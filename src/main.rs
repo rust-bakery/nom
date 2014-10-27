@@ -1,5 +1,5 @@
 #![feature(macro_rules)]
-use nom::{feed, parse, Error, Done, Incomplete};
+use nom::{feed, parse, print, Error, Done, Incomplete};
 
 mod nom;
 
@@ -13,4 +13,6 @@ fn main() {
   }
 
   feed();
+  let v2 = "abc";
+  print(&v2);
 }

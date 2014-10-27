@@ -3,6 +3,8 @@
 
 extern crate collections;
 
+use std::fmt::Show;
+
 type Err = uint;
 pub enum Parser<'a,I,O> {
   Done(I,O),
@@ -55,3 +57,7 @@ pub fn parse<'a>(input: &'a [u8]) -> Parser<'a, &'a [u8], &'a [u8]> {
   }
 }
 
+pub fn print<'a, T: Show>(input: &'a T) -> Parser<'a, (), ()> {
+  println!("{}", input);
+  Done((), ())
+}
