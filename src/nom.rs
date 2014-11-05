@@ -4,6 +4,9 @@
 extern crate collections;
 
 use std::fmt::Show;
+use std::io;
+use std::io::fs::File;
+use std::io::IoResult;
 
 type Err = uint;
 pub enum Parser<'a,I,O> {
@@ -61,3 +64,34 @@ pub fn print<'a, T: Show>(input: &'a T) -> Parser<'a, (), ()> {
   println!("{}", input);
   Done((), ())
 }
+
+pub struct FileProducer {
+  size: uint,
+  file: File
+}
+
+impl FileProducer {
+  pub fn new(filename: &str, buffer_size: uint) -> IoResult<FileProducer> {
+    File::open(&Path::new(filename)).map(|f| { FileProducer {size: buffer_size, file: f} })
+  }
+
+  pub fn produce<'a>(&mut self) -> Parser<'a, (), Vec<u8>> {
+    let mut v = Vec::with_capacity(self.size);
+    match self.file.push(self.size, &mut v) {
+      Err(e) => match e.kind {
+        /*EndOfFile => {
+          Done((), v)
+        },
+        NoProgress => {
+          Done((), v)
+        },*/
+        _ => Error((), 0)
+      },
+      Ok(i)  => {
+        println!("read {} bytes", i);
+        Done((), v)
+      }
+    }
+  }
+}
+

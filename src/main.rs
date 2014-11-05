@@ -1,5 +1,6 @@
 #![feature(macro_rules)]
-use nom::{feed, parse, print, Error, Done, Incomplete};
+use nom::{feed, parse, FileProducer, print, Error, Done, Incomplete};
+use std::str;
 
 mod nom;
 
@@ -15,4 +16,21 @@ fn main() {
   feed();
   let v2 = "abc";
   print(&v2);
+
+  FileProducer::new("links.txt", 1024).map(|producer| {
+    let mut p = producer;
+    loop {
+      match p.produce() {
+        Error(_, e)   => {
+          println!("error: {}", e);
+          break;
+        },
+        Done(i, o)    => println!("done: {}, rest: {}", str::from_utf8(o.as_slice()), i),
+        Incomplete(f) => {
+          println!("incomplete");
+        }
+      }
+    }
+  });
+
 }
