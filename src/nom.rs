@@ -1,4 +1,3 @@
-#![feature(unboxed_closures)]
 #![desc = "Omnomnom incremental byte parser"]
 #![license = "MIT"]
 
@@ -6,15 +5,15 @@ extern crate collections;
 
 
 use std::fmt::Show;
-use std::io;
 use std::io::fs::File;
-use std::io::{IoError, IoResult, IoErrorKind};
+use std::io::{IoResult, IoErrorKind};
 
 type Err = uint;
-type ParserClosure<'a, I,O> = |I|:'a -> Parser<I,O>;
+type ParserClosure<'a,I,O> = |I|:'a -> Parser<I,O>;
 
 //type ParserClosure<'a,I,O> = |I|:'a -> Parser<'a,I,O>;
 //type ParserClosure<'a,I,O> = Fn<I, Parser<'a,I,O>>;
+#[deriving(Show)]
 pub enum Parser<I,O> {
   Done(I,O),
   Error(Err),
@@ -23,80 +22,220 @@ pub enum Parser<I,O> {
   //Incomplete(fn(I) -> Parser<'a,I,O>)
 }
 
-impl<'a,I,O> Parser<I,O> {
-  //this is flatmap
-  pub fn map<'a,N>(&'a self, f: ParserClosure<&'a O, N>) -> Parser<&'a O, N> {
-    match(self) {
+pub trait Mapper<O,N> {
+  fn map(&self, f: |O| -> Parser<O,N>) -> Parser<O,N>;
+  fn mapf(&self, f: |O| -> Option<N>) -> Parser<O,N>;
+}
+
+impl<'a> Mapper<&'a [u8], &'a [u8]> for Parser<&'a [u8],&'a [u8]> {
+  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8], &'a [u8]>) -> Parser<&'c [u8], &'a [u8]> {
+    match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(o)
+      &Done(_, ref o) => f(*o)
     }
   }
 
-  pub fn mapf<'a,N>(&'a self, f: |&'a O|:'a -> Option<N>) -> Parser<&'a O, N> {
-    match(self) {
+  fn mapf(&self, f: |&'a [u8]| -> Option<&'a [u8]>) -> Parser<&'a [u8], &'a [u8]> {
+    match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(_, ref o) => match f(o) {
-        Some(output) => Done(o, output),
+      &Done(_, ref o) => match f(*o) {
+        Some(output) => Done(*o, output),
         None         => Error(0)
       }
     }
   }
+}
 
-  pub fn then<'a,N>(&'a self, f: ParserClosure<&'a I,N>) -> Parser<&'a I, N> {
-    match(self) {
+impl<'a> Mapper<&'a [u8],&'a [u8]> for Parser<(),&'a [u8]> {
+  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'a[u8]>) -> Parser<&'c [u8], &'a [u8]> {
+    match self {
       &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Incomplete(f),
-      &Done(ref i, _) => f(i)
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => f(*o)
     }
-
   }
-}
-/*
-pub fn parse<'a,I,O>(input: I) -> Option<O> {
 
-}
-*/
-/*pub fn parseString(input: String) -> Option<int> {
-  parse(vec![0]) match {
-    
-  }
-}*/
-
-/*
-pub fn feed() -> () {
-  let v = vec![1, 2, 3, 4, 5];
-  let mut acc = v.slice(0, 1);
-  let mut idx = 0;
-  let mut parser = Incomplete(parse);
-  loop {
-    match parser {
-      Error(e) => {
-        println!("error: {}", e);
-        break;
-      },
-      Done(i, o)  => {
-        println!("done: {}, rest: {}", o, i);
-        break;
-      },
-      Incomplete(f) => {
-        idx = idx + 1;
-        println!("incomplete");
-        parser = f(v.slice(0, idx));
+  fn mapf(&self, f: |&'a [u8]| -> Option<&'a [u8]>) -> Parser<&'a [u8], &'a [u8]> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Some(output) => Done(*o, output),
+        None         => Error(0)
       }
     }
   }
 }
-*/
-pub fn parse<'a>(input: &'a [u8]) -> Parser<&'a [u8], &'a [u8]> {
+impl<'a> Mapper<&'a [u8],()> for Parser<(),&'a [u8]> {
+  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],()>) -> Parser<&'c [u8], ()> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => f(*o)
+    }
+  }
 
-  match input.len() {
-    0 => Error(0),
-    //1 => Incomplete(parse),
-    _ => Done(input.slice_from(2), input.slice(0,2))
+  fn mapf(&self, f: |&'a [u8]| -> Option<()>) -> Parser<&'a [u8], ()> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Some(output) => Done(*o, output),
+        None         => Error(0)
+      }
+    }
   }
 }
+
+impl<'a> Mapper<&'a [u8],()> for Parser<&'a [u8],&'a [u8]> {
+  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],()>) -> Parser<&'c [u8], ()> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => f(*o)
+    }
+  }
+
+  fn mapf(&self, f: |&'a [u8]| -> Option<()>) -> Parser<&'a [u8], ()> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Some(output) => Done(*o, output),
+        None         => Error(0)
+      }
+    }
+  }
+}
+
+impl<'a> Mapper<&'a [u8],&'a str> for Parser<&'a [u8],&'a [u8]> {
+  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'c str>) -> Parser<&'c [u8], &'c str> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => f(*o)
+    }
+  }
+
+  fn mapf(&self, f: |&'a [u8]| -> Option<&'a str>) -> Parser<&'a [u8], &'a str> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Some(output) => Done(*o, output),
+        None         => Error(0)
+      }
+    }
+  }
+}
+
+impl<'a> Mapper<&'a [u8],&'a str> for Parser<(),&'a [u8]> {
+  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'a str>) -> Parser<&'c [u8], &'a str> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => f(*o)
+    }
+  }
+
+  fn mapf(&self, f: |&'a [u8]| -> Option<&'a str>) -> Parser<&'a [u8], &'a str> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Some(output) => Done(*o, output),
+        None         => Error(0)
+      }
+    }
+  }
+}
+
+impl<'a> Mapper<&'a str,()> for Parser<&'a [u8],&'a str> {
+  fn map<'b,'c>(&'b self, f: |&'a str| -> Parser<&'c str,()>) -> Parser<&'c str, ()> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => f(*o)
+    }
+  }
+
+  fn mapf(&self, f: |&'a str| -> Option<()>) -> Parser<&'a str, ()> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Some(output) => Done(*o, output),
+        None         => Error(0)
+      }
+    }
+  }
+}
+
+pub trait Ender<O> {
+  fn end(&self, f: |O| -> ()) -> ();
+}
+
+impl<'a> Ender<&'a [u8]> for Parser<&'a [u8],&'a [u8]> {
+  fn end(&self, f: |&'a [u8]| -> ()) -> () {
+    match self {
+      &Error(_) => (),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => {
+        f(*o)
+      }
+    }
+  }
+}
+impl<'a> Ender<&'a str> for Parser<&'a [u8],&'a str> {
+  fn end(&self, f: |&'a str| -> ()) -> () {
+    match self {
+      &Error(_) => (),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => {
+        f(*o)
+      }
+    }
+  }
+}
+
+impl<'a> Ender<&'a [u8]> for Parser<(),&'a [u8]> {
+  fn end(&self, f: |&'a [u8]| -> ()) -> () {
+    match self {
+      &Error(_) => (),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => {
+        f(*o)
+      }
+    }
+  }
+}
+
+/***/
+impl<'a>  Parser<(),&'a [u8]> {
+  pub fn m2<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],()>) -> Parser<&'c [u8], ()> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Done(_, ref o) => f(*o)
+    }
+  }
+  pub fn m3<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'c [u8]>) -> Parser<&'c [u8], &'c [u8]> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Done(_, ref o) => f(*o)
+    }
+  }
+}
+impl<'a>  Parser<&'a [u8],&'a str> {
+  pub fn m4<'b,'c>(&'b self, f: |&'a str| -> Parser<&'c str,()>) -> Parser<&'c str, ()> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Done(_, ref o) => f(*o)
+    }
+  }
+}
+/***/
 
 pub fn accline<'a>(input: &'a [u8]) -> Parser<&'a [u8], &'a [u8]> {
   match input.iter().position(|&c| c == '\n' as u8) {
@@ -105,7 +244,7 @@ pub fn accline<'a>(input: &'a [u8]) -> Parser<&'a [u8], &'a [u8]> {
   }
 }
 
-pub fn print<'a, T: Show>(input: &'a T) -> Parser<&'a T, ()> {
+pub fn print<T: Show>(input: T) -> Parser<T, ()> {
   println!("{}", input);
   Done(input, ())
 }
@@ -151,8 +290,7 @@ impl FileProducer {
     }
   }
 
-  //pub fn push<'a,'b,'c,T,O>(&'a mut self, f: |Parser<(),&'a[u8]>|:'c -> Parser<T,O>) { //ParserStarterClosure<'b, &'c[u8], T, O>) {
-  pub fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>) { //ParserStarterClosure<'b, &'c[u8], T, O>) {
+  pub fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>) {
     let mut v2 = Vec::new();
     loop {
       if self.file.eof() {
@@ -175,7 +313,7 @@ impl FileProducer {
           //match f(begin(v2.as_slice())) {
             Error(e)      => println!("error, stopping: {}", e),
             //Incomplete(_) => println!("incomplete, continue"),
-            Done(t, o)    => {
+            Done(_, _)    => {
               //println!("end, done");
               acc.clear();
             }
@@ -193,7 +331,7 @@ impl FileProducer {
           //match f(begin(v2.as_slice())) {
             Error(e)      => println!("error, stopping: {}", e),
             //Incomplete(_) => println!("incomplete, continue"),
-            Done(t, o)    => {
+            Done(_, _)    => {
               println!("end, done");
               acc.clear();
             }

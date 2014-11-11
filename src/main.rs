@@ -1,26 +1,39 @@
 #![feature(macro_rules)]
-#![feature(unboxed_closures)]
-use nom::{FileProducer, Parser, begin, print, Error, accline, Done, parse};
+use nom::{Error, FileProducer, Mapper, Ender, Parser, print, accline, Done};
 use std::str;
 
 mod nom;
 
 fn main() {
   println!("Hello world!");
-  let v = vec![3, 2, 1];
-  match parse(v.as_slice()) {
-    Error(e)   => println!("error: {}", e),
-    Done(i, o)    => println!("done: {}, rest: {}", o, i),
-    //Incomplete(_) => println!("incomplete")
+
+  fn pr(par: Parser<(),&[u8]>) -> Parser<&[u8], ()> {
+    //par.m2(print)
+    Error(0)
   }
-  //feed();
-  let v2 = "abc";
-  print(&v2);
 
   FileProducer::new("links.txt", 1024).map(|producer: FileProducer| {
     let mut p = producer;
-    p.push(|par| par.mapf(|v2| str::from_utf8(v2.as_slice())).map(print));
+    //p.push(|par| par.map(accline).mapf(|v2: &[u8]| str::from_utf8(v2.as_slice())).map(print));
+    //p.push(|par| par.m3(accline).mapf(|v2: &[u8]| str::from_utf8(v2.as_slice())).map(print));
+    p.push(|par| {
+      //let p2:Parser<&[u8],&str> = par.mapf(|v2: &[u8]| str::from_utf8(v2.as_slice()));
+      //p2.m4(print)
+      //p2.m4(|s:&str| {println!("str: {}", s); Done(s, ())})
+      //p2.end(|s:&str| { println!("str: {}", s); ()});Done((),())
+      Done((), ())
+    });
+    p.push(|par| { par.m2(print) });
+    p.push(|par| { par.map(print) });
+    p.push(|par| {println!("par: {}", par); par});
+    //p.push(pr);
     ()
   });
 
+  let v1 = vec![1, 2, 3];
+  let v2 = vec![4, 5, 6];
+  //let d: Parser<(), &[u8]> = Done((), v.as_slice());
+  let d = Done(v1.as_slice(), v2.as_slice());
+  d.map(print);
+  d.end(|s:&[u8]| { println!("str: {}", s); ()})
 }
