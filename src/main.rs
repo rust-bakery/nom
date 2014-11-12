@@ -30,10 +30,4 @@ fn main() {
     ()
   });
 
-  let v1 = vec![1, 2, 3];
-  let v2 = vec![4, 5, 6];
-  //let d: Parser<(), &[u8]> = Done((), v.as_slice());
-  let d = Done(v1.as_slice(), v2.as_slice());
-  d.map(print);
-  d.end(|s:&[u8]| { println!("str: {}", s); ()})
 }

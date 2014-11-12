@@ -13,7 +13,7 @@ type ParserClosure<'a,I,O> = |I|:'a -> Parser<I,O>;
 
 //type ParserClosure<'a,I,O> = |I|:'a -> Parser<'a,I,O>;
 //type ParserClosure<'a,I,O> = Fn<I, Parser<'a,I,O>>;
-#[deriving(Show)]
+#[deriving(Show,PartialEq,Eq)]
 pub enum Parser<I,O> {
   Done(I,O),
   Error(Err),
@@ -345,3 +345,32 @@ impl FileProducer {
   }
 }
 
+#[test]
+fn map_fn() {
+  Done((),()).map(print);
+}
+
+#[test]
+fn map_closure() {
+  Done((),()).map(|data| { println!("data: {}", data); Done(data,())});
+  //assert_eq!(decoded.number, 10);
+}
+
+#[test]
+fn t1() {
+  let v1:Vec<u8> = vec![1,2,3];
+  let v2 = vec![4,5,6];
+  let d = Done(v1.as_slice(), v2.as_slice());
+  let res = d.map(print);
+  assert_eq!(res, Done(v2.as_slice(), ()));
+}
+
+#[test]
+fn end_test() {
+  let v1:Vec<u8> = vec![1,2,3];
+  let v2 = vec![4,5,6];
+  let d = Done(v1.as_slice(), v2.as_slice());
+  let mut res: Vec<u8> = Vec::new();
+  d.end(|v:&[u8]| res.push_all(v));
+  assert_eq!(res.as_slice(), v2.as_slice());
+}
