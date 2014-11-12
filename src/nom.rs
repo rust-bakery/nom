@@ -27,7 +27,7 @@ pub trait Mapper<O,N> {
   fn mapf(&self, f: |O| -> Option<N>) -> Parser<O,N>;
 }
 
-impl<'a> Mapper<&'a [u8], &'a [u8]> for Parser<&'a [u8],&'a [u8]> {
+impl<'a,N> Mapper<&'a [u8], &'a [u8]> for Parser<N,&'a [u8]> {
   fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8], &'a [u8]>) -> Parser<&'c [u8], &'a [u8]> {
     match self {
       &Error(ref e) => Error(*e),
@@ -48,27 +48,7 @@ impl<'a> Mapper<&'a [u8], &'a [u8]> for Parser<&'a [u8],&'a [u8]> {
   }
 }
 
-impl<'a> Mapper<&'a [u8],&'a [u8]> for Parser<(),&'a [u8]> {
-  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'a[u8]>) -> Parser<&'c [u8], &'a [u8]> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
-    }
-  }
-
-  fn mapf(&self, f: |&'a [u8]| -> Option<&'a [u8]>) -> Parser<&'a [u8], &'a [u8]> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(_, ref o) => match f(*o) {
-        Some(output) => Done(*o, output),
-        None         => Error(0)
-      }
-    }
-  }
-}
-impl<'a> Mapper<&'a [u8],()> for Parser<(),&'a [u8]> {
+impl<'a,N> Mapper<&'a [u8],()> for Parser<N,&'a [u8]> {
   fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],()>) -> Parser<&'c [u8], ()> {
     match self {
       &Error(ref e) => Error(*e),
@@ -89,28 +69,7 @@ impl<'a> Mapper<&'a [u8],()> for Parser<(),&'a [u8]> {
   }
 }
 
-impl<'a> Mapper<&'a [u8],()> for Parser<&'a [u8],&'a [u8]> {
-  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],()>) -> Parser<&'c [u8], ()> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
-    }
-  }
-
-  fn mapf(&self, f: |&'a [u8]| -> Option<()>) -> Parser<&'a [u8], ()> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(_, ref o) => match f(*o) {
-        Some(output) => Done(*o, output),
-        None         => Error(0)
-      }
-    }
-  }
-}
-
-impl<'a> Mapper<&'a [u8],&'a str> for Parser<&'a [u8],&'a [u8]> {
+impl<'a,N> Mapper<&'a [u8],&'a str> for Parser<N,&'a [u8]> {
   fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'c str>) -> Parser<&'c [u8], &'c str> {
     match self {
       &Error(ref e) => Error(*e),
@@ -131,8 +90,8 @@ impl<'a> Mapper<&'a [u8],&'a str> for Parser<&'a [u8],&'a [u8]> {
   }
 }
 
-impl<'a> Mapper<&'a [u8],&'a str> for Parser<(),&'a [u8]> {
-  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'a str>) -> Parser<&'c [u8], &'a str> {
+impl<'a,N> Mapper<&'a str,()> for Parser<N,&'a str> {
+  fn map<'b,'c>(&'b self, f: |&'a str| -> Parser<&'c str,()>) -> Parser<&'c str, ()> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
@@ -140,7 +99,7 @@ impl<'a> Mapper<&'a [u8],&'a str> for Parser<(),&'a [u8]> {
     }
   }
 
-  fn mapf(&self, f: |&'a [u8]| -> Option<&'a str>) -> Parser<&'a [u8], &'a str> {
+  fn mapf(&self, f: |&'a str| -> Option<()>) -> Parser<&'a str, ()> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -152,8 +111,8 @@ impl<'a> Mapper<&'a [u8],&'a str> for Parser<(),&'a [u8]> {
   }
 }
 
-impl<'a> Mapper<&'a str,()> for Parser<&'a [u8],&'a str> {
-  fn map<'b,'c>(&'b self, f: |&'a str| -> Parser<&'c str,()>) -> Parser<&'c str, ()> {
+impl<'a,N> Mapper<(),()> for Parser<N,()> {
+  fn map<'b,'c>(&'b self, f: |()| -> Parser<(),()>) -> Parser<(), ()> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
@@ -161,7 +120,7 @@ impl<'a> Mapper<&'a str,()> for Parser<&'a [u8],&'a str> {
     }
   }
 
-  fn mapf(&self, f: |&'a str| -> Option<()>) -> Parser<&'a str, ()> {
+  fn mapf(&self, f: |()| -> Option<()>) -> Parser<(), ()> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
