@@ -6,6 +6,7 @@ extern crate collections;
 
 use std::fmt::Show;
 use std::str;
+use std::cmp::min;
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
 
@@ -214,10 +215,11 @@ pub fn begin<'a>(input: &'a [u8]) -> Parser<(), &'a [u8]> {
 }
 
 pub trait Producer {
-  fn produce(&mut self) -> ProducerState<Vec<u8>>;
+  //fn produce(&mut self) -> ProducerState<Vec<u8>>;
   fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>);
 }
 
+#[deriving(Show,PartialEq,Eq)]
 pub enum ProducerState<O> {
   Eof(O),
   Continue,
@@ -236,9 +238,7 @@ impl FileProducer {
   pub fn new(filename: &str, buffer_size: uint) -> IoResult<FileProducer> {
     File::open(&Path::new(filename)).map(|f| { FileProducer {size: buffer_size, file: f} })
   }
-}
 
-impl Producer for FileProducer {
   fn produce(&mut self) -> ProducerState<Vec<u8>> {
     let mut v = Vec::with_capacity(self.size);
     match self.file.push(self.size, &mut v) {
@@ -255,7 +255,9 @@ impl Producer for FileProducer {
       }
     }
   }
+}
 
+impl Producer for FileProducer {
   fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>) {
     let mut v2 = Vec::new();
     loop {
@@ -311,6 +313,72 @@ impl Producer for FileProducer {
   }
 }
 
+pub struct MemProducer<'a> {
+  buffer: &'a [u8],
+  chunk_size: uint,
+  length: uint,
+  index: uint
+}
+
+impl<'a> MemProducer<'a> {
+  pub fn new(buffer: &[u8], chunk_size: uint) -> MemProducer {
+    MemProducer {
+      buffer:     buffer,
+      chunk_size: chunk_size,
+      length:     buffer.len(),
+      index:      0
+    }
+  }
+
+  fn produce(&mut self) -> ProducerState<&'a[u8]> {
+    if self.index + self.chunk_size < self.length {
+      println!("self.index + {} < self.length", self.chunk_size);
+      let new_index = self.index+self.chunk_size;
+      let res = Data(self.buffer.slice(self.index, new_index));
+      self.index = new_index;
+      res
+    } else if self.index < self.length {
+      println!("self.index < self.length - 1");
+      let res = Eof(self.buffer.slice(self.index, self.length));
+      self.index = self.length;
+      res
+    } else {
+      ProducerError(0)
+    }
+  }
+}
+
+impl<'a> Producer for MemProducer<'a> {
+
+  fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>) {
+    loop {
+      let state = self.produce();
+      match state {
+        ProducerError(e)  => {println!("error: {}", e);break;},
+        Continue => {println!("continue should not happen");break;},
+        Data(v) => {
+          let p = Done((), v);
+          match f(p) {
+            Error(e)      => println!("error, stopping: {}", e),
+            Done(_, _)    => {
+              println!("data, done");
+            }
+          }
+        },
+        Eof(v) => {
+          let p = Done((), v);
+          match f(p) {
+            Error(e)      => println!("error, stopping: {}", e),
+            Done(_, _)    => {
+              println!("eof, done");
+            }
+          }
+          break;
+        }
+      }
+    }
+  }
+}
 #[test]
 fn map_fn() {
   Done((),()).map(print);
@@ -339,6 +407,22 @@ fn end_test() {
   let mut res: Vec<u8> = Vec::new();
   d.end(|v:&[u8]| res.push_all(v));
   assert_eq!(res.as_slice(), v2.as_slice());
+}
+
+#[test]
+fn mem_producer_test() {
+  let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+  assert_eq!(p.produce(), Data("abcd".as_bytes()));
+}
+
+#[test]
+fn mem_producer_test_2() {
+  let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
+  p.push(|par| par.map(print));
+  let mut iterations: uint = 0;
+  let mut p = MemProducer::new("abcdefghi".as_bytes(), 4);
+  p.push(|par| {iterations = iterations + 1; par.map(print)});
+  assert_eq!(iterations, 3);
 }
 
 #[test]
