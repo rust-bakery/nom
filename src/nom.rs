@@ -352,3 +352,16 @@ fn file_chain_test() {
     p.push(|par| par.map(accline).mapf(|v2: &[u8]| str::from_utf8(v2.as_slice())).map(print));
   });
 }*/
+
+/* FIXME: this makes rustc weep
+fn pr(par: Parser<(),&[u8]>) -> Parser<&[u8], ()> {
+  Error(0)
+}
+
+#[test]
+fn rustc_panic_test() {
+  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
+    let mut p = producer;
+    p.push(pr);
+  });
+}*/

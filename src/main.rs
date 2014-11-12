@@ -27,7 +27,6 @@ fn main() {
     p.push(|par| { par.map(print) });
     p.push(|par| {println!("par: {}", par); par});
     //p.push(pr);
-    ()
   });
 
 }
