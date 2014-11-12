@@ -5,6 +5,7 @@ extern crate collections;
 
 
 use std::fmt::Show;
+use std::str;
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
 
@@ -333,3 +334,21 @@ fn end_test() {
   d.end(|v:&[u8]| res.push_all(v));
   assert_eq!(res.as_slice(), v2.as_slice());
 }
+
+#[test]
+fn file_test() {
+  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
+    let mut p = producer;
+    p.push(|par| {println!("parsed file: {}", par); par});
+    p.push(|par| par.map(print));
+  });
+}
+
+/*
+#[test]
+fn file_chain_test() {
+  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
+    let mut p = producer;
+    p.push(|par| par.map(accline).mapf(|v2: &[u8]| str::from_utf8(v2.as_slice())).map(print));
+  });
+}*/
