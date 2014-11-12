@@ -209,10 +209,13 @@ pub fn print<T: Show>(input: T) -> Parser<T, ()> {
   Done(input, ())
 }
 
+pub fn begin<'a>(input: &'a [u8]) -> Parser<(), &'a [u8]> {
+  Done((), input)
+}
 
-pub struct FileProducer {
-  size: uint,
-  file: File
+pub trait Producer {
+  fn produce(&mut self) -> ProducerState<Vec<u8>>;
+  fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>);
 }
 
 pub enum ProducerState<O> {
@@ -222,18 +225,21 @@ pub enum ProducerState<O> {
   ProducerError(Err),
 }
 
-pub fn begin<'a>(input: &'a [u8]) -> Parser<(), &'a [u8]> {
-  Done((), input)
-}
-
 type ParserStarterClosure<'a,I,T,O> = |Parser<(),I>|:'a -> Parser<T,O>;
+
+pub struct FileProducer {
+  size: uint,
+  file: File
+}
 
 impl FileProducer {
   pub fn new(filename: &str, buffer_size: uint) -> IoResult<FileProducer> {
     File::open(&Path::new(filename)).map(|f| { FileProducer {size: buffer_size, file: f} })
   }
+}
 
-  pub fn produce(&mut self) -> ProducerState<Vec<u8>> {
+impl Producer for FileProducer {
+  fn produce(&mut self) -> ProducerState<Vec<u8>> {
     let mut v = Vec::with_capacity(self.size);
     match self.file.push(self.size, &mut v) {
       Err(e) => {
@@ -250,7 +256,7 @@ impl FileProducer {
     }
   }
 
-  pub fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>) {
+  fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>) {
     let mut v2 = Vec::new();
     loop {
       if self.file.eof() {

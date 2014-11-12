@@ -1,5 +1,5 @@
 #![feature(macro_rules)]
-use nom::{Error, FileProducer, Mapper, Ender, Parser, print, accline, Done};
+use nom::{Error, Producer, FileProducer, Mapper, Ender, Parser, print, accline, Done};
 use std::str;
 
 mod nom;
