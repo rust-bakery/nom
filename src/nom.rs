@@ -12,8 +12,9 @@ use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
 use self::Parser::*;
 use self::ProducerState::*;
+use std::kinds::Sized;
 
-type Err = uint;
+pub type Err = uint;
 type ParserClosure<'a,I,O> = |I|:'a -> Parser<I,O>;
 
 //type ParserClosure<'a,I,O> = |I|:'a -> Parser<'a,I,O>;
@@ -28,13 +29,13 @@ pub enum Parser<I,O> {
 }
 
 
-pub trait Mapper<O,N> {
-  fn map(&self, f: |O| -> Parser<O,N>) -> Parser<O,N>;
-  fn mapf(&self, f: |O| -> Option<N>) -> Parser<O,N>;
+pub trait Mapper<O,N> for Sized? {
+  fn map(& self, f: |O| -> Parser<O,N>) -> Parser<O,N>;
+  fn mapf(& self, f: |O| -> Option<N>) -> Parser<O,N>;
 }
 
-impl<'a,N> Mapper<&'a [u8], &'a [u8]> for Parser<N,&'a [u8]> {
-  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8], &'a [u8]>) -> Parser<&'c [u8], &'a [u8]> {
+impl<'a,R,S,T> Mapper<&'a[S], T> for Parser<R,&'a [S]> {
+  fn map(&self, f: |&'a[S]| -> Parser<&'a[S],T>) -> Parser<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
@@ -42,7 +43,7 @@ impl<'a,N> Mapper<&'a [u8], &'a [u8]> for Parser<N,&'a [u8]> {
     }
   }
 
-  fn mapf(&self, f: |&'a [u8]| -> Option<&'a [u8]>) -> Parser<&'a [u8], &'a [u8]> {
+  fn mapf(&self, f: |&'a[S]| -> Option<T>) -> Parser<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -54,84 +55,21 @@ impl<'a,N> Mapper<&'a [u8], &'a [u8]> for Parser<N,&'a [u8]> {
   }
 }
 
-impl<'a,N> Mapper<&'a [u8],()> for Parser<N,&'a [u8]> {
-  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],()>) -> Parser<&'c [u8], ()> {
+impl<R,T> Mapper<(), T> for Parser<R,()> {
+  fn map(&self, f: |()| -> Parser<(),T>) -> Parser<(),T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
+      &Done(_, _) => f(())
     }
   }
 
-  fn mapf(&self, f: |&'a [u8]| -> Option<()>) -> Parser<&'a [u8], ()> {
+  fn mapf(&self, f: |()| -> Option<T>) -> Parser<(),T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(_, ref o) => match f(*o) {
-        Some(output) => Done(*o, output),
-        None         => Error(0)
-      }
-    }
-  }
-}
-
-impl<'a,N> Mapper<&'a [u8],&'a str> for Parser<N,&'a [u8]> {
-  fn map<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'c str>) -> Parser<&'c [u8], &'c str> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
-    }
-  }
-
-  fn mapf(&self, f: |&'a [u8]| -> Option<&'a str>) -> Parser<&'a [u8], &'a str> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(_, ref o) => match f(*o) {
-        Some(output) => Done(*o, output),
-        None         => Error(0)
-      }
-    }
-  }
-}
-
-impl<'a,N> Mapper<&'a str,()> for Parser<N,&'a str> {
-  fn map<'b,'c>(&'b self, f: |&'a str| -> Parser<&'c str,()>) -> Parser<&'c str, ()> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
-    }
-  }
-
-  fn mapf(&self, f: |&'a str| -> Option<()>) -> Parser<&'a str, ()> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(_, ref o) => match f(*o) {
-        Some(output) => Done(*o, output),
-        None         => Error(0)
-      }
-    }
-  }
-}
-
-impl<'a,N> Mapper<(),()> for Parser<N,()> {
-  fn map<'b,'c>(&'b self, f: |()| -> Parser<(),()>) -> Parser<(), ()> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
-    }
-  }
-
-  fn mapf(&self, f: |()| -> Option<()>) -> Parser<(), ()> {
-    match self {
-      &Error(ref e) => Error(*e),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(_, ref o) => match f(*o) {
-        Some(output) => Done(*o, output),
+      &Done(_, __) => match f(()) {
+        Some(output) => Done((), output),
         None         => Error(0)
       }
     }
@@ -248,10 +186,12 @@ pub fn c<'a, 'b, 'c, 'd>(character: char) -> Box<|&'b[u8]|:'d -> Parser<&'b[u8],
 }
 */
 
+/*
 pub trait Producer {
   //fn produce(&mut self) -> ProducerState<Vec<u8>>;
-  fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>);
+  fn push<T,O>(&mut self, f: |Parser<(),T>| -> Parser<T,O>);
 }
+*/
 
 #[deriving(Show,PartialEq,Eq)]
 pub enum ProducerState<O> {
@@ -289,11 +229,11 @@ impl FileProducer {
       }
     }
   }
-}
+/*}
 
 impl Producer for FileProducer {
-  fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>) {
-    let mut v2 = Vec::new();
+*/
+  pub fn push<'x,'y,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<&'y[u8],O>) {
     loop {
       if self.file.eof() {
         println!("end");
@@ -305,11 +245,9 @@ impl Producer for FileProducer {
         ProducerError(e)  => println!("error: {}", e),
         Continue => {},
         Data(v) => {
+          let mut v2 = Vec::new();
           v2.push_all(acc.as_slice());
           v2.push_all(v.as_slice());
-          //acc.push_all(v.as_slice());
-          //let r: &'a[u8] = acc.as_slice();
-          //let data = if acc.len() == 0 { v } else { acc.push_all(v.as_slice()); acc };
           let p = Done((), v2.as_slice());
           match f(p) {
           //match f(begin(v2.as_slice())) {
@@ -323,12 +261,10 @@ impl Producer for FileProducer {
         },
         Eof(v) => {
           println!("GOT EOF");
-          v2.push_all(acc.as_slice());
-          v2.push_all(v.as_slice());
-          //acc.push_all(v.as_slice());
-          //let r: &'a[u8] = acc.as_slice();
-          //let data = if acc.len() == 0 { v } else { acc.push_all(v.as_slice()); acc };
-          let p = Done((), v2.as_slice());
+          let mut v3 = Vec::new();
+          v3.push_all(acc.as_slice());
+          v3.push_all(v.as_slice());
+          let p = Done((), v3.as_slice());
           match f(p) {
           //match f(begin(v2.as_slice())) {
             Error(e)      => println!("error, stopping: {}", e),
@@ -341,21 +277,21 @@ impl Producer for FileProducer {
           break;
         }
       }
-      v2.clear();
+      //v2.clear();
     }
     println!("end push");
   }
 }
 
-pub struct MemProducer<'a> {
-  buffer: &'a [u8],
+pub struct MemProducer<'x> {
+  buffer: &'x [u8],
   chunk_size: uint,
   length: uint,
   index: uint
 }
 
-impl<'a> MemProducer<'a> {
-  pub fn new(buffer: &[u8], chunk_size: uint) -> MemProducer {
+impl<'x> MemProducer<'x> {
+  pub fn new(buffer: &'x[u8], chunk_size: uint) -> MemProducer {
     MemProducer {
       buffer:     buffer,
       chunk_size: chunk_size,
@@ -364,7 +300,7 @@ impl<'a> MemProducer<'a> {
     }
   }
 
-  fn produce(&mut self) -> ProducerState<&'a[u8]> {
+  fn produce(&mut self) -> ProducerState<&'x[u8]> {
     if self.index + self.chunk_size < self.length {
       println!("self.index + {} < self.length", self.chunk_size);
       let new_index = self.index+self.chunk_size;
@@ -380,11 +316,13 @@ impl<'a> MemProducer<'a> {
       ProducerError(0)
     }
   }
+
+  /*
 }
 
-impl<'a> Producer for MemProducer<'a> {
-
-  fn push<T,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<T,O>) {
+impl<'x> Producer for MemProducer<'x> {
+*/
+  fn push<'b,O>(&mut self, f: |Parser<(),&'b[u8]>| -> Parser<&'b[u8],O>) {
     loop {
       let state = self.produce();
       match state {
@@ -413,6 +351,7 @@ impl<'a> Producer for MemProducer<'a> {
     }
   }
 }
+
 #[test]
 fn map_fn() {
   Done((),()).map(print);
@@ -427,7 +366,7 @@ fn map_closure() {
 #[test]
 fn t1() {
   let v1:Vec<u8> = vec![1,2,3];
-  let v2 = vec![4,5,6];
+  let v2:Vec<u8> = vec![4,5,6];
   let d = Done(v1.as_slice(), v2.as_slice());
   let res = d.map(print);
   assert_eq!(res, Done(v2.as_slice(), ()));
@@ -463,10 +402,11 @@ fn mem_producer_test_2() {
 fn file_test() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
-    p.push(|par| {println!("parsed file: {}", par); par});
+    //p.push(|par| {println!("parsed file: {}", par); par});
     p.push(|par| par.map(print));
   });
 }
+
 /*
 #[test]
 fn tag_test() {
