@@ -156,42 +156,18 @@ pub fn begin<'a>(input: &'a [u8]) -> Parser<(), &'a [u8]> {
   Done((), input)
 }
 
-
-
 #[macro_export]
 macro_rules! tag(
-  ($t:ty $inp:expr) => (
-    |input:&[$t]| {
-      if input.slice(0, $inp.len()) == $inp {
-        Done(input.slice_from($inp.len()), input.slice(0, $inp.len()))
+  ($name:ident $inp:expr) => (
+    fn $name(i:&[u8]) -> Parser<&[u8], &[u8]>{
+      if i.len() >= $inp.len() && i.slice(0, $inp.len()) == $inp {
+        Done(i.slice_from($inp.len()), i.slice(0, 0))
       } else {
-        //Done(input, [])
         Error(0)
       }
     }
   )
 )
-
-/*
-pub fn c<'a, 'b, 'c, 'd>(character: char) -> Box<|&'b[u8]|:'d -> Parser<&'b[u8], ()>> {
-  let c2 = box character;
-  box |input: &'b[u8]| {
-    let box c3 = c2;
-    if !input.is_empty() && input[0] == c3 as u8 {
-      Done(input.slice_from(1), ())
-    } else {
-      Done(input, ())
-    }
-  }
-}
-*/
-
-/*
-pub trait Producer {
-  //fn produce(&mut self) -> ProducerState<Vec<u8>>;
-  fn push<T,O>(&mut self, f: |Parser<(),T>| -> Parser<T,O>);
-}
-*/
 
 #[deriving(Show,PartialEq,Eq)]
 pub enum ProducerState<O> {
@@ -407,58 +383,16 @@ fn file_test() {
   });
 }
 
-/*
 #[test]
 fn tag_test() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
-    p.push(|par| par.map(tag!(u8 "https://".as_bytes())).map(print));
+    tag!(f "https://".as_bytes());
+    p.push(|par| par.map(f).map(print));
   });
-}
-*/
-/*
-#[test]
-fn tag_test_2() {
-  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
-    let mut p = producer;
-    //p.push(|par| par.map(tag!(u8 "https://".as_bytes())).map(print));
-    p.push(|par| match par {
-      Error(i)        => Error(i),
-      Done((), input) => {
-        //let f = tag!(u8 "https://".as_bytes());
-        //let f:|&[u8]| -> Parser<&[u8], &[u8]> = |input:&[u8]| {
-        fn f(input:&[u8]) -> Parser<&[u8], &[u8]>{
-            if input.slice(0, "https://".as_bytes().len()) == "https://".as_bytes() {
-              println!("data: {}", str::from_utf8(input.slice_from("https://".as_bytes().len())));
-              Done(input.slice_from("https://".as_bytes().len()), input.slice(0, "https://".as_bytes().len()))
-            } else {
-              //Done(input, [])
-              Error(0)
-            }
-        };
-        f(input).map(print)
-      }
-    });
-  });
-  assert!(false);
 }
 
-#[test]
-fn tag_test_3() {
-  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
-    let mut p = producer;
-    //p.push(|par| par.map(tag!(u8 "https://".as_bytes())).map(print));
-    p.push(|par| match par {
-      Error(i)        => Error(i),
-      Done((), input) => {
-        let f = tag!(u8 "https://".as_bytes());
-        f(input).map(print)
-      }
-    });
-  });
-  assert!(false);
-}
-*/
+
 /*
 #[test]
 fn file_chain_test() {
