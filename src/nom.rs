@@ -1,3 +1,4 @@
+#![feature(globs,macro_rules)]
 #![desc = "Omnomnom incremental byte parser"]
 #![license = "MIT"]
 
@@ -9,6 +10,8 @@ use std::str;
 use std::cmp::min;
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
+use self::Parser::*;
+use self::ProducerState::*;
 
 type Err = uint;
 type ParserClosure<'a,I,O> = |I|:'a -> Parser<I,O>;
