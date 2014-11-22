@@ -180,6 +180,30 @@ macro_rules! c (
   );
 )
 
+macro_rules! chain (
+  ($name:ident<$i:ty,$o:ty>, $assemble:expr, $($rest:tt)*) => (
+    fn $name(i:$i) -> Parser<$i,$o>{
+      chaining_parser!(i, $assemble, $($rest)*)
+    }
+  );
+)
+
+macro_rules! chaining_parser (
+  ($i:expr, $assemble:expr, $field:ident : $e:expr, $($rest:tt)*) => (
+    match $e($i) {
+      Error(e)  => Error(e),
+      Done(i,o) => {
+        let $field = o;
+        chaining_parser!(i, $assemble, $($rest)*)
+      }
+    }
+  );
+
+  ($i:expr, $assemble:expr, ) => (
+    Done($i, $assemble())
+  )
+)
+
 #[deriving(Show,PartialEq,Eq)]
 pub enum ProducerState<O> {
   Eof(O),
@@ -412,6 +436,22 @@ fn chain_and_ignore_test() {
   assert_eq!(r, Done("".as_bytes(), 1));
 }
 
+#[deriving(PartialEq,Eq,Show)]
+struct B {
+  a: int,
+  b: int
+}
+
+#[test]
+fn chain_test() {
+  tag!(x "abcd".as_bytes());
+  fn tempRetInt1(i:&[u8]) -> Parser<&[u8], int> { Done(i,1) };
+  c!(retInt1<&[u8],int>(x, tempRetInt1));
+  fn retInt2(i:&[u8]) -> Parser<&[u8], int> { Done(i,2) };
+  chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: retInt1, bb: retInt2,);
+  let r = Done((), "abcde".as_bytes()).map(f);
+  assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
+}
 
 
 /* FIXME: this makes rustc weep
