@@ -169,6 +169,17 @@ macro_rules! tag(
   )
 )
 
+macro_rules! c (
+  ($name:ident<$i:ty,$o:ty>($f1:expr, $f2:expr)) => (
+    fn $name(input:$i) -> Parser<$i, $o>{
+      match $f1(input) {
+        Error(e)  => Error(e),
+        Done(i,_) => $f2(i)
+      }
+    }
+  );
+)
+
 #[deriving(Show,PartialEq,Eq)]
 pub enum ProducerState<O> {
   Eof(O),
@@ -392,15 +403,16 @@ fn tag_test() {
   });
 }
 
-
-/*
 #[test]
-fn file_chain_test() {
-  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
-    let mut p = producer;
-    p.push(|par| par.map(accline).mapf(|v2: &[u8]| str::from_utf8(v2.as_slice())).map(print));
-  });
-}*/
+fn chain_and_ignore_test() {
+  tag!(x "abcd".as_bytes());
+  fn retInt(i:&[u8]) -> Parser<&[u8], int> { Done(i,1) };
+  c!(y<&[u8], int>(x, retInt));
+  let r = Done((), "abcd".as_bytes()).map(y);
+  assert_eq!(r, Done("".as_bytes(), 1));
+}
+
+
 
 /* FIXME: this makes rustc weep
 fn pr(par: Parser<(),&[u8]>) -> Parser<&[u8], ()> {
