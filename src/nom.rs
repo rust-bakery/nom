@@ -10,32 +10,32 @@ use std::str;
 use std::cmp::min;
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
-use self::Parser::*;
+use self::IResult::*;
 use self::ProducerState::*;
 use std::kinds::Sized;
 
 pub type Err = uint;
-type ParserClosure<'a,I,O> = |I|:'a -> Parser<I,O>;
+type IResultClosure<'a,I,O> = |I|:'a -> IResult<I,O>;
 
-//type ParserClosure<'a,I,O> = |I|:'a -> Parser<'a,I,O>;
-//type ParserClosure<'a,I,O> = Fn<I, Parser<'a,I,O>>;
+//type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
+//type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 #[deriving(Show,PartialEq,Eq)]
-pub enum Parser<I,O> {
+pub enum IResult<I,O> {
   Done(I,O),
   Error(Err),
-  //Incomplete(ParserClosure<'a,I,O>)
-  //Incomplete(|I|:'a -> Parser<'a,I,O>)
-  //Incomplete(fn(I) -> Parser<'a,I,O>)
+  //Incomplete(IResultClosure<'a,I,O>)
+  //Incomplete(|I|:'a -> IResult<'a,I,O>)
+  //Incomplete(fn(I) -> IResult<'a,I,O>)
 }
 
 
 pub trait Mapper<O,N> for Sized? {
-  fn flat_map(& self, f: |O| -> Parser<O,N>) -> Parser<O,N>;
-  fn map_opt(& self, f: |O| -> Option<N>) -> Parser<O,N>;
+  fn flat_map(& self, f: |O| -> IResult<O,N>) -> IResult<O,N>;
+  fn map_opt(& self, f: |O| -> Option<N>) -> IResult<O,N>;
 }
 
-impl<'a,R,S,T> Mapper<&'a[S], T> for Parser<R,&'a [S]> {
-  fn flat_map(&self, f: |&'a[S]| -> Parser<&'a[S],T>) -> Parser<&'a[S],T> {
+impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
+  fn flat_map(&self, f: |&'a[S]| -> IResult<&'a[S],T>) -> IResult<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
@@ -43,7 +43,7 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for Parser<R,&'a [S]> {
     }
   }
 
-  fn map_opt(&self, f: |&'a[S]| -> Option<T>) -> Parser<&'a[S],T> {
+  fn map_opt(&self, f: |&'a[S]| -> Option<T>) -> IResult<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -55,8 +55,8 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for Parser<R,&'a [S]> {
   }
 }
 
-impl<R,T> Mapper<(), T> for Parser<R,()> {
-  fn flat_map(&self, f: |()| -> Parser<(),T>) -> Parser<(),T> {
+impl<R,T> Mapper<(), T> for IResult<R,()> {
+  fn flat_map(&self, f: |()| -> IResult<(),T>) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
@@ -64,7 +64,7 @@ impl<R,T> Mapper<(), T> for Parser<R,()> {
     }
   }
 
-  fn map_opt(&self, f: |()| -> Option<T>) -> Parser<(),T> {
+  fn map_opt(&self, f: |()| -> Option<T>) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -76,19 +76,19 @@ impl<R,T> Mapper<(), T> for Parser<R,()> {
   }
 }
 
-pub fn print<T: Show>(input: T) -> Parser<T, ()> {
+pub fn print<T: Show>(input: T) -> IResult<T, ()> {
   println!("{}", input);
   Done(input, ())
 }
 
-pub fn begin<'a>(input: &'a [u8]) -> Parser<(), &'a [u8]> {
+pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
   Done((), input)
 }
 
 #[macro_export]
 macro_rules! tag(
   ($name:ident $inp:expr) => (
-    fn $name(i:&[u8]) -> Parser<&[u8], &[u8]>{
+    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       if i.len() >= $inp.len() && i.slice(0, $inp.len()) == $inp {
         Done(i.slice_from($inp.len()), i.slice(0, 0))
       } else {
@@ -100,7 +100,7 @@ macro_rules! tag(
 
 macro_rules! c (
   ($name:ident<$i:ty,$o:ty>($f1:expr, $f2:expr)) => (
-    fn $name(input:$i) -> Parser<$i, $o>{
+    fn $name(input:$i) -> IResult<$i, $o>{
       match $f1(input) {
         Error(e)  => Error(e),
         Done(i,_) => $f2(i)
@@ -111,7 +111,7 @@ macro_rules! c (
 
 macro_rules! chain (
   ($name:ident<$i:ty,$o:ty>, $assemble:expr, $($rest:tt)*) => (
-    fn $name(i:$i) -> Parser<$i,$o>{
+    fn $name(i:$i) -> IResult<$i,$o>{
       chaining_parser!(i, $assemble, $($rest)*)
     }
   );
@@ -141,7 +141,7 @@ pub enum ProducerState<O> {
   ProducerError(Err),
 }
 
-type ParserStarterClosure<'a,I,T,O> = |Parser<(),I>|:'a -> Parser<T,O>;
+type IResultStarterClosure<'a,I,T,O> = |IResult<(),I>|:'a -> IResult<T,O>;
 
 pub struct FileProducer {
   size: uint,
@@ -173,7 +173,7 @@ impl FileProducer {
 
 impl Producer for FileProducer {
 */
-  pub fn push<'x,'y,O>(&mut self, f: |Parser<(),&[u8]>| -> Parser<&'y[u8],O>) {
+  pub fn push<'x,'y,O>(&mut self, f: |IResult<(),&[u8]>| -> IResult<&'y[u8],O>) {
     loop {
       if self.file.eof() {
         println!("end");
@@ -262,7 +262,7 @@ impl<'x> MemProducer<'x> {
 
 impl<'x> Producer for MemProducer<'x> {
 */
-  fn push<'b,O>(&mut self, f: |Parser<(),&'b[u8]>| -> Parser<&'b[u8],O>) {
+  fn push<'b,O>(&mut self, f: |IResult<(),&'b[u8]>| -> IResult<&'b[u8],O>) {
     loop {
       let state = self.produce();
       match state {
@@ -349,7 +349,7 @@ fn tag_test() {
 #[test]
 fn chain_and_ignore_test() {
   tag!(x "abcd".as_bytes());
-  fn retInt(i:&[u8]) -> Parser<&[u8], int> { Done(i,1) };
+  fn retInt(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
   c!(y<&[u8], int>(x, retInt));
   let r = Done((), "abcd".as_bytes()).flat_map(y);
   assert_eq!(r, Done("".as_bytes(), 1));
@@ -364,9 +364,9 @@ struct B {
 #[test]
 fn chain_test() {
   tag!(x "abcd".as_bytes());
-  fn tempRetInt1(i:&[u8]) -> Parser<&[u8], int> { Done(i,1) };
+  fn tempRetInt1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
   c!(retInt1<&[u8],int>(x, tempRetInt1));
-  fn retInt2(i:&[u8]) -> Parser<&[u8], int> { Done(i,2) };
+  fn retInt2(i:&[u8]) -> IResult<&[u8], int> { Done(i,2) };
   chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: retInt1, bb: retInt2,);
   let r = Done((), "abcde".as_bytes()).flat_map(f);
   assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
@@ -374,7 +374,7 @@ fn chain_test() {
 
 
 /* FIXME: this makes rustc weep
-fn pr(par: Parser<(),&[u8]>) -> Parser<&[u8], ()> {
+fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
   Error(0)
 }
 
