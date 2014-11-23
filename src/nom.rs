@@ -76,77 +76,6 @@ impl<R,T> Mapper<(), T> for Parser<R,()> {
   }
 }
 
-pub trait Ender<O> {
-  fn end(&self, f: |O| -> ()) -> ();
-}
-
-impl<'a> Ender<&'a [u8]> for Parser<&'a [u8],&'a [u8]> {
-  fn end(&self, f: |&'a [u8]| -> ()) -> () {
-    match self {
-      &Error(_) => (),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => {
-        f(*o)
-      }
-    }
-  }
-}
-impl<'a> Ender<&'a str> for Parser<&'a [u8],&'a str> {
-  fn end(&self, f: |&'a str| -> ()) -> () {
-    match self {
-      &Error(_) => (),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => {
-        f(*o)
-      }
-    }
-  }
-}
-
-impl<'a> Ender<&'a [u8]> for Parser<(),&'a [u8]> {
-  fn end(&self, f: |&'a [u8]| -> ()) -> () {
-    match self {
-      &Error(_) => (),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => {
-        f(*o)
-      }
-    }
-  }
-}
-
-/***/
-impl<'a>  Parser<(),&'a [u8]> {
-  pub fn m2<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],()>) -> Parser<&'c [u8], ()> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Done(_, ref o) => f(*o)
-    }
-  }
-  pub fn m3<'b,'c>(&'b self, f: |&'a [u8]| -> Parser<&'c [u8],&'c [u8]>) -> Parser<&'c [u8], &'c [u8]> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Done(_, ref o) => f(*o)
-    }
-  }
-}
-impl<'a>  Parser<&'a [u8],&'a str> {
-  pub fn m4<'b,'c>(&'b self, f: |&'a str| -> Parser<&'c str,()>) -> Parser<&'c str, ()> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Done(_, ref o) => f(*o)
-    }
-  }
-}
-/***/
-
-pub fn accline<'a>(input: &'a [u8]) -> Parser<&'a [u8], &'a [u8]> {
-  match input.iter().position(|&c| c == '\n' as u8) {
-    None      => Error(0),//Incomplete(accline),
-    Some(pos) => Done(input.slice_from(pos), input.slice(0, pos))
-  }
-}
-
 pub fn print<T: Show>(input: T) -> Parser<T, ()> {
   println!("{}", input);
   Done(input, ())
@@ -381,16 +310,6 @@ fn t1() {
   let d = Done(v1.as_slice(), v2.as_slice());
   let res = d.map(print);
   assert_eq!(res, Done(v2.as_slice(), ()));
-}
-
-#[test]
-fn end_test() {
-  let v1:Vec<u8> = vec![1,2,3];
-  let v2 = vec![4,5,6];
-  let d = Done(v1.as_slice(), v2.as_slice());
-  let mut res: Vec<u8> = Vec::new();
-  d.end(|v:&[u8]| res.push_all(v));
-  assert_eq!(res.as_slice(), v2.as_slice());
 }
 
 #[test]
