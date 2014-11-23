@@ -6,8 +6,6 @@ extern crate collections;
 
 
 use std::fmt::Show;
-use std::str;
-use std::cmp::min;
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
 use self::IResult::*;
@@ -173,7 +171,7 @@ impl FileProducer {
 
 impl Producer for FileProducer {
 */
-  pub fn push<'x,'y,O>(&mut self, f: |IResult<(),&[u8]>| -> IResult<&'y[u8],O>) {
+  pub fn push<'y,O>(&mut self, f: |IResult<(),&[u8]>| -> IResult<&'y[u8],O>) {
     loop {
       if self.file.eof() {
         println!("end");

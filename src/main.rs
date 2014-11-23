@@ -1,7 +1,6 @@
 #![feature(globs,macro_rules)]
 use nom::{FileProducer, Mapper, IResult, print};
 use nom::IResult::*;
-use std::str;
 
 mod nom;
 
