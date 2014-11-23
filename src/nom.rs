@@ -30,12 +30,12 @@ pub enum Parser<I,O> {
 
 
 pub trait Mapper<O,N> for Sized? {
-  fn map(& self, f: |O| -> Parser<O,N>) -> Parser<O,N>;
-  fn mapf(& self, f: |O| -> Option<N>) -> Parser<O,N>;
+  fn flat_map(& self, f: |O| -> Parser<O,N>) -> Parser<O,N>;
+  fn map_opt(& self, f: |O| -> Option<N>) -> Parser<O,N>;
 }
 
 impl<'a,R,S,T> Mapper<&'a[S], T> for Parser<R,&'a [S]> {
-  fn map(&self, f: |&'a[S]| -> Parser<&'a[S],T>) -> Parser<&'a[S],T> {
+  fn flat_map(&self, f: |&'a[S]| -> Parser<&'a[S],T>) -> Parser<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
@@ -43,7 +43,7 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for Parser<R,&'a [S]> {
     }
   }
 
-  fn mapf(&self, f: |&'a[S]| -> Option<T>) -> Parser<&'a[S],T> {
+  fn map_opt(&self, f: |&'a[S]| -> Option<T>) -> Parser<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -56,7 +56,7 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for Parser<R,&'a [S]> {
 }
 
 impl<R,T> Mapper<(), T> for Parser<R,()> {
-  fn map(&self, f: |()| -> Parser<(),T>) -> Parser<(),T> {
+  fn flat_map(&self, f: |()| -> Parser<(),T>) -> Parser<(),T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
@@ -64,7 +64,7 @@ impl<R,T> Mapper<(), T> for Parser<R,()> {
     }
   }
 
-  fn mapf(&self, f: |()| -> Option<T>) -> Parser<(),T> {
+  fn map_opt(&self, f: |()| -> Option<T>) -> Parser<(),T> {
     match self {
       &Error(ref e) => Error(*e),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -293,13 +293,13 @@ impl<'x> Producer for MemProducer<'x> {
 }
 
 #[test]
-fn map_fn() {
-  Done((),()).map(print);
+fn flat_map_fn_test() {
+  Done((),()).flat_map(print);
 }
 
 #[test]
-fn map_closure() {
-  Done((),()).map(|data| { println!("data: {}", data); Done(data,())});
+fn flat_map_closure_test() {
+  Done((),()).flat_map(|data| { println!("data: {}", data); Done(data,())});
   //assert_eq!(decoded.number, 10);
 }
 
@@ -308,7 +308,7 @@ fn t1() {
   let v1:Vec<u8> = vec![1,2,3];
   let v2:Vec<u8> = vec![4,5,6];
   let d = Done(v1.as_slice(), v2.as_slice());
-  let res = d.map(print);
+  let res = d.flat_map(print);
   assert_eq!(res, Done(v2.as_slice(), ()));
 }
 
@@ -321,10 +321,10 @@ fn mem_producer_test() {
 #[test]
 fn mem_producer_test_2() {
   let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
-  p.push(|par| par.map(print));
+  p.push(|par| par.flat_map(print));
   let mut iterations: uint = 0;
   let mut p = MemProducer::new("abcdefghi".as_bytes(), 4);
-  p.push(|par| {iterations = iterations + 1; par.map(print)});
+  p.push(|par| {iterations = iterations + 1; par.flat_map(print)});
   assert_eq!(iterations, 3);
 }
 
@@ -333,7 +333,7 @@ fn file_test() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
     //p.push(|par| {println!("parsed file: {}", par); par});
-    p.push(|par| par.map(print));
+    p.push(|par| par.flat_map(print));
   });
 }
 
@@ -342,7 +342,7 @@ fn tag_test() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
     tag!(f "https://".as_bytes());
-    p.push(|par| par.map(f).map(print));
+    p.push(|par| par.flat_map(f).flat_map(print));
   });
 }
 
@@ -351,7 +351,7 @@ fn chain_and_ignore_test() {
   tag!(x "abcd".as_bytes());
   fn retInt(i:&[u8]) -> Parser<&[u8], int> { Done(i,1) };
   c!(y<&[u8], int>(x, retInt));
-  let r = Done((), "abcd".as_bytes()).map(y);
+  let r = Done((), "abcd".as_bytes()).flat_map(y);
   assert_eq!(r, Done("".as_bytes(), 1));
 }
 
@@ -368,7 +368,7 @@ fn chain_test() {
   c!(retInt1<&[u8],int>(x, tempRetInt1));
   fn retInt2(i:&[u8]) -> Parser<&[u8], int> { Done(i,2) };
   chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: retInt1, bb: retInt2,);
-  let r = Done((), "abcde".as_bytes()).map(f);
+  let r = Done((), "abcde".as_bytes()).flat_map(f);
   assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
 }
 

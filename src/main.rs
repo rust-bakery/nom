@@ -20,7 +20,7 @@ fn main() {
       //let p2:Parser<&[u8],&str> = par.mapf(|v2: &[u8]| str::from_utf8(v2.as_slice()));
       Done((), ())
     });*/
-    p.push(|par| { par.map(print) });
+    p.push(|par| { par.flat_map(print) });
     //p.push(|par| {println!("par: {}", par); par});
     //p.push(pr);
     //p.push(|par| { par.map(tag!("https://".as_bytes())).map(print) });
