@@ -119,15 +119,6 @@ impl<'a,S,T> Mapper2<&'a[S], T, ()> for IResult<(),&'a [S]> {
   }
 }
 
-pub fn print<T: Show>(input: T) -> IResult<T, ()> {
-  println!("{}", input);
-  Done(input, ())
-}
-
-pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
-  Done((), input)
-}
-
 #[macro_export]
 macro_rules! tag(
   ($name:ident $inp:expr) => (
@@ -357,6 +348,105 @@ impl<'x> Producer for MemProducer<'x> {
       }
     }
   }
+}
+
+pub fn print<T: Show>(input: T) -> IResult<T, ()> {
+  println!("{}", input);
+  Done(input, ())
+}
+
+pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
+  Done((), input)
+}
+
+#[macro_export]
+macro_rules! is_not(
+  ($name:ident $arr:expr) => (
+    fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
+      for idx in range(0, input.len()) {
+        for i in arr {
+          if input[idx] == i {
+            return Done(input.slice_from(idx), input.slice(0, idx))
+          }
+        }
+      }
+      Done("".as_bytes(), input)
+    }
+  )
+)
+
+#[macro_export]
+macro_rules! is_a(
+  ($name:ident $arr:expr) => (
+    fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
+      for idx in range(0, input.len()) {
+        var res = false
+        for i in arr {
+          if input[idx] == i {
+            res = true
+          }
+        }
+        if !res {
+          return Done(input.slice_from(idx), input.slice(0, idx))
+        }
+      }
+      Done("".as_bytes(), input)
+    }
+  )
+)
+
+#[macro_export]
+macro_rules! filter(
+  ($name:ident $f:ident) => (
+    fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
+      for idx in range(0, input.len()) {
+        if !$f(input[idx]) {
+          return Done(input.slice_from(idx), input.slice(0, idx))
+        }
+      }
+      Done("".as_bytes(), input)
+    }
+  )
+)
+
+fn is_alphabetic(chr:u8) -> bool {
+  (chr >= 0x41 && chr <= 0x5A) || (chr >= 0x61 && chr <= 0x7A)
+}
+
+fn is_digit(chr: u8) -> bool {
+  chr >= 0x30 && chr <= 0x39
+}
+fn is_alphanumeric(chr: u8) -> bool {
+  is_alphabetic(chr) || is_digit(chr)
+}
+
+filter!(alpha is_alphabetic)
+filter!(digit is_digit)
+filter!(alphanumeric is_alphanumeric)
+
+fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  if input.len() == 0 {
+    //FIXME: should return Incomplete
+    return Error(0)
+  }
+
+  let len = input[0] as uint;
+
+  if input.len() >= len + 1 {
+    return Done(input.slice_from(len+1), input.slice(1, len+1))
+  } else {
+    //FIXME: should return Incomplete
+    return Error(0)
+  }
+}
+
+#[test]
+fn sized_buffer_test() {
+  let arr:[u8, ..6] = [3, 4, 5, 6, 7, 8];
+  let res = Done((), arr.as_slice()).flat_map(sized_buffer);
+  let i = [7,8];
+  let o = [4,5,6];
+  assert_eq!(res, Done(i.as_slice(), o.as_slice()))
 }
 
 #[test]
