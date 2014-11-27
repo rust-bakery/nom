@@ -96,15 +96,39 @@ macro_rules! tag(
   )
 )
 
-macro_rules! c (
-  ($name:ident<$i:ty,$o:ty>($f1:expr, $f2:expr)) => (
+macro_rules! o (
+  ($name:ident<$i:ty,$o:ty> $f1:expr $($rest:tt)*) => (
     fn $name(input:$i) -> IResult<$i, $o>{
       match $f1(input) {
         Error(e)  => Error(e),
-        Done(i,_) => $f2(i)
+        Done(i,o) => {
+          o_parser!(i o $($rest)*)
+        }
       }
     }
   );
+)
+
+macro_rules! o_parser (
+  ($i:expr $o:expr) => (Done($i,$o));
+
+  ($i:expr $o:expr ~ $e:expr ~ $($rest:tt)*) => (
+    match $e($i) {
+      Error(e)  => Error(e),
+      Done(i,o) => {
+        o_parser!(i o $($rest)*)
+      }
+    }
+
+   );
+  ($i:expr $o:expr $e:expr $($rest:tt)*) => (
+    match $e($i) {
+      Error(e)  => Error(e),
+      Done(i,_) => {
+        o_parser!(i $o $($rest)*)
+      }
+    }
+   );
 )
 
 macro_rules! chain (
@@ -344,15 +368,6 @@ fn tag_test() {
   });
 }
 
-#[test]
-fn chain_and_ignore_test() {
-  tag!(x "abcd".as_bytes());
-  fn retInt(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
-  c!(y<&[u8], int>(x, retInt));
-  let r = Done((), "abcd".as_bytes()).flat_map(y);
-  assert_eq!(r, Done("".as_bytes(), 1));
-}
-
 #[deriving(PartialEq,Eq,Show)]
 struct B {
   a: int,
@@ -360,12 +375,26 @@ struct B {
 }
 
 #[test]
+fn chain_and_ignore_test() {
+  tag!(x "abcd".as_bytes());
+  tag!(y "efgh".as_bytes());
+  fn retInt(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
+  //o!(z<&[u8], int>  x S x S retInt Z y);
+  o!(z<&[u8], int>  x  x ~retInt~ y);
+
+  let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
+  assert_eq!(r, Done("".as_bytes(), 1));
+}
+
+
+#[test]
 fn chain_test() {
   tag!(x "abcd".as_bytes());
   fn tempRetInt1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
-  c!(retInt1<&[u8],int>(x, tempRetInt1));
+  o!(retInt1<&[u8],int> x ~ tempRetInt1 ~);
   fn retInt2(i:&[u8]) -> IResult<&[u8], int> { Done(i,2) };
   chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: retInt1, bb: retInt2,);
+
   let r = Done((), "abcde".as_bytes()).flat_map(f);
   assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
 }
