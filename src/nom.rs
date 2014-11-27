@@ -11,6 +11,7 @@ use std::io::{IoResult, IoErrorKind};
 use self::IResult::*;
 use self::ProducerState::*;
 use std::kinds::Sized;
+use std::str;
 
 pub type Err = uint;
 type IResultClosure<'a,I,O> = |I|:'a -> IResult<I,O>;
@@ -70,6 +71,50 @@ impl<R,T> Mapper<(), T> for IResult<R,()> {
         Some(output) => Done((), output),
         None         => Error(0)
       }
+    }
+  }
+}
+
+pub trait Mapper2<O,N,I> for Sized? {
+  fn map(& self, f: |O| -> N) -> IResult<I,N>;
+}
+
+impl<'a,R,S,T> Mapper2<&'a[S], T, &'a R> for IResult<&'a R,&'a [S]> {
+  fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a R,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ref o) => Done(*i,f(*o))
+    }
+  }
+}
+
+impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<&'a [R],&'a [S]> {
+  fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a [R],T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ref o) => Done(*i,f(*o))
+    }
+  }
+}
+
+impl<'a,R,T> Mapper2<(), T, &'a R> for IResult<&'a R,()> {
+  fn map(&self, f: |()| -> T) -> IResult<&'a R,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ()) => Done(*i,f(()))
+    }
+  }
+}
+
+impl<'a,S,T> Mapper2<&'a[S], T, ()> for IResult<(),&'a [S]> {
+  fn map(&self, f: |&'a[S]| -> T) -> IResult<(),T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done((), ref o) => Done((),f(*o))
     }
   }
 }
@@ -323,6 +368,18 @@ fn flat_map_fn_test() {
 fn flat_map_closure_test() {
   Done((),()).flat_map(|data| { println!("data: {}", data); Done(data,())});
   //assert_eq!(decoded.number, 10);
+}
+
+#[test]
+fn map_test() {
+  let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() });
+  assert_eq!(res, Done((), "abcd"));
+}
+
+#[test]
+fn map_test_2() {
+  let res = Done("abcd".as_bytes(),"efgh".as_bytes()).map(|data| { str::from_utf8(data).unwrap() });
+  assert_eq!(res, Done("abcd".as_bytes(), "efgh"));
 }
 
 #[test]
