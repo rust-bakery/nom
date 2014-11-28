@@ -1,4 +1,3 @@
-#![feature(globs,macro_rules)]
 #![desc = "Omnomnom incremental byte parser"]
 #![license = "MIT"]
 
@@ -202,7 +201,7 @@ macro_rules! alt (
 macro_rules! alt_parser (
   ($i:expr, $e:expr $($rest:tt)*) => (
     match $e($i) {
-      Error(e)  => alt_parser!($i, $($rest)*),
+      Error(_)  => alt_parser!($i, $($rest)*),
       Done(i,o) => Done(i,o)
     }
   );
@@ -575,9 +574,9 @@ struct B {
 fn chain_and_ignore_test() {
   tag!(x "abcd".as_bytes());
   tag!(y "efgh".as_bytes());
-  fn retInt(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
+  fn ret_int(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
   //o!(z<&[u8], int>  x S x S retInt Z y);
-  o!(z<&[u8], int>  x  x ~retInt~ y);
+  o!(z<&[u8], int>  x  x ~ret_int~ y);
 
   let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
   assert_eq!(r, Done("".as_bytes(), 1));
@@ -587,10 +586,10 @@ fn chain_and_ignore_test() {
 #[test]
 fn chain_test() {
   tag!(x "abcd".as_bytes());
-  fn tempRetInt1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
-  o!(retInt1<&[u8],int> x ~ tempRetInt1 ~);
-  fn retInt2(i:&[u8]) -> IResult<&[u8], int> { Done(i,2) };
-  chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: retInt1, bb: retInt2,);
+  fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
+  o!(ret_int1<&[u8],int> x ~ temp_ret_int1 ~);
+  fn ret_int2(i:&[u8]) -> IResult<&[u8], int> { Done(i,2) };
+  chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
 
   let r = Done((), "abcde".as_bytes()).flat_map(f);
   assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
