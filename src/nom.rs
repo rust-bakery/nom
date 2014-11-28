@@ -364,7 +364,7 @@ macro_rules! is_not(
   ($name:ident $arr:expr) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
       for idx in range(0, input.len()) {
-        for i in arr {
+        for &i in $arr.iter() {
           if input[idx] == i {
             return Done(input.slice_from(idx), input.slice(0, idx))
           }
@@ -381,7 +381,7 @@ macro_rules! is_a(
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
       for idx in range(0, input.len()) {
         var res = false
-        for i in arr {
+        for &i in $arr.iter() {
           if input[idx] == i {
             res = true
           }
@@ -408,6 +408,8 @@ macro_rules! filter(
     }
   )
 )
+
+is_not!(line_ending "\r\n".as_bytes())
 
 fn is_alphabetic(chr:u8) -> bool {
   (chr >= 0x41 && chr <= 0x5A) || (chr >= 0x61 && chr <= 0x7A)
@@ -438,6 +440,33 @@ fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
     //FIXME: should return Incomplete
     return Error(0)
   }
+}
+
+#[test]
+fn character_test() {
+  let empty = "".as_bytes();
+  let a = "abcd".as_bytes();
+  let b = "1234".as_bytes();
+  let c = "a123".as_bytes();
+  let d = "azé12".as_bytes();
+  assert_eq!(Done((),a).flat_map(alpha), Done(empty, a))
+  assert_eq!(Done((),b).flat_map(alpha), Done(b, empty))
+  assert_eq!(Done((),c).flat_map(alpha), Done(c.slice_from(1), "a".as_bytes()))
+  assert_eq!(Done((),d).flat_map(alpha), Done("é12".as_bytes(), "az".as_bytes()))
+  assert_eq!(Done((),a).flat_map(digit), Done(a, empty))
+  assert_eq!(Done((),b).flat_map(digit), Done(empty, b))
+  assert_eq!(Done((),c).flat_map(digit), Done(c, empty))
+  assert_eq!(Done((),d).flat_map(digit), Done(d, empty))
+  assert_eq!(Done((),a).flat_map(alphanumeric), Done(empty, a))
+  assert_eq!(Done((),b).flat_map(alphanumeric), Done(empty, b))
+  assert_eq!(Done((),c).flat_map(alphanumeric), Done(empty, c))
+  assert_eq!(Done((),d).flat_map(alphanumeric), Done("é12".as_bytes(), "az".as_bytes()))
+}
+
+#[test]
+fn is_not_test() {
+  let a = "ab12cd\nefgh".as_bytes();
+  assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
 }
 
 #[test]
