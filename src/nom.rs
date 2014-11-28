@@ -191,6 +191,27 @@ macro_rules! chaining_parser (
   )
 )
 
+macro_rules! alt (
+  ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
+    fn $name(i:$i) -> IResult<$i,$o>{
+      alt_parser!(i, $($rest)*)
+    }
+  );
+)
+
+macro_rules! alt_parser (
+  ($i:expr, $e:expr $($rest:tt)*) => (
+    match $e($i) {
+      Error(e)  => alt_parser!($i, $($rest)*),
+      Done(i,o) => Done(i,o)
+    }
+  );
+
+  ($i:expr, ) => (
+    Error(1)
+  )
+)
+
 #[deriving(Show,PartialEq,Eq)]
 pub enum ProducerState<O> {
   Eof(O),
@@ -575,6 +596,27 @@ fn chain_test() {
   assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
 }
 
+#[test]
+fn alt_test() {
+  fn work(input: &[u8]) -> IResult<&[u8],&[u8]> {
+    Done("".as_bytes(), input)
+  }
+  fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8]> {
+    Error(3)
+  }
+  fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
+    Done(input, "".as_bytes())
+  }
+
+  alt!(alt1<&[u8],&[u8]>, dont_work dont_work)
+  alt!(alt2<&[u8],&[u8]>, dont_work work)
+  alt!(alt3<&[u8],&[u8]>, dont_work dont_work work2 dont_work)
+
+  let a = "abcd".as_bytes();
+  assert_eq!(Done((), a).flat_map(alt1), Error(1))
+  assert_eq!(Done((), a).flat_map(alt2), Done("".as_bytes(), a))
+  assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()))
+}
 
 /* FIXME: this makes rustc weep
 fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
