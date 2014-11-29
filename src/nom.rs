@@ -124,6 +124,29 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
   }
 }
 
+impl<'a,R,T> Mapper<&'a str, T> for IResult<R,&'a str> {
+  fn flat_map(&self, f: |&'a str| -> IResult<&'a str,T>) -> IResult<&'a str,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => f(*o)
+    }
+  }
+
+  fn map_opt(&self, f: |&'a str| -> Option<T>) -> IResult<&'a str,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Some(output) => Done(*o, output),
+        None         => Error(0)
+      }
+    }
+  }
+}
+
 impl<'a,R,T> Mapper<(), T> for IResult<R,()> {
   fn flat_map(&self, f: |()| -> IResult<(),T>) -> IResult<(),T> {
     match self {
@@ -283,7 +306,7 @@ macro_rules! alt_parser (
   ($i:expr, $e:expr $($rest:tt)*) => (
     match $e($i) {
       Error(_)  => alt_parser!($i, $($rest)*),
-      Incomplete(i) => alt_parser!($i, $($rest)*),
+      Incomplete(_) => alt_parser!($i, $($rest)*),
       Done(i,o) => Done(i,o)
     }
   );
@@ -376,11 +399,6 @@ impl<'x> Producer for MemProducer<'x> {
     }
   }
 
-  /*
-}
-
-impl<'x> Producer for MemProducer<'x> {
-*/
 }
 
 #[macro_export]
@@ -388,13 +406,7 @@ macro_rules! pusher (
   ($name:ident, $f:expr) => (
     fn $name(producer: &mut Producer) {
       let mut acc: Vec<u8> = Vec::new();
-      let mut a:uint = 0;
       loop {
-        a = a + 1;
-        if a == 100 {
-          println!("INFINIT LOOP");
-          assert!(false);
-        }
         let state = producer.produce();
         match state {
           Data(v) => {
@@ -413,13 +425,13 @@ macro_rules! pusher (
         }
         let mut v2: Vec<u8>  = Vec::new();
         v2.push_all(acc.as_slice());
-        let mut p = Done((), v2.as_slice());
+        let p = Done((), v2.as_slice());
         match $f(p) {
           Error(e)      => {
             println!("error, stopping: {}", e);
             break;
           },
-          Incomplete(i) => {
+          Incomplete(_) => {
             println!("incomplete, stopping (BUT SHOULDN'T)");
             //acc = v2;
             //v2 = Vec::new();
@@ -622,7 +634,8 @@ fn file_test() {
     //p.push(|par| {println!("parsed file: {}", par); par});
     //p.push(|par| par.flat_map(print));
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-      par.flat_map(print)
+      par.map_opt(str::from_utf8).flat_map(print);
+      Done("".as_bytes(), ())
     }
     pusher!(ps, pr)
     ps(&mut p);
@@ -637,13 +650,13 @@ fn tag_test() {
     tag!(f "https://".as_bytes());
     //p.push(|par| par.flat_map(f).flat_map(print));
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-      println!("<-");
-      let r = par.flat_map(f).flat_map(print);
-      println!("->");
-      r
+      let p = par.flat_map(f).map_opt(str::from_utf8).flat_map(print);
+      println!("p : {}", p);
+      Done("".as_bytes(), ())
     }
     pusher!(ps, pr)
     ps(&mut p);
+    //assert!(false);
   });
 }
 
