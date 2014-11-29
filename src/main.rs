@@ -7,7 +7,7 @@ mod nom;
 fn main() {
   println!("Hello world!");
 
-  fn pr(res: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
+  fn pr<'a>(res: IResult<(),&'a[u8]>) -> IResult<'a,&'a[u8], ()> {
     //par.m2(print)
     Error(0)
   }

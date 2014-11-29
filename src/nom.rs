@@ -18,24 +18,93 @@ type IResultClosure<'a,I,O> = |I|:'a -> IResult<I,O>;
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 #[deriving(Show,PartialEq,Eq)]
-pub enum IResult<I,O> {
+pub enum IResult<'a,I,O> {
   Done(I,O),
   Error(Err),
+  //Incomplete(proc(I):'a -> IResult<I,O>)
+  Incomplete(uint)
   //Incomplete(IResultClosure<'a,I,O>)
   //Incomplete(|I|:'a -> IResult<'a,I,O>)
   //Incomplete(fn(I) -> IResult<'a,I,O>)
 }
 
+impl<'a,I,O> IResult<'a,I,O> {
+  fn is_done(&self) -> bool {
+    match self {
+      &Done(_,_) => true,
+      _          => false
+    }
+  }
+
+  fn is_err(&self) -> bool {
+    match self {
+      &Error(_) => true,
+      _         => false
+    }
+  }
+
+  fn is_incomplete(&self) -> bool {
+    match self {
+      &Incomplete(_) => true,
+      _              => false
+    }
+  }
+}
+
+pub trait GetInput<I> for Sized? {
+  fn remaining_input(&self) -> Option<I>;
+}
+
+pub trait GetOutput<O> for Sized? {
+  fn output(&self) -> Option<O>;
+}
+
+impl<'a,I,O> GetInput<&'a[I]> for IResult<'a,&'a[I],O> {
+  fn remaining_input(&self) -> Option<&'a[I]> {
+    match self {
+      &Done(ref i,_) => Some(*i),
+      _          => None
+    }
+  }
+}
+
+impl<'a,O> GetInput<()> for IResult<'a,(),O> {
+  fn remaining_input(&self) -> Option<()> {
+    match self {
+      &Done((),_) => Some(()),
+      _          => None
+    }
+  }
+}
+
+impl<'a,I,O> GetOutput<&'a[O]> for IResult<'a,I,&'a[O]> {
+  fn output(&self) -> Option<&'a[O]> {
+    match self {
+      &Done(_, ref o) => Some(*o),
+      _          => None
+    }
+  }
+}
+
+impl<'a,I> GetOutput<()> for IResult<'a,I,()> {
+  fn output(&self) -> Option<()> {
+    match self {
+      &Done(_,()) => Some(()),
+      _          => None
+    }
+  }
+}
 
 pub trait Mapper<O,N> for Sized? {
   fn flat_map(& self, f: |O| -> IResult<O,N>) -> IResult<O,N>;
   fn map_opt(& self, f: |O| -> Option<N>) -> IResult<O,N>;
 }
 
-impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
+impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<'a,R,&'a [S]> {
   fn flat_map(&self, f: |&'a[S]| -> IResult<&'a[S],T>) -> IResult<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
       &Done(_, ref o) => f(*o)
     }
@@ -44,6 +113,7 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
   fn map_opt(&self, f: |&'a[S]| -> Option<T>) -> IResult<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(_, ref o) => match f(*o) {
         Some(output) => Done(*o, output),
@@ -53,10 +123,11 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
   }
 }
 
-impl<R,T> Mapper<(), T> for IResult<R,()> {
+impl<'a,R,T> Mapper<(), T> for IResult<'a,R,()> {
   fn flat_map(&self, f: |()| -> IResult<(),T>) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
       &Done(_, _) => f(())
     }
@@ -65,6 +136,7 @@ impl<R,T> Mapper<(), T> for IResult<R,()> {
   fn map_opt(&self, f: |()| -> Option<T>) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(_, __) => match f(()) {
         Some(output) => Done((), output),
@@ -78,40 +150,44 @@ pub trait Mapper2<O,N,I> for Sized? {
   fn map(& self, f: |O| -> N) -> IResult<I,N>;
 }
 
-impl<'a,R,S,T> Mapper2<&'a[S], T, &'a R> for IResult<&'a R,&'a [S]> {
+impl<'a,R,S,T> Mapper2<&'a[S], T, &'a R> for IResult<'a,&'a R,&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, ref o) => Done(*i,f(*o))
     }
   }
 }
 
-impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<&'a [R],&'a [S]> {
+impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<'a,&'a [R],&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a [R],T> {
     match self {
       &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, ref o) => Done(*i,f(*o))
     }
   }
 }
 
-impl<'a,R,T> Mapper2<(), T, &'a R> for IResult<&'a R,()> {
+impl<'a,R,T> Mapper2<(), T, &'a R> for IResult<'a,&'a R,()> {
   fn map(&self, f: |()| -> T) -> IResult<&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, ()) => Done(*i,f(()))
     }
   }
 }
 
-impl<'a,S,T> Mapper2<&'a[S], T, ()> for IResult<(),&'a [S]> {
+impl<'a,S,T> Mapper2<&'a[S], T, ()> for IResult<'a,(),&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done((), ref o) => Done((),f(*o))
     }
@@ -136,6 +212,7 @@ macro_rules! o (
     fn $name(input:$i) -> IResult<$i, $o>{
       match $f1(input) {
         Error(e)  => Error(e),
+        Incomplete(i) => Incomplete(i),
         Done(i,o) => {
           o_parser!(i o $($rest)*)
         }
@@ -150,6 +227,7 @@ macro_rules! o_parser (
   ($i:expr $o:expr ~ $e:expr ~ $($rest:tt)*) => (
     match $e($i) {
       Error(e)  => Error(e),
+      Incomplete(i) => Incomplete(i),
       Done(i,o) => {
         o_parser!(i o $($rest)*)
       }
@@ -159,6 +237,7 @@ macro_rules! o_parser (
   ($i:expr $o:expr $e:expr $($rest:tt)*) => (
     match $e($i) {
       Error(e)  => Error(e),
+      Incomplete(i) => Incomplete(i),
       Done(i,_) => {
         o_parser!(i $o $($rest)*)
       }
@@ -178,6 +257,7 @@ macro_rules! chaining_parser (
   ($i:expr, $assemble:expr, $field:ident : $e:expr, $($rest:tt)*) => (
     match $e($i) {
       Error(e)  => Error(e),
+      Incomplete(i) => Incomplete(i),
       Done(i,o) => {
         let $field = o;
         chaining_parser!(i, $assemble, $($rest)*)
@@ -202,6 +282,7 @@ macro_rules! alt_parser (
   ($i:expr, $e:expr $($rest:tt)*) => (
     match $e($i) {
       Error(_)  => alt_parser!($i, $($rest)*),
+      Incomplete(i) => alt_parser!($i, $($rest)*),
       Done(i,o) => Done(i,o)
     }
   );
@@ -270,7 +351,10 @@ impl Producer for FileProducer {
           match f(p) {
           //match f(begin(v2.as_slice())) {
             Error(e)      => println!("error, stopping: {}", e),
-            //Incomplete(_) => println!("incomplete, continue"),
+            Incomplete(_) => {
+              acc.push_all(v.as_slice());
+              println!("incomplete, continue");
+            },
             Done(_, _)    => {
               //println!("end, done");
               acc.clear();
@@ -286,7 +370,10 @@ impl Producer for FileProducer {
           match f(p) {
           //match f(begin(v2.as_slice())) {
             Error(e)      => println!("error, stopping: {}", e),
-            //Incomplete(_) => println!("incomplete, continue"),
+            Incomplete(_) => {
+              acc.push_all(v.as_slice());
+              println!("incomplete, continue");
+            }
             Done(_, _)    => {
               println!("end, done");
               acc.clear();
@@ -341,24 +428,40 @@ impl<'x> MemProducer<'x> {
 impl<'x> Producer for MemProducer<'x> {
 */
   fn push<'b,O>(&mut self, f: |IResult<(),&'b[u8]>| -> IResult<&'b[u8],O>) {
+    let mut acc: Vec<u8> = Vec::new();
     loop {
       let state = self.produce();
       match state {
         ProducerError(e)  => {println!("error: {}", e);break;},
         Continue => {println!("continue should not happen");break;},
         Data(v) => {
-          let p = Done((), v);
+          let p = if acc.len() == 0 {
+            Done((), v)
+          } else {
+            acc.push_all(v);
+            Done((),v)
+          };
           match f(p) {
             Error(e)      => println!("error, stopping: {}", e),
+            Incomplete(i) => {
+              println!("incomplete, stopping (BUT SHOULDN'T)");
+            },
             Done(_, _)    => {
               println!("data, done");
+              acc.clear();
             }
           }
         },
         Eof(v) => {
-          let p = Done((), v);
+          let p = if acc.len() == 0 {
+            Done((), v)
+          } else {
+            acc.push_all(v);
+            Done((),v)
+          };
           match f(p) {
             Error(e)      => println!("error, stopping: {}", e),
+            Incomplete(i) => println!("incomplete, stopping (BUT SHOULDN'T)"),
             Done(_, _)    => {
               println!("eof, done");
             }
@@ -370,12 +473,12 @@ impl<'x> Producer for MemProducer<'x> {
   }
 }
 
-pub fn print<T: Show>(input: T) -> IResult<T, ()> {
+pub fn print<'a,T: Show>(input: T) -> IResult<'a,T, ()> {
   println!("{}", input);
   Done(input, ())
 }
 
-pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
+pub fn begin<'a>(input: &'a [u8]) -> IResult<'a,(), &'a [u8]> {
   Done((), input)
 }
 
@@ -615,6 +718,21 @@ fn alt_test() {
   assert_eq!(Done((), a).flat_map(alt1), Error(1))
   assert_eq!(Done((), a).flat_map(alt2), Done("".as_bytes(), a))
   assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()))
+}
+
+#[test]
+fn accu_test() {
+  fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
+    if input.len() <= 4 {
+      Incomplete(0)
+    } else {
+      Done("".as_bytes(), input)
+    }
+  }
+
+  let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+  p.push(|par| { let r = par.flat_map(f); println!("f: {}", r);r } );
+  assert!(false);
 }
 
 /* FIXME: this makes rustc weep
