@@ -18,7 +18,7 @@ type IResultClosure<'a,I,O> = |I|:'a -> IResult<I,O>;
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 #[deriving(Show,PartialEq,Eq)]
-pub enum IResult<'a,I,O> {
+pub enum IResult<I,O> {
   Done(I,O),
   Error(Err),
   //Incomplete(proc(I):'a -> IResult<I,O>)
@@ -28,7 +28,7 @@ pub enum IResult<'a,I,O> {
   //Incomplete(fn(I) -> IResult<'a,I,O>)
 }
 
-impl<'a,I,O> IResult<'a,I,O> {
+impl<I,O> IResult<I,O> {
   fn is_done(&self) -> bool {
     match self {
       &Done(_,_) => true,
@@ -59,7 +59,7 @@ pub trait GetOutput<O> for Sized? {
   fn output(&self) -> Option<O>;
 }
 
-impl<'a,I,O> GetInput<&'a[I]> for IResult<'a,&'a[I],O> {
+impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
   fn remaining_input(&self) -> Option<&'a[I]> {
     match self {
       &Done(ref i,_) => Some(*i),
@@ -68,7 +68,7 @@ impl<'a,I,O> GetInput<&'a[I]> for IResult<'a,&'a[I],O> {
   }
 }
 
-impl<'a,O> GetInput<()> for IResult<'a,(),O> {
+impl<'a,O> GetInput<()> for IResult<(),O> {
   fn remaining_input(&self) -> Option<()> {
     match self {
       &Done((),_) => Some(()),
@@ -77,7 +77,7 @@ impl<'a,O> GetInput<()> for IResult<'a,(),O> {
   }
 }
 
-impl<'a,I,O> GetOutput<&'a[O]> for IResult<'a,I,&'a[O]> {
+impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
   fn output(&self) -> Option<&'a[O]> {
     match self {
       &Done(_, ref o) => Some(*o),
@@ -86,7 +86,7 @@ impl<'a,I,O> GetOutput<&'a[O]> for IResult<'a,I,&'a[O]> {
   }
 }
 
-impl<'a,I> GetOutput<()> for IResult<'a,I,()> {
+impl<'a,I> GetOutput<()> for IResult<I,()> {
   fn output(&self) -> Option<()> {
     match self {
       &Done(_,()) => Some(()),
@@ -100,7 +100,7 @@ pub trait Mapper<O,N> for Sized? {
   fn map_opt(& self, f: |O| -> Option<N>) -> IResult<O,N>;
 }
 
-impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<'a,R,&'a [S]> {
+impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
   fn flat_map(&self, f: |&'a[S]| -> IResult<&'a[S],T>) -> IResult<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -123,7 +123,7 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<'a,R,&'a [S]> {
   }
 }
 
-impl<'a,R,T> Mapper<(), T> for IResult<'a,R,()> {
+impl<'a,R,T> Mapper<(), T> for IResult<R,()> {
   fn flat_map(&self, f: |()| -> IResult<(),T>) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -150,7 +150,7 @@ pub trait Mapper2<O,N,I> for Sized? {
   fn map(& self, f: |O| -> N) -> IResult<I,N>;
 }
 
-impl<'a,R,S,T> Mapper2<&'a[S], T, &'a R> for IResult<'a,&'a R,&'a [S]> {
+impl<'a,R,S,T> Mapper2<&'a[S], T, &'a R> for IResult<&'a R,&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -161,7 +161,7 @@ impl<'a,R,S,T> Mapper2<&'a[S], T, &'a R> for IResult<'a,&'a R,&'a [S]> {
   }
 }
 
-impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<'a,&'a [R],&'a [S]> {
+impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<&'a [R],&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a [R],T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -172,7 +172,7 @@ impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<'a,&'a [R],&'a [S]> {
   }
 }
 
-impl<'a,R,T> Mapper2<(), T, &'a R> for IResult<'a,&'a R,()> {
+impl<'a,R,T> Mapper2<(), T, &'a R> for IResult<&'a R,()> {
   fn map(&self, f: |()| -> T) -> IResult<&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -183,7 +183,7 @@ impl<'a,R,T> Mapper2<(), T, &'a R> for IResult<'a,&'a R,()> {
   }
 }
 
-impl<'a,S,T> Mapper2<&'a[S], T, ()> for IResult<'a,(),&'a [S]> {
+impl<'a,S,T> Mapper2<&'a[S], T, ()> for IResult<(),&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -427,58 +427,56 @@ impl<'x> MemProducer<'x> {
 
 impl<'x> Producer for MemProducer<'x> {
 */
-  fn push<'b,O>(&mut self, f: |IResult<(),&'b[u8]>| -> IResult<&'b[u8],O>) {
-    let mut acc: Vec<u8> = Vec::new();
-    loop {
-      let state = self.produce();
-      match state {
-        ProducerError(e)  => {println!("error: {}", e);break;},
-        Continue => {println!("continue should not happen");break;},
-        Data(v) => {
-          let p = if acc.len() == 0 {
-            Done((), v)
-          } else {
-            acc.push_all(v);
-            Done((),v)
-          };
-          match f(p) {
-            Error(e)      => println!("error, stopping: {}", e),
-            Incomplete(i) => {
-              println!("incomplete, stopping (BUT SHOULDN'T)");
-            },
-            Done(_, _)    => {
-              println!("data, done");
-              acc.clear();
-            }
+}
+
+macro_rules! pusher (
+  ($name:ident, $f:expr) => (
+    fn $name<'x>(producer: &mut MemProducer<'x>) {
+      let mut acc: Vec<u8> = Vec::new();
+      loop {
+        let state = producer.produce();
+        match state {
+          Data(v) => {
+            acc.push_all(v)
+          },
+          Eof([])  => {
+             break;
           }
-        },
-        Eof(v) => {
-          let p = if acc.len() == 0 {
-            Done((), v)
-          } else {
-            acc.push_all(v);
-            Done((),v)
-          };
-          match f(p) {
-            Error(e)      => println!("error, stopping: {}", e),
-            Incomplete(i) => println!("incomplete, stopping (BUT SHOULDN'T)"),
-            Done(_, _)    => {
-              println!("eof, done");
-            }
+          Eof(v) => {
+            acc.push_all(v)
           }
-          break;
+          _ => {break;}
+        }
+        let mut v2: Vec<u8>  = Vec::new();
+        v2.push_all(acc.as_slice());
+        let mut p = Done((), v2.as_slice());
+        match $f(p) {
+          Error(e)      => {
+            println!("error, stopping: {}", e);
+            break;
+          },
+          Incomplete(i) => {
+            println!("incomplete, stopping (BUT SHOULDN'T)");
+            //acc = v2;
+            //v2 = Vec::new();
+          },
+          Done(i, _)    => {
+            println!("data, done");
+            acc.clear();
+            acc.push_all(i);
+          }
         }
       }
     }
-  }
-}
+  );
+)
 
-pub fn print<'a,T: Show>(input: T) -> IResult<'a,T, ()> {
+pub fn print<'a,T: Show>(input: T) -> IResult<T, ()> {
   println!("{}", input);
   Done(input, ())
 }
 
-pub fn begin<'a>(input: &'a [u8]) -> IResult<'a,(), &'a [u8]> {
+pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
   Done((), input)
 }
 
@@ -642,11 +640,15 @@ fn mem_producer_test() {
 #[test]
 fn mem_producer_test_2() {
   let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
-  p.push(|par| par.flat_map(print));
+  fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+    par.flat_map(print)
+  }
+  pusher!(ps, pr)
+  ps(&mut p);
   let mut iterations: uint = 0;
   let mut p = MemProducer::new("abcdefghi".as_bytes(), 4);
-  p.push(|par| {iterations = iterations + 1; par.flat_map(print)});
-  assert_eq!(iterations, 3);
+  //p.push(|par| {iterations = iterations + 1; par.flat_map(print)});
+  //assert_eq!(iterations, 3);
 }
 
 #[test]
@@ -731,10 +733,36 @@ fn accu_test() {
   }
 
   let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-  p.push(|par| { let r = par.flat_map(f); println!("f: {}", r);r } );
-  assert!(false);
+  fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
+    let r = par.flat_map(f);
+    println!("f: {}", r);
+    r
+  }
+  pusher!(ps, pr )
+  ps(&mut p);
+  //assert!(false);
 }
 
+#[test]
+fn accu_test_2() {
+  fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
+    if input.len() <= 4 || input.slice(0,5) != "abcde".as_bytes() {
+      Incomplete(0)
+    } else {
+      Done(input.slice_from(5), input.slice(0,5))
+    }
+  }
+
+  let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+  fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
+    let r = par.flat_map(f);
+    println!("f: {}", r);
+    r
+  }
+  pusher!(ps, pr )
+  ps(&mut p);
+  //assert!(false);
+}
 /* FIXME: this makes rustc weep
 fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
   Error(0)
