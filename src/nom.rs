@@ -1,5 +1,6 @@
 #![desc = "Omnomnom incremental byte parser"]
 #![license = "MIT"]
+#![macro_escape]
 
 extern crate collections;
 
@@ -302,89 +303,40 @@ pub enum ProducerState<O> {
 
 type IResultStarterClosure<'a,I,T,O> = |IResult<(),I>|:'a -> IResult<T,O>;
 
+pub trait Producer {
+  fn produce(&mut self) -> ProducerState<&[u8]>;
+}
 pub struct FileProducer {
   size: uint,
-  file: File
+  file: File,
+  v:    Vec<u8>
 }
 
 impl FileProducer {
   pub fn new(filename: &str, buffer_size: uint) -> IoResult<FileProducer> {
-    File::open(&Path::new(filename)).map(|f| { FileProducer {size: buffer_size, file: f} })
+    File::open(&Path::new(filename)).map(|f| {
+      FileProducer {size: buffer_size, file: f, v: Vec::with_capacity(buffer_size)}
+    })
   }
+}
 
-  fn produce(&mut self) -> ProducerState<Vec<u8>> {
-    let mut v = Vec::with_capacity(self.size);
-    match self.file.push(self.size, &mut v) {
+impl Producer for FileProducer {
+  fn produce(&mut self) -> ProducerState<&[u8]> {
+    //let mut v = Vec::with_capacity(self.size);
+    self.v.clear();
+    match self.file.push(self.size, &mut self.v) {
       Err(e) => {
         match e.kind {
           IoErrorKind::NoProgress => Continue,
-          IoErrorKind::EndOfFile  => Eof(v),
+          IoErrorKind::EndOfFile  => Eof(self.v.as_slice()),
           _          => ProducerError(0)
         }
       },
       Ok(i)  => {
-        println!("read {} bytes", i);
-        Data(v)
+        println!("read {} bytes: {}", i, self.v);
+        Data(self.v.as_slice())
       }
     }
-  }
-/*}
-
-impl Producer for FileProducer {
-*/
-  pub fn push<'y,O>(&mut self, f: |IResult<(),&[u8]>| -> IResult<&'y[u8],O>) {
-    loop {
-      if self.file.eof() {
-        println!("end");
-        break;
-      }
-      let state = self.produce();
-      let mut acc: Vec<u8> = Vec::new();
-      match state {
-        ProducerError(e)  => println!("error: {}", e),
-        Continue => {},
-        Data(v) => {
-          let mut v2 = Vec::new();
-          v2.push_all(acc.as_slice());
-          v2.push_all(v.as_slice());
-          let p = Done((), v2.as_slice());
-          match f(p) {
-          //match f(begin(v2.as_slice())) {
-            Error(e)      => println!("error, stopping: {}", e),
-            Incomplete(_) => {
-              acc.push_all(v.as_slice());
-              println!("incomplete, continue");
-            },
-            Done(_, _)    => {
-              //println!("end, done");
-              acc.clear();
-            }
-          }
-        },
-        Eof(v) => {
-          println!("GOT EOF");
-          let mut v3 = Vec::new();
-          v3.push_all(acc.as_slice());
-          v3.push_all(v.as_slice());
-          let p = Done((), v3.as_slice());
-          match f(p) {
-          //match f(begin(v2.as_slice())) {
-            Error(e)      => println!("error, stopping: {}", e),
-            Incomplete(_) => {
-              acc.push_all(v.as_slice());
-              println!("incomplete, continue");
-            }
-            Done(_, _)    => {
-              println!("end, done");
-              acc.clear();
-            }
-          };
-          break;
-        }
-      }
-      //v2.clear();
-    }
-    println!("end push");
   }
 }
 
@@ -404,8 +356,10 @@ impl<'x> MemProducer<'x> {
       index:      0
     }
   }
+}
 
-  fn produce(&mut self) -> ProducerState<&'x[u8]> {
+impl<'x> Producer for MemProducer<'x> {
+  fn produce(&mut self) -> ProducerState<&[u8]> {
     if self.index + self.chunk_size < self.length {
       println!("self.index + {} < self.length", self.chunk_size);
       let new_index = self.index+self.chunk_size;
@@ -429,20 +383,30 @@ impl<'x> Producer for MemProducer<'x> {
 */
 }
 
+#[macro_export]
 macro_rules! pusher (
   ($name:ident, $f:expr) => (
-    fn $name<'x>(producer: &mut MemProducer<'x>) {
+    fn $name(producer: &mut Producer) {
       let mut acc: Vec<u8> = Vec::new();
+      let mut a:uint = 0;
       loop {
+        a = a + 1;
+        if a == 100 {
+          println!("INFINIT LOOP");
+          assert!(false);
+        }
         let state = producer.produce();
         match state {
           Data(v) => {
+            println!("got data");
             acc.push_all(v)
           },
           Eof([])  => {
-             break;
+            println!("eof empty");
+            break;
           }
           Eof(v) => {
+            println!("eof with {} bytes", v.len());
             acc.push_all(v)
           }
           _ => {break;}
@@ -656,7 +620,13 @@ fn file_test() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
     //p.push(|par| {println!("parsed file: {}", par); par});
-    p.push(|par| par.flat_map(print));
+    //p.push(|par| par.flat_map(print));
+    fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+      par.flat_map(print)
+    }
+    pusher!(ps, pr)
+    ps(&mut p);
+    //assert!(false);
   });
 }
 
@@ -665,7 +635,15 @@ fn tag_test() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
     tag!(f "https://".as_bytes());
-    p.push(|par| par.flat_map(f).flat_map(print));
+    //p.push(|par| par.flat_map(f).flat_map(print));
+    fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+      println!("<-");
+      let r = par.flat_map(f).flat_map(print);
+      println!("->");
+      r
+    }
+    pusher!(ps, pr)
+    ps(&mut p);
   });
 }
 
