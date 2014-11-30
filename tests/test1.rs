@@ -3,7 +3,7 @@
 #[phase(plugin,link)]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,Mapper,Mapper2};
+use nom::{IResult,Producer,FileProducer,Mapper,Mapper2,line_ending};
 use nom::IResult::*;
 use nom::ProducerState::*;
 
@@ -17,7 +17,7 @@ fn map_test_x() {
 }
 
 #[test]
-fn tag_test() {
+fn tag() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
     tag!(f "https://".as_bytes());
@@ -40,8 +40,16 @@ pub fn print<'a,T: Show>(input: T) -> IResult<T, ()> {
 
 
 #[test]
-fn is_not_test() {
+fn is_not() {
   is_not!(foo "\r\n".as_bytes())
   let a = "ab12cd\nefgh".as_bytes();
   assert_eq!(Done((), a).flat_map(foo), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
 }
+
+
+#[test]
+fn exported_public_method_defined_by_macro() {
+  let a = "ab12cd\nefgh".as_bytes();
+  assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
+}
+

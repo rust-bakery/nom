@@ -8,9 +8,6 @@ use std::fmt::Show;
 use internal::*;
 use internal::IResult::*;
 
-  use map::*;
-  use std::str;
-
 #[macro_export]
 macro_rules! tag(
   ($name:ident $inp:expr) => (
@@ -168,7 +165,19 @@ macro_rules! filter(
   )
 )
 
-pub is_not!(line_ending "\r\n".as_bytes())
+// FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
+// public methods
+//pub is_not!(line_ending "\r\n".as_bytes())
+pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  for idx in range(0, input.len()) {
+    for &i in "\r\n".as_bytes().iter() {
+      if input[idx] == i {
+        return Done(input.slice_from(idx), input.slice(0, idx))
+      }
+    }
+  }
+  Done("".as_bytes(), input)
+}
 
 pub fn is_alphabetic(chr:u8) -> bool {
   (chr >= 0x41 && chr <= 0x5A) || (chr >= 0x61 && chr <= 0x7A)
@@ -182,9 +191,37 @@ pub fn is_alphanumeric(chr: u8) -> bool {
   is_alphabetic(chr) || is_digit(chr)
 }
 
-pub filter!(alpha is_alphabetic)
-pub filter!(digit is_digit)
-pub filter!(alphanumeric is_alphanumeric)
+
+// FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
+//pub filter!(alpha is_alphabetic)
+//pub filter!(digit is_digit)
+//pub filter!(alphanumeric is_alphanumeric)
+pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  for idx in range(0, input.len()) {
+    if !is_alphabetic(input[idx]) {
+      return Done(input.slice_from(idx), input.slice(0, idx))
+    }
+  }
+  Done("".as_bytes(), input)
+}
+
+pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  for idx in range(0, input.len()) {
+    if !is_digit(input[idx]) {
+      return Done(input.slice_from(idx), input.slice(0, idx))
+    }
+  }
+  Done("".as_bytes(), input)
+}
+
+pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  for idx in range(0, input.len()) {
+    if !is_alphanumeric(input[idx]) {
+      return Done(input.slice_from(idx), input.slice(0, idx))
+    }
+  }
+  Done("".as_bytes(), input)
+}
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() == 0 {
