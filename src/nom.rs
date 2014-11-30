@@ -239,114 +239,123 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   }
 }
 
-#[test]
-fn character_test() {
-  let empty = "".as_bytes();
-  let a = "abcd".as_bytes();
-  let b = "1234".as_bytes();
-  let c = "a123".as_bytes();
-  let d = "azé12".as_bytes();
-  assert_eq!(Done((),a).flat_map(alpha), Done(empty, a))
-  assert_eq!(Done((),b).flat_map(alpha), Done(b, empty))
-  assert_eq!(Done((),c).flat_map(alpha), Done(c.slice_from(1), "a".as_bytes()))
-  assert_eq!(Done((),d).flat_map(alpha), Done("é12".as_bytes(), "az".as_bytes()))
-  assert_eq!(Done((),a).flat_map(digit), Done(a, empty))
-  assert_eq!(Done((),b).flat_map(digit), Done(empty, b))
-  assert_eq!(Done((),c).flat_map(digit), Done(c, empty))
-  assert_eq!(Done((),d).flat_map(digit), Done(d, empty))
-  assert_eq!(Done((),a).flat_map(alphanumeric), Done(empty, a))
-  assert_eq!(Done((),b).flat_map(alphanumeric), Done(empty, b))
-  assert_eq!(Done((),c).flat_map(alphanumeric), Done(empty, c))
-  assert_eq!(Done((),d).flat_map(alphanumeric), Done("é12".as_bytes(), "az".as_bytes()))
-}
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use map::*;
+  use internal::IResult;
+  use internal::IResult::*;
 
-#[test]
-fn is_not_test() {
-  let a = "ab12cd\nefgh".as_bytes();
-  assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
-}
+  use std::str;
 
-#[test]
-fn sized_buffer_test() {
-  let arr:[u8, ..6] = [3, 4, 5, 6, 7, 8];
-  let res = Done((), arr.as_slice()).flat_map(sized_buffer);
-  let i = [7,8];
-  let o = [4,5,6];
-  assert_eq!(res, Done(i.as_slice(), o.as_slice()))
-}
-
-#[test]
-fn t1() {
-  let v1:Vec<u8> = vec![1,2,3];
-  let v2:Vec<u8> = vec![4,5,6];
-  let d = Done(v1.as_slice(), v2.as_slice());
-  let res = d.flat_map(print);
-  assert_eq!(res, Done(v2.as_slice(), ()));
-}
-
-#[deriving(PartialEq,Eq,Show)]
-struct B {
-  a: int,
-  b: int
-}
-
-#[test]
-fn chain_and_ignore_test() {
-  tag!(x "abcd".as_bytes());
-  tag!(y "efgh".as_bytes());
-  fn ret_int(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
-  //o!(z<&[u8], int>  x S x S retInt Z y);
-  o!(z<&[u8], int>  x  x ~ret_int~ y);
-
-  let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
-  assert_eq!(r, Done("".as_bytes(), 1));
-}
-
-
-#[test]
-fn chain_test() {
-  tag!(x "abcd".as_bytes());
-  fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
-  o!(ret_int1<&[u8],int> x ~ temp_ret_int1 ~);
-  fn ret_int2(i:&[u8]) -> IResult<&[u8], int> { Done(i,2) };
-  chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
-
-  let r = Done((), "abcde".as_bytes()).flat_map(f);
-  assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
-}
-
-#[test]
-fn alt_test() {
-  fn work(input: &[u8]) -> IResult<&[u8],&[u8]> {
-    Done("".as_bytes(), input)
-  }
-  fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8]> {
-    Error(3)
-  }
-  fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
-    Done(input, "".as_bytes())
+  #[test]
+  fn character_test() {
+    let empty = "".as_bytes();
+    let a = "abcd".as_bytes();
+    let b = "1234".as_bytes();
+    let c = "a123".as_bytes();
+    let d = "azé12".as_bytes();
+    assert_eq!(Done((),a).flat_map(alpha), Done(empty, a))
+    assert_eq!(Done((),b).flat_map(alpha), Done(b, empty))
+    assert_eq!(Done((),c).flat_map(alpha), Done(c.slice_from(1), "a".as_bytes()))
+    assert_eq!(Done((),d).flat_map(alpha), Done("é12".as_bytes(), "az".as_bytes()))
+    assert_eq!(Done((),a).flat_map(digit), Done(a, empty))
+    assert_eq!(Done((),b).flat_map(digit), Done(empty, b))
+    assert_eq!(Done((),c).flat_map(digit), Done(c, empty))
+    assert_eq!(Done((),d).flat_map(digit), Done(d, empty))
+    assert_eq!(Done((),a).flat_map(alphanumeric), Done(empty, a))
+    assert_eq!(Done((),b).flat_map(alphanumeric), Done(empty, b))
+    assert_eq!(Done((),c).flat_map(alphanumeric), Done(empty, c))
+    assert_eq!(Done((),d).flat_map(alphanumeric), Done("é12".as_bytes(), "az".as_bytes()))
   }
 
-  alt!(alt1<&[u8],&[u8]>, dont_work dont_work)
-  alt!(alt2<&[u8],&[u8]>, dont_work work)
-  alt!(alt3<&[u8],&[u8]>, dont_work dont_work work2 dont_work)
+  #[test]
+  fn is_not_test() {
+    let a = "ab12cd\nefgh".as_bytes();
+    assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
+  }
 
-  let a = "abcd".as_bytes();
-  assert_eq!(Done((), a).flat_map(alt1), Error(1))
-  assert_eq!(Done((), a).flat_map(alt2), Done("".as_bytes(), a))
-  assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()))
+  #[test]
+  fn sized_buffer_test() {
+    let arr:[u8, ..6] = [3, 4, 5, 6, 7, 8];
+    let res = Done((), arr.as_slice()).flat_map(sized_buffer);
+    let i = [7,8];
+    let o = [4,5,6];
+    assert_eq!(res, Done(i.as_slice(), o.as_slice()))
+  }
+
+  #[test]
+  fn t1() {
+    let v1:Vec<u8> = vec![1,2,3];
+    let v2:Vec<u8> = vec![4,5,6];
+    let d = Done(v1.as_slice(), v2.as_slice());
+    let res = d.flat_map(print);
+    assert_eq!(res, Done(v2.as_slice(), ()));
+  }
+
+  #[deriving(PartialEq,Eq,Show)]
+  struct B {
+    a: int,
+    b: int
+  }
+
+  #[test]
+  fn chain_and_ignore_test() {
+    tag!(x "abcd".as_bytes());
+    tag!(y "efgh".as_bytes());
+    fn ret_int(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
+    //o!(z<&[u8], int>  x S x S retInt Z y);
+    o!(z<&[u8], int>  x  x ~ret_int~ y);
+
+    let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
+    assert_eq!(r, Done("".as_bytes(), 1));
+  }
+
+
+  #[test]
+  fn chain_test() {
+    tag!(x "abcd".as_bytes());
+    fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
+    o!(ret_int1<&[u8],int> x ~ temp_ret_int1 ~);
+    fn ret_int2(i:&[u8]) -> IResult<&[u8], int> { Done(i,2) };
+    chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
+
+    let r = Done((), "abcde".as_bytes()).flat_map(f);
+    assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
+  }
+
+  #[test]
+  fn alt_test() {
+    fn work(input: &[u8]) -> IResult<&[u8],&[u8]> {
+      Done("".as_bytes(), input)
+    }
+    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8]> {
+      Error(3)
+    }
+    fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
+      Done(input, "".as_bytes())
+    }
+
+    alt!(alt1<&[u8],&[u8]>, dont_work dont_work)
+    alt!(alt2<&[u8],&[u8]>, dont_work work)
+    alt!(alt3<&[u8],&[u8]>, dont_work dont_work work2 dont_work)
+
+    let a = "abcd".as_bytes();
+    assert_eq!(Done((), a).flat_map(alt1), Error(1))
+    assert_eq!(Done((), a).flat_map(alt2), Done("".as_bytes(), a))
+    assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()))
+  }
+
+  /* FIXME: this makes rustc weep
+  fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
+    Error(0)
+  }
+
+  #[test]
+  fn rustc_panic_test() {
+    FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
+      let mut p = producer;
+      p.push(pr);
+    });
+  }*/
 }
-
-/* FIXME: this makes rustc weep
-fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
-  Error(0)
-}
-
-#[test]
-fn rustc_panic_test() {
-  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
-    let mut p = producer;
-    p.push(pr);
-  });
-}*/
-
