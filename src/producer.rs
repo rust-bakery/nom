@@ -97,15 +97,15 @@ macro_rules! pusher (
       loop {
         let state = producer.produce();
         match state {
-          Data(v) => {
+          ProducerState::Data(v) => {
             println!("got data");
             acc.push_all(v)
           },
-          Eof([])  => {
+          ProducerState::Eof([])  => {
             println!("eof empty");
             break;
           }
-          Eof(v) => {
+          ProducerState::Eof(v) => {
             println!("eof with {} bytes", v.len());
             acc.push_all(v)
           }
@@ -113,16 +113,16 @@ macro_rules! pusher (
         }
         let mut v2: Vec<u8>  = Vec::new();
         v2.push_all(acc.as_slice());
-        let p = Done((), v2.as_slice());
+        let p = IResult::Done((), v2.as_slice());
         match $f(p) {
-          Error(e)      => {
+          IResult::Error(e)      => {
             println!("error, stopping: {}", e);
             break;
           },
-          Incomplete(_) => {
+          IResult::Incomplete(_) => {
             println!("incomplete");
           },
-          Done(i, _)    => {
+          IResult::Done(i, _)    => {
             println!("data, done");
             acc.clear();
             acc.push_all(i);
@@ -138,7 +138,6 @@ mod tests {
   use super::*;
   use internal::IResult;
   use internal::IResult::*;
-  use super::ProducerState::*;
   use std::fmt::Show;
   use std::str;
   use map::*;
@@ -150,7 +149,7 @@ mod tests {
   #[test]
   fn mem_producer_test() {
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-    assert_eq!(p.produce(), Data("abcd".as_bytes()));
+    assert_eq!(p.produce(), ProducerState::Data("abcd".as_bytes()));
   }
 
   #[test]

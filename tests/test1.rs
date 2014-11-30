@@ -3,9 +3,8 @@
 #[phase(plugin,link)]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,Mapper,Mapper2,line_ending};
+use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,line_ending};
 use nom::IResult::*;
-use nom::ProducerState::*;
 
 use std::str;
 use std::fmt::Show;

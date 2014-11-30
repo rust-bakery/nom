@@ -26,9 +26,9 @@ macro_rules! o (
     #[allow(unused_variables)]
     fn $name(input:$i) -> IResult<$i, $o>{
       match $f1(input) {
-        Error(e)  => Error(e),
-        Incomplete(i) => Incomplete(i),
-        Done(i,o) => {
+        IResult::Error(e)      => IResult::Error(e),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i,o)     => {
           o_parser!(i o $($rest)*)
         }
       }
@@ -41,9 +41,9 @@ macro_rules! o_parser (
 
   ($i:expr $o:expr ~ $e:expr ~ $($rest:tt)*) => (
     match $e($i) {
-      Error(e)  => Error(e),
-      Incomplete(i) => Incomplete(i),
-      Done(i,o) => {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,o)     => {
         o_parser!(i o $($rest)*)
       }
     }
@@ -51,9 +51,9 @@ macro_rules! o_parser (
    );
   ($i:expr $o:expr $e:expr $($rest:tt)*) => (
     match $e($i) {
-      Error(e)  => Error(e),
-      Incomplete(i) => Incomplete(i),
-      Done(i,_) => {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,_)     => {
         o_parser!(i $o $($rest)*)
       }
     }
@@ -71,9 +71,9 @@ macro_rules! chain (
 macro_rules! chaining_parser (
   ($i:expr, $assemble:expr, $field:ident : $e:expr, $($rest:tt)*) => (
     match $e($i) {
-      Error(e)  => Error(e),
-      Incomplete(i) => Incomplete(i),
-      Done(i,o) => {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,o)     => {
         let $field = o;
         chaining_parser!(i, $assemble, $($rest)*)
       }
@@ -81,7 +81,7 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $assemble:expr, ) => (
-    Done($i, $assemble())
+    IResult::Done($i, $assemble())
   )
 )
 
@@ -96,14 +96,14 @@ macro_rules! alt (
 macro_rules! alt_parser (
   ($i:expr, $e:expr $($rest:tt)*) => (
     match $e($i) {
-      Error(_)  => alt_parser!($i, $($rest)*),
-      Incomplete(_) => alt_parser!($i, $($rest)*),
-      Done(i,o) => Done(i,o)
+      IResult::Error(_)      => alt_parser!($i, $($rest)*),
+      IResult::Incomplete(_) => alt_parser!($i, $($rest)*),
+      IResult::Done(i,o)     => IResult::Done(i,o)
     }
   );
 
   ($i:expr, ) => (
-    Error(1)
+    IResult::Error(1)
   )
 )
 
@@ -123,11 +123,11 @@ macro_rules! is_not(
       for idx in range(0, input.len()) {
         for &i in $arr.iter() {
           if input[idx] == i {
-            return Done(input.slice_from(idx), input.slice(0, idx))
+            return IResult::Done(input.slice_from(idx), input.slice(0, idx))
           }
         }
       }
-      Done("".as_bytes(), input)
+      IResult::Done("".as_bytes(), input)
     }
   )
 )
@@ -144,10 +144,10 @@ macro_rules! is_a(
           }
         }
         if !res {
-          return Done(input.slice_from(idx), input.slice(0, idx))
+          return IResult::Done(input.slice_from(idx), input.slice(0, idx))
         }
       }
-      Done("".as_bytes(), input)
+      IResult::Done("".as_bytes(), input)
     }
   )
 )
@@ -158,10 +158,10 @@ macro_rules! filter(
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
       for idx in range(0, input.len()) {
         if !$f(input[idx]) {
-          return Done(input.slice_from(idx), input.slice(0, idx))
+          return IResult::Done(input.slice_from(idx), input.slice(0, idx))
         }
       }
-      Done("".as_bytes(), input)
+      IResult::Done("".as_bytes(), input)
     }
   )
 )
