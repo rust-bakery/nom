@@ -1,8 +1,15 @@
 #![feature(globs,macro_rules)]
-use nom::{Producer, FileProducer, Mapper, IResult, print};
-use nom::IResult::*;
-use nom::ProducerState::*;
 
+use internal::IResult;
+use internal::IResult::*;
+use map::Mapper;
+use producer::{Producer, FileProducer};
+use producer::ProducerState::*;
+use nom::print;
+
+mod internal;
+mod map;
+mod producer;
 mod nom;
 
 fn main() {
@@ -23,8 +30,9 @@ fn main() {
     fn pr2(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
       par.flat_map(print)
     }
-    pusher!(ps, pr)
+    pusher!(ps, pr);
     ps(&mut p);
+
     //p.push(|res| { res.flat_map(print) });
     //p.push(|par| {println!("par: {}", par); par});
     //p.push(pr);
