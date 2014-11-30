@@ -7,9 +7,9 @@ extern crate collections;
 use std::fmt::Show;
 use internal::*;
 use internal::IResult::*;
-use map::*;
-use std::str;
 
+  use map::*;
+  use std::str;
 
 #[macro_export]
 macro_rules! tag(
@@ -312,3 +312,4 @@ fn rustc_panic_test() {
     p.push(pr);
   });
 }*/
+

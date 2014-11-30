@@ -1,14 +1,10 @@
 #![macro_escape]
 
 use internal::*;
-use internal::IResult::*;
-use map::*;
 use self::ProducerState::*;
 
-use std::fmt::Show;
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
-use std::str;
 
 #[deriving(Show,PartialEq,Eq)]
 pub enum ProducerState<O> {
@@ -137,84 +133,95 @@ macro_rules! pusher (
   );
 )
 
-fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
-  println!("{}", input);
-  Done(input, ()) 
-}
-#[test]
-fn mem_producer_test() {
-  let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-  assert_eq!(p.produce(), Data("abcd".as_bytes()));
-}
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use internal::IResult;
+  use internal::IResult::*;
+  use super::ProducerState::*;
+  use std::fmt::Show;
+  use std::str;
+  use map::*;
 
-#[test]
-fn mem_producer_test_2() {
-  let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
-  fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-    par.flat_map(local_print)
+  fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
+    println!("{}", input);
+    Done(input, ()) 
   }
-  pusher!(ps, pr)
-  ps(&mut p);
-  //let mut iterations: uint = 0;
-  //let mut p = MemProducer::new("abcdefghi".as_bytes(), 4);
-  //p.push(|par| {iterations = iterations + 1; par.flat_map(print)});
-  //assert_eq!(iterations, 3);
-}
+  #[test]
+  fn mem_producer_test() {
+    let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+    assert_eq!(p.produce(), Data("abcd".as_bytes()));
+  }
 
-#[test]
-fn file_test() {
-  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
-    let mut p = producer;
-    //p.push(|par| {println!("parsed file: {}", par); par});
-    //p.push(|par| par.flat_map(print));
+  #[test]
+  fn mem_producer_test_2() {
+    let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-      par.map_opt(str::from_utf8).flat_map(local_print);
-      Done("".as_bytes(), ())
+      par.flat_map(local_print)
     }
     pusher!(ps, pr)
     ps(&mut p);
+    //let mut iterations: uint = 0;
+    //let mut p = MemProducer::new("abcdefghi".as_bytes(), 4);
+    //p.push(|par| {iterations = iterations + 1; par.flat_map(print)});
+    //assert_eq!(iterations, 3);
+  }
+
+  #[test]
+  fn file_test() {
+    FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
+      let mut p = producer;
+      //p.push(|par| {println!("parsed file: {}", par); par});
+      //p.push(|par| par.flat_map(print));
+      fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+        par.map_opt(str::from_utf8).flat_map(local_print);
+        Done("".as_bytes(), ())
+      }
+      pusher!(ps, pr)
+      ps(&mut p);
+      //assert!(false);
+    });
+  }
+
+  #[test]
+  fn accu_test() {
+    fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
+      if input.len() <= 4 {
+        Incomplete(0)
+      } else {
+        Done("".as_bytes(), input)
+      }
+    }
+
+    let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+    fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
+      let r = par.flat_map(f);
+      println!("f: {}", r);
+      r
+    }
+    pusher!(ps, pr )
+    ps(&mut p);
     //assert!(false);
-  });
-}
+  }
 
-#[test]
-fn accu_test() {
-  fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
-    if input.len() <= 4 {
-      Incomplete(0)
-    } else {
-      Done("".as_bytes(), input)
+  #[test]
+  fn accu_test_2() {
+    fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
+      if input.len() <= 4 || input.slice(0,5) != "abcde".as_bytes() {
+        Incomplete(0)
+      } else {
+        Done(input.slice_from(5), input.slice(0,5))
+      }
     }
-  }
 
-  let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-  fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
-    let r = par.flat_map(f);
-    println!("f: {}", r);
-    r
-  }
-  pusher!(ps, pr )
-  ps(&mut p);
-  //assert!(false);
-}
-
-#[test]
-fn accu_test_2() {
-  fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
-    if input.len() <= 4 || input.slice(0,5) != "abcde".as_bytes() {
-      Incomplete(0)
-    } else {
-      Done(input.slice_from(5), input.slice(0,5))
+    let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+    fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
+      let r = par.flat_map(f);
+      println!("f: {}", r);
+      r
     }
+    pusher!(ps, pr )
+    ps(&mut p);
+    //assert!(false);
   }
-
-  let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-  fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
-    let r = par.flat_map(f);
-    println!("f: {}", r);
-    r
-  }
-  pusher!(ps, pr )
-  ps(&mut p);
-  //assert!(false);
 }

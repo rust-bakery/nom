@@ -1,9 +1,7 @@
 use self::ConsumerState::*;
-use producer::{Producer,MemProducer};
+use producer::Producer;
 use producer::ProducerState::*;
 use internal::Err;
-
-use std::str;
 
 #[deriving(Show,PartialEq,Eq)]
 pub enum ConsumerState {
@@ -57,31 +55,39 @@ pub trait Consumer {
   }
 }
 
-struct TestPrintConsumer {
-  counter: uint
-}
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use super::ConsumerState::*;
+  use producer::MemProducer;
+  use std::str;
 
-impl TestPrintConsumer {
-  fn new() -> TestPrintConsumer {
-    TestPrintConsumer { counter: 0 }
+  struct TestPrintConsumer {
+    counter: uint
   }
-}
 
-impl Consumer for TestPrintConsumer {
-  fn consume(&mut self, input: &[u8]) -> ConsumerState {
-    println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
-    self.counter = self.counter + 1;
-    if self.counter <=4 {
-      Await
-    } else {
-      ConsumerDone
+  impl TestPrintConsumer {
+    fn new() -> TestPrintConsumer {
+      TestPrintConsumer { counter: 0 }
     }
   }
-}
 
-#[test]
-fn pull_test() {
-  let mut p = MemProducer::new("abcdefghijklmnopqrstuvwx".as_bytes(), 4);
-  let mut c = TestPrintConsumer::new();
-  c.run(&mut p);
+  impl Consumer for TestPrintConsumer {
+    fn consume(&mut self, input: &[u8]) -> ConsumerState {
+      println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
+      self.counter = self.counter + 1;
+      if self.counter <=4 {
+        Await
+      } else {
+        ConsumerDone
+      }
+    }
+  }
+
+  #[test]
+  fn pull_test() {
+    let mut p = MemProducer::new("abcdefghijklmnopqrstuvwx".as_bytes(), 4);
+    let mut c = TestPrintConsumer::new();
+    c.run(&mut p);
+  }
 }

@@ -1,7 +1,5 @@
 use internal::*;
 use internal::IResult::*;
-use std::str;
-use std::fmt::Show;
 
 pub trait Mapper<O,N> for Sized? {
   fn flat_map(& self, f: |O| -> IResult<O,N>) -> IResult<O,N>;
@@ -125,39 +123,48 @@ impl<'a,S,T> Mapper2<&'a[S], T, ()> for IResult<(),&'a [S]> {
   }
 }
 
-fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
-  println!("{}", input);
-  Done(input, ()) 
-}
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use internal::IResult;
+  use internal::IResult::*;
+  use std::str;
+  use std::fmt::Show;
 
-#[test]
-fn flat_map_fn_test() {
-  Done((),()).flat_map(local_print);
-}
+  fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
+    println!("{}", input);
+    Done(input, ()) 
+  }
 
-#[test]
-fn flat_map_closure_test() {
-  Done((),()).flat_map(|data| { println!("data: {}", data); Done(data,())});
-  //assert_eq!(decoded.number, 10);
-}
+  #[test]
+  fn flat_map_fn_test() {
+    Done((),()).flat_map(local_print);
+  }
 
-#[test]
-fn map_test() {
-  let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
-  assert_eq!(res, Done((), "abcd"));
-}
+  #[test]
+  fn flat_map_closure_test() {
+    Done((),()).flat_map(|data| { println!("data: {}", data); Done(data,())});
+    //assert_eq!(decoded.number, 10);
+  }
 
-#[test]
-fn map_test_2() {
-  let res = Done("abcd".as_bytes(),"efgh".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
-  assert_eq!(res, Done("abcd".as_bytes(), "efgh"));
-}
+  #[test]
+  fn map_test() {
+    let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
+    assert_eq!(res, Done((), "abcd"));
+  }
 
-#[test]
-fn t1() {
-  let v1:Vec<u8> = vec![1,2,3];
-  let v2:Vec<u8> = vec![4,5,6];
-  let d = Done(v1.as_slice(), v2.as_slice());
-  let res = d.flat_map(local_print);
-  assert_eq!(res, Done(v2.as_slice(), ()));
+  #[test]
+  fn map_test_2() {
+    let res = Done("abcd".as_bytes(),"efgh".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
+    assert_eq!(res, Done("abcd".as_bytes(), "efgh"));
+  }
+
+  #[test]
+  fn t1() {
+    let v1:Vec<u8> = vec![1,2,3];
+    let v2:Vec<u8> = vec![4,5,6];
+    let d = Done(v1.as_slice(), v2.as_slice());
+    let res = d.flat_map(local_print);
+    assert_eq!(res, Done(v2.as_slice(), ()));
+  }
 }
