@@ -23,6 +23,7 @@ macro_rules! tag(
 
 macro_rules! o (
   ($name:ident<$i:ty,$o:ty> $f1:expr $($rest:tt)*) => (
+    #[allow(unused_variables)]
     fn $name(input:$i) -> IResult<$i, $o>{
       match $f1(input) {
         Error(e)  => Error(e),
@@ -327,9 +328,12 @@ mod tests {
     fn work(input: &[u8]) -> IResult<&[u8],&[u8]> {
       Done("".as_bytes(), input)
     }
+
+    #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8]> {
       Error(3)
     }
+
     fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
       Done(input, "".as_bytes())
     }

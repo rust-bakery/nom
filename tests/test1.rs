@@ -17,6 +17,7 @@ fn map_test_x() {
 }
 
 #[test]
+#[allow(unused_must_use)]
 fn tag() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;

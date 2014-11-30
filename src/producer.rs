@@ -168,6 +168,7 @@ mod tests {
   }
 
   #[test]
+  #[allow(unused_must_use)]
   fn file_test() {
     FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
       let mut p = producer;
