@@ -246,8 +246,6 @@ mod tests {
   use internal::IResult;
   use internal::IResult::*;
 
-  use std::str;
-
   #[test]
   fn character_test() {
     let empty = "".as_bytes();

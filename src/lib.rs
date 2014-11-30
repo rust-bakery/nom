@@ -1,5 +1,4 @@
 #![feature(globs,macro_rules)]
-//#![macro_escape]
 
 pub use self::internal::*;
 pub use self::map::*;
