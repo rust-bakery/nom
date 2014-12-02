@@ -226,8 +226,7 @@ pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() == 0 {
-    //FIXME: should return Incomplete
-    return Error(0)
+    return Incomplete(0)
   }
 
   let len = input[0] as uint;
@@ -235,8 +234,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() >= len + 1 {
     return Done(input.slice_from(len+1), input.slice(1, len+1))
   } else {
-    //FIXME: should return Incomplete
-    return Error(0)
+    return Incomplete(0)
   }
 }
 
