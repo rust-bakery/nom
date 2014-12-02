@@ -137,24 +137,24 @@ mod tests {
   }
 
   #[test]
-  fn flat_map_fn_test() {
+  fn flat_map_fn() {
     Done((),()).flat_map(local_print);
   }
 
   #[test]
-  fn flat_map_closure_test() {
+  fn flat_map_closure() {
     Done((),()).flat_map(|data| { println!("data: {}", data); Done(data,())});
     //assert_eq!(decoded.number, 10);
   }
 
   #[test]
-  fn map_test() {
+  fn map() {
     let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
     assert_eq!(res, Done((), "abcd"));
   }
 
   #[test]
-  fn map_test_2() {
+  fn map_2() {
     let res = Done("abcd".as_bytes(),"efgh".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
     assert_eq!(res, Done("abcd".as_bytes(), "efgh"));
   }

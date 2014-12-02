@@ -258,7 +258,7 @@ mod tests {
   use internal::IResult::*;
 
   #[test]
-  fn character_test() {
+  fn character() {
     let empty = "".as_bytes();
     let a = "abcd".as_bytes();
     let b = "1234".as_bytes();
@@ -279,13 +279,13 @@ mod tests {
   }
 
   #[test]
-  fn is_not_test() {
+  fn is_not() {
     let a = "ab12cd\nefgh".as_bytes();
     assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
   }
 
   #[test]
-  fn sized_buffer_test() {
+  fn buffer_with_size() {
     let arr:[u8, ..6] = [3, 4, 5, 6, 7, 8];
     let res = Done((), arr.as_slice()).flat_map(sized_buffer);
     let i = [7,8];
@@ -309,7 +309,7 @@ mod tests {
   }
 
   #[test]
-  fn chain_and_ignore_test() {
+  fn chain_and_ignore() {
     tag!(x "abcd".as_bytes());
     tag!(y "efgh".as_bytes());
     fn ret_int(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
@@ -322,7 +322,7 @@ mod tests {
 
 
   #[test]
-  fn chain_test() {
+  fn chain() {
     tag!(x "abcd".as_bytes());
     fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
     o!(ret_int1<&[u8],int> x ~ temp_ret_int1 ~);
@@ -334,7 +334,7 @@ mod tests {
   }
 
   #[test]
-  fn alt_test() {
+  fn alt() {
     fn work(input: &[u8]) -> IResult<&[u8],&[u8]> {
       Done("".as_bytes(), input)
     }
@@ -359,7 +359,7 @@ mod tests {
   }
 
 #[test]
-  fn opt_test() {
+  fn opt() {
     tag!(x "abcd".as_bytes())
     opt!(o<&[u8],&[u8]> x)
 

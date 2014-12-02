@@ -85,7 +85,7 @@ mod tests {
   }
 
   #[test]
-  fn pull_test() {
+  fn pull() {
     let mut p = MemProducer::new("abcdefghijklmnopqrstuvwx".as_bytes(), 4);
     let mut c = TestPrintConsumer::new();
     c.run(&mut p);

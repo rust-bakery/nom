@@ -147,13 +147,13 @@ mod tests {
     Done(input, ()) 
   }
   #[test]
-  fn mem_producer_test() {
+  fn mem_producer() {
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
     assert_eq!(p.produce(), ProducerState::Data("abcd".as_bytes()));
   }
 
   #[test]
-  fn mem_producer_test_2() {
+  fn mem_producer_2() {
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
       par.flat_map(local_print)
@@ -168,7 +168,7 @@ mod tests {
 
   #[test]
   #[allow(unused_must_use)]
-  fn file_test() {
+  fn file() {
     FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
       let mut p = producer;
       //p.push(|par| {println!("parsed file: {}", par); par});
@@ -184,7 +184,7 @@ mod tests {
   }
 
   #[test]
-  fn accu_test() {
+  fn accu() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
       if input.len() <= 4 {
         Incomplete(0)
@@ -205,7 +205,7 @@ mod tests {
   }
 
   #[test]
-  fn accu_test_2() {
+  fn accu_2() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
       if input.len() <= 4 || input.slice(0,5) != "abcde".as_bytes() {
         Incomplete(0)
