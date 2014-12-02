@@ -238,6 +238,18 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   }
 }
 
+#[macro_export]
+macro_rules! opt(
+  ($name:ident<$i:ty,$o:ty> $f:ident) => (
+    fn $name(input:$i) -> IResult<$i, Option<$o>> {
+      match $f(input) {
+        IResult::Done(i,o) => IResult::Done(i, Some(o)),
+        _                  => IResult::Done(input, None)
+      }
+    }
+  )
+)
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -344,6 +356,17 @@ mod tests {
     assert_eq!(Done((), a).flat_map(alt1), Error(1))
     assert_eq!(Done((), a).flat_map(alt2), Done("".as_bytes(), a))
     assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()))
+  }
+
+#[test]
+  fn opt_test() {
+    tag!(x "abcd".as_bytes())
+    opt!(o<&[u8],&[u8]> x)
+
+    let a = "abcdef".as_bytes();
+    let b = "bcdefg".as_bytes();
+    assert_eq!(Done((),a).flat_map(o), Done("ef".as_bytes(), Some("".as_bytes())))
+    assert_eq!(Done((),b).flat_map(o), Done("bcdefg".as_bytes(), None))
   }
 
   /* FIXME: this makes rustc weep
