@@ -19,7 +19,7 @@ macro_rules! tag(
       }
     }
   )
-)
+);
 
 macro_rules! o (
   ($name:ident<$i:ty,$o:ty> $f1:expr $($rest:tt)*) => (
@@ -34,7 +34,7 @@ macro_rules! o (
       }
     }
   );
-)
+);
 
 macro_rules! o_parser (
   ($i:expr $o:expr) => (Done($i,$o));
@@ -58,7 +58,7 @@ macro_rules! o_parser (
       }
     }
    );
-)
+);
 
 macro_rules! chain (
   ($name:ident<$i:ty,$o:ty>, $assemble:expr, $($rest:tt)*) => (
@@ -66,7 +66,7 @@ macro_rules! chain (
       chaining_parser!(i, $assemble, $($rest)*)
     }
   );
-)
+);
 
 macro_rules! chaining_parser (
   ($i:expr, $assemble:expr, $field:ident : $e:expr, $($rest:tt)*) => (
@@ -83,7 +83,7 @@ macro_rules! chaining_parser (
   ($i:expr, $assemble:expr, ) => (
     IResult::Done($i, $assemble())
   )
-)
+);
 
 macro_rules! alt (
   ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
@@ -91,7 +91,7 @@ macro_rules! alt (
       alt_parser!(i, $($rest)*)
     }
   );
-)
+);
 
 macro_rules! alt_parser (
   ($i:expr, $e:expr $($rest:tt)*) => (
@@ -105,7 +105,7 @@ macro_rules! alt_parser (
   ($i:expr, ) => (
     IResult::Error(1)
   )
-)
+);
 
 pub fn print<'a,T: Show>(input: T) -> IResult<T, ()> {
   println!("{}", input);
@@ -130,7 +130,7 @@ macro_rules! is_not(
       IResult::Done("".as_bytes(), input)
     }
   )
-)
+);
 
 #[macro_export]
 macro_rules! is_a(
@@ -150,7 +150,7 @@ macro_rules! is_a(
       IResult::Done("".as_bytes(), input)
     }
   )
-)
+);
 
 #[macro_export]
 macro_rules! filter(
@@ -164,7 +164,7 @@ macro_rules! filter(
       IResult::Done("".as_bytes(), input)
     }
   )
-)
+);
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
@@ -248,7 +248,7 @@ macro_rules! opt(
       }
     }
   )
-)
+);
 
 #[cfg(test)]
 mod tests {
@@ -264,18 +264,18 @@ mod tests {
     let b = "1234".as_bytes();
     let c = "a123".as_bytes();
     let d = "azé12".as_bytes();
-    assert_eq!(Done((),a).flat_map(alpha), Done(empty, a))
-    assert_eq!(Done((),b).flat_map(alpha), Done(b, empty))
-    assert_eq!(Done((),c).flat_map(alpha), Done(c.slice_from(1), "a".as_bytes()))
-    assert_eq!(Done((),d).flat_map(alpha), Done("é12".as_bytes(), "az".as_bytes()))
-    assert_eq!(Done((),a).flat_map(digit), Done(a, empty))
-    assert_eq!(Done((),b).flat_map(digit), Done(empty, b))
-    assert_eq!(Done((),c).flat_map(digit), Done(c, empty))
-    assert_eq!(Done((),d).flat_map(digit), Done(d, empty))
-    assert_eq!(Done((),a).flat_map(alphanumeric), Done(empty, a))
-    assert_eq!(Done((),b).flat_map(alphanumeric), Done(empty, b))
-    assert_eq!(Done((),c).flat_map(alphanumeric), Done(empty, c))
-    assert_eq!(Done((),d).flat_map(alphanumeric), Done("é12".as_bytes(), "az".as_bytes()))
+    assert_eq!(Done((),a).flat_map(alpha), Done(empty, a));
+    assert_eq!(Done((),b).flat_map(alpha), Done(b, empty));
+    assert_eq!(Done((),c).flat_map(alpha), Done(c.slice_from(1), "a".as_bytes()));
+    assert_eq!(Done((),d).flat_map(alpha), Done("é12".as_bytes(), "az".as_bytes()));
+    assert_eq!(Done((),a).flat_map(digit), Done(a, empty));
+    assert_eq!(Done((),b).flat_map(digit), Done(empty, b));
+    assert_eq!(Done((),c).flat_map(digit), Done(c, empty));
+    assert_eq!(Done((),d).flat_map(digit), Done(d, empty));
+    assert_eq!(Done((),a).flat_map(alphanumeric), Done(empty, a));
+    assert_eq!(Done((),b).flat_map(alphanumeric), Done(empty, b));
+    assert_eq!(Done((),c).flat_map(alphanumeric), Done(empty, c));
+    assert_eq!(Done((),d).flat_map(alphanumeric), Done("é12".as_bytes(), "az".as_bytes()));
   }
 
   #[test]
@@ -348,25 +348,25 @@ mod tests {
       Done(input, "".as_bytes())
     }
 
-    alt!(alt1<&[u8],&[u8]>, dont_work dont_work)
-    alt!(alt2<&[u8],&[u8]>, dont_work work)
-    alt!(alt3<&[u8],&[u8]>, dont_work dont_work work2 dont_work)
+    alt!(alt1<&[u8],&[u8]>, dont_work dont_work);
+    alt!(alt2<&[u8],&[u8]>, dont_work work);
+    alt!(alt3<&[u8],&[u8]>, dont_work dont_work work2 dont_work);
 
     let a = "abcd".as_bytes();
-    assert_eq!(Done((), a).flat_map(alt1), Error(1))
-    assert_eq!(Done((), a).flat_map(alt2), Done("".as_bytes(), a))
-    assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()))
+    assert_eq!(Done((), a).flat_map(alt1), Error(1));
+    assert_eq!(Done((), a).flat_map(alt2), Done("".as_bytes(), a));
+    assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()));
   }
 
 #[test]
   fn opt() {
-    tag!(x "abcd".as_bytes())
-    opt!(o<&[u8],&[u8]> x)
+    tag!(x "abcd".as_bytes());
+    opt!(o<&[u8],&[u8]> x);
 
     let a = "abcdef".as_bytes();
     let b = "bcdefg".as_bytes();
-    assert_eq!(Done((),a).flat_map(o), Done("ef".as_bytes(), Some("".as_bytes())))
-    assert_eq!(Done((),b).flat_map(o), Done("bcdefg".as_bytes(), None))
+    assert_eq!(Done((),a).flat_map(o), Done("ef".as_bytes(), Some("".as_bytes())));
+    assert_eq!(Done((),b).flat_map(o), Done("bcdefg".as_bytes(), None));
   }
 
   /* FIXME: this makes rustc weep

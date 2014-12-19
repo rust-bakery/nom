@@ -27,7 +27,7 @@ fn tag() {
       println!("p : {}", p);
       Done("".as_bytes(), ())
     }
-    pusher!(ps, pr)
+    pusher!(ps, pr);
     ps(&mut p);
     //assert!(false);
   }); 
@@ -41,15 +41,15 @@ pub fn print<'a,T: Show>(input: T) -> IResult<T, ()> {
 
 #[test]
 fn is_not() {
-  is_not!(foo "\r\n".as_bytes())
+  is_not!(foo "\r\n".as_bytes());
   let a = "ab12cd\nefgh".as_bytes();
-  assert_eq!(Done((), a).flat_map(foo), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
+  assert_eq!(Done((), a).flat_map(foo), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
 }
 
 
 #[test]
 fn exported_public_method_defined_by_macro() {
   let a = "ab12cd\nefgh".as_bytes();
-  assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
+  assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
 }
 

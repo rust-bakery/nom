@@ -27,7 +27,7 @@ impl FileProducer {
   pub fn new(filename: &str, buffer_size: uint) -> IoResult<FileProducer> {
     File::open(&Path::new(filename)).map(|f| {
       FileProducer {size: buffer_size, file: f, v: Vec::with_capacity(buffer_size)}
-    })  
+    })
   }
 }
 
@@ -131,7 +131,7 @@ macro_rules! pusher (
       }
     }
   );
-)
+);
 
 #[cfg(test)]
 mod tests {
@@ -144,7 +144,7 @@ mod tests {
 
   fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
     println!("{}", input);
-    Done(input, ()) 
+    Done(input, ())
   }
   #[test]
   fn mem_producer() {
@@ -158,7 +158,7 @@ mod tests {
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
       par.flat_map(local_print)
     }
-    pusher!(ps, pr)
+    pusher!(ps, pr);
     ps(&mut p);
     //let mut iterations: uint = 0;
     //let mut p = MemProducer::new("abcdefghi".as_bytes(), 4);
@@ -177,7 +177,7 @@ mod tests {
         par.map_opt(str::from_utf8).flat_map(local_print);
         Done("".as_bytes(), ())
       }
-      pusher!(ps, pr)
+      pusher!(ps, pr);
       ps(&mut p);
       //assert!(false);
     });
@@ -199,7 +199,7 @@ mod tests {
       println!("f: {}", r);
       r
     }
-    pusher!(ps, pr )
+    pusher!(ps, pr );
     ps(&mut p);
     //assert!(false);
   }
@@ -220,7 +220,7 @@ mod tests {
       println!("f: {}", r);
       r
     }
-    pusher!(ps, pr )
+    pusher!(ps, pr );
     ps(&mut p);
     //assert!(false);
   }
