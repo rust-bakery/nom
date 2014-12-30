@@ -21,7 +21,8 @@ macro_rules! tag(
   )
 );
 
-macro_rules! o (
+#[macro_export]
+macro_rules! o(
   ($name:ident<$i:ty,$o:ty> $f1:expr $($rest:tt)*) => (
     #[allow(unused_variables)]
     fn $name(input:$i) -> IResult<$i, $o>{
@@ -36,7 +37,8 @@ macro_rules! o (
   );
 );
 
-macro_rules! o_parser (
+#[macro_export]
+macro_rules! o_parser(
   ($i:expr $o:expr) => (Done($i,$o));
 
   ($i:expr $o:expr ~ $e:expr ~ $($rest:tt)*) => (
@@ -60,6 +62,7 @@ macro_rules! o_parser (
    );
 );
 
+#[macro_export]
 macro_rules! chain (
   ($name:ident<$i:ty,$o:ty>, $assemble:expr, $($rest:tt)*) => (
     fn $name(i:$i) -> IResult<$i,$o>{
@@ -68,6 +71,7 @@ macro_rules! chain (
   );
 );
 
+#[macro_export]
 macro_rules! chaining_parser (
   ($i:expr, $assemble:expr, $field:ident : $e:expr, $($rest:tt)*) => (
     match $e($i) {
@@ -85,6 +89,7 @@ macro_rules! chaining_parser (
   )
 );
 
+#[macro_export]
 macro_rules! alt (
   ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
     fn $name(i:$i) -> IResult<$i,$o>{
@@ -93,6 +98,7 @@ macro_rules! alt (
   );
 );
 
+#[macro_export]
 macro_rules! alt_parser (
   ($i:expr, $e:expr $($rest:tt)*) => (
     match $e($i) {
