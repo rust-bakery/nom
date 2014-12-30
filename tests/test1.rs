@@ -23,7 +23,7 @@ fn tag() {
     tag!(f "https://".as_bytes());
     //p.push(|par| par.flat_map(f).flat_map(print));
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-      let p = par.flat_map(f).map_opt(str::from_utf8).flat_map(print);
+      let p = par.flat_map(f).map_res(str::from_utf8).flat_map(print);
       println!("p : {}", p);
       Done("".as_bytes(), ())
     }

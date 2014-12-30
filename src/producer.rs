@@ -174,7 +174,7 @@ mod tests {
       //p.push(|par| {println!("parsed file: {}", par); par});
       //p.push(|par| par.flat_map(print));
       fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-        par.map_opt(str::from_utf8).flat_map(local_print);
+        par.map_res(str::from_utf8).flat_map(local_print);
         Done("".as_bytes(), ())
       }
       pusher!(ps, pr);

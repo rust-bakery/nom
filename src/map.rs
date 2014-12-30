@@ -4,6 +4,7 @@ use internal::IResult::*;
 pub trait Mapper<O,N> for Sized? {
   fn flat_map(& self, f: |O| -> IResult<O,N>) -> IResult<O,N>;
   fn map_opt(& self, f: |O| -> Option<N>) -> IResult<O,N>;
+  fn map_res<P>(& self, f: |O| -> Result<N,P>) -> IResult<O,N>;
 }
 
 impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
@@ -24,6 +25,18 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
       &Done(_, ref o) => match f(*o) {
         Some(output) => Done(*o, output),
         None         => Error(0)
+      }
+    }
+  }
+
+  fn map_res<U>(&self, f: |&'a[S]| -> Result<T,U>) -> IResult<&'a[S],T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Ok(output) => Done(*o, output),
+        Err(_)     => Error(0)
       }
     }
   }
@@ -50,6 +63,18 @@ impl<'a,R,T> Mapper<&'a str, T> for IResult<R,&'a str> {
       }
     }
   }
+
+  fn map_res<U>(&self, f: |&'a str| -> Result<T,U>) -> IResult<&'a str,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Ok(output) => Done(*o, output),
+        Err(_)     => Error(0)
+      }
+    }
+  }
 }
 
 impl<'a,R,T> Mapper<(), T> for IResult<R,()> {
@@ -70,6 +95,18 @@ impl<'a,R,T> Mapper<(), T> for IResult<R,()> {
       &Done(_, __) => match f(()) {
         Some(output) => Done((), output),
         None         => Error(0)
+      }
+    }
+  }
+
+  fn map_res<U>(&self, f: |()| -> Result<T,U>) -> IResult<(),T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(_, ref o) => match f(*o) {
+        Ok(output) => Done(*o, output),
+        Err(_)     => Error(0)
       }
     }
   }
@@ -97,7 +134,7 @@ impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<&'a [R],&'a [S]> {
       &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, ref o) => Done(*i,f(*o))
-    }   
+    }
   }
 }
 
