@@ -3,7 +3,7 @@
 #[phase(plugin,link)]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,line_ending};
+use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,not_line_ending};
 use nom::IResult::*;
 
 use std::str;
@@ -50,6 +50,6 @@ fn is_not() {
 #[test]
 fn exported_public_method_defined_by_macro() {
   let a = "ab12cd\nefgh".as_bytes();
-  assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
+  assert_eq!(Done((), a).flat_map(not_line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
 }
 

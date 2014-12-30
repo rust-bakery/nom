@@ -175,7 +175,7 @@ macro_rules! filter(
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
 //pub is_not!(line_ending "\r\n".as_bytes())
-pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in range(0, input.len()) {
     for &i in "\r\n".as_bytes().iter() {
       if input[idx] == i {
@@ -184,6 +184,12 @@ pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
     }
   }
   Done("".as_bytes(), input)
+}
+
+tag!(tag_ln "\n".as_bytes());
+
+pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  tag_ln(input)
 }
 
 pub fn is_alphabetic(chr:u8) -> bool {
@@ -287,7 +293,10 @@ mod tests {
   #[test]
   fn is_not() {
     let a = "ab12cd\nefgh".as_bytes();
-    assert_eq!(Done((), a).flat_map(line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()))
+    assert_eq!(Done((), a).flat_map(not_line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
+
+    let b = "ab12cd\nefgh\nijkl".as_bytes();
+    assert_eq!(Done((), b).flat_map(not_line_ending), Done("\nefgh\nijkl".as_bytes(), "ab12cd".as_bytes()));
   }
 
   #[test]
