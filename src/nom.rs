@@ -204,6 +204,9 @@ pub fn is_alphanumeric(chr: u8) -> bool {
   is_alphabetic(chr) || is_digit(chr)
 }
 
+pub fn is_space(chr:u8) -> bool {
+  chr == ' ' as u8 || chr == '\t' as u8
+}
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 //pub filter!(alpha is_alphabetic)
@@ -230,6 +233,15 @@ pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
 pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in range(0, input.len()) {
     if !is_alphanumeric(input[idx]) {
+      return Done(input.slice_from(idx), input.slice(0, idx))
+    }
+  }
+  Done("".as_bytes(), input)
+}
+
+pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  for idx in range(0, input.len()) {
+    if !is_space(input[idx]) {
       return Done(input.slice_from(idx), input.slice(0, idx))
     }
   }
@@ -276,6 +288,7 @@ mod tests {
     let b = "1234".as_bytes();
     let c = "a123".as_bytes();
     let d = "azé12".as_bytes();
+    let e = " ".as_bytes();
     assert_eq!(Done((),a).flat_map(alpha), Done(empty, a));
     assert_eq!(Done((),b).flat_map(alpha), Done(b, empty));
     assert_eq!(Done((),c).flat_map(alpha), Done(c.slice_from(1), "a".as_bytes()));
@@ -288,6 +301,7 @@ mod tests {
     assert_eq!(Done((),b).flat_map(alphanumeric), Done(empty, b));
     assert_eq!(Done((),c).flat_map(alphanumeric), Done(empty, c));
     assert_eq!(Done((),d).flat_map(alphanumeric), Done("é12".as_bytes(), "az".as_bytes()));
+    assert_eq!(Done((),e).flat_map(space), Done("".as_bytes(), " ".as_bytes()));
   }
 
   #[test]
