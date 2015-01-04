@@ -278,22 +278,23 @@ macro_rules! opt(
 #[macro_export]
 macro_rules! many0(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
-    fn $name(input:$i) -> IResult<$i,$o> {
+    fn $name(input:$i) -> IResult<$i,Vec<$o>> {
       let mut begin = 0;
+      let mut res: Vec<$o> = Vec::new();
       loop {
         match $f(input.slice_from(begin)) {
           IResult::Done(i,o) => {
+            res.push(o);
             begin += o.len();
             if begin >= input.len() {
-              return IResult::Done(input.slice_from(begin), input)
+              return IResult::Done(i, res)
             }
           },
           _                  => {
-            return IResult::Done(input.slice_from(begin), input.slice(0, begin))
+            return IResult::Done(input.slice_from(begin), res)
           }
         }
       }
-      return IResult::Incomplete(0)
     }
   )
 );
@@ -302,26 +303,27 @@ macro_rules! many0(
 #[macro_export]
 macro_rules! many1(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
-    fn $name(input:$i) -> IResult<$i,$o> {
+    fn $name(input:$i) -> IResult<$i,Vec<$o>> {
       let mut begin = 0;
+      let mut res: Vec<$o> = Vec::new();
       loop {
         match $f(input.slice_from(begin)) {
           IResult::Done(i,o) => {
+            res.push(o);
             begin += o.len();
             if begin >= input.len() {
-              return IResult::Done(input.slice_from(begin), input)
+              return IResult::Done(i, res)
             }
           },
           _                  => {
             if begin == 0 {
               return IResult::Error(0)
             } else {
-              return IResult::Done(input.slice_from(begin), input.slice(0, begin))
+              return IResult::Done(input.slice_from(begin), res)
             }
           }
         }
       }
-      return IResult::Incomplete(0)
     }
   )
 );
@@ -458,9 +460,12 @@ mod tests {
     let a = "abcdef".as_bytes();
     let b = "abcdabcdef".as_bytes();
     let c = "azerty".as_bytes();
-    assert_eq!(Done((),a).flat_map(multi), Done("ef".as_bytes(), "abcd".as_bytes()));
-    assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), "abcdabcd".as_bytes()));
-    assert_eq!(Done((),c).flat_map(multi), Done("azerty".as_bytes(), "".as_bytes()));
+
+    let res1 = vec!["abcd".as_bytes()];
+    assert_eq!(Done((),a).flat_map(multi), Done("ef".as_bytes(), res1));
+    let res2 = vec!["abcd".as_bytes(), "abcd".as_bytes()];
+    assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), res2));
+    assert_eq!(Done((),c).flat_map(multi), Done("azerty".as_bytes(), Vec::new()));
   }
 
   #[test]
@@ -471,8 +476,10 @@ mod tests {
     let a = "abcdef".as_bytes();
     let b = "abcdabcdef".as_bytes();
     let c = "azerty".as_bytes();
-    assert_eq!(Done((),a).flat_map(multi), Done("ef".as_bytes(), "abcd".as_bytes()));
-    assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), "abcdabcd".as_bytes()));
+    let res1 = vec!["abcd".as_bytes()];
+    assert_eq!(Done((),a).flat_map(multi), Done("ef".as_bytes(), res1));
+    let res2 = vec!["abcd".as_bytes(), "abcd".as_bytes()];
+    assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), res2));
     assert_eq!(Done((),c).flat_map(multi), Error(0));
   }
   /* FIXME: this makes rustc weep
