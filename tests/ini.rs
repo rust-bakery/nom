@@ -3,7 +3,7 @@
 #[phase(plugin,link)]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,line_ending,not_line_ending};
+use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric};
 use nom::IResult::*;
 
 use std::str;
@@ -47,9 +47,8 @@ fn not_line_ending_or_semicolon(input:&[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 opt!(opt_line_ending<&[u8],&[u8]> line_ending);
-//o!(parameter<&[u8],&[u8]> ~ not_equal ~ equal);
-o!(value<&[u8],&[u8]> equal ~ not_line_ending_or_semicolon ~ opt_comment  opt_line_ending); // opt_comment line_ending);
-chain!(key_value<&[u8],(&[u8],&[u8])>, ||{(key, val)},  key: not_equal, val: value,);
+o!(value<&[u8],&[u8]> space equal space ~ not_line_ending_or_semicolon ~ space opt_comment  opt_line_ending);
+chain!(key_value<&[u8],(&[u8],&[u8])>, ||{(key, val)},  key: alphanumeric, val: value,);
 
 #[test]
 fn parse_comment_test() {
