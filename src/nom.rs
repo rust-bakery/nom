@@ -13,7 +13,7 @@ macro_rules! tag(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       if i.len() >= $inp.len() && i.slice(0, $inp.len()) == $inp {
-        Done(i.slice_from($inp.len()), i.slice(0, 0))
+        Done(i.slice_from($inp.len()), i.slice(0, $inp.len()))
       } else {
         Error(0)
       }
@@ -387,14 +387,14 @@ mod tests {
     assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()));
   }
 
-#[test]
+  #[test]
   fn opt() {
     tag!(x "abcd".as_bytes());
     opt!(o<&[u8],&[u8]> x);
 
     let a = "abcdef".as_bytes();
     let b = "bcdefg".as_bytes();
-    assert_eq!(Done((),a).flat_map(o), Done("ef".as_bytes(), Some("".as_bytes())));
+    assert_eq!(Done((),a).flat_map(o), Done("ef".as_bytes(), Some("abcd".as_bytes())));
     assert_eq!(Done((),b).flat_map(o), Done("bcdefg".as_bytes(), None));
   }
 
