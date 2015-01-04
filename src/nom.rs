@@ -274,6 +274,58 @@ macro_rules! opt(
   )
 );
 
+// 0 or more
+#[macro_export]
+macro_rules! many0(
+  ($name:ident<$i:ty,$o:ty> $f:ident) => (
+    fn $name(input:$i) -> IResult<$i,$o> {
+      let mut begin = 0;
+      loop {
+        match $f(input.slice_from(begin)) {
+          IResult::Done(i,o) => {
+            begin += o.len();
+            if begin >= input.len() {
+              return IResult::Done(input.slice_from(begin), input)
+            }
+          },
+          _                  => {
+            return IResult::Done(input.slice_from(begin), input.slice(0, begin))
+          }
+        }
+      }
+      return IResult::Incomplete(0)
+    }
+  )
+);
+
+// one or more
+#[macro_export]
+macro_rules! many1(
+  ($name:ident<$i:ty,$o:ty> $f:ident) => (
+    fn $name(input:$i) -> IResult<$i,$o> {
+      let mut begin = 0;
+      loop {
+        match $f(input.slice_from(begin)) {
+          IResult::Done(i,o) => {
+            begin += o.len();
+            if begin >= input.len() {
+              return IResult::Done(input.slice_from(begin), input)
+            }
+          },
+          _                  => {
+            if begin == 0 {
+              return IResult::Error(0)
+            } else {
+              return IResult::Done(input.slice_from(begin), input.slice(0, begin))
+            }
+          }
+        }
+      }
+      return IResult::Incomplete(0)
+    }
+  )
+);
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -398,6 +450,31 @@ mod tests {
     assert_eq!(Done((),b).flat_map(o), Done("bcdefg".as_bytes(), None));
   }
 
+  #[test]
+  fn many0() {
+    tag!(x "abcd".as_bytes());
+    many0!(multi<&[u8],&[u8]> x);
+
+    let a = "abcdef".as_bytes();
+    let b = "abcdabcdef".as_bytes();
+    let c = "azerty".as_bytes();
+    assert_eq!(Done((),a).flat_map(multi), Done("ef".as_bytes(), "abcd".as_bytes()));
+    assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), "abcdabcd".as_bytes()));
+    assert_eq!(Done((),c).flat_map(multi), Done("azerty".as_bytes(), "".as_bytes()));
+  }
+
+  #[test]
+  fn many1() {
+    tag!(x "abcd".as_bytes());
+    many1!(multi<&[u8],&[u8]> x);
+
+    let a = "abcdef".as_bytes();
+    let b = "abcdabcdef".as_bytes();
+    let c = "azerty".as_bytes();
+    assert_eq!(Done((),a).flat_map(multi), Done("ef".as_bytes(), "abcd".as_bytes()));
+    assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), "abcdabcd".as_bytes()));
+    assert_eq!(Done((),c).flat_map(multi), Error(0));
+  }
   /* FIXME: this makes rustc weep
   fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
     Error(0)
