@@ -332,6 +332,82 @@ macro_rules! many1(
   )
 );
 
+#[macro_export]
+macro_rules! fold0(
+  ($name:ident<$i:ty,$o:ty>, $assemble:expr, $f:ident) => (
+    fn $name(input:$i, z:$o) -> IResult<$i,$o> {
+      fold0_impl!(<$i, $o>, $assemble, $f, input, z);
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! fold0_impl(
+  (<$i:ty,$o:ty>, $assemble:expr, $f:ident, $input:ident, $z:ident) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $input.len();
+      let mut res: $o = $z;
+      loop {
+        match $f($input.slice_from(begin)) {
+          IResult::Done(i,o) => {
+            //res.push(o);
+            res = $assemble(res, o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= $input.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            return IResult::Done($input.slice_from(begin), res)
+          }
+        }
+      }
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! fold1(
+  ($name:ident<$i:ty,$o:ty>, $assemble:expr, $f:ident) => (
+    fn $name(input:$i, z:$o) -> IResult<$i,$o> {
+      fold1_impl!(<$i, $o>, $assemble, $f, input, z);
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! fold1_impl(
+  (<$i:ty,$o:ty>, $assemble:expr, $f:ident, $input:ident, $z:ident) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $input.len();
+      let mut res: $o = $z;
+      loop {
+        match $f($input.slice_from(begin)) {
+          IResult::Done(i,o) => {
+            //res.push(o);
+            res = $assemble(res, o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= $input.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            if begin == 0 {
+              return IResult::Error(0)
+            } else {
+              return IResult::Done($input.slice_from(begin), res)
+            }
+          }
+        }
+      }
+    }
+  );
+);
+
 #[cfg(test)]
 mod tests {
   use super::*;
