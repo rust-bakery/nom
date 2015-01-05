@@ -37,18 +37,22 @@ fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done("".as_bytes(), input)
 }
 
-fn value_parser(input:&[u8]) -> IResult<&[u8], &[u8]> {
+fn value_parser(input:&[u8]) -> IResult<&[u8], &str> {
   for idx in range(0, input.len()) {
     if input[idx] == '\n' as u8 || input[idx] == ';' as u8 {
-      return Done(input.slice_from(idx), input.slice(0, idx))
+      return Done(input.slice_from(idx), input.slice(0, idx)).map_res(str::from_utf8)
     }
   }
-  Done("".as_bytes(), input)
+  Done("".as_bytes(), input).map_res(str::from_utf8)
+}
+
+fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
+  alphanumeric(input).map_res(str::from_utf8)
 }
 
 opt!(opt_line_ending<&[u8],&[u8]> line_ending);
-o!(value<&[u8],&[u8]> space equal space ~ value_parser ~ space opt_comment opt_line_ending);
-chain!(key_value<&[u8],(&[u8],&[u8])>, ||{(key, val)},  key: alphanumeric, val: value,);
+o!(value<&[u8],&str> space equal space ~ value_parser ~ space opt_comment opt_line_ending);
+chain!(key_value<&[u8],(&str,&str)>, ||{(key, val)},  key: parameter_parser, val: value,);
 
 #[test]
 fn parse_comment_test() {
@@ -108,11 +112,11 @@ key = value2";
   let res = Done((), ini_file.as_bytes()).flat_map(key_value);
   println!("{}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), str::from_utf8(o1), str::from_utf8(o2)),
+    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), o1, o2),
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_key_value.as_bytes(), ("parameter".as_bytes(), "value".as_bytes())));
+  assert_eq!(res, Done(ini_without_key_value.as_bytes(), ("parameter", "value")));
 }
 
 
@@ -126,11 +130,11 @@ key = value2";
   let res = Done((), ini_file.as_bytes()).flat_map(key_value);
   println!("{}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), str::from_utf8(o1), str::from_utf8(o2)),
+    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), o1, o2),
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_key_value.as_bytes(), ("parameter".as_bytes(), "value".as_bytes())));
+  assert_eq!(res, Done(ini_without_key_value.as_bytes(), ("parameter", "value")));
 }
 
 #[test]
@@ -143,9 +147,9 @@ key = value2";
   let res = Done((), ini_file.as_bytes()).flat_map(key_value);
   println!("{}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), str::from_utf8(o1), str::from_utf8(o2)),
+    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), o1, o2),
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_key_value.as_bytes(), ("parameter".as_bytes(), "value".as_bytes())));
+  assert_eq!(res, Done(ini_without_key_value.as_bytes(), ("parameter", "value")));
 }
