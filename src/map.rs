@@ -1,13 +1,11 @@
 use internal::*;
 use internal::IResult::*;
 
-pub trait Mapper<O,N> for Sized? {
+pub trait FlatMapper<O,N> for Sized? {
   fn flat_map(& self, f: |O| -> IResult<O,N>) -> IResult<O,N>;
-  fn map_opt(& self, f: |O| -> Option<N>) -> IResult<O,N>;
-  fn map_res<P>(& self, f: |O| -> Result<N,P>) -> IResult<O,N>;
 }
 
-impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
+impl<'a,R,S,T> FlatMapper<&'a[S], T> for IResult<R,&'a [S]> {
   fn flat_map(&self, f: |&'a[S]| -> IResult<&'a[S],T>) -> IResult<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -16,7 +14,36 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
       &Done(_, ref o) => f(*o)
     }
   }
+}
 
+impl<'a,R,T> FlatMapper<&'a str, T> for IResult<R,&'a str> {
+  fn flat_map(&self, f: |&'a str| -> IResult<&'a str,T>) -> IResult<&'a str,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, ref o) => f(*o)
+    }
+  }
+}
+
+impl<'a,R,T> FlatMapper<(), T> for IResult<R,()> {
+  fn flat_map(&self, f: |()| -> IResult<(),T>) -> IResult<(),T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done(_, _) => f(())
+    }
+  }
+}
+
+pub trait Mapper<O,N> for Sized? {
+  fn map_opt(& self, f: |O| -> Option<N>) -> IResult<O,N>;
+  fn map_res<P>(& self, f: |O| -> Result<N,P>) -> IResult<O,N>;
+}
+
+impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
   fn map_opt(&self, f: |&'a[S]| -> Option<T>) -> IResult<&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -43,15 +70,6 @@ impl<'a,R,S,T> Mapper<&'a[S], T> for IResult<R,&'a [S]> {
 }
 
 impl<'a,R,T> Mapper<&'a str, T> for IResult<R,&'a str> {
-  fn flat_map(&self, f: |&'a str| -> IResult<&'a str,T>) -> IResult<&'a str,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
-    }
-  }
-
   fn map_opt(&self, f: |&'a str| -> Option<T>) -> IResult<&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -78,15 +96,6 @@ impl<'a,R,T> Mapper<&'a str, T> for IResult<R,&'a str> {
 }
 
 impl<'a,R,T> Mapper<(), T> for IResult<R,()> {
-  fn flat_map(&self, f: |()| -> IResult<(),T>) -> IResult<(),T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, _) => f(())
-    }
-  }
-
   fn map_opt(&self, f: |()| -> Option<T>) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),

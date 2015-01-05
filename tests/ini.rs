@@ -3,7 +3,7 @@
 #[phase(plugin,link)]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric, is_alphanumeric};
+use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapper,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric, is_alphanumeric};
 use nom::IResult::*;
 
 use std::str;
