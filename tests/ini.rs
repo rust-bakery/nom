@@ -7,6 +7,7 @@ use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapper,Mapper,Mapper2,
 use nom::IResult::*;
 
 use std::str;
+use std::collections::HashMap;
 use std::fmt::Show;
 
 fn empty_result(i:&[u8]) -> IResult<&[u8], ()> { Done(i,()) }
@@ -54,7 +55,13 @@ opt!(opt_line_ending<&[u8],&[u8]> line_ending);
 o!(value<&[u8],&str> space equal space ~ value_parser ~ space opt_comment opt_line_ending);
 chain!(key_value<&[u8],(&str,&str)>, ||{(key, val)},  key: parameter_parser, val: value,);
 
-many0!(keys_and_values<&[u8], (&str, &str) > key_value);
+fn keys_and_values<'a>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
+  fold0_impl!(<&[u8], HashMap<&str, &str> >, |mut h:HashMap<&'a str, &'a str>, (k, v)| {
+    h.insert(k,v);
+    h
+  }, key_value, input, z);
+
+}
 
 #[test]
 fn parse_comment_test() {
@@ -166,12 +173,16 @@ key = value2
   let ini_without_key_value = "
 [category]";
 
-  let res = Done((), ini_file.as_bytes()).flat_map(keys_and_values);
+  let mut h: HashMap<&str, &str> = HashMap::new();
+  let res = keys_and_values(ini_file.as_bytes(), h);
   println!("{}", res);
   match res {
     IResult::Done(i, ref o) => println!("i: {} | o: {}", str::from_utf8(i), o),
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_key_value.as_bytes(), vec![("parameter", "value"), ("key", "value2")]));
+  let mut expected: HashMap<&str, &str> = HashMap::new();
+  expected.insert("parameter", "value");
+  expected.insert("key", "value2");
+  assert_eq!(res, Done(ini_without_key_value.as_bytes(), expected));
 }
