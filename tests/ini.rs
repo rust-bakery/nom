@@ -54,6 +54,8 @@ opt!(opt_line_ending<&[u8],&[u8]> line_ending);
 o!(value<&[u8],&str> space equal space ~ value_parser ~ space opt_comment opt_line_ending);
 chain!(key_value<&[u8],(&str,&str)>, ||{(key, val)},  key: parameter_parser, val: value,);
 
+many0!(keys_and_values<&[u8], (&str, &str) > key_value);
+
 #[test]
 fn parse_comment_test() {
   let ini_file = ";comment
@@ -152,4 +154,24 @@ key = value2";
   }
 
   assert_eq!(res, Done(ini_without_key_value.as_bytes(), ("parameter", "value")));
+}
+
+#[test]
+fn parse_multiple_keys_and_values_test() {
+  let ini_file = "parameter=value;abc
+key = value2
+
+[category]";
+
+  let ini_without_key_value = "
+[category]";
+
+  let res = Done((), ini_file.as_bytes()).flat_map(keys_and_values);
+  println!("{}", res);
+  match res {
+    IResult::Done(i, ref o) => println!("i: {} | o: {}", str::from_utf8(i), o),
+    _ => println!("error")
+  }
+
+  assert_eq!(res, Done(ini_without_key_value.as_bytes(), vec![("parameter", "value"), ("key", "value2")]));
 }
