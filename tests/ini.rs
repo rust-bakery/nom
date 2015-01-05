@@ -3,7 +3,7 @@
 #[phase(plugin,link)]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric};
+use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric, is_alphanumeric};
 use nom::IResult::*;
 
 use std::str;
@@ -17,7 +17,7 @@ opt!(opt_comment<&[u8],&[u8]> comment_body);
 
 tag!(lsb "[".as_bytes());
 tag!(rsb "]".as_bytes());
-fn not_rsb(input:&[u8]) -> IResult<&[u8], &[u8]> {
+fn category_name(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in range(0, input.len()) {
     if input[idx] == ']' as u8 {
       return Done(input.slice_from(idx), input.slice(0, idx))
@@ -25,7 +25,7 @@ fn not_rsb(input:&[u8]) -> IResult<&[u8], &[u8]> {
   }
   Done("".as_bytes(), input)
 }
-o!(category<&[u8], &[u8]> lsb ~ not_rsb ~ rsb line_ending);
+o!(category<&[u8], &[u8]> lsb ~ category_name ~ rsb line_ending);
 
 tag!(equal "=".as_bytes());
 fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -37,7 +37,7 @@ fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done("".as_bytes(), input)
 }
 
-fn not_line_ending_or_semicolon(input:&[u8]) -> IResult<&[u8], &[u8]> {
+fn value_parser(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in range(0, input.len()) {
     if input[idx] == '\n' as u8 || input[idx] == ';' as u8 {
       return Done(input.slice_from(idx), input.slice(0, idx))
@@ -47,7 +47,7 @@ fn not_line_ending_or_semicolon(input:&[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 opt!(opt_line_ending<&[u8],&[u8]> line_ending);
-o!(value<&[u8],&[u8]> space equal space ~ not_line_ending_or_semicolon ~ space opt_comment  opt_line_ending);
+o!(value<&[u8],&[u8]> space equal space ~ value_parser ~ space opt_comment opt_line_ending);
 chain!(key_value<&[u8],(&[u8],&[u8])>, ||{(key, val)},  key: alphanumeric, val: value,);
 
 #[test]
