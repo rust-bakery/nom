@@ -280,12 +280,14 @@ macro_rules! many0(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
     fn $name(input:$i) -> IResult<$i,Vec<$o>> {
       let mut begin = 0;
+      let mut remaining = input.len();
       let mut res: Vec<$o> = Vec::new();
       loop {
         match $f(input.slice_from(begin)) {
           IResult::Done(i,o) => {
             res.push(o);
-            begin += o.len();
+            begin += remaining - i.len();
+            remaining = i.len();
             if begin >= input.len() {
               return IResult::Done(i, res)
             }
@@ -305,12 +307,14 @@ macro_rules! many1(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
     fn $name(input:$i) -> IResult<$i,Vec<$o>> {
       let mut begin = 0;
+      let mut remaining = input.len();
       let mut res: Vec<$o> = Vec::new();
       loop {
         match $f(input.slice_from(begin)) {
           IResult::Done(i,o) => {
             res.push(o);
-            begin += o.len();
+            begin += remaining - i.len();
+            remaining = i.len();
             if begin >= input.len() {
               return IResult::Done(i, res)
             }
