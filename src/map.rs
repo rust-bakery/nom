@@ -277,11 +277,11 @@ impl<T> Mapper<(),(), T> for IResult<(),()> {
   }
 }
 
-pub trait Mapper2<O,N,I> for Sized? {
+pub trait Mapper2<I,O,N> for Sized? {
   fn map(& self, f: |O| -> N) -> IResult<I,N>;
 }
 
-impl<'a,R,S,T> Mapper2<&'a[S], T, &'a R> for IResult<&'a R,&'a [S]> {
+impl<'a,R,S,T> Mapper2<&'a R, &'a[S], T> for IResult<&'a R,&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -292,7 +292,7 @@ impl<'a,R,S,T> Mapper2<&'a[S], T, &'a R> for IResult<&'a R,&'a [S]> {
   }
 }
 
-impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<&'a [R],&'a [S]> {
+impl<'a,R,S,T> Mapper2<&'a [R], &'a[S], T> for IResult<&'a [R],&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a [R],T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -303,7 +303,7 @@ impl<'a,R,S,T> Mapper2<&'a[S], T, &'a [R]> for IResult<&'a [R],&'a [S]> {
   }
 }
 
-impl<'a,R,T> Mapper2<(), T, &'a R> for IResult<&'a R,()> {
+impl<'a,R,T> Mapper2<&'a R, (), T> for IResult<&'a R,()> {
   fn map(&self, f: |()| -> T) -> IResult<&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -314,7 +314,7 @@ impl<'a,R,T> Mapper2<(), T, &'a R> for IResult<&'a R,()> {
   }
 }
 
-impl<'a,S,T> Mapper2<&'a[S], T, ()> for IResult<(),&'a [S]> {
+impl<'a,S,T> Mapper2<(), &'a[S], T> for IResult<(),&'a [S]> {
   fn map(&self, f: |&'a[S]| -> T) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
