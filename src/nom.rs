@@ -248,6 +248,15 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done("".as_bytes(), input)
 }
 
+pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  for idx in range(0, input.len()) {
+    if !is_space(input[idx]) && input[idx] != '\r' as u8 && input[idx] != '\n' as u8 {
+      return Done(input.slice_from(idx), input.slice(0, idx))
+    }
+  }
+  Done("".as_bytes(), input)
+}
+
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() == 0 {
     return Incomplete(0)

@@ -3,7 +3,7 @@
 #[phase(plugin,link)]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapper,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric, is_alphanumeric};
+use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapper,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric, is_alphanumeric, multispace};
 use nom::IResult::*;
 
 use std::str;
@@ -51,8 +51,8 @@ fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
   alphanumeric(input).map_res(str::from_utf8)
 }
 
-opt!(opt_line_ending<&[u8],&[u8]> line_ending);
-o!(value<&[u8],&str> space equal space ~ value_parser ~ space opt_comment opt_line_ending);
+opt!(opt_multispace<&[u8],&[u8]> multispace);
+o!(value<&[u8],&str> space equal space ~ value_parser ~ space opt_comment opt_multispace);
 chain!(key_value<&[u8],(&str,&str)>, ||{(key, val)},  key: parameter_parser, val: value,);
 
 fn keys_and_values<'a>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
@@ -166,12 +166,12 @@ key = value2";
 #[test]
 fn parse_multiple_keys_and_values_test() {
   let ini_file = "parameter=value;abc
+
 key = value2
 
 [category]";
 
-  let ini_without_key_value = "
-[category]";
+  let ini_without_key_value = "[category]";
 
   let mut h: HashMap<&str, &str> = HashMap::new();
   let res = keys_and_values(ini_file.as_bytes(), h);
