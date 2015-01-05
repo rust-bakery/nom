@@ -17,15 +17,15 @@ opt!(opt_comment<&[u8],&[u8]> comment_body);
 
 tag!(lsb "[".as_bytes());
 tag!(rsb "]".as_bytes());
-fn category_name(input:&[u8]) -> IResult<&[u8], &[u8]> {
+fn category_name(input:&[u8]) -> IResult<&[u8], &str> {
   for idx in range(0, input.len()) {
     if input[idx] == ']' as u8 {
-      return Done(input.slice_from(idx), input.slice(0, idx))
+      return Done(input.slice_from(idx), input.slice(0, idx)).map_res(str::from_utf8)
     }
   }
-  Done("".as_bytes(), input)
+  Done("".as_bytes(), input).map_res(str::from_utf8)
 }
-o!(category<&[u8], &[u8]> lsb ~ category_name ~ rsb line_ending);
+o!(category<&[u8], &str> lsb ~ category_name ~ rsb line_ending);
 
 tag!(equal "=".as_bytes());
 fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -91,11 +91,11 @@ key = value2";
   let res = Done((), ini_file.as_bytes()).flat_map(category);
   println!("{}", res);
   match res {
-    IResult::Done(i, o) => println!("i: {} | o: {}", str::from_utf8(i), str::from_utf8(o)),
+    IResult::Done(i, o) => println!("i: {} | o: {}", str::from_utf8(i), o),
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_category.as_bytes(), "category".as_bytes()));
+  assert_eq!(res, Done(ini_without_category.as_bytes(), "category"));
 }
 
 #[test]
