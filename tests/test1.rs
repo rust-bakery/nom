@@ -11,7 +11,7 @@ use std::fmt::Show;
 
 #[test]
 fn map_test_x() {
-  let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
+  let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() });
   assert_eq!(res, Done((), "abcd"));
 }
 

@@ -303,6 +303,28 @@ impl<'a,R,S,T> Mapper2<&'a [R], &'a[S], T> for IResult<&'a [R],&'a [S]> {
   }
 }
 
+impl<'a,S,T> Mapper2<&'a str, &'a[S], T> for IResult<&'a str,&'a [S]> {
+  fn map(&self, f: |&'a[S]| -> T) -> IResult<&'a str,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ref o) => Done(*i,f(*o))
+    }
+  }
+}
+
+impl<'a,S,T> Mapper2<(), &'a[S], T> for IResult<(),&'a [S]> {
+  fn map(&self, f: |&'a[S]| -> T) -> IResult<(),T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done((), ref o) => Done((),f(*o))
+    }
+  }
+}
+
 impl<'a,R,T> Mapper2<&'a R, (), T> for IResult<&'a R,()> {
   fn map(&self, f: |()| -> T) -> IResult<&'a R,T> {
     match self {
@@ -314,8 +336,73 @@ impl<'a,R,T> Mapper2<&'a R, (), T> for IResult<&'a R,()> {
   }
 }
 
-impl<'a,S,T> Mapper2<(), &'a[S], T> for IResult<(),&'a [S]> {
-  fn map(&self, f: |&'a[S]| -> T) -> IResult<(),T> {
+impl<'a,R,T> Mapper2<&'a [R], (), T> for IResult<&'a [R],()> {
+  fn map(&self, f: |()| -> T) -> IResult<&'a [R],T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ()) => Done(*i,f(()))
+    }
+  }
+}
+
+impl<'a,T> Mapper2<&'a str, (), T> for IResult<&'a str,()> {
+  fn map(&self, f: |()| -> T) -> IResult<&'a str,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ()) => Done(*i,f(()))
+    }
+  }
+}
+
+impl<'a,T> Mapper2<(), (), T> for IResult<(),()> {
+  fn map(&self, f: |()| -> T) -> IResult<(),T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ()) => Done(*i,f(()))
+    }
+  }
+}
+
+impl<'a,'b,R,T> Mapper2<&'b R, &'a str, T> for IResult<&'b R,&'a str> {
+  fn map(&self, f: |&'a str| -> T) -> IResult<&'b R,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ref o) => Done(*i,f(*o))
+    }
+  }
+}
+
+impl<'a,'b,R,T> Mapper2<&'b [R], &'a str, T> for IResult<&'b [R],&'a str> {
+  fn map(&self, f: |&'a str| -> T) -> IResult<&'b [R],T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ref o) => Done(*i,f(*o))
+    }
+  }
+}
+impl<'a,'b,T> Mapper2<&'b str, &'a str, T> for IResult<&'b str,&'a str> {
+  fn map(&self, f: |&'a str| -> T) -> IResult<&'b str,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),
+      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+      &Done(ref i, ref o) => Done(*i,f(*o))
+    }
+  }
+}
+
+impl<'a,T> Mapper2<(), &'a str, T> for IResult<(),&'a str> {
+  fn map(&self, f: |&'a str| -> T) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -335,7 +422,7 @@ mod tests {
 
   fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
     println!("{}", input);
-    Done(input, ()) 
+    Done(input, ())
   }
 
   #[test]
@@ -351,14 +438,32 @@ mod tests {
 
   #[test]
   fn map() {
-    let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
+    let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() });
     assert_eq!(res, Done((), "abcd"));
+    let res2 = Done("abcd".as_bytes(),"efgh".as_bytes()).map(|data| { str::from_utf8(data).unwrap() });
+    assert_eq!(res2, Done("abcd".as_bytes(), "efgh"));
+    let res3 = Done("abcd","efgh".as_bytes()).map(|data| { str::from_utf8(data).unwrap() });
+    assert_eq!(res3, Done("abcd", "efgh"));
   }
 
   #[test]
-  fn map_2() {
-    let res = Done("abcd".as_bytes(),"efgh".as_bytes()).map(|data| { str::from_utf8(data).unwrap() }); 
-    assert_eq!(res, Done("abcd".as_bytes(), "efgh"));
+  fn map_option() {
+    let res = Done((),"abcd".as_bytes()).map_opt(|data| { str::from_utf8(data).ok() });
+    assert_eq!(res, Done((), "abcd"));
+    let res2 = Done("abcd".as_bytes(),"efgh".as_bytes()).map_opt(|data| { str::from_utf8(data).ok() });
+    assert_eq!(res2, Done("abcd".as_bytes(), "efgh"));
+    let res3 = Done("abcd","efgh".as_bytes()).map_opt(|data| { str::from_utf8(data).ok() });
+    assert_eq!(res3, Done("abcd", "efgh"));
+  }
+
+  #[test]
+  fn map_result() {
+    let res = Done((),"abcd".as_bytes()).map_res(|data| { str::from_utf8(data) });
+    assert_eq!(res, Done((), "abcd"));
+    let res2 = Done("abcd".as_bytes(),"efgh".as_bytes()).map_res(|data| { str::from_utf8(data) });
+    assert_eq!(res2, Done("abcd".as_bytes(), "efgh"));
+    let res3 = Done("abcd","efgh".as_bytes()).map_res(|data| { str::from_utf8(data) });
+    assert_eq!(res3, Done("abcd", "efgh"));
   }
 
   #[test]
