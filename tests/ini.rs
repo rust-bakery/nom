@@ -60,8 +60,16 @@ fn keys_and_values<'a>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IRes
     h.insert(k,v);
     h
   }, key_value, input, z);
-
 }
+
+fn keys_and_values_wrapper<'a>(input:&'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
+  let h: HashMap<&str, &str> = HashMap::new();
+  let res = keys_and_values(input, h);
+  //println!("{}", res);
+  res
+}
+
+chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>, move |:|{(category, keys)},  category: category, keys: keys_and_values_wrapper,);
 
 #[test]
 fn parse_comment_test() {
@@ -185,4 +193,29 @@ key = value2
   expected.insert("parameter", "value");
   expected.insert("key", "value2");
   assert_eq!(res, Done(ini_without_key_value.as_bytes(), expected));
+}
+
+#[test]
+fn parse_category_then_multiple_keys_and_values_test() {
+  //FIXME: there can be an empty line or a comment line after a category
+  let ini_file = "[abcd]
+parameter=value;abc
+
+key = value2
+
+[category]";
+
+  let ini_after_parser = "[category]";
+
+  let res = category_and_keys(ini_file.as_bytes());
+  println!("{}", res);
+  match res {
+    IResult::Done(i, ref o) => println!("i: {} | o: {}", str::from_utf8(i), o),
+    _ => println!("error")
+  }
+
+  let mut expected_h: HashMap<&str, &str> = HashMap::new();
+  expected_h.insert("parameter", "value");
+  expected_h.insert("key", "value2");
+  assert_eq!(res, Done(ini_after_parser.as_bytes(), ("abcd", expected_h)));
 }
