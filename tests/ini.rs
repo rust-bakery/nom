@@ -69,7 +69,15 @@ fn keys_and_values_wrapper<'a>(input:&'a[u8]) -> IResult<&'a[u8], HashMap<&'a st
   res
 }
 
-chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>, move |:|{(category, keys)},  category: category, keys: keys_and_values_wrapper,);
+chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,move |:|{(category, keys)},  category: category, keys: keys_and_values_wrapper,);
+
+fn categories<'a>(input: &'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, HashMap<&'a str, &'a str> > > {
+  let mut z: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
+  fold0_impl!(<&[u8], HashMap<&str, HashMap<&str, &str> > >, |mut h:HashMap<&'a str, HashMap<&'a str, &'a str> >, (k, v)| {
+    h.insert(k,v);
+    h
+  }, category_and_keys, input, z);
+}
 
 #[test]
 fn parse_comment_test() {
@@ -218,4 +226,36 @@ key = value2
   expected_h.insert("parameter", "value");
   expected_h.insert("key", "value2");
   assert_eq!(res, Done(ini_after_parser.as_bytes(), ("abcd", expected_h)));
+}
+
+#[test]
+fn parse_multiple_categories_test() {
+  let ini_file = "[abcd]
+parameter=value;abc
+
+key = value2
+[category]
+parameter3=value3
+key4 = value4
+";
+
+  let ini_after_parser = "";
+
+  let res = categories(ini_file.as_bytes());
+  println!("{}", res);
+  match res {
+    IResult::Done(i, ref o) => println!("i: {} | o: {}", str::from_utf8(i), o),
+    _ => println!("error")
+  }
+
+  let mut expected_1: HashMap<&str, &str> = HashMap::new();
+  expected_1.insert("parameter", "value");
+  expected_1.insert("key", "value2");
+  let mut expected_2: HashMap<&str, &str> = HashMap::new();
+  expected_2.insert("parameter3", "value3");
+  expected_2.insert("key4", "value4");
+  let mut expected_h: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
+  expected_h.insert("abcd",     expected_1);
+  expected_h.insert("category", expected_2);
+  assert_eq!(res, Done(ini_after_parser.as_bytes(), expected_h));
 }
