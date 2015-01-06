@@ -26,7 +26,7 @@ fn category_name(input:&[u8]) -> IResult<&[u8], &str> {
   }
   Done("".as_bytes(), input).map_res(str::from_utf8)
 }
-o!(category<&[u8], &str> lsb ~ category_name ~ rsb line_ending);
+o!(category<&[u8], &str> lsb ~ category_name ~ rsb opt_multispace);
 
 tag!(equal "=".as_bytes());
 fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -111,6 +111,7 @@ str = a b cc dd ; comment";
 #[test]
 fn parse_category_test() {
   let ini_file = "[category]
+
 parameter=value
 key = value2";
 
@@ -231,9 +232,11 @@ key = value2
 #[test]
 fn parse_multiple_categories_test() {
   let ini_file = "[abcd]
+
 parameter=value;abc
 
 key = value2
+
 [category]
 parameter3=value3
 key4 = value4
