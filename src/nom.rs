@@ -417,6 +417,21 @@ macro_rules! fold1_impl(
   );
 );
 
+pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
+  let input_len = input.len();
+  if input_len == 0 {
+    return IResult::Error(0)
+  }
+
+  let len = input[0] as uint;
+  if input_len - 1 >= len {
+    return IResult::Done(input.slice_from(len+1), input.slice(1, len+1))
+  } else {
+    // FIXME: return Incomplete
+    return IResult::Error(0)
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -570,6 +585,26 @@ mod tests {
     let res2 = vec!["abcd".as_bytes(), "abcd".as_bytes()];
     assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), res2));
     assert_eq!(Done((),c).flat_map(multi), Error(0));
+  }
+
+  #[test]
+  fn length_value_test() {
+    let arr1:[u8, ..6] = [3, 4, 5, 6, 7, 8];
+    let res1 = length_value(&arr1);
+    let i1 = vec![7,8];
+    let o1 = vec![4, 5, 6];
+    assert_eq!(Done(i1.as_slice(), o1.as_slice()), res1);
+
+    let arr2:[u8, ..6] = [0, 4, 5, 6, 7, 8];
+    let res2 = length_value(&arr2);
+    let i2:[u8, ..5] = [4,5,6,7,8];
+    let o2 = "";
+    assert_eq!(Done(i2.as_slice(), o2.as_bytes()), res2);
+
+    let arr3:[u8, ..7] = [8, 4, 5, 6, 7, 8, 9];
+    let res3 = length_value(&arr3);
+    //FIXME: should be incomplete
+    assert_eq!(Error(0), res3);
   }
   /* FIXME: this makes rustc weep
   fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
