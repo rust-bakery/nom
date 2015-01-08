@@ -8,10 +8,11 @@ use std::str;
 use std::collections::HashMap;
 use std::fmt::Show;
 
+
 fn empty_result(i:&[u8]) -> IResult<&[u8], ()> { Done(i,()) }
 tag!(semicolon ";".as_bytes());
-o!(comment_body<&[u8],&[u8]> semicolon ~ not_line_ending ~ );
-o!(comment<&[u8], ()> comment_body line_ending ~ empty_result ~);
+o!(comment_body<&[u8],&[u8]> semicolon ~ [ not_line_ending]);
+o!(comment<&[u8], ()> comment_body ~ line_ending ~ [ empty_result ] ~);
 opt!(opt_comment<&[u8],&[u8]> comment_body);
 
 tag!(lsb "[".as_bytes());
@@ -24,7 +25,7 @@ fn category_name(input:&[u8]) -> IResult<&[u8], &str> {
   }
   Done("".as_bytes(), input).map_res(str::from_utf8)
 }
-o!(category<&[u8], &str> lsb ~ category_name ~ rsb opt_multispace);
+o!(category<&[u8], &str> lsb ~ [ category_name ] ~ rsb ~ opt_multispace ~);
 
 tag!(equal "=".as_bytes());
 fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -50,11 +51,11 @@ fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
 }
 
 opt!(opt_multispace<&[u8],&[u8]> multispace);
-o!(value<&[u8],&str> space equal space ~ value_parser ~ space opt_comment opt_multispace);
-chain!(key_value<&[u8],(&str,&str)>, ||{(key, val)},  key: parameter_parser, val: value,);
+o!(value<&[u8],&str> space ~ equal ~ space ~ [ value_parser ] ~ space ~ opt_comment ~ opt_multispace ~);
+chain!(key_value<&[u8],(&str,&str)>, |:|{(key, val)},  key: parameter_parser, val: value,);
 
 fn keys_and_values<'a>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
-  fold0_impl!(<&[u8], HashMap<&str, &str> >, |mut h:HashMap<&'a str, &'a str>, (k, v)| {
+  fold0_impl!(<&[u8], HashMap<&str, &str> >, |: mut h:HashMap<&'a str, &'a str>, (k, v)| {
     h.insert(k,v);
     h
   }, key_value, input, z);
@@ -63,7 +64,7 @@ fn keys_and_values<'a>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IRes
 fn keys_and_values_wrapper<'a>(input:&'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
   let h: HashMap<&str, &str> = HashMap::new();
   let res = keys_and_values(input, h);
-  //println!("{}", res);
+  //println!("{:?}", res);
   res
 }
 
@@ -71,7 +72,7 @@ chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,move |:|{(category, ke
 
 fn categories<'a>(input: &'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, HashMap<&'a str, &'a str> > > {
   let mut z: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
-  fold0_impl!(<&[u8], HashMap<&str, HashMap<&str, &str> > >, |mut h:HashMap<&'a str, HashMap<&'a str, &'a str> >, (k, v)| {
+  fold0_impl!(<&[u8], HashMap<&str, HashMap<&str, &str> > >, |: mut h:HashMap<&'a str, HashMap<&'a str, &'a str> >, (k, v)| {
     h.insert(k,v);
     h
   }, category_and_keys, input, z);
@@ -97,9 +98,9 @@ number = 1234
 str = a b cc dd ; comment";
 
   let res = Done((), ini_file.as_bytes()).flat_map(comment);
-  println!("{}", res);
+  println!("{:?}", res);
   match res {
-    IResult::Done(i, o) => println!("i: {} | o: {}", str::from_utf8(i), o),
+    IResult::Done(i, o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
     _ => println!("error")
   }
 
@@ -117,9 +118,9 @@ key = value2";
 key = value2";
 
   let res = Done((), ini_file.as_bytes()).flat_map(category);
-  println!("{}", res);
+  println!("{:?}", res);
   match res {
-    IResult::Done(i, o) => println!("i: {} | o: {}", str::from_utf8(i), o),
+    IResult::Done(i, o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
     _ => println!("error")
   }
 
@@ -134,9 +135,9 @@ key = value2";
   let ini_without_key_value = "key = value2";
 
   let res = Done((), ini_file.as_bytes()).flat_map(key_value);
-  println!("{}", res);
+  println!("{:?}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), o1, o2),
+    IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
     _ => println!("error")
   }
 
@@ -152,9 +153,9 @@ key = value2";
   let ini_without_key_value = "key = value2";
 
   let res = Done((), ini_file.as_bytes()).flat_map(key_value);
-  println!("{}", res);
+  println!("{:?}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), o1, o2),
+    IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
     _ => println!("error")
   }
 
@@ -169,9 +170,9 @@ key = value2";
   let ini_without_key_value = "key = value2";
 
   let res = Done((), ini_file.as_bytes()).flat_map(key_value);
-  println!("{}", res);
+  println!("{:?}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({},{})", str::from_utf8(i), o1, o2),
+    IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
     _ => println!("error")
   }
 
@@ -190,9 +191,9 @@ key = value2
 
   let mut h: HashMap<&str, &str> = HashMap::new();
   let res = keys_and_values(ini_file.as_bytes(), h);
-  println!("{}", res);
+  println!("{:?}", res);
   match res {
-    IResult::Done(i, ref o) => println!("i: {} | o: {}", str::from_utf8(i), o),
+    IResult::Done(i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
     _ => println!("error")
   }
 
@@ -215,9 +216,9 @@ key = value2
   let ini_after_parser = "[category]";
 
   let res = category_and_keys(ini_file.as_bytes());
-  println!("{}", res);
+  println!("{:?}", res);
   match res {
-    IResult::Done(i, ref o) => println!("i: {} | o: {}", str::from_utf8(i), o),
+    IResult::Done(i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
     _ => println!("error")
   }
 
@@ -243,9 +244,9 @@ key4 = value4
   let ini_after_parser = "";
 
   let res = categories(ini_file.as_bytes());
-  println!("{}", res);
+  println!("{:?}", res);
   match res {
-    IResult::Done(i, ref o) => println!("i: {} | o: {}", str::from_utf8(i), o),
+    IResult::Done(i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
     _ => println!("error")
   }
 
@@ -260,3 +261,4 @@ key4 = value4
   expected_h.insert("category", expected_2);
   assert_eq!(res, Done(ini_after_parser.as_bytes(), expected_h));
 }
+

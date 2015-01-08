@@ -22,14 +22,14 @@ macro_rules! tag(
 
 #[macro_export]
 macro_rules! o(
-  ($name:ident<$i:ty,$o:ty> $f1:expr $($rest:tt)*) => (
+  ($name:ident<$i:ty,$o:ty> $f1:ident ~ $($rest:tt)*) => (
     #[allow(unused_variables)]
     fn $name(input:$i) -> IResult<$i, $o>{
       match $f1(input) {
         IResult::Error(e)      => IResult::Error(e),
         IResult::Incomplete(i) => IResult::Incomplete(i),
         IResult::Done(i,o)     => {
-          o_parser!(i o $($rest)*)
+          o_parser!(i ~ o ~ $($rest)*)
         }
       }
     }
@@ -38,27 +38,32 @@ macro_rules! o(
 
 #[macro_export]
 macro_rules! o_parser(
-  ($i:expr $o:expr) => (Done($i,$o));
-
-  ($i:expr $o:expr ~ $e:expr ~ $($rest:tt)*) => (
+  ($i:ident ~ $o:ident ~ [ $e:ident ] ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
       IResult::Done(i,o)     => {
-        o_parser!(i o $($rest)*)
+        o_parser!(i ~ o ~ $($rest)*)
       }
     }
-
    );
-  ($i:expr $o:expr $e:expr $($rest:tt)*) => (
+
+  ($i:ident ~ $o:ident ~ [ $e:ident ]) => (
+    $e($i)
+   );
+
+  ($i:ident ~ $o:ident ~ $e:ident ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
       IResult::Done(i,_)     => {
-        o_parser!(i $o $($rest)*)
+        o_parser!(i ~ $o ~ $($rest)*)
       }
     }
    );
+
+  ($i:ident ~ $o:ident ~) => (Done($i,$o));
+
 );
 
 #[macro_export]
@@ -92,22 +97,30 @@ macro_rules! chaining_parser (
 macro_rules! alt (
   ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
     fn $name(i:$i) -> IResult<$i,$o>{
-      alt_parser!(i, $($rest)*)
+      alt_parser!(i | $($rest)*)
     }
   );
 );
 
 #[macro_export]
 macro_rules! alt_parser (
-  ($i:expr, $e:expr $($rest:tt)*) => (
+  ($i:ident | $e:ident | $($rest:tt)*) => (
     match $e($i) {
-      IResult::Error(_)      => alt_parser!($i, $($rest)*),
-      IResult::Incomplete(_) => alt_parser!($i, $($rest)*),
+      IResult::Error(_)      => alt_parser!($i | $($rest)*),
+      IResult::Incomplete(_) => alt_parser!($i | $($rest)*),
       IResult::Done(i,o)     => IResult::Done(i,o)
     }
   );
 
-  ($i:expr, ) => (
+  ($i:ident | $e:ident) => (
+    match $e($i) {
+      IResult::Error(_)      => alt_parser!($i),
+      IResult::Incomplete(_) => alt_parser!($i),
+      IResult::Done(i,o)     => IResult::Done(i,o)
+    }
+  );
+
+  ($i:ident) => (
     IResult::Error(1)
   )
 );
@@ -488,7 +501,7 @@ mod tests {
     assert_eq!(res, Done(v2.as_slice(), ()));
   }
 
-  #[deriving(PartialEq,Eq,Show)]
+  #[derive(PartialEq,Eq,Show)]
   struct B {
     a: int,
     b: int
@@ -500,7 +513,7 @@ mod tests {
     tag!(y "efgh".as_bytes());
     fn ret_int(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
     //o!(z<&[u8], int>  x S x S retInt Z y);
-    o!(z<&[u8], int>  x  x ~ret_int~ y);
+    o!(z<&[u8], int>  x ~ x ~ [ ret_int ] ~ y ~);
 
     let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
     assert_eq!(r, Done("".as_bytes(), 1));
@@ -511,9 +524,9 @@ mod tests {
   fn chain() {
     tag!(x "abcd".as_bytes());
     fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
-    o!(ret_int1<&[u8],int> x ~ temp_ret_int1 ~);
+    o!(ret_int1<&[u8],int> x ~ [ temp_ret_int1 ]);
     fn ret_int2(i:&[u8]) -> IResult<&[u8], int> { Done(i,2) };
-    chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
+    chain!(f<&[u8],B>, |:|{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
 
     let r = Done((), "abcde".as_bytes()).flat_map(f);
     assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
@@ -534,9 +547,9 @@ mod tests {
       Done(input, "".as_bytes())
     }
 
-    alt!(alt1<&[u8],&[u8]>, dont_work dont_work);
-    alt!(alt2<&[u8],&[u8]>, dont_work work);
-    alt!(alt3<&[u8],&[u8]>, dont_work dont_work work2 dont_work);
+    alt!(alt1<&[u8],&[u8]>, dont_work | dont_work);
+    alt!(alt2<&[u8],&[u8]>, dont_work | work);
+    alt!(alt3<&[u8],&[u8]>, dont_work | dont_work | work2 | dont_work);
 
     let a = "abcd".as_bytes();
     assert_eq!(Done((), a).flat_map(alt1), Error(1));
