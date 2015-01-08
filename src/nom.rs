@@ -38,6 +38,22 @@ macro_rules! o(
 
 #[macro_export]
 macro_rules! o_parser(
+  ($i:ident ~ $o:ident ~ [ $e:ident ] ~ $s:ident) => (
+    match $e($i) {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,o)     => {
+        match $s(i) {
+          IResult::Error(e)      => IResult::Error(e),
+          IResult::Incomplete(i) => IResult::Incomplete(i),
+          IResult::Done(i2,o2)     => {
+            IResult::Done(i2, o)
+          }
+        }
+      }
+    }
+  );
+
   ($i:ident ~ $o:ident ~ [ $e:ident ] ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
@@ -46,11 +62,11 @@ macro_rules! o_parser(
         o_parser!(i ~ o ~ $($rest)*)
       }
     }
-   );
+  );
 
   ($i:ident ~ $o:ident ~ [ $e:ident ]) => (
     $e($i)
-   );
+  );
 
   ($i:ident ~ $o:ident ~ $e:ident ~ $($rest:tt)*) => (
     match $e($i) {
@@ -60,9 +76,19 @@ macro_rules! o_parser(
         o_parser!(i ~ $o ~ $($rest)*)
       }
     }
-   );
+  );
 
-  ($i:ident ~ $o:ident ~) => (Done($i,$o));
+  ($i:ident ~ $o:ident ~ $e:ident) => (
+    match $e($i) {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,_)     => {
+        IResult::Done(i, $o)
+      }
+    }
+  );
+
+  ($i:ident ~ $o:ident) => (Done($i,$o));
 
 );
 
@@ -513,7 +539,7 @@ mod tests {
     tag!(y "efgh".as_bytes());
     fn ret_int(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
     //o!(z<&[u8], int>  x S x S retInt Z y);
-    o!(z<&[u8], int>  x ~ x ~ [ ret_int ] ~ y ~);
+    o!(z<&[u8], int>  x ~ x ~ [ ret_int ] ~ y);
 
     let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
     assert_eq!(r, Done("".as_bytes(), 1));
