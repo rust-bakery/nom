@@ -1,6 +1,4 @@
-#![feature(globs,macro_rules,phase)]
-
-#[phase(plugin,link)]
+#[macro_use]
 extern crate nom;
 
 use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapper,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric, is_alphanumeric, multispace};

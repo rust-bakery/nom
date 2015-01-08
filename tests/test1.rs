@@ -1,6 +1,4 @@
-#![feature(globs,macro_rules,phase)]
-
-#[phase(plugin,link)]
+#[macro_use]
 extern crate nom;
 
 use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapper,Mapper,Mapper2,not_line_ending};
@@ -24,7 +22,7 @@ fn tag() {
     //p.push(|par| par.flat_map(f).flat_map(print));
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
       let p = par.flat_map(f).map_res(str::from_utf8).flat_map(print);
-      println!("p : {}", p);
+      println!("p : {:?}", p);
       Done("".as_bytes(), ())
     }
     pusher!(ps, pr);
@@ -34,7 +32,7 @@ fn tag() {
 }
 
 pub fn print<'a,T: Show>(input: T) -> IResult<T, ()> {
-  println!("{}", input);
+  println!("{:?}", input);
   Done(input, ())
 }
 

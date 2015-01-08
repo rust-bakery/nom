@@ -1,6 +1,5 @@
 #![desc = "Omnomnom incremental byte parser"]
 #![license = "MIT"]
-#![macro_escape]
 
 extern crate collections;
 
@@ -114,7 +113,7 @@ macro_rules! alt_parser (
 );
 
 pub fn print<'a,T: Show>(input: T) -> IResult<T, ()> {
-  println!("{}", input);
+  println!("{:?}", input);
   Done(input, ())
 }
 
@@ -473,7 +472,7 @@ mod tests {
 
   #[test]
   fn buffer_with_size() {
-    let arr:[u8, ..6] = [3, 4, 5, 6, 7, 8];
+    let arr:[u8; 6u] = [3, 4, 5, 6, 7, 8];
     let res = Done((), arr.as_slice()).flat_map(sized_buffer);
     let i = [7,8];
     let o = [4,5,6];
@@ -589,19 +588,19 @@ mod tests {
 
   #[test]
   fn length_value_test() {
-    let arr1:[u8, ..6] = [3, 4, 5, 6, 7, 8];
+    let arr1:[u8; 6u] = [3, 4, 5, 6, 7, 8];
     let res1 = length_value(&arr1);
     let i1 = vec![7,8];
     let o1 = vec![4, 5, 6];
     assert_eq!(Done(i1.as_slice(), o1.as_slice()), res1);
 
-    let arr2:[u8, ..6] = [0, 4, 5, 6, 7, 8];
+    let arr2:[u8; 6u] = [0, 4, 5, 6, 7, 8];
     let res2 = length_value(&arr2);
-    let i2:[u8, ..5] = [4,5,6,7,8];
+    let i2:[u8; 5u] = [4,5,6,7,8];
     let o2 = "";
     assert_eq!(Done(i2.as_slice(), o2.as_bytes()), res2);
 
-    let arr3:[u8, ..7] = [8, 4, 5, 6, 7, 8, 9];
+    let arr3:[u8; 7u] = [8, 4, 5, 6, 7, 8, 9];
     let res3 = length_value(&arr3);
     //FIXME: should be incomplete
     assert_eq!(Error(0), res3);

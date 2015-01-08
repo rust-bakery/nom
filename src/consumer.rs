@@ -3,7 +3,7 @@ use producer::Producer;
 use producer::ProducerState::*;
 use internal::Err;
 
-#[deriving(Show,PartialEq,Eq)]
+#[derive(Show,PartialEq,Eq)]
 pub enum ConsumerState {
   Await,
   //Incomplete,

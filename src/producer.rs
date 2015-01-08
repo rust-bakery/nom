@@ -1,12 +1,10 @@
-#![macro_escape]
-
 use internal::*;
 use self::ProducerState::*;
 
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
 
-#[deriving(Show,PartialEq,Eq)]
+#[derive(Show,PartialEq,Eq)]
 pub enum ProducerState<O> {
   Eof(O),
   Continue,
@@ -44,7 +42,7 @@ impl Producer for FileProducer {
         }
       },
       Ok(i)  => {
-        println!("read {} bytes: {}", i, self.v);
+        println!("read {:?} bytes: {:?}", i, self.v);
         Data(self.v.as_slice())
       }
     }
@@ -143,7 +141,7 @@ mod tests {
   use map::*;
 
   fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
-    println!("{}", input);
+    println!("{:?}", input);
     Done(input, ())
   }
   #[test]
@@ -196,7 +194,7 @@ mod tests {
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
       let r = par.flat_map(f);
-      println!("f: {}", r);
+      println!("f: {:?}", r);
       r
     }
     pusher!(ps, pr );
@@ -217,7 +215,7 @@ mod tests {
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
     fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
       let r = par.flat_map(f);
-      println!("f: {}", r);
+      println!("f: {:?}", r);
       r
     }
     pusher!(ps, pr );

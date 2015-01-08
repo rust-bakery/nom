@@ -1,11 +1,11 @@
 use self::IResult::*;
 
 pub type Err = uint;
-type IResultClosure<'a,I,O> = |I|:'a -> IResult<I,O>;
+type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
 
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
-#[deriving(Show,PartialEq,Eq)]
+#[derive(Show,PartialEq,Eq)]
 pub enum IResult<I,O> {
   Done(I,O),
   Error(Err),
@@ -39,11 +39,11 @@ impl<I,O> IResult<I,O> {
   }
 }
 
-pub trait GetInput<I> for Sized? {
+pub trait GetInput<I> {
   fn remaining_input(&self) -> Option<I>;
 }
 
-pub trait GetOutput<O> for Sized? {
+pub trait GetOutput<O> {
   fn output(&self) -> Option<O>;
 }
 
