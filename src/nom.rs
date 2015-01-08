@@ -618,16 +618,4 @@ mod tests {
     //FIXME: should be incomplete
     assert_eq!(Error(0), res3);
   }
-  /* FIXME: this makes rustc weep
-  fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8], ()> {
-    Error(0)
-  }
-
-  #[test]
-  fn rustc_panic_test() {
-    FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
-      let mut p = producer;
-      p.push(pr);
-    });
-  }*/
 }
