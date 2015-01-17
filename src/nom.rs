@@ -1,6 +1,3 @@
-#![desc = "Omnomnom incremental byte parser"]
-#![license = "MIT"]
-
 extern crate collections;
 
 use std::fmt::Show;
@@ -300,7 +297,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
     return Incomplete(0)
   }
 
-  let len = input[0] as uint;
+  let len = input[0] as usize;
 
   if input.len() >= len + 1 {
     return Done(input.slice_from(len+1), input.slice(1, len+1))
@@ -461,7 +458,7 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
     return IResult::Error(0)
   }
 
-  let len = input[0] as uint;
+  let len = input[0] as usize;
   if input_len - 1 >= len {
     return IResult::Done(input.slice_from(len+1), input.slice(1, len+1))
   } else {

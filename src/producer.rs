@@ -16,13 +16,13 @@ pub trait Producer {
   fn produce(&mut self) -> ProducerState<&[u8]>;
 }
 pub struct FileProducer {
-  size: uint,
+  size: usize,
   file: File,
   v:    Vec<u8>
 }
 
 impl FileProducer {
-  pub fn new(filename: &str, buffer_size: uint) -> IoResult<FileProducer> {
+  pub fn new(filename: &str, buffer_size: usize) -> IoResult<FileProducer> {
     File::open(&Path::new(filename)).map(|f| {
       FileProducer {size: buffer_size, file: f, v: Vec::with_capacity(buffer_size)}
     })
@@ -51,13 +51,13 @@ impl Producer for FileProducer {
 
 pub struct MemProducer<'x> {
   buffer: &'x [u8],
-  chunk_size: uint,
-  length: uint,
-  index: uint
+  chunk_size: usize,
+  length: usize,
+  index: usize
 }
 
 impl<'x> MemProducer<'x> {
-  pub fn new(buffer: &'x[u8], chunk_size: uint) -> MemProducer {
+  pub fn new(buffer: &'x[u8], chunk_size: usize) -> MemProducer {
     MemProducer {
       buffer:     buffer,
       chunk_size: chunk_size,

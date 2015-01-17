@@ -1,6 +1,6 @@
 use self::IResult::*;
 
-pub type Err = uint;
+pub type Err = u32;
 type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
 
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
@@ -10,7 +10,7 @@ pub enum IResult<I,O> {
   Done(I,O),
   Error(Err),
   //Incomplete(proc(I):'a -> IResult<I,O>)
-  Incomplete(uint)
+  Incomplete(u32)
   //Incomplete(IResultClosure<'a,I,O>)
   //Incomplete(|I|:'a -> IResult<'a,I,O>)
   //Incomplete(fn(I) -> IResult<'a,I,O>)
