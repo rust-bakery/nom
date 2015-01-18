@@ -508,7 +508,7 @@ mod tests {
 
   #[test]
   fn buffer_with_size() {
-    let arr:[u8; 6u] = [3, 4, 5, 6, 7, 8];
+    let arr:[u8; 6us] = [3, 4, 5, 6, 7, 8];
     let res = Done((), arr.as_slice()).flat_map(sized_buffer);
     let i = [7,8];
     let o = [4,5,6];
@@ -526,17 +526,17 @@ mod tests {
 
   #[derive(PartialEq,Eq,Show)]
   struct B {
-    a: int,
-    b: int
+    a: u8,
+    b: u8
   }
 
   #[test]
   fn chain_and_ignore() {
     tag!(x "abcd".as_bytes());
     tag!(y "efgh".as_bytes());
-    fn ret_int(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
+    fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     //o!(z<&[u8], int>  x S x S retInt Z y);
-    o!(z<&[u8], int>  x ~ x ~ [ ret_int ] ~ y);
+    o!(z<&[u8], u8>  x ~ x ~ [ ret_int ] ~ y);
 
     let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
     assert_eq!(r, Done("".as_bytes(), 1));
@@ -546,9 +546,9 @@ mod tests {
   #[test]
   fn chain() {
     tag!(x "abcd".as_bytes());
-    fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], int> { Done(i,1) };
-    o!(ret_int1<&[u8],int> x ~ [ temp_ret_int1 ]);
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], int> { Done(i,2) };
+    fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+    o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
+    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
     chain!(f<&[u8],B>, |:|{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
 
     let r = Done((), "abcde".as_bytes()).flat_map(f);
@@ -624,19 +624,19 @@ mod tests {
 
   #[test]
   fn length_value_test() {
-    let arr1:[u8; 6u] = [3, 4, 5, 6, 7, 8];
+    let arr1:[u8; 6us] = [3, 4, 5, 6, 7, 8];
     let res1 = length_value(&arr1);
     let i1 = vec![7,8];
     let o1 = vec![4, 5, 6];
     assert_eq!(Done(i1.as_slice(), o1.as_slice()), res1);
 
-    let arr2:[u8; 6u] = [0, 4, 5, 6, 7, 8];
+    let arr2:[u8; 6us] = [0, 4, 5, 6, 7, 8];
     let res2 = length_value(&arr2);
-    let i2:[u8; 5u] = [4,5,6,7,8];
+    let i2:[u8; 5us] = [4,5,6,7,8];
     let o2 = "";
     assert_eq!(Done(i2.as_slice(), o2.as_bytes()), res2);
 
-    let arr3:[u8; 7u] = [8, 4, 5, 6, 7, 8, 9];
+    let arr3:[u8; 7us] = [8, 4, 5, 6, 7, 8, 9];
     let res3 = length_value(&arr3);
     //FIXME: should be incomplete
     assert_eq!(Error(0), res3);

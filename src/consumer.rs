@@ -63,7 +63,7 @@ mod tests {
   use std::str;
 
   struct TestPrintConsumer {
-    counter: uint
+    counter: usize
   }
 
   impl TestPrintConsumer {
