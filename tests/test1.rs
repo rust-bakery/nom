@@ -5,7 +5,7 @@ use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapper,Mapper,Mapper2,
 use nom::IResult::*;
 
 use std::str;
-use std::fmt::Show;
+use std::fmt::Debug;
 
 #[test]
 fn map_test_x() {
@@ -31,7 +31,7 @@ fn tag() {
   }); 
 }
 
-pub fn print<'a,T: Show>(input: T) -> IResult<T, ()> {
+pub fn print<'a,T: Debug>(input: T) -> IResult<T, ()> {
   println!("{:?}", input);
   Done(input, ())
 }

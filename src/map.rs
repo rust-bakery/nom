@@ -419,9 +419,9 @@ mod tests {
   use internal::IResult;
   use internal::IResult::*;
   use std::str;
-  use std::fmt::Show;
+  use std::fmt::Debug;
 
-  fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
+  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
     println!("{:?}", input);
     Done(input, ())
   }

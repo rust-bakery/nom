@@ -1,6 +1,6 @@
 extern crate collections;
 
-use std::fmt::Show;
+use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 
@@ -148,7 +148,7 @@ macro_rules! alt_parser (
   )
 );
 
-pub fn print<'a,T: Show>(input: T) -> IResult<T, ()> {
+pub fn print<'a,T: Debug>(input: T) -> IResult<T, ()> {
   println!("{:?}", input);
   Done(input, ())
 }
@@ -524,7 +524,7 @@ mod tests {
     assert_eq!(res, Done(v2.as_slice(), ()));
   }
 
-  #[derive(PartialEq,Eq,Show)]
+  #[derive(PartialEq,Eq,Debug)]
   struct B {
     a: u8,
     b: u8

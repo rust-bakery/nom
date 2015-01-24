@@ -4,7 +4,7 @@ use self::ProducerState::*;
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
 
-#[derive(Show,PartialEq,Eq)]
+#[derive(Debug,PartialEq,Eq)]
 pub enum ProducerState<O> {
   Eof(O),
   Continue,
@@ -136,11 +136,11 @@ mod tests {
   use super::*;
   use internal::IResult;
   use internal::IResult::*;
-  use std::fmt::Show;
+  use std::fmt::Debug;
   use std::str;
   use map::*;
 
-  fn local_print<'a,T: Show>(input: T) -> IResult<T, ()> {
+  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
     println!("{:?}", input);
     Done(input, ())
   }
