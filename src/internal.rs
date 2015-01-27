@@ -1,22 +1,24 @@
 use self::IResult::*;
 
 pub type Err = u32;
-type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
+
+//#[derive(Debug)]
+type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<'a,I,O> +'a>;
 
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 #[derive(Show,PartialEq,Eq)]
-pub enum IResult<I,O> {
+pub enum IResult<'a,I,O> {
   Done(I,O),
   Error(Err),
   //Incomplete(proc(I):'a -> IResult<I,O>)
-  Incomplete(u32)
-  //Incomplete(IResultClosure<'a,I,O>)
+ // Incomplete(u32)
+  Incomplete(IResultClosure<'a,I,O>)
   //Incomplete(|I|:'a -> IResult<'a,I,O>)
   //Incomplete(fn(I) -> IResult<'a,I,O>)
 }
 
-impl<I,O> IResult<I,O> {
+impl<'a,I,O> IResult<'a,I,O> {
   pub fn is_done(&self) -> bool {
     match self {
       &Done(_,_) => true,
@@ -47,7 +49,7 @@ pub trait GetOutput<O> {
   fn output(&self) -> Option<O>;
 }
 
-impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
+impl<'a,'b,I,O> GetInput<&'a[I]> for IResult<'b,&'a[I],O> {
   fn remaining_input(&self) -> Option<&'a[I]> {
     match self {
       &Done(ref i,_) => Some(*i),
@@ -56,7 +58,7 @@ impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
   }
 }
 
-impl<'a,O> GetInput<()> for IResult<(),O> {
+impl<'a,'b,O> GetInput<()> for IResult<'b,(),O> {
   fn remaining_input(&self) -> Option<()> {
     match self {
       &Done((),_) => Some(()),
@@ -65,7 +67,7 @@ impl<'a,O> GetInput<()> for IResult<(),O> {
   }
 }
 
-impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
+impl<'a,'b,I,O> GetOutput<&'a[O]> for IResult<'b,I,&'a[O]> {
   fn output(&self) -> Option<&'a[O]> {
     match self {
       &Done(_, ref o) => Some(*o),
@@ -74,7 +76,7 @@ impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
   }
 }
 
-impl<'a,I> GetOutput<()> for IResult<I,()> {
+impl<'a,'b,I> GetOutput<()> for IResult<'b,I,()> {
   fn output(&self) -> Option<()> {
     match self {
       &Done(_,()) => Some(()),

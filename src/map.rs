@@ -2,11 +2,11 @@ use internal::*;
 use internal::IResult::*;
 
 pub trait FlatMapper<O:?Sized,N:?Sized> {
-  fn flat_map<F:Fn(O) -> IResult<O,N>>(& self, f: F) -> IResult<O,N>;
+  fn flat_map<'a,F:Fn(O) -> IResult<'a,O,N>>(& self, f: F) -> IResult<O,N>;
 }
 
-impl<'a,R,S,T> FlatMapper<&'a[S], T> for IResult<R,&'a [S]> {
-  fn flat_map<F:Fn(&'a[S]) -> IResult<&'a[S],T>>(&self, f: F) -> IResult<&'a[S],T> {
+impl<'a,'b,R,S,T> FlatMapper<&'a[S], T> for IResult<'b,R,&'a [S]> {
+  fn flat_map<F:Fn(&'a[S]) -> IResult<&'a[S],T>>(&self, f: F) -> IResult<'b,&'a[S],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -16,8 +16,8 @@ impl<'a,R,S,T> FlatMapper<&'a[S], T> for IResult<R,&'a [S]> {
   }
 }
 
-impl<'a,R,T> FlatMapper<&'a str, T> for IResult<R,&'a str> {
-  fn flat_map<F:Fn(&'a str) -> IResult<&'a str,T>>(&self, f: F) -> IResult<&'a str,T> {
+impl<'a,'b,R,T> FlatMapper<&'a str, T> for IResult<'b,R,&'a str> {
+  fn flat_map<F:Fn(&'a str) -> IResult<'b,&'a str,T>>(&self, f: F) -> IResult<'b,&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -27,8 +27,8 @@ impl<'a,R,T> FlatMapper<&'a str, T> for IResult<R,&'a str> {
   }
 }
 
-impl<R,T> FlatMapper<(), T> for IResult<R,()> {
-  fn flat_map<F:Fn(()) -> IResult<(),T>>(&self, f: F) -> IResult<(),T> {
+impl<'a,R,T> FlatMapper<(), T> for IResult<'a,R,()> {
+  fn flat_map<F:Fn(()) -> IResult<'a,(),T>>(&self, f: F) -> IResult<'a,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -39,12 +39,12 @@ impl<R,T> FlatMapper<(), T> for IResult<R,()> {
 }
 
 pub trait Mapper<I,O,N> {
-  fn map_opt<F: Fn(O) -> Option<N>>(& self, f: F) -> IResult<I,N>;
-  fn map_res<P,F: Fn(O) -> Result<N,P>>(& self, f: F) -> IResult<I,N>;
+  fn map_opt<'a,F: Fn(O) -> Option<N>>(& self, f: F) -> IResult<'a,I,N>;
+  fn map_res<'a,P,F: Fn(O) -> Result<N,P>>(& self, f: F) -> IResult<'a,I,N>;
 }
 
-impl<'a,'b,R,S,T> Mapper<&'b [R],&'a[S], T> for IResult<&'b [R],&'a [S]> {
-  fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<&'b [R],T> {
+impl<'a,'b,'c,R,S,T> Mapper<&'b [R],&'a[S], T> for IResult<'c,&'b [R],&'a [S]> {
+  fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<'c,&'b [R],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -69,8 +69,8 @@ impl<'a,'b,R,S,T> Mapper<&'b [R],&'a[S], T> for IResult<&'b [R],&'a [S]> {
   }
 }
 
-impl<'a,'b,S,T> Mapper<&'b str, &'a[S], T> for IResult<&'b str,&'a [S]> {
-  fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<&'b str,T> {
+impl<'a,'b,'c,S,T> Mapper<&'b str, &'a[S], T> for IResult<'c,&'b str,&'a [S]> {
+  fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<'c,&'b str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -82,7 +82,7 @@ impl<'a,'b,S,T> Mapper<&'b str, &'a[S], T> for IResult<&'b str,&'a [S]> {
     }
   }
 
-  fn map_res<U, F: Fn(&'a[S]) -> Result<T,U>>(&self, f: F) -> IResult<&'b str,T> {
+  fn map_res<U, F: Fn(&'a[S]) -> Result<T,U>>(&self, f: F) -> IResult<'c,&'b str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -95,8 +95,8 @@ impl<'a,'b,S,T> Mapper<&'b str, &'a[S], T> for IResult<&'b str,&'a [S]> {
   }
 }
 
-impl<'a,S,T> Mapper<(), &'a[S], T> for IResult<(),&'a [S]> {
-  fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<(),T> {
+impl<'a,'b,S,T> Mapper<(), &'a[S], T> for IResult<'b,(),&'a [S]> {
+  fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<'b,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -108,7 +108,7 @@ impl<'a,S,T> Mapper<(), &'a[S], T> for IResult<(),&'a [S]> {
     }
   }
 
-  fn map_res<U, F: Fn(&'a[S]) -> Result<T,U>>(&self, f: F) -> IResult<(),T> {
+  fn map_res<U, F: Fn(&'a[S]) -> Result<T,U>>(&self, f: F) -> IResult<'b,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -121,8 +121,8 @@ impl<'a,S,T> Mapper<(), &'a[S], T> for IResult<(),&'a [S]> {
   }
 }
 
-impl<'a,'b,R,T> Mapper<&'b [R],&'a str, T> for IResult<&'b [R],&'a str> {
-  fn map_opt<F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<&'b [R],T> {
+impl<'a,'b,'c,R,T> Mapper<&'b [R],&'a str, T> for IResult<'c,&'b [R],&'a str> {
+  fn map_opt<F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<'c,&'b [R],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -134,7 +134,7 @@ impl<'a,'b,R,T> Mapper<&'b [R],&'a str, T> for IResult<&'b [R],&'a str> {
     }
   }
 
-  fn map_res<U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<&'b [R],T> {
+  fn map_res<U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<'c,&'b [R],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -147,8 +147,8 @@ impl<'a,'b,R,T> Mapper<&'b [R],&'a str, T> for IResult<&'b [R],&'a str> {
   }
 }
 
-impl<'a,'b,T> Mapper<&'b str, &'a str, T> for IResult<&'b str,&'a str> {
-  fn map_opt<F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<&'b str,T> {
+impl<'a,'b,'c,T> Mapper<&'b str, &'a str, T> for IResult<'c,&'b str,&'a str> {
+  fn map_opt<F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<'c,&'b str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -160,7 +160,7 @@ impl<'a,'b,T> Mapper<&'b str, &'a str, T> for IResult<&'b str,&'a str> {
     }
   }
 
-  fn map_res<U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<&'b str,T> {
+  fn map_res<U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<'c,&'b str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -173,8 +173,8 @@ impl<'a,'b,T> Mapper<&'b str, &'a str, T> for IResult<&'b str,&'a str> {
   }
 }
 
-impl<'a,T> Mapper<(),&'a str, T> for IResult<(),&'a str> {
-  fn map_opt<F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<(),T> {
+impl<'a,'b,T> Mapper<(),&'a str, T> for IResult<'b,(),&'a str> {
+  fn map_opt<F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<'b,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -186,7 +186,7 @@ impl<'a,T> Mapper<(),&'a str, T> for IResult<(),&'a str> {
     }
   }
 
-  fn map_res<U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<(),T> {
+  fn map_res<U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<'b,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -199,8 +199,8 @@ impl<'a,T> Mapper<(),&'a str, T> for IResult<(),&'a str> {
   }
 }
 
-impl<'a,R,T> Mapper<&'a[R], (), T> for IResult<&'a[R],()> {
-  fn map_opt<F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<&'a[R],T> {
+impl<'a,'b,R,T> Mapper<&'a[R], (), T> for IResult<'b,&'a[R],()> {
+  fn map_opt<F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<'b,&'a[R],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -212,7 +212,7 @@ impl<'a,R,T> Mapper<&'a[R], (), T> for IResult<&'a[R],()> {
     }
   }
 
-  fn map_res<U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<&'a [R],T> {
+  fn map_res<U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<'b,&'a [R],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -225,8 +225,8 @@ impl<'a,R,T> Mapper<&'a[R], (), T> for IResult<&'a[R],()> {
   }
 }
 
-impl<'a,T> Mapper<&'a str, (), T> for IResult<&'a str,()> {
-  fn map_opt<F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<&'a str,T> {
+impl<'a,'z,T> Mapper<&'a str, (), T> for IResult<'z,&'a str,()> {
+  fn map_opt<F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<'z,&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -238,7 +238,7 @@ impl<'a,T> Mapper<&'a str, (), T> for IResult<&'a str,()> {
     }
   }
 
-  fn map_res<U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<&'a str,T> {
+  fn map_res<U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<'z,&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -251,8 +251,8 @@ impl<'a,T> Mapper<&'a str, (), T> for IResult<&'a str,()> {
   }
 }
 
-impl<T> Mapper<(),(), T> for IResult<(),()> {
-  fn map_opt<F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<(),T> {
+impl<'z,T> Mapper<(),(), T> for IResult<'z,(),()> {
+  fn map_opt<F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<'z,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -264,7 +264,7 @@ impl<T> Mapper<(),(), T> for IResult<(),()> {
     }
   }
 
-  fn map_res<U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<(),T> {
+  fn map_res<U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<'z,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -278,11 +278,11 @@ impl<T> Mapper<(),(), T> for IResult<(),()> {
 }
 
 pub trait Mapper2<I,O,N> {
-  fn map<F: Fn(O) -> N>(& self, f: F) -> IResult<I,N>;
+  fn map<'z,F: Fn(O) -> N>(& self, f: F) -> IResult<'z,I,N>;
 }
 
-impl<'a,R,S,T> Mapper2<&'a R, &'a[S], T> for IResult<&'a R,&'a [S]> {
-  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<&'a R,T> {
+impl<'a,'z,R,S,T> Mapper2<&'a R, &'a[S], T> for IResult<'z,&'a R,&'a [S]> {
+  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<'z,&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -292,8 +292,8 @@ impl<'a,R,S,T> Mapper2<&'a R, &'a[S], T> for IResult<&'a R,&'a [S]> {
   }
 }
 
-impl<'a,R,S,T> Mapper2<&'a [R], &'a[S], T> for IResult<&'a [R],&'a [S]> {
-  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<&'a [R],T> {
+impl<'a,'z,R,S,T> Mapper2<&'a [R], &'a[S], T> for IResult<'z,&'a [R],&'a [S]> {
+  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<'z,&'a [R],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -303,8 +303,8 @@ impl<'a,R,S,T> Mapper2<&'a [R], &'a[S], T> for IResult<&'a [R],&'a [S]> {
   }
 }
 
-impl<'a,S,T> Mapper2<&'a str, &'a[S], T> for IResult<&'a str,&'a [S]> {
-  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<&'a str,T> {
+impl<'a,'z,S,T> Mapper2<&'a str, &'a[S], T> for IResult<'z,&'a str,&'a [S]> {
+  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<'z,&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -314,8 +314,8 @@ impl<'a,S,T> Mapper2<&'a str, &'a[S], T> for IResult<&'a str,&'a [S]> {
   }
 }
 
-impl<'a,S,T> Mapper2<(), &'a[S], T> for IResult<(),&'a [S]> {
-  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<(),T> {
+impl<'a,'z,S,T> Mapper2<(), &'a[S], T> for IResult<'z,(),&'a [S]> {
+  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<'z,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -325,8 +325,8 @@ impl<'a,S,T> Mapper2<(), &'a[S], T> for IResult<(),&'a [S]> {
   }
 }
 
-impl<'a,R,T> Mapper2<&'a R, (), T> for IResult<&'a R,()> {
-  fn map<F: Fn(()) -> T>(&self, f: F) -> IResult<&'a R,T> {
+impl<'a,'z,R,T> Mapper2<&'a R, (), T> for IResult<'z,&'a R,()> {
+  fn map<F: Fn(()) -> T>(&self, f: F) -> IResult<'z,&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -336,8 +336,8 @@ impl<'a,R,T> Mapper2<&'a R, (), T> for IResult<&'a R,()> {
   }
 }
 
-impl<'a,R,T> Mapper2<&'a [R], (), T> for IResult<&'a [R],()> {
-  fn map<F: Fn(()) -> T>(&self, f: F) -> IResult<&'a [R],T> {
+impl<'a,'z,R,T> Mapper2<&'a [R], (), T> for IResult<'z,&'a [R],()> {
+  fn map<F: Fn(()) -> T>(&self, f: F) -> IResult<'z,&'a [R],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -347,8 +347,8 @@ impl<'a,R,T> Mapper2<&'a [R], (), T> for IResult<&'a [R],()> {
   }
 }
 
-impl<'a,T> Mapper2<&'a str, (), T> for IResult<&'a str,()> {
-  fn map<F: Fn(()) -> T>(&self, f: F) -> IResult<&'a str,T> {
+impl<'a,'z,T> Mapper2<&'a str, (), T> for IResult<'z,&'a str,()> {
+  fn map<F: Fn(()) -> T>(&self, f: F) -> IResult<'z,&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -358,8 +358,8 @@ impl<'a,T> Mapper2<&'a str, (), T> for IResult<&'a str,()> {
   }
 }
 
-impl<'a,T> Mapper2<(), (), T> for IResult<(),()> {
-  fn map<F: Fn(()) -> T>(&self, f: F) -> IResult<(),T> {
+impl<'a,'z,T> Mapper2<(), (), T> for IResult<'z,(),()> {
+  fn map<F: Fn(()) -> T>(&self, f: F) -> IResult<'z,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -369,8 +369,8 @@ impl<'a,T> Mapper2<(), (), T> for IResult<(),()> {
   }
 }
 
-impl<'a,'b,R,T> Mapper2<&'b R, &'a str, T> for IResult<&'b R,&'a str> {
-  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<&'b R,T> {
+impl<'a,'b,'z,R,T> Mapper2<&'b R, &'a str, T> for IResult<'z,&'b R,&'a str> {
+  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<'z,&'b R,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -380,8 +380,8 @@ impl<'a,'b,R,T> Mapper2<&'b R, &'a str, T> for IResult<&'b R,&'a str> {
   }
 }
 
-impl<'a,'b,R,T> Mapper2<&'b [R], &'a str, T> for IResult<&'b [R],&'a str> {
-  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<&'b [R],T> {
+impl<'a,'b,'z,R,T> Mapper2<&'b [R], &'a str, T> for IResult<'z,&'b [R],&'a str> {
+  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<'z,&'b [R],T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -390,8 +390,8 @@ impl<'a,'b,R,T> Mapper2<&'b [R], &'a str, T> for IResult<&'b [R],&'a str> {
     }
   }
 }
-impl<'a,'b,T> Mapper2<&'b str, &'a str, T> for IResult<&'b str,&'a str> {
-  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<&'b str,T> {
+impl<'a,'b,'z,T> Mapper2<&'b str, &'a str, T> for IResult<'z,&'b str,&'a str> {
+  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<'z,&'b str,T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Incomplete(*i),
@@ -401,8 +401,8 @@ impl<'a,'b,T> Mapper2<&'b str, &'a str, T> for IResult<&'b str,&'a str> {
   }
 }
 
-impl<'a,T> Mapper2<(), &'a str, T> for IResult<(),&'a str> {
-  fn map<F:  Fn(&'a str) -> T>(&self, f: F) -> IResult<(),T> {
+impl<'a,'z,T> Mapper2<(), &'a str, T> for IResult<'z,(),&'a str> {
+  fn map<F:  Fn(&'a str) -> T>(&self, f: F) -> IResult<'z,(),T> {
   //fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -421,7 +421,7 @@ mod tests {
   use std::str;
   use std::fmt::Debug;
 
-  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+  fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
     println!("{:?}", input);
     Done(input, ())
   }
