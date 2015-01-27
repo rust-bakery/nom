@@ -5,26 +5,44 @@ pub trait FlatMapper<O:?Sized,N:?Sized> {
   fn flat_map<F:Fn(O) -> IResult<O,N>>(& self, f: F) -> IResult<O,N>;
 }
 
-impl<'a,R,S,T> FlatMapper<&'a[S], T> for IResult<R,&'a [S]> {
-  fn flat_map<F:Fn(&'a[S]) -> IResult<&'a[S],T>>(&self, f: F) -> IResult<&'a[S],T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
-    }
-  }
+#[macro_export]
+macro_rules! flat_map_ref_impl {
+  ($($t:ty)*) => ($(
+      impl<'a,R,T> FlatMapper<&'a $t, T> for IResult<R,&'a $t> {
+        fn flat_map<F:Fn(&'a $t) -> IResult<&'a $t,T>>(&self, f: F) -> IResult<&'a $t,T> {
+          match self {
+            &Error(ref e) => Error(*e),
+            &Incomplete(ref i) => Incomplete(*i),
+            //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+            &Done(_, ref o) => f(*o)
+          }
+        }
+      }
+  )*)
 }
 
-impl<'a,R,T> FlatMapper<&'a str, T> for IResult<R,&'a str> {
-  fn flat_map<F:Fn(&'a str) -> IResult<&'a str,T>>(&self, f: F) -> IResult<&'a str,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, ref o) => f(*o)
-    }
-  }
+flat_map_ref_impl! {
+  str [bool] [char] [usize] [u8] [u16] [u32] [u64] [isize] [i8] [i16] [i32] [i64] [f32] [f64]
+}
+
+#[macro_export]
+macro_rules! flat_map_impl {
+  ($($t:ty)*) => ($(
+      impl<R,T> FlatMapper<$t, T> for IResult<R,$t> {
+        fn flat_map<F:Fn($t) -> IResult<$t,T>>(&self, f: F) -> IResult<$t,T> {
+          match self {
+            &Error(ref e) => Error(*e),
+            &Incomplete(ref i) => Incomplete(*i),
+            //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+            &Done(_, o) => f(o)
+          }
+        }
+      }
+  )*)
+}
+
+flat_map_impl! {
+  bool char usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64
 }
 
 impl<R,T> FlatMapper<(), T> for IResult<R,()> {
@@ -43,57 +61,41 @@ pub trait Mapper<I,O,N> {
   fn map_res<P,F: Fn(O) -> Result<N,P>>(& self, f: F) -> IResult<I,N>;
 }
 
-impl<'a,'b,R,S,T> Mapper<&'b [R],&'a[S], T> for IResult<&'b [R],&'a [S]> {
-  fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<&'b [R],T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => match f(*o) {
-        Some(output) => Done(*i, output),
-        None         => Error(0)
-      }
-    }
-  }
+#[macro_export]
+macro_rules! map_ref_impl {
+  ($i:ty, $o:ty) => (
+      impl<'a,'b,T> Mapper<&'b $i,&'a $o, T> for IResult<&'b $i,&'a $o> {
+        fn map_opt<F:Fn(&'a $o) -> Option<T>>(&self, f: F) -> IResult<&'b $i,T> {
+          match self {
+            &Error(ref e) => Error(*e),
+            &Incomplete(ref i) => Incomplete(*i),
+            //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+            &Done(ref i, ref o) => match f(*o) {
+              Some(output) => Done(*i, output),
+              None         => Error(0)
+            }
+          }
+        }
 
-  fn map_res<U, F: Fn(&'a[S]) -> Result<T,U>>(&self, f: F) -> IResult<&'b [R],T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => match f(*o) {
-        Ok(output) => Done(*i, output),
-        Err(_)     => Error(0)
+        fn map_res<U, F: Fn(&'a $o) -> Result<T,U>>(&self, f: F) -> IResult<&'b $i,T> {
+          match self {
+            &Error(ref e) => Error(*e),
+            &Incomplete(ref i) => Incomplete(*i),
+            //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+            &Done(ref i, ref o) => match f(*o) {
+              Ok(output) => Done(*i, output),
+              Err(_)     => Error(0)
+            }
+          }
+        }
       }
-    }
-  }
+  )
 }
 
-impl<'a,'b,S,T> Mapper<&'b str, &'a[S], T> for IResult<&'b str,&'a [S]> {
-  fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<&'b str,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => match f(*o) {
-        Some(output) => Done(*i, output),
-        None         => Error(0)
-      }
-    }
-  }
-
-  fn map_res<U, F: Fn(&'a[S]) -> Result<T,U>>(&self, f: F) -> IResult<&'b str,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => match f(*o) {
-        Ok(output) => Done(*i, output),
-        Err(_)     => Error(0)
-      }
-    }
-  }
-}
+map_ref_impl!([u8], [u8]);
+map_ref_impl!([u8], str);
+map_ref_impl!(str,  [u8]);
+map_ref_impl!(str,  str);
 
 impl<'a,S,T> Mapper<(), &'a[S], T> for IResult<(),&'a [S]> {
   fn map_opt<F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<(),T> {
@@ -115,58 +117,6 @@ impl<'a,S,T> Mapper<(), &'a[S], T> for IResult<(),&'a [S]> {
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done((), ref o) => match f(*o) {
         Ok(output) => Done((), output),
-        Err(_)     => Error(0)
-      }
-    }
-  }
-}
-
-impl<'a,'b,R,T> Mapper<&'b [R],&'a str, T> for IResult<&'b [R],&'a str> {
-  fn map_opt<F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<&'b [R],T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => match f(*o) {
-        Some(output) => Done(*i, output),
-        None         => Error(0)
-      }
-    }
-  }
-
-  fn map_res<U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<&'b [R],T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => match f(*o) {
-        Ok(output) => Done(*i, output),
-        Err(_)     => Error(0)
-      }
-    }
-  }
-}
-
-impl<'a,'b,T> Mapper<&'b str, &'a str, T> for IResult<&'b str,&'a str> {
-  fn map_opt<F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<&'b str,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => match f(*o) {
-        Some(output) => Done(*i, output),
-        None         => Error(0)
-      }
-    }
-  }
-
-  fn map_res<U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<&'b str,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => match f(*o) {
-        Ok(output) => Done(*i, output),
         Err(_)     => Error(0)
       }
     }
@@ -281,38 +231,26 @@ pub trait Mapper2<I,O,N> {
   fn map<F: Fn(O) -> N>(& self, f: F) -> IResult<I,N>;
 }
 
-impl<'a,R,S,T> Mapper2<&'a R, &'a[S], T> for IResult<&'a R,&'a [S]> {
-  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<&'a R,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => Done(*i,f(*o))
-    }
-  }
+#[macro_export]
+macro_rules! map2_ref_impl {
+  ($i:ty, $o:ty) => (
+      impl<'a,'b,T> Mapper2<&'b $i,&'a $o, T> for IResult<&'b $i,&'a $o> {
+        fn map<F: Fn(&'a $o) -> T>(&self, f: F) -> IResult<&'b $i,T> {
+          match self {
+            &Error(ref e) => Error(*e),
+            &Incomplete(ref i) => Incomplete(*i),
+            //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+            &Done(ref i, ref o) => Done(*i,f(*o))
+          }
+        }
+      }
+  )
 }
 
-impl<'a,R,S,T> Mapper2<&'a [R], &'a[S], T> for IResult<&'a [R],&'a [S]> {
-  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<&'a [R],T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => Done(*i,f(*o))
-    }
-  }
-}
-
-impl<'a,S,T> Mapper2<&'a str, &'a[S], T> for IResult<&'a str,&'a [S]> {
-  fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<&'a str,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => Done(*i,f(*o))
-    }
-  }
-}
+map2_ref_impl!([u8], [u8]);
+map2_ref_impl!([u8], str);
+map2_ref_impl!(str,  [u8]);
+map2_ref_impl!(str,  str);
 
 impl<'a,S,T> Mapper2<(), &'a[S], T> for IResult<(),&'a [S]> {
   fn map<F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<(),T> {
@@ -365,38 +303,6 @@ impl<'a,T> Mapper2<(), (), T> for IResult<(),()> {
       &Incomplete(ref i) => Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, ()) => Done(*i,f(()))
-    }
-  }
-}
-
-impl<'a,'b,R,T> Mapper2<&'b R, &'a str, T> for IResult<&'b R,&'a str> {
-  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<&'b R,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => Done(*i,f(*o))
-    }
-  }
-}
-
-impl<'a,'b,R,T> Mapper2<&'b [R], &'a str, T> for IResult<&'b [R],&'a str> {
-  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<&'b [R],T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => Done(*i,f(*o))
-    }
-  }
-}
-impl<'a,'b,T> Mapper2<&'b str, &'a str, T> for IResult<&'b str,&'a str> {
-  fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<&'b str,T> {
-    match self {
-      &Error(ref e) => Error(*e),
-      &Incomplete(ref i) => Incomplete(*i),
-      //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
-      &Done(ref i, ref o) => Done(*i,f(*o))
     }
   }
 }
