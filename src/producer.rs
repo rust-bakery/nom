@@ -1,9 +1,53 @@
+//! # Data producers
+//!
+//! The goal of data producers is to parse data as soon as it is generated.
+//!
+//! ## Example
+//!
+//! ```
+//! // invalid code for rustdoc
+//! //#![macro_use] extern crate nom;
+//! // use nom::pusher;
+//! // use std::str;
+//! // fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+//! //   println!("{:?}", input);
+//! //   Done(input, ())
+//! // }
+//! // // create a data producer from a file
+//! // FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
+//! //   let mut p = producer;
+//!
+//! //   // create the parsing function
+//! //   fn parser(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+//! //     par.map_res(str::from_utf8).flat_map(local_print);
+//! //     Done("".as_bytes(), ())
+//! //   }
+//!
+//! //   // adapt the parsing function to the producer
+//! //   pusher!(push, parser);
+//! //   // get started
+//! //   push(&mut p);
+//! // });
+//!
+//! ```
+
 use internal::*;
 use self::ProducerState::*;
 
 use std::io::fs::File;
 use std::io::{IoResult, IoErrorKind};
 
+
+/// Holds the data producer's current state
+///
+/// * Eof indicates all data has been parsed, and contains the parser's result
+///
+/// * Continue indicates that more data is needed and should be available,
+/// but not right now. Parsing should resume at some point.
+///
+/// * Data contains already parsed data
+///
+/// * ProducerError indicates something went wrong
 #[derive(Debug,PartialEq,Eq)]
 pub enum ProducerState<O> {
   Eof(O),
@@ -12,9 +56,14 @@ pub enum ProducerState<O> {
   ProducerError(Err),
 }
 
+/// A producer implements the produce method, currently working with u8 arrays
 pub trait Producer {
   fn produce(&mut self) -> ProducerState<&[u8]>;
 }
+
+/// Can produce data from a file
+///
+/// the size field is the size of v, the internal buffer
 pub struct FileProducer {
   size: usize,
   file: File,
@@ -49,6 +98,15 @@ impl Producer for FileProducer {
   }
 }
 
+/// Can parse data from an already in memory byte array
+///
+/// * buffer holds the reference to the data that must be parsed
+///
+/// * length is the length of that buffer
+///
+/// * index is the position in the buffer
+///
+/// * chunk_size is the quantity of data sent at once
 pub struct MemProducer<'x> {
   buffer: &'x [u8],
   chunk_size: usize,
@@ -86,7 +144,22 @@ impl<'x> Producer for MemProducer<'x> {
   }
 }
 
-
+/// Prepares a parser function for a push pipeline
+///
+/// It creates a function that accepts a producer and immediately starts parsing the data sent
+///
+/// # Example
+///
+/// ```
+/// // invalid code for rustdoc
+/// //fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+/// //  par.flat_map(local_print)
+/// //}
+/// //let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
+/// //
+/// //pusher!(ps, pr);
+/// //ps(&mut p);
+/// ```
 #[macro_export]
 macro_rules! pusher (
   ($name:ident, $f:expr) => (

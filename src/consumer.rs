@@ -1,8 +1,57 @@
+//! # Data consumers
+//!
+//! The goal of data producers is to parse data depending on the previous result.
+//! It can be used to selectively seek in a file.
+//!
+//! ## Example
+//!
+//! This consumer will take 4 samples from the input, print them, then stop
+//!
+//! ```rust
+//!  use nom::{MemProducer,Consumer,ConsumerState};
+//!  use std::str;
+//!
+//!  struct TestPrintConsumer {
+//!    counter: usize
+//!  }
+//!
+//!  impl TestPrintConsumer {
+//!    fn new() -> TestPrintConsumer {
+//!      TestPrintConsumer { counter: 0 }
+//!    }
+//!  }
+//!
+//!  // Return ConsumerState::Await if it needs more data, or ConsumerDone when it ends
+//!  impl Consumer for TestPrintConsumer {
+//!    fn consume(&mut self, input: &[u8]) -> ConsumerState {
+//!      println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
+//!      self.counter = self.counter + 1;
+//!      if self.counter <=4 {
+//!        ConsumerState::Await
+//!      } else {
+//!        ConsumerState::ConsumerDone
+//!      }
+//!    }
+//!  }
+//!
+//!  // It can consume data directly from a producer
+//!  let mut p = MemProducer::new("abcdefghijklmnopqrstuvwx".as_bytes(), 4);
+//!  let mut c = TestPrintConsumer::new();
+//!  c.run(&mut p);
+//! ```
+
 use self::ConsumerState::*;
 use producer::Producer;
 use producer::ProducerState::*;
 use internal::Err;
 
+/// Holds the current state of the consumer
+///
+/// * Await if more data is needed
+///
+/// * ConsumerDone if the consumer does not need anymore data to be parsed
+///
+/// * ConsumerError when something went wrong
 #[derive(Show,PartialEq,Eq)]
 pub enum ConsumerState {
   Await,
@@ -11,6 +60,9 @@ pub enum ConsumerState {
   ConsumerError(Err)
 }
 
+/// Implement the consume method, taking a byte array as input and returning a consumer state
+///
+/// The run function takes care of continuing or not
 pub trait Consumer {
   fn consume(&mut self, input: &[u8]) -> ConsumerState;
   fn run(&mut self, producer: &mut Producer) {

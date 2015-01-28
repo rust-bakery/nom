@@ -1,10 +1,23 @@
 use self::IResult::*;
 
 pub type Err = u32;
-type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
+pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
 
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
+
+/// Holds the result of parsing functions
+///
+/// It depends on I, the input types, and O, the output type.
+///
+/// * Done indicates a correct parsing, the first field containing the rest of the unparsed data,
+/// the second field contains the parsed data
+///
+/// * Error is currently a u32, but should be updated to indicate which parser had a problem,
+/// a description, and an eventual stack of parser to know which path failed
+///
+/// * Incomplete will hold the closure used to restart the computation once more data is available.
+/// Current attemps at implementation of Incomplete are progressing, but slowed down by lifetime problems
 #[derive(Show,PartialEq,Eq)]
 pub enum IResult<I,O> {
   Done(I,O),
