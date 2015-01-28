@@ -1,9 +1,28 @@
+//! Useful parser combinators
+//!
+//! A number of useful parser combinators have already been implemented.
+//! Some of them use macros, other are implemented through functions.
+//! Hopefully, the syntax will converge to onely one way in the future,
+//! but the macros system makes no promises.
+//!
+
 extern crate collections;
 
 use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 
+/// declares a byte array as a suite to recognize
+///
+/// consumes the recognized characters
+///
+/// ```
+///  /*
+///  tag!(x "abcd".as_bytes());
+///  let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(x);
+///  assert_eq!(r, Done("efgh".as_bytes(), "abcd".as_bytes()));
+///  */
+/// ```
 #[macro_export]
 macro_rules! tag(
   ($name:ident $inp:expr) => (
@@ -17,6 +36,22 @@ macro_rules! tag(
   )
 );
 
+/// chains parsers and returns the result of only one of them
+///
+/// ```
+/// /*
+/// tag!(x "abcd".as_bytes());
+/// tag!(y "efgh".as_bytes());
+///
+/// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+///
+///  // parse the x tag two times, return an int, parse the y tag
+///  o!(z<&[u8], u8>  x ~ x ~ [ ret_int ] ~ y);
+///
+/// let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
+/// assert_eq!(r, Done("".as_bytes(), 1));
+/// */
+/// ```
 #[macro_export]
 macro_rules! o(
   ($name:ident<$i:ty,$o:ty> $f1:ident ~ $($rest:tt)*) => (

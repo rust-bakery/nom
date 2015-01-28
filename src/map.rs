@@ -1,10 +1,31 @@
+//! Basic combination functions
+//!
+//! Provides the flat_map, map, map_opt and map_res methods used elsewhere.
+//!
+//! Traits provided here must be implemented for any new combination of I and O types in IResult<I,O>
+
 use internal::*;
 use internal::IResult::*;
 
+/// flat_map is a method of IResult<R,S>, takes a function Fn(S) -> IResult<S,T>,
+/// and returns a IResult<S,T>
+///
+/// ```
+/// use nom::IResult::Done;
+/// use nom::FlatMapper;
+/// use std::str;
+/// Done((),()).flat_map(|data| { println!("data: {:?}", data); Done(data,())});
+/// ```
 pub trait FlatMapper<O:?Sized,N:?Sized> {
   fn flat_map<F:Fn(O) -> IResult<O,N>>(& self, f: F) -> IResult<O,N>;
 }
 
+/// derives flat_map implementation for a list of IResult types with referenced types
+/// like str or vectors
+///
+/// ```
+/// //flat_map_ref_impl! { [bool] [uint] };
+/// ```
 #[macro_export]
 macro_rules! flat_map_ref_impl {
   ($($t:ty)*) => ($(
@@ -25,6 +46,11 @@ flat_map_ref_impl! {
   str [bool] [char] [usize] [u8] [u16] [u32] [u64] [isize] [i8] [i16] [i32] [i64] [f32] [f64]
 }
 
+/// derives flat_map implementation for a list of specific IResult types
+///
+/// ```
+/// //flat_map_impl! { bool uint };
+/// ```
 #[macro_export]
 macro_rules! flat_map_impl {
   ($($t:ty)*) => ($(
@@ -56,11 +82,22 @@ impl<R,T> FlatMapper<(), T> for IResult<R,()> {
   }
 }
 
+/// map_opt and map_res are used to combine common functions with parsers
+///
+/// ```
+/// use nom::IResult::Done;
+/// use nom::Mapper;
+/// use std::str;
+/// let res = Done((),"abcd".as_bytes()).map_res(|&: data| { str::from_utf8(data) });
+/// assert_eq!(res, Done((), "abcd"));
+/// ```
 pub trait Mapper<I,O,N> {
   fn map_opt<F: Fn(O) -> Option<N>>(& self, f: F) -> IResult<I,N>;
   fn map_res<P,F: Fn(O) -> Result<N,P>>(& self, f: F) -> IResult<I,N>;
 }
 
+/// derives map_opt and map_res implementations for a list of IResult types with referenced types
+/// like str or vectors
 #[macro_export]
 macro_rules! map_ref_impl {
   ($i:ty, $o:ty) => (
@@ -227,6 +264,15 @@ impl<T> Mapper<(),(), T> for IResult<(),()> {
   }
 }
 
+/// map applies a parser function directly to the output of another parser function
+///
+///```
+/// use nom::IResult::Done;
+/// use nom::Mapper2;
+/// use std::str;
+/// let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() });
+/// assert_eq!(res, Done((), "abcd"));
+///```
 pub trait Mapper2<I,O,N> {
   fn map<F: Fn(O) -> N>(& self, f: F) -> IResult<I,N>;
 }

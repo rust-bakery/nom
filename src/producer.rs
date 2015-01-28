@@ -1,8 +1,8 @@
-//! # Data producers
+//! Data producers
 //!
 //! The goal of data producers is to parse data as soon as it is generated.
 //!
-//! ## Example
+//! # Example
 //!
 //! ```
 //! // invalid code for rustdoc
