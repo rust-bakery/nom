@@ -539,11 +539,11 @@ mod tests {
 
   #[test]
   fn buffer_with_size() {
+    let i:Vec<u8> = vec![7,8];
+    let o:Vec<u8> = vec![4,5,6];
     let arr:[u8; 6us] = [3, 4, 5, 6, 7, 8];
     let res = Done((), arr.as_slice()).flat_map(sized_buffer);
-    let i = [7,8];
-    let o = [4,5,6];
-    assert_eq!(res, Done(i.as_slice(), o.as_slice()))
+    assert_eq!(res, Done(&i[], &o[]))
   }
 
   #[test]
@@ -655,17 +655,17 @@ mod tests {
 
   #[test]
   fn length_value_test() {
-    let arr1:[u8; 6us] = [3, 4, 5, 6, 7, 8];
-    let res1 = length_value(&arr1);
     let i1 = vec![7,8];
     let o1 = vec![4, 5, 6];
-    assert_eq!(Done(i1.as_slice(), o1.as_slice()), res1);
+    let arr1:[u8; 6us] = [3, 4, 5, 6, 7, 8];
+    let res1 = length_value(&arr1);
+    assert_eq!(Done(&i1[], &o1[]), res1);
 
+    let i2:Vec<u8> = vec![4,5,6,7,8];
+    let o2 = "";
     let arr2:[u8; 6us] = [0, 4, 5, 6, 7, 8];
     let res2 = length_value(&arr2);
-    let i2:[u8; 5us] = [4,5,6,7,8];
-    let o2 = "";
-    assert_eq!(Done(i2.as_slice(), o2.as_bytes()), res2);
+    assert_eq!(Done(&i2[], o2.as_bytes()), res2);
 
     let arr3:[u8; 7us] = [8, 4, 5, 6, 7, 8, 9];
     let res3 = length_value(&arr3);
