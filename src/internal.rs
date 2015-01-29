@@ -1,6 +1,11 @@
+//! Basic types to build the parsers
+
 use self::IResult::*;
 
+/// Errortype. A integer for now
 pub type Err = u32;
+
+/// (Experimental) Closure used to hold the temporary state of resumable parsing
 pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
 
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;

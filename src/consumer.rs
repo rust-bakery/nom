@@ -1,4 +1,4 @@
-//! # Data consumers
+//! Data consumers
 //!
 //! The goal of data producers is to parse data depending on the previous result.
 //! It can be used to selectively seek in a file.
