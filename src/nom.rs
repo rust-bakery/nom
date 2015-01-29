@@ -26,7 +26,7 @@ macro_rules! tag(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       if i.len() >= $inp.len() && i.slice(0, $inp.len()) == $inp {
-        Done(i.slice_from($inp.len()), i.slice(0, $inp.len()))
+        Done(&i[$inp.len()..], &i[0..$inp.len()])
       } else {
         Error(0)
       }
@@ -228,9 +228,9 @@ macro_rules! is_a(
 macro_rules! filter(
   ($name:ident $f:ident) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
-      for idx in range(0, input.len()) {
+      for idx in 0..input.len() {
         if !$f(input[idx]) {
-          return IResult::Done(input.slice_from(idx), input.slice(0, idx))
+          return IResult::Done(&input[idx..], &input[0..idx])
         }
       }
       IResult::Done("".as_bytes(), input)
@@ -242,10 +242,10 @@ macro_rules! filter(
 // public methods
 //pub is_not!(line_ending "\r\n".as_bytes())
 pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     for &i in "\r\n".as_bytes().iter() {
       if input[idx] == i {
-        return Done(input.slice_from(idx), input.slice(0, idx))
+        return Done(&input[idx..], &input[0..idx])
       }
     }
   }
@@ -279,45 +279,45 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(digit is_digit)
 //pub filter!(alphanumeric is_alphanumeric)
 pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     if !is_alphabetic(input[idx]) {
-      return Done(input.slice_from(idx), input.slice(0, idx))
+      return Done(&input[idx..], &input[0..idx])
     }
   }
   Done("".as_bytes(), input)
 }
 
 pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     if !is_digit(input[idx]) {
-      return Done(input.slice_from(idx), input.slice(0, idx))
+      return Done(&input[idx..], &input[0..idx])
     }
   }
   Done("".as_bytes(), input)
 }
 
 pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     if !is_alphanumeric(input[idx]) {
-      return Done(input.slice_from(idx), input.slice(0, idx))
+      return Done(&input[idx..], &input[0..idx])
     }
   }
   Done("".as_bytes(), input)
 }
 
 pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     if !is_space(input[idx]) {
-      return Done(input.slice_from(idx), input.slice(0, idx))
+      return Done(&input[idx..], &input[0..idx])
     }
   }
   Done("".as_bytes(), input)
 }
 
 pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     if !is_space(input[idx]) && input[idx] != '\r' as u8 && input[idx] != '\n' as u8 {
-      return Done(input.slice_from(idx), input.slice(0, idx))
+      return Done(&input[idx..], &input[0..idx])
     }
   }
   Done("".as_bytes(), input)
@@ -331,7 +331,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   let len = input[0] as usize;
 
   if input.len() >= len + 1 {
-    return Done(input.slice_from(len+1), input.slice(1, len+1))
+    return Done(&input[len+1..], &input[1..len+1])
   } else {
     return Incomplete(0)
   }
@@ -491,7 +491,7 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
   let len = input[0] as usize;
   if input_len - 1 >= len {
-    return IResult::Done(input.slice_from(len+1), input.slice(1, len+1))
+    return IResult::Done(&input[len+1..], &input[1..len+1])
   } else {
     // FIXME: return Incomplete
     return IResult::Error(0)
@@ -515,7 +515,7 @@ mod tests {
     let e = " ".as_bytes();
     assert_eq!(Done((),a).flat_map(alpha), Done(empty, a));
     assert_eq!(Done((),b).flat_map(alpha), Done(b, empty));
-    assert_eq!(Done((),c).flat_map(alpha), Done(c.slice_from(1), "a".as_bytes()));
+    assert_eq!(Done((),c).flat_map(alpha), Done(&c[1..], "a".as_bytes()));
     assert_eq!(Done((),d).flat_map(alpha), Done("é12".as_bytes(), "az".as_bytes()));
     assert_eq!(Done((),a).flat_map(digit), Done(a, empty));
     assert_eq!(Done((),b).flat_map(digit), Done(empty, b));
@@ -550,7 +550,7 @@ mod tests {
   fn t1() {
     let v1:Vec<u8> = vec![1,2,3];
     let v2:Vec<u8> = vec![4,5,6];
-    let d = Done(v1.as_slice(), v2.as_slice());
+    let d = Done(&v1[], &v2[]);
     let res = d.flat_map(print);
     assert_eq!(res, Done(v2.as_slice(), ()));
   }

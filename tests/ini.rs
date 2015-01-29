@@ -1,12 +1,11 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapper,Mapper,Mapper2,line_ending,not_line_ending, space, alphanumeric, is_alphanumeric, multispace};
+use nom::{IResult,FlatMapper,Mapper,line_ending,not_line_ending, space, alphanumeric, multispace};
 use nom::IResult::*;
 
 use std::str;
 use std::collections::HashMap;
-use std::fmt::Show;
 
 
 fn empty_result(i:&[u8]) -> IResult<&[u8], ()> { Done(i,()) }
@@ -18,9 +17,9 @@ opt!(opt_comment<&[u8],&[u8]> comment_body);
 tag!(lsb "[".as_bytes());
 tag!(rsb "]".as_bytes());
 fn category_name(input:&[u8]) -> IResult<&[u8], &str> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     if input[idx] == ']' as u8 {
-      return Done(input.slice_from(idx), input.slice(0, idx)).map_res(str::from_utf8)
+      return Done(&input[idx..], &input[0..idx]).map_res(str::from_utf8)
     }
   }
   Done("".as_bytes(), input).map_res(str::from_utf8)
@@ -29,18 +28,18 @@ o!(category<&[u8], &str> lsb ~ [ category_name ] ~ rsb ~ opt_multispace);
 
 tag!(equal "=".as_bytes());
 fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     if input[idx] == '=' as u8 {
-      return Done(input.slice_from(idx), input.slice(0, idx))
+      return Done(&input[idx..], &input[0..idx])
     }
   }
   Done("".as_bytes(), input)
 }
 
 fn value_parser(input:&[u8]) -> IResult<&[u8], &str> {
-  for idx in range(0, input.len()) {
+  for idx in 0..input.len() {
     if input[idx] == '\n' as u8 || input[idx] == ';' as u8 {
-      return Done(input.slice_from(idx), input.slice(0, idx)).map_res(str::from_utf8)
+      return Done(&input[idx..], &input[0..idx]).map_res(str::from_utf8)
     }
   }
   Done("".as_bytes(), input).map_res(str::from_utf8)
@@ -71,7 +70,7 @@ fn keys_and_values_wrapper<'a>(input:&'a[u8]) -> IResult<&'a[u8], HashMap<&'a st
 chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,move |:|{(category, keys)},  category: category, keys: keys_and_values_wrapper,);
 
 fn categories<'a>(input: &'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, HashMap<&'a str, &'a str> > > {
-  let mut z: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
+  let z: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
   fold0_impl!(<&[u8], HashMap<&str, HashMap<&str, &str> > >, |: mut h:HashMap<&'a str, HashMap<&'a str, &'a str> >, (k, v)| {
     h.insert(k,v);
     h
@@ -189,7 +188,7 @@ key = value2
 
   let ini_without_key_value = "[category]";
 
-  let mut h: HashMap<&str, &str> = HashMap::new();
+  let h: HashMap<&str, &str> = HashMap::new();
   let res = keys_and_values(ini_file.as_bytes(), h);
   println!("{:?}", res);
   match res {

@@ -82,13 +82,13 @@ impl Producer for FileProducer {
       Err(e) => {
         match e.kind {
           IoErrorKind::NoProgress => Continue,
-          IoErrorKind::EndOfFile  => Eof(self.v.as_slice()),
+          IoErrorKind::EndOfFile  => Eof(&self.v[]),
           _          => ProducerError(0)
         }
       },
       Ok(i)  => {
         println!("read {:?} bytes: {:?}", i, self.v);
-        Data(self.v.as_slice())
+        Data(&self.v[])
       }
     }
   }
@@ -126,12 +126,12 @@ impl<'x> Producer for MemProducer<'x> {
     if self.index + self.chunk_size < self.length {
       println!("self.index + {} < self.length", self.chunk_size);
       let new_index = self.index+self.chunk_size;
-      let res = Data(self.buffer.slice(self.index, new_index));
+      let res = Data(&self.buffer[self.index..new_index]);
       self.index = new_index;
       res
     } else if self.index < self.length {
       println!("self.index < self.length - 1");
-      let res = Eof(self.buffer.slice(self.index, self.length));
+      let res = Eof(&self.buffer[self.index..self.length]);
       self.index = self.length;
       res
     } else {
@@ -273,10 +273,10 @@ mod tests {
   #[test]
   fn accu_2() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
-      if input.len() <= 4 || input.slice(0,5) != "abcde".as_bytes() {
+      if input.len() <= 4 || &input[0..5] != "abcde".as_bytes() {
         Incomplete(0)
       } else {
-        Done(input.slice_from(5), input.slice(0,5))
+        Done(&input[5..], &input[0..5])
       }
     }
 

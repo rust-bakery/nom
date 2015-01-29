@@ -52,7 +52,7 @@ use internal::Err;
 /// * ConsumerDone if the consumer does not need anymore data to be parsed
 ///
 /// * ConsumerError when something went wrong
-#[derive(Show,PartialEq,Eq)]
+#[derive(Show,PartialEq,Eq,Copy)]
 pub enum ConsumerState {
   Await,
   //Incomplete,
