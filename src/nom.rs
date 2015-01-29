@@ -16,12 +16,10 @@ use internal::IResult::*;
 ///
 /// consumes the recognized characters
 ///
-/// ```
-///  /*
+/// ```ignore
 ///  tag!(x "abcd".as_bytes());
 ///  let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(x);
 ///  assert_eq!(r, Done("efgh".as_bytes(), "abcd".as_bytes()));
-///  */
 /// ```
 #[macro_export]
 macro_rules! tag(
@@ -38,8 +36,7 @@ macro_rules! tag(
 
 /// chains parsers and returns the result of only one of them
 ///
-/// ```
-/// /*
+/// ```ignore
 /// tag!(x "abcd".as_bytes());
 /// tag!(y "efgh".as_bytes());
 ///
@@ -50,7 +47,6 @@ macro_rules! tag(
 ///
 /// let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
 /// assert_eq!(r, Done("".as_bytes(), 1));
-/// */
 /// ```
 #[macro_export]
 macro_rules! o(

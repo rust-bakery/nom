@@ -4,31 +4,27 @@
 //!
 //! # Example
 //!
-//! ```
-//! // invalid code for rustdoc
-//! //#![macro_use] extern crate nom;
-//! // use nom::pusher;
-//! // use std::str;
-//! // fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
-//! //   println!("{:?}", input);
-//! //   Done(input, ())
-//! // }
-//! // // create a data producer from a file
-//! // FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
-//! //   let mut p = producer;
+//! ```ignore
+//!  use std::str;
+//!  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+//!    println!("{:?}", input);
+//!    Done(input, ())
+//!  }
+//!  // create a data producer from a file
+//!  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
+//!    let mut p = producer;
 //!
-//! //   // create the parsing function
-//! //   fn parser(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-//! //     par.map_res(str::from_utf8).flat_map(local_print);
-//! //     Done("".as_bytes(), ())
-//! //   }
+//!    // create the parsing function
+//!    fn parser(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+//!      par.map_res(str::from_utf8).flat_map(local_print);
+//!      Done("".as_bytes(), ())
+//!    }
 //!
-//! //   // adapt the parsing function to the producer
-//! //   pusher!(push, parser);
-//! //   // get started
-//! //   push(&mut p);
-//! // });
-//!
+//!    // adapt the parsing function to the producer
+//!    pusher!(push, parser);
+//!    // get started
+//!    push(&mut p);
+//!  });
 //! ```
 
 use internal::*;
@@ -150,15 +146,14 @@ impl<'x> Producer for MemProducer<'x> {
 ///
 /// # Example
 ///
-/// ```
-/// // invalid code for rustdoc
-/// //fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-/// //  par.flat_map(local_print)
-/// //}
-/// //let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
-/// //
-/// //pusher!(ps, pr);
-/// //ps(&mut p);
+/// ```ignore
+/// fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+///   par.flat_map(local_print)
+/// }
+/// let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
+///
+/// pusher!(ps, pr);
+/// ps(&mut p);
 /// ```
 #[macro_export]
 macro_rules! pusher (
