@@ -30,8 +30,8 @@
 use internal::*;
 use self::ProducerState::*;
 
-use std::io::fs::File;
-use std::io::{IoResult, IoErrorKind};
+use std::old_io::fs::File;
+use std::old_io::{IoResult, IoErrorKind};
 
 
 /// Holds the data producer's current state
