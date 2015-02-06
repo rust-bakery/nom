@@ -580,7 +580,7 @@ mod tests {
     fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    chain!(f<&[u8],B>, |:|{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
+    chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
 
     let r = Done((), "abcde".as_bytes()).flat_map(f);
     assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
