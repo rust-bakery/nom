@@ -542,7 +542,7 @@ mod tests {
     let i:Vec<u8> = vec![7,8];
     let o:Vec<u8> = vec![4,5,6];
     let arr:[u8; 6us] = [3, 4, 5, 6, 7, 8];
-    let res = Done((), arr.as_slice()).flat_map(sized_buffer);
+    let res = Done((), &arr[]).flat_map(sized_buffer);
     assert_eq!(res, Done(&i[], &o[]))
   }
 
@@ -552,7 +552,7 @@ mod tests {
     let v2:Vec<u8> = vec![4,5,6];
     let d = Done(&v1[], &v2[]);
     let res = d.flat_map(print);
-    assert_eq!(res, Done(v2.as_slice(), ()));
+    assert_eq!(res, Done(&v2[], ()));
   }
 
   #[derive(PartialEq,Eq,Debug)]

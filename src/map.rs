@@ -423,8 +423,8 @@ mod tests {
   fn t1() {
     let v1:Vec<u8> = vec![1,2,3];
     let v2:Vec<u8> = vec![4,5,6];
-    let d = Done(v1.as_slice(), v2.as_slice());
+    let d = Done(&v1[], &v2[]);
     let res = d.flat_map(local_print);
-    assert_eq!(res, Done(v2.as_slice(), ()));
+    assert_eq!(res, Done(&v2[], ()));
   }
 }
