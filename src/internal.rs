@@ -1,12 +1,32 @@
 //! Basic types to build the parsers
 
 use self::IResult::*;
+use std::fmt::{Debug,Display,Formatter,Result};
 
 /// Errortype. A integer for now
 pub type Err = u32;
 
 /// (Experimental) Closure used to hold the temporary state of resumable parsing
-pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
+pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<'a,I,O> +'a>;
+
+//cf libcore/fmt/mod.rs:674
+impl<'a,I,O> Debug for IResultClosure<'a,I,O> {
+  fn fmt(&self, f: &mut Formatter) -> Result {
+    Display::fmt("closure", f)
+  }
+}
+
+impl<'a,I:PartialEq,O:PartialEq> PartialEq for IResultClosure<'a,I,O> {
+  fn eq<'b>(&self, other: &IResultClosure<'b,I,O>) -> bool {
+    false
+  }
+
+  fn ne<'b>(&self, other: &IResultClosure<'b,I,O>) -> bool {
+    false
+  }
+}
+
+impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
 
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
@@ -24,17 +44,18 @@ pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
 /// * Incomplete will hold the closure used to restart the computation once more data is available.
 /// Current attemps at implementation of Incomplete are progressing, but slowed down by lifetime problems
 #[derive(Debug,PartialEq,Eq)]
-pub enum IResult<I,O> {
+pub enum IResult<'z,I,O> {
   Done(I,O),
   Error(Err),
   //Incomplete(proc(I):'a -> IResult<I,O>)
-  Incomplete(u32)
-  //Incomplete(IResultClosure<'a,I,O>)
+  //Incomplete(u32)
+  //Incomplete(Box<FnMut(I) -> IResult<I,O>>)
+  Incomplete(IResultClosure<'z,I,O>)
   //Incomplete(|I|:'a -> IResult<'a,I,O>)
   //Incomplete(fn(I) -> IResult<'a,I,O>)
 }
 
-impl<I,O> IResult<I,O> {
+impl<'z,I,O> IResult<'z,I,O> {
   pub fn is_done(&self) -> bool {
     match self {
       &Done(_,_) => true,
@@ -65,7 +86,7 @@ pub trait GetOutput<O> {
   fn output(&self) -> Option<O>;
 }
 
-impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
+impl<'a,'z,I,O> GetInput<&'a[I]> for IResult<'z,&'a[I],O> {
   fn remaining_input(&self) -> Option<&'a[I]> {
     match self {
       &Done(ref i,_) => Some(*i),
@@ -74,7 +95,7 @@ impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
   }
 }
 
-impl<'a,O> GetInput<()> for IResult<(),O> {
+impl<'a,'z,O> GetInput<()> for IResult<'z,(),O> {
   fn remaining_input(&self) -> Option<()> {
     match self {
       &Done((),_) => Some(()),
@@ -83,7 +104,7 @@ impl<'a,O> GetInput<()> for IResult<(),O> {
   }
 }
 
-impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
+impl<'a,'z,I,O> GetOutput<&'a[O]> for IResult<'z,I,&'a[O]> {
   fn output(&self) -> Option<&'a[O]> {
     match self {
       &Done(_, ref o) => Some(*o),
@@ -92,7 +113,7 @@ impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
   }
 }
 
-impl<'a,I> GetOutput<()> for IResult<I,()> {
+impl<'a,'z,I> GetOutput<()> for IResult<'z,I,()> {
   fn output(&self) -> Option<()> {
     match self {
       &Done(_,()) => Some(()),

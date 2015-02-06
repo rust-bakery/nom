@@ -53,14 +53,14 @@ opt!(opt_multispace<&[u8],&[u8]> multispace);
 o!(value<&[u8],&str> space ~ equal ~ space ~ [ value_parser ] ~ space ~ opt_comment ~ opt_multispace);
 chain!(key_value<&[u8],(&str,&str)>, ||{(key, val)},  key: parameter_parser, val: value,);
 
-fn keys_and_values<'a>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
+fn keys_and_values<'a,'b>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<'b,&'a[u8], HashMap<&'a str, &'a str> > {
   fold0_impl!(<&[u8], HashMap<&str, &str> >, | mut h:HashMap<&'a str, &'a str>, (k, v)| {
     h.insert(k,v);
     h
   }, key_value, input, z);
 }
 
-fn keys_and_values_wrapper<'a>(input:&'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
+fn keys_and_values_wrapper<'a,'b>(input:&'a[u8]) -> IResult<'b,&'a[u8], HashMap<&'a str, &'a str> > {
   let h: HashMap<&str, &str> = HashMap::new();
   let res = keys_and_values(input, h);
   //println!("{:?}", res);

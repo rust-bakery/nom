@@ -20,7 +20,7 @@ fn tag() {
     let mut p = producer;
     tag!(f "https://".as_bytes());
     //p.push(|par| par.flat_map(f).flat_map(print));
-    fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+    fn pr<'a,'b>(par: IResult<'a,(),&'b [u8]>) -> IResult<'b,&'b [u8],()> {
       let p = par.flat_map(f).map_res(str::from_utf8).flat_map(print);
       println!("p : {:?}", p);
       Done("".as_bytes(), ())
@@ -31,7 +31,7 @@ fn tag() {
   }); 
 }
 
-pub fn print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+pub fn print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
   println!("{:?}", input);
   Done(input, ())
 }

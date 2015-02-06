@@ -208,7 +208,7 @@ mod tests {
   use std::str;
   use map::*;
 
-  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+  fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
     println!("{:?}", input);
     Done(input, ())
   }
@@ -221,7 +221,7 @@ mod tests {
   #[test]
   fn mem_producer_2() {
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
-    fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+    fn pr<'a,'b,'c>(par: IResult<'a,(),&'c [u8]>) -> IResult<'b,&'c [u8],()> {
       par.flat_map(local_print)
     }
     pusher!(ps, pr);
@@ -239,7 +239,7 @@ mod tests {
       let mut p = producer;
       //p.push(|par| {println!("parsed file: {}", par); par});
       //p.push(|par| par.flat_map(print));
-      fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
+      fn pr<'a,'b,'c>(par: IResult<'a,(),&[u8]>) -> IResult<'b,&'c [u8],()> {
         par.map_res(str::from_utf8).flat_map(local_print);
         Done("".as_bytes(), ())
       }
@@ -253,14 +253,14 @@ mod tests {
   fn accu() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
       if input.len() <= 4 {
-        Incomplete(0)
+        Error(42)//Incomplete(0)
       } else {
         Done("".as_bytes(), input)
       }
     }
 
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-    fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
+    fn pr<'a,'b>(par: IResult<'a,(),&'b [u8]>) -> IResult<'b,&'b [u8],&'b [u8]> {
       let r = par.flat_map(f);
       println!("f: {:?}", r);
       r
@@ -274,14 +274,14 @@ mod tests {
   fn accu_2() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
       if input.len() <= 4 || &input[0..5] != "abcde".as_bytes() {
-        Incomplete(0)
+        Error(42)//Incomplete(0)
       } else {
         Done(&input[5..], &input[0..5])
       }
     }
 
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-    fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],&[u8]> {
+    fn pr<'a,'b,'c>(par: IResult<'a,(),&'b [u8]>) -> IResult<'b,&'b [u8],&'b [u8]> {
       let r = par.flat_map(f);
       println!("f: {:?}", r);
       r

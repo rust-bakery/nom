@@ -55,7 +55,7 @@ macro_rules! o(
     fn $name(input:$i) -> IResult<$i, $o>{
       match $f1(input) {
         IResult::Error(e)      => IResult::Error(e),
-        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Incomplete(i) => IResult::Error(42),//IResult::Incomplete(i),
         IResult::Done(i,o)     => {
           o_parser!(i ~ o ~ $($rest)*)
         }
@@ -69,11 +69,11 @@ macro_rules! o_parser(
   ($i:ident ~ $o:ident ~ [ $e:ident ] ~ $s:ident) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Incomplete(i) => IResult::Error(42),//IResult::Incomplete(i),
       IResult::Done(i,o)     => {
         match $s(i) {
           IResult::Error(e)      => IResult::Error(e),
-          IResult::Incomplete(i) => IResult::Incomplete(i),
+          IResult::Incomplete(i) => IResult::Error(42),//IResult::Incomplete(i),
           IResult::Done(i2,o2)     => {
             IResult::Done(i2, o)
           }
@@ -85,7 +85,7 @@ macro_rules! o_parser(
   ($i:ident ~ $o:ident ~ [ $e:ident ] ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Incomplete(i) => IResult::Error(42),//IResult::Incomplete(i),
       IResult::Done(i,o)     => {
         o_parser!(i ~ o ~ $($rest)*)
       }
@@ -99,7 +99,7 @@ macro_rules! o_parser(
   ($i:ident ~ $o:ident ~ $e:ident ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Incomplete(i) => IResult::Error(42),//IResult::Incomplete(i),
       IResult::Done(i,_)     => {
         o_parser!(i ~ $o ~ $($rest)*)
       }
@@ -109,7 +109,7 @@ macro_rules! o_parser(
   ($i:ident ~ $o:ident ~ $e:ident) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Incomplete(i) => IResult::Error(42),//IResult::Incomplete(i),
       IResult::Done(i,_)     => {
         IResult::Done(i, $o)
       }
@@ -134,7 +134,7 @@ macro_rules! chaining_parser (
   ($i:expr, $assemble:expr, $field:ident : $e:expr, $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Incomplete(i) => IResult::Error(42),//IResult::Incomplete(i),
       IResult::Done(i,o)     => {
         let $field = o;
         chaining_parser!(i, $assemble, $($rest)*)
@@ -179,12 +179,12 @@ macro_rules! alt_parser (
   )
 );
 
-pub fn print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+pub fn print<'y,T: Debug>(input: T) -> IResult<'y,T, ()> {
   println!("{:?}", input);
   Done(input, ())
 }
 
-pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
+pub fn begin<'a,'y>(input: &'a [u8]) -> IResult<'y,(), &'a [u8]> {
   Done((), input)
 }
 
@@ -325,7 +325,7 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() == 0 {
-    return Incomplete(0)
+    return Error(42)//Incomplete(0)
   }
 
   let len = input[0] as usize;
@@ -333,7 +333,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() >= len + 1 {
     return Done(&input[len+1..], &input[1..len+1])
   } else {
-    return Incomplete(0)
+    return Error(42)//Incomplete(0)
   }
 }
 
