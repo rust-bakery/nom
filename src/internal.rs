@@ -23,7 +23,7 @@ pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
 ///
 /// * Incomplete will hold the closure used to restart the computation once more data is available.
 /// Current attemps at implementation of Incomplete are progressing, but slowed down by lifetime problems
-#[derive(Show,PartialEq,Eq)]
+#[derive(Debug,PartialEq,Eq)]
 pub enum IResult<I,O> {
   Done(I,O),
   Error(Err),
