@@ -179,8 +179,8 @@ macro_rules! pusher (
         }
         let mut v2: Vec<u8>  = Vec::new();
         v2.push_all(acc.as_slice());
-        let p = IResult::Done((), v2.as_slice());
-        match $f(p) {
+        //let p = IResult::Done("".as_bytes(), v2.as_slice());
+        match $f(v2.as_slice()) {
           IResult::Error(e)      => {
             println!("error, stopping: {}", e);
             break;
@@ -221,8 +221,8 @@ mod tests {
   #[test]
   fn mem_producer_2() {
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
-    fn pr<'a,'b,'c>(par: IResult<'a,(),&'c [u8]>) -> IResult<'b,&'c [u8],()> {
-      par.flat_map(local_print)
+    fn pr<'a,'b>(data: &'a [u8]) -> IResult<'b,&'a [u8],()> {
+      local_print(data)
     }
     pusher!(ps, pr);
     ps(&mut p);
@@ -239,9 +239,9 @@ mod tests {
       let mut p = producer;
       //p.push(|par| {println!("parsed file: {}", par); par});
       //p.push(|par| par.flat_map(print));
-      fn pr<'a,'b,'c>(par: IResult<'a,(),&[u8]>) -> IResult<'b,&'c [u8],()> {
-        par.map_res(str::from_utf8).flat_map(local_print);
-        Done("".as_bytes(), ())
+      fn pr<'a,'b,'c>(data: &[u8]) -> IResult<'b,&[u8], &[u8]> {
+        Done("".as_bytes(), data).map_res(str::from_utf8); //.flat_map(local_print);
+        Done("".as_bytes(),"".as_bytes())
       }
       pusher!(ps, pr);
       ps(&mut p);
@@ -260,8 +260,8 @@ mod tests {
     }
 
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-    fn pr<'a,'b>(par: IResult<'a,(),&'b [u8]>) -> IResult<'b,&'b [u8],&'b [u8]> {
-      let r = par.flat_map(f);
+    fn pr<'a,'b>(data: &'b [u8]) -> IResult<'b,&'b [u8],&'b [u8]> {
+      let r = f(data);
       println!("f: {:?}", r);
       r
     }
@@ -281,8 +281,8 @@ mod tests {
     }
 
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-    fn pr<'a,'b,'c>(par: IResult<'a,(),&'b [u8]>) -> IResult<'b,&'b [u8],&'b [u8]> {
-      let r = par.flat_map(f);
+    fn pr<'a,'b,'c>(data: &'b [u8]) -> IResult<'b,&'b [u8],&'b [u8]> {
+      let r = f(data);
       println!("f: {:?}", r);
       r
     }

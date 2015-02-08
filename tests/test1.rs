@@ -20,8 +20,8 @@ fn tag() {
     let mut p = producer;
     tag!(f "https://".as_bytes());
     //p.push(|par| par.flat_map(f).flat_map(print));
-    fn pr<'a,'b>(par: IResult<'a,(),&'b [u8]>) -> IResult<'b,&'b [u8],()> {
-      let p = par.flat_map(f).map_res(str::from_utf8).flat_map(print);
+    fn pr<'a,'b>(data:&'a [u8]) -> IResult<'b,&'a [u8],()> {
+      let p = f(data).map_res(str::from_utf8);//.flat_map(print);
       println!("p : {:?}", p);
       Done("".as_bytes(), ())
     }
@@ -41,13 +41,13 @@ pub fn print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
 fn is_not() {
   is_not!(foo "\r\n".as_bytes());
   let a = "ab12cd\nefgh".as_bytes();
-  assert_eq!(Done((), a).flat_map(foo), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
+  assert_eq!(foo(a), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
 }
 
 
 #[test]
 fn exported_public_method_defined_by_macro() {
   let a = "ab12cd\nefgh".as_bytes();
-  assert_eq!(Done((), a).flat_map(not_line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
+  assert_eq!(not_line_ending(a), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
 }
 

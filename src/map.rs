@@ -16,8 +16,8 @@ use internal::IResult::*;
 /// use std::str;
 /// Done((),()).flat_map(|data| { println!("data: {:?}", data); Done(data,())});
 /// ```
-pub trait FlatMapper<O:?Sized,N:?Sized> {
-  fn flat_map<'y,F:Fn(O) -> IResult<'y,O,N>>(& self, f: F) -> IResult<'y,O,N>;
+pub trait FlatMapper<I:?Sized,O:?Sized,N:?Sized> {
+  fn flat_map<'y,F:Fn(O) -> IResult<'y,O,N>>(& self, f: F) -> IResult<'y,I,N>;
 }
 /*
 pub fn compose<'x,'y,'z,R,S,T,F:Fn(S) -> IResult<'y,S,T>>(f:F, g:IResultClosure<'z,R,S>) -> IResultClosure<'x,R,T> {
@@ -35,16 +35,31 @@ pub fn compose<'x,'y,'z,R,S,T,F:Fn(S) -> IResult<'y,S,T>>(f:F, g:IResultClosure<
 #[macro_export]
 macro_rules! flat_map_ref_impl {
   ($($t:ty)*) => ($(
-      impl<'a,'z,R,T> FlatMapper<&'a $t, T> for IResult<'z,R,&'a $t> {
-        fn flat_map<'y,F:Fn(&'a $t) -> IResult<'y,&'a $t,T>>(&self, f: F) -> IResult<'y,&'a $t,T> {
+      impl<'a,'b,'z,R,T> FlatMapper<&'b R,&'a $t, T> for IResult<'z,&'b R,&'a $t> {
+        #[allow(unused_variables)]
+        fn flat_map<'y,F:Fn(&'a $t) -> IResult<'y,&'a $t,T>>(&self, f: F) -> IResult<'y,&'b R,T> {
           match self {
             &Error(ref e) => Error(*e),
-            &Incomplete(ref i) => Error(42),/*Incomplete(Box::new(move |input: R| -> IResult<'y,&'a $t,T> {
-              let g:IResultClosure<'z,R,&'a $t> = *i;
-              g(input).flat_map(f)
-            })),*/
-            //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-            &Done(_, ref o) => f(*o)
+            &Incomplete(ref cl) => Error(42),//Incomplete(|input:&'b R| { cl(input).map(f) }),
+            &Done(ref i, ref o) => match f(*o) {
+              Error(ref e) => Error(*e),
+              Incomplete(ref i2) => Error(42),
+              Done(_, o2) => Done(*i, o2)
+            }
+          }
+        }
+      }
+      impl<'a,'z,T> FlatMapper<(),&'a $t, T> for IResult<'z,(),&'a $t> {
+        #[allow(unused_variables)]
+        fn flat_map<'y,F:Fn(&'a $t) -> IResult<'y,&'a $t,T>>(&self, f: F) -> IResult<'y,(),T> {
+          match self {
+            &Error(ref e) => Error(*e),
+            &Incomplete(ref cl) => Error(42), //Incomplete(|input:I| { cl(input).map(f) })
+            &Done((), ref o) => match f(*o) {
+              Error(ref e) => Error(*e),
+              Incomplete(ref i2) => Error(42),
+              Done(_, o2) => Done((), o2)
+            }
           }
         }
       }
@@ -55,6 +70,7 @@ flat_map_ref_impl! {
   str [bool] [char] [usize] [u8] [u16] [u32] [u64] [isize] [i8] [i16] [i32] [i64] [f32] [f64]
 }
 
+
 /// derives flat_map implementation for a list of specific IResult types
 ///
 /// ```
@@ -63,13 +79,31 @@ flat_map_ref_impl! {
 #[macro_export]
 macro_rules! flat_map_impl {
   ($($t:ty)*) => ($(
-      impl<'z,R,T> FlatMapper<$t, T> for IResult<'z,R,$t> {
-        fn flat_map<'y,F:Fn($t) -> IResult<'y,$t,T>>(&self, f: F) -> IResult<'y,$t,T> {
+      impl<'a,'z,R,T> FlatMapper<&'a R,$t, T> for IResult<'z,&'a R,$t> {
+        #[allow(unused_variables)]
+        fn flat_map<'y,F:Fn($t) -> IResult<'y,$t,T>>(&self, f: F) -> IResult<'y,&'a R,T> {
           match self {
             &Error(ref e) => Error(*e),
             &Incomplete(ref i) => Error(42),//Incomplete(*i),
-            //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-            &Done(_, o) => f(o)
+            &Done(ref i, o) => match f(o) {
+              Error(ref e) => Error(*e),
+              Incomplete(ref i2) => Error(42),
+              Done(i2, o2) => Done(*i, o2)
+            }
+          }
+        }
+      }
+      impl<'z,T> FlatMapper<(),$t, T> for IResult<'z,(),$t> {
+        #[allow(unused_variables)]
+        fn flat_map<'y,F:Fn($t) -> IResult<'y,$t,T>>(&self, f: F) -> IResult<'y,(),T> {
+          match self {
+            &Error(ref e) => Error(*e),
+            &Incomplete(ref i) => Error(42),//Incomplete(*i),
+            &Done((), o) => match f(o) {
+              Error(ref e) => Error(*e),
+              Incomplete(ref i2) => Error(42),
+              Done(i2, o2) => Done((), o2)
+            }
           }
         }
       }
@@ -80,13 +114,52 @@ flat_map_impl! {
   bool char usize u8 u16 u32 u64 isize i8 i16 i32 i64 f32 f64
 }
 
-impl<'z,R,T> FlatMapper<(), T> for IResult<'z,R,()> {
+
+impl<'a,'z,R,T> FlatMapper<&'a R,(), T> for IResult<'z,&'a R,()> {
+  #[allow(unused_variables)]
+  fn flat_map<'y,F: Fn(()) -> IResult<'y,(),T>>(&self, f: F) -> IResult<'y,&'a R,T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Error(42),//Incomplete(*i),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      //&Incomplete(ref cl) => Incomplete(Box::new(move |input| { cl(input).flat_map(f) })),
+      &Done(ref i, ()) => match f(()) {
+        Error(ref e) => Error(*e),
+        Incomplete(ref i2) => Error(42),
+        Done(_, o2) => Done(*i, o2)
+      }
+    }
+  }
+}
+
+impl<'a,'x,'z,S,T> FlatMapper<(),&'a S,T> for IResult<'z,(),&'a S> {
+  #[allow(unused_variables)]
+  fn flat_map<'y,F:Fn(&'a S) -> IResult<'y,&'a S,T>>(&self, f: F) -> IResult<'y,(),T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Error(42),//Incomplete(*i),
+      //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
+      &Done((), ref o) => match f(*o) {
+        Error(ref e) => Error(*e),
+        Incomplete(ref i2) => Error(42),
+        Done(_, o2) => Done((), o2)
+      }
+    }
+  }
+}
+
+impl<'x,'z,T> FlatMapper<(),(),T> for IResult<'z,(),()> {
+  #[allow(unused_variables)]
   fn flat_map<'y,F:Fn(()) -> IResult<'y,(),T>>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
       &Incomplete(ref i) => Error(42),//Incomplete(*i),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
-      &Done(_, _) => f(())
+      &Done((), ()) => match f(()) {
+        Error(ref e) => Error(*e),
+        Incomplete(ref i2) => Error(42),
+        Done(_, o2) => Done((), o2)
+      }
     }
   }
 }
@@ -433,7 +506,7 @@ mod tests {
     let v1:Vec<u8> = vec![1,2,3];
     let v2:Vec<u8> = vec![4,5,6];
     let d = Done(&v1[], &v2[]);
-    let res = d.flat_map(local_print);
+    let res = local_print(&v2[]);
     assert_eq!(res, Done(&v2[], ()));
   }
 }

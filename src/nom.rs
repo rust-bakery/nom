@@ -513,28 +513,28 @@ mod tests {
     let c = "a123".as_bytes();
     let d = "azé12".as_bytes();
     let e = " ".as_bytes();
-    assert_eq!(Done((),a).flat_map(alpha), Done(empty, a));
-    assert_eq!(Done((),b).flat_map(alpha), Done(b, empty));
-    assert_eq!(Done((),c).flat_map(alpha), Done(&c[1..], "a".as_bytes()));
-    assert_eq!(Done((),d).flat_map(alpha), Done("é12".as_bytes(), "az".as_bytes()));
-    assert_eq!(Done((),a).flat_map(digit), Done(a, empty));
-    assert_eq!(Done((),b).flat_map(digit), Done(empty, b));
-    assert_eq!(Done((),c).flat_map(digit), Done(c, empty));
-    assert_eq!(Done((),d).flat_map(digit), Done(d, empty));
-    assert_eq!(Done((),a).flat_map(alphanumeric), Done(empty, a));
-    assert_eq!(Done((),b).flat_map(alphanumeric), Done(empty, b));
-    assert_eq!(Done((),c).flat_map(alphanumeric), Done(empty, c));
-    assert_eq!(Done((),d).flat_map(alphanumeric), Done("é12".as_bytes(), "az".as_bytes()));
-    assert_eq!(Done((),e).flat_map(space), Done("".as_bytes(), " ".as_bytes()));
+    assert_eq!(alpha(a), Done(empty, a));
+    assert_eq!(alpha(b), Done(b, empty));
+    assert_eq!(alpha(c), Done(&c[1..], "a".as_bytes()));
+    assert_eq!(alpha(d), Done("é12".as_bytes(), "az".as_bytes()));
+    assert_eq!(digit(a), Done(a, empty));
+    assert_eq!(digit(b), Done(empty, b));
+    assert_eq!(digit(c), Done(c, empty));
+    assert_eq!(digit(d), Done(d, empty));
+    assert_eq!(alphanumeric(a), Done(empty, a));
+    assert_eq!(alphanumeric(b), Done(empty, b));
+    assert_eq!(alphanumeric(c), Done(empty, c));
+    assert_eq!(alphanumeric(d), Done("é12".as_bytes(), "az".as_bytes()));
+    assert_eq!(space(e), Done("".as_bytes(), " ".as_bytes()));
   }
 
   #[test]
   fn is_not() {
     let a = "ab12cd\nefgh".as_bytes();
-    assert_eq!(Done((), a).flat_map(not_line_ending), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
+    assert_eq!(not_line_ending(a), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
 
     let b = "ab12cd\nefgh\nijkl".as_bytes();
-    assert_eq!(Done((), b).flat_map(not_line_ending), Done("\nefgh\nijkl".as_bytes(), "ab12cd".as_bytes()));
+    assert_eq!(not_line_ending(b), Done("\nefgh\nijkl".as_bytes(), "ab12cd".as_bytes()));
   }
 
   #[test]
@@ -542,18 +542,18 @@ mod tests {
     let i:Vec<u8> = vec![7,8];
     let o:Vec<u8> = vec![4,5,6];
     let arr:[u8; 6us] = [3, 4, 5, 6, 7, 8];
-    let res = Done((), &arr[]).flat_map(sized_buffer);
+    let res = sized_buffer(&arr[]);
     assert_eq!(res, Done(&i[], &o[]))
   }
 
-  #[test]
+  /*#[test]
   fn t1() {
     let v1:Vec<u8> = vec![1,2,3];
     let v2:Vec<u8> = vec![4,5,6];
     let d = Done(&v1[], &v2[]);
     let res = d.flat_map(print);
     assert_eq!(res, Done(&v2[], ()));
-  }
+  }*/
 
   #[derive(PartialEq,Eq,Debug)]
   struct B {
@@ -569,7 +569,7 @@ mod tests {
     //o!(z<&[u8], int>  x S x S retInt Z y);
     o!(z<&[u8], u8>  x ~ x ~ [ ret_int ] ~ y);
 
-    let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
+    let r = z("abcdabcdefgh".as_bytes());
     assert_eq!(r, Done("".as_bytes(), 1));
   }
 
@@ -582,7 +582,7 @@ mod tests {
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
     chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: ret_int1, bb: ret_int2,);
 
-    let r = Done((), "abcde".as_bytes()).flat_map(f);
+    let r = f("abcde".as_bytes());
     assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
   }
 
@@ -606,9 +606,9 @@ mod tests {
     alt!(alt3<&[u8],&[u8]>, dont_work | dont_work | work2 | dont_work);
 
     let a = "abcd".as_bytes();
-    assert_eq!(Done((), a).flat_map(alt1), Error(1));
-    assert_eq!(Done((), a).flat_map(alt2), Done("".as_bytes(), a));
-    assert_eq!(Done((), a).flat_map(alt3), Done(a, "".as_bytes()));
+    assert_eq!(alt1(a), Error(1));
+    assert_eq!(alt2(a), Done("".as_bytes(), a));
+    assert_eq!(alt3(a), Done(a, "".as_bytes()));
   }
 
   #[test]
@@ -618,8 +618,8 @@ mod tests {
 
     let a = "abcdef".as_bytes();
     let b = "bcdefg".as_bytes();
-    assert_eq!(Done((),a).flat_map(o), Done("ef".as_bytes(), Some("abcd".as_bytes())));
-    assert_eq!(Done((),b).flat_map(o), Done("bcdefg".as_bytes(), None));
+    assert_eq!(o(a), Done("ef".as_bytes(), Some("abcd".as_bytes())));
+    assert_eq!(o(b), Done("bcdefg".as_bytes(), None));
   }
 
   #[test]
@@ -632,10 +632,10 @@ mod tests {
     let c = "azerty".as_bytes();
 
     let res1 = vec!["abcd".as_bytes()];
-    assert_eq!(Done((),a).flat_map(multi), Done("ef".as_bytes(), res1));
+    assert_eq!(multi(a), Done("ef".as_bytes(), res1));
     let res2 = vec!["abcd".as_bytes(), "abcd".as_bytes()];
-    assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), res2));
-    assert_eq!(Done((),c).flat_map(multi), Done("azerty".as_bytes(), Vec::new()));
+    assert_eq!(multi(b), Done("ef".as_bytes(), res2));
+    assert_eq!(multi(c), Done("azerty".as_bytes(), Vec::new()));
   }
 
   #[test]
@@ -647,10 +647,10 @@ mod tests {
     let b = "abcdabcdef".as_bytes();
     let c = "azerty".as_bytes();
     let res1 = vec!["abcd".as_bytes()];
-    assert_eq!(Done((),a).flat_map(multi), Done("ef".as_bytes(), res1));
+    assert_eq!(multi(a), Done("ef".as_bytes(), res1));
     let res2 = vec!["abcd".as_bytes(), "abcd".as_bytes()];
-    assert_eq!(Done((),b).flat_map(multi), Done("ef".as_bytes(), res2));
-    assert_eq!(Done((),c).flat_map(multi), Error(0));
+    assert_eq!(multi(b), Done("ef".as_bytes(), res2));
+    assert_eq!(multi(c), Error(0));
   }
 
   #[test]

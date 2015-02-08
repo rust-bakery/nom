@@ -96,7 +96,7 @@ key = value2
 number = 1234
 str = a b cc dd ; comment";
 
-  let res = Done((), ini_file.as_bytes()).flat_map(comment);
+  let res = comment(ini_file.as_bytes());
   println!("{:?}", res);
   match res {
     IResult::Done(i, o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
@@ -116,7 +116,7 @@ key = value2";
   let ini_without_category = "parameter=value
 key = value2";
 
-  let res = Done((), ini_file.as_bytes()).flat_map(category);
+  let res = category(ini_file.as_bytes());
   println!("{:?}", res);
   match res {
     IResult::Done(i, o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
@@ -133,7 +133,7 @@ key = value2";
 
   let ini_without_key_value = "key = value2";
 
-  let res = Done((), ini_file.as_bytes()).flat_map(key_value);
+  let res = key_value(ini_file.as_bytes());
   println!("{:?}", res);
   match res {
     IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
@@ -151,7 +151,7 @@ key = value2";
 
   let ini_without_key_value = "key = value2";
 
-  let res = Done((), ini_file.as_bytes()).flat_map(key_value);
+  let res = key_value(ini_file.as_bytes());
   println!("{:?}", res);
   match res {
     IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
@@ -168,7 +168,7 @@ key = value2";
 
   let ini_without_key_value = "key = value2";
 
-  let res = Done((), ini_file.as_bytes()).flat_map(key_value);
+  let res = key_value(ini_file.as_bytes());
   println!("{:?}", res);
   match res {
     IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
