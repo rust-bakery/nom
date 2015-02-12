@@ -164,6 +164,68 @@ impl<'x,'z,T> FlatMapper<(),(),T> for IResult<'z,(),()> {
   }
 }
 
+/*
+pub trait FlatMap<'y,I:?Sized,O:?Sized,N:?Sized> {
+  fn flat_map2<'a,'b,F:Fn(O) -> IResult<'a,O,N> + 'b + 'y>(&'y mut self, f: F) -> IResult<'y,I,N>;
+  //fn flat_map2<'a,'b>(&mut self, f: IResultClosure<'a,O,N>) -> IResult<'b,I,N>;
+}
+
+pub type MyClosure<'a,I,O> = Box<FnMut(I) -> IResult<'a,I,O> +'a>;
+//pub fn compose<'x,T,F:Fn(()) -> IResult<'x,(),T> + 'x>(f:F, mut g:IResultClosure<'x,(),()>) -> IResultClosure<'x,(),T> {
+pub fn compose<'x,T>(mut f:IResultClosure<'x,(),T>, mut g:IResultClosure<'x,(),()>) -> IResultClosure<'x,(),T> {
+  Box::new(move |input: ()| -> IResult<'x,(),T> {
+    let res = g(input);
+    //res.flat_map(f)
+    match res {
+      Error(ref e) => Error(*e),
+      Incomplete(c) => Incomplete(compose(f, c)),
+      Done(x,y) => match f(y) {
+        Error(ref e) => Error(*e),
+        Incomplete(i2) => Incomplete(i2),//compose(i2, *c)),
+        Done(_, o2) => Done(x, o2)
+      }
+    }
+  })
+}
+
+impl<'y,T> FlatMap<'y,(),(),T> for IResult<'y,(),()> {
+  fn flat_map2<'a,'b,F:Fn(()) -> IResult<'a,(),T> + 'b + 'y>(&'y mut self, f: F) -> IResult<'y,(),T> {
+    match self {
+      &mut Error(ref e) => Error(*e),
+      &mut Incomplete(ref mut cl) => {
+        //let f2 = Box::new(ref f);
+        //Incomplete(Box::new(|input| { Error(42)}))
+        //Incomplete(Box::new(move |input| { cl(input); Error(42)}))
+        //Incomplete(Box::new(|input| { let x = f2; Error(42)}))
+        //Incomplete(Box::new(|input| { cl(input).flat_map(f)}))
+        //let c = Box::new(cl);
+        Incomplete(Box::new(move |input| {
+          let res: IResult<'y,(),()> = cl(input);
+          //let res2 = res.flat_map(f);
+          //res2
+          //res
+          //Done((),()).flat_map(f)
+          match res {
+            Error(ref e) => Error(*e),
+            Incomplete(ref c) => Error(42),
+            Done(x,y) => match f(y) {
+              Error(ref e) => Error(*e),
+              Incomplete(ref i2) => Error(42),
+              Done(_, o2) => Done(x, o2)
+            }
+          }
+        }))
+      },
+      &mut Done((), ()) => match f(()) {
+        Error(ref e) => Error(*e),
+        Incomplete(ref i2) => Error(42),
+        Done(_, o2) => Done((), o2)
+      }
+    }
+  }
+}
+*/
+
 /// map_opt and map_res are used to combine common functions with parsers
 ///
 /// ```
@@ -367,6 +429,7 @@ impl<'z,T> Mapper<(),(), T> for IResult<'z,(),()> {
 /// let res = Done((),"abcd".as_bytes()).map(|data| { str::from_utf8(data).unwrap() });
 /// assert_eq!(res, Done((), "abcd"));
 ///```
+
 pub trait Mapper2<I,O,N> {
   fn map<'y,F: Fn(O) -> N>(& self, f: F) -> IResult<'y,I,N>;
 }
@@ -465,6 +528,51 @@ impl<'a,'z,T> Mapper2<(), &'a str, T> for IResult<'z,(),&'a str> {
     }
   }
 }
+
+/*
+pub trait FMap<I,O,N> {
+  fn fmap<'y,F: Fn(O) -> N>(& self, f: F) -> IResult<'y,I,N>;
+}
+
+impl<'a,'z,S,T> FMap<(), &'a[S], T> for IResult<'z,(),&'a [S]> {
+  fn fmap<'y,F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<'y,(),T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref g) => {
+        Incomplete(Box::new(move |input| {
+          let tmp = g(input);
+          let res = tmp.fmap(f);
+          res
+        }))
+      },
+      &Done((), ref o) => Done((),f(*o))
+    }
+  }
+}
+*/
+/*
+#[macro_export]
+macro_rules! map2_ref_impl {
+  ($i:ty, $o:ty) => (
+      impl<'a,'b,'z,T> Mapper2<&'b $i,&'a $o, T> for IResult<'z,&'b $i,&'a $o> {
+        #[allow(unused_variables)]
+        fn map<'y,F: Fn(&'a $o) -> T>(&self, f: F) -> IResult<'y,&'b $i,T> {
+          match self {
+            &Error(ref e) => Error(*e),
+            &Incomplete(ref i) => Error(42),//Incomplete(*i),
+            //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
+            &Done(ref i, ref o) => Done(*i,f(*o))
+          }
+        }
+      }
+  )
+}
+
+map2_ref_impl!([u8], [u8]);
+map2_ref_impl!([u8], str);
+map2_ref_impl!(str,  [u8]);
+map2_ref_impl!(str,  str);
+*/
 
 #[cfg(test)]
 mod tests {
