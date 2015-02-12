@@ -123,6 +123,7 @@ macro_rules! o_parser(
 #[macro_export]
 macro_rules! chain (
   ($name:ident<$i:ty,$o:ty>, $assemble:expr, $($rest:tt)*) => (
+    #[allow(unused_variables)]
     fn $name(i:$i) -> IResult<$i,$o>{
       chaining_parser!(i, $assemble, $($rest)*)
     }
