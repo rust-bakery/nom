@@ -184,6 +184,7 @@ pub trait Mapper<I,O,N> {
 macro_rules! map_ref_impl {
   ($i:ty, $o:ty) => (
       impl<'a,'b,'z,T> Mapper<&'b $i,&'a $o, T> for IResult<'z,&'b $i,&'a $o> {
+        #[allow(unused_variables)]
         fn map_opt<'y,F:Fn(&'a $o) -> Option<T>>(&self, f: F) -> IResult<'y,&'b $i,T> {
           match self {
             &Error(ref e) => Error(*e),
@@ -196,6 +197,7 @@ macro_rules! map_ref_impl {
           }
         }
 
+        #[allow(unused_variables)]
         fn map_res<'y,U, F: Fn(&'a $o) -> Result<T,U>>(&self, f: F) -> IResult<'y,&'b $i,T> {
           match self {
             &Error(ref e) => Error(*e),
@@ -217,6 +219,7 @@ map_ref_impl!(str,  [u8]);
 map_ref_impl!(str,  str);
 
 impl<'a,'z,S,T> Mapper<(), &'a[S], T> for IResult<'z,(),&'a [S]> {
+  #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -229,6 +232,7 @@ impl<'a,'z,S,T> Mapper<(), &'a[S], T> for IResult<'z,(),&'a [S]> {
     }
   }
 
+  #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(&'a[S]) -> Result<T,U>>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -243,6 +247,7 @@ impl<'a,'z,S,T> Mapper<(), &'a[S], T> for IResult<'z,(),&'a [S]> {
 }
 
 impl<'a,'z,T> Mapper<(),&'a str, T> for IResult<'z,(),&'a str> {
+  #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -255,6 +260,7 @@ impl<'a,'z,T> Mapper<(),&'a str, T> for IResult<'z,(),&'a str> {
     }
   }
 
+  #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -269,6 +275,7 @@ impl<'a,'z,T> Mapper<(),&'a str, T> for IResult<'z,(),&'a str> {
 }
 
 impl<'a,'z,R,T> Mapper<&'a[R], (), T> for IResult<'z,&'a[R],()> {
+  #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<'y,&'a[R],T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -281,6 +288,7 @@ impl<'a,'z,R,T> Mapper<&'a[R], (), T> for IResult<'z,&'a[R],()> {
     }
   }
 
+  #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<'y,&'a [R],T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -295,6 +303,7 @@ impl<'a,'z,R,T> Mapper<&'a[R], (), T> for IResult<'z,&'a[R],()> {
 }
 
 impl<'a,'z,T> Mapper<&'a str, (), T> for IResult<'z,&'a str,()> {
+  #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<'y,&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -307,6 +316,7 @@ impl<'a,'z,T> Mapper<&'a str, (), T> for IResult<'z,&'a str,()> {
     }
   }
 
+  #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<'y,&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -321,6 +331,7 @@ impl<'a,'z,T> Mapper<&'a str, (), T> for IResult<'z,&'a str,()> {
 }
 
 impl<'z,T> Mapper<(),(), T> for IResult<'z,(),()> {
+  #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -333,6 +344,7 @@ impl<'z,T> Mapper<(),(), T> for IResult<'z,(),()> {
     }
   }
 
+  #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -363,6 +375,7 @@ pub trait Mapper2<I,O,N> {
 macro_rules! map2_ref_impl {
   ($i:ty, $o:ty) => (
       impl<'a,'b,'z,T> Mapper2<&'b $i,&'a $o, T> for IResult<'z,&'b $i,&'a $o> {
+        #[allow(unused_variables)]
         fn map<'y,F: Fn(&'a $o) -> T>(&self, f: F) -> IResult<'y,&'b $i,T> {
           match self {
             &Error(ref e) => Error(*e),
@@ -381,6 +394,7 @@ map2_ref_impl!(str,  [u8]);
 map2_ref_impl!(str,  str);
 
 impl<'a,'z,S,T> Mapper2<(), &'a[S], T> for IResult<'z,(),&'a [S]> {
+  #[allow(unused_variables)]
   fn map<'y,F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -392,6 +406,7 @@ impl<'a,'z,S,T> Mapper2<(), &'a[S], T> for IResult<'z,(),&'a [S]> {
 }
 
 impl<'a,'z,R,T> Mapper2<&'a R, (), T> for IResult<'z,&'a R,()> {
+  #[allow(unused_variables)]
   fn map<'y,F: Fn(()) -> T>(&self, f: F) -> IResult<'y,&'a R,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -403,6 +418,7 @@ impl<'a,'z,R,T> Mapper2<&'a R, (), T> for IResult<'z,&'a R,()> {
 }
 
 impl<'a,'z,R,T> Mapper2<&'a [R], (), T> for IResult<'z,&'a [R],()> {
+  #[allow(unused_variables)]
   fn map<'y,F: Fn(()) -> T>(&self, f: F) -> IResult<'y,&'a [R],T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -414,6 +430,7 @@ impl<'a,'z,R,T> Mapper2<&'a [R], (), T> for IResult<'z,&'a [R],()> {
 }
 
 impl<'a,'z,T> Mapper2<&'a str, (), T> for IResult<'z,&'a str,()> {
+  #[allow(unused_variables)]
   fn map<'y,F: Fn(()) -> T>(&self, f: F) -> IResult<'y,&'a str,T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -425,6 +442,7 @@ impl<'a,'z,T> Mapper2<&'a str, (), T> for IResult<'z,&'a str,()> {
 }
 
 impl<'a,'z,T> Mapper2<(), (), T> for IResult<'z,(),()> {
+  #[allow(unused_variables)]
   fn map<'y,F: Fn(()) -> T>(&self, f: F) -> IResult<'y,(),T> {
     match self {
       &Error(ref e) => Error(*e),
@@ -436,6 +454,7 @@ impl<'a,'z,T> Mapper2<(), (), T> for IResult<'z,(),()> {
 }
 
 impl<'a,'z,T> Mapper2<(), &'a str, T> for IResult<'z,(),&'a str> {
+  #[allow(unused_variables)]
   fn map<'y,F: Fn(&'a str) -> T>(&self, f: F) -> IResult<'y,(),T> {
   //fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<(),T> {
     match self {
