@@ -25,18 +25,23 @@ take_until_either_and_leave!(value_bytes "\n;".as_bytes());
 
 fn value_parser(input:&[u8]) -> IResult<&[u8], &str> {
   value_bytes(input).map_res(str::from_utf8)
-/*  for idx in 0..input.len() {
-    if input[idx] == '\n' as u8 || input[idx] == ';' as u8 {
-      return Done(&input[idx..], &input[0..idx]).map_res(str::from_utf8)
-    }
-  }
-  Done("".as_bytes(), input).map_res(str::from_utf8)
-*/
 }
 
 fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
   alphanumeric(input).map_res(str::from_utf8)
 }
+
+o!(comment_body     <&[u8], &[u8]>       semicolon ~ [ not_line_ending]);
+o!(comment          <&[u8], ()>          comment_body ~ line_ending ~ [ empty_result ]);
+opt!(opt_comment    <&[u8], &[u8]>       comment_body);
+o!(category         <&[u8], &str>        lsb ~ [ category_name ] ~ rsb ~ opt_multispace);
+opt!(opt_multispace <&[u8], &[u8]>       multispace);
+opt!(opt_space      <&[u8], &[u8]>       space);
+o!(value            <&[u8],&str>         opt_space ~ equal ~ opt_space ~ [ value_parser ] ~ opt_space ~ opt_comment ~ opt_multispace);
+chain!(key_value    <&[u8],(&str,&str)>, ||{(key, val)},
+    key: parameter_parser,
+    val: value,
+);
 
 fn keys_and_values<'a,'b>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<'b,&'a[u8], HashMap<&'a str, &'a str> > {
   fold0_impl!(<&[u8], HashMap<&str, &str> >, | mut h:HashMap<&'a str, &'a str>, (k, v)| {
@@ -52,17 +57,6 @@ fn keys_and_values_wrapper<'a,'b>(input:&'a[u8]) -> IResult<'b,&'a[u8], HashMap<
   res
 }
 
-o!(comment_body     <&[u8], &[u8]>       semicolon ~ [ not_line_ending]);
-o!(comment          <&[u8], ()>          comment_body ~ line_ending ~ [ empty_result ]);
-opt!(opt_comment    <&[u8], &[u8]>       comment_body);
-o!(category         <&[u8], &str>        lsb ~ [ category_name ] ~ rsb ~ opt_multispace);
-opt!(opt_multispace <&[u8], &[u8]>       multispace);
-opt!(opt_space      <&[u8], &[u8]>       space);
-o!(value            <&[u8],&str>         opt_space ~ equal ~ opt_space ~ [ value_parser ] ~ opt_space ~ opt_comment ~ opt_multispace);
-chain!(key_value    <&[u8],(&str,&str)>, ||{(key, val)},
-    key: parameter_parser,
-    val: value,
-);
 chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,move ||{(category, keys)},
     category: category,
     keys: keys_and_values_wrapper,
