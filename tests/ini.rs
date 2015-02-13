@@ -10,12 +10,10 @@ use std::collections::HashMap;
 
 fn empty_result(i:&[u8]) -> IResult<&[u8], ()> { Done(i,()) }
 tag!(semicolon ";".as_bytes());
-o!(comment_body<&[u8],&[u8]> semicolon ~ [ not_line_ending]);
-o!(comment<&[u8], ()> comment_body ~ line_ending ~ [ empty_result ]);
-opt!(opt_comment<&[u8],&[u8]> comment_body);
-
 tag!(lsb "[".as_bytes());
 tag!(rsb "]".as_bytes());
+tag!(equal "=".as_bytes());
+
 fn category_name(input:&[u8]) -> IResult<&[u8], &str> {
   for idx in 0..input.len() {
     if input[idx] == ']' as u8 {
@@ -24,9 +22,7 @@ fn category_name(input:&[u8]) -> IResult<&[u8], &str> {
   }
   Done("".as_bytes(), input).map_res(str::from_utf8)
 }
-o!(category<&[u8], &str> lsb ~ [ category_name ] ~ rsb ~ opt_multispace);
 
-tag!(equal "=".as_bytes());
 fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if input[idx] == '=' as u8 {
@@ -49,10 +45,6 @@ fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
   alphanumeric(input).map_res(str::from_utf8)
 }
 
-opt!(opt_multispace<&[u8],&[u8]> multispace);
-o!(value<&[u8],&str> space ~ equal ~ space ~ [ value_parser ] ~ space ~ opt_comment ~ opt_multispace);
-chain!(key_value<&[u8],(&str,&str)>, ||{(key, val)},  key: parameter_parser, val: value,);
-
 fn keys_and_values<'a,'b>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<'b,&'a[u8], HashMap<&'a str, &'a str> > {
   fold0_impl!(<&[u8], HashMap<&str, &str> >, | mut h:HashMap<&'a str, &'a str>, (k, v)| {
     h.insert(k,v);
@@ -67,7 +59,20 @@ fn keys_and_values_wrapper<'a,'b>(input:&'a[u8]) -> IResult<'b,&'a[u8], HashMap<
   res
 }
 
-chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,move ||{(category, keys)},  category: category, keys: keys_and_values_wrapper,);
+o!(comment_body     <&[u8], &[u8]>       semicolon ~ [ not_line_ending]);
+o!(comment          <&[u8], ()>          comment_body ~ line_ending ~ [ empty_result ]);
+opt!(opt_comment    <&[u8], &[u8]>       comment_body);
+o!(category         <&[u8], &str>        lsb ~ [ category_name ] ~ rsb ~ opt_multispace);
+opt!(opt_multispace <&[u8], &[u8]>       multispace);
+o!(value            <&[u8],&str>         space ~ equal ~ space ~ [ value_parser ] ~ space ~ opt_comment ~ opt_multispace);
+chain!(key_value    <&[u8],(&str,&str)>, ||{(key, val)},
+    key: parameter_parser,
+    val: value,
+);
+chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,move ||{(category, keys)},
+    category: category,
+    keys: keys_and_values_wrapper,
+);
 
 fn categories<'a>(input: &'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, HashMap<&'a str, &'a str> > > {
   let z: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
