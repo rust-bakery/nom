@@ -34,6 +34,16 @@ macro_rules! tag(
   )
 );
 
+pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]>> {
+  Box::new(move |i: &'b[u8]| -> IResult<&'b[u8], &'b[u8]> {
+    if i.len() >= rec.len() && i.slice(0, rec.len()) == rec {
+      Done(&i[rec.len()..], &i[0..rec.len()])
+    } else {
+      Error(0)
+    }
+  })
+}
+
 /// chains parsers and returns the result of only one of them
 ///
 /// ```ignore
@@ -505,6 +515,16 @@ mod tests {
   use map::*;
   use internal::IResult;
   use internal::IResult::*;
+
+  #[test]
+  fn tag_closure() {
+    let x = tag_cl("abcd".as_bytes());
+    let r = x("abcdabcdefgh".as_bytes());
+    assert_eq!(r, Done("abcdefgh".as_bytes(), "abcd".as_bytes()));
+
+    let r2 = x("abcefgh".as_bytes());
+    assert_eq!(r2, Error(0));
+  }
 
   #[test]
   fn character() {
