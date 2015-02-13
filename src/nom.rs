@@ -509,6 +509,107 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
   }
 }
 
+#[macro_export]
+macro_rules! take_until(
+  ($name:ident $inp:expr) => (
+    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      for idx in 0..i.len() {
+        println!("inp: {:?} i: {:?} idx: {:?}", $inp.len(), i.len(), idx);
+        if idx + $inp.len() > i.len() {
+          return Error(42)
+        }
+        println!("next 1: {:?}", i.slice(idx, idx+$inp.len()));
+        if i.slice(idx, idx+$inp.len()) == $inp {
+          println!("next 2");
+          if idx + $inp.len() > i.len() {
+            println!("next 3");
+            return Done("".as_bytes(), &i[0..idx])
+          } else {
+            println!("next 4");
+            return Done(&i[(idx+$inp.len())..], &i[0..idx])
+          }
+        }
+        println!("next");
+      }
+      return Error(0)
+    }
+  )
+);
+
+#[macro_export]
+macro_rules! take_until_and_leave(
+  ($name:ident $inp:expr) => (
+    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      for idx in 0..i.len() {
+        println!("inp: {:?} i: {:?} idx: {:?}", $inp.len(), i.len(), idx);
+        if idx + $inp.len() > i.len() {
+          return Error(42)
+        }
+        println!("next 1: {:?}", i.slice(idx, idx+$inp.len()));
+        if i.slice(idx, idx+$inp.len()) == $inp {
+          println!("next 2");
+          return Done(&i[idx..], &i[0..idx])
+        }
+        println!("next");
+      }
+      return Error(0)
+    }
+  )
+);
+
+#[macro_export]
+macro_rules! take_until_either(
+  ($name:ident $inp:expr) => (
+    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      for idx in 0..i.len() {
+        println!("inp: {:?} i: {:?} idx: {:?}", $inp.len(), i.len(), idx);
+        if idx + 1 > i.len() {
+          return Error(42)
+        }
+        println!("next 1: {:?}", i.slice(idx, idx+1));
+        for &t in $inp.iter() {
+          if i[idx] == t {
+            println!("next 2");
+            if idx + 1 > i.len() {
+              println!("next 3");
+              return Done("".as_bytes(), &i[0..idx])
+            } else {
+              println!("next 4");
+              return Done(&i[(idx+1)..], &i[0..idx])
+            }
+          }
+        }
+        println!("next");
+      }
+      return Error(0)
+    }
+  )
+);
+
+#[macro_export]
+macro_rules! take_until_either_and_leave(
+  ($name:ident $inp:expr) => (
+    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      for idx in 0..i.len() {
+        println!("inp: {:?} i: {:?} idx: {:?}", $inp.len(), i.len(), idx);
+        if idx + 1 > i.len() {
+          return Error(42)
+        }
+        println!("next 1: {:?}", i.slice(idx, idx+1));
+        for &t in $inp.iter() {
+          println!("testing el = {:?} and t = {:?}", i[idx], t);
+          if i[idx] == t {
+            println!("next 2");
+            return Done(&i[idx..], &i[0..idx])
+          }
+        }
+        println!("next");
+      }
+      return Error(0)
+    }
+  )
+);
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -692,5 +793,21 @@ mod tests {
     let res3 = length_value(&arr3);
     //FIXME: should be incomplete
     assert_eq!(Error(0), res3);
+  }
+
+  #[test]
+  fn take_until_test() {
+    take_until!(x "efgh".as_bytes());
+    let r = x("abcdabcdefghijkl".as_bytes());
+    assert_eq!(r, Done("ijkl".as_bytes(), "abcdabcd".as_bytes()));
+
+    println!("Done 1\n");
+
+    let r2 = x("abcdabcdefgh".as_bytes());
+    assert_eq!(r2, Done("".as_bytes(), "abcdabcd".as_bytes()));
+
+    println!("Done 2\n");
+    let r3 = x("abcefg".as_bytes());
+    assert_eq!(r3, Error(42));
   }
 }

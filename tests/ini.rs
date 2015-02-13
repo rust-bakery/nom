@@ -10,35 +10,28 @@ use std::collections::HashMap;
 
 fn empty_result(i:&[u8]) -> IResult<&[u8], ()> { Done(i,()) }
 tag!(semicolon ";".as_bytes());
-tag!(lsb "[".as_bytes());
-tag!(rsb "]".as_bytes());
-tag!(equal "=".as_bytes());
+tag!(lsb       "[".as_bytes());
+tag!(rsb       "]".as_bytes());
+tag!(equal     "=".as_bytes());
 
-fn category_name(input:&[u8]) -> IResult<&[u8], &str> {
-  for idx in 0..input.len() {
-    if input[idx] == ']' as u8 {
-      return Done(&input[idx..], &input[0..idx]).map_res(str::from_utf8)
-    }
-  }
-  Done("".as_bytes(), input).map_res(str::from_utf8)
+
+take_until_and_leave!(category_bytes "]".as_bytes());
+fn category_name(input: &[u8]) -> IResult<&[u8], &str> {
+  category_bytes(input).map_res(str::from_utf8)
 }
 
-fn not_equal(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in 0..input.len() {
-    if input[idx] == '=' as u8 {
-      return Done(&input[idx..], &input[0..idx])
-    }
-  }
-  Done("".as_bytes(), input)
-}
+take_until!(not_equal      "=".as_bytes());
+take_until_either_and_leave!(value_bytes "\n;".as_bytes());
 
 fn value_parser(input:&[u8]) -> IResult<&[u8], &str> {
-  for idx in 0..input.len() {
+  value_bytes(input).map_res(str::from_utf8)
+/*  for idx in 0..input.len() {
     if input[idx] == '\n' as u8 || input[idx] == ';' as u8 {
       return Done(&input[idx..], &input[0..idx]).map_res(str::from_utf8)
     }
   }
   Done("".as_bytes(), input).map_res(str::from_utf8)
+*/
 }
 
 fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
@@ -64,7 +57,8 @@ o!(comment          <&[u8], ()>          comment_body ~ line_ending ~ [ empty_re
 opt!(opt_comment    <&[u8], &[u8]>       comment_body);
 o!(category         <&[u8], &str>        lsb ~ [ category_name ] ~ rsb ~ opt_multispace);
 opt!(opt_multispace <&[u8], &[u8]>       multispace);
-o!(value            <&[u8],&str>         space ~ equal ~ space ~ [ value_parser ] ~ space ~ opt_comment ~ opt_multispace);
+opt!(opt_space      <&[u8], &[u8]>       space);
+o!(value            <&[u8],&str>         opt_space ~ equal ~ opt_space ~ [ value_parser ] ~ opt_space ~ opt_comment ~ opt_multispace);
 chain!(key_value    <&[u8],(&str,&str)>, ||{(key, val)},
     key: parameter_parser,
     val: value,
@@ -129,6 +123,37 @@ key = value2";
   }
 
   assert_eq!(res, Done(ini_without_category.as_bytes(), "category"));
+}
+
+#[test]
+fn parse_value_test() {
+  let ini_file1 = "value
+key =";
+  let end = "
+key =";
+
+  let res = value_parser(ini_file1.as_bytes());
+  println!("{:?}", res);
+  match res {
+    IResult::Done(i, o) => println!("i: {:?} | o: {:?})", str::from_utf8(i), o),
+    _ => println!("error")
+  }
+
+  assert_eq!(res, Done(end.as_bytes(),  "value"));
+
+  let ini_file2 = "value;blah
+key =";
+  let end2 = ";blah
+key =";
+
+  let res2 = value_parser(ini_file2.as_bytes());
+  println!("{:?}", res2);
+  match res2 {
+    IResult::Done(i, o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    _ => println!("error")
+  }
+
+  assert_eq!(res2, Done(end2.as_bytes(),  "value"));
 }
 
 #[test]
