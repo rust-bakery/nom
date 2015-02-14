@@ -61,25 +61,48 @@ impl HexDisplay for [u8] {
     }
 }
 
+take!(offset_parser 4);
+fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
+
+  match offset_parser(input) {
+    Done(i, offset_bytes) => {
+      let offset:u32 = (offset_bytes[3] as u32) + (offset_bytes[2] as u32) * 0x100 + (offset_bytes[1] as u32) * 0x10000 + (offset_bytes[0] as u32) * 0x1000000;
+      println!("size: {:08x}", offset);
+      let sz: usize = offset as usize;
+      if i.len() >= sz {
+        return Done(&i[(sz-4)..], &i[0..(sz-4)])
+      } else {
+        return Error(42)//Incomplete(0)
+      }
+    },
+    e => e
+  }
+}
+
 #[derive(PartialEq,Eq,Debug)]
-struct Brand<'a> {
-  major:   &'a str,
-  version: &'a [u8]
+struct FileType<'a> {
+  major_brand:         &'a str,
+  major_brand_version: &'a [u8],
+  compatible_brands:   Vec<&'a str>
 }
 take!(offset 4);
 tag!(ftyp    "ftyp".as_bytes());
 
-fn major_brand(input:&[u8]) -> IResult<&[u8],&str> {
+fn brand_name(input:&[u8]) -> IResult<&[u8],&str> {
   take!(major_brand_bytes 4);
   major_brand_bytes(input).map_res(str::from_utf8)
 }
 take!(major_brand_version 4);
+many0!(compatible_brands<&[u8],&str> brand_name);
 
-fn brand<'a>(input: &'a[u8]) -> IResult<&'a [u8], Brand<'a> > {
-  chaining_parser!(input, ||{Brand{major: m, version:v}}, m: major_brand, v: major_brand_version,)
+fn filetype<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
+  chaining_parser!(input, ||{FileType{major_brand: m, major_brand_version:v, compatible_brands: c}},
+    m: brand_name,
+    v: major_brand_version,
+    c: compatible_brands,)
 }
 
-o!(begin <&[u8], Brand>  offset ~ ftyp ~ [ brand ]);
+o!(begin <&[u8], FileType>  ftyp ~ [ filetype ]);
 
 
 fn parse_mp4_file(filename: &str) {
@@ -88,15 +111,22 @@ fn parse_mp4_file(filename: &str) {
     match p.produce() {
       ProducerState::Data(bytes) => {
         println!("bytes:\n{}", bytes.to_hex(8));
-        match begin(bytes) {
+        match mp4_box(bytes) {
           Done(i, o) => {
             //println!("parsed: {:?}\n{}", o, i.to_hex(8))
-            println!("parsed: {:?}\n", o)
+            println!("parsed:\n{:}\nrest:\n{:}", o.to_hex(8), i.to_hex(8));
+            match begin(o) {
+              Done(i2, o2) => {
+                println!("parsed_brand: {:?}\n{}", o2, i2.to_hex(8))
+                //println!("parsed: {:?}\n", o2)
+              },
+              a => println!("error: {:?}", a)
+            }
           },
-          a          => println!("error: {:?}", a)
+          a => println!("error: {:?}", a)
         }
       },
-      _                          => println!("got error")
+      _ => println!("got error")
     }
     /*//p.push(|par| {println!("parsed file: {}", par); par});
     //p.push(|par| par.flat_map(print));
