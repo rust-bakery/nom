@@ -272,7 +272,7 @@ fn multiple_data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
 }
 
 fn parse_mp4_file(filename: &str) {
-  FileProducer::new(filename, 150).map(|producer: FileProducer| {
+  FileProducer::new(filename, 40000).map(|producer: FileProducer| {
     let mut p = producer;
     match p.produce() {
       ProducerState::Data(bytes) => {
