@@ -61,9 +61,9 @@ impl HexDisplay for [u8] {
     }
 }
 
-take!(offset_parser 4);
 fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
+  take!(offset_parser 4);
   match offset_parser(input) {
     Done(i, offset_bytes) => {
       let offset:u32 = (offset_bytes[3] as u32) + (offset_bytes[2] as u32) * 0x100 + (offset_bytes[1] as u32) * 0x10000 + (offset_bytes[0] as u32) * 0x1000000;
@@ -150,7 +150,7 @@ fn parse_mp4_file(filename: &str) {
     match p.produce() {
       ProducerState::Data(bytes) => {
         println!("bytes:\n{}", bytes.to_hex(8));
-        match filetype_box(bytes) {
+        match box_parser(bytes) {
           Done(i, o) => {
             match o {
               MP4Box::Ftyp(f) => println!("parsed ftyp: {:?}", f),
