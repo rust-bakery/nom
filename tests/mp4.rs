@@ -36,7 +36,8 @@ struct FileType<'a> {
 enum MP4Box<'a> {
   Ftyp(FileType<'a>),
   Moov,
-  Free
+  Free,
+  Unknown
 }
 
 take!(offset 4);
@@ -59,60 +60,68 @@ fn filetype_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
 o!(filetype <&[u8], FileType>  ftyp ~ [ filetype_parser ]);
 
 fn filetype_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
-  //FIXME: flat_map should work here
-  //mp4_box(input).flat_map(filetype)
-  match mp4_box(input) {
-    Done(i, o) => {
-      match filetype(o) {
-        Done(i2, o2) => {
-          Done(i, MP4Box::Ftyp(o2))
-        },
-        Error(a) => Error(a),
-        Incomplete(a) => Incomplete(a)
-      }
-    },
-    Error(a) => Error(a),
-    Incomplete(a) => Incomplete(a)
+  match filetype(input) {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, o)    => {
+      Done(i, MP4Box::Ftyp(o))
+    }
   }
 }
 
 tag!(free    "free".as_bytes());
 fn free_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
-  match mp4_box(input) {
-    Done(i, o) => {
-      match free(o) {
-        Done(i2, o2) => {
-          Done(i, MP4Box::Free)
-        },
-        Error(a) => Error(a),
-        Incomplete(a) => Incomplete(a)
-      }
-    },
-    Error(a) => Error(a),
-    Incomplete(a) => Incomplete(a)
+  match free(input) {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, _)    => {
+      Done(i, MP4Box::Free)
+    }
   }
 }
 
-alt!(box_parser<&[u8], MP4Box>, filetype_box | free_box);
+fn unknown_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
+  println!("calling UNKNOWN");
+  Done(input, MP4Box::Unknown)
+}
+
+alt!(box_parser_internal<&[u8], MP4Box>, filetype_box | free_box | unknown_box);
+fn box_parser(input:&[u8]) -> IResult<&[u8], MP4Box> {
+  match mp4_box(input) {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, o)    => {
+      match box_parser_internal(o) {
+        Error(a)      => Error(a),
+        Incomplete(a) => Incomplete(a),
+        Done(i2, o2)  => {
+          Done(i, o2)
+        }
+      }
+    }
+  }
+}
+
 
 fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
-  println!("bytes:\n{}", bytes.to_hex(8));
+  //println!("bytes:\n{}", bytes.to_hex(8));
   match box_parser(bytes) {
     Done(i, o) => {
       match o {
-        MP4Box::Ftyp(f) => println!("parsed ftyp: {:?}", f),
-        MP4Box::Moov    => println!("found moov box"),
-        MP4Box::Free    => println!("found free box")
+        MP4Box::Ftyp(f) => println!("-> FTYP: {:?}", f),
+        MP4Box::Moov    => println!("-> MOOV"),
+        MP4Box::Free    => println!("-> FREE"),
+        MP4Box::Unknown => println!("-> UNKNOWN")
       }
-      println!("remaining:\n{}", i.to_hex(8));
+      //println!("remaining:\n{}", i.to_hex(8));
       Done(i,())
     },
     Error(a) => {
-      println!("error: {:?}", a);
+      println!("mp4 parsing error: {:?}", a);
       Error(a)
     },
     Incomplete(a) => {
-      println!("incomplete: {:?}", a);
+      //println!("incomplete: {:?}", a);
       Incomplete(a)
     }
   }
@@ -120,13 +129,14 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
 fn parse_mp4_file(filename: &str) {
   FileProducer::new(filename, 150).map(|producer: FileProducer| {
     let mut p = producer;
-    /*match p.produce() {
+    match p.produce() {
       ProducerState::Data(bytes) => {
+        data_interpreter(bytes);
       },
       _ => println!("got error")
-    }*/
-    pusher!(ps, data_interpreter);
-    ps(&mut p);
+    }
+    //pusher!(ps, data_interpreter);
+    //ps(&mut p);
     assert!(false);
   });
 
