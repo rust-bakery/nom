@@ -87,7 +87,7 @@ impl Producer for FileProducer {
         }
       },
       Ok(i)  => {
-        println!("read {:?} bytes: {:?}", i, self.v);
+        //println!("read {:?} bytes: {:?}", i, self.v);
         Data(&self.v[])
       }
     }

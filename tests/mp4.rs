@@ -51,11 +51,41 @@ impl HexDisplay for [u8] {
     }
 }
 
+#[derive(PartialEq,Eq,Debug)]
+struct Brand<'a> {
+  major:   &'a str,
+  version: &'a [u8]
+}
+take!(offset 4);
+tag!(ftyp    "ftyp".as_bytes());
+
+fn major_brand(input:&[u8]) -> IResult<&[u8],&str> {
+  take!(major_brand_bytes 4);
+  major_brand_bytes(input).map_res(str::from_utf8)
+}
+take!(major_brand_version 4);
+
+fn brand<'a>(input: &'a[u8]) -> IResult<&'a [u8], Brand<'a> > {
+  chaining_parser!(input, ||{Brand{major: m, version:v}}, m: major_brand, v: major_brand_version,)
+}
+
+o!(begin <&[u8], Brand>  offset ~ ftyp ~ [ brand ]);
+
+
 fn parse_mp4_file(filename: &str) {
   FileProducer::new(filename, 100).map(|producer: FileProducer| {
     let mut p = producer;
     match p.produce() {
-      ProducerState::Data(bytes) => println!("bytes:\n{}", bytes.to_hex(8)),
+      ProducerState::Data(bytes) => {
+        println!("bytes:\n{}", bytes.to_hex(8));
+        match begin(bytes) {
+          Done(i, o) => {
+            //println!("parsed: {:?}\n{}", o, i.to_hex(8))
+            println!("parsed: {:?}\n", o)
+          },
+          a          => println!("error: {:?}", a)
+        }
+      },
       _                          => println!("got error")
     }
     /*//p.push(|par| {println!("parsed file: {}", par); par});
