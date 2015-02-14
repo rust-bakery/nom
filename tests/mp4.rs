@@ -245,17 +245,45 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
     }
   }
 }
+
+fn multiple_data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
+  match data_interpreter(bytes) {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, ())   => {
+      println!("NEXT BOX");
+      match data_interpreter(i) {
+        Error(a)      => Error(a),
+        Incomplete(a) => Incomplete(a),
+        Done(i2,())   => {
+          println!("NEXT BOX 2");
+          match data_interpreter(i2) {
+            Error(a)      => Error(a),
+            Incomplete(a) => Incomplete(a),
+            Done(i3,())   => {
+              println!("NEXT BOX 3");
+                data_interpreter(i3)
+            }
+          }
+        }
+      }
+    },
+  }
+}
+
 fn parse_mp4_file(filename: &str) {
   FileProducer::new(filename, 150).map(|producer: FileProducer| {
     let mut p = producer;
     match p.produce() {
       ProducerState::Data(bytes) => {
-        data_interpreter(bytes);
+        multiple_data_interpreter(bytes);
       },
       _ => println!("got error")
     }
-    //pusher!(ps, data_interpreter);
-    //ps(&mut p);
+    /*
+    pusher!(ps, data_interpreter);
+    ps(&mut p);
+    */
     assert!(false);
   });
 
