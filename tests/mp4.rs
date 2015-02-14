@@ -120,10 +120,12 @@ fn filetype_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
         Done(i2, o2) => {
           Done(i, MP4Box::Ftyp(o2))
         },
-        a => Error(0)
+        Error(a) => Error(a),
+        Incomplete(a) => Incomplete(a)
       }
     },
-    a => Error(0)
+    Error(a) => Error(a),
+    Incomplete(a) => Incomplete(a)
   }
 }
 
