@@ -137,45 +137,49 @@ fn free_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
         Done(i2, o2) => {
           Done(i, MP4Box::Free)
         },
-        a => Error(0)
+        Error(a) => Error(a),
+        Incomplete(a) => Incomplete(a)
       }
     },
-    a => Error(0)
+    Error(a) => Error(a),
+    Incomplete(a) => Incomplete(a)
   }
 }
 
 alt!(box_parser<&[u8], MP4Box>, filetype_box | free_box);
 
+fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
+  println!("bytes:\n{}", bytes.to_hex(8));
+  match box_parser(bytes) {
+    Done(i, o) => {
+      match o {
+        MP4Box::Ftyp(f) => println!("parsed ftyp: {:?}", f),
+        MP4Box::Moov    => println!("found moov box"),
+        MP4Box::Free    => println!("found free box")
+      }
+      println!("remaining:\n{}", i.to_hex(8));
+      Done(i,())
+    },
+    Error(a) => {
+      println!("error: {:?}", a);
+      Error(a)
+    },
+    Incomplete(a) => {
+      println!("incomplete: {:?}", a);
+      Incomplete(a)
+    }
+  }
+}
 fn parse_mp4_file(filename: &str) {
   FileProducer::new(filename, 150).map(|producer: FileProducer| {
     let mut p = producer;
-    match p.produce() {
+    /*match p.produce() {
       ProducerState::Data(bytes) => {
-        println!("bytes:\n{}", bytes.to_hex(8));
-        match box_parser(bytes) {
-          Done(i, o) => {
-            match o {
-              MP4Box::Ftyp(f) => println!("parsed ftyp: {:?}", f),
-              MP4Box::Moov    => println!("found moov box"),
-              MP4Box::Free    => println!("found free box")
-            }
-            println!("remaining:\n{}", i.to_hex(8))
-          },
-          a => println!("error: {:?}", a)
-        }
       },
       _ => println!("got error")
-    }
-    /*//p.push(|par| {println!("parsed file: {}", par); par});
-    //p.push(|par| par.flat_map(print));
-    fn pr<'a,'b,'c>(data: &[u8]) -> IResult<'b,&[u8], &[u8]> {
-      println!("bytes: {:?}", &data[0..20]);
-      //Done("".as_bytes(), data).map_res(str::from_utf8);
-      Done("".as_bytes(),"".as_bytes())
-    }
-    pusher!(ps, pr);
+    }*/
+    pusher!(ps, data_interpreter);
     ps(&mut p);
-    */
     assert!(false);
   });
 
