@@ -284,7 +284,7 @@ fn parse_mp4_file(filename: &str) {
     pusher!(ps, data_interpreter);
     ps(&mut p);
     */
-    assert!(false);
+    //assert!(false);
   });
 
 }
