@@ -95,15 +95,30 @@ fn brand_name(input:&[u8]) -> IResult<&[u8],&str> {
 take!(major_brand_version 4);
 many0!(compatible_brands<&[u8],&str> brand_name);
 
-fn filetype<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
+fn filetype_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
   chaining_parser!(input, ||{FileType{major_brand: m, major_brand_version:v, compatible_brands: c}},
     m: brand_name,
     v: major_brand_version,
     c: compatible_brands,)
 }
 
-o!(begin <&[u8], FileType>  ftyp ~ [ filetype ]);
+o!(filetype <&[u8], FileType>  ftyp ~ [ filetype_parser ]);
 
+fn filetype_box(input:&[u8]) -> IResult<&[u8], FileType> {
+  //FIXME: flat_map should work here
+  //mp4_box(input).flat_map(filetype)
+  match mp4_box(input) {
+    Done(i, o) => {
+      match filetype(o) {
+        Done(i2, o2) => {
+          Done(i, o2)
+        },
+        a => a
+      }
+    },
+    a => Error(0)
+  }
+}
 
 fn parse_mp4_file(filename: &str) {
   FileProducer::new(filename, 100).map(|producer: FileProducer| {
@@ -111,17 +126,9 @@ fn parse_mp4_file(filename: &str) {
     match p.produce() {
       ProducerState::Data(bytes) => {
         println!("bytes:\n{}", bytes.to_hex(8));
-        match mp4_box(bytes) {
+        match filetype_box(bytes) {
           Done(i, o) => {
-            //println!("parsed: {:?}\n{}", o, i.to_hex(8))
-            println!("parsed:\n{:}\nrest:\n{:}", o.to_hex(8), i.to_hex(8));
-            match begin(o) {
-              Done(i2, o2) => {
-                println!("parsed_brand: {:?}\n{}", o2, i2.to_hex(8))
-                //println!("parsed: {:?}\n", o2)
-              },
-              a => println!("error: {:?}", a)
-            }
+            println!("parsed: {:?}\n{}", o, i.to_hex(8))
           },
           a => println!("error: {:?}", a)
         }
