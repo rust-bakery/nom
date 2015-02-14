@@ -129,7 +129,7 @@ fn filetype_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
   }
 }
 
-tag!(free    "ftyp".as_bytes());
+tag!(free    "free".as_bytes());
 fn free_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
   match mp4_box(input) {
     Done(i, o) => {
