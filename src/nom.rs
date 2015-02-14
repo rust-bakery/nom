@@ -514,7 +514,7 @@ macro_rules! take(
   ($name:ident $count:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       if i.len() < $count {
-        Error(42)
+        Incomplete(0)
       } else {
         Done(&i[$count..],&i[0..$count])
       }
@@ -529,7 +529,7 @@ macro_rules! take_until(
       for idx in 0..i.len() {
         println!("inp: {:?} i: {:?} idx: {:?}", $inp.len(), i.len(), idx);
         if idx + $inp.len() > i.len() {
-          return Error(42)
+          return Incomplete(0)
         }
         println!("next 1: {:?}", i.slice(idx, idx+$inp.len()));
         if i.slice(idx, idx+$inp.len()) == $inp {
@@ -556,7 +556,7 @@ macro_rules! take_until_and_leave(
       for idx in 0..i.len() {
         println!("inp: {:?} i: {:?} idx: {:?}", $inp.len(), i.len(), idx);
         if idx + $inp.len() > i.len() {
-          return Error(42)
+          return Incomplete(0)
         }
         println!("next 1: {:?}", i.slice(idx, idx+$inp.len()));
         if i.slice(idx, idx+$inp.len()) == $inp {
@@ -577,7 +577,7 @@ macro_rules! take_until_either(
       for idx in 0..i.len() {
         println!("inp: {:?} i: {:?} idx: {:?}", $inp.len(), i.len(), idx);
         if idx + 1 > i.len() {
-          return Error(42)
+          return Incomplete(0)
         }
         println!("next 1: {:?}", i.slice(idx, idx+1));
         for &t in $inp.iter() {
@@ -606,7 +606,7 @@ macro_rules! take_until_either_and_leave(
       for idx in 0..i.len() {
         println!("inp: {:?} i: {:?} idx: {:?}", $inp.len(), i.len(), idx);
         if idx + 1 > i.len() {
-          return Error(42)
+          return Incomplete(0)
         }
         println!("next 1: {:?}", i.slice(idx, idx+1));
         for &t in $inp.iter() {
