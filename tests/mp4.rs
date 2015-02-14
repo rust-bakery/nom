@@ -67,7 +67,6 @@ fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
   match offset_parser(input) {
     Done(i, offset_bytes) => {
       let offset:u32 = (offset_bytes[3] as u32) + (offset_bytes[2] as u32) * 0x100 + (offset_bytes[1] as u32) * 0x10000 + (offset_bytes[0] as u32) * 0x1000000;
-      println!("size: {:08x}", offset);
       let sz: usize = offset as usize;
       if i.len() >= sz {
         return Done(&i[(sz-4)..], &i[0..(sz-4)])
@@ -85,6 +84,14 @@ struct FileType<'a> {
   major_brand_version: &'a [u8],
   compatible_brands:   Vec<&'a str>
 }
+
+#[derive(PartialEq,Eq,Debug)]
+enum MP4Box<'a> {
+  Ftyp(FileType<'a>),
+  Moov,
+  Free
+}
+
 take!(offset 4);
 tag!(ftyp    "ftyp".as_bytes());
 
@@ -104,21 +111,38 @@ fn filetype_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
 
 o!(filetype <&[u8], FileType>  ftyp ~ [ filetype_parser ]);
 
-fn filetype_box(input:&[u8]) -> IResult<&[u8], FileType> {
+fn filetype_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
   //FIXME: flat_map should work here
   //mp4_box(input).flat_map(filetype)
   match mp4_box(input) {
     Done(i, o) => {
       match filetype(o) {
         Done(i2, o2) => {
-          Done(i, o2)
+          Done(i, MP4Box::Ftyp(o2))
         },
-        a => a
+        a => Error(0)
       }
     },
     a => Error(0)
   }
 }
+
+tag!(free    "ftyp".as_bytes());
+fn free_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
+  match mp4_box(input) {
+    Done(i, o) => {
+      match free(o) {
+        Done(i2, o2) => {
+          Done(i, MP4Box::Free)
+        },
+        a => Error(0)
+      }
+    },
+    a => Error(0)
+  }
+}
+
+alt!(box_parser<&[u8], MP4Box>, filetype_box | free_box);
 
 fn parse_mp4_file(filename: &str) {
   FileProducer::new(filename, 100).map(|producer: FileProducer| {
@@ -128,7 +152,12 @@ fn parse_mp4_file(filename: &str) {
         println!("bytes:\n{}", bytes.to_hex(8));
         match filetype_box(bytes) {
           Done(i, o) => {
-            println!("parsed: {:?}\n{}", o, i.to_hex(8))
+            match o {
+              MP4Box::Ftyp(f) => println!("parsed ftyp: {:?}", f),
+              MP4Box::Moov    => println!("found moov box"),
+              MP4Box::Free    => println!("found free box")
+            }
+            println!("remaining:\n{}", i.to_hex(8))
           },
           a => println!("error: {:?}", a)
         }
