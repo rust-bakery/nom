@@ -37,6 +37,8 @@ enum MP4Box<'a> {
   Ftyp(FileType<'a>),
   Moov,
   Free,
+  Skip,
+  Wide,
   Unknown
 }
 
@@ -80,12 +82,34 @@ fn free_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
   }
 }
 
+tag!(skip    "skip".as_bytes());
+fn skip_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
+  match free(input) {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, _)    => {
+      Done(i, MP4Box::Skip)
+    }
+  }
+}
+
+tag!(wide    "wide".as_bytes());
+fn wide_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
+  match free(input) {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, _)    => {
+      Done(i, MP4Box::Wide)
+    }
+  }
+}
+
 fn unknown_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
   println!("calling UNKNOWN");
   Done(input, MP4Box::Unknown)
 }
 
-alt!(box_parser_internal<&[u8], MP4Box>, filetype_box | free_box | unknown_box);
+alt!(box_parser_internal<&[u8], MP4Box>, filetype_box | free_box | skip_box | wide_box | unknown_box);
 fn box_parser(input:&[u8]) -> IResult<&[u8], MP4Box> {
   match mp4_box(input) {
     Error(a)      => Error(a),
@@ -111,6 +135,8 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
         MP4Box::Ftyp(f) => println!("-> FTYP: {:?}", f),
         MP4Box::Moov    => println!("-> MOOV"),
         MP4Box::Free    => println!("-> FREE"),
+        MP4Box::Skip    => println!("-> SKIP"),
+        MP4Box::Wide    => println!("-> WIDE"),
         MP4Box::Unknown => println!("-> UNKNOWN")
       }
       //println!("remaining:\n{}", i.to_hex(8));
