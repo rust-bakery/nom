@@ -510,6 +510,19 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 #[macro_export]
+macro_rules! take(
+  ($name:ident $count:expr) => (
+    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      if i.len() < $count {
+        Error(42)
+      } else {
+        Done(&i[$count..],&i[0..$count])
+      }
+    }
+  )
+);
+
+#[macro_export]
 macro_rules! take_until(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
