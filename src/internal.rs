@@ -48,9 +48,9 @@ pub enum IResult<'z,I,O> {
   Done(I,O),
   Error(Err),
   //Incomplete(proc(I):'a -> IResult<I,O>)
-  //Incomplete(u32)
+  Incomplete(u32)
   //Incomplete(Box<FnMut(I) -> IResult<I,O>>)
-  Incomplete(IResultClosure<'z,I,O>)
+  //Incomplete(IResultClosure<'z,I,O>)
   //Incomplete(|I|:'a -> IResult<'a,I,O>)
   //Incomplete(fn(I) -> IResult<'a,I,O>)
 }

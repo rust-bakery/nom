@@ -71,7 +71,7 @@ fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
       if i.len() >= sz {
         return Done(&i[(sz-4)..], &i[0..(sz-4)])
       } else {
-        return Error(42)//Incomplete(0)
+        return Incomplete(0)
       }
     },
     e => e
