@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,FlatMapper,Mapper,Producer,ProducerState,FileProducer,HexDisplay};
+use nom::{IResult,FlatMapper,Mapper,Mapper2,Producer,ProducerState,FileProducer,HexDisplay};
 use nom::IResult::*;
 
 use std::str;
@@ -15,6 +15,7 @@ fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
     Done(i, offset_bytes) => {
       let offset:u32 = (offset_bytes[3] as u32) + (offset_bytes[2] as u32) * 0x100 + (offset_bytes[1] as u32) * 0x10000 + (offset_bytes[0] as u32) * 0x1000000;
       let sz: usize = offset as usize;
+      //println!("box size: {} -> {}", offset_bytes.to_hex(8), sz);
       if i.len() >= sz {
         return Done(&i[(sz-4)..], &i[0..(sz-4)])
       } else {
@@ -33,9 +34,22 @@ struct FileType<'a> {
 }
 
 #[derive(PartialEq,Eq,Debug)]
+pub enum MoovBox {
+  Mdra,
+  Dref,
+  Cmov,
+  Rmra,
+  Iods,
+  Mvhd,
+  Clip,
+  Trak,
+  Udta
+}
+
+#[derive(PartialEq,Eq,Debug)]
 enum MP4Box<'a> {
   Ftyp(FileType<'a>),
-  Moov,
+  Moov(MoovBox),
   Free,
   Skip,
   Wide,
@@ -67,6 +81,85 @@ fn filetype_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
     Incomplete(a) => Incomplete(a),
     Done(i, o)    => {
       Done(i, MP4Box::Ftyp(o))
+    }
+  }
+}
+
+tag!(moov_tag "moov".as_bytes());
+
+tag!(mdra    "mdra".as_bytes());
+fn moov_mdra(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  mdra(input).map(|o| MoovBox::Mdra)
+}
+
+tag!(dref    "dref".as_bytes());
+fn moov_dref(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  dref(input).map(|o| MoovBox::Dref)
+}
+
+tag!(cmov    "cmov".as_bytes());
+fn moov_cmov(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  cmov(input).map(|o| MoovBox::Cmov)
+}
+
+tag!(rmra    "rmra".as_bytes());
+fn moov_rmra(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  rmra(input).map(|o| MoovBox::Rmra)
+}
+
+tag!(iods    "iods".as_bytes());
+fn moov_iods(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  iods(input).map(|o| MoovBox::Iods)
+}
+
+tag!(mvhd    "mvhd".as_bytes());
+fn moov_mvhd(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  mvhd(input).map(|o| MoovBox::Mvhd)
+}
+
+tag!(clip    "clip".as_bytes());
+fn moov_clip(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  clip(input).map(|o| MoovBox::Clip)
+}
+
+tag!(trak    "trak".as_bytes());
+fn moov_trak(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  trak(input).map(|o| MoovBox::Trak)
+}
+
+tag!(udta   "udta".as_bytes());
+fn moov_udta(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  udta(input).map(|o| MoovBox::Udta)
+}
+
+alt!(moov_internal<&[u8], MoovBox>, moov_mdra | moov_dref | moov_cmov |
+     moov_rmra | moov_iods | moov_mvhd | moov_clip | moov_trak | moov_udta);
+
+
+fn moov(input:&[u8]) -> IResult<&[u8], MoovBox> {
+  match mp4_box(input) {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, o)    => {
+      match moov_internal(o) {
+        Error(a)      => Error(a),
+        Incomplete(a) => Incomplete(a),
+        Done(i2, o2)  => {
+          Done(i, o2)
+        }
+
+      }
+    }
+  }
+}
+
+o!(moov_box_internal <&[u8], MoovBox>  moov_tag ~ [ moov ]);
+fn moov_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
+  match moov_box_internal(input) {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, o)  => {
+      Done(i, MP4Box::Moov(o))
     }
   }
 }
@@ -109,7 +202,7 @@ fn unknown_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
   Done(input, MP4Box::Unknown)
 }
 
-alt!(box_parser_internal<&[u8], MP4Box>, filetype_box | free_box | skip_box | wide_box | unknown_box);
+alt!(box_parser_internal<&[u8], MP4Box>, filetype_box | moov_box | free_box | skip_box | wide_box | unknown_box);
 fn box_parser(input:&[u8]) -> IResult<&[u8], MP4Box> {
   match mp4_box(input) {
     Error(a)      => Error(a),
@@ -133,7 +226,7 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
     Done(i, o) => {
       match o {
         MP4Box::Ftyp(f) => println!("-> FTYP: {:?}", f),
-        MP4Box::Moov    => println!("-> MOOV"),
+        MP4Box::Moov(m) => {println!("-> MOOV: {:?}", m); println!("remaining:\n{}", i.to_hex(8))},
         MP4Box::Free    => println!("-> FREE"),
         MP4Box::Skip    => println!("-> SKIP"),
         MP4Box::Wide    => println!("-> WIDE"),
