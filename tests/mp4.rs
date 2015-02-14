@@ -145,7 +145,7 @@ fn free_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
 alt!(box_parser<&[u8], MP4Box>, filetype_box | free_box);
 
 fn parse_mp4_file(filename: &str) {
-  FileProducer::new(filename, 100).map(|producer: FileProducer| {
+  FileProducer::new(filename, 150).map(|producer: FileProducer| {
     let mut p = producer;
     match p.produce() {
       ProducerState::Data(bytes) => {
