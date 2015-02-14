@@ -33,12 +33,14 @@
 //!  });
 //! ```
 //!
+pub use self::util::*;
 pub use self::internal::*;//{IResult, IResultClosure, GetInput, GetOutput};
 pub use self::map::*;
 pub use self::producer::*;//{ProducerState,Producer,FileProducer,MemProducer};
 pub use self::consumer::*;//{ConsumerState,Consumer};
 pub use self::nom::*;
 
+pub mod util;
 pub mod internal;
 #[macro_use] pub mod producer;
 pub mod consumer;

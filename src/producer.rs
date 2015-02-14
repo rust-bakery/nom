@@ -27,6 +27,7 @@
 //!  });
 //! ```
 
+use util::*;
 use internal::*;
 use self::ProducerState::*;
 
@@ -87,7 +88,7 @@ impl Producer for FileProducer {
         }
       },
       Ok(i)  => {
-        //println!("read {:?} bytes: {:?}", i, self.v);
+        //println!("read: {:?}\nbytes:\n{}", i, (&self.v).to_hex(8));
         Data(&self.v[])
       }
     }
