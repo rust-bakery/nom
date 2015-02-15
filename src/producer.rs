@@ -254,7 +254,7 @@ mod tests {
   fn accu() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
       if input.len() <= 4 {
-        Error(42)//Incomplete(0)
+        Incomplete(0)
       } else {
         Done("".as_bytes(), input)
       }
@@ -275,7 +275,7 @@ mod tests {
   fn accu_2() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
       if input.len() <= 4 || &input[0..5] != "abcde".as_bytes() {
-        Error(42)//Incomplete(0)
+        Incomplete(0)
       } else {
         Done(&input[5..], &input[0..5])
       }
