@@ -276,7 +276,16 @@ fn multiple_data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
             Incomplete(a) => Incomplete(a),
             Done(i3,())   => {
               println!("NEXT BOX 3");
-                data_interpreter(i3)
+              match data_interpreter(i3) {
+                Error(a)      => Error(a),
+                Incomplete(a) => Incomplete(a),
+                Done(i4,())   => {
+                  println!("NEXT BOX 4");
+                  let res = data_interpreter(i4);
+                  println!("res4: {:?}", res);
+                  res
+                }
+              }
             }
           }
         }
