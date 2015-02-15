@@ -821,6 +821,6 @@ mod tests {
 
     println!("Done 2\n");
     let r3 = x("abcefg".as_bytes());
-    assert_eq!(r3, Error(42));
+    assert_eq!(r3, Incomplete(0));
   }
 }
