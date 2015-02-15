@@ -34,6 +34,54 @@ struct FileType<'a> {
 }
 
 #[derive(PartialEq,Eq,Debug)]
+pub struct Mvhd1 {
+  version:       u8,
+  flags:         u32,
+  created_date:  u32,
+  modified_date: u32
+}
+
+#[derive(PartialEq,Eq,Debug)]
+pub struct Mvhd2 {
+  created_date:  u64,
+  modified_date: u64,
+  scale:         u32,
+  duration:      u32
+}
+
+/*
+#[derive(PartialEq,Eq,Debug)]
+struct Mvhd3 {
+  duration:      u64,
+  speed:         f32,
+  volume:        f32, // 2 bytes
+*/
+  /* 10 bytes reserved */
+/*  scaleA:        f32,
+  rotateB:       f32,
+  angleU:        f32,
+  rotateC:       f32,
+  scaleD:        f32,
+  angleV:        f32,
+  positionX:     f32,
+  positionY:     f32,
+  scaleW:        f32,
+  preview:       u64,
+  poster:        u32,
+  selection:     u64,
+  current_time:  u32,
+  track_id:      u32
+}*/
+
+#[derive(PartialEq,Eq,Debug)]
+pub enum MvhdBox {
+  M1(Mvhd1),
+  M2(Mvhd2),
+  M3
+  /*M3(Mvhd3)*/
+}
+
+#[derive(PartialEq,Eq,Debug)]
 pub enum MoovBox {
   Mdra,
   Dref,
