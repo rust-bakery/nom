@@ -294,6 +294,8 @@ fn multiple_data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
   }
 }
 
+many0!(full_data_interpreter<&[u8],()> data_interpreter);
+
 fn parse_mp4_file(filename: &str) {
   FileProducer::new(filename, 40000).map(|producer: FileProducer| {
     let mut p = producer;
@@ -304,7 +306,7 @@ fn parse_mp4_file(filename: &str) {
       _ => println!("got error")
     }
     /*
-    pusher!(ps, data_interpreter);
+    pusher!(ps, full_data_interpreter);
     ps(&mut p);
     */
     //assert!(false);
