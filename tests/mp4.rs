@@ -49,7 +49,7 @@ pub enum MoovBox {
 #[derive(PartialEq,Eq,Debug)]
 enum MP4Box<'a> {
   Ftyp(FileType<'a>),
-  Moov(MoovBox),
+  Moov(Vec<MoovBox>),
   Free,
   Skip,
   Wide,
@@ -64,7 +64,7 @@ fn brand_name(input:&[u8]) -> IResult<&[u8],&str> {
   major_brand_bytes(input).map_res(str::from_utf8)
 }
 take!(major_brand_version 4);
-many0!(compatible_brands<&[u8],&str> brand_name);
+many0!(compatible_brands<&[u8], &str> brand_name);
 
 fn filetype_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
   chaining_parser!(input, ||{FileType{major_brand: m, major_brand_version:v, compatible_brands: c}},
@@ -153,7 +153,9 @@ fn moov(input:&[u8]) -> IResult<&[u8], MoovBox> {
   }
 }
 
-o!(moov_box_internal <&[u8], MoovBox>  moov_tag ~ [ moov ]);
+many0!(moov_many<&[u8],MoovBox> moov);
+
+o!(moov_box_internal <&[u8], Vec<MoovBox> >  moov_tag ~ [ moov_many ]);
 fn moov_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
   match moov_box_internal(input) {
     Error(a)      => Error(a),
