@@ -214,6 +214,7 @@ fn moov(input:&[u8]) -> IResult<&[u8], MoovBox> {
 many0!(moov_many<&[u8],MoovBox> moov);
 
 o!(moov_box_internal <&[u8], Vec<MoovBox> >  moov_tag ~ [ moov_many ]);
+
 fn moov_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
   match moov_box_internal(input) {
     Error(a)      => Error(a),
@@ -226,45 +227,21 @@ fn moov_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
 
 tag!(mdat    "mdat".as_bytes());
 fn mdat_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
-  match mdat(input) {
-    Error(a)      => Error(a),
-    Incomplete(a) => Incomplete(a),
-    Done(i, _)    => {
-      Done(i, MP4Box::Mdat)
-    }
-  }
+  mdat(input).map(|_| MP4Box::Mdat)
 }
 tag!(free    "free".as_bytes());
 fn free_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
-  match free(input) {
-    Error(a)      => Error(a),
-    Incomplete(a) => Incomplete(a),
-    Done(i, _)    => {
-      Done(i, MP4Box::Free)
-    }
-  }
+  free(input).map(|_| MP4Box::Free)
 }
 
 tag!(skip    "skip".as_bytes());
 fn skip_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
-  match free(input) {
-    Error(a)      => Error(a),
-    Incomplete(a) => Incomplete(a),
-    Done(i, _)    => {
-      Done(i, MP4Box::Skip)
-    }
-  }
+  skip(input).map(|_| MP4Box::Skip)
 }
 
 tag!(wide    "wide".as_bytes());
 fn wide_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
-  match free(input) {
-    Error(a)      => Error(a),
-    Incomplete(a) => Incomplete(a),
-    Done(i, _)    => {
-      Done(i, MP4Box::Wide)
-    }
-  }
+  wide(input).map(|_| MP4Box::Wide)
 }
 
 fn unknown_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
@@ -274,19 +251,7 @@ fn unknown_box(input:&[u8]) -> IResult<&[u8], MP4Box> {
 
 alt!(box_parser_internal<&[u8], MP4Box>, filetype_box | moov_box | mdat_box | free_box | skip_box | wide_box | unknown_box);
 fn box_parser(input:&[u8]) -> IResult<&[u8], MP4Box> {
-  match mp4_box(input) {
-    Error(a)      => Error(a),
-    Incomplete(a) => Incomplete(a),
-    Done(i, o)    => {
-      match box_parser_internal(o) {
-        Error(a)      => Error(a),
-        Incomplete(a) => Incomplete(a),
-        Done(i2, o2)  => {
-          Done(i, o2)
-        }
-      }
-    }
-  }
+  mp4_box(input).flat_map(box_parser_internal)
 }
 
 
