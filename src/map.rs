@@ -71,6 +71,20 @@ flat_map_ref_impl! {
 }
 
 
+impl<'a,'b,'z, T> FlatMapper<&'b [u8],&'a [u8], T> for IResult<'z,&'b [u8],&'a [u8]> {
+  #[allow(unused_variables)]
+  fn flat_map<'y,F:Fn(&'a [u8]) -> IResult<'y,&'a [u8],T>>(&self, f: F) -> IResult<'y,&'b [u8],T> {
+    match self {
+      &Error(ref e) => Error(*e),
+      &Incomplete(ref i) => Incomplete(*i),//Incomplete(|input:&'b R| { cl(input).map(f) }),
+      &Done(ref i, ref o) => match f(*o) {
+        Error(ref e) => Error(*e),
+        Incomplete(ref i2) => Incomplete(*i2),
+        Done(_, o2) => Done(*i, o2)
+      }
+    }
+  }
+}
 /// derives flat_map implementation for a list of specific IResult types
 ///
 /// ```
