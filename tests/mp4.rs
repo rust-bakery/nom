@@ -164,6 +164,15 @@ fn moov_iods(input:&[u8]) -> IResult<&[u8], MoovBox> {
 tag!(mvhd    "mvhd".as_bytes());
 fn moov_mvhd(input:&[u8]) -> IResult<&[u8], MoovBox> {
   mvhd(input).map(|o| MoovBox::Mvhd)
+  /*let res = mvhd(input).map(|o| MoovBox::Mvhd);
+  match res {
+    Error(a)      => Error(a),
+    Incomplete(a) => Incomplete(a),
+    Done(i, o)    => {
+      println!("MVHD box content:\n{}", i.to_hex(8));
+      Done(i,o)
+    }
+  }*/
 }
 
 tag!(clip    "clip".as_bytes());
@@ -302,7 +311,7 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
       Error(a)
     },
     Incomplete(a) => {
-      //println!("incomplete: {:?}", a);
+      println!("incomplete: {:?}", a);
       Incomplete(a)
     }
   }

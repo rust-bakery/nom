@@ -27,7 +27,7 @@
 //!  });
 //! ```
 
-use util::*;
+use util::HexDisplay;
 use internal::*;
 use self::ProducerState::*;
 
@@ -169,7 +169,7 @@ macro_rules! pusher (
             acc.push_all(v)
           },
           ProducerState::Eof([])  => {
-            println!("eof empty");
+            println!("eof empty, acc contains {} bytes: {:?}", acc.len(), acc);
             break;
           }
           ProducerState::Eof(v) => {
