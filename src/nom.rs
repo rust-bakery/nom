@@ -144,12 +144,13 @@ macro_rules! o_parser(
 ///
 /// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
 ///
-///  chain!(z<&[u8], u8>, || ||{B{a: aa, b: bb}},
+///  chain!(z<&[u8], u8>,
 ///    x            ~
 ///    x            ~
-///    aa: ret_int ~
+///    aa: ret_int  ~
 ///    y            ~
-///    bb: ret_int
+///    bb: ret_int  ,
+///    ||{B{a: aa, b: bb}}
 ///  );
 ///
 /// let r = z("abcdabcdefgh".as_bytes());
