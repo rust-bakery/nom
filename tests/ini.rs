@@ -37,10 +37,16 @@ opt!(opt_comment    <&[u8], &[u8]>       comment_body);
 o!(category         <&[u8], &str>        lsb ~ [ category_name ] ~ rsb ~ opt_multispace);
 opt!(opt_multispace <&[u8], &[u8]>       multispace);
 opt!(opt_space      <&[u8], &[u8]>       space);
-o!(value            <&[u8],&str>         opt_space ~ equal ~ opt_space ~ [ value_parser ] ~ opt_space ~ opt_comment ~ opt_multispace);
+
 chain!(key_value    <&[u8],(&str,&str)>, ||{(key, val)},
     key: parameter_parser ~
-    val: value
+         opt_space        ~
+         equal            ~
+         opt_space        ~
+    val: value_parser     ~
+         opt_space        ~
+         opt_comment      ~
+         opt_multispace
 );
 
 fn keys_and_values<'a,'b>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<'b,&'a[u8], HashMap<&'a str, &'a str> > {
