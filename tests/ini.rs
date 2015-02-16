@@ -38,7 +38,7 @@ o!(category         <&[u8], &str>        lsb ~ [ category_name ] ~ rsb ~ opt_mul
 opt!(opt_multispace <&[u8], &[u8]>       multispace);
 opt!(opt_space      <&[u8], &[u8]>       space);
 
-chain!(key_value    <&[u8],(&str,&str)>, ||{(key, val)},
+chain!(key_value    <&[u8],(&str,&str)>,
     key: parameter_parser ~
          opt_space        ~
          equal            ~
@@ -46,7 +46,8 @@ chain!(key_value    <&[u8],(&str,&str)>, ||{(key, val)},
     val: value_parser     ~
          opt_space        ~
          opt_comment      ~
-         opt_multispace
+         opt_multispace   ,
+    ||{(key, val)}
 );
 
 fn keys_and_values<'a,'b>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<'b,&'a[u8], HashMap<&'a str, &'a str> > {
@@ -63,9 +64,10 @@ fn keys_and_values_wrapper<'a,'b>(input:&'a[u8]) -> IResult<'b,&'a[u8], HashMap<
   res
 }
 
-chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,move ||{(category, keys)},
-    category: category ~
-    keys: keys_and_values_wrapper
+chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
+    category: category            ~
+    keys: keys_and_values_wrapper ,
+    move ||{(category, keys)}
 );
 
 fn categories<'a>(input: &'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, HashMap<&'a str, &'a str> > > {

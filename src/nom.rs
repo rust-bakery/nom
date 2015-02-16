@@ -157,38 +157,38 @@ macro_rules! o_parser(
 /// ```
 #[macro_export]
 macro_rules! chain (
-  ($name:ident<$i:ty,$o:ty>, $assemble:expr, $($rest:tt)*) => (
+  ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
     #[allow(unused_variables)]
     fn $name(i:$i) -> IResult<$i,$o>{
-      chaining_parser!(i, $assemble, $($rest)*)
+      chaining_parser!(i, $($rest)*)
     }
   );
 );
 
 #[macro_export]
 macro_rules! chaining_parser (
-  ($i:expr, $assemble:expr, $e:ident ~ $($rest:tt)*) => (
+  ($i:expr, $e:ident ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
       IResult::Done(i,_)     => {
-        chaining_parser!(i, $assemble, $($rest)*)
+        chaining_parser!(i, $($rest)*)
       }
     }
   );
 
-  ($i:expr, $assemble:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
+  ($i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
       IResult::Done(i,o)     => {
         let $field = o;
-        chaining_parser!(i, $assemble, $($rest)*)
+        chaining_parser!(i, $($rest)*)
       }
     }
   );
 
-  ($i:expr, $assemble:expr, $field:ident : $e:ident) => (
+  ($i:expr, $field:ident : $e:ident, $assemble:expr) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
@@ -199,7 +199,7 @@ macro_rules! chaining_parser (
     }
   );
 
-  ($i:expr, $assemble:expr, $e: ident) => (
+  ($i:expr, $e:ident, $assemble:expr) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
@@ -208,7 +208,7 @@ macro_rules! chaining_parser (
       }
     }
   );
-  ($i:expr, $assemble:expr,) => (
+  ($i:expr, $assemble:expr) => (
     IResult::Done($i, $assemble())
   )
 );
@@ -770,7 +770,11 @@ mod tests {
     fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, aa: ret_int1 ~ bb: ret_int2);
+    chain!(f<&[u8],B>,
+      aa: ret_int1 ~
+      bb: ret_int2 ,
+      ||{B{a: aa, b: bb}}
+    );
 
     let r = f("abcde".as_bytes());
     assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
@@ -784,7 +788,14 @@ mod tests {
     //o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    chain!(f<&[u8],B>, ||{B{a: aa, b: bb}}, x ~ x ~ aa: ret_int1 ~ y ~ bb: ret_int2 ~ y);
+    chain!(f<&[u8],B>,
+      x            ~
+      x            ~
+      aa: ret_int1 ~
+      y            ~
+      bb: ret_int2 ~
+      y            ,
+      ||{B{a: aa, b: bb}});
 
     let r = f("abcdabcdefghefghX".as_bytes());
     assert_eq!(r, Done("X".as_bytes(), B{a: 1, b: 2}));
