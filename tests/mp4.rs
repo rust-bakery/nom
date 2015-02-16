@@ -117,9 +117,9 @@ many0!(compatible_brands<&[u8], &str> brand_name);
 
 fn filetype_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
   chaining_parser!(input, ||{FileType{major_brand: m, major_brand_version:v, compatible_brands: c}},
-    m: brand_name,
-    v: major_brand_version,
-    c: compatible_brands,)
+    m: brand_name ~
+    v: major_brand_version ~
+    c: compatible_brands)
 }
 
 o!(filetype <&[u8], FileType>  ftyp ~ [ filetype_parser ]);
