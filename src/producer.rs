@@ -165,15 +165,15 @@ macro_rules! pusher (
         let state = producer.produce();
         match state {
           ProducerState::Data(v) => {
-            println!("got data");
+            //println!("got data");
             acc.push_all(v)
           },
           ProducerState::Eof([])  => {
-            println!("eof empty, acc contains {} bytes: {:?}", acc.len(), acc);
+            //println!("eof empty, acc contains {} bytes: {:?}", acc.len(), acc);
             break;
           }
           ProducerState::Eof(v) => {
-            println!("eof with {} bytes", v.len());
+            //println!("eof with {} bytes", v.len());
             acc.push_all(v)
           }
           _ => {break;}
@@ -183,14 +183,14 @@ macro_rules! pusher (
         //let p = IResult::Done("".as_bytes(), v2.as_slice());
         match $f(v2.as_slice()) {
           IResult::Error(e)      => {
-            println!("error, stopping: {}", e);
+            //println!("error, stopping: {}", e);
             break;
           },
           IResult::Incomplete(_) => {
-            println!("incomplete");
+            //println!("incomplete");
           },
           IResult::Done(i, _)    => {
-            println!("data, done");
+            //println!("data, done");
             acc.clear();
             acc.push_all(i);
           }
