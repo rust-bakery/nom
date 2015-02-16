@@ -130,6 +130,31 @@ macro_rules! o_parser(
 
 );
 
+/// chains parsers and assemble the results through a closure
+///
+/// ```ignore
+/// #[derive(PartialEq,Eq,Debug)]
+/// struct B {
+///   a: u8,
+///   b: u8
+/// }
+///
+/// tag!(x "abcd".as_bytes());
+/// tag!(y "efgh".as_bytes());
+///
+/// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+///
+///  chain!(z<&[u8], u8>, || ||{B{a: aa, b: bb}},
+///    x            ~
+///    x            ~
+///    aa: ret_int ~
+///    y            ~
+///    bb: ret_int
+///  );
+///
+/// let r = z("abcdabcdefgh".as_bytes());
+/// assert_eq!(r, Done("".as_bytes(), B{a: 1, b: 1}));
+/// ```
 #[macro_export]
 macro_rules! chain (
   ($name:ident<$i:ty,$o:ty>, $assemble:expr, $($rest:tt)*) => (
