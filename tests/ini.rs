@@ -31,22 +31,26 @@ fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
   alphanumeric(input).map_res(str::from_utf8)
 }
 
-o!(comment_body     <&[u8], &[u8]>       semicolon ~ [ not_line_ending]);
+o!(comment_body     <&[u8], &[u8]>       semicolon ~ [ not_line_ending ]);
 o!(comment          <&[u8], ()>          comment_body ~ line_ending ~ [ empty_result ]);
 opt!(opt_comment    <&[u8], &[u8]>       comment_body);
-o!(category         <&[u8], &str>        lsb ~ [ category_name ] ~ rsb ~ opt_multispace);
-opt!(opt_multispace <&[u8], &[u8]>       multispace);
-opt!(opt_space      <&[u8], &[u8]>       space);
 
+chain!(category     <&[u8], &str>,
+          lsb             ~
+    name: category_name   ~
+          rsb             ~
+          multispace?     ,
+    ||{ name }
+);
 chain!(key_value    <&[u8],(&str,&str)>,
     key: parameter_parser ~
-         opt_space        ~
+         space?           ~
          equal            ~
-         opt_space        ~
+         space?           ~
     val: value_parser     ~
-         opt_space        ~
-         opt_comment      ~
-         opt_multispace   ,
+         space?           ~
+         comment_body?    ~
+         multispace?      ,
     ||{(key, val)}
 );
 
