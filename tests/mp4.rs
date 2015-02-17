@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,IResult,FlatMapper,Mapper,Mapper2,Producer,ProducerState,FileProducer};
+use nom::{HexDisplay,IResult,FlatMap,FlatMapOpt,Functor,Producer,ProducerState,FileProducer};
 use nom::IResult::*;
 
 use std::str;
@@ -274,6 +274,7 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
     },
     Error(a) => {
       println!("mp4 parsing error: {:?}", a);
+      assert!(false);
       Error(a)
     },
     Incomplete(a) => {

@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,ProducerState,Mapper,Mapper2,not_line_ending};
+use nom::{IResult,Producer,FileProducer,ProducerState,FlatMapOpt,Functor,not_line_ending};
 use nom::IResult::*;
 
 use std::str;
