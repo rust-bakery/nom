@@ -282,64 +282,29 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
   }
 }
 
-fn multiple_data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
-  match data_interpreter(bytes) {
-    Error(a)      => Error(a),
-    Incomplete(a) => Incomplete(a),
-    Done(i, ())   => {
-      println!("NEXT BOX");
-      match data_interpreter(i) {
-        Error(a)      => Error(a),
-        Incomplete(a) => Incomplete(a),
-        Done(i2,())   => {
-          println!("NEXT BOX 2");
-          match data_interpreter(i2) {
-            Error(a)      => Error(a),
-            Incomplete(a) => Incomplete(a),
-            Done(i3,())   => {
-              println!("NEXT BOX 3");
-              match data_interpreter(i3) {
-                Error(a)      => Error(a),
-                Incomplete(a) => Incomplete(a),
-                Done(i4,())   => {
-                  println!("NEXT BOX 4");
-                  let res = data_interpreter(i4);
-                  println!("res4: {:?}", res);
-                  res
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-  }
-}
-
 many0!(full_data_interpreter<&[u8],()> data_interpreter);
 
 fn parse_mp4_file(filename: &str) {
-  FileProducer::new(filename, 40000).map(|producer: FileProducer| {
+  FileProducer::new(filename, 400000).map(|producer: FileProducer| {
     let mut p = producer;
-    match p.produce() {
-      ProducerState::Data(bytes) => {
-        multiple_data_interpreter(bytes);
-      },
-      _ => println!("got error")
-    }
-    /*
     pusher!(ps, full_data_interpreter);
     ps(&mut p);
-    */
+
     //assert!(false);
   });
 
 }
+
+/*
 #[test]
 fn file_test() {
   parse_mp4_file("small.mp4");
 }
+*/
+
+
 #[test]
 fn bunny_test() {
   parse_mp4_file("bigbuckbunny.mp4");
 }
+
