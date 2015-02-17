@@ -1,26 +1,23 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,IResult,FlatMap,FlatMapOpt,Functor,Producer,ProducerState,FileProducer};
+use nom::{HexDisplay,IResult,FlatMap,FlatMapOpt,Functor,Producer,ProducerState,FileProducer,be_u8,be_u32,be_u64};
 use nom::IResult::*;
 
 use std::str;
 
 fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
-
-  take!(offset_parser 4);
-  match offset_parser(input) {
-    Done(i, offset_bytes) => {
-      let offset:u32 = (offset_bytes[3] as u32) + (offset_bytes[2] as u32) * 0x100 + (offset_bytes[1] as u32) * 0x10000 + (offset_bytes[0] as u32) * 0x1000000;
+  match be_u32(input) {
+    Done(i, offset) => {
       let sz: usize = offset as usize;
-      //println!("box size: {} -> {} (input: {})", offset_bytes.to_hex(8), sz, i.len());
       if i.len() >= sz - 4 {
         return Done(&i[(sz-4)..], &i[0..(sz-4)])
       } else {
         return Incomplete(1234)
       }
-    },
-    e => e
+    }
+    Error(e)      => Error(e),
+    Incomplete(e) => Incomplete(e)
   }
 }
 

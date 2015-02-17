@@ -726,6 +726,42 @@ macro_rules! take_until_either_and_leave(
   )
 );
 
+pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
+  if i.len() < 1 {
+    Incomplete(0)
+  } else {
+    Done(&i[1..], i[0])
+  }
+}
+
+pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
+  if i.len() < 2 {
+    Incomplete(0)
+  } else {
+    let res = ((i[0] as u16) << 8) + i[1] as u16;
+    Done(&i[2..], res)
+  }
+}
+
+pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
+  if i.len() < 4 {
+    Incomplete(0)
+  } else {
+    let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
+    Done(&i[4..], res)
+  }
+}
+
+pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
+  if i.len() < 8 {
+    Incomplete(0)
+  } else {
+    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
+      ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
+    Done(&i[8..], res)
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
