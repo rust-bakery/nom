@@ -537,9 +537,7 @@ mod tests {
   #[test]
   fn t1() {
     let v1:Vec<u8> = vec![1,2,3];
-    let v2:Vec<u8> = vec![4,5,6];
-    let d = Done(&v1[], &v2[]);
-    let res = local_print(&v2[]);
-    assert_eq!(res, Done(&v2[], ()));
+    let res = local_print(&v1[]);
+    assert_eq!(res, Done(&v1[], ()));
   }
 }

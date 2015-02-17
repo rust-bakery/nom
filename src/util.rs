@@ -8,12 +8,12 @@ pub trait HexDisplay {
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
 impl HexDisplay for [u8] {
+  #[allow(unused_variables)]
   fn to_hex(&self, chunk_size: usize) -> String {
     let mut v = Vec::with_capacity(self.len() * 3);
     let mut i = 0;
     for chunk in self.chunks(chunk_size) {
       let s = format!("{:08x}", i);
-      let s2: &str = &s;
       for &ch in s.as_bytes().iter() {
         v.push(ch);
       }
@@ -27,7 +27,7 @@ impl HexDisplay for [u8] {
         v.push(' ' as u8);
       }
       if chunk_size > chunk.len() {
-        for i in 0..(chunk_size - chunk.len()) {
+        for j in 0..(chunk_size - chunk.len()) {
           v.push(' ' as u8);
           v.push(' ' as u8);
           v.push(' ' as u8);

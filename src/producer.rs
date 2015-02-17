@@ -27,7 +27,6 @@
 //!  });
 //! ```
 
-use util::HexDisplay;
 use internal::*;
 use self::ProducerState::*;
 
@@ -87,7 +86,7 @@ impl Producer for FileProducer {
           _          => ProducerError(0)
         }
       },
-      Ok(i)  => {
+      Ok(_)  => {
         //println!("read: {:?}\nbytes:\n{}", i, (&self.v).to_hex(8));
         Data(&self.v[])
       }
@@ -159,6 +158,7 @@ impl<'x> Producer for MemProducer<'x> {
 #[macro_export]
 macro_rules! pusher (
   ($name:ident, $f:expr) => (
+    #[allow(unused_variables)]
     fn $name(producer: &mut Producer) {
       let mut acc: Vec<u8> = Vec::new();
       loop {

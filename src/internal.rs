@@ -17,10 +17,12 @@ impl<'a,I,O> Debug for IResultClosure<'a,I,O> {
 }
 
 impl<'a,I:PartialEq,O:PartialEq> PartialEq for IResultClosure<'a,I,O> {
+  #[allow(unused_variables)]
   fn eq<'b>(&self, other: &IResultClosure<'b,I,O>) -> bool {
     false
   }
 
+  #[allow(unused_variables)]
   fn ne<'b>(&self, other: &IResultClosure<'b,I,O>) -> bool {
     false
   }

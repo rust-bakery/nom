@@ -5,8 +5,6 @@ use nom::{HexDisplay,IResult,FlatMap,FlatMapOpt,Functor,Producer,ProducerState,F
 use nom::IResult::*;
 
 use std::str;
-use std::collections::HashMap;
-
 
 fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
@@ -139,32 +137,32 @@ tag!(moov_tag "moov".as_bytes());
 
 tag!(mdra    "mdra".as_bytes());
 fn moov_mdra(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  mdra(input).map(|o| MoovBox::Mdra)
+  mdra(input).map(|_| MoovBox::Mdra)
 }
 
 tag!(dref    "dref".as_bytes());
 fn moov_dref(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  dref(input).map(|o| MoovBox::Dref)
+  dref(input).map(|_| MoovBox::Dref)
 }
 
 tag!(cmov    "cmov".as_bytes());
 fn moov_cmov(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  cmov(input).map(|o| MoovBox::Cmov)
+  cmov(input).map(|_| MoovBox::Cmov)
 }
 
 tag!(rmra    "rmra".as_bytes());
 fn moov_rmra(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  rmra(input).map(|o| MoovBox::Rmra)
+  rmra(input).map(|_| MoovBox::Rmra)
 }
 
 tag!(iods    "iods".as_bytes());
 fn moov_iods(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  iods(input).map(|o| MoovBox::Iods)
+  iods(input).map(|_| MoovBox::Iods)
 }
 
 tag!(mvhd    "mvhd".as_bytes());
 fn moov_mvhd(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  mvhd(input).map(|o| MoovBox::Mvhd)
+  mvhd(input).map(|_| MoovBox::Mvhd)
   /*let res = mvhd(input).map(|o| MoovBox::Mvhd);
   match res {
     Error(a)      => Error(a),
@@ -178,17 +176,17 @@ fn moov_mvhd(input:&[u8]) -> IResult<&[u8], MoovBox> {
 
 tag!(clip    "clip".as_bytes());
 fn moov_clip(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  clip(input).map(|o| MoovBox::Clip)
+  clip(input).map(|_| MoovBox::Clip)
 }
 
 tag!(trak    "trak".as_bytes());
 fn moov_trak(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  trak(input).map(|o| MoovBox::Trak)
+  trak(input).map(|_| MoovBox::Trak)
 }
 
 tag!(udta   "udta".as_bytes());
 fn moov_udta(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  udta(input).map(|o| MoovBox::Udta)
+  udta(input).map(|_| MoovBox::Udta)
 }
 
 alt!(moov_internal<&[u8], MoovBox>, moov_mdra | moov_dref | moov_cmov |

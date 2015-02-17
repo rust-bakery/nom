@@ -25,7 +25,7 @@ use internal::IResult::*;
 macro_rules! tag(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      if i.len() >= $inp.len() && i.slice(0, $inp.len()) == $inp {
+      if i.len() >= $inp.len() && &i[0..$inp.len()] == $inp {
         Done(&i[$inp.len()..], &i[0..$inp.len()])
       } else {
         Error(0)
@@ -36,7 +36,7 @@ macro_rules! tag(
 
 pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]> + 'a> {
   Box::new(move |i: &'b[u8]| -> IResult<&'b[u8], &'b[u8]> {
-    if i.len() >= rec.len() && i.slice(0, rec.len()) == rec {
+    if i.len() >= rec.len() && &i[0..rec.len()] == rec {
       Done(&i[rec.len()..], &i[0..rec.len()])
     } else {
       Error(0)
@@ -326,10 +326,10 @@ pub fn begin<'a,'y>(input: &'a [u8]) -> IResult<'y,(), &'a [u8]> {
 macro_rules! is_not(
   ($name:ident $arr:expr) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
-      for idx in range(0, input.len()) {
+      for idx in 0..input.len() {
         for &i in $arr.iter() {
           if input[idx] == i {
-            return IResult::Done(input.slice_from(idx), input.slice(0, idx))
+            return IResult::Done(&input[idx..], &input[0..idx])
           }
         }
       }
@@ -342,7 +342,7 @@ macro_rules! is_not(
 macro_rules! is_a(
   ($name:ident $arr:expr) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
-      for idx in range(0, input.len()) {
+      for idx in 0..input.len() {
         var res = false
         for &i in $arr.iter() {
           if input[idx] == i {
@@ -350,7 +350,7 @@ macro_rules! is_a(
           }
         }
         if !res {
-          return IResult::Done(input.slice_from(idx), input.slice(0, idx))
+          return IResult::Done(&input[idx..], &input[0..idx])
         }
       }
       IResult::Done("".as_bytes(), input)
@@ -493,7 +493,7 @@ macro_rules! many0(
       let mut remaining = input.len();
       let mut res: Vec<$o> = Vec::new();
       loop {
-        match $f(input.slice_from(begin)) {
+        match $f(&input[begin..]) {
           IResult::Done(i,o) => {
             res.push(o);
             begin += remaining - i.len();
@@ -503,7 +503,7 @@ macro_rules! many0(
             }
           },
           _                  => {
-            return IResult::Done(input.slice_from(begin), res)
+            return IResult::Done(&input[begin..], res)
           }
         }
       }
@@ -520,7 +520,7 @@ macro_rules! many1(
       let mut remaining = input.len();
       let mut res: Vec<$o> = Vec::new();
       loop {
-        match $f(input.slice_from(begin)) {
+        match $f(&input[begin..]) {
           IResult::Done(i,o) => {
             res.push(o);
             begin += remaining - i.len();
@@ -533,7 +533,7 @@ macro_rules! many1(
             if begin == 0 {
               return IResult::Error(0)
             } else {
-              return IResult::Done(input.slice_from(begin), res)
+            return IResult::Done(&input[begin..], res)
             }
           }
         }
@@ -559,7 +559,7 @@ macro_rules! fold0_impl(
       let mut remaining = $input.len();
       let mut res: $o = $z;
       loop {
-        match $f($input.slice_from(begin)) {
+        match $f(&$input[begin..]) {
           IResult::Done(i,o) => {
             //res.push(o);
             res = $assemble(res, o);
@@ -570,7 +570,7 @@ macro_rules! fold0_impl(
             }
           },
           _                  => {
-            return IResult::Done($input.slice_from(begin), res)
+            return IResult::Done(&$input[begin..], res)
           }
         }
       }
@@ -595,7 +595,7 @@ macro_rules! fold1_impl(
       let mut remaining = $input.len();
       let mut res: $o = $z;
       loop {
-        match $f($input.slice_from(begin)) {
+        match $f(&$input[begin..]) {
           IResult::Done(i,o) => {
             //res.push(o);
             res = $assemble(res, o);
@@ -609,7 +609,7 @@ macro_rules! fold1_impl(
             if begin == 0 {
               return IResult::Error(0)
             } else {
-              return IResult::Done($input.slice_from(begin), res)
+              return IResult::Done(&$input[begin..], res)
             }
           }
         }
@@ -654,7 +654,7 @@ macro_rules! take_until(
         if idx + $inp.len() > i.len() {
           return Incomplete(0)
         }
-        if i.slice(idx, idx+$inp.len()) == $inp {
+        if &i[idx..idx+$inp.len()] == $inp {
           if idx + $inp.len() > i.len() {
             return Done("".as_bytes(), &i[0..idx])
           } else {
@@ -675,7 +675,7 @@ macro_rules! take_until_and_leave(
         if idx + $inp.len() > i.len() {
           return Incomplete(0)
         }
-        if i.slice(idx, idx+$inp.len()) == $inp {
+        if &i[idx..idx+$inp.len()] == $inp {
           return Done(&i[idx..], &i[0..idx])
         }
       }
