@@ -178,6 +178,18 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, $e:ident ? ~ $($rest:tt)*) => (
+    match $e($i) {
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Error(e)      => {
+        chaining_parser!($i, $($rest)*)
+      },
+      IResult::Done(i,_)     => {
+        chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+
   ($i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Error(e)      => IResult::Error(e),
@@ -185,6 +197,43 @@ macro_rules! chaining_parser (
       IResult::Done(i,o)     => {
         let $field = o;
         chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+
+  ($i:expr, $field:ident : $e:ident ? ~ $($rest:tt)*) => (
+    match $e($i) {
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Error(e)      => {
+        let $field = None;
+        chaining_parser!($i, $($rest)*)
+      },
+      IResult::Done(i,o)     => {
+        let $field = Some(o);
+        chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+
+  // ending the chain
+  ($i:expr, $e:ident, $assemble:expr) => (
+    match $e($i) {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,_)     => {
+        IResult::Done(i, $assemble())
+      }
+    }
+  );
+
+  ($i:expr, $e:ident ?, $assemble:expr) => (
+    match $e($i) {
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Error(e)      => {
+        IResult::Done($i, $assemble())
+      },
+      IResult::Done(i,_)     => {
+        IResult::Done(i, $assemble())
       }
     }
   );
@@ -200,15 +249,20 @@ macro_rules! chaining_parser (
     }
   );
 
-  ($i:expr, $e:ident, $assemble:expr) => (
+  ($i:expr, $field:ident : $e:ident ? , $assemble:expr) => (
     match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Done(i,_)     => {
+      IResult::Error(e)      => {
+        let $field = None;
+        IResult::Done($i, $assemble())
+      },
+      IResult::Done(i,o)     => {
+        let $field = Some(o);
         IResult::Done(i, $assemble())
       }
     }
   );
+
   ($i:expr, $assemble:expr) => (
     IResult::Done($i, $assemble())
   )
@@ -792,7 +846,7 @@ mod tests {
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
     chain!(f<&[u8],B>,
       x            ~
-      x            ~
+      x?           ~
       aa: ret_int1 ~
       y            ~
       bb: ret_int2 ~
@@ -801,6 +855,38 @@ mod tests {
 
     let r = f("abcdabcdefghefghX".as_bytes());
     assert_eq!(r, Done("X".as_bytes(), B{a: 1, b: 2}));
+
+    let r2 = f("abcdefghefghX".as_bytes());
+    assert_eq!(r2, Done("X".as_bytes(), B{a: 1, b: 2}));
+  }
+
+  #[derive(PartialEq,Eq,Debug)]
+  struct C {
+    a: u8,
+    b: Option<u8>
+  }
+
+
+  #[test]
+  fn chain_opt() {
+    tag!(x "abcd".as_bytes());
+    tag!(y "efgh".as_bytes());
+    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+    fn ret_y(i:&[u8]) -> IResult<&[u8], u8> {
+      y(i).map(|_| 2)
+    };
+
+    chain!(f<&[u8],C>,
+      x            ~
+      aa: ret_int1 ~
+      bb: ret_y?   ,
+      ||{C{a: aa, b: bb}});
+
+    let r = f("abcdefghX".as_bytes());
+    assert_eq!(r, Done("X".as_bytes(), C{a: 1, b: Some(2)}));
+
+    let r2 = f("abcdX".as_bytes());
+    assert_eq!(r2, Done("X".as_bytes(), C{a: 1, b: None}));
   }
 
   #[test]
