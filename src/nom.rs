@@ -136,25 +136,38 @@ macro_rules! o_parser(
 /// #[derive(PartialEq,Eq,Debug)]
 /// struct B {
 ///   a: u8,
-///   b: u8
+///   b: Option<u8>
 /// }
 ///
 /// tag!(x "abcd".as_bytes());
 /// tag!(y "efgh".as_bytes());
 ///
-/// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+/// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i, 1) };
+/// fn ret_y(i:&[u8]) -> IResult<&[u8], u8> { y(i).map(|_| 1) }; // return 1 if the "efgh" tag is found
 ///
 ///  chain!(z<&[u8], u8>,
 ///    x            ~
-///    x            ~
-///    aa: ret_int  ~
-///    y            ~
-///    bb: ret_int  ,
+///    aa: ret_int  ~     // the result of that parser will be used in the closure
+///    x?           ~     // this parser is optional
+///    bb: ret_y?   ,     // the result of that parser is an option
 ///    ||{B{a: aa, b: bb}}
 ///  );
 ///
-/// let r = z("abcdabcdefgh".as_bytes());
-/// assert_eq!(r, Done("".as_bytes(), B{a: 1, b: 1}));
+/// // the first "abcd" tag is not present, we have an error
+/// let r1 = z("efgh".as_bytes());
+/// assert_eq!(r1, Error(0));
+///
+/// // everything is present, everything is parsed
+/// let r2 = z("abcdabcdefgh".as_bytes());
+/// assert_eq!(r2, Done("".as_bytes(), B{a: 1, b: Some(1)}));
+///
+/// // the second "abcd" tag is optional
+/// let r3 = z("abcdefgh".as_bytes());
+/// assert_eq!(r3, Done("".as_bytes(), B{a: 1, b: Some(1)}));
+///
+/// // the result of ret_y is optional, as seen in the B structure
+/// let r4 = z("abcdabcd".as_bytes());
+/// assert_eq!(r4, Done("".as_bytes(), B{a: 1, b: None}));
 /// ```
 #[macro_export]
 macro_rules! chain (
