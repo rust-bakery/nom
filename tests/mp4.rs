@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,IResult,FlatMap,FlatMapOpt,Functor,Producer,ProducerState,FileProducer,be_u8,be_u32,be_u64};
+use nom::{HexDisplay,IResult,FlatMap,FlatMapOpt,Functor,Producer,ProducerState,FileProducer,be_u8,be_u16,be_u32,be_u64,be_f32,be_f64};
 use nom::IResult::*;
 
 use std::str;
@@ -28,31 +28,19 @@ struct FileType<'a> {
   compatible_brands:   Vec<&'a str>
 }
 
-#[derive(PartialEq,Eq,Debug)]
-pub struct Mvhd1 {
-  version:       u8,
-  flags:         u32,
+#[derive(Debug)]
+pub struct Mvhd32 {
+  version_flags: u32, // actually:
+  // version: u8,
+  // flags: u24       // 3 bytes
   created_date:  u32,
-  modified_date: u32
-}
-
-#[derive(PartialEq,Eq,Debug)]
-pub struct Mvhd2 {
-  created_date:  u64,
-  modified_date: u64,
+  modified_date: u32,
   scale:         u32,
-  duration:      u32
-}
-
-/*
-#[derive(PartialEq,Eq,Debug)]
-struct Mvhd3 {
-  duration:      u64,
+  duration:      u32,
   speed:         f32,
-  volume:        f32, // 2 bytes
-*/
+  volume:        u16, // actually a 2 bytes decimal
   /* 10 bytes reserved */
-/*  scaleA:        f32,
+  scaleA:        f32,
   rotateB:       f32,
   angleU:        f32,
   rotateC:       f32,
@@ -66,30 +54,157 @@ struct Mvhd3 {
   selection:     u64,
   current_time:  u32,
   track_id:      u32
-}*/
-
-#[derive(PartialEq,Eq,Debug)]
-pub enum MvhdBox {
-  M1(Mvhd1),
-  M2(Mvhd2),
-  M3
-  /*M3(Mvhd3)*/
 }
 
-#[derive(PartialEq,Eq,Debug)]
+#[derive(Debug)]
+pub struct Mvhd64 {
+  version_flags: u32, // actually:
+  // version: u8,
+  // flags: u24       // 3 bytes
+  created_date:  u64,
+  modified_date: u64,
+  scale:         u32,
+  duration:      u64,
+  speed:         f32,
+  volume:        u16, // actually a 2 bytes decimal
+  /* 10 bytes reserved */
+  scaleA:        f32,
+  rotateB:       f32,
+  angleU:        f32,
+  rotateC:       f32,
+  scaleD:        f32,
+  angleV:        f32,
+  positionX:     f32,
+  positionY:     f32,
+  scaleW:        f32,
+  preview:       u64,
+  poster:        u32,
+  selection:     u64,
+  current_time:  u32,
+  track_id:      u32
+}
+take!(ten_bytes 10);
+
+chain!(mvhd32 <&[u8], MvhdBox>,
+  version_flags: be_u32 ~
+  created_date:  be_u32 ~
+  modified_date: be_u32 ~
+  scale:         be_u32 ~
+  duration:      be_u32 ~
+  speed:         be_f32 ~
+  volume:        be_u16 ~ // actually a 2 bytes decimal
+              ten_bytes ~
+  scaleA:        be_f32 ~
+  rotateB:       be_f32 ~
+  angleU:        be_f32 ~
+  rotateC:       be_f32 ~
+  scaleD:        be_f32 ~
+  angleV:        be_f32 ~
+  positionX:     be_f32 ~
+  positionY:     be_f32 ~
+  scaleW:        be_f32 ~
+  preview:       be_u64 ~
+  poster:        be_u32 ~
+  selection:     be_u64 ~
+  current_time:  be_u32 ~
+  track_id:      be_u32,
+  ||{
+    MvhdBox::M32(Mvhd32 {
+      version_flags: version_flags,
+      created_date:  created_date,
+      modified_date: modified_date,
+      scale:         scale,
+      duration:      duration,
+      speed:         speed,
+      volume:        volume,
+      scaleA:        scaleA,
+      rotateB:       rotateB,
+      angleU:        angleU,
+      rotateC:       rotateC,
+      scaleD:        scaleD,
+      angleV:        angleV,
+      positionX:     positionX,
+      positionY:     positionY,
+      scaleW:        scaleW,
+      preview:       preview,
+      poster:        poster,
+      selection:     selection,
+      current_time:  current_time,
+      track_id:      track_id
+    })
+  }
+);
+
+chain!(mvhd64 <&[u8], MvhdBox>,
+  version_flags: be_u32 ~
+  created_date:  be_u64 ~
+  modified_date: be_u64 ~
+  scale:         be_u32 ~
+  duration:      be_u64 ~
+  speed:         be_f32 ~
+  volume:        be_u16 ~ // actually a 2 bytes decimal
+              ten_bytes ~
+  scaleA:        be_f32 ~
+  rotateB:       be_f32 ~
+  angleU:        be_f32 ~
+  rotateC:       be_f32 ~
+  scaleD:        be_f32 ~
+  angleV:        be_f32 ~
+  positionX:     be_f32 ~
+  positionY:     be_f32 ~
+  scaleW:        be_f32 ~
+  preview:       be_u64 ~
+  poster:        be_u32 ~
+  selection:     be_u64 ~
+  current_time:  be_u32 ~
+  track_id:      be_u32,
+  ||{
+    MvhdBox::M64(Mvhd64 {
+      version_flags: version_flags,
+      created_date:  created_date,
+      modified_date: modified_date,
+      scale:         scale,
+      duration:      duration,
+      speed:         speed,
+      volume:        volume,
+      scaleA:        scaleA,
+      rotateB:       rotateB,
+      angleU:        angleU,
+      rotateC:       rotateC,
+      scaleD:        scaleD,
+      angleV:        angleV,
+      positionX:     positionX,
+      positionY:     positionY,
+      scaleW:        scaleW,
+      preview:       preview,
+      poster:        poster,
+      selection:     selection,
+      current_time:  current_time,
+      track_id:      track_id
+    })
+  }
+);
+
+#[derive(Debug)]
+pub enum MvhdBox {
+  M32(Mvhd32),
+  M64(Mvhd64)
+}
+
+#[derive(Debug)]
 pub enum MoovBox {
   Mdra,
   Dref,
   Cmov,
   Rmra,
   Iods,
-  Mvhd,
+  Mvhd(MvhdBox),
   Clip,
   Trak,
   Udta
 }
 
-#[derive(PartialEq,Eq,Debug)]
+#[derive(Debug)]
 enum MP4Box<'a> {
   Ftyp(FileType<'a>),
   Moov(Vec<MoovBox>),
@@ -157,19 +272,24 @@ fn moov_iods(input:&[u8]) -> IResult<&[u8], MoovBox> {
   iods(input).map(|_| MoovBox::Iods)
 }
 
-tag!(mvhd    "mvhd".as_bytes());
-fn moov_mvhd(input:&[u8]) -> IResult<&[u8], MoovBox> {
-  mvhd(input).map(|_| MoovBox::Mvhd)
-  /*let res = mvhd(input).map(|o| MoovBox::Mvhd);
-  match res {
-    Error(a)      => Error(a),
-    Incomplete(a) => Incomplete(a),
-    Done(i, o)    => {
-      println!("MVHD box content:\n{}", i.to_hex(8));
-      Done(i,o)
-    }
-  }*/
+fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
+  if input.len() < 100 {
+    Incomplete(0)
+  } else if input.len() == 100 {
+    mvhd32(input)
+  } else if input.len() == 112 {
+    mvhd64(input)
+  } else {
+    Error(0)
+  }
 }
+
+tag!(mvhd    "mvhd".as_bytes());
+chain!(moov_mvhd<&[u8],MoovBox>,
+    mvhd              ~
+    content: mvhd_box ,
+    || { MoovBox::Mvhd(content) }
+);
 
 tag!(clip    "clip".as_bytes());
 fn moov_clip(input:&[u8]) -> IResult<&[u8], MoovBox> {
@@ -257,7 +377,7 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
     Done(i, o) => {
       match o {
         MP4Box::Ftyp(f) => println!("-> FTYP: {:?}", f),
-        MP4Box::Moov(m) => {println!("-> MOOV: {:?}", m); println!("remaining:\n{}", i.to_hex(8))},
+        MP4Box::Moov(m) => {println!("-> MOOV: {:?}", m); /*println!("remaining:\n{}", i.to_hex(8))*/},
         MP4Box::Mdat    => println!("-> MDAT"),
         MP4Box::Free    => println!("-> FREE"),
         MP4Box::Skip    => println!("-> SKIP"),
