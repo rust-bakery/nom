@@ -11,6 +11,7 @@ extern crate collections;
 use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
+use std::mem::transmute;
 
 /// declares a byte array as a suite to recognize
 ///
@@ -759,6 +760,30 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
     let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
       ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
     Done(&i[8..], res)
+  }
+}
+
+pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
+  match be_u32(input) {
+    Error(e)      => Error(e),
+    Incomplete(e) => Incomplete(e),
+    Done(i,o) => {
+      unsafe {
+        Done(i, transmute::<u32, f32>(o))
+      }
+    }
+  }
+}
+
+pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
+  match be_u64(input) {
+    Error(e)      => Error(e),
+    Incomplete(e) => Incomplete(e),
+    Done(i,o) => {
+      unsafe {
+        Done(i, transmute::<u64, f64>(o))
+      }
+    }
   }
 }
 
