@@ -409,8 +409,9 @@ macro_rules! opt(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
     fn $name(input:$i) -> IResult<$i, Option<$o>> {
       match $f(input) {
-        IResult::Done(i,o) => IResult::Done(i, Some(o)),
-        _                  => IResult::Done(input, None)
+        IResult::Done(i,o)     => IResult::Done(i, Some(o)),
+        IResult::Error(_)      => IResult::Done(input, None),
+        IResult::Incomplete(i) => IResult::Incomplete(i)
       }
     }
   )
