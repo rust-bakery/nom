@@ -30,9 +30,10 @@
 use internal::*;
 use self::ProducerState::*;
 
-use std::old_io::fs::File;
-use std::old_io::{IoResult, IoErrorKind};
-
+use std::fs::File;
+use std::path::Path;
+use std::io;
+use std::io::Read;
 
 /// Holds the data producer's current state
 ///
@@ -67,7 +68,7 @@ pub struct FileProducer {
 }
 
 impl FileProducer {
-  pub fn new(filename: &str, buffer_size: usize) -> IoResult<FileProducer> {
+  pub fn new(filename: &str, buffer_size: usize) -> io::Result<FileProducer> {
     File::open(&Path::new(filename)).map(|f| {
       FileProducer {size: buffer_size, file: f, v: Vec::with_capacity(buffer_size)}
     })
@@ -77,18 +78,25 @@ impl FileProducer {
 impl Producer for FileProducer {
   fn produce(&mut self) -> ProducerState<&[u8]> {
     //let mut v = Vec::with_capacity(self.size);
-    self.v.clear();
-    match self.file.push(self.size, &mut self.v) {
+    //self.v.clear();
+    self.v.resize(self.size, 0);
+    match self.file.read(&mut self.v) {
       Err(e) => {
-        match e.kind {
-          IoErrorKind::NoProgress => Continue,
-          IoErrorKind::EndOfFile  => Eof(&self.v[]),
+        println!("producer error: {:?}", e);
+        match e.kind() {
+          //ErrorKind::NoProgress => Continue,
+          //ErrorKind::EndOfFile  => Eof(&self.v[]),
           _          => ProducerError(0)
         }
       },
-      Ok(_)  => {
-        //println!("read: {:?}\nbytes:\n{}", i, (&self.v).to_hex(8));
-        Data(&self.v[])
+      Ok(n)  => {
+        //println!("read: {} bytes\ndata:\n{}", n, (&self.v).to_hex(8));
+        self.v.truncate(n);
+        if n == 0 {
+          Eof(&self.v[])
+        } else {
+          Data(&self.v[])
+        }
       }
     }
   }
