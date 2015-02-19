@@ -32,8 +32,9 @@ use self::ProducerState::*;
 
 use std::fs::File;
 use std::path::Path;
+use std::num::Int;
 use std::io;
-use std::io::Read;
+use std::io::{Read,Seek,SeekFrom};
 
 /// Holds the data producer's current state
 ///
@@ -55,7 +56,9 @@ pub enum ProducerState<O> {
 
 /// A producer implements the produce method, currently working with u8 arrays
 pub trait Producer {
-  fn produce(&mut self) -> ProducerState<&[u8]>;
+  fn produce(&mut self)                   -> ProducerState<&[u8]>;
+  fn seek_to(&mut self,     position:u64) -> Option<u64>;
+  fn seek_offset(&mut self, offset:i64)   -> Option<u64>;
 }
 
 /// Can produce data from a file
@@ -99,6 +102,14 @@ impl Producer for FileProducer {
         }
       }
     }
+  }
+
+  fn seek_to(&mut self, position: u64) -> Option<u64> {
+    self.file.seek(SeekFrom::Start(position)).ok()
+  }
+
+  fn seek_offset(&mut self, offset: i64) -> Option<u64> {
+    self.file.seek(SeekFrom::Current(offset)).ok()
   }
 }
 
@@ -144,6 +155,35 @@ impl<'x> Producer for MemProducer<'x> {
       res
     } else {
       ProducerError(0)
+    }
+  }
+
+  fn seek_to(&mut self, position: u64) -> Option<u64> {
+    if position as usize > self.length {
+      self.index = self.length
+    } else {
+      self.index = position as usize
+    }
+    Some(self.index as u64)
+  }
+
+  fn seek_offset(&mut self, offset: i64) -> Option<u64> {
+    let next = if offset >= 0 {
+      (self.index as u64).checked_add(offset as u64)
+    } else {
+      (self.index as u64).checked_sub(-offset as u64)
+    };
+
+    match next {
+      None    => None,
+      Some(u) => {
+        if u as usize > self.length {
+          self.index = self.length
+        } else {
+          self.index = u as usize
+        }
+        Some(self.index as u64)
+      }
     }
   }
 }
