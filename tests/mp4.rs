@@ -1,7 +1,8 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,IResult,FlatMap,FlatMapOpt,Functor,Producer,ProducerState,FileProducer,be_u8,be_u16,be_u32,be_u64,be_f32,be_f64};
+use nom::{HexDisplay,IResult,FlatMap,FlatMapOpt,Functor,Producer,ProducerState,FileProducer,be_u16,be_u32,be_u64,be_f32,be_f64};
+use nom::{Consumer,ConsumerState};
 use nom::IResult::*;
 
 use std::str;
@@ -28,6 +29,7 @@ struct FileType<'a> {
   compatible_brands:   Vec<&'a str>
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug)]
 pub struct Mvhd32 {
   version_flags: u32, // actually:
@@ -56,6 +58,7 @@ pub struct Mvhd32 {
   track_id:      u32
 }
 
+#[allow(non_snake_case)]
 #[derive(Debug)]
 pub struct Mvhd64 {
   version_flags: u32, // actually:
@@ -85,6 +88,7 @@ pub struct Mvhd64 {
 }
 take!(ten_bytes 10);
 
+#[allow(non_snake_case)]
 chain!(mvhd32 <&[u8], MvhdBox>,
   version_flags: be_u32 ~
   created_date:  be_u32 ~
@@ -135,6 +139,7 @@ chain!(mvhd32 <&[u8], MvhdBox>,
   }
 );
 
+#[allow(non_snake_case)]
 chain!(mvhd64 <&[u8], MvhdBox>,
   version_flags: be_u32 ~
   created_date:  be_u64 ~
