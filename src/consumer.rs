@@ -59,7 +59,7 @@ use internal::Err;
 #[derive(Debug,PartialEq,Eq,Copy)]
 pub enum ConsumerState {
   Await,
-  //Incomplete,
+  Incomplete,
   ConsumerDone,
   ConsumerError(Err)
 }
@@ -111,6 +111,9 @@ pub trait Consumer {
           println!("await");
           acc.clear();
           //acc.push_all(i);
+        },
+        Incomplete => {
+          println!("incomplete");
         }
       }
     if eof { self.end(); }
