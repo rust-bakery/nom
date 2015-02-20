@@ -314,12 +314,12 @@ macro_rules! alt_parser (
   )
 );
 
-pub fn print<'y,T: Debug>(input: T) -> IResult<'y,T, ()> {
+pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
   println!("{:?}", input);
   Done(input, ())
 }
 
-pub fn begin<'a,'y>(input: &'a [u8]) -> IResult<'y,(), &'a [u8]> {
+pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
   Done((), input)
 }
 

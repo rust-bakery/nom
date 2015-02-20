@@ -257,7 +257,7 @@ mod tests {
   use std::str;
   use map::*;
 
-  fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
+  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
     println!("{:?}", input);
     Done(input, ())
   }
@@ -270,7 +270,7 @@ mod tests {
   #[test]
   fn mem_producer_2() {
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
-    fn pr<'a,'b>(data: &'a [u8]) -> IResult<'b,&'a [u8],()> {
+    fn pr<'a,'b>(data: &'a [u8]) -> IResult<&'a [u8],()> {
       local_print(data)
     }
     pusher!(ps, pr);
@@ -288,7 +288,7 @@ mod tests {
       let mut p = producer;
       //p.push(|par| {println!("parsed file: {}", par); par});
       //p.push(|par| par.flat_map(print));
-      fn pr<'a,'b,'c>(data: &[u8]) -> IResult<'b,&[u8], &[u8]> {
+      fn pr<'a,'b,'c>(data: &[u8]) -> IResult<&[u8], &[u8]> {
         Done("".as_bytes(), data).map_res(str::from_utf8); //.flat_map(local_print);
         Done("".as_bytes(),"".as_bytes())
       }
@@ -309,7 +309,7 @@ mod tests {
     }
 
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-    fn pr<'a,'b>(data: &'b [u8]) -> IResult<'b,&'b [u8],&'b [u8]> {
+    fn pr<'a,'b>(data: &'b [u8]) -> IResult<&'b [u8],&'b [u8]> {
       let r = f(data);
       println!("f: {:?}", r);
       r
@@ -330,7 +330,7 @@ mod tests {
     }
 
     let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-    fn pr<'a,'b,'c>(data: &'b [u8]) -> IResult<'b,&'b [u8],&'b [u8]> {
+    fn pr<'a,'b,'c>(data: &'b [u8]) -> IResult<&'b [u8],&'b [u8]> {
       let r = f(data);
       println!("f: {:?}", r);
       r
