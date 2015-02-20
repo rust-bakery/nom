@@ -88,7 +88,7 @@ impl Producer for FileProducer {
         println!("producer error: {:?}", e);
         match e.kind() {
           //ErrorKind::NoProgress => Continue,
-          //ErrorKind::EndOfFile  => Eof(&self.v[]),
+          //ErrorKind::EndOfFile  => Eof(&self.v[..]),
           _          => ProducerError(0)
         }
       },
@@ -96,9 +96,9 @@ impl Producer for FileProducer {
         //println!("read: {} bytes\ndata:\n{}", n, (&self.v).to_hex(8));
         self.v.truncate(n);
         if n == 0 {
-          Eof(&self.v[])
+          Eof(&self.v[..])
         } else {
-          Data(&self.v[])
+          Data(&self.v[..])
         }
       }
     }

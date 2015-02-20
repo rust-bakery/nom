@@ -112,7 +112,7 @@ pub trait Consumer {
       }
       //v2.push_all(acc.as_slice());
       //match consumer.consume(v2.as_slice()) {
-      match self.consume(&acc[]) {
+      match self.consume(&acc[..]) {
         ConsumerError(e) => {
           println!("consumer error, stopping: {}", e);
         },
