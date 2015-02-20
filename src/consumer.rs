@@ -121,7 +121,7 @@ pub trait Consumer {
           acc.clear();
           end = true;
           //acc.push_all(i);
-          break;
+          //break;
         },
         Await(i) => {
           println!("await: remains {} bytes", i);
@@ -145,8 +145,14 @@ pub trait Consumer {
           println!("incomplete");
         }
       }
-    if eof { self.end(); }
-    if end { self.end(); }
+      if eof {
+        self.end();
+        break;
+      }
+      if end {
+        self.end();
+        break;
+      }
     }
   }
 }
