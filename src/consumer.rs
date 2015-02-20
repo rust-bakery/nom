@@ -59,6 +59,8 @@ use internal::Err;
 #[derive(Debug,PartialEq,Eq,Copy)]
 pub enum ConsumerState {
   Await(usize),
+  Goto(u64),
+  Offset(i64),
   Incomplete,
   ConsumerDone,
   ConsumerError(Err)
@@ -74,7 +76,19 @@ pub trait Consumer {
   fn run(&mut self, producer: &mut Producer) {
     let mut acc: Vec<u8> = Vec::new();
     //let mut v2: Vec<u8>  = Vec::new();
+    let mut isGoto     = false;
+    let mut isOffset   = false;
+    let mut goto:u64   = 0;
+    let mut offset:i64 = 0;
     loop {
+      if isGoto {
+          producer.seek(goto);
+          isGoto = false;
+      }
+      if isOffset {
+        producer.seek_offset(offset);
+        isOffset = false;
+      }
       let state   = producer.produce();
       let mut eof = false;
       let mut end = false;
@@ -116,6 +130,16 @@ pub trait Consumer {
           acc.clear();
           acc = tmp;
           println!("acc size: {}", acc.len());
+        },
+        Goto(i) => {
+          goto = i;
+          isGoto = true;
+          acc.clear();
+        },
+        Offset(i) => {
+          offset = i;
+          isOffset = true;
+          acc.clear();
         },
         Incomplete => {
           println!("incomplete");

@@ -57,7 +57,7 @@ pub enum ProducerState<O> {
 /// A producer implements the produce method, currently working with u8 arrays
 pub trait Producer {
   fn produce(&mut self)                   -> ProducerState<&[u8]>;
-  fn seek_to(&mut self,     position:u64) -> Option<u64>;
+  fn seek(&mut self,        position:u64) -> Option<u64>;
   fn seek_offset(&mut self, offset:i64)   -> Option<u64>;
 }
 
@@ -104,7 +104,7 @@ impl Producer for FileProducer {
     }
   }
 
-  fn seek_to(&mut self, position: u64) -> Option<u64> {
+  fn seek(&mut self, position: u64) -> Option<u64> {
     self.file.seek(SeekFrom::Start(position)).ok()
   }
 
@@ -158,7 +158,7 @@ impl<'x> Producer for MemProducer<'x> {
     }
   }
 
-  fn seek_to(&mut self, position: u64) -> Option<u64> {
+  fn seek(&mut self, position: u64) -> Option<u64> {
     if position as usize > self.length {
       self.index = self.length
     } else {
