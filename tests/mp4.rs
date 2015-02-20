@@ -606,15 +606,19 @@ fn explore_mp4_file(filename: &str) {
   });
 }
 
+/*
 #[test]
 fn file_test() {
-  parse_mp4_file("small.mp4");
+  //parse_mp4_file("./small.mp4");
+  explore_mp4_file("./small.mp4");
 }
-*/
 
 
 #[test]
 fn bunny_test() {
-  parse_mp4_file("bigbuckbunny.mp4");
+  //parse_mp4_file("bigbuckbunny.mp4");
+  explore_mp4_file("bigbuckbunny.mp4");
 }
+*/
+
 
