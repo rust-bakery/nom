@@ -27,7 +27,7 @@
 //!      println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
 //!      self.counter = self.counter + 1;
 //!      if self.counter <=4 {
-//!        ConsumerState::Await
+//!        ConsumerState::Await(0)
 //!      } else {
 //!        ConsumerState::ConsumerDone
 //!      }
