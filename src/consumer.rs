@@ -58,7 +58,7 @@ use internal::Err;
 /// * ConsumerError when something went wrong
 #[derive(Debug,PartialEq,Eq,Copy)]
 pub enum ConsumerState {
-  Await,
+  Await(usize),
   Incomplete,
   ConsumerDone,
   ConsumerError(Err)
@@ -77,6 +77,7 @@ pub trait Consumer {
     loop {
       let state   = producer.produce();
       let mut eof = false;
+      let mut end = false;
       match state {
         Data(v) => {
           println!("got data");
@@ -85,7 +86,8 @@ pub trait Consumer {
         Eof([])  => {
           println!("eof empty");
           eof = true;
-          break;
+          self.end();
+          return
         }
         Eof(v) => {
           println!("eof with {} bytes", v.len());
@@ -103,20 +105,24 @@ pub trait Consumer {
         ConsumerDone => {
           println!("data, done");
           acc.clear();
-          self.end();
+          end = true;
           //acc.push_all(i);
           break;
         },
-        Await => {
-          println!("await");
+        Await(i) => {
+          println!("await: remains {} bytes", i);
+          let mut tmp = Vec::new();
+          tmp.push_all(&acc[(acc.len()-i)..acc.len()]);
           acc.clear();
-          //acc.push_all(i);
+          acc = tmp;
+          println!("acc size: {}", acc.len());
         },
         Incomplete => {
           println!("incomplete");
         }
       }
     if eof { self.end(); }
+    if end { self.end(); }
     }
   }
 }
@@ -144,7 +150,7 @@ mod tests {
       println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
       self.counter = self.counter + 1;
       if self.counter <= 4 {
-        Await
+        Await(0)
       } else {
         ConsumerDone
       }
