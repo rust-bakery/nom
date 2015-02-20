@@ -398,7 +398,7 @@ fn data_interpreter(bytes:&[u8]) -> IResult<&[u8], ()> {
       Error(a)
     },
     Incomplete(a) => {
-      println!("incomplete: {:?}", a);
+      println!("mp4 incomplete: {:?}", a);
       Incomplete(a)
     }
   }
@@ -417,7 +417,77 @@ fn parse_mp4_file(filename: &str) {
 
 }
 
-/*
+pub struct MP4Consumer {
+  counter: usize
+}
+
+impl MP4Consumer {
+  fn new() -> MP4Consumer {
+    MP4Consumer { counter: 0 }
+  }
+}
+
+many1!(full_data_interpreter1<&[u8],()> data_interpreter);
+impl Consumer for MP4Consumer {
+  fn consume(&mut self, input: &[u8]) -> ConsumerState {
+    self.counter = self.counter + input.len();
+    //println!("counter: {}", self.counter);
+    println!("size: {}", input.len());
+    /*match full_data_interpreter1(input) {
+      Error(e)      => ConsumerState::ConsumerError(e),
+      Incomplete(e) => {println!("consumer incomplete");ConsumerState::Incomplete},
+      Done(i, o)    => ConsumerState::Await
+    }*/
+    let mut idx = 0;
+    loop {
+      match box_parser(&input[idx..]) {
+        Done(i, o) => {
+          match o {
+            MP4Box::Ftyp(f) => println!("-> FTYP: {:?}", f),
+            MP4Box::Moov(m) => {println!("-> MOOV: {:?}", m); /*println!("remaining:\n{}", i.to_hex(8))*/},
+            MP4Box::Mdat    => println!("-> MDAT"),
+            MP4Box::Free    => println!("-> FREE"),
+            MP4Box::Skip    => println!("-> SKIP"),
+            MP4Box::Wide    => println!("-> WIDE"),
+            MP4Box::Unknown => println!("-> UNKNOWN")
+          }
+          //println!("remaining:\n{}", i.to_hex(8));
+          Done(i,());
+          //ConsumerState::Await(i.len())
+          idx = input.len() - i.len()
+        },
+        Error(a) => {
+          println!("mp4 parsing error: {:?}", a);
+          assert!(false);
+          return ConsumerState::ConsumerError(a);
+        },
+        Incomplete(a) => {
+          println!("mp4 incomplete -> await: {} - {}", input.len(), idx);
+          return ConsumerState::Await(input.len() - idx);
+        }
+      }
+    }
+    println!("mp4 await: {} - {}", input.len(), idx);
+    ConsumerState::Await(input.len() - idx)
+  }
+
+  fn end(&mut self) {
+    println!("finish!");
+    println!("counter: {}", self.counter);
+  }
+}
+
+fn explore_mp4_file(filename: &str) {
+  FileProducer::new(filename, 4000000).map(|producer: FileProducer| {
+    println!("file producer created for {}", filename);
+    let mut p = producer;
+    let mut c = MP4Consumer{counter: 0};
+    c.run(&mut p);
+
+    assert!(false);
+  });
+}
+
 #[test]
 fn file_test() {
   parse_mp4_file("small.mp4");
