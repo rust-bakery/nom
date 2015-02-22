@@ -10,6 +10,7 @@
 //! ```rust
 //!  use nom::{MemProducer,Consumer,ConsumerState};
 //!  use std::str;
+//!  use std::io::SeekFrom;
 //!
 //!  struct TestPrintConsumer {
 //!    counter: usize
@@ -27,7 +28,7 @@
 //!      println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
 //!      self.counter = self.counter + 1;
 //!      if self.counter <=4 {
-//!        ConsumerState::Await(0)
+//!        ConsumerState::Await(0, 4)
 //!      } else {
 //!        ConsumerState::ConsumerDone
 //!      }
@@ -48,6 +49,7 @@ use self::ConsumerState::*;
 use producer::Producer;
 use producer::ProducerState::*;
 use internal::Err;
+use std::io::SeekFrom;
 
 /// Holds the current state of the consumer
 ///
@@ -58,9 +60,15 @@ use internal::Err;
 /// * ConsumerError when something went wrong
 #[derive(Debug,PartialEq,Eq,Copy)]
 pub enum ConsumerState {
-  Await(usize),
-  Goto(u64),
-  Offset(i64),
+  Await(
+    usize,    // consumed
+    usize     // needed buffer size
+  ),
+  Seek(
+    usize,    // consumed
+    SeekFrom, // new position
+    usize     // needed buffer size
+  ),
   Incomplete,
   ConsumerDone,
   ConsumerError(Err)
@@ -74,72 +82,106 @@ pub trait Consumer {
   fn end(&mut self);
 
   fn run(&mut self, producer: &mut Producer) {
-    let mut acc: Vec<u8> = Vec::new();
-    //let mut v2: Vec<u8>  = Vec::new();
-    let mut isGoto     = false;
-    let mut isOffset   = false;
-    let mut goto:u64   = 0;
-    let mut offset:i64 = 0;
+    let mut acc: Vec<u8>      = Vec::new();
+    let mut position          = 0;
+    let mut shouldSeek        = false;
+    let mut consumed:usize    = 0;
+    let mut needed:usize      = 100;
+    let mut seekFrom:SeekFrom = SeekFrom::Current(0);
+    let mut eof = false;
+    let mut end = false;
+
     loop {
-      if isGoto {
-          producer.seek(goto);
-          isGoto = false;
-      }
-      if isOffset {
-        producer.seek_offset(offset);
-        isOffset = false;
-      }
-      let state   = producer.produce();
-      let mut eof = false;
-      let mut end = false;
-      match state {
-        Data(v) => {
-          println!("got data");
-          acc.push_all(v);
-        },
-        Eof([])  => {
-          println!("eof empty");
-          eof = true;
-          self.end();
-          return
+      //self.getDataFromProducer(producer, seekFrom, needed, acc);
+      if !shouldSeek && acc.len() - consumed >= needed {
+        println!("buffer is large enough, skipping");
+        let mut tmp = Vec::new();
+        tmp.push_all(&acc[consumed..acc.len()]);
+        acc.clear();
+        acc = tmp;
+      } else {
+        if shouldSeek {
+          let pos = producer.seek(seekFrom);
+          println!("seeking: {:?}", pos);
+          shouldSeek = false;
+          acc.clear();
+        } else {
+          let mut tmp = Vec::new();
+          tmp.push_all(&acc[consumed..acc.len()]);
+          acc.clear();
+          acc = tmp;
         }
-        Eof(v) => {
-          println!("eof with {} bytes", v.len());
-          eof = true;
-          acc.push_all(v);
+
+        loop {
+          let state   = producer.produce();
+          match state {
+            Data(v) => {
+              println!("got data");
+              acc.push_all(v);
+              position = position + v.len();
+            },
+            Eof([])  => {
+              println!("eof empty");
+              eof = true;
+              self.end();
+              return
+            }
+            Eof(v) => {
+              println!("eof with {} bytes", v.len());
+              eof = true;
+              acc.push_all(v);
+              position = position + v.len();
+              break;
+            }
+            ProducerError(e) => {break;}
+            Continue => { continue; }
+          }
+          println!("acc size: {}", acc.len());
+          if acc.len() >= needed { break; }
         }
-        _ => {break;}
       }
-      //v2.push_all(acc.as_slice());
-      //match consumer.consume(v2.as_slice()) {
+
       match self.consume(&acc[..]) {
         ConsumerError(e) => {
           println!("consumer error, stopping: {}", e);
         },
         ConsumerDone => {
           println!("data, done");
-          acc.clear();
+          //acc.clear();
           end = true;
           //acc.push_all(i);
           //break;
         },
-        Await(i) => {
-          println!("await: remains {} bytes", i);
-          let mut tmp = Vec::new();
-          tmp.push_all(&acc[(acc.len()-i)..acc.len()]);
-          acc.clear();
-          acc = tmp;
-          println!("acc size: {}", acc.len());
+        Seek(consumed_bytes, sf, needed_bytes) => {
+          println!("Seek: consumed {} bytes, got {:?} and asked {} bytes", consumed_bytes, sf, needed_bytes);
+          consumed = consumed_bytes;
+          needed   = needed_bytes;
+          seekFrom = sf;
+          shouldSeek = true;
+          /*match sf {
+            SeekFrom::Current(0) => {
+              println!("should not seek");
+              let mut tmp = Vec::new();
+              tmp.push_all(&acc[(acc.len()-i)..acc.len()]);
+              acc.clear();
+              acc = tmp;
+              needed = i;
+              println!("acc size: {}", acc.len());
+            },
+            _ => {
+          //if seekFrom != SeekFrom::Current(0) {
+              println!("should seek");
+              seekFrom   = sf;
+              shouldSeek = true;
+              needed = i;
+              acc.clear();
+            }
+          }*/
         },
-        Goto(i) => {
-          goto = i;
-          isGoto = true;
-          acc.clear();
-        },
-        Offset(i) => {
-          offset = i;
-          isOffset = true;
-          acc.clear();
+        Await(consumed_bytes, needed_bytes) => {
+          println!("consumed: {} bytes | needed: {} bytes", consumed_bytes, needed_bytes);
+          consumed = consumed_bytes;
+          needed   = needed_bytes;
         },
         Incomplete => {
           println!("incomplete");
@@ -163,6 +205,7 @@ mod tests {
   use super::ConsumerState::*;
   use producer::MemProducer;
   use std::str;
+  use std::io::SeekFrom;
 
   struct TestPrintConsumer {
     counter: usize,
@@ -180,7 +223,7 @@ mod tests {
       println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
       self.counter = self.counter + 1;
       if self.counter <= 4 {
-        Await(0)
+        Await(0, 0)
       } else {
         ConsumerDone
       }

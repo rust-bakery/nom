@@ -57,8 +57,7 @@ pub enum ProducerState<O> {
 /// A producer implements the produce method, currently working with u8 arrays
 pub trait Producer {
   fn produce(&mut self)                   -> ProducerState<&[u8]>;
-  fn seek(&mut self,        position:u64) -> Option<u64>;
-  fn seek_offset(&mut self, offset:i64)   -> Option<u64>;
+  fn seek(&mut self,   position:SeekFrom) -> Option<u64>;
 }
 
 /// Can produce data from a file
@@ -104,12 +103,8 @@ impl Producer for FileProducer {
     }
   }
 
-  fn seek(&mut self, position: u64) -> Option<u64> {
-    self.file.seek(SeekFrom::Start(position)).ok()
-  }
-
-  fn seek_offset(&mut self, offset: i64) -> Option<u64> {
-    self.file.seek(SeekFrom::Current(offset)).ok()
+  fn seek(&mut self, position: SeekFrom) -> Option<u64> {
+    self.file.seek(position).ok()
   }
 }
 
@@ -158,34 +153,42 @@ impl<'x> Producer for MemProducer<'x> {
     }
   }
 
-  fn seek(&mut self, position: u64) -> Option<u64> {
-    if position as usize > self.length {
-      self.index = self.length
-    } else {
-      self.index = position as usize
-    }
-    Some(self.index as u64)
-  }
-
-  fn seek_offset(&mut self, offset: i64) -> Option<u64> {
-    let next = if offset >= 0 {
-      (self.index as u64).checked_add(offset as u64)
-    } else {
-      (self.index as u64).checked_sub(-offset as u64)
-    };
-
-    match next {
-      None    => None,
-      Some(u) => {
-        if u as usize > self.length {
+  fn seek(&mut self, position: SeekFrom) -> Option<u64> {
+    match position {
+      SeekFrom::Start(pos) => {
+        if pos as usize > self.length {
           self.index = self.length
         } else {
-          self.index = u as usize
+          self.index = pos as usize
         }
         Some(self.index as u64)
+      },
+      SeekFrom::Current(offset) => {
+        let next = if offset >= 0 {
+          (self.index as u64).checked_add(offset as u64)
+        } else {
+          (self.index as u64).checked_sub(-offset as u64)
+        };
+
+        match next {
+          None    => None,
+          Some(u) => {
+            if u as usize > self.length {
+              self.index = self.length
+            } else {
+              self.index = u as usize
+            }
+            Some(self.index as u64)
+          }
+        }
+      },
+      SeekFrom::End(pos) => {
+        //FIXME: to implement
+        panic!("SeekFrom::End not implemented");
       }
     }
   }
+
 }
 
 /// Prepares a parser function for a push pipeline
