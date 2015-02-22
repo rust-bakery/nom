@@ -50,6 +50,7 @@ use producer::Producer;
 use producer::ProducerState::*;
 use internal::Err;
 use std::io::SeekFrom;
+use util::HexDisplay;
 
 /// Holds the current state of the consumer
 ///
@@ -141,42 +142,25 @@ pub trait Consumer {
         }
       }
 
-      match self.consume(&acc[..]) {
+      //println!("full:\n{}", acc.to_hex(8));
+      //println!("truncated:\n{}", (&acc[0..needed]).to_hex(8));
+      match self.consume(&acc[0..needed]) {
         ConsumerError(e) => {
           println!("consumer error, stopping: {}", e);
         },
         ConsumerDone => {
           println!("data, done");
-          //acc.clear();
           end = true;
-          //acc.push_all(i);
-          //break;
         },
         Seek(consumed_bytes, sf, needed_bytes) => {
           println!("Seek: consumed {} bytes, got {:?} and asked {} bytes", consumed_bytes, sf, needed_bytes);
+          seekFrom = match sf {
+            SeekFrom::Current(i) => SeekFrom::Current(i - (acc.len() - needed) as i64),
+            a => a
+          };
+          shouldSeek = true;
           consumed = consumed_bytes;
           needed   = needed_bytes;
-          seekFrom = sf;
-          shouldSeek = true;
-          /*match sf {
-            SeekFrom::Current(0) => {
-              println!("should not seek");
-              let mut tmp = Vec::new();
-              tmp.push_all(&acc[(acc.len()-i)..acc.len()]);
-              acc.clear();
-              acc = tmp;
-              needed = i;
-              println!("acc size: {}", acc.len());
-            },
-            _ => {
-          //if seekFrom != SeekFrom::Current(0) {
-              println!("should seek");
-              seekFrom   = sf;
-              shouldSeek = true;
-              needed = i;
-              acc.clear();
-            }
-          }*/
         },
         Await(consumed_bytes, needed_bytes) => {
           println!("consumed: {} bytes | needed: {} bytes", consumed_bytes, needed_bytes);
