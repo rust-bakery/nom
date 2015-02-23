@@ -625,12 +625,13 @@ impl Consumer for MP4Consumer {
               MP4BoxType::Mvhd    => {
                 println!("-> MVHD");
                 self.state = MP4State::Mvhd;
-                return ConsumerState::Await(input.len() - i.len(), header.length as usize);
+                // FIXME why -8 ?
+                return ConsumerState::Await(input.len() - i.len(), header.length as usize - 8);
               },
               MP4BoxType::Clip    => println!("-> CLIP"),
               MP4BoxType::Trak    => println!("-> TRAK"),
               MP4BoxType::Udta    => println!("-> UDTA"),
-              MP4BoxType::Unknown => println!("-> UNKNOWN"),
+              MP4BoxType::Unknown => println!("-> MOOV UNKNOWN"),
               _                   => { println!("invalid header here: {:?}", header.tag); return ConsumerState::ConsumerError(0)}
             }
             return ConsumerState::Seek(input.len() - i.len(), SeekFrom::Current((header.length as usize - i.len() as usize - 8) as i64), 100);
@@ -662,6 +663,7 @@ impl Consumer for MP4Consumer {
           Done(i, movie_header) => {
             println!("correctly parsed movie header: {:?}", movie_header);
             self.state = MP4State::Moov;
+            return ConsumerState::Await(input.len() - i.len(), 100);
           }
         }
       }
