@@ -65,7 +65,7 @@ A parser combinator in Rust is basically a function which, for an input type I a
 fn parser(input: I) -> IResult<I, O>;
 ```
 
-IResult is an enumeration that can represent:
+`IResult` is an enumeration that can represent:
 
 - a correct result `Done(I,O)` with the first element being the rest of the input (not parsed yet), and the second being the output value
 - an error `Error(Err)` with Err being an integer
@@ -103,17 +103,20 @@ Here again, we use macros to combine parsers easily in useful patterns:
 tag!(abcd_p "abcd".as_bytes());
 tag!(efgh_p "efgh".as_bytes());
 
-alt!(alt_tags<&[u8],&[u8]>, abcd_p, efgh_p); // the types indicates the input and output types, that must match for all alternatives
+// the types indicates the input and output types, that must match for all alternatives
+alt!(alt_tags<&[u8],&[u8]>, abcd_p, efgh_p);
 
 assert_eq!(alt_tags("abcdxxx".as_bytes()), Done("xxx".as_bytes(), "abcd".as_bytes()));
 assert_eq!(alt_tags("efghxxx".as_bytes()), Done("xxx".as_bytes(), "efgh".as_bytes()));
 assert_eq!(alt_tags("ijklxxx".as_bytes()), Error(1));
 
-opt!(abcd_opt<&[u8], &[u8]>  abcd_p);       // make the abcd_p parser optional
+// make the abcd_p parser optional
+opt!(abcd_opt<&[u8], &[u8]>  abcd_p);
 assert_eq!(alt_tags("abcdxxx".as_bytes()), Done("xxx".as_bytes(), Some("abcd".as_bytes())));
 assert_eq!(alt_tags("efghxxx".as_bytes()), Done("efghxxx".as_bytes(), None));
 
-many0(multi<&[u8], &[u8]> abcd_p);         // the abcd_p parser can happen 0 or more times
+// the abcd_p parser can happen 0 or more times
+many0(multi<&[u8], &[u8]> abcd_p);
 let a = "abcdef".as_bytes();
 let b = "abcdabcdef".as_bytes();
 let c = "azerty".as_bytes();
@@ -122,7 +125,7 @@ assert_eq!(multi(b), Done("ef".as_bytes(), vec!["abcd".as_bytes(), "abcd".as_byt
 assert_eq!(multi(c), Done("azerty".as_bytes(), Vec::new()));
 ```
 
-There are more complex (and more useful) parsers like the chain, which is used to parse a whole buffer, gather data along the way, then assemble everything in a final closure:
+There are more complex (and more useful) parsers like the chain, which is used to parse a whole buffer, gather data along the way, then assemble everything in a final closure, if none of the subparsers failed or returned an `Incomplete`:
 
 ````rust
 struct A {
@@ -136,15 +139,15 @@ tag!(efgh_p "efgh".as_bytes());
 fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
 fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
 
-chain!(f<&[u8],A>,          // the parser takes a byte array as input, and returns an A struct
-  abcd_p       ~            // begins with "abcd"
-  abcd_p?      ~            // the question mark indicates an optional parser
-  aa: ret_int1 ~            // the return value of ret_int1, if it does not fail, will be stored in aa
+chain!(f<&[u8],A>,    // the parser takes a byte array as input, and returns an A struct
+  abcd_p       ~      // begins with "abcd"
+  abcd_p?      ~      // the question mark indicates an optional parser
+  aa: ret_int1 ~      // the return value of ret_int1, if it does not fail, will be stored in aa
   efgh_p       ~
   bb: ret_int2 ~
-  efgh_p       ,            // end the chain with a comma
+  efgh_p       ,      // end the chain with a comma
 
-  ||{A{a: aa, b: bb}}       // the final closure will be able to use the variable defined previously
+  ||{A{a: aa, b: bb}} // the final closure will be able to use the variable defined previously
 );
 
 let r = f("abcdabcdefghefghX".as_bytes());
