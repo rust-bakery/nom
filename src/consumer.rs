@@ -8,7 +8,7 @@
 //! This consumer will take 4 samples from the input, print them, then stop
 //!
 //! ```rust
-//!  use nom::{MemProducer,Consumer,ConsumerState};
+//!  use nom::{IResult,MemProducer,Consumer,ConsumerState};
 //!  use std::str;
 //!  use std::io::SeekFrom;
 //!
@@ -22,15 +22,29 @@
 //!    }
 //!  }
 //!
+//!  fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
+//!    if i.len() < 4 {
+//!      IResult::Incomplete(4)
+//!    } else {
+//!      IResult::Done(&i[4..],&i[0..4])
+//!    }
+//!  }
+//!
 //!  // Return ConsumerState::Await if it needs more data, or ConsumerDone when it ends
 //!  impl Consumer for TestPrintConsumer {
 //!    fn consume(&mut self, input: &[u8]) -> ConsumerState {
-//!      println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
-//!      self.counter = self.counter + 1;
-//!      if self.counter <=4 {
-//!        ConsumerState::Await(0, 0)
-//!      } else {
-//!        ConsumerState::ConsumerDone
+//!      match take4(input) {
+//!        IResult::Error(a)      => ConsumerState::ConsumerError(a),
+//!        IResult::Incomplete(a) => ConsumerState::Await(0, 4),
+//!        IResult::Done(i, o)    => {
+//!          println!("{} -> {}", self.counter, str::from_utf8(o).unwrap());
+//!          self.counter = self.counter + 1;
+//!          if self.counter <= 4 {
+//!            ConsumerState::Await(4, 4)
+//!          } else {
+//!            ConsumerState::ConsumerDone
+//!          }
+//!        }
 //!      }
 //!    }
 //!
@@ -190,8 +204,22 @@ mod tests {
   use super::*;
   use super::ConsumerState::*;
   use producer::MemProducer;
+  use internal::IResult;
   use std::str;
   use std::io::SeekFrom;
+
+#[macro_export]
+macro_rules! take(
+  ($name:ident $count:expr) => (
+    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      if i.len() < $count {
+        IResult::Incomplete(0)
+      } else {
+        IResult::Done(&i[$count..],&i[0..$count])
+      }
+    }
+  )
+);
 
   struct TestPrintConsumer {
     counter: usize,
@@ -204,14 +232,22 @@ mod tests {
     }
   }
 
+  take!(take4 4);
+
   impl Consumer for TestPrintConsumer {
     fn consume(&mut self, input: &[u8]) -> ConsumerState {
-      println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
-      self.counter = self.counter + 1;
-      if self.counter <= 4 {
-        Await(0, 0)
-      } else {
-        ConsumerDone
+      match take4(input) {
+        IResult::Error(a)      => ConsumerError(a),
+        IResult::Incomplete(a) => Await(0, 4),
+        IResult::Done(i, o)    => {
+          println!("{} -> {}", self.counter, str::from_utf8(o).unwrap());
+          self.counter = self.counter + 1;
+          if self.counter <= 4 {
+            Await(4, 4)
+          } else {
+            ConsumerDone
+          }
+        }
       }
     }
 
