@@ -570,7 +570,7 @@ impl Consumer for MP4Consumer {
     match self.state {
       MP4State::Main => {
         //println!("\nparsing box header:\n{}", input.to_hex(8));
-        println!("\nparsing box header:\n{}", (&input[0..8]).to_hex(8));
+        println!("\nparsing box header");
         match box_header(input) {
           Done(i, header) => {
             println!("length: {} bytes (0x{:08x})", header.length, header.length);

@@ -28,7 +28,7 @@
 //!      println!("{} -> {}", self.counter, str::from_utf8(input).unwrap());
 //!      self.counter = self.counter + 1;
 //!      if self.counter <=4 {
-//!        ConsumerState::Await(0, 4)
+//!        ConsumerState::Await(0, 0)
 //!      } else {
 //!        ConsumerState::ConsumerDone
 //!      }
@@ -87,7 +87,7 @@ pub trait Consumer {
     let mut position          = 0;
     let mut shouldSeek        = false;
     let mut consumed:usize    = 0;
-    let mut needed:usize      = 100;
+    let mut needed:usize      = 0;
     let mut seekFrom:SeekFrom = SeekFrom::Current(0);
     let mut eof = false;
     let mut end = false;
