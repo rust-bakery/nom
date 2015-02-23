@@ -84,7 +84,7 @@ impl Producer for FileProducer {
     self.v.resize(self.size, 0);
     match self.file.read(&mut self.v) {
       Err(e) => {
-        println!("producer error: {:?}", e);
+        //println!("producer error: {:?}", e);
         match e.kind() {
           //ErrorKind::NoProgress => Continue,
           //ErrorKind::EndOfFile  => Eof(&self.v[..]),
@@ -138,13 +138,13 @@ impl<'x> MemProducer<'x> {
 impl<'x> Producer for MemProducer<'x> {
   fn produce(&mut self) -> ProducerState<&[u8]> {
     if self.index + self.chunk_size < self.length {
-      println!("self.index + {} < self.length", self.chunk_size);
+      //println!("self.index({}) + {} < self.length({})", self.index, self.chunk_size, self.length);
       let new_index = self.index+self.chunk_size;
       let res = Data(&self.buffer[self.index..new_index]);
       self.index = new_index;
       res
     } else if self.index < self.length {
-      println!("self.index < self.length - 1");
+      //println!("self.index < self.length - 1");
       let res = Eof(&self.buffer[self.index..self.length]);
       self.index = self.length;
       res

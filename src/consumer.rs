@@ -95,15 +95,17 @@ pub trait Consumer {
     loop {
       //self.getDataFromProducer(producer, seekFrom, needed, acc);
       if !shouldSeek && acc.len() - consumed >= needed {
-        println!("buffer is large enough, skipping");
+        //println!("buffer is large enough, skipping");
         let mut tmp = Vec::new();
+        //println!("before:\n{}", acc.to_hex(16));
+        //println!("after:\n{}", (&acc[consumed..acc.len()]).to_hex(16));
         tmp.push_all(&acc[consumed..acc.len()]);
         acc.clear();
         acc = tmp;
       } else {
         if shouldSeek {
           let pos = producer.seek(seekFrom);
-          println!("seeking: {:?}", pos);
+          //println!("seeking: {:?}", pos);
           shouldSeek = false;
           acc.clear();
         } else {
@@ -117,18 +119,18 @@ pub trait Consumer {
           let state   = producer.produce();
           match state {
             Data(v) => {
-              println!("got data");
+              //println!("got data: {} bytes", v.len());
               acc.push_all(v);
               position = position + v.len();
             },
             Eof([])  => {
-              println!("eof empty");
+              //println!("eof empty");
               eof = true;
               self.end();
               return
             }
             Eof(v) => {
-              println!("eof with {} bytes", v.len());
+              //println!("eof with {} bytes", v.len());
               eof = true;
               acc.push_all(v);
               position = position + v.len();
@@ -137,23 +139,23 @@ pub trait Consumer {
             ProducerError(e) => {break;}
             Continue => { continue; }
           }
-          println!("acc size: {}", acc.len());
+          //println!("acc size: {}", acc.len());
           if acc.len() >= needed { break; }
         }
       }
 
       //println!("full:\n{}", acc.to_hex(8));
-      //println!("truncated:\n{}", (&acc[0..needed]).to_hex(8));
+      //println!("truncated:\n{}", (&acc[0..needed]).to_hex(16));
       match self.consume(&acc[0..needed]) {
         ConsumerError(e) => {
-          println!("consumer error, stopping: {}", e);
+          //println!("consumer error, stopping: {}", e);
         },
         ConsumerDone => {
-          println!("data, done");
+          //println!("data, done");
           end = true;
         },
         Seek(consumed_bytes, sf, needed_bytes) => {
-          println!("Seek: consumed {} bytes, got {:?} and asked {} bytes", consumed_bytes, sf, needed_bytes);
+          //println!("Seek: consumed {} bytes, got {:?} and asked {} bytes", consumed_bytes, sf, needed_bytes);
           seekFrom = match sf {
             SeekFrom::Current(i) => SeekFrom::Current(i - (acc.len() - needed) as i64),
             a => a
@@ -163,12 +165,12 @@ pub trait Consumer {
           needed   = needed_bytes;
         },
         Await(consumed_bytes, needed_bytes) => {
-          println!("consumed: {} bytes | needed: {} bytes", consumed_bytes, needed_bytes);
+          //println!("consumed: {} bytes | needed: {} bytes", consumed_bytes, needed_bytes);
           consumed = consumed_bytes;
           needed   = needed_bytes;
         },
         Incomplete => {
-          println!("incomplete");
+          //println!("incomplete");
         }
       }
       if eof {
