@@ -15,8 +15,8 @@ Here are the current and planned features, with their actual status:
 - [x] **streaming**:
   - [x] **push**: a parser can be directly fed a producer's output and called every time there is data available
   - [x] **pull**: a consumer will take a parser and a producer, and handle all the data gathering and, if available, seeking the streaming
-- [x]: **macro based syntax**: easier parser building through macro usage
-- [ ] **safe parsing**: while I have some confidence in Rust's abilities, this will be put to the test by extensive fuzzing
+- [x] **macro based syntax**: easier parser building through macro usage
+- [ ] **safe parsing**: while I have some confidence in Rust's abilities, this will be put to the test via extensive fuzzing and disassembling
 - [ ] **descriptive errors**: currently, errors are just integers, but they should express what went wrong
 
 Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
@@ -79,4 +79,87 @@ pub enum IResult<I,O> {
 }
 ```
 
+There is already a large list of parsers available, like:
 
+- **be_u8**, **be_u16**, **be_u32**, **be_u64** to parse big endian unsigned integers of multiple sizes
+- **length_value**: a byte indicating the size of the following buffer
+- **alphanumeric**: will return the longest alphanumeric array possible from the beginning of the input
+
+#### Making new parsers with macros
+
+Some macros make it easier to create new parsers. Here are a few of them:
+
+```rust
+tag!(abcd_parser  "abcd".as_bytes()); // will consume bytes if the input begins with "abcd"
+
+take!(take_10     10);                // will consume 10 bytes of input
+```
+
+#### Combining parsers
+
+Here again, we use macros to combine parsers easily in useful patterns:
+
+```rust
+tag!(abcd_p "abcd".as_bytes());
+tag!(efgh_p "efgh".as_bytes());
+
+alt!(alt_tags<&[u8],&[u8]>, abcd_p, efgh_p); // the types indicates the input and output types, that must match for all alternatives
+
+assert_eq!(alt_tags("abcdxxx".as_bytes()), Done("xxx".as_bytes(), "abcd".as_bytes()));
+assert_eq!(alt_tags("efghxxx".as_bytes()), Done("xxx".as_bytes(), "efgh".as_bytes()));
+assert_eq!(alt_tags("ijklxxx".as_bytes()), Error(1));
+
+opt!(abcd_opt<&[u8], &[u8]>  abcd_p);       // make the abcd_p parser optional
+assert_eq!(alt_tags("abcdxxx".as_bytes()), Done("xxx".as_bytes(), Some("abcd".as_bytes())));
+assert_eq!(alt_tags("efghxxx".as_bytes()), Done("efghxxx".as_bytes(), None));
+
+many0(multi<&[u8], &[u8]> abcd_p);         // the abcd_p parser can happen 0 or more times
+let a = "abcdef".as_bytes();
+let b = "abcdabcdef".as_bytes();
+let c = "azerty".as_bytes();
+assert_eq!(multi(a), Done("ef".as_bytes(), vec!["abcd".as_bytes()]));
+assert_eq!(multi(b), Done("ef".as_bytes(), vec!["abcd".as_bytes(), "abcd".as_bytes()]));
+assert_eq!(multi(c), Done("azerty".as_bytes(), Vec::new()));
+```
+
+There are more complex (and more useful) parsers like the chain, which is used to parse a whole buffer, gather data along the way, then assemble everything in a final closure:
+
+````rust
+struct A {
+  a: u8,
+  b: u8
+}
+
+tag!(abcd_p "abcd".as_bytes());
+tag!(efgh_p "efgh".as_bytes());
+
+fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
+
+chain!(f<&[u8],A>,          // the parser takes a byte array as input, and returns an A struct
+  abcd_p       ~            // begins with "abcd"
+  abcd_p?      ~            // the question mark indicates an optional parser
+  aa: ret_int1 ~            // the return value of ret_int1, if it does not fail, will be stored in aa
+  efgh_p       ~
+  bb: ret_int2 ~
+  efgh_p       ,            // end the chain with a comma
+
+  ||{A{a: aa, b: bb}}       // the final closure will be able to use the variable defined previously
+);
+
+let r = f("abcdabcdefghefghX".as_bytes());
+assert_eq!(r, Done("X".as_bytes(), A{a: 1, b: 2}));
+
+let r2 = f("abcdefghefghX".as_bytes());
+assert_eq!(r2, Done("X".as_bytes(), A{a: 1, b: 2}));
+```
+
+More examples of chain usage can be found in the [INI file parser example](tests/ini.rs).
+
+### producers
+
+Todo
+
+### consumers
+
+Todo
