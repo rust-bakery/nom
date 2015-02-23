@@ -536,7 +536,24 @@ impl Consumer for MP4Consumer {
         match box_header(input) {
           Done(i, header) => {
             match header.tag {
-              MP4BoxType::Ftyp    => println!("-> FTYP"),
+              MP4BoxType::Ftyp    => {
+                println!("-> FTYP");
+                match filetype_parser(&i[0..(header.length as usize - 8)]) {
+                  Done(i2, filetype_header) => {
+                    println!("filetype header: {:?}", filetype_header);
+                    return ConsumerState::Await(header.length as usize, header.length as usize - 8);
+                  }
+                  Error(a) => {
+                    println!("ftyp parsing error: {:?}", a);
+                    assert!(false);
+                    return ConsumerState::ConsumerError(a);
+                  },
+                  Incomplete(a) => {
+                    println!("ftyp incomplete -> await: {}", input.len());
+                    return ConsumerState::Await(0, input.len() + 100);
+                  }
+                }
+              },
               MP4BoxType::Moov    => {
                 println!("-> MOOV");
                 self.state = MP4State::Moov;
