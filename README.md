@@ -8,7 +8,7 @@ This work is currently experimental, the API and syntax may still change a lot, 
 
 ## Features
 
-Here are the current and planned features, with their actual status:
+Here are the current and planned features, with their status:
 - [x] **zero copy**:
   - [x] **in the parsers**: a parsing chain will always return a reference to its input data
   - [x] **in the producers and consumers**: some copying still happens
@@ -81,9 +81,16 @@ pub enum IResult<I,O> {
 
 There is already a large list of parsers available, like:
 
-- **be_u8**, **be_u16**, **be_u32**, **be_u64** to parse big endian unsigned integers of multiple sizes
 - **length_value**: a byte indicating the size of the following buffer
-- **alphanumeric**: will return the longest alphanumeric array possible from the beginning of the input
+- **not_line_ending**: returning as much data as possible until a line ending (\r or \n) is found
+- **line_ending**: matches a line ending
+- **alpha**: will return the longest alphabetical array from the beginning of the input
+- **digit**: will return the longest numerical array from the beginning of the input
+- **alphanumeric**: will return the longest alphanumeric array from the beginning of the input
+- **space**: will return the longest array containing only spaces
+- **multispace**: will return the longest array containing space, \r or \n
+- **be_u8**, **be_u16**, **be_u32**, **be_u64** to parse big endian unsigned integers of multiple sizes
+- **be_f32**, **be_f64** to parse big endian floating point numbers
 
 #### Making new parsers with macros
 
@@ -94,6 +101,18 @@ tag!(abcd_parser  "abcd".as_bytes()); // will consume bytes if the input begins 
 
 take!(take_10     10);                // will consume 10 bytes of input
 ```
+
+Here are the basic macros available:
+
+- **tag!**: will match the byte array provided as argument
+- **is_not!**: will match the longest array not containing any of the bytes of the array provided to the macro
+- **is_a!**: will match the longest array containing only bytes of the array provided to the macro
+- **filter!**: will walk the whole array and apply the closure to each suffix until the function fails
+- **take!**: will take as many bytes as the number provided
+- **take_until!**: will take as many bytes as possible until it encounters the provided byte array, and will skip it
+- **take_until_and_leave!**: will take as many bytes as possible until it encounters the provided byte array, and will leave it in the remaining input
+- **take_until_either!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will skip it
+- **take_until_either_and_leave**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
 
 #### Combining parsers
 
@@ -124,6 +143,15 @@ assert_eq!(multi(a), Done("ef".as_bytes(), vec!["abcd".as_bytes()]));
 assert_eq!(multi(b), Done("ef".as_bytes(), vec!["abcd".as_bytes(), "abcd".as_bytes()]));
 assert_eq!(multi(c), Done("azerty".as_bytes(), Vec::new()));
 ```
+
+Here are the basic combining macros available:
+
+- **opt!**: will make the parser optional (if it returns the O type, the new parser returns Option<O>)
+- **many0!**: will apply the parser 0 or more times (if it returns the O type, the new parser returns Vec<O>)
+- **many1!**: will appy the parser 1 or more times
+- **fold0!**: takes an assembling macro and a parser, and will fold the macro on many0 of the provided parser
+- **fold1!**: takes an assembling macro and a parser, and will fold the macro on many1 of the provided parser
+
 
 There are more complex (and more useful) parsers like the chain, which is used to parse a whole buffer, gather data along the way, then assemble everything in a final closure, if none of the subparsers failed or returned an `Incomplete`:
 
