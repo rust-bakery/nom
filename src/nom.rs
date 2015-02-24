@@ -26,7 +26,11 @@ use std::mem::transmute;
 macro_rules! tag(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      if i.len() >= $inp.len() && &i[0..$inp.len()] == $inp {
+      if $inp.len() > i.len() {
+        return Incomplete($inp.len() as u32);
+      }
+
+      if &i[0..$inp.len()] == $inp {
         Done(&i[$inp.len()..], &i[0..$inp.len()])
       } else {
         Error(0)
@@ -938,8 +942,11 @@ mod tests {
     let r = f("abcdefghX".as_bytes());
     assert_eq!(r, Done("X".as_bytes(), C{a: 1, b: Some(2)}));
 
-    let r2 = f("abcdX".as_bytes());
-    assert_eq!(r2, Done("X".as_bytes(), C{a: 1, b: None}));
+    let r2 = f("abcdWXYZ".as_bytes());
+    assert_eq!(r2, Done("WXYZ".as_bytes(), C{a: 1, b: None}));
+
+    let r3 = f("abcdX".as_bytes());
+    assert_eq!(r3, Incomplete(4));
   }
 
   #[test]
