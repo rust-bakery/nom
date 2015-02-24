@@ -9,13 +9,15 @@ This work is currently experimental, the API and syntax may still change a lot, 
 ## Features
 
 Here are the current and planned features, with their status:
+- [x] **byte oriented**: the basic type is `&[u8]` and parsers will work as much as possible on byte array slices
 - [x] **zero copy**:
-  - [x] **in the parsers**: a parsing chain will always return a reference to its input data
+  - [x] **in the parsers**: a parsing chain will almost always return a slice of its input data
   - [x] **in the producers and consumers**: some copying still happens
 - [x] **streaming**:
   - [x] **push**: a parser can be directly fed a producer's output and called every time there is data available
   - [x] **pull**: a consumer will take a parser and a producer, and handle all the data gathering and, if available, seeking the streaming
 - [x] **macro based syntax**: easier parser building through macro usage
+- [x] **state machine handling**: consumers provide a basic way of managing state machines
 - [ ] **safe parsing**: while I have some confidence in Rust's abilities, this will be put to the test via extensive fuzzing and disassembling
 - [ ] **descriptive errors**: currently, errors are just integers, but they should express what went wrong
 
@@ -44,6 +46,14 @@ While it is not mandatory to use the macros, they make it a lot easier to build 
 ### Parser combinators
 
 nom uses parser combinators to build and reuse parsers. To work with parser combinators, instead of writing the whole grammar from scratch and generating a parser, or writing the complete state machine by hand, you write small, reusable functions, that you will combine to make more interesting parsers.
+
+This has a few advantages:
+
+- the parsers are small and easy to write
+- the parsers are easy to reuse (if they're general enough, please add them to nom!)
+- the parsers are easy to test (unit tests and property-based tests)
+- the parser combination code looks close to the grammar you would have written
+- you can build partial parsers, specific to the data you need at the moment, and ignore the rest
 
 Here is an example of one such parser:
 
@@ -116,6 +126,30 @@ Here are the basic macros available:
 
 #### Combining parsers
 
+The `IResult` implements a few traits that make it easy to combine parsers. Here are their definitions:
+
+```rust
+pub trait Functor<I,O,N> {
+  fn map<F: Fn(O) -> N>(&self, f: F) -> IResult<I,N>;
+}
+
+pub trait FlatMap<I:?Sized,O:?Sized,N:?Sized> {
+  fn flat_map<F:Fn(O) -> IResult<O,N>>(&self, f: F) -> IResult<I,N>;
+}
+
+pub trait FlatMapOpt<I,O,N> {
+  fn map_opt<F:   Fn(O) -> Option<N>>   (&self, f: F) -> IResult<I,N>;
+  fn map_res<P,F: Fn(O) -> Result<N,P>> (&self, f: F) -> IResult<I,N>;
+}
+```
+
+- **map**: applies a function to the output of a `IResult` and puts the result in the output of a `IResult` with the same remaining input
+- **flat_map**: applies a parser to the ouput of a `IResult` and returns a new `IResult` with the same remaining input.
+- **map_opt**: applies a function returning an Option to the output of `IResult`, returns `Done(input, o)` if the result is `Some(o)`, or `Error(0)`
+- **map_opt**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
+
+#### Combining parsers with macros
+
 Here again, we use macros to combine parsers easily in useful patterns:
 
 ```rust
@@ -187,10 +221,194 @@ assert_eq!(r2, Done("X".as_bytes(), A{a: 1, b: 2}));
 
 More examples of chain usage can be found in the [INI file parser example](tests/ini.rs).
 
-### producers
+### Producers
 
-Todo
+While parser combinators alone are useful, you often need to handle the plumbing to feed them with data from a file, a network connection or a memory buffer. In nom, you can use producers to abstract those data accesses. A `Producer` has to implement the following trait:
 
-### consumers
+````rust
+use std::io::SeekFrom;
+pub enum ProducerState<O> {
+  Data(O),
+  Eof(O),
+  Continue,
+  ProducerError(Err),
+}
 
-Todo
+pub trait Producer {
+  fn produce(&mut self)                   -> ProducerState<&[u8]>;
+  fn seek(&mut self,   position:SeekFrom) -> Option<u64>;
+}
+```
+
+nom currently provides `FileProducer` and `MemProducer`. The network one and the channel one will soon be implemented. To use them, see the following code:
+
+```rust
+use nom::{FileProducer, MemProducer};
+
+FileProducer::new("my_file.txt", 20).map(|mut producer: FileProducer| {
+      p.produce();
+     //etc
+}
+
+let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+```
+
+The second argument for both of them is the chunk size for the produce function (which will not return the whole data at once.
+
+The `pusher!` macro is provided to wrap an existing parser, and make it into a function that will handle a producer's chunk as soon as they are available.
+
+```rust
+let mut producer = MemProducer::new("abcdefgh".as_bytes(), 8);
+
+fn print_parser<'a>(data: &'a [u8]) -> IResult<&'a [u8],()> {
+  println!("{:?}", data);
+  Done(data, ())
+}
+
+pusher!(push, print_parser);
+push(&mut producer);
+```
+
+Note that the code generated by `pusher!` has a very limited support for parsers returning `Incomplete` (it will concatenate multiple outputs of `produce()` and that is all), and does not handle seeking. It is more adapted to push-based streaming, where the data is given as soon as possible by the producer, with little or no support for seeking.
+
+If you need your parser to be smarter with the way it navigates the data, please see the next section, about consumers.
+
+### Consumers
+
+The `Consumer` is used to wrap data gathering from a producer, manage seeking, and hold the parser state while it feeds on data (om nom nom nom). It has to implement the following trait:
+
+```rust
+pub enum ConsumerState {
+  Await(
+    usize,    // consumed
+    usize     // needed buffer size
+  ),
+  Seek(
+    usize,    // consumed
+    SeekFrom, // new position
+    usize     // needed buffer size
+  ),
+  Incomplete,
+  ConsumerDone,
+  ConsumerError(Err)
+}
+
+pub trait Consumer {
+  fn consume(&mut self, input: &[u8]) -> ConsumerState;  // implement it
+  fn end(&mut self);                                     // implement it
+
+  fn run(&mut self, producer: &mut Producer);            // already provided
+}
+```
+
+In the consumer you implement, you will apply parsers on the input of the `consume` method, and depending on the parser's output, update your internal state and return a new `ConsumerState`:
+- **Await(consumed, needed)** indicates how much data was parsed, and how much you need next
+- **Seek(consumed, position, needed)** indicates where to seek in the stream, if applicable. For SeekFrom::Current, the current position is the end of the input of `consume`
+- **Incomplete** indicates there is not enough input
+- **ConsumerDone** indicates the parser is done, no more data should be fed. The `finish()` method will be called
+- **ConsumerError(error)** indicates there has been an error. The parser will stop
+
+To use your `Consumer`, you need to pass a `Producer` instance to the `run()` method, and it will aotumatically handle buffering and seeking according to what the `consume()` method returns. Examples:
+
+- if it got 100 bytes from the producer and `consume()` returned `Await(20, 50)`, it will directly give data from the internal buffer.
+- if it got 100 bytes from the producer and `consume()` returned `Await(50, 80)`, it will keep the remaining 50 bytes of the input, and call the producer multiple times until it gets 30 bytes or more of data
+
+All of the plumbing is handled for you!
+
+Let's build `Consumer` parsing the `om(nom)*kthxbye` language. It will have an internal state indicating if it is parsing the beginning of the stream, the middle, or the suffix. It could be done easily in one entire parser, but that example is interesting enough to demonstrate consumers, and the consumer lets us handle data by chunks instead of parsing the whole byte array.
+
+```rust
+#[macro_use]
+extern crate nom;
+
+use nom::{Consumer,ConsumerState,MemProducer,IResult};
+use nom::IResult::*;
+
+#[derive(PartialEq,Eq,Debug)]
+enum State {
+  Beginning,
+  Middle,
+  End,
+  Done
+}
+
+struct TestConsumer {
+  state:   State,
+  counter: usize
+}
+```
+
+Then, we define the parsers that we will use at every state of our consumer. Note that we do not make one big parser at once. We just build some small, reusable, testable components
+
+```rust
+tag!(om_parser                     "om".as_bytes());
+tag!(nom_parser                    "nom".as_bytes());
+many1!(nomnom_parser<&[u8],&[u8]>  nom_parser);
+tag!(end_parser                    "kthxbye".as_bytes());
+```
+
+
+```rust
+impl Consumer for TestConsumer {
+  fn consume(&mut self, input: &[u8]) -> ConsumerState {
+    match self.state {
+      State::Beginning => {
+        match om_parser(input) {
+          Error(a)      => ConsumerState::ConsumerError(a),
+          Incomplete(_) => ConsumerState::Await(0, 2),
+          Done(_,_)     => {
+            // "om" was recognized, get to the next state
+            self.state = State::Middle;
+            ConsumerState::Await(2, 3)
+          }
+        }
+      },
+      State::Middle    => {
+        match nomnom_parser(input) {
+          Error(a)         => {
+            // the "nom" parser failed, let's get to the next state
+            self.state = State::End;
+            ConsumerState::Await(0, 7)
+          },
+          Incomplete(_)    => ConsumerState::Await(0, 3),
+          Done(i,noms_vec) => {
+            // we got a few noms, let's count them and continue
+            self.counter = self.counter + noms_vec.len();
+            ConsumerState::Await(input.len() - i.len(), 3)
+          }
+        }
+      },
+      State::End       => {
+        match end_parser(input) {
+          Error(a)      => ConsumerState::ConsumerError(a),
+          Incomplete(_) => ConsumerState::Await(0, 7),
+          Done(_,_)     => {
+            // we recognized the suffix, everything was parsed correctly
+            self.state = State::Done;
+            ConsumerState::ConsumerDone
+          }
+        }
+      },
+      State::Done      => {
+        // this should not be called
+        ConsumerState::ConsumerError(42)
+      }
+    }
+  }
+
+  fn end(&mut self) {
+    println!("we counted {} noms", self.counter);
+  }
+}
+
+fn main() {
+  let mut p = MemProducer::new("omnomnomnomkthxbye".as_bytes(), 4);
+  let mut c = TestConsumer{state: State::Beginning, counter: 0};
+  c.run(&mut p);
+
+  assert_eq!(c.counter, 3);
+  assert_eq!(c.state, State::Done);
+}
+```
+
+You can find the code of that consumer in the [tests directory](tests/omnom.rs) with a few unit tests.
