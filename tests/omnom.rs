@@ -17,10 +17,10 @@ struct TestConsumer {
   counter: usize,
 }
 
-tag!(om_parser                     "om".as_bytes());
-tag!(nom_parser                    "nom".as_bytes());
+tag!(om_parser                     b"om");
+tag!(nom_parser                    b"nom");
 many1!(nomnom_parser<&[u8],&[u8]>  nom_parser);
-tag!(end_parser                    "kthxbye".as_bytes());
+tag!(end_parser                    b"kthxbye");
 
 impl Consumer for TestConsumer {
   fn consume(&mut self, input: &[u8]) -> ConsumerState {
@@ -72,7 +72,7 @@ impl Consumer for TestConsumer {
 
 #[test]
 fn nom1() {
-  let mut p = MemProducer::new("omnomkthxbye".as_bytes(), 4);
+  let mut p = MemProducer::new(b"omnomkthxbye", 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 
@@ -82,7 +82,7 @@ fn nom1() {
 
 #[test]
 fn nomnomnom() {
-  let mut p = MemProducer::new("omnomnomnomkthxbye".as_bytes(), 4);
+  let mut p = MemProducer::new(b"omnomnomnomkthxbye", 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 
@@ -92,7 +92,7 @@ fn nomnomnom() {
 
 #[test]
 fn no_nomnom() {
-  let mut p = MemProducer::new("omkthxbye".as_bytes(), 4);
+  let mut p = MemProducer::new(b"omkthxbye", 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 
@@ -102,7 +102,7 @@ fn no_nomnom() {
 
 #[test]
 fn impolite() {
-  let mut p = MemProducer::new("omnomnomnom".as_bytes(), 4);
+  let mut p = MemProducer::new(b"omnomnomnom", 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 

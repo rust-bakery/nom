@@ -9,19 +9,19 @@ use std::collections::HashMap;
 
 
 fn empty_result(i:&[u8]) -> IResult<&[u8], ()> { Done(i,()) }
-tag!(semicolon ";".as_bytes());
-tag!(lsb       "[".as_bytes());
-tag!(rsb       "]".as_bytes());
-tag!(equal     "=".as_bytes());
+tag!(semicolon b";");
+tag!(lsb       b"[");
+tag!(rsb       b"]");
+tag!(equal     b"=");
 
 
-take_until_and_leave!(category_bytes "]".as_bytes());
+take_until_and_leave!(category_bytes b"]");
 fn category_name(input: &[u8]) -> IResult<&[u8], &str> {
   category_bytes(input).map_res(str::from_utf8)
 }
 
-take_until!(not_equal      "=".as_bytes());
-take_until_either_and_leave!(value_bytes "\n;".as_bytes());
+take_until!(not_equal      b"=");
+take_until_either_and_leave!(value_bytes b"\n;");
 
 fn value_parser(input:&[u8]) -> IResult<&[u8], &str> {
   value_bytes(input).map_res(str::from_utf8)

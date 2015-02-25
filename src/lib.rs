@@ -23,7 +23,7 @@
 //!      par.map_res(str::from_utf8).flat_map(local_print);
 //!
 //!      // return a dummy answer
-//!      Done("".as_bytes(), ())
+//!      Done(b"", ())
 //!    }
 //!
 //!    // adapt the parsing function to the producer

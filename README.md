@@ -107,7 +107,7 @@ There is already a large list of parsers available, like:
 Some macros make it easier to create new parsers. Here are a few of them:
 
 ```rust
-tag!(abcd_parser  "abcd".as_bytes()); // will consume bytes if the input begins with "abcd"
+tag!(abcd_parser  b"abcd"); // will consume bytes if the input begins with "abcd"
 
 take!(take_10     10);                // will consume 10 bytes of input
 ```
@@ -153,29 +153,29 @@ pub trait FlatMapOpt<I,O,N> {
 Here again, we use macros to combine parsers easily in useful patterns:
 
 ```rust
-tag!(abcd_p "abcd".as_bytes());
-tag!(efgh_p "efgh".as_bytes());
+tag!(abcd_p b"abcd");
+tag!(efgh_p b"efgh");
 
 // the types indicates the input and output types, that must match for all alternatives
 alt!(alt_tags<&[u8],&[u8]>, abcd_p, efgh_p);
 
-assert_eq!(alt_tags("abcdxxx".as_bytes()), Done("xxx".as_bytes(), "abcd".as_bytes()));
-assert_eq!(alt_tags("efghxxx".as_bytes()), Done("xxx".as_bytes(), "efgh".as_bytes()));
-assert_eq!(alt_tags("ijklxxx".as_bytes()), Error(1));
+assert_eq!(alt_tags(b"abcdxxx"), Done(b"xxx", b"abcd"));
+assert_eq!(alt_tags(b"efghxxx"), Done(b"xxx", b"efgh"));
+assert_eq!(alt_tags(b"ijklxxx"), Error(1));
 
 // make the abcd_p parser optional
 opt!(abcd_opt<&[u8], &[u8]>  abcd_p);
-assert_eq!(alt_tags("abcdxxx".as_bytes()), Done("xxx".as_bytes(), Some("abcd".as_bytes())));
-assert_eq!(alt_tags("efghxxx".as_bytes()), Done("efghxxx".as_bytes(), None));
+assert_eq!(alt_tags(b"abcdxxx"), Done(b"xxx", Some(b"abcd")));
+assert_eq!(alt_tags(b"efghxxx"), Done(b"efghxxx", None));
 
 // the abcd_p parser can happen 0 or more times
 many0(multi<&[u8], &[u8]> abcd_p);
-let a = "abcdef".as_bytes();
-let b = "abcdabcdef".as_bytes();
-let c = "azerty".as_bytes();
-assert_eq!(multi(a), Done("ef".as_bytes(), vec!["abcd".as_bytes()]));
-assert_eq!(multi(b), Done("ef".as_bytes(), vec!["abcd".as_bytes(), "abcd".as_bytes()]));
-assert_eq!(multi(c), Done("azerty".as_bytes(), Vec::new()));
+let a = b"abcdef";
+let b = b"abcdabcdef";
+let c = b"azerty";
+assert_eq!(multi(a), Done(b"ef", vec![b"abcd"]));
+assert_eq!(multi(b), Done(b"ef", vec![b"abcd", b"abcd"]));
+assert_eq!(multi(c), Done(b"azerty", Vec::new()));
 ```
 
 Here are the basic combining macros available:
@@ -195,8 +195,8 @@ struct A {
   b: u8
 }
 
-tag!(abcd_p "abcd".as_bytes());
-tag!(efgh_p "efgh".as_bytes());
+tag!(abcd_p b"abcd");
+tag!(efgh_p b"efgh");
 
 fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
 fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
@@ -212,11 +212,11 @@ chain!(f<&[u8],A>,    // the parser takes a byte array as input, and returns an 
   ||{A{a: aa, b: bb}} // the final closure will be able to use the variable defined previously
 );
 
-let r = f("abcdabcdefghefghX".as_bytes());
-assert_eq!(r, Done("X".as_bytes(), A{a: 1, b: 2}));
+let r = f(b"abcdabcdefghefghX");
+assert_eq!(r, Done(b"X", A{a: 1, b: 2}));
 
-let r2 = f("abcdefghefghX".as_bytes());
-assert_eq!(r2, Done("X".as_bytes(), A{a: 1, b: 2}));
+let r2 = f(b"abcdefghefghX");
+assert_eq!(r2, Done(b"X", A{a: 1, b: 2}));
 ```
 
 More examples of chain usage can be found in the [INI file parser example](tests/ini.rs).
@@ -250,7 +250,7 @@ FileProducer::new("my_file.txt", 20).map(|mut producer: FileProducer| {
      //etc
 }
 
-let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+let mut p = MemProducer::new(b"abcdefgh", 4);
 ```
 
 The second argument for both of them is the chunk size for the produce function (which will not return the whole data at once.
@@ -258,7 +258,7 @@ The second argument for both of them is the chunk size for the produce function 
 The `pusher!` macro is provided to wrap an existing parser, and make it into a function that will handle a producer's chunk as soon as they are available.
 
 ```rust
-let mut producer = MemProducer::new("abcdefgh".as_bytes(), 8);
+let mut producer = MemProducer::new(b"abcdefgh", 8);
 
 fn print_parser<'a>(data: &'a [u8]) -> IResult<&'a [u8],()> {
   println!("{:?}", data);
@@ -341,10 +341,10 @@ struct TestConsumer {
 Then, we define the parsers that we will use at every state of our consumer. Note that we do not make one big parser at once. We just build some small, reusable, testable components
 
 ```rust
-tag!(om_parser                     "om".as_bytes());
-tag!(nom_parser                    "nom".as_bytes());
+tag!(om_parser                     b"om");
+tag!(nom_parser                    b"nom");
 many1!(nomnom_parser<&[u8],&[u8]>  nom_parser);
-tag!(end_parser                    "kthxbye".as_bytes());
+tag!(end_parser                    b"kthxbye");
 ```
 
 
@@ -402,7 +402,7 @@ impl Consumer for TestConsumer {
 }
 
 fn main() {
-  let mut p = MemProducer::new("omnomnomnomkthxbye".as_bytes(), 4);
+  let mut p = MemProducer::new(b"omnomnomnomkthxbye", 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 

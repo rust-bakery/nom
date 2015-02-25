@@ -17,7 +17,7 @@
 //!    // create the parsing function
 //!    fn parser(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
 //!      par.map_res(str::from_utf8).flat_map(local_print);
-//!      Done("".as_bytes(), ())
+//!      Done(b"", ())
 //!    }
 //!
 //!    // adapt the parsing function to the producer
@@ -201,7 +201,7 @@ impl<'x> Producer for MemProducer<'x> {
 /// fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
 ///   par.flat_map(local_print)
 /// }
-/// let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
+/// let mut p = MemProducer::new(b"abcdefgh", 8);
 ///
 /// pusher!(ps, pr);
 /// ps(&mut p);
@@ -231,7 +231,7 @@ macro_rules! pusher (
         }
         let mut v2: Vec<u8>  = Vec::new();
         v2.push_all(acc.as_slice());
-        //let p = IResult::Done("".as_bytes(), v2.as_slice());
+        //let p = IResult::Done(b"", v2.as_slice());
         match $f(v2.as_slice()) {
           IResult::Error(e)      => {
             //println!("error, stopping: {}", e);
@@ -266,20 +266,20 @@ mod tests {
   }
   #[test]
   fn mem_producer() {
-    let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
-    assert_eq!(p.produce(), ProducerState::Data("abcd".as_bytes()));
+    let mut p = MemProducer::new(b"abcdefgh", 4);
+    assert_eq!(p.produce(), ProducerState::Data(b"abcd"));
   }
 
   #[test]
   fn mem_producer_2() {
-    let mut p = MemProducer::new("abcdefgh".as_bytes(), 8);
+    let mut p = MemProducer::new(b"abcdefgh", 8);
     fn pr<'a,'b>(data: &'a [u8]) -> IResult<&'a [u8],()> {
       local_print(data)
     }
     pusher!(ps, pr);
     ps(&mut p);
     //let mut iterations: uint = 0;
-    //let mut p = MemProducer::new("abcdefghi".as_bytes(), 4);
+    //let mut p = MemProducer::new(b"abcdefghi", 4);
     //p.push(|par| {iterations = iterations + 1; par.flat_map(print)});
     //assert_eq!(iterations, 3);
   }
@@ -292,8 +292,8 @@ mod tests {
       //p.push(|par| {println!("parsed file: {}", par); par});
       //p.push(|par| par.flat_map(print));
       fn pr<'a,'b,'c>(data: &[u8]) -> IResult<&[u8], &[u8]> {
-        Done("".as_bytes(), data).map_res(str::from_utf8); //.flat_map(local_print);
-        Done("".as_bytes(),"".as_bytes())
+        Done(b"", data).map_res(str::from_utf8); //.flat_map(local_print);
+        Done(b"",b"")
       }
       pusher!(ps, pr);
       ps(&mut p);
@@ -307,11 +307,11 @@ mod tests {
       if input.len() <= 4 {
         Incomplete(0)
       } else {
-        Done("".as_bytes(), input)
+        Done(b"", input)
       }
     }
 
-    let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+    let mut p = MemProducer::new(b"abcdefgh", 4);
     fn pr<'a,'b>(data: &'b [u8]) -> IResult<&'b [u8],&'b [u8]> {
       let r = f(data);
       println!("f: {:?}", r);
@@ -325,14 +325,14 @@ mod tests {
   #[test]
   fn accu_2() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
-      if input.len() <= 4 || &input[0..5] != "abcde".as_bytes() {
+      if input.len() <= 4 || &input[0..5] != b"abcde" {
         Incomplete(0)
       } else {
         Done(&input[5..], &input[0..5])
       }
     }
 
-    let mut p = MemProducer::new("abcdefgh".as_bytes(), 4);
+    let mut p = MemProducer::new(b"abcdefgh", 4);
     fn pr<'a,'b,'c>(data: &'b [u8]) -> IResult<&'b [u8],&'b [u8]> {
       let r = f(data);
       println!("f: {:?}", r);

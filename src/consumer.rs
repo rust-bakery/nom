@@ -54,7 +54,7 @@
 //!  }
 //!
 //!  // It can consume data directly from a producer
-//!  let mut p = MemProducer::new("abcdefghijklmnopqrstuvwx".as_bytes(), 4);
+//!  let mut p = MemProducer::new(b"abcdefghijklmnopqrstuvwx", 4);
 //!  let mut c = TestPrintConsumer::new();
 //!  c.run(&mut p);
 //! ```
@@ -259,7 +259,7 @@ macro_rules! take(
 
   #[test]
   fn pull() {
-    let mut p = MemProducer::new("abcdefghijklmnopqrstuvwx".as_bytes(), 4);
+    let mut p = MemProducer::new(b"abcdefghijklmnopqrstuvwx", 4);
     let mut c = TestPrintConsumer::new();
     c.run(&mut p);
 

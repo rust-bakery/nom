@@ -18,9 +18,9 @@ use std::mem::transmute;
 /// consumes the recognized characters
 ///
 /// ```ignore
-///  tag!(x "abcd".as_bytes());
-///  let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(x);
-///  assert_eq!(r, Done("efgh".as_bytes(), "abcd".as_bytes()));
+///  tag!(x b"abcd");
+///  let r = Done((), b"abcdabcdefgh").flat_map(x);
+///  assert_eq!(r, Done(b"efgh", b"abcd"));
 /// ```
 #[macro_export]
 macro_rules! tag(
@@ -52,16 +52,16 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8
 /// chains parsers and returns the result of only one of them
 ///
 /// ```ignore
-/// tag!(x "abcd".as_bytes());
-/// tag!(y "efgh".as_bytes());
+/// tag!(x b"abcd");
+/// tag!(y b"efgh");
 ///
 /// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
 ///
 ///  // parse the x tag two times, return an int, parse the y tag
 ///  o!(z<&[u8], u8>  x ~ x ~ [ ret_int ] ~ y);
 ///
-/// let r = Done((), "abcdabcdefgh".as_bytes()).flat_map(z);
-/// assert_eq!(r, Done("".as_bytes(), 1));
+/// let r = Done((), b"abcdabcdefgh").flat_map(z);
+/// assert_eq!(r, Done(b"", 1));
 /// ```
 #[macro_export]
 macro_rules! o(
@@ -144,8 +144,8 @@ macro_rules! o_parser(
 ///   b: Option<u8>
 /// }
 ///
-/// tag!(x "abcd".as_bytes());
-/// tag!(y "efgh".as_bytes());
+/// tag!(x b"abcd");
+/// tag!(y b"efgh");
 ///
 /// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i, 1) };
 /// fn ret_y(i:&[u8]) -> IResult<&[u8], u8> { y(i).map(|_| 1) }; // return 1 if the "efgh" tag is found
@@ -159,20 +159,20 @@ macro_rules! o_parser(
 ///  );
 ///
 /// // the first "abcd" tag is not present, we have an error
-/// let r1 = z("efgh".as_bytes());
+/// let r1 = z(b"efgh");
 /// assert_eq!(r1, Error(0));
 ///
 /// // everything is present, everything is parsed
-/// let r2 = z("abcdabcdefgh".as_bytes());
-/// assert_eq!(r2, Done("".as_bytes(), B{a: 1, b: Some(1)}));
+/// let r2 = z(b"abcdabcdefgh");
+/// assert_eq!(r2, Done(b"", B{a: 1, b: Some(1)}));
 ///
 /// // the second "abcd" tag is optional
-/// let r3 = z("abcdefgh".as_bytes());
-/// assert_eq!(r3, Done("".as_bytes(), B{a: 1, b: Some(1)}));
+/// let r3 = z(b"abcdefgh");
+/// assert_eq!(r3, Done(b"", B{a: 1, b: Some(1)}));
 ///
 /// // the result of ret_y is optional, as seen in the B structure
-/// let r4 = z("abcdabcd".as_bytes());
-/// assert_eq!(r4, Done("".as_bytes(), B{a: 1, b: None}));
+/// let r4 = z(b"abcdabcd");
+/// assert_eq!(r4, Done(b"", B{a: 1, b: None}));
 /// ```
 #[macro_export]
 macro_rules! chain (
@@ -338,7 +338,7 @@ macro_rules! is_not(
           }
         }
       }
-      IResult::Done("".as_bytes(), input)
+      IResult::Done(b"", input)
     }
   )
 );
@@ -358,7 +358,7 @@ macro_rules! is_a(
           return IResult::Done(&input[idx..], &input[0..idx])
         }
       }
-      IResult::Done("".as_bytes(), input)
+      IResult::Done(b"", input)
     }
   )
 );
@@ -372,26 +372,26 @@ macro_rules! filter(
           return IResult::Done(&input[idx..], &input[0..idx])
         }
       }
-      IResult::Done("".as_bytes(), input)
+      IResult::Done(b"", input)
     }
   )
 );
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
-//pub is_not!(line_ending "\r\n".as_bytes())
+//pub is_not!(line_ending b"\r\n")
 pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
-    for &i in "\r\n".as_bytes().iter() {
+    for &i in b"\r\n".iter() {
       if input[idx] == i {
         return Done(&input[idx..], &input[0..idx])
       }
     }
   }
-  Done("".as_bytes(), input)
+  Done(b"", input)
 }
 
-tag!(tag_ln "\n".as_bytes());
+tag!(tag_ln b"\n");
 
 pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   tag_ln(input)
@@ -423,7 +423,7 @@ pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
       return Done(&input[idx..], &input[0..idx])
     }
   }
-  Done("".as_bytes(), input)
+  Done(b"", input)
 }
 
 pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -432,7 +432,7 @@ pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
       return Done(&input[idx..], &input[0..idx])
     }
   }
-  Done("".as_bytes(), input)
+  Done(b"", input)
 }
 
 pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -441,7 +441,7 @@ pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
       return Done(&input[idx..], &input[0..idx])
     }
   }
-  Done("".as_bytes(), input)
+  Done(b"", input)
 }
 
 pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -450,7 +450,7 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
       return Done(&input[idx..], &input[0..idx])
     }
   }
-  Done("".as_bytes(), input)
+  Done(b"", input)
 }
 
 pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -459,7 +459,7 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
       return Done(&input[idx..], &input[0..idx])
     }
   }
-  Done("".as_bytes(), input)
+  Done(b"", input)
 }
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -661,7 +661,7 @@ macro_rules! take_until(
         }
         if &i[idx..idx+$inp.len()] == $inp {
           if idx + $inp.len() > i.len() {
-            return Done("".as_bytes(), &i[0..idx])
+            return Done(b"", &i[0..idx])
           } else {
             return Done(&i[(idx+$inp.len())..], &i[0..idx])
           }
@@ -700,7 +700,7 @@ macro_rules! take_until_either(
         for &t in $inp.iter() {
           if i[idx] == t {
             if idx + 1 > i.len() {
-              return Done("".as_bytes(), &i[0..idx])
+              return Done(b"", &i[0..idx])
             } else {
               return Done(&i[(idx+1)..], &i[0..idx])
             }
@@ -800,25 +800,25 @@ mod tests {
 
   #[test]
   fn tag_closure() {
-    let x = tag_cl("abcd".as_bytes());
-    let r = x("abcdabcdefgh".as_bytes());
-    assert_eq!(r, Done("abcdefgh".as_bytes(), "abcd".as_bytes()));
+    let x = tag_cl(b"abcd");
+    let r = x(b"abcdabcdefgh");
+    assert_eq!(r, Done(b"abcdefgh", b"abcd"));
 
-    let r2 = x("abcefgh".as_bytes());
+    let r2 = x(b"abcefgh");
     assert_eq!(r2, Error(0));
   }
 
   #[test]
   fn character() {
-    let empty = "".as_bytes();
-    let a = "abcd".as_bytes();
-    let b = "1234".as_bytes();
-    let c = "a123".as_bytes();
+    let empty = b"";
+    let a = b"abcd";
+    let b = b"1234";
+    let c = b"a123";
     let d = "azé12".as_bytes();
-    let e = " ".as_bytes();
+    let e = b" ";
     assert_eq!(alpha(a), Done(empty, a));
     assert_eq!(alpha(b), Done(b, empty));
-    assert_eq!(alpha(c), Done(&c[1..], "a".as_bytes()));
+    assert_eq!(alpha(c), Done(&c[1..], b"a"));
     assert_eq!(alpha(d), Done("é12".as_bytes(), "az".as_bytes()));
     assert_eq!(digit(a), Done(a, empty));
     assert_eq!(digit(b), Done(empty, b));
@@ -828,16 +828,16 @@ mod tests {
     assert_eq!(alphanumeric(b), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
     assert_eq!(alphanumeric(d), Done("é12".as_bytes(), "az".as_bytes()));
-    assert_eq!(space(e), Done("".as_bytes(), " ".as_bytes()));
+    assert_eq!(space(e), Done(b"", b" "));
   }
 
   #[test]
   fn is_not() {
-    let a = "ab12cd\nefgh".as_bytes();
-    assert_eq!(not_line_ending(a), Done("\nefgh".as_bytes(), "ab12cd".as_bytes()));
+    let a = b"ab12cd\nefgh";
+    assert_eq!(not_line_ending(a), Done(b"\nefgh", b"ab12cd"));
 
-    let b = "ab12cd\nefgh\nijkl".as_bytes();
-    assert_eq!(not_line_ending(b), Done("\nefgh\nijkl".as_bytes(), "ab12cd".as_bytes()));
+    let b = b"ab12cd\nefgh\nijkl";
+    assert_eq!(not_line_ending(b), Done(b"\nefgh\nijkl", b"ab12cd"));
   }
 
   #[test]
@@ -866,20 +866,20 @@ mod tests {
 
   #[test]
   fn chain_and_ignore() {
-    tag!(x "abcd".as_bytes());
-    tag!(y "efgh".as_bytes());
+    tag!(x b"abcd");
+    tag!(y b"efgh");
     fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     //o!(z<&[u8], int>  x S x S retInt Z y);
     o!(z<&[u8], u8>  x ~ x ~ [ ret_int ] ~ y);
 
-    let r = z("abcdabcdefgh".as_bytes());
-    assert_eq!(r, Done("".as_bytes(), 1));
+    let r = z(b"abcdabcdefgh");
+    assert_eq!(r, Done(b"", 1));
   }
 
 
   #[test]
   fn chain() {
-    tag!(x "abcd".as_bytes());
+    tag!(x b"abcd");
     fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
@@ -889,14 +889,14 @@ mod tests {
       ||{B{a: aa, b: bb}}
     );
 
-    let r = f("abcde".as_bytes());
-    assert_eq!(r, Done("e".as_bytes(), B{a: 1, b: 2}));
+    let r = f(b"abcde");
+    assert_eq!(r, Done(b"e", B{a: 1, b: 2}));
   }
 
   #[test]
   fn chain2() {
-    tag!(x "abcd".as_bytes());
-    tag!(y "efgh".as_bytes());
+    tag!(x b"abcd");
+    tag!(y b"efgh");
     //fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     //o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
@@ -910,11 +910,11 @@ mod tests {
       y            ,
       ||{B{a: aa, b: bb}});
 
-    let r = f("abcdabcdefghefghX".as_bytes());
-    assert_eq!(r, Done("X".as_bytes(), B{a: 1, b: 2}));
+    let r = f(b"abcdabcdefghefghX");
+    assert_eq!(r, Done(b"X", B{a: 1, b: 2}));
 
-    let r2 = f("abcdefghefghX".as_bytes());
-    assert_eq!(r2, Done("X".as_bytes(), B{a: 1, b: 2}));
+    let r2 = f(b"abcdefghefghX");
+    assert_eq!(r2, Done(b"X", B{a: 1, b: 2}));
   }
 
   #[derive(PartialEq,Eq,Debug)]
@@ -926,8 +926,8 @@ mod tests {
 
   #[test]
   fn chain_opt() {
-    tag!(x "abcd".as_bytes());
-    tag!(y "efgh".as_bytes());
+    tag!(x b"abcd");
+    tag!(y b"efgh");
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_y(i:&[u8]) -> IResult<&[u8], u8> {
       y(i).map(|_| 2)
@@ -939,20 +939,20 @@ mod tests {
       bb: ret_y?   ,
       ||{C{a: aa, b: bb}});
 
-    let r = f("abcdefghX".as_bytes());
-    assert_eq!(r, Done("X".as_bytes(), C{a: 1, b: Some(2)}));
+    let r = f(b"abcdefghX");
+    assert_eq!(r, Done(b"X", C{a: 1, b: Some(2)}));
 
-    let r2 = f("abcdWXYZ".as_bytes());
-    assert_eq!(r2, Done("WXYZ".as_bytes(), C{a: 1, b: None}));
+    let r2 = f(b"abcdWXYZ");
+    assert_eq!(r2, Done(b"WXYZ", C{a: 1, b: None}));
 
-    let r3 = f("abcdX".as_bytes());
+    let r3 = f(b"abcdX");
     assert_eq!(r3, Incomplete(4));
   }
 
   #[test]
   fn alt() {
     fn work(input: &[u8]) -> IResult<&[u8],&[u8]> {
-      Done("".as_bytes(), input)
+      Done(b"", input)
     }
 
     #[allow(unused_variables)]
@@ -961,58 +961,58 @@ mod tests {
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
-      Done(input, "".as_bytes())
+      Done(input, b"")
     }
 
     alt!(alt1<&[u8],&[u8]>, dont_work | dont_work);
     alt!(alt2<&[u8],&[u8]>, dont_work | work);
     alt!(alt3<&[u8],&[u8]>, dont_work | dont_work | work2 | dont_work);
 
-    let a = "abcd".as_bytes();
+    let a = b"abcd";
     assert_eq!(alt1(a), Error(1));
-    assert_eq!(alt2(a), Done("".as_bytes(), a));
-    assert_eq!(alt3(a), Done(a, "".as_bytes()));
+    assert_eq!(alt2(a), Done(b"", a));
+    assert_eq!(alt3(a), Done(a, b""));
   }
 
   #[test]
   fn opt() {
-    tag!(x "abcd".as_bytes());
+    tag!(x b"abcd");
     opt!(o<&[u8],&[u8]> x);
 
-    let a = "abcdef".as_bytes();
-    let b = "bcdefg".as_bytes();
-    assert_eq!(o(a), Done("ef".as_bytes(), Some("abcd".as_bytes())));
-    assert_eq!(o(b), Done("bcdefg".as_bytes(), None));
+    let a = b"abcdef";
+    let b = b"bcdefg";
+    assert_eq!(o(a), Done(b"ef", Some(b"abcd")));
+    assert_eq!(o(b), Done(b"bcdefg", None));
   }
 
   #[test]
   fn many0() {
-    tag!(x "abcd".as_bytes());
+    tag!(x b"abcd");
     many0!(multi<&[u8],&[u8]> x);
 
-    let a = "abcdef".as_bytes();
-    let b = "abcdabcdef".as_bytes();
-    let c = "azerty".as_bytes();
+    let a = b"abcdef";
+    let b = b"abcdabcdef";
+    let c = b"azerty";
 
-    let res1 = vec!["abcd".as_bytes()];
-    assert_eq!(multi(a), Done("ef".as_bytes(), res1));
-    let res2 = vec!["abcd".as_bytes(), "abcd".as_bytes()];
-    assert_eq!(multi(b), Done("ef".as_bytes(), res2));
-    assert_eq!(multi(c), Done("azerty".as_bytes(), Vec::new()));
+    let res1 = vec![b"abcd"];
+    assert_eq!(multi(a), Done(b"ef", res1));
+    let res2 = vec![b"abcd", b"abcd"];
+    assert_eq!(multi(b), Done(b"ef", res2));
+    assert_eq!(multi(c), Done(b"azerty", Vec::new()));
   }
 
   #[test]
   fn many1() {
-    tag!(x "abcd".as_bytes());
+    tag!(x b"abcd");
     many1!(multi<&[u8],&[u8]> x);
 
-    let a = "abcdef".as_bytes();
-    let b = "abcdabcdef".as_bytes();
-    let c = "azerty".as_bytes();
-    let res1 = vec!["abcd".as_bytes()];
-    assert_eq!(multi(a), Done("ef".as_bytes(), res1));
-    let res2 = vec!["abcd".as_bytes(), "abcd".as_bytes()];
-    assert_eq!(multi(b), Done("ef".as_bytes(), res2));
+    let a = b"abcdef";
+    let b = b"abcdabcdef";
+    let c = b"azerty";
+    let res1 = vec![b"abcd"];
+    assert_eq!(multi(a), Done(b"ef", res1));
+    let res2 = vec![b"abcd", b"abcd"];
+    assert_eq!(multi(b), Done(b"ef", res2));
     assert_eq!(multi(c), Error(0));
   }
 
@@ -1038,17 +1038,17 @@ mod tests {
 
   #[test]
   fn take_until_test() {
-    take_until!(x "efgh".as_bytes());
-    let r = x("abcdabcdefghijkl".as_bytes());
-    assert_eq!(r, Done("ijkl".as_bytes(), "abcdabcd".as_bytes()));
+    take_until!(x b"efgh");
+    let r = x(b"abcdabcdefghijkl");
+    assert_eq!(r, Done(b"ijkl", b"abcdabcd"));
 
     println!("Done 1\n");
 
-    let r2 = x("abcdabcdefgh".as_bytes());
-    assert_eq!(r2, Done("".as_bytes(), "abcdabcd".as_bytes()));
+    let r2 = x(b"abcdabcdefgh");
+    assert_eq!(r2, Done(b"", b"abcdabcd"));
 
     println!("Done 2\n");
-    let r3 = x("abcefg".as_bytes());
+    let r3 = x(b"abcefg");
     assert_eq!(r3, Incomplete(0));
   }
 }
