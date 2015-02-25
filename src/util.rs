@@ -50,3 +50,35 @@ impl HexDisplay for [u8] {
     }
   }
 }
+
+pub trait AsBytes {
+  fn as_bytes(&self) -> &[u8];
+}
+
+impl<'a> AsBytes for &'a str {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    <str as StrExt>::as_bytes(self)
+  }
+}
+
+impl AsBytes for str {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    <str as StrExt>::as_bytes(&self)
+  }
+}
+
+impl<'a> AsBytes for &'a [u8] {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    *self
+  }
+}
+
+impl AsBytes for [u8] {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    self
+  }
+}

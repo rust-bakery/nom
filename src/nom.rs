@@ -18,7 +18,7 @@ use std::mem::transmute;
 /// consumes the recognized characters
 ///
 /// ```ignore
-///  tag!(x b"abcd");
+///  tag!(x "abcd");
 ///  let r = Done((), b"abcdabcdefgh").flat_map(x);
 ///  assert_eq!(r, Done(b"efgh", b"abcd"));
 /// ```
@@ -26,12 +26,20 @@ use std::mem::transmute;
 macro_rules! tag(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      if $inp.len() > i.len() {
-        return Incomplete($inp.len() as u32);
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
       }
 
-      if &i[0..$inp.len()] == $inp {
-        Done(&i[$inp.len()..], &i[0..$inp.len()])
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
+      if bytes.len() > i.len() {
+        return Incomplete(bytes.len() as u32);
+      }
+
+      if &i[0..bytes.len()] == bytes {
+        Done(&i[bytes.len()..], &i[0..bytes.len()])
       } else {
         Error(0)
       }
@@ -52,8 +60,8 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8
 /// chains parsers and returns the result of only one of them
 ///
 /// ```ignore
-/// tag!(x b"abcd");
-/// tag!(y b"efgh");
+/// tag!(x "abcd");
+/// tag!(y "efgh");
 ///
 /// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
 ///
@@ -144,8 +152,8 @@ macro_rules! o_parser(
 ///   b: Option<u8>
 /// }
 ///
-/// tag!(x b"abcd");
-/// tag!(y b"efgh");
+/// tag!(x "abcd");
+/// tag!(y "efgh");
 ///
 /// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i, 1) };
 /// fn ret_y(i:&[u8]) -> IResult<&[u8], u8> { y(i).map(|_| 1) }; // return 1 if the "efgh" tag is found
@@ -331,8 +339,16 @@ pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
 macro_rules! is_not(
   ($name:ident $arr:expr) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $arr;
+      let bytes = as_bytes(&expected);
+
       for idx in 0..input.len() {
-        for &i in $arr.iter() {
+        for &i in bytes.iter() {
           if input[idx] == i {
             return IResult::Done(&input[idx..], &input[0..idx])
           }
@@ -347,9 +363,17 @@ macro_rules! is_not(
 macro_rules! is_a(
   ($name:ident $arr:expr) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $arr;
+      let bytes = as_bytes(&expected);
+
       for idx in 0..input.len() {
         var res = false
-        for &i in $arr.iter() {
+        for &i in bytes.iter() {
           if input[idx] == i {
             res = true
           }
@@ -391,7 +415,7 @@ pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(b"", input)
 }
 
-tag!(tag_ln b"\n");
+tag!(tag_ln "\n");
 
 pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   tag_ln(input)
@@ -655,15 +679,23 @@ macro_rules! take(
 macro_rules! take_until(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
       for idx in 0..i.len() {
-        if idx + $inp.len() > i.len() {
+        if idx + bytes.len() > i.len() {
           return Incomplete(0)
         }
-        if &i[idx..idx+$inp.len()] == $inp {
-          if idx + $inp.len() > i.len() {
+        if &i[idx..idx + bytes.len()] == bytes {
+          if idx + bytes.len() > i.len() {
             return Done(b"", &i[0..idx])
           } else {
-            return Done(&i[(idx+$inp.len())..], &i[0..idx])
+            return Done(&i[(idx + bytes.len())..], &i[0..idx])
           }
         }
       }
@@ -676,11 +708,19 @@ macro_rules! take_until(
 macro_rules! take_until_and_leave(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
       for idx in 0..i.len() {
-        if idx + $inp.len() > i.len() {
+        if idx + bytes.len() > i.len() {
           return Incomplete(0)
         }
-        if &i[idx..idx+$inp.len()] == $inp {
+        if &i[idx..idx+bytes.len()] == bytes {
           return Done(&i[idx..], &i[0..idx])
         }
       }
@@ -693,11 +733,19 @@ macro_rules! take_until_and_leave(
 macro_rules! take_until_either(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
       for idx in 0..i.len() {
         if idx + 1 > i.len() {
           return Incomplete(0)
         }
-        for &t in $inp.iter() {
+        for &t in bytes.iter() {
           if i[idx] == t {
             if idx + 1 > i.len() {
               return Done(b"", &i[0..idx])
@@ -716,11 +764,19 @@ macro_rules! take_until_either(
 macro_rules! take_until_either_and_leave(
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
       for idx in 0..i.len() {
         if idx + 1 > i.len() {
           return Incomplete(0)
         }
-        for &t in $inp.iter() {
+        for &t in bytes.iter() {
           if i[idx] == t {
             return Done(&i[idx..], &i[0..idx])
           }
@@ -819,7 +875,7 @@ mod tests {
     assert_eq!(alpha(a), Done(empty, a));
     assert_eq!(alpha(b), Done(b, empty));
     assert_eq!(alpha(c), Done(&c[1..], b"a"));
-    assert_eq!(alpha(d), Done("é12".as_bytes(), "az".as_bytes()));
+    assert_eq!(alpha(d), Done("é12".as_bytes(), b"az"));
     assert_eq!(digit(a), Done(a, empty));
     assert_eq!(digit(b), Done(empty, b));
     assert_eq!(digit(c), Done(c, empty));
@@ -827,7 +883,7 @@ mod tests {
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(alphanumeric(b), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
-    assert_eq!(alphanumeric(d), Done("é12".as_bytes(), "az".as_bytes()));
+    assert_eq!(alphanumeric(d), Done("é12".as_bytes(), b"az"));
     assert_eq!(space(e), Done(b"", b" "));
   }
 
@@ -866,8 +922,8 @@ mod tests {
 
   #[test]
   fn chain_and_ignore() {
-    tag!(x b"abcd");
-    tag!(y b"efgh");
+    tag!(x "abcd");
+    tag!(y "efgh");
     fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     //o!(z<&[u8], int>  x S x S retInt Z y);
     o!(z<&[u8], u8>  x ~ x ~ [ ret_int ] ~ y);
@@ -879,7 +935,7 @@ mod tests {
 
   #[test]
   fn chain() {
-    tag!(x b"abcd");
+    tag!(x "abcd");
     fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
@@ -895,8 +951,8 @@ mod tests {
 
   #[test]
   fn chain2() {
-    tag!(x b"abcd");
-    tag!(y b"efgh");
+    tag!(x "abcd");
+    tag!(y "efgh");
     //fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     //o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
@@ -926,8 +982,8 @@ mod tests {
 
   #[test]
   fn chain_opt() {
-    tag!(x b"abcd");
-    tag!(y b"efgh");
+    tag!(x "abcd");
+    tag!(y "efgh");
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_y(i:&[u8]) -> IResult<&[u8], u8> {
       y(i).map(|_| 2)
@@ -976,7 +1032,7 @@ mod tests {
 
   #[test]
   fn opt() {
-    tag!(x b"abcd");
+    tag!(x "abcd");
     opt!(o<&[u8],&[u8]> x);
 
     let a = b"abcdef";
@@ -987,7 +1043,7 @@ mod tests {
 
   #[test]
   fn many0() {
-    tag!(x b"abcd");
+    tag!(x "abcd");
     many0!(multi<&[u8],&[u8]> x);
 
     let a = b"abcdef";
@@ -1003,7 +1059,7 @@ mod tests {
 
   #[test]
   fn many1() {
-    tag!(x b"abcd");
+    tag!(x "abcd");
     many1!(multi<&[u8],&[u8]> x);
 
     let a = b"abcdef";
@@ -1025,10 +1081,10 @@ mod tests {
     assert_eq!(Done(&i1[..], &o1[..]), res1);
 
     let i2:Vec<u8> = vec![4,5,6,7,8];
-    let o2 = "";
+    let o2 = b"";
     let arr2:[u8; 6usize] = [0, 4, 5, 6, 7, 8];
     let res2 = length_value(&arr2);
-    assert_eq!(Done(&i2[..], o2.as_bytes()), res2);
+    assert_eq!(Done(&i2[..], o2), res2);
 
     let arr3:[u8; 7usize] = [8, 4, 5, 6, 7, 8, 9];
     let res3 = length_value(&arr3);
@@ -1038,7 +1094,7 @@ mod tests {
 
   #[test]
   fn take_until_test() {
-    take_until!(x b"efgh");
+    take_until!(x "efgh");
     let r = x(b"abcdabcdefghijkl");
     assert_eq!(r, Done(b"ijkl", b"abcdabcd"));
 
