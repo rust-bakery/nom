@@ -107,7 +107,8 @@ There is already a large list of parsers available, like:
 Some macros make it easier to create new parsers. Here are a few of them:
 
 ```rust
-tag!(abcd_parser  b"abcd"); // will consume bytes if the input begins with "abcd"
+tag!(abcd_parser  "abcd"); // will consume bytes if the input begins with "abcd"
+
 
 take!(take_10     10);                // will consume 10 bytes of input
 ```
@@ -153,8 +154,8 @@ pub trait FlatMapOpt<I,O,N> {
 Here again, we use macros to combine parsers easily in useful patterns:
 
 ```rust
-tag!(abcd_p b"abcd");
-tag!(efgh_p b"efgh");
+tag!(abcd_p "abcd");
+tag!(efgh_p "efgh");
 
 // the types indicates the input and output types, that must match for all alternatives
 alt!(alt_tags<&[u8],&[u8]>, abcd_p, efgh_p);
@@ -195,8 +196,8 @@ struct A {
   b: u8
 }
 
-tag!(abcd_p b"abcd");
-tag!(efgh_p b"efgh");
+tag!(abcd_p "abcd");
+tag!(efgh_p "efgh");
 
 fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
 fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
@@ -341,10 +342,10 @@ struct TestConsumer {
 Then, we define the parsers that we will use at every state of our consumer. Note that we do not make one big parser at once. We just build some small, reusable, testable components
 
 ```rust
-tag!(om_parser                     b"om");
-tag!(nom_parser                    b"nom");
+tag!(om_parser                     "om");
+tag!(nom_parser                    "nom");
 many1!(nomnom_parser<&[u8],&[u8]>  nom_parser);
-tag!(end_parser                    b"kthxbye");
+tag!(end_parser                    "kthxbye");
 ```
 
 

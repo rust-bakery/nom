@@ -237,7 +237,7 @@ struct MP4BoxHeader {
 }
 
 take!(offset 4);
-tag!(ftyp    b"ftyp");
+tag!(ftyp    "ftyp");
 
 fn brand_name(input:&[u8]) -> IResult<&[u8],&str> {
   take!(major_brand_bytes 4);
@@ -258,29 +258,29 @@ fn filetype_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   ftyp(input).map(|_| MP4BoxType::Ftyp)
 }
 
-tag!(moov_tag b"moov");
+tag!(moov_tag "moov");
 
-tag!(mdra    b"mdra");
+tag!(mdra    "mdra");
 fn moov_mdra_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   mdra(input).map(|_| MP4BoxType::Mdra)
 }
 
-tag!(dref    b"dref");
+tag!(dref    "dref");
 fn moov_dref_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   dref(input).map(|_| MP4BoxType::Dref)
 }
 
-tag!(cmov    b"cmov");
+tag!(cmov    "cmov");
 fn moov_cmov_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   cmov(input).map(|_| MP4BoxType::Cmov)
 }
 
-tag!(rmra    b"rmra");
+tag!(rmra    "rmra");
 fn moov_rmra_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   rmra(input).map(|_| MP4BoxType::Rmra)
 }
 
-tag!(iods    b"iods");
+tag!(iods    "iods");
 fn moov_iods_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   iods(input).map(|_| MP4BoxType::Iods)
 }
@@ -297,22 +297,22 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   }
 }
 
-tag!(mvhd    b"mvhd");
+tag!(mvhd    "mvhd");
 fn moov_mvhd_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   mvhd(input).map(|_| MP4BoxType::Mvhd)
 }
 
-tag!(clip    b"clip");
+tag!(clip    "clip");
 fn moov_clip_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   clip(input).map(|_| MP4BoxType::Clip)
 }
 
-tag!(trak    b"trak");
+tag!(trak    "trak");
 fn moov_trak_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   trak(input).map(|_| MP4BoxType::Trak)
 }
 
-tag!(udta    b"udta");
+tag!(udta   "udta");
 fn moov_udta_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   udta(input).map(|_| MP4BoxType::Udta)
 }
@@ -321,22 +321,21 @@ fn moov_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   moov_tag(input).map(|_| MP4BoxType::Moov)
 }
 
-tag!(mdat    b"mdat");
+tag!(mdat    "mdat");
 fn mdat_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   mdat(input).map(|_| MP4BoxType::Mdat)
 }
-
-tag!(free    b"free");
+tag!(free    "free");
 fn free_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   free(input).map(|_| MP4BoxType::Free)
 }
 
-tag!(skip    b"skip");
+tag!(skip    "skip");
 fn skip_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   skip(input).map(|_| MP4BoxType::Skip)
 }
 
-tag!(wide    b"wide");
+tag!(wide    "wide");
 fn wide_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   wide(input).map(|_| MP4BoxType::Wide)
 }
