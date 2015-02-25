@@ -306,7 +306,7 @@ In the consumer you implement, you will apply parsers on the input of the `consu
 - **Await(consumed, needed)** indicates how much data was parsed, and how much you need next
 - **Seek(consumed, position, needed)** indicates where to seek in the stream, if applicable. For SeekFrom::Current, the current position is the end of the input of `consume`
 - **Incomplete** indicates there is not enough input
-- **ConsumerDone** indicates the parser is done, no more data should be fed. The `finish()` method will be called
+- **ConsumerDone** indicates the parser is done, no more data should be fed. The `end()` method will be called
 - **ConsumerError(error)** indicates there has been an error. The parser will stop
 
 To use your `Consumer`, you need to pass a `Producer` instance to the `run()` method, and it will aotumatically handle buffering and seeking according to what the `consume()` method returns. Examples:
