@@ -372,7 +372,7 @@ macro_rules! is_a(
       let bytes = as_bytes(&expected);
 
       for idx in 0..input.len() {
-        var res = false;
+        let res = false;
         for &i in bytes.iter() {
           if input[idx] == i {
             res = true
