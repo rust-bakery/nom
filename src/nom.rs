@@ -895,6 +895,9 @@ mod tests {
 
     let b = b"ab12cd\nefgh\nijkl";
     assert_eq!(not_line_ending(b), Done(b"\nefgh\nijkl", b"ab12cd"));
+
+    let c = b"ab12cd";
+    assert_eq!(not_line_ending(c), Done(b"", b"ab12cd"));
   }
 
   #[test]
