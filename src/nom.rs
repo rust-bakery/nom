@@ -372,10 +372,11 @@ macro_rules! is_a(
       let bytes = as_bytes(&expected);
 
       for idx in 0..input.len() {
-        var res = false;
+        let mut res = false;
         for &i in bytes.iter() {
           if input[idx] == i {
-            res = true
+            res = true;
+            break;
           }
         }
         if !res {
@@ -894,6 +895,23 @@ mod tests {
 
     let b = b"ab12cd\nefgh\nijkl";
     assert_eq!(not_line_ending(b), Done(b"\nefgh\nijkl", b"ab12cd"));
+  }
+
+  #[test]
+  fn is_a() {
+    is_a!(a_or_b   b"ab");
+
+    let a = b"abcd";
+    assert_eq!(a_or_b(a), Done(b"cd", b"ab"));
+
+    let b = b"bcde";
+    assert_eq!(a_or_b(b), Done(b"cde", b"b"));
+
+    let c = b"cdef";
+    assert_eq!(a_or_b(c), Done(b"cdef", b""));
+
+    let d = b"bacdef";
+    assert_eq!(a_or_b(d), Done(b"cdef", b"ba"));
   }
 
   #[test]
