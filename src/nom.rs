@@ -35,7 +35,7 @@ macro_rules! tag(
       let bytes = as_bytes(&expected);
 
       if bytes.len() > i.len() {
-        return Incomplete(bytes.len() as u32);
+        return Incomplete(Needed::Size(bytes.len() as u32));
       }
 
       if &i[0..bytes.len()] == bytes {
@@ -489,7 +489,7 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() == 0 {
-    return Incomplete(0)
+    return Incomplete(Needed::Unknown)
   }
 
   let len = input[0] as usize;
@@ -497,7 +497,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() >= len + 1 {
     return Done(&input[len+1..], &input[1..len+1])
   } else {
-    return Incomplete(0)
+    return Incomplete(Needed::Size(1 + len as u32))
   }
 }
 
@@ -659,7 +659,7 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
     return IResult::Done(&input[len+1..], &input[1..len+1])
   } else {
     // FIXME: return Incomplete
-    return IResult::Error(0)
+    return IResult::Incomplete(Needed::Size(1+len as u32))
   }
 }
 
@@ -668,7 +668,7 @@ macro_rules! take(
   ($name:ident $count:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       if i.len() < $count {
-        Incomplete(0)
+        Incomplete(Needed::Size($count))
       } else {
         Done(&i[$count..],&i[0..$count])
       }
@@ -690,7 +690,7 @@ macro_rules! take_until(
 
       for idx in 0..i.len() {
         if idx + bytes.len() > i.len() {
-          return Incomplete(0)
+          return Incomplete(Needed::Size((idx + bytes.len()) as u32))
         }
         if &i[idx..idx + bytes.len()] == bytes {
           if idx + bytes.len() > i.len() {
@@ -719,7 +719,7 @@ macro_rules! take_until_and_leave(
 
       for idx in 0..i.len() {
         if idx + bytes.len() > i.len() {
-          return Incomplete(0)
+          return Incomplete(Needed::Size((idx + bytes.len()) as u32))
         }
         if &i[idx..idx+bytes.len()] == bytes {
           return Done(&i[idx..], &i[0..idx])
@@ -744,7 +744,7 @@ macro_rules! take_until_either(
 
       for idx in 0..i.len() {
         if idx + 1 > i.len() {
-          return Incomplete(0)
+          return Incomplete(Needed::Size(1 + idx as u32))
         }
         for &t in bytes.iter() {
           if i[idx] == t {
@@ -775,7 +775,7 @@ macro_rules! take_until_either_and_leave(
 
       for idx in 0..i.len() {
         if idx + 1 > i.len() {
-          return Incomplete(0)
+          return Incomplete(Needed::Size(1 + idx as u32))
         }
         for &t in bytes.iter() {
           if i[idx] == t {
@@ -790,7 +790,7 @@ macro_rules! take_until_either_and_leave(
 
 pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
-    Incomplete(0)
+    Incomplete(Needed::Size(1))
   } else {
     Done(&i[1..], i[0])
   }
@@ -798,7 +798,7 @@ pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
 
 pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
-    Incomplete(0)
+    Incomplete(Needed::Size(2))
   } else {
     let res = ((i[0] as u16) << 8) + i[1] as u16;
     Done(&i[2..], res)
@@ -807,7 +807,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
 
 pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
-    Incomplete(0)
+    Incomplete(Needed::Size(4))
   } else {
     let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
     Done(&i[4..], res)
@@ -816,7 +816,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
 
 pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
-    Incomplete(0)
+    Incomplete(Needed::Size(8))
   } else {
     let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
       ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
@@ -852,6 +852,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 mod tests {
   use super::*;
   use map::*;
+  use internal::Needed;
   use internal::IResult;
   use internal::IResult::*;
 
@@ -1023,7 +1024,7 @@ mod tests {
     assert_eq!(r2, Done(b"WXYZ", C{a: 1, b: None}));
 
     let r3 = f(b"abcdX");
-    assert_eq!(r3, Incomplete(4));
+    assert_eq!(r3, Incomplete(Needed::Size(4)));
   }
 
   #[test]
@@ -1110,7 +1111,7 @@ mod tests {
     let arr3:[u8; 7usize] = [8, 4, 5, 6, 7, 8, 9];
     let res3 = length_value(&arr3);
     //FIXME: should be incomplete
-    assert_eq!(Error(0), res3);
+    assert_eq!(Incomplete(Needed::Size(9)), res3);
   }
 
   #[test]
@@ -1126,6 +1127,6 @@ mod tests {
 
     println!("Done 2\n");
     let r3 = x(b"abcefg");
-    assert_eq!(r3, Incomplete(0));
+    assert_eq!(r3, Incomplete(Needed::Size(7)));
   }
 }

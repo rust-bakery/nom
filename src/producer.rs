@@ -254,7 +254,7 @@ macro_rules! pusher (
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::IResult;
+  use internal::{Needed,IResult};
   use internal::IResult::*;
   use std::fmt::Debug;
   use std::str;
@@ -305,7 +305,7 @@ mod tests {
   fn accu() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
       if input.len() <= 4 {
-        Incomplete(0)
+        Incomplete(Needed::Size(4))
       } else {
         Done(b"", input)
       }
@@ -326,7 +326,7 @@ mod tests {
   fn accu_2() {
     fn f(input:&[u8]) -> IResult<&[u8],&[u8]> {
       if input.len() <= 4 || &input[0..5] != b"abcde" {
-        Incomplete(0)
+        Incomplete(Needed::Size(4))
       } else {
         Done(&input[5..], &input[0..5])
       }

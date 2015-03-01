@@ -33,6 +33,12 @@ impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 
+#[derive(Debug,PartialEq,Eq)]
+pub enum Needed {
+  Unknown,
+  Size(u32)
+}
+
 /// Holds the result of parsing functions
 ///
 /// It depends on I, the input types, and O, the output type.
@@ -50,7 +56,7 @@ pub enum IResult<I,O> {
   Done(I,O),
   Error(Err),
   //Incomplete(proc(I):'a -> IResult<I,O>)
-  Incomplete(u32)
+  Incomplete(Needed)
   //Incomplete(Box<FnMut(I) -> IResult<I,O>>)
   //Incomplete(IResultClosure<I,O>)
   //Incomplete(|I|:'a -> IResult<'a,I,O>)

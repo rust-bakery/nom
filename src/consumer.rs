@@ -8,7 +8,7 @@
 //! This consumer will take 4 samples from the input, print them, then stop
 //!
 //! ```rust
-//!  use nom::{IResult,MemProducer,Consumer,ConsumerState};
+//!  use nom::{IResult,Needed,MemProducer,Consumer,ConsumerState};
 //!  use std::str;
 //!  use std::io::SeekFrom;
 //!
@@ -24,7 +24,7 @@
 //!
 //!  fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
 //!    if i.len() < 4 {
-//!      IResult::Incomplete(4)
+//!      IResult::Incomplete(Needed::Size(4))
 //!    } else {
 //!      IResult::Done(&i[4..],&i[0..4])
 //!    }
@@ -204,7 +204,7 @@ mod tests {
   use super::*;
   use super::ConsumerState::*;
   use producer::MemProducer;
-  use internal::IResult;
+  use internal::{Needed,IResult};
   use std::str;
   use std::io::SeekFrom;
 
@@ -213,7 +213,7 @@ macro_rules! take(
   ($name:ident $count:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       if i.len() < $count {
-        IResult::Incomplete(0)
+        IResult::Incomplete(Needed::Size($count))
       } else {
         IResult::Done(&i[$count..],&i[0..$count])
       }

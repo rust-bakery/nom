@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Consumer,ConsumerState,MemProducer,IResult};
+use nom::{Consumer,ConsumerState,MemProducer,IResult,Needed};
 use nom::IResult::*;
 
 #[derive(PartialEq,Eq,Debug)]

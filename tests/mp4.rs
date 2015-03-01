@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,IResult,FlatMapOpt,Functor,FileProducer,be_u16,be_u32,be_u64,be_f32};
+use nom::{HexDisplay,Needed,IResult,FlatMapOpt,Functor,FileProducer,be_u16,be_u32,be_u64,be_f32};
 use nom::{Consumer,ConsumerState};
 use nom::IResult::*;
 
@@ -15,7 +15,7 @@ fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
       if i.len() >= sz - 4 {
         return Done(&i[(sz-4)..], &i[0..(sz-4)])
       } else {
-        return Incomplete(1234)
+        return Incomplete(Needed::Size(4 + offset as u32))
       }
     }
     Error(e)      => Error(e),
@@ -287,7 +287,7 @@ fn moov_iods_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
 
 fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   if input.len() < 100 {
-    Incomplete(0)
+    Incomplete(Needed::Size(100))
   } else if input.len() == 100 {
     mvhd32(input)
   } else if input.len() == 112 {
