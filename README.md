@@ -125,7 +125,7 @@ Here are the basic macros available:
 - **take_until!**: will take as many bytes as possible until it encounters the provided byte array, and will skip it
 - **take_until_and_leave!**: will take as many bytes as possible until it encounters the provided byte array, and will leave it in the remaining input
 - **take_until_either!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will skip it
-- **take_until_either_and_leave**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
+- **take_until_either_and_leave!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
 
 #### Combining parsers
 
