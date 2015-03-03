@@ -200,7 +200,7 @@ impl<'x,'z,T> FlatMap<(),(),T> for IResult<(),()> {
 /// use nom::IResult::Done;
 /// use nom::FlatMapOpt;
 /// use std::str;
-/// let res = Done((), b"abcd").map_res(|&: data| { str::from_utf8(data) });
+/// let res = Done((), b"abcd").map_res(|data| { str::from_utf8(data) });
 /// assert_eq!(res, Done((), "abcd"));
 /// ```
 pub trait FlatMapOpt<I,O,N> {
