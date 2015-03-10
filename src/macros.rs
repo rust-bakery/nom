@@ -275,6 +275,19 @@ macro_rules! chaining_parser (
   )
 );
 
+/// try a list of parser, return the result of the first successful one
+///
+/// Incomplete results are ignored
+///
+/// ```ignore
+///  tag!(x "abcd");
+///  tag!(y "efgh");
+///  alt!(test<&[u8], &[u8]> x | y);
+///  let r1 = test(b"abcdefgh"));
+///  assert_eq!(r1, Done(b"efgh", b"abcd"));
+///  let r2 = test(b"efghijkl"));
+///  assert_eq!(r2, Done(b"ijkl", b"efgh"));
+/// ```
 #[macro_export]
 macro_rules! alt (
   ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
