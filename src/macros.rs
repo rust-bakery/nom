@@ -320,6 +320,13 @@ macro_rules! alt_parser (
   )
 );
 
+/// returns the longest list of bytes that do not appear in the provided array
+///
+/// ```ignore
+///  is_not!(not_space b" \t\r\n");
+///  let r = not_space(b"abcdefgh\nijkl"));
+///  assert_eq!(r, Done(b"\nijkl", b"abcdefgh"));
+/// ```
 #[macro_export]
 macro_rules! is_not(
   ($name:ident $arr:expr) => (
@@ -344,6 +351,16 @@ macro_rules! is_not(
   )
 );
 
+/// returns the longest list of bytes that appear in the provided array
+///
+/// ```ignore
+///  is_a!(abcd b"abcd");
+///  let r1 = abcd(b"aaaaefgh"));
+///  assert_eq!(r1, Done(b"efgh", b"aaaa"));
+///
+///  let r2 = abcd(b"dcbaefgh"));
+///  assert_eq!(r2, Done(b"efgh", b"dcba"));
+/// ```
 #[macro_export]
 macro_rules! is_a(
   ($name:ident $arr:expr) => (
@@ -373,6 +390,13 @@ macro_rules! is_a(
   )
 );
 
+/// returns the longest list of bytes until the provided parser fails
+///
+/// ```ignore
+///  filter!(alpha is_alphanumeric);
+///  let r = alpha(b"abcd\nefgh"));
+///  assert_eq!(r, Done(b"\nefgh", b"abcd"));
+/// ```
 #[macro_export]
 macro_rules! filter(
   ($name:ident $f:ident) => (
@@ -387,6 +411,19 @@ macro_rules! filter(
   )
 );
 
+/// make the underlying parser optional
+///
+/// returns an Option of the returned type
+///
+/// ```ignore
+///  tag!(x "abcd");
+///  opt!(o<&[u8],&[u8]> x);
+///
+///  let a = b"abcdef";
+///  let b = b"bcdefg";
+///  assert_eq!(o(a), Done(b"ef", Some(b"abcd")));
+///  assert_eq!(o(b), Done(b"bcdefg", None));
+/// ```
 #[macro_export]
 macro_rules! opt(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
