@@ -25,6 +25,8 @@ Here are the current and planned features, with their status:
 
 Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
 
+Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
+
 ## Installation
 
 nom is available on [crates.io](https://crates.io/crates/nom) and can be included in your Cargo enabled project like this:
