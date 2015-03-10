@@ -669,6 +669,99 @@ macro_rules! take_until_either_and_leave(
   )
 );
 
+/// returns a result without consuming the input
+///
+/// the embedded parser may return Incomplete
+///
+/// ```ignore
+///  tag!(x "abcd");
+///  peek!(ptag<&[u8], &[u8]> x);
+///  let r = ptag(b"abcdefgh"));
+///  assert_eq!(r, Done(b"abcdefgh", b"abcd"));
+/// ```
+#[macro_export]
+macro_rules! length_value(
+  ($name:ident<$i:ty,$o:ty> $f:ident $g:ident) => (
+    fn $name(input:$i) -> IResult<$i, Vec<$o>> {
+      match $f(input) {
+        Error(a)      => Error(a),
+        Incomplete(i) => Incomplete(i),
+        Done(i1,nb)   => {
+          let length_token     = input.len() - i1.len();
+          let mut begin        = 0;
+          let mut remaining    = i1.len();
+          let mut res: Vec<$o> = Vec::new();
+
+          loop {
+            if res.len() == nb as usize {
+              return Done(&i1[begin..], res);
+            }
+
+            match $g(&i1[begin..]) {
+              Done(i2,o2) => {
+              res.push(o2);
+                let parsed  = remaining - i2.len();
+                begin      += parsed;
+                remaining   = i2.len();
+                if begin   >= i1.len() {
+                  return Incomplete(Needed::Size((length_token + nb as usize * parsed) as u32));
+                }
+              },
+              Error(a)      => return Error(a),
+              Incomplete(Needed::Unknown) => {
+                return Incomplete(Needed::Unknown)
+              },
+              Incomplete(Needed::Size(a)) => {
+                return Incomplete(Needed::Size(length_token  as u32 + a * nb as u32))
+              }
+            }
+          }
+        }
+      }
+    }
+  );
+
+  ($name:ident<$i:ty,$o:ty> $f:ident $g:ident $length:expr) => (
+    fn $name(input:$i) -> IResult<$i, Vec<$o>> {
+      match $f(input) {
+        Error(a)      => Error(a),
+        Incomplete(i) => Incomplete(i),
+        Done(i1,nb)   => {
+          let length_token     = input.len() - i1.len();
+          let mut begin        = 0;
+          let mut remaining    = i1.len();
+          let mut res: Vec<$o> = Vec::new();
+
+          loop {
+            if res.len() == nb as usize {
+              return Done(&i1[begin..], res);
+            }
+
+            match $g(&i1[begin..]) {
+              Done(i2,o2) => {
+                res.push(o2);
+                let parsed  = remaining - i2.len();
+                begin      += parsed;
+                remaining   = i2.len();
+                if begin   >= i1.len() {
+                  return Incomplete(Needed::Size((length_token + nb as usize * $length) as u32));
+                }
+              },
+              Error(a)      => return Error(a),
+              Incomplete(Needed::Unknown) => {
+                return Incomplete(Needed::Unknown)
+              },
+              Incomplete(Needed::Size(a)) => {
+                return Incomplete(Needed::Size(length_token  as u32 + $length * nb as u32))
+              }
+            }
+          }
+        }
+      }
+    }
+  );
+);
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -876,5 +969,37 @@ mod tests {
     println!("Done 2\n");
     let r3 = x(b"abcefg");
     assert_eq!(r3, Incomplete(Needed::Size(7)));
+  }
+
+  use nom::{be_u8,be_u16};
+  #[test]
+  fn length_value_test() {
+    length_value!(tst1<&[u8], u16 > be_u8 be_u16);
+    length_value!(tst2<&[u8], u16 > be_u8 be_u16 2);
+
+    let i1 = vec![0, 5, 6];
+    let i2 = vec![1, 5, 6, 3];
+    let i3 = vec![2, 5, 6, 3];
+    let i4 = vec![2, 5, 6, 3, 4, 5, 7];
+    let i5 = vec![3, 5, 6, 3, 4, 5];
+
+    let r1: Vec<u16> = Vec::new();
+    let r2: Vec<u16> = vec![1286];
+    let r4: Vec<u16> = vec![1286, 772];
+    assert_eq!(tst1(&i1), IResult::Done(&i1[1..], r1));
+    assert_eq!(tst1(&i2), IResult::Done(&i2[3..], r2));
+    assert_eq!(tst1(&i3), IResult::Incomplete(Needed::Size(5)));
+    assert_eq!(tst1(&i4), IResult::Done(&i4[5..], r4));
+    assert_eq!(tst1(&i5), IResult::Incomplete(Needed::Size(7)));
+
+    let r6: Vec<u16> = Vec::new();
+    let r7: Vec<u16> = vec![1286];
+    let r9: Vec<u16> = vec![1286, 772];
+    assert_eq!(tst2(&i1), IResult::Done(&i1[1..], r6));
+    assert_eq!(tst2(&i2), IResult::Done(&i2[3..], r7));
+    assert_eq!(tst2(&i3), IResult::Incomplete(Needed::Size(5)));
+    assert_eq!(tst2(&i4), IResult::Done(&i4[5..], r9));
+    assert_eq!(tst1(&i5), IResult::Incomplete(Needed::Size(7)));
+
   }
 }
