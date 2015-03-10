@@ -124,7 +124,6 @@ macro_rules! o_parser(
 
 );
 
-
 /// chains parsers and assemble the results through a closure
 ///
 /// ```ignore
@@ -173,7 +172,6 @@ macro_rules! chain (
     }
   );
 );
-
 
 #[macro_export]
 macro_rules! chaining_parser (
@@ -565,7 +563,6 @@ macro_rules! take_until(
   )
 );
 
-
 #[macro_export]
 macro_rules! take_until_and_leave(
   ($name:ident $inp:expr) => (
@@ -692,7 +689,6 @@ mod tests {
     assert_eq!(r, Done(b"", 1));
   }
 
-
   #[test]
   fn chain() {
     tag!(x "abcd");
@@ -738,7 +734,6 @@ mod tests {
     a: u8,
     b: Option<u8>
   }
-
 
   #[test]
   fn chain_opt() {
@@ -800,7 +795,6 @@ mod tests {
     assert_eq!(o(a), Done(b"ef", Some(b"abcd")));
     assert_eq!(o(b), Done(b"bcdefg", None));
   }
-
 
   #[test]
   fn many0() {

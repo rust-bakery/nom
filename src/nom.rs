@@ -23,8 +23,6 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8
   })
 }
 
-
-
 pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
   println!("{:?}", input);
   Done(input, ())
@@ -33,7 +31,6 @@ pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
 pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
   Done((), input)
 }
-
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
