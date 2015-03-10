@@ -460,6 +460,21 @@ macro_rules! peek(
   )
 );
 
+/// Applies the parser 0 or more times and returns the list of results in a Vec
+///
+/// the embedded parser may return Incomplete
+///
+/// ```ignore
+///  tag!(x "abcd");
+///  many0!(multi<&[u8],&[u8]> x);
+///
+///  let a = b"abcdabcdef";
+///  let b = b"azerty";
+///
+///  let res = vec![b"abcd", b"abcd"];
+///  assert_eq!(multi(a), Done(b"ef", res));
+///  assert_eq!(multi(b), Done(b"azerty", Vec::new()));
+/// ```
 // 0 or more
 #[macro_export]
 macro_rules! many0(
@@ -487,7 +502,21 @@ macro_rules! many0(
   )
 );
 
-// one or more
+/// Applies the parser 0 or more times and returns the list of results in a Vec
+///
+/// the embedded parser may return Incomplete
+///
+/// ```ignore
+///  tag!(x "abcd");
+///  many1!(multi<&[u8],&[u8]> x);
+///
+///  let a = b"abcdabcdef";
+///  let b = b"azerty";
+///
+///  let res = vec![b"abcd", b"abcd"];
+///  assert_eq!(multi(a), Done(b"ef", res));
+///  assert_eq!(multi(b), Error(0));
+/// ```
 #[macro_export]
 macro_rules! many1(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
@@ -518,6 +547,12 @@ macro_rules! many1(
   )
 );
 
+/// takes an assembling closure, and a parser, and generates a fold on the input 0 or more times
+///
+/// for the parser `fn p(i:I) -> IResult<I,T>` and the usage `fold0!(f<I,O>, |a,b| { ... }, p)`, this macro generates
+/// `fn f(input:I, z: O) -> IResult<I,O>`
+/// The closure takes as argument a value of type O and a value of type T and returns a value of type T
+///
 #[macro_export]
 macro_rules! fold0(
   ($name:ident<$i:ty,$o:ty>, $assemble:expr, $f:ident) => (
@@ -554,6 +589,12 @@ macro_rules! fold0_impl(
   );
 );
 
+/// takes an assembling closure, and a parser, and generates a fold on the input 1 or more times
+///
+/// for the parser `fn p(i:I) -> IResult<I,T>` and the usage `fold0!(f<I,O>, |a,b| { ... }, p)`, this macro generates
+/// `fn f(input:I, z: O) -> IResult<I,O>`
+/// The closure takes as argument a value of type O and a value of type T and returns a value of type T
+///
 #[macro_export]
 macro_rules! fold1(
   ($name:ident<$i:ty,$o:ty>, $assemble:expr, $f:ident) => (
@@ -594,6 +635,15 @@ macro_rules! fold1_impl(
   );
 );
 
+/// generates a parser consuming the specified number of bytes
+///
+/// ```ignore
+///  take!(take5 5);
+///
+///  let a = b"abcdefgh";
+///
+///  assert_eq!(take5(a), Done(b"fgh", b"abcde"));
+/// ```
 #[macro_export]
 macro_rules! take(
   ($name:ident $count:expr) => (
