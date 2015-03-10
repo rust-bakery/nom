@@ -387,6 +387,29 @@ macro_rules! opt(
   )
 );
 
+/// returns a result without consuming the input
+///
+/// the embedded parser may return Incomplete
+///
+/// ```ignore
+///  tag!(x "abcd");
+///  peek!(ptag<&[u8], &[u8]> x);
+///  let r = ptag(b"abcdefgh"));
+///  assert_eq!(r, Done(b"abcdefgh", b"abcd"));
+/// ```
+#[macro_export]
+macro_rules! peek(
+  ($name:ident<$i:ty,$o:ty> $f:ident) => (
+    fn $name(input:$i) -> IResult<$i, $o> {
+      match $f(input) {
+        IResult::Done(i,o)     => IResult::Done(input, o),
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i)
+      }
+    }
+  )
+);
+
 // 0 or more
 #[macro_export]
 macro_rules! many0(
@@ -794,6 +817,18 @@ mod tests {
     let b = b"bcdefg";
     assert_eq!(o(a), Done(b"ef", Some(b"abcd")));
     assert_eq!(o(b), Done(b"bcdefg", None));
+  }
+
+  #[test]
+  fn peek() {
+    tag!(x "abcd");
+    peek!(ptag<&[u8], &[u8]> x);
+
+    let r1 = ptag(b"abcdefgh");
+    assert_eq!(r1, Done(b"abcdefgh", b"abcd"));
+
+    let r1 = ptag(b"efgh");
+    assert_eq!(r1, Error(0));
   }
 
   #[test]
