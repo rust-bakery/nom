@@ -657,6 +657,28 @@ macro_rules! take(
   )
 );
 
+/// generates a parser consuming the specified number of bytes
+///
+/// ```ignore
+///  take!(take5 5);
+///
+///  let a = b"abcdefgh";
+///
+///  assert_eq!(take5(a), Done(b"fgh", b"abcde"));
+/// ```
+///  take_until!(x "efgh");
+///  let r = x(b"abcdabcdefghijkl");
+///  assert_eq!(r, Done(b"ijkl", b"abcdabcd"));
+///
+///  println!("Done 1\n");
+///
+///  let r2 = x(b"abcdabcdefgh");
+///  assert_eq!(r2, Done(b"", b"abcdabcd"));
+///
+///  println!("Done 2\n");
+///  let r3 = x(b"abcefg");
+///  assert_eq!(r3, Incomplete(Needed::Size(7)));
+/// ```
 #[macro_export]
 macro_rules! take_until(
   ($name:ident $inp:expr) => (
