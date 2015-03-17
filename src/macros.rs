@@ -4,6 +4,31 @@ use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 
+#[macro_export]
+macro_rules! closure (
+    ($ty:ty, $submac:ident!( $($args:tt)* )) => (
+        |i: $ty| { $submac!(i, $($args)*) }
+    );
+    ($submac:ident!( $($args:tt)* )) => (
+        |i| { $submac!(i, $($args)*) }
+    );
+);
+
+#[macro_export]
+macro_rules! named (
+    ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: $i ) -> $o {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: $i ) -> IResult<$i, $o> {
+            $submac!(i, $($args)*)
+        }
+    );
+);
+
+
 /// declares a byte array as a suite to recognize
 ///
 /// consumes the recognized characters
@@ -14,7 +39,26 @@ use internal::IResult::*;
 ///  assert_eq!(r, Done(b"efgh", b"abcd"));
 /// ```
 #[macro_export]
-macro_rules! tag(
+macro_rules! tag (
+  ($i:expr, $inp: expr) => (
+    {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
+      if bytes.len() > $i.len() {
+        Incomplete(Needed::Size(bytes.len() as u32))
+      } else if &$i[0..bytes.len()] == bytes {
+        Done(&$i[bytes.len()..], &$i[0..bytes.len()])
+      } else {
+        Error(0)
+      }
+    }
+  );
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       #[inline(always)]
@@ -35,7 +79,7 @@ macro_rules! tag(
         Error(0)
       }
     }
-  )
+  );
 );
 
 /// chains parsers and returns the result of only one of them
@@ -171,12 +215,24 @@ macro_rules! chain (
       chaining_parser!(i, $($rest)*)
     }
   );
+  ($i:expr, $($rest:tt)*) => (
+    chaining_parser!($i, $($rest)*)
+  );
 );
 
 #[macro_export]
 macro_rules! chaining_parser (
   ($i:expr, $e:ident ~ $($rest:tt)*) => (
     match $e($i) {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,_)     => {
+        chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
+    match $submac!($i, $($args)*) {
       IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
       IResult::Done(i,_)     => {
@@ -197,8 +253,31 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
+    match  $submac!($i, $($args)*) {
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Error(e)      => {
+        chaining_parser!($i, $($rest)*)
+      },
+      IResult::Done(i,_)     => {
+        chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+
   ($i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     match $e($i) {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,o)     => {
+        let $field = o;
+        chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+
+  ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
+    match  $submac!($i, $($args)*) {
       IResult::Error(e)      => IResult::Error(e),
       IResult::Incomplete(i) => IResult::Incomplete(i),
       IResult::Done(i,o)     => {
@@ -222,6 +301,20 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
+    match  $submac!($i, $($args)*) {
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Error(e)      => {
+        let $field = None;
+        chaining_parser!($i, $($rest)*)
+      },
+      IResult::Done(i,o)     => {
+        let $field = Some(o);
+        chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+
   // ending the chain
   ($i:expr, $e:ident, $assemble:expr) => (
     match $e($i) {
@@ -233,8 +326,30 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, $submac:ident!( $($args:tt)* ), $assemble:expr) => (
+    match $submac!($i, $($args)*) {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,_)     => {
+        IResult::Done(i, $assemble())
+      }
+    }
+  );
+
   ($i:expr, $e:ident ?, $assemble:expr) => (
     match $e($i) {
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Error(e)      => {
+        IResult::Done($i, $assemble())
+      },
+      IResult::Done(i,_)     => {
+        IResult::Done(i, $assemble())
+      }
+    }
+  );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ) ?, $assemble:expr) => (
+    match $submac!($i, $($args)*) {
       IResult::Incomplete(i) => IResult::Incomplete(i),
       IResult::Error(e)      => {
         IResult::Done($i, $assemble())
@@ -256,8 +371,33 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ), $assemble:expr) => (
+    match $submac!($i, $($args)*) {
+      IResult::Error(e)      => IResult::Error(e),
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Done(i,o)     => {
+        let $field = o;
+        IResult::Done(i, $assemble())
+      }
+    }
+  );
+
   ($i:expr, $field:ident : $e:ident ? , $assemble:expr) => (
     match $e($i) {
+      IResult::Incomplete(i) => IResult::Incomplete(i),
+      IResult::Error(e)      => {
+        let $field = None;
+        IResult::Done($i, $assemble())
+      },
+      IResult::Done(i,o)     => {
+        let $field = Some(o);
+        IResult::Done(i, $assemble())
+      }
+    }
+  );
+
+  ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => (
+    match $submac!($i, $($args)*)  {
       IResult::Incomplete(i) => IResult::Incomplete(i),
       IResult::Error(e)      => {
         let $field = None;
@@ -292,22 +432,37 @@ macro_rules! chaining_parser (
 macro_rules! alt (
   ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
     fn $name(i:$i) -> IResult<$i,$o>{
-      alt_parser!(i | $($rest)*)
+      alt_parser!(i, $($rest)*)
+    }
+  );
+  ($i:expr, $($rest:tt)*) => (
+    {
+      alt_parser!($i, $($rest)*)
     }
   );
 );
 
 #[macro_export]
 macro_rules! alt_parser (
-  ($i:ident | $e:ident | $($rest:tt)*) => (
+  ($i:expr, $e:ident | $($rest:tt)*) => (
     match $e($i) {
-      IResult::Error(_)      => alt_parser!($i | $($rest)*),
-      IResult::Incomplete(_) => alt_parser!($i | $($rest)*),
+      IResult::Error(_)      => alt_parser!($i, $($rest)*),
+      IResult::Incomplete(_) => alt_parser!($i, $($rest)*),
       IResult::Done(i,o)     => IResult::Done(i,o)
     }
   );
 
-  ($i:ident | $e:ident) => (
+  ($i:expr, $submac:ident!( $($args:tt)*) | $($rest:tt)*) => (
+    {
+      match $submac!($i, $($args)*) {
+        IResult::Error(_)      => alt_parser!($i, $($rest)*),
+        IResult::Incomplete(_) => alt_parser!($i, $($rest)*),
+        IResult::Done(i,o)     => IResult::Done(i,o)
+      }
+    }
+  );
+
+  ($i:expr, $e:ident) => (
     match $e($i) {
       IResult::Error(_)      => alt_parser!($i),
       IResult::Incomplete(_) => alt_parser!($i),
@@ -315,9 +470,17 @@ macro_rules! alt_parser (
     }
   );
 
-  ($i:ident) => (
+  ($i:expr, $submac:ident!( $($args:tt)*)) => (
+    match $submac!($i, $($args)*) {
+      IResult::Error(_)      => alt_parser!($i),
+      IResult::Incomplete(_) => alt_parser!($i),
+      IResult::Done(i,o)     => IResult::Done(i,o)
+    }
+  );
+
+  ($i:expr) => (
     IResult::Error(1)
-  )
+  );
 );
 
 /// returns the longest list of bytes that do not appear in the provided array
@@ -434,7 +597,16 @@ macro_rules! opt(
         IResult::Incomplete(i) => IResult::Incomplete(i)
       }
     }
-  )
+    );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        IResult::Done(i,o)     => IResult::Done(i, Some(o)),
+        IResult::Error(_)      => IResult::Done($i, None),
+        IResult::Incomplete(i) => IResult::Incomplete(i)
+      }
+    }
+  );
 );
 
 /// returns a result without consuming the input
@@ -457,7 +629,16 @@ macro_rules! peek(
         IResult::Incomplete(i) => IResult::Incomplete(i)
       }
     }
-  )
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        IResult::Done(i,o)     => IResult::Done($i, o),
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i)
+      }
+    }
+  );
 );
 
 /// Applies the parser 0 or more times and returns the list of results in a Vec
@@ -478,7 +659,7 @@ macro_rules! peek(
 // 0 or more
 #[macro_export]
 macro_rules! many0(
-  ($name:ident<$i:ty,$o:ty> $f:ident) => (
+  ($name:ident<$i:ty,$o:ty>, $f:ident) => (
     fn $name(input:$i) -> IResult<$i,Vec<$o>> {
       let mut begin = 0;
       let mut remaining = input.len();
@@ -499,7 +680,51 @@ macro_rules! many0(
         }
       }
     }
-  )
+  );
+  ($i:expr, $f:ident) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $i.len();
+      let mut res = Vec::new();
+      loop {
+        match $f(&$i[begin..]) {
+          IResult::Done(i,o) => {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= $i.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            return IResult::Done(&$i[begin..], res)
+          }
+        }
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $i.len();
+      let mut res = Vec::new();
+      loop {
+        match $submac!(&$i[begin..], $($args)*) {
+          IResult::Done(i,o) => {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= $i.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            return IResult::Done(&$i[begin..], res)
+          }
+        }
+      }
+    }
+  );
 );
 
 /// Applies the parser 0 or more times and returns the list of results in a Vec
@@ -544,7 +769,59 @@ macro_rules! many1(
         }
       }
     }
-  )
+  );
+  ($i:expr, $f:ident) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $i.len();
+      let mut res = Vec::new();
+      loop {
+        match $f(&$i[begin..]) {
+          IResult::Done(i,o) => {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= $i.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            if begin == 0 {
+              return IResult::Error(0)
+            } else {
+              return IResult::Done(&$i[begin..], res)
+            }
+          }
+        }
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $i.len();
+      let mut res = Vec::new();
+      loop {
+        match $submac!(&$i[begin..], $($args)*) {
+          IResult::Done(i,o) => {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= $i.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            if begin == 0 {
+              return IResult::Error(0)
+            } else {
+              return IResult::Done(&$i[begin..], res)
+            }
+          }
+        }
+      }
+    }
+  );
 );
 
 /// takes an assembling closure, and a parser, and generates a fold on the input 0 or more times
@@ -556,6 +833,11 @@ macro_rules! many1(
 #[macro_export]
 macro_rules! fold0(
   ($name:ident<$i:ty,$o:ty>, $assemble:expr, $f:ident) => (
+    fn $name(input:$i, z:$o) -> IResult<$i,$o> {
+      fold0_impl!(<$i, $o>, $assemble, $f, input, z);
+    }
+  );
+  ($name:ident<$i:ty,$o:ty>, $assemble:expr, $f:expr) => (
     fn $name(input:$i, z:$o) -> IResult<$i,$o> {
       fold0_impl!(<$i, $o>, $assemble, $f, input, z);
     }
@@ -587,6 +869,29 @@ macro_rules! fold0_impl(
       }
     }
   );
+  (<$i:ty,$o:ty>, $assemble:expr,  $submac:ident!( $($args:tt)*), $input:ident, $z:ident) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $input.len();
+      let mut res: $o = $z;
+      loop {
+        match $submac!(&input[begin..], $($args)*) {
+          IResult::Done(i,o) => {
+            //res.push(o);
+            res = $assemble(res, o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= $input.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            return IResult::Done(&$input[begin..], res)
+          }
+        }
+      }
+    }
+  );
 );
 
 /// takes an assembling closure, and a parser, and generates a fold on the input 1 or more times
@@ -602,6 +907,11 @@ macro_rules! fold1(
       fold1_impl!(<$i, $o>, $assemble, $f, input, z);
     }
   );
+  ($name:ident<$i:ty,$o:ty>, $assemble:expr, $f:expr) => (
+    fn $name(input:$i, z:$o) -> IResult<$i,$o> {
+      fold1_impl!(<$i, $o>, $assemble, $f, input, z);
+    }
+  );
 );
 
 #[macro_export]
@@ -613,6 +923,33 @@ macro_rules! fold1_impl(
       let mut res: $o = $z;
       loop {
         match $f(&$input[begin..]) {
+          IResult::Done(i,o) => {
+            //res.push(o);
+            res = $assemble(res, o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= $input.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            if begin == 0 {
+              return IResult::Error(0)
+            } else {
+              return IResult::Done(&$input[begin..], res)
+            }
+          }
+        }
+      }
+    }
+  );
+  (<$i:ty,$o:ty>, $assemble:expr,  $submac:ident!( $($args:tt)*), $input:ident, $z:ident) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $input.len();
+      let mut res: $o = $z;
+      loop {
+        match $submac!(&input[begin..], $($args)*) {
           IResult::Done(i,o) => {
             //res.push(o);
             res = $assemble(res, o);
@@ -945,19 +1282,15 @@ mod tests {
 
   #[test]
   fn chain2() {
-    tag!(x "abcd");
-    tag!(y "efgh");
-    //fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    //o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
     chain!(f<&[u8],B>,
-      x            ~
-      x?           ~
-      aa: ret_int1 ~
-      y            ~
-      bb: ret_int2 ~
-      y            ,
+      tag!("abcd")   ~
+      tag!("abcd")?  ~
+      aa: ret_int1   ~
+      tag!("efgh")   ~
+      bb: ret_int2   ~
+      tag!("efgh")   ,
       ||{B{a: aa, b: bb}});
 
     let r = f(b"abcdabcdefghefghX");
@@ -975,7 +1308,6 @@ mod tests {
 
   #[test]
   fn chain_opt() {
-    tag!(x "abcd");
     tag!(y "efgh");
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_y(i:&[u8]) -> IResult<&[u8], u8> {
@@ -983,7 +1315,7 @@ mod tests {
     };
 
     chain!(f<&[u8],C>,
-      x            ~
+      tag!("abcd") ~
       aa: ret_int1 ~
       bb: ret_y?   ,
       ||{C{a: aa, b: bb}});
@@ -1021,12 +1353,16 @@ mod tests {
     assert_eq!(alt1(a), Error(1));
     assert_eq!(alt2(a), Done(b"", a));
     assert_eq!(alt3(a), Done(a, b""));
+
+    named!(alt4<&[u8],&[u8]>, alt!(tag!("abcd") | tag!("efgh")));
+    let b = b"efgh";
+    assert_eq!(alt4(a), Done(b"", a));
+    assert_eq!(alt4(b), Done(b"", b));
   }
 
   #[test]
   fn opt() {
-    tag!(x "abcd");
-    opt!(o<&[u8],&[u8]> x);
+    named!(o<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
 
     let a = b"abcdef";
     let b = b"bcdefg";
@@ -1036,8 +1372,7 @@ mod tests {
 
   #[test]
   fn peek() {
-    tag!(x "abcd");
-    peek!(ptag<&[u8], &[u8]> x);
+    named!(ptag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
     let r1 = ptag(b"abcdefgh");
     assert_eq!(r1, Done(b"abcdefgh", b"abcd"));
@@ -1048,8 +1383,7 @@ mod tests {
 
   #[test]
   fn many0() {
-    tag!(x "abcd");
-    many0!(multi<&[u8],&[u8]> x);
+    named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
 
     let a = b"abcdef";
     let b = b"abcdabcdef";
@@ -1064,8 +1398,7 @@ mod tests {
 
   #[test]
   fn many1() {
-    tag!(x "abcd");
-    many1!(multi<&[u8],&[u8]> x);
+    named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
 
     let a = b"abcdef";
     let b = b"abcdabcdef";
