@@ -36,16 +36,16 @@ o!(comment          <&[u8], ()>          comment_body ~ line_ending ~ [ empty_re
 opt!(opt_comment    <&[u8], &[u8]>       comment_body);
 
 chain!(category     <&[u8], &str>,
-          lsb             ~
+          tag!("[")       ~
     name: category_name   ~
-          rsb             ~
+          tag!("]")       ~
           multispace?     ,
     ||{ name }
 );
 chain!(key_value    <&[u8],(&str,&str)>,
     key: parameter_parser ~
          space?           ~
-         equal            ~
+         tag!("=")        ~
          space?           ~
     val: value_parser     ~
          space?           ~

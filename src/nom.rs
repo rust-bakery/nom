@@ -46,7 +46,7 @@ pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(b"", input)
 }
 
-tag!(tag_ln "\n");
+named!(tag_ln<&[u8],&[u8]>, tag!("\n"));
 
 pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   tag_ln(input)

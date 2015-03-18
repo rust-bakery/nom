@@ -492,6 +492,26 @@ macro_rules! alt_parser (
 /// ```
 #[macro_export]
 macro_rules! is_not(
+  ($input:expr, $arr:expr) => (
+    {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $arr;
+      let bytes = as_bytes(&expected);
+
+      for idx in 0..$input.len() {
+        for &i in bytes.iter() {
+          if $input[idx] == i {
+            return IResult::Done(&$input[idx..], &$input[0..idx])
+          }
+        }
+      }
+      IResult::Done(b"", $input)
+    }
+  );
   ($name:ident $arr:expr) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
       #[inline(always)]
@@ -511,7 +531,7 @@ macro_rules! is_not(
       }
       IResult::Done(b"", input)
     }
-  )
+  );
 );
 
 /// returns the longest list of bytes that appear in the provided array
@@ -526,6 +546,31 @@ macro_rules! is_not(
 /// ```
 #[macro_export]
 macro_rules! is_a(
+  ($input:expr, $arr:expr) => (
+    {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $arr;
+      let bytes = as_bytes(&expected);
+
+      for idx in 0..$input.len() {
+        let mut res = false;
+        for &i in bytes.iter() {
+          if $input[idx] == i {
+            res = true;
+            break;
+          }
+        }
+        if !res {
+          return IResult::Done(&$input[idx..], &$input[0..idx])
+        }
+      }
+      IResult::Done(b"", $input)
+    }
+  );
   ($name:ident $arr:expr) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
       #[inline(always)]
@@ -550,7 +595,7 @@ macro_rules! is_a(
       }
       IResult::Done(b"", input)
     }
-  )
+  );
 );
 
 /// returns the longest list of bytes until the provided parser fails
@@ -562,6 +607,16 @@ macro_rules! is_a(
 /// ```
 #[macro_export]
 macro_rules! filter(
+  ($input:expr, $arr:expr) => (
+    {
+      for idx in 0..$input.len() {
+        if !$f($input[idx]) {
+          return IResult::Done(&$input[idx..], &$input[0..idx])
+        }
+      }
+      IResult::Done(b"", $input)
+    }
+  );
   ($name:ident $f:ident) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
       for idx in 0..input.len() {
@@ -571,7 +626,27 @@ macro_rules! filter(
       }
       IResult::Done(b"", input)
     }
-  )
+  );
+  ($name:ident $submac:ident!( $($args:tt)* )) => (
+    fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
+      for idx in 0..input.len() {
+        if !$submac!(input[idx], $($args)*) {
+          return IResult::Done(&input[idx..], &input[0..idx])
+        }
+      }
+      IResult::Done(b"", input)
+    }
+  );
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      for idx in 0..$input.len() {
+        if !$submac!($input[idx], $($args)*) {
+          return IResult::Done(&$input[idx..], &$input[0..idx])
+        }
+      }
+      IResult::Done(b"", $input)
+    }
+  );
 );
 
 /// make the underlying parser optional
@@ -597,7 +672,25 @@ macro_rules! opt(
         IResult::Incomplete(i) => IResult::Incomplete(i)
       }
     }
-    );
+  );
+  ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
+    fn $name(input:$i) -> IResult<$i, Option<$o>> {
+      match $submac!(input, $($args)*) {
+        IResult::Done(i,o)     => IResult::Done(i, Some(o)),
+        IResult::Error(_)      => IResult::Done(input, None),
+        IResult::Incomplete(i) => IResult::Incomplete(i)
+      }
+    }
+  );
+  ($i:expr, $f:ident) => (
+    {
+      match $f($i) {
+        IResult::Done(i,o)     => IResult::Done(i, Some(o)),
+        IResult::Error(_)      => IResult::Done($i, None),
+        IResult::Incomplete(i) => IResult::Incomplete(i)
+      }
+    }
+  );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -625,6 +718,24 @@ macro_rules! peek(
     fn $name(input:$i) -> IResult<$i, $o> {
       match $f(input) {
         IResult::Done(i,o)     => IResult::Done(input, o),
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i)
+      }
+    }
+  );
+  ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
+    fn $name(input:$i) -> IResult<$i, $o> {
+      match $submac!(input, $($args)*) {
+        IResult::Done(i,o)     => IResult::Done(input, o),
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i)
+      }
+    }
+  );
+  ($i:expr, $f:ident) => (
+    {
+      match $f($i) {
+        IResult::Done(i,o)     => IResult::Done($i, o),
         IResult::Error(a)      => IResult::Error(a),
         IResult::Incomplete(i) => IResult::Incomplete(i)
       }
@@ -666,6 +777,28 @@ macro_rules! many0(
       let mut res: Vec<$o> = Vec::new();
       loop {
         match $f(&input[begin..]) {
+          IResult::Done(i,o) => {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= input.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            return IResult::Done(&input[begin..], res)
+          }
+        }
+      }
+    }
+  );
+  ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    fn $name(input:$i) -> IResult<$i,Vec<$o>> {
+      let mut begin = 0;
+      let mut remaining = input.len();
+      let mut res: Vec<$o> = Vec::new();
+      loop {
+        match $submac!(&input[begin..], $($args)*) {
           IResult::Done(i,o) => {
             res.push(o);
             begin += remaining - i.len();
@@ -751,6 +884,32 @@ macro_rules! many1(
       let mut res: Vec<$o> = Vec::new();
       loop {
         match $f(&input[begin..]) {
+          IResult::Done(i,o) => {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            if begin >= input.len() {
+              return IResult::Done(i, res)
+            }
+          },
+          _                  => {
+            if begin == 0 {
+              return IResult::Error(0)
+            } else {
+            return IResult::Done(&input[begin..], res)
+            }
+          }
+        }
+      }
+    }
+  );
+  ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
+    fn $name(input:$i) -> IResult<$i,Vec<$o>> {
+      let mut begin = 0;
+      let mut remaining = input.len();
+      let mut res: Vec<$o> = Vec::new();
+      loop {
+        match $submac!(&input[begin..], $($args)*) {
           IResult::Done(i,o) => {
             res.push(o);
             begin += remaining - i.len();
@@ -983,6 +1142,15 @@ macro_rules! fold1_impl(
 /// ```
 #[macro_export]
 macro_rules! take(
+  ($i:expr, $count:expr) => (
+    {
+      if $i.len() < $count {
+        Incomplete(Needed::Size($count))
+      } else {
+        Done(&$i[$count..],&$i[0..$count])
+      }
+    }
+  );
   ($name:ident $count:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       if i.len() < $count {
@@ -991,33 +1159,37 @@ macro_rules! take(
         Done(&i[$count..],&i[0..$count])
       }
     }
-  )
+  );
 );
 
-/// generates a parser consuming the specified number of bytes
-///
-/// ```ignore
-///  take!(take5 5);
-///
-///  let a = b"abcdefgh";
-///
-///  assert_eq!(take5(a), Done(b"fgh", b"abcde"));
-/// ```
-///  take_until!(x "efgh");
-///  let r = x(b"abcdabcdefghijkl");
-///  assert_eq!(r, Done(b"ijkl", b"abcdabcd"));
-///
-///  println!("Done 1\n");
-///
-///  let r2 = x(b"abcdabcdefgh");
-///  assert_eq!(r2, Done(b"", b"abcdabcd"));
-///
-///  println!("Done 2\n");
-///  let r3 = x(b"abcefg");
-///  assert_eq!(r3, Incomplete(Needed::Size(7)));
-/// ```
+/// generates a parser consuming bytes until the specified byte sequence is found
 #[macro_export]
 macro_rules! take_until(
+  ($i:expr, $inp:expr) => (
+    {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
+      for idx in 0..i.len() {
+        if idx + bytes.len() > $i.len() {
+          return Incomplete(Needed::Size((idx + bytes.len()) as u32))
+        }
+        if &$i[idx..idx + bytes.len()] == bytes {
+          if idx + bytes.len() > $i.len() {
+            return Done(b"", &$i[0..idx])
+          } else {
+            return Done(&$i[(idx + bytes.len())..], &$i[0..idx])
+          }
+        }
+      }
+      return Error(0)
+    }
+  );
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       #[inline(always)]
@@ -1042,11 +1214,32 @@ macro_rules! take_until(
       }
       return Error(0)
     }
-  )
+  );
 );
 
 #[macro_export]
 macro_rules! take_until_and_leave(
+  ($i:expr, $inp:expr) => (
+    {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
+      for idx in 0..$i.len() {
+        if idx + bytes.len() > $i.len() {
+          return Incomplete(Needed::Size((idx + bytes.len()) as u32))
+        }
+        if &$i[idx..idx+bytes.len()] == bytes {
+          return Done(&$i[idx..], &$i[0..idx])
+        }
+      }
+      return Error(0)
+    }
+  );
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       #[inline(always)]
@@ -1067,11 +1260,38 @@ macro_rules! take_until_and_leave(
       }
       return Error(0)
     }
-  )
+  );
 );
 
 #[macro_export]
 macro_rules! take_until_either(
+  ($i:expr, $inp:expr) => (
+    {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
+      for idx in 0..$i.len() {
+        if idx + 1 > $i.len() {
+          return Incomplete(Needed::Size(1 + idx as u32))
+        }
+        for &t in bytes.iter() {
+          if $i[idx] == t {
+            if idx + 1 > $i.len() {
+              return Done(b"", &$i[0..idx])
+            } else {
+              return Done(&$i[(idx+1)..], &$i[0..idx])
+            }
+          }
+        }
+      }
+      return Error(0)
+    }
+  );
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       #[inline(always)]
@@ -1098,11 +1318,34 @@ macro_rules! take_until_either(
       }
       return Error(0)
     }
-  )
+  );
 );
 
 #[macro_export]
 macro_rules! take_until_either_and_leave(
+  ($i:expr, $inp:expr) => (
+    {
+      #[inline(always)]
+      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let expected = $inp;
+      let bytes = as_bytes(&expected);
+
+      for idx in 0..$i.len() {
+        if idx + 1 > $i.len() {
+          return Incomplete(Needed::Size(1 + idx as u32))
+        }
+        for &t in bytes.iter() {
+          if $i[idx] == t {
+            return Done(&$i[idx..], &$i[0..idx])
+          }
+        }
+      }
+      return Error(0)
+    }
+  );
   ($name:ident $inp:expr) => (
     fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
       #[inline(always)]
@@ -1125,19 +1368,10 @@ macro_rules! take_until_either_and_leave(
       }
       return Error(0)
     }
-  )
+  );
 );
 
-/// returns a result without consuming the input
-///
-/// the embedded parser may return Incomplete
-///
-/// ```ignore
-///  tag!(x "abcd");
-///  peek!(ptag<&[u8], &[u8]> x);
-///  let r = ptag(b"abcdefgh"));
-///  assert_eq!(r, Done(b"abcdefgh", b"abcd"));
-/// ```
+/// returns
 #[macro_export]
 macro_rules! length_value(
   ($name:ident<$i:ty,$o:ty> $f:ident $g:ident) => (
