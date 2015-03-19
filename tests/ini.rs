@@ -42,6 +42,7 @@ chain!(category     <&[u8], &str>,
           multispace?     ,
     ||{ name }
 );
+
 chain!(key_value    <&[u8],(&str,&str)>,
     key: parameter_parser ~
          space?           ~
@@ -54,32 +55,45 @@ chain!(key_value    <&[u8],(&str,&str)>,
     ||{(key, val)}
 );
 
-fn keys_and_values<'a>(input: &'a[u8], mut z: HashMap<&'a str, &'a str>) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
-  fold0_impl!(<&[u8], HashMap<&str, &str> >, | mut h:HashMap<&'a str, &'a str>, (k, v)| {
-    h.insert(k,v);
-    h
-  }, key_value, input, z);
-}
 
-fn keys_and_values_wrapper<'a>(input:&'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, &'a str> > {
-  let h: HashMap<&str, &str> = HashMap::new();
-  let res = keys_and_values(input, h);
-  //println!("{:?}", res);
-  res
+named!(keys_and_values_aggregator<&[u8], Vec<(&str,&str)> >, many0!(key_value));
+
+fn keys_and_values(input:&[u8]) -> IResult<&[u8], HashMap<&str, &str> > {
+  let mut h: HashMap<&str, &str> = HashMap::new();
+
+  match keys_and_values_aggregator(input) {
+    IResult::Done(i,tuple_vec) => {
+      for &(k,v) in tuple_vec.iter() {
+        h.insert(k, v);
+      }
+      IResult::Done(i, h)
+    },
+    IResult::Incomplete(a)     => IResult::Incomplete(a),
+    IResult::Error(a)          => IResult::Error(a)
+  }
 }
 
 chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
-    category: category            ~
-    keys: keys_and_values_wrapper ,
+    category: category    ~
+    keys: keys_and_values ,
     move ||{(category, keys)}
 );
 
-fn categories<'a>(input: &'a[u8]) -> IResult<&'a[u8], HashMap<&'a str, HashMap<&'a str, &'a str> > > {
-  let z: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
-  fold0_impl!(<&[u8], HashMap<&str, HashMap<&str, &str> > >, |mut h:HashMap<&'a str, HashMap<&'a str, &'a str> >, (k, v)| {
-    h.insert(k,v);
-    h
-  }, category_and_keys, input, z);
+named!(categories_aggregator<&[u8], Vec<(&str, HashMap<&str,&str>)> >, many0!(category_and_keys));
+
+fn categories(input: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str> > > {
+  let mut h: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
+
+  match categories_aggregator(input) {
+    IResult::Done(i,tuple_vec) => {
+      for &(k,ref v) in tuple_vec.iter() {
+        h.insert(k, v.clone());
+      }
+      IResult::Done(i, h)
+    },
+    IResult::Incomplete(a)     => IResult::Incomplete(a),
+    IResult::Error(a)          => IResult::Error(a)
+  }
 }
 
 #[test]
@@ -224,8 +238,7 @@ key = value2
 
   let ini_without_key_value = b"[category]";
 
-  let h: HashMap<&str, &str> = HashMap::new();
-  let res = keys_and_values(ini_file, h);
+  let res = keys_and_values(ini_file);
   println!("{:?}", res);
   match res {
     IResult::Done(i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
