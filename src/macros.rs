@@ -238,7 +238,7 @@ macro_rules! chaining_parser (
   ($i:expr, $e:ident ? ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(e)      => {
+      IResult::Error(_)      => {
         chaining_parser!($i, $($rest)*)
       },
       IResult::Done(i,_)     => {
@@ -250,7 +250,7 @@ macro_rules! chaining_parser (
   ($i:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
     match  $submac!($i, $($args)*) {
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(e)      => {
+      IResult::Error(_)      => {
         chaining_parser!($i, $($rest)*)
       },
       IResult::Done(i,_)     => {
@@ -284,7 +284,7 @@ macro_rules! chaining_parser (
   ($i:expr, $field:ident : $e:ident ? ~ $($rest:tt)*) => (
     match $e($i) {
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(e)      => {
+      IResult::Error(_)      => {
         let $field = None;
         chaining_parser!($i, $($rest)*)
       },
@@ -298,7 +298,7 @@ macro_rules! chaining_parser (
   ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
     match  $submac!($i, $($args)*) {
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(e)      => {
+      IResult::Error(_)      => {
         let $field = None;
         chaining_parser!($i, $($rest)*)
       },
@@ -333,7 +333,7 @@ macro_rules! chaining_parser (
   ($i:expr, $e:ident ?, $assemble:expr) => (
     match $e($i) {
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(e)      => {
+      IResult::Error(_)      => {
         IResult::Done($i, $assemble())
       },
       IResult::Done(i,_)     => {
@@ -345,7 +345,7 @@ macro_rules! chaining_parser (
   ($i:expr, $submac:ident!( $($args:tt)* ) ?, $assemble:expr) => (
     match $submac!($i, $($args)*) {
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(e)      => {
+      IResult::Error(_)      => {
         IResult::Done($i, $assemble())
       },
       IResult::Done(i,_)     => {
@@ -379,7 +379,7 @@ macro_rules! chaining_parser (
   ($i:expr, $field:ident : $e:ident ? , $assemble:expr) => (
     match $e($i) {
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(e)      => {
+      IResult::Error(_)      => {
         let $field = None;
         IResult::Done($i, $assemble())
       },
@@ -393,7 +393,7 @@ macro_rules! chaining_parser (
   ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => (
     match $submac!($i, $($args)*)  {
       IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(e)      => {
+      IResult::Error(_)      => {
         let $field = None;
         IResult::Done($i, $assemble())
       },
