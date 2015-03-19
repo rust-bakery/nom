@@ -82,92 +82,6 @@ macro_rules! tag (
   );
 );
 
-/// chains parsers and returns the result of only one of them
-///
-/// ```ignore
-/// tag!(x "abcd");
-/// tag!(y "efgh");
-///
-/// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-///
-///  // parse the x tag two times, return an int, parse the y tag
-///  o!(z<&[u8], u8>  x ~ x ~ [ ret_int ] ~ y);
-///
-/// let r = Done((), b"abcdabcdefgh").flat_map(z);
-/// assert_eq!(r, Done(b"", 1));
-/// ```
-#[macro_export]
-macro_rules! o(
-  ($name:ident<$i:ty,$o:ty> $f1:ident ~ $($rest:tt)*) => (
-    #[allow(unused_variables)]
-    fn $name(input:$i) -> IResult<$i, $o>{
-      match $f1(input) {
-        IResult::Error(e)      => IResult::Error(e),
-        IResult::Incomplete(i) => IResult::Incomplete(i),//IResult::Incomplete(i),
-        IResult::Done(i,o)     => {
-          o_parser!(i ~ o ~ $($rest)*)
-        }
-      }
-    }
-  );
-);
-
-#[macro_export]
-macro_rules! o_parser(
-  ($i:ident ~ $o:ident ~ [ $e:ident ] ~ $s:ident) => (
-    match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),//IResult::Incomplete(i),
-      IResult::Done(i,o)     => {
-        match $s(i) {
-          IResult::Error(e)      => IResult::Error(e),
-          IResult::Incomplete(i2) => IResult::Incomplete(i2),//IResult::Incomplete(i),
-          IResult::Done(i2,o2)     => {
-            IResult::Done(i2, o)
-          }
-        }
-      }
-    }
-  );
-
-  ($i:ident ~ $o:ident ~ [ $e:ident ] ~ $($rest:tt)*) => (
-    match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),//IResult::Incomplete(i),
-      IResult::Done(i,o)     => {
-        o_parser!(i ~ o ~ $($rest)*)
-      }
-    }
-  );
-
-  ($i:ident ~ $o:ident ~ [ $e:ident ]) => (
-    $e($i)
-  );
-
-  ($i:ident ~ $o:ident ~ $e:ident ~ $($rest:tt)*) => (
-    match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),//IResult::Incomplete(i),
-      IResult::Done(i,_)     => {
-        o_parser!(i ~ $o ~ $($rest)*)
-      }
-    }
-  );
-
-  ($i:ident ~ $o:ident ~ $e:ident) => (
-    match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),//IResult::Incomplete(i),
-      IResult::Done(i,_)     => {
-        IResult::Done(i, $o)
-      }
-    }
-  );
-
-  ($i:ident ~ $o:ident) => (Done($i,$o));
-
-);
-
 /// chains parsers and assemble the results through a closure
 ///
 /// ```ignore
@@ -1478,36 +1392,6 @@ mod tests {
   struct B {
     a: u8,
     b: u8
-  }
-
-  #[test]
-  fn chain_and_ignore() {
-    tag!(x "abcd");
-    tag!(y "efgh");
-    fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    //o!(z<&[u8], int>  x S x S retInt Z y);
-    o!(z<&[u8], u8>  x ~ x ~ [ ret_int ] ~ y);
-
-    let r = z(b"abcdabcdefgh");
-    assert_eq!(r, Done(b"", 1));
-  }
-
-  #[test]
-  fn chain() {
-    tag!(x "abcd");
-    fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    named!(f<&[u8],B>,
-      chain!(
-        aa: ret_int1 ~
-        bb: ret_int2 ,
-        ||{B{a: aa, b: bb}}
-      )
-    );
-
-    let r = f(b"abcde");
-    assert_eq!(r, Done(b"e", B{a: 1, b: 2}));
   }
 
   #[test]
