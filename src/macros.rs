@@ -176,14 +176,59 @@ macro_rules! map_res(
 
 #[macro_export]
 macro_rules! map_opt(
-  ($i:expr, $f:ident, $g:ident) => (
-    match $f($i) {
-      Error(ref e) => Error(e),
-      Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-      Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-      Done(i, o) => match $g(o) {
-        Some(output) => Done(i, output),
-        None         => Error(0)
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o) => match $submac2!(o, $($args2)*) {
+          Some(output) => Done(i, output),
+          None         => Error(0)
+        }
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    {
+      let fun2 = $g;
+      match $submac!($i, $($args)*) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o) => match fun2(o) {
+          Some(output) => Done(i, output),
+          None         => Error(0)
+        }
+      }
+    }
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    {
+      let fun  = $f;
+      let fun2 = $g;
+      match fun($i) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o) => match fun2(o) {
+          Some(output) => Done(i, output),
+          None         => Error(0)
+        }
+      }
+    }
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let fun  = $f;
+      match fun($i) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o) => match $submac!(o, $($args)*) {
+          Some(output) => Done(i, output),
+          None         => Error(0)
+        }
       }
     }
   );
