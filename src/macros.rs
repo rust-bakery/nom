@@ -796,15 +796,13 @@ macro_rules! many0(
             res.push(o);
             begin += remaining - i.len();
             remaining = i.len();
-            if begin >= $i.len() {
-              return IResult::Done(i, res)
-            }
           },
           _                  => {
-            return IResult::Done(&$i[begin..], res)
+            break;
           }
         }
       }
+      IResult::Done(&$i[begin..], res)
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -818,15 +816,13 @@ macro_rules! many0(
             res.push(o);
             begin += remaining - i.len();
             remaining = i.len();
-            if begin >= $i.len() {
-              return IResult::Done(i, res)
-            }
           },
           _                  => {
-            return IResult::Done(&$i[begin..], res)
+            break;
           }
         }
       }
+      IResult::Done(&$i[begin..], res)
     }
   );
 );
@@ -864,13 +860,14 @@ macro_rules! many1(
             }
           },
           _                  => {
-            if begin == 0 {
-              return IResult::Error(0)
-            } else {
-              return IResult::Done(&$i[begin..], res)
-            }
+            break;
           }
         }
+      }
+      if begin == 0 {
+        IResult::Error(0)
+      } else {
+        IResult::Done(&$i[begin..], res)
       }
     }
   );
@@ -885,18 +882,16 @@ macro_rules! many1(
             res.push(o);
             begin += remaining - i.len();
             remaining = i.len();
-            if begin >= $i.len() {
-              return IResult::Done(i, res)
-            }
           },
           _                  => {
-            if begin == 0 {
-              return IResult::Error(0)
-            } else {
-              return IResult::Done(&$i[begin..], res)
-            }
+            break;
           }
         }
+      }
+      if begin == 0 {
+        IResult::Error(0)
+      } else {
+        IResult::Done(&$i[begin..], res)
       }
     }
   );
