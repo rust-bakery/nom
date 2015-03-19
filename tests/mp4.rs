@@ -100,15 +100,15 @@ named!(mvhd32 <&[u8], MvhdBox>,
   speed:         be_f32 ~
   volume:        be_u16 ~ // actually a 2 bytes decimal
               ten_bytes ~
-  scaleA:        be_f32 ~
-  rotateB:       be_f32 ~
-  angleU:        be_f32 ~
-  rotateC:       be_f32 ~
-  scaleD:        be_f32 ~
-  angleV:        be_f32 ~
-  positionX:     be_f32 ~
-  positionY:     be_f32 ~
-  scaleW:        be_f32 ~
+  scale_a:       be_f32 ~
+  rotate_b:      be_f32 ~
+  angle_u:       be_f32 ~
+  rotate_c:      be_f32 ~
+  scale_d:       be_f32 ~
+  angle_v:       be_f32 ~
+  position_x:    be_f32 ~
+  position_y:    be_f32 ~
+  scale_w:       be_f32 ~
   preview:       be_u64 ~
   poster:        be_u32 ~
   selection:     be_u64 ~
@@ -123,15 +123,15 @@ named!(mvhd32 <&[u8], MvhdBox>,
       duration:      duration,
       speed:         speed,
       volume:        volume,
-      scaleA:        scaleA,
-      rotateB:       rotateB,
-      angleU:        angleU,
-      rotateC:       rotateC,
-      scaleD:        scaleD,
-      angleV:        angleV,
-      positionX:     positionX,
-      positionY:     positionY,
-      scaleW:        scaleW,
+      scaleA:        scale_a,
+      rotateB:       rotate_b,
+      angleU:        angle_u,
+      rotateC:       rotate_c,
+      scaleD:        scale_d,
+      angleV:        angle_v,
+      positionX:     position_x,
+      positionY:     position_y,
+      scaleW:        scale_w,
       preview:       preview,
       poster:        poster,
       selection:     selection,
@@ -153,15 +153,15 @@ named!(mvhd64 <&[u8], MvhdBox>,
   speed:         be_f32 ~
   volume:        be_u16 ~ // actually a 2 bytes decimal
               ten_bytes ~
-  scaleA:        be_f32 ~
-  rotateB:       be_f32 ~
-  angleU:        be_f32 ~
-  rotateC:       be_f32 ~
-  scaleD:        be_f32 ~
-  angleV:        be_f32 ~
-  positionX:     be_f32 ~
-  positionY:     be_f32 ~
-  scaleW:        be_f32 ~
+  scale_a:       be_f32 ~
+  rotate_b:      be_f32 ~
+  angle_u:       be_f32 ~
+  rotate_c:      be_f32 ~
+  scale_d:       be_f32 ~
+  angle_v:       be_f32 ~
+  position_x:    be_f32 ~
+  position_y:    be_f32 ~
+  scale_w:       be_f32 ~
   preview:       be_u64 ~
   poster:        be_u32 ~
   selection:     be_u64 ~
@@ -176,15 +176,15 @@ named!(mvhd64 <&[u8], MvhdBox>,
       duration:      duration,
       speed:         speed,
       volume:        volume,
-      scaleA:        scaleA,
-      rotateB:       rotateB,
-      angleU:        angleU,
-      rotateC:       rotateC,
-      scaleD:        scaleD,
-      angleV:        angleV,
-      positionX:     positionX,
-      positionY:     positionY,
-      scaleW:        scaleW,
+      scaleA:        scale_a,
+      rotateB:       rotate_b,
+      angleU:        angle_u,
+      rotateC:       rotate_c,
+      scaleD:        scale_d,
+      angleV:        angle_v,
+      positionX:     position_x,
+      positionY:     position_y,
+      scaleW:        scale_w,
       preview:       preview,
       poster:        poster,
       selection:     selection,
