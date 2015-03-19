@@ -64,27 +64,6 @@ macro_rules! tag (
       }
     }
   );
-  ($name:ident $inp:expr) => (
-    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
-
-      if bytes.len() > i.len() {
-        return Incomplete(Needed::Size(bytes.len() as u32));
-      }
-
-      if &i[0..bytes.len()] == bytes {
-        Done(&i[bytes.len()..], &i[0..bytes.len()])
-      } else {
-        Error(0)
-      }
-    }
-  );
 );
 
 #[macro_export]
@@ -803,53 +782,9 @@ macro_rules! peek(
 ///  assert_eq!(multi(a), Done(b"ef", res));
 ///  assert_eq!(multi(b), Done(b"azerty", Vec::new()));
 /// ```
-// 0 or more
+/// 0 or more
 #[macro_export]
 macro_rules! many0(
-  ($name:ident<$i:ty,$o:ty>, $f:ident) => (
-    fn $name(input:$i) -> IResult<$i,Vec<$o>> {
-      let mut begin = 0;
-      let mut remaining = input.len();
-      let mut res: Vec<$o> = Vec::new();
-      loop {
-        match $f(&input[begin..]) {
-          IResult::Done(i,o) => {
-            res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
-            if begin >= input.len() {
-              return IResult::Done(i, res)
-            }
-          },
-          _                  => {
-            return IResult::Done(&input[begin..], res)
-          }
-        }
-      }
-    }
-  );
-  ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-    fn $name(input:$i) -> IResult<$i,Vec<$o>> {
-      let mut begin = 0;
-      let mut remaining = input.len();
-      let mut res: Vec<$o> = Vec::new();
-      loop {
-        match $submac!(&input[begin..], $($args)*) {
-          IResult::Done(i,o) => {
-            res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
-            if begin >= input.len() {
-              return IResult::Done(i, res)
-            }
-          },
-          _                  => {
-            return IResult::Done(&input[begin..], res)
-          }
-        }
-      }
-    }
-  );
   ($i:expr, $f:ident) => (
     {
       let mut begin = 0;
@@ -913,58 +848,6 @@ macro_rules! many0(
 /// ```
 #[macro_export]
 macro_rules! many1(
-  ($name:ident<$i:ty,$o:ty> $f:ident) => (
-    fn $name(input:$i) -> IResult<$i,Vec<$o>> {
-      let mut begin = 0;
-      let mut remaining = input.len();
-      let mut res: Vec<$o> = Vec::new();
-      loop {
-        match $f(&input[begin..]) {
-          IResult::Done(i,o) => {
-            res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
-            if begin >= input.len() {
-              return IResult::Done(i, res)
-            }
-          },
-          _                  => {
-            if begin == 0 {
-              return IResult::Error(0)
-            } else {
-            return IResult::Done(&input[begin..], res)
-            }
-          }
-        }
-      }
-    }
-  );
-  ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
-    fn $name(input:$i) -> IResult<$i,Vec<$o>> {
-      let mut begin = 0;
-      let mut remaining = input.len();
-      let mut res: Vec<$o> = Vec::new();
-      loop {
-        match $submac!(&input[begin..], $($args)*) {
-          IResult::Done(i,o) => {
-            res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
-            if begin >= input.len() {
-              return IResult::Done(i, res)
-            }
-          },
-          _                  => {
-            if begin == 0 {
-              return IResult::Error(0)
-            } else {
-            return IResult::Done(&input[begin..], res)
-            }
-          }
-        }
-      }
-    }
-  );
   ($i:expr, $f:ident) => (
     {
       let mut begin = 0;

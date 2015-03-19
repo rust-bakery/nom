@@ -19,10 +19,9 @@ struct TestConsumer {
   counter: usize,
 }
 
-named!(om_parser,                  tag!("om"));
-named!(nom_parser,                 tag!("nom"));
-many1!(nomnom_parser<&[u8],&[u8]>  nom_parser);
-named!(end_parser,                 tag!("kthxbye"));
+named!(om_parser,                        tag!("om"));
+named!(nomnom_parser<&[u8],Vec<&[u8]> >, many1!(tag!("nom")));
+named!(end_parser,                       tag!("kthxbye"));
 
 impl Consumer for TestConsumer {
   fn consume(&mut self, input: &[u8]) -> ConsumerState {
