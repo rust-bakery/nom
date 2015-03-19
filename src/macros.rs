@@ -87,6 +87,48 @@ macro_rules! tag (
   );
 );
 
+#[macro_export]
+macro_rules! map(
+  ($i:expr, $f:ident, $g:ident) => (
+    match $f($i) {
+      Error(ref e) => Error(*e),
+      Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+      Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+      Done(i, o) => Done(i,$g(o))
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! map_res(
+  ($i:expr, $f:ident, $g:ident) => (
+    match $f($i) {
+      Error(e) => Error(e),
+      Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+      Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+      Done(i, o) => match $g(o) {
+        Ok(output) => Done(i, output),
+        Err(_)     => Error(0)
+      }
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! map_opt(
+  ($i:expr, $f:ident, $g:ident) => (
+    match $f($i) {
+      Error(ref e) => Error(e),
+      Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+      Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+      Done(i, o) => match $g(o) {
+        Some(output) => Done(i, output),
+        None         => Error(0)
+      }
+    }
+  );
+);
+
 /// chains parsers and assemble the results through a closure
 ///
 /// ```ignore

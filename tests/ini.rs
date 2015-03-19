@@ -5,26 +5,22 @@ use nom::{IResult,Needed,FlatMapOpt,not_line_ending, space, alphanumeric, multis
 use nom::IResult::*;
 
 use std::str;
+use std::str::from_utf8;
 use std::collections::HashMap;
 
 take_until_and_leave!(category_bytes "]");
-fn category_name(input: &[u8]) -> IResult<&[u8], &str> {
-  category_bytes(input).map_res(str::from_utf8)
-}
 take_until_either_and_leave!(value_bytes "\n;");
 
-fn value_parser(input:&[u8]) -> IResult<&[u8], &str> {
-  value_bytes(input).map_res(str::from_utf8)
-}
+named!(value_parser<&[u8],&str>, map_res!(value_bytes, from_utf8));
 
-fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
-  alphanumeric(input).map_res(str::from_utf8)
-}
+named!(parameter_parser<&[u8],&str>, map_res!(alphanumeric, from_utf8));
 
 named!(category     <&[u8], &str>,
   chain!(
           tag!("[")       ~
-    name: category_name   ~
+    name: map_res!(
+      category_bytes,
+      from_utf8)          ~
           tag!("]")       ~
           multispace?     ,
     ||{ name }
