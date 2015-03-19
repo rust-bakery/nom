@@ -11,10 +11,6 @@ use std::collections::HashMap;
 take_until_and_leave!(category_bytes "]");
 take_until_either_and_leave!(value_bytes "\n;");
 
-named!(value_parser<&[u8],&str>, map_res!(value_bytes, from_utf8));
-
-named!(parameter_parser<&[u8],&str>, map_res!(alphanumeric, from_utf8));
-
 named!(category     <&[u8], &str>,
   chain!(
           tag!("[")       ~
@@ -29,18 +25,18 @@ named!(category     <&[u8], &str>,
 
 named!(key_value    <&[u8],(&str,&str)>,
   chain!(
-    key: parameter_parser     ~
-         space?               ~
-         tag!("=")            ~
-         space?               ~
-    val: value_parser         ~
-         space?               ~
+    key: map_res!(alphanumeric, from_utf8) ~
+         space?                            ~
+         tag!("=")                         ~
+         space?                            ~
+    val: map_res!(value_bytes, from_utf8)  ~
+         space?                            ~
          chain!(
            tag!(";")        ~
            not_line_ending  ,
            ||{}
-         )?                   ~
-         multispace?          ,
+         ) ?                               ~
+         multispace?                       ,
     ||{(key, val)}
   )
 );
@@ -106,37 +102,6 @@ key = value2";
   }
 
   assert_eq!(res, Done(ini_without_category, "category"));
-}
-
-#[test]
-fn parse_value_test() {
-  let ini_file1 = b"value
-key =";
-  let end = b"
-key =";
-
-  let res = value_parser(ini_file1);
-  println!("{:?}", res);
-  match res {
-    IResult::Done(i, o) => println!("i: {:?} | o: {:?})", str::from_utf8(i), o),
-    _ => println!("error")
-  }
-
-  assert_eq!(res, Done(end,  "value"));
-
-  let ini_file2 = b"value;blah
-key =";
-  let end2 = b";blah
-key =";
-
-  let res2 = value_parser(ini_file2);
-  println!("{:?}", res2);
-  match res2 {
-    IResult::Done(i, o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error")
-  }
-
-  assert_eq!(res2, Done(end2,  "value"));
 }
 
 #[test]
