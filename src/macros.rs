@@ -33,6 +33,10 @@ macro_rules! named (
     );
 );
 
+macro_rules! call (
+  ($i:expr, $fun:ident) => ( $fun( $i ) );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => ( $submac!($i, $($args)*) );
+);
 
 /// declares a byte array as a suite to recognize
 ///
