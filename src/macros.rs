@@ -33,9 +33,9 @@ macro_rules! named (
     );
 );
 
+#[macro_export]
 macro_rules! call (
-  ($i:expr, $fun:ident) => ( $fun( $i ) );
-  ($i:expr, $submac:ident!( $($args:tt)* )) => ( $submac!($i, $($args)*) );
+  ($i:expr, $fun:expr) => ( $fun( $i ) );
 );
 
 /// declares a byte array as a suite to recognize
@@ -83,38 +83,13 @@ macro_rules! map(
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    {
-      let fun2 = $g;
-      match $submac!($i, $($args)*) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => Done(i, fun2(o))
-      }
-    }
+    map!($i, $submac!($($args)*), call!($g));
   );
   ($i:expr, $f:expr, $g:expr) => (
-    {
-      let fun  = $f;
-      let fun2 = $g;
-      match fun($i) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => Done(i,fun2(o))
-      }
-    }
+    map!($i, call!($f), call!($g));
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      let fun  = $f;
-      match fun($i) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => Done(i, $submac!(o, $($args)*))
-      }
-    }
+    map!($i, call!($f), $submac!($($args)*));
   );
 );
 
@@ -134,47 +109,13 @@ macro_rules! map_res(
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    {
-      let fun2 = $g;
-      match $submac!($i, $($args)*) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => match fun2(o) {
-          Ok(output) => Done(i, output),
-          Err(_)     => Error(0)
-        }
-      }
-    }
+    map_res!($i, $submac!($($args)*), call!($g));
   );
   ($i:expr, $f:expr, $g:expr) => (
-    {
-      let fun  = $f;
-      let fun2 = $g;
-      match fun($i) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => match fun2(o) {
-          Ok(output) => Done(i, output),
-          Err(_)     => Error(0)
-        }
-      }
-    }
+    map_res!($i, call!($f), call!($g));
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      let fun  = $f;
-      match fun($i) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => match $submac!(o, $($args)*) {
-          Ok(output) => Done(i, output),
-          Err(_)     => Error(0)
-        }
-      }
-    }
+    map_res!($i, call!($f), $submac!($($args)*));
   );
 );
 
@@ -194,47 +135,13 @@ macro_rules! map_opt(
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    {
-      let fun2 = $g;
-      match $submac!($i, $($args)*) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => match fun2(o) {
-          Some(output) => Done(i, output),
-          None         => Error(0)
-        }
-      }
-    }
+    map_opt!($i, $submac!($($args)*), call!($g));
   );
   ($i:expr, $f:expr, $g:expr) => (
-    {
-      let fun  = $f;
-      let fun2 = $g;
-      match fun($i) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => match fun2(o) {
-          Some(output) => Done(i, output),
-          None         => Error(0)
-        }
-      }
-    }
+    map_opt!($i, call!($f), call!($g));
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      let fun  = $f;
-      match fun($i) {
-        Error(ref e) => Error(*e),
-        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-        Done(i, o) => match $submac!(o, $($args)*) {
-          Some(output) => Done(i, output),
-          None         => Error(0)
-        }
-      }
-    }
+    map_opt!($i, call!($f), $submac!($($args)*));
   );
 );
 
@@ -287,13 +194,7 @@ macro_rules! chain (
 #[macro_export]
 macro_rules! chaining_parser (
   ($i:expr, $e:ident ~ $($rest:tt)*) => (
-    match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Done(i,_)     => {
-        chaining_parser!(i, $($rest)*)
-      }
-    }
+    chaining_parser!($i, call!($e) ~ $($rest)*);
   );
   ($i:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     match $submac!($i, $($args)*) {
@@ -306,15 +207,7 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $e:ident ? ~ $($rest:tt)*) => (
-    match $e($i) {
-      IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(_)      => {
-        chaining_parser!($i, $($rest)*)
-      },
-      IResult::Done(i,_)     => {
-        chaining_parser!(i, $($rest)*)
-      }
-    }
+    chaining_parser!($i, call!($e) ? ~ $($rest)*);
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
@@ -330,14 +223,7 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
-    match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Done(i,o)     => {
-        let $field = o;
-        chaining_parser!(i, $($rest)*)
-      }
-    }
+    chaining_parser!($i, $field: call!($e) ~ $($rest)*);
   );
 
   ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
@@ -352,17 +238,7 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $field:ident : $e:ident ? ~ $($rest:tt)*) => (
-    match $e($i) {
-      IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(_)      => {
-        let $field = None;
-        chaining_parser!($i, $($rest)*)
-      },
-      IResult::Done(i,o)     => {
-        let $field = Some(o);
-        chaining_parser!(i, $($rest)*)
-      }
-    }
+    chaining_parser!($i, $field : call!($e) ? ~ $($rest)*);
   );
 
   ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
@@ -381,13 +257,7 @@ macro_rules! chaining_parser (
 
   // ending the chain
   ($i:expr, $e:ident, $assemble:expr) => (
-    match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Done(i,_)     => {
-        IResult::Done(i, $assemble())
-      }
-    }
+    chaining_parser!($i, call!($e), $assemble);
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $assemble:expr) => (
@@ -401,15 +271,7 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $e:ident ?, $assemble:expr) => (
-    match $e($i) {
-      IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(_)      => {
-        IResult::Done($i, $assemble())
-      },
-      IResult::Done(i,_)     => {
-        IResult::Done(i, $assemble())
-      }
-    }
+    chaining_parser!($i, call!($e) ?, $assemble);
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ) ?, $assemble:expr) => (
@@ -425,14 +287,7 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $field:ident : $e:ident, $assemble:expr) => (
-    match $e($i) {
-      IResult::Error(e)      => IResult::Error(e),
-      IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Done(i,o)     => {
-        let $field = o;
-        IResult::Done(i, $assemble())
-      }
-    }
+    chaining_parser!($i, $field: call!($e), $assemble);
   );
 
   ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ), $assemble:expr) => (
@@ -447,17 +302,7 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $field:ident : $e:ident ? , $assemble:expr) => (
-    match $e($i) {
-      IResult::Incomplete(i) => IResult::Incomplete(i),
-      IResult::Error(_)      => {
-        let $field = None;
-        IResult::Done($i, $assemble())
-      },
-      IResult::Done(i,o)     => {
-        let $field = Some(o);
-        IResult::Done(i, $assemble())
-      }
-    }
+    chaining_parser!($i, $field : call!($e) ? , $assemble);
   );
 
   ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => (
@@ -509,11 +354,7 @@ macro_rules! alt (
 #[macro_export]
 macro_rules! alt_parser (
   ($i:expr, $e:ident | $($rest:tt)*) => (
-    match $e($i) {
-      IResult::Error(_)      => alt_parser!($i, $($rest)*),
-      IResult::Incomplete(_) => alt_parser!($i, $($rest)*),
-      IResult::Done(i,o)     => IResult::Done(i,o)
-    }
+    alt_parser!($i, call!($e) | $($rest)*);
   );
 
   ($i:expr, $submac:ident!( $($args:tt)*) | $($rest:tt)*) => (
@@ -527,11 +368,7 @@ macro_rules! alt_parser (
   );
 
   ($i:expr, $e:ident) => (
-    match $e($i) {
-      IResult::Error(_)      => alt_parser!($i),
-      IResult::Incomplete(_) => alt_parser!($i),
-      IResult::Done(i,o)     => IResult::Done(i,o)
-    }
+    alt_parser!($i, call!($e));
   );
 
   ($i:expr, $submac:ident!( $($args:tt)*)) => (
@@ -672,24 +509,10 @@ macro_rules! is_a(
 #[macro_export]
 macro_rules! filter(
   ($input:expr, $arr:expr) => (
-    {
-      for idx in 0..$input.len() {
-        if !$f($input[idx]) {
-          return IResult::Done(&$input[idx..], &$input[0..idx])
-        }
-      }
-      IResult::Done(b"", $input)
-    }
+    filter!($i, call!($f));
   );
   ($name:ident $f:ident) => (
-    fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
-      for idx in 0..input.len() {
-        if !$f(input[idx]) {
-          return IResult::Done(&input[idx..], &input[0..idx])
-        }
-      }
-      IResult::Done(b"", input)
-    }
+    filter!($name call!($f));
   );
   ($name:ident $submac:ident!( $($args:tt)* )) => (
     fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -729,13 +552,7 @@ macro_rules! filter(
 #[macro_export]
 macro_rules! opt(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
-    fn $name(input:$i) -> IResult<$i, Option<$o>> {
-      match $f(input) {
-        IResult::Done(i,o)     => IResult::Done(i, Some(o)),
-        IResult::Error(_)      => IResult::Done(input, None),
-        IResult::Incomplete(i) => IResult::Incomplete(i)
-      }
-    }
+    opt!($name<$i,$o> call!($f));
   );
   ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
     fn $name(input:$i) -> IResult<$i, Option<$o>> {
@@ -747,13 +564,7 @@ macro_rules! opt(
     }
   );
   ($i:expr, $f:ident) => (
-    {
-      match $f($i) {
-        IResult::Done(i,o)     => IResult::Done(i, Some(o)),
-        IResult::Error(_)      => IResult::Done($i, None),
-        IResult::Incomplete(i) => IResult::Incomplete(i)
-      }
-    }
+    opt($i, call($f));
   );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -779,13 +590,7 @@ macro_rules! opt(
 #[macro_export]
 macro_rules! peek(
   ($name:ident<$i:ty,$o:ty> $f:ident) => (
-    fn $name(input:$i) -> IResult<$i, $o> {
-      match $f(input) {
-        IResult::Done(i,o)     => IResult::Done(input, o),
-        IResult::Error(a)      => IResult::Error(a),
-        IResult::Incomplete(i) => IResult::Incomplete(i)
-      }
-    }
+    peek!($name<$i,$o> call!($f));
   );
   ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
     fn $name(input:$i) -> IResult<$i, $o> {
@@ -797,13 +602,7 @@ macro_rules! peek(
     }
   );
   ($i:expr, $f:ident) => (
-    {
-      match $f($i) {
-        IResult::Done(i,o)     => IResult::Done($i, o),
-        IResult::Error(a)      => IResult::Error(a),
-        IResult::Incomplete(i) => IResult::Incomplete(i)
-      }
-    }
+    peek!($i, call!(f));
   );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -835,24 +634,7 @@ macro_rules! peek(
 #[macro_export]
 macro_rules! many0(
   ($i:expr, $f:ident) => (
-    {
-      let mut begin = 0;
-      let mut remaining = $i.len();
-      let mut res = Vec::new();
-      loop {
-        match $f(&$i[begin..]) {
-          IResult::Done(i,o) => {
-            res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
-          },
-          _                  => {
-            break;
-          }
-        }
-      }
-      IResult::Done(&$i[begin..], res)
-    }
+    many0!($i, call!($f));
   );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -894,31 +676,7 @@ macro_rules! many0(
 #[macro_export]
 macro_rules! many1(
   ($i:expr, $f:ident) => (
-    {
-      let mut begin = 0;
-      let mut remaining = $i.len();
-      let mut res = Vec::new();
-      loop {
-        match $f(&$i[begin..]) {
-          IResult::Done(i,o) => {
-            res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
-            if begin >= $i.len() {
-              return IResult::Done(i, res)
-            }
-          },
-          _                  => {
-            break;
-          }
-        }
-      }
-      if begin == 0 {
-        IResult::Error(0)
-      } else {
-        IResult::Done(&$i[begin..], res)
-      }
-    }
+    many1!($i, call!($f));
   );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
