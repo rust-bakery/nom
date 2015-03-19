@@ -253,16 +253,15 @@ fn brand_name(input:&[u8]) -> IResult<&[u8],&str> {
 }*/
 
 named!(brand_name<&[u8],&str>, map_res!(take!(4), from_utf8));
-named!(compatible_brands<&[u8], Vec<&str> >, many0!(brand_name));
 
-fn filetype_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
-  chaining_parser!(input,
+named!(filetype_parser<&[u8], FileType>,
+  chain!(
     m: brand_name          ~
     v: take!(4)            ~
-    c: compatible_brands   ,
-    ||{FileType{major_brand: m, major_brand_version:v, compatible_brands: c}})
-}
-
+    c: many0!(brand_name)  ,
+    ||{ FileType{ major_brand: m, major_brand_version:v, compatible_brands: c } }
+  )
+);
 
 fn filetype_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   ftyp(input).map(|_| MP4BoxType::Ftyp)
