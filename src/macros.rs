@@ -89,12 +89,48 @@ macro_rules! tag (
 
 #[macro_export]
 macro_rules! map(
-  ($i:expr, $f:ident, $g:ident) => (
-    match $f($i) {
-      Error(ref e) => Error(*e),
-      Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
-      Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
-      Done(i, o) => Done(i,$g(o))
+  ($i:expr, $f:expr, $g:expr) => (
+    {
+      let fun  = $f;
+      let fun2 = $g;
+      match fun($i) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o) => Done(i,fun2(o))
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o) => Done(i, $submac2!(o, $($args)*))
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    {
+      let fun2 = $g;
+      match $submac!($i, $($args)*) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o) => Done(i, fun2(o))
+      }
+    }
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let fun  = $f;
+      match fun($i) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o) => Done(i, $submac!(o, $($args)*))
+      }
     }
   );
 );
