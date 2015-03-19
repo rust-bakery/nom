@@ -209,12 +209,6 @@ macro_rules! o_parser(
 /// ```
 #[macro_export]
 macro_rules! chain (
-  ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
-    #[allow(unused_variables)]
-    fn $name(i:$i) -> IResult<$i,$o>{
-      chaining_parser!(i, $($rest)*)
-    }
-  );
   ($i:expr, $($rest:tt)*) => (
     chaining_parser!($i, $($rest)*)
   );
@@ -1504,10 +1498,12 @@ mod tests {
     fn temp_ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     o!(ret_int1<&[u8],u8> x ~ [ temp_ret_int1 ]);
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    chain!(f<&[u8],B>,
-      aa: ret_int1 ~
-      bb: ret_int2 ,
-      ||{B{a: aa, b: bb}}
+    named!(f<&[u8],B>,
+      chain!(
+        aa: ret_int1 ~
+        bb: ret_int2 ,
+        ||{B{a: aa, b: bb}}
+      )
     );
 
     let r = f(b"abcde");
@@ -1518,14 +1514,17 @@ mod tests {
   fn chain2() {
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    chain!(f<&[u8],B>,
-      tag!("abcd")   ~
-      tag!("abcd")?  ~
-      aa: ret_int1   ~
-      tag!("efgh")   ~
-      bb: ret_int2   ~
-      tag!("efgh")   ,
-      ||{B{a: aa, b: bb}});
+    named!(f<&[u8],B>,
+      chain!(
+        tag!("abcd")   ~
+        tag!("abcd")?  ~
+        aa: ret_int1   ~
+        tag!("efgh")   ~
+        bb: ret_int2   ~
+        tag!("efgh")   ,
+        ||{B{a: aa, b: bb}}
+      )
+    );
 
     let r = f(b"abcdabcdefghefghX");
     assert_eq!(r, Done(b"X", B{a: 1, b: 2}));
@@ -1534,6 +1533,32 @@ mod tests {
     assert_eq!(r2, Done(b"X", B{a: 1, b: 2}));
   }
 
+  #[test]
+  fn nested_chain() {
+    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
+    tag!(x "abcd");
+    named!(f<&[u8],B>,
+      chain!(
+        chain!(
+          tag!("abcd")   ~
+          tag!("abcd")?  ,
+          || {}
+        )              ~
+        aa: ret_int1   ~
+        tag!("efgh")   ~
+        bb: ret_int2   ~
+        tag!("efgh")   ,
+        ||{B{a: aa, b: bb}}
+      )
+    );
+
+    let r = f(b"abcdabcdefghefghX");
+    assert_eq!(r, Done(b"X", B{a: 1, b: 2}));
+
+    let r2 = f(b"abcdefghefghX");
+    assert_eq!(r2, Done(b"X", B{a: 1, b: 2}));
+  }
   #[derive(PartialEq,Eq,Debug)]
   struct C {
     a: u8,
@@ -1548,11 +1573,14 @@ mod tests {
       y(i).map(|_| 2)
     };
 
-    chain!(f<&[u8],C>,
-      tag!("abcd") ~
-      aa: ret_int1 ~
-      bb: ret_y?   ,
-      ||{C{a: aa, b: bb}});
+    named!(f<&[u8],C>,
+      chain!(
+        tag!("abcd") ~
+        aa: ret_int1 ~
+        bb: ret_y?   ,
+        ||{C{a: aa, b: bb}}
+      )
+    );
 
     let r = f(b"abcdefghX");
     assert_eq!(r, Done(b"X", C{a: 1, b: Some(2)}));

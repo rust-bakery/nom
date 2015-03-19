@@ -90,7 +90,8 @@ pub struct Mvhd64 {
 take!(ten_bytes 10);
 
 #[allow(non_snake_case)]
-chain!(mvhd32 <&[u8], MvhdBox>,
+named!(mvhd32 <&[u8], MvhdBox>,
+  chain!(
   version_flags: be_u32 ~
   created_date:  be_u32 ~
   modified_date: be_u32 ~
@@ -138,10 +139,12 @@ chain!(mvhd32 <&[u8], MvhdBox>,
       track_id:      track_id
     })
   }
+  )
 );
 
 #[allow(non_snake_case)]
-chain!(mvhd64 <&[u8], MvhdBox>,
+named!(mvhd64 <&[u8], MvhdBox>,
+  chain!(
   version_flags: be_u32 ~
   created_date:  be_u64 ~
   modified_date: be_u64 ~
@@ -189,6 +192,7 @@ chain!(mvhd64 <&[u8], MvhdBox>,
       track_id:      track_id
     })
   }
+  )
 );
 
 #[derive(Debug)]
@@ -367,16 +371,20 @@ alt!(box_type<&[u8], MP4BoxType>, filetype_box_type | moov_box_type | mdat_box_t
 alt!(moov_type<&[u8], MP4BoxType>, moov_mdra_type | moov_dref_type | moov_cmov_type | moov_rmra_type | moov_iods_type |
      moov_mvhd_type | moov_clip_type | moov_trak_type | moov_udta_type);
 
-chain!(box_header<&[u8],MP4BoxHeader>,
+named!(box_header<&[u8],MP4BoxHeader>,
+  chain!(
     length: be_u32 ~
     tag: box_type  ,
     || { MP4BoxHeader{ length: length, tag: tag} }
+  )
 );
 
-chain!(moov_header<&[u8],MP4BoxHeader>,
+named!(moov_header<&[u8],MP4BoxHeader>,
+  chain!(
     length: be_u32 ~
     tag: moov_type  ,
     || { MP4BoxHeader{ length: length, tag: tag} }
+  )
 );
 
 impl Consumer for MP4Consumer {

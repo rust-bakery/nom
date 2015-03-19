@@ -35,24 +35,33 @@ o!(comment_body     <&[u8], &[u8]>       semicolon ~ [ not_line_ending ]);
 o!(comment          <&[u8], ()>          comment_body ~ line_ending ~ [ empty_result ]);
 opt!(opt_comment    <&[u8], &[u8]>       comment_body);
 
-chain!(category     <&[u8], &str>,
+named!(category     <&[u8], &str>,
+  chain!(
           tag!("[")       ~
     name: category_name   ~
           tag!("]")       ~
           multispace?     ,
     ||{ name }
+  )
 );
 
-chain!(key_value    <&[u8],(&str,&str)>,
-    key: parameter_parser ~
-         space?           ~
-         tag!("=")        ~
-         space?           ~
-    val: value_parser     ~
-         space?           ~
-         comment_body?    ~
-         multispace?      ,
+named!(key_value    <&[u8],(&str,&str)>,
+  chain!(
+    key: parameter_parser     ~
+         space?               ~
+         tag!("=")            ~
+         space?               ~
+    val: value_parser         ~
+         space?               ~
+         chain!(
+           tag!(";")        ~
+           not_line_ending  ,
+           ||{}
+         )?                   ~
+         //comment_body?        ~
+         multispace?          ,
     ||{(key, val)}
+  )
 );
 
 
@@ -73,10 +82,12 @@ fn keys_and_values(input:&[u8]) -> IResult<&[u8], HashMap<&str, &str> > {
   }
 }
 
-chain!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
+named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
+  chain!(
     category: category    ~
     keys: keys_and_values ,
     move ||{(category, keys)}
+  )
 );
 
 named!(categories_aggregator<&[u8], Vec<(&str, HashMap<&str,&str>)> >, many0!(category_and_keys));
