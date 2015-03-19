@@ -26,6 +26,11 @@ macro_rules! named (
             $submac!(i, $($args)*)
         }
     );
+    ($name:ident, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: &[u8] ) -> IResult<&[u8], &[u8]> {
+            $submac!(i, $($args)*)
+        }
+    );
 );
 
 
