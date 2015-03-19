@@ -18,7 +18,7 @@ fn map_test_x() {
 fn tag() {
   FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
-    tag!(f "https://");
+    named!(f,tag!("https://"));
     //p.push(|par| par.flat_map(f).flat_map(print));
     fn pr<'a>(data:&'a [u8]) -> IResult<&'a [u8],()> {
       let p = f(data).map_res(str::from_utf8);//.flat_map(print);
