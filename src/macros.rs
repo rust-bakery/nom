@@ -1357,7 +1357,7 @@ macro_rules! length_value(
               Incomplete(Needed::Unknown) => {
                 return Incomplete(Needed::Unknown)
               },
-              Incomplete(Needed::Size(a)) => {
+              Incomplete(Needed::Size(_)) => {
                 return Incomplete(Needed::Size(length_token  as u32 + $length * nb as u32))
               }
             }
@@ -1426,7 +1426,6 @@ mod tests {
   fn nested_chain() {
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    tag!(x "abcd");
     named!(f<&[u8],B>,
       chain!(
         chain!(
@@ -1448,6 +1447,7 @@ mod tests {
     let r2 = f(b"abcdefghefghX");
     assert_eq!(r2, Done(b"X", B{a: 1, b: 2}));
   }
+
   #[derive(PartialEq,Eq,Debug)]
   struct C {
     a: u8,
@@ -1456,7 +1456,7 @@ mod tests {
 
   #[test]
   fn chain_opt() {
-    tag!(y "efgh");
+    named!(y, tag!("efgh"));
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_y(i:&[u8]) -> IResult<&[u8], u8> {
       y(i).map(|_| 2)

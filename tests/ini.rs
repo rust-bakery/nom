@@ -1,26 +1,16 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed,FlatMapOpt,line_ending,not_line_ending, space, alphanumeric, multispace};
+use nom::{IResult,Needed,FlatMapOpt,not_line_ending, space, alphanumeric, multispace};
 use nom::IResult::*;
 
 use std::str;
 use std::collections::HashMap;
 
-
-fn empty_result(i:&[u8]) -> IResult<&[u8], ()> { Done(i,()) }
-tag!(semicolon ";");
-tag!(lsb       "[");
-tag!(rsb       "]");
-tag!(equal     "=");
-
-
 take_until_and_leave!(category_bytes "]");
 fn category_name(input: &[u8]) -> IResult<&[u8], &str> {
   category_bytes(input).map_res(str::from_utf8)
 }
-
-take_until!(not_equal      "=");
 take_until_either_and_leave!(value_bytes "\n;");
 
 fn value_parser(input:&[u8]) -> IResult<&[u8], &str> {
@@ -30,10 +20,6 @@ fn value_parser(input:&[u8]) -> IResult<&[u8], &str> {
 fn parameter_parser(input: &[u8]) -> IResult<&[u8], &str> {
   alphanumeric(input).map_res(str::from_utf8)
 }
-
-o!(comment_body     <&[u8], &[u8]>       semicolon ~ [ not_line_ending ]);
-o!(comment          <&[u8], ()>          comment_body ~ line_ending ~ [ empty_result ]);
-opt!(opt_comment    <&[u8], &[u8]>       comment_body);
 
 named!(category     <&[u8], &str>,
   chain!(
@@ -58,7 +44,6 @@ named!(key_value    <&[u8],(&str,&str)>,
            not_line_ending  ,
            ||{}
          )?                   ~
-         //comment_body?        ~
          multispace?          ,
     ||{(key, val)}
   )
@@ -105,35 +90,6 @@ fn categories(input: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str> 
     IResult::Incomplete(a)     => IResult::Incomplete(a),
     IResult::Error(a)          => IResult::Error(a)
   }
-}
-
-#[test]
-fn parse_comment_test() {
-  let ini_file = b";comment
-[category]
-parameter=value
-key = value2
-
-[other]
-number = 1234
-str = a b cc dd ; comment";
-
-  let ini_without_comment = b"[category]
-parameter=value
-key = value2
-
-[other]
-number = 1234
-str = a b cc dd ; comment";
-
-  let res = comment(ini_file);
-  println!("{:?}", res);
-  match res {
-    IResult::Done(i, o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error")
-  }
-
-  assert_eq!(res, Done(ini_without_comment, ()));
 }
 
 #[test]

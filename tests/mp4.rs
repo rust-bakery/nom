@@ -398,7 +398,7 @@ impl Consumer for MP4Consumer {
               MP4BoxType::Ftyp    => {
                 println!("-> FTYP");
                 match filetype_parser(&i[0..(header.length as usize - 8)]) {
-                  Done(i2, filetype_header) => {
+                  Done(_, filetype_header) => {
                     println!("filetype header: {:?}", filetype_header);
                     return ConsumerState::Await(header.length as usize, header.length as usize - 8);
                   }
@@ -407,7 +407,7 @@ impl Consumer for MP4Consumer {
                     assert!(false);
                     return ConsumerState::ConsumerError(a);
                   },
-                  Incomplete(a) => {
+                  Incomplete(_) => {
                     println!("ftyp incomplete -> await: {}", input.len());
                     return ConsumerState::Await(0, input.len() + 100);
                   }
@@ -440,7 +440,7 @@ impl Consumer for MP4Consumer {
             assert!(false);
             return ConsumerState::ConsumerError(a);
           },
-          Incomplete(a) => {
+          Incomplete(_) => {
             // FIXME: incomplete should send the required size
             println!("mp4 incomplete -> await: {}", input.len());
             return ConsumerState::Await(0, input.len() + 100);
@@ -485,7 +485,7 @@ impl Consumer for MP4Consumer {
             assert!(false);
             return ConsumerState::ConsumerError(a);
           },
-          Incomplete(a) => {
+          Incomplete(_) => {
             println!("moov incomplete -> await: {}", input.len());
             return ConsumerState::Await(0, input.len() + 100);
           }
