@@ -8,6 +8,7 @@ use nom::{Consumer,ConsumerState};
 use nom::IResult::*;
 
 use std::str;
+use std::str::from_utf8;
 use std::io::SeekFrom;
 
 fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -245,11 +246,13 @@ struct MP4BoxHeader {
 take!(offset 4);
 named!(ftyp, tag!("ftyp"));
 
+/*
 fn brand_name(input:&[u8]) -> IResult<&[u8],&str> {
   take!(major_brand_bytes 4);
   major_brand_bytes(input).map_res(str::from_utf8)
-}
-take!(major_brand_version 4);
+}*/
+
+named!(brand_name<&[u8],&str>, map_res!(take!(4), from_utf8));
 named!(compatible_brands<&[u8], Vec<&str> >, many0!(brand_name));
 
 fn filetype_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], FileType<'a> > {
@@ -272,11 +275,13 @@ named!(filetype_box_type2<&[u8],MP4BoxType>, map!(
 );
 
 named!(moov_tag, tag!("moov"));
+named!(mdra,     tag!("mdra"));
 
-named!(mdra,    tag!("mdra"));
-fn moov_mdra_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  mdra(input).map(|_| MP4BoxType::Mdra)
-}
+named!(moov_mdra_type<&[u8],MP4BoxType>, map!(
+   mdra,
+   |_|{MP4BoxType::Mdra}
+  )
+);
 
 named!(dref, tag!("dref"));
 fn moov_dref_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
