@@ -1,3 +1,5 @@
+#![feature(fs,io,core,collections)]
+
 #[macro_use]
 extern crate nom;
 
