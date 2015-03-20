@@ -331,7 +331,7 @@ macro_rules! chaining_parser (
 /// ```ignore
 ///  tag!(x "abcd");
 ///  tag!(y "efgh");
-///  alt!(test<&[u8], &[u8]> x | y);
+///  named!(test, alt!(x | y));
 ///  let r1 = test(b"abcdefgh"));
 ///  assert_eq!(r1, Done(b"efgh", b"abcd"));
 ///  let r2 = test(b"efghijkl"));
@@ -339,11 +339,6 @@ macro_rules! chaining_parser (
 /// ```
 #[macro_export]
 macro_rules! alt (
-  ($name:ident<$i:ty,$o:ty>, $($rest:tt)*) => (
-    fn $name(i:$i) -> IResult<$i,$o>{
-      alt_parser!(i, $($rest)*)
-    }
-  );
   ($i:expr, $($rest:tt)*) => (
     {
       alt_parser!($i, $($rest)*)
@@ -413,26 +408,6 @@ macro_rules! is_not(
       IResult::Done(b"", $input)
     }
   );
-  ($name:ident $arr:expr) => (
-    fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
-      #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected = $arr;
-      let bytes = as_bytes(&expected);
-
-      for idx in 0..input.len() {
-        for &i in bytes.iter() {
-          if input[idx] == i {
-            return IResult::Done(&input[idx..], &input[0..idx])
-          }
-        }
-      }
-      IResult::Done(b"", input)
-    }
-  );
 );
 
 /// returns the longest list of bytes that appear in the provided array
@@ -472,31 +447,6 @@ macro_rules! is_a(
       IResult::Done(b"", $input)
     }
   );
-  ($name:ident $arr:expr) => (
-    fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
-      #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected = $arr;
-      let bytes = as_bytes(&expected);
-
-      for idx in 0..input.len() {
-        let mut res = false;
-        for &i in bytes.iter() {
-          if input[idx] == i {
-            res = true;
-            break;
-          }
-        }
-        if !res {
-          return IResult::Done(&input[idx..], &input[0..idx])
-        }
-      }
-      IResult::Done(b"", input)
-    }
-  );
 );
 
 /// returns the longest list of bytes until the provided parser fails
@@ -510,19 +460,6 @@ macro_rules! is_a(
 macro_rules! filter(
   ($input:expr, $arr:expr) => (
     filter!($i, call!($f));
-  );
-  ($name:ident $f:ident) => (
-    filter!($name call!($f));
-  );
-  ($name:ident $submac:ident!( $($args:tt)* )) => (
-    fn $name(input:&[u8]) -> IResult<&[u8], &[u8]> {
-      for idx in 0..input.len() {
-        if !$submac!(input[idx], $($args)*) {
-          return IResult::Done(&input[idx..], &input[0..idx])
-        }
-      }
-      IResult::Done(b"", input)
-    }
   );
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -551,18 +488,6 @@ macro_rules! filter(
 /// ```
 #[macro_export]
 macro_rules! opt(
-  ($name:ident<$i:ty,$o:ty> $f:expr) => (
-    opt!($name<$i,$o> call!($f));
-  );
-  ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
-    fn $name(input:$i) -> IResult<$i, Option<$o>> {
-      match $submac!(input, $($args)*) {
-        IResult::Done(i,o)     => IResult::Done(i, Some(o)),
-        IResult::Error(_)      => IResult::Done(input, None),
-        IResult::Incomplete(i) => IResult::Incomplete(i)
-      }
-    }
-  );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -589,18 +514,6 @@ macro_rules! opt(
 /// ```
 #[macro_export]
 macro_rules! peek(
-  ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
-    fn $name(input:$i) -> IResult<$i, $o> {
-      match $submac!(input, $($args)*) {
-        IResult::Done(i,o)     => IResult::Done(input, o),
-        IResult::Error(a)      => IResult::Error(a),
-        IResult::Incomplete(i) => IResult::Incomplete(i)
-      }
-    }
-  );
-  ($name:ident<$i:ty,$o:ty> $f:expr) => (
-    peek!($name<$i,$o> call!($f));
-  );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -869,15 +782,6 @@ macro_rules! take(
         Incomplete(Needed::Size($count))
       } else {
         Done(&$i[$count..],&$i[0..$count])
-      }
-    }
-  );
-  ($name:ident $count:expr) => (
-    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      if i.len() < $count {
-        Incomplete(Needed::Size($count))
-      } else {
-        Done(&i[$count..],&i[0..$count])
       }
     }
   );
@@ -1186,7 +1090,7 @@ mod tests {
 
   #[test]
   fn is_a() {
-    is_a!(a_or_b   &b"ab"[..]);
+    named!(a_or_b, is_a!(&b"ab"[..]));
 
     let a = &b"abcd"[..];
     assert_eq!(a_or_b(a), Done(&b"cd"[..], &b"ab"[..]));
@@ -1304,16 +1208,16 @@ mod tests {
       Done(input, &b""[..])
     }
 
-    alt!(alt1<&[u8],&[u8]>, dont_work | dont_work);
-    alt!(alt2<&[u8],&[u8]>, dont_work | work);
-    alt!(alt3<&[u8],&[u8]>, dont_work | dont_work | work2 | dont_work);
+    named!(alt1, alt!(dont_work | dont_work));
+    named!(alt2, alt!(dont_work | work));
+    named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
     assert_eq!(alt1(a), Error(1));
     assert_eq!(alt2(a), Done(&b""[..], a));
     assert_eq!(alt3(a), Done(a, &b""[..]));
 
-    named!(alt4<&[u8],&[u8]>, alt!(tag!("abcd") | tag!("efgh")));
+    named!(alt4, alt!(tag!("abcd") | tag!("efgh")));
     let b = &b"efgh"[..];
     assert_eq!(alt4(a), Done(&b""[..], a));
     assert_eq!(alt4(b), Done(&b""[..], b));

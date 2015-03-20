@@ -90,7 +90,6 @@ pub struct Mvhd64 {
   current_time:  u32,
   track_id:      u32
 }
-take!(ten_bytes 10);
 
 #[allow(non_snake_case)]
 named!(mvhd32 <&[u8], MvhdBox>,
@@ -102,7 +101,7 @@ named!(mvhd32 <&[u8], MvhdBox>,
   duration:      be_u32 ~
   speed:         be_f32 ~
   volume:        be_u16 ~ // actually a 2 bytes decimal
-              ten_bytes ~
+              take!(10) ~
   scale_a:       be_f32 ~
   rotate_b:      be_f32 ~
   angle_u:       be_f32 ~
@@ -155,7 +154,7 @@ named!(mvhd64 <&[u8], MvhdBox>,
   duration:      be_u64 ~
   speed:         be_f32 ~
   volume:        be_u16 ~ // actually a 2 bytes decimal
-              ten_bytes ~
+              take!(10) ~
   scale_a:       be_f32 ~
   rotate_b:      be_f32 ~
   angle_u:       be_f32 ~
@@ -243,7 +242,6 @@ struct MP4BoxHeader {
   tag:    MP4BoxType
 }
 
-take!(offset 4);
 named!(ftyp, tag!("ftyp"));
 
 /*
@@ -378,26 +376,30 @@ impl MP4Consumer {
   }
 }
 
-alt!(box_type<&[u8], MP4BoxType>,
-  map!(ftyp, |_|{MP4BoxType::Ftyp}) |
-  moov_box_type                     |
-  map!(mdat, |_|{MP4BoxType::Mdat}) |
-  map!(free, |_|{MP4BoxType::Free}) |
-  map!(skip, |_|{MP4BoxType::Skip}) |
-  map!(wide, |_|{MP4BoxType::Wide}) |
-  unknown_box_type
+named!(box_type<&[u8], MP4BoxType>,
+  alt!(
+    map!(ftyp, |_|{MP4BoxType::Ftyp}) |
+    moov_box_type                     |
+    map!(mdat, |_|{MP4BoxType::Mdat}) |
+    map!(free, |_|{MP4BoxType::Free}) |
+    map!(skip, |_|{MP4BoxType::Skip}) |
+    map!(wide, |_|{MP4BoxType::Wide}) |
+    unknown_box_type
+  )
 );
 
-alt!(moov_type<&[u8], MP4BoxType>,
-  moov_mdra_type |
-  moov_dref_type |
-  moov_cmov_type |
-  moov_rmra_type |
-  moov_iods_type |
-  moov_mvhd_type |
-  moov_clip_type |
-  moov_trak_type |
-  moov_udta_type
+named!(moov_type<&[u8], MP4BoxType>,
+  alt!(
+    moov_mdra_type |
+    moov_dref_type |
+    moov_cmov_type |
+    moov_rmra_type |
+    moov_iods_type |
+    moov_mvhd_type |
+    moov_clip_type |
+    moov_trak_type |
+    moov_udta_type
+  )
 );
 
 // this increases the build time to 1mn
