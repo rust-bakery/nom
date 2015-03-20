@@ -259,7 +259,7 @@ macro_rules! take(
 
   #[test]
   fn pull() {
-    let mut p = MemProducer::new(b"abcdefghijklmnopqrstuvwx", 4);
+    let mut p = MemProducer::new(&b"abcdefghijklmnopqrstuvwx"[..], 4);
     let mut c = TestPrintConsumer::new();
     c.run(&mut p);
 

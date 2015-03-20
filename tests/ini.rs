@@ -86,13 +86,13 @@ fn categories(input: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str> 
 
 #[test]
 fn parse_category_test() {
-  let ini_file = b"[category]
+  let ini_file = &b"[category]
 
 parameter=value
-key = value2";
+key = value2"[..];
 
-  let ini_without_category = b"parameter=value
-key = value2";
+  let ini_without_category = &b"parameter=value
+key = value2"[..];
 
   let res = category(ini_file);
   println!("{:?}", res);
@@ -106,10 +106,10 @@ key = value2";
 
 #[test]
 fn parse_key_value_test() {
-  let ini_file = b"parameter=value
-key = value2";
+  let ini_file = &b"parameter=value
+key = value2"[..];
 
-  let ini_without_key_value = b"key = value2";
+  let ini_without_key_value = &b"key = value2"[..];
 
   let res = key_value(ini_file);
   println!("{:?}", res);
@@ -124,10 +124,10 @@ key = value2";
 
 #[test]
 fn parse_key_value_with_space_test() {
-  let ini_file = b"parameter = value
-key = value2";
+  let ini_file = &b"parameter = value
+key = value2"[..];
 
-  let ini_without_key_value = b"key = value2";
+  let ini_without_key_value = &b"key = value2"[..];
 
   let res = key_value(ini_file);
   println!("{:?}", res);
@@ -141,10 +141,10 @@ key = value2";
 
 #[test]
 fn parse_key_value_with_comment_test() {
-  let ini_file = b"parameter=value;abc
-key = value2";
+  let ini_file = &b"parameter=value;abc
+key = value2"[..];
 
-  let ini_without_key_value = b"key = value2";
+  let ini_without_key_value = &b"key = value2"[..];
 
   let res = key_value(ini_file);
   println!("{:?}", res);
@@ -158,13 +158,13 @@ key = value2";
 
 #[test]
 fn parse_multiple_keys_and_values_test() {
-  let ini_file = b"parameter=value;abc
+  let ini_file = &b"parameter=value;abc
 
 key = value2
 
-[category]";
+[category]"[..];
 
-  let ini_without_key_value = b"[category]";
+  let ini_without_key_value = &b"[category]"[..];
 
   let res = keys_and_values(ini_file);
   println!("{:?}", res);
@@ -182,14 +182,14 @@ key = value2
 #[test]
 fn parse_category_then_multiple_keys_and_values_test() {
   //FIXME: there can be an empty line or a comment line after a category
-  let ini_file = b"[abcd]
+  let ini_file = &b"[abcd]
 parameter=value;abc
 
 key = value2
 
-[category]";
+[category]"[..];
 
-  let ini_after_parser = b"[category]";
+  let ini_after_parser = &b"[category]"[..];
 
   let res = category_and_keys(ini_file);
   println!("{:?}", res);
@@ -206,7 +206,7 @@ key = value2
 
 #[test]
 fn parse_multiple_categories_test() {
-  let ini_file = b"[abcd]
+  let ini_file = &b"[abcd]
 
 parameter=value;abc
 
@@ -215,9 +215,9 @@ key = value2
 [category]
 parameter3=value3
 key4 = value4
-";
+"[..];
 
-  let ini_after_parser = b"";
+  let ini_after_parser = &b""[..];
 
   let res = categories(ini_file);
   println!("{:?}", res);

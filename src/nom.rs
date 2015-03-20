@@ -216,26 +216,26 @@ mod tests {
 
   #[test]
   fn tag_closure() {
-    let x = tag_cl(b"abcd");
-    let r = x(b"abcdabcdefgh");
-    assert_eq!(r, Done(b"abcdefgh", b"abcd"));
+    let x = tag_cl(&b"abcd"[..]);
+    let r = x(&b"abcdabcdefgh"[..]);
+    assert_eq!(r, Done(&b"abcdefgh"[..], &b"abcd"[..]));
 
-    let r2 = x(b"abcefgh");
+    let r2 = x(&b"abcefgh"[..]);
     assert_eq!(r2, Error(0));
   }
 
   #[test]
   fn character() {
-    let empty = b"";
-    let a = b"abcd";
-    let b = b"1234";
-    let c = b"a123";
-    let d = "azé12".as_bytes();
-    let e = b" ";
+    let empty: &[u8] = b"";
+    let a: &[u8] = b"abcd";
+    let b: &[u8] = b"1234";
+    let c: &[u8] = b"a123";
+    let d: &[u8] = "azé12".as_bytes();
+    let e: &[u8] = b" ";
     assert_eq!(alpha(a), Done(empty, a));
     assert_eq!(alpha(b), Done(b, empty));
-    assert_eq!(alpha(c), Done(&c[1..], b"a"));
-    assert_eq!(alpha(d), Done("é12".as_bytes(), b"az"));
+    assert_eq!(alpha(c), Done(&c[1..], &b"a"[..]));
+    assert_eq!(alpha(d), Done("é12".as_bytes(), &b"az"[..]));
     assert_eq!(digit(a), Done(a, empty));
     assert_eq!(digit(b), Done(empty, b));
     assert_eq!(digit(c), Done(c, empty));
@@ -243,26 +243,27 @@ mod tests {
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(alphanumeric(b), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
-    assert_eq!(alphanumeric(d), Done("é12".as_bytes(), b"az"));
-    assert_eq!(space(e), Done(b"", b" "));
+    assert_eq!(alphanumeric(d), Done("é12".as_bytes(), &b"az"[..]));
+    assert_eq!(space(e), Done(&b""[..], &b" "[..]));
   }
 
   #[test]
   fn is_not() {
-    let a = b"ab12cd\nefgh";
-    assert_eq!(not_line_ending(a), Done(b"\nefgh", b"ab12cd"));
+    let a: &[u8] = b"ab12cd\nefgh";
+    assert_eq!(not_line_ending(a), Done(&b"\nefgh"[..], &b"ab12cd"[..]));
 
-    let b = b"ab12cd\nefgh\nijkl";
-    assert_eq!(not_line_ending(b), Done(b"\nefgh\nijkl", b"ab12cd"));
+    let b: &[u8] = b"ab12cd\nefgh\nijkl";
+    assert_eq!(not_line_ending(b), Done(&b"\nefgh\nijkl"[..], &b"ab12cd"[..]));
 
-    let c = b"ab12cd";
-    assert_eq!(not_line_ending(c), Done(b"", b"ab12cd"));
+    let c: &[u8] = b"ab12cd";
+    assert_eq!(not_line_ending(c), Done(&b""[..], c));
   }
 
   #[test]
   fn buffer_with_size() {
     let i:Vec<u8> = vec![7,8];
     let o:Vec<u8> = vec![4,5,6];
+    //let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
     let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
     let res = sized_buffer(&arr[..]);
     assert_eq!(res, Done(&i[..], &o[..]))
@@ -286,7 +287,7 @@ mod tests {
     assert_eq!(Done(&i1[..], &o1[..]), res1);
 
     let i2:Vec<u8> = vec![4,5,6,7,8];
-    let o2 = b"";
+    let o2: &[u8] = b"";
     let arr2:[u8; 6usize] = [0, 4, 5, 6, 7, 8];
     let res2 = length_value(&arr2);
     assert_eq!(Done(&i2[..], o2), res2);

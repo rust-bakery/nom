@@ -266,13 +266,13 @@ mod tests {
   }
   #[test]
   fn mem_producer() {
-    let mut p = MemProducer::new(b"abcdefgh", 4);
-    assert_eq!(p.produce(), ProducerState::Data(b"abcd"));
+    let mut p = MemProducer::new(&b"abcdefgh"[..], 4);
+    assert_eq!(p.produce(), ProducerState::Data(&b"abcd"[..]));
   }
 
   #[test]
   fn mem_producer_2() {
-    let mut p = MemProducer::new(b"abcdefgh", 8);
+    let mut p = MemProducer::new(&b"abcdefgh"[..], 8);
     fn pr<'a,'b>(data: &'a [u8]) -> IResult<&'a [u8],()> {
       local_print(data)
     }
@@ -292,8 +292,8 @@ mod tests {
       //p.push(|par| {println!("parsed file: {}", par); par});
       //p.push(|par| par.flat_map(print));
       fn pr<'a,'b,'c>(data: &[u8]) -> IResult<&[u8], &[u8]> {
-        Done(b"", data).map_res(str::from_utf8); //.flat_map(local_print);
-        Done(b"",b"")
+        Done(&b""[..], data).map_res(str::from_utf8); //.flat_map(local_print);
+        Done(&b""[..],&b""[..])
       }
       pusher!(ps, pr);
       ps(&mut p);

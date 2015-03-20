@@ -1186,19 +1186,19 @@ mod tests {
 
   #[test]
   fn is_a() {
-    is_a!(a_or_b   b"ab");
+    is_a!(a_or_b   &b"ab"[..]);
 
-    let a = b"abcd";
-    assert_eq!(a_or_b(a), Done(b"cd", b"ab"));
+    let a = &b"abcd"[..];
+    assert_eq!(a_or_b(a), Done(&b"cd"[..], &b"ab"[..]));
 
-    let b = b"bcde";
-    assert_eq!(a_or_b(b), Done(b"cde", b"b"));
+    let b = &b"bcde"[..];
+    assert_eq!(a_or_b(b), Done(&b"cde"[..], &b"b"[..]));
 
-    let c = b"cdef";
-    assert_eq!(a_or_b(c), Done(b"cdef", b""));
+    let c = &b"cdef"[..];
+    assert_eq!(a_or_b(c), Done(&b"cdef"[..], &b""[..]));
 
-    let d = b"bacdef";
-    assert_eq!(a_or_b(d), Done(b"cdef", b"ba"));
+    let d = &b"bacdef"[..];
+    assert_eq!(a_or_b(d), Done(&b"cdef"[..], &b"ba"[..]));
   }
 
   #[derive(PartialEq,Eq,Debug)]
@@ -1223,11 +1223,11 @@ mod tests {
       )
     );
 
-    let r = f(b"abcdabcdefghefghX");
-    assert_eq!(r, Done(b"X", B{a: 1, b: 2}));
+    let r = f(&b"abcdabcdefghefghX"[..]);
+    assert_eq!(r, Done(&b"X"[..], B{a: 1, b: 2}));
 
-    let r2 = f(b"abcdefghefghX");
-    assert_eq!(r2, Done(b"X", B{a: 1, b: 2}));
+    let r2 = f(&b"abcdefghefghX"[..]);
+    assert_eq!(r2, Done(&b"X"[..], B{a: 1, b: 2}));
   }
 
   #[test]
@@ -1249,11 +1249,11 @@ mod tests {
       )
     );
 
-    let r = f(b"abcdabcdefghefghX");
-    assert_eq!(r, Done(b"X", B{a: 1, b: 2}));
+    let r = f(&b"abcdabcdefghefghX"[..]);
+    assert_eq!(r, Done(&b"X"[..], B{a: 1, b: 2}));
 
-    let r2 = f(b"abcdefghefghX");
-    assert_eq!(r2, Done(b"X", B{a: 1, b: 2}));
+    let r2 = f(&b"abcdefghefghX"[..]);
+    assert_eq!(r2, Done(&b"X"[..], B{a: 1, b: 2}));
   }
 
   #[derive(PartialEq,Eq,Debug)]
@@ -1279,20 +1279,20 @@ mod tests {
       )
     );
 
-    let r = f(b"abcdefghX");
-    assert_eq!(r, Done(b"X", C{a: 1, b: Some(2)}));
+    let r = f(&b"abcdefghX"[..]);
+    assert_eq!(r, Done(&b"X"[..], C{a: 1, b: Some(2)}));
 
-    let r2 = f(b"abcdWXYZ");
-    assert_eq!(r2, Done(b"WXYZ", C{a: 1, b: None}));
+    let r2 = f(&b"abcdWXYZ"[..]);
+    assert_eq!(r2, Done(&b"WXYZ"[..], C{a: 1, b: None}));
 
-    let r3 = f(b"abcdX");
+    let r3 = f(&b"abcdX"[..]);
     assert_eq!(r3, Incomplete(Needed::Size(4)));
   }
 
   #[test]
   fn alt() {
     fn work(input: &[u8]) -> IResult<&[u8],&[u8]> {
-      Done(b"", input)
+      Done(&b""[..], input)
     }
 
     #[allow(unused_variables)]
@@ -1301,42 +1301,42 @@ mod tests {
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
-      Done(input, b"")
+      Done(input, &b""[..])
     }
 
     alt!(alt1<&[u8],&[u8]>, dont_work | dont_work);
     alt!(alt2<&[u8],&[u8]>, dont_work | work);
     alt!(alt3<&[u8],&[u8]>, dont_work | dont_work | work2 | dont_work);
 
-    let a = b"abcd";
+    let a = &b"abcd"[..];
     assert_eq!(alt1(a), Error(1));
-    assert_eq!(alt2(a), Done(b"", a));
-    assert_eq!(alt3(a), Done(a, b""));
+    assert_eq!(alt2(a), Done(&b""[..], a));
+    assert_eq!(alt3(a), Done(a, &b""[..]));
 
     named!(alt4<&[u8],&[u8]>, alt!(tag!("abcd") | tag!("efgh")));
-    let b = b"efgh";
-    assert_eq!(alt4(a), Done(b"", a));
-    assert_eq!(alt4(b), Done(b"", b));
+    let b = &b"efgh"[..];
+    assert_eq!(alt4(a), Done(&b""[..], a));
+    assert_eq!(alt4(b), Done(&b""[..], b));
   }
 
   #[test]
   fn opt() {
     named!(o<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
 
-    let a = b"abcdef";
-    let b = b"bcdefg";
-    assert_eq!(o(a), Done(b"ef", Some(b"abcd")));
-    assert_eq!(o(b), Done(b"bcdefg", None));
+    let a = &b"abcdef"[..];
+    let b = &b"bcdefg"[..];
+    assert_eq!(o(a), Done(&b"ef"[..], Some(&b"abcd"[..])));
+    assert_eq!(o(b), Done(&b"bcdefg"[..], None));
   }
 
   #[test]
   fn peek() {
     named!(ptag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
-    let r1 = ptag(b"abcdefgh");
-    assert_eq!(r1, Done(b"abcdefgh", b"abcd"));
+    let r1 = ptag(&b"abcdefgh"[..]);
+    assert_eq!(r1, Done(&b"abcdefgh"[..], &b"abcd"[..]));
 
-    let r1 = ptag(b"efgh");
+    let r1 = ptag(&b"efgh"[..]);
     assert_eq!(r1, Error(0));
   }
 
@@ -1344,44 +1344,44 @@ mod tests {
   fn many0() {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
 
-    let a = b"abcdef";
-    let b = b"abcdabcdef";
-    let c = b"azerty";
+    let a = &b"abcdef"[..];
+    let b = &b"abcdabcdef"[..];
+    let c = &b"azerty"[..];
 
-    let res1 = vec![b"abcd"];
-    assert_eq!(multi(a), Done(b"ef", res1));
-    let res2 = vec![b"abcd", b"abcd"];
-    assert_eq!(multi(b), Done(b"ef", res2));
-    assert_eq!(multi(c), Done(b"azerty", Vec::new()));
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi(b), Done(&b"ef"[..], res2));
+    assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
   }
 
   #[test]
   fn many1() {
     named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
 
-    let a = b"abcdef";
-    let b = b"abcdabcdef";
-    let c = b"azerty";
-    let res1 = vec![b"abcd"];
-    assert_eq!(multi(a), Done(b"ef", res1));
-    let res2 = vec![b"abcd", b"abcd"];
-    assert_eq!(multi(b), Done(b"ef", res2));
+    let a = &b"abcdef"[..];
+    let b = &b"abcdabcdef"[..];
+    let c = &b"azerty"[..];
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Error(0));
   }
 
   #[test]
   fn take_until_test() {
     take_until!(x "efgh");
-    let r = x(b"abcdabcdefghijkl");
-    assert_eq!(r, Done(b"ijkl", b"abcdabcd"));
+    let r = x(&b"abcdabcdefghijkl"[..]);
+    assert_eq!(r, Done(&b"ijkl"[..], &b"abcdabcd"[..]));
 
     println!("Done 1\n");
 
-    let r2 = x(b"abcdabcdefgh");
-    assert_eq!(r2, Done(b"", b"abcdabcd"));
+    let r2 = x(&b"abcdabcdefgh"[..]);
+    assert_eq!(r2, Done(&b""[..], &b"abcdabcd"[..]));
 
     println!("Done 2\n");
-    let r3 = x(b"abcefg");
+    let r3 = x(&b"abcefg"[..]);
     assert_eq!(r3, Incomplete(Needed::Size(7)));
   }
 

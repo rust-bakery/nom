@@ -73,7 +73,7 @@ impl Consumer for TestConsumer {
 
 #[test]
 fn nom1() {
-  let mut p = MemProducer::new(b"omnomkthxbye", 4);
+  let mut p = MemProducer::new(&b"omnomkthxbye"[..], 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 
@@ -83,7 +83,7 @@ fn nom1() {
 
 #[test]
 fn nomnomnom() {
-  let mut p = MemProducer::new(b"omnomnomnomkthxbye", 4);
+  let mut p = MemProducer::new(&b"omnomnomnomkthxbye"[..], 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 
@@ -93,7 +93,7 @@ fn nomnomnom() {
 
 #[test]
 fn no_nomnom() {
-  let mut p = MemProducer::new(b"omkthxbye", 4);
+  let mut p = MemProducer::new(&b"omkthxbye"[..], 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 
@@ -103,7 +103,7 @@ fn no_nomnom() {
 
 #[test]
 fn impolite() {
-  let mut p = MemProducer::new(b"omnomnomnom", 4);
+  let mut p = MemProducer::new(&b"omnomnomnom"[..], 4);
   let mut c = TestConsumer{state: State::Beginning, counter: 0};
   c.run(&mut p);
 

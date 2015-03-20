@@ -200,7 +200,7 @@ impl<'x,'z,T> FlatMap<(),(),T> for IResult<(),()> {
 /// use nom::IResult::Done;
 /// use nom::FlatMapOpt;
 /// use std::str;
-/// let res = Done((), b"abcd").map_res(|data| { str::from_utf8(data) });
+/// let res = Done((), &b"abcd"[..]).map_res(|data| { str::from_utf8(data) });
 /// assert_eq!(res, Done((), "abcd"));
 /// ```
 pub trait FlatMapOpt<I,O,N> {
@@ -406,7 +406,7 @@ impl<'z,T> FlatMapOpt<(),(), T> for IResult<(),()> {
 /// use nom::IResult::Done;
 /// use nom::Functor;
 /// use std::str;
-/// let res = Done((), b"abcd").map(|data| { str::from_utf8(data).unwrap() });
+/// let res = Done((), &b"abcd"[..]).map(|data| { str::from_utf8(data).unwrap() });
 /// assert_eq!(res, Done((), "abcd"));
 ///```
 pub trait Functor<I,O,N> {
@@ -541,31 +541,31 @@ mod tests {
 
   #[test]
   fn map() {
-    let res = Done((), b"abcd").map(|data| { str::from_utf8(data).unwrap() });
+    let res = Done((), &b"abcd"[..]).map(|data| { str::from_utf8(data).unwrap() });
     assert_eq!(res, Done((), "abcd"));
-    let res2 = Done(b"abcd",b"efgh").map(|data| { str::from_utf8(data).unwrap() });
-    assert_eq!(res2, Done(b"abcd", "efgh"));
-    let res3 = Done("abcd",b"efgh").map(|data| { str::from_utf8(data).unwrap() });
+    let res2 = Done(&b"abcd"[..],&b"efgh"[..]).map(|data| { str::from_utf8(data).unwrap() });
+    assert_eq!(res2, Done(&b"abcd"[..], "efgh"));
+    let res3 = Done("abcd",&b"efgh"[..]).map(|data| { str::from_utf8(data).unwrap() });
     assert_eq!(res3, Done("abcd", "efgh"));
   }
 
   #[test]
   fn map_option() {
-    let res = Done((),b"abcd").map_opt(|data| { str::from_utf8(data).ok() });
+    let res = Done((),&b"abcd"[..]).map_opt(|data| { str::from_utf8(data).ok() });
     assert_eq!(res, Done((), "abcd"));
-    let res2 = Done(b"abcd",b"efgh").map_opt(|data| { str::from_utf8(data).ok() });
-    assert_eq!(res2, Done(b"abcd", "efgh"));
-    let res3 = Done("abcd",b"efgh").map_opt(|data| { str::from_utf8(data).ok() });
+    let res2 = Done(&b"abcd"[..],&b"efgh"[..]).map_opt(|data| { str::from_utf8(data).ok() });
+    assert_eq!(res2, Done(&b"abcd"[..], "efgh"));
+    let res3 = Done("abcd",&b"efgh"[..]).map_opt(|data| { str::from_utf8(data).ok() });
     assert_eq!(res3, Done("abcd", "efgh"));
   }
 
   #[test]
   fn map_result() {
-    let res = Done((),b"abcd").map_res(|data| { str::from_utf8(data) });
+    let res = Done((),&b"abcd"[..]).map_res(|data| { str::from_utf8(data) });
     assert_eq!(res, Done((), "abcd"));
-    let res2 = Done(b"abcd",b"efgh").map_res(|data| { str::from_utf8(data) });
-    assert_eq!(res2, Done(b"abcd", "efgh"));
-    let res3 = Done("abcd",b"efgh").map_res(|data| { str::from_utf8(data) });
+    let res2 = Done(&b"abcd"[..],&b"efgh"[..]).map_res(|data| { str::from_utf8(data) });
+    assert_eq!(res2, Done(&b"abcd"[..], "efgh"));
+    let res3 = Done("abcd",&b"efgh"[..]).map_res(|data| { str::from_utf8(data) });
     assert_eq!(res3, Done("abcd", "efgh"));
   }
 

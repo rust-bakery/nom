@@ -1,4 +1,3 @@
-
 pub trait HexDisplay {
       /// Converts the value of `self` to a hex value, returning the owned
       ///     /// string.
@@ -58,14 +57,14 @@ pub trait AsBytes {
 impl<'a> AsBytes for &'a str {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    <str as StrExt>::as_bytes(self)
+    str::as_bytes(self)
   }
 }
 
 impl AsBytes for str {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    <str as StrExt>::as_bytes(&self)
+    str::as_bytes(self)
   }
 }
 
