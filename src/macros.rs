@@ -551,7 +551,7 @@ macro_rules! filter(
 /// ```
 #[macro_export]
 macro_rules! opt(
-  ($name:ident<$i:ty,$o:ty> $f:ident) => (
+  ($name:ident<$i:ty,$o:ty> $f:expr) => (
     opt!($name<$i,$o> call!($f));
   );
   ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
@@ -563,9 +563,6 @@ macro_rules! opt(
       }
     }
   );
-  ($i:expr, $f:ident) => (
-    opt($i, call($f));
-  );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -574,6 +571,9 @@ macro_rules! opt(
         IResult::Incomplete(i) => IResult::Incomplete(i)
       }
     }
+  );
+  ($i:expr, $f:expr) => (
+    opt($i, call($f));
   );
 );
 
@@ -589,9 +589,6 @@ macro_rules! opt(
 /// ```
 #[macro_export]
 macro_rules! peek(
-  ($name:ident<$i:ty,$o:ty> $f:ident) => (
-    peek!($name<$i,$o> call!($f));
-  );
   ($name:ident<$i:ty,$o:ty> $submac:ident!( $($args:tt)* )) => (
     fn $name(input:$i) -> IResult<$i, $o> {
       match $submac!(input, $($args)*) {
@@ -601,8 +598,8 @@ macro_rules! peek(
       }
     }
   );
-  ($i:expr, $f:ident) => (
-    peek!($i, call!(f));
+  ($name:ident<$i:ty,$o:ty> $f:expr) => (
+    peek!($name<$i,$o> call!($f));
   );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -612,6 +609,9 @@ macro_rules! peek(
         IResult::Incomplete(i) => IResult::Incomplete(i)
       }
     }
+  );
+  ($i:expr, $f:expr) => (
+    peek!($i, call!(f));
   );
 );
 
@@ -633,9 +633,6 @@ macro_rules! peek(
 /// 0 or more
 #[macro_export]
 macro_rules! many0(
-  ($i:expr, $f:ident) => (
-    many0!($i, call!($f));
-  );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       let mut begin = 0;
@@ -656,6 +653,9 @@ macro_rules! many0(
       IResult::Done(&$i[begin..], res)
     }
   );
+  ($i:expr, $f:expr) => (
+    many0!($i, call!($f));
+  );
 );
 
 /// Applies the parser 0 or more times and returns the list of results in a Vec
@@ -675,9 +675,6 @@ macro_rules! many0(
 /// ```
 #[macro_export]
 macro_rules! many1(
-  ($i:expr, $f:ident) => (
-    many1!($i, call!($f));
-  );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       let mut begin = 0;
@@ -701,6 +698,9 @@ macro_rules! many1(
         IResult::Done(&$i[begin..], res)
       }
     }
+  );
+  ($i:expr, $f:expr) => (
+    many1!($i, call!($f));
   );
 );
 
