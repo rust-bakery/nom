@@ -242,14 +242,6 @@ struct MP4BoxHeader {
   tag:    MP4BoxType
 }
 
-named!(ftyp, tag!("ftyp"));
-
-/*
-fn brand_name(input:&[u8]) -> IResult<&[u8],&str> {
-  take!(major_brand_bytes 4);
-  major_brand_bytes(input).map_res(str::from_utf8)
-}*/
-
 named!(brand_name<&[u8],&str>, map_res!(take!(4), from_utf8));
 
 named!(filetype_parser<&[u8], FileType>,
@@ -261,45 +253,6 @@ named!(filetype_parser<&[u8], FileType>,
   )
 );
 
-fn filetype_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  ftyp(input).map(|_| MP4BoxType::Ftyp)
-}
-
-named!(filetype_box_type2<&[u8],MP4BoxType>, map!(
-    ftyp,
-    |_|{MP4BoxType::Ftyp}
-    )
-);
-
-named!(moov_tag, tag!("moov"));
-named!(mdra,     tag!("mdra"));
-
-named!(moov_mdra_type<&[u8],MP4BoxType>, map!(
-   mdra,
-   |_|{MP4BoxType::Mdra}
-  )
-);
-
-named!(dref, tag!("dref"));
-fn moov_dref_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  dref(input).map(|_| MP4BoxType::Dref)
-}
-
-named!(cmov, tag!("cmov"));
-fn moov_cmov_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  cmov(input).map(|_| MP4BoxType::Cmov)
-}
-
-named!(rmra, tag!("rmra"));
-fn moov_rmra_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  rmra(input).map(|_| MP4BoxType::Rmra)
-}
-
-named!(iods, tag!("iods"));
-fn moov_iods_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  iods(input).map(|_| MP4BoxType::Iods)
-}
-
 fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   if input.len() < 100 {
     Incomplete(Needed::Size(100))
@@ -310,49 +263,6 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   } else {
     Error(0)
   }
-}
-
-named!(mvhd, tag!("mvhd"));
-fn moov_mvhd_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  mvhd(input).map(|_| MP4BoxType::Mvhd)
-}
-
-named!(clip, tag!("clip"));
-fn moov_clip_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  clip(input).map(|_| MP4BoxType::Clip)
-}
-
-named!(trak,    tag!("trak"));
-fn moov_trak_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  trak(input).map(|_| MP4BoxType::Trak)
-}
-
-named!(udta, tag!("udta"));
-fn moov_udta_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  udta(input).map(|_| MP4BoxType::Udta)
-}
-
-fn moov_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  moov_tag(input).map(|_| MP4BoxType::Moov)
-}
-
-named!(mdat, tag!("mdat"));
-fn mdat_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  mdat(input).map(|_| MP4BoxType::Mdat)
-}
-named!(free, tag!("free"));
-fn free_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  free(input).map(|_| MP4BoxType::Free)
-}
-
-named!(skip, tag!("skip"));
-fn skip_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  skip(input).map(|_| MP4BoxType::Skip)
-}
-
-named!(wide, tag!("wide"));
-fn wide_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  wide(input).map(|_| MP4BoxType::Wide)
 }
 
 fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
@@ -378,44 +288,29 @@ impl MP4Consumer {
 
 named!(box_type<&[u8], MP4BoxType>,
   alt!(
-    map!(ftyp, |_|{MP4BoxType::Ftyp}) |
-    moov_box_type                     |
-    map!(mdat, |_|{MP4BoxType::Mdat}) |
-    map!(free, |_|{MP4BoxType::Free}) |
-    map!(skip, |_|{MP4BoxType::Skip}) |
-    map!(wide, |_|{MP4BoxType::Wide}) |
+    tag!("ftyp") => { |_| MP4BoxType::Ftyp } |
+    tag!("moov") => { |_| MP4BoxType::Moov } |
+    tag!("mdat") => { |_| MP4BoxType::Mdat } |
+    tag!("free") => { |_| MP4BoxType::Free } |
+    tag!("skip") => { |_| MP4BoxType::Skip } |
+    tag!("wide") => { |_| MP4BoxType::Wide } |
     unknown_box_type
   )
 );
 
 named!(moov_type<&[u8], MP4BoxType>,
   alt!(
-    moov_mdra_type |
-    moov_dref_type |
-    moov_cmov_type |
-    moov_rmra_type |
-    moov_iods_type |
-    moov_mvhd_type |
-    moov_clip_type |
-    moov_trak_type |
-    moov_udta_type
+    tag!("mdra") => { |_| MP4BoxType::Mdra } |
+    tag!("dref") => { |_| MP4BoxType::Dref } |
+    tag!("cmov") => { |_| MP4BoxType::Cmov } |
+    tag!("rmra") => { |_| MP4BoxType::Rmra } |
+    tag!("iods") => { |_| MP4BoxType::Iods } |
+    tag!("mvhd") => { |_| MP4BoxType::Mvhd } |
+    tag!("clip") => { |_| MP4BoxType::Clip } |
+    tag!("trak") => { |_| MP4BoxType::Trak } |
+    tag!("udta") => { |_| MP4BoxType::Udta }
   )
 );
-
-// this increases the build time to 1mn
-/*
-alt!(moov_type<&[u8], MP4BoxType>,
-  map!(mdra, |_|{MP4BoxType::Mdra}) |
-  map!(dref, |_|{MP4BoxType::Dref}) |
-  map!(cmov, |_|{MP4BoxType::Cmov}) |
-  map!(rmra, |_|{MP4BoxType::Rmra}) |
-  map!(iods, |_|{MP4BoxType::Iods}) |
-  map!(mvhd, |_|{MP4BoxType::Mvhd}) |
-  map!(clip, |_|{MP4BoxType::Clip}) |
-  map!(trak, |_|{MP4BoxType::Trak}) |
-  map!(udta, |_|{MP4BoxType::Udta})
-);
-*/
 
 named!(box_header<&[u8],MP4BoxHeader>,
   chain!(
