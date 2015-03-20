@@ -8,8 +8,8 @@ use std::str;
 use std::str::from_utf8;
 use std::collections::HashMap;
 
-take_until_and_leave!(category_bytes "]");
-take_until_either_and_leave!(value_bytes "\n;");
+named!(category_bytes, take_until_and_leave!("]"));
+named!(value_bytes,    take_until_either_and_leave!("\n;"));
 
 named!(category     <&[u8], &str>,
   chain!(

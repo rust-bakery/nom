@@ -652,7 +652,7 @@ macro_rules! take_until(
       let expected = $inp;
       let bytes = as_bytes(&expected);
 
-      for idx in 0..i.len() {
+      for idx in 0..$i.len() {
         if idx + bytes.len() > $i.len() {
           return Incomplete(Needed::Size((idx + bytes.len()) as u32))
         }
@@ -661,31 +661,6 @@ macro_rules! take_until(
             return Done(b"", &$i[0..idx])
           } else {
             return Done(&$i[(idx + bytes.len())..], &$i[0..idx])
-          }
-        }
-      }
-      return Error(0)
-    }
-  );
-  ($name:ident $inp:expr) => (
-    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
-
-      for idx in 0..i.len() {
-        if idx + bytes.len() > i.len() {
-          return Incomplete(Needed::Size((idx + bytes.len()) as u32))
-        }
-        if &i[idx..idx + bytes.len()] == bytes {
-          if idx + bytes.len() > i.len() {
-            return Done(b"", &i[0..idx])
-          } else {
-            return Done(&i[(idx + bytes.len())..], &i[0..idx])
           }
         }
       }
@@ -712,27 +687,6 @@ macro_rules! take_until_and_leave(
         }
         if &$i[idx..idx+bytes.len()] == bytes {
           return Done(&$i[idx..], &$i[0..idx])
-        }
-      }
-      return Error(0)
-    }
-  );
-  ($name:ident $inp:expr) => (
-    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
-
-      for idx in 0..i.len() {
-        if idx + bytes.len() > i.len() {
-          return Incomplete(Needed::Size((idx + bytes.len()) as u32))
-        }
-        if &i[idx..idx+bytes.len()] == bytes {
-          return Done(&i[idx..], &i[0..idx])
         }
       }
       return Error(0)
@@ -769,33 +723,6 @@ macro_rules! take_until_either(
       return Error(0)
     }
   );
-  ($name:ident $inp:expr) => (
-    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
-
-      for idx in 0..i.len() {
-        if idx + 1 > i.len() {
-          return Incomplete(Needed::Size(1 + idx as u32))
-        }
-        for &t in bytes.iter() {
-          if i[idx] == t {
-            if idx + 1 > i.len() {
-              return Done(b"", &i[0..idx])
-            } else {
-              return Done(&i[(idx+1)..], &i[0..idx])
-            }
-          }
-        }
-      }
-      return Error(0)
-    }
-  );
 );
 
 #[macro_export]
@@ -817,29 +744,6 @@ macro_rules! take_until_either_and_leave(
         for &t in bytes.iter() {
           if $i[idx] == t {
             return Done(&$i[idx..], &$i[0..idx])
-          }
-        }
-      }
-      return Error(0)
-    }
-  );
-  ($name:ident $inp:expr) => (
-    fn $name(i:&[u8]) -> IResult<&[u8], &[u8]>{
-      #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
-
-      for idx in 0..i.len() {
-        if idx + 1 > i.len() {
-          return Incomplete(Needed::Size(1 + idx as u32))
-        }
-        for &t in bytes.iter() {
-          if i[idx] == t {
-            return Done(&i[idx..], &i[0..idx])
           }
         }
       }
@@ -1127,7 +1031,7 @@ mod tests {
 
   #[test]
   fn take_until_test() {
-    take_until!(x "efgh");
+    named!(x, take_until!("efgh"));
     let r = x(&b"abcdabcdefghijkl"[..]);
     assert_eq!(r, Done(&b"ijkl"[..], &b"abcdabcd"[..]));
 
