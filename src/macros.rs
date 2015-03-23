@@ -782,81 +782,98 @@ macro_rules! take_until_either_and_leave(
 /// returns
 #[macro_export]
 macro_rules! length_value(
-  ($name:ident<$i:ty,$o:ty> $f:ident $g:ident) => (
-    fn $name(input:$i) -> IResult<$i, Vec<$o>> {
-      match $f(input) {
+  ($i:expr, $f:expr, $g:expr) => (
+    {
+      match $f($i) {
         Error(a)      => Error(a),
         Incomplete(i) => Incomplete(i),
         Done(i1,nb)   => {
-          let length_token     = input.len() - i1.len();
+          let length_token     = $i.len() - i1.len();
           let mut begin        = 0;
           let mut remaining    = i1.len();
-          let mut res: Vec<$o> = Vec::new();
+          let mut res          = Vec::new();
+          let mut err          = false;
+          let mut inc          = Needed::Unknown;
 
           loop {
             if res.len() == nb as usize {
-              return Done(&i1[begin..], res);
+              break;
             }
-
             match $g(&i1[begin..]) {
               Done(i2,o2) => {
               res.push(o2);
                 let parsed  = remaining - i2.len();
                 begin      += parsed;
                 remaining   = i2.len();
-                if begin   >= i1.len() {
-                  return Incomplete(Needed::Size((length_token + nb as usize * parsed) as u32));
-                }
               },
-              Error(a)      => return Error(a),
-              Incomplete(Needed::Unknown) => {
-                return Incomplete(Needed::Unknown)
+              Error(a)      => {
+                err = true;
               },
-              Incomplete(Needed::Size(a)) => {
-                return Incomplete(Needed::Size(length_token  as u32 + a * nb as u32))
+              Incomplete(a) => {
+                inc = a;
+                break;
               }
             }
           }
+          if err {
+            Error(0)
+          } else if res.len() < nb as usize {
+            match inc {
+              Needed::Unknown      => Incomplete(Needed::Unknown),
+              Needed::Size(length) => Incomplete(Needed::Size(length_token as u32 + nb as u32 * length))
+            }
+          } else {
+            Done(&i1[begin..], res)
+          }
+
         }
       }
     }
   );
-
-  ($name:ident<$i:ty,$o:ty> $f:ident $g:ident $length:expr) => (
-    fn $name(input:$i) -> IResult<$i, Vec<$o>> {
-      match $f(input) {
+  ($i:expr, $f:expr, $g:expr, $length:expr) => (
+    {
+      match $f($i) {
         Error(a)      => Error(a),
         Incomplete(i) => Incomplete(i),
         Done(i1,nb)   => {
-          let length_token     = input.len() - i1.len();
+          let length_token     = $i.len() - i1.len();
           let mut begin        = 0;
           let mut remaining    = i1.len();
-          let mut res: Vec<$o> = Vec::new();
+          let mut res          = Vec::new();
+          let mut err          = false;
+          let mut inc          = Needed::Unknown;
 
           loop {
             if res.len() == nb as usize {
-              return Done(&i1[begin..], res);
+              break;
             }
-
             match $g(&i1[begin..]) {
               Done(i2,o2) => {
-                res.push(o2);
+              res.push(o2);
                 let parsed  = remaining - i2.len();
                 begin      += parsed;
                 remaining   = i2.len();
-                if begin   >= i1.len() {
-                  return Incomplete(Needed::Size((length_token + nb as usize * $length) as u32));
-                }
               },
-              Error(a)      => return Error(a),
-              Incomplete(Needed::Unknown) => {
-                return Incomplete(Needed::Unknown)
+              Error(a)      => {
+                err = true;
               },
-              Incomplete(Needed::Size(_)) => {
-                return Incomplete(Needed::Size(length_token  as u32 + $length * nb as u32))
+              Incomplete(a) => {
+                inc = a;
+                break;
               }
             }
           }
+          if err {
+            Error(0)
+          } else if res.len() < nb as usize {
+            match inc {
+              Needed::Unknown      => Incomplete(Needed::Unknown),
+              Needed::Size(_) => Incomplete(Needed::Size(length_token as u32 + nb as u32 * $length))
+            }
+          } else {
+            Done(&i1[begin..], res)
+          }
+
         }
       }
     }
@@ -1075,8 +1092,8 @@ mod tests {
   use nom::{be_u8,be_u16};
   #[test]
   fn length_value_test() {
-    length_value!(tst1<&[u8], u16 > be_u8 be_u16);
-    length_value!(tst2<&[u8], u16 > be_u8 be_u16 2);
+    named!(tst1<&[u8], Vec<u16> >, length_value!(be_u8, be_u16));
+    named!(tst2<&[u8], Vec<u16> >, length_value!(be_u8, be_u16, 2));
 
     let i1 = vec![0, 5, 6];
     let i2 = vec![1, 5, 6, 3];
