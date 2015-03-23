@@ -70,6 +70,7 @@ macro_rules! tag (
   );
 );
 
+/// maps a function on the result of a parser
 #[macro_export]
 macro_rules! map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -93,6 +94,7 @@ macro_rules! map(
   );
 );
 
+/// maps a function returning a Result on the output of a parser
 #[macro_export]
 macro_rules! map_res(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -119,6 +121,7 @@ macro_rules! map_res(
   );
 );
 
+/// maps a function returning an Option on the output of a parser
 #[macro_export]
 macro_rules! map_opt(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
