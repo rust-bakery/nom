@@ -43,7 +43,7 @@ macro_rules! call (
 /// consumes the recognized characters
 ///
 /// ```ignore
-///  tag!(x "abcd");
+///  named!(x, tag!("abcd"));
 ///  let r = Done((), b"abcdabcdefgh").flat_map(x);
 ///  assert_eq!(r, Done(b"efgh", b"abcd"));
 /// ```
@@ -154,18 +154,19 @@ macro_rules! map_opt(
 ///   b: Option<u8>
 /// }
 ///
-/// tag!(x "abcd");
-/// tag!(y "efgh");
+/// named!(y tag!("efgh"));
 ///
 /// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i, 1) };
 /// fn ret_y(i:&[u8]) -> IResult<&[u8], u8> { y(i).map(|_| 1) }; // return 1 if the "efgh" tag is found
 ///
-///  chain!(z<&[u8], u8>,
-///    x            ~
-///    aa: ret_int  ~     // the result of that parser will be used in the closure
-///    x?           ~     // this parser is optional
-///    bb: ret_y?   ,     // the result of that parser is an option
-///    ||{B{a: aa, b: bb}}
+///  named!(z<&[u8], u8>,
+///    chain!(
+///      tag!("abcd")  ~
+///      aa: ret_int   ~     // the result of that parser will be used in the closure
+///      tag!("abcd")? ~     // this parser is optional
+///      bb: ret_y?    ,     // the result of that parser is an option
+///      ||{B{a: aa, b: bb}}
+///    )
 ///  );
 ///
 /// // the first "abcd" tag is not present, we have an error
@@ -329,9 +330,7 @@ macro_rules! chaining_parser (
 /// Incomplete results are ignored
 ///
 /// ```ignore
-///  tag!(x "abcd");
-///  tag!(y "efgh");
-///  named!(test, alt!(x | y));
+///  named!( test, alt!( tag!( "abcd" ) | tag!( "efgh" ) ) );
 ///  let r1 = test(b"abcdefgh"));
 ///  assert_eq!(r1, Done(b"efgh", b"abcd"));
 ///  let r2 = test(b"efghijkl"));
@@ -406,7 +405,8 @@ macro_rules! alt_parser (
 /// returns the longest list of bytes that do not appear in the provided array
 ///
 /// ```ignore
-///  is_not!(not_space b" \t\r\n");
+///  named!( not_space, is_not!( b" \t\r\n" ) );
+///
 ///  let r = not_space(b"abcdefgh\nijkl"));
 ///  assert_eq!(r, Done(b"\nijkl", b"abcdefgh"));
 /// ```
@@ -437,7 +437,8 @@ macro_rules! is_not(
 /// returns the longest list of bytes that appear in the provided array
 ///
 /// ```ignore
-///  is_a!(abcd b"abcd");
+///  named!(abcd, is_a!( b"abcd" ));
+///
 ///  let r1 = abcd(b"aaaaefgh"));
 ///  assert_eq!(r1, Done(b"efgh", b"aaaa"));
 ///
@@ -476,7 +477,8 @@ macro_rules! is_a(
 /// returns the longest list of bytes until the provided parser fails
 ///
 /// ```ignore
-///  filter!(alpha is_alphanumeric);
+///  named!( alpha, filter!( is_alphanumeric ) );
+///
 ///  let r = alpha(b"abcd\nefgh"));
 ///  assert_eq!(r, Done(b"\nefgh", b"abcd"));
 /// ```
@@ -502,8 +504,7 @@ macro_rules! filter(
 /// returns an Option of the returned type
 ///
 /// ```ignore
-///  tag!(x "abcd");
-///  opt!(o<&[u8],&[u8]> x);
+///  named!( o, opt!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdef";
 ///  let b = b"bcdefg";
@@ -531,8 +532,8 @@ macro_rules! opt(
 /// the embedded parser may return Incomplete
 ///
 /// ```ignore
-///  tag!(x "abcd");
-///  peek!(ptag<&[u8], &[u8]> x);
+///  named!(ptag, peek!( tag!( "abcd" ) ) );
+///
 ///  let r = ptag(b"abcdefgh"));
 ///  assert_eq!(r, Done(b"abcdefgh", b"abcd"));
 /// ```
@@ -557,8 +558,7 @@ macro_rules! peek(
 /// the embedded parser may return Incomplete
 ///
 /// ```ignore
-///  tag!(x "abcd");
-///  many0!(multi<&[u8],&[u8]> x);
+///  named!(multi, many0!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdabcdef";
 ///  let b = b"azerty";
@@ -600,8 +600,7 @@ macro_rules! many0(
 /// the embedded parser may return Incomplete
 ///
 /// ```ignore
-///  tag!(x "abcd");
-///  many1!(multi<&[u8],&[u8]> x);
+///  named!(multi, many1!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdabcdef";
 ///  let b = b"azerty";
@@ -644,7 +643,8 @@ macro_rules! many1(
 /// generates a parser consuming the specified number of bytes
 ///
 /// ```ignore
-///  take!(take5 5);
+///  // Desmond parser
+///  named!(take5, take!( 5 ) );
 ///
 ///  let a = b"abcdefgh";
 ///

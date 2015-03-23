@@ -33,7 +33,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "~0.1.0"
+nom = "~0.2.0"
 ```
 
 Then include it in your code like this:
@@ -108,13 +108,23 @@ There is already a large list of parsers available, like:
 
 #### Making new parsers with macros
 
-Some macros make it easier to create new parsers. Here are a few of them:
+Macros are the main way to make new parsers by combining other ones. Those macros accept other macros or function names as arguments. You then need to make a function out of that combinator with **named!**, or a closure with **closure!**. Here is how you would do, with the **tag!** and **take!** combinators:
 
 ```rust
-tag!(abcd_parser  "abcd"); // will consume bytes if the input begins with "abcd"
+named!(abcd_parser, tag!("abcd")); // will consume bytes if the input begins with "abcd"
 
 
-take!(take_10     10);                // will consume 10 bytes of input
+named!(take_10, take!(10));                // will consume 10 bytes of input
+```
+
+The **named!** macro can take three different syntaxes:
+
+```rust
+named!(my_function( &[u8] ) -> &[u8], tag!("abcd"));
+
+named!(my_function<&[u8], &[u8]>, tag!("abcd"));
+
+named!(my_function, tag!("abcd")); // when you know the parser takes &[u8] as input, and returns &[u8] as output
 ```
 
 Here are the basic macros available:
@@ -158,23 +168,20 @@ pub trait FlatMapOpt<I,O,N> {
 Here again, we use macros to combine parsers easily in useful patterns:
 
 ```rust
-tag!(abcd_p "abcd");
-tag!(efgh_p "efgh");
-
-// the types indicates the input and output types, that must match for all alternatives
-alt!(alt_tags<&[u8],&[u8]>, abcd_p, efgh_p);
+named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
 
 assert_eq!(alt_tags(b"abcdxxx"), Done(b"xxx", b"abcd"));
 assert_eq!(alt_tags(b"efghxxx"), Done(b"xxx", b"efgh"));
 assert_eq!(alt_tags(b"ijklxxx"), Error(1));
 
 // make the abcd_p parser optional
-opt!(abcd_opt<&[u8], &[u8]>  abcd_p);
-assert_eq!(alt_tags(b"abcdxxx"), Done(b"xxx", Some(b"abcd")));
-assert_eq!(alt_tags(b"efghxxx"), Done(b"efghxxx", None));
+named!( abcd_opt, opt!( tag!("abcd") ) );
+
+assert_eq!(abcd_opt(b"abcdxxx"), Done(b"xxx", Some(b"abcd")));
+assert_eq!(abcd_opt(b"efghxxx"), Done(b"efghxxx", None));
 
 // the abcd_p parser can happen 0 or more times
-many0(multi<&[u8], &[u8]> abcd_p);
+named!(multi, many0!( tag!( "abcd" ) ) );
 let a = b"abcdef";
 let b = b"abcdabcdef";
 let c = b"azerty";
@@ -200,21 +207,20 @@ struct A {
   b: u8
 }
 
-tag!(abcd_p "abcd");
-tag!(efgh_p "efgh");
-
 fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
 fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
 
-chain!(f<&[u8],A>,    // the parser takes a byte array as input, and returns an A struct
-  abcd_p       ~      // begins with "abcd"
-  abcd_p?      ~      // the question mark indicates an optional parser
-  aa: ret_int1 ~      // the return value of ret_int1, if it does not fail, will be stored in aa
-  efgh_p       ~
-  bb: ret_int2 ~
-  efgh_p       ,      // end the chain with a comma
+named!(f<&[u8],A>,
+  chain!(    // the parser takes a byte array as input, and returns an A struct
+    tag!("abcd")  ~      // begins with "abcd"
+    tag!("abcd")? ~      // the question mark indicates an optional parser
+    aa: ret_int1  ~      // the return value of ret_int1, if it does not fail, will be stored in aa
+    tag!("efgh")  ~
+    bb: ret_int2  ~
+    tag!("efgh")  ,      // end the chain with a comma
 
-  ||{A{a: aa, b: bb}} // the final closure will be able to use the variable defined previously
+    ||{A{a: aa, b: bb}} // the final closure will be able to use the variable defined previously
+  )
 );
 
 let r = f(b"abcdabcdefghefghX");
@@ -343,13 +349,12 @@ struct TestConsumer {
 }
 ```
 
-Then, we define the parsers that we will use at every state of our consumer. Note that we do not make one big parser at once. We just build some small, reusable, testable components
+Then, we define the parsers that we will use at every state of our consumer. Note that we do not make one big parser at once. We just build some small, reusable, testable components.
 
 ```rust
-tag!(om_parser                     "om");
-tag!(nom_parser                    "nom");
-many1!(nomnom_parser<&[u8],&[u8]>  nom_parser);
-tag!(end_parser                    "kthxbye");
+named!( om_parser,             tag!( "om" ) );
+named!( nomnom_parser, many1!( tag!( "nom" ) ) );
+named!( end_parser,            tag!( "kthxbye")  );
 ```
 
 
