@@ -4,6 +4,8 @@
 ### Changed
 
 ## 0.2.0 - 2015-03-24
+*works with `rustc 1.0.0-dev (81e2396c7 2015-03-19) (built 2015-03-19)`*
+
 ## Thanks
 - Ryman for the AsBytes implementation
 - jag426 and jaredly for documentation fixes
