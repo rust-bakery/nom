@@ -676,7 +676,7 @@ macro_rules! take(
 
 /// generates a parser consuming bytes until the specified byte sequence is found
 #[macro_export]
-macro_rules! take_until(
+macro_rules! take_until_and_consume(
   ($i:expr, $inp:expr) => (
     {
       #[inline(always)]
@@ -715,7 +715,7 @@ macro_rules! take_until(
 );
 
 #[macro_export]
-macro_rules! take_until_and_leave(
+macro_rules! take_until(
   ($i:expr, $inp:expr) => (
     {
       #[inline(always)]
@@ -754,7 +754,7 @@ macro_rules! take_until_and_leave(
 );
 
 #[macro_export]
-macro_rules! take_until_either(
+macro_rules! take_until_either_and_consume(
   ($i:expr, $inp:expr) => (
     {
       #[inline(always)]
@@ -795,7 +795,7 @@ macro_rules! take_until_either(
 );
 
 #[macro_export]
-macro_rules! take_until_either_and_leave(
+macro_rules! take_until_either(
   ($i:expr, $inp:expr) => (
     {
       #[inline(always)]
@@ -1131,7 +1131,7 @@ mod tests {
 
   #[test]
   fn take_until_test() {
-    named!(x, take_until!("efgh"));
+    named!(x, take_until_and_consume!("efgh"));
     let r = x(&b"abcdabcdefghijkl"[..]);
     assert_eq!(r, Done(&b"ijkl"[..], &b"abcdabcd"[..]));
 
