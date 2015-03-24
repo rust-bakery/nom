@@ -422,17 +422,22 @@ macro_rules! is_not(
         b.as_bytes()
       }
 
-      let expected = $arr;
-      let bytes = as_bytes(&expected);
+      let expected   = $arr;
+      let bytes      = as_bytes(&expected);
+      let mut parsed = false;
+      let mut index  = 0;
 
       for idx in 0..$input.len() {
+        index = idx;
         for &i in bytes.iter() {
           if $input[idx] == i {
-            return IResult::Done(&$input[idx..], &$input[0..idx])
+            parsed = true;
+            break;
           }
         }
+        if parsed { break; }
       }
-      IResult::Done(b"", $input)
+      IResult::Done(&$input[index..], &$input[0..index])
     }
   );
 );
@@ -457,22 +462,23 @@ macro_rules! is_a(
         b.as_bytes()
       }
 
-      let expected = $arr;
-      let bytes = as_bytes(&expected);
+      let expected  = $arr;
+      let bytes     = as_bytes(&expected);
+      let mut index = 0;
 
       for idx in 0..$input.len() {
-        let mut res = false;
+        index = idx;
+        let mut cont = false;
         for &i in bytes.iter() {
           if $input[idx] == i {
-            res = true;
+            println!("found byte: {}", i as char);
+            cont = true;
             break;
           }
         }
-        if !res {
-          return IResult::Done(&$input[idx..], &$input[0..idx])
-        }
+        if !cont { break; }
       }
-      IResult::Done(b"", $input)
+      IResult::Done(&$input[index..], &$input[0..index])
     }
   );
 );
@@ -492,12 +498,14 @@ macro_rules! filter(
   );
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      let mut index = 0;
       for idx in 0..$input.len() {
+        index = idx;
         if !$submac!($input[idx], $($args)*) {
-          return IResult::Done(&$input[idx..], &$input[0..idx])
+          break;
         }
       }
-      IResult::Done(b"", $input)
+      IResult::Done(&$input[index..], &$input[0..index])
     }
   );
 );
@@ -676,22 +684,32 @@ macro_rules! take_until(
         b.as_bytes()
       }
 
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
+      let expected   = $inp;
+      let bytes      = as_bytes(&expected);
+      let mut index  = 0;
+      let mut parsed = false;
 
       for idx in 0..$i.len() {
         if idx + bytes.len() > $i.len() {
-          return Incomplete(Needed::Size((idx + bytes.len()) as u32))
+          index = idx;
+          break;
         }
         if &$i[idx..idx + bytes.len()] == bytes {
-          if idx + bytes.len() > $i.len() {
-            return Done(b"", &$i[0..idx])
-          } else {
-            return Done(&$i[(idx + bytes.len())..], &$i[0..idx])
-          }
+          parsed = true;
+          index = idx;
+          break;
         }
       }
-      return Error(0)
+
+      if index + bytes.len() > $i.len() {
+        Incomplete(Needed::Size((index + bytes.len()) as u32))
+      } else {
+        if parsed {
+          Done(&$i[(index + bytes.len())..], &$i[0..index])
+        } else {
+          Error(0)
+        }
+      }
     }
   );
 );
@@ -705,18 +723,32 @@ macro_rules! take_until_and_leave(
         b.as_bytes()
       }
 
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
+      let expected   = $inp;
+      let bytes      = as_bytes(&expected);
+      let mut index  = 0;
+      let mut parsed = false;
 
       for idx in 0..$i.len() {
         if idx + bytes.len() > $i.len() {
-          return Incomplete(Needed::Size((idx + bytes.len()) as u32))
+          index = idx;
+          break;
         }
         if &$i[idx..idx+bytes.len()] == bytes {
-          return Done(&$i[idx..], &$i[0..idx])
+          parsed = true;
+          index  = idx;
+          break;
         }
       }
-      return Error(0)
+
+      if index + bytes.len() > $i.len() {
+        Incomplete(Needed::Size((index + bytes.len()) as u32))
+      } else {
+        if parsed {
+          Done(&$i[index..], &$i[0..index])
+        } else {
+          Error(0)
+        }
+      }
     }
   );
 );
@@ -730,24 +762,34 @@ macro_rules! take_until_either(
         b.as_bytes()
       }
 
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
+      let expected   = $inp;
+      let bytes      = as_bytes(&expected);
+      let mut index  = 0;
+      let mut parsed = false;
 
       for idx in 0..$i.len() {
         if idx + 1 > $i.len() {
-          return Incomplete(Needed::Size(1 + idx as u32))
+          index = idx;
+          break;
         }
         for &t in bytes.iter() {
           if $i[idx] == t {
-            if idx + 1 > $i.len() {
-              return Done(b"", &$i[0..idx])
-            } else {
-              return Done(&$i[(idx+1)..], &$i[0..idx])
-            }
+            parsed = true;
+            index = idx;
+            break;
           }
         }
+        if parsed { break; }
       }
-      return Error(0)
+      if index + 1 > $i.len() {
+        Incomplete(Needed::Size((index + 1) as u32))
+      } else {
+        if parsed {
+          Done(&$i[(index+1)..], &$i[0..index])
+        } else {
+          Error(0)
+        }
+      }
     }
   );
 );
@@ -761,20 +803,34 @@ macro_rules! take_until_either_and_leave(
         b.as_bytes()
       }
 
-      let expected = $inp;
-      let bytes = as_bytes(&expected);
+      let expected   = $inp;
+      let bytes      = as_bytes(&expected);
+      let mut index  = 0;
+      let mut parsed = false;
 
       for idx in 0..$i.len() {
         if idx + 1 > $i.len() {
-          return Incomplete(Needed::Size(1 + idx as u32))
+          index = idx;
+          break;
         }
         for &t in bytes.iter() {
           if $i[idx] == t {
-            return Done(&$i[idx..], &$i[0..idx])
+            parsed = true;
+            index = idx;
+            break;
           }
         }
+        if parsed { break; }
       }
-      return Error(0)
+      if index + 1 > $i.len() {
+        Incomplete(Needed::Size((index + 1) as u32))
+      } else {
+        if parsed {
+          Done(&$i[index..], &$i[0..index])
+        } else {
+          Error(0)
+        }
+      }
     }
   );
 );
