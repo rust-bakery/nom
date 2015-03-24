@@ -8,14 +8,11 @@ use std::str;
 use std::str::from_utf8;
 use std::collections::HashMap;
 
-named!(category_bytes, take_until!("]"));
-named!(value_bytes,    take_until_either!("\n;"));
-
 named!(category     <&[u8], &str>,
   chain!(
           tag!("[")       ~
     name: map_res!(
-      category_bytes,
+      take_until!("]"),
       from_utf8)          ~
           tag!("]")       ~
           multispace?     ,
@@ -29,7 +26,10 @@ named!(key_value    <&[u8],(&str,&str)>,
          space?                            ~
          tag!("=")                         ~
          space?                            ~
-    val: map_res!(value_bytes, from_utf8)  ~
+    val: map_res!(
+           take_until_either!("\n;"),
+           from_utf8
+         )                                 ~
          space?                            ~
          chain!(
            tag!(";")        ~
