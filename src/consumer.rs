@@ -8,6 +8,7 @@
 //! This consumer will take 4 samples from the input, print them, then stop
 //!
 //! ```rust
+//! #![feature(io)]
 //!  use nom::{IResult,Needed,MemProducer,Consumer,ConsumerState};
 //!  use std::str;
 //!  use std::io::SeekFrom;

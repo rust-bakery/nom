@@ -198,6 +198,7 @@ impl<'x> Producer for MemProducer<'x> {
 /// # Example
 ///
 /// ```ignore
+/// #![feature(collections)]
 /// fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
 ///   par.flat_map(local_print)
 /// }
@@ -230,9 +231,9 @@ macro_rules! pusher (
           _ => {break;}
         }
         let mut v2: Vec<u8>  = Vec::new();
-        v2.push_all(acc.as_slice());
+        v2.push_all(&acc[..]);
         //let p = IResult::Done(b"", v2.as_slice());
-        match $f(v2.as_slice()) {
+        match $f(&v2[..]) {
           IResult::Error(e)      => {
             //println!("error, stopping: {}", e);
             break;
