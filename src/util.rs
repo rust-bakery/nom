@@ -1,16 +1,38 @@
+use std::raw::{self, Repr};
+
 pub trait HexDisplay {
-      /// Converts the value of `self` to a hex value, returning the owned
-      ///     /// string.
+  fn offset(&self, second:&[u8]) -> usize;
+
+  /// Converts the value of `self` to a hex value, returning the owned
+  /// string.
   fn to_hex(&self, chunk_size: usize) -> String;
+
+  fn to_hex_from(&self, chunk_size: usize, from: usize) -> String;
 }
 
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
+
 impl HexDisplay for [u8] {
+  fn offset(&self, second:&[u8]) -> usize {
+    let fst: raw::Slice<u8> = self.repr();
+    let snd: raw::Slice<u8> = second.repr();
+
+    unsafe {
+      snd.data as usize -
+        fst.data as usize
+    }
+  }
+
   #[allow(unused_variables)]
   fn to_hex(&self, chunk_size: usize) -> String {
+    self.to_hex_from(chunk_size, 0)
+  }
+
+  #[allow(unused_variables)]
+  fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
     let mut v = Vec::with_capacity(self.len() * 3);
-    let mut i = 0;
+    let mut i = from;
     for chunk in self.chunks(chunk_size) {
       let s = format!("{:08x}", i);
       for &ch in s.as_bytes().iter() {
