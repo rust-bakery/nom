@@ -44,7 +44,7 @@ pub use self::producer::*;//{ProducerState,Producer,FileProducer,MemProducer};
 pub use self::consumer::*;//{ConsumerState,Consumer};
 pub use self::nom::*;
 
-pub mod util;
+#[macro_use] pub mod util;
 pub mod internal;
 #[macro_use] pub mod macros;
 #[macro_use] pub mod producer;

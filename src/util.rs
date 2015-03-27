@@ -72,6 +72,46 @@ impl HexDisplay for [u8] {
   }
 }
 
+#[macro_export]
+macro_rules! dbg (
+  ($i: expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let l = line!();
+      match $submac!($i, $($args)*) {
+        IResult::Error(a) => {
+          println!("Error({:?}) at l.{} by ' {} '", a, l, stringify!($submac!($($args)*)));
+          IResult::Error(a)
+        },
+        IResult::Incomplete(a) => {
+          println!("Incomplete({:?}) at {} by ' {} '", a, l, stringify!($submac!($($args)*)));
+          IResult::Incomplete(a)
+        },
+        a => a
+      }
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! dbg_dmp (
+  ($i: expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let l = line!();
+      match $submac!($i, $($args)*) {
+        IResult::Error(a) => {
+          println!("Error({:?}) at l.{} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
+          IResult::Error(a)
+        },
+        IResult::Incomplete(a) => {
+          println!("Incomplete({:?}) at {} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
+          IResult::Incomplete(a)
+        },
+        a => a
+      }
+    }
+  );
+);
+
 pub trait AsBytes {
   fn as_bytes(&self) -> &[u8];
 }
