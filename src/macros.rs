@@ -651,6 +651,48 @@ macro_rules! many1(
   );
 );
 
+#[macro_export]
+macro_rules! count(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $i.len();
+      let mut res = Vec::new();
+      let mut cnt = 0;
+      let mut err = false;
+      loop {
+        match $submac!(&$i[begin..], $($args)*) {
+          IResult::Done(i,o) => {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            cnt = cnt + 1;
+            if cnt == $count {
+              break
+            }
+          },
+          IResult::Error(_)  => {
+            err = true;
+            break;
+          },
+          IResult::Incomplete(_) => {
+            break;
+          }
+        }
+      }
+      if err {
+        IResult::Error(0)
+      } else if cnt == $count {
+        IResult::Done(&$i[begin..], res)
+      } else {
+        IResult::Incomplete(Needed::Unknown)
+      }
+    }
+  );
+  ($i:expr, $f:expr, $count: expr) => (
+    many0!($i, call!($f), $count);
+  );
+);
 /// generates a parser consuming the specified number of bytes
 ///
 /// ```ignore
