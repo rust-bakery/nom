@@ -534,7 +534,7 @@ macro_rules! opt(
     }
   );
   ($i:expr, $f:expr) => (
-    opt($i, call($f));
+    opt!($i, call!($f));
   );
 );
 
