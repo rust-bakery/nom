@@ -1,4 +1,3 @@
-#![feature(core,collections)]
 
 #[macro_use]
 extern crate nom;

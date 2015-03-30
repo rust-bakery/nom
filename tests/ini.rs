@@ -1,9 +1,8 @@
-#![feature(core,collections)]
 
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed,FlatMapOpt,not_line_ending, space, alphanumeric, multispace};
+use nom::{IResult,Needed,not_line_ending, space, alphanumeric, multispace};
 use nom::IResult::*;
 
 use std::str;

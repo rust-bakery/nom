@@ -245,9 +245,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use map::*;
   use internal::Needed;
-  use internal::IResult;
   use internal::IResult::*;
 
   #[test]
