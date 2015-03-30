@@ -538,6 +538,27 @@ macro_rules! opt(
   );
 );
 
+#[macro_export]
+macro_rules! cond(
+  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      if $cond {
+        match $submac!($i, $($args)*) {
+          IResult::Done(i,o)     => IResult::Done(i, Some(o)),
+          IResult::Error(_)      => IResult::Done($i, None),
+          IResult::Incomplete(i) => IResult::Incomplete(i)
+        }
+      } else {
+        IResult::Done($i, None)
+      }
+    }
+  );
+  ($i:expr, $cond:expr, $f:expr) => (
+    cond!($i, $cond, call($f));
+  );
+);
+
+
 /// returns a result without consuming the input
 ///
 /// the embedded parser may return Incomplete
