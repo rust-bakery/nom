@@ -364,16 +364,16 @@ macro_rules! alt_parser (
     }
   );
 
-  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
-    alt_parser!($i, call!($e) => { $gen } | $($rest)*);
-  );
-
   ($i:expr, $subrule:ident!( $args:tt ) => { $gen:expr } | $($rest:tt)+) => (
     match $subrule!( $i, $args ) {
       IResult::Error(_) => alt!( $i, $($rest)+ ),
       IResult::Incomplete(_) => alt!( $i, $($rest)+ ),
       IResult::Done(i,o) => IResult::Done(i, $gen( o ))
     }
+  );
+
+  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_parser!($i, call!($e) => { $gen } | $($rest)*);
   );
 
   ($i:expr, $e:ident => { $gen:expr }) => (
