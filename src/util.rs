@@ -18,10 +18,7 @@ impl HexDisplay for [u8] {
     let fst: raw::Slice<u8> = self.repr();
     let snd: raw::Slice<u8> = second.repr();
 
-    unsafe {
-      snd.data as usize -
-        fst.data as usize
-    }
+    snd.data as usize - fst.data as usize
   }
 
   #[allow(unused_variables)]

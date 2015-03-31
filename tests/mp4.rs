@@ -1,4 +1,5 @@
 #![feature(io,log_syntax,trace_macros)]
+#![allow(dead_code)]
 
 #[macro_use]
 extern crate nom;
@@ -456,7 +457,7 @@ impl MP4Consumer {
         assert!(false);
         return ConsumerState::ConsumerError(a);
       },
-      Incomplete(a) => {
+      Incomplete(_) => {
         println!("mvhd incomplete -> await: {}", input.len());
         return ConsumerState::Await(0, input.len() + 100);
       }
@@ -484,6 +485,7 @@ impl Consumer for MP4Consumer {
   }
 }
 
+#[allow(unused_must_use)]
 fn explore_mp4_file(filename: &str) {
   FileProducer::new(filename, 400).map(|producer: FileProducer| {
     println!("file producer created for {}", filename);
