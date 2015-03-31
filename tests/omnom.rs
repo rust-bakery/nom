@@ -37,7 +37,7 @@ impl Consumer for TestConsumer {
       },
       State::Middle    => {
         match nomnom_parser(input) {
-          Error(a)         => {
+          Error(_)         => {
             self.state = State::End;
             ConsumerState::Await(0, 7)
           },

@@ -1,9 +1,5 @@
 extern crate collections;
 
-use std::fmt::Debug;
-use internal::*;
-use internal::IResult::*;
-
 #[macro_export]
 macro_rules! closure (
     ($ty:ty, $submac:ident!( $($args:tt)* )) => (
@@ -574,7 +570,7 @@ macro_rules! peek(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        IResult::Done(i,o)     => IResult::Done($i, o),
+        IResult::Done(_,o)     => IResult::Done($i, o),
         IResult::Error(a)      => IResult::Error(a),
         IResult::Incomplete(i) => IResult::Incomplete(i)
       }
@@ -925,7 +921,7 @@ macro_rules! length_value(
                 begin      += parsed;
                 remaining   = i2.len();
               },
-              Error(a)      => {
+              Error(_)      => {
                 err = true;
               },
               Incomplete(a) => {
@@ -973,7 +969,7 @@ macro_rules! length_value(
                 begin      += parsed;
                 remaining   = i2.len();
               },
-              Error(a)      => {
+              Error(_)      => {
                 err = true;
               },
               Incomplete(a) => {
@@ -1001,7 +997,6 @@ macro_rules! length_value(
 
 #[cfg(test)]
 mod tests {
-  use super::*;
   use map::*;
   use internal::Needed;
   use internal::IResult;

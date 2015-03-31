@@ -65,7 +65,6 @@ use producer::Producer;
 use producer::ProducerState::*;
 use internal::Err;
 use std::io::SeekFrom;
-use util::HexDisplay;
 
 /// Holds the current state of the consumer
 ///
@@ -98,18 +97,18 @@ pub trait Consumer {
   fn end(&mut self);
 
   fn run(&mut self, producer: &mut Producer) {
-    let mut acc: Vec<u8>      = Vec::new();
-    let mut position          = 0;
-    let mut shouldSeek        = false;
-    let mut consumed:usize    = 0;
-    let mut needed:usize      = 0;
-    let mut seekFrom:SeekFrom = SeekFrom::Current(0);
+    let mut acc: Vec<u8>       = Vec::new();
+    let mut position           = 0;
+    let mut should_seek        = false;
+    let mut consumed:usize     = 0;
+    let mut needed:usize       = 0;
+    let mut seek_from:SeekFrom = SeekFrom::Current(0);
     let mut eof = false;
     let mut end = false;
 
     loop {
-      //self.getDataFromProducer(producer, seekFrom, needed, acc);
-      if !shouldSeek && acc.len() - consumed >= needed {
+      //self.getDataFromProducer(producer, seek_from, needed, acc);
+      if !should_seek && acc.len() - consumed >= needed {
         //println!("buffer is large enough, skipping");
         let mut tmp = Vec::new();
         //println!("before:\n{}", acc.to_hex(16));
@@ -118,10 +117,10 @@ pub trait Consumer {
         acc.clear();
         acc = tmp;
       } else {
-        if shouldSeek {
-          let pos = producer.seek(seekFrom);
+        if should_seek {
+          let _ = producer.seek(seek_from);
           //println!("seeking: {:?}", pos);
-          shouldSeek = false;
+          should_seek = false;
           acc.clear();
         } else {
           let mut tmp = Vec::new();
@@ -140,7 +139,7 @@ pub trait Consumer {
             },
             Eof([])  => {
               //println!("eof empty");
-              eof = true;
+              //eof = true;
               self.end();
               return
             }
@@ -151,7 +150,7 @@ pub trait Consumer {
               position = position + v.len();
               break;
             }
-            ProducerError(e) => {break;}
+            ProducerError(_) => {break;}
             Continue => { continue; }
           }
           //println!("acc size: {}", acc.len());
@@ -162,7 +161,8 @@ pub trait Consumer {
       //println!("full:\n{}", acc.to_hex(8));
       //println!("truncated:\n{}", (&acc[0..needed]).to_hex(16));
       match self.consume(&acc[0..needed]) {
-        ConsumerError(e) => {
+        ConsumerError(_) => {
+        //ConsumerError(e) => {
           //println!("consumer error, stopping: {}", e);
         },
         ConsumerDone => {
@@ -171,11 +171,11 @@ pub trait Consumer {
         },
         Seek(consumed_bytes, sf, needed_bytes) => {
           //println!("Seek: consumed {} bytes, got {:?} and asked {} bytes", consumed_bytes, sf, needed_bytes);
-          seekFrom = match sf {
+          seek_from = match sf {
             SeekFrom::Current(i) => SeekFrom::Current(i - (acc.len() - needed) as i64),
             a => a
           };
-          shouldSeek = true;
+          should_seek = true;
           consumed = consumed_bytes;
           needed   = needed_bytes;
         },
@@ -207,7 +207,6 @@ mod tests {
   use producer::MemProducer;
   use internal::{Needed,IResult};
   use std::str;
-  use std::io::SeekFrom;
 
 #[macro_export]
 macro_rules! take(
@@ -239,8 +238,8 @@ macro_rules! take(
     fn consume(&mut self, input: &[u8]) -> ConsumerState {
       match take4(input) {
         IResult::Error(a)      => ConsumerError(a),
-        IResult::Incomplete(a) => Await(0, 4),
-        IResult::Done(i, o)    => {
+        IResult::Incomplete(_) => Await(0, 4),
+        IResult::Done(_, o)    => {
           println!("{} -> {}", self.counter, str::from_utf8(o).unwrap());
           self.counter = self.counter + 1;
           if self.counter <= 4 {

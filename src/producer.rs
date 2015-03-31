@@ -182,7 +182,7 @@ impl<'x> Producer for MemProducer<'x> {
           }
         }
       },
-      SeekFrom::End(pos) => {
+      SeekFrom::End(_) => {
         //FIXME: to implement
         panic!("SeekFrom::End not implemented");
       }
