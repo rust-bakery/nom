@@ -5,7 +5,7 @@ use std::fmt::{Debug,Display,Formatter,Result};
 
 /// Errortype. A integer for now
 pub type Err = u32;
-
+/*
 /// (Experimental) Closure used to hold the temporary state of resumable parsing
 pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
 
@@ -29,7 +29,7 @@ impl<'a,I:PartialEq,O:PartialEq> PartialEq for IResultClosure<'a,I,O> {
 }
 
 impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
-
+*/
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 

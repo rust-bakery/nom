@@ -73,7 +73,7 @@ use std::io::SeekFrom;
 /// * ConsumerDone if the consumer does not need anymore data to be parsed
 ///
 /// * ConsumerError when something went wrong
-#[derive(Debug,PartialEq,Eq,Copy)]
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
 pub enum ConsumerState {
   Await(
     usize,    // consumed
