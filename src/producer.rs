@@ -219,13 +219,14 @@ macro_rules! pusher (
             //println!("got data");
             acc.push_all(v)
           },
-          ProducerState::Eof([])  => {
-            //println!("eof empty, acc contains {} bytes: {:?}", acc.len(), acc);
-            break;
-          }
           ProducerState::Eof(v) => {
-            //println!("eof with {} bytes", v.len());
-            acc.push_all(v)
+            if v.is_empty() {
+              //println!("eof empty, acc contains {} bytes: {:?}", acc.len(), acc);
+              break;
+            } else {
+              //println!("eof with {} bytes", v.len());
+              acc.push_all(v)
+            }
           }
           _ => {break;}
         }

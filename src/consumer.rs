@@ -137,18 +137,19 @@ pub trait Consumer {
               acc.push_all(v);
               position = position + v.len();
             },
-            Eof([])  => {
-              //println!("eof empty");
-              //eof = true;
-              self.end();
-              return
-            }
             Eof(v) => {
-              //println!("eof with {} bytes", v.len());
-              eof = true;
-              acc.push_all(v);
-              position = position + v.len();
-              break;
+              if v.is_empty() {
+                //println!("eof empty");
+                //eof = true;
+                self.end();
+                return
+              } else {
+                //println!("eof with {} bytes", v.len());
+                eof = true;
+                acc.push_all(v);
+                position = position + v.len();
+                break;
+              }
             }
             ProducerError(_) => {break;}
             Continue => { continue; }

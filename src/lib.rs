@@ -34,7 +34,7 @@
 //! ```
 //!
 
-#![feature(core,collections,log_syntax,trace_macros,slice_patterns)]
+#![feature(core,collections)]
 
 pub use self::util::*;
 pub use self::internal::*;//{IResult, IResultClosure, GetInput, GetOutput};
