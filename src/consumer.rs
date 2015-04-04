@@ -8,7 +8,6 @@
 //! This consumer will take 4 samples from the input, print them, then stop
 //!
 //! ```rust
-//! #![feature(io)]
 //!  use nom::{IResult,Needed,MemProducer,Consumer,ConsumerState};
 //!  use std::str;
 //!  use std::io::SeekFrom;
@@ -113,7 +112,7 @@ pub trait Consumer {
         let mut tmp = Vec::new();
         //println!("before:\n{}", acc.to_hex(16));
         //println!("after:\n{}", (&acc[consumed..acc.len()]).to_hex(16));
-        tmp.push_all(&acc[consumed..acc.len()]);
+        tmp.extend(acc[consumed..acc.len()].iter().cloned());
         acc.clear();
         acc = tmp;
       } else {
@@ -124,7 +123,7 @@ pub trait Consumer {
           acc.clear();
         } else {
           let mut tmp = Vec::new();
-          tmp.push_all(&acc[consumed..acc.len()]);
+          tmp.extend(acc[consumed..acc.len()].iter().cloned());
           acc.clear();
           acc = tmp;
         }
@@ -134,7 +133,7 @@ pub trait Consumer {
           match state {
             Data(v) => {
               //println!("got data: {} bytes", v.len());
-              acc.push_all(v);
+              acc.extend(v.iter().cloned());
               position = position + v.len();
             },
             Eof(v) => {
@@ -146,7 +145,7 @@ pub trait Consumer {
               } else {
                 //println!("eof with {} bytes", v.len());
                 eof = true;
-                acc.push_all(v);
+                acc.extend(v.iter().cloned());
                 position = position + v.len();
                 break;
               }

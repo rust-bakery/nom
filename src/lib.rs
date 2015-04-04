@@ -34,8 +34,6 @@
 //! ```
 //!
 
-#![feature(collections)]
-
 pub use self::util::*;
 pub use self::internal::*;//{IResult, IResultClosure, GetInput, GetOutput};
 pub use self::map::*;

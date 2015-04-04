@@ -1,5 +1,3 @@
-#![feature(collections,slice_patterns)]
-
 #[macro_use]
 extern crate nom;
 
