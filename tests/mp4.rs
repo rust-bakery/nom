@@ -1,4 +1,4 @@
-#![feature(io,log_syntax,trace_macros)]
+#![feature(log_syntax,trace_macros)]
 #![allow(dead_code)]
 
 #[macro_use]

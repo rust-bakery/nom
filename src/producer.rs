@@ -32,7 +32,6 @@ use self::ProducerState::*;
 
 use std::fs::File;
 use std::path::Path;
-use std::num::Int;
 use std::io;
 use std::io::{Read,Seek,SeekFrom};
 

@@ -1,7 +1,6 @@
 //! Basic types to build the parsers
 
 use self::IResult::*;
-use std::fmt::{Debug,Display,Formatter,Result};
 
 /// Errortype. A integer for now
 pub type Err = u32;
