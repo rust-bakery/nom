@@ -1,4 +1,3 @@
-use std::raw::{self, Repr};
 
 pub trait HexDisplay {
   fn offset(&self, second:&[u8]) -> usize;
@@ -15,10 +14,10 @@ static CHARS: &'static[u8] = b"0123456789abcdef";
 
 impl HexDisplay for [u8] {
   fn offset(&self, second:&[u8]) -> usize {
-    let fst: raw::Slice<u8> = self.repr();
-    let snd: raw::Slice<u8> = second.repr();
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
 
-    snd.data as usize - fst.data as usize
+    snd as usize - fst as usize
   }
 
   #[allow(unused_variables)]
