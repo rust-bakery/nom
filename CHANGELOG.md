@@ -1,12 +1,33 @@
 # Change Log
 
 ## [Unreleased][unreleased]
+
 ### Changed
+
+## 0.2.1 - 2015-04-04
+
+### Thanks
+- @mtsr for catching the remaining debug println!
+- @jag426 who killed a lot of warnings
+- @skade for removing the dependency on the core feature gate
+
+
+### Added
+- little endian unsigned int parsers le_u8, le_u16, le_u32, le_u64
+- `count!` to apply a parser a specified number of times
+- `cond!` applies a parser if the condition is met
+- more parser development tools in `util::*`
+
+### Fixed
+- in one case, `opt!` would not compile
+
+### Removed
+- most of the feature gates are now removed. The only one still needed is `collections`
 
 ## 0.2.0 - 2015-03-24
 *works with `rustc 1.0.0-dev (81e2396c7 2015-03-19) (built 2015-03-19)`*
 
-## Thanks
+### Thanks
 - Ryman for the AsBytes implementation
 - jag426 and jaredly for documentation fixes
 - eternaleye on #rust IRC for his help on the new macro syntax
