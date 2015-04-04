@@ -467,7 +467,6 @@ macro_rules! is_a(
         let mut cont = false;
         for &i in bytes.iter() {
           if $input[idx] == i {
-            println!("found byte: {}", i as char);
             cont = true;
             break;
           }
