@@ -433,7 +433,11 @@ macro_rules! is_not(
         }
         if parsed { break; }
       }
-      IResult::Done(&$input[index..], &$input[0..index])
+      if index == 0 {
+        IResult::Error(0)
+      } else {
+        IResult::Done(&$input[index..], &$input[0..index])
+      }
     }
   );
 );
@@ -473,7 +477,11 @@ macro_rules! is_a(
         }
         if !cont { break; }
       }
-      IResult::Done(&$input[index..], &$input[0..index])
+      if index == 0 {
+        IResult::Error(0)
+      } else {
+        IResult::Done(&$input[index..], &$input[0..index])
+      }
     }
   );
 );
@@ -500,7 +508,11 @@ macro_rules! filter(
           break;
         }
       }
-      IResult::Done(&$input[index..], &$input[0..index])
+      if index == 0 {
+        IResult::Error(0)
+      } else {
+        IResult::Done(&$input[index..], &$input[0..index])
+      }
     }
   );
 );
@@ -605,6 +617,9 @@ macro_rules! many0(
       loop {
         match $submac!(&$i[begin..], $($args)*) {
           IResult::Done(i,o) => {
+            if i.len() == $i[begin..].len() {
+              break;
+            }
             res.push(o);
             begin += remaining - i.len();
             remaining = i.len();
@@ -622,7 +637,7 @@ macro_rules! many0(
   );
 );
 
-/// Applies the parser 0 or more times and returns the list of results in a Vec
+/// Applies the parser 1 or more times and returns the list of results in a Vec
 ///
 /// the embedded parser may return Incomplete
 ///
@@ -646,6 +661,9 @@ macro_rules! many1(
       loop {
         match $submac!(&$i[begin..], $($args)*) {
           IResult::Done(i,o) => {
+            if i.len() == $i[begin..].len() {
+              break;
+            }
             res.push(o);
             begin += remaining - i.len();
             remaining = i.len();
@@ -655,7 +673,7 @@ macro_rules! many1(
           }
         }
       }
-      if begin == 0 {
+      if res.len() == 0 {
         IResult::Error(0)
       } else {
         IResult::Done(&$i[begin..], res)
@@ -1012,7 +1030,7 @@ mod tests {
     assert_eq!(a_or_b(b), Done(&b"cde"[..], &b"b"[..]));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Done(&b"cdef"[..], &b""[..]));
+    assert_eq!(a_or_b(c), Error(0));
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Done(&b"cdef"[..], &b"ba"[..]));
@@ -1184,6 +1202,22 @@ mod tests {
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Error(0));
+  }
+
+  #[test]
+  fn infinite_many() {
+    fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
+      Error(0)
+    }
+
+    // should not go into an infinite loop
+    named!(multi0<&[u8],Vec<&[u8]> >, many0!(tst));
+    let a = &b"abcdef"[..];
+    assert_eq!(multi0(a), Done(a, Vec::new()));
+
+    named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
+    let a = &b"abcdef"[..];
+    assert_eq!(multi1(a), Error(0));
   }
 
   #[test]

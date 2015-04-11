@@ -3,6 +3,8 @@
 ## [Unreleased][unreleased]
 
 ### Changed
+- `many0!` and `many1!` forbid parsers that do not consume input
+- `is_a!`, `is_not!`, `alpha`, `digit`, `space`, `multispace` will now return an error if they do not consume at least one byte
 
 ## 0.2.1 - 2015-04-04
 

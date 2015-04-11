@@ -75,7 +75,11 @@ pub fn is_space(chr:u8) -> bool {
 pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_alphabetic(input[idx]) {
-      return Done(&input[idx..], &input[0..idx])
+      if idx == 0 {
+        return Error(0)
+      } else {
+        return Done(&input[idx..], &input[0..idx])
+      }
     }
   }
   Done(b"", input)
@@ -84,7 +88,11 @@ pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
 pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_digit(input[idx]) {
-      return Done(&input[idx..], &input[0..idx])
+      if idx == 0 {
+        return Error(0)
+      } else {
+        return Done(&input[idx..], &input[0..idx])
+      }
     }
   }
   Done(b"", input)
@@ -93,7 +101,11 @@ pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
 pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_alphanumeric(input[idx]) {
-      return Done(&input[idx..], &input[0..idx])
+      if idx == 0 {
+        return Error(0)
+      } else {
+        return Done(&input[idx..], &input[0..idx])
+      }
     }
   }
   Done(b"", input)
@@ -102,7 +114,11 @@ pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
 pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_space(input[idx]) {
-      return Done(&input[idx..], &input[0..idx])
+      if idx == 0 {
+        return Error(0)
+      } else {
+        return Done(&input[idx..], &input[0..idx])
+      }
     }
   }
   Done(b"", input)
@@ -110,8 +126,13 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
+    println!("multispace at index: {}", idx);
     if !is_space(input[idx]) && input[idx] != '\r' as u8 && input[idx] != '\n' as u8 {
-      return Done(&input[idx..], &input[0..idx])
+      if idx == 0 {
+        return Error(0)
+      } else {
+        return Done(&input[idx..], &input[0..idx])
+      }
     }
   }
   Done(b"", input)
@@ -267,13 +288,13 @@ mod tests {
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
     assert_eq!(alpha(a), Done(empty, a));
-    assert_eq!(alpha(b), Done(b, empty));
+    assert_eq!(alpha(b), Error(0));
     assert_eq!(alpha(c), Done(&c[1..], &b"a"[..]));
     assert_eq!(alpha(d), Done("é12".as_bytes(), &b"az"[..]));
-    assert_eq!(digit(a), Done(a, empty));
+    assert_eq!(digit(a), Error(0));
     assert_eq!(digit(b), Done(empty, b));
-    assert_eq!(digit(c), Done(c, empty));
-    assert_eq!(digit(d), Done(d, empty));
+    assert_eq!(digit(c), Error(0));
+    assert_eq!(digit(d), Error(0));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(alphanumeric(b), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
