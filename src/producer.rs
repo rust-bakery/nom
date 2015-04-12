@@ -34,6 +34,7 @@ use std::fs::File;
 use std::path::Path;
 use std::io;
 use std::io::{Read,Seek,SeekFrom};
+use std::iter::repeat;
 
 /// Holds the data producer's current state
 ///
@@ -78,9 +79,10 @@ impl FileProducer {
 
 impl Producer for FileProducer {
   fn produce(&mut self) -> ProducerState<&[u8]> {
+    let len = self.v.len();
     //let mut v = Vec::with_capacity(self.size);
     //self.v.clear();
-    self.v.resize(self.size, 0);
+    self.v.extend(repeat(0).take(self.size - len));
     match self.file.read(&mut self.v) {
       Err(e) => {
         //println!("producer error: {:?}", e);
@@ -217,7 +219,7 @@ macro_rules! pusher (
         match state {
           ProducerState::Data(v) => {
             //println!("got data");
-            acc.push_all(v)
+            acc.extend(v.iter().cloned())
           },
           ProducerState::Eof(v) => {
             if v.is_empty() {
@@ -225,13 +227,13 @@ macro_rules! pusher (
               break;
             } else {
               //println!("eof with {} bytes", v.len());
-              acc.push_all(v)
+              acc.extend(v.iter().cloned())
             }
           }
           _ => {break;}
         }
         let mut v2: Vec<u8>  = Vec::new();
-        v2.push_all(&acc[..]);
+        v2.extend(acc[..].iter().cloned());
         //let p = IResult::Done(b"", v2.as_slice());
         match $f(&v2[..]) {
           IResult::Error(e)      => {
@@ -244,7 +246,7 @@ macro_rules! pusher (
           IResult::Done(i, _)    => {
             //println!("data, done");
             acc.clear();
-            acc.push_all(i);
+            acc.extend(i.iter().cloned());
           }
         }
       }

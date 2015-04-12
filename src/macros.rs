@@ -1,5 +1,3 @@
-extern crate collections;
-
 #[macro_export]
 macro_rules! closure (
     ($ty:ty, $submac:ident!( $($args:tt)* )) => (

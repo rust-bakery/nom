@@ -6,8 +6,6 @@
 //! but the macros system makes no promises.
 //!
 
-extern crate collections;
-
 use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
