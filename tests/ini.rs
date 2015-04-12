@@ -221,7 +221,7 @@ key4 = value4
   let ini_after_parser = &b""[..];
 
   let res = categories(ini_file);
-  println!("{:?}", res);
+  //println!("{:?}", res);
   match res {
     IResult::Done(i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
     _ => println!("error")
