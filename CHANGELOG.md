@@ -2,6 +2,10 @@
 
 ## [Unreleased][unreleased]
 
+### Changed
+
+## 0.2.2 - 2015-04-12
+
 ### Added
 - `named!` can now declare public functions like this: `named!(pub tst, tag!("abcd"));`
 - `pair!(X,Y)` returns a tuple `(x, y)`
@@ -105,7 +109,9 @@
 ### Fixed
 - closure syntax change
 
-[unreleased]: https://github.com/Geal/nom/compare/0.2.0...HEAD
+[unreleased]: https://github.com/Geal/nom/compare/0.2.2...HEAD
+[0.2.2]: https://github.com/Geal/nom/compare/0.2.1...0.2.2
+[0.2.1]: https://github.com/Geal/nom/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/Geal/nom/compare/0.1.6...0.2.0
 [0.1.6]: https://github.com/Geal/nom/compare/0.1.5...0.1.6
 [0.1.5]: https://github.com/Geal/nom/compare/0.1.4...0.1.5
