@@ -6,6 +6,11 @@
 
 ## 0.2.2 - 2015-04-12
 
+### Thanks
+- @filipegoncalves and @thehydroimpulse for debugging an infinite loop in many0 and many1
+- @thehydroimpulse for suggesting public named parsers
+- @skade for removing the dependency on the collections gate
+
 ### Added
 - `named!` can now declare public functions like this: `named!(pub tst, tag!("abcd"));`
 - `pair!(X,Y)` returns a tuple `(x, y)`
