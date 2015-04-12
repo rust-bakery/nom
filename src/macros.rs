@@ -605,6 +605,350 @@ macro_rules! peek(
   );
 );
 
+/// pair(X,Y), returns (x,y)
+#[macro_export]
+macro_rules! pair(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i1,o1)     => {
+          match $submac2!(i1, $($args2)*) {
+            IResult::Error(a)      => IResult::Error(a),
+            IResult::Incomplete(i) => IResult::Incomplete(i),
+            IResult::Done(i2,o2)   => {
+              IResult::Done(i2, (o1, o2))
+            }
+          }
+        },
+      }
+    }
+  );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    pair!($i, $submac!($($args)*), call!($g));
+  );
+
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    pair!($i, call!($f), $submac!($($args)*));
+  );
+
+  ($i:expr, $f:expr, $g:expr) => (
+    pair!($i, call!($f), call!($g));
+  );
+);
+
+/// separated_pair(X,sep,Y) returns (x,y)
+#[macro_export]
+macro_rules! separated_pair(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
+    {
+      match $submac!($i, $($args)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i1,o1)   => {
+          separated_pair1!(i1, o1,  $($rest)*)
+        }
+      }
+    }
+  );
+
+  ($i:expr, $f:expr, $($rest:tt)+) => (
+    separated_pair!($i, call!($f), $($rest)*);
+  );
+);
+
+macro_rules! separated_pair1(
+  ($i:expr, $res1:ident, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
+    {
+      match $submac2!($i, $($args2)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i2,_)    => {
+          separated_pair2!(i2, $res1,  $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $res1:ident, $g:expr, $($rest:tt)+) => (
+    separated_pair1!($i, $res1, call!($g), $($rest)*);
+  );
+);
+
+macro_rules! separated_pair2(
+  ($i:expr, $res1:ident, $submac3:ident!( $($args3:tt)* )) => (
+    {
+      match $submac3!($i, $($args3)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i3,o3)   => {
+          IResult::Done(i3, ($res1, o3))
+        }
+      }
+    }
+  );
+
+  ($i:expr, $res1:ident, $h:expr) => (
+    separated_pair2!($i, $res1, call!($h));
+  );
+);
+
+/// preceded(opening, X) returns X
+#[macro_export]
+macro_rules! preceded(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i1,_)    => {
+          match $submac2!(i1, $($args2)*) {
+            IResult::Error(a)      => IResult::Error(a),
+            IResult::Incomplete(i) => IResult::Incomplete(i),
+            IResult::Done(i2,o2)   => {
+              IResult::Done(i2, o2)
+            }
+          }
+        },
+      }
+    }
+  );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    preceded!($i, $submac!($($args)*), call!($g));
+  );
+
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    preceded!($i, call!($f), $submac!($($args)*));
+  );
+
+  ($i:expr, $f:expr, $g:expr) => (
+    preceded!($i, call!($f), call!($g));
+  );
+);
+
+/// terminated(X, closing) returns X
+#[macro_export]
+macro_rules! terminated(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i1,o1)   => {
+          match $submac2!(i1, $($args2)*) {
+            IResult::Error(a)      => IResult::Error(a),
+            IResult::Incomplete(i) => IResult::Incomplete(i),
+            IResult::Done(i2,_)    => {
+              IResult::Done(i2, o1)
+            }
+          }
+        },
+      }
+    }
+  );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    terminated!($i, $submac!($($args)*), call!($g));
+  );
+
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    terminated!($i, call!($f), $submac!($($args)*));
+  );
+
+  ($i:expr, $f:expr, $g:expr) => (
+    terminated!($i, call!($f), call!($g));
+  );
+);
+
+/// delimited(opening, X, closing) returns X
+#[macro_export]
+macro_rules! delimited(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
+    {
+      match $submac!($i, $($args)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i1,_)   => {
+          delimited1!(i1,  $($rest)*)
+        }
+      }
+    }
+  );
+
+  ($i:expr, $f:expr, $($rest:tt)+) => (
+    delimited!($i, call!($f), $($rest)*);
+  );
+);
+
+macro_rules! delimited1(
+  ($i:expr, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
+    {
+      match $submac2!($i, $($args2)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i2,o2)    => {
+          delimited2!(i2, o2,  $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $g:expr, $($rest:tt)+) => (
+    delimited1!($i, call!($g), $($rest)*);
+  );
+);
+
+macro_rules! delimited2(
+  ($i:expr, $res2:ident, $submac3:ident!( $($args3:tt)* )) => (
+    {
+      match $submac3!($i, $($args3)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i3,_)   => {
+          IResult::Done(i3, $res2)
+        }
+      }
+    }
+  );
+
+  ($i:expr, $res2:ident, $h:expr) => (
+    delimited!($i, $res2, call!($h));
+  );
+);
+
+/// separated_list(sep, X) returns Vec<X>
+#[macro_export]
+macro_rules! separated_list(
+  ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $i.len();
+      let mut res = Vec::new();
+
+      // get the first element
+      match $submac!($i, $($args2)*) {
+        IResult::Error(_)      => IResult::Done($i, Vec::new()),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i,o)     => {
+          if i.len() == $i.len() {
+            IResult::Error(0)
+          } else {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+
+            loop {
+              // get the separator first
+              match $sep!(&$i[begin..], $($args)*) {
+                IResult::Error(_)      => break,
+                IResult::Incomplete(_) => break,
+                IResult::Done(i2,_)    => {
+                  if i2.len() == (&$i[begin..]).len() {
+                    break;
+                  }
+                  begin += remaining - i2.len();
+                  remaining = i2.len();
+
+                  // get the element next
+                  match $submac!(&$i[begin..], $($args2)*) {
+                    IResult::Error(_)      => break,
+                    IResult::Incomplete(_) => break,
+                    IResult::Done(i3,o3)   => {
+                      if i3.len() == $i[begin..].len() {
+                        break;
+                      }
+                      res.push(o3);
+                      begin += remaining - i3.len();
+                      remaining = i3.len();
+                    },
+                  }
+                }
+              }
+            }
+            IResult::Done(&$i[begin..], res)
+          }
+        },
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    separated_list!($i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    separated_list!($i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    separated_list!($i, call!($f), call!($g));
+  );
+);
+
+/// separated_nonempty_list(sep, X) returns Vec<X>
+#[macro_export]
+macro_rules! separated_nonempty_list(
+  ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $i.len();
+      let mut res = Vec::new();
+
+      // get the first element
+      match $submac!($i, $($args2)*) {
+        IResult::Error(a)      => IResult::Error(a),
+        IResult::Incomplete(i) => IResult::Incomplete(i),
+        IResult::Done(i,o)     => {
+          if i.len() == $i.len() {
+            IResult::Error(0)
+          } else {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+
+            loop {
+              // get the separator first
+              match $sep!(&$i[begin..], $($args)*) {
+                IResult::Error(_)      => break,
+                IResult::Incomplete(_) => break,
+                IResult::Done(i2,_)    => {
+                  if i2.len() == (&$i[begin..]).len() {
+                    break;
+                  }
+                  begin += remaining - i2.len();
+                  remaining = i2.len();
+
+                  // get the element next
+                  match $submac!(&$i[begin..], $($args2)*) {
+                    IResult::Error(_)      => break,
+                    IResult::Incomplete(_) => break,
+                    IResult::Done(i3,o3)   => {
+                      if i3.len() == $i[begin..].len() {
+                        break;
+                      }
+                      res.push(o3);
+                      begin += remaining - i3.len();
+                      remaining = i3.len();
+                    },
+                  }
+                }
+              }
+            }
+            IResult::Done(&$i[begin..], res)
+          }
+        },
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    separated_nonempty_list!($i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    separated_nonempty_list!($i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    separated_nonempty_list!($i, call!($f), call!($g));
+  );
+);
+
 /// Applies the parser 0 or more times and returns the list of results in a Vec
 ///
 /// the embedded parser may return Incomplete
@@ -1201,6 +1545,76 @@ mod tests {
 
     let r1 = ptag(&b"efgh"[..]);
     assert_eq!(r1, Error(0));
+  }
+
+  #[test]
+  fn pair() {
+    named!(p<&[u8],(&[u8], &[u8])>, pair!(tag!("abcd"), tag!("efgh")));
+
+    let r1 = p(&b"abcdefghijkl"[..]);
+    assert_eq!(r1, Done(&b"ijkl"[..], (&b"abcd"[..], &b"efgh"[..])));
+  }
+
+  #[test]
+  fn separated_pair() {
+    named!(p<&[u8],(&[u8], &[u8])>, separated_pair!(tag!("abcd"), tag!(","), tag!("efgh")));
+
+    let r1 = p(&b"abcd,efghijkl"[..]);
+    assert_eq!(r1, Done(&b"ijkl"[..], (&b"abcd"[..], &b"efgh"[..])));
+  }
+
+  #[test]
+  fn preceded() {
+    named!(p<&[u8], &[u8]>, preceded!(tag!("abcd"), tag!("efgh")));
+
+    let r1 = p(&b"abcdefghijkl"[..]);
+    assert_eq!(r1, Done(&b"ijkl"[..], &b"efgh"[..]));
+  }
+
+  #[test]
+  fn terminated() {
+    named!(p<&[u8], &[u8]>, terminated!(tag!("abcd"), tag!("efgh")));
+
+    let r1 = p(&b"abcdefghijkl"[..]);
+    assert_eq!(r1, Done(&b"ijkl"[..], &b"abcd"[..]));
+  }
+
+  #[test]
+  fn delimited() {
+    named!(p<&[u8], &[u8]>, delimited!(tag!("abcd"), tag!("efgh"), tag!("ij")));
+
+    let r1 = p(&b"abcdefghijkl"[..]);
+    assert_eq!(r1, Done(&b"kl"[..], &b"efgh"[..]));
+  }
+
+  #[test]
+  fn separated_list() {
+    named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
+
+    let a = &b"abcdef"[..];
+    let b = &b"abcd,abcdef"[..];
+    let c = &b"azerty"[..];
+
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi(b), Done(&b"ef"[..], res2));
+    assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+  }
+
+  #[test]
+  fn separated_nonempty_list() {
+    named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(","), tag!("abcd")));
+
+    let a = &b"abcdef"[..];
+    let b = &b"abcd,abcdef"[..];
+    let c = &b"azerty"[..];
+
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi(b), Done(&b"ef"[..], res2));
+    assert_eq!(multi(c), Error(0));
   }
 
   #[test]

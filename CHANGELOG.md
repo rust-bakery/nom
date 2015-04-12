@@ -4,6 +4,13 @@
 
 ### Added
 - `named!` can now declare public functions like this: `named!(pub tst, tag!("abcd"));`
+- `pair!(X,Y)` returns a tuple `(x, y)`
+- `separated_pair!(X, sep, Y)` returns a tuple `(x, y)`
+- `preceded!(opening, X)` returns `x`
+- `terminated!(X, closing)` returns `x`
+- `delimited(opening, X, closing)` returns `x`
+- `separated_list(sep, X)` returns a `Vec<X>`
+- `separated_nonempty_list(sep, X)` returns a `Vec<X>` of at list one element
 
 ### Changed
 - `many0!` and `many1!` forbid parsers that do not consume input
