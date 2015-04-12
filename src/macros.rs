@@ -1649,6 +1649,7 @@ mod tests {
   #[test]
   fn infinite_many() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
+      println!("input: {:?}", input);
       Error(0)
     }
 
