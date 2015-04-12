@@ -2,6 +2,9 @@
 
 ## [Unreleased][unreleased]
 
+### Added
+- `named!` can now declare public functions like this: `named!(pub tst, tag!("abcd"));`
+
 ### Changed
 - `many0!` and `many1!` forbid parsers that do not consume input
 - `is_a!`, `is_not!`, `alpha`, `digit`, `space`, `multispace` will now return an error if they do not consume at least one byte

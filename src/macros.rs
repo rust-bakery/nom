@@ -25,6 +25,21 @@ macro_rules! named (
             $submac!(i, $($args)*)
         }
     );
+    (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: $i ) -> $o {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: $i ) -> IResult<$i, $o> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: &[u8] ) -> IResult<&[u8], &[u8]> {
+            $submac!(i, $($args)*)
+        }
+    );
 );
 
 #[macro_export]
@@ -1016,6 +1031,21 @@ mod tests {
   use internal::Needed;
   use internal::IResult;
   use internal::IResult::*;
+
+  mod pub_named_mod {
+    use internal::Needed;
+    use internal::IResult;
+    use internal::IResult::*;
+
+    named!(pub tst, tag!("abcd"));
+  }
+
+  #[test]
+  fn pub_named_test() {
+    let a = &b"abcd"[..];
+    let res = pub_named_mod::tst(a);
+    assert_eq!(res, Done(&b""[..], a));
+  }
 
   #[test]
   fn is_a() {
