@@ -134,10 +134,10 @@ Here are the basic macros available:
 - **is_a!**: will match the longest array containing only bytes of the array provided to the macro
 - **filter!**: will walk the whole array and apply the closure to each suffix until the function fails
 - **take!**: will take as many bytes as the number provided
-- **take_until!**: will take as many bytes as possible until it encounters the provided byte array, and will skip it
-- **take_until_and_leave!**: will take as many bytes as possible until it encounters the provided byte array, and will leave it in the remaining input
-- **take_until_either!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will skip it
-- **take_until_either_and_leave!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
+- **take_until!**: will take as many bytes as possible until it encounters the provided byte array, and will leave it in the remaining input
+- **take_until_and_consume!**: will take as many bytes as possible until it encounters the provided byte array, and will skip it
+- **take_until_either_and_consume!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will skip it
+- **take_until_either!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
 
 #### Combining parsers
 
@@ -195,8 +195,6 @@ Here are the basic combining macros available:
 - **opt!**: will make the parser optional (if it returns the O type, the new parser returns Option<O>)
 - **many0!**: will apply the parser 0 or more times (if it returns the O type, the new parser returns Vec<O>)
 - **many1!**: will appy the parser 1 or more times
-- **fold0!**: takes an assembling macro and a parser, and will fold the macro on many0 of the provided parser
-- **fold1!**: takes an assembling macro and a parser, and will fold the macro on many1 of the provided parser
 
 
 There are more complex (and more useful) parsers like the chain, which is used to parse a whole buffer, gather data along the way, then assemble everything in a final closure, if none of the subparsers failed or returned an `Incomplete`:
