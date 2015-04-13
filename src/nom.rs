@@ -124,7 +124,7 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
-    println!("multispace at index: {}", idx);
+    // println!("multispace at index: {}", idx);
     if !is_space(input[idx]) && input[idx] != '\r' as u8 && input[idx] != '\n' as u8 {
       if idx == 0 {
         return Error(0)
