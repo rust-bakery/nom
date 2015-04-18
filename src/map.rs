@@ -39,11 +39,11 @@ macro_rules! flat_map_ref_impl {
         #[allow(unused_variables)]
         fn flat_map<'y,F:Fn(&'a $t) -> IResult<&'a $t,T>>(&self, f: F) -> IResult<&'b R,T> {
           match self {
-            &Error(ref e) => Error(*e),
+            &Error(ref e) => Error(e.clone()),
             &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
             &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(|input:&'b R| { cl(input).map(f) }),
             &Done(ref i, ref o) => match f(*o) {
-              Error(ref e) => Error(*e),
+              Error(ref e) => Error(e.clone()),
               Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
               Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
               Done(_, o2) => Done(*i, o2)
@@ -55,11 +55,11 @@ macro_rules! flat_map_ref_impl {
         #[allow(unused_variables)]
         fn flat_map<'y,F:Fn(&'a $t) -> IResult<&'a $t,T>>(&self, f: F) -> IResult<(),T> {
           match self {
-            &Error(ref e) => Error(*e),
+            &Error(ref e) => Error(e.clone()),
             &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
             &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)), //Incomplete(|input:I| { cl(input).map(f) })
             &Done((), ref o) => match f(*o) {
-              Error(ref e) => Error(*e),
+              Error(ref e) => Error(e.clone()),
               Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
               Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
               Done(_, o2) => Done((), o2)
@@ -79,11 +79,11 @@ impl<'a,'b,'z, T> FlatMap<&'b [u8],&'a [u8], T> for IResult<&'b [u8],&'a [u8]> {
   #[allow(unused_variables)]
   fn flat_map<'y,F:Fn(&'a [u8]) -> IResult<&'a [u8],T>>(&self, f: F) -> IResult<&'b [u8],T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(|input:&'b R| { cl(input).map(f) }),
       &Done(ref i, ref o) => match f(*o) {
-        Error(ref e) => Error(*e),
+        Error(ref e) => Error(e.clone()),
         Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
         Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
         Done(_, o2) => Done(*i, o2)
@@ -103,11 +103,11 @@ macro_rules! flat_map_impl {
         #[allow(unused_variables)]
         fn flat_map<'y,F:Fn($t) -> IResult<$t,T>>(&self, f: F) -> IResult<&'a R,T> {
           match self {
-            &Error(ref e) => Error(*e),
+            &Error(ref e) => Error(e.clone()),
             &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
             &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
             &Done(ref i, o) => match f(o) {
-              Error(ref e) => Error(*e),
+              Error(ref e) => Error(e.clone()),
               Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
               Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
               Done(i2, o2) => Done(*i, o2)
@@ -119,11 +119,11 @@ macro_rules! flat_map_impl {
         #[allow(unused_variables)]
         fn flat_map<'y,F:Fn($t) -> IResult<$t,T>>(&self, f: F) -> IResult<(),T> {
           match self {
-            &Error(ref e) => Error(*e),
+            &Error(ref e) => Error(e.clone()),
             &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
             &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
             &Done((), o) => match f(o) {
-              Error(ref e) => Error(*e),
+              Error(ref e) => Error(e.clone()),
               Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
               Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
               Done(i2, o2) => Done((), o2)
@@ -143,13 +143,13 @@ impl<'a,'z,R,T> FlatMap<&'a R,(), T> for IResult<&'a R,()> {
   #[allow(unused_variables)]
   fn flat_map<'y,F: Fn(()) -> IResult<(),T>>(&self, f: F) -> IResult<&'a R,T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
       //&Incomplete(ref cl) => Incomplete(Box::new(move |input| { cl(input).flat_map(f) })),
       &Done(ref i, ()) => match f(()) {
-        Error(ref e) => Error(*e),
+        Error(ref e) => Error(e.clone()),
         Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
         Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
         Done(_, o2) => Done(*i, o2)
@@ -162,12 +162,12 @@ impl<'a,'x,'z,S,T> FlatMap<(),&'a S,T> for IResult<(),&'a S> {
   #[allow(unused_variables)]
   fn flat_map<'y,F:Fn(&'a S) -> IResult<&'a S,T>>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
       &Done((), ref o) => match f(*o) {
-        Error(ref e) => Error(*e),
+        Error(ref e) => Error(e.clone()),
         Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
         Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
         Done(_, o2) => Done((), o2)
@@ -180,12 +180,12 @@ impl<'x,'z,T> FlatMap<(),(),T> for IResult<(),()> {
   #[allow(unused_variables)]
   fn flat_map<'y,F:Fn(()) -> IResult<(),T>>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Incomplete(f), //Incomplete(|input:I| { cl(input).map(f) })
       &Done((), ()) => match f(()) {
-        Error(ref e) => Error(*e),
+        Error(ref e) => Error(e.clone()),
         Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
         Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
         Done(_, o2) => Done((), o2)
@@ -217,13 +217,17 @@ macro_rules! map_ref_impl {
         #[allow(unused_variables)]
         fn map_opt<'y,F:Fn(&'a $o) -> Option<T>>(&self, f: F) -> IResult<&'b $i,T> {
           match self {
-            &Error(ref e) => Error(*e),
+            &Error(ref e) => Error(e.clone()),
             &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
             &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
             //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
             &Done(ref i, ref o) => match f(*o) {
               Some(output) => Done(*i, output),
-              None         => Error(0)
+              None         => Error(Box::new(PErr {
+                code:     0,
+                position: Position::Unknown,
+                next:     Vec::new()
+              }))
             }
           }
         }
@@ -231,13 +235,17 @@ macro_rules! map_ref_impl {
         #[allow(unused_variables)]
         fn map_res<'y,U, F: Fn(&'a $o) -> Result<T,U>>(&self, f: F) -> IResult<&'b $i,T> {
           match self {
-            &Error(ref e) => Error(*e),
+            &Error(ref e) => Error(e.clone()),
             &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
             &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
             //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
             &Done(ref i, ref o) => match f(*o) {
               Ok(output) => Done(*i, output),
-              Err(_)     => Error(0)
+              Err(_)     => Error(Box::new(PErr {
+                code:     0,
+                position: Position::Unknown,
+                next:     Vec::new()
+              }))
             }
           }
         }
@@ -254,13 +262,18 @@ impl<'a,'z,S,T> FlatMapOpt<(), &'a[S], T> for IResult<(),&'a [S]> {
   #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(&'a[S]) -> Option<T>>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done((), ref o) => match f(*o) {
         Some(output) => Done((), output),
-        None         => Error(0)
+        None         => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
+
       }
     }
   }
@@ -268,13 +281,17 @@ impl<'a,'z,S,T> FlatMapOpt<(), &'a[S], T> for IResult<(),&'a [S]> {
   #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(&'a[S]) -> Result<T,U>>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done((), ref o) => match f(*o) {
         Ok(output) => Done((), output),
-        Err(_)     => Error(0)
+        Err(_)     => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -284,13 +301,17 @@ impl<'a,'z,T> FlatMapOpt<(),&'a str, T> for IResult<(),&'a str> {
   #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(&'a str) -> Option<T>>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done((), ref o) => match f(*o) {
         Some(output) => Done((), output),
-        None         => Error(0)
+        None         => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -298,13 +319,17 @@ impl<'a,'z,T> FlatMapOpt<(),&'a str, T> for IResult<(),&'a str> {
   #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(&'a str) -> Result<T,U>>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done((), ref o) => match f(*o) {
         Ok(output) => Done((), output),
-        Err(_)     => Error(0)
+        Err(_)     => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -314,13 +339,17 @@ impl<'a,'z,R,T> FlatMapOpt<&'a[R], (), T> for IResult<&'a[R],()> {
   #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<&'a[R],T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, __) => match f(()) {
         Some(output) => Done(*i, output),
-        None         => Error(0)
+        None         => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -328,13 +357,17 @@ impl<'a,'z,R,T> FlatMapOpt<&'a[R], (), T> for IResult<&'a[R],()> {
   #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<&'a [R],T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, ref o) => match f(*o) {
         Ok(output) => Done(*i, output),
-        Err(_)     => Error(0)
+        Err(_)     => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -344,13 +377,17 @@ impl<'a,'z,T> FlatMapOpt<&'a str, (), T> for IResult<&'a str,()> {
   #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<&'a str,T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, __) => match f(()) {
         Some(output) => Done(*i, output),
-        None         => Error(0)
+        None         => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Pointer(i.as_ptr()),
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -358,13 +395,17 @@ impl<'a,'z,T> FlatMapOpt<&'a str, (), T> for IResult<&'a str,()> {
   #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<&'a str,T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),// Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done(ref i, ref o) => match f(*o) {
         Ok(output) => Done(*i, output),
-        Err(_)     => Error(0)
+        Err(_)     => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Pointer(i.as_ptr()),
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -374,13 +415,17 @@ impl<'z,T> FlatMapOpt<(),(), T> for IResult<(),()> {
   #[allow(unused_variables)]
   fn map_opt<'y,F:Fn(()) -> Option<T>>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done((), __) => match f(()) {
         Some(output) => Done((), output),
-        None         => Error(0)
+        None         => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -388,13 +433,17 @@ impl<'z,T> FlatMapOpt<(),(), T> for IResult<(),()> {
   #[allow(unused_variables)]
   fn map_res<'y,U, F: Fn(()) -> Result<T,U>>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
       &Done((), ref o) => match f(*o) {
         Ok(output) => Done(*o, output),
-        Err(_)     => Error(0)
+        Err(_)     => Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
       }
     }
   }
@@ -420,7 +469,15 @@ macro_rules! map2_ref_impl {
         #[allow(unused_variables)]
         fn map<'y,F: Fn(&'a $o) -> T>(&self, f: F) -> IResult<&'b $i,T> {
           match self {
-            &Error(ref e) => Error(*e),
+            &Error(ref e) => {
+              let mut v:Vec<Box<PErr>> = Vec::new();
+              v.push(e.clone());
+              Error(Box::new(PErr {
+                code:     0,
+                position: Position::Unknown,
+                next:     v
+              }))
+            },
             &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
             &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
             //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -440,7 +497,15 @@ impl<'a,'z,S,T> Functor<(), &'a[S], T> for IResult<(),&'a [S]> {
   #[allow(unused_variables)]
   fn map<'y,F: Fn(&'a[S]) -> T>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => {
+        let mut v:Vec<Box<PErr>> = Vec::new();
+        v.push(e.clone());
+        Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     v
+        }))
+      },
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -453,7 +518,15 @@ impl<'a,'z,R,T> Functor<&'a R, (), T> for IResult<&'a R,()> {
   #[allow(unused_variables)]
   fn map<'y,F: Fn(()) -> T>(&self, f: F) -> IResult<&'a R,T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => {
+        let mut v:Vec<Box<PErr>> = Vec::new();
+        v.push(e.clone());
+        Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     v
+        }))
+      },
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -466,7 +539,15 @@ impl<'a,'z,R,T> Functor<&'a [R], (), T> for IResult<&'a [R],()> {
   #[allow(unused_variables)]
   fn map<'y,F: Fn(()) -> T>(&self, f: F) -> IResult<&'a [R],T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => {
+        let mut v:Vec<Box<PErr>> = Vec::new();
+        v.push(e.clone());
+        Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     v
+        }))
+      },
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -479,7 +560,15 @@ impl<'a,'z,T> Functor<&'a str, (), T> for IResult<&'a str,()> {
   #[allow(unused_variables)]
   fn map<'y,F: Fn(()) -> T>(&self, f: F) -> IResult<&'a str,T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => {
+        let mut v:Vec<Box<PErr>> = Vec::new();
+        v.push(e.clone());
+        Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     v
+        }))
+      },
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -492,7 +581,15 @@ impl<'a,'z,T> Functor<(), (), T> for IResult<(),()> {
   #[allow(unused_variables)]
   fn map<'y,F: Fn(()) -> T>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => {
+        let mut v:Vec<Box<PErr>> = Vec::new();
+        v.push(e.clone());
+        Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     v
+        }))
+      },
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),
@@ -506,7 +603,15 @@ impl<'a,'z,T> Functor<(), &'a str, T> for IResult<(),&'a str> {
   fn map<'y,F: Fn(&'a str) -> T>(&self, f: F) -> IResult<(),T> {
   //fn map<F: Fn(&'a str) -> T>(&self, f: F) -> IResult<(),T> {
     match self {
-      &Error(ref e) => Error(*e),
+      &Error(ref e) => {
+        let mut v:Vec<Box<PErr>> = Vec::new();
+        v.push(e.clone());
+        Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     v
+        }))
+      },//Error(e.clone()),
       &Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
       &Incomplete(Needed::Size(ref i)) => Incomplete(Needed::Size(*i)),//Incomplete(*i),
       //&Incomplete(ref cl) => Error(0),//Incomplete(|input: &'a I| {*cl(input).mapf(f)}),

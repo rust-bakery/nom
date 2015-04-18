@@ -32,7 +32,20 @@ impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 
-#[derive(Debug,PartialEq,Eq)]
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+pub enum Position {
+  Unknown,
+  Pointer(*const u8)
+}
+
+#[derive(Debug,PartialEq,Eq,Clone)]
+pub struct PErr {
+  pub code:     u32,
+  pub position: Position,
+  pub next:     Vec<Box<PErr>>
+}
+
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
 pub enum Needed {
   Unknown,
   Size(u32)
@@ -53,7 +66,7 @@ pub enum Needed {
 #[derive(Debug,PartialEq,Eq)]
 pub enum IResult<I,O> {
   Done(I,O),
-  Error(Err),
+  Error(Box<PErr>),
   //Incomplete(proc(I):'a -> IResult<I,O>)
   Incomplete(Needed)
   //Incomplete(Box<FnMut(I) -> IResult<I,O>>)

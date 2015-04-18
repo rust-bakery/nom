@@ -73,7 +73,11 @@ macro_rules! tag (
       } else if &$i[0..bytes.len()] == bytes {
         Done(&$i[bytes.len()..], &$i[0..bytes.len()])
       } else {
-        Error(0)
+        Error(Box::new(PErr {
+          code:     0,
+          position: Position::Pointer(bytes.as_ptr()),
+          next:     Vec::new()
+        }))
       }
     }
   );
@@ -85,7 +89,7 @@ macro_rules! map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        Error(ref e) => Error(*e),
+        Error(ref e) => Error(e.clone()),
         Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
         Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
         Done(i, o) => Done(i, $submac2!(o, $($args2)*))
@@ -109,16 +113,20 @@ macro_rules! map_res(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        Error(ref e) => Error(*e),
+        Error(ref e) => Error(e.clone()),
         Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
         Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
         Done(i, o) => match $submac2!(o, $($args2)*) {
           Ok(output) => Done(i, output),
-          Err(_)     => Error(0)
+          Err(_)     => Error(Box::new(PErr {
+            code:     0,
+            position: Position::Unknown,
+            next:     Vec::new()
+          }))
         }
       }
     }
-  );
+    );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     map_res!($i, $submac!($($args)*), call!($g));
   );
@@ -136,12 +144,16 @@ macro_rules! map_opt(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        Error(ref e) => Error(*e),
+        Error(ref e) => Error(e.clone()),
         Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
         Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
         Done(i, o) => match $submac2!(o, $($args2)*) {
           Some(output) => Done(i, output),
-          None         => Error(0)
+          None         => Error(Box::new(PErr {
+            code:     0,
+            position: Position::Unknown,
+            next:     v
+          }))
         }
       }
     }
@@ -352,65 +364,86 @@ macro_rules! chaining_parser (
 macro_rules! alt (
   ($i:expr, $($rest:tt)*) => (
     {
-      alt_parser!($i, $($rest)*)
+      let mut v:Vec<Box<PErr>> = Vec::new();
+      alt_parser!($i, v, $($rest)*)
     }
   );
 );
 
 #[macro_export]
 macro_rules! alt_parser (
-  ($i:expr, $e:ident | $($rest:tt)*) => (
-    alt_parser!($i, call!($e) | $($rest)*);
+  ($i:expr, $err:ident, $e:ident | $($rest:tt)*) => (
+    alt_parser!($i, $err, call!($e) | $($rest)*);
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)*) | $($rest:tt)*) => (
+  ($i:expr, $err:ident, $submac:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
       match $submac!($i, $($args)*) {
-        IResult::Error(_)      => alt_parser!($i, $($rest)*),
-        IResult::Incomplete(_) => alt_parser!($i, $($rest)*),
+        IResult::Error(e)      => {
+          $err.push(e);
+          alt_parser!($i, $err, $($rest)*)
+        },
+        IResult::Incomplete(_) => alt_parser!($i, $err, $($rest)*),
         IResult::Done(i,o)     => IResult::Done(i,o)
       }
     }
   );
 
-  ($i:expr, $subrule:ident!( $args:tt ) => { $gen:expr } | $($rest:tt)+) => (
+  ($i:expr, $err:ident, $subrule:ident!( $args:tt ) => { $gen:expr } | $($rest:tt)+) => (
     match $subrule!( $i, $args ) {
-      IResult::Error(_) => alt!( $i, $($rest)+ ),
-      IResult::Incomplete(_) => alt!( $i, $($rest)+ ),
+      IResult::Error(e) => {
+        $err.push(e);
+        alt_parser!( $i, $err, $($rest)+ )
+      },
+      IResult::Incomplete(_) => alt_parser!( $i, $err, $($rest)+ ),
       IResult::Done(i,o) => IResult::Done(i, $gen( o ))
     }
   );
 
-  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
-    alt_parser!($i, call!($e) => { $gen } | $($rest)*);
+  ($i:expr, $err:ident, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_parser!($i, $err, call!($e) => { $gen } | $($rest)*);
   );
 
-  ($i:expr, $e:ident => { $gen:expr }) => (
-    alt_parser!($i, call!($e) => { $gen });
+  ($i:expr, $err:ident, $e:ident => { $gen:expr }) => (
+    alt_parser!($i, $err, call!($e) => { $gen });
   );
 
-  ($i:expr, $subrule:ident!( $args:tt ) => { $gen:expr }) => (
+  ($i:expr, $err:ident, $subrule:ident!( $args:tt ) => { $gen:expr }) => (
     match $subrule!( $i, $args ) {
       IResult::Incomplete(x) => IResult::Incomplete(x),
-      IResult::Error(e) => IResult::Error(e),
+      IResult::Error(e) => {
+        $err.push(e);
+        IResult::Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     $err
+        }))
+      },
       IResult::Done(i,o) => IResult::Done(i, $gen( o )),
     }
   );
 
-  ($i:expr, $e:ident) => (
-    alt_parser!($i, call!($e));
+  ($i:expr, $err:ident, $e:ident) => (
+    alt_parser!($i, $err, call!($e));
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)*)) => (
+  ($i:expr, $err:ident, $submac:ident!( $($args:tt)*)) => (
     match $submac!($i, $($args)*) {
-      IResult::Error(_)      => alt_parser!($i),
-      IResult::Incomplete(_) => alt_parser!($i),
+      IResult::Error(e)      => {
+        $err.push(e);
+        alt_parser!($i, $err)
+      },
+      IResult::Incomplete(_) => alt_parser!($i, $err),
       IResult::Done(i,o)     => IResult::Done(i,o)
     }
   );
 
-  ($i:expr) => (
-    IResult::Error(1)
+  ($i:expr, $err:ident) => (
+    IResult::Error(Box::new(PErr {
+      code:     0,
+      position: Position::Unknown,
+      next:     $err
+    }))
   );
 );
 
@@ -447,7 +480,11 @@ macro_rules! is_not(
         if parsed { break; }
       }
       if index == 0 {
-        IResult::Error(0)
+        IResult::Error(Box::new(PErr {
+            code:     0,
+            position: Position::Unknown,
+            next:     Vec::new()
+          }))
       } else {
         IResult::Done(&$input[index..], &$input[0..index])
       }
@@ -491,7 +528,11 @@ macro_rules! is_a(
         if !cont { break; }
       }
       if index == 0 {
-        IResult::Error(0)
+        IResult::Error(Box::new(PErr {
+            code:     0,
+            position: Position::Unknown,
+            next:     Vec::new()
+          }))
       } else {
         IResult::Done(&$input[index..], &$input[0..index])
       }
@@ -522,7 +563,11 @@ macro_rules! filter(
         }
       }
       if index == 0 {
-        IResult::Error(0)
+        IResult::Error(Box::new(PErr {
+            code:     0,
+            position: Position::Unknown,
+            next:     Vec::new()
+          }))
       } else {
         IResult::Done(&$input[index..], &$input[0..index])
       }
@@ -832,7 +877,11 @@ macro_rules! separated_list(
         IResult::Incomplete(i) => IResult::Incomplete(i),
         IResult::Done(i,o)     => {
           if i.len() == $i.len() {
-            IResult::Error(0)
+            IResult::Error(Box::new(PErr {
+            code:     0,
+            position: Position::Pointer(i.as_ptr()),
+            next:     Vec::new()
+          }))
           } else {
             res.push(o);
             begin += remaining - i.len();
@@ -898,7 +947,11 @@ macro_rules! separated_nonempty_list(
         IResult::Incomplete(i) => IResult::Incomplete(i),
         IResult::Done(i,o)     => {
           if i.len() == $i.len() {
-            IResult::Error(0)
+            IResult::Error(Box::new(PErr {
+            code:     0,
+            position: Position::Pointer(i.as_ptr()),
+            next:     Vec::new()
+          }))
           } else {
             res.push(o);
             begin += remaining - i.len();
@@ -1031,7 +1084,11 @@ macro_rules! many1(
         }
       }
       if res.len() == 0 {
-        IResult::Error(0)
+        IResult::Error(Box::new(PErr {
+            code:     0,
+            position: Position::Pointer((&$i[begin..]).as_ptr()),
+            next:     Vec::new()
+          }))
       } else {
         IResult::Done(&$i[begin..], res)
       }
@@ -1072,7 +1129,11 @@ macro_rules! count(
         }
       }
       if err {
-        IResult::Error(0)
+        IResult::Error(Box::new(PErr {
+            code:     0,
+            position: Position::Pointer((&$i[begin..]).as_ptr()),
+            next:     Vec::new()
+          }))
       } else if cnt == $count {
         IResult::Done(&$i[begin..], res)
       } else {
@@ -1140,7 +1201,11 @@ macro_rules! take_until_and_consume(
         if parsed {
           Done(&$i[(index + bytes.len())..], &$i[0..index])
         } else {
-          Error(0)
+          Error(Box::new(PErr {
+            code:     0,
+            position: Position::Pointer((&$i[(index)..]).as_ptr()),
+            next:     Vec::new()
+          }))
         }
       }
     }
@@ -1179,7 +1244,11 @@ macro_rules! take_until(
         if parsed {
           Done(&$i[index..], &$i[0..index])
         } else {
-          Error(0)
+          Error(Box::new(PErr {
+            code:     0,
+            position: Position::Pointer((&$i[(index)..]).as_ptr()),
+            next:     Vec::new()
+          }))
         }
       }
     }
@@ -1220,7 +1289,11 @@ macro_rules! take_until_either_and_consume(
         if parsed {
           Done(&$i[(index+1)..], &$i[0..index])
         } else {
-          Error(0)
+          Error(Box::new(PErr {
+            code:     0,
+            position: Position::Pointer((&$i[(index)..]).as_ptr()),
+            next:     Vec::new()
+          }))
         }
       }
     }
@@ -1261,7 +1334,11 @@ macro_rules! take_until_either(
         if parsed {
           Done(&$i[index..], &$i[0..index])
         } else {
-          Error(0)
+          Error(Box::new(PErr {
+            code:     0,
+            position: Position::Pointer((&$i[index..]).as_ptr()),
+            next:     Vec::new()
+          }))
         }
       }
     }
@@ -1305,7 +1382,11 @@ macro_rules! length_value(
             }
           }
           if err {
-            Error(0)
+            Error(Box::new(PErr {
+              code:     0,
+              position: Position::Pointer((&i1[begin..]).as_ptr()),
+              next:     Vec::new()
+            }))
           } else if res.len() < nb as usize {
             match inc {
               Needed::Unknown      => Incomplete(Needed::Unknown),
@@ -1353,7 +1434,11 @@ macro_rules! length_value(
             }
           }
           if err {
-            Error(0)
+            Error(Box::new(PErr {
+              code:     0,
+              position: Position::Pointer((&i1[begin..]).as_ptr()),
+              next:     Vec::new()
+            }))
           } else if res.len() < nb as usize {
             match inc {
               Needed::Unknown      => Incomplete(Needed::Unknown),
@@ -1375,11 +1460,13 @@ mod tests {
   use internal::Needed;
   use internal::IResult;
   use internal::IResult::*;
+  use internal::{Position,PErr};
 
   mod pub_named_mod {
     use internal::Needed;
     use internal::IResult;
     use internal::IResult::*;
+    use internal::{Position,PErr};
 
     named!(pub tst, tag!("abcd"));
   }
@@ -1402,7 +1489,12 @@ mod tests {
     assert_eq!(a_or_b(b), Done(&b"cde"[..], &b"b"[..]));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Error(0));
+    let err = Error(Box::new(PErr {
+      code:     0,
+      position: Position::Unknown,
+      next:     Vec::new()
+    }));
+    assert_eq!(a_or_b(c), err);
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Done(&b"cdef"[..], &b"ba"[..]));
@@ -1504,7 +1596,13 @@ mod tests {
 
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8]> {
-      Error(3)
+
+      let err = Error(Box::new(PErr {
+        code:     3,
+        position: Position::Pointer(input.as_ptr()),
+        next:     Vec::new()
+      }));
+      err
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
@@ -1516,7 +1614,12 @@ mod tests {
     named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
-    assert_eq!(alt1(a), Error(1));
+      let err = Error(Box::new(PErr {
+        code:     1,
+        position: Position::Unknown,
+        next:     Vec::new()
+      }));
+    assert_eq!(alt1(a), err);
     assert_eq!(alt2(a), Done(&b""[..], a));
     assert_eq!(alt3(a), Done(a, &b""[..]));
 
@@ -1544,7 +1647,12 @@ mod tests {
     assert_eq!(r1, Done(&b"abcdefgh"[..], &b"abcd"[..]));
 
     let r1 = ptag(&b"efgh"[..]);
-    assert_eq!(r1, Error(0));
+    let err = Error(Box::new(PErr {
+      code:     3,
+      position: Position::Unknown,
+      next:     Vec::new()
+    }));
+    assert_eq!(r1, err);
   }
 
   #[test]
@@ -1614,7 +1722,12 @@ mod tests {
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
-    assert_eq!(multi(c), Error(0));
+    let err = Error(Box::new(PErr {
+      code:     3,
+      position: Position::Unknown,
+      next:     Vec::new()
+    }));
+    assert_eq!(multi(c), err);
   }
 
   #[test]
@@ -1643,14 +1756,24 @@ mod tests {
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
-    assert_eq!(multi(c), Error(0));
+      let err = Error(Box::new(PErr {
+        code:     3,
+        position: Position::Unknown,
+        next:     Vec::new()
+      }));
+    assert_eq!(multi(c), err);
   }
 
   #[test]
   fn infinite_many() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       println!("input: {:?}", input);
-      Error(0)
+      let err = Error(Box::new(PErr {
+        code:     3,
+        position: Position::Unknown,
+        next:     Vec::new()
+      }));
+      err
     }
 
     // should not go into an infinite loop
@@ -1660,7 +1783,12 @@ mod tests {
 
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
-    assert_eq!(multi1(a), Error(0));
+    let err = Error(Box::new(PErr {
+      code:     3,
+      position: Position::Unknown,
+      next:     Vec::new()
+    }));
+    assert_eq!(multi1(a), err);
   }
 
   #[test]

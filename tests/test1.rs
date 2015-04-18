@@ -3,6 +3,7 @@ extern crate nom;
 
 use nom::{IResult,Needed,Producer,FileProducer,ProducerState,FlatMapOpt,Functor,not_line_ending};
 use nom::IResult::*;
+use nom::{Position,PErr};
 
 use std::str;
 use std::fmt::Debug;

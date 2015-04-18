@@ -16,7 +16,11 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8
     if i.len() >= rec.len() && &i[0..rec.len()] == rec {
       Done(&i[rec.len()..], &i[0..rec.len()])
     } else {
-      Error(0)
+      Error(Box::new(PErr {
+        code:     0,
+        position: Position::Pointer(rec.as_ptr()),
+        next:     Vec::new()
+      }))
     }
   })
 }
@@ -74,7 +78,11 @@ pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_alphabetic(input[idx]) {
       if idx == 0 {
-        return Error(0)
+        return Error(Box::new(PErr {
+          code:     0,
+          position: Position::Pointer(input.as_ptr()),
+          next:     Vec::new()
+        }))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -87,7 +95,11 @@ pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_digit(input[idx]) {
       if idx == 0 {
-        return Error(0)
+        return Error(Box::new(PErr {
+          code:     0,
+          position: Position::Pointer(input.as_ptr()),
+          next:     Vec::new()
+        }))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -100,7 +112,11 @@ pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_alphanumeric(input[idx]) {
       if idx == 0 {
-        return Error(0)
+        return Error(Box::new(PErr {
+          code:     0,
+          position: Position::Pointer(input.as_ptr()),
+          next:     Vec::new()
+        }))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -113,7 +129,11 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_space(input[idx]) {
       if idx == 0 {
-        return Error(0)
+        return IResult::Error(Box::new(PErr {
+          code:     0,
+          position: Position::Pointer(input.as_ptr()),
+          next:     Vec::new()
+        }))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -127,7 +147,11 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
     // println!("multispace at index: {}", idx);
     if !is_space(input[idx]) && input[idx] != '\r' as u8 && input[idx] != '\n' as u8 {
       if idx == 0 {
-        return Error(0)
+        return IResult::Error(Box::new(PErr {
+          code:     0,
+          position: Position::Unknown,
+          next:     Vec::new()
+        }))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -153,7 +177,11 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
 pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
   let input_len = input.len();
   if input_len == 0 {
-    return IResult::Error(0)
+    return IResult::Error(Box::new(PErr {
+      code:     0,
+      position: Position::Unknown,
+      next:     Vec::new()
+    }))
   }
 
   let len = input[0] as usize;
@@ -264,7 +292,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::Needed;
+  use internal::{Needed,Position,PErr};
   use internal::IResult::*;
 
   #[test]
@@ -274,7 +302,12 @@ mod tests {
     assert_eq!(r, Done(&b"abcdefgh"[..], &b"abcd"[..]));
 
     let r2 = x(&b"abcefgh"[..]);
-    assert_eq!(r2, Error(0));
+    let err = Error(Box::new(PErr {
+      code:     0,
+      position: Position::Unknown,
+      next:     Vec::new()
+    }));
+    assert_eq!(r2, err);
   }
 
   #[test]
@@ -285,14 +318,19 @@ mod tests {
     let c: &[u8] = b"a123";
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
+    let err = Error(Box::new(PErr {
+      code:     0,
+      position: Position::Unknown,
+      next:     Vec::new()
+    }));
     assert_eq!(alpha(a), Done(empty, a));
-    assert_eq!(alpha(b), Error(0));
+    assert_eq!(alpha(b), err);
     assert_eq!(alpha(c), Done(&c[1..], &b"a"[..]));
     assert_eq!(alpha(d), Done("é12".as_bytes(), &b"az"[..]));
-    assert_eq!(digit(a), Error(0));
+    assert_eq!(digit(a), err);
     assert_eq!(digit(b), Done(empty, b));
-    assert_eq!(digit(c), Error(0));
-    assert_eq!(digit(d), Error(0));
+    assert_eq!(digit(c), err);
+    assert_eq!(digit(d), err);
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(alphanumeric(b), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
