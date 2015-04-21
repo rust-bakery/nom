@@ -51,7 +51,7 @@ pub enum ProducerState<O> {
   Eof(O),
   Continue,
   Data(O),
-  ProducerError(Err),
+  ProducerError(u32),
 }
 
 /// A producer implements the produce method, currently working with u8 arrays
@@ -258,12 +258,13 @@ macro_rules! pusher (
 mod tests {
   use super::*;
   use internal::{Needed,IResult};
+  use internal::Err::*;
   use internal::IResult::*;
   use std::fmt::Debug;
   use std::str;
-  use map::*;
+  //use map::*;
 
-  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+  fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
     println!("{:?}", input);
     Done(input, ())
   }
@@ -295,7 +296,7 @@ mod tests {
       //p.push(|par| {println!("parsed file: {}", par); par});
       //p.push(|par| par.flat_map(print));
       fn pr<'a,'b,'c>(data: &[u8]) -> IResult<&[u8], &[u8]> {
-        Done(&b""[..], data).map_res(str::from_utf8); //.flat_map(local_print);
+        //Done(&b""[..], data).map_res(str::from_utf8); //.flat_map(local_print);
         Done(&b""[..],&b""[..])
       }
       pusher!(ps, pr);

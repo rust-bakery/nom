@@ -3,9 +3,10 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,Needed,IResult,Functor,FileProducer,be_u16,be_u32,be_u64,be_f32};
+use nom::{HexDisplay,Needed,IResult,FileProducer,be_u16,be_u32,be_u64,be_f32};
 use nom::{Consumer,ConsumerState};
 use nom::IResult::*;
+use nom::Err::*;
 
 use std::str::from_utf8;
 use std::io::SeekFrom;
@@ -260,7 +261,7 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Error(0)
+    Error(Code(0))
   }
 }
 
@@ -353,7 +354,7 @@ impl MP4Consumer {
               Error(a) => {
                 println!("ftyp parsing error: {:?}", a);
                 assert!(false);
-                return ConsumerState::ConsumerError(a);
+                return ConsumerState::ConsumerError(0);
               },
               Incomplete(_) => {
                 println!("ftyp incomplete -> await: {}", input.len());
@@ -386,7 +387,7 @@ impl MP4Consumer {
       Error(a) => {
         println!("mp4 parsing error: {:?}", a);
         assert!(false);
-        return ConsumerState::ConsumerError(a);
+        return ConsumerState::ConsumerError(0);
       },
       Incomplete(_) => {
         // FIXME: incomplete should send the required size
@@ -432,7 +433,7 @@ impl MP4Consumer {
       Error(a) => {
         println!("moov parsing error: {:?}", a);
         assert!(false);
-        return ConsumerState::ConsumerError(a);
+        return ConsumerState::ConsumerError(0);
       },
       Incomplete(_) => {
         println!("moov incomplete -> await: {}", input.len());
@@ -454,7 +455,7 @@ impl MP4Consumer {
       Error(a) => {
         println!("mvhd parsing error: {:?}", a);
         assert!(false);
-        return ConsumerState::ConsumerError(a);
+        return ConsumerState::ConsumerError(0);
       },
       Incomplete(_) => {
         println!("mvhd incomplete -> await: {}", input.len());

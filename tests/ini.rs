@@ -4,6 +4,7 @@ extern crate nom;
 
 use nom::{IResult,Needed,not_line_ending, space, alphanumeric, multispace};
 use nom::IResult::*;
+use nom::Err::*;
 
 use std::str;
 use std::str::from_utf8;
