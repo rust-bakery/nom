@@ -15,7 +15,7 @@ fn tag() {
     named!(pr<&[u8], ()>, flat_map!(map_res!(tag!("https!"), from_utf8), print));
     pusher!(ps, pr);
     ps(&mut p);
-    assert!(false);
+    //assert!(false);
   });
 }
 
