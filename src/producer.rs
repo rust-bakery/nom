@@ -4,7 +4,14 @@
 //!
 //! # Example
 //!
-//! ```ignore
+//! ```
+//! # #[macro_use] extern crate nom;
+//! # use std::fmt::Debug;
+//! # use nom::Needed;
+//! # use nom::IResult;
+//! # use nom::IResult::*;
+//! # use nom::{Producer,ProducerState,FileProducer};
+//! # fn main() {
 //!  use std::str;
 //!  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
 //!    println!("{:?}", input);
@@ -20,6 +27,7 @@
 //!    // get started
 //!    push(&mut p);
 //!  });
+//! # }
 //! ```
 
 use internal::*;
@@ -193,7 +201,14 @@ impl<'x> Producer for MemProducer<'x> {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use std::fmt::Debug;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # use nom::{ProducerState,Producer,MemProducer};
+/// # fn main() {
 /// fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
 ///   println!("{:?}", input);
 ///   Done(input, ())
@@ -202,6 +217,7 @@ impl<'x> Producer for MemProducer<'x> {
 ///
 /// pusher!(ps, local_print);
 /// ps(&mut p);
+/// # }
 /// ```
 #[macro_export]
 macro_rules! pusher (

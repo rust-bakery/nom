@@ -51,10 +51,16 @@ macro_rules! call (
 ///
 /// consumes the recognized characters
 ///
-/// ```ignore
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
 ///  named!(x, tag!("abcd"));
-///  let r = Done((), b"abcdabcdefgh").flat_map(x);
-///  assert_eq!(r, Done(b"efgh", b"abcd"));
+///  let r = x(&b"abcdefgh"[..]);
+///  assert_eq!(r, Done(&b"efgh"[..], &b"abcd"[..]));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! tag (
@@ -190,19 +196,23 @@ macro_rules! map_opt(
 
 /// chains parsers and assemble the results through a closure
 ///
-/// ```ignore
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
 /// #[derive(PartialEq,Eq,Debug)]
 /// struct B {
 ///   a: u8,
 ///   b: Option<u8>
 /// }
 ///
-/// named!(y tag!("efgh"));
+/// named!(y, tag!("efgh"));
 ///
-/// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i, 1) };
-/// fn ret_y(i:&[u8]) -> IResult<&[u8], u8> { y(i).map(|_| 1) }; // return 1 if the "efgh" tag is found
+/// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i, 1) }
+/// named!(ret_y<&[u8], u8>, map!(y, |_| 1)); // return 1 if the "efgh" tag is found
 ///
-///  named!(z<&[u8], u8>,
+///  named!(z<&[u8], B>,
 ///    chain!(
 ///      tag!("abcd")  ~
 ///      aa: ret_int   ~     // the result of that parser will be used in the closure
@@ -212,21 +222,23 @@ macro_rules! map_opt(
 ///    )
 ///  );
 ///
+/// # fn main() {
 /// // the first "abcd" tag is not present, we have an error
-/// let r1 = z(b"efgh");
+/// let r1 = z(&b"efgh"[..]);
 /// assert_eq!(r1, Error(0));
 ///
 /// // everything is present, everything is parsed
-/// let r2 = z(b"abcdabcdefgh");
-/// assert_eq!(r2, Done(b"", B{a: 1, b: Some(1)}));
+/// let r2 = z(&b"abcdabcdefgh"[..]);
+/// assert_eq!(r2, Done(&b""[..], B{a: 1, b: Some(1)}));
 ///
 /// // the second "abcd" tag is optional
-/// let r3 = z(b"abcdefgh");
-/// assert_eq!(r3, Done(b"", B{a: 1, b: Some(1)}));
+/// let r3 = z(&b"abcdefgh"[..]);
+/// assert_eq!(r3, Done(&b""[..], B{a: 1, b: Some(1)}));
 ///
 /// // the result of ret_y is optional, as seen in the B structure
-/// let r4 = z(b"abcdabcd");
-/// assert_eq!(r4, Done(b"", B{a: 1, b: None}));
+/// let r4 = z(&b"abcdabcdwxyz"[..]);
+/// assert_eq!(r4, Done(&b"wxyz"[..], B{a: 1, b: None}));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! chain (
@@ -372,12 +384,18 @@ macro_rules! chaining_parser (
 ///
 /// Incomplete results are ignored
 ///
-/// ```ignore
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
 ///  named!( test, alt!( tag!( "abcd" ) | tag!( "efgh" ) ) );
-///  let r1 = test(b"abcdefgh"));
-///  assert_eq!(r1, Done(b"efgh", b"abcd"));
-///  let r2 = test(b"efghijkl"));
-///  assert_eq!(r2, Done(b"ijkl", b"efgh"));
+///  let r1 = test(b"abcdefgh");
+///  assert_eq!(r1, Done(&b"efgh"[..], &b"abcd"[..]));
+///  let r2 = test(&b"efghijkl"[..]);
+///  assert_eq!(r2, Done(&b"ijkl"[..], &b"efgh"[..]));
+///  # }
 /// ```
 #[macro_export]
 macro_rules! alt (
@@ -447,11 +465,17 @@ macro_rules! alt_parser (
 
 /// returns the longest list of bytes that do not appear in the provided array
 ///
-/// ```ignore
-///  named!( not_space, is_not!( b" \t\r\n" ) );
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
+///  named!( not_space, is_not!( " \t\r\n" ) );
 ///
-///  let r = not_space(b"abcdefgh\nijkl"));
-///  assert_eq!(r, Done(b"\nijkl", b"abcdefgh"));
+///  let r = not_space(&b"abcdefgh\nijkl"[..]);
+///  assert_eq!(r, Done(&b"\nijkl"[..], &b"abcdefgh"[..]));
+///  # }
 /// ```
 #[macro_export]
 macro_rules! is_not(
@@ -488,14 +512,20 @@ macro_rules! is_not(
 
 /// returns the longest list of bytes that appear in the provided array
 ///
-/// ```ignore
-///  named!(abcd, is_a!( b"abcd" ));
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
+///  named!(abcd, is_a!( "abcd" ));
 ///
-///  let r1 = abcd(b"aaaaefgh"));
-///  assert_eq!(r1, Done(b"efgh", b"aaaa"));
+///  let r1 = abcd(&b"aaaaefgh"[..]);
+///  assert_eq!(r1, Done(&b"efgh"[..], &b"aaaa"[..]));
 ///
-///  let r2 = abcd(b"dcbaefgh"));
-///  assert_eq!(r2, Done(b"efgh", b"dcba"));
+///  let r2 = abcd(&b"dcbaefgh"[..]);
+///  assert_eq!(r2, Done(&b"efgh"[..], &b"dcba"[..]));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! is_a(
@@ -532,11 +562,18 @@ macro_rules! is_a(
 
 /// returns the longest list of bytes until the provided parser fails
 ///
-/// ```ignore
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
 ///  named!( alpha, filter!( is_alphanumeric ) );
 ///
-///  let r = alpha(b"abcd\nefgh"));
-///  assert_eq!(r, Done(b"\nefgh", b"abcd"));
+///  let r = alpha(&b"abcd\nefgh"[..]);
+///  assert_eq!(r, Done(&b"\nefgh"[..], &b"abcd"[..]));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! filter(
@@ -565,13 +602,19 @@ macro_rules! filter(
 ///
 /// returns an Option of the returned type
 ///
-/// ```ignore
-///  named!( o, opt!( tag!( "abcd" ) ) );
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
+///  named!( o<&[u8], Option<&[u8]> >, opt!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdef";
 ///  let b = b"bcdefg";
-///  assert_eq!(o(a), Done(b"ef", Some(b"abcd")));
-///  assert_eq!(o(b), Done(b"bcdefg", None));
+///  assert_eq!(o(&a[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+///  assert_eq!(o(&b[..]), Done(&b"bcdefg"[..], None));
+///  # }
 /// ```
 #[macro_export]
 macro_rules! opt(
@@ -614,11 +657,17 @@ macro_rules! cond(
 ///
 /// the embedded parser may return Incomplete
 ///
-/// ```ignore
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
 ///  named!(ptag, peek!( tag!( "abcd" ) ) );
 ///
-///  let r = ptag(b"abcdefgh"));
-///  assert_eq!(r, Done(b"abcdefgh", b"abcd"));
+///  let r = ptag(&b"abcdefgh"[..]);
+///  assert_eq!(r, Done(&b"abcdefgh"[..], &b"abcd"[..]));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! peek(
@@ -984,15 +1033,21 @@ macro_rules! separated_nonempty_list(
 ///
 /// the embedded parser may return Incomplete
 ///
-/// ```ignore
-///  named!(multi, many0!( tag!( "abcd" ) ) );
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
+///  named!(multi<&[u8], Vec<&[u8]> >, many0!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdabcdef";
 ///  let b = b"azerty";
 ///
-///  let res = vec![b"abcd", b"abcd"];
-///  assert_eq!(multi(a), Done(b"ef", res));
-///  assert_eq!(multi(b), Done(b"azerty", Vec::new()));
+///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///  assert_eq!(multi(&a[..]), Done(&b"ef"[..], res));
+///  assert_eq!(multi(&b[..]), Done(&b"azerty"[..], Vec::new()));
+/// # }
 /// ```
 /// 0 or more
 #[macro_export]
@@ -1029,15 +1084,21 @@ macro_rules! many0(
 ///
 /// the embedded parser may return Incomplete
 ///
-/// ```ignore
-///  named!(multi, many1!( tag!( "abcd" ) ) );
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
+///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdabcdef";
 ///  let b = b"azerty";
 ///
-///  let res = vec![b"abcd", b"abcd"];
-///  assert_eq!(multi(a), Done(b"ef", res));
-///  assert_eq!(multi(b), Error(0));
+///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///  assert_eq!(multi(&a[..]), Done(&b"ef"[..], res));
+///  assert_eq!(multi(&b[..]), Error(0));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! many1(
@@ -1117,13 +1178,19 @@ macro_rules! count(
 );
 /// generates a parser consuming the specified number of bytes
 ///
-/// ```ignore
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Needed;
+/// # use nom::IResult;
+/// # use nom::IResult::*;
+/// # fn main() {
 ///  // Desmond parser
 ///  named!(take5, take!( 5 ) );
 ///
 ///  let a = b"abcdefgh";
 ///
-///  assert_eq!(take5(a), Done(b"fgh", b"abcde"));
+///  assert_eq!(take5(&a[..]), Done(&b"fgh"[..], &b"abcde"[..]));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! take(

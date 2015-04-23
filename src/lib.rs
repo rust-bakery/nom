@@ -7,7 +7,12 @@
 //!
 //! # Example
 //!
-//! ```ignore
+//! ```
+//! # #[macro_use] extern crate nom;
+//! # use nom::{IResult,Producer,ProducerState,FileProducer};
+//! # use nom::IResult::*;
+//! # use std::fmt::Debug;
+//! # fn main() {
 //!  use std::str;
 //!  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
 //!    println!("{:?}", input);
@@ -17,20 +22,12 @@
 //!  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
 //!    let mut p = producer;
 //!
-//!    // create the parsing function
-//!    fn parser(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-//!      // convert byte array to a string, then print it
-//!      par.map_res(str::from_utf8).flat_map(local_print);
-//!
-//!      // return a dummy answer
-//!      Done(b"", ())
-//!    }
-//!
 //!    // adapt the parsing function to the producer
-//!    pusher!(push, parser);
+//!    pusher!(push, local_print);
 //!    // get started
 //!    push(&mut p);
 //!  });
+//! # }
 //! ```
 //!
 
