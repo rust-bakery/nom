@@ -6,7 +6,6 @@ use nom::{IResult,Needed,not_line_ending, space, alphanumeric, multispace};
 use nom::IResult::*;
 
 use std::str;
-use std::str::from_utf8;
 use std::collections::HashMap;
 
 named!(category     <&[u8], &str>,
@@ -14,7 +13,7 @@ named!(category     <&[u8], &str>,
           tag!("[")       ~
     name: map_res!(
       take_until!("]"),
-      from_utf8)          ~
+      str::from_utf8)     ~
           tag!("]")       ~
           multispace?     ,
     ||{ name }
@@ -23,13 +22,13 @@ named!(category     <&[u8], &str>,
 
 named!(key_value    <&[u8],(&str,&str)>,
   chain!(
-    key: map_res!(alphanumeric, from_utf8) ~
+    key: map_res!(alphanumeric, std::str::from_utf8) ~
          space?                            ~
          tag!("=")                         ~
          space?                            ~
     val: map_res!(
            take_until_either!("\n;"),
-           from_utf8
+           str::from_utf8
          )                                 ~
          space?                            ~
          chain!(

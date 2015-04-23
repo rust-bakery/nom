@@ -7,7 +7,7 @@ use nom::{HexDisplay,Needed,IResult,FileProducer,be_u16,be_u32,be_u64,be_f32};
 use nom::{Consumer,ConsumerState};
 use nom::IResult::*;
 
-use std::str::from_utf8;
+use std::str;
 use std::io::SeekFrom;
 
 fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -241,7 +241,7 @@ struct MP4BoxHeader {
   tag:    MP4BoxType
 }
 
-named!(brand_name<&[u8],&str>, map_res!(take!(4), from_utf8));
+named!(brand_name<&[u8],&str>, map_res!(take!(4), str::from_utf8));
 
 named!(filetype_parser<&[u8], FileType>,
   chain!(
