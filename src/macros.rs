@@ -540,9 +540,6 @@ macro_rules! is_a(
 /// ```
 #[macro_export]
 macro_rules! filter(
-  ($input:expr, $arr:expr) => (
-    filter!($i, call!($f));
-  );
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
       let mut index = 0;
@@ -558,6 +555,9 @@ macro_rules! filter(
         IResult::Done(&$input[index..], &$input[0..index])
       }
     }
+  );
+  ($input:expr, $f:expr) => (
+    filter!($input, call!($f));
   );
 );
 
