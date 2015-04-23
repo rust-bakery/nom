@@ -6,22 +6,17 @@
 //!
 //! ```ignore
 //!  use std::str;
-//!  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+//!  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
 //!    println!("{:?}", input);
 //!    Done(input, ())
 //!  }
+//!
 //!  // create a data producer from a file
 //!  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
 //!    let mut p = producer;
 //!
-//!    // create the parsing function
-//!    fn parser(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-//!      par.map_res(str::from_utf8).flat_map(local_print);
-//!      Done(b"", ())
-//!    }
-//!
 //!    // adapt the parsing function to the producer
-//!    pusher!(push, parser);
+//!    pusher!(push, local_print);
 //!    // get started
 //!    push(&mut p);
 //!  });
@@ -199,13 +194,13 @@ impl<'x> Producer for MemProducer<'x> {
 /// # Example
 ///
 /// ```ignore
-/// #![feature(collections)]
-/// fn pr(par: IResult<(),&[u8]>) -> IResult<&[u8],()> {
-///   par.flat_map(local_print)
+/// fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
+///   println!("{:?}", input);
+///   Done(input, ())
 /// }
 /// let mut p = MemProducer::new(b"abcdefgh", 8);
 ///
-/// pusher!(ps, pr);
+/// pusher!(ps, local_print);
 /// ps(&mut p);
 /// ```
 #[macro_export]
@@ -261,9 +256,8 @@ mod tests {
   use internal::IResult::*;
   use std::fmt::Debug;
   use std::str;
-  use map::*;
 
-  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
     println!("{:?}", input);
     Done(input, ())
   }
@@ -294,11 +288,8 @@ mod tests {
       let mut p = producer;
       //p.push(|par| {println!("parsed file: {}", par); par});
       //p.push(|par| par.flat_map(print));
-      fn pr<'a,'b,'c>(data: &[u8]) -> IResult<&[u8], &[u8]> {
-        Done(&b""[..], data).map_res(str::from_utf8); //.flat_map(local_print);
-        Done(&b""[..],&b""[..])
-      }
-      pusher!(ps, pr);
+
+      pusher!(ps, local_print);
       ps(&mut p);
       //assert!(false);
     });

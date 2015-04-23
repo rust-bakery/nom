@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,Needed,IResult,Functor,FileProducer,be_u16,be_u32,be_u64,be_f32};
+use nom::{HexDisplay,Needed,IResult,FileProducer,be_u16,be_u32,be_u64,be_f32};
 use nom::{Consumer,ConsumerState};
 use nom::IResult::*;
 

@@ -79,6 +79,37 @@ macro_rules! tag (
   );
 );
 
+/// flat_map! combines a parser R -> IResult<R,S> and
+/// a parser S -> IResult<S,T> to return another
+/// parser R -> IResult<R,T>
+#[macro_export]
+macro_rules! flat_map(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        Error(ref e) => Error(*e),
+        Incomplete(Needed::Unknown) => Incomplete(Needed::Unknown),
+        Incomplete(Needed::Size(i)) => Incomplete(Needed::Size(i)),
+        Done(i, o)                  => match $submac2!(o, $($args2)*) {
+          Error(ref e)                     => Error(*e),
+          Incomplete(Needed::Unknown)      => Incomplete(Needed::Unknown),
+          Incomplete(Needed::Size(ref i2)) => Incomplete(Needed::Size(*i2)),
+          Done(_, o2)                      => Done(i, o2)
+        }
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    flat_map!($i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    flat_map!($i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    flat_map!($i, call!($f), $submac!($($args)*));
+  );
+);
+
 /// maps a function on the result of a parser
 #[macro_export]
 macro_rules! map(
@@ -1371,7 +1402,6 @@ macro_rules! length_value(
 
 #[cfg(test)]
 mod tests {
-  use map::*;
   use internal::Needed;
   use internal::IResult;
   use internal::IResult::*;
@@ -1473,9 +1503,7 @@ mod tests {
   fn chain_opt() {
     named!(y, tag!("efgh"));
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    fn ret_y(i:&[u8]) -> IResult<&[u8], u8> {
-      y(i).map(|_| 2)
-    };
+    named!(ret_y<&[u8], u8>, map!(y, |_| 2));
 
     named!(f<&[u8],C>,
       chain!(
