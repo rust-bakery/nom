@@ -255,7 +255,6 @@ mod tests {
   use internal::{Needed,IResult};
   use internal::IResult::*;
   use std::fmt::Debug;
-  use std::str;
 
   fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
     println!("{:?}", input);
