@@ -2,8 +2,6 @@
 
 use self::IResult::*;
 
-/// Errortype. A integer for now
-pub type Err = u32;
 /*
 /// (Experimental) Closure used to hold the temporary state of resumable parsing
 pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
@@ -32,6 +30,15 @@ impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 
+#[derive(Debug,PartialEq,Eq,Clone)]
+pub enum Err<'a>{
+  Code(u32),
+  Node(u32, Box<Err<'a>>),
+  Position(u32, &'a [u8]),
+  NodePosition(u32, &'a [u8], Box<Err<'a>>)
+}
+
+
 #[derive(Debug,PartialEq,Eq)]
 pub enum Needed {
   Unknown,
@@ -51,9 +58,9 @@ pub enum Needed {
 /// * Incomplete will hold the closure used to restart the computation once more data is available.
 /// Current attemps at implementation of Incomplete are progressing, but slowed down by lifetime problems
 #[derive(Debug,PartialEq,Eq)]
-pub enum IResult<I,O> {
+pub enum IResult<'a,I,O> {
   Done(I,O),
-  Error(Err),
+  Error(Err<'a>),
   //Incomplete(proc(I):'a -> IResult<I,O>)
   Incomplete(Needed)
   //Incomplete(Box<FnMut(I) -> IResult<I,O>>)
@@ -62,7 +69,7 @@ pub enum IResult<I,O> {
   //Incomplete(fn(I) -> IResult<'a,I,O>)
 }
 
-impl<I,O> IResult<I,O> {
+impl<'a,I,O> IResult<'a,I,O> {
   pub fn is_done(&self) -> bool {
     match self {
       &Done(_,_) => true,
@@ -93,7 +100,7 @@ pub trait GetOutput<O> {
   fn output(&self) -> Option<O>;
 }
 
-impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
+impl<'a,I,O> GetInput<&'a[I]> for IResult<'a,&'a[I],O> {
   fn remaining_input(&self) -> Option<&'a[I]> {
     match self {
       &Done(ref i,_) => Some(*i),
@@ -102,7 +109,7 @@ impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
   }
 }
 
-impl<'a,O> GetInput<()> for IResult<(),O> {
+impl<'a,O> GetInput<()> for IResult<'a,(),O> {
   fn remaining_input(&self) -> Option<()> {
     match self {
       &Done((),_) => Some(()),
@@ -111,7 +118,7 @@ impl<'a,O> GetInput<()> for IResult<(),O> {
   }
 }
 
-impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
+impl<'a,I,O> GetOutput<&'a[O]> for IResult<'a,I,&'a[O]> {
   fn output(&self) -> Option<&'a[O]> {
     match self {
       &Done(_, ref o) => Some(*o),
@@ -120,7 +127,7 @@ impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
   }
 }
 
-impl<'a,I> GetOutput<()> for IResult<I,()> {
+impl<'a,I> GetOutput<()> for IResult<'a,I,()> {
   fn output(&self) -> Option<()> {
     match self {
       &Done(_,()) => Some(()),

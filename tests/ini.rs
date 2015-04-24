@@ -4,6 +4,7 @@ extern crate nom;
 
 use nom::{IResult,not_line_ending, space, alphanumeric, multispace};
 use nom::IResult::*;
+use nom::Err::*;
 
 use std::str;
 use std::collections::HashMap;

@@ -3,6 +3,7 @@ extern crate nom;
 
 use nom::{IResult,FileProducer,not_line_ending};
 use nom::IResult::*;
+use nom::Err::*;
 
 use std::str;
 use std::fmt::Debug;
@@ -19,7 +20,7 @@ fn tag() {
   });
 }
 
-pub fn print<T: Debug>(input: T) -> IResult<T,()> {
+pub fn print<'a, T: Debug>(input: T) -> IResult<'a,T,()> {
   println!("{:?}", input);
   Done(input, ())
 }

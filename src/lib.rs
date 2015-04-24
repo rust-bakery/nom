@@ -14,7 +14,7 @@
 //! # use std::fmt::Debug;
 //! # fn main() {
 //!  use std::str;
-//!  fn local_print<'a,T: Debug>(input: T) -> IResult<T, ()> {
+//!  fn local_print<'a,T: Debug>(input: T) -> IResult<'a, T, ()> {
 //!    println!("{:?}", input);
 //!    Done(input, ())
 //!  }

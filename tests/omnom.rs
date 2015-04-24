@@ -4,6 +4,7 @@ extern crate nom;
 
 use nom::{Consumer,ConsumerState,MemProducer};
 use nom::IResult::*;
+use nom::Err::*;
 
 #[derive(PartialEq,Eq,Debug)]
 enum State {
@@ -27,7 +28,7 @@ impl Consumer for TestConsumer {
     match self.state {
       State::Beginning => {
         match om_parser(input) {
-          Error(a)      => ConsumerState::ConsumerError(a),
+          Error(_)      => ConsumerState::ConsumerError(0),
           Incomplete(_) => ConsumerState::Await(0, 2),
           Done(_,_)     => {
             self.state = State::Middle;
@@ -50,7 +51,7 @@ impl Consumer for TestConsumer {
       },
       State::End       => {
         match end_parser(input) {
-          Error(a)      => ConsumerState::ConsumerError(a),
+          Error(_)      => ConsumerState::ConsumerError(0),
           Incomplete(_) => ConsumerState::Await(0, 7),
           Done(_,_)     => {
             self.state = State::Done;

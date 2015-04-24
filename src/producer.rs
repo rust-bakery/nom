@@ -11,7 +11,8 @@
 //! # use nom::IResult::*;
 //! # use nom::{Producer,ProducerState,FileProducer};
 //! # fn main() {
-//!  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
+//!  use std::str;
+//!  fn local_print<'a, T: Debug>(input: T) -> IResult<'a, T, ()> {
 //!    println!("{:?}", input);
 //!    Done(input, ())
 //!  }
@@ -28,7 +29,6 @@
 //! # }
 //! ```
 
-use internal::*;
 use self::ProducerState::*;
 
 use std::fs::File;
@@ -52,7 +52,7 @@ pub enum ProducerState<O> {
   Eof(O),
   Continue,
   Data(O),
-  ProducerError(Err),
+  ProducerError(u32),
 }
 
 /// A producer implements the produce method, currently working with u8 arrays
@@ -207,7 +207,7 @@ impl<'x> Producer for MemProducer<'x> {
 /// # use nom::IResult::*;
 /// # use nom::{ProducerState,Producer,MemProducer};
 /// # fn main() {
-/// fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
+/// fn local_print<'a, T: Debug>(input: T) -> IResult<'a, T, ()> {
 ///   println!("{:?}", input);
 ///   Done(input, ())
 /// }
@@ -270,10 +270,11 @@ mod tests {
   use internal::IResult::*;
   use std::fmt::Debug;
 
-  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
+  fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
     println!("{:?}", input);
     Done(input, ())
   }
+
   #[test]
   fn mem_producer() {
     let mut p = MemProducer::new(&b"abcdefgh"[..], 4);

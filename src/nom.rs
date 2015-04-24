@@ -9,31 +9,32 @@
 use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
+use internal::Err::*;
 use std::mem::transmute;
 
-pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]> + 'a> {
-  Box::new(move |i: &'b[u8]| -> IResult<&'b[u8], &'b[u8]> {
+pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<'b, &'b[u8], &'b[u8]> + 'a> {
+  Box::new(move |i: &'b[u8]| -> IResult<'b, &'b[u8], &'b[u8]> {
     if i.len() >= rec.len() && &i[0..rec.len()] == rec {
       Done(&i[rec.len()..], &i[0..rec.len()])
     } else {
-      Error(0)
+      Error(Position(0, i))
     }
   })
 }
 
-pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
+pub fn print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
   println!("{:?}", input);
   Done(input, ())
 }
 
-pub fn begin<'a>(input: &'a [u8]) -> IResult<(), &'a [u8]> {
+pub fn begin<'a>(input: &'a [u8]) -> IResult<'a,(), &'a [u8]> {
   Done((), input)
 }
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
 //pub is_not!(line_ending b"\r\n")
-pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn not_line_ending<'a>(input:&[u8]) -> IResult<'a, &[u8], &[u8]> {
   for idx in 0..input.len() {
     for &i in b"\r\n".iter() {
       if input[idx] == i {
@@ -44,9 +45,9 @@ pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(b"", input)
 }
 
-named!(tag_ln<&[u8],&[u8]>, tag!("\n"));
+named!(tag_ln, tag!("\n"));
 
-pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn line_ending<'a>(input:&'a[u8]) -> IResult<'a, &[u8], &[u8]> {
   tag_ln(input)
 }
 
@@ -70,11 +71,11 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(alpha is_alphabetic)
 //pub filter!(digit is_digit)
 //pub filter!(alphanumeric is_alphanumeric)
-pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn alpha<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_alphabetic(input[idx]) {
       if idx == 0 {
-        return Error(0)
+        return Error(Position(0, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -83,11 +84,11 @@ pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(b"", input)
 }
 
-pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn digit<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_digit(input[idx]) {
       if idx == 0 {
-        return Error(0)
+        return Error(Position(0, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -96,11 +97,11 @@ pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(b"", input)
 }
 
-pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn alphanumeric<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_alphanumeric(input[idx]) {
       if idx == 0 {
-        return Error(0)
+        return Error(Position(0, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -109,11 +110,11 @@ pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(b"", input)
 }
 
-pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn space<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_space(input[idx]) {
       if idx == 0 {
-        return Error(0)
+        return Error(Position(0, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -122,12 +123,12 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(b"", input)
 }
 
-pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn multispace<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   for idx in 0..input.len() {
     // println!("multispace at index: {}", idx);
     if !is_space(input[idx]) && input[idx] != '\r' as u8 && input[idx] != '\n' as u8 {
       if idx == 0 {
-        return Error(0)
+        return Error(Position(0, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -136,7 +137,7 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(b"", input)
 }
 
-pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn sized_buffer<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   if input.len() == 0 {
     return Incomplete(Needed::Unknown)
   }
@@ -150,10 +151,10 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   }
 }
 
-pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn length_value<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   let input_len = input.len();
   if input_len == 0 {
-    return IResult::Error(0)
+    return Error(Position(0, input))
   }
 
   let len = input[0] as usize;
@@ -165,7 +166,7 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
   }
 }
 
-pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
+pub fn be_u8<'a>(i: &[u8]) -> IResult<'a,&[u8], u8> {
   if i.len() < 1 {
     Incomplete(Needed::Size(1))
   } else {
@@ -173,7 +174,7 @@ pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
   }
 }
 
-pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
+pub fn be_u16<'a>(i: &[u8]) -> IResult<'a,&[u8], u16> {
   if i.len() < 2 {
     Incomplete(Needed::Size(2))
   } else {
@@ -182,7 +183,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   }
 }
 
-pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
+pub fn be_u32<'a>(i: &[u8]) -> IResult<'a,&[u8], u32> {
   if i.len() < 4 {
     Incomplete(Needed::Size(4))
   } else {
@@ -191,7 +192,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   }
 }
 
-pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
+pub fn be_u64<'a>(i: &[u8]) -> IResult<'a,&[u8], u64> {
   if i.len() < 8 {
     Incomplete(Needed::Size(8))
   } else {
@@ -266,6 +267,7 @@ mod tests {
   use super::*;
   use internal::Needed;
   use internal::IResult::*;
+  use internal::Err::*;
 
   #[test]
   fn tag_closure() {
@@ -274,7 +276,7 @@ mod tests {
     assert_eq!(r, Done(&b"abcdefgh"[..], &b"abcd"[..]));
 
     let r2 = x(&b"abcefgh"[..]);
-    assert_eq!(r2, Error(0));
+    assert_eq!(r2, Error(Position(0, &b"abcefgh"[..])));
   }
 
   #[test]
@@ -286,13 +288,13 @@ mod tests {
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
     assert_eq!(alpha(a), Done(empty, a));
-    assert_eq!(alpha(b), Error(0));
+    assert_eq!(alpha(b), Error(Position(0,b)));
     assert_eq!(alpha(c), Done(&c[1..], &b"a"[..]));
     assert_eq!(alpha(d), Done("é12".as_bytes(), &b"az"[..]));
-    assert_eq!(digit(a), Error(0));
+    assert_eq!(digit(a), Error(Position(0,a)));
     assert_eq!(digit(b), Done(empty, b));
-    assert_eq!(digit(c), Error(0));
-    assert_eq!(digit(d), Error(0));
+    assert_eq!(digit(c), Error(Position(0,c)));
+    assert_eq!(digit(d), Error(Position(0,d)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(alphanumeric(b), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));

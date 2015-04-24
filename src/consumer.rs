@@ -33,7 +33,7 @@
 //!  impl Consumer for TestPrintConsumer {
 //!    fn consume(&mut self, input: &[u8]) -> ConsumerState {
 //!      match take4(input) {
-//!        IResult::Error(a)      => ConsumerState::ConsumerError(a),
+//!        IResult::Error(a)      => ConsumerState::ConsumerError(0),
 //!        IResult::Incomplete(a) => ConsumerState::Await(0, 4),
 //!        IResult::Done(i, o)    => {
 //!          println!("{} -> {}", self.counter, str::from_utf8(o).unwrap());
@@ -61,7 +61,6 @@
 use self::ConsumerState::*;
 use producer::Producer;
 use producer::ProducerState::*;
-use internal::Err;
 use std::io::SeekFrom;
 
 /// Holds the current state of the consumer
@@ -84,7 +83,7 @@ pub enum ConsumerState {
   ),
   Incomplete,
   ConsumerDone,
-  ConsumerError(Err)
+  ConsumerError(u32)
 }
 
 /// Implement the consume method, taking a byte array as input and returning a consumer state
@@ -236,7 +235,7 @@ macro_rules! take(
   impl Consumer for TestPrintConsumer {
     fn consume(&mut self, input: &[u8]) -> ConsumerState {
       match take4(input) {
-        IResult::Error(a)      => ConsumerError(a),
+        IResult::Error(_)      => ConsumerError(0),
         IResult::Incomplete(_) => Await(0, 4),
         IResult::Done(_, o)    => {
           println!("{} -> {}", self.counter, str::from_utf8(o).unwrap());
