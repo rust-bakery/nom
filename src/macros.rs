@@ -20,6 +20,16 @@ macro_rules! named (
             $submac!(i, $($args)*)
         }
     );
+    ($name:ident<$life:item,$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        fn $name<$life>( i: $i ) -> $crate::IResult<$life,$i, $o> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<'a, &'a [u8], $o> {
+            $submac!(i, $($args)*)
+        }
+    );
     ($name:ident, $submac:ident!( $($args:tt)* )) => (
         fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8]> {
             $submac!(i, $($args)*)
@@ -31,7 +41,7 @@ macro_rules! named (
         }
     );
     (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name<'a>( i: $i ) -> $crate::IResult<'a,$i, $o> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o> {
             $submac!(i, $($args)*)
         }
     );
