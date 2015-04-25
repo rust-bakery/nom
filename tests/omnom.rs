@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Consumer,ConsumerState,MemProducer,IResult,Needed};
+use nom::{Consumer,ConsumerState,MemProducer};
 use nom::IResult::*;
 
 #[derive(PartialEq,Eq,Debug)]
@@ -109,4 +109,3 @@ fn impolite() {
   assert_eq!(c.counter, 3);
   assert_eq!(c.state, State::Middle);
 }
-

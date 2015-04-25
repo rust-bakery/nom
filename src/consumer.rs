@@ -10,7 +10,6 @@
 //! ```rust
 //!  use nom::{IResult,Needed,MemProducer,Consumer,ConsumerState};
 //!  use std::str;
-//!  use std::io::SeekFrom;
 //!
 //!  struct TestPrintConsumer {
 //!    counter: usize

@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed,not_line_ending, space, alphanumeric, multispace};
+use nom::{IResult,not_line_ending, space, alphanumeric, multispace};
 use nom::IResult::*;
 
 use std::str;
@@ -237,4 +237,3 @@ key4 = value4
   expected_h.insert("category", expected_2);
   assert_eq!(res, Done(ini_after_parser, expected_h));
 }
-

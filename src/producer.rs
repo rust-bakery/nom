@@ -7,12 +7,10 @@
 //! ```
 //! # #[macro_use] extern crate nom;
 //! # use std::fmt::Debug;
-//! # use nom::Needed;
 //! # use nom::IResult;
 //! # use nom::IResult::*;
 //! # use nom::{Producer,ProducerState,FileProducer};
 //! # fn main() {
-//!  use std::str;
 //!  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
 //!    println!("{:?}", input);
 //!    Done(input, ())
@@ -223,16 +221,16 @@ impl<'x> Producer for MemProducer<'x> {
 macro_rules! pusher (
   ($name:ident, $f:expr) => (
     #[allow(unused_variables)]
-    fn $name(producer: &mut Producer) {
+    fn $name(producer: &mut $crate::Producer) {
       let mut acc: Vec<u8> = Vec::new();
       loop {
         let state = producer.produce();
         match state {
-          ProducerState::Data(v) => {
+          $crate::ProducerState::Data(v) => {
             //println!("got data");
             acc.extend(v.iter().cloned())
           },
-          ProducerState::Eof(v) => {
+          $crate::ProducerState::Eof(v) => {
             if v.is_empty() {
               //println!("eof empty, acc contains {} bytes: {:?}", acc.len(), acc);
               break;
@@ -247,14 +245,14 @@ macro_rules! pusher (
         v2.extend(acc[..].iter().cloned());
         //let p = IResult::Done(b"", v2.as_slice());
         match $f(&v2[..]) {
-          IResult::Error(e)      => {
+          $crate::IResult::Error(e)      => {
             //println!("error, stopping: {}", e);
             break;
           },
-          IResult::Incomplete(_) => {
+          $crate::IResult::Incomplete(_) => {
             //println!("incomplete");
           },
-          IResult::Done(i, _)    => {
+          $crate::IResult::Done(i, _)    => {
             //println!("data, done");
             acc.clear();
             acc.extend(i.iter().cloned());
