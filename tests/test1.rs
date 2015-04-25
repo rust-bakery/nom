@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed,Producer,FileProducer,ProducerState,not_line_ending};
+use nom::{IResult,FileProducer,not_line_ending};
 use nom::IResult::*;
 
 use std::str;
@@ -38,4 +38,3 @@ fn exported_public_method_defined_by_macro() {
   let a = &b"ab12cd\nefgh"[..];
   assert_eq!(not_line_ending(a), Done(&b"\nefgh"[..], &b"ab12cd"[..]));
 }
-
