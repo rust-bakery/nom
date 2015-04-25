@@ -11,7 +11,7 @@ macro_rules! closure (
 #[macro_export]
 macro_rules! named (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        fn $name<'a>( i: $i ) -> IResult<'a,$i,$o> {
+        fn $name<'a>( i: $i ) -> $crate::IResult<'a,$i,$o> {
             $submac!(i, $($args)*)
         }
     );
@@ -26,7 +26,7 @@ macro_rules! named (
         }
     );
     (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name<'a>( i: $i ) -> IResult<'a,$i,$o> {
+        pub fn $name<'a>( i: $i ) -> $crate::IResult<'a,$i,$o> {
             $submac!(i, $($args)*)
         }
     );
@@ -120,10 +120,10 @@ macro_rules! map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e) => $crate::IResult::Error(e),
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o) => $crate::IResult::Done(i, $submac2!(o, $($args2)*))
+        $crate::IResult::Done(i, o)                          => $crate::IResult::Done(i, $submac2!(o, $($args2)*))
       }
     }
   );
@@ -144,12 +144,12 @@ macro_rules! map_res(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e) => $crate::IResult::Error(e),
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o) => match $submac2!(o, $($args2)*) {
+        $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
           Ok(output) => $crate::IResult::Done(i, output),
-          Err(_)     => $crate::IResult::Error($crate::Err::Position(0, $i))
+          Err(_)     => $crate::IResult::Error($crate::Err::Position(0,$i))
         }
       }
     }
@@ -174,9 +174,9 @@ macro_rules! map_opt(
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o) => match $submac2!(o, $($args2)*) {
+        $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
           Some(output) => $crate::IResult::Done(i, output),
-          None         => $crate::IResult::Error($crate::Err::Position(0, $i))
+          None         => $crate::IResult::Error($crate::Err::Position(0,$i))
         }
       }
     }
@@ -419,9 +419,9 @@ macro_rules! alt_parser (
 
   ($i:expr, $subrule:ident!( $args:tt ) => { $gen:expr } | $($rest:tt)+) => (
     match $subrule!( $i, $args ) {
-      $crate::IResult::Error(_) => alt!( $i, $($rest)+ ),
+      $crate::IResult::Error(_)      => alt!( $i, $($rest)+ ),
       $crate::IResult::Incomplete(_) => alt!( $i, $($rest)+ ),
-      $crate::IResult::Done(i,o) => $crate::IResult::Done(i, $gen( o ))
+      $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, $gen( o ))
     }
   );
 
@@ -436,8 +436,8 @@ macro_rules! alt_parser (
   ($i:expr, $subrule:ident!( $args:tt ) => { $gen:expr }) => (
     match $subrule!( $i, $args ) {
       $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-      $crate::IResult::Error(e) => $crate::IResult::Error(e),
-      $crate::IResult::Done(i,o) => $crate::IResult::Done(i, $gen( o )),
+      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+      $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, $gen( o )),
     }
   );
 
@@ -678,7 +678,7 @@ macro_rules! pair(
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,o1)     => {
+        $crate::IResult::Done(i1,o1)   => {
           match $submac2!(i1, $($args2)*) {
             $crate::IResult::Error(a)      => $crate::IResult::Error(a),
             $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
@@ -835,7 +835,7 @@ macro_rules! delimited(
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,_)   => {
+        $crate::IResult::Done(i1,_)    => {
           delimited1!(i1,  $($rest)*)
         }
       }
@@ -853,7 +853,7 @@ macro_rules! delimited1(
       match $submac2!($i, $($args2)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i2,o2)    => {
+        $crate::IResult::Done(i2,o2)   => {
           delimited2!(i2, o2,  $($rest)*)
         }
       }
@@ -870,8 +870,8 @@ macro_rules! delimited2(
       match $submac3!($i, $($args3)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i3,_)   => {
-          IResult::Done(i3, $res2)
+        $crate::IResult::Done(i3,_)    => {
+          $crate::IResult::Done(i3, $res2)
         }
       }
     }
@@ -1050,7 +1050,7 @@ macro_rules! many0(
             begin += remaining - i.len();
             remaining = i.len();
           },
-          _                  => {
+          _                          => {
             break;
           }
         }
@@ -1155,7 +1155,7 @@ macro_rules! count(
     }
   );
   ($i:expr, $f:expr, $count: expr) => (
-    many0!($i, call!($f), $count);
+    count!($i, call!($f), $count);
   );
 );
 /// generates a parser consuming the specified number of bytes
@@ -1434,7 +1434,7 @@ macro_rules! length_value(
             $crate::IResult::Error($crate::Err::Position(0,$i))
           } else if res.len() < nb as usize {
             match inc {
-              $crate::Needed::Unknown      => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              $crate::Needed::Unknown => $crate::IResult::Incomplete($crate::Needed::Unknown),
               $crate::Needed::Size(_) => $crate::IResult::Incomplete($crate::Needed::Size(length_token as u32 + nb as u32 * $length))
             }
           } else {

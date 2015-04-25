@@ -3,8 +3,6 @@
 extern crate nom;
 
 use nom::{IResult,not_line_ending, space, alphanumeric, multispace};
-use nom::IResult::*;
-use nom::Err::*;
 
 use std::str;
 use std::collections::HashMap;
@@ -102,7 +100,7 @@ key = value2"[..];
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_category, "category"));
+  assert_eq!(res, IResult::Done(ini_without_category, "category"));
 }
 
 #[test]
@@ -119,7 +117,7 @@ key = value2"[..];
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_key_value, ("parameter", "value")));
+  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
 }
 
 
@@ -137,7 +135,7 @@ key = value2"[..];
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_key_value, ("parameter", "value")));
+  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
 }
 
 #[test]
@@ -154,7 +152,7 @@ key = value2"[..];
     _ => println!("error")
   }
 
-  assert_eq!(res, Done(ini_without_key_value, ("parameter", "value")));
+  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
 }
 
 #[test]
@@ -177,7 +175,7 @@ key = value2
   let mut expected: HashMap<&str, &str> = HashMap::new();
   expected.insert("parameter", "value");
   expected.insert("key", "value2");
-  assert_eq!(res, Done(ini_without_key_value, expected));
+  assert_eq!(res, IResult::Done(ini_without_key_value, expected));
 }
 
 #[test]
@@ -202,7 +200,7 @@ key = value2
   let mut expected_h: HashMap<&str, &str> = HashMap::new();
   expected_h.insert("parameter", "value");
   expected_h.insert("key", "value2");
-  assert_eq!(res, Done(ini_after_parser, ("abcd", expected_h)));
+  assert_eq!(res, IResult::Done(ini_after_parser, ("abcd", expected_h)));
 }
 
 #[test]
@@ -236,5 +234,5 @@ key4 = value4
   let mut expected_h: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
   expected_h.insert("abcd",     expected_1);
   expected_h.insert("category", expected_2);
-  assert_eq!(res, Done(ini_after_parser, expected_h));
+  assert_eq!(res, IResult::Done(ini_after_parser, expected_h));
 }

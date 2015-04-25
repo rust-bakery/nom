@@ -2,9 +2,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Consumer,ConsumerState,MemProducer};
-use nom::IResult::*;
-use nom::Err::*;
+use nom::{Consumer,ConsumerState,MemProducer,IResult};
 
 #[derive(PartialEq,Eq,Debug)]
 enum State {
@@ -28,9 +26,9 @@ impl Consumer for TestConsumer {
     match self.state {
       State::Beginning => {
         match om_parser(input) {
-          Error(_)      => ConsumerState::ConsumerError(0),
-          Incomplete(_) => ConsumerState::Await(0, 2),
-          Done(_,_)     => {
+          IResult::Error(_)      => ConsumerState::ConsumerError(0),
+          IResult::Incomplete(_) => ConsumerState::Await(0, 2),
+          IResult::Done(_,_)     => {
             self.state = State::Middle;
             ConsumerState::Await(2, 3)
           }
@@ -38,12 +36,12 @@ impl Consumer for TestConsumer {
       },
       State::Middle    => {
         match nomnom_parser(input) {
-          Error(_)         => {
+          IResult::Error(_)         => {
             self.state = State::End;
             ConsumerState::Await(0, 7)
           },
-          Incomplete(_)    => ConsumerState::Await(0, 3),
-          Done(i,noms_vec) => {
+          IResult::Incomplete(_)    => ConsumerState::Await(0, 3),
+          IResult::Done(i,noms_vec) => {
             self.counter = self.counter + noms_vec.len();
             ConsumerState::Await(input.len() - i.len(), 3)
           }
@@ -51,9 +49,9 @@ impl Consumer for TestConsumer {
       },
       State::End       => {
         match end_parser(input) {
-          Error(_)      => ConsumerState::ConsumerError(0),
-          Incomplete(_) => ConsumerState::Await(0, 7),
-          Done(_,_)     => {
+          IResult::Error(_)      => ConsumerState::ConsumerError(0),
+          IResult::Incomplete(_) => ConsumerState::Await(0, 7),
+          IResult::Done(_,_)     => {
             self.state = State::Done;
             ConsumerState::ConsumerDone
           }
