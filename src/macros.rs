@@ -57,6 +57,30 @@ macro_rules! call (
   ($i:expr, $fun:expr) => ( $fun( $i ) );
 );
 
+
+#[macro_export]
+macro_rules! error (
+  ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let cl = || {
+        $submac!($i, $($args)*)
+      };
+
+      match cl() {
+      //match cl($i) {
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
+        $crate::IResult::Error(e)      => {
+          return $crate::IResult::Error($crate::Err::NodePosition($code, $i, Box::new(e)))
+        }
+      }
+    }
+  );
+  ($i:expr, $code:expr, $f:expr) => (
+    error!($i, $code, call!($f));
+  );
+);
+
 /// declares a byte array as a suite to recognize
 ///
 /// consumes the recognized characters
@@ -1576,6 +1600,30 @@ mod tests {
 
     let r3 = f(&b"abcdX"[..]);
     assert_eq!(r3, Incomplete(Needed::Size(4)));
+  }
+
+  #[test]
+  fn err() {
+    named!(err_test, alt!(
+      tag!("abcd") |
+      preceded!(tag!("efgh"), error!(42,
+          chain!(
+                 tag!("ijkl")              ~
+            res: error!(128, tag!("mnop")) ,
+            || { res }
+          )
+        )
+      )
+    ));
+    let a = &b"efghblah"[..];
+    let b = &b"efghijklblah"[..];
+    let c = &b"efghijklmnop"[..];
+
+    let blah = &b"blah"[..];
+
+    assert_eq!(err_test(a), Error(NodePosition(42, blah, Box::new(Position(0, blah)))));
+    assert_eq!(err_test(b), Error(NodePosition(42, &b"ijklblah"[..], Box::new(NodePosition(128, blah, Box::new(Position(0, blah)))))));
+    assert_eq!(err_test(c), Done(&b""[..], &b"mnop"[..]));
   }
 
   #[test]
