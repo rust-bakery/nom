@@ -1636,6 +1636,7 @@ mod tests {
     }
   }*/
 
+  use std::collections;
   #[test]
   fn err() {
     named!(err_test, alt!(
@@ -1662,19 +1663,32 @@ mod tests {
     assert_eq!(res_b, Error(NodePosition(42, &b"ijklblah"[..], Box::new(NodePosition(128, blah, Box::new(Position(0, blah)))))));
     assert_eq!(res_c, Done(&b""[..], &b"mnop"[..]));
 
+    // Merr-like error matching
+    let mut err_map = collections::HashMap::new();
+    if let Error(e) = err_test(&b"efghpouet"[..]) {
+      err_map.insert(error_to_list(e), "missing `ijkl` tag");
+    }
+    if let Error(e) = err_test(&b"efghijklpouet"[..]) {
+      err_map.insert(error_to_list(e), "missing `mnop` tag after `ijkl`");
+    }
+
     match res_a {
       Error(e) => {
         let e2 = e.clone();
+        let e3 = e.clone();
         assert_eq!(error_to_list(e), [42, 0]);
         assert_eq!(error_to_string(e2), "missing `ijkl` tag");
+        assert_eq!(err_map.get(&error_to_list(e3)), Some(&"missing `ijkl` tag"));
       },
       _ => panic!()
     };
     match res_b {
       Error(e) => {
         let e2 = e.clone();
+        let e3 = e.clone();
         assert_eq!(error_to_list(e), [42, 128, 0]);
         assert_eq!(error_to_string(e2), "missing `mnop` tag after `ijkl`");
+        assert_eq!(err_map.get(&error_to_list(e3)), Some(&"missing `mnop` tag after `ijkl`"));
       },
       _ => panic!()
     };

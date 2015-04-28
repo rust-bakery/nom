@@ -126,6 +126,10 @@ pub fn error_to_list(e:Err) -> Vec<u32> {
   }
 }
 
+pub fn compare_error_paths(e1:Err, e2:Err) -> bool {
+  return error_to_list(e1) == error_to_list(e2)
+}
+
 pub trait AsBytes {
   fn as_bytes(&self) -> &[u8];
 }
