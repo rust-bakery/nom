@@ -1622,6 +1622,20 @@ mod tests {
     }
   }
 
+  // do it this way if you can use box patterns
+  /*use std::str;
+  fn error_to_string(e:Err) -> String
+    match e {
+      NodePosition(42, i1, box Position(0, i2)) => {
+        format!("missing `ijkl` tag, found '{}' instead", str::from_utf8(i2).unwrap())
+      },
+      NodePosition(42, i1, box NodePosition(128, i2,  box Position(0, i3))) => {
+        format!("missing `mnop` tag after `ijkl`, found '{}' instead", str::from_utf8(i3).unwrap())
+      },
+      _ => "unrecognized error".to_string()
+    }
+  }*/
+
   #[test]
   fn err() {
     named!(err_test, alt!(
