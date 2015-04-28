@@ -1483,8 +1483,7 @@ macro_rules! length_value(
 
 #[cfg(test)]
 mod tests {
-  use internal::Needed;
-  use internal::IResult;
+  use internal::{Needed,IResult,Err};
   use internal::IResult::*;
   use internal::Err::*;
 
@@ -1602,6 +1601,27 @@ mod tests {
     assert_eq!(r3, Incomplete(Needed::Size(4)));
   }
 
+  use util::error_to_list;
+
+  fn error_to_string(e: Err) -> &str {
+    let v:Vec<u32> = error_to_list(e);
+    // do it this way if you can use slice patterns
+    /*
+    match &v[..] {
+      [42, 0]      => "missing `ijkl` tag",
+      [42, 128, 0] => "missing `mnop` tag after `ijkl`",
+      _            => "unrecognized error"
+    }
+    */
+    if &v[..] == [42,0] {
+      "missing `ijkl` tag"
+    } else if &v[..] == [42, 128, 0] {
+      "missing `mnop` tag after `ijkl`"
+    } else {
+      "unrecognized error"
+    }
+  }
+
   #[test]
   fn err() {
     named!(err_test, alt!(
@@ -1621,9 +1641,29 @@ mod tests {
 
     let blah = &b"blah"[..];
 
-    assert_eq!(err_test(a), Error(NodePosition(42, blah, Box::new(Position(0, blah)))));
-    assert_eq!(err_test(b), Error(NodePosition(42, &b"ijklblah"[..], Box::new(NodePosition(128, blah, Box::new(Position(0, blah)))))));
-    assert_eq!(err_test(c), Done(&b""[..], &b"mnop"[..]));
+    let res_a = err_test(a);
+    let res_b = err_test(b);
+    let res_c = err_test(c);
+    assert_eq!(res_a, Error(NodePosition(42, blah, Box::new(Position(0, blah)))));
+    assert_eq!(res_b, Error(NodePosition(42, &b"ijklblah"[..], Box::new(NodePosition(128, blah, Box::new(Position(0, blah)))))));
+    assert_eq!(res_c, Done(&b""[..], &b"mnop"[..]));
+
+    match res_a {
+      Error(e) => {
+        let e2 = e.clone();
+        assert_eq!(error_to_list(e), [42, 0]);
+        assert_eq!(error_to_string(e2), "missing `ijkl` tag");
+      },
+      _ => panic!()
+    };
+    match res_b {
+      Error(e) => {
+        let e2 = e.clone();
+        assert_eq!(error_to_list(e), [42, 128, 0]);
+        assert_eq!(error_to_string(e2), "missing `mnop` tag after `ijkl`");
+      },
+      _ => panic!()
+    };
   }
 
   #[test]

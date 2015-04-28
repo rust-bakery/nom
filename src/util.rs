@@ -1,3 +1,4 @@
+use internal::Err;
 
 pub trait HexDisplay {
   fn offset(&self, second:&[u8]) -> usize;
@@ -107,6 +108,23 @@ macro_rules! dbg_dmp (
     }
   );
 );
+
+pub fn error_to_list(e:Err) -> Vec<u32> {
+  let mut v:Vec<u32> = Vec::new();
+  let mut err = e;
+  loop {
+    match err {
+      Err::Code(i) | Err::Position(i,_)                  => {
+        v.push(i);
+        return v;
+      },
+      Err::Node(i, next) | Err::NodePosition(i, _, next) => {
+        v.push(i);
+        err = *next;
+      }
+    }
+  }
+}
 
 pub trait AsBytes {
   fn as_bytes(&self) -> &[u8];
