@@ -1,4 +1,5 @@
-use internal::Err;
+use internal::{IResult,Err};
+use std::collections::HashMap;
 
 pub trait HexDisplay {
   fn offset(&self, second:&[u8]) -> usize;
@@ -128,6 +129,15 @@ pub fn error_to_list(e:Err) -> Vec<u32> {
 
 pub fn compare_error_paths(e1:Err, e2:Err) -> bool {
   return error_to_list(e1) == error_to_list(e2)
+}
+
+pub fn add_error_pattern<'a,'b,I,O>(h: &mut HashMap<Vec<u32>, &'b str>, res: IResult<'a,I,O>, message: &'b str) -> bool {
+  if let IResult::Error(e) = res {
+    h.insert(error_to_list(e), message);
+    true
+  } else {
+    false
+  }
 }
 
 pub trait AsBytes {

@@ -1601,7 +1601,7 @@ mod tests {
     assert_eq!(r3, Incomplete(Needed::Size(4)));
   }
 
-  use util::error_to_list;
+  use util::{error_to_list, add_error_pattern};
 
   fn error_to_string(e: Err) -> &str {
     let v:Vec<u32> = error_to_list(e);
@@ -1665,12 +1665,8 @@ mod tests {
 
     // Merr-like error matching
     let mut err_map = collections::HashMap::new();
-    if let Error(e) = err_test(&b"efghpouet"[..]) {
-      err_map.insert(error_to_list(e), "missing `ijkl` tag");
-    }
-    if let Error(e) = err_test(&b"efghijklpouet"[..]) {
-      err_map.insert(error_to_list(e), "missing `mnop` tag after `ijkl`");
-    }
+    assert!(add_error_pattern(&mut err_map, err_test(&b"efghpouet"[..]), "missing `ijkl` tag"));
+    assert!(add_error_pattern(&mut err_map, err_test(&b"efghijklpouet"[..]), "missing `mnop` tag after `ijkl`"));
 
     match res_a {
       Error(e) => {
