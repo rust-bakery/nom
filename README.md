@@ -105,6 +105,7 @@ There is already a large list of parsers available, like:
 - **multispace**: will return the longest array containing space, \r or \n
 - **be_u8**, **be_u16**, **be_u32**, **be_u64** to parse big endian unsigned integers of multiple sizes
 - **be_f32**, **be_f64** to parse big endian floating point numbers
+- **eof**: a parser that is successful only if the input is over. In any other case, it returns an error.
 
 #### Making new parsers with macros
 

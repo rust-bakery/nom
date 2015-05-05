@@ -262,6 +262,14 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   }
 }
 
+pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
+    if input.len() == 0 {
+        Done(input, input)
+    } else {
+        Error(Position(0, input))
+    }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -352,5 +360,17 @@ mod tests {
     //FIXME: should be incomplete
     assert_eq!(Incomplete(Needed::Size(9)), res3);
   }
+
+    #[test]
+    fn end_of_input() {
+        let not_over = &b"Hello, world!"[..];
+        let is_over = &b""[..];
+
+        let res_not_over = eof(not_over);
+        assert_eq!(res_not_over, Error(Position(0, not_over)));
+
+        let res_over = eof(is_over);
+        assert_eq!(res_over, Done(is_over, is_over));
+    }
 
 }
