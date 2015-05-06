@@ -1,3 +1,68 @@
+//! Macro combinators
+//!
+//! Macros are used to make combination easier,
+//! since they often do not depend on the type
+//! of the data they manipulate or return.
+//!
+//! There is a trick to make them easier to assemble,
+//! combinators are defined like this:
+//!
+//! ```ignore
+//! macro_rules! tag (
+//!   ($i:expr, $inp: expr) => (
+//!     {
+//!       ...
+//!     }
+//!   );
+//! );
+//! ```
+//!
+//! But when used in other combinators, are Used
+//! like this:
+//!
+//! ```ignore
+//! named!(my_function, tag!("abcd"));
+//! ```
+//!
+//! Internally, other combinators will rewrite
+//! that call to pass the input as first argument:
+//!
+//! ```ignore
+//! macro_rules! named (
+//!   ($name:ident, $submac:ident!( $($args:tt)* )) => (
+//!     fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8]> {
+//!       $submac!(i, $($args)*)
+//!     }
+//!   );
+//! );
+//! ```
+//!
+//! If you want to call a combinator directly, you can
+//! do it like this:
+//!
+//! ```ignore
+//! let res = { tag!(input, "abcd"); }
+//! ```
+//!
+//! Combinators must have a specific variant for
+//! non-macro arguments. Example: passing a function
+//! to filter! instead of another combinator.
+//!
+//! ```ignore
+//! macro_rules! filter(
+//!   ($input:expr, $submac:ident!( $($args:tt)* )) => (
+//!     {
+//!       ...
+//!     }
+//!   );
+//!
+//!   // wrap the function in a macro to pass it to the main implementation
+//!   ($input:expr, $f:expr) => (
+//!     filter!($input, call!($f));
+//!   );
+//! );
+//!
+
 #[macro_export]
 macro_rules! closure (
     ($ty:ty, $submac:ident!( $($args:tt)* )) => (
@@ -8,6 +73,23 @@ macro_rules! closure (
     );
 );
 
+/// Makes a function from a parser combination
+///
+/// The type can be set up if the compiler needs
+/// more information
+///
+/// ```ignore
+/// named!(my_function( &[u8] ) -> &[u8], tag!("abcd"));
+/// // first type parameter is input, second is output
+/// named!(my_function<&[u8], &[u8]>,     tag!("abcd"));
+/// // will have &[u8] as input type, &[u8] as output type
+/// named!(my_function,                   tag!("abcd"));
+/// // will use &[u8] as input type (use this if the compiler
+/// // complains about lifetime issues
+/// named!(my_function<&[u8]>,            tag!("abcd"));
+/// //prefix them with 'pub' to make the functions public
+/// named!(pub my_function,               tag!("abcd"));
+/// ```
 #[macro_export]
 macro_rules! named (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
@@ -52,6 +134,7 @@ macro_rules! named (
     );
 );
 
+/// Used to wrap common expressions and function as macros
 #[macro_export]
 macro_rules! call (
   ($i:expr, $fun:expr) => ( $fun( $i ) );
@@ -435,6 +518,7 @@ macro_rules! alt (
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! alt_parser (
   ($i:expr, $e:ident | $($rest:tt)*) => (
