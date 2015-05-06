@@ -70,6 +70,23 @@ impl HexDisplay for [u8] {
   }
 }
 
+/// Prints a message if the parser fails
+///
+/// The message prints the `Error` or `Incomplete`
+/// and the parser's calling code
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # fn main() {
+///    named!(f, dbg!( tag!( "abcd" ) ) );
+///
+///    let a = &b"efgh"[..];
+///
+///    // Will print the following message:
+///    // Error(Position(0, [101, 102, 103, 104])) at l.5 by ' tag ! ( "abcd" ) '
+///    f(a);
+/// # }
+/// ```
 #[macro_export]
 macro_rules! dbg (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
@@ -90,6 +107,25 @@ macro_rules! dbg (
   );
 );
 
+/// Prints a message and the input if the parser fails
+///
+/// The message prints the `Error` or `Incomplete`
+/// and the parser's calling code.
+///
+/// It also displays the input in hexdump format
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # fn main() {
+///    named!(f, dbg_dmp!( tag!( "abcd" ) ) );
+///
+///    let a = &b"efghijkl"[..];
+///
+///    // Will print the following message:
+///    // Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by ' tag ! ( "abcd" ) '
+///    // 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
+///    f(a);
+/// # }
 #[macro_export]
 macro_rules! dbg_dmp (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
