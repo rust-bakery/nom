@@ -63,6 +63,7 @@
 //! );
 //!
 
+/// Wraps a parser in a closure
 #[macro_export]
 macro_rules! closure (
     ($ty:ty, $submac:ident!( $($args:tt)* )) => (
@@ -361,6 +362,7 @@ macro_rules! chain (
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! chaining_parser (
   ($i:expr, $e:ident ~ $($rest:tt)*) => (
@@ -737,6 +739,37 @@ macro_rules! opt(
   );
 );
 
+/// Conditional combinator
+///
+/// Wraps another parser and calls it if the
+/// condition is met. This combinator returns
+/// an Option of the rturen type of the child
+/// parser.
+///
+/// This is especially useful if a parser depends
+/// on the value return by a preceding parser in
+/// a `chain!`.
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  let b = true;
+///  let f = closure!(&'static[u8],
+///    cond!( b, tag!("abcd") )
+///  );
+///
+///  let a = b"abcdef";
+///  assert_eq!(f(&a[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+///
+///  let b2 = false;
+///  let f2 = closure!(&'static[u8],
+///    cond!( b2, tag!("abcd") )
+///  );
+///  assert_eq!(f2(&a[..]), Done(&b"abcdef"[..], None));
+///  # }
+/// ```
+///
 #[macro_export]
 macro_rules! cond(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
@@ -1234,6 +1267,24 @@ macro_rules! many1(
   );
 );
 
+/// Applies the child parser a specified number of times
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error};
+/// # use nom::Err::Position;
+/// # fn main() {
+///  named!(counter< Vec<&[u8]> >, count!( tag!( "abcd" ), 2 ) );
+///
+///  let a = b"abcdabcdabcdef";
+///  let b = b"abcdefgh";
+///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///
+///  assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
+///  assert_eq!(counter(&b[..]), Error(Position(0, &b[..])));
+/// # }
+/// ```
+///
 #[macro_export]
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
@@ -1276,6 +1327,7 @@ macro_rules! count(
     count!($i, call!($f), $count);
   );
 );
+
 /// generates a parser consuming the specified number of bytes
 ///
 /// ```
