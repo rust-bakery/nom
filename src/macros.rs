@@ -102,13 +102,13 @@ macro_rules! named (
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident<$life:item,$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name<$life>( i: $i ) -> $crate::IResult<$life,$i, $o> {
+    ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<'a, &'a [u8], $o> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<'a, &'a [u8], $o> {
+    ($name:ident<$life:item,$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        fn $name<$life>( i: $i ) -> $crate::IResult<$life,$i, $o> {
             $submac!(i, $($args)*)
         }
     );
