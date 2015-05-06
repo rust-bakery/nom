@@ -1268,7 +1268,7 @@ macro_rules! count(
       } else if cnt == $count {
         $crate::IResult::Done(&$i[begin..], res)
       } else {
-        $crate::IResult::Incomplete(Needed::Unknown)
+        $crate::IResult::Incomplete($crate::Needed::Unknown)
       }
     }
   );
