@@ -142,6 +142,51 @@ macro_rules! call (
 );
 
 
+/// Prevents backtracking if the child parser fails
+///
+/// This parser will do an early return instead of sending
+/// its result to the parent parser.
+///
+/// If another `error!` combinator is present in the parent
+/// chain, the error will be wrapped and another early
+/// return will be made.
+///
+/// This makes it easy to build report on which parser failed,
+/// where it failed in the input, and the chain of parsers
+/// that led it there.
+///
+/// Additionally, the error chain contains number identifiers
+/// that can be matched to provide useful error messages.
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use std::collections;
+/// # use nom::IResult::Error;
+/// # use nom::Err::{Position,NodePosition};
+/// # fn main() {
+///     named!(err_test, alt!(
+///       tag!("abcd") |
+///       preceded!(tag!("efgh"), error!(42,
+///           chain!(
+///                  tag!("ijkl")              ~
+///             res: error!(128, tag!("mnop")) ,
+///             || { res }
+///           )
+///         )
+///       )
+///     ));
+///     let a = &b"efghblah"[..];
+///     let b = &b"efghijklblah"[..];
+///     let c = &b"efghijklmnop"[..];
+///
+///     let blah = &b"blah"[..];
+///
+///     let res_a = err_test(a);
+///     let res_b = err_test(b);
+///     let res_c = err_test(c);
+///     assert_eq!(res_a, Error(NodePosition(42, blah, Box::new(Position(0, blah)))));
+///     assert_eq!(res_b, Error(NodePosition(42, &b"ijklblah"[..], Box::new(NodePosition(128, blah, Box::new(Position(0, blah)))))));
+/// # }
 #[macro_export]
 macro_rules! error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
