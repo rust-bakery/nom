@@ -258,7 +258,7 @@ use nom::{FileProducer, MemProducer};
 FileProducer::new("my_file.txt", 20).map(|mut producer: FileProducer| {
       p.produce();
      //etc
-}
+});
 
 let mut p = MemProducer::new(b"abcdefgh", 4);
 ```
@@ -318,7 +318,7 @@ In the consumer you implement, you will apply parsers on the input of the `consu
 - **ConsumerDone** indicates the parser is done, no more data should be fed. The `end()` method will be called
 - **ConsumerError(error)** indicates there has been an error. The parser will stop
 
-To use your `Consumer`, you need to pass a `Producer` instance to the `run()` method, and it will aotumatically handle buffering and seeking according to what the `consume()` method returns. Examples:
+To use your `Consumer`, you need to pass a `Producer` instance to the `run()` method, and it will automatically handle buffering and seeking according to what the `consume()` method returns. Examples:
 
 - if it got 100 bytes from the producer and `consume()` returned `Await(20, 50)`, it will directly give data from the internal buffer.
 - if it got 100 bytes from the producer and `consume()` returned `Await(50, 80)`, it will keep the remaining 50 bytes of the input, and call the producer multiple times until it gets 30 bytes or more of data
