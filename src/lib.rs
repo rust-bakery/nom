@@ -8,26 +8,94 @@
 //! # Example
 //!
 //! ```
-//! # #[macro_use] extern crate nom;
-//! # use nom::{IResult,Producer,ProducerState,FileProducer};
-//! # use nom::IResult::*;
-//! # use std::fmt::Debug;
-//! # fn main() {
-//!  use std::str;
-//!  fn local_print<'a,T: Debug>(input: T) -> IResult<'a, T, ()> {
-//!    println!("{:?}", input);
-//!    Done(input, ())
-//!  }
-//!  // create a data producer from a file
-//!  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
-//!    let mut p = producer;
+//! #[macro_use]
+//! extern crate nom;
 //!
-//!    // adapt the parsing function to the producer
-//!    pusher!(push, local_print);
-//!    // get started
-//!    push(&mut p);
-//!  });
-//! # }
+//! use nom::{Consumer,ConsumerState,MemProducer,IResult};
+//! use nom::IResult::*;
+//! 
+//! // Parser definition
+//!
+//! named!( om_parser,                   tag!( "om" ) );
+//! named!( nomnom_parser< &[u8], Vec<&[u8]> >, many1!( tag!( "nom" ) ) );
+//! named!( end_parser,                  tag!( "kthxbye")  );
+//!
+//!
+//! // Streaming parsing and state machine
+//!
+//! #[derive(PartialEq,Eq,Debug)]
+//! enum State {
+//!   Beginning,
+//!   Middle,
+//!   End,
+//!   Done
+//! }
+//!
+//! struct TestConsumer {
+//!   state:   State,
+//!   counter: usize
+//! }
+//!
+//! impl Consumer for TestConsumer {
+//!   fn consume(&mut self, input: &[u8]) -> ConsumerState {
+//!     match self.state {
+//!       State::Beginning => {
+//!         match om_parser(input) {
+//!           Error(_)      => ConsumerState::ConsumerError(0),
+//!           Incomplete(_) => ConsumerState::Await(0, 2),
+//!           Done(_,_)     => {
+//!             // "om" was recognized, get to the next state
+//!             self.state = State::Middle;
+//!             ConsumerState::Await(2, 3)
+//!           }
+//!         }
+//!       },
+//!       State::Middle    => {
+//!         match nomnom_parser(input) {
+//!           Error(a)         => {
+//!             // the "nom" parser failed, let's get to the next state
+//!             self.state = State::End;
+//!             ConsumerState::Await(0, 7)
+//!           },
+//!           Incomplete(_)    => ConsumerState::Await(0, 3),
+//!           Done(i,noms_vec) => {
+//!             // we got a few noms, let's count them and continue
+//!             self.counter = self.counter + noms_vec.len();
+//!             ConsumerState::Await(input.len() - i.len(), 3)
+//!           }
+//!         }
+//!       },
+//!       State::End       => {
+//!         match end_parser(input) {
+//!           Error(_)      => ConsumerState::ConsumerError(0),
+//!           Incomplete(_) => ConsumerState::Await(0, 7),
+//!           Done(_,_)     => {
+//!             // we recognized the suffix, everything was parsed correctly
+//!             self.state = State::Done;
+//!             ConsumerState::ConsumerDone
+//!           }
+//!         }
+//!       },
+//!       State::Done      => {
+//!         // this should not be called
+//!         ConsumerState::ConsumerError(42)
+//!       }
+//!     }
+//!   }
+//!
+//!   fn end(&mut self) {
+//!     println!("we counted {} noms", self.counter);
+//!   }
+//! }
+//!
+//! fn main() {
+//!   let mut p = MemProducer::new(b"omnomnomnomkthxbye", 4);
+//!   let mut c = TestConsumer{state: State::Beginning, counter: 0};
+//!   c.run(&mut p);
+//!
+//!   assert_eq!(c.counter, 3);
+//!   assert_eq!(c.state, State::Done);
+//! }
 //! ```
 //!
 
