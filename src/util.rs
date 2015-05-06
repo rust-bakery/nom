@@ -94,6 +94,7 @@ macro_rules! dbg (
 macro_rules! dbg_dmp (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use $crate::util::HexDisplay;
       let l = line!();
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(a) => {
