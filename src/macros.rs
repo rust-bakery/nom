@@ -1867,6 +1867,20 @@ mod tests {
   }
 
   #[test]
+  fn cond() {
+    let b = true;
+    let f = closure!(&'static [u8], cond!( b, tag!("abcd") ) );
+
+    let a = b"abcdef";
+    assert_eq!(f(&a[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+
+    let b2 = false;
+    let f2 = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
+
+    assert_eq!(f2(&a[..]), Done(&b"abcdef"[..], None));
+  }
+
+  #[test]
   fn peek() {
     named!(ptag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
@@ -1991,6 +2005,18 @@ mod tests {
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
     assert_eq!(multi1(a), Error(Position(0,a)));
+  }
+
+  #[test]
+  fn count() {
+    named!(counter< Vec<&[u8]> >, count!( tag!( "abcd" ), 2 ) );
+
+    let a = b"abcdabcdabcdef";
+    let b = b"abcdefgh";
+    let res = vec![&b"abcd"[..], &b"abcd"[..]];
+
+    assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
+    assert_eq!(counter(&b[..]), Error(Position(0, &b[..])));
   }
 
   #[test]
