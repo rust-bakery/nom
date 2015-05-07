@@ -20,8 +20,8 @@ Here are the current and planned features, with their status:
   - [x] **pull**: a consumer will take a parser and a producer, and handle all the data gathering and, if available, seeking the streaming
 - [x] **macro based syntax**: easier parser building through macro usage
 - [x] **state machine handling**: consumers provide a basic way of managing state machines
+- [x] **descriptive errors**: the parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages
 - [ ] **safe parsing**: while I have some confidence in Rust's abilities, this will be put to the test via extensive fuzzing and disassembling
-- [ ] **descriptive errors**: currently, errors are just integers, but they should express what went wrong
 
 Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
 
