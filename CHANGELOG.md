@@ -4,6 +4,25 @@
 
 ### Changed
 
+## 0.3.0 - 2015-05-07
+
+### Thanks
+- @filipegoncalves for some documentation and the new eof parser
+- @CrimsonVoid for putting fully qualified types in the macros
+- @lu_zero for some documentation fixes
+
+### Added
+- new error types that can contain an error code, an input slice, and a list of following errors
+- `error!` will cut backtracking and return directly from the parser, with a specified error code
+- `eof` parser, successful if there is no more input
+- specific error codes for the parsers provided by nom
+
+### Changed
+- fully qualified types in macros. A lot of imports are not needed anymore
+
+### Removed
+- `FlatMap`, `FlatpMapOpt` and `Functor` traits (replaced by `map!`, `map_opt!` and `map_res!`)
+
 ## 0.2.2 - 2015-04-12
 
 ### Thanks
@@ -114,7 +133,8 @@
 ### Fixed
 - closure syntax change
 
-[unreleased]: https://github.com/Geal/nom/compare/0.2.2...HEAD
+[unreleased]: https://github.com/Geal/nom/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/Geal/nom/compare/0.2.2...0.3.0
 [0.2.2]: https://github.com/Geal/nom/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/Geal/nom/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/Geal/nom/compare/0.1.6...0.2.0
