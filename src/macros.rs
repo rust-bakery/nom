@@ -240,7 +240,7 @@ macro_rules! tag (
       } else if &$i[0..bytes.len()] == bytes {
         $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
       } else {
-        $crate::IResult::Error($crate::Err::Position(0, $i))
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Tag as u32, $i))
       }
     }
   );
@@ -312,7 +312,7 @@ macro_rules! map_res(
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
         $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
           Ok(output) => $crate::IResult::Done(i, output),
-          Err(_)     => $crate::IResult::Error($crate::Err::Position(0,$i))
+          Err(_)     => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::MapRes as u32, $i))
         }
       }
     }
@@ -339,7 +339,7 @@ macro_rules! map_opt(
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
         $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
           Some(output) => $crate::IResult::Done(i, output),
-          None         => $crate::IResult::Error($crate::Err::Position(0,$i))
+          None         => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::MapOpt as u32, $i))
         }
       }
     }
@@ -619,7 +619,7 @@ macro_rules! alt_parser (
   );
 
   ($i:expr) => (
-    $crate::IResult::Error($crate::Err::Position(0,$i))
+    $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Alt as u32,$i))
   );
 );
 
@@ -660,7 +660,7 @@ macro_rules! is_not(
         if parsed { break; }
       }
       if index == 0 {
-        $crate::IResult::Error($crate::Err::Position(0,$input))
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::IsNot as u32,$input))
       } else {
         $crate::IResult::Done(&$input[index..], &$input[0..index])
       }
@@ -708,7 +708,7 @@ macro_rules! is_a(
         if !cont { break; }
       }
       if index == 0 {
-        $crate::IResult::Error($crate::Err::Position(0,$input))
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::IsA as u32,$input))
       } else {
         $crate::IResult::Done(&$input[index..], &$input[0..index])
       }
@@ -741,7 +741,7 @@ macro_rules! filter(
         }
       }
       if index == 0 {
-        $crate::IResult::Error($crate::Err::Position(0,$input))
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Filter as u32,$input))
       } else {
         $crate::IResult::Done(&$input[index..], &$input[0..index])
       }
@@ -1093,7 +1093,7 @@ macro_rules! separated_list(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           if i.len() == $i.len() {
-            $crate::IResult::Error($crate::Err::Position(0,$i))
+            $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::SeparatedList as u32,$i))
           } else {
             res.push(o);
             begin += remaining - i.len();
@@ -1159,7 +1159,7 @@ macro_rules! separated_nonempty_list(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           if i.len() == $i.len() {
-            $crate::IResult::Error($crate::Err::Position(0,$i))
+            $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::SeparatedNonEmptyList as u32,$i))
           } else {
             res.push(o);
             begin += remaining - i.len();
@@ -1267,6 +1267,7 @@ macro_rules! many0(
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done, Error};
 /// # use nom::Err::Position;
+/// # use nom::ErrorCode;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
 ///
@@ -1275,7 +1276,7 @@ macro_rules! many0(
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&a[..]), Done(&b"ef"[..], res));
-///  assert_eq!(multi(&b[..]), Error(Position(0,&b[..])));
+///  assert_eq!(multi(&b[..]), Error(Position(ErrorCode::Many1 as u32,&b[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -1301,7 +1302,7 @@ macro_rules! many1(
         }
       }
       if res.len() == 0 {
-        $crate::IResult::Error($crate::Err::Position(0,$i))
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Many1 as u32,$i))
       } else {
         $crate::IResult::Done(&$i[begin..], res)
       }
@@ -1318,6 +1319,7 @@ macro_rules! many1(
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done,Error};
 /// # use nom::Err::Position;
+/// # use nom::ErrorCode;
 /// # fn main() {
 ///  named!(counter< Vec<&[u8]> >, count!( tag!( "abcd" ), 2 ) );
 ///
@@ -1326,7 +1328,7 @@ macro_rules! many1(
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///
 ///  assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
-///  assert_eq!(counter(&b[..]), Error(Position(0, &b[..])));
+///  assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
 /// # }
 /// ```
 ///
@@ -1360,7 +1362,7 @@ macro_rules! count(
         }
       }
       if err {
-        $crate::IResult::Error($crate::Err::Position(0,$i))
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Count as u32,$i))
       } else if cnt == $count {
         $crate::IResult::Done(&$i[begin..], res)
       } else {
@@ -1433,7 +1435,7 @@ macro_rules! take_until_and_consume(
         if parsed {
           $crate::IResult::Done(&$i[(index + bytes.len())..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position(0,$i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeUntilAndConsume as u32,$i))
         }
       }
     }
@@ -1472,7 +1474,7 @@ macro_rules! take_until(
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position(0,$i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeUntil as u32,$i))
         }
       }
     }
@@ -1513,7 +1515,7 @@ macro_rules! take_until_either_and_consume(
         if parsed {
           $crate::IResult::Done(&$i[(index+1)..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position(0,$i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeUntilEitherAndConsume as u32,$i))
         }
       }
     }
@@ -1554,7 +1556,7 @@ macro_rules! take_until_either(
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position(0,$i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeUntilEither as u32,$i))
         }
       }
     }
@@ -1598,7 +1600,7 @@ macro_rules! length_value(
             }
           }
           if err {
-            $crate::IResult::Error($crate::Err::Position(0,$i))
+            $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::LengthValue as u32,$i))
           } else if res.len() < nb as usize {
             match inc {
               $crate::Needed::Unknown      => $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -1646,7 +1648,7 @@ macro_rules! length_value(
             }
           }
           if err {
-            $crate::IResult::Error($crate::Err::Position(0,$i))
+            $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::LengthValue as u32,$i))
           } else if res.len() < nb as usize {
             match inc {
               $crate::Needed::Unknown => $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -1667,6 +1669,7 @@ mod tests {
   use internal::{Needed,IResult,Err};
   use internal::IResult::*;
   use internal::Err::*;
+  use util::ErrorCode;
 
   mod pub_named_mod {
     named!(pub tst, tag!("abcd"));
@@ -1690,7 +1693,7 @@ mod tests {
     assert_eq!(a_or_b(b), Done(&b"cde"[..], &b"b"[..]));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Error(Position(0,c)));
+    assert_eq!(a_or_b(c), Error(Position(ErrorCode::IsA as u32,c)));
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Done(&b"cdef"[..], &b"ba"[..]));
@@ -1879,7 +1882,7 @@ mod tests {
 
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8]> {
-      Error(Code(3))
+      Error(Code(42))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
@@ -1891,7 +1894,7 @@ mod tests {
     named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
-    assert_eq!(alt1(a), Error(Position(0,a)));
+    assert_eq!(alt1(a), Error(Position(ErrorCode::Alt as u32, a)));
     assert_eq!(alt2(a), Done(&b""[..], a));
     assert_eq!(alt3(a), Done(a, &b""[..]));
 
@@ -2032,7 +2035,7 @@ mod tests {
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
-    assert_eq!(multi(c), Error(Position(0,c)));
+    assert_eq!(multi(c), Error(Position(ErrorCode::Many1 as u32,c)));
   }
 
   #[test]
@@ -2049,7 +2052,7 @@ mod tests {
 
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
-    assert_eq!(multi1(a), Error(Position(0,a)));
+    assert_eq!(multi1(a), Error(Position(ErrorCode::Many1 as u32,a)));
   }
 
   #[test]
@@ -2061,7 +2064,7 @@ mod tests {
     let res = vec![&b"abcd"[..], &b"abcd"[..]];
 
     assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
-    assert_eq!(counter(&b[..]), Error(Position(0, &b[..])));
+    assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
   }
 
   #[test]

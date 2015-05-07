@@ -208,3 +208,30 @@ impl AsBytes for [u8] {
     self
   }
 }
+
+pub enum ErrorCode {
+  Tag,
+  MapRes,
+  MapOpt,
+  Alt,
+  IsNot,
+  IsA,
+  Filter,
+  SeparatedList,
+  SeparatedNonEmptyList,
+  Many1,
+  Count,
+  TakeUntilAndConsume,
+  TakeUntil,
+  TakeUntilEitherAndConsume,
+  TakeUntilEither,
+  LengthValue,
+  TagClosure,
+  Alpha,
+  Digit,
+  AlphaNumeric,
+  Space,
+  MultiSpace,
+  LengthValueFn,
+  Eof
+}
