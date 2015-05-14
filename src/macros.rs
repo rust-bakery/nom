@@ -1785,7 +1785,7 @@ mod tests {
     assert_eq!(r3, Incomplete(Needed::Size(4)));
   }
 
-  use util::{error_to_list, add_error_pattern};
+  use util::{error_to_list, add_error_pattern, print_error};
 
   fn error_to_string(e: Err) -> &str {
     let v:Vec<u32> = error_to_list(e);
@@ -1852,6 +1852,7 @@ mod tests {
     assert!(add_error_pattern(&mut err_map, err_test(&b"efghpouet"[..]), "missing `ijkl` tag"));
     assert!(add_error_pattern(&mut err_map, err_test(&b"efghijklpouet"[..]), "missing `mnop` tag after `ijkl`"));
 
+    let res_a2 = res_a.clone();
     match res_a {
       Error(e) => {
         let e2 = e.clone();
@@ -1862,6 +1863,8 @@ mod tests {
       },
       _ => panic!()
     };
+
+    let res_b2 = res_b.clone();
     match res_b {
       Error(e) => {
         let e2 = e.clone();
@@ -1872,6 +1875,9 @@ mod tests {
       },
       _ => panic!()
     };
+
+    print_error(a, res_a2);
+    print_error(b, res_b2);
   }
 
   #[test]

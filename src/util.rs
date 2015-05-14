@@ -177,6 +177,200 @@ pub fn add_error_pattern<'a,'b,I,O>(h: &mut HashMap<Vec<u32>, &'b str>, res: IRe
   }
 }
 
+pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
+  let start = input.as_ptr();
+  let off1  = s.as_ptr() as usize - start as usize;
+  let off2  = off1 + s.len();
+  return (off1, off2);
+}
+
+pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
+  if let IResult::Error(e) = res {
+    let mut v:Vec<(u32, usize, usize)> = Vec::new();
+    let mut err = e.clone();
+    loop {
+      match err {
+        Err::Position(i,s)            => {
+          let (o1, o2) = slice_to_offsets(input, s);
+          v.push((i, o1, o2));
+          //println!("v is: {:?}", v);
+          break;
+        },
+        Err::NodePosition(i, s, next) => {
+          let (o1, o2) = slice_to_offsets(input, s);
+          v.push((i, o1, o2));
+          err = *next;
+        },
+        Err::Node(_, next)            => {
+          err = *next;
+        },
+        Err::Code(_)                  => {
+          break;
+        }
+      }
+    }
+    v.sort_by(|a, b| a.1.cmp(&b.1));
+    //println!("{:?}", print_offsets(input, 0, &v));
+    println!("{}",   print_offsets(input, 0, &v));
+    //println!("{:?}", e);
+
+  } else {
+    println!("not an error");
+  }
+}
+
+pub fn generate_colors(v: &Vec<(u32, usize, usize)>) -> HashMap<u32, u8> {
+  let mut h: HashMap<u32, u8> = HashMap::new();
+  let mut color = 0;
+
+  for &(c,_,_) in v.iter() {
+    h.insert(c, color + 31);
+    color = color + 1 % 7;
+  }
+
+  h
+}
+
+pub fn code_from_offset(v: &Vec<(u32, usize, usize)>, offset: usize) -> Option<u32> {
+  let mut acc: Option<(u32, usize, usize)> = None;
+  for &(c, s, e) in v.iter() {
+    if s <= offset && offset <=e {
+      if let Some((_, start, end)) = acc {
+        if start <= s && e <= end {
+          acc = Some((c, s, e));
+        }
+      } else {
+        acc = Some((c, s, e));
+      }
+    }
+  }
+  if let Some((code, _, _)) = acc {
+    return Some(code);
+  } else {
+    return None;
+  }
+}
+
+pub fn reset_color(v: &mut Vec<u8>) {
+  v.push(0x1B);
+  v.push('[' as u8);
+  v.push(0);
+  v.push('m' as u8);
+}
+
+pub fn write_color(v: &mut Vec<u8>, color: u8) {
+  v.push(0x1B);
+  v.push('[' as u8);
+  v.push(1);
+  v.push(';' as u8);
+  let s = color.to_string();
+  let bytes = s.as_bytes();
+  v.extend(bytes.iter().cloned());
+  v.push('m' as u8);
+}
+
+pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(u32, usize, usize)>) -> String {
+  let mut v = Vec::with_capacity(input.len() * 3);
+  let mut i = from;
+  let chunk_size = 8;
+  let mut current_code:  Option<u32> = None;
+  let mut current_code2: Option<u32> = None;
+
+  let colors = generate_colors(&offsets);
+
+  let prefix = "parser codes: ";
+  v.extend(prefix.as_bytes().iter().cloned());
+
+  for (code, &color) in &colors {
+    let s = code.to_string();
+    let bytes = s.as_bytes();
+    write_color(&mut v, color);
+    v.extend(bytes.iter().cloned());
+    reset_color(&mut v);
+    v.push(' ' as u8);
+  }
+  reset_color(&mut v);
+  v.push('\n' as u8);
+
+  for chunk in input.chunks(chunk_size) {
+    let s = format!("{:08x}", i);
+    for &ch in s.as_bytes().iter() {
+      v.push(ch);
+    }
+    v.push('\t' as u8);
+
+    let mut k = i;
+    let mut l = i;
+    for &byte in chunk {
+      if let Some(code) = code_from_offset(&offsets, k) {
+        if let Some(current) = current_code {
+          if current != code {
+            reset_color(&mut v);
+            current_code = Some(code);
+            if let Some(&color) = colors.get(&code) {
+              write_color(&mut v, color);
+            }
+          }
+        } else {
+          current_code = Some(code);
+          if let Some(&color) = colors.get(&code) {
+            write_color(&mut v, color);
+          }
+        }
+      }
+      v.push(CHARS[(byte >> 4) as usize]);
+      v.push(CHARS[(byte & 0xf) as usize]);
+      v.push(' ' as u8);
+      k = k + 1;
+    }
+
+    reset_color(&mut v);
+
+    if chunk_size > chunk.len() {
+      for _ in 0..(chunk_size - chunk.len()) {
+        v.push(' ' as u8);
+        v.push(' ' as u8);
+        v.push(' ' as u8);
+      }
+    }
+    v.push('\t' as u8);
+
+    for &byte in chunk {
+      if let Some(code) = code_from_offset(&offsets, l) {
+        if let Some(current) = current_code2 {
+          if current != code {
+            reset_color(&mut v);
+            current_code2 = Some(code);
+            if let Some(&color) = colors.get(&code) {
+              write_color(&mut v, color);
+            }
+          }
+        } else {
+          current_code2 = Some(code);
+          if let Some(&color) = colors.get(&code) {
+            write_color(&mut v, color);
+          }
+        }
+      }
+      if (byte >=32 && byte <= 126) || byte >= 128 {
+        v.push(byte);
+      } else {
+        v.push('.' as u8);
+      }
+      l = l + 1;
+    }
+    reset_color(&mut v);
+
+    v.push('\n' as u8);
+    i = i + chunk_size;
+  }
+
+  unsafe {
+    String::from_utf8_unchecked(v)
+  }
+
+}
+
 pub trait AsBytes {
   fn as_bytes(&self) -> &[u8];
 }
