@@ -39,7 +39,7 @@ pub enum Err<'a>{
 }
 
 
-#[derive(Debug,PartialEq,Eq)]
+#[derive(Debug,PartialEq,Eq,Clone)]
 pub enum Needed {
   Unknown,
   Size(u32)
@@ -57,7 +57,7 @@ pub enum Needed {
 ///
 /// * Incomplete will hold the closure used to restart the computation once more data is available.
 /// Current attemps at implementation of Incomplete are progressing, but slowed down by lifetime problems
-#[derive(Debug,PartialEq,Eq)]
+#[derive(Debug,PartialEq,Eq,Clone)]
 pub enum IResult<'a,I,O> {
   Done(I,O),
   Error(Err<'a>),
