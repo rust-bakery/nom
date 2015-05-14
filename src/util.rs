@@ -184,7 +184,7 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
   return (off1, off2);
 }
 
-pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
+pub fn prepare_errors<I,O>(input: &[u8], res: IResult<I,O>) -> Option<Vec<(u32, usize, usize)> > {
   if let IResult::Error(e) = res {
     let mut v:Vec<(u32, usize, usize)> = Vec::new();
     let mut err = e.clone();
@@ -210,9 +210,17 @@ pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
       }
     }
     v.sort_by(|a, b| a.1.cmp(&b.1));
-    //println!("{:?}", print_offsets(input, 0, &v));
+    Some(v)
+  } else {
+    None
+  }
+}
+
+pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
+  if let Some(v) = prepare_errors(input, res) {
+    let colors = generate_colors(&v);
+    println!("parser codes: {}",   print_codes(colors, HashMap::new()));
     println!("{}",   print_offsets(input, 0, &v));
-    //println!("{:?}", e);
 
   } else {
     println!("not an error");
@@ -269,6 +277,30 @@ pub fn write_color(v: &mut Vec<u8>, color: u8) {
   v.push('m' as u8);
 }
 
+pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> String {
+  let mut v = Vec::new();
+  for (code, &color) in &colors {
+    if let Some(&s) = names.get(&code) {
+      let bytes = s.as_bytes();
+      write_color(&mut v, color);
+      v.extend(bytes.iter().cloned());
+    } else {
+      let s = code.to_string();
+      let bytes = s.as_bytes();
+      write_color(&mut v, color);
+      v.extend(bytes.iter().cloned());
+    }
+    reset_color(&mut v);
+    v.push(' ' as u8);
+  }
+  reset_color(&mut v);
+
+  unsafe {
+    String::from_utf8_unchecked(v)
+  }
+
+}
+
 pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(u32, usize, usize)>) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
@@ -277,20 +309,6 @@ pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(u32, usize, usize
   let mut current_code2: Option<u32> = None;
 
   let colors = generate_colors(&offsets);
-
-  let prefix = "parser codes: ";
-  v.extend(prefix.as_bytes().iter().cloned());
-
-  for (code, &color) in &colors {
-    let s = code.to_string();
-    let bytes = s.as_bytes();
-    write_color(&mut v, color);
-    v.extend(bytes.iter().cloned());
-    reset_color(&mut v);
-    v.push(' ' as u8);
-  }
-  reset_color(&mut v);
-  v.push('\n' as u8);
 
   for chunk in input.chunks(chunk_size) {
     let s = format!("{:08x}", i);
