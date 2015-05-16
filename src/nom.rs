@@ -6,6 +6,10 @@
 //! but the macros system makes no promises.
 //!
 
+#[cfg(feature = "core")]
+use std::prelude::v1::*;
+use std::boxed::Box;
+
 use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
@@ -23,6 +27,7 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<'b, &'b[u8], &'
   })
 }
 
+#[cfg(not(feature = "core"))]
 pub fn print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
   println!("{:?}", input);
   Done(input, ())

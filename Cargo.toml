@@ -9,3 +9,6 @@ repository = "https://github.com/Geal/nom"
 readme = "README.md"
 documentation = "http://rust.unhandledexpression.com/nom/"
 keywords = ["parser", "parser-combinators", "parsing", "streaming"]
+
+[features]
+core = []

@@ -99,17 +99,46 @@
 //! ```
 //!
 
+#![cfg_attr(feature = "core", feature(no_std))]
+#![cfg_attr(feature = "core", feature(core))]
+#![cfg_attr(feature = "core", feature(collections))]
+#![cfg_attr(feature = "core", no_std)]
+
+#[macro_use]
+#[cfg(feature = "core")]
+extern crate core;
+#[cfg(feature = "core")]
+extern crate collections;
+
+#[cfg(feature = "core")]
+mod std {
+#[macro_use]
+  pub use core::{fmt, iter, option, ops, slice, mem};
+  pub use collections::{boxed, vec, string};
+  pub mod prelude {
+    pub use core::prelude as v1;
+  }
+}
+
 pub use self::util::*;
 pub use self::internal::*;//{IResult, IResultClosure, GetInput, GetOutput};
 pub use self::macros::*;
+#[cfg(not(feature = "core"))]
 pub use self::producer::*;//{ProducerState,Producer,FileProducer,MemProducer};
+#[cfg(not(feature = "core"))]
 pub use self::consumer::*;//{ConsumerState,Consumer};
+
 pub use self::nom::*;
 
 #[macro_use] pub mod util;
 pub mod internal;
 #[macro_use] pub mod macros;
-#[macro_use] pub mod producer;
+
+#[macro_use]
+#[cfg(not(feature = "core"))]
+pub mod producer;
+#[cfg(not(feature = "core"))]
 pub mod consumer;
+
 #[macro_use] pub mod nom;
 

@@ -1,6 +1,14 @@
 use internal::{IResult,Err};
+
+#[cfg(not(feature = "core"))]
 use std::collections::HashMap;
 
+#[cfg(feature = "core")]
+use std::prelude::v1::*;
+use std::vec::Vec;
+use std::string::ToString;
+
+#[cfg(not(feature = "core"))]
 pub trait HexDisplay {
   fn offset(&self, second:&[u8]) -> usize;
 
@@ -13,7 +21,7 @@ pub trait HexDisplay {
 
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
-
+#[cfg(not(feature = "core"))]
 impl HexDisplay for [u8] {
   fn offset(&self, second:&[u8]) -> usize {
     let fst = self.as_ptr();
@@ -168,6 +176,7 @@ pub fn compare_error_paths(e1:Err, e2:Err) -> bool {
   return error_to_list(e1) == error_to_list(e2)
 }
 
+#[cfg(not(feature = "core"))]
 pub fn add_error_pattern<'a,'b,I,O>(h: &mut HashMap<Vec<u32>, &'b str>, res: IResult<'a,I,O>, message: &'b str) -> bool {
   if let IResult::Error(e) = res {
     h.insert(error_to_list(e), message);
@@ -184,6 +193,7 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
   return (off1, off2);
 }
 
+#[cfg(not(feature = "core"))]
 pub fn prepare_errors<I,O>(input: &[u8], res: IResult<I,O>) -> Option<Vec<(u32, usize, usize)> > {
   if let IResult::Error(e) = res {
     let mut v:Vec<(u32, usize, usize)> = Vec::new();
@@ -216,6 +226,7 @@ pub fn prepare_errors<I,O>(input: &[u8], res: IResult<I,O>) -> Option<Vec<(u32, 
   }
 }
 
+#[cfg(not(feature = "core"))]
 pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
   if let Some(v) = prepare_errors(input, res) {
     let colors = generate_colors(&v);
@@ -227,6 +238,7 @@ pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
   }
 }
 
+#[cfg(not(feature = "core"))]
 pub fn generate_colors(v: &Vec<(u32, usize, usize)>) -> HashMap<u32, u8> {
   let mut h: HashMap<u32, u8> = HashMap::new();
   let mut color = 0;
@@ -277,6 +289,7 @@ pub fn write_color(v: &mut Vec<u8>, color: u8) {
   v.push('m' as u8);
 }
 
+#[cfg(not(feature = "core"))]
 pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> String {
   let mut v = Vec::new();
   for (code, &color) in &colors {
@@ -301,6 +314,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
 
 }
 
+#[cfg(not(feature = "core"))]
 pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(u32, usize, usize)>) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;

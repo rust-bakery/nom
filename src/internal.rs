@@ -2,6 +2,10 @@
 
 use self::IResult::*;
 
+#[cfg(feature = "core")]
+use std::prelude::v1::*;
+use std::boxed::Box;
+
 /*
 /// (Experimental) Closure used to hold the temporary state of resumable parsing
 pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
