@@ -4,6 +4,16 @@
 
 ### Changed
 
+## 0.3.1 - 2015-05-21
+
+### Thanks
+- @divarvel for the big endian signed integer parsers
+
+### Added
+- `be_i8`, `be_i16`, `be_i32`, `be_i64`: big endian signed integer parsers
+- the `core` feature can be passed to cargo to build with `no_std`
+- colored hexdump can be generated from error chains
+
 ## 0.3.0 - 2015-05-07
 
 ### Thanks
