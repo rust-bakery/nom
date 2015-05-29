@@ -46,7 +46,7 @@ pub enum Err<'a>{
 #[derive(Debug,PartialEq,Eq,Clone)]
 pub enum Needed {
   Unknown,
-  Size(u32)
+  Size(usize)
 }
 
 /// Holds the result of parsing functions

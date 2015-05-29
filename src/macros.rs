@@ -236,7 +236,7 @@ macro_rules! tag (
       let bytes = as_bytes(&expected);
 
       if bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(bytes.len() as u32))
+        $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
       } else if &$i[0..bytes.len()] == bytes {
         $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
       } else {
@@ -1430,7 +1430,7 @@ macro_rules! take_until_and_consume(
       }
 
       if index + bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size((index + bytes.len()) as u32))
+        $crate::IResult::Incomplete($crate::Needed::Size(index + bytes.len()))
       } else {
         if parsed {
           $crate::IResult::Done(&$i[(index + bytes.len())..], &$i[0..index])
@@ -1469,7 +1469,7 @@ macro_rules! take_until(
       }
 
       if index + bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size((index + bytes.len()) as u32))
+        $crate::IResult::Incomplete($crate::Needed::Size(index + bytes.len()))
       } else {
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
@@ -1510,7 +1510,7 @@ macro_rules! take_until_either_and_consume(
         if parsed { break; }
       }
       if index + 1 > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size((index + 1) as u32))
+        $crate::IResult::Incomplete($crate::Needed::Size(index + 1))
       } else {
         if parsed {
           $crate::IResult::Done(&$i[(index+1)..], &$i[0..index])
@@ -1551,7 +1551,7 @@ macro_rules! take_until_either(
         if parsed { break; }
       }
       if index + 1 > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size((index + 1) as u32))
+        $crate::IResult::Incomplete($crate::Needed::Size(index + 1))
       } else {
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
@@ -1604,7 +1604,7 @@ macro_rules! length_value(
           } else if res.len() < nb as usize {
             match inc {
               $crate::Needed::Unknown      => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              $crate::Needed::Size(length) => $crate::IResult::Incomplete($crate::Needed::Size(length_token as u32 + nb as u32 * length))
+              $crate::Needed::Size(length) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + nb as usize * length))
             }
           } else {
             $crate::IResult::Done(&i1[begin..], res)
@@ -1652,7 +1652,7 @@ macro_rules! length_value(
           } else if res.len() < nb as usize {
             match inc {
               $crate::Needed::Unknown => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              $crate::Needed::Size(_) => $crate::IResult::Incomplete($crate::Needed::Size(length_token as u32 + nb as u32 * $length))
+              $crate::Needed::Size(_) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + nb as usize * $length))
             }
           } else {
             $crate::IResult::Done(&i1[begin..], res)

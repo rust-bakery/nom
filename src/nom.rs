@@ -153,7 +153,7 @@ pub fn sized_buffer<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   if input.len() >= len + 1 {
     return Done(&input[len+1..], &input[1..len+1])
   } else {
-    return Incomplete(Needed::Size(1 + len as u32))
+    return Incomplete(Needed::Size(1 + len))
   }
 }
 
@@ -168,7 +168,7 @@ pub fn length_value<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
     return IResult::Done(&input[len+1..], &input[1..len+1])
   } else {
     // FIXME: return Incomplete
-    return IResult::Incomplete(Needed::Size(1+len as u32))
+    return IResult::Incomplete(Needed::Size(1+len))
   }
 }
 
