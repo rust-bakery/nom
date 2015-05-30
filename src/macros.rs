@@ -1698,6 +1698,9 @@ mod tests {
     fn sum3(a:u8, b:u8, c:u8) -> u8 { a + b + c }
     let a = apply!(1, sum2, 2);
     let b = apply!(1, sum3, 2, 3);
+
+    assert_eq!(a, 3);
+    assert_eq!(b, 6);
   }
 
   #[test]
