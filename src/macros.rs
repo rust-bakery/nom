@@ -1412,6 +1412,12 @@ macro_rules! take(
   );
 );
 
+/// same as take! but returning a &str
+#[macro_export]
+macro_rules! take_str (
+ ( $i:expr, $size:expr ) => ( map_res!($i, take!($size), from_utf8) );
+);
+
 /// generates a parser consuming bytes until the specified byte sequence is found
 #[macro_export]
 macro_rules! take_until_and_consume(
@@ -2092,6 +2098,15 @@ mod tests {
 
     assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
     assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
+  }
+
+  use std::str::from_utf8;
+  #[test]
+  fn take_str_test() {
+    let a = b"omnomnom";
+
+    assert_eq!(take_str!(&a[..], 5), Done(&b"nom"[..], "omnom"));
+    assert_eq!(take_str!(&a[..], 9), Incomplete(Needed::Size(9)));
   }
 
   #[test]
