@@ -141,6 +141,16 @@ macro_rules! call (
   ($i:expr, $fun:expr) => ( $fun( $i ) );
 );
 
+#[macro_export]
+macro_rules! apply (
+  //($i:expr, $fun:ident( $($args:tt),*) ) => ($fun($i, $($args),*) );
+  ($i:expr, $fun:expr, $arg:expr ) => ( $fun( $i, $arg ) );
+  ($i:expr, $fun:expr, $arg:expr, $arg2:expr ) => ( $fun( $i, $arg, $arg2 ) );
+  ($i:expr, $fun:expr, $arg:expr, $arg2:expr, $arg3:expr ) => ( $fun( $i, $arg, $arg2, $arg3 ) );
+  ($i:expr, $fun:expr, $arg:expr, $arg2:expr, $arg3:expr, $arg4:expr ) => ( $fun( $i, $arg, $arg2, $arg3, $arg4 ) );
+  ($i:expr, $fun:expr, $arg:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr ) => ( $fun( $i, $arg, $arg2, $arg3, $arg4, $arg5 ) );
+  ($i:expr, $fun:expr, $arg:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr ) => ( $fun( $i, $arg, $arg2, $arg3, $arg4, $arg5, $arg6 ) );
+);
 
 /// Prevents backtracking if the child parser fails
 ///
@@ -1680,6 +1690,14 @@ mod tests {
     let a = &b"abcd"[..];
     let res = pub_named_mod::tst(a);
     assert_eq!(res, Done(&b""[..], a));
+  }
+
+  #[test]
+  fn apply_test() {
+    fn sum2(a:u8, b:u8)       -> u8 { a + b }
+    fn sum3(a:u8, b:u8, c:u8) -> u8 { a + b + c }
+    let a = apply!(1, sum2, 2);
+    let b = apply!(1, sum3, 2, 3);
   }
 
   #[test]
