@@ -4,6 +4,18 @@
 
 ### Changed
 
+## 0.3.2 - 2015-05-31
+
+### Thanks
+- @keruspe for the `take_str` parser and the function application combinator
+
+### Added
+- `take_str!`: takes the specified number of bytes and return a UTF-8 string
+- `apply!`: do partial application on the parameters of a function
+
+### Changed
+- `Needed::Size` now contains a `usize` instead of a `u32`
+
 ## 0.3.1 - 2015-05-21
 
 ### Thanks
@@ -143,7 +155,9 @@
 ### Fixed
 - closure syntax change
 
-[unreleased]: https://github.com/Geal/nom/compare/0.3.0...HEAD
+[unreleased]: https://github.com/Geal/nom/compare/0.3.2...HEAD
+[0.3.2]: https://github.com/Geal/nom/compare/0.3.1...0.3.2
+[0.3.1]: https://github.com/Geal/nom/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/Geal/nom/compare/0.2.2...0.3.0
 [0.2.2]: https://github.com/Geal/nom/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/Geal/nom/compare/0.2.0...0.2.1
