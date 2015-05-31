@@ -143,27 +143,10 @@ Here are the basic macros available:
 
 #### Combining parsers
 
-The `IResult` implements a few traits that make it easy to combine parsers. Here are their definitions:
-
-```rust
-pub trait Functor<I,O,N> {
-  fn map<F: Fn(O) -> N>(&self, f: F) -> IResult<I,N>;
-}
-
-pub trait FlatMap<I:?Sized,O:?Sized,N:?Sized> {
-  fn flat_map<F:Fn(O) -> IResult<O,N>>(&self, f: F) -> IResult<I,N>;
-}
-
-pub trait FlatMapOpt<I,O,N> {
-  fn map_opt<F:   Fn(O) -> Option<N>>   (&self, f: F) -> IResult<I,N>;
-  fn map_res<P,F: Fn(O) -> Result<N,P>> (&self, f: F) -> IResult<I,N>;
-}
-```
-
-- **map**: applies a function to the output of a `IResult` and puts the result in the output of a `IResult` with the same remaining input
-- **flat_map**: applies a parser to the ouput of a `IResult` and returns a new `IResult` with the same remaining input.
-- **map_opt**: applies a function returning an Option to the output of `IResult`, returns `Done(input, o)` if the result is `Some(o)`, or `Error(0)`
-- **map_opt**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
+- **map!**: applies a function to the output of a `IResult` and puts the result in the output of a `IResult` with the same remaining input
+- **flat_map!**: applies a parser to the ouput of a `IResult` and returns a new `IResult` with the same remaining input.
+- **map_opt!**: applies a function returning an Option to the output of `IResult`, returns `Done(input, o)` if the result is `Some(o)`, or `Error(0)`
+- **map_opt!**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
 
 #### Combining parsers with macros
 
