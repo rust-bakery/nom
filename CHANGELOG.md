@@ -3,6 +3,7 @@
 ## [Unreleased][unreleased]
 
 ### Changed
+- `count!` now returns a fixed-size array
 
 ## 0.3.2 - 2015-05-31
 

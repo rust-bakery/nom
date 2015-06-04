@@ -1331,11 +1331,11 @@ macro_rules! many1(
 /// # use nom::Err::Position;
 /// # use nom::ErrorCode;
 /// # fn main() {
-///  named!(counter< Vec<&[u8]> >, count!( tag!( "abcd" ), 2 ) );
+///  named!(counter< [&[u8]; 2] >, count!( tag!( "abcd" ), &[u8], 2 ) );
 ///
 ///  let a = b"abcdabcdabcdef";
 ///  let b = b"abcdefgh";
-///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///  let res = [&b"abcd"[..], &b"abcd"[..]];
 ///
 ///  assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
 ///  assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
@@ -1344,17 +1344,17 @@ macro_rules! many1(
 ///
 #[macro_export]
 macro_rules! count(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $typ:ty, $count: expr) => (
     {
       let mut begin = 0;
       let mut remaining = $i.len();
-      let mut res = Vec::new();
+      let mut res: [$typ; $count] = unsafe{[::std::mem::uninitialized(); $count]};
       let mut cnt = 0;
       let mut err = false;
       loop {
         match $submac!(&$i[begin..], $($args)*) {
           $crate::IResult::Done(i,o) => {
-            res.push(o);
+            res[cnt] = o;
             begin += remaining - i.len();
             remaining = i.len();
             cnt = cnt + 1;
@@ -1380,8 +1380,8 @@ macro_rules! count(
       }
     }
   );
-  ($i:expr, $f:expr, $count: expr) => (
-    count!($i, call!($f), $count);
+  ($i:expr, $f:expr, $typ:ty, $count: expr) => (
+    count!($i, call!($f), $typ, $count);
   );
 );
 
@@ -2090,11 +2090,11 @@ mod tests {
 
   #[test]
   fn count() {
-    named!(counter< Vec<&[u8]> >, count!( tag!( "abcd" ), 2 ) );
+    named!(counter< [&[u8]; 2] >, count!( tag!( "abcd" ), &[u8], 2 ) );
 
     let a = b"abcdabcdabcdef";
     let b = b"abcdefgh";
-    let res = vec![&b"abcd"[..], &b"abcd"[..]];
+    let res = [&b"abcd"[..], &b"abcd"[..]];
 
     assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
     assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
