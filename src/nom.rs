@@ -260,6 +260,22 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   }
 }
 
+pub fn le_i8<'a>(i:&'a [u8]) -> IResult<&'a [u8], i8> {
+  map!(i, le_u8, | x | { x as i8 })
+}
+
+pub fn le_i16<'a>(i:&'a [u8]) -> IResult<&'a [u8], i16> {
+  map!(i, le_u16, | x | { x as i16 })
+}
+
+pub fn le_i32<'a>(i:&'a [u8]) -> IResult<&'a [u8], i32> {
+  map!(i, le_u32, | x | { x as i32 })
+}
+
+pub fn le_i64<'a>(i:&'a [u8]) -> IResult<&'a [u8], i64> {
+  map!(i, le_u64, | x | { x as i64 })
+}
+
 pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
   match be_u32(input) {
     Error(e)      => Error(e),
@@ -414,6 +430,38 @@ mod tests {
     assert_eq!(be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Done(&b""[..], 9223372036854775807_i64));
     assert_eq!(be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
     assert_eq!(be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], -9223372036854775808_i64));
+  }
+
+  #[test]
+  fn le_i8_tests() {
+    assert_eq!(le_i8(&[0x00]), Done(&b""[..], 0));
+    assert_eq!(le_i8(&[0x7f]), Done(&b""[..], 127));
+    assert_eq!(le_i8(&[0xff]), Done(&b""[..], -1));
+    assert_eq!(le_i8(&[0x80]), Done(&b""[..], -128));
+  }
+
+  #[test]
+  fn le_i16_tests() {
+    assert_eq!(le_i16(&[0x00, 0x00]), Done(&b""[..], 0));
+    assert_eq!(le_i16(&[0xff, 0x7f]), Done(&b""[..], 32767_i16));
+    assert_eq!(le_i16(&[0xff, 0xff]), Done(&b""[..], -1));
+    assert_eq!(le_i16(&[0x00, 0x80]), Done(&b""[..], -32768_i16));
+  }
+
+  #[test]
+  fn le_i32_tests() {
+    assert_eq!(le_i32(&[0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0));
+    assert_eq!(le_i32(&[0xff, 0xff, 0xff, 0x7f]), Done(&b""[..], 2147483647_i32));
+    assert_eq!(le_i32(&[0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
+    assert_eq!(le_i32(&[0x00, 0x00, 0x00, 0x80]), Done(&b""[..], -2147483648_i32));
+  }
+
+  #[test]
+  fn le_i64_tests() {
+    assert_eq!(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0));
+    assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]), Done(&b""[..], 9223372036854775807_i64));
+    assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
+    assert_eq!(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]), Done(&b""[..], -9223372036854775808_i64));
   }
 
     #[test]
