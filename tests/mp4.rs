@@ -281,29 +281,20 @@ named!(box_type<&[u8], MP4BoxType>,
   )
 );
 
-// unfortunately, an alt combinator with 9 branches containing a tag combinator
-// will make the compilation very slow, so let's define them explicitely
-named!(mdra, tag!("mdra"));
-named!(dref, tag!("dref"));
-named!(cmov, tag!("cmov"));
-named!(rmra, tag!("rmra"));
-named!(iods, tag!("iods"));
-named!(mvhd, tag!("mvhd"));
-named!(clip, tag!("clip"));
-named!(trak, tag!("trak"));
-named!(udta, tag!("udta"));
-
+// warning, an alt combinator with 9 branches containing a tag combinator
+// can make the compilation very slow. Use functions as sub parsers,
+// or split into multiple alt! parsers if it gets slow
 named!(moov_type<&[u8], MP4BoxType>,
   alt!(
-    mdra => { |_| MP4BoxType::Mdra } |
-    dref => { |_| MP4BoxType::Dref } |
-    cmov => { |_| MP4BoxType::Cmov } |
-    rmra => { |_| MP4BoxType::Rmra } |
-    iods => { |_| MP4BoxType::Iods } |
-    mvhd => { |_| MP4BoxType::Mvhd } |
-    clip => { |_| MP4BoxType::Clip } |
-    trak => { |_| MP4BoxType::Trak } |
-    udta => { |_| MP4BoxType::Udta }
+    tag!("mdra") => { |_| MP4BoxType::Mdra } |
+    tag!("dref") => { |_| MP4BoxType::Dref } |
+    tag!("cmov") => { |_| MP4BoxType::Cmov } |
+    tag!("rmra") => { |_| MP4BoxType::Rmra } |
+    tag!("iods") => { |_| MP4BoxType::Iods } |
+    tag!("mvhd") => { |_| MP4BoxType::Mvhd } |
+    tag!("clip") => { |_| MP4BoxType::Clip } |
+    tag!("trak") => { |_| MP4BoxType::Trak } |
+    tag!("udta") => { |_| MP4BoxType::Udta }
   )
 );
 
