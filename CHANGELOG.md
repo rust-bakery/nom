@@ -3,7 +3,17 @@
 ## [Unreleased][unreleased]
 
 ### Changed
-- `count!` now returns a fixed-size array
+
+## 0.3.3 - 2015-06-09
+
+### Thanks
+- @andrew-d for the little endian signed integer parsers
+
+### Added
+- `le_i8`, `le_i16`, `le_i32`, `le_i64`: little endian signed integer parsers
+
+### Changed
+- the `alt!` parser compiles much faster, even with more than 8 branches
 
 ## 0.3.2 - 2015-05-31
 
@@ -156,7 +166,8 @@
 ### Fixed
 - closure syntax change
 
-[unreleased]: https://github.com/Geal/nom/compare/0.3.2...HEAD
+[unreleased]: https://github.com/Geal/nom/compare/0.3.3...HEAD
+[0.3.3]: https://github.com/Geal/nom/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/Geal/nom/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/Geal/nom/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/Geal/nom/compare/0.2.2...0.3.0
