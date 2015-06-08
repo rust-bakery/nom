@@ -8,12 +8,14 @@
 
 ### Thanks
 - @andrew-d for the little endian signed integer parsers
+- @keruspe for fixes on `count!`
 
 ### Added
 - `le_i8`, `le_i16`, `le_i32`, `le_i64`: little endian signed integer parsers
 
 ### Changed
 - the `alt!` parser compiles much faster, even with more than 8 branches
+- `count!` can now return a fixed size array instead of a growable vector
 
 ## 0.3.2 - 2015-05-31
 
