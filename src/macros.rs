@@ -584,19 +584,21 @@ macro_rules! alt_parser (
 
   ($i:expr, $submac:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      match $submac!($i, $($args)*) {
-        $crate::IResult::Error(_)      => alt_parser!($i, $($rest)*),
-        $crate::IResult::Incomplete(_) => alt_parser!($i, $($rest)*),
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o)
+      if let $crate::IResult::Done(i,o) = $submac!($i, $($args)*) {
+        $crate::IResult::Done(i,o)
+      } else {
+        alt_parser!($i, $($rest)*)
       }
     }
   );
 
-  ($i:expr, $subrule:ident!( $args:tt ) => { $gen:expr } | $($rest:tt)+) => (
-    match $subrule!( $i, $args ) {
-      $crate::IResult::Error(_)      => alt!( $i, $($rest)+ ),
-      $crate::IResult::Incomplete(_) => alt!( $i, $($rest)+ ),
-      $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, $gen( o ))
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+    {
+      if let $crate::IResult::Done(i,o) = $subrule!($i, $($args)*) {
+        $crate::IResult::Done(i, $gen( o ))
+      } else {
+        alt_parser!($i, $($rest)+)
+      }
     }
   );
 
@@ -608,8 +610,8 @@ macro_rules! alt_parser (
     alt_parser!($i, call!($e) => { $gen });
   );
 
-  ($i:expr, $subrule:ident!( $args:tt ) => { $gen:expr }) => (
-    match $subrule!( $i, $args ) {
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+    match $subrule!( $i, $($args)* ) {
       $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, $gen( o )),
@@ -621,10 +623,12 @@ macro_rules! alt_parser (
   );
 
   ($i:expr, $submac:ident!( $($args:tt)*)) => (
-    match $submac!($i, $($args)*) {
-      $crate::IResult::Error(_)      => alt_parser!($i),
-      $crate::IResult::Incomplete(_) => alt_parser!($i),
-      $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o)
+    {
+      if let $crate::IResult::Done(i,o) = $submac!($i, $($args)*) {
+        $crate::IResult::Done(i,o)
+      } else {
+        alt_parser!($i)
+      }
     }
   );
 
