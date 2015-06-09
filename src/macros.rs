@@ -602,7 +602,7 @@ macro_rules! chaining_parser (
     chaining_parser!($i, $field : call!($e) ? , $assemble);
   );
 
-  ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => (
+  ($i:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => (
     match $submac!($i, $($args)*)  {
       $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
       $crate::IResult::Error(_)      => {
