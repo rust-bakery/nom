@@ -4,6 +4,21 @@
 
 ### Changed
 
+## 0.3.4 - 2015-06-09
+
+### Thanks
+- @andrew-d for fixes on `cond!`
+- @keruspe for features in `chain!`
+
+### Added
+- `chain!` can now have mutable fields
+
+### Fixed
+- `cond!` had an infinite macro recursion
+
+### Changed
+- `chain!` generates less code now. No apprent compilation time improvement
+
 ## 0.3.3 - 2015-06-09
 
 ### Thanks
@@ -168,7 +183,8 @@
 ### Fixed
 - closure syntax change
 
-[unreleased]: https://github.com/Geal/nom/compare/0.3.3...HEAD
+[unreleased]: https://github.com/Geal/nom/compare/0.3.4...HEAD
+[0.3.3]: https://github.com/Geal/nom/compare/0.3.3...0.3.4
 [0.3.3]: https://github.com/Geal/nom/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/Geal/nom/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/Geal/nom/compare/0.3.0...0.3.1
