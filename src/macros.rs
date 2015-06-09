@@ -464,6 +464,21 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, mut $field:ident : $e:ident ~ $($rest:tt)*) => (
+    chaining_parser!($i, mut $field: call!($e) ~ $($rest)*);
+  );
+
+  ($i:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
+    match  $submac!($i, $($args)*) {
+      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+      $crate::IResult::Done(i,o)     => {
+        let mut $field = o;
+        chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+
   ($i:expr, $field:ident : $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, $field : call!($e) ? ~ $($rest)*);
   );
@@ -477,6 +492,24 @@ macro_rules! chaining_parser (
       },
       $crate::IResult::Done(i,o)     => {
         let $field = Some(o);
+        chaining_parser!(i, $($rest)*)
+      }
+    }
+  );
+
+  ($i:expr, mut $field:ident : $e:ident ? ~ $($rest:tt)*) => (
+    chaining_parser!($i, mut $field : call!($e) ? ~ $($rest)*);
+  );
+
+  ($i:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
+    match  $submac!($i, $($args)*) {
+      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+      $crate::IResult::Error(_)      => {
+        let mut $field = None;
+        chaining_parser!($i, $($rest)*)
+      },
+      $crate::IResult::Done(i,o)     => {
+        let mut $field = Some(o);
         chaining_parser!(i, $($rest)*)
       }
     }
@@ -528,6 +561,21 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, mut $field:ident : $e:ident, $assemble:expr) => (
+    chaining_parser!($i, mut $field: call!($e), $assemble);
+  );
+
+  ($i:expr, mut $field:ident : $submac:ident!( $($args:tt)* ), $assemble:expr) => (
+    match $submac!($i, $($args)*) {
+      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+      $crate::IResult::Done(i,o)     => {
+        let mut $field = o;
+        $crate::IResult::Done(i, $assemble())
+      }
+    }
+  );
+
   ($i:expr, $field:ident : $e:ident ? , $assemble:expr) => (
     chaining_parser!($i, $field : call!($e) ? , $assemble);
   );
@@ -541,6 +589,24 @@ macro_rules! chaining_parser (
       },
       $crate::IResult::Done(i,o)     => {
         let $field = Some(o);
+        $crate::IResult::Done(i, $assemble())
+      }
+    }
+  );
+
+  ($i:expr, mut $field:ident : $e:ident ? , $assemble:expr) => (
+    chaining_parser!($i, $field : call!($e) ? , $assemble);
+  );
+
+  ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => (
+    match $submac!($i, $($args)*)  {
+      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+      $crate::IResult::Error(_)      => {
+        let mut $field = None;
+        $crate::IResult::Done($i, $assemble())
+      },
+      $crate::IResult::Done(i,o)     => {
+        let mut $field = Some(o);
         $crate::IResult::Done(i, $assemble())
       }
     }
@@ -1789,6 +1855,27 @@ mod tests {
   struct C {
     a: u8,
     b: Option<u8>
+  }
+
+  #[test]
+  fn chain_mut() {
+    fn ret_b1_2(i:&[u8]) -> IResult<&[u8], B> { Done(i,B{a:1,b:2}) };
+    named!(f<&[u8],B>,
+      chain!(
+        tag!("abcd")     ~
+        tag!("abcd")?    ~
+        tag!("efgh")     ~
+        mut bb: ret_b1_2 ~
+        tag!("efgh")   ,
+        ||{
+          bb.b = 3;
+          bb
+        }
+      )
+    );
+
+    let r = f(&b"abcdabcdefghefghX"[..]);
+    assert_eq!(r, Done(&b"X"[..], B{a: 1, b: 3}));
   }
 
   #[test]
