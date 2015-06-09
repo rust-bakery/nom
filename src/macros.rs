@@ -802,7 +802,7 @@ macro_rules! opt(
 ///
 /// Wraps another parser and calls it if the
 /// condition is met. This combinator returns
-/// an Option of the rturen type of the child
+/// an Option of the return type of the child
 /// parser.
 ///
 /// This is especially useful if a parser depends
@@ -845,7 +845,7 @@ macro_rules! cond(
     }
   );
   ($i:expr, $cond:expr, $f:expr) => (
-    cond!($i, $cond, call($f));
+    cond!($i, $cond, call!($f));
   );
 );
 
@@ -1963,6 +1963,17 @@ mod tests {
     let f2 = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
     assert_eq!(f2(&a[..]), Done(&b"abcdef"[..], None));
+  }
+
+  #[test]
+  fn cond_wrapping() {
+    // Test that cond!() will wrap a given identifier in the call!() macro.
+
+    named!(silly, tag!("foo"));
+
+    let b = true;
+    let f = closure!(&'static [u8], cond!( b, silly ) );
+    assert_eq!(f(b"foobar"), Done(&b"bar"[..], Some(&b"foo"[..])));
   }
 
   #[test]
