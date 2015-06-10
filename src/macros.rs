@@ -1405,7 +1405,71 @@ macro_rules! many1(
 /// # use nom::Err::Position;
 /// # use nom::ErrorCode;
 /// # fn main() {
-///  named!(counter< [&[u8]; 2] >, count!( tag!( "abcd" ), &[u8], 2 ) );
+///  named!(counter< Vec<&[u8]> >, count!( tag!( "abcd" ), 2 ) );
+///
+///  let a = b"abcdabcdabcdef";
+///  let b = b"abcdefgh";
+///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///
+///  assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
+///  assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
+/// # }
+/// ```
+///
+#[macro_export]
+macro_rules! count(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
+    {
+      let mut begin = 0;
+      let mut remaining = $i.len();
+      let mut res = Vec::new();
+      let mut cnt: usize = 0;
+      let mut err = false;
+      loop {
+        match $submac!(&$i[begin..], $($args)*) {
+          $crate::IResult::Done(i,o) => {
+            res.push(o);
+            begin += remaining - i.len();
+            remaining = i.len();
+            cnt = cnt + 1;
+            if cnt == $count {
+              break
+            }
+          },
+          $crate::IResult::Error(_)  => {
+            err = true;
+            break;
+          },
+          $crate::IResult::Incomplete(_) => {
+            break;
+          }
+        }
+      }
+      if err {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Count as u32,$i))
+      } else if cnt == $count {
+        $crate::IResult::Done(&$i[begin..], res)
+      } else {
+        $crate::IResult::Incomplete($crate::Needed::Unknown)
+      }
+    }
+  );
+  ($i:expr, $f:expr, $count: expr) => (
+    count!($i, call!($f), $count);
+  );
+);
+
+/// Applies the child parser a fixed number of times and returns a fixed size array
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorCode;
+/// # fn main() {
+///  named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), &[u8], 2 ) );
+///  // can omit the type specifier if returning slices
+///  // named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), 2 ) );
 ///
 ///  let a = b"abcdabcdabcdef";
 ///  let b = b"abcdefgh";
@@ -1417,13 +1481,19 @@ macro_rules! many1(
 /// ```
 ///
 #[macro_export]
-macro_rules! count(
+macro_rules! count_fixed(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
+    count_fixed!($i, $submac!($($args)*), &[u8], $count);
+  );
+  ($i:expr, $f:expr, $count: expr) => (
+    count_fixed!($i, call!($f), &[u8], $count);
+  );
   ($i:expr, $submac:ident!( $($args:tt)* ), $typ:ty, $count: expr) => (
     {
       let mut begin = 0;
       let mut remaining = $i.len();
-      let mut res: [$typ; $count] = unsafe{[::std::mem::uninitialized(); $count]};
-      let mut cnt = 0;
+      let mut res: [$typ; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
+      let mut cnt: usize = 0;
       let mut err = false;
       loop {
         match $submac!(&$i[begin..], $($args)*) {
@@ -1455,7 +1525,7 @@ macro_rules! count(
     }
   );
   ($i:expr, $f:expr, $typ:ty, $count: expr) => (
-    count!($i, call!($f), $typ, $count);
+    count_fixed!($i, call!($f), $typ, $count);
   );
 );
 
@@ -2196,7 +2266,21 @@ mod tests {
 
   #[test]
   fn count() {
-    named!(counter< [&[u8]; 2] >, count!( tag!( "abcd" ), &[u8], 2 ) );
+    fn counter(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+      let size: usize = 2;
+      count!(input, tag!( "abcd" ), size )
+    }
+
+    let a = b"abcdabcdabcdef";
+    let b = b"abcdefgh";
+    let res = vec![&b"abcd"[..], &b"abcd"[..]];
+
+    assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
+    assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
+  }
+  #[test]
+  fn count_fixed() {
+    named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), &[u8], 2 ) );
 
     let a = b"abcdabcdabcdef";
     let b = b"abcdefgh";
@@ -2205,6 +2289,19 @@ mod tests {
     assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
     assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
   }
+
+  #[test]
+  fn count_fixed_no_type() {
+    named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), 2 ) );
+
+    let a = b"abcdabcdabcdef";
+    let b = b"abcdefgh";
+    let res = [&b"abcd"[..], &b"abcd"[..]];
+
+    assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
+    assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
+  }
+
 
   use std::str::from_utf8;
   #[test]
