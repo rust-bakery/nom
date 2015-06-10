@@ -238,7 +238,7 @@ macro_rules! tag (
   ($i:expr, $inp: expr) => (
     {
       #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
         b.as_bytes()
       }
 
@@ -724,7 +724,7 @@ macro_rules! is_not(
   ($input:expr, $arr:expr) => (
     {
       #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
         b.as_bytes()
       }
 
@@ -772,7 +772,7 @@ macro_rules! is_a(
   ($input:expr, $arr:expr) => (
     {
       #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
         b.as_bytes()
       }
 
@@ -1498,7 +1498,7 @@ macro_rules! take_until_and_consume(
   ($i:expr, $inp:expr) => (
     {
       #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
         b.as_bytes()
       }
 
@@ -1537,7 +1537,7 @@ macro_rules! take_until(
   ($i:expr, $inp:expr) => (
     {
       #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
         b.as_bytes()
       }
 
@@ -1576,7 +1576,7 @@ macro_rules! take_until_either_and_consume(
   ($i:expr, $inp:expr) => (
     {
       #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
         b.as_bytes()
       }
 
@@ -1617,7 +1617,7 @@ macro_rules! take_until_either(
   ($i:expr, $inp:expr) => (
     {
       #[inline(always)]
-      fn as_bytes<T: $crate::util::AsBytes>(b: &T) -> &[u8] {
+      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
         b.as_bytes()
       }
 

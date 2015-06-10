@@ -13,7 +13,7 @@
 //!
 //! use nom::{Consumer,ConsumerState,MemProducer,IResult};
 //! use nom::IResult::*;
-//! 
+//!
 //! // Parser definition
 //!
 //! named!( om_parser,                   tag!( "om" ) );
@@ -130,15 +130,15 @@ pub use self::consumer::*;//{ConsumerState,Consumer};
 
 pub use self::nom::*;
 
-#[macro_use] pub mod util;
-pub mod internal;
-#[macro_use] pub mod macros;
+#[macro_use] mod util;
+mod internal;
+#[macro_use] mod macros;
 
 #[macro_use]
 #[cfg(not(feature = "core"))]
-pub mod producer;
+mod producer;
 #[cfg(not(feature = "core"))]
-pub mod consumer;
+mod consumer;
 
-#[macro_use] pub mod nom;
+#[macro_use] mod nom;
 
