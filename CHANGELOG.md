@@ -4,6 +4,20 @@
 
 ### Changed
 
+## 0.3.5 - 2015-06-10
+
+### Thanks
+- @cmr for some documentation fixes
+
+### Added
+- `count_fixed!` returns a fixed array
+
+### Fixed
+- `count!` is back to the previous behaviour, returning a `Vec` for sizes known at runtime
+
+### Changed
+- functions and traits exported from `nom::util` are now directly in `nom::`
+
 ## 0.3.4 - 2015-06-09
 
 ### Thanks
@@ -183,7 +197,8 @@
 ### Fixed
 - closure syntax change
 
-[unreleased]: https://github.com/Geal/nom/compare/0.3.4...HEAD
+[unreleased]: https://github.com/Geal/nom/compare/0.3.5...HEAD
+[0.3.3]: https://github.com/Geal/nom/compare/0.3.4...0.3.5
 [0.3.3]: https://github.com/Geal/nom/compare/0.3.3...0.3.4
 [0.3.3]: https://github.com/Geal/nom/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/Geal/nom/compare/0.3.1...0.3.2
