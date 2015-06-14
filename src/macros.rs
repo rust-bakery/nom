@@ -1547,10 +1547,11 @@ macro_rules! count_fixed(
 macro_rules! take(
   ($i:expr, $count:expr) => (
     {
-      if $i.len() < $count {
-        $crate::IResult::Incomplete($crate::Needed::Size($count))
+      let cnt = $count as usize;
+      if $i.len() < cnt {
+        $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
-        $crate::IResult::Done(&$i[$count..],&$i[0..$count])
+        $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
       }
     }
   );
