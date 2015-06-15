@@ -13,6 +13,7 @@
 
 ### Fixed
 - `filter!` now returns the whole input if the filter function never returned false
+- `take!` casts its argument as usize, so it can accepts any integer type now
 
 ## 0.3.5 - 2015-06-10
 
