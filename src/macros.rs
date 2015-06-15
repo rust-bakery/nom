@@ -128,6 +128,11 @@ macro_rules! named (
             $submac!(i, $($args)*)
         }
     );
+    (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<'a, &'a [u8], $o> {
+            $submac!(i, $($args)*)
+        }
+    );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
         pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8]> {
             $submac!(i, $($args)*)
