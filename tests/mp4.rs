@@ -471,6 +471,10 @@ impl Consumer for MP4Consumer {
     }
   }
 
+  fn failed(&mut self, error_code: u32) {
+    println!("failed with error code: {}", error_code);
+  }
+
   fn end(&mut self) {
     println!("finish!");
   }

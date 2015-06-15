@@ -47,6 +47,10 @@
 //!      }
 //!    }
 //!
+//!    fn failed(&mut self, error_code: u32) {
+//!      println!("failed with error code {}", error_code);
+//!    }
+//!
 //!    fn end(&mut self) {
 //!      println!("finished");
 //!    }
@@ -95,6 +99,7 @@ pub enum ConsumerState {
 /// The run function takes care of continuing or not
 pub trait Consumer {
   fn consume(&mut self, input: &[u8]) -> ConsumerState;
+  fn failed(&mut self, error_code: u32);
   fn end(&mut self);
 
   fn run(&mut self, producer: &mut Producer) {
@@ -106,6 +111,7 @@ pub trait Consumer {
     let mut seek_from:SeekFrom = SeekFrom::Current(0);
     let mut eof = false;
     let mut end = false;
+    let mut err: Option<u32> = None;
 
     loop {
       //self.getDataFromProducer(producer, seek_from, needed, acc);
@@ -163,9 +169,9 @@ pub trait Consumer {
       //println!("full:\n{}", acc.to_hex(8));
       //println!("truncated:\n{}", (&acc[0..needed]).to_hex(16));
       match self.consume(&acc[0..needed]) {
-        ConsumerError(_) => {
-        //ConsumerError(e) => {
+        ConsumerError(e) => {
           //println!("consumer error, stopping: {}", e);
+          err = Some(e);
         },
         ConsumerDone => {
           //println!("data, done");
@@ -189,6 +195,10 @@ pub trait Consumer {
         Incomplete => {
           //println!("incomplete");
         }
+      }
+      if let Some(e) = err {
+        self.failed(e);
+        break;
       }
       if eof {
         self.end();
@@ -256,6 +266,10 @@ macro_rules! take(
     fn end(&mut self) {
       assert_eq!(self.counter, 5);
       self.ended = true;
+    }
+
+    fn failed(&mut self, error_code: u32) {
+      println!("failed with error code: {}", error_code);
     }
   }
 
