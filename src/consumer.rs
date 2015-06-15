@@ -65,11 +65,15 @@ use std::io::SeekFrom;
 
 /// Holds the current state of the consumer
 ///
-/// * Await if more data is needed
+/// * Await(consumed, needed input data size) if more data is needed
+///
+/// * Seek(consumed, new position, needed input data size) if the consumer must move back or forth
+///
+/// * Incomplete if there is not enough data but not enough information for Await or Seek
 ///
 /// * ConsumerDone if the consumer does not need anymore data to be parsed
 ///
-/// * ConsumerError when something went wrong
+/// * ConsumerError(error code) when something went wrong
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
 pub enum ConsumerState {
   Await(
