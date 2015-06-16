@@ -1477,7 +1477,7 @@ macro_rules! count(
 /// # use nom::Err::Position;
 /// # use nom::ErrorCode;
 /// # fn main() {
-///  named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), &[u8], 2 ) );
+///  named!(counter< [&[u8]; 2] >, count_fixed!( &[u8], tag!( "abcd" ), 2 ) );
 ///  // can omit the type specifier if returning slices
 ///  // named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), 2 ) );
 ///
@@ -1492,13 +1492,7 @@ macro_rules! count(
 ///
 #[macro_export]
 macro_rules! count_fixed(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
-    count_fixed!($i, $submac!($($args)*), &[u8], $count);
-  );
-  ($i:expr, $f:expr, $count: expr) => (
-    count_fixed!($i, call!($f), &[u8], $count);
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $typ:ty, $count: expr) => (
+  ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let mut begin = 0;
       let mut remaining = $i.len();
@@ -1534,8 +1528,14 @@ macro_rules! count_fixed(
       }
     }
   );
-  ($i:expr, $f:expr, $typ:ty, $count: expr) => (
-    count_fixed!($i, call!($f), $typ, $count);
+  ($i:expr, $typ: ty, $f:ident, $count: expr) => (
+    count_fixed!($i, $typ, call!($f), $count);
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
+    count_fixed!($i, &[u8], $submac!($($args)*), $count);
+  );
+  ($i:expr, $f:ident, $count: expr) => (
+    count_fixed!($i, &[u8], call!($f), $count);
   );
 );
 
@@ -2289,9 +2289,10 @@ mod tests {
     assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
     assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
   }
+
   #[test]
   fn count_fixed() {
-    named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), &[u8], 2 ) );
+    named!(counter< [&[u8]; 2] >, count_fixed!( &[u8], tag!( "abcd" ), 2 ) );
 
     let a = b"abcdabcdabcdef";
     let b = b"abcdefgh";
@@ -2299,6 +2300,17 @@ mod tests {
 
     assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
     assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
+  }
+
+  use nom::{le_u16,eof};
+  #[allow(dead_code)]
+  pub fn compile_count_fixed(input: &[u8]) -> IResult<&[u8], ()> {
+    chain!(input,
+      tag!("abcd")                   ~
+      count_fixed!( u16, le_u16, 4 ) ~
+      eof                            ,
+      || { () }
+    )
   }
 
   #[test]
