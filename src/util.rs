@@ -459,5 +459,7 @@ pub enum ErrorCode {
   Space,
   MultiSpace,
   LengthValueFn,
-  Eof
+  Eof,
+  ExprOpt,
+  ExprRes
 }

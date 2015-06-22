@@ -370,6 +370,30 @@ macro_rules! map_opt(
   );
 );
 
+#[macro_export]
+macro_rules! expr_res(
+  ($i:expr, $e:expr) => (
+    {
+      match $e {
+        Ok(output) => $crate::IResult::Done($i, output),
+        Err(_)     => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::ExprRes as u32, $i))
+      }
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! expr_opt(
+  ($i:expr, $e:expr) => (
+    {
+      match $e {
+        Some(output) => $crate::IResult::Done($i, output),
+        None         => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::ExprOpt as u32, $i))
+      }
+    }
+  );
+);
+
 /// chains parsers and assemble the results through a closure
 ///
 /// ```
