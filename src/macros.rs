@@ -370,8 +370,9 @@ macro_rules! map_opt(
   );
 );
 
+/// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Ok
 #[macro_export]
-macro_rules! expr_res(
+macro_rules! expr_res (
   ($i:expr, $e:expr) => (
     {
       match $e {
@@ -382,8 +383,37 @@ macro_rules! expr_res(
   );
 );
 
+/// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Ok
+///
+/// Useful when doing computations in a chain
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self, Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::{be_u8,ErrorCode};
+///
+///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
+///    chain!(input,
+///      sz:     be_u8                             ~
+///      length: expr_opt!(size.checked_add(sz))   ~ // checking for integer overflow (returns an Option)
+///      data:   take!(length)                     ,
+///      ||{ data }
+///    )
+///  }
+/// # fn main() {
+/// let arr1 = [1, 2, 3, 4, 5];
+/// let r1 = take_add(&arr1[..], 1);
+/// assert_eq!(r1, Done(&[4,5][..], &[2,3][..]));
+///
+/// let arr2 = [0xFE, 2, 3, 4, 5];
+/// // size is overflowing
+/// let r1 = take_add(&arr2[..], 42);
+/// assert_eq!(r1, Error(Position(ErrorCode::ExprOpt as u32,&[2,3,4,5][..])));
+/// # }
+/// ```
 #[macro_export]
-macro_rules! expr_opt(
+macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
       match $e {
