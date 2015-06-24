@@ -435,6 +435,34 @@ impl AsBytes for [u8] {
   }
 }
 
+macro_rules! array_impls {
+  ($($N:expr)+) => {
+    $(
+      impl<'a> AsBytes for &'a [u8; $N] {
+        #[inline(always)]
+        fn as_bytes(&self) -> &[u8] {
+          *self
+        }
+      }
+
+      impl AsBytes for [u8; $N] {
+        #[inline(always)]
+        fn as_bytes(&self) -> &[u8] {
+          self
+        }
+      }
+    )+
+  };
+}
+
+
+array_impls! {
+     0  1  2  3  4  5  6  7  8  9
+    10 11 12 13 14 15 16 17 18 19
+    20 21 22 23 24 25 26 27 28 29
+    30 31 32
+}
+
 pub enum ErrorCode {
   Tag,
   MapRes,
