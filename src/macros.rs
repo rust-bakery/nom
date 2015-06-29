@@ -1068,6 +1068,7 @@ macro_rules! separated_pair(
   );
 );
 
+#[macro_export]
 macro_rules! separated_pair1(
   ($i:expr, $res1:ident, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
     {
@@ -1085,6 +1086,7 @@ macro_rules! separated_pair1(
   );
 );
 
+#[macro_export]
 macro_rules! separated_pair2(
   ($i:expr, $res1:ident, $submac3:ident!( $($args3:tt)* )) => (
     {
@@ -1191,6 +1193,7 @@ macro_rules! delimited(
   );
 );
 
+#[macro_export]
 macro_rules! delimited1(
   ($i:expr, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
     {
@@ -1208,6 +1211,7 @@ macro_rules! delimited1(
   );
 );
 
+#[macro_export]
 macro_rules! delimited2(
   ($i:expr, $res2:ident, $submac3:ident!( $($args3:tt)* )) => (
     {
