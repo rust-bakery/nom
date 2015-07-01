@@ -12,3 +12,4 @@ keywords = ["parser", "parser-combinators", "parsing", "streaming"]
 
 [features]
 core = []
+nightly = []
