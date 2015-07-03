@@ -295,6 +295,22 @@ macro_rules! flat_map(
 /// maps a function on the result of a parser
 #[macro_export]
 macro_rules! map(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map_impl!($i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_impl!($i, $submac!($($args)*), $submac2!($($args2)*),);
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map_impl!($i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    map_impl!($i, call!($f), $submac!($($args)*));
+  );
+);
+
+#[macro_export]
+macro_rules! map_impl(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -304,15 +320,6 @@ macro_rules! map(
         $crate::IResult::Done(i, o)                          => $crate::IResult::Done(i, $submac2!(o, $($args2)*))
       }
     }
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map!($i, call!($f), $submac!($($args)*));
   );
 );
 
