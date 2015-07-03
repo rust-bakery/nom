@@ -4,6 +4,18 @@
 
 ### Changed
 
+## 0.3.8 - 2015-07-03
+
+### Added
+- code coverage is now calculated automatically on Travis CI
+- `Stepper`: wrap a `Producer`, and call the method `step` with a parser. This method will buffer data if there is not enough, apply the parser if there is, and keep the rest of the input in memory for the next call
+- `ReadProducer`: takes something implementing `Read`, and makes a `Producer` out of it
+
+### Fixed
+- the combinators `separated_pair!` and `delimited!` did not work because an implementation macro was not exported
+- if a `MemProducer` reached its end, it should always return `Eof`
+- `map!` had issues with argument matching
+
 ## 0.3.7 - 2015-06-24
 
 ### Added
@@ -219,8 +231,9 @@
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/0.3.7...HEAD
-* [0.3.7]: https://github.com/Geal/nom/compare/0.3.5...0.3.7
+* [unreleased]: https://github.com/Geal/nom/compare/0.3.8...HEAD
+* [0.3.7]: https://github.com/Geal/nom/compare/0.3.7...0.3.8
+* [0.3.7]: https://github.com/Geal/nom/compare/0.3.6...0.3.7
 * [0.3.6]: https://github.com/Geal/nom/compare/0.3.5...0.3.6
 * [0.3.5]: https://github.com/Geal/nom/compare/0.3.4...0.3.5
 * [0.3.4]: https://github.com/Geal/nom/compare/0.3.3...0.3.4
