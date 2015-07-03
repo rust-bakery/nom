@@ -263,6 +263,71 @@ macro_rules! pusher (
   );
 );
 
+#[derive(Debug,PartialEq,Eq)]
+pub enum StepperState<'a,O> {
+  Eof,
+  Value(O),
+  ProducerError(u32),
+  Continue,
+  ParserError(super::Err<'a>),
+}
+
+pub struct Stepper<T: Producer> {
+  acc:       Vec<u8>,
+  remaining: Vec<u8>,
+  producer: T,
+}
+
+impl<T: Producer> Stepper<T> {
+  pub fn new(producer: T) -> Stepper<T> {
+    Stepper { acc: Vec::new(), remaining: Vec::new(), producer: producer }
+  }
+
+
+  pub fn step<'a, F, O>(&'a mut self, parser: F) -> StepperState<'a, O>
+                      where F: Fn(&'a [u8]) -> super::IResult<&'a [u8],O> {
+    self.acc.clear();
+    self.acc.extend(self.remaining.iter().cloned());
+    let state = self.producer.produce();
+    match state {
+      ProducerState::Data(v) => {
+        self.acc.extend(v.iter().cloned())
+      },
+      ProducerState::Eof(v) => {
+        self.acc.extend(v.iter().cloned())
+      },
+      ProducerState::Continue => {
+        return StepperState::Continue;
+      },
+      ProducerState::ProducerError(u) => {
+        return StepperState::ProducerError(u);
+      }
+    }
+
+    if self.acc.is_empty() {
+      return StepperState::Eof;
+    }
+
+    match parser(&(self.acc)[..]) {
+      super::IResult::Error(e)      => {
+        self.remaining.clear();
+        self.remaining.extend(self.acc.iter().cloned());
+        return StepperState::ParserError(e);
+      },
+      super::IResult::Incomplete(_) => {
+        self.remaining.clear();
+        self.remaining.extend(self.acc.iter().cloned());
+        return StepperState::Continue;
+      },
+      super::IResult::Done(i, o)    => {
+        self.remaining.clear();
+        self.remaining.extend(i.iter().cloned());
+        return StepperState::Value(o);
+      }
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -348,5 +413,29 @@ mod tests {
     pusher!(ps, pr );
     ps(&mut p);
     //assert!(false);
+  }
+
+  #[test]
+  fn stepper() {
+    let p = MemProducer::new(&b"abcdabcd"[..], 3);
+    fn pr<'a>(input: &'a [u8]) -> IResult<&'a [u8],&[u8]> {
+      if input.len() >= 4 {
+        IResult::Done(&input[4..], &input[0..4])
+      } else {
+        IResult::Incomplete(Needed::Size(4 - input.len()))
+      }
+    }
+
+    let mut s = Stepper::new(p);
+    for i in 0..3 {
+      let res = s.step(|x| pr(x));
+      match i {
+        0     => assert_eq!(res, StepperState::Continue),
+        1 | 2 => assert_eq!(res, StepperState::Value(&b"abcd"[..])),
+        _     => assert!(false)
+      }
+    }
+    let res2 = s.step(|x| pr(x));
+    assert_eq!(res2, StepperState::Eof);
   }
 }
