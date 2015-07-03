@@ -193,6 +193,47 @@ impl<'x> Producer for MemProducer<'x> {
 
 }
 
+/// Can produce data from a struct implementing Read
+///
+/// the size field is the size of v, the internal buffer
+pub struct ReadProducer<T: Read> {
+  size:   usize,
+  reader: T,
+  v:      Vec<u8>
+}
+
+impl<T: Read> ReadProducer<T> {
+  pub fn new(reader: T, buffer_size: usize) -> ReadProducer<T> {
+    ReadProducer {size: buffer_size, reader: reader, v: Vec::with_capacity(buffer_size)}
+  }
+}
+
+impl<T: Read> Producer for ReadProducer<T> {
+  fn produce(&mut self) -> ProducerState<&[u8]> {
+    let len = self.v.len();
+    self.v.extend(repeat(0).take(self.size - len));
+    match self.reader.read(&mut self.v) {
+      Err(e) => {
+        match e.kind() {
+          _  => ProducerError(0)
+        }
+      },
+      Ok(n)  => {
+        self.v.truncate(n);
+        if n == 0 {
+          Eof(&self.v[..])
+        } else {
+          Data(&self.v[..])
+        }
+      }
+    }
+  }
+
+  #[allow(unused_variables)]
+  fn seek(&mut self, position: SeekFrom) -> Option<u64> {
+    None
+  }
+}
 /// Prepares a parser function for a push pipeline
 ///
 /// It creates a function that accepts a producer and immediately starts parsing the data sent
