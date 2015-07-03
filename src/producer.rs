@@ -151,7 +151,7 @@ impl<'x> Producer for MemProducer<'x> {
       self.index = self.length;
       res
     } else {
-      ProducerError(0)
+      Eof(&b""[..])
     }
   }
 
