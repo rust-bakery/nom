@@ -939,6 +939,39 @@ macro_rules! opt(
   );
 );
 
+/// make the underlying parser optional
+///
+/// returns a Result, with Err containing the parsing error
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::Err::Position;
+/// # fn main() {
+///  named!( o<&[u8], Result<&[u8], nom::Err> >, opt_res!( tag!( "abcd" ) ) );
+///
+///  let a = b"abcdef";
+///  let b = b"bcdefg";
+///  assert_eq!(o(&a[..]), Done(&b"ef"[..], Ok(&b"abcd"[..])));
+///  assert_eq!(o(b), Done(&b"bcdefg"[..], Err(Position(0, b))));
+///  # }
+/// ```
+#[macro_export]
+macro_rules! opt_res (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,  Ok(o)),
+        $crate::IResult::Error(e)      => $crate::IResult::Done($i, Err(e)),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+      }
+    }
+  );
+  ($i:expr, $f:expr) => (
+    opt_res!($i, call!($f));
+  );
+);
+
 /// Conditional combinator
 ///
 /// Wraps another parser and calls it if the
@@ -2186,6 +2219,16 @@ mod tests {
     let b = &b"bcdefg"[..];
     assert_eq!(o(a), Done(&b"ef"[..], Some(&b"abcd"[..])));
     assert_eq!(o(b), Done(&b"bcdefg"[..], None));
+  }
+
+  #[test]
+  fn opt_res() {
+    named!(o<&[u8], Result<&[u8], Err> >, opt_res!(tag!("abcd")));
+
+    let a = &b"abcdef"[..];
+    let b = &b"bcdefg"[..];
+    assert_eq!(o(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
+    assert_eq!(o(b), Done(&b"bcdefg"[..], Err(Position(0, b))));
   }
 
   #[test]
