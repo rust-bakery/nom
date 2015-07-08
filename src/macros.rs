@@ -325,7 +325,23 @@ macro_rules! map_impl(
 
 /// maps a function returning a Result on the output of a parser
 #[macro_export]
-macro_rules! map_res(
+macro_rules! map_res (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map_res_impl!($i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_res_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map_res_impl!($i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    map_res_impl!($i, call!($f), $submac!($($args)*));
+  );
+);
+
+#[macro_export]
+macro_rules! map_res_impl (
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -339,20 +355,28 @@ macro_rules! map_res(
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map_res!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map_res!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map_res!($i, call!($f), $submac!($($args)*));
-  );
 );
+
 
 /// maps a function returning an Option on the output of a parser
 #[macro_export]
-macro_rules! map_opt(
+macro_rules! map_opt (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map_opt_impl!($i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_opt_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map_opt_impl!($i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    map_opt_impl!($i, call!($f), $submac!($($args)*));
+  );
+);
+
+#[macro_export]
+macro_rules! map_opt_impl (
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -365,15 +389,6 @@ macro_rules! map_opt(
         }
       }
     }
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map_opt!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map_opt!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map_opt!($i, call!($f), $submac!($($args)*));
   );
 );
 
