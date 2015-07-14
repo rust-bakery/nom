@@ -193,7 +193,7 @@ mod tests {
     }
 
     //let it = ParsingIterator::new(c, take_4);
-    let it = ParsingIterator::new(c, move |input| { take_4(  &input  ) });
+    let it = ParsingIterator::new(c, move |input| { take_4(  input  ) });
     //let it = ParsingIterator::new(c, |input| { IResult::Done(input, &b""[..]) });
 
     for el in it {
