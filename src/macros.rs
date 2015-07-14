@@ -1038,6 +1038,25 @@ macro_rules! cond(
   );
 );
 
+#[macro_export]
+macro_rules! cond_reduce(
+  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      if $cond {
+        match $submac!($i, $($args)*) {
+          $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, o),
+          $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+        }
+      } else {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::CondReduce as u32, $i))
+      }
+    }
+  );
+  ($i:expr, $cond:expr, $f:expr) => (
+    cond_reduce!($i, $cond, call!($f));
+  );
+);
 
 /// returns a result without consuming the input
 ///

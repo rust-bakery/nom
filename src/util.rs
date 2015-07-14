@@ -489,5 +489,6 @@ pub enum ErrorCode {
   LengthValueFn,
   Eof,
   ExprOpt,
-  ExprRes
+  ExprRes,
+  CondReduce
 }
