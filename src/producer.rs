@@ -35,7 +35,8 @@ use std::fs::File;
 use std::path::Path;
 use std::io;
 use std::io::{Read,Seek,SeekFrom};
-use std::iter::repeat;
+use std::iter::{repeat,Iterator};
+use super::internal::IResult;
 
 /// Holds the data producer's current state
 ///
@@ -64,6 +65,7 @@ pub trait Producer {
 /// Can produce data from a file
 ///
 /// the size field is the size of v, the internal buffer
+#[derive(Debug)]
 pub struct FileProducer {
   size: usize,
   file: File,
@@ -119,6 +121,7 @@ impl Producer for FileProducer {
 /// * index is the position in the buffer
 ///
 /// * chunk_size is the quantity of data sent at once
+#[derive(Debug)]
 pub struct MemProducer<'x> {
   buffer: &'x [u8],
   chunk_size: usize,
@@ -234,6 +237,7 @@ impl<T: Read> Producer for ReadProducer<T> {
     None
   }
 }
+
 /// Prepares a parser function for a push pipeline
 ///
 /// It creates a function that accepts a producer and immediately starts parsing the data sent
@@ -374,6 +378,8 @@ mod tests {
   use super::*;
   use internal::{Needed,IResult};
   use std::fmt::Debug;
+  use std::io::{Cursor,Read};
+  use std::str;
 
   fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
     println!("{:?}", input);
@@ -479,4 +485,5 @@ mod tests {
     let res2 = s.step(|x| pr(x));
     assert_eq!(res2, StepperState::Eof);
   }
+
 }

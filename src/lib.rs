@@ -131,8 +131,11 @@ pub use self::macros::*;
 pub use self::producer::*;//{ProducerState,Producer,FileProducer,MemProducer};
 #[cfg(not(feature = "core"))]
 pub use self::consumer::*;//{ConsumerState,Consumer};
+#[cfg(not(feature = "core"))]
+pub use self::iterator::*;
 
 pub use self::nom::*;
+
 
 #[macro_use] mod util;
 mod internal;
@@ -143,6 +146,9 @@ mod internal;
 mod producer;
 #[cfg(not(feature = "core"))]
 mod consumer;
+
+#[cfg(not(feature = "core"))]
+mod iterator;
 
 #[macro_use] mod nom;
 
