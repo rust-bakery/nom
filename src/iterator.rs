@@ -6,6 +6,7 @@ use std::cmp;
 use std::iter;
 use super::util::HexDisplay;
 use super::internal::IResult;
+use std::marker::PhantomData;
 
 pub struct AccReader<R> {
     inner: R,
@@ -129,19 +130,24 @@ impl<R> fmt::Debug for AccReader<R> where R: fmt::Debug {
 
 pub struct ParsingIterator<R:Read,F> {
   reader: AccReader<R>,
-  f:      F
+  f:      F,
+  //phantom: PhantomData<O>
 }
 
-impl<R:Read,O,F> ParsingIterator<R,F> where  F: FnMut(&[u8]) -> super::IResult<&[u8],O> {
+//impl<'a, R:Read,O:'a ,F> ParsingIterator<R,F> where  F: FnMut(&'a [u8]) -> super::IResult<&'a [u8],O> {
+impl<R:Read,F> ParsingIterator<R,F> {
   pub fn new(reader: R, f: F) -> ParsingIterator<R,F> {
+    let mut r = AccReader::new(reader);
+    r.fill_buf();
     ParsingIterator {
-      reader: AccReader::new(reader),
-      f: f
+      reader: r,
+      f: f,
+      //phantom: PhantomData
     }
   }
 }
 
-impl<R: Read, O, F> Iterator for ParsingIterator<R,F> where F: FnMut(&[u8]) -> super::IResult<&[u8],O> {
+impl<R: Read, O: fmt::Debug, F> Iterator for ParsingIterator<R,F> where F: FnMut(&[u8]) -> super::IResult<&[u8],O> {
   type Item = O;
   fn next(&mut self) -> Option<O> {
     let ref mut f = self.f;
@@ -149,32 +155,45 @@ impl<R: Read, O, F> Iterator for ParsingIterator<R,F> where F: FnMut(&[u8]) -> s
     let mut res: Option<O> = None;
     let mut consumed = 0;
 
+    println!("next");
     match f(self.reader.current_slice()) {
       IResult::Error(_)   => return None,
       IResult::Done(i, o) => {
+        println!("i: {:?}", i);
+        println!("o: {:?}", o);
         consumed = capacity - i.len();
         res = Some(o);
       }
       _ => { }
     }
 
+    println!("next1: consumed: {} res: {:?}", consumed, res);
     if res.is_some() {
       self.reader.consume(consumed);
       return res;
     } else {
       let fill_res = self.reader.fill_buf();
+      println!("fill_res: {:?}", fill_res);
       match fill_res {
         Err(_) => return None,
-        Ok(s)  => match f(s) {
-          IResult::Done(i, o) => {
-            consumed = s.offset(i);
-            res = Some(o);
-          },
-          // if it des not work with full buffer, abort
-          _                   => return None
+        Ok(s)  => {
+          if s.len() == 0 {
+            println!("s.len() == 0");
+            return None
+          } else {
+            match f(s) {
+              IResult::Done(i, o) => {
+                consumed = s.offset(i);
+                res = Some(o);
+              },
+              // if it des not work with full buffer, abort
+              _                   => return None
+            }
+          }
         }
       }
     }
+    println!("next2: consumed: {} res: {:?}", consumed, res);
     self.reader.consume(consumed);
     res
   }
@@ -185,29 +204,63 @@ mod tests {
   use super::*;
   use internal::{Needed,IResult};
   use std::fmt::Debug;
-  use std::io::{Cursor,Read};
+  use std::io::{Cursor,Read,BufRead};
   use std::str;
+  use std::iter::Iterator;
 
   #[test]
   fn acc_reader_test() {
-    let buf = b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd";
+    //let buf = b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd";
+    let buf = b"abcd\nabcdabcdabcdabcdabcdabcd\nabcdabcdabcdabcdabcdabc\ndabcdabcdabcdab\ncdabcdabcdabcd\nabcdabcdabcdabcdabcda\nbcdabcdabcdabcdabcdabcdabcd";
     let c = Cursor::new(&buf[..]);
-    //let acc = AccReader::new(c);
 
     fn take_4<'x>(input:&'x[u8]) -> IResult<&'x[u8],&'x[u8]> {
       if input.len() <= 4 {
         IResult::Incomplete(Needed::Size(4))
       } else {
-        IResult::Done(&input[4..], &input[0..4])
+        //IResult::Done(&input[4..], &input[0..4])
+        IResult::Incomplete(Needed::Unknown)
       }
     }
 
-    //let it = ParsingIterator::new(c, take_4);
-    let it = ParsingIterator::new(c, move |input| { take_4(  input  ) });
-    //let it = ParsingIterator::new(c, |input| { IResult::Done(input, &b""[..]) });
+    /*
+    let acc = AccReader::new(c);
+    for l in acc.lines() {
+      println!("l: {:?}", l);
+    }*/
 
-    for el in it {
+    //let it = ParsingIterator::new(c, take_4);
+    let mut it = ParsingIterator::new(c, (|input| { take_4(  input  ) }) as FnMut(&[u8]) -> IResult<&[u8],&[u8]>);
+    /*
+    let it = ParsingIterator::new(c, |input| {
+      println!("input: {:?}", &input);
+      if input.len() >= 4 {
+        //IResult::Done(&input[4..], &b""[..])
+        //let clo = input.clone();
+        //IResult::Done(&input[4..], &clo[0..4])
+        IResult::Done(&input[4..], &input[4..])
+      } else {
+        //IResult::Done(&b""[..], &b""[..])
+        IResult::Incomplete(Needed::Unknown)
+      }
+    });
+    */
+
+    let mut count = 0;
+    /*for el in it {
       println!("el: {}", str::from_utf8(el).unwrap());
-    }
+      count +=1;
+      if count > 5 { break; }
+    }*/
+
+    let el1 = it.next();
+    println!("el1: {:?}", el1);
+    let el2 = it.next();
+    println!("el2: {:?}", el2);
+    let el3 = it.next();
+    println!("el3: {:?}", el3);
+    let el4 = it.next();
+    println!("el4: {:?}", el4);
+    assert!(false);
   }
 }
