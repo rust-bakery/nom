@@ -913,7 +913,7 @@ macro_rules! filter(
       } else if found {
         $crate::IResult::Done(&$input[index..], &$input[0..index])
       } else {
-        $crate::IResult::Done(b"", $input)
+        $crate::IResult::Done(&b""[..], $input)
       }
     }
   );
