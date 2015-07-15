@@ -127,6 +127,7 @@ mod std {
 pub use self::util::*;
 pub use self::internal::*;//{IResult, IResultClosure, GetInput, GetOutput};
 pub use self::macros::*;
+pub use self::accumulator::*;
 #[cfg(not(feature = "core"))]
 pub use self::producer::*;//{ProducerState,Producer,FileProducer,MemProducer};
 #[cfg(not(feature = "core"))]
@@ -137,6 +138,7 @@ pub use self::nom::*;
 #[macro_use] mod util;
 mod internal;
 #[macro_use] mod macros;
+#[macro_use] mod accumulator;
 
 #[macro_use]
 #[cfg(not(feature = "core"))]
