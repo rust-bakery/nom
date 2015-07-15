@@ -7,9 +7,9 @@
 use std::io;
 use std::io::{Read,BufRead};
 use std::iter::{repeat,Iterator};
-use std::fmt;
 use std::cmp;
 use std::iter;
+//use std::fmt;
 //use std::str;
 
 pub struct AccReader<R> {
@@ -125,14 +125,14 @@ impl<R: Read> BufRead for AccReader<R> {
   }
 }
 
-impl<R> fmt::Debug for AccReader<R> where R: fmt::Debug {
+/*impl<R> fmt::Debug for AccReader<R> where R: fmt::Debug {
   fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
     fmt.debug_struct("AccReader")
       .field("reader", &self.inner)
       .field("buffer", &format_args!("{}/{}", self.cap - self.pos, self.buf.len()))
       .finish()
   }
-}
+}*/
 
 #[cfg(test)]
 mod tests {
