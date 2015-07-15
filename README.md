@@ -248,7 +248,7 @@ FileProducer::new("my_file.txt", 20).map(|mut producer: FileProducer| {
 let mut p = MemProducer::new(b"abcdefgh", 4);
 ```
 
-The second argument for both of them is the chunk size for the produce function (which will not return the whole data at once.
+The second argument for both of them is the chunk size for the produce function (which will not return the whole data at once).
 
 The `pusher!` macro is provided to wrap an existing parser, and make it into a function that will handle a producer's chunk as soon as they are available.
 
