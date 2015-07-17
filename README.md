@@ -147,7 +147,7 @@ Here are the basic macros available:
 - **map!**: applies a function to the output of a `IResult` and puts the result in the output of a `IResult` with the same remaining input
 - **flat_map!**: applies a parser to the ouput of a `IResult` and returns a new `IResult` with the same remaining input.
 - **map_opt!**: applies a function returning an Option to the output of `IResult`, returns `Done(input, o)` if the result is `Some(o)`, or `Error(0)`
-- **map_opt!**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
+- **map_res!**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
 
 #### Combining parsers with macros
 
