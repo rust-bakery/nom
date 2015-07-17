@@ -291,6 +291,7 @@ pub enum ConsumerState {
 pub trait Consumer {
   fn consume(&mut self, input: &[u8]) -> ConsumerState;  // implement it
   fn end(&mut self);                                     // implement it
+  fn failed(&mut self, error_code: u32);                 // implement it
 
   fn run(&mut self, producer: &mut Producer);            // already provided
 }
@@ -388,6 +389,10 @@ impl Consumer for TestConsumer {
         ConsumerState::ConsumerError(42)
       }
     }
+  }
+
+  fn failed(&mut self, error_code: u32) {
+    println!("failed with error code {}", error_code);
   }
 
   fn end(&mut self) {
