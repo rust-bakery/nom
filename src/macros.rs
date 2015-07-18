@@ -1300,7 +1300,7 @@ macro_rules! delimited2(
   );
 
   ($i:expr, $res2:ident, $h:expr) => (
-    delimited!($i, $res2, call!($h));
+    delimited2!($i, $res2, call!($h));
   );
 );
 
