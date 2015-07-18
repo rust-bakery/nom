@@ -1088,6 +1088,26 @@ macro_rules! peek(
   );
 );
 
+#[macro_export]
+macro_rules! tap (
+  ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Done(i,o)     => {
+          let $name = o;
+          $e;
+          $crate::IResult::Done(i, $name)
+        },
+        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+      }
+    }
+  );
+  ($i:expr, $name: ident: $f:expr => $e:expr) => (
+    tap!($i, $name: call!(f) => $e);
+  );
+);
+
 /// pair(X,Y), returns (x,y)
 #[macro_export]
 macro_rules! pair(
