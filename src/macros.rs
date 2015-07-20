@@ -202,6 +202,8 @@ macro_rules! apply (
 ///     assert_eq!(res_a, Error(NodePosition(42, blah, Box::new(Position(0, blah)))));
 ///     assert_eq!(res_b, Error(NodePosition(42, &b"ijklblah"[..], Box::new(NodePosition(128, blah, Box::new(Position(0, blah)))))));
 /// # }
+/// ```
+///
 #[macro_export]
 macro_rules! error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
@@ -731,6 +733,32 @@ macro_rules! chaining_parser (
 ///  let r2 = test(&b"efghijkl"[..]);
 ///  assert_eq!(r2, Done(&b"ijkl"[..], &b"efgh"[..]));
 ///  # }
+/// ```
+///
+/// There is another syntax for alt allowing a block to manipulate the result:
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///     #[derive(Debug,PartialEq,Eq)]
+///     enum Tagged {
+///       Abcd,
+///       Efgh,
+///       Took(usize)
+///     }
+///     named!(test<Tagged>, alt!(
+///         tag!("abcd") => { |_|          Tagged::Abcd }
+///       | tag!("efgh") => { |_|          Tagged::Efgh }
+///       | take!(5)     => { |res: &[u8]| Tagged::Took(res.len()) } // the closure takes the result as argument if the parser is successful
+///     ));
+///     let r1 = test(b"abcdefgh");
+///     assert_eq!(r1, Done(&b"efgh"[..], Tagged::Abcd));
+///     let r2 = test(&b"efghijkl"[..]);
+///     assert_eq!(r2, Done(&b"ijkl"[..], Tagged::Efgh));
+///     let r3 = test(&b"mnopqrst"[..]);
+///     assert_eq!(r3, Done(&b"rst"[..],  Tagged::Took(5)));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! alt (
