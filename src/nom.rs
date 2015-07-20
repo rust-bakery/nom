@@ -365,7 +365,7 @@ pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::Needed;
+  use internal::{Needed,IResult};
   use internal::IResult::*;
   use internal::Err::*;
   use util::ErrorCode;
@@ -532,9 +532,48 @@ mod tests {
 
   #[test]
   fn configurable_endianness() {
-    named!(be_tst<u16>, u16!(true));
-    named!(le_tst<u16>, u16!(false));
-    assert_eq!(be_tst(&[0x80, 0x00]), Done(&b""[..], 32768_u16));
-    assert_eq!(le_tst(&[0x80, 0x00]), Done(&b""[..], 128_u16));
+    named!(be_tst16<u16>, u16!(true));
+    named!(le_tst16<u16>, u16!(false));
+    assert_eq!(be_tst16(&[0x80, 0x00]), Done(&b""[..], 32768_u16));
+    assert_eq!(le_tst16(&[0x80, 0x00]), Done(&b""[..], 128_u16));
+
+    named!(be_tst32<u32>, u32!(true));
+    named!(le_tst32<u32>, u32!(false));
+    assert_eq!(be_tst32(&[0x12, 0x00, 0x60, 0x00]), Done(&b""[..], 302014464_u32));
+    assert_eq!(le_tst32(&[0x12, 0x00, 0x60, 0x00]), Done(&b""[..], 6291474_u32));
+
+    named!(be_tst64<u64>, u64!(true));
+    named!(le_tst64<u64>, u64!(false));
+    assert_eq!(be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 1297142246100992000_u64));
+    assert_eq!(le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 36028874334666770_u64));
+
+    named!(be_tsti16<i16>, i16!(true));
+    named!(le_tsti16<i16>, i16!(false));
+    assert_eq!(be_tsti16(&[0x00, 0x80]), Done(&b""[..], 128_i16));
+    assert_eq!(le_tsti16(&[0x00, 0x80]), Done(&b""[..], -32768_i16));
+
+    named!(be_tsti32<i32>, i32!(true));
+    named!(le_tsti32<i32>, i32!(false));
+    assert_eq!(be_tsti32(&[0x00, 0x12, 0x60, 0x00]), Done(&b""[..], 1204224_i32));
+    assert_eq!(le_tsti32(&[0x00, 0x12, 0x60, 0x00]), Done(&b""[..], 6296064_i32));
+
+    named!(be_tsti64<i64>, i64!(true));
+    named!(le_tsti64<i64>, i64!(false));
+    assert_eq!(be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 71881672479506432_i64));
+    assert_eq!(le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 36028874334732032_i64));
+
   }
+
+  #[test]
+  fn manual_configurable_endianness_test() {
+    let x = 1;
+    let int_parse: Box<Fn(&[u8]) -> IResult<&[u8], u16> > = if x == 2 {
+      Box::new(be_u16)
+    } else {
+      Box::new(le_u16)
+    };
+    println!("{:?}", int_parse(&b"3"[..]));
+    assert_eq!(int_parse(&[0x80, 0x00]), Done(&b""[..], 128_u16));
+  }
+
 }
