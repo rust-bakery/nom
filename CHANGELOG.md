@@ -4,6 +4,26 @@
 
 ### Changed
 
+## 0.3.9 - 2015-07-20
+
+### Thanks
+- @badboy for fixing `filter!`
+- @idmit for some documentation fixes
+
+### Added
+- `opt_res!` applies a parser and transform its result in a Result. This parser never fails
+- `cond_reduce!` takes an expression as parameter, applies the parser if the expression is true, and returns an error if the expression is false
+- `tap!` pass the result of a parser to a block to manipulate it, but do not affect the parser's result
+- `AccReader` is a Read+BufRead that supports data accumulation and partial consumption. The `consume` method must be called afterwardsto indicate how much was consumed
+- Arithmetic expression evaluation and parsing example
+- `u16!`, `u32!`, `u64!`, `i16!`, `i32!`, `i64!` take an expression as parameter, if the expression is true, apply the big endian integer parser, if false, the little endian version
+- type information for combinators. This will make the documentation a bit easier to navigate
+
+### Fixed
+- `map_opt!` and `map_res!` had issues with argument order due to bad macros
+- `delimited!` did not compile for certain combinations of arguments
+- `filter!` did not return a byte slice but a fixed array
+
 ## 0.3.8 - 2015-07-03
 
 ### Added
@@ -231,8 +251,9 @@
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/0.3.8...HEAD
-* [0.3.7]: https://github.com/Geal/nom/compare/0.3.7...0.3.8
+* [unreleased]: https://github.com/Geal/nom/compare/0.3.9...HEAD
+* [0.3.9]: https://github.com/Geal/nom/compare/0.3.8...0.3.9
+* [0.3.8]: https://github.com/Geal/nom/compare/0.3.7...0.3.8
 * [0.3.7]: https://github.com/Geal/nom/compare/0.3.6...0.3.7
 * [0.3.6]: https://github.com/Geal/nom/compare/0.3.5...0.3.6
 * [0.3.5]: https://github.com/Geal/nom/compare/0.3.4...0.3.5
