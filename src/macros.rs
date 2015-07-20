@@ -1119,6 +1119,19 @@ macro_rules! peek(
   );
 );
 
+/// allows access to the parser's result without affecting it
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use std::str;
+/// # fn main() {
+///  named!(ptag, tap!(res: tag!( "abcd" ) => { println!("recognized {}", str::from_utf8(res).unwrap()) } ) );
+///
+///  let r = ptag(&b"abcdefgh"[..]);
+///  assert_eq!(r, Done(&b"efgh"[..], &b"abcd"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! tap (
   ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr) => (
