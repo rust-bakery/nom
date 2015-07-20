@@ -25,7 +25,11 @@
 //!     delimited!(opt!(multispace), tag!(")"), opt!(multispace))
 //!   )
 //! );
-
+//!
+//! // We transform an integer string into a i64
+//! // we look for a digit suite, and try to convert it.
+//! // if either str::from_utf8 or FromStr::from_str fail,
+//! // the parser will fail
 //! named!(factor<i64>,
 //!   alt!(
 //!     map_res!(
@@ -39,6 +43,7 @@
 //!   )
 //! );
 //!
+//! // we define acc as mutable to update its value whenever a new term is found
 //! named!(term <i64>,
 //!   chain!(
 //!     mut acc: factor  ~
