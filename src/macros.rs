@@ -309,6 +309,7 @@ macro_rules! map(
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! map_impl(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -340,6 +341,7 @@ macro_rules! map_res (
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! map_res_impl (
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -375,6 +377,7 @@ macro_rules! map_opt (
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! map_opt_impl (
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -1206,6 +1209,7 @@ macro_rules! separated_pair(
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! separated_pair1(
   ($i:expr, $res1:ident, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
@@ -1224,6 +1228,7 @@ macro_rules! separated_pair1(
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! separated_pair2(
   ($i:expr, $res1:ident, $submac3:ident!( $($args3:tt)* )) => (
@@ -1331,6 +1336,7 @@ macro_rules! delimited(
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! delimited1(
   ($i:expr, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
@@ -1349,6 +1355,7 @@ macro_rules! delimited1(
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! delimited2(
   ($i:expr, $res2:ident, $submac3:ident!( $($args3:tt)* )) => (
@@ -1930,7 +1937,7 @@ macro_rules! take_until_either(
   );
 );
 
-/// returns
+/// gets a number from the first parser, then applies the second parser that many times
 #[macro_export]
 macro_rules! length_value(
   ($i:expr, $f:expr, $g:expr) => (
