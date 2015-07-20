@@ -302,28 +302,28 @@ pub fn le_i64<'a>(i:&'a [u8]) -> IResult<&'a [u8], i64> {
 /// if parameter is true, parse a big endian u16 integer,
 /// otherwise a little endian u16 integer
 #[macro_export]
-macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $e { be_u16($i) } else { le_u16($i) } } ););
+macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_u16($i) } else { $crate::le_u16($i) } } ););
 /// if parameter is true, parse a big endian u32 integer,
 /// otherwise a little endian u32 integer
 #[macro_export]
-macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $e { be_u32($i) } else { le_u32($i) } } ););
+macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_u32($i) } else { $crate::le_u32($i) } } ););
 /// if parameter is true, parse a big endian u64 integer,
 /// otherwise a little endian u64 integer
 #[macro_export]
-macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $e { be_u64($i) } else { le_u64($i) } } ););
+macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_u64($i) } else { $crate::le_u64($i) } } ););
 
 /// if parameter is true, parse a big endian i16 integer,
 /// otherwise a little endian i16 integer
 #[macro_export]
-macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $e { be_i16($i) } else { le_i16($i) } } ););
+macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i16($i) } else { $crate::le_i16($i) } } ););
 /// if parameter is true, parse a big endian i32 integer,
 /// otherwise a little endian i32 integer
 #[macro_export]
-macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $e { be_i32($i) } else { le_i32($i) } } ););
+macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i32($i) } else { $crate::le_i32($i) } } ););
 /// if parameter is true, parse a big endian i64 integer,
 /// otherwise a little endian i64 integer
 #[macro_export]
-macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $e { be_i64($i) } else { le_i64($i) } } ););
+macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i64($i) } else { $crate::le_i64($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number
 pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
@@ -530,4 +530,11 @@ mod tests {
         assert_eq!(res_over, Done(is_over, is_over));
     }
 
+  #[test]
+  fn configurable_endianness() {
+    named!(be_tst<u16>, u16!(true));
+    named!(le_tst<u16>, u16!(false));
+    assert_eq!(be_tst(&[0x80, 0x00]), Done(&b""[..], 32768_u16));
+    assert_eq!(le_tst(&[0x80, 0x00]), Done(&b""[..], 128_u16));
+  }
 }
