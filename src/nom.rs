@@ -179,7 +179,7 @@ pub fn length_value<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   }
 }
 
-/// Recognizes big endian unsigned 1 byte integer
+/// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 pub fn be_u8<'a>(i: &[u8]) -> IResult<'a,&[u8], u8> {
   if i.len() < 1 {
     Incomplete(Needed::Size(1))
@@ -219,7 +219,7 @@ pub fn be_u64<'a>(i: &[u8]) -> IResult<'a,&[u8], u64> {
   }
 }
 
-/// Recognizes big endian signed 1 byte integer
+/// Recognizes a signed 1 byte integer (equivalent to take!(1)
 pub fn be_i8<'a>(i:&'a [u8]) -> IResult<&'a [u8], i8> {
   map!(i, be_u8, | x | { x as i8 })
 }
@@ -239,7 +239,7 @@ pub fn be_i64<'a>(i:&'a [u8]) -> IResult<&'a [u8], i64> {
   map!(i, be_u64, | x | { x as i64 })
 }
 
-/// Recognizes little endian unsigned 1 byte integer
+/// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
     Incomplete(Needed::Size(1))
@@ -279,7 +279,7 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   }
 }
 
-/// Recognizes little endian signed 1 byte integer
+/// Recognizes a signed 1 byte integer (equivalent to take!(1)
 pub fn le_i8<'a>(i:&'a [u8]) -> IResult<&'a [u8], i8> {
   map!(i, le_u8, | x | { x as i8 })
 }
