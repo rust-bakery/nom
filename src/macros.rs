@@ -225,6 +225,7 @@ macro_rules! error (
   );
 );
 
+/// `tag!(&[T]: nom::AsBytes) => &[T] -> IResult<&[T], &[T]>`
 /// declares a byte array as a suite to recognize
 ///
 /// consumes the recognized characters
@@ -261,7 +262,9 @@ macro_rules! tag (
   );
 );
 
-/// flat_map! combines a parser R -> IResult<R,S> and
+/// `flat_map!(R -> IResult<R,S>, S -> IResult<S,T>) => R -> IResult<R, T>`
+///
+/// combines a parser R -> IResult<R,S> and
 /// a parser S -> IResult<S,T> to return another
 /// parser R -> IResult<R,T>
 #[macro_export]
@@ -292,6 +295,7 @@ macro_rules! flat_map(
   );
 );
 
+/// `map!(I -> IResult<I,O>, O -> P) => I -> IResult<I, P>`
 /// maps a function on the result of a parser
 #[macro_export]
 macro_rules! map(
@@ -324,6 +328,7 @@ macro_rules! map_impl(
   );
 );
 
+/// `map_res!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P>`
 /// maps a function returning a Result on the output of a parser
 #[macro_export]
 macro_rules! map_res (
@@ -360,6 +365,7 @@ macro_rules! map_res_impl (
 );
 
 
+/// `map_res!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
 #[macro_export]
 macro_rules! map_opt (
@@ -395,7 +401,10 @@ macro_rules! map_opt_impl (
   );
 );
 
+/// `expr_res!(Result<E,O>) => I -> IResult<I, O>`
 /// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Ok
+///
+/// See expr_opt for an example
 #[macro_export]
 macro_rules! expr_res (
   ($i:expr, $e:expr) => (
@@ -408,7 +417,8 @@ macro_rules! expr_res (
   );
 );
 
-/// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Ok
+/// `expr_opt!(Option<O>) => I -> IResult<I, O>`
+/// evaluate an expression that returns a Option<T> and returns a IResult::Done(I,T) if Ok
 ///
 /// Useful when doing computations in a chain
 ///
@@ -449,6 +459,7 @@ macro_rules! expr_opt (
   );
 );
 
+/// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
 /// chains parsers and assemble the results through a closure
 ///
 /// ```
@@ -705,6 +716,7 @@ macro_rules! chaining_parser (
   )
 );
 
+/// `alt!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>`
 /// try a list of parser, return the result of the first successful one
 ///
 /// Incomplete results are ignored
@@ -791,6 +803,7 @@ macro_rules! alt_parser (
   );
 );
 
+/// `is_not!(&[T:AsBytes]) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes that do not appear in the provided array
 ///
 /// ```
@@ -836,6 +849,7 @@ macro_rules! is_not(
   );
 );
 
+/// `is_a!(&[T]) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes that appear in the provided array
 ///
 /// ```
@@ -884,8 +898,10 @@ macro_rules! is_a(
   );
 );
 
+/// `filter!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function fails.
-/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`
+///
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -926,9 +942,10 @@ macro_rules! filter(
   );
 );
 
+/// `opt!(I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// make the underlying parser optional
 ///
-/// returns an Option of the returned type
+/// returns an Option of the returned type. This parser never fails
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -958,6 +975,7 @@ macro_rules! opt(
   );
 );
 
+/// `opt_res!(I -> IResult<I,O>) => I -> IResult<I, Result<nom::Err,O>>`
 /// make the underlying parser optional
 ///
 /// returns a Result, with Err containing the parsing error
@@ -991,6 +1009,7 @@ macro_rules! opt_res (
   );
 );
 
+/// `cond!(bool, I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// Conditional combinator
 ///
 /// Wraps another parser and calls it if the
@@ -1042,6 +1061,7 @@ macro_rules! cond(
   );
 );
 
+/// `cond_reduce!(bool, I -> IResult<I,O>) => I -> IResult<I, O>`
 /// Conditional combinator with error
 ///
 /// Wraps another parser and calls it if the
@@ -1093,6 +1113,7 @@ macro_rules! cond_reduce(
   );
 );
 
+/// `peek!(I -> IResult<I,O>) => I -> IResult<I, O>`
 /// returns a result without consuming the input
 ///
 /// the embedded parser may return Incomplete
@@ -1123,6 +1144,7 @@ macro_rules! peek(
   );
 );
 
+/// `tap!(name: I -> IResult<I,O> => { block }) => I -> IResult<I, O>`
 /// allows access to the parser's result without affecting it
 ///
 /// ```
@@ -1156,7 +1178,9 @@ macro_rules! tap (
   );
 );
 
+/// `pair!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
 /// pair(X,Y), returns (x,y)
+///
 #[macro_export]
 macro_rules! pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -1190,6 +1214,7 @@ macro_rules! pair(
   );
 );
 
+/// `separated_pair!(I -> IResult<I,O>, I -> IResult<I, T>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
 /// separated_pair(X,sep,Y) returns (x,y)
 #[macro_export]
 macro_rules! separated_pair(
@@ -1249,6 +1274,7 @@ macro_rules! separated_pair2(
   );
 );
 
+/// `preceded!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, O>`
 /// preceded(opening, X) returns X
 #[macro_export]
 macro_rules! preceded(
@@ -1283,6 +1309,7 @@ macro_rules! preceded(
   );
 );
 
+/// `terminated!(I -> IResult<I,O>, I -> IResult<I,T>) => I -> IResult<I, O>`
 /// terminated(X, closing) returns X
 #[macro_export]
 macro_rules! terminated(
@@ -1317,6 +1344,7 @@ macro_rules! terminated(
   );
 );
 
+/// `delimited!(I -> IResult<I,T>, I -> IResult<I,O>, I -> IResult<I,U>) => I -> IResult<I, O>`
 /// delimited(opening, X, closing) returns X
 #[macro_export]
 macro_rules! delimited(
@@ -1376,6 +1404,7 @@ macro_rules! delimited2(
   );
 );
 
+/// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// separated_list(sep, X) returns Vec<X>
 #[macro_export]
 macro_rules! separated_list(
@@ -1442,6 +1471,7 @@ macro_rules! separated_list(
   );
 );
 
+/// `separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// separated_nonempty_list(sep, X) returns Vec<X>
 #[macro_export]
 macro_rules! separated_nonempty_list(
@@ -1508,6 +1538,7 @@ macro_rules! separated_nonempty_list(
   );
 );
 
+/// `many0!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// Applies the parser 0 or more times and returns the list of results in a Vec
 ///
 /// the embedded parser may return Incomplete
@@ -1557,6 +1588,7 @@ macro_rules! many0(
   );
 );
 
+/// `many1!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// Applies the parser 1 or more times and returns the list of results in a Vec
 ///
 /// the embedded parser may return Incomplete
@@ -1611,6 +1643,7 @@ macro_rules! many1(
   );
 );
 
+/// `count!(I -> IResult<I,O>, nb) => I -> IResult<I, Vec<O>>`
 /// Applies the child parser a specified number of times
 ///
 /// ```
@@ -1673,6 +1706,7 @@ macro_rules! count(
   );
 );
 
+/// `count_fixed!(I -> IResult<I,O>, nb) => I -> IResult<I, [O; nb]>`
 /// Applies the child parser a fixed number of times and returns a fixed size array
 ///
 /// ```
@@ -1743,6 +1777,7 @@ macro_rules! count_fixed(
   );
 );
 
+/// `take!(nb) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming the specified number of bytes
 ///
 /// ```
@@ -1771,12 +1806,14 @@ macro_rules! take(
   );
 );
 
+/// `take!(nb) => &[T] -> IResult<&[T], &str>`
 /// same as take! but returning a &str
 #[macro_export]
 macro_rules! take_str (
  ( $i:expr, $size:expr ) => ( map_res!($i, take!($size), from_utf8) );
 );
 
+/// `take_until_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming bytes until the specified byte sequence is found
 #[macro_export]
 macro_rules! take_until_and_consume(
@@ -1817,6 +1854,7 @@ macro_rules! take_until_and_consume(
   );
 );
 
+/// `take_until!(tag) => &[T] -> IResult<&[T], &[T]>`
 #[macro_export]
 macro_rules! take_until(
   ($i:expr, $inp:expr) => (
@@ -1856,6 +1894,7 @@ macro_rules! take_until(
   );
 );
 
+/// `take_until_either_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
 #[macro_export]
 macro_rules! take_until_either_and_consume(
   ($i:expr, $inp:expr) => (
@@ -1897,6 +1936,7 @@ macro_rules! take_until_either_and_consume(
   );
 );
 
+/// `take_until_either!(tag) => &[T] -> IResult<&[T], &[T]>`
 #[macro_export]
 macro_rules! take_until_either(
   ($i:expr, $inp:expr) => (
@@ -1938,6 +1978,7 @@ macro_rules! take_until_either(
   );
 );
 
+/// `length_value!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// gets a number from the first parser, then applies the second parser that many times
 #[macro_export]
 macro_rules! length_value(
