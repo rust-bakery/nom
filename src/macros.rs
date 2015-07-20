@@ -1038,6 +1038,37 @@ macro_rules! cond(
   );
 );
 
+/// Conditional combinator with error
+///
+/// Wraps another parser and calls it if the
+/// condition is met. This combinator returns
+/// an error if the condition is false
+///
+/// This is especially useful if a parser depends
+/// on the value return by a preceding parser in
+/// a `chain!`.
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error};
+/// # use nom::{Err,ErrorCode};
+/// # fn main() {
+///  let b = true;
+///  let f = closure!(&'static[u8],
+///    cond_reduce!( b, tag!("abcd") )
+///  );
+///
+///  let a = b"abcdef";
+///  assert_eq!(f(&a[..]), Done(&b"ef"[..], &b"abcd"[..]));
+///
+///  let b2 = false;
+///  let f2 = closure!(&'static[u8],
+///    cond_reduce!( b2, tag!("abcd") )
+///  );
+///  assert_eq!(f2(&a[..]), Error(Err::Position(ErrorCode::CondReduce as u32, &a[..])));
+///  # }
+/// ```
+///
 #[macro_export]
 macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
