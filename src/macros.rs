@@ -884,7 +884,8 @@ macro_rules! is_a(
   );
 );
 
-/// returns the longest list of bytes until the provided parser fails
+/// returns the longest list of bytes until the provided function fails.
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
