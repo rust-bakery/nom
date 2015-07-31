@@ -106,6 +106,7 @@ pub use self::util::*;
 pub use self::internal::*;//{IResult, IResultClosure, GetInput, GetOutput};
 pub use self::macros::*;
 pub use self::bytes::*;
+pub use self::bits::*;
 pub use self::accumulator::*;
 #[cfg(not(feature = "core"))]
 pub use self::producer::*;//{ProducerState,Producer,FileProducer,MemProducer};
@@ -118,6 +119,7 @@ pub use self::nom::*;
 mod internal;
 #[macro_use] mod macros;
 #[macro_use] mod bytes;
+#[macro_use] mod bits;
 #[macro_use] mod accumulator;
 
 #[macro_use]
