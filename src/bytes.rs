@@ -464,17 +464,15 @@ macro_rules! many1(
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
-      let mut begin = 0;
-      let mut remaining = $i.len();
-      let mut res = Vec::new();
+      let mut input      = $i;
+      let mut res        = Vec::new();
       let mut cnt: usize = 0;
-      let mut err = false;
+      let mut err        = false;
       loop {
-        match $submac!(&$i[begin..], $($args)*) {
+        match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o) => {
             res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
+            input = i;
             cnt = cnt + 1;
             if cnt == $count {
               break
@@ -492,7 +490,7 @@ macro_rules! count(
       if err {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Count as u32,$i))
       } else if cnt == $count {
-        $crate::IResult::Done(&$i[begin..], res)
+        $crate::IResult::Done(input, res)
       } else {
         $crate::IResult::Incomplete($crate::Needed::Unknown)
       }
@@ -529,17 +527,15 @@ macro_rules! count(
 macro_rules! count_fixed(
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
-      let mut begin = 0;
-      let mut remaining = $i.len();
+      let mut input = $i;
       let mut res: [$typ; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
       let mut cnt: usize = 0;
       let mut err = false;
       loop {
-        match $submac!(&$i[begin..], $($args)*) {
+        match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o) => {
             res[cnt] = o;
-            begin += remaining - i.len();
-            remaining = i.len();
+            input = i;
             cnt = cnt + 1;
             if cnt == $count {
               break
@@ -557,7 +553,7 @@ macro_rules! count_fixed(
       if err {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Count as u32,$i))
       } else if cnt == $count {
-        $crate::IResult::Done(&$i[begin..], res)
+        $crate::IResult::Done(input, res)
       } else {
         $crate::IResult::Incomplete($crate::Needed::Unknown)
       }
@@ -750,8 +746,7 @@ macro_rules! length_value(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,nb)   => {
           let length_token     = $i.len() - i1.len();
-          let mut begin        = 0;
-          let mut remaining    = i1.len();
+          let mut input        = i1;
           let mut res          = Vec::new();
           let mut err          = false;
           let mut inc          = $crate::Needed::Unknown;
@@ -760,12 +755,10 @@ macro_rules! length_value(
             if res.len() == nb as usize {
               break;
             }
-            match $g(&i1[begin..]) {
+            match $g(input) {
               $crate::IResult::Done(i2,o2) => {
-              res.push(o2);
-                let parsed  = remaining - i2.len();
-                begin      += parsed;
-                remaining   = i2.len();
+                res.push(o2);
+                input = i2;
               },
               $crate::IResult::Error(_)      => {
                 err = true;
@@ -784,7 +777,7 @@ macro_rules! length_value(
               $crate::Needed::Size(length) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + nb as usize * length))
             }
           } else {
-            $crate::IResult::Done(&i1[begin..], res)
+            $crate::IResult::Done(input, res)
           }
 
         }
@@ -798,8 +791,7 @@ macro_rules! length_value(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,nb)   => {
           let length_token     = $i.len() - i1.len();
-          let mut begin        = 0;
-          let mut remaining    = i1.len();
+          let mut input        = i1;
           let mut res          = Vec::new();
           let mut err          = false;
           let mut inc          = $crate::Needed::Unknown;
@@ -808,12 +800,10 @@ macro_rules! length_value(
             if res.len() == nb as usize {
               break;
             }
-            match $g(&i1[begin..]) {
+            match $g(input) {
               $crate::IResult::Done(i2,o2) => {
-              res.push(o2);
-                let parsed  = remaining - i2.len();
-                begin      += parsed;
-                remaining   = i2.len();
+                res.push(o2);
+                input = i2;
               },
               $crate::IResult::Error(_)      => {
                 err = true;
@@ -832,7 +822,7 @@ macro_rules! length_value(
               $crate::Needed::Size(_) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + nb as usize * $length))
             }
           } else {
-            $crate::IResult::Done(&i1[begin..], res)
+            $crate::IResult::Done(input, res)
           }
 
         }
