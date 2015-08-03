@@ -4,6 +4,18 @@
 
 ### Changed
 
+## 0.3.10 - 2015-08-03
+
+### Added
+
+- `bits!` for bit level parsing. It indicates that all child parsers will take a `(&[u8], usize)`as input, with the second parameter indicating the bit offset in the first byte. This allows viewing a byte slice as a bit stream. Most combinators can be used directly under `bits!`
+- `take_bits!` takes an integer type and a number of bits, consumes that number of bits and updates the offset, possibly by crossing byte boundaries
+- bit level parsers are all written in `src/bits.rs`
+
+### Changed
+
+- Parsers that specifically handle bytes have been moved to src/bytes.rs`. This applies to `tag!`, `is_not!`, `is_a!`, `filter!`, `take!`, `take_str!`, `take_until_and_consume!`, `take_until!`, `take_until_either_and_consume!`, `take_until_either!`
+
 ## 0.3.9 - 2015-07-20
 
 ### Thanks
@@ -251,8 +263,9 @@
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/0.3.9...HEAD
-* [0.3.9]: https://github.com/Geal/nom/compare/0.3.8...0.3.9
+* [unreleased]: https://github.com/Geal/nom/compare/0.3.10...HEAD
+* [0.3.10]: https://github.com/geal/nom/compare/0.3.9...0.3.10
+* [0.3.9]: https://github.com/geal/nom/compare/0.3.8...0.3.9
 * [0.3.8]: https://github.com/Geal/nom/compare/0.3.7...0.3.8
 * [0.3.7]: https://github.com/Geal/nom/compare/0.3.6...0.3.7
 * [0.3.6]: https://github.com/Geal/nom/compare/0.3.5...0.3.6

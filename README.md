@@ -12,7 +12,8 @@ This work is currently experimental, the API and syntax may still change a lot, 
 ## Features
 
 Here are the current and planned features, with their status:
-- [x] **byte oriented**: the basic type is `&[u8]` and parsers will work as much as possible on byte array slices
+- [x] **byte oriented**: the basic type is `&[u8]` and parsers will work as much as possible on byte array slices (but are not limited to them)
+- [x] **bit oriented**: nom can address a byte slice as a bit stream
 - [x] **zero copy**:
   - [x] **in the parsers**: a parsing chain will almost always return a slice of its input data
   - [x] **in the producers and consumers**: some copying still happens
