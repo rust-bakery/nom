@@ -219,51 +219,47 @@ macro_rules! take_str (
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut begin = 0;
-      let mut remaining = $i.len();
-      let mut res = Vec::new();
+      let mut res   = Vec::new();
+      let mut input = $i;
 
       // get the first element
-      match $submac!($i, $($args2)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, Vec::new()),
+      match $submac!(input, $($args2)*) {
+        $crate::IResult::Error(_)      => $crate::IResult::Done(input, Vec::new()),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
-          if i.len() == $i.len() {
-            $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::SeparatedList as u32,$i))
+          if i.len() == input.len() {
+            $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::SeparatedList as u32,input))
           } else {
             res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
+            input = i;
 
             loop {
               // get the separator first
-              match $sep!(&$i[begin..], $($args)*) {
+              match $sep!(input, $($args)*) {
                 $crate::IResult::Error(_)      => break,
                 $crate::IResult::Incomplete(_) => break,
                 $crate::IResult::Done(i2,_)    => {
-                  if i2.len() == (&$i[begin..]).len() {
+                  if i2.len() == input.len() {
                     break;
                   }
-                  begin += remaining - i2.len();
-                  remaining = i2.len();
+                  input = i2;
 
                   // get the element next
-                  match $submac!(&$i[begin..], $($args2)*) {
+                  match $submac!(input, $($args2)*) {
                     $crate::IResult::Error(_)      => break,
                     $crate::IResult::Incomplete(_) => break,
                     $crate::IResult::Done(i3,o3)   => {
-                      if i3.len() == $i[begin..].len() {
+                      if i3.len() == input.len() {
                         break;
                       }
                       res.push(o3);
-                      begin += remaining - i3.len();
-                      remaining = i3.len();
+                      input = i3;
                     },
                   }
                 }
               }
             }
-            $crate::IResult::Done(&$i[begin..], res)
+            $crate::IResult::Done(input, res)
           }
         },
       }
