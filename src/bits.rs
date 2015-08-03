@@ -31,19 +31,20 @@ macro_rules! bits_impl (
   );
 );
 
-/// `take!(nb) => &[T] -> IResult<&[T], &[T]>`
+/// `take_bits!(type, nb) => ( (&[T], usize), U, usize) -> IResult<(&[T], usize), U>`
 /// generates a parser consuming the specified number of bytes
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
 /// # fn main() {
-///  // Desmond parser
-///  named!(take5, take!( 5 ) );
+///  named!( take_pair<(u8, u8)>, bits!( pair!( take_bits!( u8, 3 ), take_bits!(u8, 5) ) ) );
 ///
-///  let a = b"abcdefgh";
+///  let input = vec![0b10101010, 0b11110000, 0b00110011];
+///  let sl    = &input[..];
 ///
-///  assert_eq!(take5(&a[..]), Done(&b"fgh"[..], &b"abcde"[..]));
+///  assert_eq!(take_pair( sl ),       Done(&sl[1..], (5, 10)) );
+///  assert_eq!(take_pair( &sl[1..] ), Done(&sl[2..], (7, 16)) );
 /// # }
 /// ```
 #[macro_export]
