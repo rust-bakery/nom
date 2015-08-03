@@ -371,25 +371,23 @@ macro_rules! separated_nonempty_list(
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let mut begin = 0;
-      let mut remaining = $i.len();
-      let mut res = Vec::new();
+      let mut res   = Vec::new();
+      let mut input = $i;
       loop {
-        match $submac!(&$i[begin..], $($args)*) {
+        match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o) => {
-            if i.len() == $i[begin..].len() {
+            if i.len() == input.len() {
               break;
             }
             res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
+            input = i;
           },
           _                          => {
             break;
           }
         }
       }
-      $crate::IResult::Done(&$i[begin..], res)
+      $crate::IResult::Done(input, res)
     }
   );
   ($i:expr, $f:expr) => (
@@ -422,20 +420,18 @@ macro_rules! many0(
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let mut begin = 0;
-      let mut remaining = $i.len();
-      let mut res = Vec::new();
+      let mut res   = Vec::new();
+      let mut input = $i;
       loop {
-        match $submac!(&$i[begin..], $($args)*) {
+        match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o) => {
-            if i.len() == $i[begin..].len() {
+            if i.len() == input.len() {
               break;
             }
             res.push(o);
-            begin += remaining - i.len();
-            remaining = i.len();
+            input = i;
           },
-          _                  => {
+          _                          => {
             break;
           }
         }
@@ -443,7 +439,7 @@ macro_rules! many1(
       if res.len() == 0 {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Many1 as u32,$i))
       } else {
-        $crate::IResult::Done(&$i[begin..], res)
+        $crate::IResult::Done(input, res)
       }
     }
   );
