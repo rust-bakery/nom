@@ -1278,28 +1278,24 @@ macro_rules! separated_list(
 
             loop {
               // get the separator first
-              match $sep!(input, $($args)*) {
-                $crate::IResult::Error(_)      => break,
-                $crate::IResult::Incomplete(_) => break,
-                $crate::IResult::Done(i2,_)    => {
-                  if i2.len() == input.len() {
+              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
+                if i2.len() == input.len() {
+                  break;
+                }
+                input = i2;
+
+                // get the element next
+                if let $crate::IResult::Done(i3,o3) = $submac!(input, $($args2)*) {
+                  if i3.len() == input.len() {
                     break;
                   }
-                  input = i2;
-
-                  // get the element next
-                  match $submac!(input, $($args2)*) {
-                    $crate::IResult::Error(_)      => break,
-                    $crate::IResult::Incomplete(_) => break,
-                    $crate::IResult::Done(i3,o3)   => {
-                      if i3.len() == input.len() {
-                        break;
-                      }
-                      res.push(o3);
-                      input = i3;
-                    },
-                  }
+                  res.push(o3);
+                  input = i3;
+                } else {
+                  break;
                 }
+              } else {
+                break;
               }
             }
             $crate::IResult::Done(input, res)
@@ -1340,29 +1336,23 @@ macro_rules! separated_nonempty_list(
             input = i;
 
             loop {
-              // get the separator first
-              match $sep!(input, $($args)*) {
-                $crate::IResult::Error(_)      => break,
-                $crate::IResult::Incomplete(_) => break,
-                $crate::IResult::Done(i2,_)    => {
-                  if i2.len() == input.len() {
+              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
+                if i2.len() == input.len() {
+                  break;
+                }
+                input = i2;
+
+                if let $crate::IResult::Done(i3,o3) = $submac!(input, $($args2)*) {
+                  if i3.len() == input.len() {
                     break;
                   }
-                  input = i2;
-
-                  // get the element next
-                  match $submac!(input, $($args2)*) {
-                    $crate::IResult::Error(_)      => break,
-                    $crate::IResult::Incomplete(_) => break,
-                    $crate::IResult::Done(i3,o3)   => {
-                      if i3.len() == input.len() {
-                        break;
-                      }
-                      res.push(o3);
-                      input = i3;
-                    },
-                  }
+                  res.push(o3);
+                  input = i3;
+                } else {
+                  break;
                 }
+              } else {
+                break;
               }
             }
             $crate::IResult::Done(input, res)
@@ -1409,17 +1399,14 @@ macro_rules! many0(
       let mut res   = Vec::new();
       let mut input = $i;
       loop {
-        match $submac!(input, $($args)*) {
-          $crate::IResult::Done(i,o) => {
-            if i.len() == input.len() {
-              break;
-            }
-            res.push(o);
-            input = i;
-          },
-          _                          => {
+        if let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
+          if i.len() == input.len() {
             break;
           }
+          res.push(o);
+          input = i;
+        } else {
+          break;
         }
       }
       $crate::IResult::Done(input, res)
@@ -1458,17 +1445,14 @@ macro_rules! many1(
       let mut res   = Vec::new();
       let mut input = $i;
       loop {
-        match $submac!(input, $($args)*) {
-          $crate::IResult::Done(i,o) => {
-            if i.len() == input.len() {
-              break;
-            }
-            res.push(o);
-            input = i;
-          },
-          _                          => {
+        if let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
+          if i.len() == input.len() {
             break;
           }
+          res.push(o);
+          input = i;
+        } else {
+          break;
         }
       }
       if res.len() == 0 {
