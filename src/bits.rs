@@ -5,10 +5,10 @@
 #[macro_export]
 macro_rules! bits (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    bit_impl!($i, $submac!($($args)*));
+    bits_impl!($i, $submac!($($args)*));
   );
   ($i:expr, $f:expr, $g:expr) => (
-    bit_impl!($i, call!($f));
+    bits_impl!($i, call!($f));
   );
 );
 
@@ -16,7 +16,8 @@ macro_rules! bits (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $submac!( ($i, 0usize), $($args)*) {
+      let input = ($i, 0usize);
+      match $submac!( input, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
@@ -47,18 +48,19 @@ macro_rules! bits_impl (
 /// ```
 #[macro_export]
 macro_rules! take_bits (
-  (($i:expr, $bit_offset:expr), $t:ty, $count:expr) => (
+  ($i:expr, $t:ty, $count:expr) => (
     {
       use std::ops::Div;
+      let (input, bit_offset) = $i;
       if $count == 0 {
-        $crate::IResult::Done( ($i, $bit_offset) , 0)
+        $crate::IResult::Done( (input, bit_offset), 0)
       } else {
-        let cnt = ($count as usize + $bit_offset).div(8);
-        if $i.len() * 8 < $count as usize + $bit_offset {
+        let cnt = ($count as usize + bit_offset).div(8);
+        if input.len() * 8 < $count as usize + bit_offset {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt+1))
         } else {
           let mut acc:$t            = 0;
-          let mut offset: usize     = $bit_offset;
+          let mut offset: usize     = bit_offset;
           let mut remaining: usize  = $count;
           let mut end_offset: usize = 0;
 
@@ -67,9 +69,9 @@ macro_rules! take_bits (
               break;
             }
             let val: $t = if offset == 0 {
-              $i[it] as $t
+              input[it] as $t
             } else {
-              (($i[it] << offset) as u8 >> offset) as $t
+              ((input[it] << offset) as u8 >> offset) as $t
             };
 
             if remaining < 8 - offset {
@@ -82,7 +84,7 @@ macro_rules! take_bits (
               offset = 0;
             }
           }
-          $crate::IResult::Done( (&$i[cnt..], end_offset) , acc)
+          $crate::IResult::Done( (&input[cnt..], end_offset) , acc)
         }
       }
     }
