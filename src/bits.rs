@@ -1,7 +1,31 @@
 //! Bit level parsers and combinators
 //!
+//! Bit parsing is handled by tweaking the input in most macros.
+//! In byte level parsing, the input is generally a `&[u8]` passed from combinator
+//! to combinator until the slices are manipulated.
 //!
+//! Bit parsers take a `(&[u8], usize)` as input. The first part of the tuple is an byte slice,
+//! the second part is a bit offset in the first byte of the slice.
+//!
+//! By passing a pair like this, we can leverage most of the combinators, and avoid
+//! transforming the whole slice to a vector of booleans. This should make it easy
+//! to see a byte slice as a bit stream, and parse code points of arbitrary bit length.
 
+
+/// `bits!( parser ) => ( &[u8], (&[u8], usize) -> IResult<(&[u8], usize), T> ) -> IResult<&[u8], T>`
+/// transforms its byte slice input in a bit stream for the underlying parsers
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!( take_3_bits<u8>, bits!( take_bits!( u8, 3 ) ) );
+///
+///  let input = vec![0b10101010, 0b11110000, 0b00110011];
+///  let sl    = &input[..];
+///
+///  assert_eq!(take_3_bits( sl ), Done(&sl[1..], 5) );
+/// # }
 #[macro_export]
 macro_rules! bits (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -104,6 +128,7 @@ mod tests {
     assert_eq!(take_bits!( (sl, 0), u8,   0 ), IResult::Done((sl, 0), 0));
     assert_eq!(take_bits!( (sl, 0), u8,   8 ), IResult::Done((&sl[1..], 0), 170));
     assert_eq!(take_bits!( (sl, 0), u8,   3 ), IResult::Done((&sl[0..], 3), 5));
+    assert_eq!(take_bits!( (sl, 0), u8,   6 ), IResult::Done((&sl[0..], 6), 42));
     assert_eq!(take_bits!( (sl, 1), u8,   1 ), IResult::Done((&sl[0..], 2), 0));
     assert_eq!(take_bits!( (sl, 1), u8,   2 ), IResult::Done((&sl[0..], 3), 1));
     assert_eq!(take_bits!( (sl, 1), u8,   3 ), IResult::Done((&sl[0..], 4), 2));
