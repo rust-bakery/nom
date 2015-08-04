@@ -1,2 +1,11 @@
 target/*
 Cargo.lock
+FullRecognition.jpg
+bigbuckbunny.mp4
+map.rs
+oldsrc/
+realworld/
+small.mp4
+src/generator.rs
+.DS_Store
+docs/
