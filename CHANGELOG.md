@@ -4,6 +4,14 @@
 
 ### Changed
 
+## 0.3.11 - 2015-08-04
+
+### Thanks
+- @bluss for remarking that the crate included random junk lying non commited in my local repository
+
+### Fixed
+- cleanup of my local repository will ship less files in the crates, resulting in a smaller download
+
 ## 0.3.10 - 2015-08-03
 
 ### Added
