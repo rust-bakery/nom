@@ -214,7 +214,7 @@ macro_rules! take_str (
 );
 
 /// `take_until_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
-/// generates a parser consuming bytes until the specified byte sequence is found
+/// generates a parser consuming bytes until the specified byte sequence is found, and consumes it
 #[macro_export]
 macro_rules! take_until_and_consume(
   ($i:expr, $inp:expr) => (
@@ -226,24 +226,24 @@ macro_rules! take_until_and_consume(
 
       let expected   = $inp;
       let bytes      = as_bytes(&expected);
-      let mut index  = 0;
-      let mut parsed = false;
-
-      for idx in 0..$i.len() {
-        if idx + bytes.len() > $i.len() {
-          index = idx;
-          break;
-        }
-        if &$i[idx..idx + bytes.len()] == bytes {
-          parsed = true;
-          index = idx;
-          break;
-        }
-      }
-
-      if index + bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(index + bytes.len()))
+      if bytes.len() > $i.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
       } else {
+        let mut index  = 0;
+        let mut parsed = false;
+
+        for idx in 0..$i.len() {
+          if idx + bytes.len() > $i.len() {
+            index = idx;
+            break;
+          }
+          if &$i[idx..idx + bytes.len()] == bytes {
+            parsed = true;
+            index = idx;
+            break;
+          }
+        }
+
         if parsed {
           $crate::IResult::Done(&$i[(index + bytes.len())..], &$i[0..index])
         } else {
@@ -255,6 +255,7 @@ macro_rules! take_until_and_consume(
 );
 
 /// `take_until!(tag) => &[T] -> IResult<&[T], &[T]>`
+/// consumes data until it finds the specified tag
 #[macro_export]
 macro_rules! take_until(
   ($i:expr, $inp:expr) => (
@@ -266,24 +267,24 @@ macro_rules! take_until(
 
       let expected   = $inp;
       let bytes      = as_bytes(&expected);
-      let mut index  = 0;
-      let mut parsed = false;
-
-      for idx in 0..$i.len() {
-        if idx + bytes.len() > $i.len() {
-          index = idx;
-          break;
-        }
-        if &$i[idx..idx+bytes.len()] == bytes {
-          parsed = true;
-          index  = idx;
-          break;
-        }
-      }
-
-      if index + bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(index + bytes.len()))
+      if bytes.len() > $i.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
       } else {
+        let mut index  = 0;
+        let mut parsed = false;
+
+        for idx in 0..$i.len() {
+          if idx + bytes.len() > $i.len() {
+            index = idx;
+            break;
+          }
+          if &$i[idx..idx+bytes.len()] == bytes {
+            parsed = true;
+            index  = idx;
+            break;
+          }
+        }
+
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
         } else {
@@ -295,6 +296,7 @@ macro_rules! take_until(
 );
 
 /// `take_until_either_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
+/// consumes data until it finds any of the specified characters, and consume it
 #[macro_export]
 macro_rules! take_until_either_and_consume(
   ($i:expr, $inp:expr) => (
@@ -306,26 +308,27 @@ macro_rules! take_until_either_and_consume(
 
       let expected   = $inp;
       let bytes      = as_bytes(&expected);
-      let mut index  = 0;
-      let mut parsed = false;
+      if 1 > $i.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size(1))
+      } else {
+        let mut index  = 0;
+        let mut parsed = false;
 
-      for idx in 0..$i.len() {
-        if idx + 1 > $i.len() {
-          index = idx;
-          break;
-        }
-        for &t in bytes.iter() {
-          if $i[idx] == t {
-            parsed = true;
+        for idx in 0..$i.len() {
+          if idx + 1 > $i.len() {
             index = idx;
             break;
           }
+          for &t in bytes.iter() {
+            if $i[idx] == t {
+              parsed = true;
+              index = idx;
+              break;
+            }
+          }
+          if parsed { break; }
         }
-        if parsed { break; }
-      }
-      if index + 1 > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(index + 1))
-      } else {
+
         if parsed {
           $crate::IResult::Done(&$i[(index+1)..], &$i[0..index])
         } else {
@@ -348,26 +351,27 @@ macro_rules! take_until_either(
 
       let expected   = $inp;
       let bytes      = as_bytes(&expected);
-      let mut index  = 0;
-      let mut parsed = false;
+      if 1 > $i.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size(1))
+      } else {
+        let mut index  = 0;
+        let mut parsed = false;
 
-      for idx in 0..$i.len() {
-        if idx + 1 > $i.len() {
-          index = idx;
-          break;
-        }
-        for &t in bytes.iter() {
-          if $i[idx] == t {
-            parsed = true;
+        for idx in 0..$i.len() {
+          if idx + 1 > $i.len() {
             index = idx;
             break;
           }
+          for &t in bytes.iter() {
+            if $i[idx] == t {
+              parsed = true;
+              index = idx;
+              break;
+            }
+          }
+          if parsed { break; }
         }
-        if parsed { break; }
-      }
-      if index + 1 > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(index + 1))
-      } else {
+
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
         } else {
@@ -424,7 +428,33 @@ mod tests {
 
     println!("Done 2\n");
     let r3 = x(&b"abcefg"[..]);
-    assert_eq!(r3, Incomplete(Needed::Size(7)));
+    assert_eq!(r3,  Error(Position(ErrorCode::TakeUntilAndConsume as u32, &b"abcefg"[..])));
+
+    assert_eq!(
+      x(&b"ab"[..]),
+      Incomplete(Needed::Size(4))
+    );
   }
 
+  #[test]
+  fn take_until_either_incomplete() {
+    named!(x, take_until_either!("!."));
+    assert_eq!(
+      x(&b"123"[..]),
+      Error(Position(ErrorCode::TakeUntilEither as u32, &b"123"[..]))
+    );
+  }
+
+  #[test]
+  fn take_until_incomplete() {
+    named!(y, take_until!("end"));
+    assert_eq!(
+      y(&b"nd"[..]),
+      Incomplete(Needed::Size(3))
+    );
+    assert_eq!(
+      y(&b"123"[..]),
+      Error(Position(ErrorCode::TakeUntil as u32, &b"123"[..]))
+    );
+  }
 }
