@@ -1528,8 +1528,9 @@ macro_rules! count(
   );
 );
 
-/// `count_fixed!(I -> IResult<I,O>, nb) => I -> IResult<I, [O; nb]>`
+/// `count_fixed!(O, I -> IResult<I,O>, nb) => I -> IResult<I, [O; nb]>`
 /// Applies the child parser a fixed number of times and returns a fixed size array
+/// The type must be specified
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -1551,7 +1552,7 @@ macro_rules! count(
 /// ```
 ///
 #[macro_export]
-macro_rules! count_fixed(
+macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let mut input = $i;
@@ -1588,12 +1589,6 @@ macro_rules! count_fixed(
   );
   ($i:expr, $typ: ty, $f:ident, $count: expr) => (
     count_fixed!($i, $typ, call!($f), $count);
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
-    count_fixed!($i, &[u8], $submac!($($args)*), $count);
-  );
-  ($i:expr, $f:ident, $count: expr) => (
-    count_fixed!($i, &[u8], call!($f), $count);
   );
 );
 
@@ -2189,7 +2184,7 @@ mod tests {
 
   #[test]
   fn count_fixed_no_type() {
-    named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), 2 ) );
+    named!(counter< [&[u8]; 2] >, count_fixed!( &[u8], tag!( "abcd" ), 2 ) );
 
     let a = b"abcdabcdabcdef";
     let b = b"abcdefgh";
