@@ -184,9 +184,26 @@ impl<'x> Producer for MemProducer<'x> {
           }
         }
       },
-      SeekFrom::End(_) => {
-        //FIXME: to implement
-        panic!("SeekFrom::End not implemented");
+      SeekFrom::End(i) => {
+          let next = if i < 0 {
+              (self.length as u64).checked_sub(-i as u64)
+          } else {
+              // std::io::SeekFrom documentation explicitly allows
+              // seeking beyond the end of the stream, so we seek
+              // to the end of the content if the offset is 0 or
+              // greater.
+              Some(self.length as u64)
+          };
+          match next {
+              // std::io:SeekFrom documentation states that it `is an
+              // error to seek before byte 0.' So it's the sensible
+              // thing to refuse to seek on underflow.
+              None => None,
+              Some(u) => {
+                  self.index = u as usize;
+                  Some(u)
+              }
+          }
       }
     }
   }
