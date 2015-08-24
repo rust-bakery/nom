@@ -818,7 +818,7 @@ macro_rules! opt(
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, Some(o)),
         $crate::IResult::Error(_)      => $crate::IResult::Done($i, None),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+        $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, None)
       }
     }
   );
