@@ -497,19 +497,14 @@ macro_rules! chaining_parser (
     chaining_parser!($i, call!($e) ? ~ $($rest)*);
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
-    match  $submac!($i, $($args)*) {
-      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-      res                            => {
-        let input = if let $crate::IResult::Done(i,_) = res {
-          i
-        } else {
-          $i
-        };
-        chaining_parser!(input, $($rest)*)
-      }
-    }
-  );
+  ($i:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+    let input = if let $crate::IResult::Done(i,_) = $submac!($i, $($args)*) {
+      i
+    } else {
+      $i
+    };
+    chaining_parser!(input, $($rest)*)
+  });
 
   ($i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     chaining_parser!($i, $field: call!($e) ~ $($rest)*);
@@ -545,37 +540,27 @@ macro_rules! chaining_parser (
     chaining_parser!($i, $field : call!($e) ? ~ $($rest)*);
   );
 
-  ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
-    match  $submac!($i, $($args)*) {
-      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-      res                            => {
-        let ($field, input) = if let $crate::IResult::Done(i,o) = res {
-          (Some(o), i)
-        } else {
-          (None, $i)
-        };
-        chaining_parser!(input, $($rest)*)
-      }
-    }
-  );
+  ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+    let ($field, input) = if let $crate::IResult::Done(i,o) = $submac!($i, $($args)*) {
+      (Some(o), i)
+    } else {
+      (None, $i)
+    };
+    chaining_parser!(input, $($rest)*)
+  });
 
   ($i:expr, mut $field:ident : $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, mut $field : call!($e) ? ~ $($rest)*);
   );
 
-  ($i:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
-    match  $submac!($i, $($args)*) {
-      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-      res                            => {
-        let (mut $field, input) = if let $crate::IResult::Done(i,o) = res {
-          (Some(o), i)
-        } else {
-          (None, $i)
-        };
-        chaining_parser!(input, $($rest)*)
-      }
-    }
-  );
+  ($i:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+    let (mut $field, input) = if let $crate::IResult::Done(i,o) = $submac!($i, $($args)*) {
+      (Some(o), i)
+    } else {
+      (None, $i)
+    };
+    chaining_parser!(input, $($rest)*)
+  });
 
   // ending the chain
   ($i:expr, $e:ident, $assemble:expr) => (
@@ -596,19 +581,14 @@ macro_rules! chaining_parser (
     chaining_parser!($i, call!($e) ?, $assemble);
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)* ) ?, $assemble:expr) => (
-    match $submac!($i, $($args)*) {
-      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-      res                            => {
-        let input = if let $crate::IResult::Done(i,_) = res {
-          i
-        } else {
-          $i
-        };
-        $crate::IResult::Done(input, $assemble())
-      }
-    }
-  );
+  ($i:expr, $submac:ident!( $($args:tt)* ) ?, $assemble:expr) => ({
+    let input = if let $crate::IResult::Done(i,_) = $submac!($i, $($args)*) {
+      i
+    } else {
+      $i
+    };
+    $crate::IResult::Done(input, $assemble())
+  });
 
   ($i:expr, $field:ident : $e:ident, $assemble:expr) => (
     chaining_parser!($i, $field: call!($e), $assemble);
@@ -646,8 +626,7 @@ macro_rules! chaining_parser (
 
   ($i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => (
     match $submac!($i, $($args)*)  {
-      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-      $crate::IResult::Error(_)      => {
+      $crate::IResult::Incomplete(_) | $crate::IResult::Error(_) => {
         let $field = None;
         $crate::IResult::Done($i, $assemble())
       },
@@ -664,8 +643,7 @@ macro_rules! chaining_parser (
 
   ($i:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => (
     match $submac!($i, $($args)*)  {
-      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-      $crate::IResult::Error(_)      => {
+      $crate::IResult::Incomplete(_) | $crate::IResult::Error(_) => {
         let mut $field = None;
         $crate::IResult::Done($i, $assemble())
       },
@@ -1845,7 +1823,7 @@ mod tests {
     assert_eq!(r2, Done(&b"WXYZ"[..], C{a: 1, b: None}));
 
     let r3 = f(&b"abcdX"[..]);
-    assert_eq!(r3, Incomplete(Needed::Size(4)));
+    assert_eq!(r3, Done(&b"X"[..], C{a: 1, b: None}));
   }
 
   use util::{error_to_list, add_error_pattern, print_error};
