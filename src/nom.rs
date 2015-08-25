@@ -362,6 +362,11 @@ pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
     }
 }
 
+/// Return the remaining input.
+pub fn rest(i: &[u8]) -> IResult<&[u8], &[u8]> {
+	IResult::Done(b"", i)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
