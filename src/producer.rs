@@ -391,6 +391,7 @@ mod tests {
   use super::*;
   use internal::{Needed,IResult};
   use std::fmt::Debug;
+  use std::io::SeekFrom;
 
   fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
     println!("{:?}", input);
@@ -416,6 +417,36 @@ mod tests {
     //p.push(|par| {iterations = iterations + 1; par.flat_map(print)});
     //assert_eq!(iterations, 3);
   }
+
+
+  #[test]
+  fn mem_producer_seek_from_end() {
+      let mut p = MemProducer::new(&b"abcdefg"[..], 1);
+      p.seek(SeekFrom::End(-4));
+      assert_eq!(p.produce(), ProducerState::Data(&b"d"[..]));
+  }
+
+  #[test]
+  fn mem_producer_seek_beyond_end() {
+      let mut p = MemProducer::new(&b"abcdefg"[..], 1);
+      p.seek(SeekFrom::End(1));
+      assert_eq!(p.produce(), ProducerState::Eof(&b""[..]));
+  }
+
+  #[test]
+  fn mem_producer_seek_before_start() {
+      let mut p = MemProducer::new(&b"abcdefg"[..], 1);
+      // Let's seek a bit forward in the input to ensure that
+      // we don't just seek to the start when we do an
+      // invalid seek operation.
+      p.seek(SeekFrom::Start(1));
+      let seek_result = p.seek(SeekFrom::End(-8));
+      // It shouldn't do any seeking
+      assert_eq!(seek_result, None);
+      // And the position should still be at the second byte
+      assert_eq!(p.produce(), ProducerState::Data(&b"b"[..]));
+  }
+
 
   #[test]
   #[allow(unused_must_use)]
