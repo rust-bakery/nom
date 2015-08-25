@@ -184,9 +184,26 @@ impl<'x> Producer for MemProducer<'x> {
           }
         }
       },
-      SeekFrom::End(_) => {
-        //FIXME: to implement
-        panic!("SeekFrom::End not implemented");
+      SeekFrom::End(i) => {
+          let next = if i < 0 {
+              (self.length as u64).checked_sub(-i as u64)
+          } else {
+              // std::io::SeekFrom documentation explicitly allows
+              // seeking beyond the end of the stream, so we seek
+              // to the end of the content if the offset is 0 or
+              // greater.
+              Some(self.length as u64)
+          };
+          match next {
+              // std::io:SeekFrom documentation states that it `is an
+              // error to seek before byte 0.' So it's the sensible
+              // thing to refuse to seek on underflow.
+              None => None,
+              Some(u) => {
+                  self.index = u as usize;
+                  Some(u)
+              }
+          }
       }
     }
   }
@@ -374,6 +391,7 @@ mod tests {
   use super::*;
   use internal::{Needed,IResult};
   use std::fmt::Debug;
+  use std::io::SeekFrom;
 
   fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
     println!("{:?}", input);
@@ -399,6 +417,36 @@ mod tests {
     //p.push(|par| {iterations = iterations + 1; par.flat_map(print)});
     //assert_eq!(iterations, 3);
   }
+
+
+  #[test]
+  fn mem_producer_seek_from_end() {
+      let mut p = MemProducer::new(&b"abcdefg"[..], 1);
+      p.seek(SeekFrom::End(-4));
+      assert_eq!(p.produce(), ProducerState::Data(&b"d"[..]));
+  }
+
+  #[test]
+  fn mem_producer_seek_beyond_end() {
+      let mut p = MemProducer::new(&b"abcdefg"[..], 1);
+      p.seek(SeekFrom::End(1));
+      assert_eq!(p.produce(), ProducerState::Eof(&b""[..]));
+  }
+
+  #[test]
+  fn mem_producer_seek_before_start() {
+      let mut p = MemProducer::new(&b"abcdefg"[..], 1);
+      // Let's seek a bit forward in the input to ensure that
+      // we don't just seek to the start when we do an
+      // invalid seek operation.
+      p.seek(SeekFrom::Start(1));
+      let seek_result = p.seek(SeekFrom::End(-8));
+      // It shouldn't do any seeking
+      assert_eq!(seek_result, None);
+      // And the position should still be at the second byte
+      assert_eq!(p.produce(), ProducerState::Data(&b"b"[..]));
+  }
+
 
   #[test]
   #[allow(unused_must_use)]
