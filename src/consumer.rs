@@ -128,6 +128,7 @@ pub trait Consumer {
           let _ = producer.seek(seek_from);
           //println!("seeking: {:?}", pos);
           should_seek = false;
+          eof = false;
           acc.clear();
         } else {
           let mut tmp = Vec::new();
@@ -200,7 +201,7 @@ pub trait Consumer {
         self.failed(e);
         break;
       }
-      if eof {
+      if eof && !should_seek {
         self.end();
         break;
       }
@@ -219,6 +220,7 @@ mod tests {
   use producer::MemProducer;
   use internal::{Needed,IResult};
   use std::str;
+  use std::io::SeekFrom;
 
 #[macro_export]
 macro_rules! take(
@@ -280,5 +282,84 @@ macro_rules! take(
     c.run(&mut p);
 
     assert!(c.ended);
+  }
+
+  #[derive(Debug,PartialEq,Eq,Clone,Copy)]
+  enum TestSeekState {
+      Start,
+      ToEnd,
+      ToStart,
+      Further
+  }
+
+  #[derive(Debug)]
+  struct TestSeekConsumer {
+      state: TestSeekState,
+      result: [u8;3],
+      ended: bool
+  }
+
+  impl TestSeekConsumer {
+
+      fn new() -> TestSeekConsumer {
+          TestSeekConsumer { state: TestSeekState::Start,
+                            result: [0x00, 0x00, 0x00],
+                             ended: false
+           }
+      }
+      fn result(&self) -> [u8;3] {
+          self.result
+      }
+
+      fn ended(&self) -> bool {
+          self.ended
+      }
+  }
+
+  impl Consumer for TestSeekConsumer {
+
+    fn consume(&mut self, input: &[u8]) -> ConsumerState {
+        let s = self.state;
+        match s {
+            TestSeekState::Start => {
+                self.state = TestSeekState::ToEnd;
+                ConsumerState::Seek(0,SeekFrom::End(-1), 1)
+            },
+            TestSeekState::ToEnd => {
+                self.state = TestSeekState::ToStart;
+                self.result[0] = input[0];
+                ConsumerState::Seek(1,SeekFrom::Start(0), 1)
+            },
+            TestSeekState::ToStart => {
+                self.state = TestSeekState::Further;
+                self.result[1] = input[0];
+                ConsumerState::Await(1,1)
+            }
+            TestSeekState::Further => {
+                self.result[2] = input[0];
+                ConsumerState::ConsumerDone
+            }
+
+        }
+    }
+
+    fn end(&mut self) {
+      assert_eq!(self.state, TestSeekState::Further);
+      self.ended = true;
+    }
+
+    fn failed(&mut self, error_code: u32) {
+      println!("failed with error code: {}", error_code);
+    }
+  }
+
+  #[test]
+  fn seeking() {
+    let mut p = MemProducer::new(&b"abc"[..], 1);
+    let mut c = TestSeekConsumer::new();
+    c.run(&mut p);
+    let res = c.result();
+    assert_eq!(Ok("cab"),str::from_utf8(&res));
+    assert!(c.ended());
   }
 }
