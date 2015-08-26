@@ -192,8 +192,8 @@ struct A {
   b: u8
 }
 
-fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
+fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) }
+fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) }
 
 named!(f<&[u8],A>,
   chain!(    // the parser takes a byte array as input, and returns an A struct
