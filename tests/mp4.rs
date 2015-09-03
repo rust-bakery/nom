@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,Needed,IResult,FileProducer,be_u16,be_u32,be_u64,be_f32};
+use nom::{HexDisplay,Needed,IResult,FileProducer,be_u16,be_u32,be_u64,be_f32,ErrorKind};
 use nom::{Consumer,ConsumerState};
 use nom::IResult::*;
 use nom::Err::*;
@@ -261,7 +261,7 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Error(Position(0,input))
+    Error(Position(ErrorKind::Custom(32),input))
   }
 }
 
@@ -269,8 +269,9 @@ fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
   Done(input, MP4BoxType::Unknown)
 }
 
-named!(box_type<&[u8], MP4BoxType>,
-  alt!(
+//named!(box_type<&[u8], MP4BoxType>,
+fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType, ()> {
+  alt!(input,
     tag!("ftyp") => { |_| MP4BoxType::Ftyp } |
     tag!("moov") => { |_| MP4BoxType::Moov } |
     tag!("mdat") => { |_| MP4BoxType::Mdat } |
@@ -279,7 +280,7 @@ named!(box_type<&[u8], MP4BoxType>,
     tag!("wide") => { |_| MP4BoxType::Wide } |
     unknown_box_type
   )
-);
+}
 
 // warning, an alt combinator with 9 branches containing a tag combinator
 // can make the compilation very slow. Use functions as sub parsers,

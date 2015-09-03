@@ -10,7 +10,7 @@ macro_rules! re_match (
       if re.is_match($i) {
         $crate::IResult::Done(&""[..], $i)
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpMatch as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpMatch))
       }
     }
   )
@@ -29,7 +29,7 @@ macro_rules! re_match_static (
       if re.is_match($i) {
         $crate::IResult::Done(&""[..], $i)
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpMatch as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpMatch))
       }
     }
 
@@ -48,7 +48,7 @@ macro_rules! re_find (
       if let Some((begin, end)) = re.find($i) {
         $crate::IResult::Done(&$i[end..], &$i[begin..end])
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpFind as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpFind))
       }
     }
   )
@@ -67,7 +67,7 @@ macro_rules! re_find_static (
       if let Some((begin, end)) = re.find($i) {
         $crate::IResult::Done(&$i[end..], &$i[begin..end])
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpFind as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpFind))
       }
     }
 
@@ -91,7 +91,7 @@ macro_rules! re_matches (
         };
         $crate::IResult::Done(&$i[offset..], v)
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpMatches as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpMatches))
       }
     }
   )
@@ -115,7 +115,7 @@ macro_rules! re_matches_static (
         };
         $crate::IResult::Done(&$i[offset..], v)
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpMatches as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpMatches))
       }
     }
   )
@@ -138,7 +138,7 @@ macro_rules! re_capture (
         };
         $crate::IResult::Done(&$i[offset..], v)
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpCapture as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpCapture))
       }
     }
   )
@@ -162,7 +162,7 @@ macro_rules! re_capture_static (
         };
         $crate::IResult::Done(&$i[offset..], v)
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpCapture as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpCapture))
       }
     }
   )
@@ -185,7 +185,7 @@ macro_rules! re_captures (
         };
         $crate::IResult::Done(&$i[offset..], v)
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpCapture as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpCapture))
       }
     }
   )
@@ -209,7 +209,7 @@ macro_rules! re_captures_static (
         };
         $crate::IResult::Done(&$i[offset..], v)
       } else {
-        $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::RegexpCapture as u32))
+        $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpCapture))
       }
     }
   )
@@ -219,14 +219,14 @@ macro_rules! re_captures_static (
 mod tests {
   use internal::IResult::*;
   use internal::Err::*;
-  use util::ErrorCode;
+  use util::ErrorKind;
   use regex;
 
   #[test]
   fn re_match() {
     named!(rm<&str,&str>, re_match!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Done("", "2015-09-07"));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpMatch as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpMatch)));
     assert_eq!(rm("2015-09-07blah"), Done("", "2015-09-07blah"));
   }
 
@@ -235,7 +235,7 @@ mod tests {
   fn re_match_static() {
     named!(rm<&str,&str>, re_match_static!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Done("", "2015-09-07"));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpMatch as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpMatch)));
     assert_eq!(rm("2015-09-07blah"), Done("", "2015-09-07blah"));
   }
 
@@ -243,7 +243,7 @@ mod tests {
   fn re_find() {
     named!(rm<&str,&str>, re_find!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Done("", "2015-09-07"));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpFind as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpFind)));
     assert_eq!(rm("2015-09-07blah"), Done("blah", "2015-09-07"));
   }
 
@@ -252,7 +252,7 @@ mod tests {
   fn re_find_static() {
     named!(rm<&str,&str>, re_find_static!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Done("", "2015-09-07"));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpFind as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpFind)));
     assert_eq!(rm("2015-09-07blah"), Done("blah", "2015-09-07"));
   }
 
@@ -260,7 +260,7 @@ mod tests {
   fn re_matches() {
     named!(rm< &str,Vec<&str> >, re_matches!(r"\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Done("", vec!["2015-09-07"]));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpMatches as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpMatches)));
     assert_eq!(rm("aaa2015-09-07blah2015-09-09pouet"), Done("pouet", vec!["2015-09-07", "2015-09-09"]));
   }
 
@@ -269,7 +269,7 @@ mod tests {
   fn re_matches_static() {
     named!(rm< &str,Vec<&str> >, re_matches_static!(r"\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Done("", vec!["2015-09-07"]));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpMatches as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpMatches)));
     assert_eq!(rm("aaa2015-09-07blah2015-09-09pouet"), Done("pouet", vec!["2015-09-07", "2015-09-09"]));
   }
 
@@ -277,7 +277,7 @@ mod tests {
   fn re_capture() {
     named!(rm< &str,Vec<&str> >, re_capture!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm("blah nom 0.3.11pouet"), Done("pouet", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpCapture as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpCapture)));
     assert_eq!(rm("hello nom 0.3.11 world regex 0.1.41"), Done(" world regex 0.1.41", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]));
   }
 
@@ -286,7 +286,7 @@ mod tests {
   fn re_capture_static() {
     named!(rm< &str,Vec<&str> >, re_capture_static!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm("blah nom 0.3.11pouet"), Done("pouet", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpCapture as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpCapture)));
     assert_eq!(rm("hello nom 0.3.11 world regex 0.1.41"), Done(" world regex 0.1.41", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]));
   }
 
@@ -294,7 +294,7 @@ mod tests {
   fn re_captures() {
     named!(rm< &str,Vec<Vec<&str>> >, re_captures!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm("blah nom 0.3.11pouet"), Done("pouet", vec![vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]]));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpCapture as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpCapture)));
     assert_eq!(rm("hello nom 0.3.11 world regex 0.1.41 aaa"), Done(" aaa", vec![
      vec!["nom 0.3.11",   "nom",   "0.3.11", "0", "3", "11"],
      vec!["regex 0.1.41", "regex", "0.1.41", "0", "1", "41"],
@@ -306,7 +306,7 @@ mod tests {
   fn re_captures_static() {
     named!(rm< &str,Vec<Vec<&str>> >, re_captures_static!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm("blah nom 0.3.11pouet"), Done("pouet", vec![vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]]));
-    assert_eq!(rm("blah"), Error(Code(ErrorCode::RegexpCapture as u32)));
+    assert_eq!(rm("blah"), Error(Code(ErrorKind::RegexpCapture)));
     assert_eq!(rm("hello nom 0.3.11 world regex 0.1.41 aaa"), Done(" aaa", vec![
      vec!["nom 0.3.11",   "nom",   "0.3.11", "0", "3", "11"],
      vec!["regex 0.1.41", "regex", "0.1.41", "0", "1", "41"],

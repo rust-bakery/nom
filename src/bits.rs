@@ -127,11 +127,11 @@ macro_rules! tag_bits (
           if let $p = o {
             $crate::IResult::Done(i, o)
           } else {
-            $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::TagBits as u32))
+            $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::TagBits))
           }
         },
         _                              => {
-          $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::TagBits as u32))
+          $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::TagBits))
         }
       }
     }

@@ -18,7 +18,10 @@ struct TestConsumer {
 }
 
 named!(om_parser,                        tag!("om"));
-named!(nomnom_parser<&[u8],Vec<&[u8]> >, many1!(tag!("nom")));
+//named!(nomnom_parser<&[u8],Vec<&[u8]> >, many1!(tag!("nom")));
+fn nomnom_parser(input:&[u8]) -> IResult<&[u8], Vec<&[u8]>, ()> {
+  many1!(input, tag!("nom"))
+}
 named!(end_parser,                       tag!("kthxbye"));
 
 impl Consumer for TestConsumer {

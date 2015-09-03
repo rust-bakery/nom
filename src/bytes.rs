@@ -32,7 +32,7 @@ macro_rules! tag (
       } else if &$i[0..bytes.len()] == bytes {
         $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
       } else {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Tag as u32, $i))
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
       }
     }
   );
@@ -69,7 +69,7 @@ macro_rules! is_not(
         }
         false
       }) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::IsNot as u32,$input)),
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsNot,$input)),
         Some(n) => {
           let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
@@ -116,7 +116,7 @@ macro_rules! is_a(
         }
         true
       }) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::IsA as u32,$input)),
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsA,$input)),
         Some(n) => {
           let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
@@ -198,7 +198,7 @@ macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeWhile1 as u32,$input)),
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,$input)),
         Some(n) => {
           let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
@@ -304,7 +304,7 @@ macro_rules! take_until_and_consume(
         if parsed {
           $crate::IResult::Done(&$i[(index + bytes.len())..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeUntilAndConsume as u32,$i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilAndConsume,$i))
         }
       }
     }
@@ -345,7 +345,7 @@ macro_rules! take_until(
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeUntil as u32,$i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntil,$i))
         }
       }
     }
@@ -389,7 +389,7 @@ macro_rules! take_until_either_and_consume(
         if parsed {
           $crate::IResult::Done(&$i[(index+1)..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeUntilEitherAndConsume as u32,$i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilEitherAndConsume,$i))
         }
       }
     }
@@ -432,7 +432,7 @@ macro_rules! take_until_either(
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeUntilEither as u32,$i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilEither,$i))
         }
       }
     }
@@ -444,7 +444,7 @@ mod tests {
   use internal::Needed;
   use internal::IResult::*;
   use internal::Err::*;
-  use util::ErrorCode;
+  use util::ErrorKind;
 
   #[test]
   fn is_a() {
@@ -457,7 +457,7 @@ mod tests {
     assert_eq!(a_or_b(b), Done(&b"cde"[..], &b"b"[..]));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Error(Position(ErrorCode::IsA as u32,c)));
+    assert_eq!(a_or_b(c), Error(Position(ErrorKind::IsA,c)));
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Done(&b"cdef"[..], &b"ba"[..]));
@@ -474,7 +474,7 @@ mod tests {
     assert_eq!(a_or_b(b), Done(&b"bde"[..], &b"c"[..]));
 
     let c = &b"abab"[..];
-    assert_eq!(a_or_b(c), Error(Position(ErrorCode::IsNot as u32,c)));
+    assert_eq!(a_or_b(c), Error(Position(ErrorKind::IsNot,c)));
 
     let d = &b"cdefba"[..];
     assert_eq!(a_or_b(d), Done(&b"ba"[..], &b"cdef"[..]));
@@ -518,7 +518,7 @@ mod tests {
 
     println!("Done 2\n");
     let r3 = x(&b"abcefg"[..]);
-    assert_eq!(r3,  Error(Position(ErrorCode::TakeUntilAndConsume as u32, &b"abcefg"[..])));
+    assert_eq!(r3,  Error(Position(ErrorKind::TakeUntilAndConsume, &b"abcefg"[..])));
 
     assert_eq!(
       x(&b"ab"[..]),
@@ -531,7 +531,7 @@ mod tests {
     named!(x, take_until_either!("!."));
     assert_eq!(
       x(&b"123"[..]),
-      Error(Position(ErrorCode::TakeUntilEither as u32, &b"123"[..]))
+      Error(Position(ErrorKind::TakeUntilEither, &b"123"[..]))
     );
   }
 
@@ -544,7 +544,7 @@ mod tests {
     );
     assert_eq!(
       y(&b"123"[..]),
-      Error(Position(ErrorCode::TakeUntil as u32, &b"123"[..]))
+      Error(Position(ErrorKind::TakeUntil, &b"123"[..]))
     );
   }
 

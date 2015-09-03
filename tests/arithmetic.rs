@@ -6,15 +6,18 @@ use nom::{IResult,digit, multispace};
 use std::str;
 use std::str::FromStr;
 
-named!(parens<i64>, delimited!(
+//named!(parens<i64>, delimited!(
+fn parens(input:&[u8]) -> IResult<&[u8], i64, ()> {
+  delimited!(input,
     delimited!(opt!(multispace), tag!("("), opt!(multispace)),
     expr,
     delimited!(opt!(multispace), tag!(")"), opt!(multispace))
   )
-);
+}
 
-named!(factor<i64>,
-  alt!(
+//named!(factor<i64>,
+fn factor(input:&[u8]) -> IResult<&[u8], i64, ()> {
+  alt!(input,
     map_res!(
       map_res!(
         delimited!(opt!(multispace), digit, opt!(multispace)),
@@ -24,10 +27,11 @@ named!(factor<i64>,
     )
   | parens
   )
-);
+}
 
-named!(term <i64>,
-  chain!(
+//named!(term <i64>,
+fn term(input:&[u8]) -> IResult<&[u8], i64, ()> {
+  chain!(input,
     mut acc: factor  ~
              many0!(
                alt!(
@@ -37,10 +41,11 @@ named!(term <i64>,
              ),
     || { return acc }
   )
-);
+}
 
-named!(expr <i64>,
-  chain!(
+//named!(expr <i64>,
+fn expr(input:&[u8]) -> IResult<&[u8], i64, ()> {
+  chain!(input,
     mut acc: term  ~
              many0!(
                alt!(
@@ -50,7 +55,7 @@ named!(expr <i64>,
              ),
     || { return acc }
   )
-);
+}
 
 #[test]
 fn factor_test() {
