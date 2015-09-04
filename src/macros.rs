@@ -114,7 +114,7 @@ macro_rules! named (
         }
     );
     ($name:ident, $submac:ident!( $($args:tt)* )) => (
-        fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8], u32> {
+        fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8]> {
             $submac!(i, $($args)*)
         }
     );
@@ -134,7 +134,7 @@ macro_rules! named (
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8], u32> {
+        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8]> {
             $submac!(i, $($args)*)
         }
     );
@@ -728,12 +728,10 @@ macro_rules! alt_parser (
 
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      match $subrule!( $i, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt_parser!($i, $($rest)*)
-        }
+      let res = $submac!($i, $($args)*);
+      match res {
+        $crate::IResult::Done(_,_) => res,
+        _                          => alt_parser!($i, $($rest)*)
       }
     }
   );
@@ -900,18 +898,19 @@ macro_rules! opt_res (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
+/// # use nom::IResult;
 /// # fn main() {
 ///  let b = true;
-///  let f = closure!(&'static[u8],
-///    cond!( b, tag!("abcd") )
+///  let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
+///    cond!( b, tag!("abcd") ))
 ///  );
 ///
 ///  let a = b"abcdef";
 ///  assert_eq!(f(&a[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
 ///
 ///  let b2 = false;
-///  let f2 = closure!(&'static[u8],
-///    cond!( b2, tag!("abcd") )
+///  let f2:Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
+///    cond!( b2, tag!("abcd") ))
 ///  );
 ///  assert_eq!(f2(&a[..]), Done(&b"abcdef"[..], None));
 ///  # }
@@ -1724,13 +1723,14 @@ mod tests {
         let expected = $inp;
         let bytes = as_bytes(&expected);
 
-        if bytes.len() > $i.len() {
+        let res : $crate::IResult<&[u8],&[u8]> = if bytes.len() > $i.len() {
           $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
         } else if &$i[0..bytes.len()] == bytes {
           $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
         } else {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
-        }
+        };
+        res
       }
     );
   );
@@ -1971,7 +1971,7 @@ mod tests {
 
   #[test]
   fn alt() {
-    fn work(input: &[u8]) -> IResult<&[u8],&[u8]> {
+    fn work(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
       Done(&b""[..], input)
     }
 
@@ -1980,13 +1980,22 @@ mod tests {
       Error(Code(ErrorKind::Custom("abcd")))
     }
 
-    fn work2(input: &[u8]) -> IResult<&[u8],&[u8]> {
+    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
       Done(input, &b""[..])
     }
 
-    named!(alt1, alt!(dont_work | dont_work));
-    named!(alt2, alt!(dont_work | work));
-    named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
+    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+      alt!(i, dont_work | dont_work)
+    }
+    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+      alt!(i, dont_work | work)
+    }
+    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+      alt!(i, dont_work | dont_work | work2 | dont_work)
+    }
+    //named!(alt1, alt!(dont_work | dont_work));
+    //named!(alt2, alt!(dont_work | work));
+    //named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
     assert_eq!(alt1(a), Error(Position(ErrorKind::Alt, a)));
@@ -2058,13 +2067,14 @@ mod tests {
   #[test]
   fn cond() {
     let b = true;
-    let f = closure!(&'static [u8], cond!( b, tag!("abcd") ) );
+    let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( b, tag!("abcd") ) ));
 
     let a = b"abcdef";
     assert_eq!(f(&a[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
 
     let b2 = false;
-    let f2 = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
+    let f2: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( b2, tag!("abcd") ) ));
+    //let f2 = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
     assert_eq!(f2(&a[..]), Done(&b"abcdef"[..], None));
   }
@@ -2076,7 +2086,8 @@ mod tests {
     named!(silly, tag!("foo"));
 
     let b = true;
-    let f = closure!(&'static [u8], cond!( b, silly ) );
+    //let f = closure!(&'static [u8], cond!( b, silly ) );
+    let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( b, silly ) ));
     assert_eq!(f(b"foobar"), Done(&b"bar"[..], Some(&b"foo"[..])));
   }
 

@@ -25,15 +25,16 @@ macro_rules! tag (
       }
 
       let expected = $inp;
-      let bytes = as_bytes(&expected);
+      let bytes: &[u8] = as_bytes(&expected);
 
-      if bytes.len() > $i.len() {
+      let res: $crate::IResult<&[u8],&[u8]> = if bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
       } else if &$i[0..bytes.len()] == bytes {
         $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
       } else {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
-      }
+      };
+      res
     }
   );
 );
@@ -254,11 +255,12 @@ macro_rules! take(
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      if $i.len() < cnt {
+      let res: $crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
         $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
-      }
+      };
+      res
     }
   );
 );

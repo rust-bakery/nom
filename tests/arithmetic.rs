@@ -6,18 +6,14 @@ use nom::{IResult,digit, multispace};
 use std::str;
 use std::str::FromStr;
 
-//named!(parens<i64>, delimited!(
-fn parens(input:&[u8]) -> IResult<&[u8], i64, ()> {
-  delimited!(input,
+named!(parens<i64>, delimited!(
     delimited!(opt!(multispace), tag!("("), opt!(multispace)),
     expr,
     delimited!(opt!(multispace), tag!(")"), opt!(multispace))
   )
-}
+);
 
-//named!(factor<i64>,
-fn factor(input:&[u8]) -> IResult<&[u8], i64, ()> {
-  alt!(input,
+named!(factor<i64>, alt!(
     map_res!(
       map_res!(
         delimited!(opt!(multispace), digit, opt!(multispace)),
@@ -27,11 +23,9 @@ fn factor(input:&[u8]) -> IResult<&[u8], i64, ()> {
     )
   | parens
   )
-}
+);
 
-//named!(term <i64>,
-fn term(input:&[u8]) -> IResult<&[u8], i64, ()> {
-  chain!(input,
+named!(term <i64>, chain!(
     mut acc: factor  ~
              many0!(
                alt!(
@@ -41,11 +35,9 @@ fn term(input:&[u8]) -> IResult<&[u8], i64, ()> {
              ),
     || { return acc }
   )
-}
+);
 
-//named!(expr <i64>,
-fn expr(input:&[u8]) -> IResult<&[u8], i64, ()> {
-  chain!(input,
+named!(expr <i64>, chain!(
     mut acc: term  ~
              many0!(
                alt!(
@@ -55,7 +47,7 @@ fn expr(input:&[u8]) -> IResult<&[u8], i64, ()> {
              ),
     || { return acc }
   )
-}
+);
 
 #[test]
 fn factor_test() {

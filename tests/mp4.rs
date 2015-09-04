@@ -270,7 +270,7 @@ fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
 }
 
 //named!(box_type<&[u8], MP4BoxType>,
-fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType, ()> {
+fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType, u32> {
   alt!(input,
     tag!("ftyp") => { |_| MP4BoxType::Ftyp } |
     tag!("moov") => { |_| MP4BoxType::Moov } |
