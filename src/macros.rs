@@ -1878,16 +1878,15 @@ mod tests {
     assert_eq!(r3, Done(&b"X"[..], C{a: 1, b: None}));
   }
 
-  //use util::{error_to_list, add_error_pattern, print_error};
-  use util::{error_to_list, add_error_pattern};
+  use util::{error_to_list, add_error_pattern, print_error};
 
   fn error_to_string(e: &Err) -> &'static str {
     let v:Vec<ErrorKind> = error_to_list(e);
     // do it this way if you can use slice patterns
     /*
     match &v[..] {
-      [42, 0]      => "missing `ijkl` tag",
-      [42, 128, 0] => "missing `mnop` tag after `ijkl`",
+      [ErrorKind::Custom(42), ErrorKind::Tag]                         => "missing `ijkl` tag",
+      [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag] => "missing `mnop` tag after `ijkl`",
       _            => "unrecognized error"
     }
     */
@@ -1904,10 +1903,10 @@ mod tests {
   /*use std::str;
   fn error_to_string(e:Err) -> String
     match e {
-      NodePosition(42, i1, box Position(0, i2)) => {
+      NodePosition(ErrorKind::Custom(42), i1, box Position(ErrorKind::Tag, i2)) => {
         format!("missing `ijkl` tag, found '{}' instead", str::from_utf8(i2).unwrap())
       },
-      NodePosition(42, i1, box NodePosition(128, i2,  box Position(0, i3))) => {
+      NodePosition(ErrorKind::Custom(42), i1, box NodePosition(ErrorKind::Custom(128), i2,  box Position(ErrorKind::Tag, i3))) => {
         format!("missing `mnop` tag after `ijkl`, found '{}' instead", str::from_utf8(i3).unwrap())
       },
       _ => "unrecognized error".to_string()
@@ -1965,8 +1964,8 @@ mod tests {
       _ => panic!()
     };
 
-    //print_error(a, res_a2);
-    //print_error(b, res_b2);
+    print_error(a, res_a2);
+    print_error(b, res_b2);
   }
 
   #[test]

@@ -25,7 +25,7 @@ macro_rules! tag (
       }
 
       let expected = $inp;
-      let bytes: &[u8] = as_bytes(&expected);
+      let bytes    = as_bytes(&expected);
 
       let res: $crate::IResult<&[u8],&[u8]> = if bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))

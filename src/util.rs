@@ -229,7 +229,7 @@ pub fn prepare_errors<I,O>(input: &[u8], res: IResult<I,O>) -> Option<Vec<(Error
     None
   }
 }
-/*
+
 #[cfg(not(feature = "core"))]
 pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
   if let Some(v) = prepare_errors(input, res) {
@@ -242,23 +242,23 @@ pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
   }
 }
 
-//FIXME: should not be u32 here
 #[cfg(not(feature = "core"))]
-pub fn generate_colors(v: &Vec<(u32, usize, usize)>) -> HashMap<u32, u8> {
+pub fn generate_colors(v: &Vec<(ErrorKind, usize, usize)>) -> HashMap<u32, u8> {
   let mut h: HashMap<u32, u8> = HashMap::new();
   let mut color = 0;
 
-  for &(c,_,_) in v.iter() {
-    h.insert(c, color + 31);
+  for &(ref c,_,_) in v.iter() {
+    h.insert(error_to_u32(c), color + 31);
     color = color + 1 % 7;
   }
 
   h
 }
 
-pub fn code_from_offset(v: &Vec<(u32, usize, usize)>, offset: usize) -> Option<u32> {
+pub fn code_from_offset(v: &Vec<(ErrorKind, usize, usize)>, offset: usize) -> Option<u32> {
   let mut acc: Option<(u32, usize, usize)> = None;
-  for &(c, s, e) in v.iter() {
+  for &(ref ek, s, e) in v.iter() {
+    let c = error_to_u32(ek);
     if s <= offset && offset <=e {
       if let Some((_, start, end)) = acc {
         if start <= s && e <= end {
@@ -320,7 +320,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
 }
 
 #[cfg(not(feature = "core"))]
-pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(u32, usize, usize)>) -> String {
+pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(ErrorKind, usize, usize)>) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
   let chunk_size = 8;
@@ -407,7 +407,7 @@ pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(u32, usize, usize
   }
 
 }
-*/
+
 pub trait AsBytes {
   fn as_bytes(&self) -> &[u8];
 }
@@ -511,4 +511,37 @@ pub enum ErrorKind<E=u32> {
   RegexpCaptures,
   TakeWhile1,
   Custom(E)
+}
+
+pub fn error_to_u32(e: &ErrorKind) -> u32 {
+  match e {
+    &ErrorKind::Tag                       => 0,
+    &ErrorKind::MapRes                    => 1,
+    &ErrorKind::MapOpt                    => 2,
+    &ErrorKind::Alt                       => 3,
+    &ErrorKind::IsNot                     => 4,
+    &ErrorKind::IsA                       => 5,
+    &ErrorKind::Filter                    => 6,
+    &ErrorKind::SeparatedList             => 7,
+    &ErrorKind::SeparatedNonEmptyList     => 8,
+    &ErrorKind::Many1                     => 9,
+    &ErrorKind::Count                     => 10,
+    &ErrorKind::TakeUntilAndConsume       => 11,
+    &ErrorKind::TakeUntil                 => 12,
+    &ErrorKind::TakeUntilEitherAndConsume => 13,
+    &ErrorKind::TakeUntilEither           => 14,
+    &ErrorKind::LengthValue               => 15,
+    &ErrorKind::TagClosure                => 16,
+    &ErrorKind::Alpha                     => 17,
+    &ErrorKind::Digit                     => 18,
+    &ErrorKind::AlphaNumeric              => 19,
+    &ErrorKind::Space                     => 20,
+    &ErrorKind::MultiSpace                => 21,
+    &ErrorKind::LengthValueFn             => 22,
+    &ErrorKind::Eof                       => 23,
+    &ErrorKind::ExprOpt                   => 24,
+    &ErrorKind::ExprRes                   => 25,
+    &ErrorKind::CondReduce                => 26,
+    &ErrorKind::Custom(_)                 => 27
+  }
 }
