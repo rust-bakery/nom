@@ -1474,14 +1474,14 @@ macro_rules! count(
       let mut cnt: usize = 0;
       let mut err        = false;
       loop {
+        if cnt == $count {
+          break
+        }
         match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o) => {
             res.push(o);
             input = i;
             cnt = cnt + 1;
-            if cnt == $count {
-              break
-            }
           },
           $crate::IResult::Error(_)  => {
             err = true;
@@ -1538,14 +1538,14 @@ macro_rules! count_fixed (
       let mut cnt: usize = 0;
       let mut err = false;
       loop {
+        if cnt == $count {
+          break
+        }
         match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o) => {
             res[cnt] = o;
             input = i;
             cnt = cnt + 1;
-            if cnt == $count {
-              break
-            }
           },
           $crate::IResult::Error(_)  => {
             err = true;
@@ -2135,6 +2135,19 @@ mod tests {
 
     assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
     assert_eq!(counter(&b[..]), Error(Position(ErrorCode::Count as u32, &b[..])));
+  }
+
+  #[test]
+  fn count_zero() {
+    fn counter(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+      let size: usize = 0;
+      count!(input, tag!( "abcd" ), size )
+    }
+
+    let a = b"abcdabcdabcdef";
+    let res: Vec<&[u8]> = Vec::new();
+
+    assert_eq!(counter(&a[..]), Done(&b"abcdabcdabcdef"[..], res));
   }
 
   #[test]
