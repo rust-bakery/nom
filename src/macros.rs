@@ -772,6 +772,32 @@ macro_rules! alt_parser (
   );
 );
 
+/// `switch!(I -> IResult<I,P>, P => I -> IResult<I,O> | ... | P => I -> IResult<I,O> ) => I -> IResult<I, O>`
+/// choose the next parser depending on the result of the first one, if successful
+///
+#[macro_export]
+macro_rules! switch (
+  ($i:expr, $submac:ident!( $($args:tt)*), $($p:pat => $subrule:ident!( $($args2:tt)* ))|*) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i, o)    => {
+          match o {
+            $($p => $subrule!(i, $($args2)*)),*,
+            _    => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Switch as u32,i))
+          }
+        }
+      }
+    }
+  );
+  ($i:expr, $e:ident, $($rest:tt)*) => (
+    {
+      switch!($i, call!(e), $($rest)*)
+    }
+  );
+);
+
 /// `opt!(I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// make the underlying parser optional
 ///
@@ -1674,7 +1700,7 @@ mod tests {
   use internal::Err::*;
   use util::ErrorCode;
 
-  // reproduce the tag macro, because of module import order
+  // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
     ($i:expr, $inp: expr) => (
       {
@@ -1696,6 +1722,20 @@ mod tests {
       }
     );
   );
+
+  macro_rules! take(
+    ($i:expr, $count:expr) => (
+      {
+        let cnt = $count as usize;
+        if $i.len() < cnt {
+          $crate::IResult::Incomplete($crate::Needed::Size(cnt))
+        } else {
+          $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
+        }
+      }
+    );
+  );
+
 
   mod pub_named_mod {
     named!(pub tst, tag!("abcd"));
@@ -1948,6 +1988,24 @@ mod tests {
     let b = &b"efgh"[..];
     assert_eq!(alt4(a), Done(&b""[..], a));
     assert_eq!(alt4(b), Done(&b""[..], b));
+  }
+
+  #[test]
+  fn switch() {
+    named!(sw,
+      switch!(take!(4),
+        b"abcd" => take!(2) |
+        b"efgh" => take!(4)
+      )
+    );
+
+    let a = &b"abcdefgh"[..];
+    assert_eq!(sw(a), Done(&b"gh"[..], &b"ef"[..]));
+
+    let b = &b"efghijkl"[..];
+    assert_eq!(sw(b), Done(&b""[..], &b"ijkl"[..]));
+    let c = &b"afghijkl"[..];
+    assert_eq!(sw(c), Error(Position(ErrorCode::Switch as u32, &b"ijkl"[..])));
   }
 
   #[test]

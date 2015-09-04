@@ -490,5 +490,6 @@ pub enum ErrorCode {
   Eof,
   ExprOpt,
   ExprRes,
-  CondReduce
+  CondReduce,
+  Switch
 }
