@@ -660,9 +660,11 @@ macro_rules! chaining_parser (
 );
 
 /// `alt!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>`
-/// try a list of parser, return the result of the first successful one
+/// try a list of parsers, return the result of the first successful one
 ///
-/// Incomplete results are ignored
+/// If one of the parser returns Incomplete, alt will return Incomplete, to retry
+/// once you get more input. Note that it is better for performance to know the
+/// minimum size of data you need before you get into alt.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -717,22 +719,26 @@ macro_rules! alt_parser (
     alt_parser!($i, call!($e) | $($rest)*);
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)*) | $($rest:tt)*) => (
+  ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      if let $crate::IResult::Done(i,o) = $submac!($i, $($args)*) {
-        $crate::IResult::Done(i,o)
-      } else {
-        alt_parser!($i, $($rest)*)
+      match $subrule!( $i, $($args)* ) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Error(_)      => {
+          alt_parser!($i, $($rest)*)
+        }
       }
     }
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
-      if let $crate::IResult::Done(i,o) = $subrule!($i, $($args)*) {
-        $crate::IResult::Done(i, $gen( o ))
-      } else {
-        alt_parser!($i, $($rest)+)
+      match $subrule!( $i, $($args)* ) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Error(_)      => {
+          alt_parser!($i, $($rest)*)
+        }
       }
     }
   );
@@ -746,10 +752,14 @@ macro_rules! alt_parser (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    match $subrule!( $i, $($args)* ) {
-      $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-      $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, $gen( o )),
+    {
+      match $subrule!( $i, $($args)* ) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Error(_)      => {
+          alt_parser!($i)
+        }
+      }
     }
   );
 
@@ -757,12 +767,14 @@ macro_rules! alt_parser (
     alt_parser!($i, call!($e));
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)*)) => (
+  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
     {
-      if let $crate::IResult::Done(i,o) = $submac!($i, $($args)*) {
-        $crate::IResult::Done(i,o)
-      } else {
-        alt_parser!($i)
+      match $subrule!( $i, $($args)* ) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Error(_)      => {
+          alt_parser!($i)
+        }
       }
     }
   );
@@ -1988,6 +2000,24 @@ mod tests {
     let b = &b"efgh"[..];
     assert_eq!(alt4(a), Done(&b""[..], a));
     assert_eq!(alt4(b), Done(&b""[..], b));
+  }
+
+  #[test]
+  fn alt_incomplete() {
+    named!(alt1, alt!(tag!("a") | tag!("bc") | tag!("def")));
+
+    let a = &b""[..];
+    assert_eq!(alt1(a), Incomplete(Needed::Size(1)));
+    let a = &b"b"[..];
+    assert_eq!(alt1(a), Incomplete(Needed::Size(2)));
+    let a = &b"bcd"[..];
+    assert_eq!(alt1(a), Done(&b"d"[..], &b"bc"[..]));
+    let a = &b"cde"[..];
+    assert_eq!(alt1(a), Error(Position(ErrorCode::Alt as u32, a)));
+    let a = &b"de"[..];
+    assert_eq!(alt1(a), Incomplete(Needed::Size(3)));
+    let a = &b"defg"[..];
+    assert_eq!(alt1(a), Done(&b"g"[..], &b"def"[..]));
   }
 
   #[test]
