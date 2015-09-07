@@ -158,9 +158,9 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   let len = input[0] as usize;
 
   if input.len() >= len + 1 {
-    return Done(&input[len+1..], &input[1..len+1])
+    Done(&input[len+1..], &input[1..len+1])
   } else {
-    return Incomplete(Needed::Size(1 + len))
+    Incomplete(Needed::Size(1 + len))
   }
 }
 
@@ -172,10 +172,9 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
   let len = input[0] as usize;
   if input_len - 1 >= len {
-    return IResult::Done(&input[len+1..], &input[1..len+1])
+    IResult::Done(&input[len+1..], &input[1..len+1])
   } else {
-    // FIXME: return Incomplete
-    return IResult::Incomplete(Needed::Size(1+len))
+    IResult::Incomplete(Needed::Size(1+len))
   }
 }
 

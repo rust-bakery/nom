@@ -173,7 +173,7 @@ pub fn error_to_list(e:&Err) -> Vec<u32> {
 }
 
 pub fn compare_error_paths(e1:&Err, e2:&Err) -> bool {
-  return error_to_list(e1) == error_to_list(e2)
+  error_to_list(e1) == error_to_list(e2)
 }
 
 #[cfg(not(feature = "core"))]
@@ -190,7 +190,7 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
   let start = input.as_ptr();
   let off1  = s.as_ptr() as usize - start as usize;
   let off2  = off1 + s.len();
-  return (off1, off2);
+  (off1, off2)
 }
 
 #[cfg(not(feature = "core"))]

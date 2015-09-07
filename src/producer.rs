@@ -370,17 +370,17 @@ impl<T: Producer> Stepper<T> {
       super::IResult::Error(e)      => {
         self.remaining.clear();
         self.remaining.extend(self.acc.iter().cloned());
-        return StepperState::ParserError(e);
+        StepperState::ParserError(e)
       },
       super::IResult::Incomplete(_) => {
         self.remaining.clear();
         self.remaining.extend(self.acc.iter().cloned());
-        return StepperState::Continue;
+        StepperState::Continue
       },
       super::IResult::Done(i, o)    => {
         self.remaining.clear();
         self.remaining.extend(i.iter().cloned());
-        return StepperState::Value(o);
+        StepperState::Value(o)
       }
     }
   }
