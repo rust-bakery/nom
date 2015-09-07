@@ -116,6 +116,27 @@ macro_rules! take_bits (
   );
 );
 
+#[macro_export]
+macro_rules! tag_bits (
+  ($i:expr, $t:ty, $count:expr, $p: pat) => (
+    {
+      match take_bits!($i, $t, $count) {
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i, o)    => {
+          if let $p = o {
+            $crate::IResult::Done(i, o)
+          } else {
+            $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::TagBits as u32))
+          }
+        },
+        _                              => {
+          $crate::IResult::Error($crate::Err::Code($crate::ErrorCode::TagBits as u32))
+        }
+      }
+    }
+  )
+);
+
 #[cfg(test)]
 mod tests {
   use internal::{IResult,Needed};
@@ -140,5 +161,14 @@ mod tests {
     assert_eq!(take_bits!( (sl, 0), u32, 20 ), IResult::Done((&sl[2..], 4), 700163));
     assert_eq!(take_bits!( (sl, 4), u32, 20 ), IResult::Done((&sl[3..], 0), 716851));
     assert_eq!(take_bits!( (sl, 4), u32, 22 ), IResult::Incomplete(Needed::Size(4)));
+  }
+
+  #[test]
+  fn tag_bits() {
+    let input = vec![0b10101010, 0b11110000, 0b00110011];
+    let sl    = &input[..];
+
+    assert_eq!(tag_bits!( (sl, 0), u8,   3, 0b101), IResult::Done((&sl[0..], 3), 5));
+    assert_eq!(tag_bits!( (sl, 0), u8,   4, 0b1010), IResult::Done((&sl[0..], 4), 10));
   }
 }

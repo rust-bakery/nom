@@ -491,5 +491,6 @@ pub enum ErrorCode {
   ExprOpt,
   ExprRes,
   CondReduce,
-  Switch
+  Switch,
+  TagBits
 }
