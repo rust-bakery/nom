@@ -64,6 +64,7 @@ pub trait Producer {
 /// Can produce data from a file
 ///
 /// the size field is the size of v, the internal buffer
+#[allow(dead_code)]
 pub struct FileProducer {
   size: usize,
   file: File,
@@ -82,7 +83,6 @@ impl FileProducer {
 
 impl Producer for FileProducer {
   fn produce(&mut self) -> ProducerState<&[u8]> {
-    let len = self.v.len();
     match self.file.read(&mut self.v) {
       Err(e) => {
         //println!("producer error: {:?}", e);
@@ -211,6 +211,7 @@ impl<'x> Producer for MemProducer<'x> {
 /// Can produce data from a struct implementing Read
 ///
 /// the size field is the size of v, the internal buffer
+#[allow(dead_code)]
 pub struct ReadProducer<T: Read> {
   size:   usize,
   reader: T,
@@ -227,7 +228,6 @@ impl<T: Read> ReadProducer<T> {
 
 impl<T: Read> Producer for ReadProducer<T> {
   fn produce(&mut self) -> ProducerState<&[u8]> {
-    let len = self.v.len();
     match self.reader.read(&mut self.v) {
       Err(e) => {
         match e.kind() {
