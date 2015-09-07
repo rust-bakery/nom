@@ -73,7 +73,9 @@ pub struct FileProducer {
 impl FileProducer {
   pub fn new(filename: &str, buffer_size: usize) -> io::Result<FileProducer> {
     File::open(&Path::new(filename)).map(|f| {
-      FileProducer {size: buffer_size, file: f, v: Vec::with_capacity(buffer_size)}
+      let mut v = Vec::with_capacity(buffer_size);
+      v.extend(repeat(0).take(buffer_size));
+      FileProducer {size: buffer_size, file: f, v: v}
     })
   }
 }
@@ -81,9 +83,6 @@ impl FileProducer {
 impl Producer for FileProducer {
   fn produce(&mut self) -> ProducerState<&[u8]> {
     let len = self.v.len();
-    //let mut v = Vec::with_capacity(self.size);
-    //self.v.clear();
-    self.v.extend(repeat(0).take(self.size - len));
     match self.file.read(&mut self.v) {
       Err(e) => {
         //println!("producer error: {:?}", e);
@@ -95,11 +94,10 @@ impl Producer for FileProducer {
       },
       Ok(n)  => {
         //println!("read: {} bytes\ndata:\n{}", n, (&self.v).to_hex(8));
-        self.v.truncate(n);
         if n == 0 {
-          Eof(&self.v[..])
+          Eof(&self.v[..n])
         } else {
-          Data(&self.v[..])
+          Data(&self.v[..n])
         }
       }
     }
@@ -221,14 +219,15 @@ pub struct ReadProducer<T: Read> {
 
 impl<T: Read> ReadProducer<T> {
   pub fn new(reader: T, buffer_size: usize) -> ReadProducer<T> {
-    ReadProducer {size: buffer_size, reader: reader, v: Vec::with_capacity(buffer_size)}
+    let mut v = Vec::with_capacity(buffer_size);
+    v.extend(repeat(0).take(buffer_size));
+    ReadProducer {size: buffer_size, reader: reader, v: v}
   }
 }
 
 impl<T: Read> Producer for ReadProducer<T> {
   fn produce(&mut self) -> ProducerState<&[u8]> {
     let len = self.v.len();
-    self.v.extend(repeat(0).take(self.size - len));
     match self.reader.read(&mut self.v) {
       Err(e) => {
         match e.kind() {
@@ -236,11 +235,10 @@ impl<T: Read> Producer for ReadProducer<T> {
         }
       },
       Ok(n)  => {
-        self.v.truncate(n);
         if n == 0 {
-          Eof(&self.v[..])
+          Eof(&self.v[..n])
         } else {
-          Data(&self.v[..])
+          Data(&self.v[..n])
         }
       }
     }
