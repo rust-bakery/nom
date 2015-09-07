@@ -85,12 +85,16 @@
 #![cfg_attr(feature = "core", feature(core))]
 #![cfg_attr(feature = "core", feature(collections))]
 #![cfg_attr(feature = "core", no_std)]
+#![cfg_attr(feature = "regexp_macros", feature(plugin))]
+#![cfg_attr(feature = "regexp_macros", plugin(regex_macros))]
 
 #[macro_use]
 #[cfg(feature = "core")]
 extern crate core;
 #[cfg(feature = "core")]
 extern crate collections;
+#[cfg(feature = "regexp")]
+extern crate regex;
 
 #[cfg(feature = "core")]
 mod std {
@@ -116,6 +120,9 @@ pub use self::consumer::*;//{ConsumerState,Consumer};
 pub use self::nom::*;
 pub use self::character::*;
 
+#[cfg(feature = "regexp")]
+pub use self::regexp::*;
+
 #[macro_use] mod util;
 mod internal;
 #[macro_use] mod macros;
@@ -131,4 +138,7 @@ mod consumer;
 
 #[macro_use] mod nom;
 #[macro_use] mod character;
+
+#[cfg(feature = "regexp")]
+#[macro_use] mod regexp;
 

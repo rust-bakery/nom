@@ -497,4 +497,9 @@ pub enum ErrorCode {
   NoneOf,
   Char,
   CrLf,
+  RegexpMatch,
+  RegexpMatches,
+  RegexpFind,
+  RegexpCapture,
+  RegexpCaptures,
 }

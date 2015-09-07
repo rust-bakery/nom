@@ -13,3 +13,14 @@ keywords = ["parser", "parser-combinators", "parsing", "streaming", "bit"]
 [features]
 core = []
 nightly = []
+regexp = ["regex"]
+regexp_macros = ["regexp", "regex_macros"]
+
+[dependencies.regex]
+version = "^0.1.41"
+optional = true
+
+[dependencies.regex_macros]
+version = "^0.1.21"
+optional = true
+
