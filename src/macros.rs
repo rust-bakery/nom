@@ -1880,7 +1880,7 @@ mod tests {
 
   use util::{error_to_list, add_error_pattern, print_error};
 
-  fn error_to_string(e: Err) -> &str {
+  fn error_to_string(e: &Err) -> &'static str {
     let v:Vec<u32> = error_to_list(e);
     // do it this way if you can use slice patterns
     /*
@@ -1947,11 +1947,9 @@ mod tests {
     let res_a2 = res_a.clone();
     match res_a {
       Error(e) => {
-        let e2 = e.clone();
-        let e3 = e.clone();
-        assert_eq!(error_to_list(e), [42, 0]);
-        assert_eq!(error_to_string(e2), "missing `ijkl` tag");
-        assert_eq!(err_map.get(&error_to_list(e3)), Some(&"missing `ijkl` tag"));
+        assert_eq!(error_to_list(&e), [42, 0]);
+        assert_eq!(error_to_string(&e), "missing `ijkl` tag");
+        assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `ijkl` tag"));
       },
       _ => panic!()
     };
@@ -1959,11 +1957,9 @@ mod tests {
     let res_b2 = res_b.clone();
     match res_b {
       Error(e) => {
-        let e2 = e.clone();
-        let e3 = e.clone();
-        assert_eq!(error_to_list(e), [42, 128, 0]);
-        assert_eq!(error_to_string(e2), "missing `mnop` tag after `ijkl`");
-        assert_eq!(err_map.get(&error_to_list(e3)), Some(&"missing `mnop` tag after `ijkl`"));
+        assert_eq!(error_to_list(&e), [42, 128, 0]);
+        assert_eq!(error_to_string(&e), "missing `mnop` tag after `ijkl`");
+        assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `mnop` tag after `ijkl`"));
       },
       _ => panic!()
     };
