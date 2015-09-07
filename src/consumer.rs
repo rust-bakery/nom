@@ -169,7 +169,7 @@ pub trait Consumer {
 
       //println!("full:\n{}", acc.to_hex(8));
       //println!("truncated:\n{}", (&acc[0..needed]).to_hex(16));
-      match self.consume(&acc[0..needed]) {
+      match self.consume(&acc[0..]) {
         ConsumerError(e) => {
           //println!("consumer error, stopping: {}", e);
           err = Some(e);
