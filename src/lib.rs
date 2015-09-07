@@ -114,6 +114,7 @@ pub use self::producer::*;//{ProducerState,Producer,FileProducer,MemProducer};
 pub use self::consumer::*;//{ConsumerState,Consumer};
 
 pub use self::nom::*;
+pub use self::character::*;
 
 #[macro_use] mod util;
 mod internal;
@@ -129,4 +130,5 @@ mod producer;
 mod consumer;
 
 #[macro_use] mod nom;
+#[macro_use] mod character;
 
