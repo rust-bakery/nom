@@ -1414,16 +1414,12 @@ macro_rules! many0(
     {
       let mut res   = Vec::new();
       let mut input = $i;
-      loop {
-        if let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
-          if i.len() == input.len() {
-            break;
-          }
-          res.push(o);
-          input = i;
-        } else {
+      while let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
+        if i.len() == input.len() {
           break;
         }
+        res.push(o);
+        input = i;
       }
       $crate::IResult::Done(input, res)
     }
@@ -1460,16 +1456,12 @@ macro_rules! many1(
     {
       let mut res   = Vec::new();
       let mut input = $i;
-      loop {
-        if let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
-          if i.len() == input.len() {
-            break;
-          }
-          res.push(o);
-          input = i;
-        } else {
+      while let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
+        if i.len() == input.len() {
           break;
         }
+        res.push(o);
+        input = i;
       }
       if res.len() == 0 {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Many1 as u32,$i))
