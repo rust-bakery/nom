@@ -33,14 +33,14 @@ pub fn print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
   Done(input, ())
 }
 
-pub fn begin<'a>(input: &'a [u8]) -> IResult<'a,(), &'a [u8]> {
+pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
   Done((), input)
 }
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
 //pub is_not!(line_ending b"\r\n")
-pub fn not_line_ending<'a>(input:&[u8]) -> IResult<'a, &[u8], &[u8]> {
+pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     for &i in b"\r\n".iter() {
       if input[idx] == i {
@@ -54,7 +54,7 @@ pub fn not_line_ending<'a>(input:&[u8]) -> IResult<'a, &[u8], &[u8]> {
 named!(tag_ln, tag!("\n"));
 
 /// Recognizes a line feed
-pub fn line_ending<'a>(input:&'a[u8]) -> IResult<'a, &[u8], &[u8]> {
+pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   tag_ln(input)
 }
 
@@ -80,7 +80,7 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(alphanumeric is_alphanumeric)
 
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
-pub fn alpha<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
+pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_alphabetic(input[idx]) {
       if idx == 0 {
@@ -94,7 +94,7 @@ pub fn alpha<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
 }
 
 /// Recognizes numerical characters: 0-9
-pub fn digit<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
+pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_digit(input[idx]) {
       if idx == 0 {
@@ -108,7 +108,7 @@ pub fn digit<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
-pub fn alphanumeric<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
+pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_alphanumeric(input[idx]) {
       if idx == 0 {
@@ -122,7 +122,7 @@ pub fn alphanumeric<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
 }
 
 /// Recognizes spaces and tabs
-pub fn space<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
+pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     if !is_space(input[idx]) {
       if idx == 0 {
@@ -136,7 +136,7 @@ pub fn space<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
 }
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
-pub fn multispace<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
+pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for idx in 0..input.len() {
     // println!("multispace at index: {}", idx);
     if !is_space(input[idx]) && input[idx] != '\r' as u8 && input[idx] != '\n' as u8 {
@@ -150,7 +150,7 @@ pub fn multispace<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   Done(b"", input)
 }
 
-pub fn sized_buffer<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
+pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() == 0 {
     return Incomplete(Needed::Unknown)
   }
@@ -164,7 +164,7 @@ pub fn sized_buffer<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
   }
 }
 
-pub fn length_value<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
+pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
   let input_len = input.len();
   if input_len == 0 {
     return Error(Position(ErrorCode::LengthValueFn as u32, input))
@@ -180,7 +180,7 @@ pub fn length_value<'a>(input:&'a [u8]) -> IResult<'a,&'a [u8], &[u8]> {
 }
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
-pub fn be_u8<'a>(i: &[u8]) -> IResult<'a,&[u8], u8> {
+pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
     Incomplete(Needed::Size(1))
   } else {
@@ -189,7 +189,7 @@ pub fn be_u8<'a>(i: &[u8]) -> IResult<'a,&[u8], u8> {
 }
 
 /// Recognizes big endian unsigned 2 bytes integer
-pub fn be_u16<'a>(i: &[u8]) -> IResult<'a,&[u8], u16> {
+pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     Incomplete(Needed::Size(2))
   } else {
@@ -199,7 +199,7 @@ pub fn be_u16<'a>(i: &[u8]) -> IResult<'a,&[u8], u16> {
 }
 
 /// Recognizes big endian unsigned 4 bytes integer
-pub fn be_u32<'a>(i: &[u8]) -> IResult<'a,&[u8], u32> {
+pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     Incomplete(Needed::Size(4))
   } else {
@@ -209,7 +209,7 @@ pub fn be_u32<'a>(i: &[u8]) -> IResult<'a,&[u8], u32> {
 }
 
 /// Recognizes big endian unsigned 8 bytes integer
-pub fn be_u64<'a>(i: &[u8]) -> IResult<'a,&[u8], u64> {
+pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     Incomplete(Needed::Size(8))
   } else {
@@ -220,22 +220,22 @@ pub fn be_u64<'a>(i: &[u8]) -> IResult<'a,&[u8], u64> {
 }
 
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
-pub fn be_i8<'a>(i:&'a [u8]) -> IResult<&'a [u8], i8> {
+pub fn be_i8(i:&[u8]) -> IResult<&[u8], i8> {
   map!(i, be_u8, | x | { x as i8 })
 }
 
 /// Recognizes big endian signed 2 bytes integer
-pub fn be_i16<'a>(i:&'a [u8]) -> IResult<&'a [u8], i16> {
+pub fn be_i16(i:&[u8]) -> IResult<&[u8], i16> {
   map!(i, be_u16, | x | { x as i16 })
 }
 
 /// Recognizes big endian signed 4 bytes integer
-pub fn be_i32<'a>(i:&'a [u8]) -> IResult<&'a [u8], i32> {
+pub fn be_i32(i:&[u8]) -> IResult<&[u8], i32> {
   map!(i, be_u32, | x | { x as i32 })
 }
 
 /// Recognizes big endian signed 8 bytes integer
-pub fn be_i64<'a>(i:&'a [u8]) -> IResult<&'a [u8], i64> {
+pub fn be_i64(i:&[u8]) -> IResult<&[u8], i64> {
   map!(i, be_u64, | x | { x as i64 })
 }
 
@@ -280,22 +280,22 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
 }
 
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
-pub fn le_i8<'a>(i:&'a [u8]) -> IResult<&'a [u8], i8> {
+pub fn le_i8(i:&[u8]) -> IResult<&[u8], i8> {
   map!(i, le_u8, | x | { x as i8 })
 }
 
 /// Recognizes little endian signed 2 bytes integer
-pub fn le_i16<'a>(i:&'a [u8]) -> IResult<&'a [u8], i16> {
+pub fn le_i16(i:&[u8]) -> IResult<&[u8], i16> {
   map!(i, le_u16, | x | { x as i16 })
 }
 
 /// Recognizes little endian signed 4 bytes integer
-pub fn le_i32<'a>(i:&'a [u8]) -> IResult<&'a [u8], i32> {
+pub fn le_i32(i:&[u8]) -> IResult<&[u8], i32> {
   map!(i, le_u32, | x | { x as i32 })
 }
 
 /// Recognizes little endian signed 8 bytes integer
-pub fn le_i64<'a>(i:&'a [u8]) -> IResult<&'a [u8], i64> {
+pub fn le_i64(i:&[u8]) -> IResult<&[u8], i64> {
   map!(i, le_u64, | x | { x as i64 })
 }
 
