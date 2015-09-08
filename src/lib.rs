@@ -87,6 +87,7 @@
 #![cfg_attr(feature = "core", no_std)]
 #![cfg_attr(feature = "regexp_macros", feature(plugin))]
 #![cfg_attr(feature = "regexp_macros", plugin(regex_macros))]
+#![cfg_attr(feature = "nightly", feature(test))]
 
 #[macro_use]
 #[cfg(feature = "core")]
@@ -95,6 +96,8 @@ extern crate core;
 extern crate collections;
 #[cfg(feature = "regexp")]
 extern crate regex;
+#[cfg(feature = "nightly")]
+extern crate test;
 
 #[cfg(feature = "core")]
 mod std {

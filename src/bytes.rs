@@ -506,4 +506,17 @@ mod tests {
       Error(Position(ErrorCode::TakeUntil as u32, &b"123"[..]))
     );
   }
+
+  #[cfg(feature = "nightly")]
+  use test::Bencher;
+
+  #[cfg(feature = "nightly")]
+  #[bench]
+  fn filter(b: &mut Bencher) {
+    use nom::is_alphabetic;
+    named!(f, filter!(is_alphabetic));
+    b.iter(|| {
+      f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..])
+    });
+  }
 }

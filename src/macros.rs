@@ -2175,6 +2175,18 @@ mod tests {
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
   }
 
+  #[cfg(feature = "nightly")]
+  use test::Bencher;
+
+  #[cfg(feature = "nightly")]
+  #[bench]
+  fn many0_bench(b: &mut Bencher) {
+    named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
+    b.iter(|| {
+      multi(&b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..])
+    });
+  }
+
   #[test]
   fn many1() {
     named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
