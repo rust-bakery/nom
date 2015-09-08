@@ -45,7 +45,11 @@ Then include it in your code like this:
 extern crate nom;
 ```
 
-While it is not mandatory to use the macros, they make it a lot easier to build parsers with nom.
+There are a few compilation features:
+
+* `core`: enables `no_std` builds
+* `regexp`: enables regular expression parsers with the `regex` crate
+* `regexp_macros`: enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
 
 ## Usage
 
