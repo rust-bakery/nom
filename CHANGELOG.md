@@ -6,6 +6,8 @@
 
 ## 0.4.0 - 2015-09-08
 
+Considering the number of changes since the last release, this version can contain breaking changes, so the version number becomes 0.4.0. A lot of new features and performance improvements!
+
 ### Thanks
 - @frewsxcv for documentation fixes
 - @ngrewe for his work on producers and consumers
