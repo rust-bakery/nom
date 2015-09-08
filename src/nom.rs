@@ -41,9 +41,9 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
 // public methods
 //pub is_not!(line_ending b"\r\n")
 pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in 0..input.len() {
+  for (idx, item) in input.iter().enumerate() {
     for &i in b"\r\n".iter() {
-      if input[idx] == i {
+      if *item == i {
         return Done(&input[idx..], &input[0..idx])
       }
     }
@@ -81,8 +81,8 @@ pub fn is_space(chr:u8) -> bool {
 
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in 0..input.len() {
-    if !is_alphabetic(input[idx]) {
+  for (idx, item) in input.iter().enumerate() {
+    if !is_alphabetic(*item) {
       if idx == 0 {
         return Error(Position(ErrorCode::Alpha as u32, input))
       } else {
@@ -95,8 +95,8 @@ pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 /// Recognizes numerical characters: 0-9
 pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in 0..input.len() {
-    if !is_digit(input[idx]) {
+  for (idx, item) in input.iter().enumerate() {
+    if !is_digit(*item) {
       if idx == 0 {
         return Error(Position(ErrorCode::Digit as u32, input))
       } else {
@@ -109,8 +109,8 @@ pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in 0..input.len() {
-    if !is_alphanumeric(input[idx]) {
+  for (idx, item) in input.iter().enumerate() {
+    if !is_alphanumeric(*item) {
       if idx == 0 {
         return Error(Position(ErrorCode::AlphaNumeric as u32, input))
       } else {
@@ -123,8 +123,8 @@ pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 /// Recognizes spaces and tabs
 pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in 0..input.len() {
-    if !is_space(input[idx]) {
+  for (idx, item) in input.iter().enumerate() {
+    if !is_space(*item) {
       if idx == 0 {
         return Error(Position(ErrorCode::Space as u32, input))
       } else {
@@ -137,9 +137,9 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
 pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for idx in 0..input.len() {
+  for (idx, item) in input.iter().enumerate() {
     // println!("multispace at index: {}", idx);
-    if !is_space(input[idx]) && input[idx] != '\r' as u8 && input[idx] != '\n' as u8 {
+    if !is_space(*item) && *item != '\r' as u8 && *item != '\n' as u8 {
       if idx == 0 {
         return Error(Position(ErrorCode::MultiSpace as u32, input))
       } else {
