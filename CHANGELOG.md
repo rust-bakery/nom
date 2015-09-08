@@ -4,6 +4,40 @@
 
 ### Changed
 
+## 0.4.0 - 2015-09-08
+
+### Thanks
+- @frewsxcv for documentation fixes
+- @ngrewe for his work on producers and consumers
+- @meh for fixes on `chain!` and for the `rest` parser
+- @daboross for refactoring `many0!` and `many1!`
+- @aleksander for the `switch!` combinator idea
+- @TechnoMancer for his help with bit level parsing
+- @sxeraverx for pointing out a bug in `is_a!`
+
+### Fixed
+- `count_fixed!` must take an explicit type as argument to generate the fixed-size array
+- optional parsing behaviour in `chain!`
+- `count!` can take 0 elements
+- `is_a!` and `is_not!` can now consume the whole input
+
+### Added
+- it is now possible to seek to the end of a `MemProducer`
+- `opt!` returns `Done(input, None)` if `the child parser returned `Incomplete`
+- `rest` will return the remaining input
+- consumers can now seek to and from the end of input
+- `switch!` applies a first parser then matches on its result to choose the next parser
+- bit-level parsers
+- character-level parsers
+- regular expression parsers
+- implementation of `take_till!`, `take_while!` and `take_while1!`
+
+### Changed
+- `alt!` can return `Incomplete`
+- the error analysis functions will now take references to functions instead of moving them
+- performance improvements on producers
+- performance improvement for `filter!`
+
 ## 0.3.11 - 2015-08-04
 
 ### Thanks
@@ -271,7 +305,9 @@
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/0.3.10...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/0.4.0...HEAD
+* [0.4.0]: https://github.com/geal/nom/compare/0.3.11...0.4.0
+* [0.3.11]: https://github.com/geal/nom/compare/0.3.10...0.3.11
 * [0.3.10]: https://github.com/geal/nom/compare/0.3.9...0.3.10
 * [0.3.9]: https://github.com/geal/nom/compare/0.3.8...0.3.9
 * [0.3.8]: https://github.com/Geal/nom/compare/0.3.7...0.3.8
