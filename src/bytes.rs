@@ -152,23 +152,15 @@ macro_rules! is_a(
 #[macro_export]
 macro_rules! filter(
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
-
     {
-      let mut index = 0;
-      let mut found = false;
-      for idx in 0..$input.len() {
-        index = idx;
-        if !$submac!($input[idx], $($args)*) {
-          found = true;
-          break;
+      match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
+        Some(n) => {
+          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done(&b""[..], $input)
         }
-      }
-      if index == 0 {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Filter as u32,$input))
-      } else if found {
-        $crate::IResult::Done(&$input[index..], &$input[0..index])
-      } else {
-        $crate::IResult::Done(&b""[..], $input)
       }
     }
   );
