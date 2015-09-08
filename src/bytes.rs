@@ -62,23 +62,21 @@ macro_rules! is_not(
 
       let expected   = $arr;
       let bytes      = as_bytes(&expected);
-      let mut parsed = false;
-      let mut index  = 0;
 
-      for idx in 0..$input.len() {
-        index = idx;
+      match $input.iter().position(|c| {
         for &i in bytes.iter() {
-          if $input[idx] == i {
-            parsed = true;
-            break;
-          }
+          if *c == i { return true }
         }
-        if parsed { break; }
-      }
-      if index == 0 {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::IsNot as u32,$input))
-      } else {
-        $crate::IResult::Done(&$input[index..], &$input[0..index])
+        false
+      }) {
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::IsNot as u32,$input)),
+        Some(n) => {
+          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done(&b""[..], $input)
+        }
       }
     }
   );
@@ -111,23 +109,21 @@ macro_rules! is_a(
 
       let expected  = $arr;
       let bytes     = as_bytes(&expected);
-      let mut index = 0;
 
-      for idx in 0..$input.len() {
-        index = idx;
-        let mut cont = false;
+      match $input.iter().position(|c| {
         for &i in bytes.iter() {
-          if $input[idx] == i {
-            cont = true;
-            break;
-          }
+          if *c == i { return false }
         }
-        if !cont { break; }
-      }
-      if index == 0 {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::IsA as u32,$input))
-      } else {
-        $crate::IResult::Done(&$input[index..], &$input[0..index])
+        true
+      }) {
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::IsA as u32,$input)),
+        Some(n) => {
+          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done(&b""[..], $input)
+        }
       }
     }
   );
@@ -453,6 +449,39 @@ mod tests {
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Done(&b"cdef"[..], &b"ba"[..]));
+  }
+
+  #[test]
+  fn is_not() {
+    named!(a_or_b, is_not!(&b"ab"[..]));
+
+    let a = &b"cdab"[..];
+    assert_eq!(a_or_b(a), Done(&b"ab"[..], &b"cd"[..]));
+
+    let b = &b"cbde"[..];
+    assert_eq!(a_or_b(b), Done(&b"bde"[..], &b"c"[..]));
+
+    let c = &b"abab"[..];
+    assert_eq!(a_or_b(c), Error(Position(ErrorCode::IsNot as u32,c)));
+
+    let d = &b"cdefba"[..];
+    assert_eq!(a_or_b(d), Done(&b"ba"[..], &b"cdef"[..]));
+
+    let e = &b"e"[..];
+    assert_eq!(a_or_b(e), Done(&b""[..], &b"e"[..]));
+
+    let f = &b"fghi"[..];
+    assert_eq!(a_or_b(f), Done(&b""[..], &b"fghi"[..]));
+  }
+
+  #[test]
+  fn issue_84() {
+    let r0 = is_a!(&b"aaaaefgh"[..], "abcd");
+    assert_eq!(r0, Done(&b"efgh"[..], &b"aaaa"[..]));
+    let r1 = is_a!(&b"aaaa"[..], "abcd");
+    assert_eq!(r1, Done(&b""[..], &b"aaaa"[..]));
+    let r2 = is_a!(&b"1"[..], "123456789");
+    assert_eq!(r2, Done(&b""[..], &b"1"[..]));
   }
 
   use std::str::from_utf8;
