@@ -169,6 +169,63 @@ macro_rules! filter(
   );
 );
 
+#[macro_export]
+macro_rules! take_while (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
+        Some(n) => {
+          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done(&b""[..], $input)
+        }
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_while!($input, call!($f));
+  );
+);
+
+#[macro_export]
+macro_rules! take_while1 (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::TakeWhile1 as u32,$input)),
+        Some(n) => {
+          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done(&b""[..], $input)
+        }
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_while1!($input, call!($f));
+  );
+);
+
+#[macro_export]
+macro_rules! take_till (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+
+    {
+      match $input.iter().position(|c| $submac!(c, $($args)*)) {
+        Some(n) => $crate::IResult::Done(&$input[n..], &$input[..n]),
+        None    => $crate::IResult::Done(&b""[..], $input)
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_till!($input, call!($f));
+  );
+);
+
 /// `take!(nb) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming the specified number of bytes
 ///

@@ -502,4 +502,5 @@ pub enum ErrorCode {
   RegexpFind,
   RegexpCapture,
   RegexpCaptures,
+  TakeWhile1
 }
