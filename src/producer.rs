@@ -319,6 +319,7 @@ macro_rules! pusher (
   );
 );
 
+/// Holds the Stepper's current state
 #[derive(Debug,PartialEq,Eq)]
 pub enum StepperState<'a,O> {
   Eof,
@@ -328,6 +329,7 @@ pub enum StepperState<'a,O> {
   ParserError(super::Err<'a>),
 }
 
+/// Wraps a producer. The `step` method applies a parser and returns its result
 pub struct Stepper<T: Producer> {
   acc:       Vec<u8>,
   remaining: Vec<u8>,

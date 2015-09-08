@@ -8,14 +8,18 @@ use std::prelude::v1::*;
 use std::vec::Vec;
 use std::string::ToString;
 
+/// useful functions to calculate the offset between slices and show a hexdump of a slice
 #[cfg(not(feature = "core"))]
 pub trait HexDisplay {
+  /// offset between the first byte of self and the first byte of the argument
   fn offset(&self, second:&[u8]) -> usize;
 
-  /// Converts the value of `self` to a hex value, returning the owned
+  /// Converts the value of `self` to a hex dump, returning the owned
   /// string.
   fn to_hex(&self, chunk_size: usize) -> String;
 
+  /// Converts the value of `self` to a hex dump beginning at `from` address, returning the owned
+  /// string.
   fn to_hex_from(&self, chunk_size: usize, from: usize) -> String;
 }
 
@@ -463,6 +467,7 @@ array_impls! {
     30 31 32
 }
 
+/// indicates which parser returned an error
 pub enum ErrorCode {
   Tag,
   MapRes,

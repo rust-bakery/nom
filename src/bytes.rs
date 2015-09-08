@@ -165,6 +165,10 @@ macro_rules! filter(
   );
 );
 
+/// `take_while!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest list of bytes until the provided function fails.
+///
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -185,6 +189,10 @@ macro_rules! take_while (
   );
 );
 
+/// `take_while1!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest (non empty) list of bytes until the provided function fails.
+///
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -206,6 +214,10 @@ macro_rules! take_while1 (
   );
 );
 
+/// `take_till!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest list of bytes until the provided function succeeds
+///
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (

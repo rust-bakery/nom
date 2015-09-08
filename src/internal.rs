@@ -34,18 +34,25 @@ impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
 //type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
 //type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
 
+/// Contains the error that a parser can return
 #[derive(Debug,PartialEq,Eq,Clone)]
 pub enum Err<'a>{
+  /// an error code
   Code(u32),
+  /// an error code, and the next error in the parsing chain
   Node(u32, Box<Err<'a>>),
+  /// an error code and the related input position
   Position(u32, &'a [u8]),
+  /// an error code, the related input position, and the next error in the parsing chain
   NodePosition(u32, &'a [u8], Box<Err<'a>>)
 }
 
-
+/// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug,PartialEq,Eq,Clone)]
 pub enum Needed {
+  /// needs more data, but we do not know how much
   Unknown,
+  /// contains the required data size
   Size(usize)
 }
 

@@ -36,6 +36,7 @@ macro_rules! bits (
   );
 );
 
+/// Internal parser, do not use directly
 #[macro_export]
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (

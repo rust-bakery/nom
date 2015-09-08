@@ -146,6 +146,9 @@ macro_rules! call (
   ($i:expr, $fun:expr) => ( $fun( $i ) );
 );
 
+/// emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
+///
+/// Supports up to 6 arguments
 #[macro_export]
 macro_rules! apply (
   //($i:expr, $fun:ident( $($args:tt),*) ) => ($fun($i, $($args),*) );
