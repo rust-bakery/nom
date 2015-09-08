@@ -1503,7 +1503,7 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let mut input      = $i;
-      let mut res        = Vec::new();
+      let mut res        = Vec::with_capacity($count);
       let mut cnt: usize = 0;
       let mut err        = false;
       loop {

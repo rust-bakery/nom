@@ -37,6 +37,7 @@
 - the error analysis functions will now take references to functions instead of moving them
 - performance improvements on producers
 - performance improvement for `filter!`
+- performance improvement for `count!`: a `Vec` of the right size is directly allocated
 
 ## 0.3.11 - 2015-08-04
 
