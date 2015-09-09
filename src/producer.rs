@@ -12,7 +12,7 @@
 //! # use nom::{Producer,ProducerState,FileProducer};
 //! # fn main() {
 //!  use std::str;
-//!  fn local_print<'a, T: Debug>(input: T) -> IResult<'a, T, ()> {
+//!  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
 //!    println!("{:?}", input);
 //!    Done(input, ())
 //!  }
@@ -263,7 +263,7 @@ impl<T: Read> Producer for ReadProducer<T> {
 /// # use nom::IResult::*;
 /// # use nom::{ProducerState,Producer,MemProducer};
 /// # fn main() {
-/// fn local_print<'a, T: Debug>(input: T) -> IResult<'a, T, ()> {
+/// fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
 ///   println!("{:?}", input);
 ///   Done(input, ())
 /// }

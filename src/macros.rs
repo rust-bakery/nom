@@ -247,7 +247,14 @@ macro_rules! flat_map(
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
         $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
-          $crate::IResult::Error(e)                                 => $crate::IResult::Error(e),
+          $crate::IResult::Error(e)                                 => {
+            let err = match e {
+              $crate::Err::Code(k) | $crate::Err::Node(k, _) | $crate::Err::Position(k, _) | $crate::Err::NodePosition(k, _, _) => {
+                $crate::Err::Position(k, $i)
+              }
+            };
+            $crate::IResult::Error(err)
+          },
           $crate::IResult::Incomplete($crate::Needed::Unknown)      => $crate::IResult::Incomplete($crate::Needed::Unknown),
           $crate::IResult::Incomplete($crate::Needed::Size(ref i2)) => $crate::IResult::Incomplete($crate::Needed::Size(*i2)),
           $crate::IResult::Done(_, o2)                              => $crate::IResult::Done(i, o2)
@@ -860,12 +867,12 @@ macro_rules! opt(
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///  named!( o<&[u8], Result<&[u8], nom::Err> >, opt_res!( tag!( "abcd" ) ) );
+///  named!( o<&[u8], Result<&[u8], nom::Err<&[u8]> > >, opt_res!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdef";
 ///  let b = b"bcdefg";
 ///  assert_eq!(o(&a[..]), Done(&b"ef"[..], Ok(&b"abcd"[..])));
-///  assert_eq!(o(b), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, b))));
+///  assert_eq!(o(&b[..]), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, &b[..]))));
 ///  # }
 /// ```
 #[macro_export]
