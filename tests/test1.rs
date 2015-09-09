@@ -18,7 +18,7 @@ fn tag() {
   });
 }
 
-pub fn print<'a, T: Debug>(input: T) -> IResult<'a,T,()> {
+pub fn print<T: Debug>(input: T) -> IResult<T,()> {
   println!("{:?}", input);
   IResult::Done(input, ())
 }

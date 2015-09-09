@@ -94,7 +94,7 @@ macro_rules! closure (
 #[macro_export]
 macro_rules! named (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        fn $name<'a>( i: $i ) -> $crate::IResult<'a,$i,$o> {
+        fn $name( i: $i ) -> $crate::IResult<$i,$o> {
             $submac!(i, $($args)*)
         }
     );
@@ -104,7 +104,7 @@ macro_rules! named (
         }
     );
     ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<'a, &'a [u8], $o> {
+        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o> {
             $submac!(i, $($args)*)
         }
     );
@@ -114,12 +114,12 @@ macro_rules! named (
         }
     );
     ($name:ident, $submac:ident!( $($args:tt)* )) => (
-        fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8]> {
+        fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8]> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name<'a>( i: $i ) -> $crate::IResult<'a,$i,$o> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i,$o> {
             $submac!(i, $($args)*)
         }
     );
@@ -134,7 +134,7 @@ macro_rules! named (
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<'a,&[u8], &[u8]> {
+        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8]> {
             $submac!(i, $($args)*)
         }
     );
@@ -247,7 +247,14 @@ macro_rules! flat_map(
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
         $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
-          $crate::IResult::Error(e)                                 => $crate::IResult::Error(e),
+          $crate::IResult::Error(e)                                 => {
+            let err = match e {
+              $crate::Err::Code(k) | $crate::Err::Node(k, _) | $crate::Err::Position(k, _) | $crate::Err::NodePosition(k, _, _) => {
+                $crate::Err::Position(k, $i)
+              }
+            };
+            $crate::IResult::Error(err)
+          },
           $crate::IResult::Incomplete($crate::Needed::Unknown)      => $crate::IResult::Incomplete($crate::Needed::Unknown),
           $crate::IResult::Incomplete($crate::Needed::Size(ref i2)) => $crate::IResult::Incomplete($crate::Needed::Size(*i2)),
           $crate::IResult::Done(_, o2)                              => $crate::IResult::Done(i, o2)
@@ -860,12 +867,12 @@ macro_rules! opt(
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///  named!( o<&[u8], Result<&[u8], nom::Err> >, opt_res!( tag!( "abcd" ) ) );
+///  named!( o<&[u8], Result<&[u8], nom::Err<&[u8]> > >, opt_res!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdef";
 ///  let b = b"bcdefg";
 ///  assert_eq!(o(&a[..]), Done(&b"ef"[..], Ok(&b"abcd"[..])));
-///  assert_eq!(o(b), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, b))));
+///  assert_eq!(o(&b[..]), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, &b[..]))));
 ///  # }
 /// ```
 #[macro_export]
@@ -1881,7 +1888,7 @@ mod tests {
 
   use util::{error_to_list, add_error_pattern, print_error};
 
-  fn error_to_string(e: &Err) -> &'static str {
+  fn error_to_string<P>(e: &Err<P>) -> &'static str {
     let v:Vec<ErrorKind> = error_to_list(e);
     // do it this way if you can use slice patterns
     /*
@@ -2062,7 +2069,7 @@ mod tests {
 
   #[test]
   fn opt_res() {
-    named!(o<&[u8], Result<&[u8], Err> >, opt_res!(tag!("abcd")));
+    named!(o<&[u8], Result<&[u8], Err<&[u8]>> >, opt_res!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];

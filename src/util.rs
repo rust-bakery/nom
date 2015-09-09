@@ -159,7 +159,7 @@ macro_rules! dbg_dmp (
   );
 );
 
-pub fn error_to_list(e:&Err) -> Vec<ErrorKind> {
+pub fn error_to_list<P>(e:&Err<P>) -> Vec<ErrorKind> {
   let mut v:Vec<ErrorKind> = Vec::new();
   let mut err = e;
   loop {
@@ -176,12 +176,12 @@ pub fn error_to_list(e:&Err) -> Vec<ErrorKind> {
   }
 }
 
-pub fn compare_error_paths(e1:&Err, e2:&Err) -> bool {
+pub fn compare_error_paths<P>(e1:&Err<P>, e2:&Err<P>) -> bool {
   error_to_list(e1) == error_to_list(e2)
 }
 
 #[cfg(not(feature = "core"))]
-pub fn add_error_pattern<'a,'b,I,O>(h: &mut HashMap<Vec<ErrorKind>, &'b str>, res: IResult<'a,I,O>, message: &'b str) -> bool {
+pub fn add_error_pattern<'a,I,O>(h: &mut HashMap<Vec<ErrorKind>, &'a str>, res: IResult<I,O>, message: &'a str) -> bool {
   if let IResult::Error(e) = res {
     h.insert(error_to_list(&e), message);
     true
@@ -198,7 +198,7 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 }
 
 #[cfg(not(feature = "core"))]
-pub fn prepare_errors<I,O>(input: &[u8], res: IResult<I,O>) -> Option<Vec<(ErrorKind, usize, usize)> > {
+pub fn prepare_errors<O>(input: &[u8], res: IResult<&[u8],O>) -> Option<Vec<(ErrorKind, usize, usize)> > {
   if let IResult::Error(e) = res {
     let mut v:Vec<(ErrorKind, usize, usize)> = Vec::new();
     let mut err = e.clone();
@@ -231,7 +231,7 @@ pub fn prepare_errors<I,O>(input: &[u8], res: IResult<I,O>) -> Option<Vec<(Error
 }
 
 #[cfg(not(feature = "core"))]
-pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
+pub fn print_error<O>(input: &[u8], res: IResult<&[u8],O>) {
   if let Some(v) = prepare_errors(input, res) {
     let colors = generate_colors(&v);
     println!("parser codes: {}",   print_codes(colors, HashMap::new()));

@@ -12,7 +12,7 @@
 //! # use nom::{Producer,ProducerState,FileProducer};
 //! # fn main() {
 //!  use std::str;
-//!  fn local_print<'a, T: Debug>(input: T) -> IResult<'a, T, ()> {
+//!  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
 //!    println!("{:?}", input);
 //!    Done(input, ())
 //!  }
@@ -263,7 +263,7 @@ impl<T: Read> Producer for ReadProducer<T> {
 /// # use nom::IResult::*;
 /// # use nom::{ProducerState,Producer,MemProducer};
 /// # fn main() {
-/// fn local_print<'a, T: Debug>(input: T) -> IResult<'a, T, ()> {
+/// fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
 ///   println!("{:?}", input);
 ///   Done(input, ())
 /// }
@@ -326,7 +326,7 @@ pub enum StepperState<'a,O> {
   Value(O),
   ProducerError(u32),
   Continue,
-  ParserError(super::Err<'a>),
+  ParserError(super::Err<&'a[u8]>),
 }
 
 /// Wraps a producer. The `step` method applies a parser and returns its result
@@ -393,7 +393,7 @@ mod tests {
   use std::fmt::Debug;
   use std::io::SeekFrom;
 
-  fn local_print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
+  fn local_print<T: Debug>(input: T) -> IResult<T, ()> {
     println!("{:?}", input);
     IResult::Done(input, ())
   }

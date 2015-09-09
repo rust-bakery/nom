@@ -42,8 +42,15 @@ macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       let input = ($i, 0usize);
-      match $submac!( input, $($args)*) {
-        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+      match $submac!(input, $($args)*) {
+        $crate::IResult::Error(e)                            => {
+          let err = match e {
+            $crate::Err::Code(k) | $crate::Err::Node(k, _) | $crate::Err::Position(k, _) | $crate::Err::NodePosition(k, _, _) => {
+              $crate::Err::Position(k, $i)
+            }
+          };
+          $crate::IResult::Error(err)
+        }
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
         $crate::IResult::Done((i, bit_index), o)             => {
