@@ -1,7 +1,7 @@
 /// Character level parsers
 
 use internal::{IResult,Needed,Err};
-use util::ErrorCode;
+use util::ErrorKind;
 
 /// matches one of the provided characters
 #[macro_export]
@@ -30,7 +30,7 @@ macro_rules! one_of (
         if found {
           $crate::IResult::Done(&$i[1..], $i[0] as char)
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::OneOf as u32, $i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::OneOf, $i))
         }
       }
     }
@@ -64,7 +64,7 @@ macro_rules! none_of (
         if !found {
           $crate::IResult::Done(&$i[1..], $i[0] as char)
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::NoneOf as u32, $i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::NoneOf, $i))
         }
       }
     }
@@ -82,7 +82,7 @@ macro_rules! char (
         if $i[0] == $c as u8 {
           $crate::IResult::Done(&$i[1..], $i[0] as char)
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Char as u32, $i))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Char, $i))
         }
       }
     }
@@ -98,7 +98,7 @@ pub fn crlf(input:&[u8]) -> IResult<&[u8], char> {
     if &input[0..2] == &b"\r\n"[..] {
       IResult::Done(&input[2..], '\n')
     } else {
-      IResult::Error(Err::Position(ErrorCode::CrLf as u32, input))
+      IResult::Error(Err::Position(ErrorKind::CrLf, input))
     }
   }
 }
@@ -118,7 +118,7 @@ pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
 mod tests {
   use internal::IResult::*;
   use internal::Err::*;
-  use util::ErrorCode;
+  use util::ErrorKind;
 
   #[test]
   fn one_of() {
@@ -128,7 +128,7 @@ mod tests {
     assert_eq!(f(a), Done(&b"bcd"[..], 'a'));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b), Error(Position(ErrorCode::OneOf as u32, b)));
+    assert_eq!(f(b), Error(Position(ErrorKind::OneOf, b)));
   }
 
   #[test]
@@ -136,7 +136,7 @@ mod tests {
     named!(f<char>, none_of!("ab"));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a), Error(Position(ErrorCode::NoneOf as u32, a)));
+    assert_eq!(f(a), Error(Position(ErrorKind::NoneOf, a)));
 
     let b = &b"cde"[..];
     assert_eq!(f(b), Done(&b"de"[..], 'c'));
@@ -147,7 +147,7 @@ mod tests {
     named!(f<char>, char!('c'));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a), Error(Position(ErrorCode::Char as u32, a)));
+    assert_eq!(f(a), Error(Position(ErrorKind::Char, a)));
 
     let b = &b"cde"[..];
     assert_eq!(f(b), Done(&b"de"[..], 'c'));

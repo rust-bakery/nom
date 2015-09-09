@@ -14,7 +14,7 @@ use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 use internal::Err::*;
-use util::ErrorCode;
+use util::ErrorKind;
 use std::mem::transmute;
 
 pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<'b, &'b[u8], &'b[u8]> + 'a> {
@@ -22,7 +22,7 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<'b, &'b[u8], &'
     if i.len() >= rec.len() && &i[0..rec.len()] == rec {
       Done(&i[rec.len()..], &i[0..rec.len()])
     } else {
-      Error(Position(ErrorCode::TagClosure as u32, i))
+      Error(Position(ErrorKind::TagClosure, i))
     }
   })
 }
@@ -84,7 +84,7 @@ pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for (idx, item) in input.iter().enumerate() {
     if !is_alphabetic(*item) {
       if idx == 0 {
-        return Error(Position(ErrorCode::Alpha as u32, input))
+        return Error(Position(ErrorKind::Alpha, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -98,7 +98,7 @@ pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for (idx, item) in input.iter().enumerate() {
     if !is_digit(*item) {
       if idx == 0 {
-        return Error(Position(ErrorCode::Digit as u32, input))
+        return Error(Position(ErrorKind::Digit, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -112,7 +112,7 @@ pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for (idx, item) in input.iter().enumerate() {
     if !is_alphanumeric(*item) {
       if idx == 0 {
-        return Error(Position(ErrorCode::AlphaNumeric as u32, input))
+        return Error(Position(ErrorKind::AlphaNumeric, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -126,7 +126,7 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
   for (idx, item) in input.iter().enumerate() {
     if !is_space(*item) {
       if idx == 0 {
-        return Error(Position(ErrorCode::Space as u32, input))
+        return Error(Position(ErrorKind::Space, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -141,7 +141,7 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
     // println!("multispace at index: {}", idx);
     if !is_space(*item) && *item != '\r' as u8 && *item != '\n' as u8 {
       if idx == 0 {
-        return Error(Position(ErrorCode::MultiSpace as u32, input))
+        return Error(Position(ErrorKind::MultiSpace, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -167,7 +167,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
 pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
   let input_len = input.len();
   if input_len == 0 {
-    return Error(Position(ErrorCode::LengthValueFn as u32, input))
+    return Error(Position(ErrorKind::LengthValueFn, input))
   }
 
   let len = input[0] as usize;
@@ -357,7 +357,7 @@ pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
     if input.len() == 0 {
         Done(input, input)
     } else {
-        Error(Position(ErrorCode::Eof as u32, input))
+        Error(Position(ErrorKind::Eof, input))
     }
 }
 
@@ -372,7 +372,7 @@ mod tests {
   use internal::{Needed,IResult};
   use internal::IResult::*;
   use internal::Err::*;
-  use util::ErrorCode;
+  use util::ErrorKind;
 
   #[test]
   fn tag_closure() {
@@ -381,7 +381,7 @@ mod tests {
     assert_eq!(r, Done(&b"abcdefgh"[..], &b"abcd"[..]));
 
     let r2 = x(&b"abcefgh"[..]);
-    assert_eq!(r2, Error(Position(ErrorCode::TagClosure as u32, &b"abcefgh"[..])));
+    assert_eq!(r2, Error(Position(ErrorKind::TagClosure, &b"abcefgh"[..])));
   }
 
   #[test]
@@ -393,13 +393,13 @@ mod tests {
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
     assert_eq!(alpha(a), Done(empty, a));
-    assert_eq!(alpha(b), Error(Position(ErrorCode::Alpha as u32,b)));
+    assert_eq!(alpha(b), Error(Position(ErrorKind::Alpha,b)));
     assert_eq!(alpha(c), Done(&c[1..], &b"a"[..]));
     assert_eq!(alpha(d), Done("é12".as_bytes(), &b"az"[..]));
-    assert_eq!(digit(a), Error(Position(ErrorCode::Digit as u32,a)));
+    assert_eq!(digit(a), Error(Position(ErrorKind::Digit,a)));
     assert_eq!(digit(b), Done(empty, b));
-    assert_eq!(digit(c), Error(Position(ErrorCode::Digit as u32,c)));
-    assert_eq!(digit(d), Error(Position(ErrorCode::Digit as u32,d)));
+    assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
+    assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(alphanumeric(b), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
@@ -528,7 +528,7 @@ mod tests {
         let is_over = &b""[..];
 
         let res_not_over = eof(not_over);
-        assert_eq!(res_not_over, Error(Position(ErrorCode::Eof as u32, not_over)));
+        assert_eq!(res_not_over, Error(Position(ErrorKind::Eof, not_over)));
 
         let res_over = eof(is_over);
         assert_eq!(res_over, Done(is_over, is_over));

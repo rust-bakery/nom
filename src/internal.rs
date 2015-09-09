@@ -1,6 +1,7 @@
 //! Basic types to build the parsers
 
 use self::IResult::*;
+use util::ErrorKind;
 
 #[cfg(feature = "core")]
 use std::prelude::v1::*;
@@ -36,15 +37,11 @@ impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
 
 /// Contains the error that a parser can return
 #[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<'a>{
-  /// an error code
-  Code(u32),
-  /// an error code, and the next error in the parsing chain
-  Node(u32, Box<Err<'a>>),
-  /// an error code and the related input position
-  Position(u32, &'a [u8]),
-  /// an error code, the related input position, and the next error in the parsing chain
-  NodePosition(u32, &'a [u8], Box<Err<'a>>)
+pub enum Err<'a,E=u32>{
+  Code(ErrorKind<E>),
+  Node(ErrorKind<E>, Box<Err<'a,E>>),
+  Position(ErrorKind<E>, &'a [u8]),
+  NodePosition(ErrorKind<E>, &'a [u8], Box<Err<'a,E>>)
 }
 
 /// Contains information on needed data if a parser returned `Incomplete`
@@ -69,9 +66,9 @@ pub enum Needed {
 /// * Incomplete will hold the closure used to restart the computation once more data is available.
 /// Current attemps at implementation of Incomplete are progressing, but slowed down by lifetime problems
 #[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IResult<'a,I,O> {
+pub enum IResult<'a,I,O,E=u32> {
   Done(I,O),
-  Error(Err<'a>),
+  Error(Err<'a,E>),
   //Incomplete(proc(I):'a -> IResult<I,O>)
   Incomplete(Needed)
   //Incomplete(Box<FnMut(I) -> IResult<I,O>>)

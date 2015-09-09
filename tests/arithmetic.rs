@@ -13,8 +13,7 @@ named!(parens<i64>, delimited!(
   )
 );
 
-named!(factor<i64>,
-  alt!(
+named!(factor<i64>, alt!(
     map_res!(
       map_res!(
         delimited!(opt!(multispace), digit, opt!(multispace)),
@@ -26,8 +25,7 @@ named!(factor<i64>,
   )
 );
 
-named!(term <i64>,
-  chain!(
+named!(term <i64>, chain!(
     mut acc: factor  ~
              many0!(
                alt!(
@@ -39,8 +37,7 @@ named!(term <i64>,
   )
 );
 
-named!(expr <i64>,
-  chain!(
+named!(expr <i64>, chain!(
     mut acc: term  ~
              many0!(
                alt!(

@@ -159,17 +159,17 @@ macro_rules! dbg_dmp (
   );
 );
 
-pub fn error_to_list(e:&Err) -> Vec<u32> {
-  let mut v:Vec<u32> = Vec::new();
+pub fn error_to_list(e:&Err) -> Vec<ErrorKind> {
+  let mut v:Vec<ErrorKind> = Vec::new();
   let mut err = e;
   loop {
     match *err {
-      Err::Code(i) | Err::Position(i,_)                  => {
-        v.push(i);
+      Err::Code(ref i) | Err::Position(ref i,_)                  => {
+        v.push(i.clone());
         return v;
       },
-      Err::Node(i, ref next) | Err::NodePosition(i, _, ref next) => {
-        v.push(i);
+      Err::Node(ref i, ref next) | Err::NodePosition(ref i, _, ref next) => {
+        v.push(i.clone());
         err = &*next;
       }
     }
@@ -181,7 +181,7 @@ pub fn compare_error_paths(e1:&Err, e2:&Err) -> bool {
 }
 
 #[cfg(not(feature = "core"))]
-pub fn add_error_pattern<'a,'b,I,O>(h: &mut HashMap<Vec<u32>, &'b str>, res: IResult<'a,I,O>, message: &'b str) -> bool {
+pub fn add_error_pattern<'a,'b,I,O>(h: &mut HashMap<Vec<ErrorKind>, &'b str>, res: IResult<'a,I,O>, message: &'b str) -> bool {
   if let IResult::Error(e) = res {
     h.insert(error_to_list(&e), message);
     true
@@ -198,9 +198,9 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 }
 
 #[cfg(not(feature = "core"))]
-pub fn prepare_errors<I,O>(input: &[u8], res: IResult<I,O>) -> Option<Vec<(u32, usize, usize)> > {
+pub fn prepare_errors<I,O>(input: &[u8], res: IResult<I,O>) -> Option<Vec<(ErrorKind, usize, usize)> > {
   if let IResult::Error(e) = res {
-    let mut v:Vec<(u32, usize, usize)> = Vec::new();
+    let mut v:Vec<(ErrorKind, usize, usize)> = Vec::new();
     let mut err = e.clone();
     loop {
       match err {
@@ -243,21 +243,22 @@ pub fn print_error<I,O>(input: &[u8], res: IResult<I,O>) {
 }
 
 #[cfg(not(feature = "core"))]
-pub fn generate_colors(v: &Vec<(u32, usize, usize)>) -> HashMap<u32, u8> {
+pub fn generate_colors(v: &Vec<(ErrorKind, usize, usize)>) -> HashMap<u32, u8> {
   let mut h: HashMap<u32, u8> = HashMap::new();
   let mut color = 0;
 
-  for &(c,_,_) in v.iter() {
-    h.insert(c, color + 31);
+  for &(ref c,_,_) in v.iter() {
+    h.insert(error_to_u32(c), color + 31);
     color = color + 1 % 7;
   }
 
   h
 }
 
-pub fn code_from_offset(v: &Vec<(u32, usize, usize)>, offset: usize) -> Option<u32> {
+pub fn code_from_offset(v: &Vec<(ErrorKind, usize, usize)>, offset: usize) -> Option<u32> {
   let mut acc: Option<(u32, usize, usize)> = None;
-  for &(c, s, e) in v.iter() {
+  for &(ref ek, s, e) in v.iter() {
+    let c = error_to_u32(ek);
     if s <= offset && offset <=e {
       if let Some((_, start, end)) = acc {
         if start <= s && e <= end {
@@ -319,7 +320,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
 }
 
 #[cfg(not(feature = "core"))]
-pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(u32, usize, usize)>) -> String {
+pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(ErrorKind, usize, usize)>) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
   let chunk_size = 8;
@@ -468,7 +469,8 @@ array_impls! {
 }
 
 /// indicates which parser returned an error
-pub enum ErrorCode {
+#[derive(Debug,PartialEq,Eq,Hash,Clone)]
+pub enum ErrorKind<E=u32> {
   Tag,
   MapRes,
   MapOpt,
@@ -507,5 +509,51 @@ pub enum ErrorCode {
   RegexpFind,
   RegexpCapture,
   RegexpCaptures,
-  TakeWhile1
+  TakeWhile1,
+  Custom(E)
+}
+
+pub fn error_to_u32(e: &ErrorKind) -> u32 {
+  match e {
+    &ErrorKind::Tag                       => 0,
+    &ErrorKind::MapRes                    => 1,
+    &ErrorKind::MapOpt                    => 2,
+    &ErrorKind::Alt                       => 3,
+    &ErrorKind::IsNot                     => 4,
+    &ErrorKind::IsA                       => 5,
+    &ErrorKind::Filter                    => 6,
+    &ErrorKind::SeparatedList             => 7,
+    &ErrorKind::SeparatedNonEmptyList     => 8,
+    &ErrorKind::Many1                     => 9,
+    &ErrorKind::Count                     => 10,
+    &ErrorKind::TakeUntilAndConsume       => 11,
+    &ErrorKind::TakeUntil                 => 12,
+    &ErrorKind::TakeUntilEitherAndConsume => 13,
+    &ErrorKind::TakeUntilEither           => 14,
+    &ErrorKind::LengthValue               => 15,
+    &ErrorKind::TagClosure                => 16,
+    &ErrorKind::Alpha                     => 17,
+    &ErrorKind::Digit                     => 18,
+    &ErrorKind::AlphaNumeric              => 19,
+    &ErrorKind::Space                     => 20,
+    &ErrorKind::MultiSpace                => 21,
+    &ErrorKind::LengthValueFn             => 22,
+    &ErrorKind::Eof                       => 23,
+    &ErrorKind::ExprOpt                   => 24,
+    &ErrorKind::ExprRes                   => 25,
+    &ErrorKind::CondReduce                => 26,
+    &ErrorKind::Switch                    => 27,
+    &ErrorKind::TagBits                   => 28,
+    &ErrorKind::OneOf                     => 29,
+    &ErrorKind::NoneOf                    => 30,
+    &ErrorKind::Char                      => 40,
+    &ErrorKind::CrLf                      => 41,
+    &ErrorKind::RegexpMatch               => 42,
+    &ErrorKind::RegexpMatches             => 43,
+    &ErrorKind::RegexpFind                => 44,
+    &ErrorKind::RegexpCapture             => 45,
+    &ErrorKind::RegexpCaptures            => 46,
+    &ErrorKind::TakeWhile1                => 47,
+    &ErrorKind::Custom(_)                 => 48
+  }
 }
