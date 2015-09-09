@@ -119,7 +119,7 @@ macro_rules! is_a(
       }) {
         Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsA,$input)),
         Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          let res: $crate::IResult<&[u8],&[u8]> = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
         },
         None    => {

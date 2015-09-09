@@ -126,7 +126,8 @@ macro_rules! tag_bits (
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           if let $p = o {
-            $crate::IResult::Done(i, o)
+            let res: $crate::IResult<(&[u8],usize),$t> = $crate::IResult::Done(i, o);
+            res
           } else {
             $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::TagBits))
           }

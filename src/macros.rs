@@ -728,10 +728,11 @@ macro_rules! alt_parser (
 
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      let res = $submac!($i, $($args)*);
+      let res = $subrule!($i, $($args)*);
       match res {
-        $crate::IResult::Done(_,_) => res,
-        _                          => alt_parser!($i, $($rest)*)
+        $crate::IResult::Done(_,_)     => res,
+        $crate::IResult::Incomplete(_) => res,
+        _                              => alt_parser!($i, $($rest)*)
       }
     }
   );
@@ -2005,6 +2006,12 @@ mod tests {
     let b = &b"efgh"[..];
     assert_eq!(alt4(a), Done(&b""[..], a));
     assert_eq!(alt4(b), Done(&b""[..], b));
+
+    // test the alternative syntax
+    named!(alt5<bool>, alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true }));
+    assert_eq!(alt5(a), Done(&b""[..], false));
+    assert_eq!(alt5(b), Done(&b""[..], true));
+
   }
 
   #[test]

@@ -542,6 +542,18 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     &ErrorKind::ExprOpt                   => 24,
     &ErrorKind::ExprRes                   => 25,
     &ErrorKind::CondReduce                => 26,
-    &ErrorKind::Custom(_)                 => 27
+    &ErrorKind::Switch                    => 27,
+    &ErrorKind::TagBits                   => 28,
+    &ErrorKind::OneOf                     => 29,
+    &ErrorKind::NoneOf                    => 30,
+    &ErrorKind::Char                      => 40,
+    &ErrorKind::CrLf                      => 41,
+    &ErrorKind::RegexpMatch               => 42,
+    &ErrorKind::RegexpMatches             => 43,
+    &ErrorKind::RegexpFind                => 44,
+    &ErrorKind::RegexpCapture             => 45,
+    &ErrorKind::RegexpCaptures            => 46,
+    &ErrorKind::TakeWhile1                => 47,
+    &ErrorKind::Custom(_)                 => 48
   }
 }
