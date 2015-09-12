@@ -151,7 +151,7 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  if input.len() == 0 {
+  if input.is_empty() {
     return Incomplete(Needed::Unknown)
   }
 
@@ -354,7 +354,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 ///
 /// useful to verify that the previous parsers used all of the input
 pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
-    if input.len() == 0 {
+    if input.is_empty() {
         Done(input, input)
     } else {
         Error(Position(ErrorCode::Eof as u32, input))

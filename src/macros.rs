@@ -1466,7 +1466,7 @@ macro_rules! many1(
         res.push(o);
         input = i;
       }
-      if res.len() == 0 {
+      if res.is_empty() {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorCode::Many1 as u32,$i))
       } else {
         $crate::IResult::Done(input, res)
