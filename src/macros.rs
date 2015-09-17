@@ -1045,7 +1045,7 @@ macro_rules! tap (
     }
   );
   ($i:expr, $name: ident: $f:expr => $e:expr) => (
-    tap!($i, $name: call!(f) => $e);
+    tap!($i, $name: call!($f) => $e);
   );
 );
 
