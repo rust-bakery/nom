@@ -117,6 +117,10 @@ macro_rules! dbg (
       }
     }
   );
+
+  ($i:expr, $f:ident) => (
+      dbg!($i, call!($f));
+  );
 );
 
 /// Prints a message and the input if the parser fails
@@ -156,6 +160,10 @@ macro_rules! dbg_dmp (
         a => a
       }
     }
+  );
+
+  ($i:expr, $f:ident) => (
+      dbg_dmp!($i, call!($f));
   );
 );
 
