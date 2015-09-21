@@ -17,7 +17,7 @@ pub enum Input<I> {
 
 // I pour input, O pour output, S pour State, E pour Error
 // S et E ont des types par défaut, donc on n'est pasobligé de les préciser
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum ConsumerState<O,E=(),M=()> {
   Done(O),     // output
   Error(E),
@@ -168,6 +168,98 @@ impl<'x> Producer<&'x[u8],Move> for MemProducer<'x> {
   }
 }
 
+use std::marker::PhantomData;
+
+pub struct MapConsumer<'a, C:'a ,R,S,T,E,M> {
+  state:    ConsumerState<T,E,M>,
+  consumer: &'a mut C,
+  f:        Box<Fn(S) -> T>,
+  input_type: PhantomData<R>
+}
+
+impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> MapConsumer<'a,C,R,S,T,E,M> {
+  fn new(c: &'a mut C, f: Box<Fn(S) -> T>) -> MapConsumer<'a,C,R,S,T,E,M> {
+    //let state = c.state();
+    let initial = match c.state() {
+      &ConsumerState::Done(ref o)     => ConsumerState::Done(f(o.clone())),
+      &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
+      &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone())
+    };
+
+    MapConsumer {
+      state:    initial,
+      consumer: c,
+      f:        f,
+      input_type: PhantomData
+    }
+  }
+}
+
+impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> Consumer<R,T,E,M> for MapConsumer<'a,C,R,S,T,E,M> {
+  fn handle(&mut self, input: Input<R>) -> &ConsumerState<T,E,M> {
+    let res:&ConsumerState<S,E,M> = self.consumer.handle(input);
+    self.state = match res {
+        &ConsumerState::Done(ref o)     => ConsumerState::Done((*self.f)(o.clone())),
+        &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
+        &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone())
+      };
+    &self.state
+  }
+
+  fn state(&self) -> &ConsumerState<T,E,M> {
+    &self.state
+  }
+}
+pub struct ChainConsumer<'a,'b, C1:'a,C2:'b,R,S,T,E,M> {
+  state:    ConsumerState<T,E,M>,
+  consumer1: &'a mut C1,
+  consumer2: &'b mut C2,
+  input_type: PhantomData<R>,
+  temp_type:  PhantomData<S>
+}
+
+impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S,T,E,M>> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
+  fn new(c1: &'a mut C1, c2: &'b mut C2) -> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
+    let initial = match c1.state() {
+      &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
+      &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
+      &ConsumerState::Done(ref o)     => match c2.handle(Input::Element(o.clone())) {
+        &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
+        &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
+        &ConsumerState::Done(ref o2)    => ConsumerState::Done(o2.clone())
+      }
+    };
+
+    ChainConsumer {
+      state:    initial,
+      consumer1: c1,
+      consumer2: c2,
+      input_type: PhantomData,
+      temp_type:  PhantomData
+    }
+  }
+}
+
+impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S,T,E,M>> Consumer<R,T,E,M> for ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
+  fn handle(&mut self, input: Input<R>) -> &ConsumerState<T,E,M> {
+    let res:&ConsumerState<S,E,M> = self.consumer1.handle(input);
+    self.state = match res {
+        &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
+        &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
+        &ConsumerState::Done(ref o)     => match (*self.consumer2).handle(Input::Element(o.clone())) {
+          &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
+          &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
+          &ConsumerState::Done(ref o2)    => ConsumerState::Done(o2.clone())
+        }
+      };
+    &self.state
+  }
+
+  fn state(&self) -> &ConsumerState<T,E,M> {
+    &self.state
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -175,6 +267,7 @@ mod tests {
   use util::HexDisplay;
   use std::fmt::Debug;
   use std::io::SeekFrom;
+  use std::str::from_utf8;
 
   #[derive(Debug)]
   struct AbcdConsumer<'a> {
@@ -219,7 +312,7 @@ mod tests {
     println!("apply {:?}", m.apply(&mut a));
     println!("apply {:?}", m.apply(&mut a));
     println!("apply {:?}", m.apply(&mut a));
-    assert!(false);
+    //assert!(false);
   }
 
   named!(efgh, tag!("efgh"));
@@ -318,25 +411,59 @@ mod tests {
     println!("state {:?}", a.parsing());
     println!("apply {:?}", m.apply(&mut a));
     println!("state {:?}", a.parsing());
-    assert!(false);
+    //assert!(false);
   }
-}
-/*
-macro_rules! consumer (
-  ($name:ident<$i:ty,$o:ty,$s:ty,$e:ty>, $f:ident, $initial:expr) => {
-    struct $name {
-      state: ConsumerState<$i, $o, $s, $e>
-    }
 
-    impl $name {
-      fn state(&self) -> ConsumerState<
-    }
 
-  };
-    ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: $i ) -> $crate::IResult<$i,$o> {
-            $submac!(i, $($args)*)
+  #[test]
+  fn map() {
+    let mut m = MemProducer::new(&b"abcdefghijklabcdabcd"[..], 8);
+
+    let mut s = StateConsumer { state: ConsumerState::Continue(Move::Consume(0)), parsing_state: State::Initial };
+    let mut a = MapConsumer::new(&mut s, Box::new(from_utf8));
+
+    println!("apply {:?}", m.apply(&mut a));
+    println!("apply {:?}", m.apply(&mut a));
+    println!("apply {:?}", m.apply(&mut a));
+    println!("apply {:?}", m.apply(&mut a));
+    //assert!(false);
+  }
+
+  #[derive(Debug)]
+  struct StrConsumer<'a> {
+    state: ConsumerState<&'a str, (), Move>
+  }
+
+  impl<'a> Consumer<&'a [u8], &'a str, (), Move> for StrConsumer<'a> {
+    fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<&'a str, (), Move> {
+      match input {
+        Input::Empty | Input::Eof => &self.state,
+        Input::Element(sl)        => {
+          self.state = ConsumerState::Done(from_utf8(sl).unwrap());
+          &self.state
         }
-    );
-);
-*/
+      }
+
+    }
+
+    fn state(&self) -> &ConsumerState<&'a str, (), Move> {
+      &self.state
+    }
+  }
+
+  #[test]
+  fn chain() {
+    let mut m = MemProducer::new(&b"abcdefghijklabcdabcd"[..], 8);
+
+    let mut s1 = StateConsumer { state: ConsumerState::Continue(Move::Consume(0)), parsing_state: State::Initial };
+    let mut s2 = StrConsumer { state: ConsumerState::Continue(Move::Consume(0)) };
+    let mut a = ChainConsumer::new(&mut s1, &mut s2);
+
+    println!("apply {:?}", m.apply(&mut a));
+    println!("apply {:?}", m.apply(&mut a));
+    println!("apply {:?}", m.apply(&mut a));
+    println!("apply {:?}", m.apply(&mut a));
+    //assert!(false);
+  }
+
+}
