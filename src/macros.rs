@@ -1541,7 +1541,7 @@ macro_rules! count(
 
 /// `count_fixed!(O, I -> IResult<I,O>, nb) => I -> IResult<I, [O; nb]>`
 /// Applies the child parser a fixed number of times and returns a fixed size array
-/// The type must be specified
+/// The type must be specified and it must be `Copy`
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -1567,6 +1567,7 @@ macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let mut input = $i;
+      // `$typ` must be Copy, and thus having no destructor, this is panic safe
       let mut res: [$typ; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
       let mut cnt: usize = 0;
       let mut err = false;
