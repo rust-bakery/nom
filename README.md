@@ -140,7 +140,7 @@ Here are the basic macros available:
 - **tag!**: will match the byte array provided as argument
 - **is_not!**: will match the longest array not containing any of the bytes of the array provided to the macro
 - **is_a!**: will match the longest array containing only bytes of the array provided to the macro
-- **filter!**: will walk the whole array and apply the closure to each suffix until the function fails
+- **take_while!**: will walk the whole array and apply the closure to each suffix until the function fails
 - **take!**: will take as many bytes as the number provided
 - **take_until!**: will take as many bytes as possible until it encounters the provided byte array, and will leave it in the remaining input
 - **take_until_and_consume!**: will take as many bytes as possible until it encounters the provided byte array, and will skip it
