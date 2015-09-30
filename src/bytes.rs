@@ -531,9 +531,9 @@ mod tests {
 
   #[cfg(feature = "nightly")]
   #[bench]
-  fn filter(b: &mut Bencher) {
+  fn take_while(b: &mut Bencher) {
     use nom::is_alphabetic;
-    named!(f, filter!(is_alphabetic));
+    named!(f, take_while!(is_alphabetic));
     b.iter(|| {
       f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..])
     });
