@@ -134,18 +134,6 @@ macro_rules! is_a(
 /// returns the longest list of bytes until the provided function fails.
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
-/// # use nom::is_alphanumeric;
-/// # fn main() {
-///  named!( alpha, filter!( is_alphanumeric ) );
-///
-///  let r = alpha(&b"abcd\nefgh"[..]);
-///  assert_eq!(r, Done(&b"\nefgh"[..], &b"abcd"[..]));
-/// # }
-/// ```
 #[macro_export]
 macro_rules! filter(
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -170,6 +158,18 @@ macro_rules! filter(
 /// returns the longest list of bytes until the provided function fails.
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
+///  named!( alpha, take_while!( is_alphanumeric ) );
+///
+///  let r = alpha(&b"abcd\nefgh"[..]);
+///  assert_eq!(r, Done(&b"\nefgh"[..], &b"abcd"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
