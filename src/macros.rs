@@ -46,10 +46,10 @@
 //!
 //! Combinators must have a specific variant for
 //! non-macro arguments. Example: passing a function
-//! to filter! instead of another combinator.
+//! to take_while! instead of another combinator.
 //!
 //! ```ignore
-//! macro_rules! filter(
+//! macro_rules! take_while(
 //!   ($input:expr, $submac:ident!( $($args:tt)* )) => (
 //!     {
 //!       ...
@@ -58,7 +58,7 @@
 //!
 //!   // wrap the function in a macro to pass it to the main implementation
 //!   ($input:expr, $f:expr) => (
-//!     filter!($input, call!($f));
+//!     take_while!($input, call!($f));
 //!   );
 //! );
 //!

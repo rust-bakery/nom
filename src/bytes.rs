@@ -130,7 +130,7 @@ macro_rules! is_a(
   );
 );
 
-/// `filter!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// `take_while!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function fails.
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
@@ -140,36 +140,12 @@ macro_rules! is_a(
 /// # use nom::IResult::Done;
 /// # use nom::is_alphanumeric;
 /// # fn main() {
-///  named!( alpha, filter!( is_alphanumeric ) );
+///  named!( alpha, take_while!( is_alphanumeric ) );
 ///
 ///  let r = alpha(&b"abcd\nefgh"[..]);
 ///  assert_eq!(r, Done(&b"\nefgh"[..], &b"abcd"[..]));
 /// # }
 /// ```
-#[macro_export]
-macro_rules! filter(
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
-        Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
-        },
-        None    => {
-          $crate::IResult::Done(&b""[..], $input)
-        }
-      }
-    }
-  );
-  ($input:expr, $f:expr) => (
-    filter!($input, call!($f));
-  );
-);
-
-/// `take_while!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest list of bytes until the provided function fails.
-///
-/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -555,9 +531,9 @@ mod tests {
 
   #[cfg(feature = "nightly")]
   #[bench]
-  fn filter(b: &mut Bencher) {
+  fn take_while(b: &mut Bencher) {
     use nom::is_alphabetic;
-    named!(f, filter!(is_alphabetic));
+    named!(f, take_while!(is_alphabetic));
     b.iter(|| {
       f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..])
     });
