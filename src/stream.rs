@@ -1,35 +1,41 @@
-// Context:
-// * Rust n'a pas de TCO, donc on ne peut pas faire de récursion facilement
-// * la gestion de l'ownership fait que le résultat d'une passe sur le
-//     contenu du Producer ne vivra pas plus longtemps que son buffer (sauf si on cpone les données)
-// * les Producers et Consumers actuels passent leur temps à copier des buffers,
-//     je veux limiter ça au Producer
-
+/// Context:
+/// * Rust does not have tail call optimization, so we cannot recurse wildly
+/// * data lifetimes makes sure that the result of a function applied to a producer cannot live longer than the producer's data (unless there is cloning)
+/// * previous implementation of Producer and Consumer spent its time copying buffers
+/// * the old Consumer was handling everything and buffering data. The new design has the producer handle data, but the consumer makes seeking decision
 use std::io::SeekFrom;
 
-pub type Computation<I,O,S,E> = Box<Fn(S, Input<I>) -> (I,Consumer<I,O,S,E>)>;
+//pub type Computation<I,O,S,E> = Box<Fn(S, Input<I>) -> (I,Consumer<I,O,S,E>)>;
 
+#[derive(Debug,Clone)]
 pub enum Input<I> {
   Element(I),
   Empty,
   Eof
 }
 
-// I pour input, O pour output, S pour State, E pour Error
-// S et E ont des types par défaut, donc on n'est pasobligé de les préciser
+/// Stores a consumer's current computation state
 #[derive(Debug,Clone)]
 pub enum ConsumerState<O,E=(),M=()> {
-  Done(O),     // output
+  /// A value pf type O has been produced
+  Done(O),
+  /// An error of type E has been encountered
   Error(E),
-  Continue(M) // on passe un état au lieu de passer une closure
-  //Continue(S, Computation<I,O,S,E>) // on passe un état au lieu de passer une closure
+  /// Continue applying, and pass a message of type M to the data source
+  Continue(M)
 }
 
+/// The Consumer trait wraps a computation and its state
+///
+/// it depends on the input type I, the produced value's type O, the error type E, and the message type M
 pub trait Consumer<I,O,E,M> {
 
+  /// implement hndle for the current computation, returning the new state of the consumer
   fn handle(&mut self, input: Input<I>) -> &ConsumerState<O,E,M>;
+  /// returns the current state
   fn state(&self) -> &ConsumerState<O,E,M>;
 
+  /// return the computed value if it was generated
   fn run(&self) -> Option<&O> {
     if let &ConsumerState::Done(ref o) = self.state() {
       Some(o)
@@ -39,8 +45,18 @@ pub trait Consumer<I,O,E,M> {
   }
 }
 
+/// The producer wraps a data source, like file or network, and applies a consumer on it
+///
+/// it handles buffer copying and reallocation, to provide streaming patterns.
+/// it depends on the input type I, and the message type M.
+/// the consumer can change the way data is produced (for example, to seek in the source) by sending a message of type M.
 pub trait Producer<I,M> {
-  fn apply<'a,O,E>(&'a mut self, consumer: &'a mut Consumer<I,O,E,M>) -> &ConsumerState<O,E,M>; // applique le consumer sur la donnée contenue actuellement dans le producer
+  /// Applies a consumer once on the produced data, and return the consumer's state
+  ///
+  /// a new producer has to implement this method
+  fn apply<'a,O,E>(&'a mut self, consumer: &'a mut Consumer<I,O,E,M>) -> &ConsumerState<O,E,M>;
+
+  /// Applies a consumer once on the produced data, and returns the generated value if there is one
   fn run<'a, O,E>(&'a mut self, consumer: &'a mut Consumer<I,O,E,M>)   -> Option<&O> {
     if let &ConsumerState::Done(ref o) = self.apply(consumer) {
       Some(o)
@@ -51,6 +67,7 @@ pub trait Producer<I,M> {
   // fn fromFile, FromSocket, fromRead
 }
 
+/// ProducerRepeat takes a single value, and generates it at each step
 pub struct ProducerRepeat<I:Copy> {
   value: I
 }
@@ -72,6 +89,10 @@ impl<I:Copy,M> Producer<I,M> for ProducerRepeat<I> {
   }
 }
 
+/// A MemProducer generates values from an in memory byte buffer
+///
+/// it generates data by chunks, and keeps track of how much was consumed.
+/// It can receive messages of type `Move` to handle consumption and seeking
 pub struct MemProducer<'x> {
   buffer: &'x [u8],
   chunk_size: usize,
@@ -92,7 +113,9 @@ impl<'x> MemProducer<'x> {
 
 #[derive(Debug,Clone,PartialEq,Eq)]
 pub enum Move {
+  /// indcates how much data was consumed
   Consume(usize),
+  /// indicates where in the input the consumer must seek
   Seek(SeekFrom)
 }
 
@@ -170,6 +193,7 @@ impl<'x> Producer<&'x[u8],Move> for MemProducer<'x> {
 
 use std::marker::PhantomData;
 
+/// MapConsumer takes a function S -> T and applies it on a consumer producing values of type S
 pub struct MapConsumer<'a, C:'a ,R,S,T,E,M> {
   state:    ConsumerState<T,E,M>,
   consumer: &'a mut C,
@@ -210,6 +234,8 @@ impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> Consumer<R,T,E,M> for M
     &self.state
   }
 }
+
+/// ChainConsumer takes a consumer C1 R -> S, and a consumer C2 S -> T, and makes a consumer R -> T by applying C2 on C1's result
 pub struct ChainConsumer<'a,'b, C1:'a,C2:'b,R,S,T,E,M> {
   state:    ConsumerState<T,E,M>,
   consumer1: &'a mut C1,
