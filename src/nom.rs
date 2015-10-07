@@ -17,6 +17,7 @@ use internal::Err::*;
 use util::ErrorCode;
 use std::mem::transmute;
 
+#[inline]
 pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<'b, &'b[u8], &'b[u8]> + 'a> {
   Box::new(move |i: &'b[u8]| -> IResult<'b, &'b[u8], &'b[u8]> {
     if i.len() >= rec.len() && &i[0..rec.len()] == rec {
@@ -28,11 +29,13 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<'b, &'b[u8], &'
 }
 
 #[cfg(not(feature = "core"))]
+#[inline]
 pub fn print<'a,T: Debug>(input: T) -> IResult<'a,T, ()> {
   println!("{:?}", input);
   Done(input, ())
 }
 
+#[inline]
 pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
   Done((), input)
 }
@@ -54,22 +57,27 @@ pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
 named!(tag_ln, tag!("\n"));
 
 /// Recognizes a line feed
+#[inline]
 pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   tag_ln(input)
 }
 
+#[inline]
 pub fn is_alphabetic(chr:u8) -> bool {
   (chr >= 0x41 && chr <= 0x5A) || (chr >= 0x61 && chr <= 0x7A)
 }
 
+#[inline]
 pub fn is_digit(chr: u8) -> bool {
   chr >= 0x30 && chr <= 0x39
 }
 
+#[inline]
 pub fn is_alphanumeric(chr: u8) -> bool {
   is_alphabetic(chr) || is_digit(chr)
 }
 
+#[inline]
 pub fn is_space(chr:u8) -> bool {
   chr == ' ' as u8 || chr == '\t' as u8
 }
@@ -179,6 +187,7 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
+#[inline]
 pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
     Incomplete(Needed::Size(1))
@@ -188,6 +197,7 @@ pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
 }
 
 /// Recognizes big endian unsigned 2 bytes integer
+#[inline]
 pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     Incomplete(Needed::Size(2))
@@ -198,6 +208,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
 }
 
 /// Recognizes big endian unsigned 4 bytes integer
+#[inline]
 pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     Incomplete(Needed::Size(4))
@@ -208,6 +219,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
 }
 
 /// Recognizes big endian unsigned 8 bytes integer
+#[inline]
 pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     Incomplete(Needed::Size(8))
@@ -219,26 +231,31 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
 }
 
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
+#[inline]
 pub fn be_i8(i:&[u8]) -> IResult<&[u8], i8> {
   map!(i, be_u8, | x | { x as i8 })
 }
 
 /// Recognizes big endian signed 2 bytes integer
+#[inline]
 pub fn be_i16(i:&[u8]) -> IResult<&[u8], i16> {
   map!(i, be_u16, | x | { x as i16 })
 }
 
 /// Recognizes big endian signed 4 bytes integer
+#[inline]
 pub fn be_i32(i:&[u8]) -> IResult<&[u8], i32> {
   map!(i, be_u32, | x | { x as i32 })
 }
 
 /// Recognizes big endian signed 8 bytes integer
+#[inline]
 pub fn be_i64(i:&[u8]) -> IResult<&[u8], i64> {
   map!(i, be_u64, | x | { x as i64 })
 }
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
+#[inline]
 pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
     Incomplete(Needed::Size(1))
@@ -248,6 +265,7 @@ pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
 }
 
 /// Recognizes little endian unsigned 2 bytes integer
+#[inline]
 pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     Incomplete(Needed::Size(2))
@@ -258,6 +276,7 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
 }
 
 /// Recognizes little endian unsigned 4 bytes integer
+#[inline]
 pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     Incomplete(Needed::Size(4))
@@ -268,6 +287,7 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
 }
 
 /// Recognizes little endian unsigned 8 bytes integer
+#[inline]
 pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     Incomplete(Needed::Size(8))
@@ -279,21 +299,25 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
 }
 
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
+#[inline]
 pub fn le_i8(i:&[u8]) -> IResult<&[u8], i8> {
   map!(i, le_u8, | x | { x as i8 })
 }
 
 /// Recognizes little endian signed 2 bytes integer
+#[inline]
 pub fn le_i16(i:&[u8]) -> IResult<&[u8], i16> {
   map!(i, le_u16, | x | { x as i16 })
 }
 
 /// Recognizes little endian signed 4 bytes integer
+#[inline]
 pub fn le_i32(i:&[u8]) -> IResult<&[u8], i32> {
   map!(i, le_u32, | x | { x as i32 })
 }
 
 /// Recognizes little endian signed 8 bytes integer
+#[inline]
 pub fn le_i64(i:&[u8]) -> IResult<&[u8], i64> {
   map!(i, le_u64, | x | { x as i64 })
 }
@@ -325,6 +349,7 @@ macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i32($i) } else { 
 macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i64($i) } else { $crate::le_i64($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number
+#[inline]
 pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
   match be_u32(input) {
     Error(e)      => Error(e),
@@ -338,6 +363,7 @@ pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
 }
 
 /// Recognizes big endian 8 bytes floating point number
+#[inline]
 pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   match be_u64(input) {
     Error(e)      => Error(e),
@@ -353,6 +379,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 /// Recognizes empty input buffers
 ///
 /// useful to verify that the previous parsers used all of the input
+#[inline]
 pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
     if input.is_empty() {
         Done(input, input)
@@ -362,6 +389,7 @@ pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 /// Return the remaining input.
+#[inline]
 pub fn rest(i: &[u8]) -> IResult<&[u8], &[u8]> {
 	IResult::Done(b"", i)
 }
