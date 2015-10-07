@@ -3,7 +3,10 @@
 /// * data lifetimes makes sure that the result of a function applied to a producer cannot live longer than the producer's data (unless there is cloning)
 /// * previous implementation of Producer and Consumer spent its time copying buffers
 /// * the old Consumer was handling everything and buffering data. The new design has the producer handle data, but the consumer makes seeking decision
-use std::io::SeekFrom;
+use std::io::{self,Read,SeekFrom};
+use std::fs::File;
+use std::path::Path;
+use std::ptr;
 
 //pub type Computation<I,O,S,E> = Box<Fn(S, Input<I>) -> (I,Consumer<I,O,S,E>)>;
 
@@ -11,7 +14,7 @@ use std::io::SeekFrom;
 pub enum Input<I> {
   Element(I),
   Empty,
-  Eof
+  Eof(Option<I>)
 }
 
 /// Stores a consumer's current computation state
@@ -304,14 +307,29 @@ mod tests {
   impl<'a> Consumer<&'a [u8], &'a [u8], (), Move> for AbcdConsumer<'a> {
     fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<&'a [u8],(),Move> {
       match input {
-        Input::Empty | Input::Eof => &self.state,
-        Input::Element(sl)        => {
+        Input::Empty | Input::Eof(None) => &self.state,
+        Input::Element(sl)              => {
           match abcd(sl) {
             IResult::Error(_) => {
               self.state = ConsumerState::Error(())
             },
             IResult::Incomplete(_) => {
               self.state = ConsumerState::Continue(Move::Consume(0))
+            },
+            IResult::Done(_,o) => {
+              self.state = ConsumerState::Done(o)
+            }
+          };
+          &self.state
+        }
+        Input::Eof(Some(sl))            => {
+          match abcd(sl) {
+            IResult::Error(_) => {
+              self.state = ConsumerState::Error(())
+            },
+            IResult::Incomplete(_) => {
+              // we cannot return incomplete on Eof
+              self.state = ConsumerState::Error(())
             },
             IResult::Done(_,o) => {
               self.state = ConsumerState::Done(o)
@@ -360,8 +378,8 @@ mod tests {
   impl<'a> Consumer<&'a [u8], &'a [u8], (), Move> for StateConsumer<'a> {
     fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<&'a [u8], (), Move> {
       match input {
-        Input::Empty | Input::Eof => &self.state,
-        Input::Element(sl)        => {
+        Input::Empty | Input::Eof(None) => &self.state,
+        Input::Element(sl)              => {
           match self.parsing_state {
             State::Initial => match abcd(sl) {
               IResult::Error(_) => {
@@ -396,6 +414,57 @@ mod tests {
               },
               IResult::Incomplete(_) => {
                 self.state = ConsumerState::Continue(Move::Consume(0))
+              },
+              IResult::Done(_,o) => {
+                self.parsing_state = State::End;
+                self.state = ConsumerState::Done(o)
+              }
+            },
+            _ => {
+              self.parsing_state = State::Error;
+              self.state = ConsumerState::Error(())
+            }
+          }
+          &self.state
+        }
+        Input::Eof(Some(sl))           => {
+          match self.parsing_state {
+            State::Initial => match abcd(sl) {
+              IResult::Error(_) => {
+                self.parsing_state = State::Error;
+                self.state = ConsumerState::Error(())
+              },
+              IResult::Incomplete(_) => {
+                self.parsing_state = State::Error;
+                self.state = ConsumerState::Error(())
+              },
+              IResult::Done(i,o) => {
+                self.parsing_state = State::A;
+                self.state = ConsumerState::Error(())
+              }
+            },
+            State::A => match efgh(sl) {
+              IResult::Error(_) => {
+                self.parsing_state = State::Error;
+                self.state = ConsumerState::Error(())
+              },
+              IResult::Incomplete(_) => {
+                self.parsing_state = State::Error;
+                self.state = ConsumerState::Error(())
+              },
+              IResult::Done(i,o) => {
+                self.parsing_state = State::B;
+                self.state = ConsumerState::Error(())
+              }
+            },
+            State::B => match ijkl(sl) {
+              IResult::Error(_) => {
+                self.parsing_state = State::Error;
+                self.state = ConsumerState::Error(())
+              },
+              IResult::Incomplete(_) => {
+                self.parsing_state = State::Error;
+                self.state = ConsumerState::Error(())
               },
               IResult::Done(_,o) => {
                 self.parsing_state = State::End;
@@ -463,8 +532,8 @@ mod tests {
   impl<'a> Consumer<&'a [u8], &'a str, (), Move> for StrConsumer<'a> {
     fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<&'a str, (), Move> {
       match input {
-        Input::Empty | Input::Eof => &self.state,
-        Input::Element(sl)        => {
+        Input::Empty | Input::Eof(None)           => &self.state,
+        Input::Element(sl) | Input::Eof(Some(sl)) => {
           self.state = ConsumerState::Done(from_utf8(sl).unwrap());
           &self.state
         }
