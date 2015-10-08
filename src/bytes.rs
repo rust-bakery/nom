@@ -267,7 +267,7 @@ macro_rules! take(
 /// same as take! but returning a &str
 #[macro_export]
 macro_rules! take_str (
- ( $i:expr, $size:expr ) => ( map_res!($i, take!($size), from_utf8) );
+ ( $i:expr, $size:expr ) => ( map_res!($i, take!($size), ::std::str::from_utf8) );
 );
 
 /// `take_until_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
@@ -496,7 +496,6 @@ mod tests {
     assert_eq!(r2, Done(&b""[..], &b"1"[..]));
   }
 
-  use std::str::from_utf8;
   #[test]
   fn take_str_test() {
     let a = b"omnomnom";
