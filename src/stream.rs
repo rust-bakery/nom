@@ -57,10 +57,10 @@ pub trait Producer<I,M> {
   /// Applies a consumer once on the produced data, and return the consumer's state
   ///
   /// a new producer has to implement this method
-  fn apply<'a,O,E>(&'a mut self, consumer: &'a mut Consumer<I,O,E,M>) -> &ConsumerState<O,E,M>;
+  fn apply<'a, O,E>(& mut self, consumer: &'a mut Consumer<I,O,E,M>) -> &'a ConsumerState<O,E,M>;
 
   /// Applies a consumer once on the produced data, and returns the generated value if there is one
-  fn run<'a, O,E>(&'a mut self, consumer: &'a mut Consumer<I,O,E,M>)   -> Option<&O> {
+  fn run<'a,O,E>(&'a mut self, consumer: &'a mut Consumer<I,O,E,M>)   -> Option<&O> {
     if let &ConsumerState::Done(ref o) = self.apply(consumer) {
       Some(o)
     } else {
@@ -76,7 +76,7 @@ pub struct ProducerRepeat<I:Copy> {
 }
 
 impl<I:Copy,M> Producer<I,M> for ProducerRepeat<I> {
-  fn apply<'a, O,E>(&'a mut self, consumer: &'a mut Consumer<I,O,E,M>) -> & ConsumerState<O,E,M> {
+  fn apply<'a,O,E>(& mut self, consumer: &'a mut Consumer<I,O,E,M>) -> &'a ConsumerState<O,E,M> {
     if {
       if let &ConsumerState::Continue(_) = consumer.state() {
         true
@@ -123,7 +123,7 @@ pub enum Move {
 }
 
 impl<'x> Producer<&'x[u8],Move> for MemProducer<'x> {
-  fn apply<'a, O,E>(&'a mut self, consumer: &'a mut Consumer<&'x[u8],O,E,Move>) -> & ConsumerState<O,E,Move> {
+  fn apply<'a,O,E>(& mut self, consumer: &'a mut Consumer<&'x[u8],O,E,Move>) -> &'a ConsumerState<O,E,Move> {
     if {
       if let &ConsumerState::Continue(ref m) = consumer.state() {
         match *m {
@@ -193,6 +193,219 @@ impl<'x> Producer<&'x[u8],Move> for MemProducer<'x> {
     }
   }
 }
+
+enum FileProducerState {
+  Normal,
+  Error,
+  Eof
+}
+
+pub struct FileProducer {//<'x> {
+  size:  usize,
+  file:  File,
+  v:     Vec<u8>,
+  start: usize,
+  end:   usize,
+  state: FileProducerState,
+  //ph:    PhantomData<&'x[u8]>
+}
+
+impl FileProducer {
+//impl<'x> FileProducer<'x> {
+  pub fn new(filename: &str, buffer_size: usize) -> io::Result<FileProducer> {
+    File::open(&Path::new(filename)).map(|f| {
+      let mut v = Vec::with_capacity(buffer_size);
+      //v.extend(repeat(0).take(buffer_size));
+      FileProducer {size: buffer_size, file: f, v: v, start: 0, end: 0, state: FileProducerState::Normal }//, ph: PhantomData }
+    })
+  }
+
+  fn refill(&mut self, sz: usize) -> Option<usize> {
+    shift(&mut self.v, self.start, self.end);
+    self.end = self.end - self.start;
+    self.start = 0;
+    match self.file.read(&mut self.v[self.end..]) {
+      Err(_) => {
+        self.state = FileProducerState::Error;
+        None
+      },
+      Ok(n)  => {
+        //println!("read: {} bytes\ndata:\n{}", n, (&self.v).to_hex(8));
+        /*if n == 0 { 
+          Eof(&self.v[..n])
+        } else {
+          Data(&self.v[..n])
+        }*/
+        if n == 0 {
+          self.state = FileProducerState::Eof;
+        }
+        self.end += n;
+        Some(0)
+      }
+    }
+  }
+
+  fn my_apply<'a,'x,O,E>(&'x mut self, consumer: &'a mut Consumer<&'x[u8],O,E,Move>) -> &'a ConsumerState<O,E,Move> {
+    if {
+      if let &ConsumerState::Continue(ref m) = consumer.state() {
+        match *m {
+          Move::Consume(s) => {
+            if self.end - self.start > s {
+              self.start += s
+            } else {
+              panic!("cannot consume past the end of the buffer");
+            }
+          },
+          // FIXME: must seek in the file
+          Move::Seek(SeekFrom::Start(position)) => {
+            if position as usize > self.end {
+              self.start = self.end
+            } else {
+              self.start = position as usize
+            }
+          },
+          // FIXME: must seek in the file
+          Move::Seek(SeekFrom::Current(offset)) => {
+            let next = if offset >= 0 {
+              (self.start as u64).checked_add(offset as u64)
+            } else {
+              (self.start as u64).checked_sub(-offset as u64)
+            };
+            match next {
+              None    => None,
+              Some(u) => {
+                if u as usize > self.end {
+                  self.start = self.end
+                } else {
+                  self.start = u as usize
+                }
+                Some(self.start as u64)
+              }
+            };
+          },
+          // FIXME: must seek in the file
+          Move::Seek(SeekFrom::End(i)) => {
+            let next = if i < 0 {
+              (self.end as u64).checked_sub(-i as u64)
+            } else {
+              // std::io::SeekFrom documentation explicitly allows
+              // seeking beyond the end of the stream, so we seek
+              // to the end of the content if the offset is 0 or
+              // greater.
+              Some(self.end as u64)
+            };
+            match next {
+              // std::io:SeekFrom documentation states that it `is an
+              // error to seek before byte 0.' So it's the sensible
+              // thing to refuse to seek on underflow.
+              None => None,
+              Some(u) => {
+                self.start = u as usize;
+                Some(u)
+              }
+            };
+          }
+        }
+        true
+      } else {
+        false
+      }
+    }
+    {
+      consumer.handle(Input::Element(&self.v[self.start..self.end]))
+    } else {
+      consumer.state()
+    }
+  }
+}
+
+pub fn shift(s: &mut[u8], start: usize, end: usize) {
+  if start > 0 {
+    unsafe {
+      let length = end - start;
+      ptr::copy( (&s[start..end]).as_ptr(), (&mut s[..length]).as_mut_ptr(), length);
+    }
+  }
+}
+
+
+impl<'x> Producer<&'x [u8],Move> for FileProducer {
+
+  fn apply<'a,O,E>(&mut self, consumer: &'a mut Consumer<&'x[u8],O,E,Move>) -> &'a ConsumerState<O,E,Move> {
+    //self.my_apply(consumer)
+    if {
+      if let &ConsumerState::Continue(ref m) = consumer.state() {
+        match *m {
+          Move::Consume(s) => {
+            if self.end - self.start > s {
+              self.start += s
+            } else {
+              panic!("cannot consume past the end of the buffer");
+            }
+          },
+          // FIXME: must seek in the file
+          Move::Seek(SeekFrom::Start(position)) => {
+            if position as usize > self.end {
+              self.start = self.end
+            } else {
+              self.start = position as usize
+            }
+          },
+          // FIXME: must seek in the file
+          Move::Seek(SeekFrom::Current(offset)) => {
+            let next = if offset >= 0 {
+              (self.start as u64).checked_add(offset as u64)
+            } else {
+              (self.start as u64).checked_sub(-offset as u64)
+            };
+            match next {
+              None    => None,
+              Some(u) => {
+                if u as usize > self.end {
+                  self.start = self.end
+                } else {
+                  self.start = u as usize
+                }
+                Some(self.start as u64)
+              }
+            };
+          },
+          // FIXME: must seek in the file
+          Move::Seek(SeekFrom::End(i)) => {
+            let next = if i < 0 {
+              (self.end as u64).checked_sub(-i as u64)
+            } else {
+              // std::io::SeekFrom documentation explicitly allows
+              // seeking beyond the end of the stream, so we seek
+              // to the end of the content if the offset is 0 or
+              // greater.
+              Some(self.end as u64)
+            };
+            match next {
+              // std::io:SeekFrom documentation states that it `is an
+              // error to seek before byte 0.' So it's the sensible
+              // thing to refuse to seek on underflow.
+              None => None,
+              Some(u) => {
+                self.start = u as usize;
+                Some(u)
+              }
+            };
+          }
+        }
+        true
+      } else {
+        false
+      }
+    }
+    {
+      consumer.handle(Input::Element(&self.v[self.start..self.end]))
+    } else {
+      consumer.state()
+    }
+  }
+}
+
 
 use std::marker::PhantomData;
 
