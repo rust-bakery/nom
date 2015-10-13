@@ -22,7 +22,7 @@ pub enum Input<I> {
 #[derive(Debug,Clone)]
 pub enum ConsumerState<O,E=(),M=()> {
   /// A value pf type O has been produced
-  Done(O),
+  Done(M,O),
   /// An error of type E has been encountered
   Error(E),
   /// Continue applying, and pass a message of type M to the data source
@@ -41,7 +41,7 @@ pub trait Consumer<I,O,E,M> {
 
   /// return the computed value if it was generated
   fn run(&self) -> Option<&O> {
-    if let &ConsumerState::Done(ref o) = self.state() {
+    if let &ConsumerState::Done(_, ref o) = self.state() {
       Some(o)
     } else {
       None
@@ -62,7 +62,7 @@ pub trait Producer<'b,I,M> {
 
   /// Applies a consumer once on the produced data, and returns the generated value if there is one
   fn run<'a: 'b,O,E>(&'b mut self, consumer: &'a mut Consumer<I,O,E,M>)   -> Option<&O> {
-    if let &ConsumerState::Done(ref o) = self.apply(consumer) {
+    if let &ConsumerState::Done(_,ref o) = self.apply(consumer) {
       Some(o)
     } else {
       None
@@ -354,9 +354,9 @@ impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> MapConsumer<'a,C,R,S,T,
   fn new(c: &'a mut C, f: Box<Fn(S) -> T>) -> MapConsumer<'a,C,R,S,T,E,M> {
     //let state = c.state();
     let initial = match c.state() {
-      &ConsumerState::Done(ref o)     => ConsumerState::Done(f(o.clone())),
-      &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
-      &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone())
+      &ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), f(o.clone())),
+      &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+      &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone())
     };
 
     MapConsumer {
@@ -372,9 +372,9 @@ impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> Consumer<R,T,E,M> for M
   fn handle(&mut self, input: Input<R>) -> &ConsumerState<T,E,M> {
     let res:&ConsumerState<S,E,M> = self.consumer.handle(input);
     self.state = match res {
-        &ConsumerState::Done(ref o)     => ConsumerState::Done((*self.f)(o.clone())),
-        &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
-        &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone())
+        &ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), (*self.f)(o.clone())),
+        &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+        &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone())
       };
     &self.state
   }
@@ -396,12 +396,12 @@ pub struct ChainConsumer<'a,'b, C1:'a,C2:'b,R,S,T,E,M> {
 impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S,T,E,M>> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
   fn new(c1: &'a mut C1, c2: &'b mut C2) -> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
     let initial = match c1.state() {
-      &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
-      &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
-      &ConsumerState::Done(ref o)     => match c2.handle(Input::Element(o.clone())) {
-        &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
-        &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
-        &ConsumerState::Done(ref o2)    => ConsumerState::Done(o2.clone())
+      &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+      &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
+      &ConsumerState::Done(ref m, ref o) => match c2.handle(Input::Element(o.clone())) {
+        &ConsumerState::Error(ref e)     => ConsumerState::Error(e.clone()),
+        &ConsumerState::Continue(ref m2) => ConsumerState::Continue(m2.clone()),
+        &ConsumerState::Done(_,ref o2)   => ConsumerState::Done(m.clone(), o2.clone())
       }
     };
 
@@ -419,12 +419,12 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
   fn handle(&mut self, input: Input<R>) -> &ConsumerState<T,E,M> {
     let res:&ConsumerState<S,E,M> = self.consumer1.handle(input);
     self.state = match res {
-        &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
-        &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
-        &ConsumerState::Done(ref o)     => match (*self.consumer2).handle(Input::Element(o.clone())) {
+        &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+        &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
+        &ConsumerState::Done(ref m, ref o) => match (*self.consumer2).handle(Input::Element(o.clone())) {
           &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
           &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
-          &ConsumerState::Done(ref o2)    => ConsumerState::Done(o2.clone())
+          &ConsumerState::Done(_, ref o2)    => ConsumerState::Done(m.clone(), o2.clone())
         }
       };
     &self.state
@@ -462,8 +462,8 @@ mod tests {
             IResult::Incomplete(_) => {
               self.state = ConsumerState::Continue(Move::Consume(0))
             },
-            IResult::Done(_,o) => {
-              self.state = ConsumerState::Done(o)
+            IResult::Done(i,o) => {
+              self.state = ConsumerState::Done(Move::Consume(sl.offset(i)),o)
             }
           };
           &self.state
@@ -477,8 +477,8 @@ mod tests {
               // we cannot return incomplete on Eof
               self.state = ConsumerState::Error(())
             },
-            IResult::Done(_,o) => {
-              self.state = ConsumerState::Done(o)
+            IResult::Done(i,o) => {
+              self.state = ConsumerState::Done(Move::Consume(sl.offset(i)), o)
             }
           };
           &self.state
@@ -561,9 +561,9 @@ mod tests {
               IResult::Incomplete(_) => {
                 self.state = ConsumerState::Continue(Move::Consume(0))
               },
-              IResult::Done(_,o) => {
+              IResult::Done(i,o) => {
                 self.parsing_state = State::End;
-                self.state = ConsumerState::Done(o)
+                self.state = ConsumerState::Done(Move::Consume(sl.offset(i)),o)
               }
             },
             _ => {
@@ -612,9 +612,9 @@ mod tests {
                 self.parsing_state = State::Error;
                 self.state = ConsumerState::Error(())
               },
-              IResult::Done(_,o) => {
+              IResult::Done(i,o) => {
                 self.parsing_state = State::End;
-                self.state = ConsumerState::Done(o)
+                self.state = ConsumerState::Done(Move::Consume(sl.offset(i)), o)
               }
             },
             _ => {
@@ -680,7 +680,7 @@ mod tests {
       match input {
         Input::Empty | Input::Eof(None)           => &self.state,
         Input::Element(sl) | Input::Eof(Some(sl)) => {
-          self.state = ConsumerState::Done(from_utf8(sl).unwrap());
+          self.state = ConsumerState::Done(Move::Consume(sl.len()), from_utf8(sl).unwrap());
           &self.state
         }
       }
