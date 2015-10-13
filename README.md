@@ -153,6 +153,22 @@ named!(my_function<&[u8], &[u8]>, tag!("abcd"));
 named!(my_function, tag!("abcd")); // when you know the parser takes &[u8] as input, and returns &[u8] as output
 ```
 
+**IMPORTANT NOTE**: Rust's macros can be very sensitive to the syntax, so you may encounter an error compiling parsers like this:
+
+```rust
+named!(my_function<&[u8], Vec<&[u8]>>, many0!(tag!("abcd")));
+```
+
+This happens because `>>` is seen as an operator, so the macro parser does not recognize what we want. There is a way to avoid it, by inserting a space:
+
+```rust
+named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
+```
+
+This will compile correctly. I am very sorry for this inconvenience.
+
+#### Common macros
+
 Here are the basic macros available:
 
 - **tag!**: will match the byte array provided as argument
