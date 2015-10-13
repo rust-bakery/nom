@@ -70,7 +70,7 @@ Here is an example of one such parser:
 ```rust
 fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
   if i.len() < 4 {
-    IResult::Incomplete(4)
+    IResult::Incomplete(Needed::Size(4))
   } else {
     IResult::Done(&i[4..],&i[0..4])
   }
@@ -88,14 +88,32 @@ fn parser(input: I) -> IResult<I, O>;
 `IResult` is an enumeration that can represent:
 
 - a correct result `Done(I,O)` with the first element being the rest of the input (not parsed yet), and the second being the output value
-- an error `Error(Err)` with Err being an integer
-- an `Incomplete(u32)` indicating that more input is necessary (for now the value is ignored, but it should indicate how much is needed)
+- an error `Error(Err)` with `Err` an enum that can represent an error with, optionally, position information and a chain of accumulated errors
+- an `Incomplete(Needed)` indicating that more input is necessary. `Needed` can indicate how much data is needed
 
 ````rust
 pub enum IResult<I,O> {
   Done(I,O),
   Error(Err),
-  Incomplete(u32)
+  Incomplete(Needed)
+}
+
+pub enum Err<'a>{
+  /// an error code
+  Code(u32),
+  /// an error code, and the next error in the parsing chain
+  Node(u32, Box<Err<'a>>),
+  /// an error code and the related input position
+  Position(u32, &'a [u8]),
+  /// an error code, the related input position, and the next error in the parsing chain
+  NodePosition(u32, &'a [u8], Box<Err<'a>>)
+}
+
+pub enum Needed {
+  /// needs more data, but we do not know how much
+  Unknown,
+  /// contains the required data size
+  Size(usize)
 }
 ```
 
