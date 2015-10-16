@@ -214,15 +214,16 @@ pub struct FileProducer {//<'x> {
 impl FileProducer {
 //impl<'x> FileProducer<'x> {
   pub fn new(filename: &str, buffer_size: usize) -> io::Result<FileProducer> {
-    File::open(&Path::new(filename)).map(|mut f| {
-      f.seek(SeekFrom::Start(0));
-      let mut v = Vec::with_capacity(buffer_size);
-      v.extend(repeat(0).take(buffer_size));
-      FileProducer {size: buffer_size, file: f, v: v, start: 0, end: 0, state: FileProducerState::Normal }//, ph: PhantomData }
+    File::open(&Path::new(filename)).and_then(|mut f| {
+      f.seek(SeekFrom::Start(0)).map(|_| {
+        let mut v = Vec::with_capacity(buffer_size);
+        v.extend(repeat(0).take(buffer_size));
+        FileProducer {size: buffer_size, file: f, v: v, start: 0, end: 0, state: FileProducerState::Normal }//, ph: PhantomData }
+      })
     })
   }
 
-  fn refill(&mut self, sz: usize) -> Option<usize> {
+  fn refill(&mut self) -> Option<usize> {
     shift(&mut self.v, self.start, self.end);
     self.end = self.end - self.start;
     self.start = 0;
@@ -440,8 +441,6 @@ mod tests {
   use super::*;
   use internal::IResult;
   use util::HexDisplay;
-  use std::fmt::Debug;
-  use std::io::SeekFrom;
   use std::str::from_utf8;
 
   #[derive(Debug)]
@@ -535,7 +534,7 @@ mod tests {
               IResult::Incomplete(_) => {
                 self.state = ConsumerState::Continue(Move::Consume(0))
               },
-              IResult::Done(i,o) => {
+              IResult::Done(i,_) => {
                 self.parsing_state = State::A;
                 self.state = ConsumerState::Continue(Move::Consume(sl.offset(i)))
               }
@@ -548,7 +547,7 @@ mod tests {
               IResult::Incomplete(_) => {
                 self.state = ConsumerState::Continue(Move::Consume(0))
               },
-              IResult::Done(i,o) => {
+              IResult::Done(i,_) => {
                 self.parsing_state = State::B;
                 self.state = ConsumerState::Continue(Move::Consume(sl.offset(i)))
               }
@@ -584,7 +583,7 @@ mod tests {
                 self.parsing_state = State::Error;
                 self.state = ConsumerState::Error(())
               },
-              IResult::Done(i,o) => {
+              IResult::Done(_,_) => {
                 self.parsing_state = State::A;
                 self.state = ConsumerState::Error(())
               }
@@ -598,7 +597,7 @@ mod tests {
                 self.parsing_state = State::Error;
                 self.state = ConsumerState::Error(())
               },
-              IResult::Done(i,o) => {
+              IResult::Done(_,_) => {
                 self.parsing_state = State::B;
                 self.state = ConsumerState::Error(())
               }
@@ -763,7 +762,7 @@ mod tests {
   #[test]
   fn file() {
     let mut f = FileProducer::new("testfile.txt", 200).unwrap();
-    f.refill(42);
+    f.refill();
 
     let mut a  = PrintLineConsumer { state: ConsumerState::Continue(Move::Consume(0)) };
     for _ in 1..10 {
