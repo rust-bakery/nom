@@ -281,7 +281,7 @@ macro_rules! map(
     map_impl!($i, $submac!($($args)*), call!($g));
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_impl!($i, $submac!($($args)*), $submac2!($($args2)*),);
+    map_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
   );
   ($i:expr, $f:expr, $g:expr) => (
     map_impl!($i, call!($f), call!($g));
