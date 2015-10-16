@@ -35,7 +35,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "~0.4.0"
+nom = "~0.5.0"
 ```
 
 Then include it in your code like this:

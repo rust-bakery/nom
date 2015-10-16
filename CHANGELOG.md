@@ -4,6 +4,26 @@
 
 ### Changed
 
+## 0.5.0 - 2015-10-16
+
+This release fixes a few issues and stabilizes the code.
+
+### Thanks
+- @nox for documentation fixes
+- @daboross for linting fixes
+- @ahenry for fixing `tap!` and extending `dbg!` and `dbg_dmp!`
+- @bluss for tracking down and fixing issues with unsafe code
+- @meh for inlining parser functions
+- @ccmtaylor for fixing import of `str::from_utf8`
+
+### Fixed
+- `tap!`, `dbg!` and `dbg_dmp!` now accept function parameters
+
+### Changed
+- the type used in `count_fixed!` must be `Copy`
+- `chain!` calculates how much data is needed if one of the parsers returns `Incomplete
+- optional parsers in `chain!` can return `Incomplete`
+
 ## 0.4.0 - 2015-09-08
 
 Considering the number of changes since the last release, this version can contain breaking changes, so the version number becomes 0.4.0. A lot of new features and performance improvements!
@@ -309,6 +329,7 @@ Considering the number of changes since the last release, this version can conta
 ## Compare code
 
 * [unreleased]: https://github.com/Geal/nom/compare/0.4.0...HEAD
+* [0.5.0]: https://github.com/geal/nom/compare/0.4.0...0.5.0
 * [0.4.0]: https://github.com/geal/nom/compare/0.3.11...0.4.0
 * [0.3.11]: https://github.com/geal/nom/compare/0.3.10...0.3.11
 * [0.3.10]: https://github.com/geal/nom/compare/0.3.9...0.3.10
