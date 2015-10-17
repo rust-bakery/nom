@@ -8,6 +8,7 @@ use std::fs::File;
 use std::path::Path;
 use std::ptr;
 use std::iter::repeat;
+use internal::Needed;
 
 //pub type Computation<I,O,S,E> = Box<Fn(S, Input<I>) -> (I,Consumer<I,O,S,E>)>;
 
@@ -120,7 +121,9 @@ pub enum Move {
   /// indcates how much data was consumed
   Consume(usize),
   /// indicates where in the input the consumer must seek
-  Seek(SeekFrom)
+  Seek(SeekFrom),
+  /// indicates more data is needed
+  Await(Needed)
 }
 
 impl<'x,'b> Producer<'b,&'x[u8],Move> for MemProducer<'x> {
@@ -135,6 +138,9 @@ impl<'x,'b> Producer<'b,&'x[u8],Move> for MemProducer<'x> {
               panic!("cannot consume past the end of the buffer");
             }
           },
+          Move::Await(_) => {
+            panic!("not handled for now");
+          }
           Move::Seek(SeekFrom::Start(position)) => {
             if position as usize > self.length {
               self.index = self.length
@@ -223,6 +229,7 @@ impl FileProducer {
     })
   }
 
+  // FIXME: should handle refill until a certain size is obtained
   fn refill(&mut self) -> Option<usize> {
     shift(&mut self.v, self.start, self.end);
     self.end = self.end - self.start;
@@ -274,6 +281,10 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
               self.refill();
             }
           },
+          Move::Await(_) => {
+            self.refill();
+          },
+
           // FIXME: naive seeking for now
           Move::Seek(position) => {
             let next = self.file.seek(position);
@@ -451,7 +462,7 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::IResult;
+  use internal::{Needed,IResult};
   use util::HexDisplay;
   use std::str::from_utf8;
   use std::io::SeekFrom;
@@ -735,29 +746,38 @@ mod tests {
   }
 
   #[derive(Debug)]
-  struct PrintLineConsumer {
-    state: ConsumerState<(), (), Move>
+  struct LineConsumer {
+    state: ConsumerState<String, (), Move>
   }
 
   fn lf(i:& u8) -> bool {
     *i == '\n' as u8
   }
   //named!(line<&[u8]>, take_till!(lf));
-  named!(line<&[u8]>, take_until_and_consume!("\n"));
+  //named!(line<&[u8]>, terminated!(is_not!("\n"), tag!("\n")));
+  named!(line<&[u8]>, terminated!(take_till!(lf), tag!("\n")));
+  //named!(line<&[u8]>, take_until_and_consume!("\n"));
 
-  impl<'a> Consumer<&'a [u8], (), (), Move> for PrintLineConsumer {
-    fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<(), (), Move> {
+  impl<'a> Consumer<&'a [u8], String, (), Move> for LineConsumer {
+    fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<String, (), Move> {
       match input {
         Input::Empty | Input::Eof(None)           => &self.state,
         Input::Element(sl) | Input::Eof(Some(sl)) => {
           //println!("got slice: {:?}", sl);
           self.state = match line(sl) {
-            IResult::Incomplete(_)  => ConsumerState::Continue(Move::Consume(0)),
-            IResult::Error(_)       => ConsumerState::Error(()),
+            IResult::Incomplete(n)  => {
+              println!("line not complete, continue (line was \"{}\")", from_utf8(sl).unwrap());
+              ConsumerState::Continue(Move::Await(n))
+            },
+            IResult::Error(e)       => {
+              println!("LineConsumer parsing error: {:?}", e);
+              ConsumerState::Error(())
+            },
             IResult::Done(i,o)      => {
-              println!("found: {}", from_utf8(o).unwrap());
+              let res = String::from(from_utf8(o).unwrap());
+              println!("found: {}", res);
               //println!("sl: {:?}\ni:{:?}\noffset:{}", sl, i, sl.offset(i));
-              ConsumerState::Continue(Move::Consume(sl.offset(i)))
+              ConsumerState::Done(Move::Consume(sl.offset(i)), res)
             }
           };
 
@@ -767,7 +787,7 @@ mod tests {
 
     }
 
-    fn state(&self) -> &ConsumerState<(), (), Move> {
+    fn state(&self) -> &ConsumerState<String, (), Move> {
       &self.state
     }
   }
@@ -777,13 +797,24 @@ mod tests {
     let mut f = FileProducer::new("LICENSE", 200).unwrap();
     f.refill();
 
-    let mut a  = PrintLineConsumer { state: ConsumerState::Continue(Move::Consume(0)) };
+    let mut mv = Move::Consume(0);
     for _ in 1..10 {
-      println!("file apply {:?}", f.apply(&mut a));
+      let mut a  = LineConsumer { state: ConsumerState::Continue(mv.clone()) };
+      match f.apply(&mut a) {
+        &ConsumerState::Done(ref m, ref res) => {
+          println!("got line: {}", res);
+          mv = m.clone();
+        },
+        &ConsumerState::Continue(ref m) => {
+          println!("continue");
+          mv = m.clone();
+        },
+        _ => {
+          assert!(false, "LineConsumer should not have failed");
+        }
+      }
     }
-    println!("file producer: {:?}", f);
-    println!("print line consumer: {:?}", a);
-    assert!(false);
+    //assert!(false);
   }
 
   #[derive(Debug,Clone,Copy,PartialEq,Eq)]
