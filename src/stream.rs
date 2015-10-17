@@ -459,6 +459,79 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
   }
 }
 
+#[macro_export]
+macro_rules! consumer_from_parser (
+  //FIXME: should specify the error and move type
+  ($name:ident<$input:ty, $output:ty>, $submac:ident!( $($args:tt)* )) => (
+    #[derive(Debug)]
+    struct $name {
+      state: ConsumerState<$output, (), Move>
+    }
+
+    impl Consumer<$input, $output, (), Move> for $name {
+      fn handle(&mut self, input: Input<$input>) -> &ConsumerState<$output, (), Move> {
+        match input {
+          Input::Empty | Input::Eof(None)           => &self.state,
+          Input::Element(sl) | Input::Eof(Some(sl)) => {
+            self.state = match $submac!(sl, $($args)*) {
+              IResult::Incomplete(n)  => {
+                ConsumerState::Continue(Move::Await(n))
+              },
+              IResult::Error(_)       => {
+                ConsumerState::Error(())
+              },
+              IResult::Done(i,o)      => {
+                ConsumerState::Done(Move::Consume(sl.offset(i)), o)
+              }
+            };
+
+            &self.state
+          }
+        }
+
+      }
+
+      fn state(&self) -> &ConsumerState<$output, (), Move> {
+        &self.state
+      }
+    }
+  );
+  ($name:ident<$output:ty>, $submac:ident!( $($args:tt)* )) => (
+    #[derive(Debug)]
+    struct $name {
+      state: ConsumerState<$output, (), Move>
+    }
+
+    impl<'a> Consumer<&'a[u8], $output, (), Move> for $name {
+      fn handle(&mut self, input: Input<&'a[u8]>) -> &ConsumerState<$output, (), Move> {
+        match input {
+          Input::Empty | Input::Eof(None)           => &self.state,
+          Input::Element(sl) | Input::Eof(Some(sl)) => {
+            self.state = match $submac!(sl, $($args)*) {
+              IResult::Incomplete(n)  => {
+                ConsumerState::Continue(Move::Await(n))
+              },
+              IResult::Error(_)       => {
+                ConsumerState::Error(())
+              },
+              IResult::Done(i,o)      => {
+                ConsumerState::Done(Move::Consume(sl.offset(i)), o)
+              }
+            };
+
+            &self.state
+          }
+        }
+
+      }
+
+      fn state(&self) -> &ConsumerState<$output, (), Move> {
+        &self.state
+      }
+    }
+  );
+);
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -745,19 +818,10 @@ mod tests {
     assert_eq!(&v2[..4], &[2,3,4,5][..]);
   }
 
-  #[derive(Debug)]
+  /*#[derive(Debug)]
   struct LineConsumer {
     state: ConsumerState<String, (), Move>
   }
-
-  fn lf(i:& u8) -> bool {
-    *i == '\n' as u8
-  }
-  //named!(line<&[u8]>, take_till!(lf));
-  //named!(line<&[u8]>, terminated!(is_not!("\n"), tag!("\n")));
-  named!(line<&[u8]>, terminated!(take_till!(lf), tag!("\n")));
-  //named!(line<&[u8]>, take_until_and_consume!("\n"));
-
   impl<'a> Consumer<&'a [u8], String, (), Move> for LineConsumer {
     fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<String, (), Move> {
       match input {
@@ -790,7 +854,18 @@ mod tests {
     fn state(&self) -> &ConsumerState<String, (), Move> {
       &self.state
     }
+  }*/
+
+  fn lf(i:& u8) -> bool {
+    *i == '\n' as u8
   }
+  fn to_utf8_string(input:&[u8]) -> String {
+    String::from(from_utf8(input).unwrap())
+  }
+
+  named!(line<&[u8]>, terminated!(take_till!(lf), tag!("\n")));
+
+  consumer_from_parser!(LineConsumer<String>, map!(terminated!(take_till!(lf), tag!("\n")), to_utf8_string));
 
   fn get_line(producer: &mut FileProducer, mv: Move) -> Option<(Move,String)> {
     let mut a  = LineConsumer { state: ConsumerState::Continue(mv) };
