@@ -792,26 +792,31 @@ mod tests {
     }
   }
 
+  fn get_line(producer: &mut FileProducer, mv: Move) -> Option<(Move,String)> {
+    let mut a  = LineConsumer { state: ConsumerState::Continue(mv) };
+    while let &ConsumerState::Continue(_) = producer.apply(&mut a) {
+      println!("continue");
+    }
+
+    if let &ConsumerState::Done(ref m, ref s) = a.state() {
+      Some((m.clone(), s.clone()))
+    } else {
+      None
+    }
+  }
+
   #[test]
   fn file() {
     let mut f = FileProducer::new("LICENSE", 200).unwrap();
     f.refill();
 
     let mut mv = Move::Consume(0);
-    for _ in 1..10 {
-      let mut a  = LineConsumer { state: ConsumerState::Continue(mv.clone()) };
-      match f.apply(&mut a) {
-        &ConsumerState::Done(ref m, ref res) => {
-          println!("got line: {}", res);
-          mv = m.clone();
-        },
-        &ConsumerState::Continue(ref m) => {
-          println!("continue");
-          mv = m.clone();
-        },
-        _ => {
-          assert!(false, "LineConsumer should not have failed");
-        }
+    for i in 1..10 {
+      if let Some((m,s)) = get_line(&mut f, mv.clone()) {
+        println!("got line[{}]: {}", i, s);
+        mv = m;
+      } else {
+        assert!(false, "LineConsumer should not have failed");
       }
     }
     //assert!(false);
