@@ -195,30 +195,30 @@ impl<'x,'b> Producer<'b,&'x[u8],Move> for MemProducer<'x> {
   }
 }
 
+#[derive(Debug,Clone,PartialEq,Eq)]
 enum FileProducerState {
   Normal,
   Error,
   Eof
 }
 
-pub struct FileProducer {//<'x> {
+#[derive(Debug)]
+pub struct FileProducer {
   size:  usize,
   file:  File,
   v:     Vec<u8>,
   start: usize,
   end:   usize,
   state: FileProducerState,
-  //ph:    PhantomData<&'x[u8]>
 }
 
 impl FileProducer {
-//impl<'x> FileProducer<'x> {
   pub fn new(filename: &str, buffer_size: usize) -> io::Result<FileProducer> {
     File::open(&Path::new(filename)).and_then(|mut f| {
       f.seek(SeekFrom::Start(0)).map(|_| {
         let mut v = Vec::with_capacity(buffer_size);
         v.extend(repeat(0).take(buffer_size));
-        FileProducer {size: buffer_size, file: f, v: v, start: 0, end: 0, state: FileProducerState::Normal }//, ph: PhantomData }
+        FileProducer {size: buffer_size, file: f, v: v, start: 0, end: 0, state: FileProducerState::Normal }
       })
     })
   }
@@ -233,13 +233,7 @@ impl FileProducer {
         None
       },
       Ok(n)  => {
-        //println!("read: {} bytes\ndata:\n{}", n, (&self.v).to_hex(8));
-        println!("read: {} bytes\ndata:\n{:?}", n, &self.v);
-        /*if n == 0 { 
-          Eof(&self.v[..n])
-        } else {
-          Data(&self.v[..n])
-        }*/
+        //println!("read: {} bytes\ndata:\n{:?}", n, &self.v);
         if n == 0 {
           self.state = FileProducerState::Eof;
         }
@@ -270,13 +264,25 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
       if let &ConsumerState::Continue(ref m) = consumer.state() {
         match *m {
           Move::Consume(s) => {
-            println!("start: {}, end: {}, consumed: {}", self.start, self.end, s);
+            //println!("start: {}, end: {}, consumed: {}", self.start, self.end, s);
             if self.end - self.start >= s {
               self.start = self.start + s;
             } else {
               panic!("cannot consume past the end of the buffer");
             }
+            if self.start == self.end {
+              self.refill();
+            }
           },
+          // FIXME: naive seeking for now
+          Move::Seek(position) => {
+            let next = self.file.seek(position);
+            //println!("file got seek to position {:?}. New position is {:?}", position, next);
+            self.start = 0;
+            self.end = 0;
+            self.refill();
+          }
+          /*
           // FIXME: must seek in the file
           Move::Seek(SeekFrom::Start(position)) => {
             if position as usize > self.end {
@@ -325,7 +331,7 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
                 Some(u)
               }
             };
-          }
+          }*/
         }
         true
       } else {
@@ -333,7 +339,13 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
       }
     }
     {
-      consumer.handle(Input::Element(&self.v[self.start..self.end]))
+      //println!("producer state: {:?}", self.state);
+      match self.state {
+        FileProducerState::Normal => consumer.handle(Input::Element(&self.v[self.start..self.end])),
+        FileProducerState::Eof => consumer.handle(Input::Eof(Some(&self.v[self.start..self.end]))),
+        // is it right?
+        FileProducerState::Error => consumer.state()
+      }
     } else {
       consumer.state()
     }
@@ -442,6 +454,7 @@ mod tests {
   use internal::IResult;
   use util::HexDisplay;
   use std::str::from_utf8;
+  use std::io::SeekFrom;
 
   #[derive(Debug)]
   struct AbcdConsumer<'a> {
@@ -761,14 +774,106 @@ mod tests {
 
   #[test]
   fn file() {
-    let mut f = FileProducer::new("testfile.txt", 200).unwrap();
+    let mut f = FileProducer::new("LICENSE", 200).unwrap();
     f.refill();
 
     let mut a  = PrintLineConsumer { state: ConsumerState::Continue(Move::Consume(0)) };
     for _ in 1..10 {
       println!("file apply {:?}", f.apply(&mut a));
     }
+    println!("file producer: {:?}", f);
+    println!("print line consumer: {:?}", a);
     assert!(false);
   }
 
+  #[derive(Debug,Clone,Copy,PartialEq,Eq)]
+  enum SeekState {
+    Begin,
+    SeekedToEnd,
+    ShouldEof,
+    IsEof
+  }
+
+  #[derive(Debug)]
+  struct SeekingConsumer {
+    state: ConsumerState<(), u8, Move>,
+    position: SeekState
+  }
+
+  impl SeekingConsumer {
+    fn position(&self) -> SeekState {
+      self.position
+    }
+  }
+
+  impl<'a> Consumer<&'a [u8], (), u8, Move> for SeekingConsumer {
+    fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<(), u8, Move> {
+      println!("input: {:?}", input);
+      match self.position {
+        SeekState::Begin       => {
+          self.state    = ConsumerState::Continue(Move::Seek(SeekFrom::End(-4)));
+          self.position = SeekState::SeekedToEnd;
+        },
+        SeekState::SeekedToEnd => match input {
+          Input::Element(sl) => {
+            if sl.len() == 4 {
+              self.state =  ConsumerState::Continue(Move::Consume(4));
+              self.position = SeekState::ShouldEof;
+            } else {
+              self.state = ConsumerState::Error(0);
+            }
+          },
+          Input::Eof(Some(sl)) => {
+            if sl.len() == 4 {
+              self.state = ConsumerState::Done(Move::Consume(4), ());
+              self.position = SeekState::IsEof;
+            } else {
+              self.state = ConsumerState::Error(1);
+            }
+          },
+          _ => self.state = ConsumerState::Error(2)
+        },
+        SeekState::ShouldEof => match input {
+          Input::Eof(Some(sl)) => {
+            if sl.len() == 0 {
+              self.state = ConsumerState::Done(Move::Consume(0), ());
+              self.position = SeekState::IsEof;
+            } else {
+              self.state = ConsumerState::Error(3);
+            }
+          },
+          Input::Eof(None) => {
+            self.state = ConsumerState::Done(Move::Consume(0), ());
+            self.position = SeekState::IsEof;
+          },
+          _ => self.state = ConsumerState::Error(4)
+        },
+        _ => self.state = ConsumerState::Error(5)
+      };
+      &self.state
+    }
+
+    fn state(&self) -> &ConsumerState<(), u8, Move> {
+      &self.state
+    }
+  }
+
+  #[test]
+  fn seeking_consumer() {
+    let mut f = FileProducer::new("testfile.txt", 200).unwrap();
+    f.refill();
+
+    let mut a  = SeekingConsumer { state: ConsumerState::Continue(Move::Consume(0)), position: SeekState::Begin };
+    for _ in 1..4 {
+      println!("file apply {:?}", f.apply(&mut a));
+    }
+    println!("consumer is now: {:?}", a);
+    if let &ConsumerState::Done(Move::Consume(0), ()) = a.state() {
+      println!("end");
+    } else {
+      println!("invalid state is {:?}", a.state());
+      assert!(false, "consumer is not at EOF");
+    }
+    assert_eq!(a.position(), SeekState::IsEof);
+  }
 }
