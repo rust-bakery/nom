@@ -293,56 +293,6 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
             self.end = 0;
             self.refill();
           }
-          /*
-          // FIXME: must seek in the file
-          Move::Seek(SeekFrom::Start(position)) => {
-            if position as usize > self.end {
-              self.start = self.end
-            } else {
-              self.start = position as usize
-            }
-          },
-          // FIXME: must seek in the file
-          Move::Seek(SeekFrom::Current(offset)) => {
-            let next = if offset >= 0 {
-              (self.start as u64).checked_add(offset as u64)
-            } else {
-              (self.start as u64).checked_sub(-offset as u64)
-            };
-            match next {
-              None    => None,
-              Some(u) => {
-                if u as usize > self.end {
-                  self.start = self.end
-                } else {
-                  self.start = u as usize
-                }
-                Some(self.start as u64)
-              }
-            };
-          },
-          // FIXME: must seek in the file
-          Move::Seek(SeekFrom::End(i)) => {
-            let next = if i < 0 {
-              (self.end as u64).checked_sub(-i as u64)
-            } else {
-              // std::io::SeekFrom documentation explicitly allows
-              // seeking beyond the end of the stream, so we seek
-              // to the end of the content if the offset is 0 or
-              // greater.
-              Some(self.end as u64)
-            };
-            match next {
-              // std::io:SeekFrom documentation states that it `is an
-              // error to seek before byte 0.' So it's the sensible
-              // thing to refuse to seek on underflow.
-              None => None,
-              Some(u) => {
-                self.start = u as usize;
-                Some(u)
-              }
-            };
-          }*/
         }
         true
       } else {
