@@ -45,7 +45,7 @@ pub enum Err<P,E=u32>{
 }
 
 /// Contains information on needed data if a parser returned `Incomplete`
-#[derive(Debug,PartialEq,Eq,Clone)]
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
 pub enum Needed {
   /// needs more data, but we do not know how much
   Unknown,
