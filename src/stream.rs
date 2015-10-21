@@ -235,12 +235,13 @@ enum FileProducerState {
 
 #[derive(Debug)]
 pub struct FileProducer {
-  size:  usize,
-  file:  File,
-  v:     Vec<u8>,
-  start: usize,
-  end:   usize,
-  state: FileProducerState,
+  size:     usize,
+  file:     File,
+  position: usize,
+  v:        Vec<u8>,
+  start:    usize,
+  end:      usize,
+  state:    FileProducerState,
 }
 
 impl FileProducer {
@@ -249,7 +250,7 @@ impl FileProducer {
       f.seek(SeekFrom::Start(0)).map(|_| {
         let mut v = Vec::with_capacity(buffer_size);
         v.extend(repeat(0).take(buffer_size));
-        FileProducer {size: buffer_size, file: f, v: v, start: 0, end: 0, state: FileProducerState::Normal }
+        FileProducer {size: buffer_size, file: f, position: 0, v: v, start: 0, end: 0, state: FileProducerState::Normal }
       })
     })
   }
@@ -299,6 +300,7 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
             //println!("start: {}, end: {}, consumed: {}", self.start, self.end, s);
             if self.end - self.start >= s {
               self.start = self.start + s;
+              self.position = self.position + s;
             } else {
               panic!("cannot consume past the end of the buffer");
             }
@@ -312,11 +314,18 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
 
           // FIXME: naive seeking for now
           Move::Seek(position) => {
-            let next = self.file.seek(position);
-            //println!("file got seek to position {:?}. New position is {:?}", position, next);
-            self.start = 0;
-            self.end = 0;
-            self.refill();
+            match self.file.seek(position) {
+              Ok(pos) => {
+                //println!("file got seek to position {:?}. New position is {:?}", position, next);
+                self.position = pos as usize;
+                self.start = 0;
+                self.end = 0;
+                self.refill();
+              },
+              Err(_) => {
+                self.state = FileProducerState::Error;
+              }
+            }
           }
         }
         true
@@ -328,9 +337,9 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
       //println!("producer state: {:?}", self.state);
       match self.state {
         FileProducerState::Normal => consumer.handle(Input::Element(&self.v[self.start..self.end])),
-        FileProducerState::Eof => consumer.handle(Input::Eof(Some(&self.v[self.start..self.end]))),
+        FileProducerState::Eof    => consumer.handle(Input::Eof(Some(&self.v[self.start..self.end]))),
         // is it right?
-        FileProducerState::Error => consumer.state()
+        FileProducerState::Error  => consumer.state()
       }
     } else {
       consumer.state()
