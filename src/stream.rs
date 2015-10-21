@@ -30,6 +30,29 @@ pub enum ConsumerState<O,E=(),M=()> {
   Continue(M)
 }
 
+impl<O:Clone,E:Copy,M:Copy> ConsumerState<O,E,M> {
+  pub fn map<P,F>(&self, f: F) -> ConsumerState<P,E,M> where F: FnOnce(O) -> P {
+    match self {
+      &ConsumerState::Error(ref e)    => ConsumerState::Error(*e),
+      &ConsumerState::Continue(ref m) => ConsumerState::Continue(*m),
+      &ConsumerState::Done(ref m, ref o)   => ConsumerState::Done(*m, f((*o).clone()))
+    }
+  }
+  /*pub fn map<P,F>(&self, f: F) -> ConsumerState<P,E,M> where F: FnOnce(O) -> P {
+    match self {
+      &ConsumerState::Error(ref e)    => ConsumerState::Error(*e),
+      &ConsumerState::Continue(ref m) => ConsumerState::Continue(*m),
+      &ConsumerState::Done(ref m, ref o)   => ConsumerState::Done(*m, f((*o).clone()))
+    }
+  }*/
+  pub fn flat_map<P,F>(&self, f: F) -> ConsumerState<P,E,M> where F: FnOnce(M, O) -> ConsumerState<P,E,M> {
+    match self {
+      &ConsumerState::Error(ref e)       => ConsumerState::Error(*e),
+      &ConsumerState::Continue(ref m)    => ConsumerState::Continue(*m),
+      &ConsumerState::Done(ref m, ref o) => f(*m, (*o).clone())
+    }
+  }
+}
 /// The Consumer trait wraps a computation and its state
 ///
 /// it depends on the input type I, the produced value's type O, the error type E, and the message type M
@@ -116,7 +139,7 @@ impl<'x> MemProducer<'x> {
   }
 }
 
-#[derive(Debug,Clone,PartialEq,Eq)]
+#[derive(Debug,Clone,Copy,PartialEq,Eq)]
 pub enum Move {
   /// indcates how much data was consumed
   Consume(usize),
