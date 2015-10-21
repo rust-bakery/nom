@@ -1,18 +1,20 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Consumer,ConsumerState,MemProducer,IResult};
+use nom::{Producer,Consumer,ConsumerState,Input,Move,MemProducer,IResult,HexDisplay};
 
 #[derive(PartialEq,Eq,Debug)]
 enum State {
   Beginning,
   Middle,
   End,
-  Done
+  Done,
+  Error
 }
 
 struct TestConsumer {
   state:   State,
+  c_state: ConsumerState<usize,(),Move>,
   counter: usize,
 }
 
@@ -20,63 +22,99 @@ named!(om_parser,                        tag!("om"));
 named!(nomnom_parser<&[u8],Vec<&[u8]> >, many1!(tag!("nom")));
 named!(end_parser,                       tag!("kthxbye"));
 
-impl Consumer for TestConsumer {
-  fn consume(&mut self, input: &[u8]) -> ConsumerState {
+impl<'a> Consumer<&'a[u8], usize, (), Move> for TestConsumer {
+  fn state(&self) -> &ConsumerState<usize,(),Move> {
+    &self.c_state
+  }
+
+  fn handle(&mut self, input: Input<&'a [u8]>) -> &ConsumerState<usize,(),Move> {
     match self.state {
       State::Beginning => {
-        match om_parser(input) {
-          IResult::Error(_)      => ConsumerState::ConsumerError(0),
-          IResult::Incomplete(_) => ConsumerState::Await(0, 2),
-          IResult::Done(_,_)     => {
-            self.state = State::Middle;
-            ConsumerState::Await(2, 3)
+        match input {
+          Input::Empty | Input::Eof(None) => {
+            self.state   = State::Error;
+            self.c_state = ConsumerState::Error(());
+          },
+          Input::Element(sl) | Input::Eof(Some(sl)) => {
+            match om_parser(sl) {
+              IResult::Error(_)      => {
+                self.state   = State::Error;
+                self.c_state = ConsumerState::Error(());
+              },
+              IResult::Incomplete(n) => {
+                self.c_state = ConsumerState::Continue(Move::Await(n));
+              },
+              IResult::Done(i,_)     => {
+                self.state = State::Middle;
+                self.c_state = ConsumerState::Continue(Move::Consume(sl.offset(i)));
+              }
+            }
           }
         }
       },
       State::Middle    => {
-        match nomnom_parser(input) {
-          IResult::Error(_)         => {
-            self.state = State::End;
-            ConsumerState::Await(0, 7)
+        match input {
+          Input::Empty | Input::Eof(None) => {
+            self.state   = State::Error;
+            self.c_state = ConsumerState::Error(());
           },
-          IResult::Incomplete(_)    => ConsumerState::Await(0, 3),
-          IResult::Done(i,noms_vec) => {
-            self.counter = self.counter + noms_vec.len();
-            ConsumerState::Await(input.len() - i.len(), 3)
+          Input::Element(sl) | Input::Eof(Some(sl)) => {
+            match nomnom_parser(sl) {
+              IResult::Error(_)      => {
+                self.state   = State::End;
+                self.c_state = ConsumerState::Continue(Move::Consume(0));
+              },
+              IResult::Incomplete(n) => {
+                self.c_state = ConsumerState::Continue(Move::Await(n));
+              },
+              IResult::Done(i,noms_vec)     => {
+                self.counter = self.counter + noms_vec.len();
+                self.state = State::Middle;
+                self.c_state = ConsumerState::Continue(Move::Consume(sl.offset(i)));
+              }
+            }
           }
         }
       },
       State::End       => {
-        match end_parser(input) {
-          IResult::Error(_)      => ConsumerState::ConsumerError(0),
-          IResult::Incomplete(_) => ConsumerState::Await(0, 7),
-          IResult::Done(_,_)     => {
-            self.state = State::Done;
-            ConsumerState::ConsumerDone
+        match input {
+          Input::Empty | Input::Eof(None) => {
+            self.state   = State::Error;
+            self.c_state = ConsumerState::Error(());
+          },
+          Input::Element(sl) | Input::Eof(Some(sl)) => {
+            match end_parser(sl) {
+              IResult::Error(_)      => {
+                self.state   = State::Error;
+                self.c_state = ConsumerState::Error(());
+              },
+              IResult::Incomplete(n) => {
+                self.c_state = ConsumerState::Continue(Move::Await(n));
+              },
+              IResult::Done(i,_)     => {
+                self.state = State::Done;
+                self.c_state = ConsumerState::Done(Move::Consume(sl.offset(i)), self.counter);
+              }
+            }
           }
         }
       },
-      State::Done      => {
+    State::Done | State::Error     => {
         // this should not be called
-        ConsumerState::ConsumerError(42)
+        self.state = State::Error;
+        self.c_state = ConsumerState::Error(())
       }
-    }
-  }
-
-  fn failed(&mut self, error_code: u32) {
-    println!("failed with error code: {}", error_code);
-  }
-
-  fn end(&mut self) {
-    println!("counted {} noms", self.counter);
+    };
+    &self.c_state
   }
 }
 
 #[test]
 fn nom1() {
-  let mut p = MemProducer::new(&b"omnomkthxbye"[..], 4);
-  let mut c = TestConsumer{state: State::Beginning, counter: 0};
-  c.run(&mut p);
+  let mut p = MemProducer::new(&b"omnomkthxbye"[..], 8);
+  let mut c = TestConsumer{state: State::Beginning, counter: 0, c_state: ConsumerState::Continue(Move::Consume(0))};
+  while let &ConsumerState::Continue(Move::Consume(_)) = p.apply(&mut c) {
+  }
 
   assert_eq!(c.counter, 1);
   assert_eq!(c.state, State::Done);
@@ -84,9 +122,10 @@ fn nom1() {
 
 #[test]
 fn nomnomnom() {
-  let mut p = MemProducer::new(&b"omnomnomnomkthxbye"[..], 4);
-  let mut c = TestConsumer{state: State::Beginning, counter: 0};
-  c.run(&mut p);
+  let mut p = MemProducer::new(&b"omnomnomnomkthxbye"[..], 8);
+  let mut c = TestConsumer{state: State::Beginning, counter: 0, c_state: ConsumerState::Continue(Move::Consume(0))};
+  while let &ConsumerState::Continue(_) = p.apply(&mut c) {
+  }
 
   assert_eq!(c.counter, 3);
   assert_eq!(c.state, State::Done);
@@ -94,9 +133,10 @@ fn nomnomnom() {
 
 #[test]
 fn no_nomnom() {
-  let mut p = MemProducer::new(&b"omkthxbye"[..], 4);
-  let mut c = TestConsumer{state: State::Beginning, counter: 0};
-  c.run(&mut p);
+  let mut p = MemProducer::new(&b"omkthxbye"[..], 8);
+  let mut c = TestConsumer{state: State::Beginning, counter: 0, c_state: ConsumerState::Continue(Move::Consume(0))};
+  while let &ConsumerState::Continue(_) = p.apply(&mut c) {
+  }
 
   assert_eq!(c.counter, 0);
   assert_eq!(c.state, State::Done);
@@ -105,9 +145,11 @@ fn no_nomnom() {
 #[test]
 fn impolite() {
   let mut p = MemProducer::new(&b"omnomnomnom"[..], 4);
-  let mut c = TestConsumer{state: State::Beginning, counter: 0};
-  c.run(&mut p);
+  let mut c = TestConsumer{state: State::Beginning, counter: 0, c_state: ConsumerState::Continue(Move::Consume(0))};
+  while let &ConsumerState::Continue(Move::Consume(ref c)) = p.apply(&mut c) {
+    println!("consume {:?}", c);
+  }
 
   assert_eq!(c.counter, 3);
-  assert_eq!(c.state, State::Middle);
+  assert_eq!(c.state, State::End);
 }

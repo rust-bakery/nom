@@ -110,21 +110,20 @@ mod std {
 }
 
 pub use self::util::*;
-pub use self::internal::*;//{IResult, IResultClosure, GetInput, GetOutput};
+pub use self::internal::*;
 pub use self::macros::*;
 pub use self::bytes::*;
 pub use self::bits::*;
 pub use self::accumulator::*;
-#[cfg(not(feature = "core"))]
-pub use self::producer::*;//{ProducerState,Producer,FileProducer,MemProducer};
-#[cfg(not(feature = "core"))]
-pub use self::consumer::*;//{ConsumerState,Consumer};
 
 pub use self::nom::*;
 pub use self::character::*;
 
 #[cfg(feature = "regexp")]
 pub use self::regexp::*;
+
+#[cfg(not(feature = "core"))]
+pub use self::stream::*;
 
 #[macro_use] mod util;
 mod internal;
@@ -133,15 +132,12 @@ mod internal;
 #[macro_use] mod bits;
 #[macro_use] mod accumulator;
 
-#[macro_use]
-#[cfg(not(feature = "core"))]
-mod producer;
-#[cfg(not(feature = "core"))]
-mod consumer;
-
 #[macro_use] mod nom;
 #[macro_use] mod character;
 
 #[cfg(feature = "regexp")]
 #[macro_use] mod regexp;
 
+#[macro_use]
+#[cfg(not(feature = "core"))]
+mod stream;
