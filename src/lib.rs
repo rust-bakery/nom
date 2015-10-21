@@ -80,7 +80,6 @@
 //!   assert_eq!(expr(&b"  2*2 / ( 5 - 1) + 3"[..]), IResult::Done(&b""[..], 4));
 //! }
 //! ```
-
 #![cfg_attr(feature = "core", feature(no_std))]
 #![cfg_attr(feature = "core", feature(core))]
 #![cfg_attr(feature = "core", feature(collections))]

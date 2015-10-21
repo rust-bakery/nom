@@ -76,9 +76,7 @@ impl HexDisplay for [u8] {
       v.push('\n' as u8);
     }
 
-    unsafe {
-      String::from_utf8_unchecked(v)
-    }
+    String::from_utf8_lossy(&v[..]).into_owned()
   }
 }
 
@@ -116,6 +114,10 @@ macro_rules! dbg (
         a => a
       }
     }
+  );
+
+  ($i:expr, $f:ident) => (
+      dbg!($i, call!($f));
   );
 );
 
@@ -156,6 +158,10 @@ macro_rules! dbg_dmp (
         a => a
       }
     }
+  );
+
+  ($i:expr, $f:ident) => (
+      dbg_dmp!($i, call!($f));
   );
 );
 
@@ -313,10 +319,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
   }
   reset_color(&mut v);
 
-  unsafe {
-    String::from_utf8_unchecked(v)
-  }
-
+  String::from_utf8_lossy(&v[..]).into_owned()
 }
 
 #[cfg(not(feature = "core"))]
@@ -402,10 +405,7 @@ pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(ErrorKind, usize,
     i = i + chunk_size;
   }
 
-  unsafe {
-    String::from_utf8_unchecked(v)
-  }
-
+  String::from_utf8_lossy(&v[..]).into_owned()
 }
 
 pub trait AsBytes {

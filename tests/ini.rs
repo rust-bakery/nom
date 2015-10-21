@@ -48,7 +48,7 @@ fn keys_and_values(input:&[u8]) -> IResult<&[u8], HashMap<&str, &str> > {
 
   match keys_and_values_aggregator(input) {
     IResult::Done(i,tuple_vec) => {
-      for &(k,v) in tuple_vec.iter() {
+      for &(k,v) in &tuple_vec {
         h.insert(k, v);
       }
       IResult::Done(i, h)
@@ -73,7 +73,7 @@ fn categories(input: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str> 
 
   match categories_aggregator(input) {
     IResult::Done(i,tuple_vec) => {
-      for &(k,ref v) in tuple_vec.iter() {
+      for &(k,ref v) in &tuple_vec {
         h.insert(k, v.clone());
       }
       IResult::Done(i, h)

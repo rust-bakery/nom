@@ -16,9 +16,9 @@ fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
     Done(i, offset) => {
       let sz: usize = offset as usize;
       if i.len() >= sz - 4 {
-        return Done(&i[(sz-4)..], &i[0..(sz-4)])
+        Done(&i[(sz-4)..], &i[0..(sz-4)])
       } else {
-        return Incomplete(Needed::Size(offset as usize + 4))
+        Incomplete(Needed::Size(offset as usize + 4))
       }
     }
     Error(e)      => Error(e),
@@ -446,7 +446,6 @@ impl MP4Consumer {
             return ConsumerState::Continue(Move::Await(i));
           }
         }
-
       }
     };
   }

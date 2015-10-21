@@ -8,7 +8,7 @@ use util::ErrorKind;
 macro_rules! one_of (
   ($i:expr, $inp: expr) => (
     {
-      if $i.len() == 0 {
+      if $i.is_empty() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         #[inline(always)]
@@ -42,7 +42,7 @@ macro_rules! one_of (
 macro_rules! none_of (
   ($i:expr, $inp: expr) => (
     {
-      if $i.len() == 0 {
+      if $i.is_empty() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         #[inline(always)]
@@ -76,7 +76,7 @@ macro_rules! none_of (
 macro_rules! char (
   ($i:expr, $c: expr) => (
     {
-      if $i.len() == 0 {
+      if $i.is_empty() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         if $i[0] == $c as u8 {
@@ -107,7 +107,7 @@ named!(pub eol<char>, alt!(crlf | newline));
 named!(pub tab<char>, char!('\t'));
 
 pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
-  if input.len() == 0 {
+  if input.is_empty() {
     IResult::Incomplete(Needed::Size(1))
   } else {
     IResult::Done(&input[1..], input[0] as char)

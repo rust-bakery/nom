@@ -6,7 +6,7 @@
 macro_rules! re_match (
   ($i:expr, $re:expr) => (
     {
-      let re = regex::Regex::new($re).unwrap();
+      let re = ::regex::Regex::new($re).unwrap();
       if re.is_match($i) {
         $crate::IResult::Done(&""[..], $i)
       } else {
@@ -44,7 +44,7 @@ macro_rules! re_match_static (
 macro_rules! re_find (
   ($i:expr, $re:expr) => (
     {
-      let re = regex::Regex::new($re).unwrap();
+      let re = ::regex::Regex::new($re).unwrap();
       if let Some((begin, end)) = re.find($i) {
         $crate::IResult::Done(&$i[end..], &$i[begin..end])
       } else {
@@ -82,7 +82,7 @@ macro_rules! re_find_static (
 macro_rules! re_matches (
   ($i:expr, $re:expr) => (
     {
-      let re = regex::Regex::new($re).unwrap();
+      let re = ::regex::Regex::new($re).unwrap();
       let v: Vec<&str> = re.find_iter($i).map(|(begin,end)| &$i[begin..end]).collect();
       if v.len() != 0 {
         let offset = {
@@ -129,7 +129,7 @@ macro_rules! re_matches_static (
 macro_rules! re_capture (
   ($i:expr, $re:expr) => (
     {
-      let re = regex::Regex::new($re).unwrap();
+      let re = ::regex::Regex::new($re).unwrap();
       if let Some(c) = re.captures($i) {
         let v:Vec<&str> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| &$i[begin..end]).collect();
         let offset = {
@@ -176,7 +176,7 @@ macro_rules! re_capture_static (
 macro_rules! re_captures (
   ($i:expr, $re:expr) => (
     {
-      let re = regex::Regex::new($re).unwrap();
+      let re = ::regex::Regex::new($re).unwrap();
       let v:Vec<Vec<&str>> = re.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| &$i[begin..end]).collect()).collect();
       if v.len() != 0 {
         let offset = {
@@ -220,7 +220,6 @@ mod tests {
   use internal::IResult::*;
   use internal::Err::*;
   use util::ErrorKind;
-  use regex;
 
   #[test]
   fn re_match() {
