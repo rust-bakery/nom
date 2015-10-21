@@ -359,7 +359,7 @@ pub struct MapConsumer<'a, C:'a ,R,S,T,E,M> {
 }
 
 impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> MapConsumer<'a,C,R,S,T,E,M> {
-  fn new(c: &'a mut C, f: Box<Fn(S) -> T>) -> MapConsumer<'a,C,R,S,T,E,M> {
+  pub fn new(c: &'a mut C, f: Box<Fn(S) -> T>) -> MapConsumer<'a,C,R,S,T,E,M> {
     //let state = c.state();
     let initial = match c.state() {
       &ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), f(o.clone())),
@@ -402,7 +402,7 @@ pub struct ChainConsumer<'a,'b, C1:'a,C2:'b,R,S,T,E,M> {
 }
 
 impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S,T,E,M>> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
-  fn new(c1: &'a mut C1, c2: &'b mut C2) -> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
+  pub fn new(c1: &'a mut C1, c2: &'b mut C2) -> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
     let initial = match c1.state() {
       &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
       &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
@@ -526,7 +526,7 @@ macro_rules! consumer_from_parser (
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Needed,IResult};
+  use internal::IResult;
   use util::HexDisplay;
   use std::str::from_utf8;
   use std::io::SeekFrom;
@@ -854,7 +854,7 @@ mod tests {
     String::from(from_utf8(input).unwrap())
   }
 
-  named!(line<&[u8]>, terminated!(take_till!(lf), tag!("\n")));
+  //named!(line<&[u8]>, terminated!(take_till!(lf), tag!("\n")));
 
   consumer_from_parser!(LineConsumer<String>, map!(terminated!(take_till!(lf), tag!("\n")), to_utf8_string));
 

@@ -14,8 +14,8 @@ fn tag() {
     let mut p = producer;
     p.refill();
 
-    consumer_from_parser!(pr<()>, flat_map!(map_res!(tag!("https!"), str::from_utf8), print));
-    let mut cs = pr { state: ConsumerState::Continue(Move::Consume(0)) };
+    consumer_from_parser!(PrintConsumer<()>, flat_map!(map_res!(tag!("https!"), str::from_utf8), print));
+    let mut cs = PrintConsumer { state: ConsumerState::Continue(Move::Consume(0)) };
     for _ in 1..4 {
       p.apply(&mut cs);
     }
