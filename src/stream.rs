@@ -255,7 +255,7 @@ impl FileProducer {
   }
 
   // FIXME: should handle refill until a certain size is obtained
-  fn refill(&mut self) -> Option<usize> {
+  pub fn refill(&mut self) -> Option<usize> {
     shift(&mut self.v, self.start, self.end);
     self.end = self.end - self.start;
     self.start = 0;
@@ -505,6 +505,13 @@ macro_rules! consumer_from_parser (
       }
     }
   );
+  ($name:ident<$input:ty, $output:ty>, $f:expr) => (
+    consumer_from_parser!($name<$input, $output>, call!($f));
+  );
+  ($name:ident<$output:ty>, $f:expr) => (
+    consumer_from_parser!($name<$output>, call!($f));
+  );
+
 );
 
 #[cfg(test)]
