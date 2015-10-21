@@ -155,14 +155,14 @@ impl<'x,'b> Producer<'b,&'x[u8],Move> for MemProducer<'x> {
       if let &ConsumerState::Continue(ref m) = consumer.state() {
         match *m {
           Move::Consume(s) => {
-            if self.length - self.index > s {
+            if self.length - self.index >= s {
               self.index += s
             } else {
               panic!("cannot consume past the end of the buffer");
             }
           },
-          Move::Await(_) => {
-            panic!("not handled for now");
+          Move::Await(a) => {
+            panic!("not handled for now: await({:?}", a);
           }
           Move::Seek(SeekFrom::Start(position)) => {
             if position as usize > self.length {
@@ -217,7 +217,9 @@ impl<'x,'b> Producer<'b,&'x[u8],Move> for MemProducer<'x> {
       }
     }
     {
-      consumer.handle(Input::Element(&self.buffer[self.index..(self.index + self.chunk_size)]))
+      use std::cmp;
+      let end = cmp::min(self.index + self.chunk_size, self.length);
+      consumer.handle(Input::Element(&self.buffer[self.index..end]))
     } else {
       consumer.state()
     }
