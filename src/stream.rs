@@ -56,14 +56,6 @@ pub trait Consumer<I,O,E,M> {
   /// returns the current state
   fn state(&self) -> &ConsumerState<O,E,M>;
 
-  /// return the computed value if it was generated
-  fn run(&self) -> Option<&O> {
-    if let &ConsumerState::Done(_, ref o) = self.state() {
-      Some(o)
-    } else {
-      None
-    }
-  }
 }
 
 /// The producer wraps a data source, like file or network, and applies a consumer on it
