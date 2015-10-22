@@ -38,13 +38,6 @@ impl<O:Clone,E:Copy,M:Copy> ConsumerState<O,E,M> {
       &ConsumerState::Done(ref m, ref o)   => ConsumerState::Done(*m, f((*o).clone()))
     }
   }
-  /*pub fn map<P,F>(&self, f: F) -> ConsumerState<P,E,M> where F: FnOnce(O) -> P {
-    match self {
-      &ConsumerState::Error(ref e)    => ConsumerState::Error(*e),
-      &ConsumerState::Continue(ref m) => ConsumerState::Continue(*m),
-      &ConsumerState::Done(ref m, ref o)   => ConsumerState::Done(*m, f((*o).clone()))
-    }
-  }*/
   pub fn flat_map<P,F>(&self, f: F) -> ConsumerState<P,E,M> where F: FnOnce(M, O) -> ConsumerState<P,E,M> {
     match self {
       &ConsumerState::Error(ref e)       => ConsumerState::Error(*e),
