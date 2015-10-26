@@ -32,17 +32,17 @@ pub enum ConsumerState<O,E=(),M=()> {
 
 impl<O:Clone,E:Copy,M:Copy> ConsumerState<O,E,M> {
   pub fn map<P,F>(&self, f: F) -> ConsumerState<P,E,M> where F: FnOnce(O) -> P {
-    match self {
-      &ConsumerState::Error(ref e)    => ConsumerState::Error(*e),
-      &ConsumerState::Continue(ref m) => ConsumerState::Continue(*m),
-      &ConsumerState::Done(ref m, ref o)   => ConsumerState::Done(*m, f((*o).clone()))
+    match *self {
+      ConsumerState::Error(e)    => ConsumerState::Error(e),
+      ConsumerState::Continue(m) => ConsumerState::Continue(m),
+      ConsumerState::Done(m, ref o) => ConsumerState::Done(m, f(o.clone()))
     }
   }
   pub fn flat_map<P,F>(&self, f: F) -> ConsumerState<P,E,M> where F: FnOnce(M, O) -> ConsumerState<P,E,M> {
-    match self {
-      &ConsumerState::Error(ref e)       => ConsumerState::Error(*e),
-      &ConsumerState::Continue(ref m)    => ConsumerState::Continue(*m),
-      &ConsumerState::Done(ref m, ref o) => f(*m, (*o).clone())
+    match *self {
+      ConsumerState::Error(e)       => ConsumerState::Error(e),
+      ConsumerState::Continue(m)    => ConsumerState::Continue(m),
+      ConsumerState::Done(m, ref o) => f(m, o.clone())
     }
   }
 }
@@ -346,10 +346,10 @@ pub struct MapConsumer<'a, C:'a ,R,S,T,E,M> {
 impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> MapConsumer<'a,C,R,S,T,E,M> {
   pub fn new(c: &'a mut C, f: Box<Fn(S) -> T>) -> MapConsumer<'a,C,R,S,T,E,M> {
     //let state = c.state();
-    let initial = match c.state() {
-      &ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), f(o.clone())),
-      &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
-      &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone())
+    let initial = match *c.state() {
+      ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), f(o.clone())),
+      ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+      ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone())
     };
 
     MapConsumer {
@@ -364,10 +364,10 @@ impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> MapConsumer<'a,C,R,S,T,
 impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> Consumer<R,T,E,M> for MapConsumer<'a,C,R,S,T,E,M> {
   fn handle(&mut self, input: Input<R>) -> &ConsumerState<T,E,M> {
     let res:&ConsumerState<S,E,M> = self.consumer.handle(input);
-    self.state = match res {
-        &ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), (*self.f)(o.clone())),
-        &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
-        &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone())
+    self.state = match *res {
+        ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), (*self.f)(o.clone())),
+        ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+        ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone())
       };
     &self.state
   }
@@ -388,13 +388,13 @@ pub struct ChainConsumer<'a,'b, C1:'a,C2:'b,R,S,T,E,M> {
 
 impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S,T,E,M>> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
   pub fn new(c1: &'a mut C1, c2: &'b mut C2) -> ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
-    let initial = match c1.state() {
-      &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
-      &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
-      &ConsumerState::Done(ref m, ref o) => match c2.handle(Input::Element(o.clone())) {
-        &ConsumerState::Error(ref e)     => ConsumerState::Error(e.clone()),
-        &ConsumerState::Continue(ref m2) => ConsumerState::Continue(m2.clone()),
-        &ConsumerState::Done(_,ref o2)   => ConsumerState::Done(m.clone(), o2.clone())
+    let initial = match *c1.state() {
+      ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+      ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
+      ConsumerState::Done(ref m, ref o) => match *c2.handle(Input::Element(o.clone())) {
+        ConsumerState::Error(ref e)     => ConsumerState::Error(e.clone()),
+        ConsumerState::Continue(ref m2) => ConsumerState::Continue(m2.clone()),
+        ConsumerState::Done(_,ref o2)   => ConsumerState::Done(m.clone(), o2.clone())
       }
     };
 
@@ -411,13 +411,13 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
 impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S,T,E,M>> Consumer<R,T,E,M> for ChainConsumer<'a,'b,C1,C2,R,S,T,E,M> {
   fn handle(&mut self, input: Input<R>) -> &ConsumerState<T,E,M> {
     let res:&ConsumerState<S,E,M> = self.consumer1.handle(input);
-    self.state = match res {
-        &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
-        &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
-        &ConsumerState::Done(ref m, ref o) => match (*self.consumer2).handle(Input::Element(o.clone())) {
-          &ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
-          &ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
-          &ConsumerState::Done(_, ref o2)    => ConsumerState::Done(m.clone(), o2.clone())
+    self.state = match *res {
+        ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+        ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
+        ConsumerState::Done(ref m, ref o) => match *self.consumer2.handle(Input::Element(o.clone())) {
+          ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
+          ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
+          ConsumerState::Done(_, ref o2)    => ConsumerState::Done(m.clone(), o2.clone())
         }
       };
     &self.state

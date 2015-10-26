@@ -249,7 +249,7 @@ pub fn print_error<O>(input: &[u8], res: IResult<&[u8],O>) {
 }
 
 #[cfg(not(feature = "core"))]
-pub fn generate_colors(v: &Vec<(ErrorKind, usize, usize)>) -> HashMap<u32, u8> {
+pub fn generate_colors(v: &[(ErrorKind, usize, usize)]) -> HashMap<u32, u8> {
   let mut h: HashMap<u32, u8> = HashMap::new();
   let mut color = 0;
 
@@ -261,7 +261,7 @@ pub fn generate_colors(v: &Vec<(ErrorKind, usize, usize)>) -> HashMap<u32, u8> {
   h
 }
 
-pub fn code_from_offset(v: &Vec<(ErrorKind, usize, usize)>, offset: usize) -> Option<u32> {
+pub fn code_from_offset(v: &[(ErrorKind, usize, usize)], offset: usize) -> Option<u32> {
   let mut acc: Option<(u32, usize, usize)> = None;
   for &(ref ek, s, e) in v.iter() {
     let c = error_to_u32(ek);
@@ -323,7 +323,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
 }
 
 #[cfg(not(feature = "core"))]
-pub fn print_offsets(input: &[u8], from: usize, offsets: &Vec<(ErrorKind, usize, usize)>) -> String {
+pub fn print_offsets(input: &[u8], from: usize, offsets: &[(ErrorKind, usize, usize)]) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
   let chunk_size = 8;
@@ -514,46 +514,46 @@ pub enum ErrorKind<E=u32> {
 }
 
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
-  match e {
-    &ErrorKind::Tag                       => 0,
-    &ErrorKind::MapRes                    => 1,
-    &ErrorKind::MapOpt                    => 2,
-    &ErrorKind::Alt                       => 3,
-    &ErrorKind::IsNot                     => 4,
-    &ErrorKind::IsA                       => 5,
-    &ErrorKind::Filter                    => 6,
-    &ErrorKind::SeparatedList             => 7,
-    &ErrorKind::SeparatedNonEmptyList     => 8,
-    &ErrorKind::Many1                     => 9,
-    &ErrorKind::Count                     => 10,
-    &ErrorKind::TakeUntilAndConsume       => 11,
-    &ErrorKind::TakeUntil                 => 12,
-    &ErrorKind::TakeUntilEitherAndConsume => 13,
-    &ErrorKind::TakeUntilEither           => 14,
-    &ErrorKind::LengthValue               => 15,
-    &ErrorKind::TagClosure                => 16,
-    &ErrorKind::Alpha                     => 17,
-    &ErrorKind::Digit                     => 18,
-    &ErrorKind::AlphaNumeric              => 19,
-    &ErrorKind::Space                     => 20,
-    &ErrorKind::MultiSpace                => 21,
-    &ErrorKind::LengthValueFn             => 22,
-    &ErrorKind::Eof                       => 23,
-    &ErrorKind::ExprOpt                   => 24,
-    &ErrorKind::ExprRes                   => 25,
-    &ErrorKind::CondReduce                => 26,
-    &ErrorKind::Switch                    => 27,
-    &ErrorKind::TagBits                   => 28,
-    &ErrorKind::OneOf                     => 29,
-    &ErrorKind::NoneOf                    => 30,
-    &ErrorKind::Char                      => 40,
-    &ErrorKind::CrLf                      => 41,
-    &ErrorKind::RegexpMatch               => 42,
-    &ErrorKind::RegexpMatches             => 43,
-    &ErrorKind::RegexpFind                => 44,
-    &ErrorKind::RegexpCapture             => 45,
-    &ErrorKind::RegexpCaptures            => 46,
-    &ErrorKind::TakeWhile1                => 47,
-    &ErrorKind::Custom(_)                 => 48
+  match *e {
+    ErrorKind::Tag                       => 0,
+    ErrorKind::MapRes                    => 1,
+    ErrorKind::MapOpt                    => 2,
+    ErrorKind::Alt                       => 3,
+    ErrorKind::IsNot                     => 4,
+    ErrorKind::IsA                       => 5,
+    ErrorKind::Filter                    => 6,
+    ErrorKind::SeparatedList             => 7,
+    ErrorKind::SeparatedNonEmptyList     => 8,
+    ErrorKind::Many1                     => 9,
+    ErrorKind::Count                     => 10,
+    ErrorKind::TakeUntilAndConsume       => 11,
+    ErrorKind::TakeUntil                 => 12,
+    ErrorKind::TakeUntilEitherAndConsume => 13,
+    ErrorKind::TakeUntilEither           => 14,
+    ErrorKind::LengthValue               => 15,
+    ErrorKind::TagClosure                => 16,
+    ErrorKind::Alpha                     => 17,
+    ErrorKind::Digit                     => 18,
+    ErrorKind::AlphaNumeric              => 19,
+    ErrorKind::Space                     => 20,
+    ErrorKind::MultiSpace                => 21,
+    ErrorKind::LengthValueFn             => 22,
+    ErrorKind::Eof                       => 23,
+    ErrorKind::ExprOpt                   => 24,
+    ErrorKind::ExprRes                   => 25,
+    ErrorKind::CondReduce                => 26,
+    ErrorKind::Switch                    => 27,
+    ErrorKind::TagBits                   => 28,
+    ErrorKind::OneOf                     => 29,
+    ErrorKind::NoneOf                    => 30,
+    ErrorKind::Char                      => 40,
+    ErrorKind::CrLf                      => 41,
+    ErrorKind::RegexpMatch               => 42,
+    ErrorKind::RegexpMatches             => 43,
+    ErrorKind::RegexpFind                => 44,
+    ErrorKind::RegexpCapture             => 45,
+    ErrorKind::RegexpCaptures            => 46,
+    ErrorKind::TakeWhile1                => 47,
+    ErrorKind::Custom(_)                 => 48
   }
 }
