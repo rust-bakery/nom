@@ -144,6 +144,7 @@ macro_rules! named (
 #[macro_export]
 macro_rules! call (
   ($i:expr, $fun:expr) => ( $fun( $i ) );
+  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
 );
 
 /// emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
@@ -151,13 +152,7 @@ macro_rules! call (
 /// Supports up to 6 arguments
 #[macro_export]
 macro_rules! apply (
-  //($i:expr, $fun:ident( $($args:tt),*) ) => ($fun($i, $($args),*) );
-  ($i:expr, $fun:expr, $arg:expr ) => ( $fun( $i, $arg ) );
-  ($i:expr, $fun:expr, $arg:expr, $arg2:expr ) => ( $fun( $i, $arg, $arg2 ) );
-  ($i:expr, $fun:expr, $arg:expr, $arg2:expr, $arg3:expr ) => ( $fun( $i, $arg, $arg2, $arg3 ) );
-  ($i:expr, $fun:expr, $arg:expr, $arg2:expr, $arg3:expr, $arg4:expr ) => ( $fun( $i, $arg, $arg2, $arg3, $arg4 ) );
-  ($i:expr, $fun:expr, $arg:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr ) => ( $fun( $i, $arg, $arg2, $arg3, $arg4, $arg5 ) );
-  ($i:expr, $fun:expr, $arg:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr ) => ( $fun( $i, $arg, $arg2, $arg3, $arg4, $arg5, $arg6 ) );
+  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
 );
 
 /// Prevents backtracking if the child parser fails
