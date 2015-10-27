@@ -434,23 +434,23 @@ macro_rules! consumer_from_parser (
   ($name:ident<$input:ty, $output:ty>, $submac:ident!( $($args:tt)* )) => (
     #[derive(Debug)]
     struct $name {
-      state: ConsumerState<$output, (), Move>
+      state: $crate::ConsumerState<$output, (), $crate::Move>
     }
 
-    impl Consumer<$input, $output, (), Move> for $name {
-      fn handle(&mut self, input: Input<$input>) -> &ConsumerState<$output, (), Move> {
+    impl $crate::Consumer<$input, $output, (), $crate::Move> for $name {
+      fn handle(&mut self, input: $crate::Input<$input>) -> & $crate::ConsumerState<$output, (), $crate::Move> {
         match input {
-          Input::Empty | Input::Eof(None)           => &self.state,
-          Input::Element(sl) | Input::Eof(Some(sl)) => {
+          $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
+          $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
             self.state = match $submac!(sl, $($args)*) {
-              IResult::Incomplete(n)  => {
-                ConsumerState::Continue(Move::Await(n))
+              $crate::IResult::Incomplete(n)  => {
+                $crate::ConsumerState::Continue($crate::Move::Await(n))
               },
-              IResult::Error(_)       => {
-                ConsumerState::Error(())
+              $crate::IResult::Error(_)       => {
+                $crate::ConsumerState::Error(())
               },
-              IResult::Done(i,o)      => {
-                ConsumerState::Done(Move::Consume(sl.offset(i)), o)
+              $crate::IResult::Done(i,o)      => {
+                $crate::ConsumerState::Done($crate::Move::Consume(sl.offset(i)), o)
               }
             };
 
@@ -460,7 +460,7 @@ macro_rules! consumer_from_parser (
 
       }
 
-      fn state(&self) -> &ConsumerState<$output, (), Move> {
+      fn state(&self) -> &$crate::ConsumerState<$output, (), $crate::Move> {
         &self.state
       }
     }
@@ -468,23 +468,23 @@ macro_rules! consumer_from_parser (
   ($name:ident<$output:ty>, $submac:ident!( $($args:tt)* )) => (
     #[derive(Debug)]
     struct $name {
-      state: ConsumerState<$output, (), Move>
+      state: $crate::ConsumerState<$output, (),  $crate::Move>
     }
 
-    impl<'a> Consumer<&'a[u8], $output, (), Move> for $name {
-      fn handle(&mut self, input: Input<&'a[u8]>) -> &ConsumerState<$output, (), Move> {
+    impl<'a>  $crate::Consumer<&'a[u8], $output, (), $crate::Move> for $name {
+      fn handle(&mut self, input: $crate::Input<&'a[u8]>) -> & $crate::ConsumerState<$output, (), $crate::Move> {
         match input {
-          Input::Empty | Input::Eof(None)           => &self.state,
-          Input::Element(sl) | Input::Eof(Some(sl)) => {
+          $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
+          $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
             self.state = match $submac!(sl, $($args)*) {
-              IResult::Incomplete(n)  => {
-                ConsumerState::Continue(Move::Await(n))
+              $crate::IResult::Incomplete(n)  => {
+                $crate::ConsumerState::Continue($crate::Move::Await(n))
               },
-              IResult::Error(_)       => {
-                ConsumerState::Error(())
+              $crate::IResult::Error(_)       => {
+                $crate::ConsumerState::Error(())
               },
-              IResult::Done(i,o)      => {
-                ConsumerState::Done(Move::Consume(sl.offset(i)), o)
+              $crate::IResult::Done(i,o)      => {
+                $crate::ConsumerState::Done($crate::Move::Consume(sl.offset(i)), o)
               }
             };
 
@@ -494,7 +494,7 @@ macro_rules! consumer_from_parser (
 
       }
 
-      fn state(&self) -> &ConsumerState<$output, (), Move> {
+      fn state(&self) -> &$crate::ConsumerState<$output, (), $crate::Move> {
         &self.state
       }
     }

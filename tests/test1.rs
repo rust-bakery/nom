@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,Move,Consumer,ConsumerState,Input,not_line_ending};
+use nom::{IResult,Producer,FileProducer,Move,Consumer,ConsumerState,not_line_ending};
 
 use std::str;
 use std::fmt::Debug;
