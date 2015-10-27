@@ -12,7 +12,7 @@ use std::string::ToString;
 #[cfg(not(feature = "core"))]
 pub trait HexDisplay {
   /// offset between the first byte of self and the first byte of the argument
-  fn offset(&self, second:&[u8]) -> usize;
+  fn offset(&self, second:&[u8]) -> usize;// OFFSET SHOULD GO TO ITS OWN TRAIT
 
   /// Converts the value of `self` to a hex dump, returning the owned
   /// string.

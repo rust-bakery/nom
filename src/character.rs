@@ -18,9 +18,22 @@ macro_rules! one_of (
 
         let expected = $inp;
         let bytes = as_bytes(&expected);
+        one_of_bytes!($i, bytes)
+      }
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! one_of_bytes (
+  ($i:expr, $bytes: expr) => (
+    {
+      if $i.is_empty() {
+        $crate::IResult::Incomplete($crate::Needed::Size(1))
+      } else {
         let mut found = false;
 
-        for &i in bytes {
+        for &i in $bytes {
           if i == $i[0] {
             found = true;
             break;
@@ -52,9 +65,22 @@ macro_rules! none_of (
 
         let expected = $inp;
         let bytes = as_bytes(&expected);
+        none_of_bytes!($i, bytes)
+      }
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! none_of_bytes (
+  ($i:expr, $bytes: expr) => (
+    {
+      if $i.is_empty() {
+        $crate::IResult::Incomplete($crate::Needed::Size(1))
+      } else {
         let mut found = false;
 
-        for &i in bytes {
+        for &i in $bytes {
           if i == $i[0] {
             found = true;
             break;

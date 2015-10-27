@@ -27,10 +27,19 @@ macro_rules! tag (
       let expected = $inp;
       let bytes    = as_bytes(&expected);
 
-      let res: $crate::IResult<&[u8],&[u8]> = if bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
-      } else if &$i[0..bytes.len()] == bytes {
-        $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
+      tag_bytes!($i,bytes)
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! tag_bytes (
+  ($i:expr, $bytes: expr) => (
+    {
+      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
+      } else if &$i[0..$bytes.len()] == $bytes {
+        $crate::IResult::Done(&$i[$bytes.len()..], &$i[0..$bytes.len()])
       } else {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
       };
@@ -64,8 +73,17 @@ macro_rules! is_not(
       let expected   = $arr;
       let bytes      = as_bytes(&expected);
 
+      is_not_bytes!($input, bytes)
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! is_not_bytes (
+  ($input:expr, $bytes:expr) => (
+    {
       match $input.iter().position(|c| {
-        for &i in bytes.iter() {
+        for &i in $bytes.iter() {
           if *c == i { return true }
         }
         false
@@ -100,7 +118,7 @@ macro_rules! is_not(
 /// # }
 /// ```
 #[macro_export]
-macro_rules! is_a(
+macro_rules! is_a (
   ($input:expr, $arr:expr) => (
     {
       #[inline(always)]
@@ -111,8 +129,17 @@ macro_rules! is_a(
       let expected  = $arr;
       let bytes     = as_bytes(&expected);
 
+      is_a_bytes!($input, bytes)
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! is_a_bytes (
+  ($input:expr, $bytes:expr) => (
+    {
       match $input.iter().position(|c| {
-        for &i in bytes.iter() {
+        for &i in $bytes.iter() {
           if *c == i { return false }
         }
         true
@@ -261,18 +288,27 @@ macro_rules! take_until_and_consume(
 
       let expected   = $inp;
       let bytes      = as_bytes(&expected);
-      if bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
+      take_until_and_consume_bytes!($i, bytes)
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! take_until_and_consume_bytes (
+  ($i:expr, $bytes:expr) => (
+    {
+      if $bytes.len() > $i.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
         let mut parsed = false;
 
         for idx in 0..$i.len() {
-          if idx + bytes.len() > $i.len() {
+          if idx + $bytes.len() > $i.len() {
             index = idx;
             break;
           }
-          if &$i[idx..idx + bytes.len()] == bytes {
+          if &$i[idx..idx + $bytes.len()] == $bytes {
             parsed = true;
             index = idx;
             break;
@@ -280,7 +316,7 @@ macro_rules! take_until_and_consume(
         }
 
         if parsed {
-          $crate::IResult::Done(&$i[(index + bytes.len())..], &$i[0..index])
+          $crate::IResult::Done(&$i[(index + $bytes.len())..], &$i[0..index])
         } else {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilAndConsume,$i))
         }
@@ -302,18 +338,27 @@ macro_rules! take_until(
 
       let expected   = $inp;
       let bytes      = as_bytes(&expected);
-      if bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
+      take_until_bytes!($i, bytes)
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! take_until_bytes(
+  ($i:expr, $bytes:expr) => (
+    {
+      if $bytes.len() > $i.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
         let mut parsed = false;
 
         for idx in 0..$i.len() {
-          if idx + bytes.len() > $i.len() {
+          if idx + $bytes.len() > $i.len() {
             index = idx;
             break;
           }
-          if &$i[idx..idx+bytes.len()] == bytes {
+          if &$i[idx..idx+$bytes.len()] == $bytes {
             parsed = true;
             index  = idx;
             break;
@@ -343,6 +388,15 @@ macro_rules! take_until_either_and_consume(
 
       let expected   = $inp;
       let bytes      = as_bytes(&expected);
+      take_until_either_and_consume_bytes!($i, bytes)
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! take_until_either_and_consume_bytes(
+  ($i:expr, $bytes:expr) => (
+    {
       if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
@@ -354,7 +408,7 @@ macro_rules! take_until_either_and_consume(
             index = idx;
             break;
           }
-          for &t in bytes.iter() {
+          for &t in $bytes.iter() {
             if $i[idx] == t {
               parsed = true;
               index = idx;
@@ -386,6 +440,15 @@ macro_rules! take_until_either(
 
       let expected   = $inp;
       let bytes      = as_bytes(&expected);
+      take_until_either_bytes!($i, bytes)
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! take_until_either_bytes(
+  ($i:expr, $bytes:expr) => (
+    {
       if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
@@ -397,7 +460,7 @@ macro_rules! take_until_either(
             index = idx;
             break;
           }
-          for &t in bytes.iter() {
+          for &t in $bytes.iter() {
             if $i[idx] == t {
               parsed = true;
               index = idx;
