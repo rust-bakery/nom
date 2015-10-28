@@ -569,7 +569,7 @@ macro_rules! chaining_parser (
       }
     } else {
       let ($field,input) = if let $crate::IResult::Done(i,o) = res {
-        Some(o,i)
+        (Some(o),i)
       } else {
         (None,$i)
       };
@@ -590,7 +590,7 @@ macro_rules! chaining_parser (
       }
     } else {
       let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
-        Some(o,i)
+        (Some(o),i)
       } else {
         (None,$i)
       };
