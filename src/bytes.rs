@@ -82,7 +82,7 @@ macro_rules! is_not(
 macro_rules! is_not_bytes (
   ($input:expr, $bytes:expr) => (
     {
-      match $input.iter().position(|c| {
+      let res: $crate::IResult<&[u8],&[u8]> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return true }
         }
@@ -96,7 +96,8 @@ macro_rules! is_not_bytes (
         None    => {
           $crate::IResult::Done(&b""[..], $input)
         }
-      }
+      };
+      res
     }
   );
 );
@@ -138,7 +139,7 @@ macro_rules! is_a (
 macro_rules! is_a_bytes (
   ($input:expr, $bytes:expr) => (
     {
-      match $input.iter().position(|c| {
+      let res: $crate::IResult<&[u8],&[u8]> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return false }
         }
@@ -152,7 +153,8 @@ macro_rules! is_a_bytes (
         None    => {
           $crate::IResult::Done(&b""[..], $input)
         }
-      }
+      };
+      res
     }
   );
 );
@@ -297,7 +299,7 @@ macro_rules! take_until_and_consume(
 macro_rules! take_until_and_consume_bytes (
   ($i:expr, $bytes:expr) => (
     {
-      if $bytes.len() > $i.len() {
+      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
@@ -320,7 +322,8 @@ macro_rules! take_until_and_consume_bytes (
         } else {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilAndConsume,$i))
         }
-      }
+      };
+      res
     }
   );
 );
@@ -347,7 +350,7 @@ macro_rules! take_until(
 macro_rules! take_until_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      if $bytes.len() > $i.len() {
+      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
@@ -370,7 +373,8 @@ macro_rules! take_until_bytes(
         } else {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntil,$i))
         }
-      }
+      };
+      res
     }
   );
 );
@@ -397,7 +401,7 @@ macro_rules! take_until_either_and_consume(
 macro_rules! take_until_either_and_consume_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      if 1 > $i.len() {
+      let res: $crate::IResult<&[u8],&[u8]> = if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         let mut index  = 0;
@@ -423,7 +427,8 @@ macro_rules! take_until_either_and_consume_bytes(
         } else {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilEitherAndConsume,$i))
         }
-      }
+      };
+      res
     }
   );
 );
@@ -449,7 +454,7 @@ macro_rules! take_until_either(
 macro_rules! take_until_either_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      if 1 > $i.len() {
+      let res: $crate::IResult<&[u8],&[u8]> = if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         let mut index  = 0;
@@ -475,7 +480,8 @@ macro_rules! take_until_either_bytes(
         } else {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilEither,$i))
         }
-      }
+      };
+      res
     }
   );
 );
