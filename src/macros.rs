@@ -623,9 +623,14 @@ macro_rules! chain (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! chaining_parser (
+  ($i:expr, $consumed:expr, ( $e:expr ) ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, call!($e) ~ $($rest)*);
+  );
+
   ($i:expr, $consumed:expr, $e:ident ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, call!($e) ~ $($rest)*);
   );
+
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
       use $crate::InputLength;
@@ -639,6 +644,10 @@ macro_rules! chaining_parser (
     }
     }
 );
+
+  ($i:expr, $consumed:expr, ( $e:expr ) ? ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, call!($e) ? ~ $($rest)*);
+  );
 
   ($i:expr, $consumed:expr, $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, call!($e) ? ~ $($rest)*);
@@ -664,6 +673,10 @@ macro_rules! chaining_parser (
     }
   });
 
+  ($i:expr, $consumed:expr, $field:ident : ( $e:expr ) ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, $field: call!($e) ~ $($rest)*);
+  );
+
   ($i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, $field: call!($e) ~ $($rest)*);
   );
@@ -683,6 +696,10 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, $consumed:expr, mut $field:ident : ( $e:expr ) ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, mut $field: call!($e) ~ $($rest)*);
+  );
+
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, mut $field: call!($e) ~ $($rest)*);
   );
@@ -700,6 +717,10 @@ macro_rules! chaining_parser (
       }
     }
     }
+  );
+
+  ($i:expr, $consumed:expr, $field:ident : ( $e:expr ) ? ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, $field : call!($e) ? ~ $($rest)*);
   );
 
   ($i:expr, $consumed:expr, $field:ident : $e:ident ? ~ $($rest:tt)*) => (
@@ -726,6 +747,10 @@ macro_rules! chaining_parser (
     }
   });
 
+  ($i:expr, $consumed:expr, mut $field:ident : ( $e:expr ) ? ~ $($rest:tt)*) => (
+    chaining_parser!($i, $consumed, mut $field : call!($e) ? ~ $($rest)*);
+  );
+
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, mut $field : call!($e) ? ~ $($rest)*);
   );
@@ -751,6 +776,10 @@ macro_rules! chaining_parser (
   });
 
   // ending the chain
+  ($i:expr, $consumed:expr, ( $e:expr ), $assemble:expr) => (
+    chaining_parser!($i, $consumed, call!($e), $assemble);
+  );
+
   ($i:expr, $consumed:expr, $e:ident, $assemble:expr) => (
     chaining_parser!($i, $consumed, call!($e), $assemble);
   );
@@ -764,6 +793,10 @@ macro_rules! chaining_parser (
         $crate::IResult::Done(i, $assemble())
       }
     }
+  );
+
+  ($i:expr, $consumed:expr, ( $e:expr ) ?, $assemble:expr) => (
+    chaining_parser!($i, $consumed, call!($e) ?, $assemble);
   );
 
   ($i:expr, $consumed:expr, $e:ident ?, $assemble:expr) => (
@@ -787,6 +820,10 @@ macro_rules! chaining_parser (
     }
   });
 
+  ($i:expr, $consumed:expr, $field:ident : ( $e:expr ), $assemble:expr) => (
+    chaining_parser!($i, $consumed, $field: call!($e), $assemble);
+  );
+
   ($i:expr, $consumed:expr, $field:ident : $e:ident, $assemble:expr) => (
     chaining_parser!($i, $consumed, $field: call!($e), $assemble);
   );
@@ -803,6 +840,10 @@ macro_rules! chaining_parser (
     }
   );
 
+  ($i:expr, $consumed:expr, mut $field:ident : ( $e:expr ), $assemble:expr) => (
+    chaining_parser!($i, $consumed, mut $field: call!($e), $assemble);
+  );
+
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident, $assemble:expr) => (
     chaining_parser!($i, $consumed, mut $field: call!($e), $assemble);
   );
@@ -817,6 +858,10 @@ macro_rules! chaining_parser (
         $crate::IResult::Done(i, $assemble())
       }
     }
+  );
+
+  ($i:expr, $consumed:expr, $field:ident : ( $e:expr ) ? , $assemble:expr) => (
+    chaining_parser!($i, $consumed, $field : call!($e) ? , $assemble);
   );
 
   ($i:expr, $consumed:expr, $field:ident : $e:ident ? , $assemble:expr) => (
@@ -839,6 +884,10 @@ macro_rules! chaining_parser (
       $crate::IResult::Done(input, $assemble())
     }
   });
+
+  ($i:expr, $consumed:expr, mut $field:ident : ( $e:expr ) ? , $assemble:expr) => (
+    chaining_parser!($i, $consumed, $field : call!($e) ? , $assemble);
+  );
 
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident ? , $assemble:expr) => (
     chaining_parser!($i, $consumed, $field : call!($e) ? , $assemble);
