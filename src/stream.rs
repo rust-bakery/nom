@@ -438,7 +438,7 @@ macro_rules! consumer_from_parser (
     }
 
     impl $name {
-      pub fn new() -> $name {
+      fn new() -> $name {
         $name { state: $crate::ConsumerState::Continue($crate::Move::Consume(0)) }
       }
     }
@@ -479,7 +479,7 @@ macro_rules! consumer_from_parser (
     }
 
     impl $name {
-      pub fn new() -> $name {
+      fn new() -> $name {
         $name { state: $crate::ConsumerState::Continue($crate::Move::Consume(0)) }
       }
     }
