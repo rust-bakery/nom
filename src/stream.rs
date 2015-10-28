@@ -437,8 +437,15 @@ macro_rules! consumer_from_parser (
       state: $crate::ConsumerState<$output, (), $crate::Move>
     }
 
+    impl $name {
+      pub fn new() -> $name {
+        $name { state: $crate::ConsumerState::Continue($crate::Move::Consume(0)) }
+      }
+    }
+
     impl $crate::Consumer<$input, $output, (), $crate::Move> for $name {
       fn handle(&mut self, input: $crate::Input<$input>) -> & $crate::ConsumerState<$output, (), $crate::Move> {
+      use $crate::HexDisplay;
         match input {
           $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
           $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
@@ -471,8 +478,15 @@ macro_rules! consumer_from_parser (
       state: $crate::ConsumerState<$output, (),  $crate::Move>
     }
 
+    impl $name {
+      pub fn new() -> $name {
+        $name { state: $crate::ConsumerState::Continue($crate::Move::Consume(0)) }
+      }
+    }
+
     impl<'a>  $crate::Consumer<&'a[u8], $output, (), $crate::Move> for $name {
       fn handle(&mut self, input: $crate::Input<&'a[u8]>) -> & $crate::ConsumerState<$output, (), $crate::Move> {
+      use $crate::HexDisplay;
         match input {
           $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
           $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
