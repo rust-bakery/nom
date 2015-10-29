@@ -214,7 +214,6 @@ macro_rules! error (
       };
 
       match cl() {
-      //match cl($i) {
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
@@ -225,6 +224,30 @@ macro_rules! error (
   );
   ($i:expr, $code:expr, $f:expr) => (
     error!($i, $code, call!($f));
+  );
+);
+
+/// Add an error if the child parser fails
+///
+/// While error! does an early return and avoids backtracking,
+/// add_error! backtracks normally. It just provides more context
+/// for an error
+///
+#[macro_export]
+macro_rules! add_error (
+  ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
+        $crate::IResult::Error(e)      => {
+          $crate::IResult::Error($crate::Err::NodePosition($code, $i, Box::new(e)))
+        }
+      }
+    }
+  );
+  ($i:expr, $code:expr, $f:expr) => (
+    add_error!($i, $code, call!($f));
   );
 );
 
@@ -2017,6 +2040,31 @@ mod tests {
 
     print_error(a, res_a2);
     print_error(b, res_b2);
+  }
+
+  #[test]
+  fn add_err() {
+    named!(err_test,
+      preceded!(tag!("efgh"), add_error!(ErrorKind::Custom(42),
+          chain!(
+                 tag!("ijkl")              ~
+            res: add_error!(ErrorKind::Custom(128), tag!("mnop")) ,
+            || { res }
+          )
+        )
+    ));
+    let a = &b"efghblah"[..];
+    let b = &b"efghijklblah"[..];
+    let c = &b"efghijklmnop"[..];
+
+    let blah = &b"blah"[..];
+
+    let res_a = err_test(a);
+    let res_b = err_test(b);
+    let res_c = err_test(c);
+    assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), blah, Box::new(Position(ErrorKind::Tag, blah)))));
+    assert_eq!(res_b, Error(NodePosition(ErrorKind::Custom(42), &b"ijklblah"[..], Box::new(NodePosition(ErrorKind::Custom(128), blah, Box::new(Position(ErrorKind::Tag, blah)))))));
+    assert_eq!(res_c, Done(&b""[..], &b"mnop"[..]));
   }
 
   #[test]
