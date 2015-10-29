@@ -471,13 +471,13 @@ array_impls! {
 /// indicates which parser returned an error
 #[derive(Debug,PartialEq,Eq,Hash,Clone)]
 pub enum ErrorKind<E=u32> {
+  Custom(E),
   Tag,
   MapRes,
   MapOpt,
   Alt,
   IsNot,
   IsA,
-  Filter,
   SeparatedList,
   SeparatedNonEmptyList,
   Many1,
@@ -510,18 +510,18 @@ pub enum ErrorKind<E=u32> {
   RegexpCapture,
   RegexpCaptures,
   TakeWhile1,
-  Custom(E)
+  Complete
 }
 
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
   match *e {
-    ErrorKind::Tag                       => 0,
-    ErrorKind::MapRes                    => 1,
-    ErrorKind::MapOpt                    => 2,
-    ErrorKind::Alt                       => 3,
-    ErrorKind::IsNot                     => 4,
-    ErrorKind::IsA                       => 5,
-    ErrorKind::Filter                    => 6,
+    ErrorKind::Custom(_)                 => 0,
+    ErrorKind::Tag                       => 1,
+    ErrorKind::MapRes                    => 2,
+    ErrorKind::MapOpt                    => 3,
+    ErrorKind::Alt                       => 4,
+    ErrorKind::IsNot                     => 5,
+    ErrorKind::IsA                       => 6,
     ErrorKind::SeparatedList             => 7,
     ErrorKind::SeparatedNonEmptyList     => 8,
     ErrorKind::Many1                     => 9,
@@ -554,6 +554,6 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::RegexpCapture             => 45,
     ErrorKind::RegexpCaptures            => 46,
     ErrorKind::TakeWhile1                => 47,
-    ErrorKind::Custom(_)                 => 48
+    ErrorKind::Complete                  => 48
   }
 }

@@ -251,6 +251,27 @@ macro_rules! add_error (
   );
 );
 
+/// replaces a `Incomplete` returned by the child parser
+/// with an `Error`
+///
+#[macro_export]
+macro_rules! complete (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(_) =>  {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Complete, $i))
+        },
+      }
+    }
+  );
+  ($i:expr, $f:expr) => (
+    complete!($i, call!($f));
+  );
+);
+
 /// `flat_map!(R -> IResult<R,S>, S -> IResult<S,T>) => R -> IResult<R, T>`
 ///
 /// combines a parser R -> IResult<R,S> and
@@ -2067,6 +2088,20 @@ mod tests {
     assert_eq!(res_c, Done(&b""[..], &b"mnop"[..]));
   }
 
+  #[test]
+  fn complete() {
+    named!(err_test,
+      chain!(
+             tag!("ijkl")              ~
+        res: complete!(tag!("mnop")) ,
+        || { res }
+      )
+    );
+    let a = &b"ijklmn"[..];
+
+    let res_a = err_test(a);
+    assert_eq!(res_a, Error(Position(ErrorKind::Complete, &b"mn"[..])));
+  }
   #[test]
   fn alt() {
     fn work(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
