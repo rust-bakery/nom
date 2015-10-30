@@ -528,7 +528,7 @@ macro_rules! expr_opt (
 macro_rules! chain (
   ($i:expr, $($rest:tt)*) => (
     {
-      use $crate::InputLength;
+      //use $crate::InputLength;
       chaining_parser!($i, 0usize, $($rest)*)
     }
   );
@@ -542,6 +542,7 @@ macro_rules! chaining_parser (
   );
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
+      use $crate::InputLength;
     match $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -558,6 +559,8 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+    {
+      use $crate::InputLength;
     let res = $submac!($i, $($args)*);
     if let $crate::IResult::Incomplete(inc) = res {
       match inc {
@@ -572,6 +575,7 @@ macro_rules! chaining_parser (
       };
       chaining_parser!(input, $consumed + (($i).input_len() - input.input_len()), $($rest)*)
     }
+    }
   });
 
   ($i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
@@ -580,6 +584,7 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
+      use $crate::InputLength;
     match  $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -597,6 +602,8 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
+    {
+      use $crate::InputLength;
     match  $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -606,6 +613,7 @@ macro_rules! chaining_parser (
         chaining_parser!(i, $consumed + ($i).input_len() - i.input_len(), $($rest)*)
       }
     }
+    }
   );
 
   ($i:expr, $consumed:expr, $field:ident : $e:ident ? ~ $($rest:tt)*) => (
@@ -613,6 +621,8 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+    {
+      use $crate::InputLength;
     let res = $submac!($i, $($args)*);
     if let $crate::IResult::Incomplete(inc) = res {
       match inc {
@@ -627,6 +637,7 @@ macro_rules! chaining_parser (
       };
       chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
     }
+    }
   });
 
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident ? ~ $($rest:tt)*) => (
@@ -634,6 +645,8 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+    {
+      use $crate::InputLength;
     let res = $submac!($i, $($args)*);
     if let $crate::IResult::Incomplete(inc) = res {
       match inc {
@@ -647,6 +660,7 @@ macro_rules! chaining_parser (
         (None,$i)
       };
       chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
+    }
     }
   });
 
