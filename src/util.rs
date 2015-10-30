@@ -24,22 +24,26 @@ pub trait HexDisplay {
 }
 
 pub trait InputLength {
+  #[inline]
   fn input_len(&self) -> usize;
 }
 
 impl<'a, T> InputLength for &'a[T] {
+  #[inline]
   fn input_len(&self) -> usize {
     self.len()
   }
 }
 
 impl<'a> InputLength for &'a str {
+  #[inline]
   fn input_len(&self) -> usize {
     self.len()
   }
 }
 
 impl<'a> InputLength for (&'a [u8], usize) {
+  #[inline]
   fn input_len(&self) -> usize {
     println!("bit input length for ({:?}, {}):", self.0, self.1);
     let res = self.0.len() * 8 - self.1;
