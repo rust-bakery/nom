@@ -18,12 +18,14 @@ Here are the current and planned features, with their status:
   - [x] **in the parsers**: a parsing chain will almost always return a slice of its input data
   - [x] **in the producers and consumers**: some copying still happens
 - [x] **streaming**:
-  - [x] **push**: a parser can be directly fed a producer's output and called every time there is data available
-  - [x] **pull**: a consumer will take a parser and a producer, and handle all the data gathering and, if available, seeking the streaming
+  - [x] **push**: a data producer can continuously feed consumers and parsers, as long as there is data available
+  - [x] **pull**: a consumer will handle the produced data and drive seeking in the producer
 - [x] **macro based syntax**: easier parser building through macro usage
 - [x] **state machine handling**: consumers provide a basic way of managing state machines
-- [x] **descriptive errors**: the parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages
-- [ ] **safe parsing**: while I have some confidence in Rust's abilities, this will be put to the test via extensive fuzzing and disassembling
+- [x] **descriptive errors**: the parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages.
+- [x] **custom error types**: you can provide a specific type to improve errors returned by parsers
+- [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real wolrd data. So far, the only flaws found by fuzzing were in code written outside of nom
+- [x] **speed**: benchmarks have shown that nom parsers often outperform many parser combinators library like Parsec and attoparsec, some regular expression engines and even handwritten C parsers
 
 Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
 
@@ -51,21 +53,38 @@ There are a few compilation features:
 * `regexp`: enables regular expression parsers with the `regex` crate
 * `regexp_macros`: enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
 
+You can activate those features like this:
+
+```toml
+[dependencies.nom]
+version = "~0.5.0"
+features = [regexp]
+```
+
 ## Usage
 
 ### Parser combinators
 
-nom uses parser combinators to build and reuse parsers. To work with parser combinators, instead of writing the whole grammar from scratch and generating a parser, or writing the complete state machine by hand, you write small, reusable functions, that you will combine to make more interesting parsers.
+Parser combinators are an approach to aprser that is very different from software like lex and yacc. Instead of writing the grammar in a separate file and generating the corresponding code, you use very small functions with very specific purpose, like "take 5 bytes", or "recognize the word 'HTTP'", and assemble then in meaningful patterns like "recognize 'HTTP', then a space, then a version".
+The resulting code is small, and looks like the grammar you would have written with other parser approaches.
 
 This has a few advantages:
 
 - the parsers are small and easy to write
-- the parsers are easy to reuse (if they're general enough, please add them to nom!)
-- the parsers are easy to test (unit tests and property-based tests)
+- the parsers components are easy to reuse (if they're general enough, please add them to nom!)
+- the parsers components are easy to test separately (unit tests and property-based tests)
 - the parser combination code looks close to the grammar you would have written
 - you can build partial parsers, specific to the data you need at the moment, and ignore the rest
 
-Here is an example of one such parser:
+Here is an example of one such parser, to recognize text between parenthesis:
+
+```rust
+named!(parens, delimited!(char!('('), none_of!(")"), char!(')'));
+```
+
+It defines a function named `parens`, which will recognize a sequence of the caracter '(', the longest byte array not containing ')', then the character ')', and will return the byte array in the middle.
+
+Here is another parser, written without using nom's macros this time:
 
 ```rust
 fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
@@ -77,10 +96,20 @@ fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
 }
 ```
 
-This function takes a byte array as input, and tries to consume 4 bytes.
+This function takes a byte array as input, and tries to consume 4 bytes. With macros, you would write it like this:
 
-A parser combinator in Rust is basically a function which, for an input type I and an output type O, will have the following signature:
+```rust
+named!(take4, take!(4));
+```
 
+
+A parser in nom is a function which, for an input type I, an output type O, and an optional error type E, will have the following signature:
+
+```rust
+fn parser(input: I) -> IResult<I, O, E>;
+```
+
+Or like this, if you don't want to specify a custom error type (it will be u32 by default):
 ```rust
 fn parser(input: I) -> IResult<I, O>;
 ```
@@ -92,21 +121,21 @@ fn parser(input: I) -> IResult<I, O>;
 - an `Incomplete(Needed)` indicating that more input is necessary. `Needed` can indicate how much data is needed
 
 ````rust
-pub enum IResult<I,O> {
+pub enum IResult<I,O,E=u32> {
   Done(I,O),
-  Error(Err),
+  Error(Err<I,E>),
   Incomplete(Needed)
 }
 
-pub enum Err<'a>{
+pub enum Err<P,E=u32>{
   /// an error code
-  Code(u32),
+  Code(ErrorKind<E>),
   /// an error code, and the next error in the parsing chain
-  Node(u32, Box<Err<'a>>),
+  Node(ErrorKind<E>, Box<Err<P,E>>),
   /// an error code and the related input position
-  Position(u32, &'a [u8]),
+  Position(ErrorKind<E>, P),
   /// an error code, the related input position, and the next error in the parsing chain
-  NodePosition(u32, &'a [u8], Box<Err<'a>>)
+  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
 }
 
 pub enum Needed {
@@ -117,7 +146,7 @@ pub enum Needed {
 }
 ```
 
-There is already a large list of parsers available, like:
+There is already a large list of basic parsers available, like:
 
 - **length_value**: a byte indicating the size of the following buffer
 - **not_line_ending**: returning as much data as possible until a line ending (\r or \n) is found
@@ -131,6 +160,8 @@ There is already a large list of parsers available, like:
 - **be_i8**, **be_i16**, **be_i32**, **be_i64** to parse big endian signed integers of multiple sizes
 - **be_f32**, **be_f64** to parse big endian floating point numbers
 - **eof**: a parser that is successful only if the input is over. In any other case, it returns an error.
+
+Please refer to the documentation for an exhaustive list of parsers.
 
 #### Making new parsers with macros
 
@@ -167,7 +198,7 @@ named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
 
 This will compile correctly. I am very sorry for this inconvenience.
 
-#### Common macros
+#### Common combinators
 
 Here are the basic macros available:
 
@@ -180,17 +211,16 @@ Here are the basic macros available:
 - **take_until_and_consume!**: will take as many bytes as possible until it encounters the provided byte array, and will skip it
 - **take_until_either_and_consume!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will skip it
 - **take_until_either!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
-
-#### Combining parsers
-
 - **map!**: applies a function to the output of a `IResult` and puts the result in the output of a `IResult` with the same remaining input
 - **flat_map!**: applies a parser to the ouput of a `IResult` and returns a new `IResult` with the same remaining input.
 - **map_opt!**: applies a function returning an Option to the output of `IResult`, returns `Done(input, o)` if the result is `Some(o)`, or `Error(0)`
 - **map_res!**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
 
-#### Combining parsers with macros
+Please refer to the documentation for an exhaustive list of combinators.
 
-Here again, we use macros to combine parsers easily in useful patterns:
+#### Combining parsers
+
+There are more high level patterns, like the **alt!** combinator, which provides a choice between multiple parsers. If one branch fails, it tries the next, and returns the result of the first parser that succeeds:
 
 ```rust
 named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
@@ -198,14 +228,22 @@ named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
 assert_eq!(alt_tags(b"abcdxxx"), Done(b"xxx", b"abcd"));
 assert_eq!(alt_tags(b"efghxxx"), Done(b"xxx", b"efgh"));
 assert_eq!(alt_tags(b"ijklxxx"), Error(1));
+```
 
-// make the abcd_p parser optional
+The pipe `|` character is used as separator.
+
+The **opt!** combinator makes a parser optional. If the child parser returns an error, **opt!** will succeed and return None:
+
+```rust
 named!( abcd_opt, opt!( tag!("abcd") ) );
 
 assert_eq!(abcd_opt(b"abcdxxx"), Done(b"xxx", Some(b"abcd")));
 assert_eq!(abcd_opt(b"efghxxx"), Done(b"efghxxx", None));
+```
 
-// the abcd_p parser can happen 0 or more times
+**many0!** applies a parser 0 or more times, and returns a vector of the aggregated results:
+
+```rust
 named!(multi, many0!( tag!( "abcd" ) ) );
 let a = b"abcdef";
 let b = b"abcdabcdef";
@@ -215,12 +253,13 @@ assert_eq!(multi(b), Done(b"ef", vec![b"abcd", b"abcd"]));
 assert_eq!(multi(c), Done(b"azerty", Vec::new()));
 ```
 
-Here are the basic combining macros available:
+Here are some basic combining macros available:
 
 - **opt!**: will make the parser optional (if it returns the O type, the new parser returns Option<O>)
 - **many0!**: will apply the parser 0 or more times (if it returns the O type, the new parser returns Vec<O>)
 - **many1!**: will appy the parser 1 or more times
 
+Please refer to the documentation for an exhaustive list of combinators.
 
 There are more complex (and more useful) parsers like the chain, which is used to parse a whole buffer, gather data along the way, then assemble everything in a final closure, if none of the subparsers failed or returned an `Incomplete`:
 
@@ -253,200 +292,8 @@ let r2 = f(b"abcdefghefghX");
 assert_eq!(r2, Done(b"X", A{a: 1, b: 2}));
 ```
 
+The tilde `~` is used as separator between every parser in the sequence, the comma `,` indicates the parser chain ended, and the last closure can see the variables storing the result of parsers.
+
 More examples of chain usage can be found in the [INI file parser example](tests/ini.rs).
 
-### Producers
-
-While parser combinators alone are useful, you often need to handle the plumbing to feed them with data from a file, a network connection or a memory buffer. In nom, you can use producers to abstract those data accesses. A `Producer` has to implement the following trait:
-
-````rust
-use std::io::SeekFrom;
-pub enum ProducerState<O> {
-  Data(O),
-  Eof(O),
-  Continue,
-  ProducerError(Err),
-}
-
-pub trait Producer {
-  fn produce(&mut self)                   -> ProducerState<&[u8]>;
-  fn seek(&mut self,   position:SeekFrom) -> Option<u64>;
-}
-```
-
-nom currently provides `FileProducer` and `MemProducer`. The network one and the channel one will soon be implemented. To use them, see the following code:
-
-```rust
-use nom::{FileProducer, MemProducer};
-
-FileProducer::new("my_file.txt", 20).map(|mut producer: FileProducer| {
-      p.produce();
-     //etc
-});
-
-let mut p = MemProducer::new(b"abcdefgh", 4);
-```
-
-The second argument for both of them is the chunk size for the produce function (which will not return the whole data at once).
-
-The `pusher!` macro is provided to wrap an existing parser, and make it into a function that will handle a producer's chunk as soon as they are available.
-
-```rust
-let mut producer = MemProducer::new(b"abcdefgh", 8);
-
-fn print_parser<'a>(data: &'a [u8]) -> IResult<&'a [u8],()> {
-  println!("{:?}", data);
-  Done(data, ())
-}
-
-pusher!(push, print_parser);
-push(&mut producer);
-```
-
-Note that the code generated by `pusher!` has a very limited support for parsers returning `Incomplete` (it will concatenate multiple outputs of `produce()` and that is all), and does not handle seeking. It is more adapted to push-based streaming, where the data is given as soon as possible by the producer, with little or no support for seeking.
-
-If you need your parser to be smarter with the way it navigates the data, please see the next section, about consumers.
-
-### Consumers
-
-The `Consumer` is used to wrap data gathering from a producer, manage seeking, and hold the parser state while it feeds on data (om nom nom nom). It has to implement the following trait:
-
-```rust
-pub enum ConsumerState {
-  Await(
-    usize,    // consumed
-    usize     // needed buffer size
-  ),
-  Seek(
-    usize,    // consumed
-    SeekFrom, // new position
-    usize     // needed buffer size
-  ),
-  Incomplete,
-  ConsumerDone,
-  ConsumerError(Err)
-}
-
-pub trait Consumer {
-  fn consume(&mut self, input: &[u8]) -> ConsumerState;  // implement it
-  fn end(&mut self);                                     // implement it
-  fn failed(&mut self, error_code: u32);                 // implement it
-
-  fn run(&mut self, producer: &mut Producer);            // already provided
-}
-```
-
-In the consumer you implement, you will apply parsers on the input of the `consume` method, and depending on the parser's output, update your internal state and return a new `ConsumerState`:
-- **Await(consumed, needed)** indicates how much data was parsed, and how much you need next
-- **Seek(consumed, position, needed)** indicates where to seek in the stream, if applicable. For SeekFrom::Current, the current position is the end of the input of `consume`
-- **Incomplete** indicates there is not enough input
-- **ConsumerDone** indicates the parser is done, no more data should be fed. The `end()` method will be called
-- **ConsumerError(error)** indicates there has been an error. The parser will stop
-
-To use your `Consumer`, you need to pass a `Producer` instance to the `run()` method, and it will automatically handle buffering and seeking according to what the `consume()` method returns. Examples:
-
-- if it got 100 bytes from the producer and `consume()` returned `Await(20, 50)`, it will directly give data from the internal buffer.
-- if it got 100 bytes from the producer and `consume()` returned `Await(50, 80)`, it will keep the remaining 50 bytes of the input, and call the producer multiple times until it gets 30 bytes or more of data
-
-All of the plumbing is handled for you!
-
-Let's build `Consumer` parsing the `om(nom)*kthxbye` language. It will have an internal state indicating if it is parsing the beginning of the stream, the middle, or the suffix. It could be done easily in one entire parser, but that example is interesting enough to demonstrate consumers, and the consumer lets us handle data by chunks instead of parsing the whole byte array.
-
-```rust
-#[macro_use]
-extern crate nom;
-
-use nom::{Consumer,ConsumerState,MemProducer,IResult};
-use nom::IResult::*;
-
-#[derive(PartialEq,Eq,Debug)]
-enum State {
-  Beginning,
-  Middle,
-  End,
-  Done
-}
-
-struct TestConsumer {
-  state:   State,
-  counter: usize
-}
-```
-
-Then, we define the parsers that we will use at every state of our consumer. Note that we do not make one big parser at once. We just build some small, reusable, testable components.
-
-```rust
-named!( om_parser,             tag!( "om" ) );
-named!( nomnom_parser, many1!( tag!( "nom" ) ) );
-named!( end_parser,            tag!( "kthxbye")  );
-```
-
-
-```rust
-impl Consumer for TestConsumer {
-  fn consume(&mut self, input: &[u8]) -> ConsumerState {
-    match self.state {
-      State::Beginning => {
-        match om_parser(input) {
-          Error(a)      => ConsumerState::ConsumerError(a),
-          Incomplete(_) => ConsumerState::Await(0, 2),
-          Done(_,_)     => {
-            // "om" was recognized, get to the next state
-            self.state = State::Middle;
-            ConsumerState::Await(2, 3)
-          }
-        }
-      },
-      State::Middle    => {
-        match nomnom_parser(input) {
-          Error(a)         => {
-            // the "nom" parser failed, let's get to the next state
-            self.state = State::End;
-            ConsumerState::Await(0, 7)
-          },
-          Incomplete(_)    => ConsumerState::Await(0, 3),
-          Done(i,noms_vec) => {
-            // we got a few noms, let's count them and continue
-            self.counter = self.counter + noms_vec.len();
-            ConsumerState::Await(input.len() - i.len(), 3)
-          }
-        }
-      },
-      State::End       => {
-        match end_parser(input) {
-          Error(a)      => ConsumerState::ConsumerError(a),
-          Incomplete(_) => ConsumerState::Await(0, 7),
-          Done(_,_)     => {
-            // we recognized the suffix, everything was parsed correctly
-            self.state = State::Done;
-            ConsumerState::ConsumerDone
-          }
-        }
-      },
-      State::Done      => {
-        // this should not be called
-        ConsumerState::ConsumerError(42)
-      }
-    }
-  }
-
-  fn failed(&mut self, error_code: u32) {
-    println!("failed with error code {}", error_code);
-  }
-
-  fn end(&mut self) {
-    println!("we counted {} noms", self.counter);
-  }
-}
-
-fn main() {
-  let mut p = MemProducer::new(b"omnomnomnomkthxbye", 4);
-  let mut c = TestConsumer{state: State::Beginning, counter: 0};
-  c.run(&mut p);
-
-  assert_eq!(c.counter, 3);
-  assert_eq!(c.state, State::Done);
-}
-```
-
-You can find the code of that consumer in the [tests directory](tests/omnom.rs) with a few unit tests.
+### TODO: example for new producers and consumers
