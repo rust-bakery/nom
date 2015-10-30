@@ -31,7 +31,7 @@ macro_rules! bits (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     bits_impl!($i, $submac!($($args)*));
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr) => (
     bits_impl!($i, call!($f));
   );
 );
