@@ -84,13 +84,15 @@ macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
       use std::ops::Div;
+      //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
       let res : $crate::IResult<(&[u8],usize), $t> = if $count == 0 {
         $crate::IResult::Done( (input, bit_offset), 0)
       } else {
         let cnt = ($count as usize + bit_offset).div(8);
         if input.len() * 8 < $count as usize + bit_offset {
-          $crate::IResult::Incomplete($crate::Needed::Size(cnt+1))
+          //println!("returning incomplete: {}", $count as usize + bit_offset);
+          $crate::IResult::Incomplete($crate::Needed::Size($count as usize))
         } else {
           let mut acc:$t            = 0;
           let mut offset: usize     = bit_offset;
@@ -170,7 +172,7 @@ mod tests {
     assert_eq!(take_bits!( (sl, 6), u16, 11 ), IResult::Done((&sl[2..], 1), 1504));
     assert_eq!(take_bits!( (sl, 0), u32, 20 ), IResult::Done((&sl[2..], 4), 700163));
     assert_eq!(take_bits!( (sl, 4), u32, 20 ), IResult::Done((&sl[3..], 0), 716851));
-    assert_eq!(take_bits!( (sl, 4), u32, 22 ), IResult::Incomplete(Needed::Size(4)));
+    assert_eq!(take_bits!( (sl, 4), u32, 22 ), IResult::Incomplete(Needed::Size(22)));
   }
 
   #[test]
