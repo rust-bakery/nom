@@ -138,11 +138,11 @@ macro_rules! tag_bits (
             let res: $crate::IResult<(&[u8],usize),$t> = $crate::IResult::Done(i, o);
             res
           } else {
-            $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::TagBits))
+            $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))
           }
         },
         _                              => {
-          $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::TagBits))
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))
         }
       }
     }
