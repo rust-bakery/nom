@@ -478,6 +478,7 @@ macro_rules! expr_opt (
 
 /// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
 /// chains parsers and assemble the results through a closure
+/// the input type I must implement nom::InputLength
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -526,7 +527,10 @@ macro_rules! expr_opt (
 #[macro_export]
 macro_rules! chain (
   ($i:expr, $($rest:tt)*) => (
-    chaining_parser!($i, 0, $($rest)*)
+    {
+      use $crate::InputLength;
+      chaining_parser!($i, 0usize, $($rest)*)
+    }
   );
 );
 
@@ -537,15 +541,17 @@ macro_rules! chaining_parser (
     chaining_parser!($i, $consumed, call!($e) ~ $($rest)*);
   );
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
+    {
     match $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
       $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
       $crate::IResult::Done(i,_)     => {
-        chaining_parser!(i, $consumed + ($i).len() - i.len(), $($rest)*)
+        chaining_parser!(i, $consumed + (($i).input_len() - i.input_len()), $($rest)*)
       }
     }
-  );
+    }
+);
 
   ($i:expr, $consumed:expr, $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, call!($e) ? ~ $($rest)*);
@@ -564,7 +570,7 @@ macro_rules! chaining_parser (
       } else {
         $i
       };
-      chaining_parser!(input, $consumed + ($i).len() - input.len(), $($rest)*)
+      chaining_parser!(input, $consumed + (($i).input_len() - input.input_len()), $($rest)*)
     }
   });
 
@@ -573,14 +579,16 @@ macro_rules! chaining_parser (
   );
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
+    {
     match  $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
       $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
       $crate::IResult::Done(i,o)     => {
         let $field = o;
-        chaining_parser!(i, $consumed + ($i).len() - i.len(), $($rest)*)
+        chaining_parser!(i, $consumed + (($i).input_len() - i.input_len()), $($rest)*)
       }
+    }
     }
   );
 
@@ -595,7 +603,7 @@ macro_rules! chaining_parser (
       $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
       $crate::IResult::Done(i,o)     => {
         let mut $field = o;
-        chaining_parser!(i, $consumed + ($i).len() - i.len(), $($rest)*)
+        chaining_parser!(i, $consumed + ($i).input_len() - i.input_len(), $($rest)*)
       }
     }
   );
@@ -617,7 +625,7 @@ macro_rules! chaining_parser (
       } else {
         (None,$i)
       };
-      chaining_parser!(input, $consumed + ($i).len() - input.len(), $($rest)*)
+      chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
     }
   });
 
@@ -638,7 +646,7 @@ macro_rules! chaining_parser (
       } else {
         (None,$i)
       };
-      chaining_parser!(input, $consumed + ($i).len() - input.len(), $($rest)*)
+      chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
     }
   });
 

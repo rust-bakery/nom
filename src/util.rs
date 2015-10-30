@@ -23,6 +23,31 @@ pub trait HexDisplay {
   fn to_hex_from(&self, chunk_size: usize, from: usize) -> String;
 }
 
+pub trait InputLength {
+  fn input_len(&self) -> usize;
+}
+
+impl<'a, T> InputLength for &'a[T] {
+  fn input_len(&self) -> usize {
+    self.len()
+  }
+}
+
+impl<'a> InputLength for &'a str {
+  fn input_len(&self) -> usize {
+    self.len()
+  }
+}
+
+impl<'a> InputLength for (&'a [u8], usize) {
+  fn input_len(&self) -> usize {
+    println!("bit input length for ({:?}, {}):", self.0, self.1);
+    let res = self.0.len() * 8 - self.1;
+    println!("-> {}", res);
+    res
+  }
+}
+
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
 #[cfg(not(feature = "core"))]
