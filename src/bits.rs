@@ -45,17 +45,21 @@ macro_rules! bits_impl (
       match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)                            => {
           let err = match e {
-            $crate::Err::Code(k) | $crate::Err::Node(k, _) | $crate::Err::Position(k, _) | $crate::Err::NodePosition(k, _, _) => {
-              $crate::Err::Position(k, $i)
+            $crate::Err::Code(k) | $crate::Err::Node(k, _) => $crate::Err::Code(k),
+            $crate::Err::Position(k, (i,b)) | $crate::Err::NodePosition(k, (i,b), _) => {
+              $crate::Err::Position(k, &i[b/8..])
             }
           };
           $crate::IResult::Error(err)
         }
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          //println!("bits parser returned Needed::Size({})", i);
+          $crate::IResult::Incomplete($crate::Needed::Size(i / 8 + 1))
+        },
         $crate::IResult::Done((i, bit_index), o)             => {
-          let byte_index = if bit_index == 0 { 0 } else { 1 };
-
+          let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
+          //println!("bit index=={} => byte index=={}", bit_index, byte_index);
           $crate::IResult::Done(&i[byte_index..], o)
         }
       }
@@ -151,7 +155,8 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use internal::{IResult,Needed};
+  use internal::{IResult,Needed,Err};
+  use ErrorKind;
 
   #[test]
   fn take_bits() {
@@ -182,5 +187,32 @@ mod tests {
 
     assert_eq!(tag_bits!( (sl, 0), u8,   3, 0b101), IResult::Done((&sl[0..], 3), 5));
     assert_eq!(tag_bits!( (sl, 0), u8,   4, 0b1010), IResult::Done((&sl[0..], 4), 10));
+  }
+
+  named!(ch<(&[u8],usize),(u8,u8)>,
+    chain!(
+      tag_bits!(u8, 3, 0b101) ~
+      x: take_bits!(u8, 4)    ~
+      y: take_bits!(u8, 5)    ,
+      || { (x,y) }
+    )
+  );
+
+  #[test]
+  fn chain_bits() {
+    let input = vec![0b10101010, 0b11110000, 0b00110011];
+    let sl    = &input[..];
+    assert_eq!(ch((&input[..],0)), IResult::Done((&sl[1..], 4), (5,15)));
+    assert_eq!(ch((&input[..],4)), IResult::Done((&sl[2..], 0), (7,16)));
+    assert_eq!(ch((&input[..1],0)), IResult::Incomplete(Needed::Size(12)));
+  }
+
+  named!(ch_bytes<(u8,u8)>, bits!(ch));
+  #[test]
+  fn bits_to_bytes() {
+    let input = vec![0b10101010, 0b11110000, 0b00110011];
+    assert_eq!(ch_bytes(&input[..]), IResult::Done(&input[2..], (5,15)));
+    assert_eq!(ch_bytes(&input[..1]), IResult::Incomplete(Needed::Size(2)));
+    assert_eq!(ch_bytes(&input[1..]), IResult::Error(Err::Position(ErrorKind::TagBits, &input[1..])));
   }
 }
