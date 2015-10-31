@@ -45,9 +45,9 @@ impl<'a> InputLength for &'a str {
 impl<'a> InputLength for (&'a [u8], usize) {
   #[inline]
   fn input_len(&self) -> usize {
-    println!("bit input length for ({:?}, {}):", self.0, self.1);
+    //println!("bit input length for ({:?}, {}):", self.0, self.1);
     let res = self.0.len() * 8 - self.1;
-    println!("-> {}", res);
+    //println!("-> {}", res);
     res
   }
 }
