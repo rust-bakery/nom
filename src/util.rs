@@ -539,7 +539,8 @@ pub enum ErrorKind<E=u32> {
   RegexpCapture,
   RegexpCaptures,
   TakeWhile1,
-  Complete
+  Complete,
+  Fix
 }
 
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
@@ -583,6 +584,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::RegexpCapture             => 45,
     ErrorKind::RegexpCaptures            => 46,
     ErrorKind::TakeWhile1                => 47,
-    ErrorKind::Complete                  => 48
+    ErrorKind::Complete                  => 48,
+    ErrorKind::Fix                       => 49
   }
 }

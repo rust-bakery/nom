@@ -429,7 +429,7 @@ mod tests {
     assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
     assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
     assert_eq!(alphanumeric(a), Done(empty, a));
-    assert_eq!(alphanumeric(b), Done(empty, b));
+    assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
     assert_eq!(alphanumeric(d), Done("é12".as_bytes(), &b"az"[..]));
     assert_eq!(space(e), Done(&b""[..], &b" "[..]));
@@ -608,4 +608,7 @@ mod tests {
     assert_eq!(int_parse(&[0x80, 0x00]), Done(&b""[..], 128_u16));
   }
 
+  fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], ()> {
+    fix_error!(input, (), alphanumeric)
+  }
 }

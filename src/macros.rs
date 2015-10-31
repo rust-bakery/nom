@@ -251,6 +251,44 @@ macro_rules! add_error (
   );
 );
 
+
+/// translate parser result from IResult<I,O,u32> to IResult<I,O,E> woth a custom type
+///
+#[macro_export]
+macro_rules! fix_error (
+  ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
+        $crate::IResult::Error($crate::Err::Code(ErrorKind::Custom(_))) |
+          $crate::IResult::Error($crate::Err::Node(ErrorKind::Custom(_), _))=> {
+          let e: ErrorKind<$t> = ErrorKind::Fix;
+          $crate::IResult::Error($crate::Err::Code(e))
+        },
+        $crate::IResult::Error($crate::Err::Position(ErrorKind::Custom(_), p)) |
+          $crate::IResult::Error($crate::Err::NodePosition(ErrorKind::Custom(_), p, _)) => {
+          let e: ErrorKind<$t> = ErrorKind::Fix;
+          $crate::IResult::Error($crate::Err::Position(e, p))
+        },
+        $crate::IResult::Error($crate::Err::Code(_)) |
+          $crate::IResult::Error($crate::Err::Node(_, _))=> {
+          let e: ErrorKind<$t> = ErrorKind::Fix;
+          $crate::IResult::Error($crate::Err::Code(e))
+        },
+        $crate::IResult::Error($crate::Err::Position(_, p)) |
+          $crate::IResult::Error($crate::Err::NodePosition(_, p, _)) => {
+          let e: ErrorKind<$t> = ErrorKind::Fix;
+          $crate::IResult::Error($crate::Err::Position(e, p))
+        },
+      }
+    }
+  );
+  ($i:expr, $t:ty, $f:expr) => (
+    fix_error!($i, $t, call!($f));
+  );
+);
+
 /// replaces a `Incomplete` returned by the child parser
 /// with an `Error`
 ///
