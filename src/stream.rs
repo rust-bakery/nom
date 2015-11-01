@@ -322,7 +322,15 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
       //println!("producer state: {:?}", self.state);
       match self.state {
         FileProducerState::Normal => consumer.handle(Input::Element(&self.v[self.start..self.end])),
-        FileProducerState::Eof    => consumer.handle(Input::Eof(Some(&self.v[self.start..self.end]))),
+        FileProducerState::Eof    => {
+          let slice = &self.v[self.start..self.end];
+
+          if slice.is_empty() {
+            consumer.handle(Input::Eof(None))
+          } else {
+            consumer.handle(Input::Eof(Some(slice)))
+          }
+        }
         // is it right?
         FileProducerState::Error  => consumer.state()
       }
