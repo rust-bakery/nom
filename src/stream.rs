@@ -344,15 +344,17 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
 use std::marker::PhantomData;
 
 /// MapConsumer takes a function S -> T and applies it on a consumer producing values of type S
-pub struct MapConsumer<'a, C:'a ,R,S,T,E,M> {
+pub struct MapConsumer<'a, C:'a,R,S,T,E,M,F> {
   state:    ConsumerState<T,E,M>,
   consumer: &'a mut C,
-  f:        Box<Fn(S) -> T>,
-  input_type: PhantomData<R>
+  f:        F,
+  consumer_input_type: PhantomData<R>,
+  f_input_type: PhantomData<S>,
+  f_output_type: PhantomData<T>
 }
 
-impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> MapConsumer<'a,C,R,S,T,E,M> {
-  pub fn new(c: &'a mut C, f: Box<Fn(S) -> T>) -> MapConsumer<'a,C,R,S,T,E,M> {
+impl<'a,R,S:Clone,T,E:Clone,M:Clone,F:Fn(S) -> T,C:Consumer<R,S,E,M>> MapConsumer<'a,C,R,S,T,E,M,F> {
+  pub fn new(c: &'a mut C, f: F) -> MapConsumer<'a,C,R,S,T,E,M,F> {
     //let state = c.state();
     let initial = match *c.state() {
       ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), f(o.clone())),
@@ -364,19 +366,21 @@ impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> MapConsumer<'a,C,R,S,T,
       state:    initial,
       consumer: c,
       f:        f,
-      input_type: PhantomData
+      consumer_input_type: PhantomData,
+      f_input_type: PhantomData,
+      f_output_type: PhantomData
     }
   }
 }
 
-impl<'a,R,S:Clone,T,E:Clone,M:Clone,C:Consumer<R,S,E,M>> Consumer<R,T,E,M> for MapConsumer<'a,C,R,S,T,E,M> {
+impl<'a,R,S:Clone,T,E:Clone,M:Clone,F:Fn(S) -> T,C:Consumer<R,S,E,M>> Consumer<R,T,E,M> for MapConsumer<'a,C,R,S,T,E,M,F> {
   fn handle(&mut self, input: Input<R>) -> &ConsumerState<T,E,M> {
     let res:&ConsumerState<S,E,M> = self.consumer.handle(input);
-    self.state = match *res {
-        ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), (*self.f)(o.clone())),
-        ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
-        ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone())
-      };
+    self.state = match res {
+        &ConsumerState::Done(ref m, ref o) => ConsumerState::Done(m.clone(), (self.f)(o.clone())),
+        &ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
+        &ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone())
+    };
     &self.state
   }
 
@@ -755,7 +759,7 @@ mod tests {
     let mut m = MemProducer::new(&b"abcdefghijklabcdabcd"[..], 8);
 
     let mut s = StateConsumer { state: ConsumerState::Continue(Move::Consume(0)), parsing_state: State::Initial };
-    let mut a = MapConsumer::new(&mut s, Box::new(from_utf8));
+    let mut a = MapConsumer::new(&mut s, from_utf8);
 
     println!("apply {:?}", m.apply(&mut a));
     println!("apply {:?}", m.apply(&mut a));
