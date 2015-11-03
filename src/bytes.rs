@@ -159,6 +159,113 @@ macro_rules! is_a_bytes (
   );
 );
 
+#[macro_export]
+macro_rules! escaped (
+  ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
+    {
+      let cl = || {
+        use $crate::HexDisplay;
+        let mut index  = 0;
+
+        while index < $i.len() {
+          if let $crate::IResult::Done(i,_) = $normal!(&$i[index..], $($args)*) {
+            if i.is_empty() {
+              return $crate::IResult::Done(&b""[..], $i)
+            } else {
+              index = $i.offset(i);
+            }
+          } else if $i[index] == $control_char as u8 {
+            if index + 1 >= $i.len() {
+              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Escaped,&$i[index..]));
+            } else {
+              match $escapable!(&$i[index+1..], $($args2)*) {
+                $crate::IResult::Done(i,_) => {
+                  if i.is_empty() {
+                    return $crate::IResult::Done(&b""[..], $i)
+                  } else {
+                    index = $i.offset(i);
+                  }
+                },
+                $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
+                $crate::IResult::Error(e)      => return $crate::IResult::Error(e)
+              }
+            }
+          } else {
+            if index == 0 {
+              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Escaped,&$i[index..]))
+            } else {
+              return $crate::IResult::Done(&$i[index..], &$i[..index])
+            }
+          }
+        }
+        $crate::IResult::Done(&$i[index..], &$i[..index])
+      };
+      match cl() {
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
+        $crate::IResult::Error(e)      => {
+          return $crate::IResult::Error($crate::Err::NodePosition($crate::ErrorKind::Escaped, $i, Box::new(e)))
+        }
+      }
+    }
+  )
+);
+
+#[macro_export]
+macro_rules! escaped_transform (
+  ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
+    {
+      let cl = || {
+        use $crate::HexDisplay;
+        let mut index  = 0;
+        let mut res = Vec::new();
+
+        while index < $i.len() {
+          if let $crate::IResult::Done(i,o) = $normal!(&$i[index..], $($args)*) {
+            res.extend(o.iter().cloned());
+            if i.is_empty() {
+              return $crate::IResult::Done(&b""[..], res)
+            } else {
+              index = $i.offset(i);
+            }
+          } else if $i[index] == $control_char as u8 {
+            if index + 1 >= $i.len() {
+              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::EscapedTransform,&$i[index..]));
+            } else {
+              match $transform!(&$i[index+1..], $($args2)*) {
+                $crate::IResult::Done(i,o) => {
+                  res.extend(o.iter().cloned());
+                  if i.is_empty() {
+                    return $crate::IResult::Done(&b""[..], res)
+                  } else {
+                    index = $i.offset(i);
+                  }
+                },
+                $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
+                $crate::IResult::Error(e)      => return $crate::IResult::Error(e)
+              }
+            }
+          } else {
+            if index == 0 {
+              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::EscapedTransform,&$i[index..]))
+            } else {
+              return $crate::IResult::Done(&$i[index..], res)
+            }
+          }
+        }
+        $crate::IResult::Done(&$i[index..], res)
+      };
+      match cl() {
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
+        $crate::IResult::Error(e)      => {
+          return $crate::IResult::Error($crate::Err::NodePosition($crate::ErrorKind::EscapedTransform, $i, Box::new(e)))
+        }
+      }
+    }
+  )
+);
+
 /// `take_while!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function fails.
 ///
@@ -531,6 +638,56 @@ mod tests {
 
     let f = &b"fghi"[..];
     assert_eq!(a_or_b(f), Done(&b""[..], &b"fghi"[..]));
+  }
+
+  use nom::alpha;
+  #[test]
+  fn escaping() {
+    named!(esc, escaped!(call!(alpha), '\\', is_a_bytes!(&b"\"n\\"[..])));
+    assert_eq!(esc(&b"abcd"[..]), Done(&b""[..], &b"abcd"[..]));
+    assert_eq!(esc(&b"ab\\\"cd"[..]), Done(&b""[..], &b"ab\\\"cd"[..]));
+    assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], &b"\\\"abcd"[..]));
+    assert_eq!(esc(&b"\\n"[..]), Done(&b""[..], &b"\\n"[..]));
+    assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], &b"ab\\\""[..]));
+    assert_eq!(esc(&b"AB\\"[..]), Error(NodePosition(ErrorKind::Escaped, &b"AB\\"[..], Box::new(Position(ErrorKind::Escaped, &b"\\"[..])))));
+    assert_eq!(esc(&b"AB\\A"[..]), Error(NodePosition(ErrorKind::Escaped, &b"AB\\A"[..], Box::new(Position(ErrorKind::IsA, &b"A"[..])))));
+  }
+
+  fn to_s(i:Vec<u8>) -> String {
+    String::from_utf8_lossy(&i).into_owned()
+  }
+
+  #[test]
+  fn escape_transform() {
+    use std::str;
+
+    named!(esc< String >, map!(escaped_transform!(call!(alpha), '\\',
+      alt!(
+          tag!("\\")       => { |_| &b"\\"[..] }
+        | tag!("\"")       => { |_| &b"\""[..] }
+        | tag!("n")        => { |_| &b"\n"[..] }
+      )), to_s)
+    );
+
+    assert_eq!(esc(&b"abcd"[..]), Done(&b""[..], String::from("abcd")));
+    assert_eq!(esc(&b"ab\\\"cd"[..]), Done(&b""[..], String::from("ab\"cd")));
+    assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], String::from("\"abcd")));
+    assert_eq!(esc(&b"\\n"[..]), Done(&b""[..], String::from("\n")));
+    assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], String::from("ab\"")));
+    assert_eq!(esc(&b"AB\\"[..]), Error(NodePosition(ErrorKind::EscapedTransform, &b"AB\\"[..], Box::new(Position(ErrorKind::EscapedTransform, &b"\\"[..])))));
+    assert_eq!(esc(&b"AB\\A"[..]), Error(NodePosition(ErrorKind::EscapedTransform, &b"AB\\A"[..], Box::new(Position(ErrorKind::Alt, &b"A"[..])))));
+
+    let e = "è";
+    let a = "à";
+    println!("è: {:?} | à: {:?}", str::as_bytes(e), str::as_bytes(a));
+    named!(esc2< String >, map!(escaped_transform!(call!(alpha), '&',
+      alt!(
+          tag!("egrave;") => { |_| str::as_bytes("è") }
+        | tag!("agrave;") => { |_| str::as_bytes("à") }
+      )), to_s)
+    );
+    assert_eq!(esc2(&b"ab&egrave;DEF"[..]), Done(&b""[..], String::from("abèDEF")));
+    assert_eq!(esc2(&b"ab&egrave;D&agrave;EF"[..]), Done(&b""[..], String::from("abèDàEF")));
   }
 
   #[test]
