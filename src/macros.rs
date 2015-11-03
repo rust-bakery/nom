@@ -520,6 +520,8 @@ macro_rules! expr_opt (
 /// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
 /// chains parsers and assemble the results through a closure
 /// the input type I must implement nom::InputLength
+/// this combinator will count how much data is consumed by every child parser and take it into account if
+/// there is not enough data
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -539,10 +541,11 @@ macro_rules! expr_opt (
 ///
 ///  named!(z<&[u8], B>,
 ///    chain!(
-///      tag!("abcd")  ~
+///      tag!("abcd")  ~     // the '~' character is used as separator
 ///      aa: ret_int   ~     // the result of that parser will be used in the closure
 ///      tag!("abcd")? ~     // this parser is optional
 ///      bb: ret_y?    ,     // the result of that parser is an option
+///                          // the last parser in the chain is followed by a ','
 ///      ||{B{a: aa, b: bb}}
 ///    )
 ///  );
