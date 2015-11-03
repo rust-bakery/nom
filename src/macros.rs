@@ -369,6 +369,7 @@ macro_rules! map(
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! map_impl(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -402,6 +403,7 @@ macro_rules! map_res (
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! map_res_impl (
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -439,6 +441,7 @@ macro_rules! map_opt (
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! map_opt_impl (
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -573,6 +576,7 @@ macro_rules! chain (
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! chaining_parser (
   ($i:expr, $consumed:expr, $e:ident ~ $($rest:tt)*) => (
@@ -872,6 +876,7 @@ macro_rules! alt (
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! alt_parser (
   ($i:expr, $e:ident | $($rest:tt)*) => (
@@ -1264,6 +1269,7 @@ macro_rules! separated_pair(
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! separated_pair1(
   ($i:expr, $res1:ident, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
@@ -1283,6 +1289,7 @@ macro_rules! separated_pair1(
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! separated_pair2(
   ($i:expr, $res1:ident, $submac3:ident!( $($args3:tt)* )) => (
@@ -1394,6 +1401,7 @@ macro_rules! delimited(
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! delimited1(
   ($i:expr, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
@@ -1413,6 +1421,7 @@ macro_rules! delimited1(
 );
 
 /// Internal parser, do not use directly
+#[doc(hidden)]
 #[macro_export]
 macro_rules! delimited2(
   ($i:expr, $res2:ident, $submac3:ident!( $($args3:tt)* )) => (
