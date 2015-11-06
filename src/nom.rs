@@ -376,6 +376,24 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   }
 }
 
+/// Recognizes a hex-encoded integer
+#[inline]
+pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
+  match is_a!(input, &b"0123456789abcdef"[..]) {
+    Error(e)    => Error(e),
+    Incomplete(e) => Incomplete(e),
+    Done(i,o) => {
+      let mut res = 0;
+      for &e in o {
+        let digit = e as char;
+        let value = digit.to_digit(16).unwrap_or(0);
+        res = value + (res << 4);
+      }
+      Done(i, res)
+    }
+  }
+}
+
 /// Recognizes empty input buffers
 ///
 /// useful to verify that the previous parsers used all of the input
@@ -548,6 +566,14 @@ mod tests {
     assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]), Done(&b""[..], 9223372036854775807_i64));
     assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
     assert_eq!(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]), Done(&b""[..], -9223372036854775808_i64));
+  }
+
+  #[test]
+  fn hex_u32_tests() {
+    assert_eq!(hex_u32(&b""[..]), Done(&b""[..], 0));
+    assert_eq!(hex_u32(&b"ff"[..]), Done(&b""[..], 255));
+    assert_eq!(hex_u32(&b"1be2"[..]), Done(&b""[..], 7138));
+    assert_eq!(hex_u32(&b"0x1be2"[..]), Done(&b"x1be2"[..], 0));
   }
 
     #[test]
