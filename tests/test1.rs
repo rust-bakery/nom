@@ -1,3 +1,5 @@
+#![cfg(feature = "stream")]
+
 #[macro_use]
 extern crate nom;
 

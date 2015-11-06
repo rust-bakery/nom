@@ -122,6 +122,7 @@ pub use self::character::*;
 pub use self::regexp::*;
 
 #[cfg(not(feature = "core"))]
+#[cfg(feature = "stream")]
 pub use self::stream::*;
 
 #[macro_use] mod util;
@@ -139,4 +140,5 @@ mod internal;
 
 #[macro_use]
 #[cfg(not(feature = "core"))]
+#[cfg(feature = "stream")]
 mod stream;

@@ -1,3 +1,4 @@
+#![cfg(feature = "stream")]
 #![allow(dead_code)]
 
 #[macro_use]
