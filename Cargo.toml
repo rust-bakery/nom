@@ -10,6 +10,16 @@ readme = "README.md"
 documentation = "http://rust.unhandledexpression.com/nom/"
 keywords = ["parser", "parser-combinators", "parsing", "streaming", "bit"]
 
+include = [
+  "CHANGELOG.md",
+  "LICENSE",
+  ".gitignore",
+  ".travis.yml",
+  "Cargo.toml",
+  "src/*.rs",
+  "tests/*.rs"
+]
+
 [features]
 core = []
 nightly = []
