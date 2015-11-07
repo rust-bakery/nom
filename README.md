@@ -24,7 +24,7 @@ Here are the current and planned features, with their status:
 - [x] **state machine handling**: consumers provide a basic way of managing state machines
 - [x] **descriptive errors**: the parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages.
 - [x] **custom error types**: you can provide a specific type to improve errors returned by parsers
-- [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real wolrd data. So far, the only flaws found by fuzzing were in code written outside of nom
+- [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real world data. So far, the only flaws found by fuzzing were in code written outside of nom
 - [x] **speed**: benchmarks have shown that nom parsers often outperform many parser combinators library like Parsec and attoparsec, some regular expression engines and even handwritten C parsers
 
 Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
@@ -82,7 +82,7 @@ Here is an example of one such parser, to recognize text between parenthesis:
 named!(parens, delimited!(char!('('), none_of!(")"), char!(')'));
 ```
 
-It defines a function named `parens`, which will recognize a sequence of the caracter '(', the longest byte array not containing ')', then the character ')', and will return the byte array in the middle.
+It defines a function named `parens`, which will recognize a sequence of the character '(', the longest byte array not containing ')', then the character ')', and will return the byte array in the middle.
 
 Here is another parser, written without using nom's macros this time:
 
@@ -212,7 +212,7 @@ Here are the basic macros available:
 - **take_until_either_and_consume!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will skip it
 - **take_until_either!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
 - **map!**: applies a function to the output of a `IResult` and puts the result in the output of a `IResult` with the same remaining input
-- **flat_map!**: applies a parser to the ouput of a `IResult` and returns a new `IResult` with the same remaining input.
+- **flat_map!**: applies a parser to the output of a `IResult` and returns a new `IResult` with the same remaining input.
 - **map_opt!**: applies a function returning an Option to the output of `IResult`, returns `Done(input, o)` if the result is `Some(o)`, or `Error(0)`
 - **map_res!**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
 
@@ -257,7 +257,7 @@ Here are some basic combining macros available:
 
 - **opt!**: will make the parser optional (if it returns the O type, the new parser returns Option<O>)
 - **many0!**: will apply the parser 0 or more times (if it returns the O type, the new parser returns Vec<O>)
-- **many1!**: will appy the parser 1 or more times
+- **many1!**: will apply the parser 1 or more times
 
 Please refer to the documentation for an exhaustive list of combinators.
 
