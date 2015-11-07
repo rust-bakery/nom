@@ -322,7 +322,12 @@ impl<'x> Producer<'x,&'x [u8],Move> for FileProducer {
 
           // FIXME: naive seeking for now
           Move::Seek(position) => {
-            match self.file.seek(position) {
+            let pos = match position {
+              // take into account data in the buffer
+              SeekFrom::Current(c) => SeekFrom::Current(c - (self.end - self.start) as i64),
+              default              => default
+            };
+            match self.file.seek(pos) {
               Ok(pos) => {
                 //println!("file got seek to position {:?}. New position is {:?}", position, next);
                 self.position = pos as usize;
