@@ -593,6 +593,29 @@ macro_rules! take_until_either_bytes(
   );
 );
 
+/// `length_bytes!(&[T] -> IResult<&[T], nb>) => &[T] -> IResult<&[T], &[T]>
+/// gets a number from the first parser, then extracts that many bytes from the
+/// remaining stream
+#[macro_export]
+macro_rules! length_bytes(
+  ($i:expr, $f:expr) => (
+    {
+      match $f($i) {
+        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i1,nb)   => {
+          let length_remaining = i1.len();
+          if length_remaining < nb {
+            $crate::IResult::Incomplete(Needed::Size(nb - length_remaining))
+          } else {
+            $crate::IResult::Done(&i1[nb..], &i1[..nb])
+          }
+        }
+      }
+    }
+  )
+);
+
 #[cfg(test)]
 mod tests {
   use internal::Needed;
