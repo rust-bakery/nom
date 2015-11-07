@@ -113,7 +113,6 @@ pub use self::internal::*;
 pub use self::macros::*;
 pub use self::bytes::*;
 pub use self::bits::*;
-pub use self::accumulator::*;
 
 pub use self::nom::*;
 pub use self::character::*;
@@ -130,7 +129,6 @@ mod internal;
 #[macro_use] mod macros;
 #[macro_use] mod bytes;
 #[macro_use] mod bits;
-#[macro_use] mod accumulator;
 
 #[macro_use] mod nom;
 #[macro_use] mod character;
