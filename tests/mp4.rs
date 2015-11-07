@@ -5,7 +5,7 @@
 extern crate nom;
 
 use nom::{HexDisplay,Needed,IResult,be_u16,be_u32,be_u64,be_f32,ErrorKind};
-use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer};
+use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer,FileProducerState};
 use nom::IResult::*;
 use nom::Err::*;
 
@@ -255,7 +255,7 @@ named!(filetype_parser<&[u8], FileType>,
 );
 
 fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
-  if input.len() < 100 {
+  let res = if input.len() < 100 {
     Incomplete(Needed::Size(100))
   } else if input.len() == 100 {
     mvhd32(input)
@@ -263,7 +263,9 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
     mvhd64(input)
   } else {
     Error(Position(ErrorKind::Custom(32),input))
-  }
+  };
+  println!("res: {:?}", res);
+  res
 }
 
 fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
@@ -316,16 +318,17 @@ named!(moov_header<&[u8],MP4BoxHeader>,
   )
 );
 
+#[derive(Debug,PartialEq,Eq)]
 enum MP4State {
   Main,
   Moov,
-  Mvhd
+  Mvhd(usize)
 }
 
 pub struct MP4Consumer {
   state:      MP4State,
   moov_bytes: usize,
-  c_state:    ConsumerState<usize, (), Move>
+  c_state:    ConsumerState<(), (), Move>
 }
 
 impl MP4Consumer {
@@ -333,10 +336,11 @@ impl MP4Consumer {
     MP4Consumer { state: MP4State::Main, moov_bytes: 0, c_state: ConsumerState::Continue(Move::Consume(0)) }
   }
 
-  fn consume_main(&mut self, input: Input<&[u8]>) -> ConsumerState<usize, (), Move> {
+  fn consume_main(&mut self, input: Input<&[u8]>) -> ConsumerState<(), (), Move> {
     //println!("\nparsing box header:\n{}", input.to_hex(8));
     match input {
-      Input::Empty | Input::Eof(None) => ConsumerState::Continue(Move::Consume(0)),
+      Input::Eof(None) => ConsumerState::Done(Move::Consume(0), ()),
+      Input::Empty     => ConsumerState::Continue(Move::Consume(0)),
       Input::Element(sl) |  Input::Eof(Some(sl)) => {
         match box_header(sl) {
           Done(i, header) => {
@@ -344,19 +348,19 @@ impl MP4Consumer {
               MP4BoxType::Ftyp    => {
                 println!("-> FTYP");
                 match filetype_parser(&i[0..(header.length as usize - 8)]) {
-                  Done(_, filetype_header) => {
+                  Done(rest, filetype_header) => {
                     println!("filetype header: {:?}", filetype_header);
                     //return ConsumerState::Await(header.length as usize, header.length as usize - 8);
-                    return ConsumerState::Continue(Move::Consume(0));
+                    return ConsumerState::Continue(Move::Consume(sl.offset(rest)));
                   }
                   Error(a) => {
                     println!("ftyp parsing error: {:?}", a);
                     assert!(false);
                     return ConsumerState::Error(());
                   },
-                  Incomplete(_) => {
+                  Incomplete(n) => {
                     println!("ftyp incomplete -> await: {}", sl.len());
-                    return ConsumerState::Continue(Move::Consume(0));
+                    return ConsumerState::Continue(Move::Await(n));
                     //return ConsumerState::Await(0, input.len() + 100);
                   }
                 }
@@ -365,8 +369,7 @@ impl MP4Consumer {
                 println!("-> MOOV");
                 self.state = MP4State::Moov;
                 self.moov_bytes = header.length as usize - 8;
-                return ConsumerState::Continue(Move::Consume(0));
-                //return ConsumerState::Await(input.len() - i.len(), header.length as usize);
+                return ConsumerState::Continue(Move::Consume(sl.offset(i)));
               },
               MP4BoxType::Mdat    => println!("-> MDAT"),
               MP4BoxType::Free    => println!("-> FREE"),
@@ -375,15 +378,11 @@ impl MP4Consumer {
               MP4BoxType::Unknown => {
                 println!("-> UNKNOWN");
                 println!("bytes:\n{}", (sl).to_hex(8));
+                //return ConsumerState::Continue(Move::Consume(sl.offset(i)));
               },
               _                   => { println!("invalid"); return ConsumerState::Error(())}
             }
-            // current producer position is at input.len()
-            // I consumed input.len() - i.len() = 8
-            // I want to advance from header.length()
-            // offset to my new position: -input.len() + (input.len() - i.len()) + header.len() == header.len() - i.len()
-            //return ConsumerState::Seek(input.len() - i.len(), SeekFrom::Current((header.length as usize - i.len() as usize - 8) as i64), 100);
-            return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length as usize - i.len() as usize - 8) as i64)))
+            return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length) as i64)))
           },
           Error(a) => {
             println!("mp4 parsing error: {:?}", a);
@@ -393,7 +392,6 @@ impl MP4Consumer {
           Incomplete(i) => {
             // FIXME: incomplete should send the required size
             println!("mp4 incomplete -> await: {}", sl.len());
-            //return ConsumerState::Await(0, input.len() + 100);
             return ConsumerState::Continue(Move::Await(i));
           }
         }
@@ -401,10 +399,11 @@ impl MP4Consumer {
     }
   }
 
-  fn consume_moov(&mut self, input: Input<&[u8]>) -> ConsumerState<usize, (), Move> {
+  fn consume_moov(&mut self, input: Input<&[u8]>) -> ConsumerState<(), (), Move> {
     //println!("\nparsing moov box(remaining {} bytes):\n{}", self.moov_bytes, input.to_hex(8));
     match input {
-      Input::Empty | Input::Eof(None) => return ConsumerState::Continue(Move::Consume(0)),
+      Input::Eof(None) => return ConsumerState::Error(()),
+      Input::Empty => return ConsumerState::Continue(Move::Consume(0)),
       Input::Element(sl) |  Input::Eof(Some(sl)) => {
         if self.moov_bytes == 0 {
           //println!("finished parsing moov atom, continuing with main parser");
@@ -416,10 +415,11 @@ impl MP4Consumer {
             match header.tag {
               MP4BoxType::Mvhd    => {
                 println!("-> MVHD");
-                self.state = MP4State::Mvhd;
+                self.state = MP4State::Mvhd(header.length as usize - 8);
                 // TODO: check for overflow here
                 self.moov_bytes = self.moov_bytes - (sl.len() - i.len());
-                return ConsumerState::Continue(Move::Consume(sl.len() - i.len()));
+                println!("remaining moov_bytes: {}", self.moov_bytes);
+                return ConsumerState::Continue(Move::Consume(sl.offset(i)));
               },
               MP4BoxType::Wide    => println!("-> WIDE"),
               MP4BoxType::Mdra    => println!("-> MDRA"),
@@ -435,10 +435,12 @@ impl MP4Consumer {
             };
             // TODO: check for overflow here
             self.moov_bytes = self.moov_bytes - header.length as usize;
-            return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length as usize - i.len() as usize - 8) as i64)));
+            println!("remaining moov_bytes: {}", self.moov_bytes);
+            return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length) as i64)))
           },
           Error(a) => {
             println!("moov parsing error: {:?}", a);
+            println!("data:\n{}", sl.to_hex(8));
             assert!(false);
             return ConsumerState::Error(());
           },
@@ -451,79 +453,66 @@ impl MP4Consumer {
     };
   }
 
-/*
-  pub fn consume_mvhd(&mut self, input: Input<&[u8]>) -> ConsumerState<usize, (), Move> {
-    //println!("parsing mvhd box(remaining moov bytes:{}):\n{}", self.moov_bytes, input.to_hex(8));
-    match mvhd_box(input) {
-      Done(i, movie_header) => {
-        println!("correctly parsed movie header: {:?}", movie_header);
-        self.state = MP4State::Moov;
-        //TODO: check for overflow here
-        self.moov_bytes = self.moov_bytes - (input.len() - i.len());
-        return ConsumerState::Continue(Move::Consume(input.offset(i)));
-      },
-      Error(a) => {
-        println!("mvhd parsing error: {:?}", a);
-        assert!(false);
-        return ConsumerState::Error(());
-      },
-      Incomplete(i) => {
-        println!("mvhd incomplete -> await: {}", input.len());
-        //return ConsumerState::Await(0, input.len() + 100);
-        return ConsumerState::Continue(Move::Await(i));
-      }
-    }
-  }
-*/
 }
 
 consumer_from_parser!(MvhdConsumer<MvhdBox>, mvhd_box);
 
-impl<'a> Consumer<&'a[u8], usize, (), Move> for MP4Consumer {
-  fn handle(&mut self, input: Input<&[u8]>) -> &ConsumerState<usize, (), Move> {
+impl<'a> Consumer<&'a[u8], (), (), Move> for MP4Consumer {
+  fn handle(&mut self, input: Input<&[u8]>) -> &ConsumerState<(), (), Move> {
     match self.state {
-      MP4State::Main => {
+      MP4State::Main     => {
         self.c_state = self.consume_main(input);
       },
-      MP4State::Moov => {
+      MP4State::Moov     => {
         self.c_state = self.consume_moov(input);
       },
-      MP4State::Mvhd => {
-        let mut c = MvhdConsumer{ state:ConsumerState::Continue(Move::Consume(0)) };
-        self.c_state = c.handle(input).flat_map(|m, _| {
-          self.state = MP4State::Moov;
-          ConsumerState::Continue(m)
-        });
-        /*self.c_state = match c.handle(input) {
-          &ConsumerState::Error(())   => ConsumerState::Error(()),
-          &ConsumerState::Continue(ref c) => ConsumerState::Continue(*c),
-          &ConsumerState::Done(ref m,_)   => {
-            self.state = MP4State::Moov;
-            ConsumerState::Continue(*m)
+      MP4State::Mvhd(sz) => {
+        match input {
+          Input::Eof(None) => self.c_state = ConsumerState::Error(()),
+          Input::Empty     => self.c_state = ConsumerState::Continue(Move::Consume(0)),
+          Input::Element(sl) |  Input::Eof(Some(sl)) => {
+            let mut c = MvhdConsumer{ state:ConsumerState::Continue(Move::Consume(0)) };
+            self.c_state = c.handle(Input::Element(&sl[..sz])).flat_map(|m, _| {
+              self.state = MP4State::Moov;
+              ConsumerState::Continue(m)
+            });
+            println!("found mvhd?: {:?}", c.state());
+            match self.c_state {
+              ConsumerState::Continue(Move::Consume(sz)) => self.moov_bytes = self.moov_bytes - sz,
+              ConsumerState::Continue(Move::Seek(SeekFrom::Current(sz))) => self.moov_bytes = self.moov_bytes - (sz as usize),
+              _ => ()
+            };
+            println!("remaining moov_bytes: {}", self.moov_bytes);
           }
-        }*/
+        }
       }
     };
     &self.c_state
   }
 
-  fn state(&self) -> &ConsumerState<usize, (), Move> {
+  fn state(&self) -> &ConsumerState<(), (), Move> {
     &self.c_state
   }
 }
 
 #[allow(unused_must_use)]
 fn explore_mp4_file(filename: &str) {
-  FileProducer::new(filename, 400).map(|producer: FileProducer| {
-    println!("file producer created for {}", filename);
-    let mut p = producer;
-    let mut c = MP4Consumer{state: MP4State::Main, moov_bytes: 0, c_state: ConsumerState::Continue(Move::Consume(0))};
-    //c.run(&mut p);
-    while let &ConsumerState::Continue(_) = p.apply(&mut c) {
-    }
+  let mut p = FileProducer::new(filename, 400).unwrap();
+  let mut c = MP4Consumer{state: MP4State::Main, moov_bytes: 0, c_state: ConsumerState::Continue(Move::Consume(0))};
+  //c.run(&mut p);
+  while let &ConsumerState::Continue(mv) = p.apply(&mut c) {
+    println!("move: {:?}", mv);
+  }
+  println!("last consumer state: {:?} | last state: {:?}", c.c_state, c.state);
 
-    //assert!(false);
-  });
+  if let ConsumerState::Done(Move::Consume(0), ()) = c.c_state {
+    println!("consumer state ok");
+  } else {
+    assert!(false, "consumer should have reached Done state");
+  }
+  assert_eq!(c.state, MP4State::Main);
+  assert_eq!(p.state(), FileProducerState::Eof);
+  //assert!(false);
 }
 
 /*
