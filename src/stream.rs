@@ -211,8 +211,8 @@ impl<'x,'b> Producer<'b,&'x[u8],Move> for MemProducer<'x> {
   }
 }
 
-#[derive(Debug,Clone,PartialEq,Eq)]
-enum FileProducerState {
+#[derive(Debug,Copy,Clone,PartialEq,Eq)]
+pub enum FileProducerState {
   Normal,
   Error,
   Eof
@@ -238,6 +238,10 @@ impl FileProducer {
         FileProducer {size: buffer_size, file: f, position: 0, v: v, start: 0, end: 0, state: FileProducerState::Normal }
       })
     })
+  }
+
+  pub fn state(&self) -> FileProducerState {
+    self.state
   }
 
   // FIXME: should handle refill until a certain size is obtained
