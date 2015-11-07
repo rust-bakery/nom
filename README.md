@@ -76,7 +76,7 @@ This has a few advantages:
 - the parser combination code looks close to the grammar you would have written
 - you can build partial parsers, specific to the data you need at the moment, and ignore the rest
 
-Here is an example of one such parser, to recognize text between parenthesis:
+Here is an example of one such parser, to recognize text between parentheses:
 
 ```rust
 named!(parens, delimited!(char!('('), none_of!(")"), char!(')'));
