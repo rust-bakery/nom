@@ -65,7 +65,7 @@ features = [regexp]
 
 ### Parser combinators
 
-Parser combinators are an approach to aprser that is very different from software like lex and yacc. Instead of writing the grammar in a separate file and generating the corresponding code, you use very small functions with very specific purpose, like "take 5 bytes", or "recognize the word 'HTTP'", and assemble then in meaningful patterns like "recognize 'HTTP', then a space, then a version".
+Parser combinators are an approach to parser that is very different from software like lex and yacc. Instead of writing the grammar in a separate file and generating the corresponding code, you use very small functions with very specific purpose, like "take 5 bytes", or "recognize the word 'HTTP'", and assemble then in meaningful patterns like "recognize 'HTTP', then a space, then a version".
 The resulting code is small, and looks like the grammar you would have written with other parser approaches.
 
 This has a few advantages:
