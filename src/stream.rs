@@ -261,6 +261,25 @@ impl FileProducer {
     }
   }
 
+  /// Resize the internal buffer, copy the data to the new one and returned how much data was copied
+  ///
+  /// If the new buffer is smaller, the prefix will be copied, and the rest of the data will be dropped
+  pub fn resize(&mut self, s: usize) -> usize {
+    let mut v =  Vec::with_capacity(s);
+    v.extend(repeat(0).take(s));
+    let length = self.end - self.start;
+    unsafe {
+      if length <= s {
+        ptr::copy( (&mut self.v[self.start..self.end]).as_ptr(), (&mut v[..length]).as_mut_ptr(), length);
+        self.v = v;
+        length
+      } else {
+        ptr::copy( (&mut self.v[self.start..(self.start+s)]).as_ptr(), (&mut v[..]).as_mut_ptr(), s);
+        self.v = v;
+        s
+      }
+    }
+  }
 }
 
 pub fn shift(s: &mut[u8], start: usize, end: usize) {
