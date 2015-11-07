@@ -1001,7 +1001,7 @@ mod tests {
 
   #[test]
   fn seeking_consumer() {
-    let mut f = FileProducer::new("testfile.txt", 200).unwrap();
+    let mut f = FileProducer::new("assets/testfile.txt", 200).unwrap();
     f.refill();
 
     let mut a  = SeekingConsumer { state: ConsumerState::Continue(Move::Consume(0)), position: SeekState::Begin };

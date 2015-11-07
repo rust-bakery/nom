@@ -515,17 +515,17 @@ fn explore_mp4_file(filename: &str) {
   //assert!(false);
 }
 
-/*
+
 #[test]
-fn file_test() {
-  explore_mp4_file("./small.mp4");
+fn small_test() {
+  explore_mp4_file("assets/small.mp4");
 }
 
 
 #[test]
-fn bunny_test() {
-  //explore_mp4_file("bigbuckbunny.mp4");
+fn big_bunny_test() {
+  explore_mp4_file("assets/bigbuckbunny.mp4");
 }
-*/
+
 
 
