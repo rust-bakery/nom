@@ -310,6 +310,47 @@ macro_rules! complete (
   );
 );
 
+/// A bit like `std::try!`, this macro will return the remaining input and parsed value if the child parser returned `Done`,
+/// and will do an early return for `Error` and `Incomplete`
+/// this can provide more flexibility than `chain!` if needed
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self, Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::{be_u8,ErrorKind};
+///
+///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
+///    let (i1, sz)     = try_parse!(input, be_u8);
+///    let (i2, length) = try_parse!(i1, expr_opt!(size.checked_add(sz)));
+///    let (i3, data)   = try_parse!(i2, take!(length));
+///    return Done(i3, data);
+///  }
+/// # fn main() {
+/// let arr1 = [1, 2, 3, 4, 5];
+/// let r1 = take_add(&arr1[..], 1);
+/// assert_eq!(r1, Done(&[4,5][..], &[2,3][..]));
+///
+/// let arr2 = [0xFE, 2, 3, 4, 5];
+/// // size is overflowing
+/// let r1 = take_add(&arr2[..], 42);
+/// assert_eq!(r1, Error(Position(ErrorKind::ExprOpt,&[2,3,4,5][..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! try_parse (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    match $submac!($i, $($args)*) {
+      $crate::IResult::Done(i,o)     => (i,o),
+      $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
+      $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i)
+    }
+  );
+  ($i:expr, $f:expr) => (
+    try_parse!($i, call!($f))
+  );
+);
+
 /// `flat_map!(R -> IResult<R,S>, S -> IResult<S,T>) => R -> IResult<R, T>`
 ///
 /// combines a parser R -> IResult<R,S> and
