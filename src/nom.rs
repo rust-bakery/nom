@@ -634,6 +634,7 @@ mod tests {
     assert_eq!(int_parse(&[0x80, 0x00]), Done(&b""[..], 128_u16));
   }
 
+  #[allow(dead_code)]
   fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], ()> {
     fix_error!(input, (), alphanumeric)
   }

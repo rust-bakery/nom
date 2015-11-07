@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,Move,Consumer,ConsumerState,not_line_ending};
+use nom::{IResult,Producer,FileProducer,Consumer,not_line_ending};
 
 use std::str;
 use std::fmt::Debug;
@@ -17,7 +17,7 @@ fn tag() {
     p.refill();
 
     consumer_from_parser!(PrintConsumer<()>, flat_map!(map_res!(tag!("https!"), str::from_utf8), print));
-    let mut cs = PrintConsumer { state: ConsumerState::Continue(Move::Consume(0)) };
+    let mut cs = PrintConsumer::new();
     for _ in 1..4 {
       p.apply(&mut cs);
     }
