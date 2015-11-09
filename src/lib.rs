@@ -81,16 +81,12 @@
 //! }
 //! ```
 #![cfg_attr(feature = "core", feature(no_std))]
-#![cfg_attr(feature = "core", feature(core))]
 #![cfg_attr(feature = "core", feature(collections))]
 #![cfg_attr(feature = "core", no_std)]
 #![cfg_attr(feature = "regexp_macros", feature(plugin))]
 #![cfg_attr(feature = "regexp_macros", plugin(regex_macros))]
 #![cfg_attr(feature = "nightly", feature(test))]
 
-#[macro_use]
-#[cfg(feature = "core")]
-extern crate core;
 #[cfg(feature = "core")]
 extern crate collections;
 #[cfg(feature = "regexp")]
