@@ -6,8 +6,9 @@
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing*, *zero copy* parsing, *push streaming*, *pull streaming*, and provides macros and traits to abstract most of the error prone plumbing.
 
-This work is currently experimental, the API and syntax may still change a lot, but it can already be used to parse relatively complex formats like [MP4](tests/mp4.rs).
+nom can handle any format, binary or textual, with grammars from regular to context sensitive. There are already a lot of [example parsers](https://github.com/Geal/nom/issues/14) available on Github.
 
+If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
 ## Features
 
