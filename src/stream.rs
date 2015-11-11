@@ -275,11 +275,15 @@ impl FileProducer {
     unsafe {
       if length <= s {
         ptr::copy( (&mut self.v[self.start..self.end]).as_ptr(), (&mut v[..length]).as_mut_ptr(), length);
-        self.v = v;
+        self.v     = v;
+        self.start = 0;
+        self.end   = length;
         length
       } else {
         ptr::copy( (&mut self.v[self.start..(self.start+s)]).as_ptr(), (&mut v[..]).as_mut_ptr(), s);
-        self.v = v;
+        self.v     = v;
+        self.start = 0;
+        self.end   = s;
         s
       }
     }
