@@ -269,24 +269,23 @@ impl FileProducer {
   ///
   /// If the new buffer is smaller, the prefix will be copied, and the rest of the data will be dropped
   pub fn resize(&mut self, s: usize) -> usize {
-    let mut v =  Vec::with_capacity(s);
-    v.extend(repeat(0).take(s));
+    let mut v  = Vec::with_capacity(s);
     let length = self.end - self.start;
+
+    v.extend(repeat(0).take(s));
+
+    let size = if length <= s { length } else { s };
+
     unsafe {
-      if length <= s {
-        ptr::copy( (&mut self.v[self.start..self.end]).as_ptr(), (&mut v[..length]).as_mut_ptr(), length);
-        self.v     = v;
-        self.start = 0;
-        self.end   = length;
-        length
-      } else {
-        ptr::copy( (&mut self.v[self.start..(self.start+s)]).as_ptr(), (&mut v[..]).as_mut_ptr(), s);
-        self.v     = v;
-        self.start = 0;
-        self.end   = s;
-        s
-      }
+      let slice_ptr = (&self.v[self.start..self.end]).as_ptr();
+      ptr::copy(slice_ptr, v.as_mut_ptr(), size);
     }
+
+    self.v     = v;
+    self.start = 0;
+    self.end   = size;
+
+    size
   }
 }
 
