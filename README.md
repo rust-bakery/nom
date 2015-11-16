@@ -83,7 +83,7 @@ This has a few advantages:
 Here is an example of one such parser, to recognize text between parentheses:
 
 ```rust
-named!(parens, delimited!(char!('('), is_not!(")"), char!(')'));
+named!(parens, delimited!(char!('('), is_not!(")"), char!(')')));
 ```
 
 It defines a function named `parens`, which will recognize a sequence of the character '(', the longest byte array not containing ')', then the character ')', and will return the byte array in the middle.
