@@ -1020,7 +1020,8 @@ macro_rules! switch (
 /// `opt!(I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// make the underlying parser optional
 ///
-/// returns an Option of the returned type. This parser never fails
+/// returns an Option of the returned type. This parser returns `Some(result)` if the child parser
+/// succeeds,`None` if it fails, and `Incomplete` if it did not have enough data to decide
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -1041,7 +1042,7 @@ macro_rules! opt(
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, Some(o)),
         $crate::IResult::Error(_)      => $crate::IResult::Done($i, None),
-        $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, None)
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
       }
     }
   );
