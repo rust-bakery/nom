@@ -12,7 +12,7 @@ use nom::HexDisplay;
 #[test]
 #[allow(unused_must_use)]
 fn tag() {
-  FileProducer::new("links.txt", 20).map(|producer: FileProducer| {
+  FileProducer::new("assets/links.txt", 20).map(|producer: FileProducer| {
     let mut p = producer;
     p.refill();
 
@@ -21,7 +21,6 @@ fn tag() {
     for _ in 1..4 {
       p.apply(&mut cs);
     }
-    //assert!(false);
   });
 }
 
