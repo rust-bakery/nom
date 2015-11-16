@@ -463,7 +463,7 @@ macro_rules! map_res_impl (
 );
 
 
-/// `map_res!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P>`
+/// `map_opt!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
 #[macro_export]
 macro_rules! map_opt (
