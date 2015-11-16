@@ -48,6 +48,9 @@ Then include it in your code like this:
 extern crate nom;
 ```
 
+**NOTE: if you have existing code using nom below the 1.0 version, please take a look at the [upgrading documentation](https://github.com/Geal/nom/wiki/Upgrading-to-nom-1.0) to
+handle the breaking changes.**
+
 There are a few compilation features:
 
 * `core`: enables `no_std` builds
