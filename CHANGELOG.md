@@ -4,6 +4,40 @@
 
 ### Changed
 
+## 1.0.0 - 2015-11-16
+
+Stable release for nom. A lot of new features, a few breaking changes
+
+### Thanks
+- @ahenry for macro fixes
+- @bluss for fixing documentation
+- @sourrust for cleaning code and debugging the new streaming utilities
+- @meh for inline optimizations
+- @ccmtaylor for fixing function imports
+- @soro for improvements to the streaming utilities
+- @breard-r for catching my typos
+- @nelsonjchen for catching my typos too
+- @divarvel for hex string parsers
+- @mrordinaire for the `length_bytes!` combinator
+
+### Breaking changes
+- `IResult::Error` can now use custom error types, and is generic over the input type
+- Producers and consumers have been replaced. The new implementation uses less memory and integrates more with parsers
+- `nom::ErrorCode` is now `nom::ErrorKind`
+- `filter!` has been renamed to `take_while!`
+- `chain!` will count how much data is consumed and use that number to calculate how much data is needed if a parser returned `Incomplete`
+- `alt!` returns `Incomplete` if a child parser returned `Incomplete`, instead of skipping to the next parser
+- `IResult` does not require a lifetime tag anymore, yay!
+
+### Added
+
+- `complete!` will return an error if the child parser returned `Incomplete`
+- `add_error!` will wrap an error, but allow backtracking
+- `hex_u32` parser
+
+### Fixed
+- the behaviour around `Incomplete` is better for most parsers now
+
 ## 0.5.0 - 2015-10-16
 
 This release fixes a few issues and stabilizes the code.

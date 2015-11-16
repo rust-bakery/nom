@@ -38,7 +38,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "~0.5.0"
+nom = "~1.0.0"
 ```
 
 Then include it in your code like this:
@@ -58,7 +58,7 @@ You can activate those features like this:
 
 ```toml
 [dependencies.nom]
-version = "~0.5.0"
+version = "~1.0.0"
 features = [regexp]
 ```
 
