@@ -4,6 +4,13 @@
 
 ### Changed
 
+## 1.0.1 - 2015-11-22
+
+This releases makes the 1.0 version compatible with Rust 1.2 and 1.3
+
+### Thanks
+- @steveklabnik for fixing lifetime issues in Producers and Consumers
+
 ## 1.0.0 - 2015-11-16
 
 Stable release for nom. A lot of new features, a few breaking changes
@@ -362,7 +369,9 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/0.4.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/1.0.1...HEAD
+* [1.0.1]: https://github.com/Geal/nom/compare/1.0.0...1.0.1
+* [1.0.0]: https://github.com/Geal/nom/compare/0.5.0...1.0.0
 * [0.5.0]: https://github.com/geal/nom/compare/0.4.0...0.5.0
 * [0.4.0]: https://github.com/geal/nom/compare/0.3.11...0.4.0
 * [0.3.11]: https://github.com/geal/nom/compare/0.3.10...0.3.11
