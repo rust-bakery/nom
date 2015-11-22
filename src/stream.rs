@@ -63,14 +63,14 @@ pub trait Consumer<I,O,E,M> {
 /// it handles buffer copying and reallocation, to provide streaming patterns.
 /// it depends on the input type I, and the message type M.
 /// the consumer can change the way data is produced (for example, to seek in the source) by sending a message of type M.
-pub trait Producer<'b,I,M> {
+pub trait Producer<'b,I,M: 'b> {
   /// Applies a consumer once on the produced data, and return the consumer's state
   ///
   /// a new producer has to implement this method
   fn apply<'a, O,E>(&'b mut self, consumer: &'a mut Consumer<I,O,E,M>) -> &'a ConsumerState<O,E,M>;
 
   /// Applies a consumer once on the produced data, and returns the generated value if there is one
-  fn run<'a: 'b,O,E>(&'b mut self, consumer: &'a mut Consumer<I,O,E,M>)   -> Option<&O> {
+  fn run<'a: 'b,O,E: 'b>(&'b mut self, consumer: &'a mut Consumer<I,O,E,M>)   -> Option<&O> {
     if let &ConsumerState::Done(_,ref o) = self.apply(consumer) {
       Some(o)
     } else {
@@ -85,7 +85,7 @@ pub struct ProducerRepeat<I:Copy> {
   value: I
 }
 
-impl<'b,I:Copy,M> Producer<'b,I,M> for ProducerRepeat<I> {
+impl<'b,I:Copy,M: 'b> Producer<'b,I,M> for ProducerRepeat<I> {
   fn apply<'a,O,E>(&'b mut self, consumer: &'a mut Consumer<I,O,E,M>) -> &'a ConsumerState<O,E,M> {
     if {
       if let &ConsumerState::Continue(_) = consumer.state() {
