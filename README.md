@@ -248,13 +248,14 @@ assert_eq!(abcd_opt(b"efghxxx"), Done(b"efghxxx", None));
 **many0!** applies a parser 0 or more times, and returns a vector of the aggregated results:
 
 ```rust
-named!(multi, many0!( tag!( "abcd" ) ) );
+use std::str;
+named!(multi< Vec<&str> >, many0!( map_res!(tag!( "abcd" ), str::from_utf8) ) );
 let a = b"abcdef";
 let b = b"abcdabcdef";
 let c = b"azerty";
-assert_eq!(multi(a), Done(b"ef", vec![b"abcd"]));
-assert_eq!(multi(b), Done(b"ef", vec![b"abcd", b"abcd"]));
-assert_eq!(multi(c), Done(b"azerty", Vec::new()));
+assert_eq!(multi(a), Done(&b"ef"[..],     vec!["abcd"]));
+assert_eq!(multi(b), Done(&b"ef"[..],     vec!["abcd", "abcd"]));
+assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
 ```
 
 Here are some basic combining macros available:
