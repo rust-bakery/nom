@@ -136,3 +136,6 @@ mod internal;
 #[cfg(not(feature = "core"))]
 #[cfg(feature = "stream")]
 mod stream;
+
+#[cfg(not(feature = "core"))]
+mod str;
