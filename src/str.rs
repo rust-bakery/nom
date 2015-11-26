@@ -1,7 +1,7 @@
 //! Parsers and helper functions operating on strings, especially useful when writing parsers for
 //! text-based formats.
 
-/// `tag_str!(&str) => &str -> IResult<&str, &str>`
+/// `tag_s!(&str) => &str -> IResult<&str, &str>`
 /// declares a string as a suite to recognize
 ///
 /// consumes the recognized characters
@@ -11,14 +11,14 @@
 /// # use nom::IResult::{self,Done};
 /// # fn main() {
 ///  fn test(input: &str) -> IResult<&str, &str> {
-///    tag_str!(input, "abcd")
+///    tag_s!(input, "abcd")
 ///  }
 ///  let r = test("abcdefgh");
 ///  assert_eq!(r, Done("efgh", "abcd"));
 /// # }
 /// ```
 #[macro_export]
-macro_rules! tag_str (
+macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
     {
       let res: $crate::IResult<&str,&str> = if $tag.len() > $i.len() {
@@ -150,17 +150,17 @@ mod test {
         const INPUT: &'static str = "Hello World!";
         const TAG: &'static str = "Hello";
         fn test(input: &str) -> IResult<&str, &str> {
-          tag_str!(input, TAG)
+          tag_s!(input, TAG)
         }
 
         match test(INPUT) {
             IResult::Done(extra, output) => {
-                assert!(extra == " World!", "Parser `tag_str` consumed leftover input.");
+                assert!(extra == " World!", "Parser `tag_s` consumed leftover input.");
                 assert!(output == TAG,
-                    "Parser `tag_str` doesn't return the tag it matched on success. \
+                    "Parser `tag_s` doesn't return the tag it matched on success. \
                      Expected `{}`, got `{}`.", TAG, output);
             },
-            other => panic!("Parser `tag_str` didn't succeed when it should have. \
+            other => panic!("Parser `tag_s` didn't succeed when it should have. \
                              Got `{:?}`.", other),
         };
     }
@@ -170,10 +170,10 @@ mod test {
         const INPUT: &'static str = "Hello";
         const TAG: &'static str = "Hello World!";
 
-        match tag_str!(INPUT, TAG) {
+        match tag_s!(INPUT, TAG) {
             IResult::Incomplete(_) => (),
             other => {
-                panic!("Parser `tag_str` didn't require more input when it should have. \
+                panic!("Parser `tag_s` didn't require more input when it should have. \
                         Got `{:?}`.", other);
             }
         };
@@ -184,10 +184,10 @@ mod test {
         const INPUT: &'static str = "Hello World!";
         const TAG: &'static str = "Random"; // TAG must be closer than INPUT.
 
-        match tag_str!(INPUT, TAG) {
+        match tag_s!(INPUT, TAG) {
             IResult::Error(_) => (),
             other => {
-                panic!("Parser `tag_str` didn't fail when it should have. Got `{:?}`.`", other);
+                panic!("Parser `tag_s` didn't fail when it should have. Got `{:?}`.`", other);
             },
         };
     }
