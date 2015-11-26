@@ -52,6 +52,80 @@ impl<'a> InputLength for (&'a [u8], usize) {
   }
 }
 
+use std::iter::Enumerate;
+use std::str::CharIndices;
+
+pub trait AsChar {
+    #[inline]
+    fn as_char(self)     -> char;
+    #[inline]
+    fn is_alpha(self)    -> bool;
+    #[inline]
+    fn is_alphanum(self) -> bool;
+    #[inline]
+    fn is_0_to_9(self)   -> bool;
+    #[inline]
+    fn is_hex_digit(self) -> bool;
+}
+
+impl<'a> AsChar for &'a u8 {
+    #[inline]
+    fn as_char(self)     -> char { *self as char }
+    #[inline]
+    fn is_alpha(self)    -> bool {
+      (*self >= 0x41 && *self <= 0x5A) || (*self >= 0x61 && *self <= 0x7A)
+    }
+    #[inline]
+    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    #[inline]
+    fn is_0_to_9(self)   -> bool {
+      *self >= 0x30 && *self <= 0x39
+    }
+    #[inline]
+    fn is_hex_digit(self) -> bool {
+      (*self >= 0x30 && *self <= 0x39) ||
+      (*self >= 0x41 && *self <= 0x46) ||
+      (*self >= 0x61 && *self <= 0x66)
+    }
+}
+
+impl AsChar for char {
+    #[inline]
+    fn as_char(self)     -> char { self }
+    #[inline]
+    fn is_alpha(self)    -> bool { self.is_alphabetic() }
+    #[inline]
+    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    #[inline]
+    fn is_0_to_9(self)   -> bool { self.is_digit(10) }
+    #[inline]
+    fn is_hex_digit(self) -> bool { self.is_digit(16) }
+}
+
+pub trait IterIndices {
+    type Item: AsChar;
+    type Iter : Iterator<Item=(usize, Self::Item)>;
+    fn iter_indices(self) -> Self::Iter;
+}
+
+impl<'a> IterIndices for &'a [u8] {
+    type Item = &'a u8;
+    type Iter = Enumerate<::std::slice::Iter<'a, u8>>;
+    #[inline]
+    fn iter_indices(self) -> Enumerate<::std::slice::Iter<'a, u8>> {
+        self.iter().enumerate()
+    }
+}
+
+impl<'a> IterIndices for &'a str {
+    type Item = char;
+    type Iter = CharIndices<'a>;
+    #[inline]
+    fn iter_indices(self) -> CharIndices<'a> {
+        self.char_indices()
+    }
+}
+
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
 #[cfg(not(feature = "core"))]
@@ -194,8 +268,8 @@ macro_rules! dbg_dmp (
   );
 );
 
-pub fn error_to_list<P>(e:&Err<P>) -> Vec<ErrorKind> {
-  let mut v:Vec<ErrorKind> = Vec::new();
+pub fn error_to_list<P,E:Clone>(e:&Err<P,E>) -> Vec<ErrorKind<E>> {
+  let mut v:Vec<ErrorKind<E>> = Vec::new();
   let mut err = e;
   loop {
     match *err {
@@ -211,12 +285,14 @@ pub fn error_to_list<P>(e:&Err<P>) -> Vec<ErrorKind> {
   }
 }
 
-pub fn compare_error_paths<P>(e1:&Err<P>, e2:&Err<P>) -> bool {
+pub fn compare_error_paths<P,E:Clone+PartialEq>(e1:&Err<P,E>, e2:&Err<P,E>) -> bool {
   error_to_list(e1) == error_to_list(e2)
 }
 
+use std::hash::Hash;
+
 #[cfg(not(feature = "core"))]
-pub fn add_error_pattern<'a,I,O>(h: &mut HashMap<Vec<ErrorKind>, &'a str>, res: IResult<I,O>, message: &'a str) -> bool {
+pub fn add_error_pattern<'a,I,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<ErrorKind<E>>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
   if let IResult::Error(e) = res {
     h.insert(error_to_list(&e), message);
     true
@@ -233,9 +309,9 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 }
 
 #[cfg(not(feature = "core"))]
-pub fn prepare_errors<O>(input: &[u8], res: IResult<&[u8],O>) -> Option<Vec<(ErrorKind, usize, usize)> > {
+pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Option<Vec<(ErrorKind<E>, usize, usize)> > {
   if let IResult::Error(e) = res {
-    let mut v:Vec<(ErrorKind, usize, usize)> = Vec::new();
+    let mut v:Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
     let mut err = e.clone();
     loop {
       match err {
@@ -266,7 +342,7 @@ pub fn prepare_errors<O>(input: &[u8], res: IResult<&[u8],O>) -> Option<Vec<(Err
 }
 
 #[cfg(not(feature = "core"))]
-pub fn print_error<O>(input: &[u8], res: IResult<&[u8],O>) {
+pub fn print_error<O,E:Clone>(input: &[u8], res: IResult<&[u8],O,E>) {
   if let Some(v) = prepare_errors(input, res) {
     let colors = generate_colors(&v);
     println!("parser codes: {}",   print_codes(colors, HashMap::new()));
@@ -278,7 +354,7 @@ pub fn print_error<O>(input: &[u8], res: IResult<&[u8],O>) {
 }
 
 #[cfg(not(feature = "core"))]
-pub fn generate_colors(v: &[(ErrorKind, usize, usize)]) -> HashMap<u32, u8> {
+pub fn generate_colors<E>(v: &[(ErrorKind<E>, usize, usize)]) -> HashMap<u32, u8> {
   let mut h: HashMap<u32, u8> = HashMap::new();
   let mut color = 0;
 
@@ -290,7 +366,7 @@ pub fn generate_colors(v: &[(ErrorKind, usize, usize)]) -> HashMap<u32, u8> {
   h
 }
 
-pub fn code_from_offset(v: &[(ErrorKind, usize, usize)], offset: usize) -> Option<u32> {
+pub fn code_from_offset<E>(v: &[(ErrorKind<E>, usize, usize)], offset: usize) -> Option<u32> {
   let mut acc: Option<(u32, usize, usize)> = None;
   for &(ref ek, s, e) in v.iter() {
     let c = error_to_u32(ek);
@@ -352,7 +428,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
 }
 
 #[cfg(not(feature = "core"))]
-pub fn print_offsets(input: &[u8], from: usize, offsets: &[(ErrorKind, usize, usize)]) -> String {
+pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usize, usize)]) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
   let chunk_size = 8;
@@ -519,6 +595,7 @@ pub enum ErrorKind<E=u32> {
   TagClosure,
   Alpha,
   Digit,
+  HexDigit,
   AlphaNumeric,
   Space,
   MultiSpace,
@@ -546,9 +623,13 @@ pub enum ErrorKind<E=u32> {
   TagStr,
   IsNotStr,
   IsAStr,
+  TakeWhile1Str,
+  NonEmpty,
+  ManyMN,
+  TakeUntilAndConsumeStr,
 }
 
-pub fn error_to_u32(e: &ErrorKind) -> u32 {
+pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
   match *e {
     ErrorKind::Custom(_)                 => 0,
     ErrorKind::Tag                       => 1,
@@ -596,5 +677,10 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::TagStr                    => 52,
     ErrorKind::IsNotStr                  => 53,
     ErrorKind::IsAStr                    => 54,
+    ErrorKind::TakeWhile1Str             => 55,
+    ErrorKind::NonEmpty                  => 56,
+    ErrorKind::ManyMN                    => 57,
+    ErrorKind::TakeUntilAndConsumeStr    => 58,
+    ErrorKind::HexDigit                  => 59,
   }
 }

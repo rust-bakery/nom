@@ -1,7 +1,7 @@
-//! Nom, eating data byte by byte
+//! nom, eating data byte by byte
 //!
-//! The goal is to make a parser combinator library that is safe,
-//! supports streaming (push and pull), and as much as possible zero copy.
+//! nom is a parser combinator library with a focus on safe parsing,
+//! streaming patterns, and as much as possible zero copy.
 //!
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!
@@ -11,7 +11,7 @@
 //! #[macro_use]
 //! extern crate nom;
 //!
-//! use nom::{IResult,digit,multispace};
+//! use nom::{IResult,digit};
 //! use nom::IResult::*;
 //!
 //! // Parser definition
@@ -20,9 +20,19 @@
 //! use std::str::FromStr;
 //!
 //! named!(parens<i64>, delimited!(
-//!     delimited!(opt!(multispace), tag!("("), opt!(multispace)),
+//!     char!('('),
 //!     expr,
-//!     delimited!(opt!(multispace), tag!(")"), opt!(multispace))
+//!     char!(')')
+//!   )
+//! );
+//!
+//! named!(i64_digit<i64>,
+//!   map_res!(
+//!     map_res!(
+//!       digit,
+//!       str::from_utf8
+//!     ),
+//!     FromStr::from_str
 //!   )
 //! );
 //!
@@ -32,13 +42,7 @@
 //! // the parser will fail
 //! named!(factor<i64>,
 //!   alt!(
-//!     map_res!(
-//!       map_res!(
-//!         delimited!(opt!(multispace), digit, opt!(multispace)),
-//!         str::from_utf8
-//!       ),
-//!       FromStr::from_str
-//!     )
+//!     i64_digit
 //!   | parens
 //!   )
 //! );
@@ -71,13 +75,13 @@
 //! );
 //!
 //! fn main() {
-//!   assert_eq!(expr(&b" 1 +  2 "[..]),             IResult::Done(&b""[..], 3));
-//!   assert_eq!(expr(&b" 12 + 6 - 4+  3"[..]),      IResult::Done(&b""[..], 17));
-//!   assert_eq!(expr(&b" 1 + 2*3 + 4"[..]),         IResult::Done(&b""[..], 11));
+//!   assert_eq!(expr(b"1+2"),         IResult::Done(&b""[..], 3));
+//!   assert_eq!(expr(b"12+6-4+3"),    IResult::Done(&b""[..], 17));
+//!   assert_eq!(expr(b"1+2*3+4"),     IResult::Done(&b""[..], 11));
 //!
-//!   assert_eq!(expr(&b" (  2 )"[..]),              IResult::Done(&b""[..], 2));
-//!   assert_eq!(expr(&b" 2* (  3 + 4 ) "[..]),      IResult::Done(&b""[..], 14));
-//!   assert_eq!(expr(&b"  2*2 / ( 5 - 1) + 3"[..]), IResult::Done(&b""[..], 4));
+//!   assert_eq!(expr(b"(2)"),         IResult::Done(&b""[..], 2));
+//!   assert_eq!(expr(b"2*(3+4)"),     IResult::Done(&b""[..], 14));
+//!   assert_eq!(expr(b"2*2/(5-1)+3"), IResult::Done(&b""[..], 4));
 //! }
 //! ```
 #![cfg_attr(feature = "core", feature(no_std))]
@@ -107,6 +111,7 @@ mod std {
 pub use self::util::*;
 pub use self::internal::*;
 pub use self::macros::*;
+pub use self::method_macros::*;
 pub use self::bytes::*;
 pub use self::bits::*;
 
@@ -126,6 +131,7 @@ pub use self::str::*;
 #[macro_use] mod util;
 mod internal;
 #[macro_use] mod macros;
+#[macro_use] mod method_macros;
 #[macro_use] mod bytes;
 #[macro_use] mod bits;
 

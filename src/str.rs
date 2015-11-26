@@ -1,7 +1,7 @@
 //! Parsers and helper functions operating on strings, especially useful when writing parsers for
 //! text-based formats.
 
-/// `tag_str!(&str) => &str -> IResult<&str, &str>`
+/// `tag_s!(&str) => &str -> IResult<&str, &str>`
 /// declares a string as a suite to recognize
 ///
 /// consumes the recognized characters
@@ -11,17 +11,17 @@
 /// # use nom::IResult::{self,Done};
 /// # fn main() {
 ///  fn test(input: &str) -> IResult<&str, &str> {
-///    tag_str!(input, "abcd")
+///    tag_s!(input, "abcd")
 ///  }
 ///  let r = test("abcdefgh");
 ///  assert_eq!(r, Done("efgh", "abcd"));
 /// # }
 /// ```
 #[macro_export]
-macro_rules! tag_str (
+macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
     {
-      let res: $crate::IResult<&str,&str> = if $tag.len() > $i.len() {
+      let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
       //} else if &$i[0..$tag.len()] == $tag {
       } else if ($i).starts_with($tag) {
@@ -54,15 +54,25 @@ macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<&str,&str> = if $i.len() < cnt {
+      let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
-        $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
+        let mut offset = $i.len();
+        let mut count = 0;
+        for (o, _) in $i.char_indices() {
+          if count == cnt {
+            offset = o;
+            break;
+          }
+          count += 1;
+        }
+        $crate::IResult::Done(&$i[offset..], &$i[..offset])
       };
       res
     }
   );
 );
+
 
 /// `is_not_s!(&str) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters that do not appear in the provided array
@@ -81,22 +91,22 @@ macro_rules! take_s (
 macro_rules! is_not_s (
   ($input:expr, $arr:expr) => (
     {
-      let res: $crate::IResult<&str,&str> = match $input.chars().position(|c| {
-        for i in $arr.chars() {
-          if c == i { return true }
+      use std::collections::HashSet;
+      let set: HashSet<char> = $arr.chars().collect();
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if set.contains(&c) {
+          offset = o;
+          break;
         }
-        false
-      }) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsNotStr,$input)),
-        Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
-        },
-        None    => {
-          $crate::IResult::Done("", $input)
-        }
-      };
-      res
+      }
+      if offset == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input))
+      } else if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
+      }
     }
   );
 );
@@ -121,19 +131,215 @@ macro_rules! is_not_s (
 macro_rules! is_a_s (
   ($input:expr, $arr:expr) => (
     {
-      let res: $crate::IResult<&str,&str> = match $input.chars().position(|c| {
-        for i in $arr.chars() {
-          if c == i { return false }
+      use std::collections::HashSet;
+      let set: HashSet<char> = $arr.chars().collect();
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if !set.contains(&c) {
+          offset = o;
+          break;
         }
-        true
-      }) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input)),
-        Some(n) => {
-          let res: $crate::IResult<&str,&str> = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
-        },
-        None    => {
-          $crate::IResult::Done("", $input)
+      }
+      if offset == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input))
+      } else if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
+      }
+    }
+  );
+);
+
+
+/// `take_while!(char -> bool) => &str -> IResult<&str, &str>`
+/// returns the longest list of bytes until the provided function fails.
+///
+/// The argument is either a function `T -> bool` or a macro returning a `bool
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
+///  fn alphabetic(chr: char) -> bool { (chr >= 0x41 as char && chr <= 0x5A as char) || (chr >= 0x61 as char && chr <= 0x7A as char) }
+///  named!( alpha<&str,&str>, take_while_s!( alphabetic ) );
+///
+///  let r = alpha("abcd\nefgh");
+///  assert_eq!(r, Done("\nefgh", "abcd"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_while_s (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if !$submac!(c, $($args)*) {
+          offset = o;
+          break;
+        }
+      }
+      if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_while_s!($input, call!($f));
+  );
+);
+
+/// `take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest (non empty) list of bytes until the provided function fails.
+///
+/// The argument is either a function `T -> bool` or a macro returning a `bool`
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
+///  fn alphabetic(chr: char) -> bool { (chr >= 0x41 as char && chr <= 0x5A as char) || (chr >= 0x61 as char && chr <= 0x7A as char) }
+///  named!( alpha<&str,&str>, take_while1_s!( alphabetic ) );
+///
+///  let r = alpha("abcd\nefgh");
+///  assert_eq!(r, Done("\nefgh", "abcd"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_while1_s (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if !$submac!(c, $($args)*) {
+          offset = o;
+          break;
+        }
+      }
+      if offset == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input))
+      } else if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_while1_s!($input, call!($f));
+  );
+);
+
+
+/// `take_till_s!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest list of bytes until the provided function succeeds
+///
+/// The argument is either a function `T -> bool` or a macro returning a `bool
+#[macro_export]
+macro_rules! take_till_s (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+
+    {
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if $submac!(c, $($args)*) {
+            offset = o;
+            break;
+        }
+      }
+      if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_till_s!($input, call!($f));
+  );
+);
+
+/// `take_until_and_consume_s!(&str) => &str -> IResult<&str, &str>`
+/// generates a parser consuming all chars until the specified string is found and consumes it
+#[macro_export]
+macro_rules! take_until_and_consume_s (
+  ($input:expr, $substr:expr) => (
+    {
+      use ::std::vec::Vec;
+      #[inline(always)]
+      fn shift_window_and_cmp(window: & mut Vec<char>, c: char, substr_vec: &Vec<char>) -> bool {
+        window.push(c);
+        if window.len() > substr_vec.len() {
+          window.remove(0);
+        }
+        window == substr_vec
+      }
+      let res: $crate::IResult<_, _> = if $substr.len() > $input.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($substr.len()))
+      } else {
+        let substr_vec: Vec<char> = $substr.chars().collect();
+        let mut window: Vec<char> = vec![];
+        let mut offset = $input.len();
+        let mut parsed = false;
+        for (o, c) in $input.char_indices() {
+            if parsed {
+                // The easiest way to get the byte offset of the char after the found string
+                offset = o;
+                break;
+            }
+            if shift_window_and_cmp(& mut window, c, &substr_vec) {
+                parsed = true;
+            }
+        }
+        if parsed {
+          if offset < $input.len() {
+            $crate::IResult::Done(&$input[offset..], &$input[..offset])
+          } else {
+            $crate::IResult::Done("", $input)
+          }
+        } else {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilAndConsumeStr,$input))
+        }
+      };
+      res
+    }
+  );
+);
+
+/// `take_until_s!(&str) => &str -> IResult<&str, &str>`
+/// generates a parser consuming all chars until the specified string is found and leaves it in the remaining input
+#[macro_export]
+macro_rules! take_until_s (
+  ($input:expr, $substr:expr) => (
+    {
+      #[inline(always)]
+      fn shift_window_and_cmp(window: & mut Vec<char>, c: char, substr_vec: &Vec<char>) -> bool {
+        window.push(c);
+        if window.len() > substr_vec.len() {
+          window.remove(0);
+        }
+        window == substr_vec
+      }
+      let res: $crate::IResult<&str, &str> = if $substr.len() > $input.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($substr.len()))
+      } else {
+        let substr_vec: Vec<char> = $substr.chars().collect();
+        let mut window: Vec<char> = vec![];
+        let mut offset = $input.len();
+        let mut parsed = false;
+        for (o, c) in $input.char_indices() {
+            if shift_window_and_cmp(& mut window, c, &substr_vec) {
+                parsed = true;
+                offset = o - window[1].len_utf8() - window[2].len_utf8()
+            }
+        }
+        if parsed {
+          $crate::IResult::Done(&$input[offset..], &$input[..offset])
+        } else {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilStr,$input))
         }
       };
       res
@@ -150,17 +356,17 @@ mod test {
         const INPUT: &'static str = "Hello World!";
         const TAG: &'static str = "Hello";
         fn test(input: &str) -> IResult<&str, &str> {
-          tag_str!(input, TAG)
+          tag_s!(input, TAG)
         }
 
         match test(INPUT) {
             IResult::Done(extra, output) => {
-                assert!(extra == " World!", "Parser `tag_str` consumed leftover input.");
+                assert!(extra == " World!", "Parser `tag_s` consumed leftover input.");
                 assert!(output == TAG,
-                    "Parser `tag_str` doesn't return the tag it matched on success. \
+                    "Parser `tag_s` doesn't return the tag it matched on success. \
                      Expected `{}`, got `{}`.", TAG, output);
             },
-            other => panic!("Parser `tag_str` didn't succeed when it should have. \
+            other => panic!("Parser `tag_s` didn't succeed when it should have. \
                              Got `{:?}`.", other),
         };
     }
@@ -170,10 +376,10 @@ mod test {
         const INPUT: &'static str = "Hello";
         const TAG: &'static str = "Hello World!";
 
-        match tag_str!(INPUT, TAG) {
+        match tag_s!(INPUT, TAG) {
             IResult::Incomplete(_) => (),
             other => {
-                panic!("Parser `tag_str` didn't require more input when it should have. \
+                panic!("Parser `tag_s` didn't require more input when it should have. \
                         Got `{:?}`.", other);
             }
         };
@@ -184,11 +390,306 @@ mod test {
         const INPUT: &'static str = "Hello World!";
         const TAG: &'static str = "Random"; // TAG must be closer than INPUT.
 
-        match tag_str!(INPUT, TAG) {
+        match tag_s!(INPUT, TAG) {
             IResult::Error(_) => (),
             other => {
-                panic!("Parser `tag_str` didn't fail when it should have. Got `{:?}`.`", other);
+                panic!("Parser `tag_s` didn't fail when it should have. Got `{:?}`.`", other);
             },
+        };
+    }
+
+    #[test]
+    fn take_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+
+        match take_s!(INPUT, 9) {
+             IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_s` consumed leftover input. Leftover `{}`.", extra);
+                assert!(output == CONSUMED,
+                    "Parser `take_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+                    CONSUMED, output);
+            },
+            other => panic!("Parser `take_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+  use internal::IResult::{Done, Error};
+  use internal::Err::Position;
+  use util::ErrorKind;
+
+  pub fn is_alphabetic(c:char) -> bool {
+    (c as u8 >= 0x41 && c as u8 <= 0x5A) || (c as u8 >= 0x61 && c as u8 <= 0x7A)
+  }
+  #[test]
+  fn take_while_s() {
+    named!(f<&str,&str>, take_while_s!(is_alphabetic));
+    let a = "";
+    let b = "abcd";
+    let c = "abcd123";
+    let d = "123";
+
+    assert_eq!(f(&a[..]), Done(&a[..], &a[..]));
+    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
+    assert_eq!(f(&c[..]), Done(&d[..], &b[..]));
+    assert_eq!(f(&d[..]), Done(&d[..], &a[..]));
+  }
+
+  #[test]
+  fn take_while1_s() {
+    named!(f<&str,&str>, take_while1_s!(is_alphabetic));
+    let a = "";
+    let b = "abcd";
+    let c = "abcd123";
+    let d = "123";
+
+    assert_eq!(f(&a[..]), Error(Position(ErrorKind::TakeWhile1Str, &""[..])));
+    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
+    assert_eq!(f(&c[..]), Done(&"123"[..], &b[..]));
+    assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1Str, &d[..])));
+  }
+
+    #[test]
+    fn take_till_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn till_s(c: char) -> bool {
+            c == 'á'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_till_s!(input, till_s)
+        }
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_till_s` consumed leftover input.");
+                assert!(output == CONSUMED,
+                    "Parser `take_till_s` doesn't return the string it consumed on success. \
+                     Expected `{}`, got `{}`.", CONSUMED, output);
+            },
+            other => panic!("Parser `take_till_s` didn't succeed when it should have. \
+               Got `{:?}`.", other),
+      };
+    }
+
+    fn take_while_s_succeed_none() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "";
+        const LEFTOVER: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        fn while_s(c: char) -> bool {
+            c == '9'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_while_s!(input, while_s)
+        }
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
+                assert!(output == CONSUMED,
+                    "Parser `take_while_s` doesn't return the string it consumed on success. \
+                     Expected `{}`, got `{}`.", CONSUMED, output);
+            },
+            other => panic!("Parser `take_while_s` didn't succeed when it should have. \
+                                           Got `{:?}`.", other),
+      };
+    }
+    fn is_not_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const AVOID: &'static str = "£úçƙ¥á";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_not_s!(input, AVOID)
+        }
+        match test(INPUT) {
+             IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `is_not_s` consumed leftover input. Leftover `{}`.", extra);
+                assert!(output == CONSUMED,
+                    "Parser `is_not_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+                    CONSUMED, output);
+            },
+            other => panic!("Parser `is_not_s` didn't succeed when it should have. \
+                                            Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_while_s_succeed_some() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn while_s(c: char) -> bool {
+            c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
+            c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_while_s!(input, while_s)
+        }
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
+                assert!(output == CONSUMED,
+                    "Parser `take_while_s` doesn't return the string it consumed on success. \
+                     Expected `{}`, got `{}`.", CONSUMED, output);
+            },
+            other => panic!("Parser `take_while_s` didn't succeed when it should have. \
+                                           Got `{:?}`.", other),
+        };
+    }
+  
+    #[test]
+    fn take_until_and_consume_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const FIND: &'static str = "ÂßÇ";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+
+        match take_until_and_consume_s!(INPUT, FIND) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_until_and_consume_s`\
+                    consumed leftover input. Leftover `{}`.", extra);
+                assert!(output == CONSUMED, "Parser `take_until_and_consume_s`\
+                    doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+                    CONSUMED, output);
+            }
+            other => panic!("Parser `take_until_and_consume_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn is_not_s_fail() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const AVOID: &'static str = "βúçƙ¥";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_not_s!(input, AVOID)
+        }
+        match test(INPUT) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `is_not_s` didn't fail when it should have. Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_while1_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn while1_s(c: char) -> bool {
+            c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
+            c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_while1_s!(input, while1_s)
+        }
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_while1_s` consumed leftover input.");
+                assert!(output == CONSUMED,
+                    "Parser `take_while1_s` doesn't return the string it consumed on success. \
+                     Expected `{}`, got `{}`.", CONSUMED, output);
+            },
+            other => panic!("Parser `take_while1_s` didn't succeed when it should have. \
+                                           Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_until_s_incomplete() {
+        const INPUT: &'static str = "βèƒôřè";
+        const FIND: &'static str = "βèƒôřèÂßÇ";
+
+        match take_until_s!(INPUT, FIND) {
+            IResult::Incomplete(_) => (),
+            other => panic!("Parser `take_until_s` didn't require more input when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn is_a_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const MATCH: &'static str = "βèƒôřèÂßÇ";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_a_s!(input, MATCH)
+        }
+        match test(INPUT) {
+             IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `is_a_s` consumed leftover input. Leftover `{}`.", extra);
+                assert!(output == CONSUMED,
+                    "Parser `is_a_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+                    CONSUMED, output);
+            },
+            other => panic!("Parser `is_a_s` didn't succeed when it should have. \
+                                           Got `{:?}`.", other),
+        };
+    }
+      #[test]
+      fn take_until_and_consume_s_incomplete() {
+        const INPUT: &'static str = "βèƒôřè";
+        const FIND: &'static str = "βèƒôřèÂßÇ";
+
+        match take_until_and_consume_s!(INPUT, FIND) {
+            IResult::Incomplete(_) => (),
+            other => panic!("Parser `take_until_and_consume_s` didn't require more input when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_while1_s_fail() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        fn while1_s(c: char) -> bool {
+            c == '9'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_while1_s!(input, while1_s)
+        }
+        match test(INPUT) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `take_while1_s` didn't fail when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn is_a_s_fail() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const MATCH: &'static str = "Ûñℓúçƙ¥";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_a_s!(input, MATCH)
+        }
+        match test(INPUT) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `is_a_s` didn't fail when it should have. Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_until_and_consume_s_error() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const FIND: &'static str = "Ráñδô₥";
+
+        match take_until_and_consume_s!(INPUT, FIND) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_until_s_error() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const FIND: &'static str = "Ráñδô₥";
+
+        match take_until_s!(INPUT, FIND) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
+                             Got `{:?}`.", other),
         };
     }
 }

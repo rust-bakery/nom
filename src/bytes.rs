@@ -68,12 +68,19 @@ macro_rules! tag (
 macro_rules! tag_bytes (
   ($i:expr, $bytes: expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
-      } else if &$i[0..$bytes.len()] == $bytes {
-        $crate::IResult::Done(&$i[$bytes.len()..], &$i[0..$bytes.len()])
-      } else {
+      use std::cmp::min;
+      let len = $i.len();
+      let blen = $bytes.len();
+      let m   = min(len, blen);
+      let reduced = &$i[..m];
+      let b       = &$bytes[..m];
+
+      let res: $crate::IResult<_,_> = if reduced != b {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
+      } else if m < blen {
+        $crate::IResult::Incomplete($crate::Needed::Size(blen))
+      } else {
+        $crate::IResult::Done(&$i[blen..], reduced)
       };
       res
     }
@@ -114,7 +121,7 @@ macro_rules! is_not(
 macro_rules! is_not_bytes (
   ($input:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = match $input.iter().position(|c| {
+      let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return true }
         }
@@ -171,7 +178,7 @@ macro_rules! is_a (
 macro_rules! is_a_bytes (
   ($input:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = match $input.iter().position(|c| {
+      let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return false }
         }
@@ -179,7 +186,7 @@ macro_rules! is_a_bytes (
       }) {
         Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsA,$input)),
         Some(n) => {
-          let res: $crate::IResult<&[u8],&[u8]> = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          let res: $crate::IResult<_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
         },
         None    => {
@@ -191,8 +198,52 @@ macro_rules! is_a_bytes (
   );
 );
 
+/// `escaped!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], &[T]>`
+/// matches a byte string with escaped characters.
+///
+/// The first argument parses the normal characters, the second argument is the control character (like `\` in most languages),
+/// the third argument matches the escaped characters
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::alpha;
+/// # fn main() {
+///  named!(esc, escaped!(call!(alpha), '\\', is_a_bytes!(&b"\"n\\"[..])));
+///  assert_eq!(esc(&b"abcd"[..]), Done(&b""[..], &b"abcd"[..]));
+///  assert_eq!(esc(&b"ab\\\"cd"[..]), Done(&b""[..], &b"ab\\\"cd"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! escaped (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
+    {
+      escaped1!($i, $submac!($($args)*), $control_char, $($rest)*)
+    }
+  );
+
+  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
+    escaped1!($i, call!($f), $control_char, $($rest)*)
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! escaped1 (
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+    {
+     escaped_impl!($i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+    }
+  );
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+     escaped_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+  );
+);
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! escaped_impl (
   ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
       let cl = || {
@@ -240,11 +291,71 @@ macro_rules! escaped (
         }
       }
     }
-  )
+  );
 );
 
+/// `escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>>`
+/// matches a byte string with escaped characters.
+///
+/// The first argument parses the normal characters, the second argument is the control character (like `\` in most languages),
+/// the third argument matches the escaped characters and trnasforms them.
+///
+/// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::alpha;
+/// # use std::str::from_utf8;
+/// # fn main() {
+/// fn to_s(i:Vec<u8>) -> String {
+///   String::from_utf8_lossy(&i).into_owned()
+/// }
+
+///  named!(transform < String >,
+///    map!(
+///      escaped_transform!(call!(alpha), '\\',
+///        alt!(
+///            tag!("\\")       => { |_| &b"\\"[..] }
+///          | tag!("\"")       => { |_| &b"\""[..] }
+///          | tag!("n")        => { |_| &b"\n"[..] }
+///        )
+///      ), to_s
+///    )
+///  );
+///  assert_eq!(transform(&b"ab\\\"cd"[..]), Done(&b""[..], String::from("ab\"cd")));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! escaped_transform (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
+    {
+      escaped_transform1!($i, $submac!($($args)*), $control_char, $($rest)*)
+    }
+  );
+
+  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
+    escaped_transform1!($i, call!($f), $control_char, $($rest)*)
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! escaped_transform1 (
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+    {
+     escaped_transform_impl!($i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+    }
+  );
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+     escaped_transform_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+  );
+);
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! escaped_transform_impl (
   ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
       let cl = || {
@@ -320,11 +431,11 @@ macro_rules! take_while (
     {
       match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
         Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          let res:$crate::IResult<_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
         },
         None    => {
-          $crate::IResult::Done(&b""[..], $input)
+          $crate::IResult::Done(&$input[..0], $input)
         }
       }
     }
@@ -342,14 +453,18 @@ macro_rules! take_while (
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,$input)),
-        Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
-        },
-        None    => {
-          $crate::IResult::Done(&b""[..], $input)
+      use $crate::InputLength;
+      if ($input).input_len() == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,$input))
+      } else {
+        match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
+          Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,$input)),
+          Some(n) => {
+            $crate::IResult::Done(&$input[n..], &$input[..n])
+          },
+          None    => {
+            $crate::IResult::Done(&$input[..0], $input)
+          }
         }
       }
     }
@@ -359,7 +474,7 @@ macro_rules! take_while1 (
   );
 );
 
-/// `take_till!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// `take_till!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function succeeds
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
@@ -399,7 +514,7 @@ macro_rules! take(
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
+      let res: $crate::IResult<_,_> = if $i.len() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
         $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
@@ -438,7 +553,7 @@ macro_rules! take_until_and_consume(
 macro_rules! take_until_and_consume_bytes (
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
+      let res: $crate::IResult<_,_> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
@@ -489,7 +604,7 @@ macro_rules! take_until(
 macro_rules! take_until_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
+      let res: $crate::IResult<_,_> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
@@ -540,7 +655,7 @@ macro_rules! take_until_either_and_consume(
 macro_rules! take_until_either_and_consume_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if 1 > $i.len() {
+      let res: $crate::IResult<_,_> = if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         let mut index  = 0;
@@ -593,7 +708,7 @@ macro_rules! take_until_either(
 macro_rules! take_until_either_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if 1 > $i.len() {
+      let res: $crate::IResult<_,_> = if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         let mut index  = 0;
@@ -654,6 +769,7 @@ mod tests {
   use internal::IResult::*;
   use internal::Err::*;
   use util::ErrorKind;
+  use nom::{alpha, digit, hex_digit, alphanumeric, space, multispace};
 
   #[test]
   fn is_a() {
@@ -695,7 +811,6 @@ mod tests {
     assert_eq!(a_or_b(f), Done(&b""[..], &b"fghi"[..]));
   }
 
-  use nom::alpha;
   #[test]
   fn escaping() {
     named!(esc, escaped!(call!(alpha), '\\', is_a_bytes!(&b"\"n\\"[..])));
@@ -716,7 +831,7 @@ mod tests {
   fn escape_transform() {
     use std::str;
 
-    named!(esc< String >, map!(escaped_transform!(call!(alpha), '\\',
+    named!(esc< String >, map!(escaped_transform!(alpha, '\\',
       alt!(
           tag!("\\")       => { |_| &b"\\"[..] }
         | tag!("\"")       => { |_| &b"\""[..] }
@@ -811,6 +926,62 @@ mod tests {
     named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
     let r = x(&b"<!-- abc --> aaa"[..]);
     assert_eq!(r, Done(&b" aaa"[..], &b"<!-- abc -->"[..]));
+
+    let empty = &b""[..];
+
+    named!(ya, recognize!(alpha));
+    let ra = ya(&b"abc"[..]);
+    assert_eq!(ra, Done(empty, &b"abc"[..]));
+
+    named!(yd, recognize!(digit));
+    let rd = yd(&b"123"[..]);
+    assert_eq!(rd, Done(empty, &b"123"[..]));
+
+    named!(yhd, recognize!(hex_digit));
+    let rhd = yhd(&b"123abcDEF"[..]);
+    assert_eq!(rhd, Done(empty, &b"123abcDEF"[..]));
+
+    named!(yan, recognize!(alphanumeric));
+    let ran = yan(&b"123abc"[..]);
+    assert_eq!(ran, Done(empty, &b"123abc"[..]));
+
+    named!(ys, recognize!(space));
+    let rs = ys(&b" \t"[..]);
+    assert_eq!(rs, Done(empty, &b" \t"[..]));
+
+    named!(yms, recognize!(multispace));
+    let rms = yms(&b" \t\r\n"[..]);
+    assert_eq!(rms, Done(empty, &b" \t\r\n"[..]));
+  }
+
+  #[test]
+  fn take_while() {
+    use nom::is_alphabetic;
+    named!(f, take_while!(is_alphabetic));
+    let a = b"";
+    let b = b"abcd";
+    let c = b"abcd123";
+    let d = b"123";
+
+    assert_eq!(f(&a[..]), Done(&a[..], &a[..]));
+    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
+    assert_eq!(f(&c[..]), Done(&d[..], &b[..]));
+    assert_eq!(f(&d[..]), Done(&d[..], &a[..]));
+  }
+
+  #[test]
+  fn take_while1() {
+    use nom::is_alphabetic;
+    named!(f, take_while1!(is_alphabetic));
+    let a = b"";
+    let b = b"abcd";
+    let c = b"abcd123";
+    let d = b"123";
+
+    assert_eq!(f(&a[..]), Error(Position(ErrorKind::TakeWhile1, &b""[..])));
+    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
+    assert_eq!(f(&c[..]), Done(&b"123"[..], &b[..]));
+    assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1, &d[..])));
   }
 
   #[cfg(feature = "nightly")]
@@ -818,7 +989,7 @@ mod tests {
 
   #[cfg(feature = "nightly")]
   #[bench]
-  fn take_while(b: &mut Bencher) {
+  fn take_while_bench(b: &mut Bencher) {
     use nom::is_alphabetic;
     named!(f, take_while!(is_alphabetic));
     b.iter(|| {

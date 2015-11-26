@@ -7,34 +7,6 @@ use util::ErrorKind;
 use std::prelude::v1::*;
 use std::boxed::Box;
 
-/*
-/// (Experimental) Closure used to hold the temporary state of resumable parsing
-pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
-
-//cf libcore/fmt/mod.rs:674
-impl<'a,I,O> Debug for IResultClosure<'a,I,O> {
-  fn fmt(&self, f: &mut Formatter) -> Result {
-    Display::fmt("closure", f)
-  }
-}
-
-impl<'a,I:PartialEq,O:PartialEq> PartialEq for IResultClosure<'a,I,O> {
-  #[allow(unused_variables)]
-  fn eq<'b>(&self, other: &IResultClosure<'b,I,O>) -> bool {
-    false
-  }
-
-  #[allow(unused_variables)]
-  fn ne<'b>(&self, other: &IResultClosure<'b,I,O>) -> bool {
-    false
-  }
-}
-
-impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
-*/
-//type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
-//type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
-
 /// Contains the error that a parser can return
 ///
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
@@ -70,16 +42,11 @@ pub enum IResult<I,O,E=u32> {
   Done(I,O),
   /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
   Error(Err<I,E>),
-  //Incomplete(proc(I):'a -> IResult<I,O>)
   /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
   Incomplete(Needed)
-  //Incomplete(Box<FnMut(I) -> IResult<I,O>>)
-  //Incomplete(IResultClosure<I,O>)
-  //Incomplete(|I|:'a -> IResult<'a,I,O>)
-  //Incomplete(fn(I) -> IResult<'a,I,O>)
 }
 
-impl<I,O> IResult<I,O> {
+impl<I,O,E> IResult<I,O,E> {
   pub fn is_done(&self) -> bool {
     match *self {
       Done(_,_) => true,
@@ -88,14 +55,14 @@ impl<I,O> IResult<I,O> {
   }
 
   pub fn is_err(&self) -> bool {
-    match *self {
+    match self {
       Error(_) => true,
       _        => false
     }
   }
 
   pub fn is_incomplete(&self) -> bool {
-    match *self {
+    match self {
       Incomplete(_) => true,
       _             => false
     }
@@ -110,7 +77,7 @@ pub trait GetOutput<O> {
   fn output(&self) -> Option<O>;
 }
 
-impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
+impl<'a,I,O,E> GetInput<&'a[I]> for IResult<&'a[I],O,E> {
   fn remaining_input(&self) -> Option<&'a[I]> {
     match *self {
       Done(ref i,_) => Some(*i),
@@ -119,7 +86,7 @@ impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
   }
 }
 
-impl<'a,O> GetInput<()> for IResult<(),O> {
+impl<O,E> GetInput<()> for IResult<(),O,E> {
   fn remaining_input(&self) -> Option<()> {
     match *self {
       Done((),_) => Some(()),
@@ -128,7 +95,16 @@ impl<'a,O> GetInput<()> for IResult<(),O> {
   }
 }
 
-impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
+impl<'a,O,E> GetInput<&'a str> for IResult<&'a str,O,E> {
+  fn remaining_input(&self) -> Option<&'a str> {
+    match *self {
+      Done(ref i,_) => Some(*i),
+      _          => None
+    }
+  }
+}
+
+impl<'a,I,O,E> GetOutput<&'a[O]> for IResult<I,&'a[O],E> {
   fn output(&self) -> Option<&'a[O]> {
     match *self {
       Done(_, ref o) => Some(*o),
@@ -137,7 +113,7 @@ impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
   }
 }
 
-impl<'a,I> GetOutput<()> for IResult<I,()> {
+impl<I,E> GetOutput<()> for IResult<I,(),E> {
   fn output(&self) -> Option<()> {
     match *self {
       Done(_,()) => Some(()),
@@ -146,3 +122,11 @@ impl<'a,I> GetOutput<()> for IResult<I,()> {
   }
 }
 
+impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
+  fn output(&self) -> Option<&'a str> {
+    match *self {
+      Done(_,ref o) => Some(*o),
+      _          => None
+    }
+  }
+}

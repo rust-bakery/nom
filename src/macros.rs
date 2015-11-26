@@ -94,47 +94,52 @@ macro_rules! closure (
 #[macro_export]
 macro_rules! named (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: $i ) -> $crate::IResult<$i,$o> {
+        fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: $i ) -> $crate::IResult<$i, $o> {
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o> {
-            $submac!(i, $($args)*)
-        }
-    );
-    ($name:ident<$life:item,$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name<$life>( i: $i ) -> $crate::IResult<$life, $i, $o> {
+        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8]> {
+        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: $i ) -> $crate::IResult<$i,$o> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: $i ) -> $crate::IResult<$i, $o> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o> {
+        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8]> {
+        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
@@ -261,26 +266,31 @@ macro_rules! fix_error (
       match $submac!($i, $($args)*) {
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
-        $crate::IResult::Error($crate::Err::Code(ErrorKind::Custom(_))) |
-          $crate::IResult::Error($crate::Err::Node(ErrorKind::Custom(_), _))=> {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Code(e))
-        },
-        $crate::IResult::Error($crate::Err::Position(ErrorKind::Custom(_), p)) |
-          $crate::IResult::Error($crate::Err::NodePosition(ErrorKind::Custom(_), p, _)) => {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Position(e, p))
-        },
-        $crate::IResult::Error($crate::Err::Code(_)) |
-          $crate::IResult::Error($crate::Err::Node(_, _))=> {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Code(e))
-        },
-        $crate::IResult::Error($crate::Err::Position(_, p)) |
-          $crate::IResult::Error($crate::Err::NodePosition(_, p, _)) => {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Position(e, p))
-        },
+        $crate::IResult::Error(e) => {
+          let err = match e {
+            $crate::Err::Code(ErrorKind::Custom(_)) |
+              $crate::Err::Node(ErrorKind::Custom(_), _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Code(e)
+            },
+            $crate::Err::Position(ErrorKind::Custom(_), p) |
+              $crate::Err::NodePosition(ErrorKind::Custom(_), p, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Position(e, p)
+            },
+            $crate::Err::Code(_) |
+              $crate::Err::Node(_, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Code(e)
+            },
+            $crate::Err::Position(_, p) |
+              $crate::Err::NodePosition(_, p, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Position(e, p)
+            },
+          };
+          $crate::IResult::Error(err)
+        }
       }
     }
   );
@@ -492,11 +502,53 @@ macro_rules! map_opt_impl (
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
         $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
-          Some(output) => $crate::IResult::Done(i, output),
-          None         => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::MapOpt, $i))
+          ::std::option::Option::Some(output) => $crate::IResult::Done(i, output),
+          ::std::option::Option::None         => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::MapOpt, $i))
         }
       }
     }
+  );
+);
+
+/// `value!(T, R -> IResult<R, S> ) => R -> IResult<R, T>`
+///
+/// or `value!(T) => R -> IResult<R, T>`
+///
+/// If the child parser was successful, return the value.
+/// If no child parser is provided, always return the value
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(x<u8>, value!(42, delimited!(tag!("<!--"), take!(5), tag!("-->"))));
+///  named!(y<u8>, delimited!(tag!("<!--"), value!(42), tag!("-->")));
+///  let r = x(&b"<!-- abc --> aaa"[..]);
+///  assert_eq!(r, Done(&b" aaa"[..], 42));
+///
+///  let r2 = y(&b"<!----> aaa"[..]);
+///  assert_eq!(r2, Done(&b" aaa"[..], 42));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! value (
+  ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::HexDisplay;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Done(i,_)     => {
+          $crate::IResult::Done(i, $res)
+        },
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+      }
+    }
+  );
+  ($i:expr, $res:expr, $f:expr) => (
+    value!($i, $res, call!($f))
+  );
+  ($i:expr, $res:expr) => (
+    $crate::IResult::Done($i, $res)
   );
 );
 
@@ -551,8 +603,8 @@ macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
       match $e {
-        Some(output) => $crate::IResult::Done($i, output),
-        None         => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ExprOpt, $i))
+        ::std::option::Option::Some(output) => $crate::IResult::Done($i, output),
+        ::std::option::Option::None         => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ExprOpt, $i))
       }
     }
   );
@@ -717,9 +769,9 @@ macro_rules! chaining_parser (
       }
     } else {
       let ($field,input) = if let $crate::IResult::Done(i,o) = res {
-        (Some(o),i)
+        (::std::option::Option::Some(o),i)
       } else {
-        (None,$i)
+        (::std::option::Option::None,$i)
       };
       chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
     }
@@ -741,9 +793,9 @@ macro_rules! chaining_parser (
       }
     } else {
       let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
-        (Some(o),i)
+        (::std::option::Option::Some(o),i)
       } else {
-        (None,$i)
+        (::std::option::Option::None,$i)
       };
       chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
     }
@@ -832,9 +884,9 @@ macro_rules! chaining_parser (
       }
     } else {
       let ($field,input) = if let $crate::IResult::Done(i,o) = res {
-        (Some(o), i)
+        (::std::option::Option::Some(o), i)
       } else {
-        (None, $i)
+        (::std::option::Option::None, $i)
       };
       $crate::IResult::Done(input, $assemble())
     }
@@ -853,9 +905,9 @@ macro_rules! chaining_parser (
       }
     } else {
       let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
-        (Some(o), i)
+        (::std::option::Option::Some(o), i)
       } else {
-        (None, $i)
+        (::std::option::Option::None, $i)
       };
       $crate::IResult::Done(input, $assemble())
     }
@@ -866,6 +918,84 @@ macro_rules! chaining_parser (
   )
 );
 
+
+#[macro_export]
+macro_rules! tuple (
+  ($i:expr, $($rest:tt)*) => (
+    {
+      tuple_parser!($i, 0usize, (), $($rest)*)
+    }
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! tuple_parser (
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => (
+    tuple_parser!($i, $consumed, ($($parsed),*), call!($e), $($rest)*);
+  );
+  ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          tuple_parser!(i, $consumed + (($i).input_len() - i.input_len()), (o), $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          tuple_parser!(i, $consumed + (($i).input_len() - i.input_len()), ($($parsed)* , o), $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident) => (
+    tuple_parser!($i, $consumed, ($($parsed),*), call!($e));
+  );
+  ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          $crate::IResult::Done(i, (o))
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          $crate::IResult::Done(i, ($($parsed),* , o))
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:expr),*)) => (
+    {
+      $crate::IResult::Done($i, ($($parsed),*))
+    }
+  );
+);
 /// `alt!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>`
 /// try a list of parsers, return the result of the first successful one
 ///
@@ -910,6 +1040,80 @@ macro_rules! chaining_parser (
 ///     assert_eq!(r3, Done(&b"rst"[..],  Tagged::Took(5)));
 /// # }
 /// ```
+///
+/// **BE CAREFUL** there is a case where the behaviour of `alt!` can be confusing:
+///
+/// when the alternatives have different lengths, like this case:
+///
+/// ```ignore
+///  named!( test, alt!( tag!( "abcd" ) | tag!( "ef" ) | tag!( "ghi" ) | tag!( "kl" ) ) );
+/// ```
+///
+/// With this parser, if you pass `"abcd"` as input, the first alternative parses it correctly,
+/// but if you pass `"efg"`, the first alternative will return `Incomplete`, since it needs an input
+/// of 4 bytes. This behaviour of `alt!` is expected: if you get a partial input that isn't matched
+/// by the first alternative, but would match if the input was complete, you want `alt!` to indicate
+/// that it cannot decide with limited information.
+///
+/// There are two ways to fix this behaviour. The first one consists in ordering the alternatives
+/// by size, like this:
+///
+/// ```ignore
+///  named!( test, alt!( tag!( "ef" ) | tag!( "kl") | tag!( "ghi" ) | tag!( "abcd" ) ) );
+/// ```
+///
+/// With this solution, the largest alternative will be tested last.
+///
+/// The other solution uses the `complete!` combinator, which transforms an `Incomplete` in an
+/// `Error`. If one of the alternatives returns `Incomplete` but is wrapped by `complete!`,
+/// `alt!` will try the next alternative. This is useful when you know that
+/// you will not get partial input:
+///
+/// ```ignore
+///  named!( test,
+///    alt!(
+///      complete!( tag!( "abcd" ) ) |
+///      complete!( tag!( "ef"   ) ) |
+///      complete!( tag!( "ghi"  ) ) |
+///      complete!( tag!( "kl"   ) )
+///    )
+///  );
+/// ```
+///
+/// If you want the `complete!` combinator to be applied to all rules then use the convenience
+/// `alt_complete!` macro (see below).
+///
+/// This behaviour of `alt!` can get especially confusing if multiple alternatives have different
+/// sizes but a common prefix, like this:
+///
+/// ```ignore
+///  named!( test, alt!( tag!( "abcd" ) | tag!( "ab" ) | tag!( "ef" ) ) );
+/// ```
+///
+/// in that case, if you order by size, passing `"abcd"` as input will always be matched by the
+/// smallest parser, so the solution using `complete!` is better suited.
+///
+/// You can also nest multiple `alt!`, like this:
+///
+/// ```ignore
+///  named!( test,
+///    alt!(
+///      preceded!(
+///        tag!("ab"),
+///        alt!(
+///          tag!( "cd" ) |
+///          eof
+///        )
+///      )
+///    | tag!( "ef" )
+///    )
+///  );
+/// ```
+///
+///  `preceded!` will first parse `"ab"` then, if successful, try the alternatives "cd",
+///  or empty input (End Of File). If none of them work, `preceded!` will fail and
+///  "ef" will be tested.
+///
 #[macro_export]
 macro_rules! alt (
   ($i:expr, $($rest:tt)*) => (
@@ -991,32 +1195,155 @@ macro_rules! alt_parser (
   );
 );
 
+/// This is a combination of the `alt!` and `complete!` combinators. Rather
+/// than returning `Incomplete` on partial input, `alt_complete!` will try the
+/// next alternative in the chain. You should use this only if you know you
+/// will not receive partial input for the rules you're trying to match (this
+/// is almost always the case for parsing programming languages).
+#[macro_export]
+macro_rules! alt_complete (
+  // Recursive rules (must include `complete!` around the head)
+
+  ($i:expr, $e:ident | $($rest:tt)*) => (
+    alt_complete!($i, complete!(call!($e)) | $($rest)*);
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
+    {
+      let res = complete!($i, $subrule!($($args)*));
+      match res {
+        $crate::IResult::Done(_,_) => res,
+        _ => alt_complete!($i, $($rest)*),
+      }
+    }
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+    {
+      match complete!($i, $subrule!($($args)*)) {
+        $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
+        _ => alt_complete!($i, $($rest)*),
+      }
+    }
+  );
+
+  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_complete!($i, complete!(call!($e)) => { $gen } | $($rest)*);
+  );
+
+  // Tail (non-recursive) rules
+
+  ($i:expr, $e:ident => { $gen:expr }) => (
+    alt_complete!($i, call!($e) => { $gen });
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+    alt_parser!($i, $subrule!($($args)*) => { $gen })
+  );
+
+  ($i:expr, $e:ident) => (
+    alt_complete!($i, call!($e));
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
+    alt_parser!($i, $subrule!($($args)*))
+  );
+);
+
 /// `switch!(I -> IResult<I,P>, P => I -> IResult<I,O> | ... | P => I -> IResult<I,O> ) => I -> IResult<I, O>`
-/// choose the next parser depending on the result of the first one, if successful
+/// choose the next parser depending on the result of the first one, if successful,
+/// and returns the result of the second parser
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error};
+/// # use nom::Err::{Position, NodePosition};
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => tag!("XYZ") |
+///      b"efgh" => tag!("123")
+///    )
+///  );
+///
+///  let a = b"abcdXYZ123";
+///  let b = b"abcdef";
+///  let c = b"efgh123";
+///  let d = b"blah";
+///
+///  assert_eq!(sw(&a[..]), Done(&b"123"[..], &b"XYZ"[..]));
+///  assert_eq!(sw(&b[..]), Error(NodePosition(ErrorKind::Switch, &b"abcdef"[..], Box::new(Position(ErrorKind::Tag, &b"ef"[..])))));
+///  assert_eq!(sw(&c[..]), Done(&b""[..], &b"123"[..]));
+///  assert_eq!(sw(&d[..]), Error(Position(ErrorKind::Switch, &b"blah"[..])));
+///  # }
+/// ```
+///
+/// Due to limitations in Rust macros, it is not possible to have simple functions on the right hand
+/// side of pattern, like this:
+///
+/// ```ignore
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => tag!("XYZ") |
+///      b"efgh" => tag!("123")
+///    )
+///  );
+/// ```
+///
+/// If you want to pass your own functions instead, you can use the `call!` combinator as follows:
+///
+/// ```ignore
+///  named!(xyz, tag!("XYZ"));
+///  named!(num, tag!("123"));
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => call!(xyz) |
+///      b"efgh" => call!(num)
+///    )
+///  );
+/// ```
 ///
 #[macro_export]
 macro_rules! switch (
-  ($i:expr, $submac:ident!( $($args:tt)*), $($p:pat => $subrule:ident!( $($args2:tt)* ))|*) => (
+  ($i:expr, $submac:ident!( $($args:tt)*), $($rest:tt)*) => (
+    {
+      switch_impl!($i, $submac!($($args)*), $($rest)*)
+    }
+  );
+  ($i:expr, $e:ident, $($rest:tt)*) => (
+    {
+      switch_impl!($i, call!($e), $($rest)*)
+    }
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! switch_impl (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Error(e)      => $crate::IResult::Error($crate::Err::NodePosition(
+            $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
+        )),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           match o {
-            $($p => $subrule!(i, $($args2)*)),*,
-            _    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Switch,i))
+            $($p => match $subrule!(i, $($args2)*) {
+              $crate::IResult::Error(e) => $crate::IResult::Error($crate::Err::NodePosition(
+                  $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
+              )),
+              a => a,
+            }),*,
+            _    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Switch,$i))
           }
         }
       }
     }
   );
-  ($i:expr, $e:ident, $($rest:tt)*) => (
-    {
-      switch!($i, call!(e), $($rest)*)
-    }
-  );
 );
-
 /// `opt!(I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// make the underlying parser optional
 ///
@@ -1040,8 +1367,8 @@ macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, Some(o)),
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, None),
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
+        $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
       }
     }
@@ -1125,12 +1452,12 @@ macro_rules! cond(
     {
       if $cond {
         match $submac!($i, $($args)*) {
-          $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, Some(o)),
-          $crate::IResult::Error(_)      => $crate::IResult::Done($i, None),
+          $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
+          $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
           $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
         }
       } else {
-        $crate::IResult::Done($i, None)
+        $crate::IResult::Done($i, ::std::option::Option::None)
       }
     }
   );
@@ -1218,7 +1545,7 @@ macro_rules! peek(
     }
   );
   ($i:expr, $f:expr) => (
-    peek!($i, call!(f));
+    peek!($i, call!($f));
   );
 );
 
@@ -1492,12 +1819,12 @@ macro_rules! delimited2(
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut res   = Vec::new();
+      let mut res   = ::std::vec::Vec::new();
       let mut input = $i;
 
       // get the first element
       match $submac!(input, $($args2)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Done(input, Vec::new()),
+        $crate::IResult::Error(_)      => $crate::IResult::Done(input, ::std::vec::Vec::new()),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           if i.len() == input.len() {
@@ -1551,7 +1878,7 @@ macro_rules! separated_list(
 macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut res   = Vec::new();
+      let mut res   = ::std::vec::Vec::new();
       let mut input = $i;
 
       // get the first element
@@ -1613,11 +1940,11 @@ macro_rules! separated_nonempty_list(
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many0!( tag!( "abcd" ) ) );
 ///
-///  let a = b"abcdabcdef";
+///  let a = b"abcdabcdefgh";
 ///  let b = b"azerty";
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]), Done(&b"ef"[..], res));
+///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
 ///  assert_eq!(multi(&b[..]), Done(&b"azerty"[..], Vec::new()));
 /// # }
 /// ```
@@ -1626,16 +1953,58 @@ macro_rules! separated_nonempty_list(
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let mut res   = Vec::new();
-      let mut input = $i;
-      while let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
-        if i.len() == input.len() {
-          break;
+      use $crate::InputLength;
+      if ($i).input_len() == 0 {
+        $crate::IResult::Done($i, ::std::vec::Vec::new())
+      } else {
+        match $submac!($i, $($args)*) {
+          $crate::IResult::Error(_)      => {
+            $crate::IResult::Done($i, ::std::vec::Vec::new())
+          },
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i1,o1)   => {
+            if i1.input_len() == 0 {
+              $crate::IResult::Done(i1,vec![o1])
+            } else {
+              let mut res    = ::std::vec::Vec::with_capacity(4);
+              res.push(o1);
+              let mut input  = i1;
+              let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+              loop {
+                match $submac!(input, $($args)*) {
+                  $crate::IResult::Done(i, o) => {
+                    // do not allow parsers that do not consume input (causes infinite loops)
+                    if i.input_len() == input.input_len() {
+                      break;
+                    }
+                    res.push(o);
+                    input = i;
+                  }
+                  $crate::IResult::Error(_)                    => {
+                    break;
+                  },
+                  $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                    incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+                    break;
+                  },
+                  $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                    incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                    break;
+                  },
+                }
+                if input.input_len() == 0 {
+                  break;
+                }
+              }
+
+              match incomplete {
+                ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+                ::std::option::Option::None    => $crate::IResult::Done(input, res)
+              }
+            }
+          }
         }
-        res.push(o);
-        input = i;
       }
-      $crate::IResult::Done(input, res)
     }
   );
   ($i:expr, $f:expr) => (
@@ -1656,11 +2025,11 @@ macro_rules! many0(
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
 ///
-///  let a = b"abcdabcdef";
+///  let a = b"abcdabcdefgh";
 ///  let b = b"azerty";
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]), Done(&b"ef"[..], res));
+///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
 ///  assert_eq!(multi(&b[..]), Error(Position(ErrorKind::Many1,&b[..])));
 /// # }
 /// ```
@@ -1668,24 +2037,142 @@ macro_rules! many0(
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let mut res   = Vec::new();
-      let mut input = $i;
-      while let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
-        if i.len() == input.len() {
-          break;
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(_)      => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1,$i)),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i1,o1)   => {
+          if i1.len() == 0 {
+            $crate::IResult::Done(i1,vec![o1])
+          } else {
+
+            let mut res    = ::std::vec::Vec::with_capacity(4);
+            res.push(o1);
+            let mut input  = i1;
+            let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+            loop {
+              if input.input_len() == 0 {
+                break;
+              }
+              match $submac!(input, $($args)*) {
+                $crate::IResult::Error(_)                    => {
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                  incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                  incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                  break;
+                },
+                $crate::IResult::Done(i, o) => {
+                  if i.input_len() == input.input_len() {
+                    break;
+                  }
+                  res.push(o);
+                  input = i;
+                }
+              }
+            }
+
+            match incomplete {
+              ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+              ::std::option::Option::None    => $crate::IResult::Done(input, res)
+            }
+          }
         }
-        res.push(o);
-        input = i;
-      }
-      if res.is_empty() {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1,$i))
-      } else {
-        $crate::IResult::Done(input, res)
       }
     }
   );
   ($i:expr, $f:expr) => (
     many1!($i, call!($f));
+  );
+);
+
+/// `many_m_n!(usize, usize, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// Applies the parser between m and n times (n included) and returns the list of results in a Vec
+///
+/// the embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(multi<&[u8], Vec<&[u8]> >, many_m_n!(2, 4, tag!( "abcd" ) ) );
+///
+///  let a = b"abcdefgh";
+///  let b = b"abcdabcdefgh";
+///  let c = b"abcdabcdabcdabcdabcdefgh";
+///
+///  assert_eq!(multi(&a[..]),Error(Position(ErrorKind::ManyMN,&a[..])));
+///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///  assert_eq!(multi(&b[..]), Done(&b"efgh"[..], res));
+///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
+///  assert_eq!(multi(&c[..]), Done(&b"abcdefgh"[..], res2));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! many_m_n(
+  ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      let mut res          = ::std::vec::Vec::with_capacity($m);
+      let mut input        = $i;
+      let mut count: usize = 0;
+      let mut err          = false;
+      let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+      loop {
+        if count == $n { break }
+        match $submac!(input, $($args)*) {
+          $crate::IResult::Done(i, o) => {
+            // do not allow parsers that do not consume input (causes infinite loops)
+            if i.input_len() == input.input_len() {
+              break;
+            }
+            res.push(o);
+            input  = i;
+            count += 1;
+          }
+          $crate::IResult::Error(_)                    => {
+            err = true;
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+            break;
+          },
+        }
+        if input.input_len() == 0 {
+          break;
+        }
+      }
+
+      if count < $m {
+        if err {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ManyMN,$i))
+        } else {
+          match incomplete {
+            ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+            ::std::option::Option::None    => $crate::IResult::Incomplete($crate::Needed::Unknown)
+          }
+        }
+      } else {
+        match incomplete {
+          ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+          ::std::option::Option::None    => $crate::IResult::Done(input, res)
+        }
+      }
+    }
+  );
+  ($i:expr, $m:expr, $n: expr, $f:expr) => (
+    many_m_n!($i, $m, $n, call!($f));
   );
 );
 
@@ -1714,7 +2201,7 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let mut input      = $i;
-      let mut res        = Vec::with_capacity($count);
+      let mut res        = ::std::vec::Vec::with_capacity($count);
       let mut cnt: usize = 0;
       let mut err        = false;
       loop {
@@ -1827,7 +2314,7 @@ macro_rules! length_value(
         $crate::IResult::Done(i1,nb)   => {
           let length_token     = $i.len() - i1.len();
           let mut input        = i1;
-          let mut res          = Vec::new();
+          let mut res          = ::std::vec::Vec::new();
           let mut err          = false;
           let mut inc          = $crate::Needed::Unknown;
 
@@ -1872,7 +2359,7 @@ macro_rules! length_value(
         $crate::IResult::Done(i1,nb)   => {
           let length_token     = $i.len() - i1.len();
           let mut input        = i1;
-          let mut res          = Vec::new();
+          let mut res          = ::std::vec::Vec::new();
           let mut err          = false;
           let mut inc          = $crate::Needed::Unknown;
 
@@ -2280,6 +2767,20 @@ mod tests {
   }
 
   #[test]
+  fn alt_complete() {
+    named!(ac<&[u8], &[u8]>,
+      alt_complete!(tag!("abcd") | tag!("ef") | tag!("ghi") | tag!("kl"))
+    );
+
+    let a = &b""[..];
+    assert_eq!(ac(a), Incomplete(Needed::Size(2)));
+    let a = &b"ef"[..];
+    assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
+    let a = &b"cde"[..];
+    assert_eq!(ac(a), Error(Position(ErrorKind::Alt, a)));
+  }
+
+  #[test]
   fn switch() {
     named!(sw,
       switch!(take!(4),
@@ -2294,7 +2795,7 @@ mod tests {
     let b = &b"efghijkl"[..];
     assert_eq!(sw(b), Done(&b""[..], &b"ijkl"[..]));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Error(Position(ErrorKind::Switch, &b"ijkl"[..])));
+    assert_eq!(sw(c), Error(Position(ErrorKind::Switch, &b"afghijkl"[..])));
   }
 
   #[test]
@@ -2395,19 +2896,23 @@ mod tests {
     assert_eq!(r1, Done(&b"kl"[..], &b"efgh"[..]));
   }
 
-    #[test]
+  #[test]
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
+    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
+    let d = &b",,abc"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+    let res3 = vec![&b""[..], &b""[..], &b""[..]];
+    //assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
   }
 
   #[test]
@@ -2430,14 +2935,16 @@ mod tests {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
-    let b = &b"abcdabcdef"[..];
+    let b = &b"abcdabcdefgh"[..];
     let c = &b"azerty"[..];
+    let d = &b"abcdab"[..];
 
-    let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    //let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
-    assert_eq!(multi(b), Done(&b"ef"[..], res2));
+    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+    assert_eq!(multi(d), Incomplete(Needed::Size(8)));
   }
 
   #[cfg(feature = "nightly")]
@@ -2457,13 +2964,16 @@ mod tests {
     named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
-    let b = &b"abcdabcdef"[..];
+    let b = &b"abcdabcdefgh"[..];
     let c = &b"azerty"[..];
-    let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    let d = &b"abcdab"[..];
+
+    //let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
-    assert_eq!(multi(b), Done(&b"ef"[..], res2));
+    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Error(Position(ErrorKind::Many1,c)));
+    assert_eq!(multi(d), Incomplete(Needed::Size(8)));
   }
 
   #[test]
@@ -2481,6 +2991,27 @@ mod tests {
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
     assert_eq!(multi1(a), Error(Position(ErrorKind::Many1,a)));
+  }
+
+  #[test]
+  fn many_m_n() {
+    named!(multi<&[u8],Vec<&[u8]> >, many_m_n!(2, 4, tag!("Abcd")));
+
+    let a = &b"Abcdef"[..];
+    let b = &b"AbcdAbcdefgh"[..];
+    let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
+    let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
+    let e = &b"AbcdAb"[..];
+
+    //let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
+    let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
+    let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(c), Done(&b"efgh"[..], res3));
+    let res4 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(d), Done(&b"Abcdefgh"[..], res4));
+    assert_eq!(multi(e), Incomplete(Needed::Size(8)));
   }
 
   #[test]
@@ -2592,5 +3123,22 @@ mod tests {
     );
 
     assert_eq!(res, IResult::Incomplete(Needed::Size(12)));
+  }
+
+  #[test]
+  fn tuple_test() {
+    named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
+      tuple!(
+        be_u16 ,
+        take!(3),
+        tag!("fg")
+      )
+    );
+
+    assert_eq!(tpl(&b"abcdefgh"[..]), Done(&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])));
+    assert_eq!(tpl(&b"abcd"[..]), Incomplete(Needed::Size(5)));
+    assert_eq!(tpl(&b"abcde"[..]), Incomplete(Needed::Size(7)));
+    let input = &b"abcdejk"[..];
+    assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
   }
 }

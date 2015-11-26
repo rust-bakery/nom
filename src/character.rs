@@ -9,7 +9,7 @@ macro_rules! one_of (
   ($i:expr, $inp: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
       } else {
         #[inline(always)]
         fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -29,7 +29,7 @@ macro_rules! one_of_bytes (
   ($i:expr, $bytes: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
       } else {
         let mut found = false;
 
@@ -56,7 +56,7 @@ macro_rules! none_of (
   ($i:expr, $inp: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
       } else {
         #[inline(always)]
         fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -76,7 +76,7 @@ macro_rules! none_of_bytes (
   ($i:expr, $bytes: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
       } else {
         let mut found = false;
 
@@ -103,7 +103,8 @@ macro_rules! char (
   ($i:expr, $c: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        let res: $crate::IResult<&[u8], char> = $crate::IResult::Incomplete($crate::Needed::Size(1));
+        res
       } else {
         if $i[0] == $c as u8 {
           $crate::IResult::Done(&$i[1..], $i[0] as char)
