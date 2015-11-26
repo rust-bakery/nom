@@ -34,6 +34,113 @@ macro_rules! tag_str (
   );
 );
 
+/// `take_s!(nb) => &str -> IResult<&str, &str>`
+/// generates a parser consuming the specified number of characters
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  // Desmond parser
+///  named!(take5<&str,&str>, take_s!( 5 ) );
+///
+///  let a = "abcdefgh";
+///
+///  assert_eq!(take5(a), Done("fgh", "abcde"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_s (
+  ($i:expr, $count:expr) => (
+    {
+      let cnt = $count as usize;
+      let res: $crate::IResult<&str,&str> = if $i.len() < cnt {
+        $crate::IResult::Incomplete($crate::Needed::Size(cnt))
+      } else {
+        $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
+      };
+      res
+    }
+  );
+);
+
+/// `is_not_s!(&str) => &str -> IResult<&str, &str>`
+/// returns the longest list of characters that do not appear in the provided array
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!( not_space<&str,&str>, is_not_s!( " \t\r\n" ) );
+///
+///  let r = not_space("abcdefgh\nijkl");
+///  assert_eq!(r, Done("\nijkl", "abcdefgh"));
+///  # }
+/// ```
+#[macro_export]
+macro_rules! is_not_s (
+  ($input:expr, $arr:expr) => (
+    {
+      let res: $crate::IResult<&str,&str> = match $input.chars().position(|c| {
+        for i in $arr.chars() {
+          if c == i { return true }
+        }
+        false
+      }) {
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsNotStr,$input)),
+        Some(n) => {
+          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done("", $input)
+        }
+      };
+      res
+    }
+  );
+);
+
+/// `is_a_s!(&str) => &str -> IResult<&str, &str>`
+/// returns the longest list of characters that appear in the provided array
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(abcd<&str, &str>, is_a_s!( "abcd" ));
+///
+///  let r1 = abcd("aaaaefgh");
+///  assert_eq!(r1, Done("efgh", "aaaa"));
+///
+///  let r2 = abcd("dcbaefgh");
+///  assert_eq!(r2, Done("efgh", "dcba"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! is_a_s (
+  ($input:expr, $arr:expr) => (
+    {
+      let res: $crate::IResult<&str,&str> = match $input.chars().position(|c| {
+        for i in $arr.chars() {
+          if c == i { return false }
+        }
+        true
+      }) {
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input)),
+        Some(n) => {
+          let res: $crate::IResult<&str,&str> = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done("", $input)
+        }
+      };
+      res
+    }
+  );
+);
+
 #[cfg(test)]
 mod test {
     use ::IResult;
