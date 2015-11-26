@@ -1,6 +1,38 @@
 //! Byte level parsers and combinators
 //!
 
+/// `recognize!(&[T] -> IResult<&[T], O> ) => &[T] -> IResult<&[T], &[T]>`
+/// if the child parser was successful, return the consumed input as produced value
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
+///  let r = x(&b"<!-- abc --> aaa"[..]);
+///  assert_eq!(r, Done(&b" aaa"[..], &b"<!-- abc -->"[..]));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! recognize (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::HexDisplay;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Done(i,_)     => {
+          let index = ($i).offset(i);
+          $crate::IResult::Done(i, &($i)[..index])
+        },
+        $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i)
+      }
+    }
+  );
+  ($i:expr, $f:expr) => (
+    recognize!($i, call!($f))
+  );
+);
+
 /// `tag!(&[T]: nom::AsBytes) => &[T] -> IResult<&[T], &[T]>`
 /// declares a byte array as a suite to recognize
 ///
@@ -772,6 +804,13 @@ mod tests {
       y(&b"123"[..]),
       Error(Position(ErrorKind::TakeUntil, &b"123"[..]))
     );
+  }
+
+  #[test]
+  fn recognize() {
+    named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
+    let r = x(&b"<!-- abc --> aaa"[..]);
+    assert_eq!(r, Done(&b" aaa"[..], &b"<!-- abc -->"[..]));
   }
 
   #[cfg(feature = "nightly")]
