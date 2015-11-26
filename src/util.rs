@@ -542,7 +542,8 @@ pub enum ErrorKind<E=u32> {
   Complete,
   Fix,
   Escaped,
-  EscapedTransform
+  EscapedTransform,
+  TagStr,
 }
 
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
@@ -590,5 +591,6 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Fix                       => 49,
     ErrorKind::Escaped                   => 50,
     ErrorKind::EscapedTransform          => 51,
+    ErrorKind::TagStr                    => 52,
   }
 }
