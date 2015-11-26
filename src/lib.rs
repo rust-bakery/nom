@@ -120,6 +120,9 @@ pub use self::regexp::*;
 #[cfg(feature = "stream")]
 pub use self::stream::*;
 
+#[cfg(not(feature = "core"))]
+pub use self::str::*;
+
 #[macro_use] mod util;
 mod internal;
 #[macro_use] mod macros;
@@ -136,3 +139,6 @@ mod internal;
 #[cfg(not(feature = "core"))]
 #[cfg(feature = "stream")]
 mod stream;
+
+#[cfg(not(feature = "core"))]
+mod str;
