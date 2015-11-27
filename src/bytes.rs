@@ -191,6 +191,22 @@ macro_rules! is_a_bytes (
   );
 );
 
+/// `escaped!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], &[T]>`
+/// matches a byte string with escaped characters.
+///
+/// The first argument parses the normal characters, the second argument is the control character (like `\` in most languages),
+/// the third argument matches the escaped characters
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::alpha;
+/// # fn main() {
+///  named!(esc, escaped!(call!(alpha), '\\', is_a_bytes!(&b"\"n\\"[..])));
+///  assert_eq!(esc(&b"abcd"[..]), Done(&b""[..], &b"abcd"[..]));
+///  assert_eq!(esc(&b"ab\\\"cd"[..]), Done(&b""[..], &b"ab\\\"cd"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! escaped (
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
@@ -271,6 +287,38 @@ macro_rules! escaped_impl (
   );
 );
 
+/// `escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>>`
+/// matches a byte string with escaped characters.
+///
+/// The first argument parses the normal characters, the second argument is the control character (like `\` in most languages),
+/// the third argument matches the escaped characters and trnasforms them.
+///
+/// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::alpha;
+/// # use std::str::from_utf8;
+/// # fn main() {
+/// fn to_s(i:Vec<u8>) -> String {
+///   String::from_utf8_lossy(&i).into_owned()
+/// }
+
+///  named!(transform < String >,
+///    map!(
+///      escaped_transform!(call!(alpha), '\\',
+///        alt!(
+///            tag!("\\")       => { |_| &b"\\"[..] }
+///          | tag!("\"")       => { |_| &b"\""[..] }
+///          | tag!("n")        => { |_| &b"\n"[..] }
+///        )
+///      ), to_s
+///    )
+///  );
+///  assert_eq!(transform(&b"ab\\\"cd"[..]), Done(&b""[..], String::from("ab\"cd")));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! escaped_transform (
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
