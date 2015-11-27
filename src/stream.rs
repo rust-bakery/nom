@@ -3,7 +3,7 @@
 /// * data lifetimes makes sure that the result of a function applied to a producer cannot live longer than the producer's data (unless there is cloning)
 /// * previous implementation of Producer and Consumer spent its time copying buffers
 /// * the old Consumer was handling everything and buffering data. The new design has the producer handle data, but the consumer makes seeking decision
-use std::io::{self,Read,Seek,SeekFrom};
+use std::io::{self,Read,Write,Seek,SeekFrom};
 use std::fs::File;
 use std::path::Path;
 use std::ptr;
@@ -269,17 +269,13 @@ impl FileProducer {
   ///
   /// If the new buffer is smaller, the prefix will be copied, and the rest of the data will be dropped
   pub fn resize(&mut self, s: usize) -> usize {
-    let mut v  = Vec::with_capacity(s);
+    let mut v = vec![0; s];
     let length = self.end - self.start;
-
-    v.extend(repeat(0).take(s));
 
     let size = if length <= s { length } else { s };
 
-    unsafe {
-      let slice_ptr = (&self.v[self.start..self.end]).as_ptr();
-      ptr::copy(slice_ptr, v.as_mut_ptr(), size);
-    }
+    // Use `Write` for `&mut [u8]`
+    (&mut v[..]).write(&self.v[self.start..self.start + size]).unwrap();
 
     self.v     = v;
     self.start = 0;
