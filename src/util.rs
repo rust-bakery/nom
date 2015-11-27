@@ -546,6 +546,7 @@ pub enum ErrorKind<E=u32> {
   TagStr,
   IsNotStr,
   IsAStr,
+  TakeWhile1Str,
 }
 
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
@@ -596,5 +597,6 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::TagStr                    => 52,
     ErrorKind::IsNotStr                  => 53,
     ErrorKind::IsAStr                    => 54,
+    ErrorKind::TakeWhile1Str             => 55,
   }
 }

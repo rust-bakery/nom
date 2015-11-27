@@ -141,6 +141,101 @@ macro_rules! is_a_s (
   );
 );
 
+
+/// `take_while!(char -> bool) => &str -> IResult<&str, &str>`
+/// returns the longest list of bytes until the provided function fails.
+///
+/// The argument is either a function `T -> bool` or a macro returning a `bool
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
+///  fn alphabetic(chr: char) -> bool { (chr >= 0x41 as char && chr <= 0x5A as char) || (chr >= 0x61 as char && chr <= 0x7A as char) }
+///  named!( alpha<&str,&str>, take_while_s!( alphabetic ) );
+///
+///  let r = alpha("abcd\nefgh");
+///  assert_eq!(r, Done("\nefgh", "abcd"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_while_s (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $input.chars().position(|c| !$submac!(c, $($args)*)) {
+        Some(n) => {
+          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done("", $input)
+        }
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_while_s!($input, call!($f));
+  );
+);
+
+/// `take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest (non empty) list of bytes until the provided function fails.
+///
+/// The argument is either a function `T -> bool` or a macro returning a `bool`
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
+///  fn alphabetic(chr: char) -> bool { (chr >= 0x41 as char && chr <= 0x5A as char) || (chr >= 0x61 as char && chr <= 0x7A as char) }
+///  named!( alpha<&str,&str>, take_while1_s!( alphabetic ) );
+///
+///  let r = alpha("abcd\nefgh");
+///  assert_eq!(r, Done("\nefgh", "abcd"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_while1_s (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $input.chars().position(|c| !$submac!(c, $($args)*)) {
+        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input)),
+        Some(n) => {
+          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
+        },
+        None    => {
+          $crate::IResult::Done("", $input)
+        }
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_while1_s!($input, call!($f));
+  );
+);
+
+/// `take_till_s!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest list of bytes until the provided function succeeds
+///
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+#[macro_export]
+macro_rules! take_till (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+
+    {
+      match $input.chars().position(|c| $submac!(c, $($args)*)) {
+        Some(n) => $crate::IResult::Done(&$input[n..], &$input[..n]),
+        None    => $crate::IResult::Done("", $input)
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_till_s!($input, call!($f));
+  );
+);
+
 #[cfg(test)]
 mod test {
     use ::IResult;
