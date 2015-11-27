@@ -500,6 +500,48 @@ macro_rules! map_opt_impl (
   );
 );
 
+/// `value!(T, R -> IResult<R, S> ) => R -> IResult<R, T>`
+///
+/// or `value!(T) => R -> IResult<R, T>`
+///
+/// If the child parser was successful, return the value.
+/// If no child parser is provided, always return the value
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(x<u8>, value!(42, delimited!(tag!("<!--"), take!(5), tag!("-->"))));
+///  named!(y<u8>, delimited!(tag!("<!--"), value!(42), tag!("-->")));
+///  let r = x(&b"<!-- abc --> aaa"[..]);
+///  assert_eq!(r, Done(&b" aaa"[..], 42));
+///
+///  let r2 = y(&b"<!----> aaa"[..]);
+///  assert_eq!(r2, Done(&b" aaa"[..], 42));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! value (
+  ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::HexDisplay;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Done(i,_)     => {
+          $crate::IResult::Done(i, $res)
+        },
+        $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i)
+      }
+    }
+  );
+  ($i:expr, $res:expr, $f:expr) => (
+    value!($i, $res, call!($f))
+  );
+  ($i:expr, $res:expr) => (
+    $crate::IResult::Done($i, $res)
+  );
+);
+
 /// `expr_res!(Result<E,O>) => I -> IResult<I, O>`
 /// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Ok
 ///
