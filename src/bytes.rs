@@ -193,6 +193,34 @@ macro_rules! is_a_bytes (
 
 #[macro_export]
 macro_rules! escaped (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
+    {
+      escaped1!($i, $submac!($($args)*), $control_char, $($rest)*)
+    }
+  );
+
+  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
+    escaped1!($i, call!($f), $control_char, $($rest)*)
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! escaped1 (
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+    {
+     escaped_impl!($i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+    }
+  );
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+     escaped_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+  );
+);
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! escaped_impl (
   ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
       let cl = || {
@@ -240,11 +268,39 @@ macro_rules! escaped (
         }
       }
     }
-  )
+  );
 );
 
 #[macro_export]
 macro_rules! escaped_transform (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
+    {
+      escaped_transform1!($i, $submac!($($args)*), $control_char, $($rest)*)
+    }
+  );
+
+  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
+    escaped_transform1!($i, call!($f), $control_char, $($rest)*)
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! escaped_transform1 (
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+    {
+     escaped_transform_impl!($i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+    }
+  );
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+     escaped_transform_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+  );
+);
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! escaped_transform_impl (
   ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
       let cl = || {
@@ -716,7 +772,7 @@ mod tests {
   fn escape_transform() {
     use std::str;
 
-    named!(esc< String >, map!(escaped_transform!(call!(alpha), '\\',
+    named!(esc< String >, map!(escaped_transform!(alpha, '\\',
       alt!(
           tag!("\\")       => { |_| &b"\\"[..] }
         | tag!("\"")       => { |_| &b"\""[..] }
