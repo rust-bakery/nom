@@ -68,15 +68,18 @@ macro_rules! tag (
 macro_rules! tag_bytes (
   ($i:expr, $bytes: expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
+      use std::cmp::min;
+      let len = $i.len();
+      let m   = min(len, $bytes.len());
+      let reduced = &$i[..m];
+      let b       = &$bytes[..m];
+
+      let res : $crate::IResult<&[u8],&[u8]> = if reduced != b {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
+      } else if m < $bytes.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
-        let reduced = &$i[..$bytes.len()];
-        if reduced == $bytes {
-          $crate::IResult::Done(&$i[$bytes.len()..], &$i[..$bytes.len()])
-        } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
-        }
+        $crate::IResult::Done(&$i[$bytes.len()..], &$i[..$bytes.len()])
       };
       res
     }

@@ -2532,7 +2532,7 @@ mod tests {
     let c = &b"azerty"[..];
     let d = &b"abcdab"[..];
 
-    let res1 = vec![&b"abcd"[..]];
+    //let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Incomplete(Needed::Size(8)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
@@ -2561,7 +2561,7 @@ mod tests {
     let c = &b"azerty"[..];
     let d = &b"abcdab"[..];
 
-    let res1 = vec![&b"abcd"[..]];
+    //let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Incomplete(Needed::Size(8)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
