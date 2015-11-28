@@ -1655,11 +1655,11 @@ macro_rules! separated_nonempty_list(
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many0!( tag!( "abcd" ) ) );
 ///
-///  let a = b"abcdabcdef";
+///  let a = b"abcdabcdefgh";
 ///  let b = b"azerty";
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]), Done(&b"ef"[..], res));
+///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
 ///  assert_eq!(multi(&b[..]), Done(&b"azerty"[..], Vec::new()));
 /// # }
 /// ```
@@ -1668,16 +1668,40 @@ macro_rules! separated_nonempty_list(
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let mut res   = Vec::new();
-      let mut input = $i;
-      while let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
-        if i.len() == input.len() {
+      use $crate::InputLength;
+      let mut res    = Vec::new();
+      let mut input  = $i;
+      let mut incomplete: Option<$crate::Needed> = None;
+      loop {
+        if input.input_len() == 0 {
           break;
         }
-        res.push(o);
-        input = i;
+        match $submac!(input, $($args)*) {
+          $crate::IResult::Error(_)                    => {
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            incomplete = Some($crate::Needed::Unknown);
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            incomplete = Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+            break;
+          },
+          $crate::IResult::Done(i, o) => {
+            if i.input_len() == input.input_len() {
+              break;
+            }
+            res.push(o);
+            input = i;
+          }
+        }
       }
-      $crate::IResult::Done(input, res)
+
+      match incomplete {
+        Some(i) => $crate::IResult::Incomplete(i),
+        None    => $crate::IResult::Done(input, res)
+      }
     }
   );
   ($i:expr, $f:expr) => (
@@ -1698,11 +1722,11 @@ macro_rules! many0(
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
 ///
-///  let a = b"abcdabcdef";
+///  let a = b"abcdabcdefgh";
 ///  let b = b"azerty";
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]), Done(&b"ef"[..], res));
+///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
 ///  assert_eq!(multi(&b[..]), Error(Position(ErrorKind::Many1,&b[..])));
 /// # }
 /// ```
@@ -1710,19 +1734,51 @@ macro_rules! many0(
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let mut res   = Vec::new();
-      let mut input = $i;
-      while let $crate::IResult::Done(i,o) = $submac!(input, $($args)*) {
-        if i.len() == input.len() {
-          break;
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(_)      => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1,$i)),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i1,o1)   => {
+          if i1.len() == 0 {
+            $crate::IResult::Done(i1,vec![o1])
+          } else {
+
+            let mut res    = Vec::with_capacity(4);
+            res.push(o1);
+            let mut input  = i1;
+            let mut incomplete: Option<$crate::Needed> = None;
+            loop {
+              if input.input_len() == 0 {
+                break;
+              }
+              match $submac!(input, $($args)*) {
+                $crate::IResult::Error(_)                    => {
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                  incomplete = Some($crate::Needed::Unknown);
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                  incomplete = Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                  break;
+                },
+                $crate::IResult::Done(i, o) => {
+                  if i.input_len() == input.input_len() {
+                    break;
+                  }
+                  res.push(o);
+                  input = i;
+                }
+              }
+            }
+
+            match incomplete {
+              Some(i) => $crate::IResult::Incomplete(i),
+              None    => $crate::IResult::Done(input, res)
+            }
+          }
         }
-        res.push(o);
-        input = i;
-      }
-      if res.is_empty() {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1,$i))
-      } else {
-        $crate::IResult::Done(input, res)
       }
     }
   );
@@ -2472,14 +2528,16 @@ mod tests {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
-    let b = &b"abcdabcdef"[..];
+    let b = &b"abcdabcdefgh"[..];
     let c = &b"azerty"[..];
+    let d = &b"abcdab"[..];
 
     let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
-    assert_eq!(multi(b), Done(&b"ef"[..], res2));
+    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+    assert_eq!(multi(d), Incomplete(Needed::Size(8)));
   }
 
   #[cfg(feature = "nightly")]
@@ -2499,13 +2557,16 @@ mod tests {
     named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
-    let b = &b"abcdabcdef"[..];
+    let b = &b"abcdabcdefgh"[..];
     let c = &b"azerty"[..];
+    let d = &b"abcdab"[..];
+
     let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
-    assert_eq!(multi(b), Done(&b"ef"[..], res2));
+    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Error(Position(ErrorKind::Many1,c)));
+    assert_eq!(multi(d), Incomplete(Needed::Size(8)));
   }
 
   #[test]
