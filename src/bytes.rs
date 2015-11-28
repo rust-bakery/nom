@@ -427,11 +427,10 @@ macro_rules! take_while (
     {
       match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
         Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
+          $crate::IResult::Done(&$input[n..], &$input[..n])
         },
         None    => {
-          $crate::IResult::Done(&b""[..], $input)
+          $crate::IResult::Done(&$input[..0], $input)
         }
       }
     }
@@ -452,11 +451,10 @@ macro_rules! take_while1 (
       match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
         Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,$input)),
         Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
+          $crate::IResult::Done(&$input[n..], &$input[..n])
         },
         None    => {
-          $crate::IResult::Done(&b""[..], $input)
+          $crate::IResult::Done(&$input[..0], $input)
         }
       }
     }
