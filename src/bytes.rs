@@ -70,10 +70,13 @@ macro_rules! tag_bytes (
     {
       let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
-      } else if &$i[0..$bytes.len()] == $bytes {
-        $crate::IResult::Done(&$i[$bytes.len()..], &$i[0..$bytes.len()])
       } else {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
+        let reduced = &$i[..$bytes.len()];
+        if reduced == $bytes {
+          $crate::IResult::Done(&$i[$bytes.len()..], &$i[..$bytes.len()])
+        } else {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
+        }
       };
       res
     }
