@@ -1669,38 +1669,53 @@ macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::InputLength;
-      let mut res    = Vec::new();
-      let mut input  = $i;
-      let mut incomplete: Option<$crate::Needed> = None;
-      loop {
-        if input.input_len() == 0 {
-          break;
-        }
-        match $submac!(input, $($args)*) {
-          $crate::IResult::Error(_)                    => {
-            break;
-          },
-          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
-            incomplete = Some($crate::Needed::Unknown);
-            break;
-          },
-          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-            incomplete = Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
-            break;
-          },
-          $crate::IResult::Done(i, o) => {
-            if i.input_len() == input.input_len() {
-              break;
+      if ($i).input_len() == 0 {
+        $crate::IResult::Done($i, Vec::new())
+      } else {
+        match $submac!($i, $($args)*) {
+          $crate::IResult::Error(_)      => $crate::IResult::Done($i, Vec::new()),
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i1,o1)   => {
+            if i1.input_len() == 0 {
+              $crate::IResult::Done(i1,vec![o1])
+            } else {
+              let mut res    = Vec::with_capacity(4);
+              res.push(o1);
+              let mut input  = i1;
+              let mut incomplete: Option<$crate::Needed> = None;
+              loop {
+                if input.input_len() == 0 {
+                  break;
+                }
+                match $submac!(input, $($args)*) {
+                  $crate::IResult::Error(_)                    => {
+                    break;
+                  },
+                  $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                    incomplete = Some($crate::Needed::Unknown);
+                    break;
+                  },
+                  $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                    incomplete = Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                    break;
+                  },
+                  $crate::IResult::Done(i, o) => {
+                    if i.input_len() == input.input_len() {
+                      break;
+                    }
+                    res.push(o);
+                    input = i;
+                  }
+                }
+              }
+
+              match incomplete {
+                Some(i) => $crate::IResult::Incomplete(i),
+                None    => $crate::IResult::Done(input, res)
+              }
             }
-            res.push(o);
-            input = i;
           }
         }
-      }
-
-      match incomplete {
-        Some(i) => $crate::IResult::Incomplete(i),
-        None    => $crate::IResult::Done(input, res)
       }
     }
   );
