@@ -1673,7 +1673,9 @@ macro_rules! many0(
         $crate::IResult::Done($i, Vec::new())
       } else {
         match $submac!($i, $($args)*) {
-          $crate::IResult::Error(_)      => $crate::IResult::Done($i, Vec::new()),
+          $crate::IResult::Error(_)      => {
+            $crate::IResult::Done($i, Vec::new())
+          },
           $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
           $crate::IResult::Done(i1,o1)   => {
             if i1.input_len() == 0 {
@@ -1684,10 +1686,15 @@ macro_rules! many0(
               let mut input  = i1;
               let mut incomplete: Option<$crate::Needed> = None;
               loop {
-                if input.input_len() == 0 {
-                  break;
-                }
                 match $submac!(input, $($args)*) {
+                  $crate::IResult::Done(i, o) => {
+                    // do not allow parsers that do not consume input (causes infinite loops)
+                    if i.input_len() == input.input_len() {
+                      break;
+                    }
+                    res.push(o);
+                    input = i;
+                  }
                   $crate::IResult::Error(_)                    => {
                     break;
                   },
@@ -1699,13 +1706,9 @@ macro_rules! many0(
                     incomplete = Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
                     break;
                   },
-                  $crate::IResult::Done(i, o) => {
-                    if i.input_len() == input.input_len() {
-                      break;
-                    }
-                    res.push(o);
-                    input = i;
-                  }
+                }
+                if input.input_len() == 0 {
+                  break;
                 }
               }
 
