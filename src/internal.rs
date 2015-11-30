@@ -7,34 +7,6 @@ use util::ErrorKind;
 use std::prelude::v1::*;
 use std::boxed::Box;
 
-/*
-/// (Experimental) Closure used to hold the temporary state of resumable parsing
-pub type IResultClosure<'a,I,O> = Box<FnMut(I) -> IResult<I,O> +'a>;
-
-//cf libcore/fmt/mod.rs:674
-impl<'a,I,O> Debug for IResultClosure<'a,I,O> {
-  fn fmt(&self, f: &mut Formatter) -> Result {
-    Display::fmt("closure", f)
-  }
-}
-
-impl<'a,I:PartialEq,O:PartialEq> PartialEq for IResultClosure<'a,I,O> {
-  #[allow(unused_variables)]
-  fn eq<'b>(&self, other: &IResultClosure<'b,I,O>) -> bool {
-    false
-  }
-
-  #[allow(unused_variables)]
-  fn ne<'b>(&self, other: &IResultClosure<'b,I,O>) -> bool {
-    false
-  }
-}
-
-impl<'a,I:Eq,O:Eq> Eq for IResultClosure<'a,I,O> {}
-*/
-//type IResultClosure<'a,I,O> = |I|:'a -> IResult<'a,I,O>;
-//type IResultClosure<'a,I,O> = Fn<I, IResult<'a,I,O>>;
-
 /// Contains the error that a parser can return
 ///
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
@@ -70,13 +42,8 @@ pub enum IResult<I,O,E=u32> {
   Done(I,O),
   /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
   Error(Err<I,E>),
-  //Incomplete(proc(I):'a -> IResult<I,O>)
   /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
   Incomplete(Needed)
-  //Incomplete(Box<FnMut(I) -> IResult<I,O>>)
-  //Incomplete(IResultClosure<I,O>)
-  //Incomplete(|I|:'a -> IResult<'a,I,O>)
-  //Incomplete(fn(I) -> IResult<'a,I,O>)
 }
 
 impl<I,O> IResult<I,O> {
