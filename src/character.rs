@@ -103,7 +103,8 @@ macro_rules! char (
   ($i:expr, $c: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        let res: $crate::IResult<&[u8], char> = $crate::IResult::Incomplete($crate::Needed::Size(1));
+        res
       } else {
         if $i[0] == $c as u8 {
           $crate::IResult::Done(&$i[1..], $i[0] as char)

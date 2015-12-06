@@ -431,7 +431,8 @@ macro_rules! take_while (
     {
       match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
         Some(n) => {
-          $crate::IResult::Done(&$input[n..], &$input[..n])
+          let res:$crate::IResult<&[u8], &[u8]> = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          res
         },
         None    => {
           $crate::IResult::Done(&$input[..0], $input)
