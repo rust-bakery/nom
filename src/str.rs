@@ -221,7 +221,7 @@ macro_rules! take_while1_s (
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 #[macro_export]
-macro_rules! take_till (
+macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
 
     {
