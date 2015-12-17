@@ -14,7 +14,7 @@ use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 use internal::Err::*;
-use util::ErrorKind;
+use util::{ErrorKind, need_more, AtEof};
 use std::mem::transmute;
 
 #[inline]
@@ -160,7 +160,7 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.is_empty() {
-    return Incomplete(Needed::Unknown)
+    return need_more(input, Needed::Unknown)
   }
 
   let len = input[0] as usize;
@@ -168,7 +168,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() >= len + 1 {
     Done(&input[len+1..], &input[1..len+1])
   } else {
-    Incomplete(Needed::Size(1 + len))
+    need_more(input, Needed::Size(1 + len))
   }
 }
 
@@ -182,7 +182,7 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input_len - 1 >= len {
     IResult::Done(&input[len+1..], &input[1..len+1])
   } else {
-    IResult::Incomplete(Needed::Size(1+len))
+    need_more(input, Needed::Size(1+len))
   }
 }
 
@@ -190,7 +190,7 @@ pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
 #[inline]
 pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
-    Incomplete(Needed::Size(1))
+    need_more(i, Needed::Size(1))
   } else {
     Done(&i[1..], i[0])
   }
@@ -200,7 +200,7 @@ pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
 #[inline]
 pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
-    Incomplete(Needed::Size(2))
+    need_more(i, Needed::Size(2))
   } else {
     let res = ((i[0] as u16) << 8) + i[1] as u16;
     Done(&i[2..], res)
@@ -211,7 +211,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
 #[inline]
 pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
-    Incomplete(Needed::Size(4))
+    need_more(i, Needed::Size(4))
   } else {
     let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
     Done(&i[4..], res)
@@ -222,7 +222,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
 #[inline]
 pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
-    Incomplete(Needed::Size(8))
+    need_more(i, Needed::Size(8))
   } else {
     let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
       ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
@@ -258,7 +258,7 @@ pub fn be_i64(i:&[u8]) -> IResult<&[u8], i64> {
 #[inline]
 pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
-    Incomplete(Needed::Size(1))
+    need_more(i, Needed::Size(1))
   } else {
     Done(&i[1..], i[0])
   }
@@ -268,7 +268,7 @@ pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
 #[inline]
 pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
-    Incomplete(Needed::Size(2))
+    need_more(i, Needed::Size(2))
   } else {
     let res = ((i[1] as u16) << 8) + i[0] as u16;
     Done(&i[2..], res)
@@ -279,7 +279,7 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
 #[inline]
 pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
-    Incomplete(Needed::Size(4))
+    need_more(i, Needed::Size(4))
   } else {
     let res = ((i[3] as u32) << 24) + ((i[2] as u32) << 16) + ((i[1] as u32) << 8) + i[0] as u32;
     Done(&i[4..], res)
@@ -290,7 +290,7 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
 #[inline]
 pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
-    Incomplete(Needed::Size(8))
+    need_more(i, Needed::Size(8))
   } else {
     let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) +
       ((i[3] as u64) << 24) + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
@@ -399,7 +399,7 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
 /// useful to verify that the previous parsers used all of the input
 #[inline]
 pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
-    if input.is_empty() {
+    if input.is_empty() && input.at_eof() {
         Done(input, input)
     } else {
         Error(Position(ErrorKind::Eof, input))

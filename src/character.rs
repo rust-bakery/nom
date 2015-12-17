@@ -1,7 +1,7 @@
 /// Character level parsers
 
 use internal::{IResult,Needed,Err};
-use util::ErrorKind;
+use util::{ErrorKind, need_more};
 
 /// matches one of the provided characters
 #[macro_export]
@@ -9,7 +9,7 @@ macro_rules! one_of (
   ($i:expr, $inp: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::need_more($i, $crate::Needed::Size(1))
       } else {
         #[inline(always)]
         fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -29,7 +29,7 @@ macro_rules! one_of_bytes (
   ($i:expr, $bytes: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::need_more($i, $crate::Needed::Size(1))
       } else {
         let mut found = false;
 
@@ -56,7 +56,7 @@ macro_rules! none_of (
   ($i:expr, $inp: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::need_more($i, $crate::Needed::Size(1))
       } else {
         #[inline(always)]
         fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -76,7 +76,7 @@ macro_rules! none_of_bytes (
   ($i:expr, $bytes: expr) => (
     {
       if $i.is_empty() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::need_more($i, $crate::Needed::Size(1))
       } else {
         let mut found = false;
 
@@ -103,7 +103,7 @@ macro_rules! char (
   ($i:expr, $c: expr) => (
     {
       if $i.is_empty() {
-        let res: $crate::IResult<&[u8], char> = $crate::IResult::Incomplete($crate::Needed::Size(1));
+        let res: $crate::IResult<&[u8], char> = $crate::need_more($i, $crate::Needed::Size(1));
         res
       } else {
         if $i[0] == $c as u8 {
@@ -120,7 +120,7 @@ named!(pub newline<char>, char!('\n'));
 
 pub fn crlf(input:&[u8]) -> IResult<&[u8], char> {
   if input.len() < 2 {
-    IResult::Incomplete(Needed::Size(2))
+    need_more(input, Needed::Size(2))
   } else {
     if &input[0..2] == &b"\r\n"[..] {
       IResult::Done(&input[2..], '\n')
@@ -135,7 +135,7 @@ named!(pub tab<char>, char!('\t'));
 
 pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
   if input.is_empty() {
-    IResult::Incomplete(Needed::Size(1))
+    need_more(input, Needed::Size(1))
   } else {
     IResult::Done(&input[1..], input[0] as char)
   }

@@ -56,7 +56,7 @@ macro_rules! bits_impl (
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
           //println!("bits parser returned Needed::Size({})", i);
-          $crate::IResult::Incomplete($crate::Needed::Size(i / 8 + 1))
+          $crate::need_more($i, $crate::Needed::Size(i / 8 + 1))
         },
         $crate::IResult::Done((i, bit_index), o)             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
@@ -97,7 +97,7 @@ macro_rules! take_bits (
         let cnt = ($count as usize + bit_offset).div(8);
         if input.len() * 8 < $count as usize + bit_offset {
           //println!("returning incomplete: {}", $count as usize + bit_offset);
-          $crate::IResult::Incomplete($crate::Needed::Size($count as usize))
+          $crate::need_more($i, $crate::Needed::Size($count as usize))
         } else {
           let mut acc:$t            = 0;
           let mut offset: usize     = bit_offset;

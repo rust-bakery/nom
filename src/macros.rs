@@ -1857,7 +1857,7 @@ macro_rules! count(
       } else if cnt == $count {
         $crate::IResult::Done(input, res)
       } else {
-        $crate::IResult::Incomplete($crate::Needed::Unknown)
+        $crate::need_more(input, $crate::Needed::Unknown)
       }
     }
   );
@@ -1922,7 +1922,7 @@ macro_rules! count_fixed (
       } else if cnt == $count {
         $crate::IResult::Done(input, res)
       } else {
-        $crate::IResult::Incomplete($crate::Needed::Unknown)
+        $crate::need_more(input, $crate::Needed::Unknown)
       }
     }
   );
@@ -2048,7 +2048,7 @@ mod tests {
         let bytes = as_bytes(&expected);
 
         let res : $crate::IResult<&[u8],&[u8]> = if bytes.len() > $i.len() {
-          $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
+          $crate::need_more($i, $crate::Needed::Size(bytes.len()))
         } else if &$i[0..bytes.len()] == bytes {
           $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
         } else {
@@ -2064,7 +2064,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          $crate::IResult::Incomplete($crate::Needed::Size(cnt))
+          $crate::need_more($i, $crate::Needed::Size(cnt))
         } else {
           $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
         };

@@ -78,7 +78,7 @@ macro_rules! tag_bytes (
       let res : $crate::IResult<&[u8],&[u8]> = if reduced != b {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
       } else if m < blen {
-        $crate::IResult::Incomplete($crate::Needed::Size(blen))
+        $crate::need_more($i, $crate::Needed::Size(blen))
       } else {
         $crate::IResult::Done(&$i[blen..], reduced)
       };
@@ -510,7 +510,7 @@ macro_rules! take(
     {
       let cnt = $count as usize;
       let res: $crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
-        $crate::IResult::Incomplete($crate::Needed::Size(cnt))
+        $crate::need_more($i, $crate::Needed::Size(cnt))
       } else {
         $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
       };
@@ -549,7 +549,7 @@ macro_rules! take_until_and_consume_bytes (
   ($i:expr, $bytes:expr) => (
     {
       let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
+        $crate::need_more($i, $crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
         let mut parsed = false;
@@ -600,7 +600,7 @@ macro_rules! take_until_bytes(
   ($i:expr, $bytes:expr) => (
     {
       let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
+        $crate::need_more($i, $crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
         let mut parsed = false;
@@ -651,7 +651,7 @@ macro_rules! take_until_either_and_consume_bytes(
   ($i:expr, $bytes:expr) => (
     {
       let res: $crate::IResult<&[u8],&[u8]> = if 1 > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::need_more($i, $crate::Needed::Size(1))
       } else {
         let mut index  = 0;
         let mut parsed = false;
@@ -704,7 +704,7 @@ macro_rules! take_until_either_bytes(
   ($i:expr, $bytes:expr) => (
     {
       let res: $crate::IResult<&[u8],&[u8]> = if 1 > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size(1))
+        $crate::need_more($i, $crate::Needed::Size(1))
       } else {
         let mut index  = 0;
         let mut parsed = false;
@@ -748,7 +748,7 @@ macro_rules! length_bytes(
         $crate::IResult::Done(i1,nb)   => {
           let length_remaining = i1.len();
           if length_remaining < nb {
-            $crate::IResult::Incomplete(Needed::Size(nb - length_remaining))
+            $crate::need_more($i, Needed::Size(nb - length_remaining))
           } else {
             $crate::IResult::Done(&i1[nb..], &i1[..nb])
           }
