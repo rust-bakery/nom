@@ -952,6 +952,77 @@ macro_rules! chaining_parser (
 ///     assert_eq!(r3, Done(&b"rst"[..],  Tagged::Took(5)));
 /// # }
 /// ```
+///
+/// **BE CAREFUL** there is a case where the behaviour of `alt!` can be confusing:
+///
+/// when the alternatives have different lengths, like this case:
+///
+/// ```ignore
+///  named!( test, alt!( tag!( "abcd" ) | tag!( "ef" ) | tag!( "ghi" ) | tag!( "kl" ) ) );
+/// ```
+///
+/// With this parser, if you pass `"abcd"` as input, the first alternative parses it correctly,
+/// but if you pass `"efg"`, the first alternative will return `Incomplete`, since it needs an input
+/// of 4 bytes. This behaviour of `alt!` is expected: if you get a partial input that isn't matched
+/// by the first alternative, but would match if the input was complete, you want `alt!` to indicate
+/// that it cannot decide with limited information.
+///
+/// There are two ways to fix this behaviour. The first one consists in ordering the alternatives
+/// by size, like this:
+///
+/// ```ignore
+///  named!( test, alt!( tag!( "ef" ) | tag!( "kl") | tag!( "ghi" ) | tag!( "abcd" ) ) );
+/// ```
+///
+/// With this solution, the largest alternative will be tested last.
+///
+/// The other solution uses the `complete!` combinator, which transforms an `Incomplete` in an
+/// `Error`. If one of the alternatives returns `Incomplete` but is wrapped by `complete!`,
+/// `alt!` will try the next alternative. This is useful when you know that
+/// you will not get partial input:
+///
+/// ```ignore
+///  named!( test,
+///    alt!(
+///      complete!( tag!( "abcd" ) ) |
+///      complete!( tag!( "ef"   ) ) |
+///      complete!( tag!( "ghi"  ) ) |
+///      complete!( tag!( "kl"   ) )
+///    )
+///  );
+/// ```
+///
+/// This behaviour of `alt!` can get especially confusing if multiple alternatives have different
+/// sizes but a common prefix, like this:
+///
+/// ```ignore
+///  named!( test, alt!( tag!( "abcd" ) | tag!( "ab" ) | tag!( "ef" ) ) );
+/// ```
+///
+/// in that case, if you order by size, passing `"abcd"` as input will always be matched by the
+/// smallest parser, so the solution using `complete!` is better suited.
+///
+/// You can also nest multiple `alt!`, like this:
+///
+/// ```ignore
+///  named!( test,
+///    alt!(
+///      preceded!(
+///        tag!("ab"),
+///        alt!(
+///          tag!( "cd" ) |
+///          eof
+///        )
+///      )
+///    | tag!( "ef" )
+///    )
+///  );
+/// ```
+///
+///  `preceded!` will first parse `"ab"` then, if successful, try the alternatives "cd",
+///  or empty input (End Of File). If none of them work, `preceded!` will fail and
+///  "ef" will be tested.
+///
 #[macro_export]
 macro_rules! alt (
   ($i:expr, $($rest:tt)*) => (
