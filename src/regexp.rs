@@ -168,7 +168,7 @@ macro_rules! re_capture_static (
   )
 );
 
-/// `re_captures!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
+/// `re_captures!(regexp) => &[T] -> IResult<&[T], Vec<Vec<&[T]>>>`
 /// Returns all the capture groups
 ///
 /// requires the `regexp` feature
@@ -192,7 +192,7 @@ macro_rules! re_captures (
 );
 
 #[cfg(feature = "regexp_macros")]
-/// `re_captures_static!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
+/// `re_captures_static!(regexp) => &[T] -> IResult<&[T], Vec<Vec<&[T]>>>`
 /// Returns all the capture groups. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
