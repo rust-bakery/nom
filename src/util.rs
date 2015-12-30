@@ -52,6 +52,70 @@ impl<'a> InputLength for (&'a [u8], usize) {
   }
 }
 
+use std::iter::Enumerate;
+use std::str::CharIndices;
+
+pub trait AsChar {
+    #[inline]
+    fn as_char(self)     -> char;
+    #[inline]
+    fn is_alpha(self)    -> bool;
+    #[inline]
+    fn is_alphanum(self) -> bool;
+    #[inline]
+    fn is_0_to_9(self)   -> bool;
+}
+
+impl<'a> AsChar for &'a u8 {
+    #[inline]
+    fn as_char(self)     -> char { *self as char }
+    #[inline]
+    fn is_alpha(self)    -> bool {
+      (*self >= 0x41 && *self <= 0x5A) || (*self >= 0x61 && *self <= 0x7A)
+    }
+    #[inline]
+    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    #[inline]
+    fn is_0_to_9(self)   -> bool {
+      *self >= 0x30 && *self <= 0x39
+    }
+}
+
+impl AsChar for char {
+    #[inline]
+    fn as_char(self)     -> char { self }
+    #[inline]
+    fn is_alpha(self)    -> bool { self.is_alphabetic() }
+    #[inline]
+    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    #[inline]
+    fn is_0_to_9(self)   -> bool { self.is_digit(10) }
+}
+
+pub trait IterIndices {
+    type Item: AsChar;
+    type Iter : Iterator<Item=(usize, Self::Item)>;
+    fn iter_indices(self) -> Self::Iter;
+}
+
+impl<'a> IterIndices for &'a [u8] {
+    type Item = &'a u8;
+    type Iter = Enumerate<::std::slice::Iter<'a, u8>>;
+    #[inline]
+    fn iter_indices(self) -> Enumerate<::std::slice::Iter<'a, u8>> {
+        self.iter().enumerate()
+    }
+}
+
+impl<'a> IterIndices for &'a str {
+    type Item = char;
+    type Iter = CharIndices<'a>;
+    #[inline]
+    fn iter_indices(self) -> CharIndices<'a> {
+        self.char_indices()
+    }
+}
+
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
 #[cfg(not(feature = "core"))]
