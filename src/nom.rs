@@ -14,7 +14,7 @@ use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 use internal::Err::*;
-use util::{ErrorKind,IterIndices,AsChar};
+use util::{ErrorKind,IterIndices,AsChar,InputLength};
 use std::mem::transmute;
 
 #[inline]
@@ -410,12 +410,27 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
 ///
 /// useful to verify that the previous parsers used all of the input
 #[inline]
-pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
-    if input.is_empty() {
-        Done(input, input)
-    } else {
-        Error(Position(ErrorKind::Eof, input))
-    }
+//pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn eof<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: InputLength {
+  if input.input_len() == 0 {
+      Done(input, input)
+  } else {
+      Error(Position(ErrorKind::Eof, input))
+  }
+}
+
+/// Recognizes non empty buffers
+#[inline]
+pub fn non_empty<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: InputLength {
+  if input.input_len() == 0 {
+    Error(Position(ErrorKind::NonEmpty, input))
+  } else {
+    Done(&input[0..0], input)
+  }
 }
 
 /// Return the remaining input.
