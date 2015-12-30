@@ -62,7 +62,7 @@ You can activate those features like this:
 ```toml
 [dependencies.nom]
 version = "~1.0.0"
-features = [regexp]
+features = ["regexp"]
 ```
 
 ## Usage
