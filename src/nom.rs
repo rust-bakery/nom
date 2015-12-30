@@ -91,7 +91,11 @@ use std::ops::{Index,Range,RangeFrom};
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
-    &'a T: IterIndices {
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::Alpha, input))
+  }
+
   for (idx, item) in input.iter_indices() {
     if ! item.is_alpha() {
       if idx == 0 {
@@ -107,7 +111,11 @@ pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 /// Recognizes numerical characters: 0-9
 pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
-    &'a T: IterIndices {
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::Digit, input))
+  }
+
   for (idx, item) in input.iter_indices() {
     if ! item.is_0_to_9() {
       if idx == 0 {
@@ -123,7 +131,11 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
-    &'a T: IterIndices {
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::AlphaNumeric, input));
+  }
+
   for (idx, item) in input.iter_indices() {
     if ! item.is_alphanum() {
       if idx == 0 {
@@ -139,7 +151,11 @@ pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 /// Recognizes spaces and tabs
 pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
-    &'a T: IterIndices {
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::Space, input));
+  }
+
   for (idx, item) in input.iter_indices() {
     let chr = item.as_char();
     if ! (chr == ' ' || chr == '\t')  {
@@ -156,7 +172,11 @@ pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 /// Recognizes spaces, tabs, carriage returns and line feeds
 pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
-    &'a T: IterIndices {
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::MultiSpace, input));
+  }
+
   for (idx, item) in input.iter_indices() {
     let chr = item.as_char();
     if ! (chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n')  {

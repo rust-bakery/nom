@@ -1,7 +1,8 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed};
+use nom::{IResult,Needed,HexDisplay,space,digit};
+use std::str;
 
 #[allow(dead_code)]
 struct Range {
@@ -63,3 +64,34 @@ fn issue_58() {
 }
 
 //trace_macros!(false);
+
+named!(parse_ints< Vec<i32> >, many0!(spaces_or_int));
+
+fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32>{
+  println!("{}", input.to_hex(8));
+  chain!(input,
+    opt!(space) ~
+    x:   digit,
+    || {
+      println!("x: {:?}", x);
+      let result = str::from_utf8(x).unwrap();
+      println!("Result: {}", result);
+      println!("int is empty?: {}", x.is_empty());
+      match result.parse(){
+        Ok(i) => i,
+        Err(_) =>  panic!("UH OH! NOT A DIGIT!")
+      }
+    }
+  )
+}
+
+#[test]
+fn issue_142(){
+   let subject = parse_ints(&b"12 34 5689"[..]);
+   let expected = IResult::Done(&b""[..], vec![12, 34, 5689]);
+   assert_eq!(subject, expected);
+
+   let subject = parse_ints(&b"12 34 5689 "[..]);
+   let expected = IResult::Done(&b" "[..], vec![12, 34, 5689]);
+   assert_eq!(subject, expected)
+}
