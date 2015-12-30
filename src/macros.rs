@@ -1034,19 +1034,51 @@ macro_rules! alt_parser (
 );
 
 /// `switch!(I -> IResult<I,P>, P => I -> IResult<I,O> | ... | P => I -> IResult<I,O> ) => I -> IResult<I, O>`
-/// choose the next parser depending on the result of the first one, if successful
+/// choose the next parser depending on the result of the first one, if successful,
+/// and returns the result of the second parser
 ///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error};
+/// # use nom::Err::{Position, NodePosition};
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => tag!("XYZ") |
+///      b"efgh" => tag!("123")
+///    )
+///  );
+///
+///  let a = b"abcdXYZ123";
+///  let b = b"abcdef";
+///  let c = b"efgh123";
+///  let d = b"blah";
+///
+///  assert_eq!(sw(&a[..]), Done(&b"123"[..], &b"XYZ"[..]));
+///  assert_eq!(sw(&b[..]), Error(NodePosition(ErrorKind::Switch, &b"abcdef"[..], Box::new(Position(ErrorKind::Tag, &b"ef"[..])))));
+///  assert_eq!(sw(&c[..]), Done(&b""[..], &b"123"[..]));
+///  assert_eq!(sw(&d[..]), Error(Position(ErrorKind::Switch, &b"blah"[..])));
+///  # }
+/// ```
 #[macro_export]
 macro_rules! switch (
   ($i:expr, $submac:ident!( $($args:tt)*), $($p:pat => $subrule:ident!( $($args2:tt)* ))|*) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Error(e)      => $crate::IResult::Error($crate::Err::NodePosition(
+            $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
+        )),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           match o {
-            $($p => $subrule!(i, $($args2)*)),*,
-            _    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Switch,i))
+            $($p => match $subrule!(i, $($args2)*) {
+              $crate::IResult::Error(e) => $crate::IResult::Error($crate::Err::NodePosition(
+                  $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
+              )),
+              a => a,
+            }),*,
+            _    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Switch,$i))
           }
         }
       }
@@ -2496,7 +2528,7 @@ mod tests {
     let b = &b"efghijkl"[..];
     assert_eq!(sw(b), Done(&b""[..], &b"ijkl"[..]));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Error(Position(ErrorKind::Switch, &b"ijkl"[..])));
+    assert_eq!(sw(c), Error(Position(ErrorKind::Switch, &b"afghijkl"[..])));
   }
 
   #[test]
