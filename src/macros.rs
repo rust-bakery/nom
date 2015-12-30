@@ -1805,6 +1805,92 @@ macro_rules! many1(
   );
 );
 
+/// `many_m_n!(usize, usize, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// Applies the parser between m and n times (n included) and returns the list of results in a Vec
+///
+/// the embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(multi<&[u8], Vec<&[u8]> >, many_m_n!(2, 4, tag!( "abcd" ) ) );
+///
+///  let a = b"abcdefgh";
+///  let b = b"abcdabcdefgh";
+///  let c = b"abcdabcdabcdabcdabcdefgh";
+///
+///  assert_eq!(multi(&a[..]),Error(Position(ErrorKind::ManyMN,&a[..])));
+///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///  assert_eq!(multi(&b[..]), Done(&b"efgh"[..], res));
+///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
+///  assert_eq!(multi(&c[..]), Done(&b"abcdefgh"[..], res2));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! many_m_n(
+  ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      let mut res          = ::std::vec::Vec::with_capacity($m);
+      let mut input        = $i;
+      let mut count: usize = 0;
+      let mut err          = false;
+      let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+      loop {
+        if count == $n { break }
+        match $submac!(input, $($args)*) {
+          $crate::IResult::Done(i, o) => {
+            // do not allow parsers that do not consume input (causes infinite loops)
+            if i.input_len() == input.input_len() {
+              break;
+            }
+            res.push(o);
+            input  = i;
+            count += 1;
+          }
+          $crate::IResult::Error(_)                    => {
+            err = true;
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+            break;
+          },
+        }
+        if input.input_len() == 0 {
+          break;
+        }
+      }
+
+      if count < $m {
+        if err {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ManyMN,$i))
+        } else {
+          match incomplete {
+            ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+            ::std::option::Option::None    => $crate::IResult::Incomplete($crate::Needed::Unknown)
+          }
+        }
+      } else {
+        match incomplete {
+          ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+          ::std::option::Option::None    => $crate::IResult::Done(input, res)
+        }
+      }
+    }
+  );
+  ($i:expr, $m:expr, $n: expr, $f:expr) => (
+    many_m_n!($i, $m, $n, call!($f));
+  );
+);
+
 /// `count!(I -> IResult<I,O>, nb) => I -> IResult<I, Vec<O>>`
 /// Applies the child parser a specified number of times
 ///
@@ -2602,6 +2688,27 @@ mod tests {
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
     assert_eq!(multi1(a), Error(Position(ErrorKind::Many1,a)));
+  }
+
+  #[test]
+  fn many_m_n() {
+    named!(multi<&[u8],Vec<&[u8]> >, many_m_n!(2, 4, tag!("Abcd")));
+
+    let a = &b"Abcdef"[..];
+    let b = &b"AbcdAbcdefgh"[..];
+    let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
+    let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
+    let e = &b"AbcdAb"[..];
+
+    //let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
+    let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
+    let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(c), Done(&b"efgh"[..], res3));
+    let res4 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(d), Done(&b"Abcdefgh"[..], res4));
+    assert_eq!(multi(e), Incomplete(Needed::Size(8)));
   }
 
   #[test]

@@ -612,6 +612,7 @@ pub enum ErrorKind<E=u32> {
   IsAStr,
   TakeWhile1Str,
   NonEmpty,
+  ManyMN,
 }
 
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
@@ -664,5 +665,6 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::IsAStr                    => 54,
     ErrorKind::TakeWhile1Str             => 55,
     ErrorKind::NonEmpty                  => 56,
+    ErrorKind::ManyMN                    => 57,
   }
 }
