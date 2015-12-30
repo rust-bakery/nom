@@ -74,7 +74,7 @@ macro_rules! re_find_static (
   )
 );
 
-/// `re_matches!(regexp) => &[T] -> IResult<&[T], &[T]>`
+/// `re_matches!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
 /// Returns all the matched parts
 ///
 /// requires the `regexp` feature
@@ -98,7 +98,7 @@ macro_rules! re_matches (
 );
 
 #[cfg(feature = "regexp_macros")]
-/// `re_matches!(regexp) => &[T] -> IResult<&[T], &[T]>`
+/// `re_matches_static!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
 /// Returns all the matched parts. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
@@ -121,7 +121,7 @@ macro_rules! re_matches_static (
   )
 );
 
-/// `re_capture!(regexp) => &[T] -> IResult<&[T], &[T]>`
+/// `re_capture!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
 /// Returns the first capture group
 ///
 /// requires the `regexp` feature
@@ -145,7 +145,7 @@ macro_rules! re_capture (
 );
 
 #[cfg(feature = "regexp_macros")]
-/// `re_capture!(regexp) => &[T] -> IResult<&[T], &[T]>`
+/// `re_capture_static!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
 /// Returns the first capture group. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
@@ -168,7 +168,7 @@ macro_rules! re_capture_static (
   )
 );
 
-/// `re_captures!(regexp) => &[T] -> IResult<&[T], &[T]>`
+/// `re_captures!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
 /// Returns all the capture groups
 ///
 /// requires the `regexp` feature
@@ -192,7 +192,7 @@ macro_rules! re_captures (
 );
 
 #[cfg(feature = "regexp_macros")]
-/// `re_captures!(regexp) => &[T] -> IResult<&[T], &[T]>`
+/// `re_captures_static!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
 /// Returns all the capture groups. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
