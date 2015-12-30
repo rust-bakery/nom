@@ -453,13 +453,18 @@ macro_rules! take_while (
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,$input)),
-        Some(n) => {
-          $crate::IResult::Done(&$input[n..], &$input[..n])
-        },
-        None    => {
-          $crate::IResult::Done(&$input[..0], $input)
+      use $crate::InputLength;
+      if ($input).input_len() == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,$input))
+      } else {
+        match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
+          Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,$input)),
+          Some(n) => {
+            $crate::IResult::Done(&$input[n..], &$input[..n])
+          },
+          None    => {
+            $crate::IResult::Done(&$input[..0], $input)
+          }
         }
       }
     }
@@ -921,6 +926,36 @@ mod tests {
     named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
     let r = x(&b"<!-- abc --> aaa"[..]);
     assert_eq!(r, Done(&b" aaa"[..], &b"<!-- abc -->"[..]));
+  }
+
+  #[test]
+  fn take_while() {
+    use nom::is_alphabetic;
+    named!(f, take_while!(is_alphabetic));
+    let a = b"";
+    let b = b"abcd";
+    let c = b"abcd123";
+    let d = b"123";
+
+    assert_eq!(f(&a[..]), Done(&a[..], &a[..]));
+    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
+    assert_eq!(f(&c[..]), Done(&d[..], &b[..]));
+    assert_eq!(f(&d[..]), Done(&d[..], &a[..]));
+  }
+
+  #[test]
+  fn take_while1() {
+    use nom::is_alphabetic;
+    named!(f, take_while1!(is_alphabetic));
+    let a = b"";
+    let b = b"abcd";
+    let c = b"abcd123";
+    let d = b"123";
+
+    assert_eq!(f(&a[..]), Error(Position(ErrorKind::TakeWhile1, &b""[..])));
+    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
+    assert_eq!(f(&c[..]), Done(&b"123"[..], &b[..]));
+    assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1, &d[..])));
   }
 
   #[cfg(feature = "nightly")]

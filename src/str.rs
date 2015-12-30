@@ -199,14 +199,19 @@ macro_rules! take_while_s (
 macro_rules! take_while1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $input.chars().position(|c| !$submac!(c, $($args)*)) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input)),
-        Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
-        },
-        None    => {
-          $crate::IResult::Done("", $input)
+      use $crate::InputLength;
+      if ($input).input_len() == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input))
+      } else {
+        match $input.chars().position(|c| !$submac!(c, $($args)*)) {
+          Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input)),
+          Some(n) => {
+            let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+            res
+          },
+          None    => {
+            $crate::IResult::Done("", $input)
+          }
         }
       }
     }
@@ -286,4 +291,39 @@ mod test {
             },
         };
     }
+
+  use internal::IResult::{Done, Error};
+  use internal::Err::Position;
+  use util::ErrorKind;
+
+  pub fn is_alphabetic(c:char) -> bool {
+    (c as u8 >= 0x41 && c as u8 <= 0x5A) || (c as u8 >= 0x61 && c as u8 <= 0x7A)
+  }
+  #[test]
+  fn take_while_s() {
+    named!(f<&str,&str>, take_while_s!(is_alphabetic));
+    let a = "";
+    let b = "abcd";
+    let c = "abcd123";
+    let d = "123";
+
+    assert_eq!(f(&a[..]), Done(&a[..], &a[..]));
+    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
+    assert_eq!(f(&c[..]), Done(&d[..], &b[..]));
+    assert_eq!(f(&d[..]), Done(&d[..], &a[..]));
+  }
+
+  #[test]
+  fn take_while1_s() {
+    named!(f<&str,&str>, take_while1_s!(is_alphabetic));
+    let a = "";
+    let b = "abcd";
+    let c = "abcd123";
+    let d = "123";
+
+    assert_eq!(f(&a[..]), Error(Position(ErrorKind::TakeWhile1Str, &""[..])));
+    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
+    assert_eq!(f(&c[..]), Done(&"123"[..], &b[..]));
+    assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1Str, &d[..])));
+  }
 }
