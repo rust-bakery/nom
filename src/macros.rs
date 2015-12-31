@@ -1132,9 +1132,51 @@ macro_rules! alt_parser (
 ///  assert_eq!(sw(&d[..]), Error(Position(ErrorKind::Switch, &b"blah"[..])));
 ///  # }
 /// ```
+///
+/// Due to limitations in Rust macros, it is not possible to have simple functions on the right hand
+/// side of pattern, like this:
+///
+/// ```ignore
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => tag!("XYZ") |
+///      b"efgh" => tag!("123")
+///    )
+///  );
+/// ```
+///
+/// If you want to pass your own functions instead, you can use the `call!` combinator as follows:
+///
+/// ```ignore
+///  named!(xyz, tag!("XYZ"));
+///  named!(num, tag!("123"));
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => call!(xyz) |
+///      b"efgh" => call!(num)
+///    )
+///  );
+/// ```
+///
 #[macro_export]
 macro_rules! switch (
-  ($i:expr, $submac:ident!( $($args:tt)*), $($p:pat => $subrule:ident!( $($args2:tt)* ))|*) => (
+  ($i:expr, $submac:ident!( $($args:tt)*), $($rest:tt)*) => (
+    {
+      switch_impl!($i, $submac!($($args)*), $($rest)*)
+    }
+  );
+  ($i:expr, $e:ident, $($rest:tt)*) => (
+    {
+      switch_impl!($i, call!($e), $($rest)*)
+    }
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! switch_impl (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error($crate::Err::NodePosition(
@@ -1155,13 +1197,7 @@ macro_rules! switch (
       }
     }
   );
-  ($i:expr, $e:ident, $($rest:tt)*) => (
-    {
-      switch!($i, call!($e), $($rest)*)
-    }
-  );
 );
-
 /// `opt!(I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// make the underlying parser optional
 ///
