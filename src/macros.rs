@@ -1157,7 +1157,7 @@ macro_rules! switch (
   );
   ($i:expr, $e:ident, $($rest:tt)*) => (
     {
-      switch!($i, call!(e), $($rest)*)
+      switch!($i, call!($e), $($rest)*)
     }
   );
 );
