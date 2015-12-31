@@ -95,3 +95,17 @@ fn issue_142(){
    let expected = IResult::Done(&b" "[..], vec![12, 34, 5689]);
    assert_eq!(subject, expected)
 }
+
+#[allow(dead_code)]
+#[test]
+fn issue_switch() {
+    named!(take4, take!(4));
+    named!(xyz, tag!("XYZ"));
+    named!(abc, tag!("abc"));
+    named!(sw,
+        switch!(take4,
+            b"abcd" => xyz |
+            b"efgh" => abc
+        )
+    );
+}
