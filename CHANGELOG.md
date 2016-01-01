@@ -21,7 +21,7 @@ There are also a few performance improvements and documentation fixes.
 
 ### Added
 
-- string related parsers: `tag_s!`, `take_s!`, `is_a_s!`, `is_not_s!`, `take_while_s!`, `take_while1_s!`, `take_till!_s!
+- string related parsers: `tag_s!`, `take_s!`, `is_a_s!`, `is_not_s!`, `take_while_s!`, `take_while1_s!`, `take_till_s!
 - `value!` is a combinator that always returns the same value. If a child parser is passed as second argument, that value is returned when the child parser succeeds
 
 ### Changed
