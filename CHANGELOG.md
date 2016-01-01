@@ -4,6 +4,38 @@
 
 ### Changed
 
+## 1.1.0 - 2016-01-01
+
+This release adds a lot of features related to `&str` parsing. The previous versions
+were focused on `&[u8]` and bit streams parsing, but there's a need for more text
+parsing with nom. The parsing functions like `alpha`, `digit` and others will now
+accept either a `&[u8]` or a `&str`, so there is no breaking change on that part.
+
+There are also a few performance improvements and documentation fixes.
+
+### Thanks
+- @Binero for pushing the work on `&str` parsing
+- @meh for fixing `Option` and `Vec` imports
+- @hoodie for a documentation fix
+- @joelself for some documentation fixes
+
+### Added
+
+- string related parsers: `tag_s!`, `take_s!`, `is_a_s!`, `is_not_s!`, `take_while_s!`, `take_while1_s!`, `take_till!_s!
+- `value!` is a combinator that always returns the same value. If a child parser is passed as second argument, that value is returned when the child parser succeeds
+
+### Changed
+
+- `tag!` will now compare even on partial input. If it expects "abcd" but receives "ef", it will now return an `Error` instead of `Incomplete`
+- `many0!` and others will preallocate a larger vector to avoid some copies and reallocations
+- `alpha`, `digit`, `alphanumeric`, `space` and `multispace` now accept as input a `&[u8]` or a `&str`. Additionally, they return an error if they receive an empty input
+- `take_while!`, `take_while1!`, `take_while_s!`, `take_while1_s!` wilreturn an error on empty input
+
+### Fixed
+
+- if the child parser of `many0!` or `many1!` returns `Incomplete`, it will return `Incomplete` too, possibly updating the needed size
+- `Option,` `Some`, `None` and `Vec` are now used with full path imports
+
 ## 1.0.1 - 2015-11-22
 
 This releases makes the 1.0 version compatible with Rust 1.2 and 1.3
@@ -369,7 +401,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/1.0.1...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/1.1.0...HEAD
+* [1.1.0]: https://github.com/Geal/nom/compare/1.0.1...1.1.0
 * [1.0.1]: https://github.com/Geal/nom/compare/1.0.0...1.0.1
 * [1.0.0]: https://github.com/Geal/nom/compare/0.5.0...1.0.0
 * [0.5.0]: https://github.com/geal/nom/compare/0.4.0...0.5.0
