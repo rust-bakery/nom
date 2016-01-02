@@ -18,6 +18,7 @@ There are also a few performance improvements and documentation fixes.
 - @meh for fixing `Option` and `Vec` imports
 - @hoodie for a documentation fix
 - @joelself for some documentation fixes
+- @vberger for his traits magic making `nom functions more generic
 
 ### Added
 
