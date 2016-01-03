@@ -86,10 +86,19 @@ impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
   }
 }
 
-impl<'a,O> GetInput<()> for IResult<(),O> {
+impl<O> GetInput<()> for IResult<(),O> {
   fn remaining_input(&self) -> Option<()> {
     match *self {
       Done((),_) => Some(()),
+      _          => None
+    }
+  }
+}
+
+impl<'a,O> GetInput<&'a str> for IResult<&'a str,O> {
+  fn remaining_input(&self) -> Option<&'a str> {
+    match *self {
+      Done(ref i,_) => Some(*i),
       _          => None
     }
   }
@@ -104,7 +113,7 @@ impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
   }
 }
 
-impl<'a,I> GetOutput<()> for IResult<I,()> {
+impl<I> GetOutput<()> for IResult<I,()> {
   fn output(&self) -> Option<()> {
     match *self {
       Done(_,()) => Some(()),
@@ -113,3 +122,11 @@ impl<'a,I> GetOutput<()> for IResult<I,()> {
   }
 }
 
+impl<'a,I> GetOutput<&'a str> for IResult<I,&'a str> {
+  fn output(&self) -> Option<&'a str> {
+    match *self {
+      Done(_,ref o) => Some(*o),
+      _          => None
+    }
+  }
+}

@@ -14,7 +14,7 @@ use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 use internal::Err::*;
-use util::ErrorKind;
+use util::{ErrorKind,IterIndices,AsChar,InputLength};
 use std::mem::transmute;
 
 #[inline]
@@ -87,10 +87,17 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(digit is_digit)
 //pub filter!(alphanumeric is_alphanumeric)
 
+use std::ops::{Index,Range,RangeFrom};
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
-pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for (idx, item) in input.iter().enumerate() {
-    if !is_alphabetic(*item) {
+pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::Alpha, input))
+  }
+
+  for (idx, item) in input.iter_indices() {
+    if ! item.is_alpha() {
       if idx == 0 {
         return Error(Position(ErrorKind::Alpha, input))
       } else {
@@ -98,13 +105,19 @@ pub fn alpha(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
   }
-  Done(b"", input)
+  Done(&input[0..0], input)
 }
 
 /// Recognizes numerical characters: 0-9
-pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for (idx, item) in input.iter().enumerate() {
-    if !is_digit(*item) {
+pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::Digit, input))
+  }
+
+  for (idx, item) in input.iter_indices() {
+    if ! item.is_0_to_9() {
       if idx == 0 {
         return Error(Position(ErrorKind::Digit, input))
       } else {
@@ -112,13 +125,19 @@ pub fn digit(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
   }
-  Done(b"", input)
+  Done(&input[0..0], input)
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
-pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for (idx, item) in input.iter().enumerate() {
-    if !is_alphanumeric(*item) {
+pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::AlphaNumeric, input));
+  }
+
+  for (idx, item) in input.iter_indices() {
+    if ! item.is_alphanum() {
       if idx == 0 {
         return Error(Position(ErrorKind::AlphaNumeric, input))
       } else {
@@ -126,13 +145,20 @@ pub fn alphanumeric(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
   }
-  Done(b"", input)
+  Done(&input[0..0], input)
 }
 
 /// Recognizes spaces and tabs
-pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for (idx, item) in input.iter().enumerate() {
-    if !is_space(*item) {
+pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::Space, input));
+  }
+
+  for (idx, item) in input.iter_indices() {
+    let chr = item.as_char();
+    if ! (chr == ' ' || chr == '\t')  {
       if idx == 0 {
         return Error(Position(ErrorKind::Space, input))
       } else {
@@ -140,14 +166,20 @@ pub fn space(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
   }
-  Done(b"", input)
+  Done(&input[0..0], input)
 }
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
-pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for (idx, item) in input.iter().enumerate() {
-    // println!("multispace at index: {}", idx);
-    if !is_space(*item) && *item != '\r' as u8 && *item != '\n' as u8 {
+pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::MultiSpace, input));
+  }
+
+  for (idx, item) in input.iter_indices() {
+    let chr = item.as_char();
+    if ! (chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n')  {
       if idx == 0 {
         return Error(Position(ErrorKind::MultiSpace, input))
       } else {
@@ -155,7 +187,7 @@ pub fn multispace(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
   }
-  Done(b"", input)
+  Done(&input[0..0], input)
 }
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -398,12 +430,27 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
 ///
 /// useful to verify that the previous parsers used all of the input
 #[inline]
-pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
-    if input.is_empty() {
-        Done(input, input)
-    } else {
-        Error(Position(ErrorKind::Eof, input))
-    }
+//pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn eof<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: InputLength {
+  if input.input_len() == 0 {
+      Done(input, input)
+  } else {
+      Error(Position(ErrorKind::Eof, input))
+  }
+}
+
+/// Recognizes non empty buffers
+#[inline]
+pub fn non_empty<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: InputLength {
+  if input.input_len() == 0 {
+    Error(Position(ErrorKind::NonEmpty, input))
+  } else {
+    Done(&input[0..0], input)
+  }
 }
 
 /// Return the remaining input.
@@ -451,6 +498,29 @@ mod tests {
     assert_eq!(alphanumeric(c), Done(empty, c));
     assert_eq!(alphanumeric(d), Done("é12".as_bytes(), &b"az"[..]));
     assert_eq!(space(e), Done(&b""[..], &b" "[..]));
+  }
+
+  #[test]
+  fn character_s() {
+    let empty = "";
+    let a     = "abcd";
+    let b     = "1234";
+    let c     = "a123";
+    let d     = "azé12";
+    let e     = " ";
+    assert_eq!(alpha(a), Done(empty, a));
+    assert_eq!(alpha(b), Error(Position(ErrorKind::Alpha,b)));
+    assert_eq!(alpha(c), Done(&c[1..], &"a"[..]));
+    assert_eq!(alpha(d), Done("12", &"azé"[..]));
+    assert_eq!(digit(a), Error(Position(ErrorKind::Digit,a)));
+    assert_eq!(digit(b), Done(empty, b));
+    assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
+    assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
+    assert_eq!(alphanumeric(a), Done(empty, a));
+    assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
+    assert_eq!(alphanumeric(c), Done(empty, c));
+    assert_eq!(alphanumeric(d), Done("", &"azé12"[..]));
+    assert_eq!(space(e), Done(&""[..], &" "[..]));
   }
 
   #[test]
