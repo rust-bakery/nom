@@ -6,13 +6,14 @@ use util::ErrorKind;
 #[cfg(feature = "core")]
 use std::prelude::v1::*;
 use std::boxed::Box;
+use std::error;
 
 /// Contains the error that a parser can return
 ///
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
-/// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, u32)
+/// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, Box<std::error::Error>)
 #[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<P,E=u32>{
+pub enum Err<P,E=Box<error::Error>>{
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
   Code(ErrorKind<E>),
   /// An error code, and the next error
@@ -37,7 +38,7 @@ pub enum Needed {
 /// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
 ///
 #[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IResult<I,O,E=u32> {
+pub enum IResult<I,O,E=Box<error::Error>> {
    /// indicates a correct parsing, the first field containing the rest of the unparsed data, the second field contains the parsed data
   Done(I,O),
   /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
