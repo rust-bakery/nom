@@ -1399,7 +1399,7 @@ macro_rules! peek(
     }
   );
   ($i:expr, $f:expr) => (
-    peek!($i, call!(f));
+    peek!($i, call!($f));
   );
 );
 
