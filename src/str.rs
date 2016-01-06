@@ -64,6 +64,7 @@ macro_rules! take_s (
   );
 );
 
+
 /// `is_not_s!(&str) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters that do not appear in the provided array
 ///
@@ -81,22 +82,22 @@ macro_rules! take_s (
 macro_rules! is_not_s (
   ($input:expr, $arr:expr) => (
     {
-      let res: $crate::IResult<&str,&str> = match $input.chars().position(|c| {
-        for i in $arr.chars() {
-          if c == i { return true }
+      use std::collections::HashSet;
+      let set: HashSet<char> = $arr.chars().collect();
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if set.contains(&c) {
+          offset = o;
+          break;
         }
-        false
-      }) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsNotStr,$input)),
-        Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
-        },
-        None    => {
-          $crate::IResult::Done("", $input)
-        }
-      };
-      res
+      }
+      if offset == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input))
+      } else if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
+      }
     }
   );
 );
@@ -121,22 +122,22 @@ macro_rules! is_not_s (
 macro_rules! is_a_s (
   ($input:expr, $arr:expr) => (
     {
-      let res: $crate::IResult<&str,&str> = match $input.chars().position(|c| {
-        for i in $arr.chars() {
-          if c == i { return false }
+      use std::collections::HashSet;
+      let set: HashSet<char> = $arr.chars().collect();
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if !set.contains(&c) {
+          offset = o;
+          break;
         }
-        true
-      }) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input)),
-        Some(n) => {
-          let res: $crate::IResult<&str,&str> = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
-        },
-        None    => {
-          $crate::IResult::Done("", $input)
-        }
-      };
-      res
+      }
+      if offset == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input))
+      } else if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
+      }
     }
   );
 );
@@ -326,4 +327,72 @@ mod test {
     assert_eq!(f(&c[..]), Done(&"123"[..], &b[..]));
     assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1Str, &d[..])));
   }
+
+      #[test]
+    fn is_not_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const AVOID: &'static str = "£úçƙ¥á";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_not_s!(input, AVOID)
+        }
+        match test(INPUT) {
+             IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `is_not_s` consumed leftover input. Leftover `{}`.", extra);
+                assert!(output == CONSUMED,
+                    "Parser `is_not_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+                    CONSUMED, output);
+            },
+            other => panic!("Parser `is_not_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn is_not_s_fail() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const AVOID: &'static str = "βúçƙ¥";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_not_s!(input, AVOID)
+        }
+        match test(INPUT) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `is_not_s` didn't fail when it should have. Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn is_a_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const MATCH: &'static str = "βèƒôřèÂßÇ";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_a_s!(input, MATCH)
+        }
+        match test(INPUT) {
+             IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `is_a_s` consumed leftover input. Leftover `{}`.", extra);
+                assert!(output == CONSUMED,
+                    "Parser `is_a_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+                    CONSUMED, output);
+            },
+            other => panic!("Parser `is_a_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn is_a_s_fail() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const MATCH: &'static str = "Ûñℓúçƙ¥";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_a_s!(input, MATCH)
+        }
+        match test(INPUT) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `is_a_s` didn't fail when it should have. Got `{:?}`.", other),
+        };
+    }
 }
