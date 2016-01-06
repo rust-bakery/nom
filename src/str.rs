@@ -221,10 +221,10 @@ macro_rules! take_while1_s (
   );
 );
 
-/// `take_till_s!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// `take_till_s!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function succeeds
 ///
-/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+/// The argument is either a function `T -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
