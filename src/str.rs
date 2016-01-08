@@ -230,9 +230,17 @@ macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
 
     {
-      match $input.chars().position(|c| $submac!(c, $($args)*)) {
-        Some(n) => $crate::IResult::Done(&$input[n..], &$input[..n]),
-        None    => $crate::IResult::Done("", $input)
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if $submac!(c, $($args)*) {
+            offset = o;
+            break;
+        }
+      }
+      if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
       }
     }
   );
@@ -326,4 +334,27 @@ mod test {
     assert_eq!(f(&c[..]), Done(&"123"[..], &b[..]));
     assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1Str, &d[..])));
   }
+
+      #[test]
+    fn take_till_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn till_s(c: char) -> bool {
+            c == 'á'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_till_s!(input, till_s)
+        }
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_till_s` consumed leftover input.");
+                assert!(output == CONSUMED,
+                    "Parser `take_till_s` doesn't return the string it consumed on success. \
+                     Expected `{}`, got `{}`.", CONSUMED, output);
+            },
+            other => panic!("Parser `take_till_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
 }
