@@ -163,14 +163,17 @@ macro_rules! is_a_s (
 macro_rules! take_while_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $input.chars().position(|c| !$submac!(c, $($args)*)) {
-        Some(n) => {
-          let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-          res
-        },
-        None    => {
-          $crate::IResult::Done("", $input)
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if !$submac!(c, $($args)*) {
+          offset = o;
+          break;
         }
+      }
+      if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
       }
     }
   );
@@ -199,20 +202,19 @@ macro_rules! take_while_s (
 macro_rules! take_while1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::InputLength;
-      if ($input).input_len() == 0 {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input))
-      } else {
-        match $input.chars().position(|c| !$submac!(c, $($args)*)) {
-          Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input)),
-          Some(n) => {
-            let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
-            res
-          },
-          None    => {
-            $crate::IResult::Done("", $input)
-          }
+      let mut offset = $input.len();
+      for (o, c) in $input.char_indices() {
+        if !$submac!(c, $($args)*) {
+          offset = o;
+          break;
         }
+      }
+      if offset == 0 {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input))
+      } else if offset < $input.len() {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Done("", $input)
       }
     }
   );
@@ -220,6 +222,7 @@ macro_rules! take_while1_s (
     take_while1_s!($input, call!($f));
   );
 );
+
 
 /// `take_till_s!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function succeeds
@@ -335,7 +338,7 @@ mod test {
     assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1Str, &d[..])));
   }
 
-      #[test]
+    #[test]
     fn take_till_s_succeed() {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const CONSUMED: &'static str = "βèƒôřèÂßÇ";
@@ -354,6 +357,93 @@ mod test {
                      Expected `{}`, got `{}`.", CONSUMED, output);
             },
             other => panic!("Parser `take_till_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_while_s_succeed_none() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "";
+        const LEFTOVER: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        fn while_s(c: char) -> bool {
+            c == '9'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_while_s!(input, while_s)
+        }
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
+                assert!(output == CONSUMED,
+                    "Parser `take_while_s` doesn't return the string it consumed on success. \
+                     Expected `{}`, got `{}`.", CONSUMED, output);
+            },
+            other => panic!("Parser `take_while_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_while_s_succeed_some() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn while_s(c: char) -> bool {
+            c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
+            c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_while_s!(input, while_s)
+        }
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
+                assert!(output == CONSUMED,
+                    "Parser `take_while_s` doesn't return the string it consumed on success. \
+                     Expected `{}`, got `{}`.", CONSUMED, output);
+            },
+            other => panic!("Parser `take_while_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_while1_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &'static str = "áƒƭèř";
+        fn while1_s(c: char) -> bool {
+            c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
+            c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_while1_s!(input, while1_s)
+        }
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `take_while1_s` consumed leftover input.");
+                assert!(output == CONSUMED,
+                    "Parser `take_while1_s` doesn't return the string it consumed on success. \
+                     Expected `{}`, got `{}`.", CONSUMED, output);
+            },
+            other => panic!("Parser `take_while1_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_while1_s_fail() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        fn while1_s(c: char) -> bool {
+            c == '9'
+        }
+        fn test(input: &str) -> IResult<&str, &str> {
+          take_while1_s!(input, while1_s)
+        }
+        match test(INPUT) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `take_while1_s` didn't fail when it should have. \
                              Got `{:?}`.", other),
         };
     }
