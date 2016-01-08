@@ -247,6 +247,7 @@ macro_rules! take_till_s (
 macro_rules! take_until_and_consume_s (
   ($input:expr, $substr:expr) => (
     {
+      use ::std::vec::Vec;
       #[inline(always)]
       fn shift_window_and_cmp(window: & mut Vec<char>, c: char, substr_vec: &Vec<char>) -> bool {
         window.push(c);
