@@ -21,7 +21,7 @@
 macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
     {
-      let res: $crate::IResult<&str,&str> = if $tag.len() > $i.len() {
+      let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
       //} else if &$i[0..$tag.len()] == $tag {
       } else if ($i).starts_with($tag) {
@@ -54,7 +54,7 @@ macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<&str,&str> = if $i.len() < cnt {
+      let res: $crate::IResult<_,_> = if $i.len() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
         $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
@@ -267,7 +267,7 @@ macro_rules! take_until_and_consume_s (
         }
         window == substr_vec
       }
-      let res: $crate::IResult<&str, &str> = if $substr.len() > $input.len() {
+      let res: $crate::IResult<_, _> = if $substr.len() > $input.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($substr.len()))
       } else {
         let substr_vec: ::std::vec::Vec<char> = $substr.chars().collect();
