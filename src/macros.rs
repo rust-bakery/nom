@@ -266,26 +266,31 @@ macro_rules! fix_error (
       match $submac!($i, $($args)*) {
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
-        $crate::IResult::Error($crate::Err::Code(ErrorKind::Custom(_))) |
-          $crate::IResult::Error($crate::Err::Node(ErrorKind::Custom(_), _))=> {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Code(e))
-        },
-        $crate::IResult::Error($crate::Err::Position(ErrorKind::Custom(_), p)) |
-          $crate::IResult::Error($crate::Err::NodePosition(ErrorKind::Custom(_), p, _)) => {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Position(e, p))
-        },
-        $crate::IResult::Error($crate::Err::Code(_)) |
-          $crate::IResult::Error($crate::Err::Node(_, _))=> {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Code(e))
-        },
-        $crate::IResult::Error($crate::Err::Position(_, p)) |
-          $crate::IResult::Error($crate::Err::NodePosition(_, p, _)) => {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Position(e, p))
-        },
+        $crate::IResult::Error(e) => {
+          let err = match e {
+            $crate::Err::Code(ErrorKind::Custom(_)) |
+              $crate::Err::Node(ErrorKind::Custom(_), _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Code(e)
+            },
+            $crate::Err::Position(ErrorKind::Custom(_), p) |
+              $crate::Err::NodePosition(ErrorKind::Custom(_), p, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Position(e, p)
+            },
+            $crate::Err::Code(_) |
+              $crate::Err::Node(_, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Code(e)
+            },
+            $crate::Err::Position(_, p) |
+              $crate::Err::NodePosition(_, p, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Position(e, p)
+            },
+          };
+          $crate::IResult::Error(err)
+        }
       }
     }
   );
