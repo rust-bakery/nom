@@ -11,7 +11,7 @@ struct Range {
   end:   char
 }
 
-pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
+pub fn take_char(input: &[u8]) -> IResult<&[u8], char, ()> {
   if input.len() > 0 {
     IResult::Done(&input[1..], input[0] as char)
   } else {
@@ -22,7 +22,7 @@ pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
 //trace_macros!(true);
 
 #[allow(dead_code)]
-named!(range<&[u8], Range>,
+named!(range<&[u8], Range, ()>,
     alt!(
         chain!(
             start: take_char ~
@@ -49,7 +49,7 @@ named!(range<&[u8], Range>,
 
 
 #[allow(dead_code)]
-named!(literal<&[u8], Vec<char> >,
+named!(literal<&[u8], Vec<char>, ()>,
     map!(
         many1!(take_char),
         |cs| {
@@ -68,7 +68,7 @@ fn issue_58() {
 
 named!(parse_ints< Vec<i32> >, many0!(spaces_or_int));
 
-fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32>{
+fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32, u32>{
   println!("{}", input.to_hex(8));
   chain!(input,
     opt!(space) ~

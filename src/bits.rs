@@ -91,7 +91,7 @@ macro_rules! take_bits (
       use std::ops::Div;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
-      let res : $crate::IResult<(&[u8],usize), $t> = if $count == 0 {
+      let res : $crate::IResult<(&[u8],usize), $t, _> = if $count == 0 {
         $crate::IResult::Done( (input, bit_offset), 0)
       } else {
         let cnt = ($count as usize + bit_offset).div(8);
@@ -140,7 +140,7 @@ macro_rules! tag_bits (
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           if let $p = o {
-            let res: $crate::IResult<(&[u8],usize),$t> = $crate::IResult::Done(i, o);
+            let res: $crate::IResult<(&[u8],usize),$t, _> = $crate::IResult::Done(i, o);
             res
           } else {
             $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))

@@ -7,7 +7,7 @@ use nom::{IResult,not_line_ending, space, alphanumeric, multispace};
 use std::str;
 use std::collections::HashMap;
 
-named!(category     <&[u8], &str>,
+named!(category     <&[u8], &str, u32>,
   chain!(
           tag!("[")       ~
     name: map_res!(
@@ -19,7 +19,7 @@ named!(category     <&[u8], &str>,
   )
 );
 
-named!(key_value    <&[u8],(&str,&str)>,
+named!(key_value    <&[u8],(&str,&str),32>,
   chain!(
     key: map_res!(alphanumeric, std::str::from_utf8) ~
          space?                            ~
@@ -43,7 +43,7 @@ named!(key_value    <&[u8],(&str,&str)>,
 
 named!(keys_and_values_aggregator<&[u8], Vec<(&str,&str)> >, many0!(key_value));
 
-fn keys_and_values(input:&[u8]) -> IResult<&[u8], HashMap<&str, &str> > {
+fn keys_and_values(input:&[u8]) -> IResult<&[u8], HashMap<&str, &str>, u32 > {
   let mut h: HashMap<&str, &str> = HashMap::new();
 
   match keys_and_values_aggregator(input) {
@@ -68,7 +68,7 @@ named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
 
 named!(categories_aggregator<&[u8], Vec<(&str, HashMap<&str,&str>)> >, many0!(category_and_keys));
 
-fn categories(input: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str> > > {
+fn categories(input: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str> >, u32 > {
   let mut h: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
 
   match categories_aggregator(input) {

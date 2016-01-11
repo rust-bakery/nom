@@ -12,7 +12,7 @@ use nom::Err::*;
 use std::str;
 use std::io::SeekFrom;
 
-fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
+fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8], u32> {
   match be_u32(input) {
     Done(i, offset) => {
       let sz: usize = offset as usize;
@@ -254,7 +254,7 @@ named!(filetype_parser<&[u8], FileType>,
   )
 );
 
-fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
+fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox, u32> {
   let res = if input.len() < 100 {
     Incomplete(Needed::Size(100))
   } else if input.len() == 100 {
@@ -268,7 +268,7 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   res
 }
 
-fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
+fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType, u32> {
   Done(input, MP4BoxType::Unknown)
 }
 

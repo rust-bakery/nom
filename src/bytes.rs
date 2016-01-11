@@ -75,7 +75,7 @@ macro_rules! tag_bytes (
       let reduced = &$i[..m];
       let b       = &$bytes[..m];
 
-      let res: $crate::IResult<_,_> = if reduced != b {
+      let res: $crate::IResult<_,_,_> = if reduced != b {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
       } else if m < blen {
         $crate::IResult::Incomplete($crate::Needed::Size(blen))
@@ -121,7 +121,7 @@ macro_rules! is_not(
 macro_rules! is_not_bytes (
   ($input:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
+      let res: $crate::IResult<_,_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return true }
         }
@@ -178,7 +178,7 @@ macro_rules! is_a (
 macro_rules! is_a_bytes (
   ($input:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
+      let res: $crate::IResult<_,_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return false }
         }
@@ -186,7 +186,7 @@ macro_rules! is_a_bytes (
       }) {
         Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsA,$input)),
         Some(n) => {
-          let res: $crate::IResult<_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          let res: $crate::IResult<_,_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
         },
         None    => {
@@ -431,7 +431,7 @@ macro_rules! take_while (
     {
       match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
         Some(n) => {
-          let res:$crate::IResult<_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          let res:$crate::IResult<_,_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
         },
         None    => {
@@ -514,7 +514,7 @@ macro_rules! take(
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<_,_> = if $i.len() < cnt {
+      let res: $crate::IResult<_,_,_> = if $i.len() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
         $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
@@ -553,7 +553,7 @@ macro_rules! take_until_and_consume(
 macro_rules! take_until_and_consume_bytes (
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<_,_> = if $bytes.len() > $i.len() {
+      let res: $crate::IResult<_,_,_> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
@@ -604,7 +604,7 @@ macro_rules! take_until(
 macro_rules! take_until_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<_,_> = if $bytes.len() > $i.len() {
+      let res: $crate::IResult<_,_,_> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
@@ -655,7 +655,7 @@ macro_rules! take_until_either_and_consume(
 macro_rules! take_until_either_and_consume_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<_,_> = if 1 > $i.len() {
+      let res: $crate::IResult<_,_,_> = if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         let mut index  = 0;
@@ -708,7 +708,7 @@ macro_rules! take_until_either(
 macro_rules! take_until_either_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<_,_> = if 1 > $i.len() {
+      let res: $crate::IResult<_,_,_> = if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         let mut index  = 0;

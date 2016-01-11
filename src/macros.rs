@@ -2282,7 +2282,7 @@ mod tests {
         let expected = $inp;
         let bytes = as_bytes(&expected);
 
-        let res : $crate::IResult<&[u8],&[u8]> = if bytes.len() > $i.len() {
+        let res : $crate::IResult<&[u8],&[u8], _> = if bytes.len() > $i.len() {
           $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
         } else if &$i[0..bytes.len()] == bytes {
           $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
@@ -2298,7 +2298,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
+        let res:$crate::IResult<&[u8],&[u8], _> = if $i.len() < cnt {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt))
         } else {
           $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
@@ -2339,9 +2339,9 @@ mod tests {
 
   #[test]
   fn chain2() {
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    named!(f<&[u8],B>,
+    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8, ()> { Done(i,1) };
+    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8, ()> { Done(i,2) };
+    named!(f<&[u8],B, ()>,
       chain!(
         tag!("abcd")   ~
         tag!("abcd")?  ~
@@ -2362,9 +2362,9 @@ mod tests {
 
   #[test]
   fn nested_chain() {
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    named!(f<&[u8],B>,
+    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8, ()> { Done(i,1) };
+    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8, ()> { Done(i,2) };
+    named!(f<&[u8],B, ()>,
       chain!(
         chain!(
           tag!("abcd")   ~
@@ -2394,7 +2394,7 @@ mod tests {
 
   #[test]
   fn chain_mut() {
-    fn ret_b1_2(i:&[u8]) -> IResult<&[u8], B> { Done(i,B{a:1,b:2}) };
+    fn ret_b1_2<E>(i:&[u8]) -> IResult<&[u8], B, E> { Done(i,B{a:1,b:2}) };
     named!(f<&[u8],B>,
       chain!(
         tag!("abcd")     ~
@@ -2415,11 +2415,11 @@ mod tests {
 
   #[test]
   fn chain_opt() {
-    named!(y, tag!("efgh"));
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    named!(ret_y<&[u8], u8>, map!(y, |_| 2));
+    named!(y<&[u8], &[u8], ()>, tag!("efgh"));
+    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8, ()> { Done(i,1) };
+    named!(ret_y<&[u8], u8, ()>, map!(y, |_| 2));
 
-    named!(f<&[u8],C>,
+    named!(f<&[u8],C, ()>,
       chain!(
         tag!("abcd") ~
         aa: ret_int1 ~
@@ -2440,8 +2440,8 @@ mod tests {
 
   use util::{error_to_list, add_error_pattern, print_error};
 
-  fn error_to_string<P>(e: &Err<P>) -> &'static str {
-    let v:Vec<ErrorKind> = error_to_list(e);
+  fn error_to_string<P>(e: &Err<P, u32>) -> &'static str {
+    let v:Vec<ErrorKind<u32>> = error_to_list(e);
     // do it this way if you can use slice patterns
     /*
     match &v[..] {
@@ -2508,7 +2508,7 @@ mod tests {
     match res_a {
       Error(e) => {
         assert_eq!(error_to_list(&e), [ErrorKind::Custom(42), ErrorKind::Tag]);
-        assert_eq!(error_to_string(&e), "missing `ijkl` tag");
+        assert_eq!(error_to_string::<&[u8]>(&e), "missing `ijkl` tag");
         assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `ijkl` tag"));
       },
       _ => panic!()
@@ -2518,7 +2518,7 @@ mod tests {
     match res_b {
       Error(e) => {
         assert_eq!(error_to_list(&e), [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag]);
-        assert_eq!(error_to_string(&e), "missing `mnop` tag after `ijkl`");
+        assert_eq!(error_to_string::<&[u8]>(&e), "missing `mnop` tag after `ijkl`");
         assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `mnop` tag after `ijkl`"));
       },
       _ => panic!()
@@ -2660,7 +2660,7 @@ mod tests {
 
   #[test]
   fn opt_res() {
-    named!(o<&[u8], Result<&[u8], Err<&[u8]>> >, opt_res!(tag!("abcd")));
+    named!(o<&[u8], Result<&[u8], Err<&[u8], ()>> >, opt_res!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];
@@ -2824,7 +2824,7 @@ mod tests {
 
   #[test]
   fn infinite_many() {
-    fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    fn tst<E>(input: &[u8]) -> IResult<&[u8], &[u8], u8> {
       println!("input: {:?}", input);
       Error(Position(ErrorKind::Custom(0),input))
     }
@@ -2862,7 +2862,7 @@ mod tests {
 
   #[test]
   fn count() {
-    fn counter(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fn counter<E>(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>, E> {
       let size: usize = 2;
       count!(input, tag!( "abcd" ), size )
     }
@@ -2877,7 +2877,7 @@ mod tests {
 
   #[test]
   fn count_zero() {
-    fn counter(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fn counter<E>(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>, E> {
       let size: usize = 0;
       count!(input, tag!( "abcd" ), size )
     }
@@ -2905,7 +2905,7 @@ mod tests {
 
   use nom::{le_u16,eof};
   #[allow(dead_code)]
-  pub fn compile_count_fixed(input: &[u8]) -> IResult<&[u8], ()> {
+  pub fn compile_count_fixed<E>(input: &[u8]) -> IResult<&[u8], (), E> {
     chain!(input,
       tag!("abcd")                   ~
       count_fixed!( u16, le_u16, 4 ) ~

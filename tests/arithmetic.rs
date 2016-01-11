@@ -6,14 +6,14 @@ use nom::{IResult,digit, multispace};
 use std::str;
 use std::str::FromStr;
 
-named!(parens<i64>, delimited!(
+named!(parens<&[u8], i64, u32>, delimited!(
     delimited!(opt!(multispace), tag!("("), opt!(multispace)),
     expr,
     delimited!(opt!(multispace), tag!(")"), opt!(multispace))
   )
 );
 
-named!(factor<i64>, alt!(
+named!(factor<&[u8],i64,u32>, alt!(
     map_res!(
       map_res!(
         delimited!(opt!(multispace), digit, opt!(multispace)),
@@ -25,7 +25,7 @@ named!(factor<i64>, alt!(
   )
 );
 
-named!(term <i64>, chain!(
+named!(term <&[u8],i64,u32>, chain!(
     mut acc: factor  ~
              many0!(
                alt!(
@@ -37,7 +37,7 @@ named!(term <i64>, chain!(
   )
 );
 
-named!(expr <i64>, chain!(
+named!(expr <&[u8],i64,u32>, chain!(
     mut acc: term  ~
              many0!(
                alt!(

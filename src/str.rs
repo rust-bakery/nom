@@ -21,7 +21,7 @@
 macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
     {
-      let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
+      let res: $crate::IResult<_,_,_> = if $tag.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
       //} else if &$i[0..$tag.len()] == $tag {
       } else if ($i).starts_with($tag) {
@@ -54,7 +54,7 @@ macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<_,_> = if $i.len() < cnt {
+      let res: $crate::IResult<_,_,_> = if $i.len() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
         $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
@@ -267,7 +267,7 @@ macro_rules! take_until_and_consume_s (
         }
         window == substr_vec
       }
-      let res: $crate::IResult<_, _> = if $substr.len() > $input.len() {
+      let res: $crate::IResult<_,_,_> = if $substr.len() > $input.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($substr.len()))
       } else {
         let substr_vec: ::std::vec::Vec<char> = $substr.chars().collect();
@@ -307,7 +307,7 @@ mod test {
     fn tag_str_succeed() {
         const INPUT: &'static str = "Hello World!";
         const TAG: &'static str = "Hello";
-        fn test(input: &str) -> IResult<&str, &str> {
+        fn test(input: &str) -> IResult<&str, &str, ()> {
           tag_s!(input, TAG)
         }
 
@@ -393,7 +393,7 @@ mod test {
     fn till_s(c: char) -> bool {
       c == 'á'
     }
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> IResult<&str, &str, ()> {
       take_till_s!(input, till_s)
     }
     match test(INPUT) {
@@ -416,7 +416,7 @@ mod test {
     fn while_s(c: char) -> bool {
       c == '9'
     }
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> IResult<&str, &str, ()> {
       take_while_s!(input, while_s)
     }
     match test(INPUT) {
@@ -437,7 +437,7 @@ mod test {
     const AVOID: &'static str = "£úçƙ¥á";
     const CONSUMED: &'static str = "βèƒôřèÂßÇ";
     const LEFTOVER: &'static str = "áƒƭèř";
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> IResult<&str, &str, ()> {
       is_not_s!(input, AVOID)
     }
     match test(INPUT) {
@@ -481,7 +481,7 @@ mod test {
             c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
             c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
         }
-        fn test(input: &str) -> IResult<&str, &str> {
+        fn test(input: &str) -> IResult<&str, &str, ()> {
           take_while_s!(input, while_s)
         }
         match test(INPUT) {
@@ -500,7 +500,7 @@ mod test {
     fn is_not_s_fail() {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const AVOID: &'static str = "βúçƙ¥";
-        fn test(input: &str) -> IResult<&str, &str> {
+        fn test(input: &str) -> IResult<&str, &str, ()> {
             is_not_s!(input, AVOID)
         }
         match test(INPUT) {
@@ -518,7 +518,7 @@ mod test {
             c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
             c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
         }
-        fn test(input: &str) -> IResult<&str, &str> {
+        fn test(input: &str) -> IResult<&str, &str, ()> {
           take_while1_s!(input, while1_s)
         }
         match test(INPUT) {
@@ -551,7 +551,7 @@ mod test {
         const MATCH: &'static str = "βèƒôřèÂßÇ";
         const CONSUMED: &'static str = "βèƒôřèÂßÇ";
         const LEFTOVER: &'static str = "áƒƭèř";
-        fn test(input: &str) -> IResult<&str, &str> {
+        fn test(input: &str) -> IResult<&str, &str, ()> {
             is_a_s!(input, MATCH)
         }
         match test(INPUT) {
@@ -572,7 +572,7 @@ mod test {
         fn while1_s(c: char) -> bool {
             c == '9'
         }
-        fn test(input: &str) -> IResult<&str, &str> {
+        fn test(input: &str) -> IResult<&str, &str, ()> {
           take_while1_s!(input, while1_s)
         }
         match test(INPUT) {
@@ -586,7 +586,7 @@ mod test {
     fn is_a_s_fail() {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const MATCH: &'static str = "Ûñℓúçƙ¥";
-        fn test(input: &str) -> IResult<&str, &str> {
+        fn test(input: &str) -> IResult<&str, &str, ()> {
             is_a_s!(input, MATCH)
         }
         match test(INPUT) {
