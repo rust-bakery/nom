@@ -19,7 +19,7 @@ named!(category     <&[u8], &str, u32>,
   )
 );
 
-named!(key_value    <&[u8],(&str,&str),32>,
+named!(key_value    <&[u8],(&str,&str), u32>,
   chain!(
     key: map_res!(alphanumeric, std::str::from_utf8) ~
          space?                            ~
