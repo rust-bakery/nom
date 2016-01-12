@@ -963,7 +963,7 @@ mod tests {
 
   #[cfg(feature = "nightly")]
   #[bench]
-  fn take_while(b: &mut Bencher) {
+  fn take_while_bench(b: &mut Bencher) {
     use nom::is_alphabetic;
     named!(f, take_while!(is_alphabetic));
     b.iter(|| {
