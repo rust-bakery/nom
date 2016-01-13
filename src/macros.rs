@@ -1002,6 +1002,9 @@ macro_rules! chaining_parser (
 ///  );
 /// ```
 ///
+/// If you want the `complete!` combinator to be applied to all rules then use the convenience
+/// `alt_complete!` macro (see below).
+///
 /// This behaviour of `alt!` can get especially confusing if multiple alternatives have different
 /// sizes but a common prefix, like this:
 ///
@@ -1111,6 +1114,61 @@ macro_rules! alt_parser (
 
   ($i:expr) => (
     $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Alt,$i))
+  );
+);
+
+/// This is a combination of the `alt!` and `complete!` combinators. Rather
+/// than returning `Incomplete` on partial input, `alt_complete!` will try the
+/// next alternative in the chain. You should use this only if you know you
+/// will not receive partial input for the rules you're trying to match (this
+/// is almost always the case for parsing programming languages).
+#[macro_export]
+macro_rules! alt_complete (
+  // Recursive rules (must include `complete!` around the head)
+
+  ($i:expr, $e:ident | $($rest:tt)*) => (
+    alt_complete!($i, complete!(call!($e)) | $($rest)*);
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
+    {
+      let res = complete!($i, $subrule!($($args)*));
+      match res {
+        $crate::IResult::Done(_,_) => res,
+        _ => alt_complete!($i, $($rest)*),
+      }
+    }
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+    {
+      match complete!($i, $subrule!($($args)*)) {
+        $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
+        _ => alt_complete!($i, $($rest)*),
+      }
+    }
+  );
+
+  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_complete!($i, complete!(call!($e)) => { $gen } | $($rest)*);
+  );
+
+  // Tail (non-recursive) rules
+
+  ($i:expr, $e:ident => { $gen:expr }) => (
+    alt_complete!($i, call!($e) => { $gen });
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+    alt_parser!($i, $subrule!($($args)*) => { $gen })
+  );
+
+  ($i:expr, $e:ident) => (
+    alt_complete!($i, call!($e));
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
+    alt_parser!($i, $subrule!($($args)*))
   );
 );
 
@@ -2628,6 +2686,20 @@ mod tests {
     assert_eq!(alt1(a), Incomplete(Needed::Size(3)));
     let a = &b"defg"[..];
     assert_eq!(alt1(a), Done(&b"g"[..], &b"def"[..]));
+  }
+
+  #[test]
+  fn alt_complete() {
+    named!(ac<&[u8], &[u8]>,
+      alt_complete!(tag!("abcd") | tag!("ef") | tag!("ghi") | tag!("kl"))
+    );
+
+    let a = &b""[..];
+    assert_eq!(ac(a), Incomplete(Needed::Size(2)));
+    let a = &b"ef"[..];
+    assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
+    let a = &b"cde"[..];
+    assert_eq!(ac(a), Error(Position(ErrorKind::Alt, a)));
   }
 
   #[test]
