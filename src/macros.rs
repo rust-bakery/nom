@@ -1134,11 +1134,8 @@ macro_rules! alt_complete (
     {
       let res = complete!($i, $subrule!($($args)*));
       match res {
-        $crate::IResult::Done(_,_)     => res,
-        $crate::IResult::Incomplete(_) |
-        $crate::IResult::Error(_)      => {
-          alt_complete!($i, $($rest)*)
-        }
+        $crate::IResult::Done(_,_) => res,
+        _ => alt_complete!($i, $($rest)*),
       }
     }
   );
@@ -1146,11 +1143,8 @@ macro_rules! alt_complete (
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
       match complete!($i, $subrule!($($args)*)) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
-        $crate::IResult::Incomplete(_) |
-        $crate::IResult::Error(_)      => {
-          alt_complete!($i, $($rest)*)
-        }
+        $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
+        _ => alt_complete!($i, $($rest)*),
       }
     }
   );
