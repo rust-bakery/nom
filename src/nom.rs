@@ -73,6 +73,13 @@ pub fn is_digit(chr: u8) -> bool {
 }
 
 #[inline]
+pub fn is_xdigit(chr: u8) -> bool {
+  (chr >= 0x30 && chr <= 0x39) ||
+  (chr >= 0x41 && chr <= 0x46) ||
+  (chr >= 0x61 && chr <= 0x66)
+}
+
+#[inline]
 pub fn is_alphanumeric(chr: u8) -> bool {
   is_alphabetic(chr) || is_digit(chr)
 }
@@ -85,6 +92,7 @@ pub fn is_space(chr:u8) -> bool {
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 //pub filter!(alpha is_alphabetic)
 //pub filter!(digit is_digit)
+//pub filter!(xdigit is_xdigit)
 //pub filter!(alphanumeric is_alphanumeric)
 
 use std::ops::{Index,Range,RangeFrom};
@@ -128,6 +136,26 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     }
   }
   Done(&input[input_length..], input)
+}
+
+/// Recognizes hexadecimal numerical characters: 0-9, A-F, a-f
+pub fn xdigit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: IterIndices+InputLength {
+  if input.input_len() == 0 {
+    return Error(Position(ErrorKind::Digit, input))
+  }
+
+  for (idx, item) in input.iter_indices() {
+    if ! item.is_hexdigit() {
+      if idx == 0 {
+        return Error(Position(ErrorKind::Digit, input))
+      } else {
+        return Done(&input[idx..], &input[0..idx])
+      }
+    }
+  }
+  Done(&input[0..0], input)
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z

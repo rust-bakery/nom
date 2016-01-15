@@ -64,6 +64,8 @@ pub trait AsChar {
     fn is_alphanum(self) -> bool;
     #[inline]
     fn is_0_to_9(self)   -> bool;
+    #[inline]
+    fn is_hexdigit(self) -> bool;
 }
 
 impl<'a> AsChar for &'a u8 {
@@ -79,6 +81,12 @@ impl<'a> AsChar for &'a u8 {
     fn is_0_to_9(self)   -> bool {
       *self >= 0x30 && *self <= 0x39
     }
+    #[inline]
+    fn is_hexdigit(self) -> bool {
+      (*self >= 0x30 && *self <= 0x39) ||
+      (*self >= 0x41 && *self <= 0x46) ||
+      (*self >= 0x61 && *self <= 0x66)
+    }
 }
 
 impl AsChar for char {
@@ -90,6 +98,8 @@ impl AsChar for char {
     fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
     #[inline]
     fn is_0_to_9(self)   -> bool { self.is_digit(10) }
+    #[inline]
+    fn is_hexdigit(self) -> bool { self.is_digit(16) }
 }
 
 pub trait IterIndices {
