@@ -42,7 +42,7 @@
 //! method on the struct it is defined in.
 //!
 //! Compared to the `named!` macro there are a few differences in how they are
-//! invoked. A `method!` invocation always has to have the type of `self`
+//! invodked. A `method!` invocation always has to have the type of `self`
 //! declared and it can't be a reference due to Rust's borrow lifetime
 //! restrictions:
 //! ```ignore
@@ -86,7 +86,7 @@
 //!      )
 //!    );
 //! ```
-//! The three additions to method definitions to remember are:
+//! The three additions to method definitions remeber are:
 //! 1. Specify `self`'s type
 //! 2. Pass `self` to the macro
 //! 4. Call parser methods using the `call_m!` macro.
