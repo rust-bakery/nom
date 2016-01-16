@@ -390,7 +390,7 @@ macro_rules! map_m(
   // ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
   //   map_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
   // );
-  ($i:expr, $obj:ident1.$method1:ident, $obj2:ident.$method2:ident) => (
+  ($i:expr, $obj1:ident.$method1:ident, $obj2:ident.$method2:ident) => (
     map_impl!($i, call_m!($obj.$method), call_m!($obj2.$method2));
   );
   ($i:expr, $obj:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
@@ -2255,7 +2255,7 @@ mod tests {
   mod pub_named_mod {
     struct TestStruct;
     impl TestStruct {
-      method<&TestStruct>!(pub tst, tag!("abcd"));
+      method!(pub tst<&TestStruct>, tag!("abcd"));
 
       pub fn sum2(a:u8, b:u8)       -> u8 { a + b }
       pub fn sum3(a:u8, b:u8, c:u8) -> u8 { a + b + c }
@@ -2290,8 +2290,8 @@ mod tests {
   fn chain2() {
     struct TestStruct;
     impl TestStruct {
-      fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-      fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
+      fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) }
+      fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) }
       method!(f<&TestStruct,&[u8],B>,
         chain_m!(
           tag!("abcd")        ~
@@ -2317,8 +2317,8 @@ mod tests {
   fn nested_chain() {
     struct TestStruct;
     impl TestStruct {
-      fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-      fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
+      fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) }
+      fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) }
       method!(f<&TestStruct,&[u8],B>,
         chain_m!(
           chain!(
@@ -2353,7 +2353,7 @@ mod tests {
   fn chain_mut() {
     struct TestStruct;
     impl TestStruct {
-      fn ret_b1_2(i:&[u8]) -> IResult<&[u8], B> { Done(i,B{a:1,b:2}) };
+      fn ret_b1_2(i:&[u8]) -> IResult<&[u8], B> { Done(i,B{a:1,b:2}) }
       method!(f<&TestStruct,&[u8],B>,
         chain_mut!(
           tag!("abcd")     ~
@@ -2379,7 +2379,7 @@ mod tests {
     struct TestStruct;
     impl TestStruct {
       method!(y<&TestStruct>, tag!("efgh"));
-      fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+      fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) }
       method!(ret_y<&TestStruct,&[u8], u8>, map_m!(self.y, |_| 2));
 
       method!(f<&TestStruct,&[u8],C>,
@@ -2530,6 +2530,7 @@ mod tests {
     let res_a = t.err_test(a);
     assert_eq!(res_a, Error(Position(ErrorKind::Complete, &b"mn"[..])));
   }
+
   #[test]
   fn alt() {
     struct TestStruct;
@@ -3026,7 +3027,7 @@ mod tests {
 
   #[test]
   fn chain_incomplete() {
-    struct TestStruct {res: }
+    struct TestStruct;
     impl TestStruct {
       fn res() -> IResult<&[u8], &[u8]> {
         chain!(&b"abcdefgh"[..],
@@ -3034,6 +3035,7 @@ mod tests {
           b: take!(8),
           ||{(a,b )}
         )
+      }
     };
 
     let t = TestStruct{};
