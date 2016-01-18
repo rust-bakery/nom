@@ -92,7 +92,8 @@ use std::ops::{Index,Range,RangeFrom};
 pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::Alpha, input))
   }
 
@@ -105,14 +106,15 @@ pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes numerical characters: 0-9
 pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::Digit, input))
   }
 
@@ -125,14 +127,15 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::AlphaNumeric, input));
   }
 
@@ -145,14 +148,15 @@ pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes spaces and tabs
 pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::Space, input));
   }
 
@@ -166,14 +170,15 @@ pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
 pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::MultiSpace, input));
   }
 
@@ -187,7 +192,7 @@ pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
