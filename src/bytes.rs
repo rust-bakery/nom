@@ -769,6 +769,7 @@ mod tests {
   use internal::IResult::*;
   use internal::Err::*;
   use util::ErrorKind;
+  use nom::{alpha, digit, alphanumeric, space, multispace};
 
   #[test]
   fn is_a() {
@@ -810,7 +811,6 @@ mod tests {
     assert_eq!(a_or_b(f), Done(&b""[..], &b"fghi"[..]));
   }
 
-  use nom::alpha;
   #[test]
   fn escaping() {
     named!(esc, escaped!(call!(alpha), '\\', is_a_bytes!(&b"\"n\\"[..])));
@@ -926,6 +926,28 @@ mod tests {
     named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
     let r = x(&b"<!-- abc --> aaa"[..]);
     assert_eq!(r, Done(&b" aaa"[..], &b"<!-- abc -->"[..]));
+
+    let empty = &b""[..];
+
+    named!(ya, recognize!(alpha));
+    let ra = ya(&b"abc"[..]);
+    assert_eq!(ra, Done(empty, &b"abc"[..]));
+
+    named!(yd, recognize!(digit));
+    let rd = yd(&b"123"[..]);
+    assert_eq!(rd, Done(empty, &b"123"[..]));
+
+    named!(yan, recognize!(alphanumeric));
+    let ran = yan(&b"123abc"[..]);
+    assert_eq!(ran, Done(empty, &b"123abc"[..]));
+
+    named!(ys, recognize!(space));
+    let rs = ys(&b" \t"[..]);
+    assert_eq!(rs, Done(empty, &b" \t"[..]));
+
+    named!(yms, recognize!(multispace));
+    let rms = yms(&b" \t\r\n"[..]);
+    assert_eq!(rms, Done(empty, &b" \t\r\n"[..]));
   }
 
   #[test]
