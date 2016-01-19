@@ -539,23 +539,23 @@ mod tests {
 
     match alpha(a) {
         Done(i, _)  => { assert_eq!(a.offset(i) + i.len(), a.len()); }
-        _           => { }
+        _           => { panic!("wrong return type in offset test for alpha") }
     }
     match digit(b) {
         Done(i, _)  => { assert_eq!(b.offset(i) + i.len(), b.len()); }
-        _           => { }
+        _           => { panic!("wrong return type in offset test for digit") }
     }
     match alphanumeric(c) {
         Done(i, _)  => { assert_eq!(c.offset(i) + i.len(), c.len()); }
-        _           => { }
+        _           => { panic!("wrong return type in offset test for alphanumeric") }
     }
     match space(d) {
         Done(i, _)  => { assert_eq!(d.offset(i) + i.len(), d.len()); }
-        _           => { }
+        _           => { panic!("wrong return type in offset test for space") }
     }
     match multispace(e) {
         Done(i, _)  => { assert_eq!(e.offset(i) + i.len(), e.len()); }
-        _           => { }
+        _           => { panic!("wrong return type in offset test for multispace") }
     }
   }
 
