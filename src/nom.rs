@@ -528,6 +528,37 @@ mod tests {
     assert_eq!(space(e), Done(&""[..], &" "[..]));
   }
 
+  use util::HexDisplay;
+  #[test]
+  fn offset() {
+    let a = &b"abcd"[..];
+    let b = &b"1234"[..];
+    let c = &b"a123"[..];
+    let d = &b" \t"[..];
+    let e = &b" \t\r\n"[..];
+
+    match alpha(a) {
+        Done(i, _)  => { assert_eq!(a.offset(i) + i.len(), a.len()); }
+        _           => { }
+    }
+    match digit(b) {
+        Done(i, _)  => { assert_eq!(b.offset(i) + i.len(), b.len()); }
+        _           => { }
+    }
+    match alphanumeric(c) {
+        Done(i, _)  => { assert_eq!(c.offset(i) + i.len(), c.len()); }
+        _           => { }
+    }
+    match space(d) {
+        Done(i, _)  => { assert_eq!(d.offset(i) + i.len(), d.len()); }
+        _           => { }
+    }
+    match multispace(e) {
+        Done(i, _)  => { assert_eq!(e.offset(i) + i.len(), e.len()); }
+        _           => { }
+    }
+  }
+
   #[test]
   fn is_not() {
     let a: &[u8] = b"ab12cd\nefgh";
