@@ -404,14 +404,34 @@ macro_rules! flat_map_m (
     flat_map!($i, call_m!($obj.$method), $submac!($($args)*));
   );
 
-  ($cell:ident # $i:expr, $submac:ident!( $($args:tt)* ), $method:ident) => (
+  ($cell:ident # $i:expr, $submac:ident!!( $($args:tt)* ), $method:ident) => (
     flat_map_m!($cell # $i, $submac!!($($args)*), call_m!!($method));
   );
   ($cell:ident # $i:expr, $method1:ident, $method2:ident) => (
     flat_map_m!($cell # $i, call_m!!($method1), call_m!!($method2));
   );
-  ($cell:ident # $i:expr, $obj:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+  ($cell:ident # $i:expr, $obj:ident.$method:ident, $submac:ident!!( $($args:tt)* )) => (
     flat_map_m!($cell # $i, call_m!!($method), $submac!!($($args)*));
+  );
+
+
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $method:ident) => (
+    {
+      let cell = RefCell::new($obj);
+      flat_map_m!(cell # $i, $submac!!($($args)*), call_m!!($obj.$method));
+    }
+  );
+  ($i:expr, $obj:ident, $method1:ident, $method2:ident) => (
+    {
+      let cell = RefCell::new($obj);
+      flat_map_m!(cell # $i, call_m!!($obj1.$method1), call_m!!($obj2.$method2));
+    }
+  );
+  ($i:expr, $obj:ident, $method:ident, $submac:ident!( $($args:tt)* )) => (
+    {
+      let cell = RefCell::new($obj);
+      flat_map!(cell # $i, call_m!!($obj.$method), $submac!!($($args)*));
+    }
   );
 );
 
@@ -443,6 +463,31 @@ macro_rules! map_m(
   );
   ($cell:ident # $i:expr, $method:ident, $submac:ident!!( $($args:tt)* )) => (
     map_impl_m!($cell # $i, call_m!($method), $submac!($($args)*));
+  );
+
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $method:ident) => (
+    {
+      let cell = RefCell::new($obj);
+      map_impl_m!(cell # $i, $submac!($($args)*), call!($method));
+    }
+  );
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      let cell = RefCell::new($obj);
+      map_impl_m!(cell # $i, $submac!($($args)*), $submac2!($($args2)*));
+    }
+  );
+  ($i:expr, $obj:ident, $method1:ident, $method2:ident) => (
+    {
+      let cell = RefCell::new($obj);
+      map_impl_m!(cell # $i, call_m!($method1), call_m!(method2));
+    }
+  );
+  ($i:expr, $obj:ident, $method:ident, $submac:ident!!( $($args:tt)* )) => (
+    {
+      let cell = RefCell::new($obj);
+      map_impl_m!(cell # $i, call_m!($method), $submac!($($args)*));
+    }
   );
 );
 
@@ -496,6 +541,31 @@ macro_rules! map_res_m (
   );
   ($cell:ident # $i:expr, $method:ident, $submac:ident!!( $($args:tt)* )) => (
     map_res_impl_m!($cell # $i, call_m!($method), $submac!($($args)*));
+  );
+
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $method:ident) => (
+    {
+      let cell = RefCell::new($obj);
+      map_res_impl_m!(cell # $i, $submac!($($args)*), call!($method));
+    }
+  );
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      let cell = RefCell::new($obj);
+      map_res_impl_m!($cell # $i, $submac!($($args)*), $submac2!($($args2)*));
+    }
+  );
+  ($i:expr, $obj:ident, $method1:ident, $method2:ident,) => (
+    {
+      let cell = RefCell::new($obj);
+      map_res_impl_m!($cell # $i, call_m!($method1), call!($method2));
+    }
+  );
+  ($i:expr, $obj:ident, $method:ident, $submac:ident!!( $($args:tt)* )) => (
+    {
+      let cell = RefCell::new($obj);
+      map_res_impl_m!($cell # $i, call_m!($method), $submac!($($args)*));
+    }
   );
 );
 
@@ -554,6 +624,31 @@ macro_rules! map_opt_m (
   );
   ($cell:ident # $i:expr, $method:ident, $submac:ident!!( $($args:tt)* )) => (
     map_opt_impl_m!($cell # $i, call_m!($method), $submac!($($args)*));
+  );
+
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $method:ident) => (
+    {
+      let cell = RefCell::new($obj);
+      map_opt_impl_m!(cell # $i, $submac!($($args)*), call!($obj.$method));
+    }
+  );
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      let cell = RefCell::new($obj);
+      map_opt_impl_m!(cell # $i, $submac!($($args)*), $submac2!($($args2)*));
+    }
+  );
+  ($i:expr, $obj:ident, $method1:ident, $method2:ident) => (
+    {
+      let cell = RefCell::new($obj);
+      map_opt_impl_m!(cell # $i, call_m!($method), call!($method));
+    }
+  );
+  ($i:expr, $obj:ident, $method:ident, $submac:ident!!( $($args:tt)* )) => (
+    {
+      let cell = RefCell::new($obj);
+      map_opt_impl_m!(cell # $i, call_m!($method), $submac!($($args)*));
+    }
   );
 );
 
@@ -760,7 +855,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, call_m!!($method) ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, $submac:ident!( $($args:tt)* )~ $($rest)*);
+    chaining_parser!($i, $consumed, $submac!( $($args)* )~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, $submac:ident!!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
@@ -784,7 +879,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, call_m!!($method) ? ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, $submac:ident!($($args:tt)* )  ? ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, $submac:ident!($($args:tt)* ) ? ~ $($rest)*);
+    chaining_parser!($i, $consumed, $submac!($($args)* ) ? ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, $submac:ident!!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
     {
@@ -813,7 +908,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, $field: call_m!!($method) ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* )  ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, $field: $submac:ident!( $($args:tt)* ) ~ $($rest)*);
+    chaining_parser!($i, $consumed, $field: $submac!( $($args)* ) ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, $field:ident : $submac:ident!!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
@@ -837,7 +932,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, mut $field: call_m!!($method) ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* )  ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, mut $field: $submac:ident!( $($args:tt)* ) ~ $($rest)*);
+    chaining_parser!($i, $consumed, mut $field: $submac!( $($args)* ) ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, mut $field:ident : $submac:ident!!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
@@ -861,7 +956,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, $field : call_m!!($method) ? ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* )  ? ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, $field : $submac:ident!( $($args:tt)* ) ? ~ $($rest)*);
+    chaining_parser!($i, $consumed, $field : $submac!( $($args)* ) ? ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, $field:ident : $submac:ident!!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
     {
@@ -890,7 +985,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, mut $field : call_m!!($method) ? ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* )  ? ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, mut $field : $submac:ident!( $($args:tt)* ) ? ~ $($rest)*);
+    chaining_parser!($i, $consumed, mut $field : $submac!( $($args)* ) ? ~ $($rest)*);
   );
   ($cell:ident # $i:expr, $consumed:expr, mut $field:ident : $submac:ident!!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
     {
@@ -920,7 +1015,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, call_m!!($method), $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, submac:ident!( $($args:tt)* ) , $assemble:expr) => (
-    chaining_parser!($i, $consumed, submac:ident!( $($args:tt)* ), $assemble);
+    chaining_parser!($i, $consumed, submac!( $($args)* ), $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, $submac:ident!!( $($args:tt)* ), $assemble:expr) => ({
       let res = $submac!($cell # $i, $($args)*);
@@ -939,7 +1034,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, call_m!!($method) ?, $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* )  ?, $assemble:expr) => (
-    chaining_parser!($i, $consumed, $submac:ident!( $($args:tt)* ) ?, $assemble);
+    chaining_parser!($i, $consumed, $submac!( $($args)* ) ?, $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, $submac:ident!!( $($args:tt)* ) ?, $assemble:expr) => ({
     let res = $submac!($cell # $i, $($args)*);
@@ -962,7 +1057,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, $field: call_m!!($method), $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) , $assemble:expr) => (
-    chaining_parser!($i, $consumed, $field: $submac:ident!( $($args:tt)* ), $assemble);
+    chaining_parser!($i, $consumed, $field: $submac!( $($args)* ), $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, $field:ident : $submac:ident!!( $($args:tt)* ), $assemble:expr) => ({
       let res = $submac!($cell # $i, $($args)*);
@@ -982,7 +1077,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, mut $field: call_m!!($method), $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) , $assemble:expr) => (
-    chaining_parser!($cell # $i, $consumed, mut $field: $submac:ident!( $($args:tt)* ), $assemble);
+    chaining_parser!($cell # $i, $consumed, mut $field: $submac!( $($args)* ), $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, mut $field:ident : $submac:ident!!( $($args:tt)* ), $assemble:expr) => ({
       let res = $submac!($cell # $i, $($args)*);
@@ -1002,7 +1097,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, $field : call_m!!($method) ? , $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* )  ? , $assemble:expr) => (
-    chaining_parser!($i, $consumed, $field : $submac:ident!( $($args:tt)* ) ? , $assemble);
+    chaining_parser!($i, $consumed, $field : $submac!( $($args)* ) ? , $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, $field:ident : $submac:ident!!( $($args:tt)* ) ? , $assemble:expr) => ({
     let res = $submac!($cell # $i, $($args)*);
@@ -1025,7 +1120,7 @@ macro_rules! chaining_parser_m (
     chaining_parser_m!($cell # $i, $consumed, $field : call_m!!($method) ? , $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* )  ? , $assemble:expr) => (
-    chaining_parser!($i, $consumed, $field : $submac:ident!( $($args:tt)* ) ? , $assemble);
+    chaining_parser!($i, $consumed, $field : $submac!( $($args)* ) ? , $assemble);
   );
   ($cell:ident # $i:expr, $consumed:expr, mut $field:ident : $submac:ident!!( $($args:tt)* ) ? , $assemble:expr) => ({
     let res = $submac!($cell # $i, $($args)*);
@@ -1166,9 +1261,16 @@ macro_rules! chaining_parser_m (
 ///
 #[macro_export]
 macro_rules! alt_m (
-  ($i:expr, $($rest:tt)*) => (
+  ($i:expr, $obj:ident, $($rest:tt)*) => (
     {
-      alt_parser_m!($i, $($rest)*)
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      alt_parser_m!($cell # $i, $($rest)*)
+    }
+  );
+  ($cell:ident # $i:expr, $($rest:tt)*) => (
+    {
+      alt_parser_m!($cell # $i, $($rest)*)
     }
   );
 );
@@ -1177,65 +1279,136 @@ macro_rules! alt_m (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! alt_parser_m (
-  ($i:expr, $obj:ident.$method:ident | $($rest:tt)*) => (
-    alt_parser_m!($i, call_m!($obj.$method) | $($rest)*);
+  ($cell:ident # $i:expr, $method:ident | $($rest:tt)*) => (
+    alt_parser_m!($cell # $i, call_m!!($method) | $($rest)*);
   );
-
-  ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
+  ($cell:ident # $i:expr, $subrule:ident!!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      let res = $subrule!($i, $($args)*);
-      match res {
-        $crate::IResult::Done(_,_)     => res,
-        $crate::IResult::Incomplete(_) => res,
-        _                              => alt_parser_m!($i, $($rest)*)
+      {
+        let res = $subrule!($cell # $i, $($args)*);
+        match res {
+          $crate::IResult::Done(_,_)     => return res,
+          $crate::IResult::Incomplete(_) => return res,
+          _                              => (),
+        }
+      }
+      {
+        (alt_parser_m!($cell # $i, $($rest)*))
       }
     }
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+  ($cell:ident # $i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      match $subrule!( $i, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt_parser_m!($i, $($rest)*)
+      {
+        let res = $subrule!($i, $($args)*);
+        match res {
+          $crate::IResult::Done(_,_)     => return res,
+          $crate::IResult::Incomplete(_) => return res,
+          _                              => (),
         }
+      }
+      {
+        (alt_parser_m!($cell # $i, $($rest)*))
       }
     }
   );
 
-  ($i:expr, $obj:ident.$method:ident  => { $gen:expr } | $($rest:tt)*) => (
-    alt_parser_m!($i, call_m!($obj.$method) => { $gen } | $($rest)*);
+  ($cell:ident # $i:expr, $method:ident  => { $gen:expr } | $($rest:tt)*) => (
+    alt_parser_m!($cell # i, call_m!!($method) => { $gen } | $($rest)*);
   );
-
-  ($i:expr, $obj:ident.$method:ident  => { $gen:expr }) => (
-    alt_parser_m!($i, call_m!($obj.$method) => { $gen });
-  );
-
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+  ($cell:ident # $i:expr, $subrule:ident!!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
-      match $subrule!( $i, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt_parser_m!($i)
+      {
+        match $subrule!( $cell # $i, $($args)* ) {
+          $crate::IResult::Done(i,o)     => return $crate::IResult::Done(i,$gen(o)),
+          $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
+          $crate::IResult::Error(_)      => (),
         }
+      }
+      {
+        alt_parser_m!($cell # $i, $($rest)*)
       }
     }
   );
 
-  ($i:expr, $obj:ident.$method:ident ) => (
-    alt_parser_m!($i, call_m!($obj.$method));
+  ($cell:ident # $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+    {
+      {
+        match $subrule!( $i, $($args)* ) {
+          $crate::IResult::Done(i,o)     => return $crate::IResult::Done(i,$gen(o)),
+          $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
+          $crate::IResult::Error(_)      => (),
+        }
+      }
+      {
+        alt_parser_m!($cell # $i, $($rest)*)
+      }
+    }
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
+  ($cell:ident # $i:expr, $method:ident  => { $gen:expr }) => (
+    alt_parser_m!($cell # $i, call_m!!($method) => { $gen });
+  );
+  ($cell:ident # $i:expr, $subrule:ident!!( $($args:tt)* ) => { $gen:expr }) => (
     {
-      match $subrule!( $i, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt_parser_m!($i)
+      {
+        match $subrule!( $cell # $i, $($args)* ) {
+          $crate::IResult::Done(i,o)     => return $crate::IResult::Done(i,$gen(o)),
+          $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
+          $crate::IResult::Error(_)      => ()
         }
+      }
+      {
+        alt_parser_m!($cell # $i)
+      }
+    }
+  );
+
+  ($cell:ident # $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+    {
+      {
+        match $subrule!( $i, $($args)* ) {
+          $crate::IResult::Done(i,o)     => return $crate::IResult::Done(i,$gen(o)),
+          $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
+          $crate::IResult::Error(_)      => ()
+        }
+      }
+      {
+        alt_parser_m!($cell # $i)
+      }
+    }
+  );
+
+  ($cell:ident # $i:expr, $method:ident ) => (
+    alt_parser_m!($i, call_m!!($method));
+  );
+  ($cell:ident # $i:expr, $subrule:ident!!( $($args:tt)*)) => (
+    {
+      {
+        match $subrule!( $cell # $i, $($args)* ) {
+          $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
+          $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+          $crate::IResult::Error(_)      => ()
+        }
+      }
+      {
+        (({alt_parser_m!($i)}))
+      }
+    }
+  );
+
+  ($cell:ident # $i:expr, $subrule:ident!( $($args:tt)*)) => (
+    {
+      {
+        match $subrule!( $i, $($args)* ) {
+          $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
+          $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+          $crate::IResult::Error(_)      => ()
+        }
+      }
+      {
+        (({alt_parser_m!($i)}))
       }
     }
   );
@@ -1275,27 +1448,27 @@ macro_rules! alt_parser_m (
 /// ```
 #[macro_export]
 macro_rules! switch_m (
-  // ($i:expr, $submac:ident!( $($args:tt)*), $($p:pat => $subrule:ident!( $($args2:tt)* ))|*) => (
-  //   {
-  //     match $submac!($i, $($args)*) {
-  //       $crate::IResult::Error(e)      => $crate::IResult::Error($crate::Err::NodePosition(
-  //           $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
-  //       )),
-  //       $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-  //       $crate::IResult::Done(i, o)    => {
-  //         match o {
-  //           $($p => match $subrule!(i, $($args2)*) {
-  //             $crate::IResult::Error(e) => $crate::IResult::Error($crate::Err::NodePosition(
-  //                 $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
-  //             )),
-  //             a => a,
-  //           }),*,
-  //           _    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Switch,$i))
-  //         }
-  //       }
-  //     }
-  //   }
-  // );
+  ($cell:ident # $i:expr, $submac:ident!!( $($args:tt)*), $($p:pat => $subrule:ident!( $($args2:tt)* ))|*) => (
+    {
+      match $submac!($cell # $i, $($args)*) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error($crate::Err::NodePosition(
+            $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
+        )),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i, o)    => {
+          match o {
+            $($p => match $subrule!(i, $($args2)*) {
+              $crate::IResult::Error(e) => $crate::IResult::Error($crate::Err::NodePosition(
+                  $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
+              )),
+              a => a,
+            }),*,
+            _    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Switch,$i))
+          }
+        }
+      }
+    }
+  );
   ($i:expr, $obj:ident.$method:ident , $($rest:tt)*) => (
     {
       switch!($i, call_m!($obj.$method), $($rest)*)
