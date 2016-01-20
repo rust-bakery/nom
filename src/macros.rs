@@ -2818,19 +2818,23 @@ mod tests {
     assert_eq!(r1, Done(&b"kl"[..], &b"efgh"[..]));
   }
 
-    #[test]
+  #[test]
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
+    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
+    let d = &b",,abc"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+    let res3 = vec![&b""[..], &b""[..], &b""[..]];
+    assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
   }
 
   #[test]
