@@ -1741,45 +1741,30 @@ macro_rules! delimited2(
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
+      let mut res      = ::std::vec::Vec::new();
+      let mut input    = $i;
+      let mut buff_sep = $i;
 
-      // get the first element
-      match $submac!(input, $($args2)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Done(input, ::std::vec::Vec::new()),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i,o)     => {
-          if i.len() == input.len() {
-            $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::SeparatedList,input))
-          } else {
-            res.push(o);
-            input = i;
+      loop {
+        match $submac!(input, $($args2)*) {
+          $crate::IResult::Error(_)           => { return $crate::IResult::Done(buff_sep, res); },
+          $crate::IResult::Incomplete(i)      => { return $crate::IResult::Incomplete(i); },
+          $crate::IResult::Done(i, o)         => { res.push(o); input = i; }
+        }
 
-            loop {
-              // get the separator first
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
-                if i2.len() == input.len() {
-                  break;
-                }
-                input = i2;
-
-                // get the element next
-                if let $crate::IResult::Done(i3,o3) = $submac!(input, $($args2)*) {
-                  if i3.len() == input.len() {
-                    break;
-                  }
-                  res.push(o3);
-                  input = i3;
-                } else {
-                  break;
-                }
-              } else {
-                break;
-              }
+        match $sep!(input, $($args)*) {
+          $crate::IResult::Error(_)           => { return $crate::IResult::Done(input, res); },
+          $crate::IResult::Incomplete(i)      => { return $crate::IResult::Incomplete(i); },
+          $crate::IResult::Done(i, _)         => {
+            // separator must allways consume
+            if i == input {
+              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::SeparatedList,input));
             }
-            $crate::IResult::Done(input, res)
+
+            buff_sep = input;
+            input = i;
           }
-        },
+        }
       }
     }
   );
