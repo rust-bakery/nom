@@ -2806,12 +2806,14 @@ mod tests {
   #[test]
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
-    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
+    named!(multi_empty_elems<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
+    named!(multi_empty_sep<&[u8],Vec<&[u8]> >, separated_list!(tag!(""), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
     let d = &b",,abc"[..];
+    let e = &b"abcabcabcxxx"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
@@ -2819,7 +2821,9 @@ mod tests {
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
     let res3 = vec![&b""[..], &b""[..], &b""[..]];
-    assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
+    assert_eq!(multi_empty_elems(d), Done(&b"abc"[..], res3));
+    let res4 = vec![&b"abc"[..], &b"abc"[..], &b"abc"[..]];
+    assert_eq!(multi_empty_sep(e), Done(&b""[..], res4));
   }
 
   #[test]
