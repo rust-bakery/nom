@@ -150,7 +150,7 @@ pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
   for (idx, item) in input.iter_indices() {
     if ! item.is_hex_digit() {
       if idx == 0 {
-        return Error(Position(ErrorKind::Digit, input))
+        return Error(Position(ErrorKind::HexDigit, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
