@@ -1756,8 +1756,8 @@ macro_rules! separated_list(
           $crate::IResult::Error(_)           => { return $crate::IResult::Done(input, res); },
           $crate::IResult::Incomplete(i)      => { return $crate::IResult::Incomplete(i); },
           $crate::IResult::Done(i, _)         => {
-            // separator must allways consume
-            if i == input {
+            // loop trip must always consume
+            if i == buff_sep {
               return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::SeparatedList,input));
             }
 
@@ -2807,7 +2807,7 @@ mod tests {
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
     named!(multi_empty_elems<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
-    named!(multi_empty_sep<&[u8],Vec<&[u8]> >, separated_list!(tag!(""), tag!("abcd")));
+    named!(multi_empty_sep<&[u8],Vec<&[u8]> >, separated_list!(tag!(""), tag!("abc")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
@@ -2823,7 +2823,7 @@ mod tests {
     let res3 = vec![&b""[..], &b""[..], &b""[..]];
     assert_eq!(multi_empty_elems(d), Done(&b"abc"[..], res3));
     let res4 = vec![&b"abc"[..], &b"abc"[..], &b"abc"[..]];
-    assert_eq!(multi_empty_sep(e), Done(&b""[..], res4));
+    assert_eq!(multi_empty_sep(e), Done(&b"xxx"[..], res4));
   }
 
   #[test]
