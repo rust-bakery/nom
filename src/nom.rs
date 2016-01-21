@@ -527,6 +527,11 @@ mod tests {
     assert_eq!(digit(b), Done(empty, b));
     assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
     assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
+    assert_eq!(hex_digit(a), Done(empty, a));
+    assert_eq!(hex_digit(b), Done(empty, b));
+    assert_eq!(hex_digit(c), Done(empty, c));
+    assert_eq!(hex_digit(d), Done("zé12".as_bytes(), &b"a"[..]));
+    assert_eq!(hex_digit(e), Error(Position(ErrorKind::HexDigit,e)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
@@ -550,6 +555,11 @@ mod tests {
     assert_eq!(digit(b), Done(empty, b));
     assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
     assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
+    assert_eq!(hex_digit(a), Done(empty, a));
+    assert_eq!(hex_digit(b), Done(empty, b));
+    assert_eq!(hex_digit(c), Done(empty, c));
+    assert_eq!(hex_digit(d), Done("zé12", &"a"[..]));
+    assert_eq!(hex_digit(e), Error(Position(ErrorKind::HexDigit,e)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
@@ -777,5 +787,32 @@ mod tests {
   #[allow(dead_code)]
   fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], ()> {
     fix_error!(input, (), alphanumeric)
+  }
+
+  #[test]
+  fn hex_digit_test() {
+    let empty = &b""[..];
+
+    let i = &b"0123456789abcdefABCDEF"[..];
+    assert_eq!(hex_digit(i), Done(empty, i));
+
+    let i = &b"g"[..];
+    assert_eq!(hex_digit(i), Error(Position(ErrorKind::HexDigit,i)));
+
+    let i = &b"G"[..];
+    assert_eq!(hex_digit(i), Error(Position(ErrorKind::HexDigit,i)));
+
+    assert!(is_hex_digit(b'0'));
+    assert!(is_hex_digit(b'9'));
+    assert!(is_hex_digit(b'a'));
+    assert!(is_hex_digit(b'f'));
+    assert!(is_hex_digit(b'A'));
+    assert!(is_hex_digit(b'F'));
+    assert!(!is_hex_digit(b'g'));
+    assert!(!is_hex_digit(b'G'));
+    assert!(!is_hex_digit(b'/'));
+    assert!(!is_hex_digit(b':'));
+    assert!(!is_hex_digit(b'@'));
+    assert!(!is_hex_digit(b'\x60'));
   }
 }
