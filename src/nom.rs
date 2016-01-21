@@ -142,7 +142,8 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::Digit, input))
   }
 
@@ -155,7 +156,7 @@ pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
@@ -564,6 +565,7 @@ mod tests {
     let c = &b"a123"[..];
     let d = &b" \t"[..];
     let e = &b" \t\r\n"[..];
+    let f = &b"123abcDEF"[..];
 
     match alpha(a) {
         Done(i, _)  => { assert_eq!(a.offset(i) + i.len(), a.len()); }
@@ -584,6 +586,10 @@ mod tests {
     match multispace(e) {
         Done(i, _)  => { assert_eq!(e.offset(i) + i.len(), e.len()); }
         _           => { panic!("wrong return type in offset test for multispace") }
+    }
+    match hex_digit(f) {
+        Done(i, _)  => { assert_eq!(f.offset(i) + i.len(), f.len()); }
+        _           => { panic!("wrong return type in offset test for hex_digit") }
     }
   }
 
