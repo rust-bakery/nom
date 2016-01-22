@@ -1879,58 +1879,39 @@ macro_rules! separated_nonempty_list(
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::InputLength;
-      if ($i).input_len() == 0 {
-        $crate::IResult::Done($i, ::std::vec::Vec::new())
-      } else {
-        match $submac!($i, $($args)*) {
-          $crate::IResult::Error(_)      => {
-            $crate::IResult::Done($i, ::std::vec::Vec::new())
-          },
-          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-          $crate::IResult::Done(i1,o1)   => {
-            if i1.input_len() == 0 {
-              $crate::IResult::Done(i1,vec![o1])
-            } else {
-              let mut res    = ::std::vec::Vec::with_capacity(4);
-              res.push(o1);
-              let mut input  = i1;
-              let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
-              loop {
-                match $submac!(input, $($args)*) {
-                  $crate::IResult::Done(i, o) => {
-                    // do not allow parsers that do not consume input (causes infinite loops)
-                    if i.input_len() == input.input_len() {
-                      break;
-                    }
-                    res.push(o);
-                    input = i;
-                  }
-                  $crate::IResult::Error(_)                    => {
-                    break;
-                  },
-                  $crate::IResult::Incomplete($crate::Needed::Unknown) => {
-                    incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
-                    break;
-                  },
-                  $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-                    incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
-                    break;
-                  },
-                }
-                if input.input_len() == 0 {
-                  break;
-                }
-              }
+      use ::std::vec::Vec;
+      use $crate::IResult::{Done, Incomplete, Error};
+      use $crate::{Needed, Err, ErrorKind, InputLength};
 
-              match incomplete {
-                ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
-                ::std::option::Option::None    => $crate::IResult::Done(input, res)
-              }
+      let ret;
+      let mut res = Vec::new();
+      let mut input   = $i;
+
+      loop {
+        if input.input_len() == 0 {
+          ret = Done(input, res); break;
+        }
+
+        match $submac!(input, $($args)*) {
+          Error(_)                    => { ret = Done(input, res); break; },
+          Incomplete(Needed::Unknown) => { ret = Incomplete(Needed::Unknown); break; },
+          Incomplete(Needed::Size(i)) => {
+            ret = Incomplete(Needed::Size(i + ($i).input_len() - input.input_len())); break;
+          },
+          Done(i, o)                  => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i == input {
+              ret = Error(Err::Position(ErrorKind::Many0,input));
+              break;
             }
+
+            res.push(o);
+            input = i;
           }
         }
       }
+
+      ret
     }
   );
   ($i:expr, $f:expr) => (
