@@ -1741,31 +1741,50 @@ macro_rules! delimited2(
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut res      = ::std::vec::Vec::new();
-      let mut input    = $i;
-      let mut buff_sep = $i;
+      use ::std::vec::Vec;
+      use $crate::IResult::{Done, Incomplete, Error};
+      use $crate::{Needed, Err, ErrorKind, InputLength};
+
+      let ret;
+      let mut res       = Vec::new();
+      let mut input     = $i;
+      let mut buff_sep  = $i;
 
       loop {
-        match $submac!(input, $($args2)*) {
-          $crate::IResult::Error(_)           => { return $crate::IResult::Done(buff_sep, res); },
-          $crate::IResult::Incomplete(i)      => { return $crate::IResult::Incomplete(i); },
-          $crate::IResult::Done(i, o)         => { res.push(o); input = i; }
+        if input.input_len() == 0 {
+          ret = Done(input, res); break;
         }
 
-        match $sep!(input, $($args)*) {
-          $crate::IResult::Error(_)           => { return $crate::IResult::Done(input, res); },
-          $crate::IResult::Incomplete(i)      => { return $crate::IResult::Incomplete(i); },
-          $crate::IResult::Done(i, _)         => {
-            // separator must allways consume
-            if i == input {
-              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::SeparatedList,input));
-            }
+        // match element
+        match $submac!(input, $($args2)*) {
+          Error(_)                    => { ret = Done(buff_sep, res); break; },
+          Incomplete(Needed::Unknown) => { ret = Incomplete(Needed::Unknown); break; },
+          Incomplete(Needed::Size(i)) => {
+            ret = Incomplete(Needed::Size(i + ($i).input_len() - input.input_len())); break;
+          },
+          Done(i, o)                  => { res.push(o); input = i; }
+        }
 
-            buff_sep = input;
-            input = i;
+        // match separator
+        match $sep!(input, $($args)*) {
+          Error(_)                    => { ret = Done(input, res); break; },
+          Incomplete(Needed::Unknown) => { ret = Incomplete(Needed::Unknown); break; },
+          Incomplete(Needed::Size(i)) => {
+            ret = Incomplete(Needed::Size(i + ($i).input_len() - input.input_len())); break;
+          },
+          Done(i, _)                  => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i == buff_sep {
+              ret = Error(Err::Position(ErrorKind::SeparatedList, input)); break;
+            } else {
+              buff_sep = input;
+              input = i;
+            }
           }
         }
       }
+
+      ret
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
