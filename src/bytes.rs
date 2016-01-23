@@ -769,7 +769,7 @@ mod tests {
   use internal::IResult::*;
   use internal::Err::*;
   use util::ErrorKind;
-  use nom::{alpha, digit, alphanumeric, space, multispace};
+  use nom::{alpha, digit, hex_digit, alphanumeric, space, multispace};
 
   #[test]
   fn is_a() {
@@ -936,6 +936,10 @@ mod tests {
     named!(yd, recognize!(digit));
     let rd = yd(&b"123"[..]);
     assert_eq!(rd, Done(empty, &b"123"[..]));
+
+    named!(yhd, recognize!(hex_digit));
+    let rhd = yhd(&b"123abcDEF"[..]);
+    assert_eq!(rhd, Done(empty, &b"123abcDEF"[..]));
 
     named!(yan, recognize!(alphanumeric));
     let ran = yan(&b"123abc"[..]);
