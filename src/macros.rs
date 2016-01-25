@@ -2323,14 +2323,29 @@ mod tests {
         }
 
         let expected = $inp;
-        let bytes = as_bytes(&expected);
+        let bytes    = as_bytes(&expected);
 
-        let res : $crate::IResult<&[u8],&[u8]> = if bytes.len() > $i.len() {
-          $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
-        } else if &$i[0..bytes.len()] == bytes {
-          $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
-        } else {
+        tag_bytes!($i,bytes)
+      }
+    );
+  );
+
+  macro_rules! tag_bytes (
+    ($i:expr, $bytes: expr) => (
+      {
+        use std::cmp::min;
+        let len = $i.len();
+        let blen = $bytes.len();
+        let m   = min(len, blen);
+        let reduced = &$i[..m];
+        let b       = &$bytes[..m];
+
+        let res: $crate::IResult<_,_> = if reduced != b {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
+        } else if m < blen {
+          $crate::IResult::Incomplete($crate::Needed::Size(blen))
+        } else {
+          $crate::IResult::Done(&$i[blen..], reduced)
         };
         res
       }
