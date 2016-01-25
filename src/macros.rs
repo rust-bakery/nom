@@ -539,8 +539,8 @@ macro_rules! value (
         $crate::IResult::Done(i,_)     => {
           $crate::IResult::Done(i, $res)
         },
-        $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
-        $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i)
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
       }
     }
   );
