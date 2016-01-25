@@ -1776,10 +1776,10 @@ macro_rules! separated_list(
             // loop trip must always consume (otherwise infinite loops)
             if i == buff_sep {
               ret = Error(Err::Position(ErrorKind::SeparatedList, input)); break;
-            } else {
-              buff_sep = input;
-              input = i;
             }
+
+            buff_sep = input;
+            input = i;
           }
         }
       }
