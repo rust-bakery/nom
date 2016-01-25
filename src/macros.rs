@@ -1819,24 +1819,41 @@ macro_rules! delimited2(
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut res      = ::std::vec::Vec::new();
-      let mut input    = $i;
-      let mut buff_sep = $i;
+      use ::std::vec::Vec;
+      use $crate::IResult::{Done, Incomplete, Error};
+      use $crate::{Needed, Err, ErrorKind, InputLength};
+
+      let ret;
+      let mut res       = Vec::new();
+      let mut input     = $i;
+      let mut buff_sep  = $i;
 
       loop {
-        match $submac!(input, $($args2)*) {
-          $crate::IResult::Error(_)           => { return $crate::IResult::Done(buff_sep, res); },
-          $crate::IResult::Incomplete(i)      => { return $crate::IResult::Incomplete(i); },
-          $crate::IResult::Done(i, o)         => { res.push(o); input = i; }
+        if input.input_len() == 0 {
+          ret = Done(input, res); break;
         }
 
+        // match element
+        match $submac!(input, $($args2)*) {
+          Error(_)                    => { ret = Done(buff_sep, res); break; },
+          Incomplete(Needed::Unknown) => { ret = Incomplete(Needed::Unknown); break; },
+          Incomplete(Needed::Size(i)) => {
+            ret = Incomplete(Needed::Size(i + ($i).input_len() - input.input_len())); break;
+          },
+          Done(i, o)                  => { res.push(o); input = i; }
+        }
+
+        // match separator
         match $sep!(input, $($args)*) {
-          $crate::IResult::Error(_)           => { return $crate::IResult::Done(input, res); },
-          $crate::IResult::Incomplete(i)      => { return $crate::IResult::Incomplete(i); },
-          $crate::IResult::Done(i, _)         => {
-            // separator must allways consume
-            if i == input {
-              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::SeparatedList,input));
+          Error(_)                    => { ret = Done(input, res); break; },
+          Incomplete(Needed::Unknown) => { ret = Incomplete(Needed::Unknown); break; },
+          Incomplete(Needed::Size(i)) => {
+            ret = Incomplete(Needed::Size(i + ($i).input_len() - input.input_len())); break;
+          },
+          Done(i, _)                  => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i == buff_sep {
+              ret = Error(Err::Position(ErrorKind::SeparatedList, input)); break;
             }
 
             buff_sep = input;
@@ -1844,6 +1861,8 @@ macro_rules! separated_list(
           }
         }
       }
+
+      ret
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
@@ -1938,58 +1957,39 @@ macro_rules! separated_nonempty_list(
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::InputLength;
-      if ($i).input_len() == 0 {
-        $crate::IResult::Done($i, ::std::vec::Vec::new())
-      } else {
-        match $submac!($i, $($args)*) {
-          $crate::IResult::Error(_)      => {
-            $crate::IResult::Done($i, ::std::vec::Vec::new())
-          },
-          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-          $crate::IResult::Done(i1,o1)   => {
-            if i1.input_len() == 0 {
-              $crate::IResult::Done(i1,vec![o1])
-            } else {
-              let mut res    = ::std::vec::Vec::with_capacity(4);
-              res.push(o1);
-              let mut input  = i1;
-              let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
-              loop {
-                match $submac!(input, $($args)*) {
-                  $crate::IResult::Done(i, o) => {
-                    // do not allow parsers that do not consume input (causes infinite loops)
-                    if i.input_len() == input.input_len() {
-                      break;
-                    }
-                    res.push(o);
-                    input = i;
-                  }
-                  $crate::IResult::Error(_)                    => {
-                    break;
-                  },
-                  $crate::IResult::Incomplete($crate::Needed::Unknown) => {
-                    incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
-                    break;
-                  },
-                  $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-                    incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
-                    break;
-                  },
-                }
-                if input.input_len() == 0 {
-                  break;
-                }
-              }
+      use ::std::vec::Vec;
+      use $crate::IResult::{Done, Incomplete, Error};
+      use $crate::{Needed, Err, ErrorKind, InputLength};
 
-              match incomplete {
-                ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
-                ::std::option::Option::None    => $crate::IResult::Done(input, res)
-              }
+      let ret;
+      let mut res = Vec::new();
+      let mut input   = $i;
+
+      loop {
+        if input.input_len() == 0 {
+          ret = Done(input, res); break;
+        }
+
+        match $submac!(input, $($args)*) {
+          Error(_)                    => { ret = Done(input, res); break; },
+          Incomplete(Needed::Unknown) => { ret = Incomplete(Needed::Unknown); break; },
+          Incomplete(Needed::Size(i)) => {
+            ret = Incomplete(Needed::Size(i + ($i).input_len() - input.input_len())); break;
+          },
+          Done(i, o)                  => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i == input {
+              ret = Error(Err::Position(ErrorKind::Many0,input));
+              break;
             }
+
+            res.push(o);
+            input = i;
           }
         }
       }
+
+      ret
     }
   );
   ($i:expr, $f:expr) => (
@@ -2884,12 +2884,14 @@ mod tests {
   #[test]
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
-    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
+    named!(multi_empty_elems<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
+    named!(multi_empty_sep<&[u8],Vec<&[u8]> >, separated_list!(tag!(""), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
     let d = &b",,abc"[..];
+    let e = &b"abcdabcdabcdxxx"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
@@ -2897,7 +2899,9 @@ mod tests {
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
     let res3 = vec![&b""[..], &b""[..], &b""[..]];
-    assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
+    assert_eq!(multi_empty_elems(d), Done(&b"abc"[..], res3));
+    let res4 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi_empty_sep(e), Done(&b"xxx"[..], res4));
   }
 
   #[test]
