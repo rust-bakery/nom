@@ -2813,7 +2813,7 @@ mod tests {
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
     let d = &b",,abc"[..];
-    let e = &b"abcabcabcxxx"[..];
+    let e = &b"abcdabcdabcdxxx"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
@@ -2822,8 +2822,8 @@ mod tests {
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
     let res3 = vec![&b""[..], &b""[..], &b""[..]];
     assert_eq!(multi_empty_elems(d), Done(&b"abc"[..], res3));
-    let res4 = vec![&b"abc"[..], &b"abc"[..], &b"abc"[..]];
-    assert_eq!(multi_empty_sep(e), Done(&b""[..], res4));
+    let res4 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi_empty_sep(e), Done(&b"xxx"[..], res4));
   }
 
   #[test]
