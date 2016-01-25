@@ -918,6 +918,84 @@ macro_rules! chaining_parser (
   )
 );
 
+
+#[macro_export]
+macro_rules! tuple (
+  ($i:expr, $($rest:tt)*) => (
+    {
+      tuple_parser!($i, 0usize, (), $($rest)*)
+    }
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! tuple_parser (
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => (
+    tuple_parser!($i, $consumed, ($($parsed),*), call!($e), $($rest)*);
+  );
+  ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          tuple_parser!(i, $consumed + (($i).input_len() - i.input_len()), (o), $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          tuple_parser!(i, $consumed + (($i).input_len() - i.input_len()), ($($parsed)* , o), $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident) => (
+    tuple_parser!($i, $consumed, ($($parsed),*), call!($e));
+  );
+  ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          $crate::IResult::Done(i, (o))
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          $crate::IResult::Done(i, ($($parsed),* , o))
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:expr),*)) => (
+    {
+      $crate::IResult::Done($i, ($($parsed),*))
+    }
+  );
+);
 /// `alt!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>`
 /// try a list of parsers, return the result of the first successful one
 ///
@@ -3030,5 +3108,22 @@ mod tests {
     );
 
     assert_eq!(res, IResult::Incomplete(Needed::Size(12)));
+  }
+
+  #[test]
+  fn tuple_test() {
+    named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
+      tuple!(
+        be_u16 ,
+        take!(3),
+        tag!("fg")
+      )
+    );
+
+    assert_eq!(tpl(&b"abcdefgh"[..]), Done(&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])));
+    assert_eq!(tpl(&b"abcd"[..]), Incomplete(Needed::Size(5)));
+    assert_eq!(tpl(&b"abcde"[..]), Incomplete(Needed::Size(7)));
+    let input = &b"abcdejk"[..];
+    assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
   }
 }
