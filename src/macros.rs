@@ -2586,7 +2586,7 @@ mod tests {
     assert_eq!(r2, Done(&b"WXYZ"[..], C{a: 1, b: None}));
 
     let r3 = f(&b"abcdX"[..]);
-    assert_eq!(r3, Incomplete(Needed::Size(8)));
+    assert_eq!(r3, Done(&b"X"[..], C{a: 1, b: None}));
   }
 
   use util::{error_to_list, add_error_pattern, print_error};
@@ -2954,8 +2954,8 @@ mod tests {
     let c = &b"azerty"[..];
     let d = &b"abcdab"[..];
 
-    //let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
@@ -2983,8 +2983,8 @@ mod tests {
     let c = &b"azerty"[..];
     let d = &b"abcdab"[..];
 
-    //let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Error(Position(ErrorKind::Many1,c)));
@@ -3018,14 +3018,13 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    //let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
-    let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
-    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
+    assert_eq!(multi(a), Error(Err::Position(ErrorKind::ManyMN,a)));
+    let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(b), Done(&b"efgh"[..], res1));
+    let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(c), Done(&b"efgh"[..], res2));
     let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
-    assert_eq!(multi(c), Done(&b"efgh"[..], res3));
-    let res4 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
-    assert_eq!(multi(d), Done(&b"Abcdefgh"[..], res4));
+    assert_eq!(multi(d), Done(&b"Abcdefgh"[..], res3));
     assert_eq!(multi(e), Incomplete(Needed::Size(8)));
   }
 
