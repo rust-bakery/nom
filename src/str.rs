@@ -54,7 +54,7 @@ macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<&str,&str> = if $i.chars().count() < cnt {
+      let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
         let mut offset = 0;
