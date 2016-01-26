@@ -352,15 +352,15 @@ mod test {
 
     #[test]
     fn tag_str_succeed() {
-        const INPUT: &'static str = "Hèℓℓô Wôřℓδ!";
-        const TAG: &'static str = "Hèℓℓô";
+        const INPUT: &'static str = "Hello World!";
+        const TAG: &'static str = "Hello";
         fn test(input: &str) -> IResult<&str, &str> {
           tag_s!(input, TAG)
         }
 
         match test(INPUT) {
             IResult::Done(extra, output) => {
-                assert!(extra == " Wôřℓδ!", "Parser `tag_s` consumed leftover input.");
+                assert!(extra == " World!", "Parser `tag_s` consumed leftover input.");
                 assert!(output == TAG,
                     "Parser `tag_s` doesn't return the tag it matched on success. \
                      Expected `{}`, got `{}`.", TAG, output);
@@ -372,8 +372,8 @@ mod test {
 
     #[test]
     fn tag_str_incomplete() {
-        const INPUT: &'static str = "Hèℓℓô";
-        const TAG: &'static str = "Hèℓℓô Wôřℓδ!";
+        const INPUT: &'static str = "Hello";
+        const TAG: &'static str = "Hello World!";
 
         match tag_s!(INPUT, TAG) {
             IResult::Incomplete(_) => (),
@@ -386,8 +386,8 @@ mod test {
 
     #[test]
     fn tag_str_error() {
-        const INPUT: &'static str = "Hèℓℓô Wôřℓδ!";
-        const TAG: &'static str = "Ráñδô₥"; // TAG must be closer than INPUT.
+        const INPUT: &'static str = "Hello World!";
+        const TAG: &'static str = "Random"; // TAG must be closer than INPUT.
 
         match tag_s!(INPUT, TAG) {
             IResult::Error(_) => (),
@@ -444,29 +444,6 @@ mod test {
             other => panic!("Parser `take_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
         }
-    }
-
-    #[test]
-    fn take_until_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřè";
-        const FIND: &'static str = "βèƒôřèÂßÇ";
-
-        match take_until_s!(INPUT, FIND) {
-            IResult::Incomplete(_) => (),
-            other => panic!("Parser `take_until_s` didn't require more input when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_until_s_error() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "Ráñδô₥";
-
-        match take_until_s!(INPUT, FIND) {
-            IResult::Error(_) => (),
-            other => panic!("Parser `take_untl_s` didn't fail when it should have. Got `{:?}`.", other),
-        };
     }
 
   use internal::IResult::{Done, Error};
