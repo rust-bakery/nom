@@ -2024,11 +2024,28 @@ macro_rules! pair_m (
   );
 );
 
+
+////////////  ****************** START FROM HERE GOING UP, MAKE SURE ALL MACROS CAN TAKE *************************
+// a regular macro: submac:ident!,
+// a cell passing macro: submac:ident!!,
+// an object.method call: $object:ident.$method:ident, which is called like call_m!($obj.$method)
+// and a method call only: $method:ident, which is called on the cell like call_m!($cell.borrow_mut.$method)
+// FOR MACROS THAT TAKE MORE THAN ONE FUNCTION/MACRO YOU NEED TO DO THIS FIRST CREATING THE RefCell as if you're
+// the top level macro, and then again as if you are a submacro being called and being passed a RefCell.
+//
+// Then for single and multi-macro macros you need to make sure they can be called with no RefCell or $obj
+// parameter.
+// For single macro macros you need to make sure they can be called with a function as a parameter, multi-macro
+// macros will just have to use call!(function) as a workaround.
+// 
+///////////   ****************************************************************************************************
+
 /// `separated_pair!(I -> IResult<I,O>, I -> IResult<I, T>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
 /// separated_pair(X,sep,Y) returns (x,y)
 #[macro_export]
 macro_rules! separated_pair_m (
   // Top level, create the RefCell to pass down
+  // Double bang
   ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $($rest:tt)+) => (
     {
       use std::cell::RefCell;
@@ -2036,6 +2053,7 @@ macro_rules! separated_pair_m (
       separated_pair_m!($i, object_cell # $submac!!($($args)*), $($rest)+);
     }
   );
+  // Single bang
   ($i:expr, $obj:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       use std::cell::RefCell;
@@ -2043,6 +2061,7 @@ macro_rules! separated_pair_m (
       separated_pair_m!($i, object_cell # $submac!($($args)*), $($rest)+);
     }
   );
+  // Object.Method only
   ($i:expr, $obj:ident, $obj2:ident.$method:ident, $($rest:tt)+) => (
     {
       use std::cell::RefCell;
@@ -2050,6 +2069,7 @@ macro_rules! separated_pair_m (
       separated_pair_m!($i, object_cell # call_m!($obj2.$method), $($rest)+);
     }
   );
+  // Top-level, obj, method only
   ($i:expr, $obj:ident, $method:ident, $($rest:tt)+) => (
     {
       use std::cell::RefCell;
@@ -2057,6 +2077,25 @@ macro_rules! separated_pair_m (
       separated_pair_m!($i, object_cell # call_m!($obj.borrow_mut.$method), $($rest)+);
     }
   );
+
+  // Second level, RefCell is passed in
+  // Double bang
+  ($i:expr, $cell # $submac:ident!!( $($args:tt)* ), $($rest:tt)+) => (
+    separated_pair_m!($i, $cell # $submac!!($($args)*), $($rest)+);
+  );
+  // Single bang
+  ($i:expr, $cell # $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
+    separated_pair_m!($i, $cell # $submac!($($args)*), $($rest)+);
+  );
+  // Object.Method only
+  ($i:expr, $cell # $obj2:ident.$method:ident, $($rest:tt)+) => (
+    separated_pair_m!($i, $cell # call_m!($obj2.$method), $($rest)+);
+  );
+  // Top-level, obj, method only
+  ($i:expr, $cell # $method:ident, $($rest:tt)+) => (
+    separated_pair_m!($i, $cell # call_m!($obj.borrow_mut.$method), $($rest)+);
+  );
+
   // Main method macros that take a passed in RefCell
   ($i:expr, $cell:ident # $submac:ident!!( $($args:tt)* ), $($rest:tt)+) => (
     {
@@ -2092,7 +2131,8 @@ macro_rules! separated_pair_m (
   ($i:expr, $obj:ident.$method:ident, $($rest:tt)+) => (
     seperated_pair_m!($i, call_m!($obj.$method), $($rest)+);
   );
-  ($i:expr, $obj:ident.$method:ident, $($rest:tt)+) => (
+  // To call a function here you have to use call!(function)
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       let (left, parsed) = {
         let res = $submac!($i, $($args)*);
@@ -2114,6 +2154,7 @@ macro_rules! separated_pair_m (
 #[macro_export]
 macro_rules! separated_pair1_m(
   // Main method macros that take a passed in RefCell
+  // Double bang
   ($i:expr, $res1:ident, $cell:ident # $submac2:ident!!( $($args2:tt)* ), $($rest:tt)+) => (
     {
       let (left) = {
@@ -2129,6 +2170,15 @@ macro_rules! separated_pair1_m(
       }
     }
   );
+  // Method only
+  ($i:expr, $res1:ident, $cell:ident # $method, $($rest:tt)+) => (
+    separated_pair1_m!($i, $res1, $cell, call_m!($cell.borrow_mut.$method));
+  );
+  // Object.Method only
+  ($i:expr, $res1:ident, $cell:ident # $obj:ident.$method:ident, $($rest:tt)+) => (
+    separated_pair1_m!($i, $res1, $cell, call_m!($obj.$method), $($rest)+)
+  );
+  //Single bang
   ($i:expr, $res1:ident, $cell:ident # $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
     {
       let (left) = {
@@ -2148,6 +2198,7 @@ macro_rules! separated_pair1_m(
   ($i:expr, $res1:ident, $obj:ident.$method:ident, $($rest:tt)+) => (
     seperated_pair1_m!($i, $res1, call_m!($obj.$method), $($rest)+);
   );
+  // To call a function here you need to use call!(function)
   ($i:expr, $res1:ident, $obj:ident.$method:ident, $($rest:tt)+) => (
     {
       let (left) = {
@@ -2170,6 +2221,7 @@ macro_rules! separated_pair1_m(
 #[macro_export]
 macro_rules! separated_pair2_m(
   // Main method macros that take a passed in RefCell
+  // Double bang
   ($i:expr, $res1:ident, $cell:ident # $submac3:ident!!( $($args3:tt)* )) => (
     {
       let res = $submac3!($i, $cell # $($args3)*);
@@ -2182,6 +2234,15 @@ macro_rules! separated_pair2_m(
       }
     }
   );
+  // Method only
+  ($i:expr, $res1:ident, $cell:ident # $method:ident) => (
+    separated_pair2_m!($i, $res1, $cell # call_m!($cell.borrow_mut.$method));
+  );
+  // Obj.Method only
+  ($i:expr, $res1:ident, $cell:ident # $obj:ident.$method.ident) => (
+    separated_pair2_m!($i, $res1, $cell # call_m!($obj.$method));
+  );
+  // Single bang
   ($i:expr, $res1:ident, $cell:ident # $submac3:ident!( $($args3:tt)* )) => (
     {
       let res = $submac3!($i, $($args3)*);
@@ -2195,9 +2256,10 @@ macro_rules! separated_pair2_m(
     }
   );
   // method macros that don't use/ignore RefCells
-  ($i:expr, $res1:ident, $obj:ident.$method:ident) => (
+  ($i:expr, $res1:ident, $cell:ident # $obj:ident.$method:ident) => (
     seperated_pair2_m!($i, $res1, call_m!($obj.$method));
   );
+  // To call a function here, you need to use call!(function)
   ($i:expr, $res1:ident, $submac3:ident!( $($args3:tt)* )) => (
     {
       let res = $submac3!($i, $($args3)*);
@@ -2216,30 +2278,222 @@ macro_rules! separated_pair2_m(
 /// preceded(opening, X) returns X
 #[macro_export]
 macro_rules! preceded_m(
-  // ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-  //   {
-  //     match $submac!($i, $($args)*) {
-  //       $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-  //       $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-  //       $crate::IResult::Done(i1,_)    => {
-  //         match $submac2!(i1, $($args2)*) {
-  //           $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-  //           $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-  //           $crate::IResult::Done(i2,o2)   => {
-  //             $crate::IResult::Done(i2, o2)
-  //           }
-  //         }
-  //       },
-  //     }
-  //   }
-  // );
+  // Top level, create the RefCell to pass down
+  // single bang, Single bang -- not needed, this can be done with regular preceeded!
+  // Single bang, double bang
+  ($i:expr, $obj:ident, $submac:ident!( $($args:tt)* ), $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # $submac!($($args)*), $submac2!!($($args2)*));
+    }
+  );
+  // Object.Method, Single Bang
+  ($i:expr, $obj:ident, $obj2:ident.$method:ident, $submac2:ident!( $($args2:tt)* )) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # call_m!($obj2.$method), $submac2!($($args2)*));
+    }
+  );
+  // Single Bang, Object.Method
+  ($i:expr, $obj:ident, $submac:ident!( $($args:tt)* ), $obj2:ident.$obj2.method) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # $submac!($($args)*), call_m!($obj2.$method));
+    }
+  );
+  // Object, Method, Single Bang
+  ($i:expr, $obj:ident, $method:ident, $submac2:ident!( $($args2:tt)* )) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # call_m!(object_cell.borrow_mut.$method), $submac2!($($args2)*));
+    }
+  );
+  // Single Bang, Object, method
+  ($i:expr, $obj:ident, $submac:ident!( $($args:tt)* ), $method:ident) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # $submac!($($args)*), call_m!(object_cell.borrow_mut.$method));
+    }
+  );
+  // double bang, single bang
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # $submac!!($($args)*), $submac2!($($args2)*));
+    }
+  );
+  // Object.Method, Double Bang
+  ($i:expr, $obj:ident, $obj2:ident.$method:ident, $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # call_m!($obj2.$method), $submac2!!($($args2)*));
+    }
+  );
+  // Double Bang, Object.Method
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $obj2:ident.$obj2.method) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # $submac!!($($args)*), call_m!($obj2.$method));
+    }
+  );
+  // Object, Method, Double Bang
+  ($i:expr, $obj:ident, $method:ident, $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # call_m!(object_cell.borrow_mut.$method), $submac2!!($($args2)*));
+    }
+  );
+  // Double Bang, Object, method
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $method:ident) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # $submac!!($($args)*), call_m!(object_cell.borrow_mut.$method));
+    }
+  );
+  // Double banng, double bang
+  ($i:expr, $obj:ident, $submac:ident!!( $($args:tt)* ), $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      use std::cell::RefCell;
+      let object_cell = RefCell::new($obj);
+      preceded_m!($i, object_cell # $submac!!($($args)*), $submac2!!($($args2)*));
+    }
+  );
 
-  ($i:expr, $submac:ident!( $($args:tt)* ), $obj:ident.$method:ident) => (
+  // Second level, RefCell is passed in
+
+  // Object.Method, Single Bang
+  ($i:expr, $cell:ident # $obj2:ident.$method:ident, $submac2:ident!( $($args2:tt)* )) => (
+    preceded_m!($i, $cell # call_m!($obj2.$method), $submac2!($($args2)*));
+  );
+  // Single Bang, Object.Method
+  ($i:expr, $cell:ident # $submac:ident!( $($args:tt)* ), $obj2:ident.$obj2.method) => (
+    preceded_m!($i, $cell # $submac!($($args)*), call_m!($obj2.$method));
+  );
+  // Object, Method, Single Bang
+  ($i:expr, $cell:ident # $method:ident, $submac2:ident!( $($args2:tt)* )) => (
+    preceded_m!($i, $cell # call_m!(object_cell.borrow_mut.$method), $submac2!($($args2)*));
+  );
+  // Single Bang, Object, method
+  ($i:expr, $cell:ident # $submac:ident!( $($args:tt)* ), $method:ident) => (
+    preceded_m!($i, $cell # $submac!($($args)*), call_m!(object_cell.borrow_mut.$method));
+  );
+  // Object.Method, Double Bang
+  ($i:expr, $cell:ident # $obj2:ident.$method:ident, $submac2:ident!!( $($args2:tt)* )) => (
+    preceded_m!($i, $cell # call_m!($obj2.$method), $submac2!!($($args2)*));
+  );
+  // Double Bang, Object.Method
+  ($i:expr, $cell:ident # $submac:ident!!( $($args:tt)* ), $obj2:ident.$obj2.method) => (
+    preceded_m!($i, $cell # $submac!!($($args)*), call_m!($obj2.$method));
+  );
+  // Object, Method, Double Bang
+  ($i:expr, $cell:ident # $method:ident, $submac2:ident!!( $($args2:tt)* )) => (
+    preceded_m!($i, $cell # call_m!(object_cell.borrow_mut.$method), $submac2!!($($args2)*));
+  );
+  // Double Bang, Object, method
+  ($i:expr, $cell:ident # $submac:ident!!( $($args:tt)* ), $method:ident) => (
+    preceded_m!($i, $cell # $submac!!($($args)*), call_m!(object_cell.borrow_mut.$method));
+  );
+
+  // Main method macros that take a passed in RefCell
+  // Double bang, single bang
+  ($i:expr, $cell:ident # $submac:ident!!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      let left = {
+        let res = $submac!($i, $cell # $($args)*);
+        match res {
+          $crate::IResult::Error(a)      => return $crate::IResult::Error(a),
+          $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i1,_)    => left,
+        }
+      };
+      {
+        let res = $submac2!(left, $($args2)*);
+        match res {
+          $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i2,o2)   => {
+            $crate::IResult::Done(i2, o2)
+          }
+        }
+      }
+    }
+  );
+  // Single bang, double bang
+  ($i:expr, $cell:ident # $submac:ident!( $($args:tt)* ), $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      let left = {
+        let res = $submac!($i, $($args)*);
+        match res {
+          $crate::IResult::Error(a)      => return $crate::IResult::Error(a),
+          $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i1,_)    => left,
+        }
+      };
+      {
+        let res = $submac2!(left, $cell # $($args2)*);
+        match res {
+          $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i2,o2)   => {
+            $crate::IResult::Done(i2, o2)
+          }
+        }
+      }
+    }
+  );
+  // Double bang, double bang
+  ($i:expr, $cell:ident # $submac:ident!!( $($args:tt)* ), $submac2:ident!!( $($args2:tt)* )) => (
+    {
+      let left = {
+        let res = $submac!($i, $cell # $($args)*);
+        match res {
+          $crate::IResult::Error(a)      => return $crate::IResult::Error(a),
+          $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i1,_)    => left,
+        }
+      };
+      {
+        let res = $submac2!(left, $cell # $($args2)*);
+        match res {
+          $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Done(i2,o2)   => {
+            $crate::IResult::Done(i2, o2)
+          }
+        }
+      }
+    }
+  );
+
+  // method macros that don't use/ignore RefCells
+  ($i:expr, $cell:ident # $submac:ident!( $($args:tt)* ), $obj:ident.$method:ident) => (
     preceded!($i, $submac!($($args)*), call_m!($obj.$method));
   );
 
-  ($i:expr, $obj:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $cell:ident #, $obj:ident.$method:ident, $submac:ident!( $($args:tt)* )) => (
     preceded!($i, call_m!($obj.$method), $submac!($($args)*));
+  );
+
+  ($i:expr, $obj1:ident.$method1:ident, $obj2:ident.$method2:ident) => (
+    preceded!($i, call_m!($obj1.$method1), call_m!($obj2.$method2));
+  );
+
+  ($i:expr, $cell:ident # $submac:ident!( $($args:tt)* ), $func:ident) => (
+    preceded!($i, $submac!($($args)*), call!($func));
+  );
+
+  ($i:expr, $cell:ident #, $func:ident, $submac:ident!( $($args:tt)* )) => (
+    preceded!($i, call!($func), $submac!($($args)*));
   );
 
   ($i:expr, $obj1:ident.$method1:ident, $obj2:ident.$method2:ident) => (
