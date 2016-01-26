@@ -57,7 +57,7 @@ macro_rules! take_s (
       let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
-        let mut offset = 0;
+        let mut offset = $i.len();
         let mut count = 0;
         for (o, _) in $i.char_indices() {
           if count == cnt {
