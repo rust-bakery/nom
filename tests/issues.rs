@@ -1,3 +1,4 @@
+//#![feature(trace_macros)]
 #[macro_use]
 extern crate nom;
 
@@ -95,3 +96,21 @@ fn issue_142(){
    let expected = IResult::Done(&b" "[..], vec![12, 34, 5689]);
    assert_eq!(subject, expected)
 }
+
+/*
+ DOES NOT COMPILE
+#[test]
+fn issue_152() {
+  named!(take4, take!(4));
+  named!(xyz, tag!("XYZ"));
+  named!(abc, tag!("abc"));
+
+
+  named!(sw,
+    switch!(take4,
+      b"abcd" => xyz |
+      b"efgh" => abc
+    )
+  );
+}
+*/

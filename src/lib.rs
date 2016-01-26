@@ -1,7 +1,7 @@
-//! Nom, eating data byte by byte
+//! nom, eating data byte by byte
 //!
-//! The goal is to make a parser combinator library that is safe,
-//! supports streaming (push and pull), and as much as possible zero copy.
+//! nom is a parser combinator library with a focus on safe parsing,
+//! streaming patterns, and as much as possible zero copy.
 //!
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!

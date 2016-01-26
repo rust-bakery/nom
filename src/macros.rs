@@ -94,47 +94,52 @@ macro_rules! closure (
 #[macro_export]
 macro_rules! named (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: $i ) -> $crate::IResult<$i,$o> {
+        fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: $i ) -> $crate::IResult<$i, $o> {
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o> {
-            $submac!(i, $($args)*)
-        }
-    );
-    ($name:ident<$life:item,$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name<$life>( i: $i ) -> $crate::IResult<$life, $i, $o> {
+        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8]> {
+        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: $i ) -> $crate::IResult<$i,$o> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: $i ) -> $crate::IResult<$i, $o> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o> {
+        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8]> {
+        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
@@ -261,26 +266,31 @@ macro_rules! fix_error (
       match $submac!($i, $($args)*) {
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
-        $crate::IResult::Error($crate::Err::Code(ErrorKind::Custom(_))) |
-          $crate::IResult::Error($crate::Err::Node(ErrorKind::Custom(_), _))=> {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Code(e))
-        },
-        $crate::IResult::Error($crate::Err::Position(ErrorKind::Custom(_), p)) |
-          $crate::IResult::Error($crate::Err::NodePosition(ErrorKind::Custom(_), p, _)) => {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Position(e, p))
-        },
-        $crate::IResult::Error($crate::Err::Code(_)) |
-          $crate::IResult::Error($crate::Err::Node(_, _))=> {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Code(e))
-        },
-        $crate::IResult::Error($crate::Err::Position(_, p)) |
-          $crate::IResult::Error($crate::Err::NodePosition(_, p, _)) => {
-          let e: ErrorKind<$t> = ErrorKind::Fix;
-          $crate::IResult::Error($crate::Err::Position(e, p))
-        },
+        $crate::IResult::Error(e) => {
+          let err = match e {
+            $crate::Err::Code(ErrorKind::Custom(_)) |
+              $crate::Err::Node(ErrorKind::Custom(_), _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Code(e)
+            },
+            $crate::Err::Position(ErrorKind::Custom(_), p) |
+              $crate::Err::NodePosition(ErrorKind::Custom(_), p, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Position(e, p)
+            },
+            $crate::Err::Code(_) |
+              $crate::Err::Node(_, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Code(e)
+            },
+            $crate::Err::Position(_, p) |
+              $crate::Err::NodePosition(_, p, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              $crate::Err::Position(e, p)
+            },
+          };
+          $crate::IResult::Error(err)
+        }
       }
     }
   );
@@ -529,8 +539,8 @@ macro_rules! value (
         $crate::IResult::Done(i,_)     => {
           $crate::IResult::Done(i, $res)
         },
-        $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
-        $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i)
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
       }
     }
   );
@@ -908,6 +918,84 @@ macro_rules! chaining_parser (
   )
 );
 
+
+#[macro_export]
+macro_rules! tuple (
+  ($i:expr, $($rest:tt)*) => (
+    {
+      tuple_parser!($i, 0usize, (), $($rest)*)
+    }
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! tuple_parser (
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => (
+    tuple_parser!($i, $consumed, ($($parsed),*), call!($e), $($rest)*);
+  );
+  ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          tuple_parser!(i, $consumed + (($i).input_len() - i.input_len()), (o), $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          tuple_parser!(i, $consumed + (($i).input_len() - i.input_len()), ($($parsed)* , o), $($rest)*)
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident) => (
+    tuple_parser!($i, $consumed, ($($parsed),*), call!($e));
+  );
+  ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          $crate::IResult::Done(i, (o))
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          $crate::IResult::Done(i, ($($parsed),* , o))
+        }
+      }
+    }
+  );
+  ($i:expr, $consumed:expr, ($($parsed:expr),*)) => (
+    {
+      $crate::IResult::Done($i, ($($parsed),*))
+    }
+  );
+);
 /// `alt!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>`
 /// try a list of parsers, return the result of the first successful one
 ///
@@ -991,6 +1079,9 @@ macro_rules! chaining_parser (
 ///    )
 ///  );
 /// ```
+///
+/// If you want the `complete!` combinator to be applied to all rules then use the convenience
+/// `alt_complete!` macro (see below).
 ///
 /// This behaviour of `alt!` can get especially confusing if multiple alternatives have different
 /// sizes but a common prefix, like this:
@@ -1104,6 +1195,61 @@ macro_rules! alt_parser (
   );
 );
 
+/// This is a combination of the `alt!` and `complete!` combinators. Rather
+/// than returning `Incomplete` on partial input, `alt_complete!` will try the
+/// next alternative in the chain. You should use this only if you know you
+/// will not receive partial input for the rules you're trying to match (this
+/// is almost always the case for parsing programming languages).
+#[macro_export]
+macro_rules! alt_complete (
+  // Recursive rules (must include `complete!` around the head)
+
+  ($i:expr, $e:ident | $($rest:tt)*) => (
+    alt_complete!($i, complete!(call!($e)) | $($rest)*);
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
+    {
+      let res = complete!($i, $subrule!($($args)*));
+      match res {
+        $crate::IResult::Done(_,_) => res,
+        _ => alt_complete!($i, $($rest)*),
+      }
+    }
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+    {
+      match complete!($i, $subrule!($($args)*)) {
+        $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
+        _ => alt_complete!($i, $($rest)*),
+      }
+    }
+  );
+
+  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_complete!($i, complete!(call!($e)) => { $gen } | $($rest)*);
+  );
+
+  // Tail (non-recursive) rules
+
+  ($i:expr, $e:ident => { $gen:expr }) => (
+    alt_complete!($i, call!($e) => { $gen });
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+    alt_parser!($i, $subrule!($($args)*) => { $gen })
+  );
+
+  ($i:expr, $e:ident) => (
+    alt_complete!($i, call!($e));
+  );
+
+  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
+    alt_parser!($i, $subrule!($($args)*))
+  );
+);
+
 /// `switch!(I -> IResult<I,P>, P => I -> IResult<I,O> | ... | P => I -> IResult<I,O> ) => I -> IResult<I, O>`
 /// choose the next parser depending on the result of the first one, if successful,
 /// and returns the result of the second parser
@@ -1132,9 +1278,51 @@ macro_rules! alt_parser (
 ///  assert_eq!(sw(&d[..]), Error(Position(ErrorKind::Switch, &b"blah"[..])));
 ///  # }
 /// ```
+///
+/// Due to limitations in Rust macros, it is not possible to have simple functions on the right hand
+/// side of pattern, like this:
+///
+/// ```ignore
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => tag!("XYZ") |
+///      b"efgh" => tag!("123")
+///    )
+///  );
+/// ```
+///
+/// If you want to pass your own functions instead, you can use the `call!` combinator as follows:
+///
+/// ```ignore
+///  named!(xyz, tag!("XYZ"));
+///  named!(num, tag!("123"));
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => call!(xyz) |
+///      b"efgh" => call!(num)
+///    )
+///  );
+/// ```
+///
 #[macro_export]
 macro_rules! switch (
-  ($i:expr, $submac:ident!( $($args:tt)*), $($p:pat => $subrule:ident!( $($args2:tt)* ))|*) => (
+  ($i:expr, $submac:ident!( $($args:tt)*), $($rest:tt)*) => (
+    {
+      switch_impl!($i, $submac!($($args)*), $($rest)*)
+    }
+  );
+  ($i:expr, $e:ident, $($rest:tt)*) => (
+    {
+      switch_impl!($i, call!($e), $($rest)*)
+    }
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! switch_impl (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error($crate::Err::NodePosition(
@@ -1155,13 +1343,7 @@ macro_rules! switch (
       }
     }
   );
-  ($i:expr, $e:ident, $($rest:tt)*) => (
-    {
-      switch!($i, call!(e), $($rest)*)
-    }
-  );
 );
-
 /// `opt!(I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// make the underlying parser optional
 ///
@@ -2585,6 +2767,20 @@ mod tests {
   }
 
   #[test]
+  fn alt_complete() {
+    named!(ac<&[u8], &[u8]>,
+      alt_complete!(tag!("abcd") | tag!("ef") | tag!("ghi") | tag!("kl"))
+    );
+
+    let a = &b""[..];
+    assert_eq!(ac(a), Incomplete(Needed::Size(2)));
+    let a = &b"ef"[..];
+    assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
+    let a = &b"cde"[..];
+    assert_eq!(ac(a), Error(Position(ErrorKind::Alt, a)));
+  }
+
+  #[test]
   fn switch() {
     named!(sw,
       switch!(take!(4),
@@ -2700,19 +2896,23 @@ mod tests {
     assert_eq!(r1, Done(&b"kl"[..], &b"efgh"[..]));
   }
 
-    #[test]
+  #[test]
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
+    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
+    let d = &b",,abc"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+    let res3 = vec![&b""[..], &b""[..], &b""[..]];
+    assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
   }
 
   #[test]
@@ -2923,5 +3123,22 @@ mod tests {
     );
 
     assert_eq!(res, IResult::Incomplete(Needed::Size(12)));
+  }
+
+  #[test]
+  fn tuple_test() {
+    named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
+      tuple!(
+        be_u16 ,
+        take!(3),
+        tag!("fg")
+      )
+    );
+
+    assert_eq!(tpl(&b"abcdefgh"[..]), Done(&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])));
+    assert_eq!(tpl(&b"abcd"[..]), Incomplete(Needed::Size(5)));
+    assert_eq!(tpl(&b"abcde"[..]), Incomplete(Needed::Size(7)));
+    let input = &b"abcdejk"[..];
+    assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
   }
 }
