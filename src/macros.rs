@@ -3596,7 +3596,7 @@ mod tests {
                                      second: Second {
                                        whole: "42", fractional: "654", full: "42.654"
                                      },
-                                     offset: Offset(
+                                     offset: TimeOffset::Offset(
                                        "+", HourMinute {
                                          hour: "10", minute: "30", full: "10:30"
                                        },
