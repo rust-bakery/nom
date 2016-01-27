@@ -627,6 +627,8 @@ pub enum ErrorKind<E=u32> {
   NonEmpty,
   ManyMN,
   TakeUntilAndConsumeStr,
+  IsNotNStr,
+  IsANStr,
 }
 
 pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
@@ -682,5 +684,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::ManyMN                    => 57,
     ErrorKind::TakeUntilAndConsumeStr    => 58,
     ErrorKind::HexDigit                  => 59,
+    ErrorKind::IsNotNStr                 => 61,
+    ErrorKind::IsANStr                   => 62,
   }
 }
