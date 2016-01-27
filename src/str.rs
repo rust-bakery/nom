@@ -118,7 +118,7 @@ macro_rules! is_not_s (
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
 /// # fn main() {
-///  named!( not_space_5<&str,&str>, is_not_s!( 5, " \t\r\n" ) );
+///  named!( not_space_5<&str,&str>, is_not_n_s!( 5, " \t\r\n" ) );
 ///
 ///  let r = not_space_5("abcdefgh\nijkl");
 ///  assert_eq!(r, Done("fgh\nijkl", "abcde"));
@@ -140,10 +140,10 @@ macro_rules! is_not_n_s (
         }
         cnt += 1;
       }
-      if cnt < $count {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsNotNStr,$input))
-      } else if cnt == $count {
+      if cnt == $count {
         $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsNotNStr,$input))
       }
     }
   );
@@ -221,10 +221,10 @@ macro_rules! is_a_n_s (
         }
         cnt += 1;
       }
-      if cnt < $count {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsANStr,$input))
-      } else if cnt == $count {
+      if cnt == $count {
         $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      } else {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsANStr,$input))
       }
     }
   );
@@ -685,6 +685,27 @@ mod test {
     }
 
     #[test]
+    fn is_not_n_s_fail() {
+        const INPUT1: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const INPUT2: &'static str = "βèƒô";
+        const AVOID1: &'static str = "ôúçƙ¥";
+        const AVOID2: &'static str = "Ûñℓúçƙ¥";
+        fn test<'a>(input: &'a str, count: usize, avoid: &'a str) -> IResult<&'a str, &'a str> {
+            is_not_n_s!(input, count, avoid)
+        }
+        // Should hit character to avoid before it gets to 6 characters
+        match test(INPUT1, 6, AVOID1) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `is_not_n_s` got 6 characters when it shouldn't have on first test. Got `{:?}`.", other),
+        };
+        // Should run out of input before collecting 6 characters
+        match test(INPUT2, 6, AVOID2) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `is_not_n_s` got 6 characters when it shouldn't have on second test. Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
     fn take_while1_s_succeed() {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const CONSUMED: &'static str = "βèƒôřèÂßÇ";
@@ -754,6 +775,62 @@ mod test {
     }
 
     #[test]
+    fn is_a_n_s_succeed() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const MATCH: &'static str = "βèƒôřèÂßÇ";
+        const CONSUMED: &'static str = "βèƒôř";
+        const LEFTOVER: &'static str = "èÂßÇáƒƭèř";
+        fn test(input: &str) -> IResult<&str, &str> {
+            is_a_n_s!(input, 5, MATCH)
+        }
+        match test(INPUT) {
+             IResult::Done(extra, output) => {
+                assert!(extra == LEFTOVER, "Parser `is_a_n_s` consumed leftover input. Leftover `{}`.", extra);
+                assert!(output == CONSUMED,
+                    "Parser `is_a_n_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+                    CONSUMED, output);
+            },
+            other => panic!("Parser `is_a_n_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn is_not_n_s_succeed() {
+      const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+      const AVOID: &'static str = "£úçƙ¥á";
+      const CONSUMED1: &'static str = "βèƒô";
+      const LEFTOVER1: &'static str = "řèÂßÇáƒƭèř";
+      const CONSUMED2: &'static str = "βèƒôřèÂßÇ";
+      const LEFTOVER2: &'static str = "áƒƭèř";
+      fn test(input: &str, count: usize) -> IResult<&str, &str> {
+        is_not_n_s!(input, count, AVOID)
+      }
+      // Check that it only gets 4 characters
+      match test(INPUT, 4) {
+        IResult::Done(extra, output) => {
+          assert!(extra == LEFTOVER1, "Parser `is_not_n_s` consumed leftover input. Leftover `{}`.", extra);
+          assert!(output == CONSUMED1,
+          "Parser `is_not_n_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+          CONSUMED1, output);
+        },
+        other => panic!("Parser `is_not_n_s` didn't succeed when it should have. \
+                               Got `{:?}`.", other),
+      };
+      // Check that it gets all characters
+      match test(INPUT, 9) {
+        IResult::Done(extra, output) => {
+          assert!(extra == LEFTOVER2, "Parser `is_not_n_s` consumed leftover input. Leftover `{}`.", extra);
+          assert!(output == CONSUMED2,
+          "Parser `is_not_n_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+          CONSUMED2, output);
+        },
+        other => panic!("Parser `is_not_n_s` didn't succeed when it should have. \
+                               Got `{:?}`.", other),
+      };
+    }
+
+    #[test]
     fn take_while1_s_fail() {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         fn while1_s(c: char) -> bool {
@@ -779,6 +856,26 @@ mod test {
         match test(INPUT) {
             IResult::Error(_) => (),
             other => panic!("Parser `is_a_s` didn't fail when it should have. Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn is_a_n_s_fail() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const NOMATCH: &'static str = "Ûñℓúçƙ¥";
+        const MATCH: &'static str = "βèƒ";
+        fn test<'a>(input: &'a str, count: usize, mat: &'a str) -> IResult<&'a str, &'a str> {
+            is_a_n_s!(input, count, mat)
+        }
+        // There are no matching characters between the input and string of characters to look for
+        match test(INPUT, 6, NOMATCH) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `is_a_n_s` matched characters when it shouldn't have. Got `{:?}`.", other),
+        };
+        // Should only be able to match 3 characters out of 6 requested
+        match test(INPUT, 6, MATCH) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `is_a_n_s` matched more characters than it should have. Got `{:?}`.", other),
         };
     }
 
