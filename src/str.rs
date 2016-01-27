@@ -111,6 +111,44 @@ macro_rules! is_not_s (
   );
 );
 
+/// `is_not_n_s!(&str, n) => &str -> IResult<&str, &str>`
+/// returns a list of characters of length n that do not appear in the provided array
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!( not_space_5<&str,&str>, is_not_s!( 5, " \t\r\n" ) );
+///
+///  let r = not_space_5("abcdefgh\nijkl");
+///  assert_eq!(r, Done("fgh\nijkl", "abcde"));
+///  # }
+/// ```
+#[macro_export]
+macro_rules! is_not_n_s (
+  ($input:expr, $count:expr, $arr:expr) => (
+    {
+      // Don't check the count beforehand, it's an O(n) operation
+      use std::collections::HashSet;
+      let set: HashSet<char> = $arr.chars().collect();
+      let mut offset = $input.len();
+      let mut cnt = 0;
+      for (o, c) in $input.char_indices() {
+        if cnt >= $count || set.contains(&c) {
+          offset = o;
+          break;
+        }
+        cnt += 1;
+      }
+      if cnt < $count {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsNotNStr,$input))
+      } else if cnt == $count {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
+      }
+    }
+  );
+);
+
 /// `is_a_s!(&str) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters that appear in the provided array
 ///
@@ -146,6 +184,47 @@ macro_rules! is_a_s (
         $crate::IResult::Done(&$input[offset..], &$input[..offset])
       } else {
         $crate::IResult::Done("", $input)
+      }
+    }
+  );
+);
+
+/// `is_a_n_s!(&str, n) => &str -> IResult<&str, &str>`
+/// returns a list of characters of length `n` that appear in the provided array
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(abcd3<&str, &str>, is_a_n_s!( 3, "abcd" ));
+///
+///  let r1 = abcd3("aaaaefgh");
+///  assert_eq!(r1, Done("aefgh", "aaa"));
+///
+///  let r2 = abcd3("dcbaefgh");
+///  assert_eq!(r2, Done("aefgh", "dcb"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! is_a_n_s (
+  ($input:expr, $count:expr, $arr:expr) => (
+    {
+      // Don't check the count beforehand, it's an O(n) operation
+      use std::collections::HashSet;
+      let set: HashSet<char> = $arr.chars().collect();
+      let mut offset = $input.len();
+      let mut cnt = 0;
+      for (o, c) in $input.char_indices() {
+        if cnt >= $count || !set.contains(&c) {
+          offset = o;
+          break;
+        }
+        cnt += 1;
+      }
+      if cnt < $count {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsANStr,$input))
+      } else if cnt == $count {
+        $crate::IResult::Done(&$input[offset..], &$input[..offset])
       }
     }
   );
