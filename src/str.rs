@@ -54,10 +54,10 @@ macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<&str,&str> = if $i.chars().count() < cnt {
+      let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
-        let mut offset = 0;
+        let mut offset = $i.len();
         let mut count = 0;
         for (o, _) in $i.char_indices() {
           if count == cnt {
@@ -352,15 +352,15 @@ mod test {
 
     #[test]
     fn tag_str_succeed() {
-        const INPUT: &'static str = "Hèℓℓô Wôřℓδ!";
-        const TAG: &'static str = "Hèℓℓô";
+        const INPUT: &'static str = "Hello World!";
+        const TAG: &'static str = "Hello";
         fn test(input: &str) -> IResult<&str, &str> {
           tag_s!(input, TAG)
         }
 
         match test(INPUT) {
             IResult::Done(extra, output) => {
-                assert!(extra == " Wôřℓδ!", "Parser `tag_s` consumed leftover input.");
+                assert!(extra == " World!", "Parser `tag_s` consumed leftover input.");
                 assert!(output == TAG,
                     "Parser `tag_s` doesn't return the tag it matched on success. \
                      Expected `{}`, got `{}`.", TAG, output);
@@ -372,8 +372,8 @@ mod test {
 
     #[test]
     fn tag_str_incomplete() {
-        const INPUT: &'static str = "Hèℓℓô";
-        const TAG: &'static str = "Hèℓℓô Wôřℓδ!";
+        const INPUT: &'static str = "Hello";
+        const TAG: &'static str = "Hello World!";
 
         match tag_s!(INPUT, TAG) {
             IResult::Incomplete(_) => (),
@@ -386,8 +386,8 @@ mod test {
 
     #[test]
     fn tag_str_error() {
-        const INPUT: &'static str = "Hèℓℓô Wôřℓδ!";
-        const TAG: &'static str = "Ráñδô₥"; // TAG must be closer than INPUT.
+        const INPUT: &'static str = "Hello World!";
+        const TAG: &'static str = "Random"; // TAG must be closer than INPUT.
 
         match tag_s!(INPUT, TAG) {
             IResult::Error(_) => (),
@@ -416,248 +416,6 @@ mod test {
     }
 
     #[test]
-    fn take_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřèÂßÇá";
-
-        match take_s!(INPUT, 13) {
-            IResult::Incomplete(_) => (),
-            other => panic!("Parser `take_s` didn't require more input when it should have. \
-                             Got `{:?}`.", other),
-        }
-    }
-
-    #[test]
-    fn is_not_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const AVOID: &'static str = "£úçƙ¥á";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
-
-        fn test(input: &str) -> IResult<&str, &str> {
-            is_not_s!(input, AVOID)
-        }
-        match test(INPUT) {
-             IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `is_not_s` consumed leftover input. Leftover `{}`.", extra);
-                assert!(output == CONSUMED,
-                    "Parser `is_not_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
-                    CONSUMED, output);
-            },
-            other => panic!("Parser `is_not_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn is_not_s_fail() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const AVOID: &'static str = "βúçƙ¥";
-
-        fn test(input: &str) -> IResult<&str, &str> {
-            is_not_s!(input, AVOID)
-        }
-        match test(INPUT) {
-            IResult::Error(_) => (),
-            other => panic!("Parser `is_not_s` didn't fail when it should have. Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn is_a_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const MATCH: &'static str = "βèƒôřèÂßÇ";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
-
-        fn test(input: &str) -> IResult<&str, &str> {
-            is_a_s!(input, MATCH)
-        }
-        match test(INPUT) {
-             IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `is_a_s` consumed leftover input. Leftover `{}`.", extra);
-                assert!(output == CONSUMED,
-                    "Parser `is_a_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
-                    CONSUMED, output);
-            },
-            other => panic!("Parser `is_a_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn is_a_s_fail() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const MATCH: &'static str = "Ûñℓúçƙ¥";
-
-        fn test(input: &str) -> IResult<&str, &str> {
-            is_a_s!(input, MATCH)
-        }
-        match test(INPUT) {
-            IResult::Error(_) => (),
-            other => panic!("Parser `is_a_s` didn't fail when it should have. Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_while_s_succeed_none() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const CONSUMED: &'static str = "";
-        const LEFTOVER: &'static str = "βèƒôřèÂßÇáƒƭèř";
-
-        fn while_s(c: char) -> bool {
-            c == '9'
-        }
-        fn test(input: &str) -> IResult<&str, &str> {
-          take_while_s!(input, while_s)
-        }
-        match test(INPUT) {
-            IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
-                assert!(output == CONSUMED,
-                    "Parser `take_while_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.", CONSUMED, output);
-            },
-            other => panic!("Parser `take_while_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_while_s_succeed_some() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
-
-        fn while_s(c: char) -> bool {
-            c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
-            c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
-        }
-        fn test(input: &str) -> IResult<&str, &str> {
-          take_while_s!(input, while_s)
-        }
-        match test(INPUT) {
-            IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
-                assert!(output == CONSUMED,
-                    "Parser `take_while_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.", CONSUMED, output);
-            },
-            other => panic!("Parser `take_while_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_while1_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
-
-        fn while1_s(c: char) -> bool {
-            c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
-            c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
-        }
-        fn test(input: &str) -> IResult<&str, &str> {
-          take_while1_s!(input, while1_s)
-        }
-        match test(INPUT) {
-            IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `take_while1_s` consumed leftover input.");
-                assert!(output == CONSUMED,
-                    "Parser `take_while1_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.", CONSUMED, output);
-            },
-            other => panic!("Parser `take_while1_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_while1_s_fail() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-
-        fn while1_s(c: char) -> bool {
-            c == '9'
-        }
-        fn test(input: &str) -> IResult<&str, &str> {
-          take_while1_s!(input, while1_s)
-        }
-        match test(INPUT) {
-            IResult::Error(_) => (),
-            other => panic!("Parser `take_while1_s` didn't fail when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_till_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
-
-        fn till_s(c: char) -> bool {
-            c == 'á'
-        }
-        fn test(input: &str) -> IResult<&str, &str> {
-          take_till_s!(input, till_s)
-        }
-        match test(INPUT) {
-            IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `take_till_s` consumed leftover input.");
-                assert!(output == CONSUMED,
-                    "Parser `take_till_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.", CONSUMED, output);
-            },
-            other => panic!("Parser `take_till_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_until_and_consume_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "ÂßÇ";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
-
-        match take_until_and_consume_s!(INPUT, FIND) {
-            IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `take_until_and_consume_s`\
-                    consumed leftover input. Leftover `{}`.", extra);
-                assert!(output == CONSUMED, "Parser `take_until_and_consume_s`\
-                    doens't return the string it consumed on success. Expected `{}`, got `{}`.",
-                    CONSUMED, output);
-            }
-            other => panic!("Parser `take_until_and_consume_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_until_and_consume_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřè";
-        const FIND: &'static str = "βèƒôřèÂßÇ";
-
-        match take_until_and_consume_s!(INPUT, FIND) {
-            IResult::Incomplete(_) => (),
-            other => panic!("Parser `take_until_and_consume_s` didn't require more input when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_until_and_consume_s_error() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "Ráñδô₥";
-
-        match take_until_and_consume_s!(INPUT, FIND) {
-            IResult::Error(_) => (),
-            other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
     fn take_until_s_succeed() {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const FIND: &'static str = "ÂßÇ";
@@ -666,38 +424,26 @@ mod test {
 
         match take_until_s!(INPUT, FIND) {
             IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `takeconsume_s`\
-                    consumed leftover input. Leftover `{}`.", extra);
-                assert!(output == CONSUMED, "Parser `take_consume_s`\
-                    doens't return the string it consumed on success. Expected `{}`, got `{}`.",
-                    CONSUMED, output);
+                assert!(extra == LEFTOVER, "Parser `take_until_s`\
+                  consumed leftover input. Leftover `{}`.", extra);
+                assert!(output == CONSUMED, "Parser `take_until_s`\
+                  doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+                  CONSUMED, output);
             }
-            other => panic!("Parser `take_consume_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
+            other => panic!("Parser `take_until_s` didn't succeed when it should have. \
+             Got `{:?}`.", other),
         };
     }
 
     #[test]
-    fn take_until_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřè";
-        const FIND: &'static str = "βèƒôřèÂßÇ";
+    fn take_s_incomplete() {
+        const INPUT: &'static str = "βèƒôřèÂßÇá";
 
-        match take_until_s!(INPUT, FIND) {
+        match take_s!(INPUT, 13) {
             IResult::Incomplete(_) => (),
-            other => panic!("Parser `take_consume_s` didn't require more input when it should have. \
+            other => panic!("Parser `take_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_until_s_error() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "Ráñδô₥";
-
-        match take_until_s!(INPUT, FIND) {
-            IResult::Error(_) => (),
-            other => panic!("Parser `take_s` didn't fail when it should have. Got `{:?}`.", other),
-        };
+        }
     }
 
   use internal::IResult::{Done, Error};
@@ -896,6 +642,18 @@ mod test {
     }
 
     #[test]
+    fn take_until_s_incomplete() {
+        const INPUT: &'static str = "βèƒôřè";
+        const FIND: &'static str = "βèƒôřèÂßÇ";
+
+        match take_until_s!(INPUT, FIND) {
+            IResult::Incomplete(_) => (),
+            other => panic!("Parser `take_until_s` didn't require more input when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
     fn is_a_s_succeed() {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const MATCH: &'static str = "βèƒôřèÂßÇ";
@@ -955,5 +713,17 @@ mod test {
             other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
                              Got `{:?}`.", other),
         };
-  }
+    }
+
+    #[test]
+    fn take_until_s_error() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const FIND: &'static str = "Ráñδô₥";
+
+        match take_until_s!(INPUT, FIND) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
 }

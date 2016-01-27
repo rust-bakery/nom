@@ -2763,6 +2763,45 @@ mod tests {
     );
   );
 
+  macro_rules! tag_s (
+    ($i:expr, $tag: expr) => (
+      {
+        let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
+          $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
+        //} else if &$i[0..$tag.len()] == $tag {
+        } else if ($i).starts_with($tag) {
+          $crate::IResult::Done(&$i[$tag.len()..], &$i[0..$tag.len()])
+        } else {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagStr, $i))
+        };
+        res
+      }
+    );
+  );
+
+  macro_rules! is_a_s (
+    ($input:expr, $arr:expr) => (
+      {
+        use std::collections::HashSet;
+        let set: HashSet<char> = $arr.chars().collect();
+        let mut offset = $input.len();
+        for (o, c) in $input.char_indices() {
+          if !set.contains(&c) {
+            offset = o;
+            break;
+          }
+        }
+        if offset == 0 {
+          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input))
+        } else if offset < $input.len() {
+          $crate::IResult::Done(&$input[offset..], &$input[..offset])
+        } else {
+          $crate::IResult::Done("", $input)
+        }
+      }
+    );
+  );
+
 
   mod pub_named_mod {
     named!(pub tst, tag!("abcd"));
@@ -3532,7 +3571,7 @@ mod tests {
                                                                             tag_s!(":")          ~
                                                                    off_min: is_a_s!("0123456789"),
                                                                    ||{HourMinute{hour: off_hr, minute: off_min, full: off_hr_min}}
-                                                             ),  chain!(off_hr_min)
+                                                             ),  // chain_group!(off_hr_min)
                                                     ||{(posneg, hr_min, off)}
                                              )) /* chain_group!(off)*/   => { |(posneg, hr_min, off)| TimeOffset::Offset(posneg, hr_min, off)}
                                        ),  // alt!
