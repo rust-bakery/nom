@@ -84,7 +84,7 @@
 //! the wrapper's names, so you need to supply them yourself, but this is okay
 //! because you'll need to use them later.
 //! 
-//! To call a wrapped struct you need to use the `call_rf!` macro. For example:
+//! To call a wrapped struct you need to use the `call_rc!` macro. For example:
 //! ```ignore
 //! struct<'a> Parser<'a> {
 //!   parsed: &'a str,
@@ -92,14 +92,14 @@
 //! impl<'a> Parser<'a> {
 //!   // Constructor omitted for brevity
 //!   method!(take4<&Parser<'a>, &'a str, &'a str>, self, take!(4));
-//!   method!(caller<&Parser<'a>, &'a str, &'a str>, self, [(self, rcs)]), call_rf!(rcs.take4));
+//!   method!(caller<&Parser<'a>, &'a str, &'a str>, self, [(self, rcs)]), call_rc!(rcs.take4));
 //! }
 //! ```
 //! Notice in the definition of `take4` no structs and wrapped names are specified
 //! because they aren't needed since it won't be calling any methods. The `caller`
 //! method however does call a method on the `self` struct so it specifies `self`
 //! as a struct to be wrapped and `rcs` as the wrapped name. Later, we make use of
-//! the `call_rf!` macro to call the `take4` method on the wrapped `self` struct, 
+//! the `call_rc!` macro to call the `take4` method on the wrapped `self` struct, 
 //! `rcs`.
 //! 
 //! More complicated combinations still mostly look the same as their `named!`
@@ -107,10 +107,10 @@
 //! ```ignore
 //!    method!(pub simple_chain<&mut Parser<'a>, &'a str, &'a str>, self, [(self, rcs)],
 //!      chain!(
-//!             call_rf!(rcs.tag_abc)      ~
-//!             call_rf!(rcs.tag_def)      ~
-//!             call_rf!(rcs.tag_ghi)      ~
-//!       last: call_rf!(rcs.simple_peek)  ,
+//!             call_rc!(rcs.tag_abc)      ~
+//!             call_rc!(rcs.tag_def)      ~
+//!             call_rc!(rcs.tag_ghi)      ~
+//!       last: call_rc!(rcs.simple_peek)  ,
 //!        ||{rcs.borrow_mut().parsed = last; last}
 //!      )
 //!    );
@@ -120,7 +120,7 @@
 //! 1. Specify `self`'s type
 //! 2. Pass `self` to the macro
 //! 3. Specify structs that need to be wrapped and the name of their wrapper
-//! 4. Call parser methods using the `call_rf!` macro.
+//! 4. Call parser methods using the `call_rc!` macro.
 
 /// Makes a method from a parser combination
 ///
@@ -206,7 +206,7 @@ macro_rules! method (
 
 /// Used to called methods on non-mutable structs wrapped in `RefCell`s
 #[macro_export]
-macro_rules! call_rf (
+macro_rules! call_rc (
   ($i:expr, $cell:ident.$method:ident) => ( { let res = $cell.borrow_mut().$method( $i ); res } );
   ($i:expr, $cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $cell.borrow_mut().$method( $i, $($args),* ); res } );
 );
@@ -279,15 +279,15 @@ mod tests {
     method!(pub tag_ijk<&mut Parser<'a>, &'a str, &'a str>, self, tag_s!("ïJƙ"));
     method!(take3<&mut Parser<'a>, &'a str, &'a str>, self, take_s!(3));
     method!(pub simple_call<&mut Parser<'a>, &'a str, &'a str>, self, [(self, ref_cell_self)],
-      call_rf!(ref_cell_self.tag_abc)
+      call_rc!(ref_cell_self.tag_abc)
     );
     method!(pub simple_peek<&mut Parser<'a>, &'a str, &'a str>, self, [(self, rcs)],
-      peek!(call_rf!(rcs.take3))
+      peek!(call_rc!(rcs.take3))
     );
     method!(pub simple_chain<&mut Parser<'a>, &'a str, &'a str>, self, [(self, rcs)],
       chain!(
-         bcd:  call_rf!(rcs.tag_bcd)      ~
-         last: call_rf!(rcs.simple_peek)  ,
+         bcd:  call_rc!(rcs.tag_bcd)      ~
+         last: call_rc!(rcs.simple_peek)  ,
          ||{rcs.borrow_mut().bcd = bcd; last}
       )
     );
@@ -362,7 +362,7 @@ mod tests {
     }
   }
   #[test]
-  fn test_method_call_rf() {
+  fn test_method_call_rc() {
     let mut p = Parser::new();
     const INPUT: &'static str = "áβçδèƒϱλïJƙ";
     const CONSUMED: &'static str = "áβç";
