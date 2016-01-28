@@ -73,12 +73,13 @@
 //! borrow-checker is used instead of the compile-time borrow checker).
 //!
 //! The `method!` creator needs specify the structs they want wrapped in
-//! `RefCell`s for later calling as well as the name of the wrapping `RefCell`.
+//! `RefCell`s for later calling as well as the name of the borrowed ref from
+//! the wrapping `RefCell`.
 //! ```ignore
 //! 
 //! method!(method_name<&Parser<'a>, &'a str, &'a str>, self,
-//! // -struct, wrapped struct's name-    -struct,     wrapped struct's name-
-//!   [(self,     ref_cell_self     ), (other_parser,      ref_cell_other  )], ...);
+//! // -struct, wrapped struct's borrowed name-    -struct,     wrapped struct's borrowed name-
+//!   [(self,           self_borrow           ), (other_parser,            other_borrow        )], ...);
 //! ```
 //! Again, due to macro hygiene the `method!` macro can't auto-generate the
 //! the wrapper's names, so you need to supply them yourself, but this is okay
@@ -92,26 +93,26 @@
 //! impl<'a> Parser<'a> {
 //!   // Constructor omitted for brevity
 //!   method!(take4<&Parser<'a>, &'a str, &'a str>, self, take!(4));
-//!   method!(caller<&Parser<'a>, &'a str, &'a str>, self, [(self, rcs)]), call_rc!(rcs.take4));
+//!   method!(caller<&Parser<'a>, &'a str, &'a str>, self, [(self, sb)]), call_rc!(sb.take4));
 //! }
 //! ```
 //! Notice in the definition of `take4` no structs and wrapped names are specified
 //! because they aren't needed since it won't be calling any methods. The `caller`
 //! method however does call a method on the `self` struct so it specifies `self`
-//! as a struct to be wrapped and `rcs` as the wrapped name. Later, we make use of
-//! the `call_rc!` macro to call the `take4` method on the wrapped `self` struct, 
-//! `rcs`.
+//! as a struct to be wrapped and `br` as the borrowed wrapped name. Later, we make
+//! use of the `call_rc!` macro to call the `take4` method on the borrowed wrapped
+//! `self` struct, `sb`.
 //! 
 //! More complicated combinations still mostly look the same as their `named!`
 //! counterparts:
 //! ```ignore
-//!    method!(pub simple_chain<&mut Parser<'a>, &'a str, &'a str>, self, [(self, rcs)],
+//!    method!(pub simple_chain<&mut Parser<'a>, &'a str, &'a str>, self, [(self, sb)],
 //!      chain!(
-//!             call_rc!(rcs.tag_abc)      ~
-//!             call_rc!(rcs.tag_def)      ~
-//!             call_rc!(rcs.tag_ghi)      ~
-//!       last: call_rc!(rcs.simple_peek)  ,
-//!        ||{rcs.borrow_mut().parsed = last; last}
+//!             call_rc!(sb.tag_abc)      ~
+//!             call_rc!(sb.tag_def)      ~
+//!             call_rc!(sb.tag_ghi)      ~
+//!       last: call_rc!(sb.simple_peek)  ,
+//!        ||{sb.parsed = last; last}
 //!      )
 //!    );
 //! ```
@@ -119,7 +120,7 @@
 //! The four additions to method definitions remeber are:
 //! 1. Specify `self`'s type
 //! 2. Pass `self` to the macro
-//! 3. Specify structs that need to be wrapped and the name of their wrapper
+//! 3. Specify structs that need to be wrapped and the name of the borrow from the wrapper
 //! 4. Call parser methods using the `call_rc!` macro.
 
 /// Makes a method from a parser combination
@@ -131,48 +132,48 @@
 /// method!(my_function<&Parser<'a> >( &[u8] ) -> &[u8], tag!("abcd"));
 /// // first type parameter is `self`'s type, second is input, third is output
 /// method!(my_function<&Parser<'a>, &[u8], &[u8]>,     tag!("abcd"));
-/// // will have &Parser<'a> as the `self` type, &[u8] as input type, &[u8] as output type
-/// method!(my_function<&Parser<'a>,                   tag!("abcd"));
-/// // will use &[u8] as input type (use this if the compiler
-/// // complains about lifetime issues
-/// method!(my_function<&Parser<'a>, &[u8]>,            tag!("abcd"));
 /// //prefix them with 'pub' to make the methods public
-/// method!(pub my_function<&Parser<'a>,               tag!("abcd"));
+/// method!(pub my_function<&Parser<'a>,&[u8], &[u8]>, tag!("abcd"));
 /// ```
 #[macro_export]
 macro_rules! method (
-  ($name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
+  ($name:ident<$a:ty>( $i:ty ) -> $o:ty, $obj:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
     fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
       use std::cell::RefCell;
-      $(let $cell = RefCell::new($stt)),*;
+      $($self_.rc = Option::Some(RefCell::new($stt));
+        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
       $submac!(i, $($args)*)
     }
   );
   ($name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
     fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i, $o> {
       use std::cell::RefCell;
-      $(let $cell = RefCell::new($stt)),*;
+      $($self_.rc = Option::Some(RefCell::new($stt));
+        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
       $submac!(i, $($args)*)
     }
   );
   (pub $name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
     pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
       use std::cell::RefCell;
-      $(let $cell = RefCell::new($stt)),*;
+      $($self_.rc = Option::Some(RefCell::new($stt));
+        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
       $submac!(i, $($args)*)
     }
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
     pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i, $o> {
       use std::cell::RefCell;
-      $(let $cell = RefCell::new($stt)),*;
+      $($self_.rc = Option::Some(RefCell::new($stt));
+        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
       $submac!(i, $($args)*)
     }
   );
   (pub $name:ident<$a:ty,$o:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
     pub fn $name( $self_: $a, i: &[u8] ) -> $crate::IResult<&[u8], $o> {
       use std::cell::RefCell;
-      $(let $cell = RefCell::new($stt)),*;
+      $($self_.rc = Option::Some(RefCell::new($stt));
+        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
       $submac!(i, $($args)*)
     }
   );
@@ -207,8 +208,8 @@ macro_rules! method (
 /// Used to called methods on non-mutable structs wrapped in `RefCell`s
 #[macro_export]
 macro_rules! call_rc (
-  ($i:expr, $cell:ident.$method:ident) => ( { let res = $cell.borrow_mut().$method( $i ); res } );
-  ($i:expr, $cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $cell.borrow_mut().$method( $i, $($args),* ); res } );
+  ($i:expr, $self_:ident.$cell:ident.$method:ident) => ( { let res = $self_.$cell.unwrap().$method( $i ); res } );
+  ($i:expr, $self_:ident.$cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $self_.$cell.unwrap().$method( $i, $($args),* ); res } );
 );
 
 /// emulate function currying for method calls on non-mutable structs wrapped in `RefCell`s: 
@@ -217,7 +218,12 @@ macro_rules! call_rc (
 /// Supports up to 6 arguments
 #[macro_export]
 macro_rules! apply_rf (
-  ($i:expr, $cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $cell.borrow_mut().$method( $i, $($args),* ); res } );
+  ($i:expr, $self_:ident.$cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $self_.$cell.unwrap().$method( $i, $($args),* ); res } );
+);
+
+#[macro_export]
+macro_rules! get_field (
+  ($stt:ident.$field:ident) => ($stt.$field.unwrap());
 );
 
 #[cfg(test)]
@@ -288,7 +294,7 @@ mod tests {
       chain!(
          bcd:  call_rc!(rcs.tag_bcd)      ~
          last: call_rc!(rcs.simple_peek)  ,
-         ||{rcs.borrow_mut().bcd = bcd; last}
+         ||{rcs.bcd = bcd; last}
       )
     );
     fn tag_stuff(self: &mut Parser<'a>, input: &'a str, something: &'a str) -> ::IResult<&'a str, &'a str> {
@@ -303,13 +309,13 @@ mod tests {
   #[test]
   fn test_method_call_abc() {
     let mut p = Parser::new();
-    const INPUT: &'static str = "áβçδèƒϱλïJƙ";
-    const CONSUMED: &'static str = "áβç";
-    const LEFTOVER: &'static str = "δèƒϱλïJƙ";
-    match p.tag_abc(INPUT) {
-      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.tag_abc` consumed leftover input. Leftover: {}", extra);
-                               assert!(output == CONSUMED, "`Parser.tag_abc` doesnt return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", CONSUMED, output);
+    let input: &str = "áβçδèƒϱλïJƙ";
+    let consumed: &str = "áβç";
+    let leftover: &str = "δèƒϱλïJƙ";
+    match p.tag_abc(input) {
+      Done(extra, output) => { assert!(extra == leftover, "`Parser.tag_abc` consumed leftover input. leftover: {}", extra);
+                               assert!(output == consumed, "`Parser.tag_abc` doesnt return the string it consumed \
+                                on success. Expected `{}`, got `{}`.", consumed, output);
                              },
       other => panic!("`Parser.tag_abc` didn't succeed when it should have. \
                              Got `{:?}`.", other),
@@ -318,13 +324,13 @@ mod tests {
   #[test]
   fn test_method_call_bcd() {
     let mut p = Parser::new();
-    const INPUT: &'static str = "βçδèƒϱλïJƙ";
-    const CONSUMED: &'static str = "βçδ";
-    const LEFTOVER: &'static str = "èƒϱλïJƙ";
-    match p.tag_bcd(INPUT) {
-      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.tag_bcd` consumed leftover input. Leftover: {}", extra);
-                               assert!(output == CONSUMED, "`Parser.tag_bcd` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", CONSUMED, output);
+    let input: &str = "βçδèƒϱλïJƙ";
+    let consumed: &str = "βçδ";
+    let leftover: &str = "èƒϱλïJƙ";
+    match p.tag_bcd(input) {
+      Done(extra, output) => { assert!(extra == leftover, "`Parser.tag_bcd` consumed leftover input. leftover: {}", extra);
+                               assert!(output == consumed, "`Parser.tag_bcd` doesn't return the string it consumed \
+                                on success. Expected `{}`, got `{}`.", consumed, output);
                              },
       other => panic!("`Parser.tag_bcd` didn't succeed when it should have. \
                              Got `{:?}`.", other),
@@ -333,13 +339,13 @@ mod tests {
   #[test]
   fn test_method_call_hij() {
     let mut p = Parser::new();
-    const INPUT: &'static str = "λïJƙℓ₥ñôƥ9řƨ";
-    const CONSUMED: &'static str = "λïJ";
-    const LEFTOVER: &'static str = "ƙℓ₥ñôƥ9řƨ";
-    match p.tag_hij(INPUT) {
-      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.tag_hij` consumed leftover input. Leftover: {}", extra);
-                               assert!(output == CONSUMED, "`Parser.tag_hij` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", CONSUMED, output);
+    let input: &str = "λïJƙℓ₥ñôƥ9řƨ";
+    let consumed: &str = "λïJ";
+    let leftover: &str = "ƙℓ₥ñôƥ9řƨ";
+    match p.tag_hij(input) {
+      Done(extra, output) => { assert!(extra == leftover, "`Parser.tag_hij` consumed leftover input. leftover: {}", extra);
+                               assert!(output == consumed, "`Parser.tag_hij` doesn't return the string it consumed \
+                                on success. Expected `{}`, got `{}`.", consumed, output);
                              },
       other => panic!("`Parser.tag_hij` didn't succeed when it should have. \
                              Got `{:?}`.", other),
@@ -349,13 +355,13 @@ mod tests {
   #[test]
   fn test_method_call_ijk() {
     let mut p = Parser::new();
-    const INPUT: &'static str = "ïJƙℓ₥ñôƥ9řƨ";
-    const CONSUMED: &'static str = "ïJƙ";
-    const LEFTOVER: &'static str = "ℓ₥ñôƥ9řƨ";
-    match p.tag_ijk(INPUT) {
-      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.tag_ijk` consumed leftover input. Leftover: {}", extra);
-                               assert!(output == CONSUMED, "`Parser.tag_ijk` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", CONSUMED, output);
+    let input: &str = "ïJƙℓ₥ñôƥ9řƨ";
+    let consumed: &str = "ïJƙ";
+    let leftover: &str = "ℓ₥ñôƥ9řƨ";
+    match p.tag_ijk(input) {
+      Done(extra, output) => { assert!(extra == leftover, "`Parser.tag_ijk` consumed leftover input. leftover: {}", extra);
+                               assert!(output == consumed, "`Parser.tag_ijk` doesn't return the string it consumed \
+                                on success. Expected `{}`, got `{}`.", consumed, output);
                              },
       other => panic!("`Parser.tag_ijk` didn't succeed when it should have. \
                              Got `{:?}`.", other),
@@ -364,13 +370,13 @@ mod tests {
   #[test]
   fn test_method_call_rc() {
     let mut p = Parser::new();
-    const INPUT: &'static str = "áβçδèƒϱλïJƙ";
-    const CONSUMED: &'static str = "áβç";
-    const LEFTOVER: &'static str = "δèƒϱλïJƙ";
-    match p.simple_call(INPUT) {
-      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.simple_call` consumed leftover input. Leftover: {}", extra);
-                               assert!(output == CONSUMED, "`Parser.simple_call` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", CONSUMED, output);
+    let input: &str = "áβçδèƒϱλïJƙ";
+    let consumed: &str = "áβç";
+    let leftover: &str = "δèƒϱλïJƙ";
+    match p.simple_call(input) {
+      Done(extra, output) => { assert!(extra == leftover, "`Parser.simple_call` consumed leftover input. leftover: {}", extra);
+                               assert!(output == consumed, "`Parser.simple_call` doesn't return the string it consumed \
+                                on success. Expected `{}`, got `{}`.", consumed, output);
                              },
       other => panic!("`Parser.simple_call` didn't succeed when it should have. \
                              Got `{:?}`.", other),
@@ -380,13 +386,13 @@ mod tests {
   #[test]
   fn test_apply_rf() {
     let mut p = Parser::new();
-    const INPUT: &'static str = "áβçδèƒϱλïJƙ";
-    const CONSUMED: &'static str = "áβç";
-    const LEFTOVER: &'static str = "δèƒϱλïJƙ";
-    match p.use_apply(INPUT) {
-      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.use_apply` consumed leftover input. Leftover: {}", extra);
-                               assert!(output == CONSUMED, "`Parser.use_apply` doesn't return the string it was supposed to \
-                                on success. Expected `{}`, got `{}`.", LEFTOVER, output);
+    let input: &str = "áβçδèƒϱλïJƙ";
+    let consumed: &str = "áβç";
+    let leftover: &str = "δèƒϱλïJƙ";
+    match p.use_apply(input) {
+      Done(extra, output) => { assert!(extra == leftover, "`Parser.use_apply` consumed leftover input. leftover: {}", extra);
+                               assert!(output == consumed, "`Parser.use_apply` doesn't return the string it was supposed to \
+                                on success. Expected `{}`, got `{}`.", leftover, output);
                                assert!(p.bcd == "βçδ", "Parser.use_apply didn't modify the parser field correctly: {}", p.bcd);
                              },
       other => panic!("`Parser.use_apply` didn't succeed when it should have. \
@@ -397,12 +403,12 @@ mod tests {
   #[test]
   fn test_method_call_peek() {
     let mut p = Parser::new();
-    const INPUT: &'static str = "ж¥ƺáβçδèƒϱλïJƙ";
-    const CONSUMED: &'static str = "ж¥ƺ";
-    match p.simple_peek(INPUT) {
-      Done(extra, output) => { assert!(extra == INPUT, "`Parser.simple_peek` consumed leftover input. Leftover: {}", extra);
-                               assert!(output == CONSUMED, "`Parser.simple_peek` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", CONSUMED, output);
+    let input: &str = "ж¥ƺáβçδèƒϱλïJƙ";
+    let consumed: &str = "ж¥ƺ";
+    match p.simple_peek(input) {
+      Done(extra, output) => { assert!(extra == input, "`Parser.simple_peek` consumed leftover input. leftover: {}", extra);
+                               assert!(output == consumed, "`Parser.simple_peek` doesn't return the string it consumed \
+                                on success. Expected `{}`, got `{}`.", consumed, output);
                              },
       other => panic!("`Parser.simple_peek` didn't succeed when it should have. \
                              Got `{:?}`.", other),
@@ -412,13 +418,13 @@ mod tests {
   #[test]
   fn test_method_call_chain() {
     let mut p = Parser::new();
-    const INPUT: &'static str = "βçδδèƒϱλïJƙℓ";
-    const LEFTOVER: &'static str = "δèƒϱλïJƙℓ";
-    const OUTPUT: &'static str = "δèƒ";
-    match p.simple_chain(INPUT) {
-      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.simple_chain` consumed leftover input. Leftover: {}", extra);
-                               assert!(output == OUTPUT, "`Parser.simple_chain` doesn't return the string it was supposed to \
-                                on success. Expected `{}`, got `{}`.", LEFTOVER, output);
+    let input : &str = "βçδδèƒϱλïJƙℓ";
+    let leftover : &str = "δèƒϱλïJƙℓ";
+    let output : &str = "δèƒ";
+    match p.simple_chain(input) {
+      Done(extra, output) => { assert!(extra == leftover, "`Parser.simple_chain` consumed leftover input. leftover: {}", extra);
+                               assert!(output == output, "`Parser.simple_chain` doesn't return the string it was supposed to \
+                                on success. Expected `{}`, got `{}`.", leftover, output);
                                assert!(p.bcd == "βçδ", "Parser.simple_chain didn't modify the parser field correctly: {}", p.bcd);
                              },
       other => panic!("`Parser.simple_chain` didn't succeed when it should have. \
