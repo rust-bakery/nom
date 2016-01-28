@@ -223,15 +223,12 @@ macro_rules! call_rf (
 /// Supports up to 6 arguments
 #[macro_export]
 macro_rules! apply_rf (
-  ($i:expr, $cell:ident.$method:ident, $($args:expr),* ) => ( $cell.borrow_mut().$method( $i, $($args),* ) );
+  ($i:expr, $cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $cell.borrow_mut().$method( $i, $($args),* ); res } );
 );
 
 #[cfg(test)]
 mod tests {
-  use internal::{Needed,IResult,Err};
   use internal::IResult::*;
-  use internal::Err::*;
-  use util::ErrorKind;
 
   // reproduce the tag_s and take_s macros, because of module import order
   macro_rules! tag_s (
@@ -259,7 +256,7 @@ mod tests {
         } else {
           let mut offset = $i.len();
           let mut count = 0;
-          for (o, c) in $i.char_indices() {
+          for (o, _) in $i.char_indices() {
             if count == cnt {
               offset = o;
               break;
@@ -273,64 +270,14 @@ mod tests {
     );
   );
 
-  macro_rules! tag (
-    ($i:expr, $inp: expr) => (
-      {
-        #[inline(always)]
-        fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-          b.as_bytes()
-        }
-
-        let expected = $inp;
-        let bytes    = as_bytes(&expected);
-
-        tag_bytes!($i,bytes)
-      }
-    );
-  );
-
-  macro_rules! tag_bytes (
-    ($i:expr, $bytes: expr) => (
-      {
-        use std::cmp::min;
-        let len = $i.len();
-        let blen = $bytes.len();
-        let m   = min(len, blen);
-        let reduced = &$i[..m];
-        let b       = &$bytes[..m];
-
-        let res: $crate::IResult<_,_> = if reduced != b {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
-        } else if m < blen {
-          $crate::IResult::Incomplete($crate::Needed::Size(blen))
-        } else {
-          $crate::IResult::Done(&$i[blen..], reduced)
-        };
-        res
-      }
-    );
-  );
-
-  struct Foo {
-    bar: bool,
-  }
   struct Parser<'a> {
-    cde: &'a str,
+    bcd: &'a str,
   }
 
   impl<'a> Parser<'a> {
     pub fn new() -> Parser<'a> {
-      Parser{cde: ""}
+      Parser{bcd: ""}
     }
-
-// * macro_rules! call_rf (
-//   ($i:expr, $cell:ident.$method:ident) => ( { let res = $cell.borrow().$method( $i ); res } );
-//   ($i:expr, $cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $cell.borrow().$method( $i, $($args),* ); res } );
-// );
-// macro_rules! apply_rf (
-//   ($i:expr, $cell:ident.$method:ident, $($args:expr),* ) => ( $cell.borrow().$method( $i, $($args),* ) );
-// );
-// áβçδèƒϱλïJƙℓ₥ñôƥ9řƨƭúƲωж¥ƺ
 
     method!(tag_abc<&mut Parser<'a>, &'a str, &'a str>, self, [], tag_s!("áβç"));
     method!(tag_bcd<&mut Parser<'a> >(&'a str) -> &'a str, self, [], tag_s!("βçδ"));
@@ -345,12 +292,19 @@ mod tests {
     );
     method!(pub simple_chain<&mut Parser<'a>, &'a str, &'a str>, self, [(self, rcs)],
       chain!(
-         cde:  call_rf!(rcs.tag_bcd)      ~
+         bcd:  call_rf!(rcs.tag_bcd)      ~
          last: call_rf!(rcs.simple_peek)  ,
-         ||{rcs.borrow_mut().cde = cde; last}
+         ||{rcs.borrow_mut().bcd = bcd; last}
       )
     );
-    method!(pub call_chain<&mut Parser<'a>, &'a str, &'a str>, self, [(self, rcs)], call_rf!(rcs.simple_chain));
+    fn tag_stuff(self: &mut Parser<'a>, input: &'a str, something: &'a str) -> ::IResult<&'a str, &'a str> {
+      use std::cell::RefCell;
+      let rcs = RefCell::new(self);
+      let mut borrow = rcs.borrow_mut();
+      borrow.bcd = something;
+      borrow.tag_abc(input)
+    }
+    method!(use_apply<&mut Parser<'a>, &'a str, &'a str>, self, [(self, rcs)], apply_rf!(rcs.tag_stuff, "βçδ"));
   }
   #[test]
   fn test_method_call_abc() {
@@ -382,16 +336,37 @@ mod tests {
                              Got `{:?}`.", other),
     }
   }
-  // #[test]
-  // fn test_method_call_fgh() {}
-  // #[test]
-  // fn test_method_call_hij() {}
-  // #[test]
-  // fn test_method_call_ijk() {}
-  // #[test]
-  // fn test_method_call_jkl() {}
-  // #[test]
-  // fn test_method_call_klm() {}
+  #[test]
+  fn test_method_call_hij() {
+    let mut p = Parser::new();
+    const INPUT: &'static str = "λïJƙℓ₥ñôƥ9řƨ";
+    const CONSUMED: &'static str = "λïJ";
+    const LEFTOVER: &'static str = "ƙℓ₥ñôƥ9řƨ";
+    match p.tag_hij(INPUT) {
+      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.tag_hij` consumed leftover input. Leftover: {}", extra);
+                               assert!(output == CONSUMED, "`Parser.tag_hij` doesn't return the string it consumed \
+                                on success. Expected `{}`, got `{}`.", CONSUMED, output);
+                             },
+      other => panic!("`Parser.tag_hij` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+    }
+  }
+// áβçδèƒϱλïJƙℓ₥ñôƥ9řƨƭúƲωж¥ƺ
+  #[test]
+  fn test_method_call_ijk() {
+    let mut p = Parser::new();
+    const INPUT: &'static str = "ïJƙℓ₥ñôƥ9řƨ";
+    const CONSUMED: &'static str = "ïJƙ";
+    const LEFTOVER: &'static str = "ℓ₥ñôƥ9řƨ";
+    match p.tag_ijk(INPUT) {
+      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.tag_ijk` consumed leftover input. Leftover: {}", extra);
+                               assert!(output == CONSUMED, "`Parser.tag_ijk` doesn't return the string it consumed \
+                                on success. Expected `{}`, got `{}`.", CONSUMED, output);
+                             },
+      other => panic!("`Parser.tag_ijk` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+    }
+  }
   #[test]
   fn test_method_call_rf() {
     let mut p = Parser::new();
@@ -404,6 +379,23 @@ mod tests {
                                 on success. Expected `{}`, got `{}`.", CONSUMED, output);
                              },
       other => panic!("`Parser.simple_call` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+    }
+  }
+
+  #[test]
+  fn test_apply_rf() {
+    let mut p = Parser::new();
+    const INPUT: &'static str = "áβçδèƒϱλïJƙ";
+    const CONSUMED: &'static str = "áβç";
+    const LEFTOVER: &'static str = "δèƒϱλïJƙ";
+    match p.use_apply(INPUT) {
+      Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.use_apply` consumed leftover input. Leftover: {}", extra);
+                               assert!(output == CONSUMED, "`Parser.use_apply` doesn't return the string it was supposed to \
+                                on success. Expected `{}`, got `{}`.", LEFTOVER, output);
+                               assert!(p.bcd == "βçδ", "Parser.use_apply didn't modify the parser field correctly: {}", p.bcd);
+                             },
+      other => panic!("`Parser.use_apply` didn't succeed when it should have. \
                              Got `{:?}`.", other),
     }
   }
@@ -433,6 +425,7 @@ mod tests {
       Done(extra, output) => { assert!(extra == LEFTOVER, "`Parser.simple_chain` consumed leftover input. Leftover: {}", extra);
                                assert!(output == OUTPUT, "`Parser.simple_chain` doesn't return the string it was supposed to \
                                 on success. Expected `{}`, got `{}`.", LEFTOVER, output);
+                               assert!(p.bcd == "βçδ", "Parser.simple_chain didn't modify the parser field correctly: {}", p.bcd);
                              },
       other => panic!("`Parser.simple_chain` didn't succeed when it should have. \
                              Got `{:?}`.", other),
