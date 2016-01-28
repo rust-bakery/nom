@@ -91,7 +91,7 @@
 //! }
 //! impl<'a> Parser<'a> {
 //!   // Constructor omitted for brevity
-//!   method!(take4<&Parser<'a>, &'a str, &'a str>, self, [], take!(4));
+//!   method!(take4<&Parser<'a>, &'a str, &'a str>, self, take!(4));
 //!   method!(caller<&Parser<'a>, &'a str, &'a str>, self, [(self, rcs)]), call_rf!(rcs.take4));
 //! }
 //! ```
@@ -155,30 +155,6 @@ macro_rules! method (
       $submac!(i, $($args)*)
     }
   );
-  // You have to be able to specify the lifetimes of both input and output so this doesn't work
-  // ($name:ident<$a:ty, $o:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-  //   fn $name<'a>( $self_: $a, i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o> {
-  //     use std::cell::RefCell;
-  //     $(let $cell = RefCell::new($stt)),*;
-  //     $submac!(i, $($args)*)
-  //   }
-  // );
-  // This doesn't work, you can't capture tokenize and output a lifetime
-  // ($name:ident<$life:item,$a:ty,$i:ty,$o:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-  //   fn $name<$life>( $self_: $a, i: $i ) -> $crate::IResult<$life, $i, $o> {
-  //     use std::cell::RefCell;
-  //     $(let $cell = RefCell::new($stt)),*;
-  //     $submac!(i, $($args)*)
-  //   }
-  // );
-  // Methods need to be able to declare their lifetimes, so this doesn't work
-  // ($name:ident<$a:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-  //   fn $name( $self_: $a, i: &[u8] ) -> $crate::IResult<&[u8], &[u8]> {
-  //     use std::cell::RefCell;
-  //     $(let $cell = RefCell::new($stt)),*;
-  //     $submac!(i, $($args)*)
-  //   }
-  // );
   (pub $name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
     pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
       use std::cell::RefCell;
@@ -200,14 +176,32 @@ macro_rules! method (
       $submac!(i, $($args)*)
     }
   );
-  // You need to be able to sepecify the lifetime of both input and output so this won't work
-  // (pub $name:ident<$a:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-  //   pub fn $name<'nom>( $self_: $a, i: &'nom [u8] ) -> $crate::IResult<&[u8], &[u8]> {
-  //     use std::cell::RefCell;
-  //     $(let $cell = RefCell::new($stt)),*;
-  //     $submac!(i, $($args)*)
-  //   }
-  // );
+
+  ($name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, $submac:ident!( $($args:tt)* )) => (
+    fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
+      $submac!(i, $($args)*)
+    }
+  );
+  ($name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
+    fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i, $o> {
+      $submac!(i, $($args)*)
+    }
+  );
+  (pub $name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, $submac:ident!( $($args:tt)* )) => (
+    pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
+      $submac!(i, $($args)*)
+    }
+  );
+  (pub $name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
+    pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i, $o> {
+      $submac!(i, $($args)*)
+    }
+  );
+  (pub $name:ident<$a:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
+    pub fn $name( $self_: $a, i: &[u8] ) -> $crate::IResult<&[u8], $o> {
+      $submac!(i, $($args)*)
+    }
+  );
 );
 
 /// Used to called methods on non-mutable structs wrapped in `RefCell`s
@@ -279,11 +273,11 @@ mod tests {
       Parser{bcd: ""}
     }
 
-    method!(tag_abc<&mut Parser<'a>, &'a str, &'a str>, self, [], tag_s!("áβç"));
-    method!(tag_bcd<&mut Parser<'a> >(&'a str) -> &'a str, self, [], tag_s!("βçδ"));
-    method!(pub tag_hij<&mut Parser<'a> >(&'a str) -> &'a str, self, [], tag_s!("λïJ"));
-    method!(pub tag_ijk<&mut Parser<'a>, &'a str, &'a str>, self, [], tag_s!("ïJƙ"));
-    method!(take3<&mut Parser<'a>, &'a str, &'a str>, self, [], take_s!(3));
+    method!(tag_abc<&mut Parser<'a>, &'a str, &'a str>, self, tag_s!("áβç"));
+    method!(tag_bcd<&mut Parser<'a> >(&'a str) -> &'a str, self, tag_s!("βçδ"));
+    method!(pub tag_hij<&mut Parser<'a> >(&'a str) -> &'a str, self, tag_s!("λïJ"));
+    method!(pub tag_ijk<&mut Parser<'a>, &'a str, &'a str>, self, tag_s!("ïJƙ"));
+    method!(take3<&mut Parser<'a>, &'a str, &'a str>, self, take_s!(3));
     method!(pub simple_call<&mut Parser<'a>, &'a str, &'a str>, self, [(self, ref_cell_self)],
       call_rf!(ref_cell_self.tag_abc)
     );
