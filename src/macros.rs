@@ -1989,57 +1989,40 @@ macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::InputLength;
-      if ($i).input_len() == 0 {
-        $crate::IResult::Done($i, ::std::vec::Vec::new())
-      } else {
-        match $submac!($i, $($args)*) {
-          $crate::IResult::Error(_)      => {
-            $crate::IResult::Done($i, ::std::vec::Vec::new())
-          },
-          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-          $crate::IResult::Done(i1,o1)   => {
-            if i1.input_len() == 0 {
-              $crate::IResult::Done(i1,vec![o1])
-            } else {
-              let mut res    = ::std::vec::Vec::with_capacity(4);
-              res.push(o1);
-              let mut input  = i1;
-              let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
-              loop {
-                match $submac!(input, $($args)*) {
-                  $crate::IResult::Done(i, o) => {
-                    // do not allow parsers that do not consume input (causes infinite loops)
-                    if i.input_len() == input.input_len() {
-                      break;
-                    }
-                    res.push(o);
-                    input = i;
-                  }
-                  $crate::IResult::Error(_)                    => {
-                    break;
-                  },
-                  $crate::IResult::Incomplete($crate::Needed::Unknown) => {
-                    incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
-                    break;
-                  },
-                  $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-                    incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
-                    break;
-                  },
-                }
-                if input.input_len() == 0 {
-                  break;
-                }
-              }
 
-              match incomplete {
-                ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
-                ::std::option::Option::None    => $crate::IResult::Done(input, res)
-              }
+      let ret;
+      let mut res   = ::std::vec::Vec::new();
+      let mut input = $i;
+
+      loop {
+        if input.input_len() == 0 {
+          ret = $crate::IResult::Done(input, res); break;
+        }
+
+        match $submac!(input, $($args)*) {
+          $crate::IResult::Error(_)                            => {
+            ret = $crate::IResult::Done(input, res); break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            let size = i + ($i).input_len() - input.input_len();
+            ret = $crate::IResult::Incomplete($crate::Needed::Size(size)); break;
+          },
+          $crate::IResult::Done(i, o)                          => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i == input {
+              ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many0,input)); break;
             }
+
+            res.push(o);
+            input = i;
           }
         }
       }
+
+      ret
     }
   );
   ($i:expr, $f:expr) => (
@@ -2964,12 +2947,17 @@ mod tests {
 
   #[test]
   fn many0() {
-    named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
+    named!( tag_abcd, tag!("abcd") );
+    named!( tag_empty, tag!("") );
+    named!( multi<&[u8],Vec<&[u8]> >, many0!(tag_abcd) );
+    named!( multi_empty<&[u8],Vec<&[u8]> >, many0!(tag_empty) );
 
     let a = &b"abcdef"[..];
     let b = &b"abcdabcdefgh"[..];
     let c = &b"azerty"[..];
     let d = &b"abcdab"[..];
+    let e = &b"abcd"[..];
+    let f = &b""[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
@@ -2977,6 +2965,10 @@ mod tests {
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
     assert_eq!(multi(d), Incomplete(Needed::Size(8)));
+    let res3 = vec![&b"abcd"[..]];
+    assert_eq!(multi(e), Done(&b""[..], res3));
+    assert_eq!(multi(f), Done(&b""[..], Vec::new()));
+    assert_eq!(multi_empty(a), Error(Position(ErrorKind::Many0,a)));
   }
 
   #[cfg(feature = "nightly")]
