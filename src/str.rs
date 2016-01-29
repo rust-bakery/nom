@@ -54,19 +54,10 @@ macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
+      let res: $crate::IResult<_,_> = if $i.len() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
-        let mut offset = $i.len();
-        let mut count = 0;
-        for (o, _) in $i.char_indices() {
-          if count == cnt {
-            offset = o;
-            break;
-          }
-          count += 1;
-        }
-        $crate::IResult::Done(&$i[offset..], &$i[..offset])
+        $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
       };
       res
     }
@@ -308,44 +299,6 @@ macro_rules! take_until_and_consume_s (
   );
 );
 
-/// `take_until_s!(&str) => &str -> IResult<&str, &str>`
-/// generates a parser consuming all chars until the specified string is found and leaves it in the remaining input
-#[macro_export]
-macro_rules! take_until_s (
-  ($input:expr, $substr:expr) => (
-    {
-      #[inline(always)]
-      fn shift_window_and_cmp(window: & mut Vec<char>, c: char, substr_vec: &Vec<char>) -> bool {
-        window.push(c);
-        if window.len() > substr_vec.len() {
-          window.remove(0);
-        }
-        window == substr_vec
-      }
-      let res: $crate::IResult<&str, &str> = if $substr.len() > $input.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($substr.len()))
-      } else {
-        let substr_vec: Vec<char> = $substr.chars().collect();
-        let mut window: Vec<char> = vec![];
-        let mut offset = $input.len();
-        let mut parsed = false;
-        for (o, c) in $input.char_indices() {
-            if shift_window_and_cmp(& mut window, c, &substr_vec) {
-                parsed = true;
-                offset = o - window[1].len_utf8() - window[2].len_utf8()
-            }
-        }
-        if parsed {
-          $crate::IResult::Done(&$input[offset..], &$input[..offset])
-        } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilStr,$input))
-        }
-      };
-      res
-    }
-  );
-);
-
 #[cfg(test)]
 mod test {
     use ::IResult;
@@ -395,55 +348,6 @@ mod test {
                 panic!("Parser `tag_s` didn't fail when it should have. Got `{:?}`.`", other);
             },
         };
-    }
-
-    #[test]
-    fn take_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
-
-        match take_s!(INPUT, 9) {
-             IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `take_s` consumed leftover input. Leftover `{}`.", extra);
-                assert!(output == CONSUMED,
-                    "Parser `take_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
-                    CONSUMED, output);
-            },
-            other => panic!("Parser `take_s` didn't succeed when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_until_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "ÂßÇ";
-        const CONSUMED: &'static str = "βèƒôřè";
-        const LEFTOVER: &'static str = "ÂßÇáƒƭèř";
-
-        match take_until_s!(INPUT, FIND) {
-            IResult::Done(extra, output) => {
-                assert!(extra == LEFTOVER, "Parser `take_until_s`\
-                  consumed leftover input. Leftover `{}`.", extra);
-                assert!(output == CONSUMED, "Parser `take_until_s`\
-                  doens't return the string it consumed on success. Expected `{}`, got `{}`.",
-                  CONSUMED, output);
-            }
-            other => panic!("Parser `take_until_s` didn't succeed when it should have. \
-             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
-    fn take_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřèÂßÇá";
-
-        match take_s!(INPUT, 13) {
-            IResult::Incomplete(_) => (),
-            other => panic!("Parser `take_s` didn't require more input when it should have. \
-                             Got `{:?}`.", other),
-        }
     }
 
   use internal::IResult::{Done, Error};
@@ -642,18 +546,6 @@ mod test {
     }
 
     #[test]
-    fn take_until_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřè";
-        const FIND: &'static str = "βèƒôřèÂßÇ";
-
-        match take_until_s!(INPUT, FIND) {
-            IResult::Incomplete(_) => (),
-            other => panic!("Parser `take_until_s` didn't require more input when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
-
-    #[test]
     fn is_a_s_succeed() {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const MATCH: &'static str = "βèƒôřèÂßÇ";
@@ -713,17 +605,5 @@ mod test {
             other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
                              Got `{:?}`.", other),
         };
-    }
-
-    #[test]
-    fn take_until_s_error() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "Ráñδô₥";
-
-        match take_until_s!(INPUT, FIND) {
-            IResult::Error(_) => (),
-            other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
-                             Got `{:?}`.", other),
-        };
-    }
+  }
 }
