@@ -137,79 +137,59 @@
 /// ```
 #[macro_export]
 macro_rules! method (
-  ($name:ident<$a:ty>( $i:ty ) -> $o:ty, $obj:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-    fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
+  ($name:ident<$a:ty,$o:ty>,  [ ($self_:ident, $self_cell:ident) $( ,($stt:ident, $cell:ident) )* ], $submac:ident!( $($args:tt)* )) => (
+    pub fn $name( $self_: $a ) {
       use std::cell::RefCell;
-      $($self_.rc = Option::Some(RefCell::new($stt));
-        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
-      $submac!(i, $($args)*)
+      let $self_cell = RefCell::new($self_);
+      $(let $cell = RefCell::new($stt)),*;
+      $submac!($self_cell.borrow_mut().input, $($args)*)
     }
   );
-  ($name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-    fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i, $o> {
+  (pub $name:ident<$a:ty,$o:ty>, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
+    pub fn $name( $self_: $a ) {
       use std::cell::RefCell;
-      $($self_.rc = Option::Some(RefCell::new($stt));
-        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
-      $submac!(i, $($args)*)
-    }
-  );
-  (pub $name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-    pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
-      use std::cell::RefCell;
-      $($self_.rc = Option::Some(RefCell::new($stt));
-        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
-      $submac!(i, $($args)*)
-    }
-  );
-  (pub $name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-    pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i, $o> {
-      use std::cell::RefCell;
-      $($self_.rc = Option::Some(RefCell::new($stt));
-        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
-      $submac!(i, $($args)*)
-    }
-  );
-  (pub $name:ident<$a:ty,$o:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-    pub fn $name( $self_: $a, i: &[u8] ) -> $crate::IResult<&[u8], $o> {
-      use std::cell::RefCell;
-      $($self_.rc = Option::Some(RefCell::new($stt));
-        $self_.$cell = Option::Some($self_.rc.unwrap().borrow_mut())),*;
-      $submac!(i, $($args)*)
+      let $self_cell = RefCell::new($self_);
+      $(let $cell = RefCell::new($stt)),*;
+      $submac!($self_cell.borrow_mut().input, $($args)*)
     }
   );
 
-  ($name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, $submac:ident!( $($args:tt)* )) => (
-    fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
-      $submac!(i, $($args)*)
+  ($name:ident<$a:ty,$o:ty>, $self_:ident, $cell:ident, $submac:ident!( $($args:tt)* )) => (
+    fn $name( $self_: $a) {
+      use std::cell::RefCell;
+      let $cell = RefCell::new($self_);
+      $submac!($cell.borrow_mut().input, $($args)*)
     }
   );
-  ($name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
-    fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i, $o> {
-      $submac!(i, $($args)*)
+  (pub $name:ident<$a:ty,$o:ty>, $self_:ident, $cell:ident, $submac:ident!( $($args:tt)* )) => (
+    fn $name( $self_: $a) {
+      use std::cell::RefCell;
+      let $cell = RefCell::new($self_);
+      $submac!($cell.borrow_mut().input, $($args)*)
     }
   );
-  (pub $name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, $submac:ident!( $($args:tt)* )) => (
-    pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i,$o> {
-      $submac!(i, $($args)*)
-    }
-  );
-  (pub $name:ident<$a:ty,$i:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
-    pub fn $name( $self_: $a, i: $i ) -> $crate::IResult<$i, $o> {
-      $submac!(i, $($args)*)
-    }
-  );
-  (pub $name:ident<$a:ty,$o:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
-    pub fn $name( $self_: $a, i: &[u8] ) -> $crate::IResult<&[u8], $o> {
-      $submac!(i, $($args)*)
-    }
-  );
+
 );
 
 /// Used to called methods on non-mutable structs wrapped in `RefCell`s
 #[macro_export]
 macro_rules! call_rc (
-  ($i:expr, $self_:ident.$cell:ident.$method:ident) => ( { let res = $self_.$cell.unwrap().$method( $i ); res } );
-  ($i:expr, $self_:ident.$cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $self_.$cell.unwrap().$method( $i, $($args),* ); res } );
+  ($i:expr, $cell:ident.$method:ident) => (
+    {
+      $cell.borrow_mut().input = $i;
+      let b = $cell.borrow_mut();
+      b.$method();
+      b.result
+    }
+  );
+  ($i:expr, .$cell:ident.$method:ident, $($args:expr),* ) => (
+    {
+      $cell.borrow_mut().input = $i;
+      let b = $cell.borrow_mut( $($args),* );
+      b.$method();
+      b.result
+    }
+  );
 );
 
 /// emulate function currying for method calls on non-mutable structs wrapped in `RefCell`s: 
@@ -218,12 +198,7 @@ macro_rules! call_rc (
 /// Supports up to 6 arguments
 #[macro_export]
 macro_rules! apply_rf (
-  ($i:expr, $self_:ident.$cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $self_.$cell.unwrap().$method( $i, $($args),* ); res } );
-);
-
-#[macro_export]
-macro_rules! get_field (
-  ($stt:ident.$field:ident) => ($stt.$field.unwrap());
+  ($i:expr, $cell:ident.$method:ident, $($args:expr),* ) => ( { let res = $cell.borrow_mut().$method( $i, $($args),* ); res } );
 );
 
 #[cfg(test)]
