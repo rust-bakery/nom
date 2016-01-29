@@ -137,35 +137,17 @@
 /// ```
 #[macro_export]
 macro_rules! method (
-  ($name:ident<$a:ty,$o:ty>,  [ ($self_:ident, $self_cell:ident) $( ,($stt:ident, $cell:ident) )* ], $submac:ident!( $($args:tt)* )) => (
-    pub fn $name( $self_: $a ) {
-      use std::cell::RefCell;
-      let $self_cell = RefCell::new($self_);
-      $(let $cell = RefCell::new($stt)),*;
-      $submac!($self_cell.borrow_mut().input, $($args)*)
-    }
-  );
-  (pub $name:ident<$a:ty,$o:ty>, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
-    pub fn $name( $self_: $a ) {
-      use std::cell::RefCell;
-      let $self_cell = RefCell::new($self_);
-      $(let $cell = RefCell::new($stt)),*;
-      $submac!($self_cell.borrow_mut().input, $($args)*)
-    }
-  );
 
-  ($name:ident<$a:ty,$o:ty>, $self_:ident, $cell:ident, $submac:ident!( $($args:tt)* )) => (
-    fn $name( $self_: $a) {
-      use std::cell::RefCell;
-      let $cell = RefCell::new($self_);
-      $submac!($cell.borrow_mut().input, $($args)*)
+  ($name:ident<$a:ty,$i:ty,$o:ty># $self_:ident: $submac:ident!( $($args:tt)* )) => (
+    fn $name(  mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i,$o,u32>)  {
+      let result = $submac!(i, $($args)*);
+      ($self_, result)
     }
   );
-  (pub $name:ident<$a:ty,$o:ty>, $self_:ident, $cell:ident, $submac:ident!( $($args:tt)* )) => (
-    fn $name( $self_: $a) {
-      use std::cell::RefCell;
-      let $cell = RefCell::new($self_);
-      $submac!($cell.borrow_mut().input, $($args)*)
+  (pub $name:ident<$a:ty,$i:ty,$o:ty># $self_:ident: $submac:ident!( $($args:tt)* )) => (
+    pub fn $name( mut $self_: $a,i: $i ) -> ($a, $crate::IResult<$i,$o,u32>)  {
+      let result = $submac!(i, $($args)*);
+      ($self_, result)
     }
   );
 
@@ -174,23 +156,22 @@ macro_rules! method (
 /// Used to called methods on non-mutable structs wrapped in `RefCell`s
 #[macro_export]
 macro_rules! call_rc (
-  ($i:expr, $cell:ident.$method:ident) => (
+  ($i:expr, $self_:ident.$method:ident) => (
     {
-      $cell.borrow_mut().input = $i;
-      let b = $cell.borrow_mut();
-      b.$method();
-      b.result
+      let (tmp, res) = $self_.$method($i);
+      $self_ = tmp;
+      res
     }
   );
-  ($i:expr, .$cell:ident.$method:ident, $($args:expr),* ) => (
+  ($i:expr, $self_:ident.$method:ident, $($args:expr),* ) => (
     {
-      $cell.borrow_mut().input = $i;
-      let b = $cell.borrow_mut( $($args),* );
-      b.$method();
-      b.result
+      let (tmp, res) = $self_.$method($i, $($args),*);
+      $self_ = tmp;
+      res
     }
   );
 );
+
 
 /// emulate function currying for method calls on non-mutable structs wrapped in `RefCell`s: 
 /// `apply!(cell.my_function, arg1, arg2, ...)` becomes `cell.borrow_mut().my_function(input, arg1, arg2, ...)`
