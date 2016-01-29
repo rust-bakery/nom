@@ -2200,36 +2200,30 @@ macro_rules! many_m_n(
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
-      let mut input      = $i;
-      let mut res        = ::std::vec::Vec::with_capacity($count);
-      let mut cnt: usize = 0;
-      let mut err        = false;
+      let mut ret;
+      let mut input = $i;
+      let mut res   = ::std::vec::Vec::with_capacity($count);
+
       loop {
-        if cnt == $count {
-          break
+        if res.len() == $count {
+          ret = $crate::IResult::Done(input, res); break;
         }
+
         match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o) => {
             res.push(o);
             input = i;
-            cnt = cnt + 1;
           },
           $crate::IResult::Error(_)  => {
-            err = true;
-            break;
+            ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Count,$i)); break;
           },
           $crate::IResult::Incomplete(_) => {
-            break;
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
           }
         }
       }
-      if err {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Count,$i))
-      } else if cnt == $count {
-        $crate::IResult::Done(input, res)
-      } else {
-        $crate::IResult::Incomplete($crate::Needed::Unknown)
-      }
+
+      ret
     }
   );
   ($i:expr, $f:expr, $count: expr) => (
