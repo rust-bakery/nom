@@ -2300,43 +2300,37 @@ macro_rules! length_value(
     {
       match $f($i) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,nb)   => {
-          let length_token     = $i.len() - i1.len();
-          let mut input        = i1;
-          let mut res          = ::std::vec::Vec::new();
-          let mut err          = false;
-          let mut inc          = $crate::Needed::Unknown;
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(inum, onum)   => {
+          let ret;
+          let length_token = $i.len() - inum.len();
+          let mut input    = inum;
+          let mut res      = ::std::vec::Vec::new();
 
           loop {
-            if res.len() == nb as usize {
-              break;
+            if res.len() == onum as usize {
+              ret = $crate::IResult::Done(input, res); break;
             }
+
             match $g(input) {
-              $crate::IResult::Done(i2,o2) => {
-                res.push(o2);
-                input = i2;
+              $crate::IResult::Done(iparse, oparse) => {
+                res.push(oparse);
+                input = iparse;
               },
               $crate::IResult::Error(_)      => {
-                err = true;
+                ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::LengthValue,$i)); break;
               },
               $crate::IResult::Incomplete(a) => {
-                inc = a;
+                ret = match a {
+                  $crate::Needed::Unknown      => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                  $crate::Needed::Size(length) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + onum as usize * length))
+                };
                 break;
               }
             }
           }
-          if err {
-            $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::LengthValue,$i))
-          } else if res.len() < nb as usize {
-            match inc {
-              $crate::Needed::Unknown      => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              $crate::Needed::Size(length) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + nb as usize * length))
-            }
-          } else {
-            $crate::IResult::Done(input, res)
-          }
 
+          ret
         }
       }
     }
@@ -2345,43 +2339,37 @@ macro_rules! length_value(
     {
       match $f($i) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,nb)   => {
-          let length_token     = $i.len() - i1.len();
-          let mut input        = i1;
-          let mut res          = ::std::vec::Vec::new();
-          let mut err          = false;
-          let mut inc          = $crate::Needed::Unknown;
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Done(inum, onum)   => {
+          let ret;
+          let length_token = $i.len() - inum.len();
+          let mut input    = inum;
+          let mut res      = ::std::vec::Vec::new();
 
           loop {
-            if res.len() == nb as usize {
-              break;
+            if res.len() == onum as usize {
+              ret = $crate::IResult::Done(input, res); break;
             }
+
             match $g(input) {
-              $crate::IResult::Done(i2,o2) => {
-                res.push(o2);
-                input = i2;
+              $crate::IResult::Done(iparse, oparse) => {
+                res.push(oparse);
+                input = iparse;
               },
               $crate::IResult::Error(_)      => {
-                err = true;
+                ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::LengthValue,$i)); break;
               },
               $crate::IResult::Incomplete(a) => {
-                inc = a;
+                ret = match a {
+                  $crate::Needed::Unknown => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                  $crate::Needed::Size(_) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + onum as usize * $length))
+                };
                 break;
               }
             }
           }
-          if err {
-            $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::LengthValue,$i))
-          } else if res.len() < nb as usize {
-            match inc {
-              $crate::Needed::Unknown => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              $crate::Needed::Size(_) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + nb as usize * $length))
-            }
-          } else {
-            $crate::IResult::Done(input, res)
-          }
 
+          ret
         }
       }
     }
