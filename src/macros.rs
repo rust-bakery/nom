@@ -1413,6 +1413,59 @@ macro_rules! opt_res (
   );
 );
 
+/// `cond_with_error!(bool, I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
+/// Conditional combinator
+///
+/// Wraps another parser and calls it if the
+/// condition is met. This combinator returns
+/// an Option of the return type of the child
+/// parser.
+///
+/// This is especially useful if a parser depends
+/// on the value return by a preceding parser in
+/// a `chain!`.
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::IResult;
+/// # fn main() {
+///  let b = true;
+///  let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
+///    cond!( b, tag!("abcd") ))
+///  );
+///
+///  let a = b"abcdef";
+///  assert_eq!(f(&a[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+///
+///  let b2 = false;
+///  let f2:Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
+///    cond!( b2, tag!("abcd") ))
+///  );
+///  assert_eq!(f2(&a[..]), Done(&b"abcdef"[..], None));
+///  # }
+/// ```
+///
+#[macro_export]
+macro_rules! cond_with_error(
+  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      if $cond {
+        match $submac!($i, $($args)*) {
+          $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
+          $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+        }
+      } else {
+        $crate::IResult::Done($i, ::std::option::Option::None)
+      }
+    }
+  );
+  ($i:expr, $cond:expr, $f:expr) => (
+    cond!($i, $cond, call!($f));
+  );
+);
+
 /// `cond!(bool, I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// Conditional combinator
 ///
