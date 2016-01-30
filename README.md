@@ -15,6 +15,7 @@ If you need any help developing your parsers, please ping `geal` on IRC (mozilla
 Here are the current and planned features, with their status:
 - [x] **byte-oriented**: the basic type is `&[u8]` and parsers will work as much as possible on byte array slices (but are not limited to them)
 - [x] **bit-oriented**: nom can address a byte slice as a bit stream
+- [x] **string-oriented**: the same kind of combinators can apply on UTF-8 strings as well
 - [x] **zero-copy**:
   - [x] **in the parsers**: a parsing chain will almost always return a slice of its input data
   - [x] **in the producers and consumers**: some copying still happens
@@ -38,7 +39,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "~1.0.0"
+nom = "~1.1.0"
 ```
 
 Then include it in your code like this:

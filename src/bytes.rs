@@ -75,7 +75,7 @@ macro_rules! tag_bytes (
       let reduced = &$i[..m];
       let b       = &$bytes[..m];
 
-      let res : $crate::IResult<&[u8],&[u8]> = if reduced != b {
+      let res: $crate::IResult<_,_> = if reduced != b {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
       } else if m < blen {
         $crate::IResult::Incomplete($crate::Needed::Size(blen))
@@ -121,7 +121,7 @@ macro_rules! is_not(
 macro_rules! is_not_bytes (
   ($input:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = match $input.iter().position(|c| {
+      let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return true }
         }
@@ -178,7 +178,7 @@ macro_rules! is_a (
 macro_rules! is_a_bytes (
   ($input:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = match $input.iter().position(|c| {
+      let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return false }
         }
@@ -186,7 +186,7 @@ macro_rules! is_a_bytes (
       }) {
         Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsA,$input)),
         Some(n) => {
-          let res: $crate::IResult<&[u8],&[u8]> = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          let res: $crate::IResult<_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
         },
         None    => {
@@ -431,7 +431,7 @@ macro_rules! take_while (
     {
       match $input.iter().position(|c| !$submac!(*c, $($args)*)) {
         Some(n) => {
-          let res:$crate::IResult<&[u8], &[u8]> = $crate::IResult::Done(&$input[n..], &$input[..n]);
+          let res:$crate::IResult<_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
         },
         None    => {
@@ -514,7 +514,7 @@ macro_rules! take(
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
-      let res: $crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
+      let res: $crate::IResult<_,_> = if $i.len() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
       } else {
         $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
@@ -553,7 +553,7 @@ macro_rules! take_until_and_consume(
 macro_rules! take_until_and_consume_bytes (
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
+      let res: $crate::IResult<_,_> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
@@ -604,7 +604,7 @@ macro_rules! take_until(
 macro_rules! take_until_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if $bytes.len() > $i.len() {
+      let res: $crate::IResult<_,_> = if $bytes.len() > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
       } else {
         let mut index  = 0;
@@ -655,7 +655,7 @@ macro_rules! take_until_either_and_consume(
 macro_rules! take_until_either_and_consume_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if 1 > $i.len() {
+      let res: $crate::IResult<_,_> = if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         let mut index  = 0;
@@ -708,7 +708,7 @@ macro_rules! take_until_either(
 macro_rules! take_until_either_bytes(
   ($i:expr, $bytes:expr) => (
     {
-      let res: $crate::IResult<&[u8],&[u8]> = if 1 > $i.len() {
+      let res: $crate::IResult<_,_> = if 1 > $i.len() {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         let mut index  = 0;
@@ -769,6 +769,7 @@ mod tests {
   use internal::IResult::*;
   use internal::Err::*;
   use util::ErrorKind;
+  use nom::{alpha, digit, hex_digit, alphanumeric, space, multispace};
 
   #[test]
   fn is_a() {
@@ -810,7 +811,6 @@ mod tests {
     assert_eq!(a_or_b(f), Done(&b""[..], &b"fghi"[..]));
   }
 
-  use nom::alpha;
   #[test]
   fn escaping() {
     named!(esc, escaped!(call!(alpha), '\\', is_a_bytes!(&b"\"n\\"[..])));
@@ -926,6 +926,32 @@ mod tests {
     named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
     let r = x(&b"<!-- abc --> aaa"[..]);
     assert_eq!(r, Done(&b" aaa"[..], &b"<!-- abc -->"[..]));
+
+    let empty = &b""[..];
+
+    named!(ya, recognize!(alpha));
+    let ra = ya(&b"abc"[..]);
+    assert_eq!(ra, Done(empty, &b"abc"[..]));
+
+    named!(yd, recognize!(digit));
+    let rd = yd(&b"123"[..]);
+    assert_eq!(rd, Done(empty, &b"123"[..]));
+
+    named!(yhd, recognize!(hex_digit));
+    let rhd = yhd(&b"123abcDEF"[..]);
+    assert_eq!(rhd, Done(empty, &b"123abcDEF"[..]));
+
+    named!(yan, recognize!(alphanumeric));
+    let ran = yan(&b"123abc"[..]);
+    assert_eq!(ran, Done(empty, &b"123abc"[..]));
+
+    named!(ys, recognize!(space));
+    let rs = ys(&b" \t"[..]);
+    assert_eq!(rs, Done(empty, &b" \t"[..]));
+
+    named!(yms, recognize!(multispace));
+    let rms = yms(&b" \t\r\n"[..]);
+    assert_eq!(rms, Done(empty, &b" \t\r\n"[..]));
   }
 
   #[test]
@@ -963,7 +989,7 @@ mod tests {
 
   #[cfg(feature = "nightly")]
   #[bench]
-  fn take_while(b: &mut Bencher) {
+  fn take_while_bench(b: &mut Bencher) {
     use nom::is_alphabetic;
     named!(f, take_while!(is_alphabetic));
     b.iter(|| {

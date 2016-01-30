@@ -46,7 +46,7 @@ pub enum IResult<I,O,E=u32> {
   Incomplete(Needed)
 }
 
-impl<I,O> IResult<I,O> {
+impl<I,O,E> IResult<I,O,E> {
   pub fn is_done(&self) -> bool {
     match *self {
       Done(_,_) => true,
@@ -77,7 +77,7 @@ pub trait GetOutput<O> {
   fn output(&self) -> Option<O>;
 }
 
-impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
+impl<'a,I,O,E> GetInput<&'a[I]> for IResult<&'a[I],O,E> {
   fn remaining_input(&self) -> Option<&'a[I]> {
     match *self {
       Done(ref i,_) => Some(*i),
@@ -86,7 +86,7 @@ impl<'a,I,O> GetInput<&'a[I]> for IResult<&'a[I],O> {
   }
 }
 
-impl<O> GetInput<()> for IResult<(),O> {
+impl<O,E> GetInput<()> for IResult<(),O,E> {
   fn remaining_input(&self) -> Option<()> {
     match *self {
       Done((),_) => Some(()),
@@ -95,7 +95,7 @@ impl<O> GetInput<()> for IResult<(),O> {
   }
 }
 
-impl<'a,O> GetInput<&'a str> for IResult<&'a str,O> {
+impl<'a,O,E> GetInput<&'a str> for IResult<&'a str,O,E> {
   fn remaining_input(&self) -> Option<&'a str> {
     match *self {
       Done(ref i,_) => Some(*i),
@@ -104,7 +104,7 @@ impl<'a,O> GetInput<&'a str> for IResult<&'a str,O> {
   }
 }
 
-impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
+impl<'a,I,O,E> GetOutput<&'a[O]> for IResult<I,&'a[O],E> {
   fn output(&self) -> Option<&'a[O]> {
     match *self {
       Done(_, ref o) => Some(*o),
@@ -113,7 +113,7 @@ impl<'a,I,O> GetOutput<&'a[O]> for IResult<I,&'a[O]> {
   }
 }
 
-impl<I> GetOutput<()> for IResult<I,()> {
+impl<I,E> GetOutput<()> for IResult<I,(),E> {
   fn output(&self) -> Option<()> {
     match *self {
       Done(_,()) => Some(()),
@@ -122,7 +122,7 @@ impl<I> GetOutput<()> for IResult<I,()> {
   }
 }
 
-impl<'a,I> GetOutput<&'a str> for IResult<I,&'a str> {
+impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   fn output(&self) -> Option<&'a str> {
     match *self {
       Done(_,ref o) => Some(*o),

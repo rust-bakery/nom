@@ -73,6 +73,13 @@ pub fn is_digit(chr: u8) -> bool {
 }
 
 #[inline]
+pub fn is_hex_digit(chr: u8) -> bool {
+  (chr >= 0x30 && chr <= 0x39) ||
+  (chr >= 0x41 && chr <= 0x46) ||
+  (chr >= 0x61 && chr <= 0x66)
+}
+
+#[inline]
 pub fn is_alphanumeric(chr: u8) -> bool {
   is_alphabetic(chr) || is_digit(chr)
 }
@@ -85,6 +92,7 @@ pub fn is_space(chr:u8) -> bool {
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 //pub filter!(alpha is_alphabetic)
 //pub filter!(digit is_digit)
+//pub filter!(hex_digit is_hex_digit)
 //pub filter!(alphanumeric is_alphanumeric)
 
 use std::ops::{Index,Range,RangeFrom};
@@ -92,7 +100,8 @@ use std::ops::{Index,Range,RangeFrom};
 pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::Alpha, input))
   }
 
@@ -105,14 +114,15 @@ pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes numerical characters: 0-9
 pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::Digit, input))
   }
 
@@ -125,14 +135,36 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
+}
+
+/// Recognizes hexadecimal numerical characters: 0-9, A-F, a-f
+pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: IterIndices+InputLength {
+  let input_length = input.input_len();
+  if input_length == 0 {
+    return Error(Position(ErrorKind::Digit, input))
+  }
+
+  for (idx, item) in input.iter_indices() {
+    if ! item.is_hex_digit() {
+      if idx == 0 {
+        return Error(Position(ErrorKind::HexDigit, input))
+      } else {
+        return Done(&input[idx..], &input[0..idx])
+      }
+    }
+  }
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::AlphaNumeric, input));
   }
 
@@ -145,14 +177,15 @@ pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes spaces and tabs
 pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::Space, input));
   }
 
@@ -166,14 +199,15 @@ pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
 pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  if input.input_len() == 0 {
+  let input_length = input.input_len();
+  if input_length == 0 {
     return Error(Position(ErrorKind::MultiSpace, input));
   }
 
@@ -187,7 +221,7 @@ pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       }
     }
   }
-  Done(&input[0..0], input)
+  Done(&input[input_length..], input)
 }
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
@@ -493,6 +527,11 @@ mod tests {
     assert_eq!(digit(b), Done(empty, b));
     assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
     assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
+    assert_eq!(hex_digit(a), Done(empty, a));
+    assert_eq!(hex_digit(b), Done(empty, b));
+    assert_eq!(hex_digit(c), Done(empty, c));
+    assert_eq!(hex_digit(d), Done("zé12".as_bytes(), &b"a"[..]));
+    assert_eq!(hex_digit(e), Error(Position(ErrorKind::HexDigit,e)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
@@ -516,11 +555,52 @@ mod tests {
     assert_eq!(digit(b), Done(empty, b));
     assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
     assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
+    assert_eq!(hex_digit(a), Done(empty, a));
+    assert_eq!(hex_digit(b), Done(empty, b));
+    assert_eq!(hex_digit(c), Done(empty, c));
+    assert_eq!(hex_digit(d), Done("zé12", &"a"[..]));
+    assert_eq!(hex_digit(e), Error(Position(ErrorKind::HexDigit,e)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
     assert_eq!(alphanumeric(d), Done("", &"azé12"[..]));
     assert_eq!(space(e), Done(&""[..], &" "[..]));
+  }
+
+  use util::HexDisplay;
+  #[test]
+  fn offset() {
+    let a = &b"abcd"[..];
+    let b = &b"1234"[..];
+    let c = &b"a123"[..];
+    let d = &b" \t"[..];
+    let e = &b" \t\r\n"[..];
+    let f = &b"123abcDEF"[..];
+
+    match alpha(a) {
+        Done(i, _)  => { assert_eq!(a.offset(i) + i.len(), a.len()); }
+        _           => { panic!("wrong return type in offset test for alpha") }
+    }
+    match digit(b) {
+        Done(i, _)  => { assert_eq!(b.offset(i) + i.len(), b.len()); }
+        _           => { panic!("wrong return type in offset test for digit") }
+    }
+    match alphanumeric(c) {
+        Done(i, _)  => { assert_eq!(c.offset(i) + i.len(), c.len()); }
+        _           => { panic!("wrong return type in offset test for alphanumeric") }
+    }
+    match space(d) {
+        Done(i, _)  => { assert_eq!(d.offset(i) + i.len(), d.len()); }
+        _           => { panic!("wrong return type in offset test for space") }
+    }
+    match multispace(e) {
+        Done(i, _)  => { assert_eq!(e.offset(i) + i.len(), e.len()); }
+        _           => { panic!("wrong return type in offset test for multispace") }
+    }
+    match hex_digit(f) {
+        Done(i, _)  => { assert_eq!(f.offset(i) + i.len(), f.len()); }
+        _           => { panic!("wrong return type in offset test for hex_digit") }
+    }
   }
 
   #[test]
@@ -707,5 +787,32 @@ mod tests {
   #[allow(dead_code)]
   fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], ()> {
     fix_error!(input, (), alphanumeric)
+  }
+
+  #[test]
+  fn hex_digit_test() {
+    let empty = &b""[..];
+
+    let i = &b"0123456789abcdefABCDEF"[..];
+    assert_eq!(hex_digit(i), Done(empty, i));
+
+    let i = &b"g"[..];
+    assert_eq!(hex_digit(i), Error(Position(ErrorKind::HexDigit,i)));
+
+    let i = &b"G"[..];
+    assert_eq!(hex_digit(i), Error(Position(ErrorKind::HexDigit,i)));
+
+    assert!(is_hex_digit(b'0'));
+    assert!(is_hex_digit(b'9'));
+    assert!(is_hex_digit(b'a'));
+    assert!(is_hex_digit(b'f'));
+    assert!(is_hex_digit(b'A'));
+    assert!(is_hex_digit(b'F'));
+    assert!(!is_hex_digit(b'g'));
+    assert!(!is_hex_digit(b'G'));
+    assert!(!is_hex_digit(b'/'));
+    assert!(!is_hex_digit(b':'));
+    assert!(!is_hex_digit(b'@'));
+    assert!(!is_hex_digit(b'\x60'));
   }
 }
