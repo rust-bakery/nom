@@ -1,11 +1,11 @@
 [package]
 
-name = "nomplusplus"
-version = "0.1.0"
-authors = [ "joel@dislocal.com", "contact@geoffroycouprie.com" ]
+name = "nom"
+version = "1.1.0"
+authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
-repository = "https://github.com/joelself/nomplusplus"
+repository = "https://github.com/Geal/nom"
 readme = "README.md"
 documentation = "http://rust.unhandledexpression.com/nom/"
 keywords = ["parser", "parser-combinators", "parsing", "streaming", "bit"]
