@@ -1,133 +1,305 @@
-# nom++, [nom](https://github.com/Geal/nom) for methods
+# nom, eating data byte by byte
 
+[![Join the chat at https://gitter.im/Geal/nom](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Geal/nom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/Geal/nom.svg?branch=master)](https://travis-ci.org/Geal/nom)
+[![Coverage Status](https://coveralls.io/repos/Geal/nom/badge.svg?branch=master)](https://coveralls.io/r/Geal/nom?branch=master)
 
-**nom** is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing*, *zero copy* parsing, *push streaming*, *pull streaming*, and provides macros and traits to abstract most of the error prone plumbing.
+nom is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing*, *zero copy* parsing, *push streaming*, *pull streaming*, and provides macros and traits to abstract most of the error prone plumbing.
 
-**nom++** is an extension of **nom** that allows you to create parsing [methods](http://stackoverflow.com/questions/155609/difference-between-a-method-and-a-function). The goal is for method-making macros have parity with the function-making macros that are already in **nom**. 
+nom can handle any format, binary or textual, with grammars from regular to context sensitive. There are already a lot of [example parsers](https://github.com/Geal/nom/issues/14) available on Github.
+
+If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
 ## Features
 
 Here are the current and planned features, with their status:
-- [x] Make method creating and using macros
-- [ ] Add variations on parser combinators in macros.rs that will wrap methods just like they wrap functions right now
-- [ ] Write tests for all of the new ways you can create and call methods and functions (partially done)
+- [x] **byte-oriented**: the basic type is `&[u8]` and parsers will work as much as possible on byte array slices (but are not limited to them)
+- [x] **bit-oriented**: nom can address a byte slice as a bit stream
+- [x] **string-oriented**: the same kind of combinators can apply on UTF-8 strings as well
+- [x] **zero-copy**:
+  - [x] **in the parsers**: a parsing chain will almost always return a slice of its input data
+  - [x] **in the producers and consumers**: some copying still happens
+- [x] **streaming**:
+  - [x] **push**: a data producer can continuously feed consumers and parsers, as long as there is data available
+  - [x] **pull**: a consumer will handle the produced data and drive seeking in the producer
+- [x] **macro based syntax**: easier parser building through macro usage
+- [x] **state machine handling**: consumers provide a basic way of managing state machines
+- [x] **descriptive errors**: the parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages.
+- [x] **custom error types**: you can provide a specific type to improve errors returned by parsers
+- [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real world data. So far, the only flaws found by fuzzing were in code written outside of nom
+- [x] **speed**: benchmarks have shown that nom parsers often outperform many parser combinators library like Parsec and attoparsec, some regular expression engines and even handwritten C parsers
 
-## How to use it
+Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
 
-First read up on how to use [**nom**](https://github.com/Geal/nom) because the basics are the same. The differences come in creating methods and then calling methods (although phase 2 will eliminate the extra step in calling methods).
+Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
 
-In **nom** you used `named!` to create a parser function:
-```rust
-named!(<&str, &str>, take4, take!(4));
+## Installation
+
+nom is available on [crates.io](https://crates.io/crates/nom) and can be included in your Cargo enabled project like this:
+
+```toml
+[dependencies]
+nom = "~1.1.0"
 ```
-In **nom++** you use `method!`, and supply it with the type of `self` and the `self` struct (a macro can't declare the `self` struct on it's own due to macro hygiene):
+
+Then include it in your code like this:
+
 ```rust
-impl<'a> SomeStruct<'a> {
-  //      --self's type---                        -self-
-  method!(<SomeStruct<'a>, &str, &str>, take4, mut self, take_s!(4));
+#[macro_use]
+extern crate nom;
+```
+
+**NOTE: if you have existing code using nom below the 1.0 version, please take a look at the [upgrading documentation](https://github.com/Geal/nom/wiki/Upgrading-to-nom-1.0) to
+handle the breaking changes.**
+
+There are a few compilation features:
+
+* `core`: enables `no_std` builds
+* `regexp`: enables regular expression parsers with the `regex` crate
+* `regexp_macros`: enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
+
+You can activate those features like this:
+
+```toml
+[dependencies.nom]
+version = "~1.0.0"
+features = ["regexp"]
+```
+
+## Usage
+
+### Parser combinators
+
+Parser combinators are an approach to parsers that is very different from software like lex and yacc. Instead of writing the grammar in a separate file and generating the corresponding code, you use very small functions with very specific purpose, like "take 5 bytes", or "recognize the word 'HTTP'", and assemble then in meaningful patterns like "recognize 'HTTP', then a space, then a version".
+The resulting code is small, and looks like the grammar you would have written with other parser approaches.
+
+This has a few advantages:
+
+- the parsers are small and easy to write
+- the parsers components are easy to reuse (if they're general enough, please add them to nom!)
+- the parsers components are easy to test separately (unit tests and property-based tests)
+- the parser combination code looks close to the grammar you would have written
+- you can build partial parsers, specific to the data you need at the moment, and ignore the rest
+
+Here is an example of one such parser, to recognize text between parentheses:
+
+```rust
+named!(parens, delimited!(char!('('), is_not!(")"), char!(')')));
+```
+
+It defines a function named `parens`, which will recognize a sequence of the character '(', the longest byte array not containing ')', then the character ')', and will return the byte array in the middle.
+
+Here is another parser, written without using nom's macros this time:
+
+```rust
+fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
+  if i.len() < 4 {
+    IResult::Incomplete(Needed::Size(4))
+  } else {
+    IResult::Done(&i[4..],&i[0..4])
+  }
 }
 ```
-You can make `self` immutable if you like:
+
+This function takes a byte array as input, and tries to consume 4 bytes. With macros, you would write it like this:
+
 ```rust
-  method!(<SomeStruct<'a>, &str, &str>, take4, self, take!(4));
+named!(take4, take!(4));
 ```
 
-Now you can call that method from another method by specifying `call_m!(self.method)` like this:
+
+A parser in nom is a function which, for an input type I, an output type O, and an optional error type E, will have the following signature:
+
 ```rust
-impl<'a> SomeStruct<'a> {
-  method!(<SomeStruct<'a>, &str, &str>, take4, self, take_s!(4));
-  //                                                            -struct.method-
-  method!(<&SomeStruct<'a>, &str, &str>, call_take4, self, call_m!(self.take4));
+fn parser(input: I) -> IResult<I, O, E>;
+```
+
+Or like this, if you don't want to specify a custom error type (it will be u32 by default):
+```rust
+fn parser(input: I) -> IResult<I, O>;
+```
+
+`IResult` is an enumeration that can represent:
+
+- a correct result `Done(I,O)` with the first element being the rest of the input (not parsed yet), and the second being the output value
+- an error `Error(Err)` with `Err` an enum that can represent an error with, optionally, position information and a chain of accumulated errors
+- an `Incomplete(Needed)` indicating that more input is necessary. `Needed` can indicate how much data is needed
+
+````rust
+pub enum IResult<I,O,E=u32> {
+  Done(I,O),
+  Error(Err<I,E>),
+  Incomplete(Needed)
+}
+
+pub enum Err<P,E=u32>{
+  /// an error code
+  Code(ErrorKind<E>),
+  /// an error code, and the next error in the parsing chain
+  Node(ErrorKind<E>, Box<Err<P,E>>),
+  /// an error code and the related input position
+  Position(ErrorKind<E>, P),
+  /// an error code, the related input position, and the next error in the parsing chain
+  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
+}
+
+pub enum Needed {
+  /// needs more data, but we do not know how much
+  Unknown,
+  /// contains the required data size
+  Size(usize)
 }
 ```
-And that's all there is to it. In phase two I will eliminate the need to wrap `self.method` in a `call_m!` macro:
+
+There is already a large list of basic parsers available, like:
+
+- **length_value**: a byte indicating the size of the following buffer
+- **not_line_ending**: returning as much data as possible until a line ending (\r or \n) is found
+- **line_ending**: matches a line ending
+- **alpha**: will return the longest alphabetical array from the beginning of the input
+- **digit**: will return the longest numerical array from the beginning of the input
+- **alphanumeric**: will return the longest alphanumeric array from the beginning of the input
+- **space**: will return the longest array containing only spaces
+- **multispace**: will return the longest array containing space, \r or \n
+- **be_u8**, **be_u16**, **be_u32**, **be_u64** to parse big endian unsigned integers of multiple sizes
+- **be_i8**, **be_i16**, **be_i32**, **be_i64** to parse big endian signed integers of multiple sizes
+- **be_f32**, **be_f64** to parse big endian floating point numbers
+- **eof**: a parser that is successful only if the input is over. In any other case, it returns an error.
+
+Please refer to the documentation for an exhaustive list of parsers.
+
+#### Making new parsers with macros
+
+Macros are the main way to make new parsers by combining other ones. Those macros accept other macros or function names as arguments. You then need to make a function out of that combinator with **named!**, or a closure with **closure!**. Here is how you would do, with the **tag!** and **take!** combinators:
+
 ```rust
-  method!(<&SomeStruct<'a>, &str, &str>, call_take4, self, self.take4);
+named!(abcd_parser, tag!("abcd")); // will consume bytes if the input begins with "abcd"
+
+
+named!(take_10, take!(10));                // will consume 10 bytes of input
 ```
-so that it's just like how you currently call a function in **nom** parser combinators.
 
-## LOL why would I even need this?
+The **named!** macro can take three different syntaxes:
 
-Story time! I was writing a [TOML](https://github.com/toml-lang/toml) parser and needed to store keys and values that were parsed and keep a line count to report where non-failure errors occurred. My options were:
-
-1. Parse the file generating an AST, then post-process the AST noting errors and inserting key/value pairs in a hash table
-2. Insert key/value pairs and keep track of line count in global variables
-3. Turn my parser functions into methods of a struct and access member variables to insert key/value pairs and keep a line count.
-
-The whole point of **nom**`, besides ease of use, is that it's dang fast. Putting in a post-processing step would be wasteful when what I wanted to do could easily be done on-the-fly. So option 1 was out. Global variables would allow me store my extra information on-the-fly, but, while global variables aren't always bad, I feel they should be avoided whenever possible. So option 2 was also out. Option three avoids globals and does it's work on-the-fly and so was the best option. The only problem was that **nom** didn't support creating parsing methods. So I made them myself.
-
-The anwser then is: you'll want to use parsing structs and methods whenever your parsing requires accessing variables other than the input or your generated output.
-
-It remains to be seen whether [Geal](https://github.com/Geal/) will want to merge this into **nom**. If he doesn't want to add it, I'll just keep this as a fork of **nom** or as a separate crate that builds on top of **nom**.
-
-## How does it work?
-
-I tried many different ways of implementing method calls. It seemed like an easy task, just add `self` to the function signature and call `self.method` instead calling `function`. It turns out to be very tricky due to the lifetime of `self`, its borrows, and the return values of the methods. Simply moving `self` into a called method makes `self` inaccessable for the rest of the method, so macros like `chain` wouldn't be able to call more than one method or modify `self` in it's post processing step:
 ```rust
-chain!(
-  stuff: self.do_stuff,
-  ||{self.my_stuff = stuff} // Error, use of moved value, self was moved into the do_stuff method.
-);
-chain!(
-  self.do_stuff ~
-  self.do_more  , // Error, use of moved value, self was moved into the do_stuff method.
-  ||{}
-);
+named!(my_function( &[u8] ) -> &[u8], tag!("abcd"));
+
+named!(my_function<&[u8], &[u8]>, tag!("abcd"));
+
+named!(my_function, tag!("abcd")); // when you know the parser takes &[u8] as input, and returns &[u8] as output
 ```
-Borrowing is problematic because of the lifetimes imposed by Rust. In certain situations, usually involving methods that call more than one method and store the return values of the methods, a borrow needs to last the entire function so (pseudo-code of an expanded `chain!` macro):
+
+**IMPORTANT NOTE**: Rust's macros can be very sensitive to the syntax, so you may encounter an error compiling parsers like this one:
+
 ```rust
-  impl<'a> Parser<'a> {
-  fn call_two(self: &'a mut Parser<'a>, i: &'a str) -> IResult<&'a str &'a str> {
-  ...
-    let (stuff, input) = match self.do_stuff(i) {
-  ...
-    };
-    let (more, input) = match self.do_more(input) { // Error, self was borrowed at self.do stuff
-    // and the lifetime 'a says that the borrow lasts the entire function, even if the call to
-    // do_stuff is in a separate scope
-  ...
-    };
+named!(my_function<&[u8], Vec<&[u8]>>, many0!(tag!("abcd")));
+```
+
+You will get the following error: "error: expected an item keyword". This happens because `>>` is seen as an operator, so the macro parser does not recognize what we want. There is a way to avoid it, by inserting a space:
+
+```rust
+named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
+```
+
+This will compile correctly. I am very sorry for this inconvenience.
+
+#### Common combinators
+
+Here are the basic macros available:
+
+- **tag!**: will match the byte array provided as argument
+- **is_not!**: will match the longest array not containing any of the bytes of the array provided to the macro
+- **is_a!**: will match the longest array containing only bytes of the array provided to the macro
+- **take_while!**: will walk the whole array and apply the closure to each suffix until the function fails
+- **take!**: will take as many bytes as the number provided
+- **take_until!**: will take as many bytes as possible until it encounters the provided byte array, and will leave it in the remaining input
+- **take_until_and_consume!**: will take as many bytes as possible until it encounters the provided byte array, and will skip it
+- **take_until_either_and_consume!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will skip it
+- **take_until_either!**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
+- **map!**: applies a function to the output of a `IResult` and puts the result in the output of a `IResult` with the same remaining input
+- **flat_map!**: applies a parser to the output of a `IResult` and returns a new `IResult` with the same remaining input.
+- **map_opt!**: applies a function returning an Option to the output of `IResult`, returns `Done(input, o)` if the result is `Some(o)`, or `Error(0)`
+- **map_res!**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
+
+Please refer to the documentation for an exhaustive list of combinators.
+
+#### Combining parsers
+
+There are more high level patterns, like the **alt!** combinator, which provides a choice between multiple parsers. If one branch fails, it tries the next, and returns the result of the first parser that succeeds:
+
+```rust
+named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
+
+assert_eq!(alt_tags(b"abcdxxx"), Done(b"xxx", b"abcd"));
+assert_eq!(alt_tags(b"efghxxx"), Done(b"xxx", b"efgh"));
+assert_eq!(alt_tags(b"ijklxxx"), Error(1));
+```
+
+The pipe `|` character is used as separator.
+
+The **opt!** combinator makes a parser optional. If the child parser returns an error, **opt!** will succeed and return None:
+
+```rust
+named!( abcd_opt, opt!( tag!("abcd") ) );
+
+assert_eq!(abcd_opt(b"abcdxxx"), Done(b"xxx", Some(b"abcd")));
+assert_eq!(abcd_opt(b"efghxxx"), Done(b"efghxxx", None));
+```
+
+**many0!** applies a parser 0 or more times, and returns a vector of the aggregated results:
+
+```rust
+use std::str;
+named!(multi< Vec<&str> >, many0!( map_res!(tag!( "abcd" ), str::from_utf8) ) );
+let a = b"abcdef";
+let b = b"abcdabcdef";
+let c = b"azerty";
+assert_eq!(multi(a), Done(&b"ef"[..],     vec!["abcd"]));
+assert_eq!(multi(b), Done(&b"ef"[..],     vec!["abcd", "abcd"]));
+assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+```
+
+Here are some basic combining macros available:
+
+- **opt!**: will make the parser optional (if it returns the O type, the new parser returns Option<O>)
+- **many0!**: will apply the parser 0 or more times (if it returns the O type, the new parser returns Vec<O>)
+- **many1!**: will apply the parser 1 or more times
+
+Please refer to the documentation for an exhaustive list of combinators.
+
+There are more complex (and more useful) parsers like the chain, which is used to parse a whole buffer, gather data along the way, then assemble everything in a final closure, if none of the subparsers failed or returned an `Incomplete`:
+
+````rust
+struct A {
+  a: u8,
+  b: u8
+}
+
+fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) }
+fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) }
+
+named!(f<&[u8],A>,
+  chain!(    // the parser takes a byte array as input, and returns an A struct
+    tag!("abcd")  ~      // begins with "abcd"
+    tag!("abcd")? ~      // the question mark indicates an optional parser
+    aa: ret_int1  ~      // the return value of ret_int1, if it does not fail, will be stored in aa
+    tag!("efgh")  ~
+    bb: ret_int2  ~
+    tag!("efgh")  ,      // end the chain with a comma
+
+    ||{A{a: aa, b: bb}} // the final closure will be able to use the variable defined previously
   )
-}
+);
+
+let r = f(b"abcdabcdefghefghX");
+assert_eq!(r, Done(b"X", A{a: 1, b: 2}));
+
+let r2 = f(b"abcdefghefghX");
+assert_eq!(r2, Done(b"X", A{a: 1, b: 2}));
 ```
-Taking the lifetime `'a` off of `self` results in the compiler not being able to resolve conflicting lifetimes.
 
-I tried using `RefCells` with some success, in some situations they worked where simple borrowing didn't but there were plenty of situations where this happened:
-```rust
-  let self_cell = RefCell::new(self);
-  let (stuff, input) = self.borrow_mut().do_stuff(i); // Error, borrow doen't live long enough,
-  // it needs to last the entire function, but only lasts until the call to do_stuff..
-```
-Storing the result of `borrow_mut()` and calling more than one method on it results in a "`self` cannot be mutably borrowed twice" error.
+The tilde `~` is used as separator between every parser in the sequence, the comma `,` indicates the parser chain ended, and the last closure can see the variables storing the result of parsers.
 
-I even tried storing the `RefCell` of `self` in `self` to extend its lifetime, but you have to use a wrapper to do that (otherwise you get a recursive struct error), but unwrapping it to get at the `RefCell` results again in a reference that doesn't live long enough.
+More examples of chain usage can be found in the [INI file parser example](tests/ini.rs).
 
-So regular borrows last too long to use multiple times. `RefCell` borrows don't last long enough in a lot of cases. After looking at the Rust book chapter on ownership multiple times I decided to try a technique they basically said was really ugly and you should use borrowing instead. This technique is moving a value into a method then returning the value back to the callee.
-```rust
-fn move_and_return(v: Vec<i32>) -> Vec<i32> {
-    // do stuff with v
-
-    // hand back ownership
-    v
-}
-```
-The Rust book says:
-> This would get very tedious...The return type, return line, and calling the function gets way more complicated.
-
-> Luckily, Rust offers a feature, borrowing, which helps us solve this problem.
-
-Unfortunately for my situation borrowing doesn't solve the problem. So I decided to try, what I'm going to call, "move and return". A `method!` invocation creates a function signature like this:
-```rust
-fn do_stuff(mut self: Parser<'a>, i: &'a str) -> (Parser<'a>, nom::IResult<&'a str, &'a str>)
-```
-We now take ownership of `self`, but we return it in a tuple with the `IResult`.
-
-The `call_m` macro makes it work transparently with current parser combinators by restoring ownership of `self` and then returning only the `IResult` that all parser combinators are expecting:
-```rust
-{
-  let (tmp, res) = self.do_more(i); // get self and the IResult back from the called method
-  self = tmp; // restore ownership of self
-  res // return only the IResult
-}
-```
-In the future, I would like to eliminate the explicit invocation of `call_m` and have parser combinators detect a method call and automatically wrap it in a `call_m` invocation just as it does with function calls and the `call` macro invocation.
+### TODO: example for new producers and consumers
