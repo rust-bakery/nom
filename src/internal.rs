@@ -56,14 +56,14 @@ impl<I,O,E> IResult<I,O,E> {
 
   pub fn is_err(&self) -> bool {
     match self {
-      Error(_) => true,
+      &Error(_) => true,
       _        => false
     }
   }
 
   pub fn is_incomplete(&self) -> bool {
     match self {
-      Incomplete(_) => true,
+      &Incomplete(_) => true,
       _             => false
     }
   }

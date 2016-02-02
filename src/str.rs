@@ -66,7 +66,7 @@ macro_rules! take_s (
           }
           count += 1;
         }
-        $crate::IResult::Done(&$i[offset..], &$i[..offset
+        $crate::IResult::Done(&$i[offset..], &$i[..offset])
       };
       res
     }
