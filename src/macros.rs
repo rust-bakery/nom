@@ -2200,7 +2200,7 @@ macro_rules! many_m_n(
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
-      let mut ret;
+      let ret;
       let mut input = $i;
       let mut res   = ::std::vec::Vec::with_capacity($count);
 
