@@ -1,8 +1,8 @@
-//! Macro combinators
+//! Method macro combinators
 //!
-//! Macros are used to make combination easier,
-//! since they often do not depend on the type
-//! of the data they manipulate or return.
+//! These macros make parsers as methods of structs
+//! and that can take methods of structs to call
+//! as parsers.
 //!
 //! There is a trick to make them easier to assemble,
 //! combinators are defined like this:
@@ -21,7 +21,7 @@
 //! like this:
 //!
 //! ```ignore
-//! method!(my_function<&Parser>,self, tag!("abcd"));
+//! method!(my_function<Parser<'a> >, self, tag!("abcd"));
 //! ```
 //!
 //! Internally, other combinators will rewrite
@@ -29,10 +29,8 @@
 //!
 //! ```ignore
 //! macro_rules! method (
-//!   ($name:ident<$a:ty>, $self_:ident, [ $( ($stt:ident, $cell:ident) ),* ], $submac:ident!( $($args:tt)* )) => (
+//!   ($name:ident<$a:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
 //!     fn $name( $self_: $a, i: &[u8] ) -> $crate::IResult<&[u8], &[u8]> {
-//!       use std::cell::RefCell;
-//!       $(let $cell = RefCell::new($stt)),*;
 //!       $submac!(i, $($args)*)
 //!     }
 //!   );
