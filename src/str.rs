@@ -259,9 +259,9 @@ macro_rules! take_till_s (
 macro_rules! take_until_and_consume_s (
   ($input:expr, $substr:expr) => (
     {
-      use ::std::vec::Vec;
       #[inline(always)]
-      fn shift_window_and_cmp(window: & mut Vec<char>, c: char, substr_vec: &Vec<char>) -> bool {
+      fn shift_window_and_cmp(window: & mut ::std::vec::Vec<char>, c: char, substr_vec: & ::std::vec::Vec<char>) -> bool {
+
         window.push(c);
         if window.len() > substr_vec.len() {
           window.remove(0);
@@ -271,8 +271,8 @@ macro_rules! take_until_and_consume_s (
       let res: $crate::IResult<_, _> = if $substr.len() > $input.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($substr.len()))
       } else {
-        let substr_vec: Vec<char> = $substr.chars().collect();
-        let mut window: Vec<char> = vec![];
+        let substr_vec: ::std::vec::Vec<char> = $substr.chars().collect();
+        let mut window: ::std::vec::Vec<char> = vec![];
         let mut offset = $input.len();
         let mut parsed = false;
         for (o, c) in $input.char_indices() {
@@ -522,6 +522,7 @@ mod test {
         match test(INPUT) {
             IResult::Error(_) => (),
             other => panic!("Parser `is_not_s` didn't fail when it should have. Got `{:?}`.", other),
+
         };
     }
 
@@ -545,7 +546,19 @@ mod test {
                      Expected `{}`, got `{}`.", CONSUMED, output);
             },
             other => panic!("Parser `take_while1_s` didn't succeed when it should have. \
-                                           Got `{:?}`.", other),
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn take_until_and_consume_s_incomplete() {
+        const INPUT: &'static str = "βèƒôřè";
+        const FIND: &'static str = "βèƒôřèÂßÇ";
+
+        match take_until_and_consume_s!(INPUT, FIND) {
+            IResult::Incomplete(_) => (),
+            other => panic!("Parser `take_until_and_consume_s` didn't require more input when it should have. \
+                             Got `{:?}`.", other),
         };
     }
 
@@ -566,17 +579,6 @@ mod test {
                     CONSUMED, output);
             },
             other => panic!("Parser `is_a_s` didn't succeed when it should have. \
-                                           Got `{:?}`.", other),
-        };
-    }
-      #[test]
-      fn take_until_and_consume_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřè";
-        const FIND: &'static str = "βèƒôřèÂßÇ";
-
-        match take_until_and_consume_s!(INPUT, FIND) {
-            IResult::Incomplete(_) => (),
-            other => panic!("Parser `take_until_and_consume_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
         };
     }
