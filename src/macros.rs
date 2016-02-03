@@ -2920,10 +2920,35 @@ mod tests {
 
   #[test]
   fn delimited() {
-    named!(p<&[u8], &[u8]>, delimited!(tag!("abcd"), tag!("efgh"), tag!("ij")));
+    named!( tag_abc, tag!("abc") );
+    named!( tag_def, tag!("def") );
+    named!( tag_ghi, tag!("ghi") );
+    named!( delimited_abc_def_ghi<&[u8], &[u8]>, delimited!(tag_abc, tag_def, tag_ghi) );
 
-    let r1 = p(&b"abcdefghijkl"[..]);
-    assert_eq!(r1, Done(&b"kl"[..], &b"efgh"[..]));
+    let done = &b"abcdefghijkl"[..];
+    // let parsed_pre = &b"abc"[..];
+    let parsed_main = &b"def"[..];
+    // let parsed_post = &b"ghi"[..];
+    let rest = &b"jkl"[..];
+    let incomplete_1 = &b"ab"[..];
+    let incomplete_2 = &b"abcde"[..];
+    let incomplete_3 = &b"abcdefgh"[..];
+    let error = &b"xxx"[..];
+    let error_1 = &b"xxxdefghi"[..];
+    let error_1_remain = &b"xxxdefghi"[..];
+    let error_2 = &b"abcxxxghi"[..];
+    let error_2_remain = &b"xxxghi"[..];
+    let error_3 = &b"abcdefxxx"[..];
+    let error_3_remain = &b"xxx"[..];
+
+    assert_eq!(delimited_abc_def_ghi(done), Done(rest, parsed_main));
+    assert_eq!(delimited_abc_def_ghi(incomplete_1), Incomplete(Needed::Size(3)));
+    assert_eq!(delimited_abc_def_ghi(incomplete_2), Incomplete(Needed::Size(3)));
+    assert_eq!(delimited_abc_def_ghi(incomplete_3), Incomplete(Needed::Size(3)));
+    assert_eq!(delimited_abc_def_ghi(error), Error(Position(ErrorKind::Tag, error)));
+    assert_eq!(delimited_abc_def_ghi(error_1), Error(Position(ErrorKind::Tag, error_1_remain)));
+    assert_eq!(delimited_abc_def_ghi(error_2), Error(Position(ErrorKind::Tag, error_2_remain)));
+    assert_eq!(delimited_abc_def_ghi(error_3), Error(Position(ErrorKind::Tag, error_3_remain)));
   }
 
   #[test]
