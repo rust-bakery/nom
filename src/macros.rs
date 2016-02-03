@@ -3066,17 +3066,27 @@ mod tests {
 
   #[test]
   fn count_fixed_no_type() {
-    //named!(counter< [&[u8]; 2], u32 >, count_fixed!( &[u8], tag!( "abcd" ), 2 ) );
-    fn counter(input:&[u8]) -> IResult<&[u8], [&[u8]; 2], () > {
-      count_fixed!(input, &[u8], tag!( "abcd" ), 2 )
-    }
+    const TIMES: usize = 2;
+    named!( tag_abc, tag!("abc") );
+    named!( counter_2<&[u8], [&[u8]; TIMES], () >, count_fixed!(&[u8], tag_abc, TIMES ) );
 
-    let a = b"abcdabcdabcdef";
-    let b = b"abcdefgh";
-    let res = [&b"abcd"[..], &b"abcd"[..]];
+    let done = &b"abcabcabcdef"[..];
+    let parsed_main = [&b"abc"[..], &b"abc"[..]];
+    let rest = &b"abcdef"[..];
+    let incomplete_1 = &b"ab"[..];
+    let incomplete_2 = &b"abcab"[..];
+    let error = &b"xxx"[..];
+    let error_1 = &b"xxxabcabcdef"[..];
+    let error_1_remain = &b"xxxabcabcdef"[..];
+    let error_2 = &b"abcxxxabcdef"[..];
+    let error_2_remain = &b"abcxxxabcdef"[..];
 
-    assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
-    assert_eq!(counter(&b[..]), Error(Position(ErrorKind::Count, &b[..])));
+    assert_eq!(counter_2(done), Done(rest, parsed_main));
+    assert_eq!(counter_2(incomplete_1), Incomplete(Needed::Unknown));
+    assert_eq!(counter_2(incomplete_2), Incomplete(Needed::Unknown));
+    assert_eq!(counter_2(error), Error(Position(ErrorKind::Count, error)));
+    assert_eq!(counter_2(error_1), Error(Position(ErrorKind::Count, error_1_remain)));
+    assert_eq!(counter_2(error_2), Error(Position(ErrorKind::Count, error_2_remain)));
   }
 
   use nom::{be_u8,be_u16};
