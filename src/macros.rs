@@ -2912,10 +2912,28 @@ mod tests {
 
   #[test]
   fn terminated() {
-    named!(p<&[u8], &[u8]>, terminated!(tag!("abcd"), tag!("efgh")));
+    named!( tag_abcd, tag!("abcd") );
+    named!( tag_efgh, tag!("efgh") );
+    named!( terminated_abcd_efgh<&[u8], &[u8]>, terminated!(tag_abcd, tag_efgh) );
 
-    let r1 = p(&b"abcdefghijkl"[..]);
-    assert_eq!(r1, Done(&b"ijkl"[..], &b"abcd"[..]));
+    let done = &b"abcdefghijkl"[..];
+    let parsed_main = &b"abcd"[..];
+    // let parsed_post = &b"efgh"[..];
+    let rest = &b"ijkl"[..];
+    let incomplete_1 = &b"ab"[..];
+    let incomplete_2 = &b"abcde"[..];
+    let error = &b"xxx"[..];
+    let error_1 = &b"xxxxdef"[..];
+    let error_1_remain = &b"xxxxdef"[..];
+    let error_2 = &b"abcdxxxx"[..];
+    let error_2_remain = &b"xxxx"[..];
+
+    assert_eq!(terminated_abcd_efgh(done), Done(rest, parsed_main));
+    assert_eq!(terminated_abcd_efgh(incomplete_1), Incomplete(Needed::Size(4)));
+    assert_eq!(terminated_abcd_efgh(incomplete_2), Incomplete(Needed::Size(4)));
+    assert_eq!(terminated_abcd_efgh(error), Error(Position(ErrorKind::Tag, error)));
+    assert_eq!(terminated_abcd_efgh(error_1), Error(Position(ErrorKind::Tag, error_1_remain)));
+    assert_eq!(terminated_abcd_efgh(error_2), Error(Position(ErrorKind::Tag, error_2_remain)));
   }
 
   #[test]
