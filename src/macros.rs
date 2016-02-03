@@ -3105,18 +3105,19 @@ mod tests {
 
   #[test]
   fn tuple_test() {
-    named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
-      tuple!(
-        be_u16 ,
-        take!(3),
-        tag!("fg")
-      )
-    );
+    named!(tuple_3<&[u8], (u16, &[u8], &[u8]) >,
+    tuple!( be_u16 , take!(3), tag!("fg") ) );
 
-    assert_eq!(tpl(&b"abcdefgh"[..]), Done(&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])));
-    assert_eq!(tpl(&b"abcd"[..]), Incomplete(Needed::Size(5)));
-    assert_eq!(tpl(&b"abcde"[..]), Incomplete(Needed::Size(7)));
-    let input = &b"abcdejk"[..];
-    assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
+    let done = &b"abcdefgh"[..];
+    let done_res = (0x6162u16, &b"cde"[..], &b"fg"[..]);
+    let incomplete_1 = &b"abcd"[..];
+    let incomplete_2 = &b"abcde"[..];
+    let error = &b"abcdejk"[..];
+    let error_remain = &b"jk"[..];
+
+    assert_eq!(tuple_3(done), Done(&b"h"[..], done_res));
+    assert_eq!(tuple_3(incomplete_1), Incomplete(Needed::Size(5)));
+    assert_eq!(tuple_3(incomplete_2), Incomplete(Needed::Size(7)));
+    assert_eq!(tuple_3(error), Error(Position(ErrorKind::Tag, error_remain)));
   }
 }
