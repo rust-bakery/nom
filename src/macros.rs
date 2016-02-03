@@ -3064,32 +3064,32 @@ mod tests {
   use nom::{be_u8,be_u16};
   #[test]
   fn length_value_test() {
-    named!(tst1<&[u8], Vec<u16> >, length_value!(be_u8, be_u16));
-    named!(tst2<&[u8], Vec<u16> >, length_value!(be_u8, be_u16, 2));
+    named!(length_value_1<&[u8], Vec<u16> >, length_value!(be_u8, be_u16));
+    named!(length_value_2<&[u8], Vec<u16> >, length_value!(be_u8, be_u16, 2));
 
     let i1 = vec![0, 5, 6];
     let i2 = vec![1, 5, 6, 3];
-    let i3 = vec![2, 5, 6, 3];
-    let i4 = vec![2, 5, 6, 3, 4, 5, 7];
+    let i3 = vec![2, 5, 6, 3, 4, 5, 7];
+    let i4 = vec![2, 5, 6, 3];
     let i5 = vec![3, 5, 6, 3, 4, 5];
 
-    let r1: Vec<u16> = Vec::new();
-    let r2: Vec<u16> = vec![1286];
-    let r4: Vec<u16> = vec![1286, 772];
-    assert_eq!(tst1(&i1), IResult::Done(&i1[1..], r1));
-    assert_eq!(tst1(&i2), IResult::Done(&i2[3..], r2));
-    assert_eq!(tst1(&i3), IResult::Incomplete(Needed::Size(5)));
-    assert_eq!(tst1(&i4), IResult::Done(&i4[5..], r4));
-    assert_eq!(tst1(&i5), IResult::Incomplete(Needed::Size(7)));
+    let r_1_1: Vec<u16> = Vec::new();
+    let r_1_2: Vec<u16> = vec![1286];
+    let r_1_3: Vec<u16> = vec![1286, 772];
+    let r_2_1: Vec<u16> = Vec::new();
+    let r_2_2: Vec<u16> = vec![1286];
+    let r_2_3: Vec<u16> = vec![1286, 772];
 
-    let r6: Vec<u16> = Vec::new();
-    let r7: Vec<u16> = vec![1286];
-    let r9: Vec<u16> = vec![1286, 772];
-    assert_eq!(tst2(&i1), IResult::Done(&i1[1..], r6));
-    assert_eq!(tst2(&i2), IResult::Done(&i2[3..], r7));
-    assert_eq!(tst2(&i3), IResult::Incomplete(Needed::Size(5)));
-    assert_eq!(tst2(&i4), IResult::Done(&i4[5..], r9));
-    assert_eq!(tst1(&i5), IResult::Incomplete(Needed::Size(7)));
+    assert_eq!(length_value_1(&i1), IResult::Done(&i1[1..], r_1_1));
+    assert_eq!(length_value_1(&i2), IResult::Done(&i2[3..], r_1_2));
+    assert_eq!(length_value_1(&i3), IResult::Done(&i3[5..], r_1_3));
+    assert_eq!(length_value_1(&i4), IResult::Incomplete(Needed::Size(5)));
+    assert_eq!(length_value_1(&i5), IResult::Incomplete(Needed::Size(7)));
+    assert_eq!(length_value_2(&i1), IResult::Done(&i1[1..], r_2_1));
+    assert_eq!(length_value_2(&i2), IResult::Done(&i2[3..], r_2_2));
+    assert_eq!(length_value_2(&i3), IResult::Done(&i3[5..], r_2_3));
+    assert_eq!(length_value_2(&i4), IResult::Incomplete(Needed::Size(5)));
+    assert_eq!(length_value_2(&i5), IResult::Incomplete(Needed::Size(7)));
   }
 
   #[test]
