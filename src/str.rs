@@ -152,8 +152,8 @@ macro_rules! is_a_s (
 );
 
 
-/// `take_while!(char -> bool) => &str -> IResult<&str, &str>`
-/// returns the longest list of bytes until the provided function fails.
+/// `take_while_s!(char -> bool) => &str -> IResult<&str, &str>`
+/// returns the longest list of char until the provided function fails.
 ///
 /// The argument is either a function `T -> bool` or a macro returning a `bool
 ///
@@ -192,8 +192,8 @@ macro_rules! take_while_s (
   );
 );
 
-/// `take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest (non empty) list of bytes until the provided function fails.
+/// `take_while1_s!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest (non empty) list of byte until the provided function fails.
 ///
 /// The argument is either a function `T -> bool` or a macro returning a `bool`
 /// ```
