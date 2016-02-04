@@ -3009,15 +3009,33 @@ mod tests {
 
   #[test]
   fn count_zero() {
-    fn counter(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-      let size: usize = 0;
-      count!(input, tag!( "abcd" ), size )
-    }
+    const TIMES: usize = 0;
+    named!( tag_abc, tag!("abc") );
+    named!( counter_2<&[u8], Vec<&[u8]> >, count!(tag_abc, TIMES ) );
 
-    let a = b"abcdabcdabcdef";
-    let res: Vec<&[u8]> = Vec::new();
+    let done = &b"abcabcabcdef"[..];
+    let parsed_done = Vec::new();
+    let rest = done;
+    let incomplete_1 = &b"ab"[..];
+    let parsed_incompl_1 = Vec::new();
+    let incomplete_2 = &b"abcab"[..];
+    let parsed_incompl_2 = Vec::new();
+    let error = &b"xxx"[..];
+    let error_remain = &b"xxx"[..];
+    let parsed_err = Vec::new();
+    let error_1 = &b"xxxabcabcdef"[..];
+    let parsed_err_1 = Vec::new();
+    let error_1_remain = &b"xxxabcabcdef"[..];
+    let error_2 = &b"abcxxxabcdef"[..];
+    let parsed_err_2 = Vec::new();
+    let error_2_remain = &b"abcxxxabcdef"[..];
 
-    assert_eq!(counter(&a[..]), Done(&b"abcdabcdabcdef"[..], res));
+    assert_eq!(counter_2(done), Done(rest, parsed_done));
+    assert_eq!(counter_2(incomplete_1), Done(incomplete_1, parsed_incompl_1));
+    assert_eq!(counter_2(incomplete_2), Done(incomplete_2, parsed_incompl_2));
+    assert_eq!(counter_2(error), Done(error_remain, parsed_err));
+    assert_eq!(counter_2(error_1), Done(error_1_remain, parsed_err_1));
+    assert_eq!(counter_2(error_2), Done(error_2_remain, parsed_err_2));
   }
 
   #[test]
