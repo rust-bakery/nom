@@ -2879,13 +2879,15 @@ mod tests {
 
   #[test]
   fn peek() {
-    named!(ptag<&[u8],&[u8]>, peek!(tag!("abcd")));
+    named!(peek_tag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
-    let r1 = ptag(&b"abcdefgh"[..]);
-    assert_eq!(r1, Done(&b"abcdefgh"[..], &b"abcd"[..]));
-
-    let r1 = ptag(&b"efgh"[..]);
-    assert_eq!(r1, Error(Position(ErrorKind::Tag,&b"efgh"[..])));
+    let done = &b"abcdef"[..];
+    let parsed = &b"abcd"[..];
+    let incomplete = &b"ab"[..];
+    let error = &b"xxx"[..];
+    assert_eq!(peek_tag(done), Done(done, parsed));
+    assert_eq!(peek_tag(incomplete), Incomplete(Needed::Size(4)));
+    assert_eq!(peek_tag(error), Error(Position(ErrorKind::Tag, error)));
   }
 
   #[test]
