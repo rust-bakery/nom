@@ -2868,13 +2868,24 @@ mod tests {
   #[test]
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
+    named!( tag_abcd, tag!("abcd") );
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag_abcd ) ));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag_abcd ) ));
+    //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
-    named!(silly, tag!("foo"));
+    let done = &b"abcdef"[..];
+    let parsed = &b"abcd"[..];
+    let rest = &b"ef"[..];
+    let incomplete = &b"ab"[..];
+    let error = &b"xxx"[..];
 
-    let b = true;
-    //let f = closure!(&'static [u8], cond!( b, silly ) );
-    let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( b, silly ) ));
-    assert_eq!(f(b"foobar"), Done(&b"bar"[..], Some(&b"foo"[..])));
+    assert_eq!(f_true(done), Done(rest, Some(parsed)));
+    assert_eq!(f_true(incomplete), Incomplete(Needed::Size(4)));
+    assert_eq!(f_true(error), Done(error, None));
+
+    assert_eq!(f_false(done), Done(done, None));
+    assert_eq!(f_false(incomplete), Done(incomplete, None));
+    assert_eq!(f_false(error), Done(error, None));
   }
 
   #[test]
