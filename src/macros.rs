@@ -2550,6 +2550,9 @@ mod tests {
 
     let r3 = f(&b"abcdX"[..]);
     assert_eq!(r3, Incomplete(Needed::Size(8)));
+
+    let r4 = f(&b"abcdef"[..]);
+    assert_eq!(r4, Incomplete(Needed::Size(8)));
   }
 
   use util::{error_to_list, add_error_pattern, print_error};
