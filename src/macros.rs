@@ -2778,12 +2778,14 @@ mod tests {
 
   #[test]
   fn opt() {
-    named!(o<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
+    named!(opt_abcd<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];
-    assert_eq!(o(a), Done(&b"ef"[..], Some(&b"abcd"[..])));
-    assert_eq!(o(b), Done(&b"bcdefg"[..], None));
+    let c = &b"ab"[..];
+    assert_eq!(opt_abcd(a), Done(&b"ef"[..], Some(&b"abcd"[..])));
+    assert_eq!(opt_abcd(b), Done(&b"bcdefg"[..], None));
+    assert_eq!(opt_abcd(c), Incomplete(Needed::Size(4)));
   }
 
   #[test]
