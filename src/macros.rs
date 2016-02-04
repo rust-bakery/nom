@@ -2467,11 +2467,17 @@ mod tests {
       )
     );
 
-    let r = f(&b"abcdabcdefghefghX"[..]);
-    assert_eq!(r, Done(&b"X"[..], B{a: 1, b: 2}));
+    let r1 = f(&b"abcdabcdefghefghX"[..]);
+    assert_eq!(r1, Done(&b"X"[..], B{a: 1, b: 2}));
 
     let r2 = f(&b"abcdefghefghX"[..]);
     assert_eq!(r2, Done(&b"X"[..], B{a: 1, b: 2}));
+
+    let r3 = f(&b"abcdab"[..]);
+    assert_eq!(r3, Incomplete(Needed::Size(8)));
+
+    let r4 = f(&b"abcdefghef"[..]);
+    assert_eq!(r4, Incomplete(Needed::Size(12)));
   }
 
   #[test]
@@ -2493,11 +2499,17 @@ mod tests {
       )
     );
 
-    let r = f(&b"abcdabcdefghefghX"[..]);
-    assert_eq!(r, Done(&b"X"[..], B{a: 1, b: 2}));
+    let r1 = f(&b"abcdabcdefghefghX"[..]);
+    assert_eq!(r1, Done(&b"X"[..], B{a: 1, b: 2}));
 
     let r2 = f(&b"abcdefghefghX"[..]);
     assert_eq!(r2, Done(&b"X"[..], B{a: 1, b: 2}));
+
+    let r3 = f(&b"abcdab"[..]);
+    assert_eq!(r3, Incomplete(Needed::Size(8)));
+
+    let r4 = f(&b"abcdefghef"[..]);
+    assert_eq!(r4, Incomplete(Needed::Size(12)));
   }
 
   #[derive(PartialEq,Eq,Debug)]
