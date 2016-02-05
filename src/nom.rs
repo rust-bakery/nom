@@ -144,7 +144,7 @@ pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::Digit, input))
+    return Error(Position(ErrorKind::HexDigit, input))
   }
 
   for (idx, item) in input.iter_indices() {
@@ -490,7 +490,7 @@ pub fn non_empty<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
 /// Return the remaining input.
 #[inline]
 pub fn rest(i: &[u8]) -> IResult<&[u8], &[u8]> {
-	IResult::Done(b"", i)
+    IResult::Done(b"", i)
 }
 
 #[cfg(test)]
