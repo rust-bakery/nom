@@ -2788,12 +2788,14 @@ mod tests {
 
   #[test]
   fn opt_res() {
-    named!(o<&[u8], Result<&[u8], Err<&[u8]>> >, opt_res!(tag!("abcd")));
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]>> >, opt_res!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];
-    assert_eq!(o(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
-    assert_eq!(o(b), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, b))));
+    let c = &b"ab"[..];
+    assert_eq!(opt_res_abcd(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
+    assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, b))));
+    assert_eq!(opt_res_abcd(c), Incomplete(Needed::Size(4)));
   }
 
   #[test]
