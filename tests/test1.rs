@@ -43,3 +43,12 @@ fn exported_public_method_defined_by_macro() {
   let a = &b"ab12cd\nefgh"[..];
   assert_eq!(not_line_ending(a), IResult::Done(&b"\nefgh"[..], &b"ab12cd"[..]));
 }
+
+#[test]
+fn recognize_leaving_empty_input() {
+  named!(number< &[u8] >,  recognize!(is_a!("0123456789")));
+
+  assert_eq!(IResult::Done(&b""[..], &b"42"[..]), number(&b"42"[..]));
+  assert_eq!(IResult::Done(&b""[..], &b"3"[..]), number(&b"3"[..]));
+  assert_eq!(IResult::Done(&b""[..], &b"0"[..]), number(&b"0"[..]));
+}
