@@ -24,6 +24,7 @@ macro_rules! one_of (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! one_of_bytes (
   ($i:expr, $bytes: expr) => (
@@ -71,6 +72,7 @@ macro_rules! none_of (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! none_of_bytes (
   ($i:expr, $bytes: expr) => (
