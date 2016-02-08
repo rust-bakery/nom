@@ -612,8 +612,10 @@ macro_rules! expr_opt (
 
 /// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
 /// chains parsers and assemble the results through a closure
-/// the input type I must implement nom::InputLength
-/// this combinator will count how much data is consumed by every child parser and take it into account if
+///
+/// The input type `I` must implement `nom::InputLength`.
+///
+/// This combinator will count how much data is consumed by every child parser and take it into account if
 /// there is not enough data
 ///
 /// ```
@@ -919,6 +921,39 @@ macro_rules! chaining_parser (
 );
 
 
+/// `tuple!(I->IResult<I,A>, I->IResult<I,B>, ... I->IResult<I,X>) => I -> IResult<I, (A, B, ..., X)>`
+/// chains parsers and assemble the sub results in a tuple.
+///
+/// The input type `I` must implement `nom::InputLength`.
+///
+/// This combinator will count how much data is consumed by every child parser and take it into account if
+/// there is not enough data
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self, Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # use nom::be_u16;
+/// // the return type depends of the children parsers
+/// named!(parser<&[u8], (u16, &[u8], &[u8]) >,
+///   tuple!(
+///     be_u16 ,
+///     take!(3),
+///     tag!("fg")
+///   )
+/// );
+///
+/// # fn main() {
+/// assert_eq!(
+///   parser(&b"abcdefgh"[..]),
+///   Done(
+///     &b"h"[..],
+///     (0x6162u16, &b"cde"[..], &b"fg"[..])
+///   )
+/// );
+/// # }
+/// ```
 #[macro_export]
 macro_rules! tuple (
   ($i:expr, $($rest:tt)*) => (
