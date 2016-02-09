@@ -149,3 +149,20 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use util::ErrorKind;
+
+  #[test]
+  fn iresult_map() {
+    let done: IResult<&[u8], u32> = IResult::Done(&b""[..], 5);
+    let error: IResult<&[u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
+    let incomplete: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
+
+    assert_eq!(done.map(|x| x * 2), IResult::Done(&b""[..], 10));
+    assert_eq!(error.map(|x| x * 2), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(incomplete.map(|x| x * 2), IResult::Incomplete(Needed::Unknown));
+  }
+}
