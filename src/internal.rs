@@ -68,6 +68,9 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
+  /// Maps a `IResult<I, O, E>` to `IResult<I, N, E>` by appling a function
+  /// to a contained `Done` value, leaving `Error` and `Incomplete` value
+  /// untouched.
   #[inline]
   pub fn map<N, F: FnOnce(O) -> N>(self, f: F) -> IResult<I, N, E> {
     match self {
