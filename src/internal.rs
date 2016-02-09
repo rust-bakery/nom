@@ -165,4 +165,20 @@ mod tests {
     assert_eq!(error.map(|x| x * 2), IResult::Error(Err::Code(ErrorKind::Tag)));
     assert_eq!(incomplete.map(|x| x * 2), IResult::Incomplete(Needed::Unknown));
   }
+
+  #[test]
+  fn iresult_map_err() {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    struct Error(u32);
+
+    let error_kind = Err::Code(ErrorKind::Custom(Error(5)));
+
+    let done: IResult<&[u8], u32> = IResult::Done(&b""[..], 5);
+    let error: IResult<&[u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
+    let incomplete: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
+
+    assert_eq!(done.map_err(|_| error_kind.clone()), IResult::Done(&b""[..], 5));
+    assert_eq!(error.map_err(|x| error_kind.clone()), IResult::Error(error_kind.clone()));
+    assert_eq!(incomplete.map_err(|x| error_kind.clone()), IResult::Incomplete(Needed::Unknown));
+  }
 }
