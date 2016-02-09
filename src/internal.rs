@@ -76,6 +76,16 @@ impl<I,O,E> IResult<I,O,E> {
       Incomplete(n) => Incomplete(n),
     }
   }
+
+  #[inline]
+  pub fn map_err<N, F>(self, f: F) -> IResult<I, O, N>
+   where F: FnOnce(Err<I, E>) -> Err<I, N> {
+    match self {
+      Error(e)      => Error(f(e)),
+      Incomplete(n) => Incomplete(n),
+      Done(i, o)    => Done(i, o),
+    }
+  }
 }
 
 pub trait GetInput<I> {
