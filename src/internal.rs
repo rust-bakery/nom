@@ -67,6 +67,15 @@ impl<I,O,E> IResult<I,O,E> {
       _             => false
     }
   }
+
+  #[inline]
+  pub fn map<N, F: FnOnce(O) -> N>(self, f: F) -> IResult<I, N, E> {
+    match self {
+      Done(i, o)    => Done(i, f(o)),
+      Error(e)      => Error(e),
+      Incomplete(n) => Incomplete(n),
+    }
+  }
 }
 
 pub trait GetInput<I> {
