@@ -3024,25 +3024,14 @@ mod tests {
   fn count_fixed() {
     const TIMES: usize = 2;
     named!( tag_abc, tag!("abc") );
-    named!( counter_2<&[u8], [&[u8]; TIMES] >, count_fixed!(&[u8], tag_abc, TIMES ) );
+    named!( cnt_2<&[u8], [&[u8]; TIMES] >, count_fixed!(&[u8], tag_abc, TIMES ) );
 
-    let done = &b"abcabcabcdef"[..];
-    let parsed_main = [&b"abc"[..], &b"abc"[..]];
-    let rest = &b"abcdef"[..];
-    let incomplete_1 = &b"ab"[..];
-    let incomplete_2 = &b"abcab"[..];
-    let error = &b"xxx"[..];
-    let error_1 = &b"xxxabcabcdef"[..];
-    let error_1_remain = &b"xxxabcabcdef"[..];
-    let error_2 = &b"abcxxxabcdef"[..];
-    let error_2_remain = &b"abcxxxabcdef"[..];
-
-    assert_eq!(counter_2(done), Done(rest, parsed_main));
-    assert_eq!(counter_2(incomplete_1), Incomplete(Needed::Unknown));
-    assert_eq!(counter_2(incomplete_2), Incomplete(Needed::Unknown));
-    assert_eq!(counter_2(error), Error(Position(ErrorKind::Count, error)));
-    assert_eq!(counter_2(error_1), Error(Position(ErrorKind::Count, error_1_remain)));
-    assert_eq!(counter_2(error_2), Error(Position(ErrorKind::Count, error_2_remain)));
+    assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Done(&b"abcdef"[..], [&b"abc"[..], &b"abc"[..]]));
+    assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt_2(&b"xxx"[..]), Error(Position(ErrorKind::Count, &b"xxx"[..])));
+    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(Position(ErrorKind::Count, &b"xxxabcabcdef"[..])));
+    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(Position(ErrorKind::Count, &b"abcxxxabcdef"[..])));
   }
 
   use nom::{le_u16,eof};
