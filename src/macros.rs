@@ -2908,22 +2908,12 @@ mod tests {
     named!( tag_efgh, tag!("efgh") );
     named!( preceded_abcd_efgh<&[u8], &[u8]>, preceded!(tag_abcd, tag_efgh) );
 
-    let done = &b"abcdefghijkl"[..];
-    // let parsed_pre = &b"abcd"[..];
-    let parsed_main = &b"efgh"[..];
-    let rest = &b"ijkl"[..];
-    let incomplete_1 = &b"ab"[..];
-    let incomplete_2 = &b"abcde"[..];
-    let error = &b"xxx"[..];
-    let error_1 = &b"xxxxdef"[..];
-    let error_2 = &b"abcdxxx"[..];
-
-    assert_eq!(preceded_abcd_efgh(done), Done(rest, parsed_main));
-    assert_eq!(preceded_abcd_efgh(incomplete_1), Incomplete(Needed::Size(4)));
-    assert_eq!(preceded_abcd_efgh(incomplete_2), Incomplete(Needed::Size(4)));
-    assert_eq!(preceded_abcd_efgh(error), Error(Position(ErrorKind::Tag, error)));
-    assert_eq!(preceded_abcd_efgh(error_1), Error(Position(ErrorKind::Tag, error_1)));
-    assert_eq!(preceded_abcd_efgh(error_2), Error(Position(ErrorKind::Tag, error)));
+    assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Done(&b"ijkl"[..], &b"efgh"[..]));
+    assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Error(Position(ErrorKind::Tag, &b"xxxxdef"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
