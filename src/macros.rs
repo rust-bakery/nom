@@ -2533,7 +2533,7 @@ mod tests {
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     named!(ret_y<&[u8], u8>, map!(y, |_| 2));
 
-    named!(f<&[u8],C>,
+    named!(chain_parser<&[u8],C>,
       chain!(
         tag!("abcd") ~
         aa: ret_int1 ~
@@ -2542,17 +2542,10 @@ mod tests {
       )
     );
 
-    let r = f(&b"abcdefghX"[..]);
-    assert_eq!(r, Done(&b"X"[..], C{a: 1, b: Some(2)}));
-
-    let r2 = f(&b"abcdWXYZ"[..]);
-    assert_eq!(r2, Done(&b"WXYZ"[..], C{a: 1, b: None}));
-
-    let r3 = f(&b"abcdX"[..]);
-    assert_eq!(r3, Incomplete(Needed::Size(8)));
-
-    let r4 = f(&b"abcdef"[..]);
-    assert_eq!(r4, Incomplete(Needed::Size(8)));
+    assert_eq!(chain_parser(&b"abcdefghX"[..]), Done(&b"X"[..], C{a: 1, b: Some(2)}));
+    assert_eq!(chain_parser(&b"abcdWXYZ"[..]), Done(&b"WXYZ"[..], C{a: 1, b: None}));
+    assert_eq!(chain_parser(&b"abcdX"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(chain_parser(&b"abcdef"[..]), Incomplete(Needed::Size(8)));
   }
 
   use util::{error_to_list, add_error_pattern, print_error};
