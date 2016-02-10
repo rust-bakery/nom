@@ -3093,17 +3093,6 @@ mod tests {
   }
 
   #[test]
-  fn chain_incomplete() {
-    let res = chain!(&b"abcdefgh"[..],
-      a: take!(4) ~
-      b: take!(8),
-      ||{(a,b )}
-    );
-
-    assert_eq!(res, IResult::Incomplete(Needed::Size(12)));
-  }
-
-  #[test]
   fn tuple_test() {
     named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
       tuple!(
