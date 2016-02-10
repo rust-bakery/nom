@@ -2925,30 +2925,14 @@ mod tests {
     named!( tag_ghi, tag!("ghi") );
     named!( delimited_abc_def_ghi<&[u8], &[u8]>, delimited!(tag_abc, tag_def, tag_ghi) );
 
-    let done = &b"abcdefghijkl"[..];
-    // let parsed_pre = &b"abc"[..];
-    let parsed_main = &b"def"[..];
-    // let parsed_post = &b"ghi"[..];
-    let rest = &b"jkl"[..];
-    let incomplete_1 = &b"ab"[..];
-    let incomplete_2 = &b"abcde"[..];
-    let incomplete_3 = &b"abcdefgh"[..];
-    let error = &b"xxx"[..];
-    let error_1 = &b"xxxdefghi"[..];
-    let error_1_remain = &b"xxxdefghi"[..];
-    let error_2 = &b"abcxxxghi"[..];
-    let error_2_remain = &b"xxxghi"[..];
-    let error_3 = &b"abcdefxxx"[..];
-    let error_3_remain = &b"xxx"[..];
-
-    assert_eq!(delimited_abc_def_ghi(done), Done(rest, parsed_main));
-    assert_eq!(delimited_abc_def_ghi(incomplete_1), Incomplete(Needed::Size(3)));
-    assert_eq!(delimited_abc_def_ghi(incomplete_2), Incomplete(Needed::Size(3)));
-    assert_eq!(delimited_abc_def_ghi(incomplete_3), Incomplete(Needed::Size(3)));
-    assert_eq!(delimited_abc_def_ghi(error), Error(Position(ErrorKind::Tag, error)));
-    assert_eq!(delimited_abc_def_ghi(error_1), Error(Position(ErrorKind::Tag, error_1_remain)));
-    assert_eq!(delimited_abc_def_ghi(error_2), Error(Position(ErrorKind::Tag, error_2_remain)));
-    assert_eq!(delimited_abc_def_ghi(error_3), Error(Position(ErrorKind::Tag, error_3_remain)));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefghijkl"[..]), Done(&b"jkl"[..], &b"def"[..]));
+    assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Error(Position(ErrorKind::Tag, &b"xxxdefghi"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Error(Position(ErrorKind::Tag, &b"xxxghi"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
