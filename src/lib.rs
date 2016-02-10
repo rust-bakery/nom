@@ -111,6 +111,7 @@ mod std {
 pub use self::util::*;
 pub use self::internal::*;
 pub use self::macros::*;
+pub use self::methods::*;
 pub use self::bytes::*;
 pub use self::bits::*;
 
@@ -130,6 +131,7 @@ pub use self::str::*;
 #[macro_use] mod util;
 mod internal;
 #[macro_use] mod macros;
+#[macro_use] mod methods;
 #[macro_use] mod bytes;
 #[macro_use] mod bits;
 

@@ -612,8 +612,10 @@ macro_rules! expr_opt (
 
 /// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
 /// chains parsers and assemble the results through a closure
-/// the input type I must implement nom::InputLength
-/// this combinator will count how much data is consumed by every child parser and take it into account if
+///
+/// The input type `I` must implement `nom::InputLength`.
+///
+/// This combinator will count how much data is consumed by every child parser and take it into account if
 /// there is not enough data
 ///
 /// ```
@@ -919,6 +921,39 @@ macro_rules! chaining_parser (
 );
 
 
+/// `tuple!(I->IResult<I,A>, I->IResult<I,B>, ... I->IResult<I,X>) => I -> IResult<I, (A, B, ..., X)>`
+/// chains parsers and assemble the sub results in a tuple.
+///
+/// The input type `I` must implement `nom::InputLength`.
+///
+/// This combinator will count how much data is consumed by every child parser and take it into account if
+/// there is not enough data
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self, Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # use nom::be_u16;
+/// // the return type depends of the children parsers
+/// named!(parser<&[u8], (u16, &[u8], &[u8]) >,
+///   tuple!(
+///     be_u16 ,
+///     take!(3),
+///     tag!("fg")
+///   )
+/// );
+///
+/// # fn main() {
+/// assert_eq!(
+///   parser(&b"abcdefgh"[..]),
+///   Done(
+///     &b"h"[..],
+///     (0x6162u16, &b"cde"[..], &b"fg"[..])
+///   )
+/// );
+/// # }
+/// ```
 #[macro_export]
 macro_rules! tuple (
   ($i:expr, $($rest:tt)*) => (
@@ -2394,14 +2429,29 @@ mod tests {
         }
 
         let expected = $inp;
-        let bytes = as_bytes(&expected);
+        let bytes    = as_bytes(&expected);
 
-        let res : $crate::IResult<&[u8],&[u8]> = if bytes.len() > $i.len() {
-          $crate::IResult::Incomplete($crate::Needed::Size(bytes.len()))
-        } else if &$i[0..bytes.len()] == bytes {
-          $crate::IResult::Done(&$i[bytes.len()..], &$i[0..bytes.len()])
-        } else {
+        tag_bytes!($i,bytes)
+      }
+    );
+  );
+
+  macro_rules! tag_bytes (
+    ($i:expr, $bytes: expr) => (
+      {
+        use std::cmp::min;
+        let len = $i.len();
+        let blen = $bytes.len();
+        let m   = min(len, blen);
+        let reduced = &$i[..m];
+        let b       = &$bytes[..m];
+
+        let res: $crate::IResult<_,_> = if reduced != b {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
+        } else if m < blen {
+          $crate::IResult::Incomplete($crate::Needed::Size(blen))
+        } else {
+          $crate::IResult::Done(&$i[blen..], reduced)
         };
         res
       }
@@ -2549,7 +2599,7 @@ mod tests {
     assert_eq!(r2, Done(&b"WXYZ"[..], C{a: 1, b: None}));
 
     let r3 = f(&b"abcdX"[..]);
-    assert_eq!(r3, Incomplete(Needed::Size(8)));
+    assert_eq!(r3, Done(&b"X"[..], C{a: 1, b: None}));
   }
 
   use util::{error_to_list, add_error_pattern, print_error};
@@ -2778,22 +2828,26 @@ mod tests {
 
   #[test]
   fn opt() {
-    named!(o<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
+    named!(opt_abcd<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];
-    assert_eq!(o(a), Done(&b"ef"[..], Some(&b"abcd"[..])));
-    assert_eq!(o(b), Done(&b"bcdefg"[..], None));
+    let c = &b"ab"[..];
+    assert_eq!(opt_abcd(a), Done(&b"ef"[..], Some(&b"abcd"[..])));
+    assert_eq!(opt_abcd(b), Done(&b"bcdefg"[..], None));
+    assert_eq!(opt_abcd(c), Incomplete(Needed::Size(4)));
   }
 
   #[test]
   fn opt_res() {
-    named!(o<&[u8], Result<&[u8], Err<&[u8]>> >, opt_res!(tag!("abcd")));
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]>> >, opt_res!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];
-    assert_eq!(o(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
-    assert_eq!(o(b), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, b))));
+    let c = &b"ab"[..];
+    assert_eq!(opt_res_abcd(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
+    assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, b))));
+    assert_eq!(opt_res_abcd(c), Incomplete(Needed::Size(4)));
   }
 
   #[test]
@@ -2917,8 +2971,8 @@ mod tests {
     let c = &b"azerty"[..];
     let d = &b"abcdab"[..];
 
-    //let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
@@ -2946,8 +3000,8 @@ mod tests {
     let c = &b"azerty"[..];
     let d = &b"abcdab"[..];
 
-    //let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Error(Position(ErrorKind::Many1,c)));
@@ -2981,14 +3035,13 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    //let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Incomplete(Needed::Size(8)));
-    let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
-    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
+    assert_eq!(multi(a), Error(Err::Position(ErrorKind::ManyMN,a)));
+    let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(b), Done(&b"efgh"[..], res1));
+    let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+    assert_eq!(multi(c), Done(&b"efgh"[..], res2));
     let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
-    assert_eq!(multi(c), Done(&b"efgh"[..], res3));
-    let res4 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
-    assert_eq!(multi(d), Done(&b"Abcdefgh"[..], res4));
+    assert_eq!(multi(d), Done(&b"Abcdefgh"[..], res3));
     assert_eq!(multi(e), Incomplete(Needed::Size(8)));
   }
 

@@ -39,7 +39,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "~1.1.0"
+nom = "~1.2.0"
 ```
 
 Then include it in your code like this:
@@ -267,9 +267,34 @@ Here are some basic combining macros available:
 
 Please refer to the documentation for an exhaustive list of combinators.
 
-There are more complex (and more useful) parsers like the chain, which is used to parse a whole buffer, gather data along the way, then assemble everything in a final closure, if none of the subparsers failed or returned an `Incomplete`:
+There are more complex (and more useful) parsers like `chain!` and `tuple!`, which are used to apply a serie of parsers then assemble their results.
 
-````rust
+Example with `tuple!`:
+
+```rust
+named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
+  tuple!(
+    be_u16 ,
+    take!(3),
+    tag!("fg")
+  )
+);
+
+assert_eq!(
+  tpl(&b"abcdefgh"[..]),
+  Done(
+    &b"h"[..],
+    (0x6162u16, &b"cde"[..], &b"fg"[..])
+  )
+);
+assert_eq!(tpl(&b"abcde"[..]), Incomplete(Needed::Size(7)));
+let input = &b"abcdejk"[..];
+assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
+```
+
+Example with `chain!`:
+
+```rust
 struct A {
   a: u8,
   b: u8
@@ -300,6 +325,6 @@ assert_eq!(r2, Done(b"X", A{a: 1, b: 2}));
 
 The tilde `~` is used as separator between every parser in the sequence, the comma `,` indicates the parser chain ended, and the last closure can see the variables storing the result of parsers.
 
-More examples of chain usage can be found in the [INI file parser example](tests/ini.rs).
+More examples of chain and tuple usage can be found in the [INI file parser example](tests/ini.rs).
 
 ### TODO: example for new producers and consumers

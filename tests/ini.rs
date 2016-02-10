@@ -7,17 +7,21 @@ use nom::{IResult,not_line_ending, space, alphanumeric, multispace};
 use std::str;
 use std::collections::HashMap;
 
-named!(category     <&[u8], &str>,
-  chain!(
-          tag!("[")       ~
-    name: map_res!(
-      take_until!("]"),
-      str::from_utf8)     ~
-          tag!("]")       ~
-          multispace?     ,
-    ||{ name }
-  )
-);
+fn category(input: &[u8]) -> IResult<&[u8], &str> {
+  let (i, (_, name, _, _)) = try_parse!(input,
+    tuple!(
+      tag!("["),
+      map_res!(
+        take_until!("]"),
+        str::from_utf8
+      ),
+      tag!("]"),
+      opt!(multispace)
+    )
+  );
+
+  return IResult::Done(i, name)
+}
 
 named!(key_value    <&[u8],(&str,&str)>,
   chain!(

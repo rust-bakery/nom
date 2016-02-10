@@ -64,6 +64,7 @@ macro_rules! tag (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! tag_bytes (
   ($i:expr, $bytes: expr) => (
@@ -117,6 +118,7 @@ macro_rules! is_not(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! is_not_bytes (
   ($input:expr, $bytes:expr) => (
@@ -174,6 +176,7 @@ macro_rules! is_a (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! is_a_bytes (
   ($input:expr, $bytes:expr) => (
@@ -510,7 +513,7 @@ macro_rules! take_till (
 /// # }
 /// ```
 #[macro_export]
-macro_rules! take(
+macro_rules! take (
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
@@ -549,6 +552,7 @@ macro_rules! take_until_and_consume(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! take_until_and_consume_bytes (
   ($i:expr, $bytes:expr) => (
@@ -600,6 +604,7 @@ macro_rules! take_until(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! take_until_bytes(
   ($i:expr, $bytes:expr) => (
@@ -651,6 +656,7 @@ macro_rules! take_until_either_and_consume(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! take_until_either_and_consume_bytes(
   ($i:expr, $bytes:expr) => (
@@ -704,6 +710,7 @@ macro_rules! take_until_either(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! take_until_either_bytes(
   ($i:expr, $bytes:expr) => (
@@ -753,7 +760,7 @@ macro_rules! length_bytes(
         $crate::IResult::Done(i1,nb)   => {
           let length_remaining = i1.len();
           if length_remaining < nb {
-            $crate::IResult::Incomplete(Needed::Size(nb - length_remaining))
+            $crate::IResult::Incomplete($crate::Needed::Size(nb - length_remaining))
           } else {
             $crate::IResult::Done(&i1[nb..], &i1[..nb])
           }

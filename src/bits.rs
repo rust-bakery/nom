@@ -132,6 +132,7 @@ macro_rules! take_bits (
   );
 );
 
+/// matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
 #[macro_export]
 macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
