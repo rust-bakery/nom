@@ -42,7 +42,7 @@
 //! method on the struct it is defined in.
 //!
 //! Compared to the `named!` macro there are a few differences in how they are
-//! invodked. A `method!` invocation always has to have the type of `self`
+//! invoked. A `method!` invocation always has to have the type of `self`
 //! declared and it can't be a reference due to Rust's borrow lifetime
 //! restrictions:
 //! ```ignore
@@ -86,7 +86,7 @@
 //!      )
 //!    );
 //! ```
-//! The three additions to method definitions remeber are:
+//! The three additions to method definitions to remember are:
 //! 1. Specify `self`'s type
 //! 2. Pass `self` to the macro
 //! 4. Call parser methods using the `call_m!` macro.
@@ -256,7 +256,7 @@ macro_rules! call_m (
 ///
 /// Supports up to 6 arguments
 #[macro_export]
-macro_rules! apply_rf (
+macro_rules! apply_m (
   ($i:expr, $self_:ident.$method:ident, $($args:expr),* ) => ( { let (tmp, res) = $self_.$method( $i, $($args),* ); $self_ = tmp; res } );
 );
 
@@ -337,7 +337,7 @@ mod tests {
       self = tmp;
       (self, res)
     }
-    method!(use_apply<Parser<'a>, &'a str, &'a str>, mut self, apply_rf!(self.tag_stuff, "βçδ"));
+    method!(use_apply<Parser<'a>, &'a str, &'a str>, mut self, apply_m!(self.tag_stuff, "βçδ"));
   }
 
   #[test]
@@ -425,7 +425,7 @@ mod tests {
   }
 
   #[test]
-  fn test_apply_rf() {
+  fn test_apply_m() {
     let mut p = Parser::new();
     let input: &str = "áβçδèƒϱλïJƙ";
     let consumed: &str = "áβç";
@@ -441,7 +441,7 @@ mod tests {
       other => panic!("`Parser.use_apply` didn't succeed when it should have. \
                              Got `{:?}`.", other),
     }
-  }
+  } 
 
   #[test]
   fn test_method_call_peek() {
