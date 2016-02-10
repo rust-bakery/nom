@@ -2849,22 +2849,12 @@ mod tests {
     named!( tag_separator, tag!(",") );
     named!( sep_pair_abc_def<&[u8],(&[u8], &[u8])>, separated_pair!(tag_abc, tag_separator, tag_def) );
 
-    let done = &b"abc,defghijkl"[..];
-    let parsed_1 = &b"abc"[..];
-    let parsed_2 = &b"def"[..];
-    let rest = &b"ghijkl"[..];
-    let incomplete_1 = &b"ab"[..];
-    let incomplete_2 = &b"abc,d"[..];
-    let error = &b"xxx"[..];
-    let error_1 = &b"xxx,def"[..];
-    let error_2 = &b"abc,xxx"[..];
-
-    assert_eq!(sep_pair_abc_def(done), Done(rest, (parsed_1, parsed_2)));
-    assert_eq!(sep_pair_abc_def(incomplete_1), Incomplete(Needed::Size(3)));
-    assert_eq!(sep_pair_abc_def(incomplete_2), Incomplete(Needed::Size(3)));
-    assert_eq!(sep_pair_abc_def(error), Error(Position(ErrorKind::Tag, error)));
-    assert_eq!(sep_pair_abc_def(error_1), Error(Position(ErrorKind::Tag, error_1)));
-    assert_eq!(sep_pair_abc_def(error_2), Error(Position(ErrorKind::Tag, error)));
+    assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
+    assert_eq!(sep_pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Error(Position(ErrorKind::Tag, &b"xxx,def"[..])));
+    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
