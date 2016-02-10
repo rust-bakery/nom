@@ -2455,7 +2455,8 @@ mod tests {
   fn chain2() {
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    named!(f<&[u8],B>,
+
+    named!(chain_parser<&[u8],B>,
       chain!(
         tag!("abcd")   ~
         tag!("abcd")?  ~
@@ -2467,24 +2468,18 @@ mod tests {
       )
     );
 
-    let r1 = f(&b"abcdabcdefghefghX"[..]);
-    assert_eq!(r1, Done(&b"X"[..], B{a: 1, b: 2}));
-
-    let r2 = f(&b"abcdefghefghX"[..]);
-    assert_eq!(r2, Done(&b"X"[..], B{a: 1, b: 2}));
-
-    let r3 = f(&b"abcdab"[..]);
-    assert_eq!(r3, Incomplete(Needed::Size(8)));
-
-    let r4 = f(&b"abcdefghef"[..]);
-    assert_eq!(r4, Incomplete(Needed::Size(12)));
+    assert_eq!(chain_parser(&b"abcdabcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(chain_parser(&b"abcdefghef"[..]), Incomplete(Needed::Size(12)));
   }
 
   #[test]
   fn nested_chain() {
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    named!(f<&[u8],B>,
+
+    named!(chain_parser<&[u8],B>,
       chain!(
         chain!(
           tag!("abcd")   ~
@@ -2499,17 +2494,10 @@ mod tests {
       )
     );
 
-    let r1 = f(&b"abcdabcdefghefghX"[..]);
-    assert_eq!(r1, Done(&b"X"[..], B{a: 1, b: 2}));
-
-    let r2 = f(&b"abcdefghefghX"[..]);
-    assert_eq!(r2, Done(&b"X"[..], B{a: 1, b: 2}));
-
-    let r3 = f(&b"abcdab"[..]);
-    assert_eq!(r3, Incomplete(Needed::Size(8)));
-
-    let r4 = f(&b"abcdefghef"[..]);
-    assert_eq!(r4, Incomplete(Needed::Size(12)));
+    assert_eq!(chain_parser(&b"abcdabcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(chain_parser(&b"abcdefghef"[..]), Incomplete(Needed::Size(12)));
   }
 
   #[derive(PartialEq,Eq,Debug)]
