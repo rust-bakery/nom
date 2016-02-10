@@ -2952,23 +2952,13 @@ mod tests {
     named!( multi<&[u8],Vec<&[u8]> >, many0!(tag_abcd) );
     named!( multi_empty<&[u8],Vec<&[u8]> >, many0!(tag_empty) );
 
-    let a = &b"abcdef"[..];
-    let b = &b"abcdabcdefgh"[..];
-    let c = &b"azerty"[..];
-    let d = &b"abcdab"[..];
-    let e = &b"abcd"[..];
-    let f = &b""[..];
-
-    let res1 = vec![&b"abcd"[..]];
-    assert_eq!(multi(a), Done(&b"ef"[..], res1));
-    let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
-    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
-    assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
-    assert_eq!(multi(d), Incomplete(Needed::Size(8)));
-    let res3 = vec![&b"abcd"[..]];
-    assert_eq!(multi(e), Done(&b""[..], res3));
-    assert_eq!(multi(f), Done(&b""[..], Vec::new()));
-    assert_eq!(multi_empty(a), Error(Position(ErrorKind::Many0,a)));
+    assert_eq!(multi(&b"abcdef"[..]), Done(&b"ef"[..], vec![&b"abcd"[..]]));
+    assert_eq!(multi(&b"abcdabcdefgh"[..]), Done(&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]));
+    assert_eq!(multi(&b"azerty"[..]), Done(&b"azerty"[..], Vec::new()));
+    assert_eq!(multi(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(multi(&b"abcd"[..]), Done(&b""[..], vec![&b"abcd"[..]]));
+    assert_eq!(multi(&b""[..]), Done(&b""[..], Vec::new()));
+    assert_eq!(multi_empty(&b"abcdef"[..]), Error(Position(ErrorKind::Many0, &b"abcdef"[..])));
   }
 
   #[cfg(feature = "nightly")]
