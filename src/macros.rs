@@ -2873,19 +2873,13 @@ mod tests {
     let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag_abcd ) ));
     //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
-    let done = &b"abcdef"[..];
-    let parsed = &b"abcd"[..];
-    let rest = &b"ef"[..];
-    let incomplete = &b"ab"[..];
-    let error = &b"xxx"[..];
+    assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+    assert_eq!(f_true(&b"ab"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(f_true(&b"xxx"[..]), Done(&b"xxx"[..], None));
 
-    assert_eq!(f_true(done), Done(rest, Some(parsed)));
-    assert_eq!(f_true(incomplete), Incomplete(Needed::Size(4)));
-    assert_eq!(f_true(error), Done(error, None));
-
-    assert_eq!(f_false(done), Done(done, None));
-    assert_eq!(f_false(incomplete), Done(incomplete, None));
-    assert_eq!(f_false(error), Done(error, None));
+    assert_eq!(f_false(&b"abcdef"[..]), Done(&b"abcdef"[..], None));
+    assert_eq!(f_false(&b"ab"[..]), Done(&b"ab"[..], None));
+    assert_eq!(f_false(&b"xxx"[..]), Done(&b"xxx"[..], None));
   }
 
   #[test]
