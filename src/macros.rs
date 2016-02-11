@@ -3047,17 +3047,16 @@ mod tests {
 
   #[test]
   fn count() {
-    fn counter(input: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-      let size: usize = 2;
-      count!(input, tag!( "abcd" ), size )
-    }
+    const TIMES: usize = 2;
+    named!( tag_abc, tag!("abc") );
+    named!( cnt_2<&[u8], Vec<&[u8]> >, count!(tag_abc, TIMES ) );
 
-    let a = b"abcdabcdabcdef";
-    let b = b"abcdefgh";
-    let res = vec![&b"abcd"[..], &b"abcd"[..]];
-
-    assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
-    assert_eq!(counter(&b[..]), Error(Position(ErrorKind::Count, &b[..])));
+    assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Done(&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]));
+    assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt_2(&b"xxx"[..]), Error(Position(ErrorKind::Count, &b"xxx"[..])));
+    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(Position(ErrorKind::Count, &b"xxxabcabcdef"[..])));
+    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(Position(ErrorKind::Count, &b"abcxxxabcdef"[..])));
   }
 
   #[test]
