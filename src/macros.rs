@@ -3092,17 +3092,16 @@ mod tests {
 
   #[test]
   fn count_fixed() {
-    //named!(counter< [&[u8]; 2], u32 >, count_fixed!( &[u8], tag!( "abcd" ), 2 ) );
-    fn counter(input:&[u8]) -> IResult<&[u8], [&[u8]; 2], () > {
-      count_fixed!(input, &[u8], tag!( "abcd" ), 2 )
-    }
+    const TIMES: usize = 2;
+    named!( tag_abc, tag!("abc") );
+    named!( cnt_2<&[u8], [&[u8]; TIMES] >, count_fixed!(&[u8], tag_abc, TIMES ) );
 
-    let a = b"abcdabcdabcdef";
-    let b = b"abcdefgh";
-    let res = [&b"abcd"[..], &b"abcd"[..]];
-
-    assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
-    assert_eq!(counter(&b[..]), Error(Position(ErrorKind::Count, &b[..])));
+    assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Done(&b"abcdef"[..], [&b"abc"[..], &b"abc"[..]]));
+    assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt_2(&b"xxx"[..]), Error(Position(ErrorKind::Count, &b"xxx"[..])));
+    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(Position(ErrorKind::Count, &b"xxxabcabcdef"[..])));
+    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(Position(ErrorKind::Count, &b"abcxxxabcdef"[..])));
   }
 
   use nom::{le_u16,eof};
