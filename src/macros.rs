@@ -2910,7 +2910,7 @@ mod tests {
 
     assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Done(&b"ijkl"[..], &b"efgh"[..]));
     assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Incomplete(Needed::Size(8)));
     assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
     assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Error(Position(ErrorKind::Tag, &b"xxxxdef"[..])));
     assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
