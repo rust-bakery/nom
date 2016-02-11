@@ -2852,17 +2852,17 @@ mod tests {
 
   #[test]
   fn cond() {
-    let b = true;
-    let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( b, tag!("abcd") ) ));
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag!("abcd") ) ));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag!("abcd") ) ));
+    //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
 
-    let a = b"abcdef";
-    assert_eq!(f(&a[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+    assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+    assert_eq!(f_true(&b"ab"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(f_true(&b"xxx"[..]), Done(&b"xxx"[..], None));
 
-    let b2 = false;
-    let f2: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( b2, tag!("abcd") ) ));
-    //let f2 = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
-
-    assert_eq!(f2(&a[..]), Done(&b"abcdef"[..], None));
+    assert_eq!(f_false(&b"abcdef"[..]), Done(&b"abcdef"[..], None));
+    assert_eq!(f_false(&b"ab"[..]), Done(&b"ab"[..], None));
+    assert_eq!(f_false(&b"xxx"[..]), Done(&b"xxx"[..], None));
   }
 
   #[test]
