@@ -2505,7 +2505,8 @@ mod tests {
   fn chain2() {
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    named!(f<&[u8],B>,
+
+    named!(chain_parser<&[u8],B>,
       chain!(
         tag!("abcd")   ~
         tag!("abcd")?  ~
@@ -2517,18 +2518,18 @@ mod tests {
       )
     );
 
-    let r = f(&b"abcdabcdefghefghX"[..]);
-    assert_eq!(r, Done(&b"X"[..], B{a: 1, b: 2}));
-
-    let r2 = f(&b"abcdefghefghX"[..]);
-    assert_eq!(r2, Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdabcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(chain_parser(&b"abcdefghef"[..]), Incomplete(Needed::Size(12)));
   }
 
   #[test]
   fn nested_chain() {
     fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
     fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-    named!(f<&[u8],B>,
+
+    named!(chain_parser<&[u8],B>,
       chain!(
         chain!(
           tag!("abcd")   ~
@@ -2543,11 +2544,10 @@ mod tests {
       )
     );
 
-    let r = f(&b"abcdabcdefghefghX"[..]);
-    assert_eq!(r, Done(&b"X"[..], B{a: 1, b: 2}));
-
-    let r2 = f(&b"abcdefghefghX"[..]);
-    assert_eq!(r2, Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdabcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
+    assert_eq!(chain_parser(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(chain_parser(&b"abcdefghef"[..]), Incomplete(Needed::Size(12)));
   }
 
   #[derive(PartialEq,Eq,Debug)]
@@ -3171,17 +3171,6 @@ mod tests {
     assert_eq!(tst2(&i3), IResult::Incomplete(Needed::Size(5)));
     assert_eq!(tst2(&i4), IResult::Done(&i4[5..], r9));
     assert_eq!(tst1(&i5), IResult::Incomplete(Needed::Size(7)));
-  }
-
-  #[test]
-  fn chain_incomplete() {
-    let res = chain!(&b"abcdefgh"[..],
-      a: take!(4) ~
-      b: take!(8),
-      ||{(a,b )}
-    );
-
-    assert_eq!(res, IResult::Incomplete(Needed::Size(12)));
   }
 
   #[test]
