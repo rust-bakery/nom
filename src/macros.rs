@@ -2896,10 +2896,17 @@ mod tests {
 
   #[test]
   fn separated_pair() {
-    named!(p<&[u8],(&[u8], &[u8])>, separated_pair!(tag!("abcd"), tag!(","), tag!("efgh")));
+    named!( tag_abc, tag!("abc") );
+    named!( tag_def, tag!("def") );
+    named!( tag_separator, tag!(",") );
+    named!( sep_pair_abc_def<&[u8],(&[u8], &[u8])>, separated_pair!(tag_abc, tag_separator, tag_def) );
 
-    let r1 = p(&b"abcd,efghijkl"[..]);
-    assert_eq!(r1, Done(&b"ijkl"[..], (&b"abcd"[..], &b"efgh"[..])));
+    assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
+    assert_eq!(sep_pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Error(Position(ErrorKind::Tag, &b"xxx,def"[..])));
+    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
