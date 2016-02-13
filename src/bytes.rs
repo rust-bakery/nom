@@ -123,6 +123,7 @@ macro_rules! is_not(
 macro_rules! is_not_bytes (
   ($input:expr, $bytes:expr) => (
     {
+      use $crate::InputLength;
       let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return true }
@@ -135,7 +136,7 @@ macro_rules! is_not_bytes (
           res
         },
         None    => {
-          $crate::IResult::Done(&b""[..], $input)
+          $crate::IResult::Done(&$input[$input.input_len()..], $input)
         }
       };
       res
@@ -181,6 +182,7 @@ macro_rules! is_a (
 macro_rules! is_a_bytes (
   ($input:expr, $bytes:expr) => (
     {
+      use $crate::InputLength;
       let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return false }
@@ -193,7 +195,7 @@ macro_rules! is_a_bytes (
           res
         },
         None    => {
-          $crate::IResult::Done(&b""[..], $input)
+          $crate::IResult::Done(&$input[($input).input_len()..], $input)
         }
       };
       res
@@ -249,6 +251,7 @@ macro_rules! escaped1 (
 macro_rules! escaped_impl (
   ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
+      use $crate::InputLength;
       let cl = || {
         use $crate::HexDisplay;
         let mut index  = 0;
@@ -256,7 +259,7 @@ macro_rules! escaped_impl (
         while index < $i.len() {
           if let $crate::IResult::Done(i,_) = $normal!(&$i[index..], $($args)*) {
             if i.is_empty() {
-              return $crate::IResult::Done(&b""[..], $i)
+              return $crate::IResult::Done(&$i[$i.input_len()..], $i)
             } else {
               index = $i.offset(i);
             }
@@ -267,7 +270,7 @@ macro_rules! escaped_impl (
               match $escapable!(&$i[index+1..], $($args2)*) {
                 $crate::IResult::Done(i,_) => {
                   if i.is_empty() {
-                    return $crate::IResult::Done(&b""[..], $i)
+                    return $crate::IResult::Done(&$i[$i.input_len()..], $i)
                   } else {
                     index = $i.offset(i);
                   }
@@ -361,6 +364,7 @@ macro_rules! escaped_transform1 (
 macro_rules! escaped_transform_impl (
   ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
+      use $crate::InputLength;
       let cl = || {
         use $crate::HexDisplay;
         let mut index  = 0;
@@ -370,7 +374,7 @@ macro_rules! escaped_transform_impl (
           if let $crate::IResult::Done(i,o) = $normal!(&$i[index..], $($args)*) {
             res.extend(o.iter().cloned());
             if i.is_empty() {
-              return $crate::IResult::Done(&b""[..], res)
+              return $crate::IResult::Done(&$i[$i.input_len()..], res)
             } else {
               index = $i.offset(i);
             }
@@ -382,7 +386,7 @@ macro_rules! escaped_transform_impl (
                 $crate::IResult::Done(i,o) => {
                   res.extend(o.iter().cloned());
                   if i.is_empty() {
-                    return $crate::IResult::Done(&b""[..], res)
+                    return $crate::IResult::Done(&$i[$i.input_len()..], res)
                   } else {
                     index = $i.offset(i);
                   }
@@ -488,7 +492,7 @@ macro_rules! take_till (
     {
       match $input.iter().position(|c| $submac!(c, $($args)*)) {
         Some(n) => $crate::IResult::Done(&$input[n..], &$input[..n]),
-        None    => $crate::IResult::Done(&b""[..], $input)
+        None    => $crate::IResult::Done(&$input[($input).input_len()..], $input)
       }
     }
   );

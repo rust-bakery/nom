@@ -6,9 +6,10 @@
 macro_rules! re_match (
   ($i:expr, $re:expr) => (
     {
+      use $crate::InputLength;
       let re = ::regex::Regex::new($re).unwrap();
       if re.is_match($i) {
-        $crate::IResult::Done(&""[..], $i)
+        $crate::IResult::Done(&$i[$i.input_len()..], $i)
       } else {
         $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpMatch))
       }
@@ -25,9 +26,10 @@ macro_rules! re_match (
 macro_rules! re_match_static (
   ($i:expr, $re:expr) => (
     {
+      use $crate::InputLength;
       let re = regex!($re);
       if re.is_match($i) {
-        $crate::IResult::Done(&""[..], $i)
+        $crate::IResult::Done(&$i[$i.input_len()..], $i)
       } else {
         $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpMatch))
       }
