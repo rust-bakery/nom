@@ -2920,10 +2920,19 @@ mod tests {
 
   #[test]
   fn delimited() {
-    named!(p<&[u8], &[u8]>, delimited!(tag!("abcd"), tag!("efgh"), tag!("ij")));
+    named!( tag_abc, tag!("abc") );
+    named!( tag_def, tag!("def") );
+    named!( tag_ghi, tag!("ghi") );
+    named!( delimited_abc_def_ghi<&[u8], &[u8]>, delimited!(tag_abc, tag_def, tag_ghi) );
 
-    let r1 = p(&b"abcdefghijkl"[..]);
-    assert_eq!(r1, Done(&b"kl"[..], &b"efgh"[..]));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefghijkl"[..]), Done(&b"jkl"[..], &b"def"[..]));
+    assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Incomplete(Needed::Size(6)));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Incomplete(Needed::Size(9)));
+    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Error(Position(ErrorKind::Tag, &b"xxxdefghi"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Error(Position(ErrorKind::Tag, &b"xxxghi"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
