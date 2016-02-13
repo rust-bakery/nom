@@ -2912,10 +2912,16 @@ mod tests {
 
   #[test]
   fn terminated() {
-    named!(p<&[u8], &[u8]>, terminated!(tag!("abcd"), tag!("efgh")));
+    named!( tag_abcd, tag!("abcd") );
+    named!( tag_efgh, tag!("efgh") );
+    named!( terminated_abcd_efgh<&[u8], &[u8]>, terminated!(tag_abcd, tag_efgh) );
 
-    let r1 = p(&b"abcdefghijkl"[..]);
-    assert_eq!(r1, Done(&b"ijkl"[..], &b"abcd"[..]));
+    assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]), Done(&b"ijkl"[..], &b"abcd"[..]));
+    assert_eq!(terminated_abcd_efgh(&b"ab"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(terminated_abcd_efgh(&b"abcde"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]), Error(Position(ErrorKind::Tag, &b"xxxxdef"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxxx"[..])));
   }
 
   #[test]
