@@ -2488,7 +2488,7 @@ mod tests {
 
     assert_eq!(chain_parser(&b"abcdefghX"[..]), Done(&b"X"[..], C{a: 1, b: Some(2)}));
     assert_eq!(chain_parser(&b"abcdWXYZ"[..]), Done(&b"WXYZ"[..], C{a: 1, b: None}));
-    assert_eq!(chain_parser(&b"abcdX"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(chain_parser(&b"abcdX"[..]), Done(&b"X"[..], C{ a: 1, b: None }));
     assert_eq!(chain_parser(&b"abcdef"[..]), Incomplete(Needed::Size(8)));
   }
 
