@@ -2888,10 +2888,16 @@ mod tests {
 
   #[test]
   fn pair() {
-    named!(p<&[u8],(&[u8], &[u8])>, pair!(tag!("abcd"), tag!("efgh")));
+    named!( tag_abc, tag!("abc") );
+    named!( tag_def, tag!("def") );
+    named!( pair_abc_def<&[u8],(&[u8], &[u8])>, pair!(tag_abc, tag_def) );
 
-    let r1 = p(&b"abcdefghijkl"[..]);
-    assert_eq!(r1, Done(&b"ijkl"[..], (&b"abcd"[..], &b"efgh"[..])));
+    assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
+    assert_eq!(pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(pair_abc_def(&b"abcd"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(pair_abc_def(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(pair_abc_def(&b"xxxdef"[..]), Error(Position(ErrorKind::Tag, &b"xxxdef"[..])));
+    assert_eq!(pair_abc_def(&b"abcxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
