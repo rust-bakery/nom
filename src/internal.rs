@@ -67,6 +67,31 @@ impl<I,O,E> IResult<I,O,E> {
       _             => false
     }
   }
+
+  /// Maps a `IResult<I, O, E>` to `IResult<I, N, E>` by appling a function
+  /// to a contained `Done` value, leaving `Error` and `Incomplete` value
+  /// untouched.
+  #[inline]
+  pub fn map<N, F: FnOnce(O) -> N>(self, f: F) -> IResult<I, N, E> {
+    match self {
+      Done(i, o)    => Done(i, f(o)),
+      Error(e)      => Error(e),
+      Incomplete(n) => Incomplete(n),
+    }
+  }
+
+  /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
+  /// to a contained `Error` value, leaving `Done` and `Incomplete` value
+  /// untouched.
+  #[inline]
+  pub fn map_err<N, F>(self, f: F) -> IResult<I, O, N>
+   where F: FnOnce(Err<I, E>) -> Err<I, N> {
+    match self {
+      Error(e)      => Error(f(e)),
+      Incomplete(n) => Incomplete(n),
+      Done(i, o)    => Done(i, o),
+    }
+  }
 }
 
 pub trait GetInput<I> {
@@ -128,5 +153,38 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
       Done(_,ref o) => Some(*o),
       _          => None
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use util::ErrorKind;
+
+  #[test]
+  fn iresult_map() {
+    let done: IResult<&[u8], u32> = IResult::Done(&b""[..], 5);
+    let error: IResult<&[u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
+    let incomplete: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
+
+    assert_eq!(done.map(|x| x * 2), IResult::Done(&b""[..], 10));
+    assert_eq!(error.map(|x| x * 2), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(incomplete.map(|x| x * 2), IResult::Incomplete(Needed::Unknown));
+  }
+
+  #[test]
+  fn iresult_map_err() {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    struct Error(u32);
+
+    let error_kind = Err::Code(ErrorKind::Custom(Error(5)));
+
+    let done: IResult<&[u8], u32> = IResult::Done(&b""[..], 5);
+    let error: IResult<&[u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
+    let incomplete: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
+
+    assert_eq!(done.map_err(|_| error_kind.clone()), IResult::Done(&b""[..], 5));
+    assert_eq!(error.map_err(|x| error_kind.clone()), IResult::Error(error_kind.clone()));
+    assert_eq!(incomplete.map_err(|x| error_kind.clone()), IResult::Incomplete(Needed::Unknown));
   }
 }
