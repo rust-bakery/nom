@@ -66,6 +66,8 @@ pub trait AsChar {
     fn is_0_to_9(self)   -> bool;
     #[inline]
     fn is_hex_digit(self) -> bool;
+    #[inline]
+    fn is_oct_digit(self) -> bool;
 }
 
 impl<'a> AsChar for &'a u8 {
@@ -87,6 +89,10 @@ impl<'a> AsChar for &'a u8 {
       (*self >= 0x41 && *self <= 0x46) ||
       (*self >= 0x61 && *self <= 0x66)
     }
+    #[inline]
+    fn is_oct_digit(self)   -> bool {
+      *self >= 0x30 && *self <= 0x37
+    }
 }
 
 impl AsChar for char {
@@ -100,6 +106,8 @@ impl AsChar for char {
     fn is_0_to_9(self)   -> bool { self.is_digit(10) }
     #[inline]
     fn is_hex_digit(self) -> bool { self.is_digit(16) }
+    #[inline]
+    fn is_oct_digit(self) -> bool { self.is_digit(8) }
 }
 
 pub trait IterIndices {
@@ -596,6 +604,7 @@ pub enum ErrorKind<E=u32> {
   Alpha,
   Digit,
   HexDigit,
+  OctDigit,
   AlphaNumeric,
   Space,
   MultiSpace,
@@ -684,5 +693,6 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::TakeUntilAndConsumeStr    => 58,
     ErrorKind::HexDigit                  => 59,
     ErrorKind::TakeUntilStr              => 60,
+    ErrorKind::OctDigit                  => 61,
   }
 }
