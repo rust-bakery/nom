@@ -1625,19 +1625,7 @@ macro_rules! tap (
 macro_rules! pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,o1)   => {
-          match $submac2!(i1, $($args2)*) {
-            $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-            $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-            $crate::IResult::Done(i2,o2)   => {
-              $crate::IResult::Done(i2, (o1, o2))
-            }
-          }
-        },
-      }
+      tuple!($i, $submac!($($args)*), $submac2!($($args2)*))
     }
   );
 
@@ -1660,11 +1648,11 @@ macro_rules! pair(
 macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
-      match $submac!($i, $($args)*) {
+      match tuple_parser!($i, 0usize, (), $submac!($($args)*), $($rest)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,o1)   => {
-          separated_pair1!(i1, o1,  $($rest)*)
+        $crate::IResult::Done(i1, (o1, _, o2))   => {
+          $crate::IResult::Done(i1, (o1, o2))
         }
       }
     }
@@ -1675,65 +1663,18 @@ macro_rules! separated_pair(
   );
 );
 
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! separated_pair1(
-  ($i:expr, $res1:ident, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
-    {
-      match $submac2!($i, $($args2)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i2,_)    => {
-          separated_pair2!(i2, $res1,  $($rest)*)
-        }
-      }
-    }
-  );
-  ($i:expr, $res1:ident, $g:expr, $($rest:tt)+) => (
-    separated_pair1!($i, $res1, call!($g), $($rest)*);
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! separated_pair2(
-  ($i:expr, $res1:ident, $submac3:ident!( $($args3:tt)* )) => (
-    {
-      match $submac3!($i, $($args3)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i3,o3)   => {
-          $crate::IResult::Done(i3, ($res1, o3))
-        }
-      }
-    }
-  );
-
-  ($i:expr, $res1:ident, $h:expr) => (
-    separated_pair2!($i, $res1, call!($h));
-  );
-);
-
 /// `preceded!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, O>`
 /// preceded(opening, X) returns X
 #[macro_export]
 macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,_)    => {
-          match $submac2!(i1, $($args2)*) {
-            $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-            $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-            $crate::IResult::Done(i2,o2)   => {
-              $crate::IResult::Done(i2, o2)
-            }
-          }
-        },
+        $crate::IResult::Done(remaining, (_,o))    => {
+          $crate::IResult::Done(remaining, o)
+        }
       }
     }
   );
@@ -1757,18 +1698,12 @@ macro_rules! preceded(
 macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,o1)   => {
-          match $submac2!(i1, $($args2)*) {
-            $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-            $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-            $crate::IResult::Done(i2,_)    => {
-              $crate::IResult::Done(i2, o1)
-            }
-          }
-        },
+        $crate::IResult::Done(remaining, (o,_))    => {
+          $crate::IResult::Done(remaining, o)
+        }
       }
     }
   );
@@ -1792,11 +1727,11 @@ macro_rules! terminated(
 macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
-      match $submac!($i, $($args)*) {
+      match tuple_parser!($i, 0usize, (), $submac!($($args)*), $($rest)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,_)    => {
-          delimited1!(i1,  $($rest)*)
+        $crate::IResult::Done(i1, (_, o, _))   => {
+          $crate::IResult::Done(i1, o)
         }
       }
     }
@@ -1804,47 +1739,6 @@ macro_rules! delimited(
 
   ($i:expr, $f:expr, $($rest:tt)+) => (
     delimited!($i, call!($f), $($rest)*);
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! delimited1(
-  ($i:expr, $submac2:ident!( $($args2:tt)* ), $($rest:tt)+) => (
-    {
-      match $submac2!($i, $($args2)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i2,o2)   => {
-          delimited2!(i2, o2,  $($rest)*)
-        }
-      }
-    }
-  );
-  ($i:expr, $g:expr, $($rest:tt)+) => (
-    delimited1!($i, call!($g), $($rest)*);
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! delimited2(
-  ($i:expr, $res2:ident, $submac3:ident!( $($args3:tt)* )) => (
-    {
-      match $submac3!($i, $($args3)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i3,_)    => {
-          $crate::IResult::Done(i3, $res2)
-        }
-      }
-    }
-  );
-
-  ($i:expr, $res2:ident, $h:expr) => (
-    delimited2!($i, $res2, call!($h));
   );
 );
 
@@ -2894,7 +2788,7 @@ mod tests {
 
     assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
     assert_eq!(pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
-    assert_eq!(pair_abc_def(&b"abcd"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(pair_abc_def(&b"abcd"[..]), Incomplete(Needed::Size(6)));
     assert_eq!(pair_abc_def(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
     assert_eq!(pair_abc_def(&b"xxxdef"[..]), Error(Position(ErrorKind::Tag, &b"xxxdef"[..])));
     assert_eq!(pair_abc_def(&b"abcxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
@@ -2909,7 +2803,7 @@ mod tests {
 
     assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
     assert_eq!(sep_pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
-    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Incomplete(Needed::Size(7)));
     assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
     assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Error(Position(ErrorKind::Tag, &b"xxx,def"[..])));
     assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
