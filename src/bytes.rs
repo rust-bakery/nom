@@ -20,8 +20,12 @@ macro_rules! recognize (
       use $crate::HexDisplay;
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
-          let index = ($i).offset(i);
-          $crate::IResult::Done(i, &($i)[..index])
+          if i.is_empty() {
+            $crate::IResult::Done(i, $i)
+          } else {
+            let index = ($i).offset(i);
+            $crate::IResult::Done(i, &($i)[..index])
+          }
         },
         $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
         $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i)
