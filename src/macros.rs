@@ -374,7 +374,7 @@ macro_rules! flat_map(
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => match $submac2!(o, $($args2)*) {
-          $crate::IResult::Done(_, o2)   => $crate::IResult::Done(i, o2),
+          $crate::IResult::Done(_, p)   => $crate::IResult::Done(i, p),
           $crate::IResult::Incomplete(y) => $crate::IResult::Incomplete(y),
           $crate::IResult::Error(e)                                 => {
             let err = match e {
@@ -1660,8 +1660,8 @@ macro_rules! preceded(
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(remaining, (_,o))    => {
-          $crate::IResult::Done(remaining, o)
+        $crate::IResult::Done(i, (_,o))    => {
+          $crate::IResult::Done(i, o)
         }
       }
     }
@@ -1689,8 +1689,8 @@ macro_rules! terminated(
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(remaining, (o,_))    => {
-          $crate::IResult::Done(remaining, o)
+        $crate::IResult::Done(i, (o,_))    => {
+          $crate::IResult::Done(i, o)
         }
       }
     }

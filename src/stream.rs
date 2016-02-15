@@ -441,9 +441,9 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
       ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
       ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
       ConsumerState::Done(ref m, ref o) => match *c2.handle(Input::Element(o.clone())) {
-        ConsumerState::Error(ref e)     => ConsumerState::Error(e.clone()),
-        ConsumerState::Continue(ref m2) => ConsumerState::Continue(m2.clone()),
-        ConsumerState::Done(_,ref o2)   => ConsumerState::Done(m.clone(), o2.clone())
+        ConsumerState::Error(ref f)     => ConsumerState::Error(f.clone()),
+        ConsumerState::Continue(ref n)  => ConsumerState::Continue(n.clone()),
+        ConsumerState::Done(_,ref p)    => ConsumerState::Done(m.clone(), p.clone())
       }
     };
 
@@ -464,9 +464,9 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
         ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
         ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
         ConsumerState::Done(ref m, ref o) => match *self.consumer2.handle(Input::Element(o.clone())) {
-          ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
-          ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
-          ConsumerState::Done(_, ref o2)    => ConsumerState::Done(m.clone(), o2.clone())
+          ConsumerState::Error(ref f)     => ConsumerState::Error(f.clone()),
+          ConsumerState::Continue(ref n)  => ConsumerState::Continue(n.clone()),
+          ConsumerState::Done(_, ref p)   => ConsumerState::Done(m.clone(), p.clone())
         }
       };
     &self.state
