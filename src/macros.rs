@@ -368,9 +368,9 @@ macro_rules! try_parse (
 /// parser R -> IResult<R,T>
 #[macro_export]
 macro_rules! flat_map(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      match $submac1!($i, $($args1)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => match $submac2!(o, $($args2)*) {
@@ -406,8 +406,8 @@ macro_rules! map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     map_impl!($i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
+  ($i:expr, $subma1c:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_impl!($i, $submac1!($($args1)*), $submac2!($($args2)*));
   );
   ($i:expr, $f:expr, $g:expr) => (
     map_impl!($i, call!($f), call!($g));
@@ -421,9 +421,9 @@ macro_rules! map(
 #[doc(hidden)]
 #[macro_export]
 macro_rules! map_impl(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      match $submac1!($i, $($args1)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, $submac2!(o, $($args2)*))
@@ -439,8 +439,8 @@ macro_rules! map_res (
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     map_res_impl!($i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_res_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_res_impl!($i, $submac1!($($args1)*), $submac2!($($args2)*));
   );
   ($i:expr, $f:expr, $g:expr) => (
     map_res_impl!($i, call!($f), call!($g));
@@ -454,9 +454,9 @@ macro_rules! map_res (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! map_res_impl (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      match $submac1!($i, $($args1)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => match $submac2!(o, $($args2)*) {
@@ -476,8 +476,8 @@ macro_rules! map_opt (
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     map_opt_impl!($i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_opt_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_opt_impl!($i, $submac1!($($args1)*), $submac2!($($args2)*));
   );
   ($i:expr, $f:expr, $g:expr) => (
     map_opt_impl!($i, call!($f), call!($g));
@@ -491,9 +491,9 @@ macro_rules! map_opt (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! map_opt_impl (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      match $submac1!($i, $($args1)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => match $submac2!(o, $($args2)*) {
@@ -1611,9 +1611,9 @@ macro_rules! tap (
 ///
 #[macro_export]
 macro_rules! pair(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      tuple!($i, $submac!($($args)*), $submac2!($($args2)*))
+      tuple!($i, $submac1!($($args1)*), $submac2!($($args2)*))
     }
   );
 
@@ -1655,9 +1655,9 @@ macro_rules! separated_pair(
 /// preceded(opening, X) returns X
 #[macro_export]
 macro_rules! preceded(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
+      match tuple!($i, $submac1!($($args1)*), $submac2!($($args2)*)) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, (_,o))    => {
@@ -1684,9 +1684,9 @@ macro_rules! preceded(
 /// terminated(X, closing) returns X
 #[macro_export]
 macro_rules! terminated(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
+      match tuple!($i, $submac1!($($args1)*), $submac2!($($args2)*)) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, (o,_))    => {

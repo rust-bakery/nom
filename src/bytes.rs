@@ -236,20 +236,20 @@ macro_rules! escaped (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! escaped1 (
-  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
     {
-     escaped_impl!($i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+     escaped_impl!($i, $submac1!($($args1)*), $control_char,  $submac2!($($args2)*))
     }
   );
-  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
-     escaped_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+     escaped_impl!($i, $submac!($($args)*), $control_char, call!($g))
   );
 );
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! escaped_impl (
-  ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
+  ($i: expr, $normal:ident!(  $($argsn:tt)* ), $control_char: expr, $escapable:ident!(  $($argse:tt)* )) => (
     {
       use $crate::InputLength;
       let cl = || {
@@ -257,7 +257,7 @@ macro_rules! escaped_impl (
         let mut index  = 0;
 
         while index < $i.len() {
-          if let $crate::IResult::Done(i,_) = $normal!(&$i[index..], $($args)*) {
+          if let $crate::IResult::Done(i,_) = $normal!(&$i[index..], $($argsn)*) {
             if i.is_empty() {
               return $crate::IResult::Done(&$i[$i.input_len()..], $i)
             } else {
@@ -267,7 +267,7 @@ macro_rules! escaped_impl (
             if index + 1 >= $i.len() {
               return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Escaped,&$i[index..]));
             } else {
-              match $escapable!(&$i[index+1..], $($args2)*) {
+              match $escapable!(&$i[index+1..], $($argse)*) {
                 $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
                 $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
                 $crate::IResult::Done(i,_) => {
@@ -349,20 +349,20 @@ macro_rules! escaped_transform (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! escaped_transform1 (
-  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
     {
-     escaped_transform_impl!($i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+     escaped_transform_impl!($i, $submac1!($($args1)*), $control_char,  $submac2!($($args2)*))
     }
   );
-  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
-     escaped_transform_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+     escaped_transform_impl!($i, $submac!($($args)*), $control_char, call!($g))
   );
 );
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! escaped_transform_impl (
-  ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
+  ($i: expr, $normal:ident!(  $($argsn:tt)* ), $control_char: expr, $transform:ident!( $($argst:tt)* )) => (
     {
       use $crate::InputLength;
       let cl = || {
@@ -371,7 +371,7 @@ macro_rules! escaped_transform_impl (
         let mut res = Vec::new();
 
         while index < $i.len() {
-          if let $crate::IResult::Done(i,o) = $normal!(&$i[index..], $($args)*) {
+          if let $crate::IResult::Done(i,o) = $normal!(&$i[index..], $($argsn)*) {
             res.extend(o.iter().cloned());
             if i.is_empty() {
               return $crate::IResult::Done(&$i[$i.input_len()..], res)
@@ -382,7 +382,7 @@ macro_rules! escaped_transform_impl (
             if index + 1 >= $i.len() {
               return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::EscapedTransform,&$i[index..]));
             } else {
-              match $transform!(&$i[index+1..], $($args2)*) {
+              match $transform!(&$i[index+1..], $($argst)*) {
                 $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
                 $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
                 $crate::IResult::Done(i,o) => {
