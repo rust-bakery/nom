@@ -499,8 +499,8 @@ macro_rules! consumer_from_parser (
           $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
           $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
             self.state = match $submac!(sl, $($args)*) {
-              $crate::IResult::Incomplete(n)  => {
-                $crate::ConsumerState::Continue($crate::Move::Await(n))
+              $crate::IResult::Incomplete(x)  => {
+                $crate::ConsumerState::Continue($crate::Move::Await(x))
               },
               $crate::IResult::Error(_)       => {
                 $crate::ConsumerState::Error(())
@@ -540,8 +540,8 @@ macro_rules! consumer_from_parser (
           $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
           $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
             self.state = match $submac!(sl, $($args)*) {
-              $crate::IResult::Incomplete(n)  => {
-                $crate::ConsumerState::Continue($crate::Move::Await(n))
+              $crate::IResult::Incomplete(x)  => {
+                $crate::ConsumerState::Continue($crate::Move::Await(x))
               },
               $crate::IResult::Error(_)       => {
                 $crate::ConsumerState::Error(())
@@ -868,9 +868,9 @@ mod tests {
         Input::Element(sl) | Input::Eof(Some(sl)) => {
           //println!("got slice: {:?}", sl);
           self.state = match line(sl) {
-            IResult::Incomplete(n)  => {
+            IResult::Incomplete(x)  => {
               println!("line not complete, continue (line was \"{}\")", from_utf8(sl).unwrap());
-              ConsumerState::Continue(Move::Await(n))
+              ConsumerState::Continue(Move::Await(x))
             },
             IResult::Error(e)       => {
               println!("LineConsumer parsing error: {:?}", e);

@@ -19,12 +19,12 @@ macro_rules! recognize (
     {
       use $crate::HexDisplay;
       match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i,_)     => {
           let index = ($i).offset(i);
           $crate::IResult::Done(i, &($i)[..index])
-        },
-        $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
-        $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i)
+        }
       }
     }
   );
@@ -268,15 +268,15 @@ macro_rules! escaped_impl (
               return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Escaped,&$i[index..]));
             } else {
               match $escapable!(&$i[index+1..], $($args2)*) {
+                $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
+                $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
                 $crate::IResult::Done(i,_) => {
                   if i.is_empty() {
                     return $crate::IResult::Done(&$i[$i.input_len()..], $i)
                   } else {
                     index = $i.offset(i);
                   }
-                },
-                $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
-                $crate::IResult::Error(e)      => return $crate::IResult::Error(e)
+                }
               }
             }
           } else {
@@ -290,8 +290,8 @@ macro_rules! escaped_impl (
         $crate::IResult::Done(&$i[index..], &$i[..index])
       };
       match cl() {
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(e)      => {
           return $crate::IResult::Error($crate::Err::NodePosition($crate::ErrorKind::Escaped, $i, Box::new(e)))
         }
@@ -383,6 +383,8 @@ macro_rules! escaped_transform_impl (
               return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::EscapedTransform,&$i[index..]));
             } else {
               match $transform!(&$i[index+1..], $($args2)*) {
+                $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
+                $crate::IResult::Incomplete(x) => return $crate::IResult::Incomplete(x),
                 $crate::IResult::Done(i,o) => {
                   res.extend(o.iter().cloned());
                   if i.is_empty() {
@@ -390,9 +392,7 @@ macro_rules! escaped_transform_impl (
                   } else {
                     index = $i.offset(i);
                   }
-                },
-                $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
-                $crate::IResult::Error(e)      => return $crate::IResult::Error(e)
+                }
               }
             }
           } else {
@@ -406,8 +406,8 @@ macro_rules! escaped_transform_impl (
         $crate::IResult::Done(&$i[index..], res)
       };
       match cl() {
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(e)      => {
           return $crate::IResult::Error($crate::Err::NodePosition($crate::ErrorKind::EscapedTransform, $i, Box::new(e)))
         }
@@ -760,7 +760,7 @@ macro_rules! length_bytes(
     {
       match $f($i) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i1,nb)   => {
           let length_remaining = i1.len();
           if length_remaining < nb {

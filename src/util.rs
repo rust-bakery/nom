@@ -218,9 +218,9 @@ macro_rules! dbg (
           println!("Error({:?}) at l.{} by ' {} '", a, l, stringify!($submac!($($args)*)));
           $crate::IResult::Error(a)
         },
-        $crate::IResult::Incomplete(a) => {
-          println!("Incomplete({:?}) at {} by ' {} '", a, l, stringify!($submac!($($args)*)));
-          $crate::IResult::Incomplete(a)
+        $crate::IResult::Incomplete(x) => {
+          println!("Incomplete({:?}) at {} by ' {} '", x, l, stringify!($submac!($($args)*)));
+          $crate::IResult::Incomplete(x)
         },
         a => a
       }
@@ -262,9 +262,9 @@ macro_rules! dbg_dmp (
           println!("Error({:?}) at l.{} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
           $crate::IResult::Error(a)
         },
-        $crate::IResult::Incomplete(a) => {
-          println!("Incomplete({:?}) at {} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
-          $crate::IResult::Incomplete(a)
+        $crate::IResult::Incomplete(x) => {
+          println!("Incomplete({:?}) at {} by ' {} '\n{}", x, l, stringify!($submac!($($args)*)), $i.to_hex(8));
+          $crate::IResult::Incomplete(x)
         },
         a => a
       }

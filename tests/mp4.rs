@@ -23,7 +23,7 @@ fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
     Error(e)      => Error(e),
-    Incomplete(e) => Incomplete(e)
+    Incomplete(x) => Incomplete(x)
   }
 }
 
@@ -358,9 +358,9 @@ impl MP4Consumer {
                     assert!(false);
                     return ConsumerState::Error(());
                   },
-                  Incomplete(n) => {
+                  Incomplete(x) => {
                     println!("ftyp incomplete -> await: {}", sl.len());
-                    return ConsumerState::Continue(Move::Await(n));
+                    return ConsumerState::Continue(Move::Await(x));
                     //return ConsumerState::Await(0, input.len() + 100);
                   }
                 }
@@ -389,10 +389,10 @@ impl MP4Consumer {
             assert!(false);
             return ConsumerState::Error(());
           },
-          Incomplete(i) => {
+          Incomplete(x) => {
             // FIXME: incomplete should send the required size
             println!("mp4 incomplete -> await: {}", sl.len());
-            return ConsumerState::Continue(Move::Await(i));
+            return ConsumerState::Continue(Move::Await(x));
           }
         }
       }
@@ -444,9 +444,9 @@ impl MP4Consumer {
             assert!(false);
             return ConsumerState::Error(());
           },
-          Incomplete(i) => {
+          Incomplete(x) => {
             println!("moov incomplete -> await: {}", sl.len());
-            return ConsumerState::Continue(Move::Await(i));
+            return ConsumerState::Continue(Move::Await(x));
           }
         }
       }
@@ -526,6 +526,3 @@ fn small_test() {
 fn big_bunny_test() {
   explore_mp4_file("assets/bigbuckbunny.mp4");
 }
-
-
-

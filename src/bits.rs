@@ -138,7 +138,7 @@ macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
     {
       match take_bits!($i, $t, $count) {
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => {
           if let $p = o {
             let res: $crate::IResult<(&[u8],usize),$t> = $crate::IResult::Done(i, o);
@@ -147,7 +147,7 @@ macro_rules! tag_bits (
             $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))
           }
         },
-        _                              => {
+        $crate::IResult::Error(_)      => {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))
         }
       }
