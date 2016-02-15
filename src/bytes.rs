@@ -759,7 +759,7 @@ macro_rules! length_bytes(
   ($i:expr, $f:expr) => (
     {
       match $f($i) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i1,nb)   => {
           let length_remaining = i1.len();

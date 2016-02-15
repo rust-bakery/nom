@@ -353,8 +353,8 @@ impl MP4Consumer {
                     //return ConsumerState::Await(header.length as usize, header.length as usize - 8);
                     return ConsumerState::Continue(Move::Consume(sl.offset(rest)));
                   }
-                  Error(a) => {
-                    println!("ftyp parsing error: {:?}", a);
+                  Error(e) => {
+                    println!("ftyp parsing error: {:?}", e);
                     assert!(false);
                     return ConsumerState::Error(());
                   },
@@ -384,8 +384,8 @@ impl MP4Consumer {
             }
             return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length) as i64)))
           },
-          Error(a) => {
-            println!("mp4 parsing error: {:?}", a);
+          Error(e) => {
+            println!("mp4 parsing error: {:?}", e);
             assert!(false);
             return ConsumerState::Error(());
           },
@@ -438,8 +438,8 @@ impl MP4Consumer {
             println!("remaining moov_bytes: {}", self.moov_bytes);
             return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length) as i64)))
           },
-          Error(a) => {
-            println!("moov parsing error: {:?}", a);
+          Error(e) => {
+            println!("moov parsing error: {:?}", e);
             println!("data:\n{}", sl.to_hex(8));
             assert!(false);
             return ConsumerState::Error(());

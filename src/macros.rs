@@ -1562,7 +1562,7 @@ macro_rules! peek(
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(_,o)     => $crate::IResult::Done($i, o),
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x)
       }
     }
@@ -1596,7 +1596,7 @@ macro_rules! tap (
           $e;
           $crate::IResult::Done(i, $name)
         },
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x)
       }
     }
@@ -1637,7 +1637,7 @@ macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       match tuple_parser!($i, 0usize, (), $submac!($($args)*), $($rest)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i1, (o1, _, o2))   => {
           $crate::IResult::Done(i1, (o1, o2))
@@ -1658,7 +1658,7 @@ macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(remaining, (_,o))    => {
           $crate::IResult::Done(remaining, o)
@@ -1687,7 +1687,7 @@ macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(remaining, (o,_))    => {
           $crate::IResult::Done(remaining, o)
@@ -1716,7 +1716,7 @@ macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       match tuple_parser!($i, 0usize, (), $submac!($($args)*), $($rest)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i1, (_, o, _))   => {
           $crate::IResult::Done(i1, o)
@@ -1800,7 +1800,7 @@ macro_rules! separated_nonempty_list(
 
       // get the first element
       match $submac!(input, $($args2)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i,o)     => {
           if i.len() == input.len() {
@@ -2216,7 +2216,7 @@ macro_rules! length_value(
   ($i:expr, $f:expr, $g:expr) => (
     {
       match $f($i) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(inum, onum)   => {
           let ret;
@@ -2255,7 +2255,7 @@ macro_rules! length_value(
   ($i:expr, $f:expr, $g:expr, $length:expr) => (
     {
       match $f($i) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(inum, onum)   => {
           let ret;

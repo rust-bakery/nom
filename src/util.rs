@@ -214,9 +214,9 @@ macro_rules! dbg (
     {
       let l = line!();
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(a) => {
-          println!("Error({:?}) at l.{} by ' {} '", a, l, stringify!($submac!($($args)*)));
-          $crate::IResult::Error(a)
+        $crate::IResult::Error(e) => {
+          println!("Error({:?}) at l.{} by ' {} '", e, l, stringify!($submac!($($args)*)));
+          $crate::IResult::Error(e)
         },
         $crate::IResult::Incomplete(x) => {
           println!("Incomplete({:?}) at {} by ' {} '", x, l, stringify!($submac!($($args)*)));
@@ -258,9 +258,9 @@ macro_rules! dbg_dmp (
       use $crate::HexDisplay;
       let l = line!();
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(a) => {
-          println!("Error({:?}) at l.{} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
-          $crate::IResult::Error(a)
+        $crate::IResult::Error(e) => {
+          println!("Error({:?}) at l.{} by ' {} '\n{}", e, l, stringify!($submac!($($args)*)), $i.to_hex(8));
+          $crate::IResult::Error(e)
         },
         $crate::IResult::Incomplete(x) => {
           println!("Incomplete({:?}) at {} by ' {} '\n{}", x, l, stringify!($submac!($($args)*)), $i.to_hex(8));
