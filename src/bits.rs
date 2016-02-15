@@ -54,9 +54,9 @@ macro_rules! bits_impl (
           $crate::IResult::Error(err)
         }
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          //println!("bits parser returned Needed::Size({})", i);
-          $crate::IResult::Incomplete($crate::Needed::Size(i / 8 + 1))
+        $crate::IResult::Incomplete($crate::Needed::Size(n)) => {
+          //println!("bits parser returned Needed::Size({})", n);
+          $crate::IResult::Incomplete($crate::Needed::Size(n / 8 + 1))
         },
         $crate::IResult::Done((i, bit_index), o)             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
