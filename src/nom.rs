@@ -51,7 +51,7 @@ pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
   }
-  Done(b"", input)
+  Done(&input[input.len()..], input)
 }
 
 named!(tag_ln, tag!("\n"));
@@ -510,14 +510,14 @@ pub fn non_empty<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
   if input.input_len() == 0 {
     Error(Position(ErrorKind::NonEmpty, input))
   } else {
-    Done(&input[0..0], input)
+    Done(&input[input.input_len()..], input)
   }
 }
 
 /// Return the remaining input.
 #[inline]
-pub fn rest(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    IResult::Done(b"", i)
+pub fn rest(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    IResult::Done(&input[input.len()..], input)
 }
 
 #[cfg(test)]
