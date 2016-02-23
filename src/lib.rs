@@ -88,6 +88,7 @@
 #![cfg_attr(feature = "core", feature(collections))]
 #![cfg_attr(feature = "core", no_std)]
 #![cfg_attr(feature = "nightly", feature(test))]
+#![cfg_attr(feature = "nightly", feature(const_fn))]
 
 #[cfg(feature = "core")]
 extern crate collections;
