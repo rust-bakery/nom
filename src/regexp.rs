@@ -1,3 +1,14 @@
+#[doc(hidden)]
+#[macro_export]
+macro_rules! regex (
+  ($re: ident, $s:expr) => (
+    lazy_static! {
+      static ref $re: ::regex::Regex = ::regex::Regex::new($s).unwrap();
+    }
+  );
+);
+
+
 /// `re_match!(regexp) => &[T] -> IResult<&[T], &[T]>`
 /// Returns the whole input if a match is found
 ///
@@ -27,8 +38,8 @@ macro_rules! re_match_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::InputLength;
-      let re = regex!($re);
-      if re.is_match($i) {
+      regex!(RE, $re);
+      if RE.is_match($i) {
         $crate::IResult::Done(&$i[$i.input_len()..], $i)
       } else {
         $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpMatch))
@@ -65,8 +76,8 @@ macro_rules! re_find (
 macro_rules! re_find_static (
   ($i:expr, $re:expr) => (
     {
-      let re = regex!($re);
-      if let Some((begin, end)) = re.find($i) {
+      regex!(RE, $re);
+      if let Some((begin, end)) = RE.find($i) {
         $crate::IResult::Done(&$i[end..], &$i[begin..end])
       } else {
         $crate::IResult::Error($crate::Err::Code($crate::ErrorKind::RegexpFind))
@@ -108,8 +119,8 @@ macro_rules! re_matches (
 macro_rules! re_matches_static (
   ($i:expr, $re:expr) => (
     {
-      let re = regex!($re);
-      let v: Vec<&str> = re.find_iter($i).map(|(begin,end)| &$i[begin..end]).collect();
+      regex!(RE, $re);
+      let v: Vec<&str> = RE.find_iter($i).map(|(begin,end)| &$i[begin..end]).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap();
@@ -155,8 +166,8 @@ macro_rules! re_capture (
 macro_rules! re_capture_static (
   ($i:expr, $re:expr) => (
     {
-      let re = regex!($re);
-      if let Some(c) = re.captures($i) {
+      regex!(RE, $re);
+      if let Some(c) = RE.captures($i) {
         let v:Vec<&str> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| &$i[begin..end]).collect();
         let offset = {
           let end = v.last().unwrap();
@@ -202,8 +213,8 @@ macro_rules! re_captures (
 macro_rules! re_captures_static (
   ($i:expr, $re:expr) => (
     {
-      let re = regex!($re);
-      let v:Vec<Vec<&str>> = re.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| &$i[begin..end]).collect()).collect();
+      regex!(RE, $re);
+      let v:Vec<Vec<&str>> = RE.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| &$i[begin..end]).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();

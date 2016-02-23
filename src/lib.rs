@@ -87,14 +87,14 @@
 #![cfg_attr(feature = "core", feature(no_std))]
 #![cfg_attr(feature = "core", feature(collections))]
 #![cfg_attr(feature = "core", no_std)]
-#![cfg_attr(feature = "regexp_macros", feature(plugin))]
-#![cfg_attr(feature = "regexp_macros", plugin(regex_macros))]
 #![cfg_attr(feature = "nightly", feature(test))]
 
 #[cfg(feature = "core")]
 extern crate collections;
 #[cfg(feature = "regexp")]
 extern crate regex;
+#[cfg(feature = "regexp_macros")]
+#[macro_use] extern crate lazy_static;
 #[cfg(feature = "nightly")]
 extern crate test;
 
