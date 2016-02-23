@@ -43,8 +43,8 @@ impl<'a> Consumer<&'a[u8], usize, (), Move> for TestConsumer {
                 self.state   = State::Error;
                 self.c_state = ConsumerState::Error(());
               },
-              IResult::Incomplete(n) => {
-                self.c_state = ConsumerState::Continue(Move::Await(n));
+              IResult::Incomplete(x) => {
+                self.c_state = ConsumerState::Continue(Move::Await(x));
               },
               IResult::Done(i,_)     => {
                 self.state = State::Middle;
@@ -66,9 +66,9 @@ impl<'a> Consumer<&'a[u8], usize, (), Move> for TestConsumer {
                 self.state   = State::End;
                 self.c_state = ConsumerState::Continue(Move::Consume(0));
               },
-              IResult::Incomplete(n) => {
-                println!("Middle got Incomplete({:?})", n);
-                self.c_state = ConsumerState::Continue(Move::Await(n));
+              IResult::Incomplete(x) => {
+                println!("Middle got Incomplete({:?})", x);
+                self.c_state = ConsumerState::Continue(Move::Await(x));
               },
               IResult::Done(i,noms_vec)     => {
                 self.counter = self.counter + noms_vec.len();
@@ -91,8 +91,8 @@ impl<'a> Consumer<&'a[u8], usize, (), Move> for TestConsumer {
                 self.state   = State::Error;
                 self.c_state = ConsumerState::Error(());
               },
-              IResult::Incomplete(n) => {
-                self.c_state = ConsumerState::Continue(Move::Await(n));
+              IResult::Incomplete(x) => {
+                self.c_state = ConsumerState::Continue(Move::Await(x));
               },
               IResult::Done(i,_)     => {
                 self.state = State::Done;

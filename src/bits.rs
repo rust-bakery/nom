@@ -54,9 +54,9 @@ macro_rules! bits_impl (
           $crate::IResult::Error(err)
         }
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          //println!("bits parser returned Needed::Size({})", i);
-          $crate::IResult::Incomplete($crate::Needed::Size(i / 8 + 1))
+        $crate::IResult::Incomplete($crate::Needed::Size(n)) => {
+          //println!("bits parser returned Needed::Size({})", n);
+          $crate::IResult::Incomplete($crate::Needed::Size(n / 8 + 1))
         },
         $crate::IResult::Done((i, bit_index), o)             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
@@ -138,7 +138,7 @@ macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
     {
       match take_bits!($i, $t, $count) {
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => {
           if let $p = o {
             let res: $crate::IResult<(&[u8],usize),$t> = $crate::IResult::Done(i, o);
@@ -147,7 +147,7 @@ macro_rules! tag_bits (
             $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))
           }
         },
-        _                              => {
+        $crate::IResult::Error(_)      => {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))
         }
       }

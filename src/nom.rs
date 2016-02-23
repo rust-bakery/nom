@@ -446,7 +446,7 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i64($i) } else { 
 pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
   match be_u32(input) {
     Error(e)      => Error(e),
-    Incomplete(e) => Incomplete(e),
+    Incomplete(x) => Incomplete(x),
     Done(i,o) => {
       unsafe {
         Done(i, transmute::<u32, f32>(o))
@@ -460,7 +460,7 @@ pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
 pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   match be_u64(input) {
     Error(e)      => Error(e),
-    Incomplete(e) => Incomplete(e),
+    Incomplete(x) => Incomplete(x),
     Done(i,o) => {
       unsafe {
         Done(i, transmute::<u64, f64>(o))
@@ -474,7 +474,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
   match is_a!(input, &b"0123456789abcdef"[..]) {
     Error(e)    => Error(e),
-    Incomplete(e) => Incomplete(e),
+    Incomplete(x) => Incomplete(x),
     Done(i,o) => {
       let mut res = 0;
       for &e in o {

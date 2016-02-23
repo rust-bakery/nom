@@ -441,9 +441,9 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
       ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
       ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
       ConsumerState::Done(ref m, ref o) => match *c2.handle(Input::Element(o.clone())) {
-        ConsumerState::Error(ref e)     => ConsumerState::Error(e.clone()),
-        ConsumerState::Continue(ref m2) => ConsumerState::Continue(m2.clone()),
-        ConsumerState::Done(_,ref o2)   => ConsumerState::Done(m.clone(), o2.clone())
+        ConsumerState::Error(ref f)     => ConsumerState::Error(f.clone()),
+        ConsumerState::Continue(ref n)  => ConsumerState::Continue(n.clone()),
+        ConsumerState::Done(_,ref p)    => ConsumerState::Done(m.clone(), p.clone())
       }
     };
 
@@ -464,9 +464,9 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
         ConsumerState::Error(ref e)       => ConsumerState::Error(e.clone()),
         ConsumerState::Continue(ref m)    => ConsumerState::Continue(m.clone()),
         ConsumerState::Done(ref m, ref o) => match *self.consumer2.handle(Input::Element(o.clone())) {
-          ConsumerState::Error(ref e)    => ConsumerState::Error(e.clone()),
-          ConsumerState::Continue(ref m) => ConsumerState::Continue(m.clone()),
-          ConsumerState::Done(_, ref o2)    => ConsumerState::Done(m.clone(), o2.clone())
+          ConsumerState::Error(ref f)     => ConsumerState::Error(f.clone()),
+          ConsumerState::Continue(ref n)  => ConsumerState::Continue(n.clone()),
+          ConsumerState::Done(_, ref p)   => ConsumerState::Done(m.clone(), p.clone())
         }
       };
     &self.state
@@ -499,8 +499,8 @@ macro_rules! consumer_from_parser (
           $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
           $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
             self.state = match $submac!(sl, $($args)*) {
-              $crate::IResult::Incomplete(n)  => {
-                $crate::ConsumerState::Continue($crate::Move::Await(n))
+              $crate::IResult::Incomplete(x)  => {
+                $crate::ConsumerState::Continue($crate::Move::Await(x))
               },
               $crate::IResult::Error(_)       => {
                 $crate::ConsumerState::Error(())
@@ -540,8 +540,8 @@ macro_rules! consumer_from_parser (
           $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
           $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
             self.state = match $submac!(sl, $($args)*) {
-              $crate::IResult::Incomplete(n)  => {
-                $crate::ConsumerState::Continue($crate::Move::Await(n))
+              $crate::IResult::Incomplete(x)  => {
+                $crate::ConsumerState::Continue($crate::Move::Await(x))
               },
               $crate::IResult::Error(_)       => {
                 $crate::ConsumerState::Error(())
@@ -868,9 +868,9 @@ mod tests {
         Input::Element(sl) | Input::Eof(Some(sl)) => {
           //println!("got slice: {:?}", sl);
           self.state = match line(sl) {
-            IResult::Incomplete(n)  => {
+            IResult::Incomplete(x)  => {
               println!("line not complete, continue (line was \"{}\")", from_utf8(sl).unwrap());
-              ConsumerState::Continue(Move::Await(n))
+              ConsumerState::Continue(Move::Await(x))
             },
             IResult::Error(e)       => {
               println!("LineConsumer parsing error: {:?}", e);

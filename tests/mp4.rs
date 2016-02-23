@@ -23,7 +23,7 @@ fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
     Error(e)      => Error(e),
-    Incomplete(e) => Incomplete(e)
+    Incomplete(x) => Incomplete(x)
   }
 }
 
@@ -353,14 +353,14 @@ impl MP4Consumer {
                     //return ConsumerState::Await(header.length as usize, header.length as usize - 8);
                     return ConsumerState::Continue(Move::Consume(sl.offset(rest)));
                   }
-                  Error(a) => {
-                    println!("ftyp parsing error: {:?}", a);
+                  Error(e) => {
+                    println!("ftyp parsing error: {:?}", e);
                     assert!(false);
                     return ConsumerState::Error(());
                   },
-                  Incomplete(n) => {
+                  Incomplete(x) => {
                     println!("ftyp incomplete -> await: {}", sl.len());
-                    return ConsumerState::Continue(Move::Await(n));
+                    return ConsumerState::Continue(Move::Await(x));
                     //return ConsumerState::Await(0, input.len() + 100);
                   }
                 }
@@ -384,15 +384,15 @@ impl MP4Consumer {
             }
             return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length) as i64)))
           },
-          Error(a) => {
-            println!("mp4 parsing error: {:?}", a);
+          Error(e) => {
+            println!("mp4 parsing error: {:?}", e);
             assert!(false);
             return ConsumerState::Error(());
           },
-          Incomplete(i) => {
+          Incomplete(x) => {
             // FIXME: incomplete should send the required size
             println!("mp4 incomplete -> await: {}", sl.len());
-            return ConsumerState::Continue(Move::Await(i));
+            return ConsumerState::Continue(Move::Await(x));
           }
         }
       }
@@ -438,15 +438,15 @@ impl MP4Consumer {
             println!("remaining moov_bytes: {}", self.moov_bytes);
             return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length) as i64)))
           },
-          Error(a) => {
-            println!("moov parsing error: {:?}", a);
+          Error(e) => {
+            println!("moov parsing error: {:?}", e);
             println!("data:\n{}", sl.to_hex(8));
             assert!(false);
             return ConsumerState::Error(());
           },
-          Incomplete(i) => {
+          Incomplete(x) => {
             println!("moov incomplete -> await: {}", sl.len());
-            return ConsumerState::Continue(Move::Await(i));
+            return ConsumerState::Continue(Move::Await(x));
           }
         }
       }
@@ -526,6 +526,3 @@ fn small_test() {
 fn big_bunny_test() {
   explore_mp4_file("assets/bigbuckbunny.mp4");
 }
-
-
-

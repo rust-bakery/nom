@@ -71,8 +71,8 @@ fn keys_and_values(input:&str) -> IResult<&str, HashMap<&str, &str> > {
       }
       IResult::Done(i, h)
     },
-    IResult::Incomplete(a)     => IResult::Incomplete(a),
-    IResult::Error(a)          => IResult::Error(a)
+    IResult::Incomplete(x)     => IResult::Incomplete(x),
+    IResult::Error(e)          => IResult::Error(e)
   }
 }
 
@@ -93,8 +93,8 @@ fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str> > 
       }
       IResult::Done(i, h)
     },
-    IResult::Incomplete(a)     => IResult::Incomplete(a),
-    IResult::Error(a)          => IResult::Error(a)
+    IResult::Incomplete(x)     => IResult::Incomplete(x),
+    IResult::Error(e)          => IResult::Error(e)
   }
 }
 

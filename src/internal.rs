@@ -92,7 +92,7 @@ impl<I,O,E> IResult<I,O,E> {
     match self {
       Done(i, o)    => Done(i, f(o)),
       Error(e)      => Error(e),
-      Incomplete(n) => Incomplete(n),
+      Incomplete(x) => Incomplete(x),
     }
   }
 
@@ -117,7 +117,7 @@ impl<I,O,E> IResult<I,O,E> {
    where F: FnOnce(Err<I, E>) -> Err<I, N> {
     match self {
       Error(e)      => Error(f(e)),
-      Incomplete(n) => Incomplete(n),
+      Incomplete(x) => Incomplete(x),
       Done(i, o)    => Done(i, o),
     }
   }
