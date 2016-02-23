@@ -534,7 +534,6 @@ macro_rules! map_opt_impl (
 macro_rules! value (
   ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::HexDisplay;
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
           $crate::IResult::Done(i, $res)
