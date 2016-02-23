@@ -4,6 +4,27 @@
 
 ### Changed
 
+## 1.2.1 - 2016-02-23
+
+### Thanks
+- @sourrust for adding methods to `IResult`
+- @tstorch for the test refactoring, and for adding methods to `IResult` and `Needed`
+- @joelself for fixing the method system
+
+### Added
+
+- mapping methods over `IResult` and `Needed`
+
+### Changed
+
+- `apply_rf` is renamed to `apply_m`. This will not warrant a major version, since it is part missing from the methods feture added in the 1.2.0 release
+- the `regexp_macros` feature that used `regex!` to precompile regular expressions has been replaced by the normal regex engine combined with `lazy_static`
+
+### Fixed
+
+- when a parser or combinator was returning an empty buffer as remaining part, it was generating one from a static empty string. This was messing with buffer offset calculation. Now, that empty slice is taken like this: `&input[input.len()..]`.
+- The `regexp_macros` and `no_std` feature build again and are now tested with Travis CI
+
 ## 1.2.0 - 2016-02-08
 
 ### Thanks
@@ -429,7 +450,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/1.2.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/1.2.1...HEAD
+* [1.2.0]: https://github.com/Geal/nom/compare/1.2.0...1.2.1
 * [1.2.0]: https://github.com/Geal/nom/compare/1.1.0...1.2.0
 * [1.1.0]: https://github.com/Geal/nom/compare/1.0.1...1.1.0
 * [1.0.1]: https://github.com/Geal/nom/compare/1.0.0...1.0.1
