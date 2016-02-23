@@ -235,7 +235,7 @@ mod tests {
     let incomplete: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
 
     assert_eq!(done.map_err(|_| error_kind.clone()), IResult::Done(&b""[..], 5));
-    assert_eq!(error.map_err(|x| error_kind.clone()), IResult::Error(error_kind.clone()));
-    assert_eq!(incomplete.map_err(|x| error_kind.clone()), IResult::Incomplete(Needed::Unknown));
+    assert_eq!(error.map_err(|x| {println!("err: {:?}", x); error_kind.clone()}), IResult::Error(error_kind.clone()));
+    assert_eq!(incomplete.map_err(|x| {println!("err: {:?}", x); error_kind.clone()}), IResult::Incomplete(Needed::Unknown));
   }
 }
