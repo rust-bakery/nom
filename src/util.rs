@@ -53,6 +53,7 @@ impl<'a> InputLength for (&'a [u8], usize) {
 }
 
 use std::iter::Enumerate;
+#[cfg(not(feature = "core"))]
 use std::str::CharIndices;
 
 pub trait AsChar {
@@ -125,6 +126,7 @@ impl<'a> IterIndices for &'a [u8] {
     }
 }
 
+#[cfg(not(feature = "core"))]
 impl<'a> IterIndices for &'a str {
     type Item = char;
     type Iter = CharIndices<'a>;
@@ -297,6 +299,8 @@ pub fn compare_error_paths<P,E:Clone+PartialEq>(e1:&Err<P,E>, e2:&Err<P,E>) -> b
   error_to_list(e1) == error_to_list(e2)
 }
 
+
+#[cfg(not(feature = "core"))]
 use std::hash::Hash;
 
 #[cfg(not(feature = "core"))]
