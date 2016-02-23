@@ -1,6 +1,7 @@
 //! Basic types to build the parsers
 
 use self::IResult::*;
+use self::Needed::*;
 use util::ErrorKind;
 
 #[cfg(feature = "core")]
@@ -30,6 +31,21 @@ pub enum Needed {
   Unknown,
   /// contains the required data size
   Size(usize)
+}
+
+impl Needed {
+  pub fn is_known(&self) -> bool {
+    *self != Unknown
+  }
+
+  /// Maps a `Needed` to `Needed` by appling a function to a contained `Size` value.
+  #[inline]
+  pub fn map<F: FnOnce(usize) -> usize>(self, f: F) -> Needed {
+    match self {
+      Unknown => Unknown,
+      Size(n) => Size(f(n)),
+    }
+  }
 }
 
 /// Holds the result of parsing functions
@@ -160,6 +176,15 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
 mod tests {
   use super::*;
   use util::ErrorKind;
+
+  #[test]
+  fn needed_map() {
+    let unknown = Needed::Unknown;
+    let size = Needed::Size(5);
+
+    assert_eq!(size.map(|x| x * 2), Needed::Size(10));
+    assert_eq!(unknown.map(|x| x * 2), Needed::Unknown);
+  }
 
   #[test]
   fn iresult_map() {
