@@ -96,6 +96,19 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
+  /// Maps a `IResult<I, O, E>` to `IResult<I, O, E>` by appling a function
+  /// to a contained `Incomplete` value, leaving `Done` and `Error` value
+  /// untouched.
+  #[inline]
+  pub fn map_inc<F>(self, f: F) -> IResult<I, O, E>
+   where F: FnOnce(Needed) -> Needed {
+    match self {
+      Error(e)      => Error(e),
+      Incomplete(n) => Incomplete(f(n)),
+      Done(i, o)    => Done(i, o),
+    }
+  }
+
   /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
   /// to a contained `Error` value, leaving `Done` and `Incomplete` value
   /// untouched.
@@ -195,6 +208,19 @@ mod tests {
     assert_eq!(done.map(|x| x * 2), IResult::Done(&b""[..], 10));
     assert_eq!(error.map(|x| x * 2), IResult::Error(Err::Code(ErrorKind::Tag)));
     assert_eq!(incomplete.map(|x| x * 2), IResult::Incomplete(Needed::Unknown));
+  }
+
+  #[test]
+  fn iresult_map_inc() {
+    let done: IResult<&[u8], u32> = IResult::Done(&b""[..], 5);
+    let error: IResult<&[u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
+    let inc_unknown: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
+    let inc_size: IResult<&[u8], u32> = IResult::Incomplete(Needed::Size(5));
+
+    assert_eq!(done.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Done(&b""[..], 5));
+    assert_eq!(error.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(inc_unknown.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Incomplete(Needed::Unknown));
+    assert_eq!(inc_size.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Incomplete(Needed::Size(6)));
   }
 
   #[test]
