@@ -69,10 +69,9 @@ macro_rules! tag (
 macro_rules! tag_bytes (
   ($i:expr, $bytes: expr) => (
     {
-      use std::cmp::min;
       let len = $i.len();
       let blen = $bytes.len();
-      let m   = min(len, blen);
+      let m   = if len < blen { len } else { blen };
       let reduced = &$i[..m];
       let b       = &$bytes[..m];
 
