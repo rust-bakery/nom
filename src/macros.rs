@@ -2463,6 +2463,88 @@ macro_rules! fold_many0(
   );
 );
 
+/// `fold_many1!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
+/// Applies the parser 1 or more times and folds the list of return values
+///
+/// the embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Error};
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(multi<&[u8], Vec<&[u8]> >, fold_many1!( tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
+///      acc.push(item);
+///      acc
+///  }));
+///
+///  let a = b"abcdabcdefgh";
+///  let b = b"azerty";
+///
+///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
+///  assert_eq!(multi(&b[..]), Error(Position(ErrorKind::Many1,&b[..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! fold_many1(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
+    {
+      use $crate::InputLength;
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(_)      => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1,$i)),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i1,o1)   => {
+          let acc = $init;
+          let f = $f;
+          if i1.len() == 0 {
+            let acc = f(acc, o1);
+            $crate::IResult::Done(i1,acc)
+          } else {
+            let mut acc = f(acc, o1);
+            let mut input  = i1;
+            let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+            loop {
+              if input.input_len() == 0 {
+                break;
+              }
+              match $submac!(input, $($args)*) {
+                $crate::IResult::Error(_)                    => {
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                  incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                  incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                  break;
+                },
+                $crate::IResult::Done(i, o) => {
+                  if i.input_len() == input.input_len() {
+                    break;
+                  }
+                  acc = f(acc, o);
+                  input = i;
+                }
+              }
+            }
+
+            match incomplete {
+              ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
+              ::std::option::Option::None    => $crate::IResult::Done(input, acc)
+            }
+          }
+        }
+      }
+    }
+  );
+  ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
+    fold_many1!($i, call!($f), $init, $fold_f);
+  );
+);
+
 #[cfg(test)]
 mod tests {
   use internal::{Needed,IResult,Err};
@@ -3241,6 +3323,27 @@ mod tests {
     assert_eq!(multi(&b"abcd"[..]), Done(&b""[..], vec![&b"abcd"[..]]));
     assert_eq!(multi(&b""[..]), Done(&b""[..], Vec::new()));
     assert_eq!(multi_empty(&b"abcdef"[..]), Error(Position(ErrorKind::Many0, &b"abcdef"[..])));
+  }
+
+  #[test]
+  fn fold_many1() {
+    fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
+      acc.push(item);
+      acc
+    };
+    named!(multi<&[u8],Vec<&[u8]> >, fold_many1!(tag!("abcd"), Vec::new(), fold_into_vec));
+
+    let a = &b"abcdef"[..];
+    let b = &b"abcdabcdefgh"[..];
+    let c = &b"azerty"[..];
+    let d = &b"abcdab"[..];
+
+    let res1 = vec![&b"abcd"[..]];
+    assert_eq!(multi(a), Done(&b"ef"[..], res1));
+    let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi(b), Done(&b"efgh"[..], res2));
+    assert_eq!(multi(c), Error(Position(ErrorKind::Many1,c)));
+    assert_eq!(multi(d), Incomplete(Needed::Size(8)));
   }
 
   #[test]
