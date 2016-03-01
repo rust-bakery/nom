@@ -2394,6 +2394,74 @@ macro_rules! length_value(
   );
 );
 
+/// `fold_many0!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
+/// Applies the parser 0 or more times and folds the list of return values
+///
+/// the embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(multi<&[u8], Vec<&[u8]> >, fold_many0!( tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
+///      acc.push(item);
+///      acc
+///  }));
+///
+///  let a = b"abcdabcdefgh";
+///  let b = b"azerty";
+///
+///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
+///  assert_eq!(multi(&b[..]), Done(&b"azerty"[..], Vec::new()));
+/// # }
+/// ```
+/// 0 or more
+#[macro_export]
+macro_rules! fold_many0(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
+    {
+      use $crate::InputLength;
+      let ret;
+      let f         = $f;
+      let mut res   = $init;
+      let mut input = $i;
+
+      loop {
+        if input.input_len() == 0 {
+          ret = $crate::IResult::Done(input, res); break;
+        }
+
+        match $submac!(input, $($args)*) {
+          $crate::IResult::Error(_)                            => {
+            ret = $crate::IResult::Done(input, res); break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            let size = i + ($i).input_len() - input.input_len();
+            ret = $crate::IResult::Incomplete($crate::Needed::Size(size)); break;
+          },
+          $crate::IResult::Done(i, o)                          => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i == input {
+              ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many0,input)); break;
+            }
+
+            res = f(res, o);
+            input = i;
+          }
+        }
+      }
+
+      ret
+    }
+  );
+  ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
+    fold_many0!($i, call!($f), $init, $fold_f);
+  );
+);
 
 #[cfg(test)]
 mod tests {
@@ -3153,6 +3221,26 @@ mod tests {
     assert_eq!(tst2(&i3), IResult::Incomplete(Needed::Size(5)));
     assert_eq!(tst2(&i4), IResult::Done(&i4[5..], r9));
     assert_eq!(tst1(&i5), IResult::Incomplete(Needed::Size(7)));
+  }
+
+  #[test]
+  fn fold_many0() {
+    fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
+      acc.push(item);
+      acc
+    };
+    named!( tag_abcd, tag!("abcd") );
+    named!( tag_empty, tag!("") );
+    named!( multi<&[u8],Vec<&[u8]> >, fold_many0!(tag_abcd, Vec::new(), fold_into_vec) );
+    named!( multi_empty<&[u8],Vec<&[u8]> >, fold_many0!(tag_empty, Vec::new(), fold_into_vec) );
+
+    assert_eq!(multi(&b"abcdef"[..]), Done(&b"ef"[..], vec![&b"abcd"[..]]));
+    assert_eq!(multi(&b"abcdabcdefgh"[..]), Done(&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]));
+    assert_eq!(multi(&b"azerty"[..]), Done(&b"azerty"[..], Vec::new()));
+    assert_eq!(multi(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(multi(&b"abcd"[..]), Done(&b""[..], vec![&b"abcd"[..]]));
+    assert_eq!(multi(&b""[..]), Done(&b""[..], Vec::new()));
+    assert_eq!(multi_empty(&b"abcdef"[..]), Error(Position(ErrorKind::Many0, &b"abcdef"[..])));
   }
 
   #[test]
