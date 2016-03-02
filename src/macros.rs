@@ -2757,13 +2757,18 @@ mod tests {
   #[test]
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
+    named!( tag_abcd, tag!("abcd") );
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag_abcd ) ));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag_abcd ) ));
+    //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
-    named!(silly, tag!("foo"));
+    assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+    assert_eq!(f_true(&b"ab"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(f_true(&b"xxx"[..]), Done(&b"xxx"[..], None));
 
-    let b = true;
-    //let f = closure!(&'static [u8], cond!( b, silly ) );
-    let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( b, silly ) ));
-    assert_eq!(f(b"foobar"), Done(&b"bar"[..], Some(&b"foo"[..])));
+    assert_eq!(f_false(&b"abcdef"[..]), Done(&b"abcdef"[..], None));
+    assert_eq!(f_false(&b"ab"[..]), Done(&b"ab"[..], None));
+    assert_eq!(f_false(&b"xxx"[..]), Done(&b"xxx"[..], None));
   }
 
   #[test]
