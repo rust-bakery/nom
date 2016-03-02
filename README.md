@@ -267,7 +267,7 @@ Here are some basic combining macros available:
 
 Please refer to the documentation for an exhaustive list of combinators.
 
-There are more complex (and more useful) parsers like `chain!` and `tuple!`, which are used to apply a serie of parsers then assemble their results.
+There are more complex (and more useful) parsers like `chain!` and `tuple!`, which are used to apply a series of parsers then assemble their results.
 
 Example with `tuple!`:
 
