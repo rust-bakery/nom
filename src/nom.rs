@@ -476,13 +476,22 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
     Error(e)    => Error(e),
     Incomplete(e) => Incomplete(e),
     Done(i,o) => {
-      let mut res = 0;
-      for &e in o {
+      let mut res = 0u32;
+
+      // Do not parse more than 8 characters for a u32
+      let mut remaining = i;
+      let mut parsed    = o;
+      if o.len() > 8 {
+        remaining = &input[8..];
+        parsed    = &input[..8];
+      }
+
+      for &e in parsed {
         let digit = e as char;
         let value = digit.to_digit(16).unwrap_or(0);
         res = value + (res << 4);
       }
-      Done(i, res)
+      Done(remaining, res)
     }
   }
 }
@@ -762,6 +771,10 @@ mod tests {
     assert_eq!(hex_u32(&b""[..]), Done(&b""[..], 0));
     assert_eq!(hex_u32(&b"ff"[..]), Done(&b""[..], 255));
     assert_eq!(hex_u32(&b"1be2"[..]), Done(&b""[..], 7138));
+    assert_eq!(hex_u32(&b"c5a31be2"[..]), Done(&b""[..], 3315801058));
+    assert_eq!(hex_u32(&b"00c5a31be2"[..]), Done(&b"e2"[..], 12952347));
+    assert_eq!(hex_u32(&b"c5a31be201"[..]), Done(&b"01"[..], 3315801058));
+    assert_eq!(hex_u32(&b"ffffffff"[..]), Done(&b""[..], 4294967295));
     assert_eq!(hex_u32(&b"0x1be2"[..]), Done(&b"x1be2"[..], 0));
   }
 
