@@ -332,7 +332,12 @@ macro_rules! take_until_s (
         for (o, c) in $input.char_indices() {
             if shift_window_and_cmp(& mut window, c, &substr_vec) {
                 parsed = true;
-                offset = o - window[1].len_utf8() - window[2].len_utf8()
+                window.pop();
+                let window_len: usize = window.iter()
+                    .map(|x| x.len_utf8())
+                    .fold(0, |x, y| x + y);
+                offset = o - window_len;
+                break;
             }
         }
         if parsed {
@@ -417,10 +422,10 @@ mod test {
 
     #[test]
     fn take_until_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "ÂßÇ";
+        const INPUT: &'static str = "βèƒôřèÂßÇ∂áƒƭèř";
+        const FIND: &'static str = "ÂßÇ∂";
         const CONSUMED: &'static str = "βèƒôřè";
-        const LEFTOVER: &'static str = "ÂßÇáƒƭèř";
+        const LEFTOVER: &'static str = "ÂßÇ∂áƒƭèř";
 
         match take_until_s!(INPUT, FIND) {
             IResult::Done(extra, output) => {
