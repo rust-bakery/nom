@@ -568,7 +568,7 @@ macro_rules! expr_res (
 );
 
 /// `expr_opt!(Option<O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Option<T> and returns a IResult::Done(I,T) if Ok
+/// evaluate an expression that returns a Option<T> and returns a IResult::Done(I,T) if Some
 ///
 /// Useful when doing computations in a chain
 ///
