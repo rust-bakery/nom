@@ -441,7 +441,7 @@ macro_rules! take_while (
           res
         },
         None    => {
-          $crate::IResult::Done(&$input[..0], $input)
+          $crate::IResult::Done(&$input[($input).len()..], $input)
         }
       }
     }
@@ -469,7 +469,7 @@ macro_rules! take_while1 (
             $crate::IResult::Done(&$input[n..], &$input[..n])
           },
           None    => {
-            $crate::IResult::Done(&$input[..0], $input)
+            $crate::IResult::Done(&$input[($input).len()..], $input)
           }
         }
       }
@@ -1009,5 +1009,15 @@ mod tests {
     b.iter(|| {
       f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..])
     });
+  }
+
+  #[test]
+  fn recognize_take_while() {
+    use nom::is_alphanumeric;
+    named!(x, take_while!(is_alphanumeric));
+    named!(y, recognize!(x));
+    assert_eq!(x(&b"ab"[..]), Done(&[][..], &b"ab"[..]));
+    println!("X: {:?}", x(&b"ab"[..]));
+    assert_eq!(y(&b"ab"[..]), Done(&[][..], &b"ab"[..]));
   }
 }
