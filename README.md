@@ -327,4 +327,33 @@ The tilde `~` is used as separator between every parser in the sequence, the com
 
 More examples of chain and tuple usage can be found in the [INI file parser example](tests/ini.rs).
 
+# Parsers written with nom
+
+Here is a list of known projects using nom:
+
+- Text file formats:
+ * [CSV](https://github.com/GuillaumeGomez/csv-parser)
+ * [FASTQ](https://github.com/elij/fastq.rs)
+ * [INI](https://github.com/Geal/nom/blob/master/tests/ini.rs)
+ * [ISO 8601 dates](https://github.com/badboy/iso8601)
+ * [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config)
+ * [torrc configuration file](https://github.com/dhuseby/torrc-rs)
+ * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
+- Interface definition formats:
+ * [Thrift](https://github.com/thehydroimpulse/thrust)
+- Audio, video and image formats:
+ * [GIF](https://github.com/Geal/gif.rs)
+- Document formats:
+ * [TAR](https://github.com/Keruspe/tar-parser.rs)
+ * [torrent files](https://github.com/jag426/bittorrent)
+- Database formats: 
+ * [Redis database files](https://github.com/badboy/rdb-rs)
+- Network protocol formats: 
+ * [IRC](https://github.com/Detegr/RBot-parser)
+ * [Pcap-NG](https://github.com/richo/pcapng-rs)
+
+Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
+
+Want to add your parser here? Create a pull request for it!
+
 ### TODO: example for new producers and consumers
