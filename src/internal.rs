@@ -185,6 +185,31 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   }
 }
 
+use std::error;
+use std::fmt;
+use std::any::Any;
+impl<P:fmt::Debug+Any,E:fmt::Debug+Any> error::Error for Err<P,E> {
+  fn description(&self) -> &str {
+    let kind = match *self {
+      Err::Code(ref e) | Err::Node(ref e, _) | Err::Position(ref e, _) | Err::NodePosition(ref e, _, _) => e
+    };
+    kind.description()
+  }
+}
+
+impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match *self {
+      Err::Code(ref e) | Err::Node(ref e, _) => {
+        write!(f, "{:?}", e)
+      },
+      Err::Position(ref e, ref p) | Err::NodePosition(ref e, ref p, _) => {
+        write!(f, "{:?}:{:?}", p, e)
+      }
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
