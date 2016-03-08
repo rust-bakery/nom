@@ -185,10 +185,14 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   }
 }
 
-use std::error;
-use std::fmt;
+#[cfg(not(feature = "core"))]
 use std::any::Any;
-impl<P:fmt::Debug+Any,E:fmt::Debug+Any> error::Error for Err<P,E> {
+#[cfg(not(feature = "core"))]
+use std::{error,fmt};
+#[cfg(not(feature = "core"))]
+use std::fmt::Debug;
+#[cfg(not(feature = "core"))]
+impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
   fn description(&self) -> &str {
     let kind = match *self {
       Err::Code(ref e) | Err::Node(ref e, _) | Err::Position(ref e, _) | Err::NodePosition(ref e, _, _) => e
@@ -197,6 +201,7 @@ impl<P:fmt::Debug+Any,E:fmt::Debug+Any> error::Error for Err<P,E> {
   }
 }
 
+#[cfg(not(feature = "core"))]
 impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match *self {
