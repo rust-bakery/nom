@@ -4,6 +4,21 @@
 
 ### Changed
 
+## 1.2.2 - 2016-03-09
+
+### Thanks
+- @conradev for fixing take_until_s!`
+- @GuillaumeGomez for some documentation fixes
+- @frewsxcv for some documentation fixes
+- @tstorch for some test refactorings
+
+### Added
+- `nom::Err` now implements `std::error::Error`
+
+### Fixed
+- `hex_u32` does not parses more than 8 chars now
+- `take_while!` and `take_while1!` will not perturb the behaviour of `recognize!` anymore
+
 ## 1.2.1 - 2016-02-23
 
 ### Thanks
@@ -450,7 +465,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/1.2.1...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/1.2.2...HEAD
+* [1.2.1]: https://github.com/Geal/nom/compare/1.2.1...1.2.2
 * [1.2.0]: https://github.com/Geal/nom/compare/1.2.0...1.2.1
 * [1.2.0]: https://github.com/Geal/nom/compare/1.1.0...1.2.0
 * [1.1.0]: https://github.com/Geal/nom/compare/1.0.1...1.1.0
