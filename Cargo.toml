@@ -29,7 +29,7 @@ regexp_macros = ["regexp", "lazy_static"]
 stream = []
 
 [dependencies.regex]
-version = "^0.1.41"
+version = "^0.1.56"
 optional = true
 
 [dependencies.lazy_static]
