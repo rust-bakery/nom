@@ -8,8 +8,6 @@
 #[macro_use]
 extern crate nom;
 
-use nom::IResult;
-
 macro_rules! n (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         fn $name( i: $i ) -> std::result::Result<nom::IResult<$i,$o,u32>, nom::Err<$i, u32>> {
