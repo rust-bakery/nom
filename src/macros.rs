@@ -1767,11 +1767,10 @@ macro_rules! separated_list(
                 if i2.len() == input.len() {
                   break;
                 }
-                input = i2;
 
                 // get the element next
-                if let $crate::IResult::Done(i3,o3) = $submac!(input, $($args2)*) {
-                  if i3.len() == input.len() {
+                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
+                  if i3.len() == i2.len() {
                     break;
                   }
                   res.push(o3);
@@ -1825,10 +1824,9 @@ macro_rules! separated_nonempty_list(
                 if i2.len() == input.len() {
                   break;
                 }
-                input = i2;
 
-                if let $crate::IResult::Done(i3,o3) = $submac!(input, $($args2)*) {
-                  if i3.len() == input.len() {
+                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
+                  if i3.len() == i2.len() {
                     break;
                   }
                   res.push(o3);
@@ -2196,7 +2194,7 @@ macro_rules! count_fixed (
         if cnt == $count {
           ret = $crate::IResult::Done(input, res); break;
         }
-        
+
         match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o) => {
             res[cnt] = o;
@@ -2863,6 +2861,7 @@ mod tests {
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
     let d = &b",,abc"[..];
+    let e = &b"abcd,abcd,ef"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
@@ -2871,6 +2870,8 @@ mod tests {
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
     let res3 = vec![&b""[..], &b""[..], &b""[..]];
     //assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
+    let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi(e), Done(&b",ef"[..], res4));
   }
 
   #[test]
@@ -2880,12 +2881,15 @@ mod tests {
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
+    let d = &b"abcd,abcd,ef"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Error(Position(ErrorKind::Tag,c)));
+    let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
+    assert_eq!(multi(d), Done(&b",ef"[..], res3));
   }
 
   #[test]
