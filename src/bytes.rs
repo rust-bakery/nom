@@ -761,6 +761,7 @@ macro_rules! length_bytes(
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,nb)   => {
+          let nb = nb as usize;
           let length_remaining = i1.len();
           if length_remaining < nb {
             $crate::IResult::Incomplete($crate::Needed::Size(nb - length_remaining))
