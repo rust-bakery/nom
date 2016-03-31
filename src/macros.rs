@@ -1747,46 +1747,62 @@ macro_rules! delimited(
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
+      use $crate::InputLength;
 
-      // get the first element
-      match $submac!(input, $($args2)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Done(input, ::std::vec::Vec::new()),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i,o)     => {
-          if i.len() == input.len() {
-            $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::SeparatedList,input))
-          } else {
+      let ret;
+      let mut res       = ::std::vec::Vec::new();
+      let mut input     = $i;
+      let mut buff_sep  = $i;
+
+      loop {
+        if input.input_len() == 0 {
+          ret = $crate::IResult::Done(input, res); break;
+        }
+
+        // match element
+        match $submac!(input, $($args2)*) {
+          $crate::IResult::Error(_)                            => {
+            ret = $crate::IResult::Done(buff_sep, res); break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            let size = i + ($i).input_len() - input.input_len();
+            ret = $crate::IResult::Incomplete($crate::Needed::Size(size)); break;
+          },
+          $crate::IResult::Done(i, o)                          => {
             res.push(o);
             input = i;
-
-            loop {
-              // get the separator first
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
-                if i2.len() == input.len() {
-                  break;
-                }
-                input = i2;
-
-                // get the element next
-                if let $crate::IResult::Done(i3,o3) = $submac!(input, $($args2)*) {
-                  if i3.len() == input.len() {
-                    break;
-                  }
-                  res.push(o3);
-                  input = i3;
-                } else {
-                  break;
-                }
-              } else {
-                break;
-              }
-            }
-            $crate::IResult::Done(input, res)
           }
-        },
+        }
+
+        // match separator
+        match $sep!(input, $($args)*) {
+          $crate::IResult::Error(_)                            => {
+            ret = $crate::IResult::Done(input, res); break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            let size = i + ($i).input_len() - input.input_len();
+            ret = $crate::IResult::Incomplete($crate::Needed::Size(size)); break;
+          },
+          $crate::IResult::Done(i, _)                           => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i == buff_sep {
+              let error = $crate::Err::Position($crate::ErrorKind::SeparatedList, input);
+              ret = $crate::IResult::Error(error); break;
+            }
+
+            buff_sep = input;
+            input = i;
+          }
+        }
       }
+
+      ret
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
