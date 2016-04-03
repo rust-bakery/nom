@@ -69,7 +69,7 @@ macro_rules! bits_impl (
 );
 
 /// `take_bits!(type, nb) => ( (&[T], usize), U, usize) -> IResult<(&[T], usize), U>`
-/// generates a parser consuming the specified number of bytes
+/// generates a parser consuming the specified number of bits.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
