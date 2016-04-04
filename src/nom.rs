@@ -469,6 +469,35 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   }
 }
 
+
+/// Recognizes little endian 4 bytes floating point number
+#[inline]
+pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
+  match le_u32(input) {
+    Error(e)      => Error(e),
+    Incomplete(e) => Incomplete(e),
+    Done(i,o) => {
+      unsafe {
+        Done(i, transmute::<u32, f32>(o))
+      }
+    }
+  }
+}
+
+/// Recognizes little endian 8 bytes floating point number
+#[inline]
+pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
+  match le_u64(input) {
+    Error(e)      => Error(e),
+    Incomplete(e) => Incomplete(e),
+    Done(i,o) => {
+      unsafe {
+        Done(i, transmute::<u64, f64>(o))
+      }
+    }
+  }
+}
+
 /// Recognizes a hex-encoded integer
 #[inline]
 pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
