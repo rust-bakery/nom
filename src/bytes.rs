@@ -491,7 +491,7 @@ macro_rules! take_till (
     {
       match $input.iter().position(|c| $submac!(c, $($args)*)) {
         Some(n) => $crate::IResult::Done(&$input[n..], &$input[..n]),
-        None    => $crate::IResult::Done(&$input[($input).input_len()..], $input)
+        None    => $crate::IResult::Done(&$input[$crate::util::InputLength::input_len(&$input)..], $input)
       }
     }
   );
