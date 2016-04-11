@@ -879,7 +879,7 @@ mod tests {
     assert_eq!(oct_digit(i), Error(Position(ErrorKind::OctDigit,i)));
 
     assert!(is_oct_digit(b'0'));
-    assert!(is_hex_digit(b'7'));
+    assert!(is_oct_digit(b'7'));
     assert!(!is_oct_digit(b'8'));
     assert!(!is_oct_digit(b'9'));
     assert!(!is_oct_digit(b'a'));
