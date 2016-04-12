@@ -487,11 +487,11 @@ macro_rules! take_while1 (
 #[macro_export]
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
-
     {
+      use $crate::InputLength;
       match $input.iter().position(|c| $submac!(c, $($args)*)) {
         Some(n) => $crate::IResult::Done(&$input[n..], &$input[..n]),
-        None    => $crate::IResult::Done(&$input[$crate::util::InputLength::input_len(&$input)..], $input)
+        None    => $crate::IResult::Done(&$input[($input).input_len()..], $input)
       }
     }
   );
