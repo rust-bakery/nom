@@ -257,7 +257,7 @@ macro_rules! add_error (
 );
 
 
-/// translate parser result from IResult<I,O,u32> to IResult<I,O,E> woth a custom type
+/// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
 #[macro_export]
 macro_rules! fix_error (
