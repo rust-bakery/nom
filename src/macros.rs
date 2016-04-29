@@ -146,6 +146,17 @@ macro_rules! named (
 );
 
 /// Used to wrap common expressions and function as macros
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+///   fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> { take!(input, i * 10) }
+///
+///   // will make a parser taking 20 bytes
+///   named!(parser, apply!(take_wrapper, 2));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! call (
   ($i:expr, $fun:expr) => ( $fun( $i ) );
@@ -154,7 +165,16 @@ macro_rules! call (
 
 /// emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
 ///
-/// Supports up to 6 arguments
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+///   fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> { take!(input, i * 10) }
+///
+///   // will make a parser taking 20 bytes
+///   named!(parser, apply!(take_wrapper, 2));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! apply (
   ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
@@ -238,6 +258,21 @@ macro_rules! error (
 /// add_error! backtracks normally. It just provides more context
 /// for an error
 ///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use std::collections;
+/// # use nom::IResult::Error;
+/// # use nom::Err::{Position,NodePosition};
+/// # use nom::ErrorKind;
+/// # fn main() {
+///     named!(err_test, add_error!(ErrorKind::Custom(42), tag!("abcd")));
+///
+///     let a = &b"efghblah"[..];
+///     let res_a = err_test(a);
+///     assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), a, Box::new(Position(ErrorKind::Tag, a)))));
+/// # }
+/// ```
+///
 #[macro_export]
 macro_rules! add_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
@@ -259,6 +294,23 @@ macro_rules! add_error (
 
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use std::collections;
+/// # use nom::IResult::Error;
+/// # use nom::Err::{Position,NodePosition};
+/// # use nom::ErrorKind;
+/// # fn main() {
+///     // will add a Custom(42) error to the error chain
+///     named!(err_test, add_error!(ErrorKind::Custom(42), tag!("abcd")));
+///     // Convert to IREsult<&[u8], &[u8], &str>
+///     named!(parser<&[u8], &[u8], &str>, add_error!(ErrorKind::Custom("custom error message"), fix_error!(&str, err_test)));
+///
+///     let a = &b"efghblah"[..];
+///     let res_a = parser(a);
+///     assert_eq!(res_a,  Error(NodePosition( ErrorKind::Custom("custom error message"), a, Box::new(Position(ErrorKind::Fix, a)))));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
@@ -301,6 +353,21 @@ macro_rules! fix_error (
 
 /// replaces a `Incomplete` returned by the child parser
 /// with an `Error`
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use std::collections;
+/// # use nom::IResult::Error;
+/// # use nom::Err::{Position,NodePosition};
+/// # use nom::ErrorKind;
+/// # fn main() {
+///     named!(take_5, complete!(take!(5)));
+///
+///     let a = &b"abcd"[..];
+///     let res_a = take_5(a);
+///     assert_eq!(res_a,  Error(Position(ErrorKind::Complete, a)));
+/// # }
+/// ```
 ///
 #[macro_export]
 macro_rules! complete (
