@@ -332,6 +332,7 @@ More examples of chain and tuple usage can be found in the [INI file parser exam
 Here is a list of known projects using nom:
 
 - Text file formats:
+ * [Ceph Crush](https://github.com/cholcombe973/crushtool)
  * [CSV](https://github.com/GuillaumeGomez/csv-parser)
  * [FASTQ](https://github.com/elij/fastq.rs)
  * [INI](https://github.com/Geal/nom/blob/master/tests/ini.rs)
