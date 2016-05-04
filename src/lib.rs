@@ -87,14 +87,15 @@
 #![cfg_attr(feature = "core", feature(no_std))]
 #![cfg_attr(feature = "core", feature(collections))]
 #![cfg_attr(feature = "core", no_std)]
-#![cfg_attr(feature = "regexp_macros", feature(plugin))]
-#![cfg_attr(feature = "regexp_macros", plugin(regex_macros))]
 #![cfg_attr(feature = "nightly", feature(test))]
+#![cfg_attr(feature = "nightly", feature(const_fn))]
 
 #[cfg(feature = "core")]
 extern crate collections;
 #[cfg(feature = "regexp")]
 extern crate regex;
+#[cfg(feature = "regexp_macros")]
+#[macro_use] extern crate lazy_static;
 #[cfg(feature = "nightly")]
 extern crate test;
 
@@ -111,6 +112,7 @@ mod std {
 pub use self::util::*;
 pub use self::internal::*;
 pub use self::macros::*;
+pub use self::methods::*;
 pub use self::bytes::*;
 pub use self::bits::*;
 
@@ -130,6 +132,7 @@ pub use self::str::*;
 #[macro_use] mod util;
 mod internal;
 #[macro_use] mod macros;
+#[macro_use] mod methods;
 #[macro_use] mod bytes;
 #[macro_use] mod bits;
 

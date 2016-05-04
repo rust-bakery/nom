@@ -1,7 +1,7 @@
 [package]
 
 name = "nom"
-version = "1.1.0"
+version = "1.2.2"
 authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
@@ -25,14 +25,14 @@ core = []
 nightly = []
 default = ["stream"]
 regexp = ["regex"]
-regexp_macros = ["regexp", "regex_macros"]
+regexp_macros = ["regexp", "lazy_static"]
 stream = []
 
 [dependencies.regex]
-version = "^0.1.41"
+version = "^0.1.56"
 optional = true
 
-[dependencies.regex_macros]
-version = "^0.1.21"
+[dependencies.lazy_static]
+version = "^0.1.15"
 optional = true
 

@@ -18,10 +18,13 @@ before_script:
 
 script:
   - |
-      travis-cargo build &&
-      travis-cargo test &&
+      travis-cargo --only 1.2     test  -- --features regexp &&
+      travis-cargo --only stable  test  -- --features "regexp regexp_macros" &&
+      travis-cargo --only beta    test  -- --features "regexp regexp_macros" &&
+      travis-cargo --only nightly build -- --features "nightly core regexp" &&
+      travis-cargo --only nightly test  -- --features "regexp regexp_macros" &&
       travis-cargo bench &&
-      travis-cargo --only stable doc
+      travis-cargo --only stable doc -- --features "regexp regexp_macros"
 
 after_success:
   - travis-cargo coveralls --no-sudo

@@ -4,6 +4,69 @@
 
 ### Changed
 
+## 1.2.2 - 2016-03-09
+
+### Thanks
+- @conradev for fixing take_until_s!`
+- @GuillaumeGomez for some documentation fixes
+- @frewsxcv for some documentation fixes
+- @tstorch for some test refactorings
+
+### Added
+- `nom::Err` now implements `std::error::Error`
+
+### Fixed
+- `hex_u32` does not parses more than 8 chars now
+- `take_while!` and `take_while1!` will not perturb the behaviour of `recognize!` anymore
+
+## 1.2.1 - 2016-02-23
+
+### Thanks
+- @sourrust for adding methods to `IResult`
+- @tstorch for the test refactoring, and for adding methods to `IResult` and `Needed`
+- @joelself for fixing the method system
+
+### Added
+
+- mapping methods over `IResult` and `Needed`
+
+### Changed
+
+- `apply_rf` is renamed to `apply_m`. This will not warrant a major version, since it is part missing from the methods feture added in the 1.2.0 release
+- the `regexp_macros` feature that used `regex!` to precompile regular expressions has been replaced by the normal regex engine combined with `lazy_static`
+
+### Fixed
+
+- when a parser or combinator was returning an empty buffer as remaining part, it was generating one from a static empty string. This was messing with buffer offset calculation. Now, that empty slice is taken like this: `&input[input.len()..]`.
+- The `regexp_macros` and `no_std` feature build again and are now tested with Travis CI
+
+## 1.2.0 - 2016-02-08
+
+### Thanks
+- @zentner-kyle for type inference fixes
+- @joelself for his work on `&str` parsing and method parsers
+- @GuillaumeGomez for implementing methods on `IResult`
+- @dirk for the `alt_complete!` combinator
+- @tstorch for a lot of refactoring work and unit tests additions
+- @jansegre for the hex digit parsers
+- @belgum for some documentation fixes
+- @lwandrebeck for some documentation fixes and code fixes in `hex_digit`
+
+### Added
+- `take_until_and_consume_s!` for consumption of string data until a tag
+- more function patterns in `named!`. The error type can now be specified
+- `alt_complete!` works like the `alt!` combinator, but tries the next branch if the current one returned `Incomplete`, instead of returning directly
+- more unit tests for a lot of combinators
+- hexadecimal digit parsers
+- the `tuple!` combinator takes a list of parsers as argument, and applies them serially on the input. If all of them are successful, it willr eturn a tuple accumulating all the values. This combinator will (hopefully) replace most uses of `chain!`
+- parsers can now be implemented as a method for a struct thanks to the `method!`, `call_m!` and `apply_rf!` combinators
+
+### Fixed
+- there were type inference issues in a few combinators. They will now be easier to compile
+- `peek!` compilation with bare functions
+- `&str` parsers were splitting data at the byte level, not at the char level, which can result in inconsistencies in parsing UTF-8 characters. They now use character indexes
+- some method implementations were missing on `ÌResult<I,O,E>` (with specified error type instead of implicit)
+
 ## 1.1.0 - 2016-01-01
 
 This release adds a lot of features related to `&str` parsing. The previous versions
@@ -402,7 +465,10 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/1.1.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/1.2.2...HEAD
+* [1.2.1]: https://github.com/Geal/nom/compare/1.2.1...1.2.2
+* [1.2.0]: https://github.com/Geal/nom/compare/1.2.0...1.2.1
+* [1.2.0]: https://github.com/Geal/nom/compare/1.1.0...1.2.0
 * [1.1.0]: https://github.com/Geal/nom/compare/1.0.1...1.1.0
 * [1.0.1]: https://github.com/Geal/nom/compare/1.0.0...1.0.1
 * [1.0.0]: https://github.com/Geal/nom/compare/0.5.0...1.0.0

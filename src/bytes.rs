@@ -64,14 +64,14 @@ macro_rules! tag (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! tag_bytes (
   ($i:expr, $bytes: expr) => (
     {
-      use std::cmp::min;
       let len = $i.len();
       let blen = $bytes.len();
-      let m   = min(len, blen);
+      let m   = if len < blen { len } else { blen };
       let reduced = &$i[..m];
       let b       = &$bytes[..m];
 
@@ -117,10 +117,12 @@ macro_rules! is_not(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! is_not_bytes (
   ($input:expr, $bytes:expr) => (
     {
+      use $crate::InputLength;
       let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return true }
@@ -133,7 +135,7 @@ macro_rules! is_not_bytes (
           res
         },
         None    => {
-          $crate::IResult::Done(&b""[..], $input)
+          $crate::IResult::Done(&$input[$input.input_len()..], $input)
         }
       };
       res
@@ -174,10 +176,12 @@ macro_rules! is_a (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! is_a_bytes (
   ($input:expr, $bytes:expr) => (
     {
+      use $crate::InputLength;
       let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
         for &i in $bytes.iter() {
           if *c == i { return false }
@@ -190,7 +194,7 @@ macro_rules! is_a_bytes (
           res
         },
         None    => {
-          $crate::IResult::Done(&b""[..], $input)
+          $crate::IResult::Done(&$input[($input).input_len()..], $input)
         }
       };
       res
@@ -201,7 +205,7 @@ macro_rules! is_a_bytes (
 /// `escaped!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], &[T]>`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument parses the normal characters, the second argument is the control character (like `\` in most languages),
+/// The first argument matches the normal characters (it must not accept the control character), the second argument is the control character (like `\` in most languages),
 /// the third argument matches the escaped characters
 ///
 /// ```
@@ -246,6 +250,7 @@ macro_rules! escaped1 (
 macro_rules! escaped_impl (
   ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
+      use $crate::InputLength;
       let cl = || {
         use $crate::HexDisplay;
         let mut index  = 0;
@@ -253,7 +258,7 @@ macro_rules! escaped_impl (
         while index < $i.len() {
           if let $crate::IResult::Done(i,_) = $normal!(&$i[index..], $($args)*) {
             if i.is_empty() {
-              return $crate::IResult::Done(&b""[..], $i)
+              return $crate::IResult::Done(&$i[$i.input_len()..], $i)
             } else {
               index = $i.offset(i);
             }
@@ -264,7 +269,7 @@ macro_rules! escaped_impl (
               match $escapable!(&$i[index+1..], $($args2)*) {
                 $crate::IResult::Done(i,_) => {
                   if i.is_empty() {
-                    return $crate::IResult::Done(&b""[..], $i)
+                    return $crate::IResult::Done(&$i[$i.input_len()..], $i)
                   } else {
                     index = $i.offset(i);
                   }
@@ -297,7 +302,7 @@ macro_rules! escaped_impl (
 /// `escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>>`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument parses the normal characters, the second argument is the control character (like `\` in most languages),
+/// The first argument matches the normal characters (it must not match the control character), the second argument is the control character (like `\` in most languages),
 /// the third argument matches the escaped characters and trnasforms them.
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
@@ -358,6 +363,7 @@ macro_rules! escaped_transform1 (
 macro_rules! escaped_transform_impl (
   ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
+      use $crate::InputLength;
       let cl = || {
         use $crate::HexDisplay;
         let mut index  = 0;
@@ -367,7 +373,7 @@ macro_rules! escaped_transform_impl (
           if let $crate::IResult::Done(i,o) = $normal!(&$i[index..], $($args)*) {
             res.extend(o.iter().cloned());
             if i.is_empty() {
-              return $crate::IResult::Done(&b""[..], res)
+              return $crate::IResult::Done(&$i[$i.input_len()..], res)
             } else {
               index = $i.offset(i);
             }
@@ -379,7 +385,7 @@ macro_rules! escaped_transform_impl (
                 $crate::IResult::Done(i,o) => {
                   res.extend(o.iter().cloned());
                   if i.is_empty() {
-                    return $crate::IResult::Done(&b""[..], res)
+                    return $crate::IResult::Done(&$i[$i.input_len()..], res)
                   } else {
                     index = $i.offset(i);
                   }
@@ -435,7 +441,7 @@ macro_rules! take_while (
           res
         },
         None    => {
-          $crate::IResult::Done(&$input[..0], $input)
+          $crate::IResult::Done(&$input[($input).len()..], $input)
         }
       }
     }
@@ -463,7 +469,7 @@ macro_rules! take_while1 (
             $crate::IResult::Done(&$input[n..], &$input[..n])
           },
           None    => {
-            $crate::IResult::Done(&$input[..0], $input)
+            $crate::IResult::Done(&$input[($input).len()..], $input)
           }
         }
       }
@@ -485,7 +491,7 @@ macro_rules! take_till (
     {
       match $input.iter().position(|c| $submac!(c, $($args)*)) {
         Some(n) => $crate::IResult::Done(&$input[n..], &$input[..n]),
-        None    => $crate::IResult::Done(&b""[..], $input)
+        None    => $crate::IResult::Done(&$input[($input).input_len()..], $input)
       }
     }
   );
@@ -510,7 +516,7 @@ macro_rules! take_till (
 /// # }
 /// ```
 #[macro_export]
-macro_rules! take(
+macro_rules! take (
   ($i:expr, $count:expr) => (
     {
       let cnt = $count as usize;
@@ -549,6 +555,7 @@ macro_rules! take_until_and_consume(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! take_until_and_consume_bytes (
   ($i:expr, $bytes:expr) => (
@@ -600,6 +607,7 @@ macro_rules! take_until(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! take_until_bytes(
   ($i:expr, $bytes:expr) => (
@@ -651,6 +659,7 @@ macro_rules! take_until_either_and_consume(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! take_until_either_and_consume_bytes(
   ($i:expr, $bytes:expr) => (
@@ -704,6 +713,7 @@ macro_rules! take_until_either(
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! take_until_either_bytes(
   ($i:expr, $bytes:expr) => (
@@ -751,9 +761,10 @@ macro_rules! length_bytes(
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,nb)   => {
+          let nb = nb as usize;
           let length_remaining = i1.len();
           if length_remaining < nb {
-            $crate::IResult::Incomplete(Needed::Size(nb - length_remaining))
+            $crate::IResult::Incomplete($crate::Needed::Size(nb - length_remaining))
           } else {
             $crate::IResult::Done(&i1[nb..], &i1[..nb])
           }
@@ -769,7 +780,7 @@ mod tests {
   use internal::IResult::*;
   use internal::Err::*;
   use util::ErrorKind;
-  use nom::{alpha, digit, hex_digit, alphanumeric, space, multispace};
+  use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
 
   #[test]
   fn is_a() {
@@ -941,6 +952,10 @@ mod tests {
     let rhd = yhd(&b"123abcDEF"[..]);
     assert_eq!(rhd, Done(empty, &b"123abcDEF"[..]));
 
+    named!(yod, recognize!(oct_digit));
+    let rod = yod(&b"1234567"[..]);
+    assert_eq!(rod, Done(empty, &b"1234567"[..]));
+
     named!(yan, recognize!(alphanumeric));
     let ran = yan(&b"123abc"[..]);
     assert_eq!(ran, Done(empty, &b"123abc"[..]));
@@ -995,5 +1010,15 @@ mod tests {
     b.iter(|| {
       f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..])
     });
+  }
+
+  #[test]
+  fn recognize_take_while() {
+    use nom::is_alphanumeric;
+    named!(x, take_while!(is_alphanumeric));
+    named!(y, recognize!(x));
+    assert_eq!(x(&b"ab"[..]), Done(&[][..], &b"ab"[..]));
+    println!("X: {:?}", x(&b"ab"[..]));
+    assert_eq!(y(&b"ab"[..]), Done(&[][..], &b"ab"[..]));
   }
 }

@@ -51,7 +51,7 @@ pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
       }
     }
   }
-  Done(b"", input)
+  Done(&input[input.len()..], input)
 }
 
 named!(tag_ln, tag!("\n"));
@@ -80,6 +80,11 @@ pub fn is_hex_digit(chr: u8) -> bool {
 }
 
 #[inline]
+pub fn is_oct_digit(chr: u8) -> bool {
+  chr >= 0x30 && chr <= 0x37
+}
+
+#[inline]
 pub fn is_alphanumeric(chr: u8) -> bool {
   is_alphabetic(chr) || is_digit(chr)
 }
@@ -93,6 +98,7 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(alpha is_alphabetic)
 //pub filter!(digit is_digit)
 //pub filter!(hex_digit is_hex_digit)
+//pub filter!(oct_digit is_oct_digit)
 //pub filter!(alphanumeric is_alphanumeric)
 
 use std::ops::{Index,Range,RangeFrom};
@@ -144,13 +150,34 @@ pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::Digit, input))
+    return Error(Position(ErrorKind::HexDigit, input))
   }
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_hex_digit() {
       if idx == 0 {
         return Error(Position(ErrorKind::HexDigit, input))
+      } else {
+        return Done(&input[idx..], &input[0..idx])
+      }
+    }
+  }
+  Done(&input[input_length..], input)
+}
+
+/// Recognizes octal characters: 0-7
+pub fn oct_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: IterIndices+InputLength {
+  let input_length = input.input_len();
+  if input_length == 0 {
+    return Error(Position(ErrorKind::OctDigit, input))
+  }
+
+  for (idx, item) in input.iter_indices() {
+    if ! item.is_oct_digit() {
+      if idx == 0 {
+        return Error(Position(ErrorKind::OctDigit, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -449,13 +476,22 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
     Error(e)    => Error(e),
     Incomplete(e) => Incomplete(e),
     Done(i,o) => {
-      let mut res = 0;
-      for &e in o {
+      let mut res = 0u32;
+
+      // Do not parse more than 8 characters for a u32
+      let mut remaining = i;
+      let mut parsed    = o;
+      if o.len() > 8 {
+        remaining = &input[8..];
+        parsed    = &input[..8];
+      }
+
+      for &e in parsed {
         let digit = e as char;
         let value = digit.to_digit(16).unwrap_or(0);
         res = value + (res << 4);
       }
-      Done(i, res)
+      Done(remaining, res)
     }
   }
 }
@@ -483,14 +519,14 @@ pub fn non_empty<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
   if input.input_len() == 0 {
     Error(Position(ErrorKind::NonEmpty, input))
   } else {
-    Done(&input[0..0], input)
+    Done(&input[input.input_len()..], input)
   }
 }
 
 /// Return the remaining input.
 #[inline]
-pub fn rest(i: &[u8]) -> IResult<&[u8], &[u8]> {
-	IResult::Done(b"", i)
+pub fn rest(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    IResult::Done(&input[input.len()..], input)
 }
 
 #[cfg(test)]
@@ -532,6 +568,10 @@ mod tests {
     assert_eq!(hex_digit(c), Done(empty, c));
     assert_eq!(hex_digit(d), Done("zé12".as_bytes(), &b"a"[..]));
     assert_eq!(hex_digit(e), Error(Position(ErrorKind::HexDigit,e)));
+    assert_eq!(oct_digit(a), Error(Position(ErrorKind::OctDigit,a)));
+    assert_eq!(oct_digit(b), Done(empty, b));
+    assert_eq!(oct_digit(c), Error(Position(ErrorKind::OctDigit,c)));
+    assert_eq!(oct_digit(d), Error(Position(ErrorKind::OctDigit,d)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
@@ -560,6 +600,10 @@ mod tests {
     assert_eq!(hex_digit(c), Done(empty, c));
     assert_eq!(hex_digit(d), Done("zé12", &"a"[..]));
     assert_eq!(hex_digit(e), Error(Position(ErrorKind::HexDigit,e)));
+    assert_eq!(oct_digit(a), Error(Position(ErrorKind::OctDigit,a)));
+    assert_eq!(oct_digit(b), Done(empty, b));
+    assert_eq!(oct_digit(c), Error(Position(ErrorKind::OctDigit,c)));
+    assert_eq!(oct_digit(d), Error(Position(ErrorKind::OctDigit,d)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
@@ -600,6 +644,10 @@ mod tests {
     match hex_digit(f) {
         Done(i, _)  => { assert_eq!(f.offset(i) + i.len(), f.len()); }
         _           => { panic!("wrong return type in offset test for hex_digit") }
+    }
+    match oct_digit(f) {
+        Done(i, _)  => { assert_eq!(f.offset(i) + i.len(), f.len()); }
+        _           => { panic!("wrong return type in offset test for oct_digit") }
     }
   }
 
@@ -723,6 +771,10 @@ mod tests {
     assert_eq!(hex_u32(&b""[..]), Done(&b""[..], 0));
     assert_eq!(hex_u32(&b"ff"[..]), Done(&b""[..], 255));
     assert_eq!(hex_u32(&b"1be2"[..]), Done(&b""[..], 7138));
+    assert_eq!(hex_u32(&b"c5a31be2"[..]), Done(&b""[..], 3315801058));
+    assert_eq!(hex_u32(&b"00c5a31be2"[..]), Done(&b"e2"[..], 12952347));
+    assert_eq!(hex_u32(&b"c5a31be201"[..]), Done(&b"01"[..], 3315801058));
+    assert_eq!(hex_u32(&b"ffffffff"[..]), Done(&b""[..], 4294967295));
     assert_eq!(hex_u32(&b"0x1be2"[..]), Done(&b"x1be2"[..], 0));
   }
 
@@ -814,5 +866,27 @@ mod tests {
     assert!(!is_hex_digit(b':'));
     assert!(!is_hex_digit(b'@'));
     assert!(!is_hex_digit(b'\x60'));
+  }
+
+  #[test]
+  fn oct_digit_test() {
+    let empty = &b""[..];
+
+    let i = &b"01234567"[..];
+    assert_eq!(oct_digit(i), Done(empty, i));
+
+    let i = &b"8"[..];
+    assert_eq!(oct_digit(i), Error(Position(ErrorKind::OctDigit,i)));
+
+    assert!(is_oct_digit(b'0'));
+    assert!(is_hex_digit(b'7'));
+    assert!(!is_oct_digit(b'8'));
+    assert!(!is_oct_digit(b'9'));
+    assert!(!is_oct_digit(b'a'));
+    assert!(!is_oct_digit(b'A'));
+    assert!(!is_oct_digit(b'/'));
+    assert!(!is_oct_digit(b':'));
+    assert!(!is_oct_digit(b'@'));
+    assert!(!is_oct_digit(b'\x60'));
   }
 }

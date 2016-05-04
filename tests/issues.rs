@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed,HexDisplay,space,digit};
+use nom::{IResult,Needed,HexDisplay,space,digit,be_u16};
 use std::str;
 
 #[allow(dead_code)]
@@ -95,6 +95,11 @@ fn issue_142(){
    let subject = parse_ints(&b"12 34 5689 "[..]);
    let expected = IResult::Done(&b" "[..], vec![12, 34, 5689]);
    assert_eq!(subject, expected)
+}
+
+#[test]
+fn usize_length_bytes_issue(){
+  length_bytes!(b"012346", be_u16);
 }
 
 /*
