@@ -212,9 +212,11 @@ impl<'x,'b> Producer<'b,&'x[u8],Move> for MemProducer<'x> {
       }
     }
     {
-      use std::cmp;
-      let end = cmp::min(self.index + self.chunk_size, self.length);
-      consumer.handle(Input::Element(&self.buffer[self.index..end]))
+      if self.index + self.chunk_size > self.length {
+        consumer.handle(Input::Eof(Some(&self.buffer[self.index..self.length])))
+      } else {
+        consumer.handle(Input::Element(&self.buffer[self.index..self.index + self.chunk_size]))
+      }
     } else {
       consumer.state()
     }
