@@ -747,12 +747,12 @@ macro_rules! chaining_parser (
   );
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
-      use $crate::InputLength;
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,_)     => {
+          use $crate::InputLength;
           chaining_parser!(i, $consumed + (($i).input_len() - i.input_len()), $($rest)*)
         }
       }
@@ -765,7 +765,6 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
     {
-      use $crate::InputLength;
       let res = $submac!($i, $($args)*);
       if let $crate::IResult::Incomplete(inc) = res {
         match inc {
@@ -773,6 +772,7 @@ macro_rules! chaining_parser (
           $crate::Needed::Size(i) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         }
       } else {
+        use $crate::InputLength;
         let input = if let $crate::IResult::Done(i,_) = res {
           i
         } else {
@@ -789,12 +789,12 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
-      use $crate::InputLength;
       match  $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
+          use $crate::InputLength;
           let $field = o;
           chaining_parser!(i, $consumed + (($i).input_len() - i.input_len()), $($rest)*)
         }
@@ -808,12 +808,12 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
     {
-      use $crate::InputLength;
       match  $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
+          use $crate::InputLength;
           let mut $field = o;
           chaining_parser!(i, $consumed + ($i).input_len() - i.input_len(), $($rest)*)
         }
@@ -827,7 +827,6 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
     {
-      use $crate::InputLength;
       let res = $submac!($i, $($args)*);
       if let $crate::IResult::Incomplete(inc) = res {
         match inc {
@@ -835,6 +834,7 @@ macro_rules! chaining_parser (
           $crate::Needed::Size(i) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         }
       } else {
+        use $crate::InputLength;
         let ($field,input) = if let $crate::IResult::Done(i,o) = res {
           (::std::option::Option::Some(o),i)
         } else {
@@ -851,7 +851,6 @@ macro_rules! chaining_parser (
 
   ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
     {
-      use $crate::InputLength;
       let res = $submac!($i, $($args)*);
       if let $crate::IResult::Incomplete(inc) = res {
         match inc {
@@ -859,6 +858,7 @@ macro_rules! chaining_parser (
           $crate::Needed::Size(i) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         }
       } else {
+        use $crate::InputLength;
         let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
           (::std::option::Option::Some(o),i)
         } else {
