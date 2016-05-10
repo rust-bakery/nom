@@ -752,8 +752,7 @@ macro_rules! chaining_parser (
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,_)     => {
-          use $crate::InputLength;
-          chaining_parser!(i, $consumed + (($i).input_len() - i.input_len()), $($rest)*)
+          chaining_parser!(i, $consumed + ($crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)), $($rest)*)
         }
       }
     }
@@ -772,13 +771,12 @@ macro_rules! chaining_parser (
           $crate::Needed::Size(i) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         }
       } else {
-        use $crate::InputLength;
         let input = if let $crate::IResult::Done(i,_) = res {
           i
         } else {
           $i
         };
-        chaining_parser!(input, $consumed + (($i).input_len() - input.input_len()), $($rest)*)
+        chaining_parser!(input, $consumed + ($crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)), $($rest)*)
       }
     }
   );
@@ -794,9 +792,8 @@ macro_rules! chaining_parser (
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
-          use $crate::InputLength;
           let $field = o;
-          chaining_parser!(i, $consumed + (($i).input_len() - i.input_len()), $($rest)*)
+          chaining_parser!(i, $consumed + ($crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)), $($rest)*)
         }
       }
     }
@@ -813,9 +810,8 @@ macro_rules! chaining_parser (
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
-          use $crate::InputLength;
           let mut $field = o;
-          chaining_parser!(i, $consumed + ($i).input_len() - i.input_len(), $($rest)*)
+          chaining_parser!(i, $consumed + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i), $($rest)*)
         }
       }
     }
@@ -834,13 +830,12 @@ macro_rules! chaining_parser (
           $crate::Needed::Size(i) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         }
       } else {
-        use $crate::InputLength;
         let ($field,input) = if let $crate::IResult::Done(i,o) = res {
           (::std::option::Option::Some(o),i)
         } else {
           (::std::option::Option::None,$i)
         };
-        chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
+        chaining_parser!(input, $consumed + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input), $($rest)*)
       }
     }
   );
@@ -858,13 +853,12 @@ macro_rules! chaining_parser (
           $crate::Needed::Size(i) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         }
       } else {
-        use $crate::InputLength;
         let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
           (::std::option::Option::Some(o),i)
         } else {
           (::std::option::Option::None,$i)
         };
-        chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
+        chaining_parser!(input, $consumed + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input), $($rest)*)
       }
     }
   );
@@ -1037,26 +1031,24 @@ macro_rules! tuple_parser (
   );
   ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      use $crate::InputLength;
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
-          tuple_parser!(i, $consumed + (($i).input_len() - i.input_len()), (o), $($rest)*)
+          tuple_parser!(i, $consumed + ($crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)), (o), $($rest)*)
         }
       }
     }
   );
   ($i:expr, $consumed:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      use $crate::InputLength;
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
-          tuple_parser!(i, $consumed + (($i).input_len() - i.input_len()), ($($parsed)* , o), $($rest)*)
+          tuple_parser!(i, $consumed + ($crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)), ($($parsed)* , o), $($rest)*)
         }
       }
     }
