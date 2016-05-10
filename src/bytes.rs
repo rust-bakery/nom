@@ -418,7 +418,7 @@ macro_rules! escaped_transform_impl (
 /// `take_while!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function fails.
 ///
-/// The argument is either a function `T -> bool` or a macro returning a `bool
+/// The argument is either a function `T -> bool` or a macro returning a `bool`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
