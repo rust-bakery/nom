@@ -3212,7 +3212,7 @@ mod tests {
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
     assert_eq!(multi_empty(d), Error(Position(ErrorKind::SeparatedList, d)));
-    let res3 = vec![&b""[..], &b""[..], &b""[..]];
+    //let res3 = vec![&b""[..], &b""[..], &b""[..]];
     //assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
     let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(e), Done(&b",ef"[..], res4));
