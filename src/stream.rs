@@ -528,6 +528,8 @@ macro_rules! consumer_from_parser (
     }
 
     impl $name {
+      // Allow this to go unused, because code in the defining scope can create the struct directly.
+      #[allow(dead_code)]
       fn new() -> $name {
         $name { state: $crate::ConsumerState::Continue($crate::Move::Consume(0)) }
       }

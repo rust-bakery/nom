@@ -320,24 +320,24 @@ macro_rules! fix_error (
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e) => {
           let err = match e {
-            $crate::Err::Code(ErrorKind::Custom(_)) |
-              $crate::Err::Node(ErrorKind::Custom(_), _) => {
-              let e: ErrorKind<$t> = ErrorKind::Fix;
+            $crate::Err::Code($crate::ErrorKind::Custom(_)) |
+              $crate::Err::Node($crate::ErrorKind::Custom(_), _) => {
+              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
               $crate::Err::Code(e)
             },
-            $crate::Err::Position(ErrorKind::Custom(_), p) |
-              $crate::Err::NodePosition(ErrorKind::Custom(_), p, _) => {
-              let e: ErrorKind<$t> = ErrorKind::Fix;
+            $crate::Err::Position($crate::ErrorKind::Custom(_), p) |
+              $crate::Err::NodePosition($crate::ErrorKind::Custom(_), p, _) => {
+              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
               $crate::Err::Position(e, p)
             },
             $crate::Err::Code(_) |
               $crate::Err::Node(_, _) => {
-              let e: ErrorKind<$t> = ErrorKind::Fix;
+              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
               $crate::Err::Code(e)
             },
             $crate::Err::Position(_, p) |
               $crate::Err::NodePosition(_, p, _) => {
-              let e: ErrorKind<$t> = ErrorKind::Fix;
+              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
               $crate::Err::Position(e, p)
             },
           };
@@ -3212,8 +3212,7 @@ mod tests {
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
-    let res3 = vec![&b""[..], &b""[..], &b""[..]];
-    //assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
+    assert_eq!(multi_empty(d), Error(Position(ErrorKind::SeparatedList, d)));
   }
 
   #[test]
