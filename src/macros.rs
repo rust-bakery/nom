@@ -733,7 +733,6 @@ macro_rules! expr_opt (
 macro_rules! chain (
   ($i:expr, $($rest:tt)*) => (
     {
-      //use $crate::InputLength;
       chaining_parser!($i, 0usize, $($rest)*)
     }
   );
@@ -764,7 +763,7 @@ macro_rules! chaining_parser (
     chaining_parser!($i, $consumed, call!($e) ? ~ $($rest)*);
   );
 
-  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
     {
       use $crate::InputLength;
       let res = $submac!($i, $($args)*);
@@ -782,7 +781,7 @@ macro_rules! chaining_parser (
         chaining_parser!(input, $consumed + (($i).input_len() - input.input_len()), $($rest)*)
       }
     }
-  });
+  );
 
   ($i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, $field: call!($e) ~ $($rest)*);
@@ -826,7 +825,7 @@ macro_rules! chaining_parser (
     chaining_parser!($i, $consumed, $field : call!($e) ? ~ $($rest)*);
   );
 
-  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
     {
       use $crate::InputLength;
       let res = $submac!($i, $($args)*);
@@ -844,13 +843,13 @@ macro_rules! chaining_parser (
         chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
       }
     }
-  });
+  );
 
   ($i:expr, $consumed:expr, mut $field:ident : $e:ident ? ~ $($rest:tt)*) => (
     chaining_parser!($i, $consumed, mut $field : call!($e) ? ~ $($rest)*);
   );
 
-  ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => ({
+  ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
     {
       use $crate::InputLength;
       let res = $submac!($i, $($args)*);
@@ -868,7 +867,7 @@ macro_rules! chaining_parser (
         chaining_parser!(input, $consumed + ($i).input_len() - input.input_len(), $($rest)*)
       }
     }
-  });
+  );
 
   // ending the chain
   ($i:expr, $consumed:expr, $e:ident, $assemble:expr) => (
