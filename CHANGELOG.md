@@ -4,6 +4,35 @@
 
 ### Changed
 
+## 1.2.3 - 2016-05-10
+
+### Thanks
+- @lu-zero for the contribution guidelines
+- @GuillaumeGomez for fixes on `length_bytes` and some documentation
+- @Hywan for ducomentation and test fixes
+- @Xirdus for correct trait import issues
+- @mspiegel for the new AST example
+- @cholcombe973 for adding the `cond_with_error!` combinator
+- @tstorch for refactoring `many0!`
+- @panicbit for the folding combinators
+- @evestera for `separated_list!` fixes
+- @DanielKeep for correcting some enum imports
+
+### Added
+- Regular expression combinators starting with `re_bytes_` work on byte slices
+- example parsing arithmetic expressions to an AST
+- `cond_with_error!` works like `cond!` but will return `None` if the condition is false, and `Some(value)` if the underlying parser succeeded
+- `fold_many0!`, `fold_many1!` and `fold_many_m_n!` will take a parser, an initial value and a combining function, and fold over the successful applications of the parser
+
+### Fixed
+- `length_bytes!` converts the result of its child parser to usize
+- `take_till!` now imports `InputLength` instead of assuming it's in scope
+- `separated_list!` and `separated_nonempty_list!` will not consume the separator if there's no following successfully parsed value
+- no more warnings on build
+
+### Changed
+- simpler implementation of `many0!`
+
 ## 1.2.2 - 2016-03-09
 
 ### Thanks
@@ -465,9 +494,10 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/1.2.2...HEAD
-* [1.2.1]: https://github.com/Geal/nom/compare/1.2.1...1.2.2
-* [1.2.0]: https://github.com/Geal/nom/compare/1.2.0...1.2.1
+* [unreleased]: https://github.com/Geal/nom/compare/1.2.3...HEAD
+* [1.2.3]: https://github.com/Geal/nom/compare/1.2.2...1.2.3
+* [1.2.2]: https://github.com/Geal/nom/compare/1.2.1...1.2.2
+* [1.2.1]: https://github.com/Geal/nom/compare/1.2.0...1.2.1
 * [1.2.0]: https://github.com/Geal/nom/compare/1.1.0...1.2.0
 * [1.1.0]: https://github.com/Geal/nom/compare/1.0.1...1.1.0
 * [1.0.1]: https://github.com/Geal/nom/compare/1.0.0...1.0.1
