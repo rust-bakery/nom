@@ -119,3 +119,13 @@ fn issue_152() {
   );
 }
 */
+
+#[test]
+fn take_till_issue() {
+    named!(nothing,
+        take_till!(call!(|_| true))
+    );
+
+    assert_eq!(nothing(b""), IResult::Done(&b""[..], &b""[..]));
+    assert_eq!(nothing(b"abc"), IResult::Done(&b"abc"[..], &b""[..]));
+}
