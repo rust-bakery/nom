@@ -22,9 +22,9 @@ script:
       travis-cargo --only stable  test  -- --features "regexp regexp_macros" &&
       travis-cargo --only beta    test  -- --features "regexp regexp_macros" &&
       travis-cargo --only nightly build -- --features "nightly core regexp" &&
-      travis-cargo --only nightly test  -- --features "regexp regexp_macros" &&
+      travis-cargo --only nightly test  -- --features "regexp" &&
       travis-cargo bench &&
-      travis-cargo --only stable doc -- --features "regexp regexp_macros"
+      travis-cargo --only stable doc -- --features "regexp"
 
 after_success:
   - travis-cargo coveralls --no-sudo
