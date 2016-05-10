@@ -3,11 +3,10 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Producer,FileProducer,Consumer,not_line_ending};
+use nom::{IResult,Producer,FileProducer,not_line_ending};
 
 use std::str;
 use std::fmt::Debug;
-use nom::HexDisplay;
 
 #[test]
 #[allow(unused_must_use)]

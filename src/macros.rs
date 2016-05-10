@@ -1067,7 +1067,6 @@ macro_rules! tuple_parser (
   );
   ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::InputLength;
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -1080,7 +1079,6 @@ macro_rules! tuple_parser (
   );
   ($i:expr, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::InputLength;
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
