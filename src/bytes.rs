@@ -755,7 +755,7 @@ macro_rules! take_until_either_bytes(
 /// remaining stream
 #[macro_export]
 macro_rules! length_bytes(
-  ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match  $submac!($i, $($args)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
@@ -772,8 +772,8 @@ macro_rules! length_bytes(
       }
     }
   );
-  ($i:expr, $code: expr, $f:expr) => (
-    length_bytes!($i, $code, call!($f))
+  ($i:expr, $f:expr) => (
+    length_bytes!($i, call!($f))
   )
 );
 
