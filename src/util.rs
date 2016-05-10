@@ -597,6 +597,7 @@ pub enum ErrorKind<E=u32> {
   IsA,
   SeparatedList,
   SeparatedNonEmptyList,
+  Many0,
   Many1,
   Count,
   TakeUntilAndConsume,
@@ -698,6 +699,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::HexDigit                  => 59,
     ErrorKind::TakeUntilStr              => 60,
     ErrorKind::OctDigit                  => 61,
+    ErrorKind::Many0                     => 62,
   }
 }
 
@@ -713,6 +715,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
         ErrorKind::IsA                       => "IsA",
         ErrorKind::SeparatedList             => "Separated list",
         ErrorKind::SeparatedNonEmptyList     => "Separated non empty list",
+        ErrorKind::Many0                     => "Many0",
         ErrorKind::Many1                     => "Many1",
         ErrorKind::Count                     => "Count",
         ErrorKind::TakeUntilAndConsume       => "Take until and consume",
