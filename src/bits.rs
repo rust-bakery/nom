@@ -13,7 +13,7 @@
 
 
 /// `bits!( parser ) => ( &[u8], (&[u8], usize) -> IResult<(&[u8], usize), T> ) -> IResult<&[u8], T>`
-/// transforms its byte slice input in a bit stream for the underlying parsers
+/// transforms its byte slice input into a bit stream for the underlying parsers
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
