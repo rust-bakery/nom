@@ -119,7 +119,7 @@ macro_rules! take_bits (
               end_offset = remaining + offset;
               break;
             } else {
-              acc += val << remaining - (8 - offset);
+              acc += val << (remaining - (8 - offset));
               remaining -= 8 - offset;
               offset = 0;
             }
