@@ -1692,6 +1692,40 @@ macro_rules! peek(
   );
 );
 
+/// `not!(I -> IResult<I,0>) => I -> IResult<I, O>`
+/// returns a result only if the embedded parser returns Error or Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Error};
+/// # use nom::Err::{Position};
+/// # use nom::ErrorKind;
+/// # fn main() {
+/// named!(not_e, chain!(
+///     res: tag!("abc") ~ 
+///          not!(char!('e')),
+///     || { res }));
+///
+/// let r = not_e(&b"abcd"[..]); 
+/// assert_eq!(r, Done(&b"d"[..], &b"abc"[..]));
+///
+/// let r2 = not_e(&b"abce"[..]);
+/// assert_eq!(r2, Error(Position(ErrorKind::Not, &b"e"[..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! not(
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Done(_, _)    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Not, $i)),
+        $crate::IResult::Error(_)      => $crate::IResult::Done($i, &($i)[..0]),
+        $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, &($i)[..0])
+      }
+    }
+  );
+);
+
 /// `tap!(name: I -> IResult<I,O> => { block }) => I -> IResult<I, O>`
 /// allows access to the parser's result without affecting it
 ///
@@ -3514,5 +3548,13 @@ mod tests {
     assert_eq!(tuple_3(&b"abcd"[..]), Incomplete(Needed::Size(5)));
     assert_eq!(tuple_3(&b"abcde"[..]), Incomplete(Needed::Size(7)));
     assert_eq!(tuple_3(&b"abcdejk"[..]), Error(Position(ErrorKind::Tag, &b"jk"[..])));
+  }
+  
+  #[test]
+  fn not() {
+    named!(not_aaa, not!(tag!("aaa")));
+    assert_eq!(not_aaa(&b"aaa"[..]), Error(Position(ErrorKind::Not, &b"aaa"[..])));
+    assert_eq!(not_aaa(&b"aa"[..]), Done(&b"aa"[..], &b""[..]));
+    assert_eq!(not_aaa(&b"abcd"[..]), Done(&b"abcd"[..], &b""[..]));
   }
 }
