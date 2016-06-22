@@ -104,14 +104,14 @@ macro_rules! take_bits (
           let mut remaining: usize  = $count;
           let mut end_offset: usize = 0;
 
-          for it in 0..cnt+1 {
+          for byte in input.iter().take(cnt + 1) {
             if remaining == 0 {
               break;
             }
             let val: $t = if offset == 0 {
-              input[it] as $t
+              *byte as $t
             } else {
-              ((input[it] << offset) as u8 >> offset) as $t
+              ((*byte << offset) as u8 >> offset) as $t
             };
 
             if remaining < 8 - offset {
@@ -119,7 +119,7 @@ macro_rules! take_bits (
               end_offset = remaining + offset;
               break;
             } else {
-              acc += val << remaining - (8 - offset);
+              acc += val << (remaining - (8 - offset));
               remaining -= 8 - offset;
               offset = 0;
             }
