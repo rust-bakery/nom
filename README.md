@@ -333,6 +333,7 @@ Here is a list of known projects using nom:
 
 - Text file formats:
  * [Ceph Crush](https://github.com/cholcombe973/crushtool)
+ * [XFS Runtime Stats](https://github.com/ChrisMacNaughton/xfs-rs)
  * [CSV](https://github.com/GuillaumeGomez/csv-parser)
  * [FASTQ](https://github.com/elij/fastq.rs)
  * [INI](https://github.com/Geal/nom/blob/master/tests/ini.rs)
