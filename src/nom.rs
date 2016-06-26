@@ -529,6 +529,12 @@ pub fn rest(input: &[u8]) -> IResult<&[u8], &[u8]> {
     IResult::Done(&input[input.len()..], input)
 }
 
+/// Return the remaining input, for strings.
+#[inline]
+pub fn rest_s(input: &str) -> IResult<&str, &str> {
+    IResult::Done(&input[input.len()..], input)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
