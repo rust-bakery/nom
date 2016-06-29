@@ -54,7 +54,7 @@ pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(&input[input.len()..], input)
 }
 
-named!(tag_ln, tag!("\n"));
+named!(tag_ln, alt!(tag!("\n") | tag!("\r\n")));
 
 /// Recognizes a line feed
 #[inline]
@@ -895,4 +895,35 @@ mod tests {
     assert!(!is_oct_digit(b'@'));
     assert!(!is_oct_digit(b'\x60'));
   }
+
+  #[test]
+  fn full_line_windows() {
+    named!(take_full_line<(&[u8], &[u8])>, tuple!(not_line_ending, line_ending));
+    let input = b"abc\r\n";
+    let output = take_full_line(input);
+    assert_eq!(output, Done(&b""[..], (&b"abc"[..], &b"\r\n"[..])));
+  }
+
+  #[test]
+  fn full_line_unix() {
+    named!(take_full_line<(&[u8], &[u8])>, tuple!(not_line_ending, line_ending));
+    let input = b"abc\n";
+    let output = take_full_line(input);
+    assert_eq!(output, Done(&b""[..], (&b"abc"[..], &b"\n"[..])));
+  }
+
+  #[test]
+  fn check_windows_lineending() {
+    let input = b"\r\n";
+    let output = line_ending(input);
+    assert_eq!(output, Done(&b""[..], &b"\r\n"[..]))  
+  }
+
+  #[test]
+  fn check_unix_lineending() {
+    let input = b"\n";
+    let output = line_ending(input);
+    assert_eq!(output, Done(&b""[..], &b"\n"[..]))  
+  }
+    
 }
