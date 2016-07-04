@@ -469,7 +469,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   }
 }
 
-/// Recognizes big endian 4 bytes floating point number
+/// Recognizes little endian 4 bytes floating point number
 #[inline]
 pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
   match le_u32(input) {
@@ -483,7 +483,7 @@ pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
   }
 }
 
-/// Recognizes big endian 8 bytes floating point number
+/// Recognizes little endian 8 bytes floating point number
 #[inline]
 pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
   match le_u64(input) {
