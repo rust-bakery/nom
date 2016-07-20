@@ -1694,6 +1694,7 @@ macro_rules! peek(
 
 /// `not!(I -> IResult<I,0>) => I -> IResult<I, O>`
 /// returns a result only if the embedded parser returns Error or Incomplete
+/// does not consume the input
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
