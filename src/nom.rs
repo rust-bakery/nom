@@ -469,6 +469,34 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   }
 }
 
+/// Recognizes little endian 4 bytes floating point number
+#[inline]
+pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
+  match le_u32(input) {
+    Error(e)      => Error(e),
+    Incomplete(e) => Incomplete(e),
+    Done(i,o) => {
+      unsafe {
+        Done(i, transmute::<u32, f32>(o))
+      }
+    }
+  }
+}
+
+/// Recognizes little endian 8 bytes floating point number
+#[inline]
+pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
+  match le_u64(input) {
+    Error(e)      => Error(e),
+    Incomplete(e) => Incomplete(e),
+    Done(i,o) => {
+      unsafe {
+        Done(i, transmute::<u64, f64>(o))
+      }
+    }
+  }
+}
+
 /// Recognizes a hex-encoded integer
 #[inline]
 pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
@@ -770,6 +798,30 @@ mod tests {
     assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]), Done(&b""[..], 9223372036854775807_i64));
     assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
     assert_eq!(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]), Done(&b""[..], -9223372036854775808_i64));
+  }
+
+  #[test]
+  fn be_f32_tests() {
+    assert_eq!(be_f32(&[0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0_f32));
+    assert_eq!(be_f32(&[0x4d, 0x31, 0x1f, 0xd8]), Done(&b""[..], 185728392_f32));
+  }
+
+  #[test]
+  fn be_f64_tests() {
+    assert_eq!(be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0_f64));
+    assert_eq!(be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00]), Done(&b""[..], 185728392_f64));
+  }
+
+  #[test]
+  fn le_f32_tests() {
+    assert_eq!(le_f32(&[0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0_f32));
+    assert_eq!(le_f32(&[0xd8, 0x1f, 0x31, 0x4d]), Done(&b""[..], 185728392_f32));
+  }
+
+  #[test]
+  fn le_f64_tests() {
+    assert_eq!(le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0_f64));
+    assert_eq!(le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41]), Done(&b""[..], 185728392_f64));
   }
 
   #[test]
