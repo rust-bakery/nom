@@ -2094,7 +2094,7 @@ macro_rules! many1(
         $crate::IResult::Error(_)      => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1,$i)),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,o1)   => {
-          if i1.len() == 0 {
+          if i1.input_len() == 0 {
             $crate::IResult::Done(i1,vec![o1])
           } else {
 
