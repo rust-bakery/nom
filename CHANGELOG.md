@@ -4,6 +4,33 @@
 
 ### Changed
 
+## 1.2.4 - 2016-07-20
+
+### Thanks
+- @Phlosioneer for documentation fixes
+- @sourrust for fixing offsets in `take_bits!`
+- @ChrisMacNaughton for the XFS crate
+- @pwoolcoc for `rest_s`
+- @fitzgen for more `IResult` methods
+- @gtors for the negative lookahead feature
+- @frk1 and @jeandudey for little endian float parsing
+- @jethrogb for fixing input usage in `many1`
+- @acatton for beating me at nom golf :D
+
+### Added
+- the `rest_s` method on `IResult` returns the remaining `&str` input
+- `unwrap_err` and `unwrap_inc` methods on `IResult`
+- `not!` will peek at the input and return `Done` if the underlying parser returned `Error` or `Incomplete`, without consuming the input
+- `le_f32` and `le_f64` parse little endian floating point numbers (IEEE 754)
+-
+
+### Fixed
+- documentation fixes
+- `take_bits!` is now more precise
+- `many1` inccorectly used the `len` function instead of `input_len`
+- the INI parser is simpler
+- `recognize!` had an early `return` taht is removed now
+
 ## 1.2.3 - 2016-05-10
 
 ### Thanks
@@ -494,7 +521,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/1.2.3...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/1.2.4...HEAD
+* [1.2.3]: https://github.com/Geal/nom/compare/1.2.3...1.2.4
 * [1.2.3]: https://github.com/Geal/nom/compare/1.2.2...1.2.3
 * [1.2.2]: https://github.com/Geal/nom/compare/1.2.1...1.2.2
 * [1.2.1]: https://github.com/Geal/nom/compare/1.2.0...1.2.1
