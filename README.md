@@ -39,7 +39,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "^1.2.3"
+nom = "^1.2.4"
 ```
 
 Then include it in your code like this:
