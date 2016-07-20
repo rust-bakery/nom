@@ -121,6 +121,36 @@ impl<I,O,E> IResult<I,O,E> {
       Done(i, o)    => Done(i, o),
     }
   }
+
+  /// Unwrap the contained `Done(I, O)` value, or panic if the `IResult` is not
+  /// `Done`.
+  pub fn unwrap(self) -> (I, O) {
+    match self {
+      Done(i, o)    => (i, o),
+      Incomplete(_) => panic!("unwrap() called on an IResult that is Incomplete"),
+      Error(_)      => panic!("unwrap() called on an IResult that is Error")
+    }
+  }
+
+  /// Unwrap the contained `Done(I, O)` value, or panic if the `IResult` is not
+  /// `Done`.
+  pub fn unwrap_inc(self) -> Needed {
+    match self {
+      Incomplete(n) => n,
+      Done(_, _)    => panic!("unwrap_inc() called on an IResult that is Done"),
+      Error(_)      => panic!("unwrap_inc() called on an IResult that is Error")
+    }
+  }
+
+  /// Unwrap the contained `Done(I, O)` value, or panic if the `IResult` is not
+  /// `Done`.
+  pub fn unwrap_err(self) -> Err<I, E> {
+    match self {
+      Error(e)      => e,
+      Done(_, _)    => panic!("unwrap_err() called on an IResult that is Done"),
+      Incomplete(_) => panic!("unwrap_err() called on an IResult that is Incomplete"),
+    }
+  }
 }
 
 pub trait GetInput<I> {
@@ -220,6 +250,11 @@ mod tests {
   use super::*;
   use util::ErrorKind;
 
+  const REST: [u8; 0] = [];
+  const DONE: IResult<&'static [u8], u32> = IResult::Done(&REST, 5);
+  const ERROR: IResult<&'static [u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
+  const INCOMPLETE: IResult<&'static [u8], u32> = IResult::Incomplete(Needed::Unknown);
+
   #[test]
   fn needed_map() {
     let unknown = Needed::Unknown;
@@ -231,24 +266,18 @@ mod tests {
 
   #[test]
   fn iresult_map() {
-    let done: IResult<&[u8], u32> = IResult::Done(&b""[..], 5);
-    let error: IResult<&[u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
-    let incomplete: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
-
-    assert_eq!(done.map(|x| x * 2), IResult::Done(&b""[..], 10));
-    assert_eq!(error.map(|x| x * 2), IResult::Error(Err::Code(ErrorKind::Tag)));
-    assert_eq!(incomplete.map(|x| x * 2), IResult::Incomplete(Needed::Unknown));
+    assert_eq!(DONE.map(|x| x * 2), IResult::Done(&b""[..], 10));
+    assert_eq!(ERROR.map(|x| x * 2), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(INCOMPLETE.map(|x| x * 2), IResult::Incomplete(Needed::Unknown));
   }
 
   #[test]
   fn iresult_map_inc() {
-    let done: IResult<&[u8], u32> = IResult::Done(&b""[..], 5);
-    let error: IResult<&[u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
     let inc_unknown: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
     let inc_size: IResult<&[u8], u32> = IResult::Incomplete(Needed::Size(5));
 
-    assert_eq!(done.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Done(&b""[..], 5));
-    assert_eq!(error.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(DONE.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Done(&b""[..], 5));
+    assert_eq!(ERROR.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Error(Err::Code(ErrorKind::Tag)));
     assert_eq!(inc_unknown.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Incomplete(Needed::Unknown));
     assert_eq!(inc_size.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Incomplete(Needed::Size(6)));
   }
@@ -260,12 +289,59 @@ mod tests {
 
     let error_kind = Err::Code(ErrorKind::Custom(Error(5)));
 
-    let done: IResult<&[u8], u32> = IResult::Done(&b""[..], 5);
-    let error: IResult<&[u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
-    let incomplete: IResult<&[u8], u32> = IResult::Incomplete(Needed::Unknown);
+    assert_eq!(DONE.map_err(|_| error_kind.clone()), IResult::Done(&b""[..], 5));
+    assert_eq!(ERROR.map_err(|x| {println!("err: {:?}", x); error_kind.clone()}), IResult::Error(error_kind.clone()));
+    assert_eq!(INCOMPLETE.map_err(|x| {println!("err: {:?}", x); error_kind.clone()}), IResult::Incomplete(Needed::Unknown));
+  }
 
-    assert_eq!(done.map_err(|_| error_kind.clone()), IResult::Done(&b""[..], 5));
-    assert_eq!(error.map_err(|x| {println!("err: {:?}", x); error_kind.clone()}), IResult::Error(error_kind.clone()));
-    assert_eq!(incomplete.map_err(|x| {println!("err: {:?}", x); error_kind.clone()}), IResult::Incomplete(Needed::Unknown));
+  #[test]
+  fn iresult_unwrap_on_done() {
+    assert_eq!(DONE.unwrap(), (&b""[..], 5));
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_unwrap_on_err() {
+    ERROR.unwrap();
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_unwrap_on_inc() {
+    INCOMPLETE.unwrap();
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_unwrap_err_on_done() {
+    DONE.unwrap_err();
+  }
+
+  #[test]
+  fn iresult_unwrap_err_on_err() {
+    assert_eq!(ERROR.unwrap_err(), Err::Code(ErrorKind::Tag));
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_unwrap_err_on_inc() {
+    INCOMPLETE.unwrap_err();
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_unwrap_inc_on_done() {
+    DONE.unwrap_inc();
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_unwrap_inc_on_err() {
+    ERROR.unwrap_inc();
+  }
+
+  #[test]
+  fn iresult_unwrap_inc_on_inc() {
+    assert_eq!(INCOMPLETE.unwrap_inc(), Needed::Unknown);
   }
 }
