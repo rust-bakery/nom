@@ -23,8 +23,8 @@ macro_rules! recognize (
           let index = ($i).offset(i);
           $crate::IResult::Done(i, &($i)[..index])
         },
-        $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
-        $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i)
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
       }
     }
   );
