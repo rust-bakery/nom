@@ -20,7 +20,7 @@ macro_rules! recognize (
       use $crate::HexDisplay;
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
-          let index = ($i).offset(i);
+          let index = $i.len() - i.len();
           $crate::IResult::Done(i, &($i)[..index])
         },
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),

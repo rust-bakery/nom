@@ -34,6 +34,43 @@ macro_rules! tag_s (
   );
 );
 
+/// `tag_nocase_s!(&str) => &str -> IResult<&str, &str>`
+/// declares a case-insensitive string as a suite to recognize
+///
+/// consumes the recognized characters
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self,Done};
+/// # fn main() {
+///  fn test(input: &str) -> IResult<&str, &str> {
+///    tag_nocase_s!(input, "ABcd")
+///  }
+///  let r = test("aBCdefgh");
+///  assert_eq!(r, Done("efgh", "aBCd"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! tag_nocase_s (
+  ($i:expr, $tag: expr) => (
+    {
+      let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
+      } else if $i[0..$tag.len()].chars().map(|c| (c).to_lowercase().next().unwrap_or(c))
+                    .zip($tag.chars().map(|c| (c).to_lowercase().next().unwrap_or(c)))
+                    .map(|(tc, ic)| tc == ic)
+                    .take_while(|r| *r == true)
+                    .count() == $tag.len()
+      {
+        $crate::IResult::Done(&$i[$tag.len()..], &$i[0..$tag.len()])
+      } else {
+        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagStr, $i))
+      };
+      res
+    }
+  );
+);
+
 /// `take_s!(nb) => &str -> IResult<&str, &str>`
 /// generates a parser consuming the specified number of characters
 ///
