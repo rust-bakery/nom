@@ -17,10 +17,11 @@
 macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use $crate::InputLength;
       use $crate::HexDisplay;
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
-          let index = ($i).offset(i);
+          let index = $i.input_len() - i.input_len();
           $crate::IResult::Done(i, &($i)[..index])
         },
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
