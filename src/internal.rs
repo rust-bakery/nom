@@ -123,8 +123,8 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
-  /// Unwrap the contained `Done(I, O)` value, or panic if the `IResult` is not
-  /// `Done`.
+  /// Unwrap the contained `Incomplete(n)` value, or panic if the `IResult` is not
+  /// `Incomplete`.
   pub fn unwrap_inc(self) -> Needed {
     match self {
       Incomplete(n) => n,

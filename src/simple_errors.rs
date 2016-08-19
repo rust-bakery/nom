@@ -18,8 +18,8 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
-  /// Unwrap the contained `Done(I, O)` value, or panic if the `IResult` is not
-  /// `Done`.
+  /// Unwrap the contained `Error(E)` value, or panic if the `IResult` is not
+  /// `Error`.
   pub fn unwrap_err(self) -> Err<E> {
     match self {
       Error(e)      => e,
