@@ -409,6 +409,18 @@ mod tests {
   }
 
   #[test]
+  fn iresult_to_result() {
+    assert_eq!(DONE.to_result(), Ok(5));
+    assert_eq!(ERROR.to_result(), Err(error_code!(ErrorKind::Tag)));
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_to_result_on_incomplete() {
+    INCOMPLETE.to_result().unwrap();
+  }
+
+  #[test]
   fn iresult_to_full_result() {
     assert_eq!(DONE.to_full_result(), Ok(5));
     assert_eq!(INCOMPLETE.to_full_result(), Err(IError::Incomplete(Needed::Unknown)));

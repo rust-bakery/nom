@@ -27,6 +27,15 @@ impl<I,O,E> IResult<I,O,E> {
       Incomplete(_) => panic!("unwrap_err() called on an IResult that is Incomplete"),
     }
   }
+
+  /// Convert the IResult to a std::result::Result
+  pub fn to_result(self) -> Result<O, Err<E>> {
+    match self {
+      Done(_, o)    => Ok(o),
+      Error(e)      => Err(e),
+      Incomplete(_) => panic!("to_result() called on an IResult that is Incomplete")
+    }
+  }
 }
 
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
