@@ -1552,7 +1552,7 @@ macro_rules! cond_with_error(
     }
   );
   ($i:expr, $cond:expr, $f:expr) => (
-    cond!($i, $cond, call!($f));
+    cond_with_error!($i, $cond, call!($f));
   );
 );
 
