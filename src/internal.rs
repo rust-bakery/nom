@@ -154,6 +154,15 @@ impl<I,O,E> IResult<I,O,E> {
   }
 
   /// Convert the IResult to a std::result::Result
+  pub fn to_result(self) -> Result<O, Err<I,E>> {
+    match self {
+      Done(_, o)    => Ok(o),
+      Error(e)      => Err(e),
+      Incomplete(_) => panic!("to_result() called on an IResult that is Incomplete")
+    }
+  }
+
+  /// Convert the IResult to a std::result::Result
   pub fn to_full_result(self) -> Result<O, IError<I,E>> {
     match self {
       Done(_, o)    => Ok(o),
@@ -406,6 +415,18 @@ mod tests {
   #[test]
   fn iresult_unwrap_inc_on_inc() {
     assert_eq!(INCOMPLETE.unwrap_inc(), Needed::Unknown);
+  }
+
+  #[test]
+  fn iresult_to_result() {
+    assert_eq!(DONE.to_result(), Ok(5));
+    assert_eq!(ERROR.to_result(), Err(error_code!(ErrorKind::Tag)));
+  }
+
+  #[test]
+  #[should_panic]
+  fn iresult_to_result_on_incomplete() {
+    INCOMPLETE.to_result().unwrap();
   }
 
   #[test]
