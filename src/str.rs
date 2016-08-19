@@ -100,13 +100,14 @@ macro_rules! is_not_s (
           break;
         }
       }
-      if offset == 0 {
+      let res: $crate::IResult<_,_> = if offset == 0 {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input))
       } else if offset < $input.len() {
         $crate::IResult::Done(&$input[offset..], &$input[..offset])
       } else {
         $crate::IResult::Done("", $input)
-      }
+      };
+      res
     }
   );
 );
@@ -140,13 +141,14 @@ macro_rules! is_a_s (
           break;
         }
       }
-      if offset == 0 {
+      let res: $crate::IResult<_,_> = if offset == 0 {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,$input))
       } else if offset < $input.len() {
         $crate::IResult::Done(&$input[offset..], &$input[..offset])
       } else {
         $crate::IResult::Done("", $input)
-      }
+      };
+      res
     }
   );
 );
@@ -180,11 +182,12 @@ macro_rules! take_while_s (
           break;
         }
       }
-      if offset < $input.len() {
+      let res: $crate::IResult<_,_> = if offset < $input.len() {
         $crate::IResult::Done(&$input[offset..], &$input[..offset])
       } else {
         $crate::IResult::Done("", $input)
-      }
+      };
+      res
     }
   );
   ($input:expr, $f:expr) => (
@@ -219,13 +222,14 @@ macro_rules! take_while1_s (
           break;
         }
       }
-      if offset == 0 {
+      let res: $crate::IResult<_,_> = if offset == 0 {
         $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,$input))
       } else if offset < $input.len() {
         $crate::IResult::Done(&$input[offset..], &$input[..offset])
       } else {
         $crate::IResult::Done("", $input)
-      }
+      };
+      res
     }
   );
   ($input:expr, $f:expr) => (
@@ -250,11 +254,12 @@ macro_rules! take_till_s (
             break;
         }
       }
-      if offset < $input.len() {
+      let res: $crate::IResult<_,_> = if offset < $input.len() {
         $crate::IResult::Done(&$input[offset..], &$input[..offset])
       } else {
         $crate::IResult::Done("", $input)
-      }
+      };
+      res
     }
   );
   ($input:expr, $f:expr) => (
