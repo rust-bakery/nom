@@ -154,7 +154,7 @@ impl<I,O,E> IResult<I,O,E> {
   }
 
   /// Convert the IResult to a std::result::Result
-  pub fn to_result(self) -> Result<O, IError<I,E>> {
+  pub fn to_full_result(self) -> Result<O, IError<I,E>> {
     match self {
       Done(_, o)    => Ok(o),
       Incomplete(n) => Err(IError::Incomplete(n)),
@@ -409,9 +409,9 @@ mod tests {
   }
 
   #[test]
-  fn iresult_to_result() {
-    assert_eq!(DONE.to_result(), Ok(5));
-    assert_eq!(INCOMPLETE.to_result(), Err(IError::Incomplete(Needed::Unknown)));
-    assert_eq!(ERROR.to_result(), Err(IError::Error(error_code!(ErrorKind::Tag))));
+  fn iresult_to_full_result() {
+    assert_eq!(DONE.to_full_result(), Ok(5));
+    assert_eq!(INCOMPLETE.to_full_result(), Err(IError::Incomplete(Needed::Unknown)));
+    assert_eq!(ERROR.to_full_result(), Err(IError::Error(error_code!(ErrorKind::Tag))));
   }
 }
