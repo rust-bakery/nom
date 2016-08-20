@@ -817,15 +817,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "attempt to subtract with overflow")]
-    fn test_offset_u8_fail() {
-        let s = b"abcd123";
-        let a = &s[..];
-        let d = &a[3..5];
-        assert_eq!(d.offset(a), 0);
-    }
-
-    #[test]
     fn test_offset_str() {
       let s = "abcřèÂßÇd123";
       let a = &s[..];
@@ -835,14 +826,5 @@ mod tests {
       assert_eq!(a.offset(b), 7);
       assert_eq!(a.offset(c), 0);
       assert_eq!(a.offset(d), 5);
-    }
-
-    #[test]
-    #[should_panic(expected = "attempt to subtract with overflow")]
-    fn test_offset_str_fail() {
-        let s = "abcřèÂßÇd123";
-        let a = &s[..];
-        let d = &a[5..9];
-        assert_eq!(d.offset(a), 0);
     }
 }

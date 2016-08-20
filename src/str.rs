@@ -751,4 +751,18 @@ mod test {
                              Got `{:?}`.", other),
         };
     }
+
+    #[test]
+    fn recognize_is_a_s() {
+    let a = "aabbab";
+    let b = "ababcd";
+
+    named!(f <&str,&str>, recognize!(many1!(alt!( tag_s!("a") | tag_s!("b") ))));
+
+    assert_eq!(f(&a[..]), Done(&a[6..], &a[..]));
+    assert_eq!(f(&b[..]), Done(&b[4..], &b[..4]));
+
+    }
+
+
 }
