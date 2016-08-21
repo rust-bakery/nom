@@ -106,149 +106,142 @@ use std::ops::{Index,Range,RangeFrom};
 pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  let input_length = input.input_len();
-  if input_length == 0 {
-    return Error(Position(ErrorKind::Alpha, input))
-  }
+  let mut parse_length = input.input_len();
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_alpha() {
-      if idx == 0 {
-        return Error(Position(ErrorKind::Alpha, input))
-      } else {
-        return Done(&input[idx..], &input[0..idx])
-      }
+        parse_length = idx;
+        break;
     }
   }
-  Done(&input[input_length..], input)
+
+  if parse_length == 0 {
+      Error(Position(ErrorKind::Alpha, input))
+  } else {
+      Done(&input[parse_length..], &input[0..parse_length])
+  }
 }
 
 /// Recognizes numerical characters: 0-9
 pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  let input_length = input.input_len();
-  if input_length == 0 {
-    return Error(Position(ErrorKind::Digit, input))
-  }
+  let mut parse_length = input.input_len();
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_0_to_9() {
-      if idx == 0 {
-        return Error(Position(ErrorKind::Digit, input))
-      } else {
-        return Done(&input[idx..], &input[0..idx])
-      }
+        parse_length = idx;
+        break;
     }
   }
-  Done(&input[input_length..], input)
+
+  if parse_length == 0 {
+      Error(Position(ErrorKind::Digit, input))
+  } else {
+      Done(&input[parse_length..], &input[0..parse_length])
+  }
 }
 
 /// Recognizes hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  let input_length = input.input_len();
-  if input_length == 0 {
-    return Error(Position(ErrorKind::HexDigit, input))
-  }
+  let mut parse_length = input.input_len();
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_hex_digit() {
-      if idx == 0 {
-        return Error(Position(ErrorKind::HexDigit, input))
-      } else {
-        return Done(&input[idx..], &input[0..idx])
-      }
+        parse_length = idx;
+        break;
     }
   }
-  Done(&input[input_length..], input)
+
+  if parse_length == 0 {
+      Error(Position(ErrorKind::HexDigit, input))
+  } else {
+      Done(&input[parse_length..], &input[0..parse_length])
+  }
 }
 
 /// Recognizes octal characters: 0-7
 pub fn oct_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  let input_length = input.input_len();
-  if input_length == 0 {
-    return Error(Position(ErrorKind::OctDigit, input))
-  }
+  let mut parse_length = input.input_len();
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_oct_digit() {
-      if idx == 0 {
-        return Error(Position(ErrorKind::OctDigit, input))
-      } else {
-        return Done(&input[idx..], &input[0..idx])
-      }
+        parse_length = idx;
+        break;
     }
   }
-  Done(&input[input_length..], input)
+
+  if parse_length == 0 {
+      Error(Position(ErrorKind::OctDigit, input))
+  } else {
+      Done(&input[parse_length..], &input[0..parse_length])
+  }
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  let input_length = input.input_len();
-  if input_length == 0 {
-    return Error(Position(ErrorKind::AlphaNumeric, input));
-  }
+  let mut parse_length = input.input_len();
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_alphanum() {
-      if idx == 0 {
-        return Error(Position(ErrorKind::AlphaNumeric, input))
-      } else {
-        return Done(&input[idx..], &input[0..idx])
-      }
+        parse_length = idx;
+        break;
     }
   }
-  Done(&input[input_length..], input)
+
+  if parse_length == 0 {
+      Error(Position(ErrorKind::AlphaNumeric, input))
+  } else {
+      Done(&input[parse_length..], &input[0..parse_length])
+  }
 }
 
 /// Recognizes spaces and tabs
 pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  let input_length = input.input_len();
-  if input_length == 0 {
-    return Error(Position(ErrorKind::Space, input));
-  }
+  let mut parse_length = input.input_len();
 
   for (idx, item) in input.iter_indices() {
     let chr = item.as_char();
     if ! (chr == ' ' || chr == '\t')  {
-      if idx == 0 {
-        return Error(Position(ErrorKind::Space, input))
-      } else {
-        return Done(&input[idx..], &input[0..idx])
-      }
+        parse_length = idx;
+        break;
     }
   }
-  Done(&input[input_length..], input)
+
+  if parse_length == 0 {
+      Error(Position(ErrorKind::Space, input))
+  } else {
+      Done(&input[parse_length..], &input[0..parse_length])
+  }
 }
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
 pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: IterIndices+InputLength {
-  let input_length = input.input_len();
-  if input_length == 0 {
-    return Error(Position(ErrorKind::MultiSpace, input));
-  }
+  let mut parse_length = input.input_len();
 
   for (idx, item) in input.iter_indices() {
     let chr = item.as_char();
     if ! (chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n')  {
-      if idx == 0 {
-        return Error(Position(ErrorKind::MultiSpace, input))
-      } else {
-        return Done(&input[idx..], &input[0..idx])
-      }
+        parse_length = idx;
+        break;
     }
   }
-  Done(&input[input_length..], input)
+
+  if parse_length == 0 {
+      Error(Position(ErrorKind::MultiSpace, input))
+  } else {
+      Done(&input[parse_length..], &input[0..parse_length])
+  }
 }
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
