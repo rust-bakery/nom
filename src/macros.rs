@@ -62,6 +62,7 @@
 //!   );
 //! );
 //!
+#[allow(unused_variables)]
 
 /// Wraps a parser in a closure
 #[macro_export]
@@ -200,6 +201,7 @@ macro_rules! apply (
 /// # #[macro_use] extern crate nom;
 /// # use std::collections;
 /// # use nom::IResult::Error;
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -223,9 +225,9 @@ macro_rules! apply (
 ///     let res_a = err_test(a);
 ///     let res_b = err_test(b);
 ///     let res_c = err_test(c);
-///     assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), blah, Box::new(Position(ErrorKind::Tag, blah)))));
-///     assert_eq!(res_b, Error(NodePosition(ErrorKind::Custom(42), &b"ijklblah"[..],
-///       Box::new(NodePosition(ErrorKind::Custom(128), blah, Box::new(Position(ErrorKind::Tag, blah))))))
+///     assert_eq!(res_a, Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah))));
+///     assert_eq!(res_b, Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..],
+///       error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah))))
 ///     );
 /// # }
 /// ```
@@ -242,7 +244,7 @@ macro_rules! error (
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
-          return $crate::IResult::Error($crate::Err::NodePosition($code, $i, Box::new(e)))
+          return $crate::IResult::Error(error_node_position!($code, $i, e))
         }
       }
     }
@@ -262,6 +264,7 @@ macro_rules! error (
 /// # #[macro_use] extern crate nom;
 /// # use std::collections;
 /// # use nom::IResult::Error;
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -269,7 +272,7 @@ macro_rules! error (
 ///
 ///     let a = &b"efghblah"[..];
 ///     let res_a = err_test(a);
-///     assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), a, Box::new(Position(ErrorKind::Tag, a)))));
+///     assert_eq!(res_a, Error(error_node_position!(ErrorKind::Custom(42), a, error_position!(ErrorKind::Tag, a))));
 /// # }
 /// ```
 ///
@@ -281,73 +284,13 @@ macro_rules! add_error (
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
-          $crate::IResult::Error($crate::Err::NodePosition($code, $i, Box::new(e)))
+          $crate::IResult::Error(error_node_position!($code, $i, e))
         }
       }
     }
   );
   ($i:expr, $code:expr, $f:expr) => (
     add_error!($i, $code, call!($f));
-  );
-);
-
-
-/// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use std::collections;
-/// # use nom::IResult::Error;
-/// # use nom::Err::{Position,NodePosition};
-/// # use nom::ErrorKind;
-/// # fn main() {
-///     // will add a Custom(42) error to the error chain
-///     named!(err_test, add_error!(ErrorKind::Custom(42), tag!("abcd")));
-///     // Convert to IREsult<&[u8], &[u8], &str>
-///     named!(parser<&[u8], &[u8], &str>, add_error!(ErrorKind::Custom("custom error message"), fix_error!(&str, err_test)));
-///
-///     let a = &b"efghblah"[..];
-///     let res_a = parser(a);
-///     assert_eq!(res_a,  Error(NodePosition( ErrorKind::Custom("custom error message"), a, Box::new(Position(ErrorKind::Fix, a)))));
-/// # }
-/// ```
-#[macro_export]
-macro_rules! fix_error (
-  ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
-    {
-      match $submac!($i, $($args)*) {
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
-        $crate::IResult::Error(e) => {
-          let err = match e {
-            $crate::Err::Code($crate::ErrorKind::Custom(_)) |
-              $crate::Err::Node($crate::ErrorKind::Custom(_), _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Code(e)
-            },
-            $crate::Err::Position($crate::ErrorKind::Custom(_), p) |
-              $crate::Err::NodePosition($crate::ErrorKind::Custom(_), p, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Position(e, p)
-            },
-            $crate::Err::Code(_) |
-              $crate::Err::Node(_, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Code(e)
-            },
-            $crate::Err::Position(_, p) |
-              $crate::Err::NodePosition(_, p, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Position(e, p)
-            },
-          };
-          $crate::IResult::Error(err)
-        }
-      }
-    }
-  );
-  ($i:expr, $t:ty, $f:expr) => (
-    fix_error!($i, $t, call!($f));
   );
 );
 
@@ -358,6 +301,7 @@ macro_rules! fix_error (
 /// # #[macro_use] extern crate nom;
 /// # use std::collections;
 /// # use nom::IResult::Error;
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -365,7 +309,7 @@ macro_rules! fix_error (
 ///
 ///     let a = &b"abcd"[..];
 ///     let res_a = take_5(a);
-///     assert_eq!(res_a,  Error(Position(ErrorKind::Complete, a)));
+///     assert_eq!(res_a,  Error(error_position!(ErrorKind::Complete, a)));
 /// # }
 /// ```
 ///
@@ -377,7 +321,7 @@ macro_rules! complete (
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(_) =>  {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Complete, $i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Complete, $i))
         },
       }
     }
@@ -394,6 +338,7 @@ macro_rules! complete (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{self, Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::{be_u8,ErrorKind};
 ///
@@ -411,7 +356,7 @@ macro_rules! complete (
 /// let arr2 = [0xFE, 2, 3, 4, 5];
 /// // size is overflowing
 /// let r1 = take_add(&arr2[..], 42);
-/// assert_eq!(r1, Error(Position(ErrorKind::ExprOpt,&[2,3,4,5][..])));
+/// assert_eq!(r1, Error(error_position!(ErrorKind::ExprOpt,&[2,3,4,5][..])));
 /// # }
 /// ```
 #[macro_export]
@@ -425,46 +370,6 @@ macro_rules! try_parse (
   );
   ($i:expr, $f:expr) => (
     try_parse!($i, call!($f))
-  );
-);
-
-/// `flat_map!(R -> IResult<R,S>, S -> IResult<S,T>) => R -> IResult<R, T>`
-///
-/// combines a parser R -> IResult<R,S> and
-/// a parser S -> IResult<S,T> to return another
-/// parser R -> IResult<R,T>
-#[macro_export]
-macro_rules! flat_map(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
-          $crate::IResult::Error(e)                                 => {
-            let err = match e {
-              $crate::Err::Code(k) | $crate::Err::Node(k, _) | $crate::Err::Position(k, _) | $crate::Err::NodePosition(k, _, _) => {
-                $crate::Err::Position(k, $i)
-              }
-            };
-            $crate::IResult::Error(err)
-          },
-          $crate::IResult::Incomplete($crate::Needed::Unknown)      => $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::IResult::Incomplete($crate::Needed::Size(ref i2)) => $crate::IResult::Incomplete($crate::Needed::Size(*i2)),
-          $crate::IResult::Done(_, o2)                              => $crate::IResult::Done(i, o2)
-        }
-      }
-    }
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    flat_map!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    flat_map!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    flat_map!($i, call!($f), $submac!($($args)*));
   );
 );
 
@@ -532,7 +437,7 @@ macro_rules! map_res_impl (
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
         $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
           Ok(output) => $crate::IResult::Done(i, output),
-          Err(_)     => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::MapRes, $i))
+          Err(_)     => $crate::IResult::Error(error_position!($crate::ErrorKind::MapRes, $i))
         }
       }
     }
@@ -570,7 +475,7 @@ macro_rules! map_opt_impl (
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
         $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
           ::std::option::Option::Some(output) => $crate::IResult::Done(i, output),
-          ::std::option::Option::None         => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::MapOpt, $i))
+          ::std::option::Option::None         => $crate::IResult::Error(error_position!($crate::ErrorKind::MapOpt, $i))
         }
       }
     }
@@ -628,7 +533,7 @@ macro_rules! expr_res (
     {
       match $e {
         Ok(output) => $crate::IResult::Done($i, output),
-        Err(_)     => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ExprRes, $i))
+        Err(_)     => $crate::IResult::Error(error_position!($crate::ErrorKind::ExprRes, $i))
       }
     }
   );
@@ -642,6 +547,7 @@ macro_rules! expr_res (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{self, Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::{be_u8,ErrorKind};
 ///
@@ -661,7 +567,7 @@ macro_rules! expr_res (
 /// let arr2 = [0xFE, 2, 3, 4, 5];
 /// // size is overflowing
 /// let r1 = take_add(&arr2[..], 42);
-/// assert_eq!(r1, Error(Position(ErrorKind::ExprOpt,&[2,3,4,5][..])));
+/// assert_eq!(r1, Error(error_position!(ErrorKind::ExprOpt,&[2,3,4,5][..])));
 /// # }
 /// ```
 #[macro_export]
@@ -670,7 +576,7 @@ macro_rules! expr_opt (
     {
       match $e {
         ::std::option::Option::Some(output) => $crate::IResult::Done($i, output),
-        ::std::option::Option::None         => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ExprOpt, $i))
+        ::std::option::Option::None         => $crate::IResult::Error(error_position!($crate::ErrorKind::ExprOpt, $i))
       }
     }
   );
@@ -687,6 +593,7 @@ macro_rules! expr_opt (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{self, Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// #[derive(PartialEq,Eq,Debug)]
@@ -714,7 +621,7 @@ macro_rules! expr_opt (
 /// # fn main() {
 /// // the first "abcd" tag is not present, we have an error
 /// let r1 = z(&b"efgh"[..]);
-/// assert_eq!(r1, Error(Position(ErrorKind::Tag,&b"efgh"[..])));
+/// assert_eq!(r1, Error(error_position!(ErrorKind::Tag,&b"efgh"[..])));
 ///
 /// // everything is present, everything is parsed
 /// let r2 = z(&b"abcdabcdefgh"[..]);
@@ -991,6 +898,7 @@ macro_rules! chaining_parser (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{self, Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # use nom::be_u16;
@@ -1281,7 +1189,7 @@ macro_rules! alt_parser (
   );
 
   ($i:expr) => (
-    $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Alt,$i))
+    $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
   );
 );
 
@@ -1347,6 +1255,7 @@ macro_rules! alt_complete (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done,Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::{Position, NodePosition};
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -1363,9 +1272,10 @@ macro_rules! alt_complete (
 ///  let d = b"blah";
 ///
 ///  assert_eq!(sw(&a[..]), Done(&b"123"[..], &b"XYZ"[..]));
-///  assert_eq!(sw(&b[..]), Error(NodePosition(ErrorKind::Switch, &b"abcdef"[..], Box::new(Position(ErrorKind::Tag, &b"ef"[..])))));
+///  assert_eq!(sw(&b[..]), Error(error_node_position!(ErrorKind::Switch, &b"abcdef"[..],
+///    error_position!(ErrorKind::Tag, &b"ef"[..]))));
 ///  assert_eq!(sw(&c[..]), Done(&b""[..], &b"123"[..]));
-///  assert_eq!(sw(&d[..]), Error(Position(ErrorKind::Switch, &b"blah"[..])));
+///  assert_eq!(sw(&d[..]), Error(error_position!(ErrorKind::Switch, &b"blah"[..])));
 ///  # }
 /// ```
 ///
@@ -1415,19 +1325,19 @@ macro_rules! switch_impl (
   ($i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error($crate::Err::NodePosition(
-            $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
+        $crate::IResult::Error(e)      => $crate::IResult::Error(error_node_position!(
+            $crate::ErrorKind::Switch, $i, e
         )),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           match o {
             $($p => match $subrule!(i, $($args2)*) {
-              $crate::IResult::Error(e) => $crate::IResult::Error($crate::Err::NodePosition(
-                  $crate::ErrorKind::Switch, $i, ::std::boxed::Box::new(e)
+              $crate::IResult::Error(e) => $crate::IResult::Error(error_node_position!(
+                  $crate::ErrorKind::Switch, $i, e
               )),
               a => a,
             }),*,
-            _    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Switch,$i))
+            _    => $crate::IResult::Error(error_position!($crate::ErrorKind::Switch,$i))
           }
         }
       }
@@ -1473,9 +1383,10 @@ macro_rules! opt(
 ///
 /// returns a Result, with Err containing the parsing error
 ///
-/// ```
+/// ```ignore
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -1484,7 +1395,7 @@ macro_rules! opt(
 ///  let a = b"abcdef";
 ///  let b = b"bcdefg";
 ///  assert_eq!(o(&a[..]), Done(&b"ef"[..], Ok(&b"abcd"[..])));
-///  assert_eq!(o(&b[..]), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, &b[..]))));
+///  assert_eq!(o(&b[..]), Done(&b"bcdefg"[..], Err(error_position!(ErrorKind::Tag, &b[..]))));
 ///  # }
 /// ```
 #[macro_export]
@@ -1492,8 +1403,8 @@ macro_rules! opt_res (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,  Ok(o)),
-        $crate::IResult::Error(e)      => $crate::IResult::Done($i, Err(e)),
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,  ::std::result::Result::Ok(o)),
+        $crate::IResult::Error(e)      => $crate::IResult::Done($i, ::std::result::Result::Err(e)),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
       }
     }
@@ -1637,7 +1548,7 @@ macro_rules! cond(
 ///  let f2 = closure!(&'static[u8],
 ///    cond_reduce!( b2, tag!("abcd") )
 ///  );
-///  assert_eq!(f2(&a[..]), Error(Err::Position(ErrorKind::CondReduce, &a[..])));
+///  assert_eq!(f2(&a[..]), Error(error_position!(ErrorKind::CondReduce, &a[..])));
 ///  # }
 /// ```
 ///
@@ -1652,7 +1563,7 @@ macro_rules! cond_reduce(
           $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
         }
       } else {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::CondReduce, $i))
+        $crate::IResult::Error(error_position!($crate::ErrorKind::CondReduce, $i))
       }
     }
   );
@@ -1699,19 +1610,20 @@ macro_rules! peek(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done, Error};
-/// # use nom::Err::{Position};
+/// # #[cfg(feature = "verbose-errors")]
+/// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
 /// named!(not_e, chain!(
-///     res: tag!("abc") ~ 
+///     res: tag!("abc") ~
 ///          not!(char!('e')),
 ///     || { res }));
 ///
-/// let r = not_e(&b"abcd"[..]); 
+/// let r = not_e(&b"abcd"[..]);
 /// assert_eq!(r, Done(&b"d"[..], &b"abc"[..]));
 ///
 /// let r2 = not_e(&b"abce"[..]);
-/// assert_eq!(r2, Error(Position(ErrorKind::Not, &b"e"[..])));
+/// assert_eq!(r2, Error(error_position!(ErrorKind::Not, &b"e"[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -1719,7 +1631,7 @@ macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Done(_, _)    => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Not, $i)),
+        $crate::IResult::Done(_, _)    => $crate::IResult::Error(error_position!($crate::ErrorKind::Not, $i)),
         $crate::IResult::Error(_)      => $crate::IResult::Done($i, &($i)[..0]),
         $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, &($i)[..0])
       }
@@ -1900,7 +1812,7 @@ macro_rules! separated_list(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           if i.len() == input.len() {
-            $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::SeparatedList,input))
+            $crate::IResult::Error(error_position!($crate::ErrorKind::SeparatedList,input))
           } else {
             res.push(o);
             input = i;
@@ -1958,7 +1870,7 @@ macro_rules! separated_nonempty_list(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           if i.len() == input.len() {
-            $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::SeparatedNonEmptyList,input))
+            $crate::IResult::Error(error_position!($crate::ErrorKind::SeparatedNonEmptyList,input))
           } else {
             res.push(o);
             input = i;
@@ -2048,7 +1960,7 @@ macro_rules! many0(
           $crate::IResult::Done(i, o)                          => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many0,input)); break;
+              ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Many0,input)); break;
             }
 
             res.push(o);
@@ -2073,6 +1985,7 @@ macro_rules! many0(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -2083,7 +1996,7 @@ macro_rules! many0(
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
-///  assert_eq!(multi(&b[..]), Error(Position(ErrorKind::Many1,&b[..])));
+///  assert_eq!(multi(&b[..]), Error(error_position!(ErrorKind::Many1,&b[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -2092,7 +2005,7 @@ macro_rules! many1(
     {
       use $crate::InputLength;
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1,$i)),
+        $crate::IResult::Error(_)      => $crate::IResult::Error(error_position!($crate::ErrorKind::Many1,$i)),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,o1)   => {
           if i1.input_len() == 0 {
@@ -2151,6 +2064,7 @@ macro_rules! many1(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -2160,7 +2074,7 @@ macro_rules! many1(
 ///  let b = b"abcdabcdefgh";
 ///  let c = b"abcdabcdabcdabcdabcdefgh";
 ///
-///  assert_eq!(multi(&a[..]),Error(Position(ErrorKind::ManyMN,&a[..])));
+///  assert_eq!(multi(&a[..]),Error(error_position!(ErrorKind::ManyMN,&a[..])));
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&b[..]), Done(&b"efgh"[..], res));
 ///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
@@ -2209,7 +2123,7 @@ macro_rules! many_m_n(
 
       if count < $m {
         if err {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ManyMN,$i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::ManyMN,$i))
         } else {
           match incomplete {
             ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
@@ -2235,6 +2149,7 @@ macro_rules! many_m_n(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done,Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -2245,7 +2160,7 @@ macro_rules! many_m_n(
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///
 ///  assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
-///  assert_eq!(counter(&b[..]), Error(Position(ErrorKind::Count, &b[..])));
+///  assert_eq!(counter(&b[..]), Error(error_position!(ErrorKind::Count, &b[..])));
 /// # }
 /// ```
 ///
@@ -2268,7 +2183,7 @@ macro_rules! count(
             input = i;
           },
           $crate::IResult::Error(_)  => {
-            ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Count,$i)); break;
+            ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Count,$i)); break;
           },
           $crate::IResult::Incomplete(_) => {
             ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
@@ -2291,6 +2206,7 @@ macro_rules! count(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done,Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -2303,7 +2219,7 @@ macro_rules! count(
 ///  let res = [&b"abcd"[..], &b"abcd"[..]];
 ///
 ///  assert_eq!(counter(&a[..]), Done(&b"abcdef"[..], res));
-///  assert_eq!(counter(&b[..]), Error(Position(ErrorKind::Count, &b[..])));
+///  assert_eq!(counter(&b[..]), Error(error_position!(ErrorKind::Count, &b[..])));
 /// # }
 /// ```
 ///
@@ -2329,7 +2245,7 @@ macro_rules! count_fixed (
             input = i;
           },
           $crate::IResult::Error(_)  => {
-            ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Count,$i)); break;
+            ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Count,$i)); break;
           },
           $crate::IResult::Incomplete(_) => {
             ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
@@ -2371,7 +2287,7 @@ macro_rules! length_value(
                 input = iparse;
               },
               $crate::IResult::Error(_)      => {
-                ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::LengthValue,$i)); break;
+                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::LengthValue,$i)); break;
               },
               $crate::IResult::Incomplete(a) => {
                 ret = match a {
@@ -2410,7 +2326,7 @@ macro_rules! length_value(
                 input = iparse;
               },
               $crate::IResult::Error(_)      => {
-                ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::LengthValue,$i)); break;
+                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::LengthValue,$i)); break;
               },
               $crate::IResult::Incomplete(a) => {
                 ret = match a {
@@ -2481,7 +2397,7 @@ macro_rules! fold_many0(
           $crate::IResult::Done(i, o)                          => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many0,input)); break;
+              ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Many0,input)); break;
             }
 
             res = f(res, o);
@@ -2506,6 +2422,7 @@ macro_rules! fold_many0(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -2519,7 +2436,7 @@ macro_rules! fold_many0(
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&a[..]), Done(&b"efgh"[..], res));
-///  assert_eq!(multi(&b[..]), Error(Position(ErrorKind::Many1,&b[..])));
+///  assert_eq!(multi(&b[..]), Error(error_position!(ErrorKind::Many1,&b[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -2528,7 +2445,7 @@ macro_rules! fold_many1(
     {
       use $crate::InputLength;
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Many1,$i)),
+        $crate::IResult::Error(_)      => $crate::IResult::Error(error_position!($crate::ErrorKind::Many1,$i)),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,o1)   => {
           let acc = $init;
@@ -2588,6 +2505,7 @@ macro_rules! fold_many1(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::{Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
@@ -2600,7 +2518,7 @@ macro_rules! fold_many1(
 ///  let b = b"abcdabcdefgh";
 ///  let c = b"abcdabcdabcdabcdabcdefgh";
 ///
-///  assert_eq!(multi(&a[..]),Error(Position(ErrorKind::ManyMN,&a[..])));
+///  assert_eq!(multi(&a[..]),Error(error_position!(ErrorKind::ManyMN,&a[..])));
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&b[..]), Done(&b"efgh"[..], res));
 ///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
@@ -2650,7 +2568,7 @@ macro_rules! fold_many_m_n(
 
       if count < $m {
         if err {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::ManyMN,$i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::ManyMN,$i))
         } else {
           match incomplete {
             ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
@@ -2672,9 +2590,14 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Needed,IResult,Err};
+  use internal::{Needed,IResult};
+  #[cfg(feature = "verbose-errors")]
+  use verbose_errors::Err;
+
+  #[cfg(not(feature = "verbose-errors"))]
+  use simple_errors::Err;
+
   use internal::IResult::*;
-  use internal::Err::*;
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -2705,7 +2628,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: $crate::IResult<_,_> = if reduced != b {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
         } else if m < blen {
           $crate::IResult::Incomplete($crate::Needed::Size(blen))
         } else {
@@ -2856,8 +2779,10 @@ mod tests {
     assert_eq!(chain_parser(&b"abcdef"[..]), Incomplete(Needed::Size(8)));
   }
 
+  #[cfg(feature = "verbose-errors")]
   use util::{error_to_list, add_error_pattern, print_error};
 
+  #[cfg(feature = "verbose-errors")]
   fn error_to_string<P>(e: &Err<P>) -> &'static str {
     let v:Vec<ErrorKind> = error_to_list(e);
     // do it this way if you can use slice patterns
@@ -2890,7 +2815,11 @@ mod tests {
       _ => "unrecognized error".to_string()
     }
   }*/
+
+  #[cfg(feature = "verbose-errors")]
   use std::collections;
+
+  #[cfg(feature = "verbose-errors")]
   #[test]
   fn err() {
     named!(err_test, alt!(
@@ -2913,8 +2842,8 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), blah, Box::new(Position(ErrorKind::Tag, blah)))));
-    assert_eq!(res_b, Error(NodePosition(ErrorKind::Custom(42), &b"ijklblah"[..], Box::new(NodePosition(ErrorKind::Custom(128), blah, Box::new(Position(ErrorKind::Tag, blah)))))));
+    assert_eq!(res_a, Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah))));
+    assert_eq!(res_b, Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah)))));
     assert_eq!(res_c, Done(&b""[..], &b"mnop"[..]));
 
     // Merr-like error matching
@@ -2946,6 +2875,7 @@ mod tests {
     print_error(b, res_b2);
   }
 
+  #[allow(unused_variables)]
   #[test]
   fn add_err() {
     named!(err_test,
@@ -2966,8 +2896,8 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), blah, Box::new(Position(ErrorKind::Tag, blah)))));
-    assert_eq!(res_b, Error(NodePosition(ErrorKind::Custom(42), &b"ijklblah"[..], Box::new(NodePosition(ErrorKind::Custom(128), blah, Box::new(Position(ErrorKind::Tag, blah)))))));
+    assert_eq!(res_a, Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah))));
+    assert_eq!(res_b, Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah)))));
     assert_eq!(res_c, Done(&b""[..], &b"mnop"[..]));
   }
 
@@ -2983,7 +2913,7 @@ mod tests {
     let a = &b"ijklmn"[..];
 
     let res_a = err_test(a);
-    assert_eq!(res_a, Error(Position(ErrorKind::Complete, &b"mn"[..])));
+    assert_eq!(res_a, Error(error_position!(ErrorKind::Complete, &b"mn"[..])));
   }
   #[test]
   fn alt() {
@@ -2993,7 +2923,7 @@ mod tests {
 
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8],&'static str> {
-      Error(Code(ErrorKind::Custom("abcd")))
+      Error(error_code!(ErrorKind::Custom("abcd")))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
@@ -3014,7 +2944,7 @@ mod tests {
     //named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
-    assert_eq!(alt1(a), Error(Position(ErrorKind::Alt, a)));
+    assert_eq!(alt1(a), Error(error_position!(ErrorKind::Alt, a)));
     assert_eq!(alt2(a), Done(&b""[..], a));
     assert_eq!(alt3(a), Done(a, &b""[..]));
 
@@ -3041,7 +2971,7 @@ mod tests {
     let a = &b"bcd"[..];
     assert_eq!(alt1(a), Done(&b"d"[..], &b"bc"[..]));
     let a = &b"cde"[..];
-    assert_eq!(alt1(a), Error(Position(ErrorKind::Alt, a)));
+    assert_eq!(alt1(a), Error(error_position!(ErrorKind::Alt, a)));
     let a = &b"de"[..];
     assert_eq!(alt1(a), Incomplete(Needed::Size(3)));
     let a = &b"defg"[..];
@@ -3059,7 +2989,7 @@ mod tests {
     let a = &b"ef"[..];
     assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
     let a = &b"cde"[..];
-    assert_eq!(ac(a), Error(Position(ErrorKind::Alt, a)));
+    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
   }
 
   #[test]
@@ -3077,7 +3007,7 @@ mod tests {
     let b = &b"efghijkl"[..];
     assert_eq!(sw(b), Done(&b""[..], &b"ijkl"[..]));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Error(Position(ErrorKind::Switch, &b"afghijkl"[..])));
+    assert_eq!(sw(c), Error(error_position!(ErrorKind::Switch, &b"afghijkl"[..])));
   }
 
   #[test]
@@ -3092,15 +3022,29 @@ mod tests {
     assert_eq!(opt_abcd(c), Incomplete(Needed::Size(4)));
   }
 
+  #[cfg(feature = "verbose-errors")]
   #[test]
   fn opt_res() {
-    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]>> >, opt_res!(tag!("abcd")));
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]> > >, opt_res!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];
     let c = &b"ab"[..];
     assert_eq!(opt_res_abcd(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
-    assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(Position(ErrorKind::Tag, b))));
+    assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(error_position!(ErrorKind::Tag, b))));
+    assert_eq!(opt_res_abcd(c), Incomplete(Needed::Size(4)));
+  }
+
+  #[cfg(not(feature = "verbose-errors"))]
+  #[test]
+  fn opt_res() {
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<u32>> >, opt_res!(tag!("abcd")));
+
+    let a = &b"abcdef"[..];
+    let b = &b"bcdefg"[..];
+    let c = &b"ab"[..];
+    assert_eq!(opt_res_abcd(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
+    assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(error_position!(ErrorKind::Tag, b))));
     assert_eq!(opt_res_abcd(c), Incomplete(Needed::Size(4)));
   }
 
@@ -3142,7 +3086,7 @@ mod tests {
 
     assert_eq!(peek_tag(&b"abcdef"[..]), Done(&b"abcdef"[..], &b"abcd"[..]));
     assert_eq!(peek_tag(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(peek_tag(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(peek_tag(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
@@ -3154,9 +3098,9 @@ mod tests {
     assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
     assert_eq!(pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
     assert_eq!(pair_abc_def(&b"abcd"[..]), Incomplete(Needed::Size(6)));
-    assert_eq!(pair_abc_def(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(pair_abc_def(&b"xxxdef"[..]), Error(Position(ErrorKind::Tag, &b"xxxdef"[..])));
-    assert_eq!(pair_abc_def(&b"abcxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(pair_abc_def(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(pair_abc_def(&b"xxxdef"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxdef"[..])));
+    assert_eq!(pair_abc_def(&b"abcxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
@@ -3169,9 +3113,9 @@ mod tests {
     assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
     assert_eq!(sep_pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
     assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Incomplete(Needed::Size(7)));
-    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Error(Position(ErrorKind::Tag, &b"xxx,def"[..])));
-    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx,def"[..])));
+    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
@@ -3183,9 +3127,9 @@ mod tests {
     assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Done(&b"ijkl"[..], &b"efgh"[..]));
     assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Incomplete(Needed::Size(4)));
     assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Incomplete(Needed::Size(8)));
-    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Error(Position(ErrorKind::Tag, &b"xxxxdef"[..])));
-    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxxdef"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
@@ -3197,9 +3141,9 @@ mod tests {
     assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]), Done(&b"ijkl"[..], &b"abcd"[..]));
     assert_eq!(terminated_abcd_efgh(&b"ab"[..]), Incomplete(Needed::Size(4)));
     assert_eq!(terminated_abcd_efgh(&b"abcde"[..]), Incomplete(Needed::Size(8)));
-    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]), Error(Position(ErrorKind::Tag, &b"xxxxdef"[..])));
-    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxxx"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxxdef"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxx"[..])));
   }
 
   #[test]
@@ -3213,10 +3157,10 @@ mod tests {
     assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Incomplete(Needed::Size(3)));
     assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Incomplete(Needed::Size(6)));
     assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Incomplete(Needed::Size(9)));
-    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Error(Position(ErrorKind::Tag, &b"xxxdefghi"[..])));
-    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Error(Position(ErrorKind::Tag, &b"xxxghi"[..])));
-    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Error(Position(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxdefghi"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxghi"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
   }
 
   #[test]
@@ -3235,7 +3179,7 @@ mod tests {
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
     assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
-    assert_eq!(multi_empty(d), Error(Position(ErrorKind::SeparatedList, d)));
+    assert_eq!(multi_empty(d), Error(error_position!(ErrorKind::SeparatedList, d)));
     //let res3 = vec![&b""[..], &b""[..], &b""[..]];
     //assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
     let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
@@ -3255,7 +3199,7 @@ mod tests {
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"ef"[..], res2));
-    assert_eq!(multi(c), Error(Position(ErrorKind::Tag,c)));
+    assert_eq!(multi(c), Error(error_position!(ErrorKind::Tag,c)));
     let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(d), Done(&b",ef"[..], res3));
   }
@@ -3273,7 +3217,7 @@ mod tests {
     assert_eq!(multi(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
     assert_eq!(multi(&b"abcd"[..]), Done(&b""[..], vec![&b"abcd"[..]]));
     assert_eq!(multi(&b""[..]), Done(&b""[..], Vec::new()));
-    assert_eq!(multi_empty(&b"abcdef"[..]), Error(Position(ErrorKind::Many0, &b"abcdef"[..])));
+    assert_eq!(multi_empty(&b"abcdef"[..]), Error(error_position!(ErrorKind::Many0, &b"abcdef"[..])));
   }
 
   #[cfg(feature = "nightly")]
@@ -3301,7 +3245,7 @@ mod tests {
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
-    assert_eq!(multi(c), Error(Position(ErrorKind::Many1,c)));
+    assert_eq!(multi(c), Error(error_position!(ErrorKind::Many1,c)));
     assert_eq!(multi(d), Incomplete(Needed::Size(8)));
   }
 
@@ -3309,7 +3253,7 @@ mod tests {
   fn infinite_many() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       println!("input: {:?}", input);
-      Error(Position(ErrorKind::Custom(0),input))
+      Error(error_position!(ErrorKind::Custom(0),input))
     }
 
     // should not go into an infinite loop
@@ -3319,7 +3263,7 @@ mod tests {
 
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
-    assert_eq!(multi1(a), Error(Position(ErrorKind::Many1,a)));
+    assert_eq!(multi1(a), Error(error_position!(ErrorKind::Many1,a)));
   }
 
   #[test]
@@ -3332,7 +3276,7 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    assert_eq!(multi(a), Error(Err::Position(ErrorKind::ManyMN,a)));
+    assert_eq!(multi(a), Error(error_position!(ErrorKind::ManyMN,a)));
     let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res1));
     let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
@@ -3351,9 +3295,9 @@ mod tests {
     assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Done(&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]));
     assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Unknown));
     assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Unknown));
-    assert_eq!(cnt_2(&b"xxx"[..]), Error(Position(ErrorKind::Count, &b"xxx"[..])));
-    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(Position(ErrorKind::Count, &b"xxxabcabcdef"[..])));
-    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(Position(ErrorKind::Count, &b"abcxxxabcdef"[..])));
+    assert_eq!(cnt_2(&b"xxx"[..]), Error(error_position!(ErrorKind::Count, &b"xxx"[..])));
+    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(error_position!(ErrorKind::Count, &b"xxxabcabcdef"[..])));
+    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(error_position!(ErrorKind::Count, &b"abcxxxabcdef"[..])));
   }
 
   #[test]
@@ -3396,9 +3340,9 @@ mod tests {
     assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Done(&b"abcdef"[..], [&b"abc"[..], &b"abc"[..]]));
     assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Unknown));
     assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Unknown));
-    assert_eq!(cnt_2(&b"xxx"[..]), Error(Position(ErrorKind::Count, &b"xxx"[..])));
-    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(Position(ErrorKind::Count, &b"xxxabcabcdef"[..])));
-    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(Position(ErrorKind::Count, &b"abcxxxabcdef"[..])));
+    assert_eq!(cnt_2(&b"xxx"[..]), Error(error_position!(ErrorKind::Count, &b"xxx"[..])));
+    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(error_position!(ErrorKind::Count, &b"xxxabcabcdef"[..])));
+    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(error_position!(ErrorKind::Count, &b"abcxxxabcdef"[..])));
   }
 
   use nom::{le_u16,eof};
@@ -3432,9 +3376,9 @@ mod tests {
     assert_eq!(counter_2(done), Done(rest, parsed_main));
     assert_eq!(counter_2(incomplete_1), Incomplete(Needed::Unknown));
     assert_eq!(counter_2(incomplete_2), Incomplete(Needed::Unknown));
-    assert_eq!(counter_2(error), Error(Position(ErrorKind::Count, error)));
-    assert_eq!(counter_2(error_1), Error(Position(ErrorKind::Count, error_1_remain)));
-    assert_eq!(counter_2(error_2), Error(Position(ErrorKind::Count, error_2_remain)));
+    assert_eq!(counter_2(error), Error(error_position!(ErrorKind::Count, error)));
+    assert_eq!(counter_2(error_1), Error(error_position!(ErrorKind::Count, error_1_remain)));
+    assert_eq!(counter_2(error_2), Error(error_position!(ErrorKind::Count, error_2_remain)));
   }
 
   use nom::{be_u8,be_u16};
@@ -3481,7 +3425,7 @@ mod tests {
     assert_eq!(multi(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
     assert_eq!(multi(&b"abcd"[..]), Done(&b""[..], vec![&b"abcd"[..]]));
     assert_eq!(multi(&b""[..]), Done(&b""[..], Vec::new()));
-    assert_eq!(multi_empty(&b"abcdef"[..]), Error(Position(ErrorKind::Many0, &b"abcdef"[..])));
+    assert_eq!(multi_empty(&b"abcdef"[..]), Error(error_position!(ErrorKind::Many0, &b"abcdef"[..])));
   }
 
   #[test]
@@ -3501,7 +3445,7 @@ mod tests {
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
-    assert_eq!(multi(c), Error(Position(ErrorKind::Many1,c)));
+    assert_eq!(multi(c), Error(error_position!(ErrorKind::Many1,c)));
     assert_eq!(multi(d), Incomplete(Needed::Size(8)));
   }
 
@@ -3519,7 +3463,7 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    assert_eq!(multi(a), Error(Err::Position(ErrorKind::ManyMN,a)));
+    assert_eq!(multi(a), Error(error_position!(ErrorKind::ManyMN,a)));
     let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(b), Done(&b"efgh"[..], res1));
     let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
@@ -3548,13 +3492,13 @@ mod tests {
     assert_eq!(tuple_3(&b"abcdefgh"[..]), Done(&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])));
     assert_eq!(tuple_3(&b"abcd"[..]), Incomplete(Needed::Size(5)));
     assert_eq!(tuple_3(&b"abcde"[..]), Incomplete(Needed::Size(7)));
-    assert_eq!(tuple_3(&b"abcdejk"[..]), Error(Position(ErrorKind::Tag, &b"jk"[..])));
+    assert_eq!(tuple_3(&b"abcdejk"[..]), Error(error_position!(ErrorKind::Tag, &b"jk"[..])));
   }
   
   #[test]
   fn not() {
     named!(not_aaa, not!(tag!("aaa")));
-    assert_eq!(not_aaa(&b"aaa"[..]), Error(Position(ErrorKind::Not, &b"aaa"[..])));
+    assert_eq!(not_aaa(&b"aaa"[..]), Error(error_position!(ErrorKind::Not, &b"aaa"[..])));
     assert_eq!(not_aaa(&b"aa"[..]), Done(&b"aa"[..], &b""[..]));
     assert_eq!(not_aaa(&b"abcd"[..]), Done(&b"abcd"[..], &b""[..]));
   }

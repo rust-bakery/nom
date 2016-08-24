@@ -7,7 +7,6 @@ extern crate nom;
 use nom::{HexDisplay,Needed,IResult,be_u16,be_u32,be_u64,be_f32,ErrorKind};
 use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer,FileProducerState};
 use nom::IResult::*;
-use nom::Err::*;
 
 use std::str;
 use std::io::SeekFrom;
@@ -262,7 +261,7 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Error(Position(ErrorKind::Custom(32),input))
+    Error(error_position!(ErrorKind::Custom(32),input))
   };
   println!("res: {:?}", res);
   res

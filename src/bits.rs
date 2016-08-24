@@ -36,6 +36,7 @@ macro_rules! bits (
   );
 );
 
+#[cfg(feature = "verbose-errors")]
 /// Internal parser, do not use directly
 #[doc(hidden)]
 #[macro_export]
@@ -52,6 +53,33 @@ macro_rules! bits_impl (
             }
           };
           $crate::IResult::Error(err)
+        }
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          //println!("bits parser returned Needed::Size({})", i);
+          $crate::IResult::Incomplete($crate::Needed::Size(i / 8 + 1))
+        },
+        $crate::IResult::Done((i, bit_index), o)             => {
+          let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
+          //println!("bit index=={} => byte index=={}", bit_index, byte_index);
+          $crate::IResult::Done(&i[byte_index..], o)
+        }
+      }
+    }
+  );
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! bits_impl (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let input = ($i, 0usize);
+      match $submac!(input, $($args)*) {
+        $crate::IResult::Error(e)                            => {
+          $crate::IResult::Error(e)
         }
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
@@ -144,11 +172,11 @@ macro_rules! tag_bits (
             let res: $crate::IResult<(&[u8],usize),$t> = $crate::IResult::Done(i, o);
             res
           } else {
-            $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))
+            $crate::IResult::Error(error_position!($crate::ErrorKind::TagBits, $i))
           }
         },
         _                              => {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagBits, $i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::TagBits, $i))
         }
       }
     }
@@ -157,7 +185,7 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use internal::{IResult,Needed,Err};
+  use internal::{IResult,Needed};
   use ErrorKind;
 
   #[test]
@@ -215,6 +243,6 @@ mod tests {
     let input = vec![0b10101010, 0b11110000, 0b00110011];
     assert_eq!(ch_bytes(&input[..]), IResult::Done(&input[2..], (5,15)));
     assert_eq!(ch_bytes(&input[..1]), IResult::Incomplete(Needed::Size(2)));
-    assert_eq!(ch_bytes(&input[1..]), IResult::Error(Err::Position(ErrorKind::TagBits, &input[1..])));
+    assert_eq!(ch_bytes(&input[1..]), IResult::Error(error_position!(ErrorKind::TagBits, &input[1..])));
   }
 }

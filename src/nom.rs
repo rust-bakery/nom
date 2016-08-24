@@ -13,8 +13,7 @@ use std::boxed::Box;
 use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
-use internal::Err::*;
-use util::{ErrorKind,IterIndices,AsChar,InputLength};
+use util::{AsChar,ErrorKind,InputLength,IterIndices};
 use std::mem::transmute;
 
 #[inline]
@@ -23,7 +22,7 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8
     if i.len() >= rec.len() && &i[0..rec.len()] == rec {
       Done(&i[rec.len()..], &i[0..rec.len()])
     } else {
-      Error(Position(ErrorKind::TagClosure, i))
+      Error(error_position!(ErrorKind::TagClosure, i))
     }
   })
 }
@@ -108,13 +107,13 @@ pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::Alpha, input))
+    return Error(error_position!(ErrorKind::Alpha, input))
   }
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_alpha() {
       if idx == 0 {
-        return Error(Position(ErrorKind::Alpha, input))
+        return Error(error_position!(ErrorKind::Alpha, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -129,13 +128,13 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::Digit, input))
+    return Error(error_position!(ErrorKind::Digit, input))
   }
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_0_to_9() {
       if idx == 0 {
-        return Error(Position(ErrorKind::Digit, input))
+        return Error(error_position!(ErrorKind::Digit, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -150,13 +149,13 @@ pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::HexDigit, input))
+    return Error(error_position!(ErrorKind::HexDigit, input))
   }
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_hex_digit() {
       if idx == 0 {
-        return Error(Position(ErrorKind::HexDigit, input))
+        return Error(error_position!(ErrorKind::HexDigit, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -171,13 +170,13 @@ pub fn oct_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::OctDigit, input))
+    return Error(error_position!(ErrorKind::OctDigit, input))
   }
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_oct_digit() {
       if idx == 0 {
-        return Error(Position(ErrorKind::OctDigit, input))
+        return Error(error_position!(ErrorKind::OctDigit, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -192,13 +191,13 @@ pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::AlphaNumeric, input));
+    return Error(error_position!(ErrorKind::AlphaNumeric, input));
   }
 
   for (idx, item) in input.iter_indices() {
     if ! item.is_alphanum() {
       if idx == 0 {
-        return Error(Position(ErrorKind::AlphaNumeric, input))
+        return Error(error_position!(ErrorKind::AlphaNumeric, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -213,14 +212,14 @@ pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::Space, input));
+    return Error(error_position!(ErrorKind::Space, input));
   }
 
   for (idx, item) in input.iter_indices() {
     let chr = item.as_char();
     if ! (chr == ' ' || chr == '\t')  {
       if idx == 0 {
-        return Error(Position(ErrorKind::Space, input))
+        return Error(error_position!(ErrorKind::Space, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -235,14 +234,14 @@ pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(Position(ErrorKind::MultiSpace, input));
+    return Error(error_position!(ErrorKind::MultiSpace, input));
   }
 
   for (idx, item) in input.iter_indices() {
     let chr = item.as_char();
     if ! (chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n')  {
       if idx == 0 {
-        return Error(Position(ErrorKind::MultiSpace, input))
+        return Error(error_position!(ErrorKind::MultiSpace, input))
       } else {
         return Done(&input[idx..], &input[0..idx])
       }
@@ -268,7 +267,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
 pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
   let input_len = input.len();
   if input_len == 0 {
-    return Error(Position(ErrorKind::LengthValueFn, input))
+    return Error(error_position!(ErrorKind::LengthValueFn, input))
   }
 
   let len = input[0] as usize;
@@ -535,7 +534,7 @@ pub fn eof<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
   if input.input_len() == 0 {
       Done(input, input)
   } else {
-      Error(Position(ErrorKind::Eof, input))
+      Error(error_position!(ErrorKind::Eof, input))
   }
 }
 
@@ -545,7 +544,7 @@ pub fn non_empty<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
     &'a T: InputLength {
   if input.input_len() == 0 {
-    Error(Position(ErrorKind::NonEmpty, input))
+    Error(error_position!(ErrorKind::NonEmpty, input))
   } else {
     Done(&input[input.input_len()..], input)
   }
@@ -568,7 +567,6 @@ mod tests {
   use super::*;
   use internal::{Needed,IResult};
   use internal::IResult::*;
-  use internal::Err::*;
   use util::ErrorKind;
 
   #[test]
@@ -578,7 +576,7 @@ mod tests {
     assert_eq!(r, Done(&b"abcdefgh"[..], &b"abcd"[..]));
 
     let r2 = x(&b"abcefgh"[..]);
-    assert_eq!(r2, Error(Position(ErrorKind::TagClosure, &b"abcefgh"[..])));
+    assert_eq!(r2, Error(error_position!(ErrorKind::TagClosure, &b"abcefgh"[..])));
   }
 
   #[test]
@@ -590,22 +588,22 @@ mod tests {
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
     assert_eq!(alpha(a), Done(empty, a));
-    assert_eq!(alpha(b), Error(Position(ErrorKind::Alpha,b)));
+    assert_eq!(alpha(b), Error(error_position!(ErrorKind::Alpha,b)));
     assert_eq!(alpha(c), Done(&c[1..], &b"a"[..]));
     assert_eq!(alpha(d), Done("é12".as_bytes(), &b"az"[..]));
-    assert_eq!(digit(a), Error(Position(ErrorKind::Digit,a)));
+    assert_eq!(digit(a), Error(error_position!(ErrorKind::Digit,a)));
     assert_eq!(digit(b), Done(empty, b));
-    assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
-    assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
+    assert_eq!(digit(c), Error(error_position!(ErrorKind::Digit,c)));
+    assert_eq!(digit(d), Error(error_position!(ErrorKind::Digit,d)));
     assert_eq!(hex_digit(a), Done(empty, a));
     assert_eq!(hex_digit(b), Done(empty, b));
     assert_eq!(hex_digit(c), Done(empty, c));
     assert_eq!(hex_digit(d), Done("zé12".as_bytes(), &b"a"[..]));
-    assert_eq!(hex_digit(e), Error(Position(ErrorKind::HexDigit,e)));
-    assert_eq!(oct_digit(a), Error(Position(ErrorKind::OctDigit,a)));
+    assert_eq!(hex_digit(e), Error(error_position!(ErrorKind::HexDigit,e)));
+    assert_eq!(oct_digit(a), Error(error_position!(ErrorKind::OctDigit,a)));
     assert_eq!(oct_digit(b), Done(empty, b));
-    assert_eq!(oct_digit(c), Error(Position(ErrorKind::OctDigit,c)));
-    assert_eq!(oct_digit(d), Error(Position(ErrorKind::OctDigit,d)));
+    assert_eq!(oct_digit(c), Error(error_position!(ErrorKind::OctDigit,c)));
+    assert_eq!(oct_digit(d), Error(error_position!(ErrorKind::OctDigit,d)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
@@ -622,22 +620,22 @@ mod tests {
     let d     = "azé12";
     let e     = " ";
     assert_eq!(alpha(a), Done(empty, a));
-    assert_eq!(alpha(b), Error(Position(ErrorKind::Alpha,b)));
+    assert_eq!(alpha(b), Error(error_position!(ErrorKind::Alpha,b)));
     assert_eq!(alpha(c), Done(&c[1..], &"a"[..]));
     assert_eq!(alpha(d), Done("12", &"azé"[..]));
-    assert_eq!(digit(a), Error(Position(ErrorKind::Digit,a)));
+    assert_eq!(digit(a), Error(error_position!(ErrorKind::Digit,a)));
     assert_eq!(digit(b), Done(empty, b));
-    assert_eq!(digit(c), Error(Position(ErrorKind::Digit,c)));
-    assert_eq!(digit(d), Error(Position(ErrorKind::Digit,d)));
+    assert_eq!(digit(c), Error(error_position!(ErrorKind::Digit,c)));
+    assert_eq!(digit(d), Error(error_position!(ErrorKind::Digit,d)));
     assert_eq!(hex_digit(a), Done(empty, a));
     assert_eq!(hex_digit(b), Done(empty, b));
     assert_eq!(hex_digit(c), Done(empty, c));
     assert_eq!(hex_digit(d), Done("zé12", &"a"[..]));
-    assert_eq!(hex_digit(e), Error(Position(ErrorKind::HexDigit,e)));
-    assert_eq!(oct_digit(a), Error(Position(ErrorKind::OctDigit,a)));
+    assert_eq!(hex_digit(e), Error(error_position!(ErrorKind::HexDigit,e)));
+    assert_eq!(oct_digit(a), Error(error_position!(ErrorKind::OctDigit,a)));
     assert_eq!(oct_digit(b), Done(empty, b));
-    assert_eq!(oct_digit(c), Error(Position(ErrorKind::OctDigit,c)));
-    assert_eq!(oct_digit(d), Error(Position(ErrorKind::OctDigit,d)));
+    assert_eq!(oct_digit(c), Error(error_position!(ErrorKind::OctDigit,c)));
+    assert_eq!(oct_digit(d), Error(error_position!(ErrorKind::OctDigit,d)));
     assert_eq!(alphanumeric(a), Done(empty, a));
     assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
     assert_eq!(alphanumeric(c), Done(empty, c));
@@ -842,7 +840,7 @@ mod tests {
         let is_over = &b""[..];
 
         let res_not_over = eof(not_over);
-        assert_eq!(res_not_over, Error(Position(ErrorKind::Eof, not_over)));
+        assert_eq!(res_not_over, Error(error_position!(ErrorKind::Eof, not_over)));
 
         let res_over = eof(is_over);
         assert_eq!(res_over, Done(is_over, is_over));
@@ -907,10 +905,10 @@ mod tests {
     assert_eq!(hex_digit(i), Done(empty, i));
 
     let i = &b"g"[..];
-    assert_eq!(hex_digit(i), Error(Position(ErrorKind::HexDigit,i)));
+    assert_eq!(hex_digit(i), Error(error_position!(ErrorKind::HexDigit,i)));
 
     let i = &b"G"[..];
-    assert_eq!(hex_digit(i), Error(Position(ErrorKind::HexDigit,i)));
+    assert_eq!(hex_digit(i), Error(error_position!(ErrorKind::HexDigit,i)));
 
     assert!(is_hex_digit(b'0'));
     assert!(is_hex_digit(b'9'));
@@ -934,7 +932,7 @@ mod tests {
     assert_eq!(oct_digit(i), Done(empty, i));
 
     let i = &b"8"[..];
-    assert_eq!(oct_digit(i), Error(Position(ErrorKind::OctDigit,i)));
+    assert_eq!(oct_digit(i), Error(error_position!(ErrorKind::OctDigit,i)));
 
     assert!(is_oct_digit(b'0'));
     assert!(is_oct_digit(b'7'));

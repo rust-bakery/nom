@@ -23,10 +23,11 @@ include = [
 [features]
 core = []
 nightly = []
-default = ["stream"]
+default = ["stream", "verbose-errors"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
 stream = []
+verbose-errors = []
 
 [dependencies.regex]
 version = "^0.1.56"

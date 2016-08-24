@@ -2,27 +2,15 @@
 
 use self::IResult::*;
 use self::Needed::*;
-use util::ErrorKind;
 
 #[cfg(feature = "core")]
 use std::prelude::v1::*;
-use std::boxed::Box;
 
-/// Contains the error that a parser can return
-///
-/// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
-/// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, u32)
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<P,E=u32>{
-  /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
-  Code(ErrorKind<E>),
-  /// An error code, and the next error
-  Node(ErrorKind<E>, Box<Err<P,E>>),
-  /// An error code, and the input position
-  Position(ErrorKind<E>, P),
-  /// An error code, the input position and the next error
-  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
-}
+#[cfg(feature = "verbose-errors")]
+use verbose_errors::Err;
+
+#[cfg(not(feature = "verbose-errors"))]
+use simple_errors::Err;
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
@@ -48,6 +36,7 @@ impl Needed {
   }
 }
 
+#[cfg(feature = "verbose-errors")]
 /// Holds the result of parsing functions
 ///
 /// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
@@ -58,6 +47,21 @@ pub enum IResult<I,O,E=u32> {
   Done(I,O),
   /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
   Error(Err<I,E>),
+  /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
+  Incomplete(Needed)
+}
+
+#[cfg(not(feature = "verbose-errors"))]
+/// Holds the result of parsing functions
+///
+/// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
+///
+#[derive(Debug,PartialEq,Eq,Clone)]
+pub enum IResult<I,O,E=u32> {
+   /// indicates a correct parsing, the first field containing the rest of the unparsed data, the second field contains the parsed data
+  Done(I,O),
+  /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
+  Error(Err<E>),
   /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
   Incomplete(Needed)
 }
@@ -109,19 +113,6 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
-  /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
-  /// to a contained `Error` value, leaving `Done` and `Incomplete` value
-  /// untouched.
-  #[inline]
-  pub fn map_err<N, F>(self, f: F) -> IResult<I, O, N>
-   where F: FnOnce(Err<I, E>) -> Err<I, N> {
-    match self {
-      Error(e)      => Error(f(e)),
-      Incomplete(n) => Incomplete(n),
-      Done(i, o)    => Done(i, o),
-    }
-  }
-
   /// Unwrap the contained `Done(I, O)` value, or panic if the `IResult` is not
   /// `Done`.
   pub fn unwrap(self) -> (I, O) {
@@ -139,16 +130,6 @@ impl<I,O,E> IResult<I,O,E> {
       Incomplete(n) => n,
       Done(_, _)    => panic!("unwrap_inc() called on an IResult that is Done"),
       Error(_)      => panic!("unwrap_inc() called on an IResult that is Error")
-    }
-  }
-
-  /// Unwrap the contained `Done(I, O)` value, or panic if the `IResult` is not
-  /// `Done`.
-  pub fn unwrap_err(self) -> Err<I, E> {
-    match self {
-      Error(e)      => e,
-      Done(_, _)    => panic!("unwrap_err() called on an IResult that is Done"),
-      Incomplete(_) => panic!("unwrap_err() called on an IResult that is Incomplete"),
     }
   }
 }
@@ -216,12 +197,16 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
 }
 
 #[cfg(not(feature = "core"))]
+#[cfg(feature = "verbose-errors")]
 use std::any::Any;
 #[cfg(not(feature = "core"))]
+#[cfg(feature = "verbose-errors")]
 use std::{error,fmt};
 #[cfg(not(feature = "core"))]
+#[cfg(feature = "verbose-errors")]
 use std::fmt::Debug;
 #[cfg(not(feature = "core"))]
+#[cfg(feature = "verbose-errors")]
 impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
   fn description(&self) -> &str {
     let kind = match *self {
@@ -232,6 +217,7 @@ impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
 }
 
 #[cfg(not(feature = "core"))]
+#[cfg(feature = "verbose-errors")]
 impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match *self {
@@ -245,6 +231,54 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
   }
 }
 
+#[cfg(feature = "verbose-errors")]
+#[macro_export]
+macro_rules! error_code(
+  ($code:expr) => ($crate::Err::Code($code));
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+#[macro_export]
+macro_rules! error_code(
+  ($code:expr) => ($code);
+);
+
+#[cfg(feature = "verbose-errors")]
+#[macro_export]
+macro_rules! error_node(
+  ($code:expr, $next:expr) => ($crate::Err::Node($code, Box::new($next)));
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+#[macro_export]
+macro_rules! error_node(
+  ($code:expr, $next:expr) => ($code);
+);
+
+#[cfg(feature = "verbose-errors")]
+#[macro_export]
+macro_rules! error_position(
+  ($code:expr, $input:expr) => ($crate::Err::Position($code, $input));
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+#[macro_export]
+macro_rules! error_position(
+  ($code:expr, $input:expr) => ($code);
+);
+
+#[cfg(feature = "verbose-errors")]
+#[macro_export]
+macro_rules! error_node_position(
+  ($code:expr, $input:expr, $next:expr) => ($crate::Err::NodePosition($code, $input, Box::new($next)));
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+#[macro_export]
+macro_rules! error_node_position(
+  ($code:expr, $input: expr, $next:expr) => ($code);
+);
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -252,7 +286,7 @@ mod tests {
 
   const REST: [u8; 0] = [];
   const DONE: IResult<&'static [u8], u32> = IResult::Done(&REST, 5);
-  const ERROR: IResult<&'static [u8], u32> = IResult::Error(Err::Code(ErrorKind::Tag));
+  const ERROR: IResult<&'static [u8], u32> = IResult::Error(error_code!(ErrorKind::Tag));
   const INCOMPLETE: IResult<&'static [u8], u32> = IResult::Incomplete(Needed::Unknown);
 
   #[test]
@@ -267,7 +301,7 @@ mod tests {
   #[test]
   fn iresult_map() {
     assert_eq!(DONE.map(|x| x * 2), IResult::Done(&b""[..], 10));
-    assert_eq!(ERROR.map(|x| x * 2), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(ERROR.map(|x| x * 2), IResult::Error(error_code!(ErrorKind::Tag)));
     assert_eq!(INCOMPLETE.map(|x| x * 2), IResult::Incomplete(Needed::Unknown));
   }
 
@@ -277,7 +311,7 @@ mod tests {
     let inc_size: IResult<&[u8], u32> = IResult::Incomplete(Needed::Size(5));
 
     assert_eq!(DONE.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Done(&b""[..], 5));
-    assert_eq!(ERROR.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Error(Err::Code(ErrorKind::Tag)));
+    assert_eq!(ERROR.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Error(error_code!(ErrorKind::Tag)));
     assert_eq!(inc_unknown.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Incomplete(Needed::Unknown));
     assert_eq!(inc_size.map_inc(|n| if let Needed::Size(i) = n {Needed::Size(i+1)} else {n}), IResult::Incomplete(Needed::Size(6)));
   }
@@ -287,7 +321,7 @@ mod tests {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     struct Error(u32);
 
-    let error_kind = Err::Code(ErrorKind::Custom(Error(5)));
+    let error_kind = error_code!(ErrorKind::Custom(Error(5)));
 
     assert_eq!(DONE.map_err(|_| error_kind.clone()), IResult::Done(&b""[..], 5));
     assert_eq!(ERROR.map_err(|x| {println!("err: {:?}", x); error_kind.clone()}), IResult::Error(error_kind.clone()));
@@ -319,7 +353,7 @@ mod tests {
 
   #[test]
   fn iresult_unwrap_err_on_err() {
-    assert_eq!(ERROR.unwrap_err(), Err::Code(ErrorKind::Tag));
+    assert_eq!(ERROR.unwrap_err(), error_code!(ErrorKind::Tag));
   }
 
   #[test]

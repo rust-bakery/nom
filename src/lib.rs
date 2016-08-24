@@ -110,6 +110,13 @@ mod std {
 }
 
 pub use self::util::*;
+
+#[cfg(feature = "verbose-errors")]
+pub use self::verbose_errors::*;
+
+#[cfg(not(feature = "verbose-errors"))]
+pub use self::simple_errors::*;
+
 pub use self::internal::*;
 pub use self::macros::*;
 pub use self::methods::*;
@@ -130,7 +137,12 @@ pub use self::stream::*;
 pub use self::str::*;
 
 #[macro_use] mod util;
-mod internal;
+
+#[cfg(feature = "verbose-errors")] #[macro_use] mod verbose_errors;
+
+#[cfg(not(feature = "verbose-errors"))] #[macro_use] mod simple_errors;
+
+#[macro_use] mod internal;
 #[macro_use] mod macros;
 #[macro_use] mod methods;
 #[macro_use] mod bytes;

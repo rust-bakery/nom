@@ -20,9 +20,11 @@ script:
   - |
       travis-cargo --only 1.2     test  -- --features regexp &&
       travis-cargo --only stable  test  -- --features "regexp regexp_macros" &&
+      travis-cargo --only stable  test  -- --features "stream regexp regexp_macros" --no-default-features &&
       travis-cargo --only beta    test  -- --features "regexp regexp_macros" &&
       travis-cargo --only nightly build -- --features "nightly core regexp" &&
-      travis-cargo --only nightly test  -- --features "regexp" &&
+      travis-cargo --only nightly test  -- --features "regexp regexp_macros" &&
+      travis-cargo --only nightly test  -- --features "stream regexp regexp_macros" --no-default-features &&
       travis-cargo bench &&
       travis-cargo --only stable doc -- --features "regexp"
 

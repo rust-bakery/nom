@@ -274,7 +274,7 @@ mod tests {
         } else if ($i).starts_with($tag) {
           $crate::IResult::Done(&$i[$tag.len()..], &$i[0..$tag.len()])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagStr, $i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::TagStr, $i))
         };
         res
       }

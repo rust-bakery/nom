@@ -27,7 +27,7 @@ macro_rules! tag_s (
       } else if (input).starts_with($tag) {
         $crate::IResult::Done(&input[$tag.len()..], &input[0..$tag.len()])
       } else {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagStr, input))
+        $crate::IResult::Error(error_position!($crate::ErrorKind::TagStr, input))
       };
       res
     }
@@ -104,7 +104,7 @@ macro_rules! is_not_s (
         }
       }
       let res: $crate::IResult<_,_> = if offset == 0 {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,input))
+        $crate::IResult::Error(error_position!($crate::ErrorKind::IsAStr,input))
       } else if offset < input.len() {
         $crate::IResult::Done(&input[offset..], &input[..offset])
       } else {
@@ -147,7 +147,7 @@ macro_rules! is_a_s (
         }
       }
       let res: $crate::IResult<_,_> = if offset == 0 {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsAStr,input))
+        $crate::IResult::Error(error_position!($crate::ErrorKind::IsAStr,input))
       } else if offset < input.len() {
         $crate::IResult::Done(&input[offset..], &input[..offset])
       } else {
@@ -232,7 +232,7 @@ macro_rules! take_while1_s (
         }
       }
       let res: $crate::IResult<_,_> = if offset == 0 {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1Str,input))
+        $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1Str,input))
       } else if offset < input.len() {
         $crate::IResult::Done(&input[offset..], &input[..offset])
       } else {
@@ -319,7 +319,7 @@ macro_rules! take_until_and_consume_s (
             $crate::IResult::Done(&input[input.len()..], input)
           }
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilAndConsumeStr,input))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsumeStr,input))
         }
       };
       res
@@ -364,7 +364,7 @@ macro_rules! take_until_s (
         if parsed {
           $crate::IResult::Done(&input[offset..], &input[..offset])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilStr,input))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilStr,input))
         }
       };
       res
@@ -473,7 +473,6 @@ mod test {
     }
 
   use internal::IResult::{Done, Error};
-  use internal::Err::Position;
   use util::ErrorKind;
 
   pub fn is_alphabetic(c:char) -> bool {
@@ -501,10 +500,10 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Error(Position(ErrorKind::TakeWhile1Str, &""[..])));
+    assert_eq!(f(&a[..]), Error(error_position!(ErrorKind::TakeWhile1Str, &""[..])));
     assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
     assert_eq!(f(&c[..]), Done(&"123"[..], &b[..]));
-    assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1Str, &d[..])));
+    assert_eq!(f(&d[..]), Error(error_position!(ErrorKind::TakeWhile1Str, &d[..])));
   }
 
   #[test]

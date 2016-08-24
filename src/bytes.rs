@@ -1,5 +1,6 @@
 //! Byte level parsers and combinators
 //!
+#[allow(unused_variables)]
 
 /// `recognize!(&[T] -> IResult<&[T], O> ) => &[T] -> IResult<&[T], &[T]>`
 /// if the child parser was successful, return the consumed input as produced value
@@ -79,7 +80,7 @@ macro_rules! tag_bytes (
       let b       = &$bytes[..m];
 
       let res: $crate::IResult<_,_> = if reduced != b {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Tag, $i))
+        $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
       } else if m < blen {
         $crate::IResult::Incomplete($crate::Needed::Size(blen))
       } else {
@@ -134,7 +135,7 @@ macro_rules! is_not_bytes (
         }
         false
       }) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsNot,$input)),
+        Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::IsNot,$input)),
         Some(n) => {
           let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
@@ -195,7 +196,7 @@ macro_rules! is_a_bytes (
         }
         true
       }) {
-        Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::IsA,$input)),
+        Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::IsA,$input)),
         Some(n) => {
           let res: $crate::IResult<_,_> = $crate::IResult::Done(&$input[n..], &$input[..n]);
           res
@@ -273,7 +274,7 @@ macro_rules! escaped_impl (
             }
           } else if $i[index] == $control_char as u8 {
             if index + 1 >= $i.len() {
-              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Escaped,&$i[index..]));
+              return $crate::IResult::Error(error_position!($crate::ErrorKind::Escaped,&$i[index..]));
             } else {
               match $escapable!(&$i[index+1..], $($args2)*) {
                 $crate::IResult::Done(i,_) => {
@@ -289,7 +290,7 @@ macro_rules! escaped_impl (
             }
           } else {
             if index == 0 {
-              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::Escaped,&$i[index..]))
+              return $crate::IResult::Error(error_position!($crate::ErrorKind::Escaped,&$i[index..]))
             } else {
               return $crate::IResult::Done(&$i[index..], &$i[..index])
             }
@@ -301,7 +302,7 @@ macro_rules! escaped_impl (
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
-          return $crate::IResult::Error($crate::Err::NodePosition($crate::ErrorKind::Escaped, $i, Box::new(e)))
+          return $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i, e))
         }
       }
     }
@@ -316,7 +317,10 @@ macro_rules! escaped_impl (
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///
-/// ```
+/// WARNING: if you do not use the `verbose-errors` feature, this combinator will currently fail to build
+/// because of a type inference error
+///
+/// ```ignore
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
 /// # use nom::alpha;
@@ -384,13 +388,13 @@ macro_rules! escaped_transform_impl (
           if let $crate::IResult::Done(i,o) = $normal!(&$i[index..], $($args)*) {
             res.extend(o.iter().cloned());
             if i.is_empty() {
-              return $crate::IResult::Done(&$i[$i.input_len()..], res)
+              return $crate::IResult::Done(&$i[$i.input_len()..], res);
             } else {
               index = $i.offset(i);
             }
           } else if $i[index] == $control_char as u8 {
             if index + 1 >= $i.len() {
-              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::EscapedTransform,&$i[index..]));
+              return $crate::IResult::Error(error_position!($crate::ErrorKind::EscapedTransform,&$i[index..]));
             } else {
               match $transform!(&$i[index+1..], $($args2)*) {
                 $crate::IResult::Done(i,o) => {
@@ -407,7 +411,7 @@ macro_rules! escaped_transform_impl (
             }
           } else {
             if index == 0 {
-              return $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::EscapedTransform,&$i[index..]))
+              return $crate::IResult::Error(error_position!($crate::ErrorKind::EscapedTransform,&$i[index..]))
             } else {
               return $crate::IResult::Done(&$i[index..], res)
             }
@@ -419,7 +423,7 @@ macro_rules! escaped_transform_impl (
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
-          return $crate::IResult::Error($crate::Err::NodePosition($crate::ErrorKind::EscapedTransform, $i, Box::new(e)))
+          return $crate::IResult::Error(error_node_position!($crate::ErrorKind::EscapedTransform, $i, e))
         }
       }
     }
@@ -476,10 +480,10 @@ macro_rules! take_while1 (
 
       use $crate::InputLength;
       if input.input_len() == 0 {
-        $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,input))
+        $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1,input))
       } else {
         match input.iter().position(|c| !$submac!(*c, $($args)*)) {
-          Some(0) => $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeWhile1,input)),
+          Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1,input)),
           Some(n) => {
             $crate::IResult::Done(&input[n..], &input[..n])
           },
@@ -608,7 +612,7 @@ macro_rules! take_until_and_consume_bytes (
         if parsed {
           $crate::IResult::Done(&$i[(index + $bytes.len())..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilAndConsume,$i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsume,$i))
         }
       };
       res
@@ -662,7 +666,7 @@ macro_rules! take_until_bytes(
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntil,$i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntil,$i))
         }
       };
       res
@@ -719,7 +723,7 @@ macro_rules! take_until_either_and_consume_bytes(
         if parsed {
           $crate::IResult::Done(&$i[(index+1)..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilEitherAndConsume,$i))
+          $crate::IResult::Error($crate::Err::error_position!($crate::ErrorKind::TakeUntilEitherAndConsume,$i))
         }
       };
       res
@@ -775,7 +779,7 @@ macro_rules! take_until_either_bytes(
         if parsed {
           $crate::IResult::Done(&$i[index..], &$i[0..index])
         } else {
-          $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilEither,$i))
+          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilEither,$i))
         }
       };
       res
@@ -816,7 +820,6 @@ macro_rules! length_bytes(
 mod tests {
   use internal::Needed;
   use internal::IResult::*;
-  use internal::Err::*;
   use util::ErrorKind;
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
 
@@ -831,7 +834,7 @@ mod tests {
     assert_eq!(a_or_b(b), Done(&b"cde"[..], &b"b"[..]));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Error(Position(ErrorKind::IsA,c)));
+    assert_eq!(a_or_b(c), Error(error_position!(ErrorKind::IsA,c)));
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Done(&b"cdef"[..], &b"ba"[..]));
@@ -848,7 +851,7 @@ mod tests {
     assert_eq!(a_or_b(b), Done(&b"bde"[..], &b"c"[..]));
 
     let c = &b"abab"[..];
-    assert_eq!(a_or_b(c), Error(Position(ErrorKind::IsNot,c)));
+    assert_eq!(a_or_b(c), Error(error_position!(ErrorKind::IsNot,c)));
 
     let d = &b"cdefba"[..];
     assert_eq!(a_or_b(d), Done(&b"ba"[..], &b"cdef"[..]));
@@ -868,19 +871,22 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], &b"\\\"abcd"[..]));
     assert_eq!(esc(&b"\\n"[..]), Done(&b""[..], &b"\\n"[..]));
     assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], &b"ab\\\""[..]));
-    assert_eq!(esc(&b"AB\\"[..]), Error(NodePosition(ErrorKind::Escaped, &b"AB\\"[..], Box::new(Position(ErrorKind::Escaped, &b"\\"[..])))));
-    assert_eq!(esc(&b"AB\\A"[..]), Error(NodePosition(ErrorKind::Escaped, &b"AB\\A"[..], Box::new(Position(ErrorKind::IsA, &b"A"[..])))));
+    assert_eq!(esc(&b"AB\\"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\"[..],
+      error_position!(ErrorKind::Escaped, &b"\\"[..]))));
+    assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\A"[..],
+      error_position!(ErrorKind::IsA, &b"A"[..]))));
   }
 
   fn to_s(i:Vec<u8>) -> String {
     String::from_utf8_lossy(&i).into_owned()
   }
 
+  #[cfg(feature = "verbose-errors")]
   #[test]
   fn escape_transform() {
     use std::str;
 
-    named!(esc< String >, map!(escaped_transform!(alpha, '\\',
+    named!(esc<String>, map!(escaped_transform!(alpha, '\\',
       alt!(
           tag!("\\")       => { |_| &b"\\"[..] }
         | tag!("\"")       => { |_| &b"\""[..] }
@@ -893,8 +899,9 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], String::from("\"abcd")));
     assert_eq!(esc(&b"\\n"[..]), Done(&b""[..], String::from("\n")));
     assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], String::from("ab\"")));
-    assert_eq!(esc(&b"AB\\"[..]), Error(NodePosition(ErrorKind::EscapedTransform, &b"AB\\"[..], Box::new(Position(ErrorKind::EscapedTransform, &b"\\"[..])))));
-    assert_eq!(esc(&b"AB\\A"[..]), Error(NodePosition(ErrorKind::EscapedTransform, &b"AB\\A"[..], Box::new(Position(ErrorKind::Alt, &b"A"[..])))));
+    assert_eq!(esc(&b"AB\\"[..]), Error(error_node_position!(ErrorKind::EscapedTransform, &b"AB\\"[..], error_position!(ErrorKind::EscapedTransform, &b"\\"[..]))));
+    assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::EscapedTransform, &b"AB\\A"[..],
+      error_position!(ErrorKind::Alt, &b"A"[..]))));
 
     let e = "è";
     let a = "à";
@@ -940,7 +947,7 @@ mod tests {
 
     println!("Done 2\n");
     let r3 = x(&b"abcefg"[..]);
-    assert_eq!(r3,  Error(Position(ErrorKind::TakeUntilAndConsume, &b"abcefg"[..])));
+    assert_eq!(r3,  Error(error_position!(ErrorKind::TakeUntilAndConsume, &b"abcefg"[..])));
 
     assert_eq!(
       x(&b"ab"[..]),
@@ -953,7 +960,7 @@ mod tests {
     named!(x, take_until_either!("!."));
     assert_eq!(
       x(&b"123"[..]),
-      Error(Position(ErrorKind::TakeUntilEither, &b"123"[..]))
+      Error(error_position!(ErrorKind::TakeUntilEither, &b"123"[..]))
     );
   }
 
@@ -966,7 +973,7 @@ mod tests {
     );
     assert_eq!(
       y(&b"123"[..]),
-      Error(Position(ErrorKind::TakeUntil, &b"123"[..]))
+      Error(error_position!(ErrorKind::TakeUntil, &b"123"[..]))
     );
   }
 
@@ -1031,10 +1038,10 @@ mod tests {
     let c = b"abcd123";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Error(Position(ErrorKind::TakeWhile1, &b""[..])));
+    assert_eq!(f(&a[..]), Error(error_position!(ErrorKind::TakeWhile1, &b""[..])));
     assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
     assert_eq!(f(&c[..]), Done(&b"123"[..], &b[..]));
-    assert_eq!(f(&d[..]), Error(Position(ErrorKind::TakeWhile1, &d[..])));
+    assert_eq!(f(&d[..]), Error(error_position!(ErrorKind::TakeWhile1, &d[..])));
   }
 
   #[cfg(feature = "nightly")]
