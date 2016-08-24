@@ -246,7 +246,7 @@ macro_rules! error_code(
 #[cfg(feature = "verbose-errors")]
 #[macro_export]
 macro_rules! error_node(
-  ($code:expr, $next:expr) => ($crate::Err::Node($code, Box::new($next)));
+  ($code:expr, $next:expr) => ($crate::Err::Node($code, ::std::boxed::Box::new($next)));
 );
 
 #[cfg(not(feature = "verbose-errors"))]
@@ -270,7 +270,7 @@ macro_rules! error_position(
 #[cfg(feature = "verbose-errors")]
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input:expr, $next:expr) => ($crate::Err::NodePosition($code, $input, Box::new($next)));
+  ($code:expr, $input:expr, $next:expr) => ($crate::Err::NodePosition($code, $input, ::std::boxed::Box::new($next)));
 );
 
 #[cfg(not(feature = "verbose-errors"))]

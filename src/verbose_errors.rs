@@ -1,6 +1,7 @@
 use util::ErrorKind;
 use internal::IResult;
 use internal::IResult::*;
+use std::boxed::Box;
 
 /// Contains the error that a parser can return
 ///
@@ -51,6 +52,7 @@ impl<I,O,E> IResult<I,O,E> {
 /// # use nom::IResult::Error;
 /// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
+/// # use std::boxed::Box;
 /// # fn main() {
 ///     // will add a Custom(42) error to the error chain
 ///     named!(err_test, add_error!(ErrorKind::Custom(42), tag!("abcd")));
