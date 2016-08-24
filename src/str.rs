@@ -108,7 +108,7 @@ macro_rules! is_not_s (
       } else if offset < input.len() {
         $crate::IResult::Done(&input[offset..], &input[..offset])
       } else {
-        $crate::IResult::Done("", input)
+        $crate::IResult::Done(&input[input.len()..], input)
       };
       res
     }
@@ -151,7 +151,7 @@ macro_rules! is_a_s (
       } else if offset < input.len() {
         $crate::IResult::Done(&input[offset..], &input[..offset])
       } else {
-        $crate::IResult::Done("", input)
+        $crate::IResult::Done(&input[input.len()..], input)
       };
       res
     }
@@ -192,7 +192,7 @@ macro_rules! take_while_s (
       let res: $crate::IResult<_,_> = if offset < input.len() {
         $crate::IResult::Done(&input[offset..], &input[..offset])
       } else {
-        $crate::IResult::Done("", input)
+        $crate::IResult::Done(&input[input.len()..], input)
       };
       res
     }
@@ -236,7 +236,7 @@ macro_rules! take_while1_s (
       } else if offset < input.len() {
         $crate::IResult::Done(&input[offset..], &input[..offset])
       } else {
-        $crate::IResult::Done("", input)
+        $crate::IResult::Done(&input[input.len()..], input)
       };
       res
     }
@@ -268,7 +268,7 @@ macro_rules! take_till_s (
       let res: $crate::IResult<_,_> = if offset < input.len() {
         $crate::IResult::Done(&input[offset..], &input[..offset])
       } else {
-        $crate::IResult::Done("", input)
+        $crate::IResult::Done(&input[input.len()..], input)
       };
       res
     }
@@ -316,7 +316,7 @@ macro_rules! take_until_and_consume_s (
           if offset < input.len() {
             $crate::IResult::Done(&input[offset..], &input[..offset])
           } else {
-            $crate::IResult::Done("", input)
+            $crate::IResult::Done(&input[input.len()..], input)
           }
         } else {
           $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TakeUntilAndConsumeStr,input))
