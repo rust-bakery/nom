@@ -21,7 +21,7 @@
 macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
     {
-      let input = $i as &str;
+      let input: &str = $i;
       let res: $crate::IResult<_,_> = if $tag.len() > input.len() {
         $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
       } else if (input).starts_with($tag) {
@@ -53,7 +53,7 @@ macro_rules! tag_s (
 macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
-      let input = $i as &str;
+      let input: &str = $i;
       let cnt = $count as usize;
       let res: $crate::IResult<_,_> = if input.chars().count() < cnt {
         $crate::IResult::Incomplete($crate::Needed::Size(cnt))
@@ -92,7 +92,7 @@ macro_rules! take_s (
 macro_rules! is_not_s (
   ($input:expr, $arr:expr) => (
     {
-      let input = $input as &str;
+      let input: &str = $input;
 
       use std::collections::HashSet;
       let set: HashSet<char> = $arr.chars().collect();
@@ -135,7 +135,7 @@ macro_rules! is_not_s (
 macro_rules! is_a_s (
   ($input:expr, $arr:expr) => (
     {
-      let input = $input as &str;
+      let input: &str = $input;
 
       use std::collections::HashSet;
       let set: HashSet<char> = $arr.chars().collect();
@@ -180,7 +180,7 @@ macro_rules! is_a_s (
 macro_rules! take_while_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input = $input as &str;
+      let input: &str = $input;
 
       let mut offset = input.len();
       for (o, c) in input.char_indices() {
@@ -222,7 +222,7 @@ macro_rules! take_while_s (
 macro_rules! take_while1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input = $input as &str;
+      let input: &str = $input;
 
       let mut offset = input.len();
       for (o, c) in input.char_indices() {
@@ -256,7 +256,7 @@ macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
 
     {
-      let input = $input as &str;
+      let input: &str = $input;
 
       let mut offset = input.len();
       for (o, c) in input.char_indices() {
@@ -284,7 +284,7 @@ macro_rules! take_till_s (
 macro_rules! take_until_and_consume_s (
   ($input:expr, $substr:expr) => (
     {
-      let input = $input as &str;
+      let input: &str = $input;
 
       #[inline(always)]
       fn shift_window_and_cmp(window: & mut ::std::vec::Vec<char>, c: char, substr_vec: & ::std::vec::Vec<char>) -> bool {
@@ -333,7 +333,7 @@ macro_rules! take_until_and_consume_s (
 macro_rules! take_until_s (
   ($input:expr, $substr:expr) => (
     {
-      let input = $input as &str;
+      let input: &str = $input;
 
       #[inline(always)]
       fn shift_window_and_cmp(window: & mut Vec<char>, c: char, substr_vec: &Vec<char>) -> bool {

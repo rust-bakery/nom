@@ -18,7 +18,7 @@
 macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
       use $crate::HexDisplay;
       match $submac!(input, $($args)*) {
         $crate::IResult::Done(i,_)     => {
@@ -53,7 +53,7 @@ macro_rules! recognize (
 macro_rules! tag (
   ($i:expr, $inp: expr) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       #[inline(always)]
       fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -108,7 +108,7 @@ macro_rules! tag_bytes (
 macro_rules! is_not(
   ($input:expr, $arr:expr) => (
     {
-      let input = $input as &[u8];
+      let input: &[u8] = $input;
 
       #[inline(always)]
       fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -169,7 +169,7 @@ macro_rules! is_not_bytes (
 macro_rules! is_a (
   ($input:expr, $arr:expr) => (
     {
-      let input = $input as &[u8];
+      let input: &[u8] = $input;
 
       #[inline(always)]
       fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -230,7 +230,7 @@ macro_rules! is_a_bytes (
 macro_rules! escaped (
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       escaped1!(input, $submac!($($args)*), $control_char, $($rest)*)
     }
@@ -348,7 +348,7 @@ macro_rules! escaped_impl (
 macro_rules! escaped_transform (
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       escaped_transform1!(input, $submac!($($args)*), $control_char, $($rest)*)
     }
@@ -450,7 +450,7 @@ macro_rules! escaped_transform_impl (
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input = $input as &[u8];
+      let input: &[u8] = $input;
 
       match input.iter().position(|c| !$submac!(*c, $($args)*)) {
         Some(n) => {
@@ -476,7 +476,7 @@ macro_rules! take_while (
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input = $input as &[u8];
+      let input: &[u8] = $input;
 
       use $crate::InputLength;
       if input.input_len() == 0 {
@@ -507,7 +507,7 @@ macro_rules! take_while1 (
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input = $input as &[u8];
+      let input: &[u8] = $input;
 
       use $crate::InputLength;
       match input.iter().position(|c| $submac!(c, $($args)*)) {
@@ -540,7 +540,7 @@ macro_rules! take_till (
 macro_rules! take (
   ($i:expr, $count:expr) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       let cnt = $count as usize;
       let res: $crate::IResult<_,_> = if input.len() < cnt {
@@ -559,7 +559,7 @@ macro_rules! take (
 macro_rules! take_str (
  ( $i:expr, $size:expr ) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       map_res!(input, take!($size), ::std::str::from_utf8)
     }
@@ -572,7 +572,7 @@ macro_rules! take_str (
 macro_rules! take_until_and_consume(
   ($i:expr, $inp:expr) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       #[inline(always)]
       fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -626,7 +626,7 @@ macro_rules! take_until_and_consume_bytes (
 macro_rules! take_until(
   ($i:expr, $inp:expr) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       #[inline(always)]
       fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -680,7 +680,7 @@ macro_rules! take_until_bytes(
 macro_rules! take_until_either_and_consume(
   ($i:expr, $inp:expr) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       #[inline(always)]
       fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -736,7 +736,7 @@ macro_rules! take_until_either_and_consume_bytes(
 macro_rules! take_until_either(
   ($i:expr, $inp:expr) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       #[inline(always)]
       fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -794,7 +794,7 @@ macro_rules! take_until_either_bytes(
 macro_rules! length_bytes(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input = $i as &[u8];
+      let input: &[u8] = $i;
 
       match  $submac!(input, $($args)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
