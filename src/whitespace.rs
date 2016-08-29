@@ -162,9 +162,7 @@ macro_rules! eat_separator (
     {
       use $crate::util::{InputLength,IterIndices};
       use std::str;
-      println!("got input: \"{}\"", str::from_utf8($i).unwrap());
       if ($i).input_len() == 0 {
-        println!("empty input");
         $crate::IResult::Done($i, &($i)[0..0])
       } else {
         match ($i).iter_indices().position(|(_, item)| {
@@ -174,11 +172,9 @@ macro_rules! eat_separator (
           true
         }) {
           Some(index) => {
-            println!("got index: {}", index);
             $crate::IResult::Done(&($i)[index..], &($i)[..index])
           },
           None        => {
-            println!("got no index");
             $crate::IResult::Done(&($i)[($i).input_len()..], $i)
           }
         }
