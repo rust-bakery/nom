@@ -1237,7 +1237,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt_parser!($i, $subrule!($($args)*) => { $gen })
+    alt_complete!($i, $subrule!($($args)*) => { $gen })
   );
 
   ($i:expr, $e:ident) => (
@@ -1245,7 +1245,19 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
-    alt_parser!($i, $subrule!($($args)*))
+    {
+      match $subrule!( $i, $($args)* ) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Error(_)      => {
+          alt_complete!($i)
+        }
+      }
+    }
+  );
+
+  ($i:expr) => (
+    $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
   );
 );
 
