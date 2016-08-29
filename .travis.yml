@@ -25,7 +25,7 @@ script:
   - travis-cargo --only 1.2     test  -- --features regexp
   - travis-cargo --only nightly build -- --features "nightly core regexp"
 
-  - travis-cargo test  -- $FEATURES
+  - echo $FEATURES && travis-cargo test  -- $FEATURES
   - travis-cargo bench
   - travis-cargo --only stable doc -- --features "stream regexp regexp_macros" --no-default-features
 
