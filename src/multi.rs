@@ -146,24 +146,29 @@ macro_rules! many0(
 
       loop {
         if input.input_len() == 0 {
-          ret = $crate::IResult::Done(input, res); break;
+          ret = $crate::IResult::Done(input, res);
+          break;
         }
 
         match $submac!(input, $($args)*) {
           $crate::IResult::Error(_)                            => {
-            ret = $crate::IResult::Done(input, res); break;
+            ret = $crate::IResult::Done(input, res);
+            break;
           },
           $crate::IResult::Incomplete($crate::Needed::Unknown) => {
-            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+            break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
             let size = i + ($i).input_len() - input.input_len();
-            ret = $crate::IResult::Incomplete($crate::Needed::Size(size)); break;
+            ret = $crate::IResult::Incomplete($crate::Needed::Size(size));
+            break;
           },
           $crate::IResult::Done(i, o)                          => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Many0,input)); break;
+              ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Many0,input));
+              break;
             }
 
             res.push(o);
@@ -208,7 +213,9 @@ macro_rules! many1(
     {
       use $crate::InputLength;
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Error(error_position!($crate::ErrorKind::Many1,$i)),
+        $crate::IResult::Error(_)      => $crate::IResult::Error(
+          error_position!($crate::ErrorKind::Many1,$i)
+        ),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,o1)   => {
           if i1.input_len() == 0 {
@@ -218,7 +225,8 @@ macro_rules! many1(
             let mut res    = ::std::vec::Vec::with_capacity(4);
             res.push(o1);
             let mut input  = i1;
-            let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+            let mut incomplete: ::std::option::Option<$crate::Needed> =
+              ::std::option::Option::None;
             loop {
               if input.input_len() == 0 {
                 break;
@@ -232,7 +240,9 @@ macro_rules! many1(
                   break;
                 },
                 $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-                  incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                  incomplete = ::std::option::Option::Some(
+                    $crate::Needed::Size(i + ($i).input_len() - input.input_len())
+                  );
                   break;
                 },
                 $crate::IResult::Done(i, o) => {
@@ -260,7 +270,8 @@ macro_rules! many1(
 );
 
 /// `many_m_n!(usize, usize, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// Applies the parser between m and n times (n included) and returns the list of results in a Vec
+/// Applies the parser between m and n times (n included) and returns the list of
+/// results in a Vec
 ///
 /// the embedded parser may return Incomplete
 ///
@@ -315,7 +326,9 @@ macro_rules! many_m_n(
             break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-            incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+            incomplete = ::std::option::Option::Some(
+              $crate::Needed::Size(i + ($i).input_len() - input.input_len())
+            );
             break;
           },
         }
@@ -330,7 +343,9 @@ macro_rules! many_m_n(
         } else {
           match incomplete {
             ::std::option::Option::Some(i) => $crate::IResult::Incomplete(i),
-            ::std::option::Option::None    => $crate::IResult::Incomplete($crate::Needed::Unknown)
+            ::std::option::Option::None    => $crate::IResult::Incomplete(
+              $crate::Needed::Unknown
+            )
           }
         }
       } else {
@@ -377,7 +392,8 @@ macro_rules! count(
 
       loop {
         if res.len() == $count {
-          ret = $crate::IResult::Done(input, res); break;
+          ret = $crate::IResult::Done(input, res);
+          break;
         }
 
         match $submac!(input, $($args)*) {
@@ -386,10 +402,12 @@ macro_rules! count(
             input = i;
           },
           $crate::IResult::Error(_)  => {
-            ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Count,$i)); break;
+            ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Count,$i));
+            break;
           },
           $crate::IResult::Incomplete(_) => {
-            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+            break;
           }
         }
       }
@@ -448,10 +466,12 @@ macro_rules! count_fixed (
             input = i;
           },
           $crate::IResult::Error(_)  => {
-            ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Count,$i)); break;
+            ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Count,$i));
+            break;
           },
           $crate::IResult::Incomplete(_) => {
-            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+            break;
           }
         }
       }
@@ -490,12 +510,17 @@ macro_rules! length_value(
                 input = iparse;
               },
               $crate::IResult::Error(_)      => {
-                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::LengthValue,$i)); break;
+                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::LengthValue,$i));
+                break;
               },
               $crate::IResult::Incomplete(a) => {
                 ret = match a {
-                  $crate::Needed::Unknown      => $crate::IResult::Incomplete($crate::Needed::Unknown),
-                  $crate::Needed::Size(length) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + onum as usize * length))
+                  $crate::Needed::Unknown      => $crate::IResult::Incomplete(
+                    $crate::Needed::Unknown
+                  ),
+                  $crate::Needed::Size(length) => $crate::IResult::Incomplete(
+                    $crate::Needed::Size(length_token + onum as usize * length)
+                  )
                 };
                 break;
               }
@@ -529,12 +554,17 @@ macro_rules! length_value(
                 input = iparse;
               },
               $crate::IResult::Error(_)      => {
-                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::LengthValue,$i)); break;
+                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::LengthValue,$i));
+                break;
               },
               $crate::IResult::Incomplete(a) => {
                 ret = match a {
-                  $crate::Needed::Unknown => $crate::IResult::Incomplete($crate::Needed::Unknown),
-                  $crate::Needed::Size(_) => $crate::IResult::Incomplete($crate::Needed::Size(length_token + onum as usize * $length))
+                  $crate::Needed::Unknown => $crate::IResult::Incomplete(
+                    $crate::Needed::Unknown
+                  ),
+                  $crate::Needed::Size(_) => $crate::IResult::Incomplete(
+                    $crate::Needed::Size(length_token + onum as usize * $length)
+                  )
                 };
                 break;
               }
@@ -557,7 +587,8 @@ macro_rules! length_value(
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
 /// # fn main() {
-///  named!(multi<&[u8], Vec<&[u8]> >, fold_many0!( tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
+///  named!(multi<&[u8], Vec<&[u8]> >,
+///    fold_many0!( tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
 ///      acc.push(item);
 ///      acc
 ///  }));
@@ -583,24 +614,31 @@ macro_rules! fold_many0(
 
       loop {
         if input.input_len() == 0 {
-          ret = $crate::IResult::Done(input, res); break;
+          ret = $crate::IResult::Done(input, res);
+          break;
         }
 
         match $submac!(input, $($args)*) {
           $crate::IResult::Error(_)                            => {
-            ret = $crate::IResult::Done(input, res); break;
+            ret = $crate::IResult::Done(input, res);
+            break;
           },
           $crate::IResult::Incomplete($crate::Needed::Unknown) => {
-            ret = $crate::IResult::Incomplete($crate::Needed::Unknown); break;
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+            break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
             let size = i + ($i).input_len() - input.input_len();
-            ret = $crate::IResult::Incomplete($crate::Needed::Size(size)); break;
+            ret = $crate::IResult::Incomplete($crate::Needed::Size(size));
+            break;
           },
           $crate::IResult::Done(i, o)                          => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Many0,input)); break;
+              ret = $crate::IResult::Error(
+                error_position!($crate::ErrorKind::Many0,input)
+              );
+              break;
             }
 
             res = f(res, o);
@@ -629,7 +667,8 @@ macro_rules! fold_many0(
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///  named!(multi<&[u8], Vec<&[u8]> >, fold_many1!( tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
+///  named!(multi<&[u8], Vec<&[u8]> >,
+///    fold_many1!( tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
 ///      acc.push(item);
 ///      acc
 ///  }));
@@ -648,7 +687,9 @@ macro_rules! fold_many1(
     {
       use $crate::InputLength;
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Error(error_position!($crate::ErrorKind::Many1,$i)),
+        $crate::IResult::Error(_)      => $crate::IResult::Error(
+          error_position!($crate::ErrorKind::Many1,$i)
+        ),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,o1)   => {
           let acc = $init;
@@ -659,7 +700,8 @@ macro_rules! fold_many1(
           } else {
             let mut acc = f(acc, o1);
             let mut input  = i1;
-            let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+            let mut incomplete: ::std::option::Option<$crate::Needed> =
+              ::std::option::Option::None;
             loop {
               if input.input_len() == 0 {
                 break;
@@ -673,7 +715,9 @@ macro_rules! fold_many1(
                   break;
                 },
                 $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-                  incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+                  incomplete = ::std::option::Option::Some(
+                    $crate::Needed::Size(i + ($i).input_len() - input.input_len())
+                  );
                   break;
                 },
                 $crate::IResult::Done(i, o) => {
@@ -712,7 +756,8 @@ macro_rules! fold_many1(
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///  named!(multi<&[u8], Vec<&[u8]> >, fold_many_m_n!(2, 4, tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
+///  named!(multi<&[u8], Vec<&[u8]> >,
+///    fold_many_m_n!(2, 4, tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
 ///      acc.push(item);
 ///      acc
 ///  }));
@@ -760,7 +805,9 @@ macro_rules! fold_many_m_n(
             break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-            incomplete = ::std::option::Option::Some($crate::Needed::Size(i + ($i).input_len() - input.input_len()));
+            incomplete = ::std::option::Option::Some(
+              $crate::Needed::Size(i + ($i).input_len() - input.input_len())
+            );
             break;
           },
         }
