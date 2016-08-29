@@ -1,22 +1,17 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,digit, multispace};
+use nom::{IResult,digit};
 
 use std::str;
 use std::str::FromStr;
 
-named!(parens<i64>, delimited!(
-    delimited!(opt!(multispace), tag!("("), opt!(multispace)),
-    expr,
-    delimited!(opt!(multispace), tag!(")"), opt!(multispace))
-  )
-);
+named!(parens<i64>, ws!(delimited!( tag!("("), expr, tag!(")") )) );
 
 named!(factor<i64>, alt!(
     map_res!(
       map_res!(
-        delimited!(opt!(multispace), digit, opt!(multispace)),
+        ws!(digit),
         str::from_utf8
       ),
       FromStr::from_str
