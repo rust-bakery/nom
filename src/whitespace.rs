@@ -21,7 +21,10 @@ macro_rules! wrap_sep (
         }
       }
     }
-  )
+  );
+  ($i:expr, $separator:expr, $f:expr) => (
+    wrap_sep!($i, $separator, call!($f))
+  );
 );
 
 #[macro_export]
@@ -211,7 +214,7 @@ macro_rules! sep (
     wrap_sep!($i, $separator, $submac!($($args)*))
   };
   ($i:expr, $separator:ident, $f:expr) => {
-    wrap_sep!($i, $separator, $f)
+    wrap_sep!($i, $separator, call!($f))
   };
 );
 
