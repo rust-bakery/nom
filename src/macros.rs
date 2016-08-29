@@ -994,6 +994,7 @@ macro_rules! tuple_parser (
     }
   );
 );
+
 /// `alt!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>`
 /// try a list of parsers, return the result of the first successful one
 ///
