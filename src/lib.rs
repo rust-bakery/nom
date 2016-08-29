@@ -125,6 +125,7 @@ pub use self::bits::*;
 
 pub use self::nom::*;
 pub use self::character::*;
+pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
 pub use self::regexp::*;
@@ -150,6 +151,7 @@ pub use self::str::*;
 
 #[macro_use] mod nom;
 #[macro_use] mod character;
+#[macro_use] mod whitespace;
 
 #[cfg(feature = "regexp")]
 #[macro_use] mod regexp;
