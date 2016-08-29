@@ -161,7 +161,6 @@ macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
       use $crate::util::{InputLength,IterIndices};
-      use std::str;
       if ($i).input_len() == 0 {
         $crate::IResult::Done($i, &($i)[0..0])
       } else {
