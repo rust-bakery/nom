@@ -119,6 +119,7 @@ pub use self::simple_errors::*;
 
 pub use self::internal::*;
 pub use self::macros::*;
+pub use self::sequence::*;
 pub use self::multi::*;
 pub use self::methods::*;
 pub use self::bytes::*;
@@ -148,6 +149,7 @@ pub use self::str::*;
 
 #[macro_use] mod internal;
 #[macro_use] mod macros;
+#[macro_use] mod sequence;
 #[macro_use] mod multi;
 #[macro_use] mod methods;
 #[macro_use] mod bytes;
