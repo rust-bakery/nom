@@ -386,22 +386,25 @@ macro_rules! permutation (
 #[macro_export]
 macro_rules! permutation_init (
   ((), $e:ident, $($rest:tt)*) => (
-    permutation_init!((None), $($rest)*);
+    permutation_init!((None), $($rest)*)
   );
   ((), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!((None), $($rest)*);
+    permutation_init!((None), $($rest)*)
   );
-  (($($parsed:tt)*), $e:ident, $($rest:tt)*) => (
-    permutation_init!(($($parsed)* , None), $($rest)*);
+  (($($parsed:expr),*), $e:ident, $($rest:tt)*) => (
+    permutation_init!(($($parsed),* , None), $($rest)*);
   );
-  (($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!(($($parsed)* , None), $($rest)*);
+  (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    permutation_init!(($($parsed),* , None), $($rest)*);
   );
-  (($($parsed:tt)*), $e:ident) => (
-    ($($parsed)* , None)
+  (($($parsed:expr),*), $e:ident) => (
+    ($($parsed),* , None)
   );
-  (($($parsed:tt)*), $submac:ident!( $($args:tt)* )) => (
-    ($($parsed)* , None)
+  (($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
+    ($($parsed),* , None)
+  );
+  (($($parsed:expr),*),) => (
+    ($($parsed),*)
   );
 );
 
@@ -414,23 +417,35 @@ macro_rules! succ (
   (3, $submac:ident ! ($($rest:tt)*)) => ($submac!(4, $($rest)*));
 );
 
+// HACK: for some reason, Rust 1.11 does not accept $res.$it in
+// permutation_unwrap. This is a bit ugly, but it will have None
+// impact on the generated code
+#[doc(hidden)]
+#[macro_export]
+macro_rules! acc (
+  (0, $tup:expr) => ($tup.0);
+  (1, $tup:expr) => ($tup.1);
+  (2, $tup:expr) => ($tup.2);
+  (3, $tup:expr) => ($tup.3);
+);
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_unwrap (
-  ($it:tt,  (), $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!(($res.$it.unwrap()), $res, $($rest)*));
+  ($it:tt,  (), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!((acc!($it, $res).unwrap()), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:tt)*), $res:expr, $e:ident, $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!(($($parsed)* , $res.$it.unwrap()), $res, $($rest)*));
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident, $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res).unwrap()), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:tt)*), $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!(($($parsed)* , $res.$it.unwrap()), $res, $($rest)*));
+  ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res).unwrap()), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:tt)*), $res:expr, $e:ident) => (
-    ($($parsed)* , $res.$it.unwrap())
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident) => (
+    ($($parsed),* , { acc!($it, $res).unwrap() })
   );
-  ($it:tt, ($($parsed:tt)*), $res:expr, $submac:ident!( $($args:tt)* )) => (
-    ($($parsed)* , $res.$it.unwrap())
+  ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )) => (
+    ($($parsed),* , acc!($it, $res).unwrap() )
   );
 );
 
@@ -441,13 +456,13 @@ macro_rules! permutation_iterator (
     permutation_iterator!($it, $i, $all_done, $res, call!($e), $($rest)*);
   );
   ($it:tt, $i:expr, $all_done:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
-    if ($res).$it == None {
+    if acc!($it, $res) == None {
       match $submac!($i, $($args)*) {
         //$crate::IResult::Error(e)      => $crate::IResult::Error(e),
         //$crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           $i = i;
-          ($res).$it = Some(o);
+          acc!($it, $res) = Some(o);
           continue;
         },
         _ => {
@@ -461,13 +476,13 @@ macro_rules! permutation_iterator (
     permutation_iterator!($it, $i, $all_done, $res, call!($e));
   );
   ($it:tt, $i:expr, $all_done:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
-    if ($res).$it == None {
+    if acc!($it, $res) == None {
       match $submac!($i, $($args)*) {
         //$crate::IResult::Error(e)      => $crate::IResult::Error(e),
         //$crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           $i = i;
-          ($res).$it = Some(o);
+          acc!($it, $res) = Some(o);
           continue;
         },
         _ => {
