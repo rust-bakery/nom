@@ -354,24 +354,37 @@ macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
       use util::HexDisplay;
-      let mut res   = permutation_init!((), $($rest)*);
-      let mut input = $i;
-      let mut error = None;
+      let mut res    = permutation_init!((), $($rest)*);
+      let mut input  = $i;
+      let mut error  = None;
+      let mut needed = None;
 
       loop {
         let mut all_done = true;
         println!("res = {:?}, input:\n{}", res, input.to_hex(16));
-        permutation_iterator!(0, input, all_done, res, $($rest)*);
+        permutation_iterator!(0, input, all_done, needed, res, $($rest)*);
 
         //if we reach that part, it means none of the parsers were able to read anything
         if !all_done {
+          //FIXME: should wrap the error returned by the child parser
           error = Some(error_position!($crate::ErrorKind::Permutation, input));
         }
         break;
       }
 
-      //FIXME: handle incomplete
-      if let Some(e) = error {
+      if let Some(need) = needed {
+        if let $crate::Needed::Size(sz) = need {
+          $crate::IResult::Incomplete(
+            $crate::Needed::Size(
+              $crate::InputLength::input_len(&($i))  -
+              $crate::InputLength::input_len(&input) +
+              sz
+            )
+          )
+        } else {
+          $crate::IResult::Incomplete($crate::Needed::Unknown)
+        }
+      } else if let Some(e) = error {
         $crate::IResult::Error(e)
       } else {
         let unwrapped_res = permutation_unwrap!(0, (), res, $($rest)*);
@@ -452,41 +465,45 @@ macro_rules! permutation_unwrap (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_iterator (
-  ($it:tt,$i:expr, $all_done:expr, $res:expr, $e:ident, $($rest:tt)*) => (
-    permutation_iterator!($it, $i, $all_done, $res, call!($e), $($rest)*);
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident, $($rest:tt)*) => (
+    permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e), $($rest)*);
   );
-  ($it:tt, $i:expr, $all_done:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
+  ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
     if acc!($it, $res) == None {
       match $submac!($i, $($args)*) {
-        //$crate::IResult::Error(e)      => $crate::IResult::Error(e),
-        //$crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           $i = i;
           acc!($it, $res) = Some(o);
           continue;
         },
-        _ => {
+        $crate::IResult::Error(_) => {
           $all_done = false;
+        },
+        $crate::IResult::Incomplete(i) => {
+          $needed = Some(i);
+          break;
         }
       };
     }
-    succ!($it, permutation_iterator!($i, $all_done, $res, $($rest)*));
+    succ!($it, permutation_iterator!($i, $all_done, $needed, $res, $($rest)*));
   };
-  ($it:tt,$i:expr, $all_done:expr, $res:expr, $e:ident) => (
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident) => (
     permutation_iterator!($it, $i, $all_done, $res, call!($e));
   );
-  ($it:tt, $i:expr, $all_done:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
+  ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
     if acc!($it, $res) == None {
       match $submac!($i, $($args)*) {
-        //$crate::IResult::Error(e)      => $crate::IResult::Error(e),
-        //$crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           $i = i;
           acc!($it, $res) = Some(o);
           continue;
         },
-        _ => {
+        $crate::IResult::Error(_) => {
           $all_done = false;
+        },
+        $crate::IResult::Incomplete(i) => {
+          $needed = Some(i);
+          break;
         }
       };
     }
@@ -667,9 +684,7 @@ mod tests {
     let d = &b"efgxyzabcdefghi"[..];
     assert_eq!(perm(d), Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..])));
 
-    /*
     let e = &b"efgabc"[..];
-    assert_eq!(perm(e), Incomplete(Needed::Size(4)));
-    */
+    assert_eq!(perm(e), Incomplete(Needed::Size(7)));
   }
 }
