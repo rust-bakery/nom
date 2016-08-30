@@ -349,6 +349,135 @@ macro_rules! switch_impl (
   );
 );
 
+#[macro_export]
+macro_rules! permutation (
+  ($i:expr, $($rest:tt)*) => (
+    {
+      use util::HexDisplay;
+      let mut res: (Option<&[u8]>,Option<&[u8]>, Option<&[u8]>) = permutation_init!((), $($rest)*);
+      let mut input    = $i;
+      let mut error    = None;
+
+      loop {
+        let mut all_done = true;
+        println!("res = {:?}, input:\n{}", res, input.to_hex(16));
+        permutation_iterator!(0, input, all_done, res, $($rest)*);
+
+        //if we reach that part, it means none of the parsers were able to read anything
+        if !all_done {
+          error = Some(error_position!($crate::ErrorKind::Permutation, input));
+        }
+        break;
+      }
+
+      //FIXME: handle incomplete
+      if let Some(e) = error {
+        $crate::IResult::Error(e)
+      } else {
+        let unwrapped_res = permutation_unwrap!(0, (), res, $($rest)*);
+        $crate::IResult::Done(input, unwrapped_res)
+      }
+    }
+  );
+);
+
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! permutation_init (
+  ((), $e:ident, $($rest:tt)*) => (
+    permutation_init!((None), $($rest)*);
+  );
+  ((), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    permutation_init!((None), $($rest)*);
+  );
+  (($($parsed:tt)*), $e:ident, $($rest:tt)*) => (
+    permutation_init!(($($parsed)* , None), $($rest)*);
+  );
+  (($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    permutation_init!(($($parsed)* , None), $($rest)*);
+  );
+  (($($parsed:tt)*), $e:ident) => (
+    ($($parsed)* , None)
+  );
+  (($($parsed:tt)*), $submac:ident!( $($args:tt)* )) => (
+    ($($parsed)* , None)
+  );
+);
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! succ (
+  (0, $submac:ident ! ($($rest:tt)*)) => ($submac!(1, $($rest)*));
+  (1, $submac:ident ! ($($rest:tt)*)) => ($submac!(2, $($rest)*));
+  (2, $submac:ident ! ($($rest:tt)*)) => ($submac!(3, $($rest)*));
+  (3, $submac:ident ! ($($rest:tt)*)) => ($submac!(4, $($rest)*));
+);
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! permutation_unwrap (
+  ($it:tt,  (), $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!(($res.$it.unwrap()), $res, $($rest)*));
+  );
+  ($it:tt, ($($parsed:tt)*), $res:expr, $e:ident, $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!(($($parsed)* , $res.$it.unwrap()), $res, $($rest)*));
+  );
+  ($it:tt, ($($parsed:tt)*), $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!(($($parsed)* , $res.$it.unwrap()), $res, $($rest)*));
+  );
+  ($it:tt, ($($parsed:tt)*), $res:expr, $e:ident) => (
+    ($($parsed)* , $res.$it.unwrap())
+  );
+  ($it:tt, ($($parsed:tt)*), $res:expr, $submac:ident!( $($args:tt)* )) => (
+    ($($parsed)* , $res.$it.unwrap())
+  );
+);
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! permutation_iterator (
+  ($it:tt,$i:expr, $all_done:expr, $res:expr, $e:ident, $($rest:tt)*) => (
+    permutation_iterator!($it, $i, $all_done, $res, call!($e), $($rest)*);
+  );
+  ($it:tt, $i:expr, $all_done:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
+    if ($res).$it == None {
+      match $submac!($i, $($args)*) {
+        //$crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        //$crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i,o)     => {
+          $i = i;
+          ($res).$it = Some(o);
+          continue;
+        },
+        _ => {
+          $all_done = false;
+        }
+      };
+    }
+    succ!($it, permutation_iterator!($i, $all_done, $res, $($rest)*));
+  };
+  ($it:tt,$i:expr, $all_done:expr, $res:expr, $e:ident) => (
+    permutation_iterator!($it, $i, $all_done, $res, call!($e));
+  );
+  ($it:tt, $i:expr, $all_done:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
+    if ($res).$it == None {
+      match $submac!($i, $($args)*) {
+        //$crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        //$crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i,o)     => {
+          $i = i;
+          ($res).$it = Some(o);
+          continue;
+        },
+        _ => {
+          $all_done = false;
+        }
+      };
+    }
+  };
+);
+
 #[cfg(test)]
 mod tests {
   use internal::{Needed,IResult};
@@ -503,4 +632,29 @@ mod tests {
     assert_eq!(sw(c), Error(error_position!(ErrorKind::Switch, &b"afghijkl"[..])));
   }
 
+  #[test]
+  fn permutation() {
+    //trace_macros!(true);
+    named!(perm<(&[u8], &[u8], &[u8])>,
+      permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
+    );
+    //trace_macros!(false);
+
+    let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
+
+    let a = &b"abcdefghijk"[..];
+    assert_eq!(perm(a), Done(&b"jk"[..], expected));
+    let b = &b"efgabcdhijk"[..];
+    assert_eq!(perm(b), Done(&b"jk"[..], expected));
+    let c = &b"hiefgabcdjk"[..];
+    assert_eq!(perm(c), Done(&b"jk"[..], expected));
+
+    let d = &b"efgxyzabcdefghi"[..];
+    assert_eq!(perm(d), Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..])));
+
+    /*
+    let e = &b"efgabc"[..];
+    assert_eq!(perm(e), Incomplete(Needed::Size(4)));
+    */
+  }
 }
