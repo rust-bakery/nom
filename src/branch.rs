@@ -354,9 +354,9 @@ macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
       use util::HexDisplay;
-      let mut res: (Option<&[u8]>,Option<&[u8]>, Option<&[u8]>) = permutation_init!((), $($rest)*);
-      let mut input    = $i;
-      let mut error    = None;
+      let mut res   = permutation_init!((), $($rest)*);
+      let mut input = $i;
+      let mut error = None;
 
       loop {
         let mut all_done = true;
