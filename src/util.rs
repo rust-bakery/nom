@@ -655,7 +655,8 @@ pub enum ErrorKind<E=u32> {
   ManyMN,
   TakeUntilAndConsumeStr,
   TakeUntilStr,
-  Not
+  Not,
+  Permutation,
 }
 
 pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
@@ -715,6 +716,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::OctDigit                  => 61,
     ErrorKind::Many0                     => 62,
     ErrorKind::Not                       => 63,
+    ErrorKind::Permutation               => 64,
   }
 }
 
@@ -776,6 +778,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
         ErrorKind::TakeUntilStr              => "Take until on strings",
         ErrorKind::OctDigit                  => "Octal digit",
         ErrorKind::Not                       => "Negation",
+        ErrorKind::Permutation               => "Permutation",
       }
 
     }
