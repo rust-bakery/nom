@@ -588,6 +588,105 @@ macro_rules! delimited(
   );
 );
 
+#[macro_export]
+macro_rules! do_parse (
+  ($i:expr, $($rest:tt)*) => (
+    {
+      do_parse_impl!($i, 0usize, $($rest)*)
+    }
+  );
+);
+
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! do_parse_impl (
+
+  ($i:expr, $consumed:expr, ( $($rest:expr),* )) => (
+    $crate::IResult::Done($i, ( $($rest),* ))
+  );
+
+  ($i:expr, $consumed:expr, $e:ident >> $($rest:tt)*) => (
+    do_parse_impl!($i, $consumed, call!($e) >> $($rest)*);
+  );
+  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
+          $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
+          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,_)     => {
+          do_parse_impl!(i,
+            $consumed + ($crate::InputLength::input_len(&($i)) -
+                         $crate::InputLength::input_len(&i)), $($rest)*)
+        },
+      }
+    }
+	);
+
+  ($i:expr, $consumed:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
+    do_parse_impl!($i, $consumed, $field: call!($e) >> $($rest)*);
+  );
+
+  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+    {
+      match  $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
+          $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
+          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          let $field = o;
+          do_parse_impl!(i,
+            $consumed + ($crate::InputLength::input_len(&($i)) -
+                         $crate::InputLength::input_len(&i)), $($rest)*)
+        },
+      }
+    }
+  );
+
+  // ending the chain
+  ($i:expr, $consumed:expr, $e:ident >> ( $($rest:tt)* )) => (
+    do_parse_impl!($i, $consumed, call!($e) >> ( $($rest)* ));
+  );
+
+  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+    match $submac!($i, $($args)*) {
+      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
+        $crate::IResult::Incomplete($crate::Needed::Unknown),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
+        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Done(i,_)     => {
+        $crate::IResult::Done(i, ( $($rest)* ))
+      },
+    }
+  );
+
+  ($i:expr, $consumed:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
+    do_parse_impl!($i, $consumed, $field: call!($e) >> ( $($rest)* ) );
+  );
+
+  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+    match $submac!($i, $($args)*) {
+      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
+        $crate::IResult::Incomplete($crate::Needed::Unknown),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
+        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Done(i,o)     => {
+        let $field = o;
+        $crate::IResult::Done(i, ( $($rest)* ))
+      },
+    }
+  );
+
+);
+
+
 #[cfg(test)]
 mod tests {
   use internal::{Needed,IResult};
@@ -988,5 +1087,55 @@ mod tests {
     assert_eq!(tuple_3(&b"abcd"[..]), Incomplete(Needed::Size(5)));
     assert_eq!(tuple_3(&b"abcde"[..]), Incomplete(Needed::Size(7)));
     assert_eq!(tuple_3(&b"abcdejk"[..]), Error(error_position!(ErrorKind::Tag, &b"jk"[..])));
+  }
+
+  #[test]
+  fn do_parse() {
+    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
+
+    //trace_macros!(true);
+    named!(do_parser<&[u8], (u8, u8)>,
+      do_parse!(
+        tag!("abcd")       >>
+        opt!(tag!("abcd")) >>
+        aa: ret_int1       >>
+        tag!("efgh")       >>
+        bb: ret_int2       >>
+        tag!("efgh")       >>
+        (aa, bb)
+      )
+    );
+    //named!(do_parser<&[u8], (u8, u8)>,
+    //  do_parse!(
+    //    tag!("abcd") >> aa: ret_int1 >> tag!("efgh") >> bb: ret_int2 >> tag!("efgh") >> (aa, bb)
+    //  )
+    //);
+
+    //trace_macros!(false);
+
+    assert_eq!(do_parser(&b"abcdabcdefghefghX"[..]), Done(&b"X"[..], (1, 2)));
+    assert_eq!(do_parser(&b"abcdefghefghX"[..]), Done(&b"X"[..], (1, 2)));
+    assert_eq!(do_parser(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
+    assert_eq!(do_parser(&b"abcdefghef"[..]), Incomplete(Needed::Size(12)));
+  }
+
+  #[test]
+  fn do_parse_dependency() {
+    use nom::be_u8;
+
+    named!(length_value,
+      do_parse!(
+        length: be_u8         >>
+        bytes:  take!(length) >>
+        (bytes)
+      )
+    );
+
+    let a: Vec<u8>     = vec!(2, 3, 4, 5);
+    let res_a: Vec<u8> = vec!(3, 4);
+    assert_eq!(length_value(&a[..]), Done(&a[3..], &res_a[..]));
+    let b: Vec<u8>     = vec!(5, 3, 4, 5);
+    assert_eq!(length_value(&b[..]), Incomplete(Needed::Size(6)));
   }
 }
