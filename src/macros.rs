@@ -911,6 +911,19 @@ macro_rules! tap (
   );
 );
 
+//FIXME: needs tests and docs
+#[macro_export]
+macro_rules! eof (
+  ($i:expr) => {
+    use $crate::util::InputLength;
+    if ($i).input_len() == 0 {
+      $crate::IResult::Done($i, $i)
+    } else {
+      $crate::IResult::Error(error_position!(ErrorKind::Eof, î))
+    }
+  };
+);
+
 #[cfg(test)]
 mod tests {
   use internal::{Needed,IResult};
