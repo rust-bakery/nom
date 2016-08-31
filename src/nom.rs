@@ -523,21 +523,6 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
   }
 }
 
-/// Recognizes empty input buffers
-///
-/// useful to verify that the previous parsers used all of the input
-#[inline]
-//pub fn eof(input:&[u8]) -> IResult<&[u8], &[u8]> {
-pub fn eof<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
-    &'a T: InputLength {
-  if input.input_len() == 0 {
-      Done(input, input)
-  } else {
-      Error(error_position!(ErrorKind::Eof, input))
-  }
-}
-
 /// Recognizes non empty buffers
 #[inline]
 pub fn non_empty<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
@@ -838,11 +823,12 @@ mod tests {
     fn end_of_input() {
         let not_over = &b"Hello, world!"[..];
         let is_over = &b""[..];
+        named!(eof_test, eof!());
 
-        let res_not_over = eof(not_over);
+        let res_not_over = eof_test(not_over);
         assert_eq!(res_not_over, Error(error_position!(ErrorKind::Eof, not_over)));
 
-        let res_over = eof(is_over);
+        let res_over = eof_test(is_over);
         assert_eq!(res_over, Done(is_over, is_over));
     }
 

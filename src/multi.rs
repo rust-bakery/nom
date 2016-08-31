@@ -844,7 +844,7 @@ mod tests {
 
   use internal::IResult::*;
   use util::ErrorKind;
-  use nom::{be_u8,be_u16,le_u16,eof};
+  use nom::{be_u8,be_u16,le_u16};
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -1086,7 +1086,7 @@ mod tests {
     chain!(input,
       tag!("abcd")                   ~
       count_fixed!( u16, le_u16, 4 ) ~
-      eof                            ,
+      eof!()                         ,
       || { () }
     )
   }
