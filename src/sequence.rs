@@ -901,10 +901,10 @@ mod tests {
   fn err() {
     named!(err_test, alt!(
       tag!("abcd") |
-      preceded!(tag!("efgh"), error!(ErrorKind::Custom(42),
+      preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42),
           chain!(
                  tag!("ijkl")              ~
-            res: error!(ErrorKind::Custom(128), tag!("mnop")) ,
+            res: return_error!(ErrorKind::Custom(128), tag!("mnop")) ,
             || { res }
           )
         )

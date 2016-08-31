@@ -186,7 +186,7 @@ macro_rules! apply (
 /// This parser will do an early return instead of sending
 /// its result to the parent parser.
 ///
-/// If another `error!` combinator is present in the parent
+/// If another `return_error!` combinator is present in the parent
 /// chain, the error will be wrapped and another early
 /// return will be made.
 ///
@@ -207,10 +207,10 @@ macro_rules! apply (
 /// # fn main() {
 ///     named!(err_test, alt!(
 ///       tag!("abcd") |
-///       preceded!(tag!("efgh"), error!(ErrorKind::Custom(42),
+///       preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42),
 ///           chain!(
 ///                  tag!("ijkl")              ~
-///             res: error!(ErrorKind::Custom(128), tag!("mnop")) ,
+///             res: return_error!(ErrorKind::Custom(128), tag!("mnop")) ,
 ///             || { res }
 ///           )
 ///         )
@@ -233,7 +233,7 @@ macro_rules! apply (
 /// ```
 ///
 #[macro_export]
-macro_rules! error (
+macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       let cl = || {
@@ -250,7 +250,7 @@ macro_rules! error (
     }
   );
   ($i:expr, $code:expr, $f:expr) => (
-    error!($i, $code, call!($f));
+    return_error!($i, $code, call!($f));
   );
 );
 
