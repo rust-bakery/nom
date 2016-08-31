@@ -643,7 +643,7 @@ mod tests {
     assert_eq!(space(e), Done(&""[..], &" "[..]));
   }
 
-  use util::HexDisplay;
+  use util::Offset;
   #[test]
   fn offset() {
     let a = &b"abcd"[..];

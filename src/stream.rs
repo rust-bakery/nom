@@ -496,7 +496,7 @@ macro_rules! consumer_from_parser (
 
     impl $crate::Consumer<$input, $output, (), $crate::Move> for $name {
       fn handle(&mut self, input: $crate::Input<$input>) -> & $crate::ConsumerState<$output, (), $crate::Move> {
-      use $crate::HexDisplay;
+      use $crate::Offset;
         match input {
           $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
           $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
@@ -539,7 +539,7 @@ macro_rules! consumer_from_parser (
 
     impl<'a>  $crate::Consumer<&'a[u8], $output, (), $crate::Move> for $name {
       fn handle(&mut self, input: $crate::Input<&'a[u8]>) -> & $crate::ConsumerState<$output, (), $crate::Move> {
-      use $crate::HexDisplay;
+      use $crate::Offset;
         match input {
           $crate::Input::Empty | $crate::Input::Eof(None)           => &self.state,
           $crate::Input::Element(sl) | $crate::Input::Eof(Some(sl)) => {
@@ -579,7 +579,7 @@ macro_rules! consumer_from_parser (
 mod tests {
   use super::*;
   use internal::IResult;
-  use util::HexDisplay;
+  use util::Offset;
   use std::str::from_utf8;
   use std::io::SeekFrom;
 

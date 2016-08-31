@@ -19,7 +19,7 @@ macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       let input: &[u8] = $i;
-      use $crate::HexDisplay;
+      use $crate::Offset;
       match $submac!(input, $($args)*) {
         $crate::IResult::Done(i,_)     => {
           let index = input.offset(i);
@@ -262,7 +262,7 @@ macro_rules! escaped_impl (
     {
       use $crate::InputLength;
       let cl = || {
-        use $crate::HexDisplay;
+        use $crate::Offset;
         let mut index  = 0;
 
         while index < $i.len() {
@@ -380,7 +380,7 @@ macro_rules! escaped_transform_impl (
     {
       use $crate::InputLength;
       let cl = || {
-        use $crate::HexDisplay;
+        use $crate::Offset;
         let mut index  = 0;
         let mut res = Vec::new();
 

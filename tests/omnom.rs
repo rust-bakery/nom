@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Producer,Consumer,ConsumerState,Input,Move,MemProducer,IResult,HexDisplay};
+use nom::{Producer,Consumer,ConsumerState,Input,Move,MemProducer,IResult,Offset};
 
 #[derive(PartialEq,Eq,Debug)]
 enum State {

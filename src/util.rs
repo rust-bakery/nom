@@ -15,10 +15,13 @@ use std::string::ToString;
 
 /// useful functions to calculate the offset between slices and show a hexdump of a slice
 #[cfg(not(feature = "core"))]
-pub trait HexDisplay {
+pub trait Offset {
   /// offset between the first byte of self and the first byte of the argument
-  fn offset(&self, second:&[u8]) -> usize;// OFFSET SHOULD GO TO ITS OWN TRAIT
+  fn offset(&self, second:&Self) -> usize;
+}
 
+#[cfg(not(feature = "core"))]
+pub trait HexDisplay {
   /// Converts the value of `self` to a hex dump, returning the owned
   /// string.
   fn to_hex(&self, chunk_size: usize) -> String;
@@ -144,14 +147,17 @@ impl<'a> IterIndices for &'a str {
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
 #[cfg(not(feature = "core"))]
-impl HexDisplay for [u8] {
+impl Offset for [u8] {
   fn offset(&self, second:&[u8]) -> usize {
     let fst = self.as_ptr();
     let snd = second.as_ptr();
 
     snd as usize - fst as usize
   }
+}
 
+#[cfg(not(feature = "core"))]
+impl HexDisplay for [u8] {
   #[allow(unused_variables)]
   fn to_hex(&self, chunk_size: usize) -> String {
     self.to_hex_from(chunk_size, 0)
