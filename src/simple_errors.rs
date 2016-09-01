@@ -1,5 +1,5 @@
 use util::ErrorKind;
-use internal::IResult;
+use internal::{IResult, IError};
 use internal::IResult::*;
 
 pub type Err<E=u32> = ErrorKind<E>;
@@ -25,6 +25,15 @@ impl<I,O,E> IResult<I,O,E> {
       Error(e)      => e,
       Done(_, _)    => panic!("unwrap_err() called on an IResult that is Done"),
       Incomplete(_) => panic!("unwrap_err() called on an IResult that is Incomplete"),
+    }
+  }
+
+  /// Convert the IResult to a std::result::Result
+  pub fn to_full_result(self) -> Result<O, IError<E>> {
+    match self {
+      Done(_, o)    => Ok(o),
+      Incomplete(n) => Err(IError::Incomplete(n)),
+      Error(e)      => Err(IError::Error(e))
     }
   }
 

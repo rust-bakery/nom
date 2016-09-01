@@ -81,7 +81,7 @@ pub enum IError<I,E=u32> {
 ///
 /// This is used as the Error type when converting to std::result::Result
 #[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IError<I,E=u32> {
+pub enum IError<E=u32> {
   Error(Err<E>),
   Incomplete(Needed)
 }
@@ -150,15 +150,6 @@ impl<I,O,E> IResult<I,O,E> {
       Incomplete(n) => n,
       Done(_, _)    => panic!("unwrap_inc() called on an IResult that is Done"),
       Error(_)      => panic!("unwrap_inc() called on an IResult that is Error")
-    }
-  }
-
-  /// Convert the IResult to a std::result::Result
-  pub fn to_full_result(self) -> Result<O, IError<I,E>> {
-    match self {
-      Done(_, o)    => Ok(o),
-      Incomplete(n) => Err(IError::Incomplete(n)),
-      Error(e)      => Err(IError::Error(e))
     }
   }
 }
