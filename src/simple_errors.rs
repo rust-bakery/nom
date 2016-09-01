@@ -1,5 +1,5 @@
 use util::ErrorKind;
-use internal::IResult;
+use internal::{IResult, IError};
 use internal::IResult::*;
 
 pub type Err<E=u32> = ErrorKind<E>;
@@ -18,13 +18,31 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
-  /// Unwrap the contained `Done(I, O)` value, or panic if the `IResult` is not
-  /// `Done`.
+  /// Unwrap the contained `Error(E)` value, or panic if the `IResult` is not
+  /// `Error`.
   pub fn unwrap_err(self) -> Err<E> {
     match self {
       Error(e)      => e,
       Done(_, _)    => panic!("unwrap_err() called on an IResult that is Done"),
       Incomplete(_) => panic!("unwrap_err() called on an IResult that is Incomplete"),
+    }
+  }
+
+  /// Convert the IResult to a std::result::Result
+  pub fn to_full_result(self) -> Result<O, IError<E>> {
+    match self {
+      Done(_, o)    => Ok(o),
+      Incomplete(n) => Err(IError::Incomplete(n)),
+      Error(e)      => Err(IError::Error(e))
+    }
+  }
+
+  /// Convert the IResult to a std::result::Result
+  pub fn to_result(self) -> Result<O, Err<E>> {
+    match self {
+      Done(_, o)    => Ok(o),
+      Error(e)      => Err(e),
+      Incomplete(_) => panic!("to_result() called on an IResult that is Incomplete")
     }
   }
 }
