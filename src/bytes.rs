@@ -228,37 +228,8 @@ macro_rules! is_a_bytes (
 /// ```
 #[macro_export]
 macro_rules! escaped (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
-    {
-      let input: &[u8] = $i;
-
-      escaped1!(input, $submac!($($args)*), $control_char, $($rest)*)
-    }
-  );
-
-  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
-    escaped1!($i, call!($f), $control_char, $($rest)*)
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! escaped1 (
-  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
-    {
-     escaped_impl!($i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
-    }
-  );
-  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
-     escaped_impl!($i, $submac1!($($args)*), $control_char, call!($g))
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! escaped_impl (
-  ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
+  // Internal parser, do not use directly
+  (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
       use $crate::InputLength;
       let cl = || {
@@ -307,6 +278,27 @@ macro_rules! escaped_impl (
       }
     }
   );
+  // Internal parser, do not use directly
+  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+    {
+     escaped!(__impl $i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+    }
+  );
+  // Internal parser, do not use directly
+  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+     escaped!(__impl $i, $submac1!($($args)*), $control_char, call!($g))
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
+    {
+      let input: &[u8] = $i;
+
+      escaped!(__impl_1 input, $submac!($($args)*), $control_char, $($rest)*)
+    }
+  );
+
+  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
+    escaped!(__impl_1 $i, call!($f), $control_char, $($rest)*)
+  );
 );
 
 /// `escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>>`
@@ -346,37 +338,8 @@ macro_rules! escaped_impl (
 /// ```
 #[macro_export]
 macro_rules! escaped_transform (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
-    {
-      let input: &[u8] = $i;
-
-      escaped_transform1!(input, $submac!($($args)*), $control_char, $($rest)*)
-    }
-  );
-
-  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
-    escaped_transform1!($i, call!($f), $control_char, $($rest)*)
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! escaped_transform1 (
-  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
-    {
-     escaped_transform_impl!($i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
-    }
-  );
-  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
-     escaped_transform_impl!($i, $submac1!($($args)*), $control_char, call!($g))
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! escaped_transform_impl (
-  ($i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
+  // Internal parser, do not use directly
+  (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
       use $crate::InputLength;
       let cl = || {
@@ -427,7 +390,28 @@ macro_rules! escaped_transform_impl (
         }
       }
     }
-  )
+  );
+  // Internal parser, do not use directly
+  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+    {
+     escaped_transform!(__impl $i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+    }
+  );
+  // Internal parser, do not use directly
+  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+     escaped_transform_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
+    {
+      let input: &[u8] = $i;
+
+      escaped_transform!(__impl_1 input, $submac!($($args)*), $control_char, $($rest)*)
+    }
+  );
+
+  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
+    escaped_transform!(__impl_1 $i, call!($f), $control_char, $($rest)*)
+  );
 );
 
 /// `take_while!(T -> bool) => &[T] -> IResult<&[T], &[T]>`

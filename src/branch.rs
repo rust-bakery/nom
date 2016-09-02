@@ -310,23 +310,8 @@ macro_rules! alt_complete (
 ///
 #[macro_export]
 macro_rules! switch (
-  ($i:expr, $submac:ident!( $($args:tt)*), $($rest:tt)*) => (
-    {
-      switch_impl!($i, $submac!($($args)*), $($rest)*)
-    }
-  );
-  ($i:expr, $e:ident, $($rest:tt)*) => (
-    {
-      switch_impl!($i, call!($e), $($rest)*)
-    }
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! switch_impl (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
+  // Internal parser, do not use directly
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(error_node_position!(
@@ -345,6 +330,16 @@ macro_rules! switch_impl (
           }
         }
       }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)*), $($rest:tt)*) => (
+    {
+      switch!(__impl $i, $submac!($($args)*), $($rest)*)
+    }
+  );
+  ($i:expr, $e:ident, $($rest:tt)*) => (
+    {
+      switch!(__impl $i, call!($e), $($rest)*)
     }
   );
 );
