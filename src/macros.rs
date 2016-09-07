@@ -916,7 +916,7 @@ macro_rules! tap (
 macro_rules! eof (
   ($i:expr,) => (
     {
-      use $crate::util::InputLength;
+      use $crate::InputLength;
       if ($i).input_len() == 0 {
         $crate::IResult::Done($i, $i)
       } else {
