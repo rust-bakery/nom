@@ -34,6 +34,52 @@ macro_rules! tag_s (
   );
 );
 
+/// `tag_mix_s!(&[&str]) => &str -> IResult<&str, &str>`
+/// defines a set of tags that can be mixed together to for a suite
+///
+/// The nth character of the input is compared to the nth character of each of the supplied tags.
+/// The character from one of the tags must match the corresponding character in the input.
+/// The tags do not need to be the same length,
+/// shorter tags are ignored for later characters. A match is only successful if matching
+/// characters can be found for the length of the longest tag.
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self,Done};
+/// # fn main() {
+///  fn test(input: &str) -> IResult<&str, &str> {
+///    tag_mix_s!(input, &["abcd", "ABCD", "X"])
+///  }
+///  let r = test("XbCdefgh");
+///  assert_eq!(r, Done("efgh", "XbCd"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! tag_mix_s (
+    ($i:expr, $tags: expr) => (
+        {
+            let total_len = $tags.iter().fold(0, |acc, s| if s.len() > acc { s.len() } else { acc } );
+            let res: $crate::IResult<_,_> = if total_len > $i.len() {
+                $crate::IResult::Incomplete($crate::Needed::Size(total_len))
+            } else if {
+                        let mut tag_iters: Vec<_> = $tags.iter().map(|tag| tag.chars()).collect();
+                        $i.chars().take(total_len).all( |in_c|
+                            // fold() is used so that all the interators are advanced (no short circuit)
+                            tag_iters.iter_mut().fold(false, |found, mut tag_iter|
+                                tag_iter.next().map_or(false, |tag_c| tag_c == in_c ) || found
+                            )
+                        )
+                      }
+            {
+                $crate::IResult::Done(&$i[total_len..], &$i[0..total_len])
+            } else {
+                $crate::IResult::Error($crate::Err::Position($crate::ErrorKind::TagStr, $i))
+            };
+        res
+        }
+    );
+);
+
 /// `take_s!(nb) => &str -> IResult<&str, &str>`
 /// generates a parser consuming the specified number of characters
 ///
@@ -749,6 +795,53 @@ mod test {
             IResult::Error(_) => (),
             other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
                              Got `{:?}`.", other),
+        };
+    }
+
+
+    #[test]
+    fn tag_mix_s_succeed() {
+        const INPUT: &'static str = "AbCdEfG1234!!";
+        const MATCH: &'static [&'static str] = &["ABCDEFGHI", "abcdefg", "       1234"];
+        fn test(input: &str) -> IResult<&str, &str> {
+          tag_mix_s!(input, MATCH)
+        }
+
+        match test(INPUT) {
+            IResult::Done(extra, output) => {
+                assert!(extra == "!!", "Parser `tag_mix_s` consumed leftover input.");
+                assert!(output == "AbCdEfG1234", "Parser tag_mix_s didn't output the correct \
+                                    string. Got {:?}", output);
+            },
+            other => panic!("Parser `tag_mix_s` didn't succeed when it should have. \
+                             Got `{:?}`.", other),
+        };
+    }
+
+    #[test]
+    fn tag_mix_s_incomplete() {
+        const INPUT: &'static str = "AbCdEfG123";
+        const MATCH: &'static [&'static str] = &["ABCDEFGHI", "abcdefg", "       1234"];
+
+        match tag_mix_s!(INPUT, MATCH) {
+            IResult::Incomplete(_) => (),
+            other => {
+                panic!("Parser `tag_mix_s` didn't require more input when it should have. \
+                        Got `{:?}`.", other);
+            }
+        };
+    }
+
+    #[test]
+    fn tag_mix_s_fail() {
+        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const MATCH: &'static [&'static str] = &["βè","Ûñℓúçƙ¥"];
+        fn test(input: &str) -> IResult<&str, &str> {
+            tag_mix_s!(input, MATCH)
+        }
+        match test(INPUT) {
+            IResult::Error(_) => (),
+            other => panic!("Parser `tag_mix_s` didn't fail when it should have. Got `{:?}`.", other),
         };
     }
 }
