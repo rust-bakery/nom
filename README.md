@@ -11,6 +11,10 @@ nom can handle any format, binary or textual, with grammars from regular to cont
 
 If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
+Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
+
+Various design documents and tutorials can be found in the [docs directory](https://github.com/Geal/nom/tree/master/docs).
+
 ## Features
 
 Here are the current and planned features, with their status:
@@ -29,8 +33,6 @@ Here are the current and planned features, with their status:
 - [x] **custom error types**: you can provide a specific type to improve errors returned by parsers
 - [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real world data. So far, the only flaws found by fuzzing were in code written outside of nom
 - [x] **speed**: benchmarks have shown that nom parsers often outperform many parser combinators library like Parsec and attoparsec, some regular expression engines and even handwritten C parsers
-
-Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
 
 Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
 
