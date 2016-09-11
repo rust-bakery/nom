@@ -377,25 +377,8 @@ macro_rules! try_parse (
 /// maps a function on the result of a parser
 #[macro_export]
 macro_rules! map(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map_impl!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map_impl!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map_impl!($i, call!($f), $submac!($($args)*));
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! map_impl(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  // Internal parser, do not use directly
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
@@ -405,31 +388,26 @@ macro_rules! map_impl(
       }
     }
   );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map!(__impl $i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map!(__impl $i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    map!(__impl $i, call!($f), $submac!($($args)*));
+  );
 );
 
 /// `map_res!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P>`
 /// maps a function returning a Result on the output of a parser
 #[macro_export]
 macro_rules! map_res (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map_res_impl!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_res_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map_res_impl!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map_res_impl!($i, call!($f), $submac!($($args)*));
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! map_res_impl (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  // Internal parser, do not use directly
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
@@ -442,32 +420,26 @@ macro_rules! map_res_impl (
       }
     }
   );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map_res!(__impl $i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_res!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map_res!(__impl $i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    map_res!(__impl $i, call!($f), $submac!($($args)*));
+  );
 );
-
 
 /// `map_opt!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
 #[macro_export]
 macro_rules! map_opt (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map_opt_impl!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_opt_impl!($i, $submac!($($args)*), $submac2!($($args2)*));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map_opt_impl!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map_opt_impl!($i, call!($f), $submac!($($args)*));
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! map_opt_impl (
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  // Internal parser, do not use directly
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
@@ -479,6 +451,18 @@ macro_rules! map_opt_impl (
         }
       }
     }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map_opt!(__impl $i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_opt!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map_opt!(__impl $i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    map_opt!(__impl $i, call!($f), $submac!($($args)*));
   );
 );
 
@@ -841,7 +825,7 @@ macro_rules! peek(
   );
 );
 
-/// `not!(I -> IResult<I,0>) => I -> IResult<I, O>`
+/// `not!(I -> IResult<I,O>) => I -> IResult<I, O>`
 /// returns a result only if the embedded parser returns Error or Incomplete
 /// does not consume the input
 ///

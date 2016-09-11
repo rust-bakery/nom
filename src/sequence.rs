@@ -590,26 +590,14 @@ macro_rules! delimited(
 
 #[macro_export]
 macro_rules! do_parse (
-  ($i:expr, $($rest:tt)*) => (
-    {
-      do_parse_impl!($i, 0usize, $($rest)*)
-    }
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! do_parse_impl (
-
-  ($i:expr, $consumed:expr, ( $($rest:expr),* )) => (
+  (__impl $i:expr, $consumed:expr, ( $($rest:expr),* )) => (
     $crate::IResult::Done($i, ( $($rest),* ))
   );
 
-  ($i:expr, $consumed:expr, $e:ident >> $($rest:tt)*) => (
-    do_parse_impl!($i, $consumed, call!($e) >> $($rest)*);
+  (__impl $i:expr, $consumed:expr, $e:ident >> $($rest:tt)*) => (
+    do_parse!(__impl $i, $consumed, call!($e) >> $($rest)*);
   );
-  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
@@ -618,19 +606,19 @@ macro_rules! do_parse_impl (
         $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,_)     => {
-          do_parse_impl!(i,
+          do_parse!(__impl i,
             $consumed + ($crate::InputLength::input_len(&($i)) -
                          $crate::InputLength::input_len(&i)), $($rest)*)
         },
       }
     }
-	);
-
-  ($i:expr, $consumed:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
-    do_parse_impl!($i, $consumed, $field: call!($e) >> $($rest)*);
   );
 
-  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+  (__impl $i:expr, $consumed:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
+    do_parse!(__impl $i, $consumed, $field: call!($e) >> $($rest)*);
+  );
+
+  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       match  $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
@@ -640,7 +628,7 @@ macro_rules! do_parse_impl (
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
           let $field = o;
-          do_parse_impl!(i,
+          do_parse!(__impl i,
             $consumed + ($crate::InputLength::input_len(&($i)) -
                          $crate::InputLength::input_len(&i)), $($rest)*)
         },
@@ -649,11 +637,11 @@ macro_rules! do_parse_impl (
   );
 
   // ending the chain
-  ($i:expr, $consumed:expr, $e:ident >> ( $($rest:tt)* )) => (
-    do_parse_impl!($i, $consumed, call!($e) >> ( $($rest)* ));
+  (__impl $i:expr, $consumed:expr, $e:ident >> ( $($rest:tt)* )) => (
+    do_parse!(__impl $i, $consumed, call!($e) >> ( $($rest)* ));
   );
 
-  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
     match $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
@@ -666,11 +654,11 @@ macro_rules! do_parse_impl (
     }
   );
 
-  ($i:expr, $consumed:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
-    do_parse_impl!($i, $consumed, $field: call!($e) >> ( $($rest)* ) );
+  (__impl $i:expr, $consumed:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
+    do_parse!(__impl $i, $consumed, $field: call!($e) >> ( $($rest)* ) );
   );
 
-  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
     match $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
@@ -684,8 +672,12 @@ macro_rules! do_parse_impl (
     }
   );
 
+  ($i:expr, $($rest:tt)*) => (
+    {
+      do_parse!(__impl $i, 0usize, $($rest)*)
+    }
+  );
 );
-
 
 #[cfg(test)]
 mod tests {
