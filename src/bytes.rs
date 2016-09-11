@@ -801,9 +801,9 @@ macro_rules! length_bytes(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,nb)   => {
           let nb = nb as usize;
-          let length_remaining = i1.len();
-          if length_remaining < nb {
-            $crate::IResult::Incomplete($crate::Needed::Size(nb - length_remaining))
+          if i1.len() < nb {
+            use $crate::Offset;
+            $crate::IResult::Incomplete($crate::Needed::Size($i.offset(i1) + nb))
           } else {
             $crate::IResult::Done(&i1[nb..], &i1[..nb])
           }
@@ -1065,5 +1065,21 @@ mod tests {
     assert_eq!(x(&b"ab"[..]), Done(&[][..], &b"ab"[..]));
     println!("X: {:?}", x(&b"ab"[..]));
     assert_eq!(y(&b"ab"[..]), Done(&[][..], &b"ab"[..]));
+  }
+
+  #[test]
+  fn length_bytes() {
+    use nom::le_u8;
+    named!(x, length_bytes!(le_u8));
+    assert_eq!(x(b"\x02..>>"), Done(&b">>"[..], &b".."[..]));
+    assert_eq!(x(b"\x02.."), Done(&[][..], &b".."[..]));
+    assert_eq!(x(b"\x02."), Incomplete(Needed::Size(3)));
+    assert_eq!(x(b"\x02"), Incomplete(Needed::Size(3)));
+
+    named!(y, chain!(tag!("magic") ~ b: length_bytes!(le_u8), || b));
+    assert_eq!(y(b"magic\x02..>>"), Done(&b">>"[..], &b".."[..]));
+    assert_eq!(y(b"magic\x02.."), Done(&[][..], &b".."[..]));
+    assert_eq!(y(b"magic\x02."), Incomplete(Needed::Size(8)));
+    assert_eq!(y(b"magic\x02"), Incomplete(Needed::Size(8)));
   }
 }
