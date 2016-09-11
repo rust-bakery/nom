@@ -483,12 +483,10 @@ macro_rules! count_fixed (
     count_fixed!($i, $typ, call!($f), $count);
   );
 );
-
-/// `length_value!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// gets a number from the first parser, then applies the second parser that many times
 #[macro_export]
-macro_rules! length_value(
-  ($i:expr, $f:expr, $g:expr) => (
+#[doc(hidden)]
+macro_rules! length_value_impl(
+  ($i:expr, $f:expr, $g:ident!( $($args:tt)* ), $lenpat:pat, $lenexpr:expr) => (
     {
       match $f($i) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
@@ -504,51 +502,7 @@ macro_rules! length_value(
               ret = $crate::IResult::Done(input, res); break;
             }
 
-            match $g(input) {
-              $crate::IResult::Done(iparse, oparse) => {
-                res.push(oparse);
-                input = iparse;
-              },
-              $crate::IResult::Error(_)      => {
-                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::LengthValue,$i));
-                break;
-              },
-              $crate::IResult::Incomplete(a) => {
-                ret = match a {
-                  $crate::Needed::Unknown      => $crate::IResult::Incomplete(
-                    $crate::Needed::Unknown
-                  ),
-                  $crate::Needed::Size(length) => $crate::IResult::Incomplete(
-                    $crate::Needed::Size(length_token + onum as usize * length)
-                  )
-                };
-                break;
-              }
-            }
-          }
-
-          ret
-        }
-      }
-    }
-  );
-  ($i:expr, $f:expr, $g:expr, $length:expr) => (
-    {
-      match $f($i) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(inum, onum)   => {
-          let ret;
-          let length_token = $i.len() - inum.len();
-          let mut input    = inum;
-          let mut res      = ::std::vec::Vec::new();
-
-          loop {
-            if res.len() == onum as usize {
-              ret = $crate::IResult::Done(input, res); break;
-            }
-
-            match $g(input) {
+            match $g!(input, $($args)*) {
               $crate::IResult::Done(iparse, oparse) => {
                 res.push(oparse);
                 input = iparse;
@@ -562,8 +516,8 @@ macro_rules! length_value(
                   $crate::Needed::Unknown => $crate::IResult::Incomplete(
                     $crate::Needed::Unknown
                   ),
-                  $crate::Needed::Size(_) => $crate::IResult::Incomplete(
-                    $crate::Needed::Size(length_token + onum as usize * $length)
+                  $crate::Needed::Size($lenpat) => $crate::IResult::Incomplete(
+                    $crate::Needed::Size(length_token + onum as usize * $lenexpr)
                   )
                 };
                 break;
@@ -576,6 +530,16 @@ macro_rules! length_value(
       }
     }
   );
+);
+
+/// `length_value!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// gets a number from the first parser, then applies the second parser that many times
+#[macro_export]
+macro_rules! length_value(
+  ($i:expr, $f:expr, $g:ident!( $($args:tt)* )) => (length_value_impl!($i, $f, $g!($($args)*), length, length));
+  ($i:expr, $f:expr, $g:ident!( $($args:tt)* ), $length:expr) => (length_value_impl!($i, $f, $g!($($args)*), _, $length));
+  ($i:expr, $f:expr, $g:expr) => (length_value_impl!($i, $f, call!($g), length, length));
+  ($i:expr, $f:expr, $g:expr, $length:expr) => (length_value_impl!($i, $f, call!($g), _, $length));
 );
 
 /// `fold_many0!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
@@ -1120,26 +1084,38 @@ mod tests {
   fn length_value_test() {
     named!(length_value_1<&[u8], Vec<u16> >, length_value!(be_u8, be_u16));
     named!(length_value_2<&[u8], Vec<u16> >, length_value!(be_u8, be_u16, 2));
+    named!(length_value_3<&[u8], Vec<(u8, u8)> >, length_value!(be_u8, tuple!(be_u8, be_u8)));
+    named!(length_value_4<&[u8], Vec<(u8, u8)> >, length_value!(be_u8, tuple!(be_u8, be_u8), 2));
 
     let i1 = vec![0, 5, 6];
     assert_eq!(length_value_1(&i1), IResult::Done(&i1[1..], vec![]));
     assert_eq!(length_value_2(&i1), IResult::Done(&i1[1..], vec![]));
+    assert_eq!(length_value_3(&i1), IResult::Done(&i1[1..], vec![]));
+    assert_eq!(length_value_4(&i1), IResult::Done(&i1[1..], vec![]));
 
     let i2 = vec![1, 5, 6, 3];
     assert_eq!(length_value_1(&i2), IResult::Done(&i2[3..], vec![1286]));
     assert_eq!(length_value_2(&i2), IResult::Done(&i2[3..], vec![1286]));
+    assert_eq!(length_value_3(&i2), IResult::Done(&i2[3..], vec![(5, 6)]));
+    assert_eq!(length_value_4(&i2), IResult::Done(&i2[3..], vec![(5, 6)]));
 
     let i3 = vec![2, 5, 6, 3, 4, 5, 7];
     assert_eq!(length_value_1(&i3), IResult::Done(&i3[5..], vec![1286, 772]));
     assert_eq!(length_value_2(&i3), IResult::Done(&i3[5..], vec![1286, 772]));
+    assert_eq!(length_value_3(&i3), IResult::Done(&i3[5..], vec![(5, 6), (3, 4)]));
+    assert_eq!(length_value_4(&i3), IResult::Done(&i3[5..], vec![(5, 6), (3, 4)]));
 
     let i4 = vec![2, 5, 6, 3];
     assert_eq!(length_value_1(&i4), IResult::Incomplete(Needed::Size(5)));
     assert_eq!(length_value_2(&i4), IResult::Incomplete(Needed::Size(5)));
+    assert_eq!(length_value_3(&i4), IResult::Incomplete(Needed::Size(5)));
+    assert_eq!(length_value_4(&i4), IResult::Incomplete(Needed::Size(5)));
 
     let i5 = vec![3, 5, 6, 3, 4, 5];
     assert_eq!(length_value_1(&i5), IResult::Incomplete(Needed::Size(7)));
     assert_eq!(length_value_2(&i5), IResult::Incomplete(Needed::Size(7)));
+    assert_eq!(length_value_3(&i5), IResult::Incomplete(Needed::Size(7)));
+    assert_eq!(length_value_4(&i5), IResult::Incomplete(Needed::Size(7)));
   }
 
   #[test]
