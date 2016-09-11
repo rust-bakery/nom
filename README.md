@@ -9,8 +9,6 @@ nom is a parser combinators library written in Rust. Its goal is to provide tool
 
 nom can handle any format, binary or textual, with grammars from regular to context sensitive. There are already a lot of [example parsers](https://github.com/Geal/nom/issues/14) available on Github.
 
-If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
-
 ## Features
 
 Here are the current and planned features, with their status:
@@ -30,9 +28,15 @@ Here are the current and planned features, with their status:
 - [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real world data. So far, the only flaws found by fuzzing were in code written outside of nom
 - [x] **speed**: benchmarks have shown that nom parsers often outperform many parser combinators library like Parsec and attoparsec, some regular expression engines and even handwritten C parsers
 
-Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
+## Documentation
+
+Reference documentation is available [here](http://rust.unhandledexpression.com/nom/). More documentation, including an FAQ and a tutorial for extending nom, is avaliable on the [wiki](https://github.com/Geal/nom/wiki).
+
+Some example parsers can be found in [this issue](https://github.com/Geal/nom/issues/14).
 
 Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
+
+If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
 ## Installation
 
