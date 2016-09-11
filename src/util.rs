@@ -157,6 +157,16 @@ impl Offset for [u8] {
 }
 
 #[cfg(not(feature = "core"))]
+impl Offset for str {
+    fn offset(&self, second: &Self) -> usize {
+      let fst = self.as_ptr();
+      let snd = second.as_ptr();
+
+      snd as usize - fst as usize
+    }
+}
+
+#[cfg(not(feature = "core"))]
 impl HexDisplay for [u8] {
   #[allow(unused_variables)]
   fn to_hex(&self, chunk_size: usize) -> String {
@@ -789,3 +799,32 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
 
     }
   }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_offset_u8() {
+      let s = b"abcd123";
+      let a = &s[..];
+      let b = &a[2..];
+      let c = &a[..4];
+      let d = &a[3..5];
+      assert_eq!(a.offset(b), 2);
+      assert_eq!(a.offset(c), 0);
+      assert_eq!(a.offset(d), 3);
+    }
+
+    #[test]
+    fn test_offset_str() {
+      let s = "abcřèÂßÇd123";
+      let a = &s[..];
+      let b = &a[7..];
+      let c = &a[..5];
+      let d = &a[5..9];
+      assert_eq!(a.offset(b), 7);
+      assert_eq!(a.offset(c), 0);
+      assert_eq!(a.offset(d), 5);
+    }
+}
