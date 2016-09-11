@@ -231,9 +231,9 @@ There are more high level patterns, like the **alt!** combinator, which provides
 ```rust
 named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
 
-assert_eq!(alt_tags(b"abcdxxx"), Done(b"xxx", b"abcd"));
-assert_eq!(alt_tags(b"efghxxx"), Done(b"xxx", b"efgh"));
-assert_eq!(alt_tags(b"ijklxxx"), Error(1));
+assert_eq!(alt_tags(b"abcdxxx"), Done(&b"xxx"[..], &b"abcd"[..]));
+assert_eq!(alt_tags(b"efghxxx"), Done(&b"xxx"[..], &b"efgh"[..]));
+assert_eq!(alt_tags(b"ijklxxx"), Error(Position(Alt, &b"ijklxxx"[..])));
 ```
 
 The pipe `|` character is used as separator.
@@ -241,10 +241,10 @@ The pipe `|` character is used as separator.
 The **opt!** combinator makes a parser optional. If the child parser returns an error, **opt!** will succeed and return None:
 
 ```rust
-named!( abcd_opt, opt!( tag!("abcd") ) );
+named!( abcd_opt< &[u8], Option<&[u8]> >, opt!( tag!("abcd") ) );
 
-assert_eq!(abcd_opt(b"abcdxxx"), Done(b"xxx", Some(b"abcd")));
-assert_eq!(abcd_opt(b"efghxxx"), Done(b"efghxxx", None));
+assert_eq!(abcd_opt(b"abcdxxx"), Done(&b"xxx"[..], Some(&b"abcd"[..])));
+assert_eq!(abcd_opt(b"efghxxx"), Done(&b"efghxxx"[..], None));
 ```
 
 **many0!** applies a parser 0 or more times, and returns a vector of the aggregated results:
@@ -296,6 +296,7 @@ assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
 Example with `chain!`:
 
 ```rust
+#[derive(Debug, PartialEq)]
 struct A {
   a: u8,
   b: u8
@@ -318,11 +319,10 @@ named!(f<&[u8],A>,
 );
 
 let r = f(b"abcdabcdefghefghX");
-assert_eq!(r, Done(b"X", A{a: 1, b: 2}));
+assert_eq!(r, Done(&b"X"[..], A{a: 1, b: 2}));
 
 let r2 = f(b"abcdefghefghX");
-assert_eq!(r2, Done(b"X", A{a: 1, b: 2}));
-```
+assert_eq!(r2, Done(&b"X"[..], A{a: 1, b: 2}));```
 
 The tilde `~` is used as separator between every parser in the sequence, the comma `,` indicates the parser chain ended, and the last closure can see the variables storing the result of parsers.
 
