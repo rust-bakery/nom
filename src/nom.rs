@@ -42,15 +42,16 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
 //pub is_not!(line_ending b"\r\n")
-pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for (idx, item) in input.iter().enumerate() {
-    for &i in b"\r\n".iter() {
-      if *item == i {
-        return Done(&input[idx..], &input[0..idx])
-      }
+pub fn not_line_ending<'a, T: ?Sized>(input: &'a T) -> IResult<&'a T, &'a T> where
+  T: Index<Range<usize>, Output=T> + Index<RangeFrom<usize>, Output=T>,
+  &'a T: IterIndices + InputLength
+{
+  for (idx, item) in input.iter_indices() {
+    if item.is_newline() {
+      return Done(&input[idx..], &input[0..idx])
     }
   }
-  Done(&input[input.len()..], input)
+  Done(&input[input.input_len()..], input)
 }
 
 named!(tag_ln, alt!(tag!("\n") | tag!("\r\n")));
@@ -678,6 +679,15 @@ mod tests {
 
     let c: &[u8] = b"ab12cd";
     assert_eq!(not_line_ending(c), Done(&b""[..], c));
+
+    let i = "ab12cd\nefgh";
+    assert_eq!(not_line_ending(i), Done(&"\nefgh"[..], &"ab12cd"[..]));
+
+    let j = "ab12cd\nefgh\nijkl";
+    assert_eq!(not_line_ending(j), Done(&"\nefgh\nijkl"[..], &"ab12cd"[..]));
+
+    let k = "ab12cd";
+    assert_eq!(not_line_ending(k), Done(&""[..], k));
   }
 
   #[test]

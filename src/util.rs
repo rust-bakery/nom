@@ -77,6 +77,8 @@ pub trait AsChar {
     fn is_hex_digit(self) -> bool;
     #[inline]
     fn is_oct_digit(self) -> bool;
+    #[inline]
+    fn is_newline(self)   -> bool;
 }
 
 impl<'a> AsChar for &'a u8 {
@@ -102,6 +104,10 @@ impl<'a> AsChar for &'a u8 {
     fn is_oct_digit(self)   -> bool {
       *self >= 0x30 && *self <= 0x37
     }
+    #[inline]
+    fn is_newline(self) -> bool {
+      *self == b'\n' || *self == b'\r'
+    }
 }
 
 impl AsChar for char {
@@ -117,6 +123,8 @@ impl AsChar for char {
     fn is_hex_digit(self) -> bool { self.is_digit(16) }
     #[inline]
     fn is_oct_digit(self) -> bool { self.is_digit(8) }
+    #[inline]
+    fn is_newline(self) -> bool { self == '\n' || self == '\r' }
 }
 
 pub trait IterIndices {
