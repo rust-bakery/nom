@@ -18,40 +18,20 @@
 /// ```
 #[macro_export]
 macro_rules! tag (
-  ($i:expr, $inp: expr) => (
+  ($i:expr, $tag: expr) => (
     {
-      let input: &[u8] = $i;
-
-      #[inline(always)]
-      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected = $inp;
-      let bytes    = as_bytes(&expected);
-
-      tag_bytes!(input,bytes)
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! tag_bytes (
-  ($i:expr, $bytes: expr) => (
-    {
-      let len = $i.len();
-      let blen = $bytes.len();
-      let m   = if len < blen { len } else { blen };
-      let reduced = &$i[..m];
-      let b       = &$bytes[..m];
-
-      let res: $crate::IResult<_,_> = if reduced != b {
-        $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
-      } else if m < blen {
-        $crate::IResult::Incomplete($crate::Needed::Size(blen))
-      } else {
-        $crate::IResult::Done(&$i[blen..], reduced)
+      use $crate::{Compare,CompareResult};
+      let res: $crate::IResult<_,_> = match ($i).compare($tag) {
+        CompareResult::Ok => {
+          let blen = $tag.len();
+          $crate::IResult::Done(&$i[blen..], &$i[..blen])
+        },
+        CompareResult::Incomplete => {
+          $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
+        },
+        CompareResult::Error => {
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
+        }
       };
       res
     }

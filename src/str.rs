@@ -21,15 +21,7 @@
 macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
     {
-      let input: &str = $i;
-      let res: $crate::IResult<_,_> = if $tag.len() > input.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
-      } else if (input).starts_with($tag) {
-        $crate::IResult::Done(&input[$tag.len()..], &input[0..$tag.len()])
-      } else {
-        $crate::IResult::Error(error_position!($crate::ErrorKind::TagStr, input))
-      };
-      res
+      tag!($i, $tag)
     }
   );
 );

@@ -266,6 +266,61 @@ impl IterTake for str {
     }
 }
 
+pub enum CompareResult {
+  Ok,
+  Incomplete,
+  Error
+}
+
+pub trait Compare<T> {
+  fn compare(&self, t:T) -> CompareResult;
+}
+
+impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
+  #[inline(always)]
+  fn compare(&self, t: &'b[u8]) -> CompareResult {
+    let len     = self.len();
+    let blen    = t.len();
+    let m       = if len < blen { len } else { blen };
+    let reduced = &self[..m];
+    let b       = &t[..m];
+
+    if reduced != b {
+      CompareResult::Error
+    } else if m < blen {
+      CompareResult::Incomplete
+    } else {
+      CompareResult::Ok
+    }
+  }
+}
+
+
+impl<'a,'b> Compare<&'b str> for &'a [u8] {
+  #[inline(always)]
+  fn compare(&self, t: &'b str) -> CompareResult {
+    self.compare(str::as_bytes(t))
+  }
+}
+
+impl<'a,'b> Compare<&'b str> for &'a str {
+  #[inline(always)]
+  fn compare(&self, t: &'b str) -> CompareResult {
+    let len     = self.len();
+    let blen    = t.len();
+    let m       = if len < blen { len } else { blen };
+    let reduced = &self[..m];
+    let b       = &t[..m];
+
+    if reduced != b {
+      CompareResult::Error
+    } else if m < blen {
+      CompareResult::Incomplete
+    } else {
+      CompareResult::Ok
+    }
+  }
+}
 
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
