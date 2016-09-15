@@ -10,9 +10,12 @@ use std::collections::HashMap;
 
 #[cfg(feature = "core")]
 use std::prelude::v1::*;
+
+#[cfg(not(feature = "core"))]
+use std::str::Chars;
+
 use std::vec::Vec;
 use std::string::ToString;
-use std::str::Chars;
 
 /// useful functions to calculate the offset between slices and show a hexdump of a slice
 #[cfg(not(feature = "core"))]
