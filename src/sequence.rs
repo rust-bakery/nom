@@ -731,7 +731,7 @@ mod tests {
     );
   );
 
-  macro_rules! take(
+  macro_rules! take (
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;

@@ -899,8 +899,8 @@ mod tests {
     }
   }*/
 
-  fn lf(i:& u8) -> bool {
-    *i == '\n' as u8
+  fn lf(i:u8) -> bool {
+    i == '\n' as u8
   }
   fn to_utf8_string(input:&[u8]) -> String {
     String::from(from_utf8(input).unwrap())

@@ -53,23 +53,9 @@ macro_rules! tag_s (
 macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
-      let input: &str = $i;
+      let input = $i;
       let cnt = $count as usize;
-      let res: $crate::IResult<_,_> = if input.chars().count() < cnt {
-        $crate::IResult::Incomplete($crate::Needed::Size(cnt))
-      } else {
-        let mut offset = input.len();
-        let mut count = 0;
-        for (o, _) in input.char_indices() {
-          if count == cnt {
-            offset = o;
-            break;
-          }
-          count += 1;
-        }
-        $crate::IResult::Done(&input[offset..], &input[..offset])
-      };
-      res
+      take!(input, cnt)
     }
   );
 );
@@ -180,21 +166,7 @@ macro_rules! is_a_s (
 macro_rules! take_while_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input: &str = $input;
-
-      let mut offset = input.len();
-      for (o, c) in input.char_indices() {
-        if !$submac!(c, $($args)*) {
-          offset = o;
-          break;
-        }
-      }
-      let res: $crate::IResult<_,_> = if offset < input.len() {
-        $crate::IResult::Done(&input[offset..], &input[..offset])
-      } else {
-        $crate::IResult::Done(&input[input.len()..], input)
-      };
-      res
+      take_while!($input, $submac!($($args)*))
     }
   );
   ($input:expr, $f:expr) => (
@@ -221,25 +193,7 @@ macro_rules! take_while_s (
 #[macro_export]
 macro_rules! take_while1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      let input: &str = $input;
-
-      let mut offset = input.len();
-      for (o, c) in input.char_indices() {
-        if !$submac!(c, $($args)*) {
-          offset = o;
-          break;
-        }
-      }
-      let res: $crate::IResult<_,_> = if offset == 0 {
-        $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1Str,input))
-      } else if offset < input.len() {
-        $crate::IResult::Done(&input[offset..], &input[..offset])
-      } else {
-        $crate::IResult::Done(&input[input.len()..], input)
-      };
-      res
-    }
+    take_while1!($input, $submac!($($args)*))
   );
   ($input:expr, $f:expr) => (
     take_while1_s!($input, call!($f));
@@ -254,23 +208,8 @@ macro_rules! take_while1_s (
 #[macro_export]
 macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
-
     {
-      let input: &str = $input;
-
-      let mut offset = input.len();
-      for (o, c) in input.char_indices() {
-        if $submac!(c, $($args)*) {
-            offset = o;
-            break;
-        }
-      }
-      let res: $crate::IResult<_,_> = if offset < input.len() {
-        $crate::IResult::Done(&input[offset..], &input[..offset])
-      } else {
-        $crate::IResult::Done(&input[input.len()..], input)
-      };
-      res
+      take_till!($input, $submac!($($args)*))
     }
   );
   ($input:expr, $f:expr) => (
@@ -500,10 +439,10 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Error(error_position!(ErrorKind::TakeWhile1Str, &""[..])));
+    assert_eq!(f(&a[..]), Error(error_position!(ErrorKind::TakeWhile1, &""[..])));
     assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
     assert_eq!(f(&c[..]), Done(&"123"[..], &b[..]));
-    assert_eq!(f(&d[..]), Error(error_position!(ErrorKind::TakeWhile1Str, &d[..])));
+    assert_eq!(f(&d[..]), Error(error_position!(ErrorKind::TakeWhile1, &d[..])));
   }
 
   #[test]

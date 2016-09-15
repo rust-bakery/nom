@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::prelude::v1::*;
 use std::vec::Vec;
 use std::string::ToString;
+use std::str::Chars;
 
 /// useful functions to calculate the offset between slices and show a hexdump of a slice
 #[cfg(not(feature = "core"))]
@@ -79,6 +80,30 @@ pub trait AsChar {
     fn is_oct_digit(self) -> bool;
 }
 
+impl AsChar for u8 {
+    #[inline]
+    fn as_char(self)     -> char { self as char }
+    #[inline]
+    fn is_alpha(self)    -> bool {
+      (self >= 0x41 && self <= 0x5A) || (self >= 0x61 && self <= 0x7A)
+    }
+    #[inline]
+    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    #[inline]
+    fn is_0_to_9(self)   -> bool {
+      self >= 0x30 && self <= 0x39
+    }
+    #[inline]
+    fn is_hex_digit(self) -> bool {
+      (self >= 0x30 && self <= 0x39) ||
+      (self >= 0x41 && self <= 0x46) ||
+      (self >= 0x61 && self <= 0x66)
+    }
+    #[inline]
+    fn is_oct_digit(self)   -> bool {
+      self >= 0x30 && self <= 0x37
+    }
+}
 impl<'a> AsChar for &'a u8 {
     #[inline]
     fn as_char(self)     -> char { *self as char }
@@ -120,29 +145,127 @@ impl AsChar for char {
 }
 
 pub trait IterIndices {
-    type Item: AsChar;
-    type Iter : Iterator<Item=(usize, Self::Item)>;
-    fn iter_indices(self) -> Self::Iter;
+    type Item     : AsChar;
+    type RawItem  : AsChar;
+    type Iter     : Iterator<Item=(usize, Self::Item)>;
+    type IterElem : Iterator<Item=Self::Item>;
+    fn iter_indices(self)  -> Self::Iter;
+    fn iter_elements(self) -> Self::IterElem;
+    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool;
+    fn index(&self, count:usize) -> Option<usize>;
+}
+
+pub trait IterTake {
+    fn take<P>(&self, count: usize)  -> Option<&Self>;
+    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)>;
 }
 
 impl<'a> IterIndices for &'a [u8] {
-    type Item = &'a u8;
-    type Iter = Enumerate<::std::slice::Iter<'a, u8>>;
+    type Item     = &'a u8;
+    type RawItem  = u8;
+    type Iter     = Enumerate<::std::slice::Iter<'a, u8>>;
+    type IterElem = ::std::slice::Iter<'a, u8>;
     #[inline]
     fn iter_indices(self) -> Enumerate<::std::slice::Iter<'a, u8>> {
         self.iter().enumerate()
+    }
+    #[inline]
+    fn iter_elements(self) -> ::std::slice::Iter<'a,u8> {
+      self.iter()
+    }
+    #[inline]
+    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
+      self.iter().position(|b| predicate(*b))
+    }
+    #[inline]
+    fn index(&self, count:usize) -> Option<usize> {
+      if self.len() >= count {
+        Some(count)
+      } else {
+        None
+      }
+    }
+}
+
+impl IterTake for [u8] {
+    #[inline]
+    fn take<P>(&self, count: usize) -> Option<&Self> {
+      if self.len() >= count {
+        Some(&self[0..count])
+      } else {
+        None
+      }
+    }
+    #[inline]
+    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)> {
+      if self.len() >= count {
+        Some((&self[count..],&self[..count]))
+      } else {
+        None
+      }
     }
 }
 
 #[cfg(not(feature = "core"))]
 impl<'a> IterIndices for &'a str {
-    type Item = char;
-    type Iter = CharIndices<'a>;
+    type Item     = char;
+    type RawItem  = char;
+    type Iter     = CharIndices<'a>;
+    type IterElem = Chars<'a>;
     #[inline]
     fn iter_indices(self) -> CharIndices<'a> {
         self.char_indices()
     }
+    #[inline]
+    fn iter_elements(self) -> Chars<'a> {
+      self.chars()
+    }
+    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
+      for (o,c) in self.char_indices() {
+        if predicate(c) {
+          return Some(o)
+        }
+      }
+      None
+    }
+    #[inline]
+    fn index(&self, count:usize) -> Option<usize> {
+      let mut cnt    = 0;
+      for (index, _) in self.char_indices() {
+        if cnt == count {
+          return Some(index)
+        }
+        cnt += 1;
+      }
+      None
+    }
 }
+
+impl IterTake for str {
+    #[inline]
+    fn take<P>(&self, count: usize) -> Option<&Self> {
+      let mut cnt    = 0;
+      for (index, _) in self.char_indices() {
+        if cnt == count {
+          return Some(&self[..index])
+        }
+        cnt += 1;
+      }
+      None
+    }
+    #[inline]
+    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)> {
+      let mut cnt    = 0;
+      for (index, _) in self.char_indices() {
+        if cnt == count {
+          return Some((&self[index..],&self[..index]))
+        }
+        cnt += 1;
+      }
+      None
+    }
+}
+
 
 static CHARS: &'static[u8] = b"0123456789abcdef";
 

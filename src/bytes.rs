@@ -96,9 +96,10 @@ macro_rules! is_not_bytes (
   ($input:expr, $bytes:expr) => (
     {
       use $crate::InputLength;
-      let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
+      use $crate::IterIndices;
+      let res: $crate::IResult<_,_> = match $input.position(|c| {
         for &i in $bytes.iter() {
-          if *c == i { return true }
+          if c == i { return true }
         }
         false
       }) {
@@ -157,9 +158,10 @@ macro_rules! is_a_bytes (
   ($input:expr, $bytes:expr) => (
     {
       use $crate::InputLength;
-      let res: $crate::IResult<_,_> = match $input.iter().position(|c| {
+      use $crate::IterIndices;
+      let res: $crate::IResult<_,_> = match $input.position(|c| {
         for &i in $bytes.iter() {
-          if *c == i { return false }
+          if c == i { return false }
         }
         true
       }) {
@@ -401,9 +403,10 @@ macro_rules! escaped_transform (
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input: &[u8] = $input;
+      use $crate::IterIndices;
+      let input = $input;
 
-      match input.iter().position(|c| !$submac!(*c, $($args)*)) {
+      match input.position(|c| !$submac!(c, $($args)*)) {
         Some(n) => {
           let res:$crate::IResult<_,_> = $crate::IResult::Done(&input[n..], &input[..n]);
           res
@@ -427,13 +430,14 @@ macro_rules! take_while (
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input: &[u8] = $input;
+      let input = $input;
 
       use $crate::InputLength;
+      use $crate::IterIndices;
       if input.input_len() == 0 {
         $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1,input))
       } else {
-        match input.iter().position(|c| !$submac!(*c, $($args)*)) {
+        match input.position(|c| !$submac!(c, $($args)*)) {
           Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1,input)),
           Some(n) => {
             $crate::IResult::Done(&input[n..], &input[..n])
@@ -458,10 +462,11 @@ macro_rules! take_while1 (
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      let input: &[u8] = $input;
+      let input = $input;
 
       use $crate::InputLength;
-      match input.iter().position(|c| $submac!(c, $($args)*)) {
+      use $crate::IterIndices;
+      match input.position(|c| $submac!(c, $($args)*)) {
         Some(n) => $crate::IResult::Done(&input[n..], &input[..n]),
         None    => $crate::IResult::Done(&input[input.input_len()..], input)
       }
@@ -491,13 +496,14 @@ macro_rules! take_till (
 macro_rules! take (
   ($i:expr, $count:expr) => (
     {
-      let input: &[u8] = $i;
+      use $crate::IterIndices;
+      let input = $i;
 
       let cnt = $count as usize;
-      let res: $crate::IResult<_,_> = if input.len() < cnt {
-        $crate::IResult::Incomplete($crate::Needed::Size(cnt))
-      } else {
-        $crate::IResult::Done(&input[cnt..],&input[..cnt])
+
+      let res: $crate::IResult<_,_> = match input.index(cnt) {
+        None        => $crate::IResult::Incomplete($crate::Needed::Size(cnt)),
+        Some(index) => $crate::IResult::Done(&input[index..], &input[..index])
       };
       res
     }
