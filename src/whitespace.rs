@@ -160,7 +160,7 @@ macro_rules! tuple_sep (
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
-      use $crate::util::{InputLength,IterIndices};
+      use $crate::traits::{InputLength,IterIndices};
       if ($i).input_len() == 0 {
         $crate::IResult::Done($i, &($i)[0..0])
       } else {

@@ -13,7 +13,8 @@ use std::boxed::Box;
 use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
-use util::{AsChar,ErrorKind,InputLength,IterIndices};
+use util::ErrorKind;
+use traits::{AsChar,InputLength,IterIndices};
 use std::mem::transmute;
 
 #[inline]
