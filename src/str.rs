@@ -70,25 +70,7 @@ macro_rules! take_s (
 macro_rules! is_not_s (
   ($input:expr, $arr:expr) => (
     {
-      let input: &str = $input;
-
-      use std::collections::HashSet;
-      let set: HashSet<char> = $arr.chars().collect();
-      let mut offset = input.len();
-      for (o, c) in input.char_indices() {
-        if set.contains(&c) {
-          offset = o;
-          break;
-        }
-      }
-      let res: $crate::IResult<_,_> = if offset == 0 {
-        $crate::IResult::Error(error_position!($crate::ErrorKind::IsAStr,input))
-      } else if offset < input.len() {
-        $crate::IResult::Done(&input[offset..], &input[..offset])
-      } else {
-        $crate::IResult::Done(&input[input.len()..], input)
-      };
-      res
+      is_not!($input, $arr)
     }
   );
 );
@@ -113,25 +95,7 @@ macro_rules! is_not_s (
 macro_rules! is_a_s (
   ($input:expr, $arr:expr) => (
     {
-      let input: &str = $input;
-
-      use std::collections::HashSet;
-      let set: HashSet<char> = $arr.chars().collect();
-      let mut offset = input.len();
-      for (o, c) in input.char_indices() {
-        if !set.contains(&c) {
-          offset = o;
-          break;
-        }
-      }
-      let res: $crate::IResult<_,_> = if offset == 0 {
-        $crate::IResult::Error(error_position!($crate::ErrorKind::IsAStr,input))
-      } else if offset < input.len() {
-        $crate::IResult::Done(&input[offset..], &input[..offset])
-      } else {
-        $crate::IResult::Done(&input[input.len()..], input)
-      };
-      res
+      is_a!($input, $arr)
     }
   );
 );

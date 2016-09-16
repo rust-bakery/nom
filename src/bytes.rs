@@ -55,33 +55,12 @@ macro_rules! tag (
 macro_rules! is_not(
   ($input:expr, $arr:expr) => (
     {
-      let input: &[u8] = $input;
-
-      #[inline(always)]
-      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected   = $arr;
-      let bytes      = as_bytes(&expected);
-
-      is_not_bytes!(input, bytes)
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! is_not_bytes (
-  ($input:expr, $bytes:expr) => (
-    {
       use $crate::InputLength;
       use $crate::IterIndices;
+      use $crate::Find;
+
       let res: $crate::IResult<_,_> = match $input.position(|c| {
-        for &i in $bytes.iter() {
-          if c == i { return true }
-        }
-        false
+        c.find($arr)
       }) {
         Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::IsNot,$input)),
         Some(n) => {
@@ -117,33 +96,12 @@ macro_rules! is_not_bytes (
 macro_rules! is_a (
   ($input:expr, $arr:expr) => (
     {
-      let input: &[u8] = $input;
-
-      #[inline(always)]
-      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected  = $arr;
-      let bytes     = as_bytes(&expected);
-
-      is_a_bytes!(input, bytes)
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! is_a_bytes (
-  ($input:expr, $bytes:expr) => (
-    {
       use $crate::InputLength;
       use $crate::IterIndices;
+      use $crate::Find;
+
       let res: $crate::IResult<_,_> = match $input.position(|c| {
-        for &i in $bytes.iter() {
-          if c == i { return false }
-        }
-        true
+        !c.find($arr)
       }) {
         Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::IsA,$input)),
         Some(n) => {
@@ -170,7 +128,7 @@ macro_rules! is_a_bytes (
 /// # use nom::IResult::Done;
 /// # use nom::alpha;
 /// # fn main() {
-///  named!(esc, escaped!(call!(alpha), '\\', is_a_bytes!(&b"\"n\\"[..])));
+///  named!(esc, escaped!(call!(alpha), '\\', is_a!("\"n\\")));
 ///  assert_eq!(esc(&b"abcd"[..]), Done(&b""[..], &b"abcd"[..]));
 ///  assert_eq!(esc(&b"ab\\\"cd"[..]), Done(&b""[..], &b"ab\\\"cd"[..]));
 /// # }
@@ -802,7 +760,7 @@ mod tests {
 
   #[test]
   fn escaping() {
-    named!(esc, escaped!(call!(alpha), '\\', is_a_bytes!(&b"\"n\\"[..])));
+    named!(esc, escaped!(call!(alpha), '\\', is_a!("\"n\\")));
     assert_eq!(esc(&b"abcd"[..]), Done(&b""[..], &b"abcd"[..]));
     assert_eq!(esc(&b"ab\\\"cd"[..]), Done(&b""[..], &b"ab\\\"cd"[..]));
     assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], &b"\\\"abcd"[..]));

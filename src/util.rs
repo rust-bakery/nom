@@ -298,7 +298,6 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
   }
 }
 
-
 impl<'a,'b> Compare<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
@@ -322,6 +321,34 @@ impl<'a,'b> Compare<&'b str> for &'a str {
     } else {
       CompareResult::Ok
     }
+  }
+}
+
+pub trait Find<T> {
+  fn find(&self, list: T) -> bool;
+}
+
+impl<'a> Find<&'a[u8]> for u8 {
+  fn find(&self, list: &[u8]) -> bool {
+    for &i in list.iter() {
+      if *self == i { return true }
+    }
+    false
+  }
+}
+
+impl<'a> Find<&'a str> for u8 {
+  fn find(&self, list: &str) -> bool {
+    self.find(str::as_bytes(list))
+  }
+}
+
+impl<'a> Find<&'a str> for char {
+  fn find(&self, list: &str) -> bool {
+    for i in list.chars() {
+      if *self == i { return true }
+    }
+    false
   }
 }
 
