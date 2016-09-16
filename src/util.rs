@@ -256,6 +256,8 @@ impl IterTake for str {
       }
       None
     }
+
+    // return byte index
     #[inline]
     fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)> {
       let mut cnt    = 0;
@@ -351,6 +353,35 @@ impl<'a> FindToken<&'a str> for char {
     false
   }
 }
+
+pub trait FindSubstring<T> {
+  fn find_substring(&self, substr: T) -> Option<usize>;
+}
+
+impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
+  fn find_substring(&self, substr: &'b[u8]) -> Option<usize> {
+    for (index,win) in self.windows(substr.len()).enumerate() {
+      if win == substr {
+        return Some(index)
+      }
+    }
+    None
+  }
+}
+
+impl<'a,'b> FindSubstring<&'b str> for &'a[u8] {
+  fn find_substring(&self, substr: &'b str) -> Option<usize> {
+    self.find_substring(str::as_bytes(substr))
+  }
+}
+
+impl<'a,'b> FindSubstring<&'b str> for &'a str {
+  //returns byte index
+  fn find_substring(&self, substr: &'b str) -> Option<usize> {
+    self.find(substr)
+  }
+}
+
 
 static CHARS: &'static[u8] = b"0123456789abcdef";
 

@@ -179,45 +179,7 @@ macro_rules! take_till_s (
 macro_rules! take_until_and_consume_s (
   ($input:expr, $substr:expr) => (
     {
-      let input: &str = $input;
-
-      #[inline(always)]
-      fn shift_window_and_cmp(window: & mut ::std::vec::Vec<char>, c: char, substr_vec: & ::std::vec::Vec<char>) -> bool {
-        window.push(c);
-        if window.len() > substr_vec.len() {
-          window.remove(0);
-        }
-        window == substr_vec
-      }
-
-      let res: $crate::IResult<_, _> = if $substr.len() > input.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($substr.len()))
-      } else {
-        let substr_vec: ::std::vec::Vec<char> = $substr.chars().collect();
-        let mut window: ::std::vec::Vec<char> = vec![];
-        let mut offset = input.len();
-        let mut parsed = false;
-        for (o, c) in input.char_indices() {
-            if parsed {
-                // The easiest way to get the byte offset of the char after the found string
-                offset = o;
-                break;
-            }
-            if shift_window_and_cmp(& mut window, c, &substr_vec) {
-                parsed = true;
-            }
-        }
-        if parsed {
-          if offset < input.len() {
-            $crate::IResult::Done(&input[offset..], &input[..offset])
-          } else {
-            $crate::IResult::Done(&input[input.len()..], input)
-          }
-        } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsumeStr,input))
-        }
-      };
-      res
+      take_until_and_consume!($input, $substr)
     }
   );
 );
@@ -228,41 +190,7 @@ macro_rules! take_until_and_consume_s (
 macro_rules! take_until_s (
   ($input:expr, $substr:expr) => (
     {
-      let input: &str = $input;
-
-      #[inline(always)]
-      fn shift_window_and_cmp(window: & mut Vec<char>, c: char, substr_vec: &Vec<char>) -> bool {
-        window.push(c);
-        if window.len() > substr_vec.len() {
-          window.remove(0);
-        }
-        window == substr_vec
-      }
-      let res: $crate::IResult<&str, &str> = if $substr.len() > input.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($substr.len()))
-      } else {
-        let substr_vec: Vec<char> = $substr.chars().collect();
-        let mut window: Vec<char> = vec![];
-        let mut offset = input.len();
-        let mut parsed = false;
-        for (o, c) in input.char_indices() {
-            if shift_window_and_cmp(& mut window, c, &substr_vec) {
-                parsed = true;
-                window.pop();
-                let window_len: usize = window.iter()
-                    .map(|x| x.len_utf8())
-                    .fold(0, |x, y| x + y);
-                offset = o - window_len;
-                break;
-            }
-        }
-        if parsed {
-          $crate::IResult::Done(&input[offset..], &input[..offset])
-        } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilStr,input))
-        }
-      };
-      res
+      take_until!($input, $substr)
     }
   );
 );

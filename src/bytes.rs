@@ -464,50 +464,22 @@ macro_rules! take_str (
 /// `take_until_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming bytes until the specified byte sequence is found, and consumes it
 #[macro_export]
-macro_rules! take_until_and_consume(
-  ($i:expr, $inp:expr) => (
+macro_rules! take_until_and_consume (
+  ($i:expr, $substr:expr) => (
     {
-      let input: &[u8] = $i;
+      use $crate::InputLength;
+      use $crate::FindSubstring;
 
-      #[inline(always)]
-      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected   = $inp;
-      let bytes      = as_bytes(&expected);
-      take_until_and_consume_bytes!(input, bytes)
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! take_until_and_consume_bytes (
-  ($i:expr, $bytes:expr) => (
-    {
-      let res: $crate::IResult<_,_> = if $bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
+      let res: $crate::IResult<_,_> = if $substr.input_len() > $i.input_len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
       } else {
-        let mut index  = 0;
-        let mut parsed = false;
-
-        for idx in 0..$i.len() {
-          if idx + $bytes.len() > $i.len() {
-            index = idx;
-            break;
-          }
-          if &$i[idx..idx + $bytes.len()] == $bytes {
-            parsed = true;
-            index = idx;
-            break;
-          }
-        }
-
-        if parsed {
-          $crate::IResult::Done(&$i[(index + $bytes.len())..], &$i[0..index])
-        } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsume,$i))
+        match ($i).find_substring($substr) {
+          None => {
+            $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsume,$i))
+          },
+          Some(index) => {
+            $crate::IResult::Done(&$i[index+$substr.len()..], &$i[0..index])
+          },
         }
       };
       res
@@ -518,50 +490,22 @@ macro_rules! take_until_and_consume_bytes (
 /// `take_until!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// consumes data until it finds the specified tag
 #[macro_export]
-macro_rules! take_until(
-  ($i:expr, $inp:expr) => (
+macro_rules! take_until (
+  ($i:expr, $substr:expr) => (
     {
-      let input: &[u8] = $i;
+      use $crate::InputLength;
+      use $crate::FindSubstring;
 
-      #[inline(always)]
-      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected   = $inp;
-      let bytes      = as_bytes(&expected);
-      take_until_bytes!(input, bytes)
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! take_until_bytes(
-  ($i:expr, $bytes:expr) => (
-    {
-      let res: $crate::IResult<_,_> = if $bytes.len() > $i.len() {
-        $crate::IResult::Incomplete($crate::Needed::Size($bytes.len()))
+      let res: $crate::IResult<_,_> = if $substr.input_len() > $i.input_len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
       } else {
-        let mut index  = 0;
-        let mut parsed = false;
-
-        for idx in 0..$i.len() {
-          if idx + $bytes.len() > $i.len() {
-            index = idx;
-            break;
-          }
-          if &$i[idx..idx+$bytes.len()] == $bytes {
-            parsed = true;
-            index  = idx;
-            break;
-          }
-        }
-
-        if parsed {
-          $crate::IResult::Done(&$i[index..], &$i[0..index])
-        } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntil,$i))
+        match ($i).find_substring($substr) {
+          None => {
+            $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntil,$i))
+          },
+          Some(index) => {
+            $crate::IResult::Done(&$i[index..], &$i[0..index])
+          },
         }
       };
       res
@@ -572,112 +516,60 @@ macro_rules! take_until_bytes(
 /// `take_until_either_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// consumes data until it finds any of the specified characters, and consume it
 #[macro_export]
-macro_rules! take_until_either_and_consume(
-  ($i:expr, $inp:expr) => (
+macro_rules! take_until_either_and_consume (
+  ($input:expr, $arr:expr) => (
     {
-      let input: &[u8] = $i;
+      use $crate::InputLength;
+      use $crate::IterIndices;
+      use $crate::FindToken;
 
-      #[inline(always)]
-      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected   = $inp;
-      let bytes      = as_bytes(&expected);
-      take_until_either_and_consume_bytes!(input, bytes)
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! take_until_either_and_consume_bytes(
-  ($i:expr, $bytes:expr) => (
-    {
-      let res: $crate::IResult<_,_> = if 1 > $i.len() {
+      if $input.input_len() == 0 {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
-        let mut index  = 0;
-        let mut parsed = false;
-
-        for idx in 0..$i.len() {
-          if idx + 1 > $i.len() {
-            index = idx;
-            break;
+        let res: $crate::IResult<_,_> = match $input.position(|c| {
+          c.find_token($arr)
+        }) {
+          Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilEitherAndConsume,$input)),
+          Some(n) => {
+            let res = $crate::IResult::Done(&$input[n+1..], &$input[..n]);
+            res
+          },
+          None    => {
+            $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilEitherAndConsume,$input))
           }
-          for &t in $bytes.iter() {
-            if $i[idx] == t {
-              parsed = true;
-              index = idx;
-              break;
-            }
-          }
-          if parsed { break; }
-        }
-
-        if parsed {
-          $crate::IResult::Done(&$i[(index+1)..], &$i[0..index])
-        } else {
-          $crate::IResult::Error($crate::Err::error_position!($crate::ErrorKind::TakeUntilEitherAndConsume,$i))
-        }
-      };
-      res
+        };
+        res
+      }
     }
   );
 );
 
 /// `take_until_either!(tag) => &[T] -> IResult<&[T], &[T]>`
 #[macro_export]
-macro_rules! take_until_either(
-  ($i:expr, $inp:expr) => (
+macro_rules! take_until_either (
+  ($input:expr, $arr:expr) => (
     {
-      let input: &[u8] = $i;
+      use $crate::InputLength;
+      use $crate::IterIndices;
+      use $crate::FindToken;
 
-      #[inline(always)]
-      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-        b.as_bytes()
-      }
-
-      let expected   = $inp;
-      let bytes      = as_bytes(&expected);
-      take_until_either_bytes!(input, bytes)
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! take_until_either_bytes(
-  ($i:expr, $bytes:expr) => (
-    {
-      let res: $crate::IResult<_,_> = if 1 > $i.len() {
+      if $input.input_len() == 0 {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
-        let mut index  = 0;
-        let mut parsed = false;
-
-        for idx in 0..$i.len() {
-          if idx + 1 > $i.len() {
-            index = idx;
-            break;
+        let res: $crate::IResult<_,_> = match $input.position(|c| {
+          c.find_token($arr)
+        }) {
+          Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilEither,$input)),
+          Some(n) => {
+            let res = $crate::IResult::Done(&$input[n..], &$input[..n]);
+            res
+          },
+          None    => {
+            $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilEither,$input))
           }
-          for &t in $bytes.iter() {
-            if $i[idx] == t {
-              parsed = true;
-              index = idx;
-              break;
-            }
-          }
-          if parsed { break; }
-        }
-
-        if parsed {
-          $crate::IResult::Done(&$i[index..], &$i[0..index])
-        } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilEither,$i))
-        }
-      };
-      res
+        };
+        res
+      }
     }
   );
 );
@@ -851,6 +743,15 @@ mod tests {
   }
 
   #[test]
+  fn take_until_either() {
+    named!(x, take_until_either!("!."));
+    assert_eq!(
+      x(&b"123!abc"[..]),
+      Done(&b"!abc"[..], &b"123"[..])
+    );
+  }
+
+  #[test]
   fn take_until_either_incomplete() {
     named!(x, take_until_either!("!."));
     assert_eq!(
@@ -858,6 +759,16 @@ mod tests {
       Error(error_position!(ErrorKind::TakeUntilEither, &b"123"[..]))
     );
   }
+
+  #[test]
+  fn take_until_either_and_consume() {
+    named!(x, take_until_either_and_consume!("!."));
+    assert_eq!(
+      x(&b"123.abc"[..]),
+      Done(&b"abc"[..], &b"123"[..])
+    );
+  }
+
 
   #[test]
   fn take_until_incomplete() {
