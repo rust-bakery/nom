@@ -57,10 +57,10 @@ macro_rules! is_not(
     {
       use $crate::InputLength;
       use $crate::IterIndices;
-      use $crate::Find;
+      use $crate::FindToken;
 
       let res: $crate::IResult<_,_> = match $input.position(|c| {
-        c.find($arr)
+        c.find_token($arr)
       }) {
         Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::IsNot,$input)),
         Some(n) => {
@@ -98,10 +98,10 @@ macro_rules! is_a (
     {
       use $crate::InputLength;
       use $crate::IterIndices;
-      use $crate::Find;
+      use $crate::FindToken;
 
       let res: $crate::IResult<_,_> = match $input.position(|c| {
-        !c.find($arr)
+        !c.find_token($arr)
       }) {
         Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::IsA,$input)),
         Some(n) => {

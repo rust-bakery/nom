@@ -324,12 +324,12 @@ impl<'a,'b> Compare<&'b str> for &'a str {
   }
 }
 
-pub trait Find<T> {
-  fn find(&self, list: T) -> bool;
+pub trait FindToken<T> {
+  fn find_token(&self, list: T) -> bool;
 }
 
-impl<'a> Find<&'a[u8]> for u8 {
-  fn find(&self, list: &[u8]) -> bool {
+impl<'a> FindToken<&'a[u8]> for u8 {
+  fn find_token(&self, list: &[u8]) -> bool {
     for &i in list.iter() {
       if *self == i { return true }
     }
@@ -337,14 +337,14 @@ impl<'a> Find<&'a[u8]> for u8 {
   }
 }
 
-impl<'a> Find<&'a str> for u8 {
-  fn find(&self, list: &str) -> bool {
-    self.find(str::as_bytes(list))
+impl<'a> FindToken<&'a str> for u8 {
+  fn find_token(&self, list: &str) -> bool {
+    self.find_token(str::as_bytes(list))
   }
 }
 
-impl<'a> Find<&'a str> for char {
-  fn find(&self, list: &str) -> bool {
+impl<'a> FindToken<&'a str> for char {
+  fn find_token(&self, list: &str) -> bool {
     for i in list.chars() {
       if *self == i { return true }
     }
