@@ -472,16 +472,16 @@ mod test {
   fn take_until_and_consume_s_succeed() {
     const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
     const FIND: &'static str = "ÂßÇ";
-    const CONSUMED: &'static str = "βèƒôřèÂßÇ";
+    const OUTPUT: &'static str = "βèƒôřè";
     const LEFTOVER: &'static str = "áƒƭèř";
 
     match take_until_and_consume_s!(INPUT, FIND) {
       IResult::Done(extra, output) => {
         assert!(extra == LEFTOVER, "Parser `take_until_and_consume_s`\
                     consumed leftover input. Leftover `{}`.", extra);
-        assert!(output == CONSUMED, "Parser `take_until_and_consume_s`\
-                    doens't return the string it consumed on success. Expected `{}`, got `{}`.",
-                    CONSUMED, output);
+        assert!(output == OUTPUT, "Parser `take_until_and_consume_s`\
+                    doens't return the string it selected on success. Expected `{}`, got `{}`.",
+                    OUTPUT, output);
       }
       other => panic!("Parser `take_until_and_consume_s` didn't succeed when it should have. \
                              Got `{:?}`.", other),
