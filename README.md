@@ -324,7 +324,8 @@ let r = f(b"abcdabcdefghefghX");
 assert_eq!(r, Done(&b"X"[..], A{a: 1, b: 2}));
 
 let r2 = f(b"abcdefghefghX");
-assert_eq!(r2, Done(&b"X"[..], A{a: 1, b: 2}));```
+assert_eq!(r2, Done(&b"X"[..], A{a: 1, b: 2}));
+```
 
 The tilde `~` is used as separator between every parser in the sequence, the comma `,` indicates the parser chain ended, and the last closure can see the variables storing the result of parsers.
 
