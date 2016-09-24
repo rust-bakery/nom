@@ -133,7 +133,7 @@ pub fn crlf(input:&[u8]) -> IResult<&[u8], char> {
   }
 }
 
-named!(pub eol<char>, alt!(crlf | newline));
+named!(pub eol<char>, alt!(newline | crlf));
 named!(pub tab<char>, char!('\t'));
 
 pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
