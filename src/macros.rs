@@ -852,10 +852,11 @@ macro_rules! peek(
 macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use $crate::Slice;
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(_, _)    => $crate::IResult::Error(error_position!($crate::ErrorKind::Not, $i)),
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, &($i)[..0]),
-        $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, &($i)[..0])
+        $crate::IResult::Error(_)      => $crate::IResult::Done($i, ($i).slice(..0)),
+        $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, ($i).slice(..0))
       }
     }
   );
@@ -927,10 +928,11 @@ macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::Offset;
+      use $crate::Slice;
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
           let index = ($i).offset(i);
-          $crate::IResult::Done(i, &($i)[..index])
+          $crate::IResult::Done(i, ($i).slice(..index))
         },
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)

@@ -1,5 +1,6 @@
 //! Traits input types have to implement to work with nom combinators
 //!
+use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
 
 #[cfg(not(feature = "core"))]
 use std::str::Chars;
@@ -356,5 +357,58 @@ impl<'a,'b> FindSubstring<&'b str> for &'a str {
   //returns byte index
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.find(substr)
+  }
+}
+
+pub trait Slice<R> {
+  #[inline(always)]
+  fn slice(&self, range: R) -> Self;
+}
+
+impl<'a,T> Slice<Range<usize>> for &'a [T] {
+  fn slice(&self, range:Range<usize>) -> Self {
+    &self[range]
+  }
+}
+
+impl<'a,T> Slice<RangeTo<usize>> for &'a [T] {
+  fn slice(&self, range:RangeTo<usize>) -> Self {
+    &self[range]
+  }
+}
+
+impl<'a,T> Slice<RangeFrom<usize>> for &'a [T] {
+  fn slice(&self, range:RangeFrom<usize>) -> Self {
+    &self[range]
+  }
+}
+
+impl<'a,T> Slice<RangeFull> for &'a [T] {
+  fn slice(&self, range:RangeFull) -> Self {
+    &self[range]
+  }
+}
+
+impl<'a> Slice<Range<usize>> for &'a str {
+  fn slice(&self, range:Range<usize>) -> Self {
+    &self[range]
+  }
+}
+
+impl<'a> Slice<RangeTo<usize>> for &'a str {
+  fn slice(&self, range:RangeTo<usize>) -> Self {
+    &self[range]
+  }
+}
+
+impl<'a> Slice<RangeFrom<usize>> for &'a str {
+  fn slice(&self, range:RangeFrom<usize>) -> Self {
+    &self[range]
+  }
+}
+
+impl<'a> Slice<RangeFull> for &'a str {
+  fn slice(&self, range:RangeFull) -> Self {
+    &self[range]
   }
 }

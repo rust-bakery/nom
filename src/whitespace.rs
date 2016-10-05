@@ -160,7 +160,7 @@ macro_rules! tuple_sep (
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
-      use $crate::traits::{InputLength,IterIndices};
+      use $crate::traits::{InputLength,IterIndices,Slice};
       if ($i).input_len() == 0 {
         $crate::IResult::Done($i, &($i)[0..0])
       } else {
@@ -171,10 +171,10 @@ macro_rules! eat_separator (
           true
         }) {
           Some(index) => {
-            $crate::IResult::Done(&($i)[index..], &($i)[..index])
+            $crate::IResult::Done(($i).slice(index..), ($i).slice(..index))
           },
           None        => {
-            $crate::IResult::Done(&($i)[($i).input_len()..], $i)
+            $crate::IResult::Done(($i).slice(($i).input_len()..), $i)
           }
         }
       }
