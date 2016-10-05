@@ -37,3 +37,5 @@ optional = true
 version = "^0.2.1"
 optional = true
 
+[dev-dependencies.bytes]
+git = "https://github.com/carllerche/bytes"
