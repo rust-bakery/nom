@@ -94,52 +94,62 @@ macro_rules! closure (
 /// ```
 #[macro_export]
 macro_rules! named (
-    ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* $name:ident, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])* pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
