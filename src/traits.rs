@@ -41,13 +41,13 @@ use std::str::CharIndices;
 
 pub trait AsChar {
     #[inline]
-    fn as_char(self)     -> char;
+    fn as_char(self)      -> char;
     #[inline]
-    fn is_alpha(self)    -> bool;
+    fn is_alpha(self)     -> bool;
     #[inline]
-    fn is_alphanum(self) -> bool;
+    fn is_alphanum(self)  -> bool;
     #[inline]
-    fn is_0_to_9(self)   -> bool;
+    fn is_dec_digit(self) -> bool;
     #[inline]
     fn is_hex_digit(self) -> bool;
     #[inline]
@@ -56,15 +56,15 @@ pub trait AsChar {
 
 impl AsChar for u8 {
     #[inline]
-    fn as_char(self)     -> char { self as char }
+    fn as_char(self)      -> char { self as char }
     #[inline]
-    fn is_alpha(self)    -> bool {
+    fn is_alpha(self)     -> bool {
       (self >= 0x41 && self <= 0x5A) || (self >= 0x61 && self <= 0x7A)
     }
     #[inline]
-    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
     #[inline]
-    fn is_0_to_9(self)   -> bool {
+    fn is_dec_digit(self) -> bool {
       self >= 0x30 && self <= 0x39
     }
     #[inline]
@@ -74,21 +74,21 @@ impl AsChar for u8 {
       (self >= 0x61 && self <= 0x66)
     }
     #[inline]
-    fn is_oct_digit(self)   -> bool {
+    fn is_oct_digit(self) -> bool {
       self >= 0x30 && self <= 0x37
     }
 }
 impl<'a> AsChar for &'a u8 {
     #[inline]
-    fn as_char(self)     -> char { *self as char }
+    fn as_char(self)      -> char { *self as char }
     #[inline]
-    fn is_alpha(self)    -> bool {
+    fn is_alpha(self)     -> bool {
       (*self >= 0x41 && *self <= 0x5A) || (*self >= 0x61 && *self <= 0x7A)
     }
     #[inline]
-    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
     #[inline]
-    fn is_0_to_9(self)   -> bool {
+    fn is_dec_digit(self) -> bool {
       *self >= 0x30 && *self <= 0x39
     }
     #[inline]
@@ -105,13 +105,13 @@ impl<'a> AsChar for &'a u8 {
 
 impl AsChar for char {
     #[inline]
-    fn as_char(self)     -> char { self }
+    fn as_char(self)      -> char { self }
     #[inline]
-    fn is_alpha(self)    -> bool { self.is_alphabetic() }
+    fn is_alpha(self)     -> bool { self.is_alphabetic() }
     #[inline]
-    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
     #[inline]
-    fn is_0_to_9(self)   -> bool { self.is_digit(10) }
+    fn is_dec_digit(self) -> bool { self.is_digit(10) }
     #[inline]
     fn is_hex_digit(self) -> bool { self.is_digit(16) }
     #[inline]

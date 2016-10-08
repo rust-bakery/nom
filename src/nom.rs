@@ -139,7 +139,7 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
   }
 
   for (idx, item) in input.iter_indices() {
-    if ! item.is_0_to_9() {
+    if ! item.is_dec_digit() {
       if idx == 0 {
         return Error(error_position!(ErrorKind::Digit, input))
       } else {
