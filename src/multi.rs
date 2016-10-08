@@ -1,17 +1,22 @@
 //! Parsers for applying parsers multiple times
 
+#[cfg(feature = "core")]
+pub type Vec<T> = ::collections::vec::Vec<T>;
+#[cfg(not(feature = "core"))]
+pub type Vec<T> = ::std::vec::Vec<T>;
+
 /// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// separated_list(sep, X) returns Vec<X>
 #[macro_export]
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut res   = ::std::vec::Vec::new();
+      let mut res   = Vec::new();
       let mut input = $i;
 
       // get the first element
       match $submac!(input, $($args2)*) {
-        $crate::IResult::Error(_)      => $crate::IResult::Done(input, ::std::vec::Vec::new()),
+        $crate::IResult::Error(_)      => $crate::IResult::Done(input, Vec::new()),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
           if i.len() == input.len() {
@@ -64,7 +69,7 @@ macro_rules! separated_list(
 macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
-      let mut res   = ::std::vec::Vec::new();
+      let mut res   = Vec::new();
       let mut input = $i;
 
       // get the first element
@@ -141,7 +146,7 @@ macro_rules! many0(
       use $crate::InputLength;
 
       let ret;
-      let mut res   = ::std::vec::Vec::new();
+      let mut res   = Vec::new();
       let mut input = $i;
 
       loop {
@@ -222,7 +227,7 @@ macro_rules! many1(
             $crate::IResult::Done(i1,vec![o1])
           } else {
 
-            let mut res    = ::std::vec::Vec::with_capacity(4);
+            let mut res    = Vec::with_capacity(4);
             res.push(o1);
             let mut input  = i1;
             let mut incomplete: ::std::option::Option<$crate::Needed> =
@@ -300,7 +305,7 @@ macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::InputLength;
-      let mut res          = ::std::vec::Vec::with_capacity($m);
+      let mut res          = Vec::with_capacity($m);
       let mut input        = $i;
       let mut count: usize = 0;
       let mut err          = false;
@@ -388,7 +393,7 @@ macro_rules! count(
     {
       let ret;
       let mut input = $i;
-      let mut res   = ::std::vec::Vec::with_capacity($count);
+      let mut res   = Vec::with_capacity($count);
 
       loop {
         if res.len() == $count {
@@ -495,7 +500,7 @@ macro_rules! length_value_impl(
           let ret;
           let length_token = $i.len() - inum.len();
           let mut input    = inum;
-          let mut res      = ::std::vec::Vec::new();
+          let mut res      = Vec::new();
 
           loop {
             if res.len() == onum as usize {
