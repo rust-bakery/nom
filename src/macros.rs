@@ -905,7 +905,7 @@ macro_rules! eof (
       if ($i).input_len() == 0 {
         $crate::IResult::Done($i, $i)
       } else {
-        $crate::IResult::Error(error_position!(ErrorKind::Eof, $i))
+        $crate::IResult::Error(error_position!($crate::ErrorKind::Eof, $i))
       }
     }
   );
