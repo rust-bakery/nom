@@ -24,13 +24,14 @@ macro_rules! named_table_intern {
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{IResult, IterIndices, Slice};
-/// 
+/// use nom::{IResult, IterIndices, Slice};
+/// # fn main() {
 /// named_table!(c0_table, enum=C0, meta=derive(PartialEq, Debug);
 ///     0x1D => GroupSeparator,
 ///     0x1E => RecordSeparator,
 ///     0x1F => UnitSeparator,
 /// );
+/// # }
 /// ```
 ///
 /// The generated macro `c0_table` can then either be used to:
@@ -40,28 +41,55 @@ macro_rules! named_table_intern {
 /// an additional fallback has to be specified.
 ///
 /// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::{IResult, IterIndices, Slice};
+/// # fn main() {
+/// # named_table!(c0_table, enum=C0, meta=derive(PartialEq, Debug);
+/// #     0x1D => GroupSeparator,
+/// #     0x1E => RecordSeparator,
+/// #     0x1F => UnitSeparator,
+/// # );
 /// let byte: u8 = 0x1D;
 ///
 /// // this does not work:
 /// // let symbol = c0_table!(match byte);
 /// let symbol = c0_table!(match byte, _ => panic!());
-/// assert_eq!(symbol == C0::GroupSeparator);
+/// assert_eq!(symbol, C0::GroupSeparator);
+/// # }
 /// ```
 ///
 /// ### match a symbol and get the corresponding input value:
 ///
 /// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::{IResult, IterIndices, Slice};
+/// # fn main() {
+/// # named_table!(c0_table, enum=C0, meta=derive(PartialEq, Debug);
+/// #     0x1D => GroupSeparator,
+/// #     0x1E => RecordSeparator,
+/// #     0x1F => UnitSeparator,
+/// # );
 /// let symbol: C0 = C0::UnitSeparator;
 /// let byte = c0_table!(rev symbol);
-/// assert_eq!(byte == 0x1F);
+/// assert_eq!(byte, 0x1F);
+/// # }
 /// ```
 ///
 /// ### work as a tag and match the specifed values:
 ///
 /// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::{IResult, IterIndices, Slice};
+/// # fn main() {
+/// # named_table!(c0_table, enum=C0, meta=derive(PartialEq, Debug);
+/// #     0x1D => GroupSeparator,
+/// #     0x1E => RecordSeparator,
+/// #     0x1F => UnitSeparator,
+/// # );
 /// let input: &[u8] = b"\x1dbar" as &[u8];
-/// let result = c0_table!(parse input);
-/// assert_eq!(result, IResult::Done(b"bar", C0::GroupSeparator));
+/// let result: IResult<&[u8], C0> = c0_table!(parse input);
+/// assert_eq!(result, IResult::Done(b"bar" as &[u8], C0::GroupSeparator));
+/// # }
 /// ```
 #[macro_export]
 macro_rules! named_table {
