@@ -91,6 +91,23 @@ macro_rules! named_table_intern {
 /// assert_eq!(result, IResult::Done(b"bar" as &[u8], C0::GroupSeparator));
 /// # }
 /// ```
+///
+/// ### also apply an transformation on the input value (eg. offset)
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::{IResult, IterIndices, Slice};
+/// # fn main() {
+/// # named_table!(c0_table, enum=C0, meta=derive(PartialEq, Debug);
+/// #     0x1D => GroupSeparator,
+/// #     0x1E => RecordSeparator,
+/// #     0x1F => UnitSeparator,
+/// # );
+/// let input: &[u8] = b"\x5dbar" as &[u8];
+/// let result: IResult<&[u8], C0> = c0_table!(parse input; x - 0x40);
+/// assert_eq!(result, IResult::Done(b"bar" as &[u8], C0::GroupSeparator));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! named_table {
     ($t:ident, enum = $n:ident, meta = $m:meta; $($a:expr => $b:ident,)*) => {
