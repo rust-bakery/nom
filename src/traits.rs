@@ -243,6 +243,7 @@ impl IterTake for str {
     }
 }
 
+#[derive(Debug,PartialEq)]
 pub enum CompareResult {
   Ok,
   Incomplete,

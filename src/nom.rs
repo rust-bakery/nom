@@ -16,6 +16,8 @@ use internal::IResult::*;
 use util::ErrorKind;
 use traits::{AsChar,InputLength,IterIndices};
 use std::mem::transmute;
+use std::ops::{Index,Range,RangeFrom,RangeTo};
+use traits::{Compare,CompareResult,Slice};
 
 #[inline]
 pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]> + 'a> {
@@ -42,22 +44,50 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
-//pub is_not!(line_ending b"\r\n")
-pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  for (idx, item) in input.iter().enumerate() {
-    for &i in b"\r\n".iter() {
-      if *item == i {
-        return Done(&input[idx..], &input[0..idx])
+pub fn not_line_ending<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    &'a T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
+    &'a T: IterIndices+InputLength,
+    &'a T: Compare<&'static str> {
+      match input.iter_elements().position(|item| {
+        let c = item.as_char();
+        c == '\r' || c == '\n'
+      }) {
+        None        => Done(input.slice(input.input_len()..), input),
+        Some(index) => {
+          let mut it = input.iter_elements();
+          let nth    = it.nth(index).unwrap().as_char();
+          if nth == '\r' {
+            let sliced = input.slice(index..);
+            let comp   = sliced.compare("\r\n");
+            match comp {
+              //FIXME: calculate the right index
+              CompareResult::Incomplete => Incomplete(Needed::Unknown),
+              CompareResult::Error      => Error(error_position!(ErrorKind::Tag, input)),
+              CompareResult::Ok         => Done(input.slice(index..), input.slice(..index))
+            }
+          } else {
+            Done(input.slice(index..), input.slice(..index))
+          }
+        }
       }
-    }
-  }
-  Done(&input[input.len()..], input)
 }
 
-/// Recognizes a line feed
-#[inline]
-pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  alt!(input, tag!(&b"\n"[..]) | tag!(&b"\r\n"[..]))
+/// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
+pub fn line_ending<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
+    &'a T: IterIndices+InputLength,
+    &'a T: Compare<&'static str> {
+
+  match input.compare("\n") {
+    CompareResult::Ok         => Done(input.slice(1..), input.slice(0..1)),
+    CompareResult::Incomplete => Incomplete(Needed::Size(1)),
+    CompareResult::Error      => match input.compare("\r\n") {
+      //FIXME: is this the right index?
+      CompareResult::Ok         => Done(input.slice(2..), input.slice(0..2)),
+      CompareResult::Incomplete => Incomplete(Needed::Size(2)),
+      CompareResult::Error      => Error(error_position!(ErrorKind::CrLf, input))
+    }
+  }
 }
 
 /// Tests if byte is ASCII alphabetic: A-Z, a-z
@@ -105,7 +135,6 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(oct_digit is_oct_digit)
 //pub filter!(alphanumeric is_alphanumeric)
 
-use std::ops::{Index,Range,RangeFrom};
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
@@ -681,15 +710,44 @@ mod tests {
   }
 
   #[test]
-  fn is_not() {
+  fn is_not_line_ending_bytes() {
     let a: &[u8] = b"ab12cd\nefgh";
     assert_eq!(not_line_ending(a), Done(&b"\nefgh"[..], &b"ab12cd"[..]));
 
     let b: &[u8] = b"ab12cd\nefgh\nijkl";
     assert_eq!(not_line_ending(b), Done(&b"\nefgh\nijkl"[..], &b"ab12cd"[..]));
 
-    let c: &[u8] = b"ab12cd";
-    assert_eq!(not_line_ending(c), Done(&b""[..], c));
+    let c: &[u8] = b"ab12cd\r\nefgh\nijkl";
+    assert_eq!(not_line_ending(c), Done(&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..]));
+
+    let d: &[u8] = b"ab12cd";
+    assert_eq!(not_line_ending(d), Done(&b""[..], d));
+  }
+
+  #[test]
+  fn is_not_line_ending_str() {
+    /*
+    let a: &str = "ab12cd\nefgh";
+    assert_eq!(not_line_ending(a), Done(&"\nefgh"[..], &"ab12cd"[..]));
+
+    let b: &str = "ab12cd\nefgh\nijkl";
+    assert_eq!(not_line_ending(b), Done(&"\nefgh\nijkl"[..], &"ab12cd"[..]));
+
+    let c: &str = "ab12cd\r\nefgh\nijkl";
+    assert_eq!(not_line_ending(c), Done(&"\r\nefgh\nijkl"[..], &"ab12cd"[..]));
+
+    let d = "βèƒôřè\nÂßÇáƒƭèř";
+    assert_eq!(not_line_ending(d), Done(&"\nÂßÇáƒƭèř"[..], &"βèƒôřè"[..]));
+
+    let e = "βèƒôřè\r\nÂßÇáƒƭèř";
+    assert_eq!(not_line_ending(e), Done(&"\r\nÂßÇáƒƭèř"[..], &"βèƒôřè"[..]));
+    */
+
+    let f = "βèƒôřè\rÂßÇáƒƭèř";
+    assert_eq!(not_line_ending(f), Error(error_position!(ErrorKind::Tag,f)));
+
+    let g: &str = "ab12cd";
+    assert_eq!(not_line_ending(g), Done("", g));
   }
 
   #[test]
@@ -963,15 +1021,15 @@ mod tests {
   #[test]
   fn check_windows_lineending() {
     let input = b"\r\n";
-    let output = line_ending(input);
-    assert_eq!(output, Done(&b""[..], &b"\r\n"[..]))  
+    let output = line_ending(&input[..]);
+    assert_eq!(output, Done(&b""[..], &b"\r\n"[..]));
   }
 
   #[test]
   fn check_unix_lineending() {
     let input = b"\n";
-    let output = line_ending(input);
-    assert_eq!(output, Done(&b""[..], &b"\n"[..]))  
+    let output = line_ending(&input[..]);
+    assert_eq!(output, Done(&b""[..], &b"\n"[..]));
   }
-    
+
 }
