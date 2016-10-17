@@ -54,12 +54,10 @@ pub fn not_line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
   Done(&input[input.len()..], input)
 }
 
-named!(tag_ln, alt!(tag!("\n") | tag!("\r\n")));
-
 /// Recognizes a line feed
 #[inline]
 pub fn line_ending(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  tag_ln(input)
+  alt!(input, tag!(&b"\n"[..]) | tag!(&b"\r\n"[..]))
 }
 
 /// Tests if byte is ASCII alphabetic: A-Z, a-z
