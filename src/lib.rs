@@ -90,6 +90,7 @@
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(feature = "nightly", feature(const_fn))]
 
+extern crate byteorder;
 #[cfg(feature = "core")]
 extern crate collections;
 #[cfg(feature = "regexp")]
