@@ -137,7 +137,7 @@ pub fn is_space(chr:u8) -> bool {
 
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
@@ -149,16 +149,16 @@ pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       if idx == 0 {
         return Error(error_position!(ErrorKind::Alpha, input))
       } else {
-        return Done(&input[idx..], &input[0..idx])
+        return Done(input.slice(idx..), input.slice(0..idx))
       }
     }
   }
-  Done(&input[input_length..], input)
+  Done(input.slice(input_length..), input)
 }
 
 /// Recognizes numerical characters: 0-9
 pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
@@ -170,16 +170,16 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       if idx == 0 {
         return Error(error_position!(ErrorKind::Digit, input))
       } else {
-        return Done(&input[idx..], &input[0..idx])
+        return Done(input.slice(idx..), input.slice(0..idx))
       }
     }
   }
-  Done(&input[input_length..], input)
+  Done(input.slice(input_length..), input)
 }
 
 /// Recognizes hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
@@ -191,16 +191,16 @@ pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       if idx == 0 {
         return Error(error_position!(ErrorKind::HexDigit, input))
       } else {
-        return Done(&input[idx..], &input[0..idx])
+        return Done(input.slice(idx..), input.slice(0..idx))
       }
     }
   }
-  Done(&input[input_length..], input)
+  Done(input.slice(input_length..), input)
 }
 
 /// Recognizes octal characters: 0-7
 pub fn oct_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
@@ -212,16 +212,16 @@ pub fn oct_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       if idx == 0 {
         return Error(error_position!(ErrorKind::OctDigit, input))
       } else {
-        return Done(&input[idx..], &input[0..idx])
+        return Done(input.slice(idx..), input.slice(0..idx))
       }
     }
   }
-  Done(&input[input_length..], input)
+  Done(input.slice(input_length..), input)
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
@@ -233,16 +233,16 @@ pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       if idx == 0 {
         return Error(error_position!(ErrorKind::AlphaNumeric, input))
       } else {
-        return Done(&input[idx..], &input[0..idx])
+        return Done(input.slice(idx..), input.slice(0..idx))
       }
     }
   }
-  Done(&input[input_length..], input)
+  Done(input.slice(input_length..), input)
 }
 
 /// Recognizes spaces and tabs
 pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
@@ -255,16 +255,16 @@ pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       if idx == 0 {
         return Error(error_position!(ErrorKind::Space, input))
       } else {
-        return Done(&input[idx..], &input[0..idx])
+        return Done(input.slice(idx..), input.slice(0..idx))
       }
     }
   }
-  Done(&input[input_length..], input)
+  Done(input.slice(input_length..), input)
 }
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
 pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
@@ -277,11 +277,11 @@ pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       if idx == 0 {
         return Error(error_position!(ErrorKind::MultiSpace, input))
       } else {
-        return Done(&input[idx..], &input[0..idx])
+        return Done(input.slice(idx..), input.slice(0..idx))
       }
     }
   }
-  Done(&input[input_length..], input)
+  Done(input.slice(input_length..), input)
 }
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
