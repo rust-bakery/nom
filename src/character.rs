@@ -123,7 +123,24 @@ macro_rules! char (
 
 named!(pub newline<char>, char!('\n'));
 
+//FIXME: this crlf implementation returns a char, while "\r\n" is two chars
+// these should probably be removed or return a slice instead of a char
 pub fn crlf<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, char> where
+  &'a T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
+  &'a T: IterIndices,
+  &'a T: Compare<&'static str> {
+    match input.compare("\r\n") {
+      //FIXME: is this the right index?
+      CompareResult::Ok         => {
+        let c = input.slice(0..2).iter_elements().next().unwrap().as_char();
+        IResult::Done(input.slice(2..), c)
+      },
+      CompareResult::Incomplete => IResult::Incomplete(Needed::Size(2)),
+      CompareResult::Error      => IResult::Error(error_position!(ErrorKind::CrLf, input))
+    }
+}
+
+pub fn eol<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, char> where
   &'a T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
   &'a T: IterIndices,
   &'a T: Compare<&'static str> {
@@ -145,7 +162,6 @@ pub fn crlf<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, char> where
     }
 }
 
-named!(pub eol<char>, alt!(newline | crlf));
 named!(pub tab<char>, char!('\t'));
 
 pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
@@ -158,7 +174,9 @@ pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
 
 #[cfg(test)]
 mod tests {
+  use super::*;
   use internal::IResult::*;
+  use internal::Needed;
   use util::ErrorKind;
 
   #[test]
@@ -192,5 +210,29 @@ mod tests {
 
     let b = &b"cde"[..];
     assert_eq!(f(b), Done(&b"de"[..], 'c'));
+  }
+
+  #[test]
+  fn cr_lf() {
+    assert_eq!(crlf(&b"\r\na"[..]), Done(&b"a"[..], '\r'));
+    assert_eq!(crlf(&b"\r"[..]),    Incomplete(Needed::Size(2)));
+    assert_eq!(crlf(&b"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
+
+    assert_eq!(crlf("\r\na"), Done("a", '\r'));
+    assert_eq!(crlf("\r"),    Incomplete(Needed::Size(2)));
+    assert_eq!(crlf("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
+  }
+
+  #[test]
+  fn end_of_line() {
+    assert_eq!(eol(&b"\na"[..]),   Done(&b"a"[..], '\n'));
+    assert_eq!(eol(&b"\r\na"[..]), Done(&b"a"[..], '\r'));
+    assert_eq!(eol(&b"\r"[..]),    Incomplete(Needed::Size(2)));
+    assert_eq!(eol(&b"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
+
+    assert_eq!(eol("\na"),   Done("a", '\n'));
+    assert_eq!(eol("\r\na"), Done("a", '\r'));
+    assert_eq!(eol("\r"),    Incomplete(Needed::Size(2)));
+    assert_eq!(eol("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
   }
 }
