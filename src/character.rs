@@ -2,6 +2,8 @@
 
 use internal::{IResult,Needed};
 use util::ErrorKind;
+use std::ops::{Range,RangeFrom,RangeTo};
+use traits::{AsChar,Compare,CompareResult,IterIndices,Slice};
 
 /// matches one of the provided characters
 #[macro_export]
@@ -121,16 +123,26 @@ macro_rules! char (
 
 named!(pub newline<char>, char!('\n'));
 
-pub fn crlf(input:&[u8]) -> IResult<&[u8], char> {
-  if input.len() < 2 {
-    IResult::Incomplete(Needed::Size(2))
-  } else {
-    if &input[0..2] == &b"\r\n"[..] {
-      IResult::Done(&input[2..], '\n')
-    } else {
-      IResult::Error(error_position!(ErrorKind::CrLf, input))
+pub fn crlf<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, char> where
+  &'a T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
+  &'a T: IterIndices,
+  &'a T: Compare<&'static str> {
+    match input.compare("\n") {
+      CompareResult::Ok         => {
+        let c = input.slice(0..1).iter_elements().next().unwrap().as_char();
+        IResult::Done(input.slice(1..), c)
+      },
+      CompareResult::Incomplete => IResult::Incomplete(Needed::Size(1)),
+      CompareResult::Error      => match input.compare("\r\n") {
+        //FIXME: is this the right index?
+        CompareResult::Ok         => {
+          let c = input.slice(0..2).iter_elements().next().unwrap().as_char();
+          IResult::Done(input.slice(2..), c)
+        },
+        CompareResult::Incomplete => IResult::Incomplete(Needed::Size(2)),
+        CompareResult::Error      => IResult::Error(error_position!(ErrorKind::CrLf, input))
+      }
     }
-  }
 }
 
 named!(pub eol<char>, alt!(newline | crlf));
