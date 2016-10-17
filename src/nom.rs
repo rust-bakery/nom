@@ -42,6 +42,20 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
   Done((), input)
 }
 
+pub fn crlf<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+  &'a T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
+  &'a T: IterIndices,
+  &'a T: Compare<&'static str> {
+    match input.compare("\r\n") {
+      //FIXME: is this the right index?
+      CompareResult::Ok         => {
+        IResult::Done(input.slice(2..), input.slice(0..2))
+      },
+      CompareResult::Incomplete => IResult::Incomplete(Needed::Size(2)),
+      CompareResult::Error      => IResult::Error(error_position!(ErrorKind::CrLf, input))
+    }
+}
+
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
 pub fn not_line_ending<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
@@ -88,6 +102,13 @@ pub fn line_ending<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
       CompareResult::Error      => Error(error_position!(ErrorKind::CrLf, input))
     }
   }
+}
+
+pub fn eol<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
+    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
+    &'a T: IterIndices+InputLength,
+    &'a T: Compare<&'static str> {
+  line_ending(input)
 }
 
 /// Tests if byte is ASCII alphabetic: A-Z, a-z
@@ -1032,4 +1053,27 @@ mod tests {
     assert_eq!(output, Done(&b""[..], &b"\n"[..]));
   }
 
+  #[test]
+  fn cr_lf() {
+    assert_eq!(crlf(&b"\r\na"[..]), Done(&b"a"[..], &b"\r\n"[..]));
+    assert_eq!(crlf(&b"\r"[..]),    Incomplete(Needed::Size(2)));
+    assert_eq!(crlf(&b"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
+
+    assert_eq!(crlf("\r\na"), Done("a", "\r\n"));
+    assert_eq!(crlf("\r"),    Incomplete(Needed::Size(2)));
+    assert_eq!(crlf("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
+  }
+
+  #[test]
+  fn end_of_line() {
+    assert_eq!(eol(&b"\na"[..]),   Done(&b"a"[..], &b"\n"[..]));
+    assert_eq!(eol(&b"\r\na"[..]), Done(&b"a"[..], &b"\r\n"[..]));
+    assert_eq!(eol(&b"\r"[..]),    Incomplete(Needed::Size(2)));
+    assert_eq!(eol(&b"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
+
+    assert_eq!(eol("\na"),   Done("a", "\n"));
+    assert_eq!(eol("\r\na"), Done("a", "\r\n"));
+    assert_eq!(eol("\r"),    Incomplete(Needed::Size(2)));
+    assert_eq!(eol("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
+  }
 }
