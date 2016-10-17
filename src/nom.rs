@@ -419,31 +419,38 @@ pub fn le_i64(i:&[u8]) -> IResult<&[u8], i64> {
   map!(i, le_u64, | x | { x as i64 })
 }
 
-/// if parameter is true, parse a big endian u16 integer,
+/// Configurable endianness
+#[derive(PartialEq)]
+pub enum Endianness {
+  Big,
+  Little,
+}
+
+/// if the parameter is nom::Endianness::Big, parse a big endian u16 integer,
 /// otherwise a little endian u16 integer
 #[macro_export]
-macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_u16($i) } else { $crate::le_u16($i) } } ););
-/// if parameter is true, parse a big endian u32 integer,
+macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u16($i) } else { $crate::le_u16($i) } } ););
+/// if the parameter is nom::Endianness::Big, parse a big endian u32 integer,
 /// otherwise a little endian u32 integer
 #[macro_export]
-macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_u32($i) } else { $crate::le_u32($i) } } ););
-/// if parameter is true, parse a big endian u64 integer,
+macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u32($i) } else { $crate::le_u32($i) } } ););
+/// if the parameter is nom::Endianness::Big, parse a big endian u64 integer,
 /// otherwise a little endian u64 integer
 #[macro_export]
-macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_u64($i) } else { $crate::le_u64($i) } } ););
+macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u64($i) } else { $crate::le_u64($i) } } ););
 
-/// if parameter is true, parse a big endian i16 integer,
+/// if the parameter is nom::Endianness::Big, parse a big endian i16 integer,
 /// otherwise a little endian i16 integer
 #[macro_export]
-macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i16($i) } else { $crate::le_i16($i) } } ););
-/// if parameter is true, parse a big endian i32 integer,
+macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i16($i) } else { $crate::le_i16($i) } } ););
+/// if the parameter is nom::Endianness::Big, parse a big endian i32 integer,
 /// otherwise a little endian i32 integer
 #[macro_export]
-macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i32($i) } else { $crate::le_i32($i) } } ););
-/// if parameter is true, parse a big endian i64 integer,
+macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i32($i) } else { $crate::le_i32($i) } } ););
+/// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
 /// otherwise a little endian i64 integer
 #[macro_export]
-macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $e { $crate::be_i64($i) } else { $crate::le_i64($i) } } ););
+macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i64($i) } else { $crate::le_i64($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
@@ -839,33 +846,33 @@ mod tests {
 
   #[test]
   fn configurable_endianness() {
-    named!(be_tst16<u16>, u16!(true));
-    named!(le_tst16<u16>, u16!(false));
+    named!(be_tst16<u16>, u16!(Endianness::Big));
+    named!(le_tst16<u16>, u16!(Endianness::Little));
     assert_eq!(be_tst16(&[0x80, 0x00]), Done(&b""[..], 32768_u16));
     assert_eq!(le_tst16(&[0x80, 0x00]), Done(&b""[..], 128_u16));
 
-    named!(be_tst32<u32>, u32!(true));
-    named!(le_tst32<u32>, u32!(false));
+    named!(be_tst32<u32>, u32!(Endianness::Big));
+    named!(le_tst32<u32>, u32!(Endianness::Little));
     assert_eq!(be_tst32(&[0x12, 0x00, 0x60, 0x00]), Done(&b""[..], 302014464_u32));
     assert_eq!(le_tst32(&[0x12, 0x00, 0x60, 0x00]), Done(&b""[..], 6291474_u32));
 
-    named!(be_tst64<u64>, u64!(true));
-    named!(le_tst64<u64>, u64!(false));
+    named!(be_tst64<u64>, u64!(Endianness::Big));
+    named!(le_tst64<u64>, u64!(Endianness::Little));
     assert_eq!(be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 1297142246100992000_u64));
     assert_eq!(le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 36028874334666770_u64));
 
-    named!(be_tsti16<i16>, i16!(true));
-    named!(le_tsti16<i16>, i16!(false));
+    named!(be_tsti16<i16>, i16!(Endianness::Big));
+    named!(le_tsti16<i16>, i16!(Endianness::Little));
     assert_eq!(be_tsti16(&[0x00, 0x80]), Done(&b""[..], 128_i16));
     assert_eq!(le_tsti16(&[0x00, 0x80]), Done(&b""[..], -32768_i16));
 
-    named!(be_tsti32<i32>, i32!(true));
-    named!(le_tsti32<i32>, i32!(false));
+    named!(be_tsti32<i32>, i32!(Endianness::Big));
+    named!(le_tsti32<i32>, i32!(Endianness::Little));
     assert_eq!(be_tsti32(&[0x00, 0x12, 0x60, 0x00]), Done(&b""[..], 1204224_i32));
     assert_eq!(le_tsti32(&[0x00, 0x12, 0x60, 0x00]), Done(&b""[..], 6296064_i32));
 
-    named!(be_tsti64<i64>, i64!(true));
-    named!(le_tsti64<i64>, i64!(false));
+    named!(be_tsti64<i64>, i64!(Endianness::Big));
+    named!(le_tsti64<i64>, i64!(Endianness::Little));
     assert_eq!(be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 71881672479506432_i64));
     assert_eq!(le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 36028874334732032_i64));
 
