@@ -102,10 +102,10 @@ macro_rules! c (
 
 #[cfg(feature = "verbose_errors")]
 n!(pub foo< bool >,
-    chain!(
-        tag!("a") ~
-        cut!(nom::ErrorKind::Custom(42),dbg_dmp!(tag!("b"))) ,
-        || { true }
+    do_parse!(
+        tag!("a") >>
+        cut!(nom::ErrorKind::Custom(42),dbg_dmp!(tag!("b"))) >>
+        (true)
     )
 );
 
