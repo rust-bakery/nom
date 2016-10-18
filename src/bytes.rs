@@ -663,6 +663,7 @@ mod tests {
     assert_eq!(a_or_b(f), Done(&b""[..], &b"fghi"[..]));
   }
 
+  #[allow(unused_variables)]
   #[test]
   fn escaping() {
     named!(esc, escaped!(call!(alpha), '\\', is_a!("\"n\\")));
@@ -677,6 +678,7 @@ mod tests {
       error_position!(ErrorKind::IsA, &b"A"[..]))));
   }
 
+  #[cfg(feature = "verbose-errors")]
   fn to_s(i:Vec<u8>) -> String {
     String::from_utf8_lossy(&i).into_owned()
   }

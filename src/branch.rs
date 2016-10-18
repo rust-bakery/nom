@@ -641,6 +641,7 @@ mod tests {
     assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
   }
 
+  #[allow(unused_variables)]
   #[test]
   fn switch() {
     named!(sw,

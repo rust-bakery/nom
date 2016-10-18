@@ -131,9 +131,7 @@ pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
   use internal::IResult::*;
-  use internal::Needed;
   use util::ErrorKind;
 
   #[test]

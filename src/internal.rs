@@ -270,6 +270,7 @@ macro_rules! error_node(
 );
 
 #[cfg(not(feature = "verbose-errors"))]
+#[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node(
   ($code:expr, $next:expr) => ($code);
@@ -282,6 +283,7 @@ macro_rules! error_position(
 );
 
 #[cfg(not(feature = "verbose-errors"))]
+#[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_position(
   ($code:expr, $input:expr) => ($code);
@@ -294,6 +296,7 @@ macro_rules! error_node_position(
 );
 
 #[cfg(not(feature = "verbose-errors"))]
+#[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node_position(
   ($code:expr, $input: expr, $next:expr) => ($code);

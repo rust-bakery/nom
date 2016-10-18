@@ -689,9 +689,6 @@ mod tests {
   #[cfg(feature = "verbose-errors")]
   use verbose_errors::Err;
 
-  #[cfg(not(feature = "verbose-errors"))]
-  use simple_errors::Err;
-
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
     ($i:expr, $inp: expr) => (
