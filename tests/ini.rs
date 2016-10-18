@@ -16,23 +16,23 @@ named!(category<&str>, map_res!(
 ));
 
 named!(key_value    <&[u8],(&str,&str)>,
-  chain!(
-    key: map_res!(alphanumeric, std::str::from_utf8) ~
-         space?                            ~
-         tag!("=")                         ~
-         space?                            ~
+  do_parse!(
+    key: map_res!(alphanumeric, std::str::from_utf8) >>
+         opt!(space)                                 >>
+         tag!("=")                                   >>
+         opt!(space)                                 >>
     val: map_res!(
            take_until_either!("\n;"),
            str::from_utf8
-         )                                 ~
-         space?                            ~
-         chain!(
-           tag!(";")        ~
-           not_line_ending  ,
-           ||{}
-         ) ?                               ~
-         multispace?                       ,
-    ||{(key, val)}
+         )                                           >>
+         opt!(space)                                 >>
+         opt!(do_parse!(
+           tag!(";")                                 >>
+           not_line_ending                           >>
+           ()
+         ))                                          >>
+         opt!(multispace)                            >>
+    (key, val)
   )
 );
 
@@ -55,10 +55,10 @@ fn keys_and_values(input:&[u8]) -> IResult<&[u8], HashMap<&str, &str> > {
 }
 
 named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
-  chain!(
-    category: category    ~
-    keys: keys_and_values ,
-    move ||{(category, keys)}
+  do_parse!(
+    category: category    >>
+    keys: keys_and_values >>
+    (category, keys)
   )
 );
 
