@@ -118,82 +118,77 @@
 ///
 #[macro_export]
 macro_rules! alt (
-  ($i:expr, $($rest:tt)*) => (
-    {
-      alt_parser!($i, $($rest)*)
-    }
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! alt_parser (
-  ($i:expr, $e:ident | $($rest:tt)*) => (
-    alt_parser!($i, call!($e) | $($rest)*);
+  (__impl $i:expr, $e:ident | $($rest:tt)*) => (
+    alt!(__impl $i, call!($e) | $($rest)*);
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
       let res = $subrule!($i, $($args)*);
       match res {
         $crate::IResult::Done(_,_)     => res,
         $crate::IResult::Incomplete(_) => res,
-        _                              => alt_parser!($i, $($rest)*)
+        _                              => alt!(__impl $i, $($rest)*)
       }
     }
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt_parser!($i, $($rest)*)
+          alt!(__impl $i, $($rest)*)
         }
       }
     }
   );
 
-  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
-    alt_parser!($i, call!($e) => { $gen } | $($rest)*);
+  (__impl $i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt!(__impl $i, call!($e) => { $gen } | $($rest)*);
   );
 
-  ($i:expr, $e:ident => { $gen:expr }) => (
-    alt_parser!($i, call!($e) => { $gen });
+  (__impl $i:expr, $e:ident => { $gen:expr }) => (
+    alt!(__impl $i, call!($e) => { $gen });
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
     {
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt_parser!($i)
+          alt!(__impl $i)
         }
       }
     }
   );
 
-  ($i:expr, $e:ident) => (
-    alt_parser!($i, call!($e));
+  (__impl $i:expr, $e:ident) => (
+    alt!(__impl $i, call!($e));
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)*)) => (
     {
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt_parser!($i)
+          alt!(__impl $i)
         }
       }
     }
   );
 
-  ($i:expr) => (
+  (__impl $i:expr) => (
     $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
+  );
+
+  ($i:expr, $($rest:tt)*) => (
+    {
+      alt!(__impl $i, $($rest)*)
+    }
   );
 );
 
@@ -240,7 +235,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt_parser!($i, $subrule!($($args)*) => { $gen })
+    alt!(__impl $i, $subrule!($($args)*) => { $gen })
   );
 
   ($i:expr, $e:ident) => (
@@ -248,7 +243,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
-    alt_parser!($i, $subrule!($($args)*))
+    alt!(__impl $i, $subrule!($($args)*))
   );
 );
 
@@ -310,7 +305,6 @@ macro_rules! alt_complete (
 ///
 #[macro_export]
 macro_rules! switch (
-  // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       match $submac!($i, $($args)*) {
