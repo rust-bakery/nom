@@ -348,7 +348,6 @@ macro_rules! switch (
 macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
-      use util::HexDisplay;
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
       let mut error  = None;
@@ -356,7 +355,6 @@ macro_rules! permutation (
 
       loop {
         let mut all_done = true;
-        println!("res = {:?}, input:\n{}", res, input.to_hex(16));
         permutation_iterator!(0, input, all_done, needed, res, $($rest)*);
 
         //if we reach that part, it means none of the parsers were able to read anything
