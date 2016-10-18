@@ -36,26 +36,26 @@ fn right_bracket(c:char) -> bool {
 }
 
 named!(category     <&str, &str>,
-  chain!(
-          tag_s!("[")                 ~
-    name: take_till_s!(right_bracket) ~
-          tag_s!("]")                 ~
-          space_or_line_ending?       ,
-    ||{ name }
+  do_parse!(
+          tag_s!("[")                 >>
+    name: take_till_s!(right_bracket) >>
+          tag_s!("]")                 >>
+          opt!(space_or_line_ending)  >>
+    (name)
   )
 );
 
 named!(key_value    <&str,(&str,&str)>,
-  chain!(
-    key: alphanumeric                            ~
-         space?                                  ~
-         tag_s!("=")                             ~
-         space?                                  ~
-    val: take_till_s!(is_line_ending_or_comment) ~
-         space?                                  ~
-         pair!(tag_s!(";"), not_line_ending)?    ~
-         space_or_line_ending?                   ,
-    ||{(key, val)}
+  do_parse!(
+    key: alphanumeric                              >>
+         opt!(space)                               >>
+         tag_s!("=")                               >>
+         opt!(space)                               >>
+    val: take_till_s!(is_line_ending_or_comment)   >>
+         opt!(space)                               >>
+         opt!(pair!(tag_s!(";"), not_line_ending)) >>
+         opt!(space_or_line_ending)                >>
+    (key, val)
   )
 );
 
