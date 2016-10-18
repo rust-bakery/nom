@@ -77,12 +77,12 @@
 //! counterparts:
 //! ```ignore
 //!    method!(pub simple_chain<&mut Parser<'a>, &'a str, &'a str>, self,
-//!      chain!(
-//!             call_m!(self.tag_abc)      ~
-//!             call_m!(self.tag_def)      ~
-//!             call_m!(self.tag_ghi)      ~
-//!       last: call_m!(self.simple_peek)  ,
-//!        ||{sb.parsed = last; last}
+//!      do_parse!(
+//!             call_m!(self.tag_abc)                                        >>
+//!             call_m!(self.tag_def)                                        >>
+//!             call_m!(self.tag_ghi)                                        >>
+//!       last: map!(call_m!(self.simple_peek), |parsed| sb.parsed = parsed) >>
+//!       (last)
 //!      )
 //!    );
 //! ```
@@ -325,10 +325,10 @@ mod tests {
       peek!(call_m!(self.take3))
     );
     method!(pub simple_chain<Parser<'a>, &'a str, &'a str>, mut self,
-      chain!(
-         bcd:  call_m!(self.tag_bcd)      ~
-         last: call_m!(self.simple_peek)  ,
-         ||{self.bcd = bcd; last}
+      do_parse!(
+         map!(call_m!(self.tag_bcd), |bcd| self.bcd = bcd) >>
+         last: call_m!(self.simple_peek)                   >>
+         (last)
       )
     );
     fn tag_stuff(mut self: Parser<'a>, input: &'a str, something: &'a str) -> (Parser<'a>, ::IResult<&'a str, &'a str>) {
