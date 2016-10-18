@@ -155,16 +155,16 @@ mod traits;
 #[macro_use] mod branch;
 #[macro_use] mod sequence;
 #[macro_use] mod multi;
-#[macro_use] mod methods;
+#[macro_use] pub mod methods;
 #[macro_use] mod bytes;
-#[macro_use] mod bits;
+#[macro_use] pub mod bits;
 
 #[macro_use] mod nom;
 #[macro_use] mod character;
 
 #[macro_use]
 #[cfg(not(feature = "core"))]
-mod whitespace;
+pub mod whitespace;
 
 #[cfg(feature = "regexp")]
 #[macro_use] mod regexp;
