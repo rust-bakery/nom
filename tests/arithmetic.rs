@@ -20,27 +20,29 @@ named!(factor<i64>, alt!(
   )
 );
 
-named!(term <i64>, chain!(
-    mut acc: factor  ~
-             many0!(
-               alt!(
-                 tap!(mul: preceded!(tag!("*"), factor) => acc = acc * mul) |
-                 tap!(div: preceded!(tag!("/"), factor) => acc = acc / div)
-               )
-             ),
-    || { return acc }
+named!(term <i64>, do_parse!(
+    init: factor >>
+    res:  fold_many0!(
+        pair!(alt!(tag!("*") | tag!("/")), factor),
+        init,
+        |acc, (op, val): (&[u8], i64)| {
+            if (op[0] as char) == '*' { acc * val } else { acc / val }
+        }
+    ) >>
+    (res)
   )
 );
 
-named!(expr <i64>, chain!(
-    mut acc: term  ~
-             many0!(
-               alt!(
-                 tap!(add: preceded!(tag!("+"), term) => acc = acc + add) |
-                 tap!(sub: preceded!(tag!("-"), term) => acc = acc - sub)
-               )
-             ),
-    || { return acc }
+named!(expr <i64>, do_parse!(
+    init: term >>
+    res:  fold_many0!(
+        pair!(alt!(tag!("+") | tag!("-")), term),
+        init,
+        |acc, (op, val): (&[u8], i64)| {
+            if (op[0] as char) == '+' { acc + val } else { acc - val }
+        }
+    ) >>
+    (res)
   )
 );
 
