@@ -350,8 +350,8 @@ macro_rules! permutation (
     {
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
-      let mut error  = None;
-      let mut needed = None;
+      let mut error  = ::std::option::Option::None;
+      let mut needed = ::std::option::Option::None;
 
       loop {
         let mut all_done = true;
@@ -360,12 +360,12 @@ macro_rules! permutation (
         //if we reach that part, it means none of the parsers were able to read anything
         if !all_done {
           //FIXME: should wrap the error returned by the child parser
-          error = Some(error_position!($crate::ErrorKind::Permutation, input));
+          error = ::std::option::Option::Some(error_position!($crate::ErrorKind::Permutation, input));
         }
         break;
       }
 
-      if let Some(need) = needed {
+      if let ::std::option::Option::Some(need) = needed {
         if let $crate::Needed::Size(sz) = need {
           $crate::IResult::Incomplete(
             $crate::Needed::Size(
@@ -377,7 +377,7 @@ macro_rules! permutation (
         } else {
           $crate::IResult::Incomplete($crate::Needed::Unknown)
         }
-      } else if let Some(e) = error {
+      } else if let ::std::option::Option::Some(e) = error {
         $crate::IResult::Error(e)
       } else {
         let unwrapped_res = permutation_unwrap!(0, (), res, $($rest)*);
@@ -392,22 +392,22 @@ macro_rules! permutation (
 #[macro_export]
 macro_rules! permutation_init (
   ((), $e:ident, $($rest:tt)*) => (
-    permutation_init!((None), $($rest)*)
+    permutation_init!((::std::option::Option::None), $($rest)*)
   );
   ((), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!((None), $($rest)*)
+    permutation_init!((::std::option::Option::None), $($rest)*)
   );
   (($($parsed:expr),*), $e:ident, $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , None), $($rest)*);
+    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , None), $($rest)*);
+    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $e:ident) => (
-    ($($parsed),* , None)
+    ($($parsed),* , ::std::option::Option::None)
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
-    ($($parsed),* , None)
+    ($($parsed),* , ::std::option::Option::None)
   );
   (($($parsed:expr),*),) => (
     ($($parsed),*)
@@ -462,18 +462,18 @@ macro_rules! permutation_iterator (
     permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e), $($rest)*);
   );
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
-    if acc!($it, $res) == None {
+    if acc!($it, $res) == ::std::option::Option::None {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,o)     => {
           $i = i;
-          acc!($it, $res) = Some(o);
+          acc!($it, $res) = ::std::option::Option::Some(o);
           continue;
         },
         $crate::IResult::Error(_) => {
           $all_done = false;
         },
         $crate::IResult::Incomplete(i) => {
-          $needed = Some(i);
+          $needed = ::std::option::Option::Some(i);
           break;
         }
       };
@@ -484,18 +484,18 @@ macro_rules! permutation_iterator (
     permutation_iterator!($it, $i, $all_done, $res, call!($e));
   );
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
-    if acc!($it, $res) == None {
+    if acc!($it, $res) == ::std::option::Option::None {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,o)     => {
           $i = i;
-          acc!($it, $res) = Some(o);
+          acc!($it, $res) = ::std::option::Option::Some(o);
           continue;
         },
         $crate::IResult::Error(_) => {
           $all_done = false;
         },
         $crate::IResult::Incomplete(i) => {
-          $needed = Some(i);
+          $needed = ::std::option::Option::Some(i);
           break;
         }
       };
