@@ -10,11 +10,13 @@ macro_rules! wrap_sep (
       $crate::IResult::Done(i1,_)    => {
         match $submac!(i1, $($args)*) {
           $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i + ($crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i1)))),
           $crate::IResult::Done(i2,o)    => {
             match ($separator)(i2) {
               $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-              $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+              $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i + ($crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i2)))),
               $crate::IResult::Done(i3,_)    => $crate::IResult::Done(i3, o)
             }
           }
