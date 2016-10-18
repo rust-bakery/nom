@@ -10,7 +10,7 @@ named!(unsigned_float <f32>, map_res!(
   map_res!(
     recognize!(
       alt!(
-        delimited!(digit, tag!("."), opt!(digit)) |
+        delimited!(digit, tag!("."), opt!(complete!(digit))) |
         delimited!(opt!(digit), tag!("."), digit)
       )
     ),

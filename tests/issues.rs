@@ -71,8 +71,8 @@ named!(parse_ints< Vec<i32> >, many0!(spaces_or_int));
 fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32>{
   println!("{}", input.to_hex(8));
   chain!(input,
-    opt!(space) ~
-    x:   digit,
+    opt!(complete!(space)) ~
+    x:   complete!(digit),
     || {
       println!("x: {:?}", x);
       let result = str::from_utf8(x).unwrap();

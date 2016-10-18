@@ -162,7 +162,7 @@ pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(error_position!(ErrorKind::Alpha, input))
+    return Incomplete(Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -183,7 +183,7 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(error_position!(ErrorKind::Digit, input))
+    return Incomplete(Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -204,7 +204,7 @@ pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(error_position!(ErrorKind::HexDigit, input))
+    return Incomplete(Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -225,7 +225,7 @@ pub fn oct_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(error_position!(ErrorKind::OctDigit, input))
+    return Incomplete(Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -246,7 +246,7 @@ pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(error_position!(ErrorKind::AlphaNumeric, input));
+    return Incomplete(Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -267,7 +267,7 @@ pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(error_position!(ErrorKind::Space, input));
+    return Incomplete(Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -289,7 +289,7 @@ pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
     &'a T: IterIndices+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Error(error_position!(ErrorKind::MultiSpace, input));
+    return Incomplete(Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -322,7 +322,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
 pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
   let input_len = input.len();
   if input_len == 0 {
-    return Error(error_position!(ErrorKind::LengthValueFn, input))
+    return Incomplete(Needed::Unknown);
   }
 
   let len = input[0] as usize;
