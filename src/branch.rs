@@ -338,6 +338,41 @@ macro_rules! switch (
   );
 );
 
+///
+///
+/// `permutation!(I -> IResult<I,A>, I -> IResult<I,B>, ... I -> IResult<I,X> ) => I -> IResult<I, (A,B,...X)>`
+/// applies its sub parsers in a sequence, but independent from their order
+/// this parser will only succeed if all of its sub parsers succeed
+///
+/// the tuple of results is in the same order as the parsers are declared
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error,Incomplete};
+/// # use nom::{ErrorKind,Needed};
+/// # fn main() {
+/// named!(perm<(&[u8], &[u8], &[u8])>,
+///   permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
+/// );
+///
+/// // whatever the order, if the parser succeeds, each
+/// // tag should have matched correctly
+/// let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
+///
+/// let a = &b"abcdefghijk"[..];
+/// assert_eq!(perm(a), Done(&b"jk"[..], expected));
+/// let b = &b"efgabcdhijkl"[..];
+/// assert_eq!(perm(b), Done(&b"jkl"[..], expected));
+/// let c = &b"hiefgabcdjklm"[..];
+/// assert_eq!(perm(c), Done(&b"jklm"[..], expected));
+///
+/// let d = &b"efgxyzabcdefghi"[..];
+/// assert_eq!(perm(d), Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..])));
+///
+/// let e = &b"efgabc"[..];
+/// assert_eq!(perm(e), Incomplete(Needed::Size(7)));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
