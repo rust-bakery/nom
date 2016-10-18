@@ -421,10 +421,14 @@ macro_rules! succ (
   (1, $submac:ident ! ($($rest:tt)*)) => ($submac!(2, $($rest)*));
   (2, $submac:ident ! ($($rest:tt)*)) => ($submac!(3, $($rest)*));
   (3, $submac:ident ! ($($rest:tt)*)) => ($submac!(4, $($rest)*));
+  (4, $submac:ident ! ($($rest:tt)*)) => ($submac!(5, $($rest)*));
+  (5, $submac:ident ! ($($rest:tt)*)) => ($submac!(6, $($rest)*));
+  (6, $submac:ident ! ($($rest:tt)*)) => ($submac!(7, $($rest)*));
+  (7, $submac:ident ! ($($rest:tt)*)) => ($submac!(8, $($rest)*));
 );
 
 // HACK: for some reason, Rust 1.11 does not accept $res.$it in
-// permutation_unwrap. This is a bit ugly, but it will have None
+// permutation_unwrap. This is a bit ugly, but it will have no
 // impact on the generated code
 #[doc(hidden)]
 #[macro_export]
@@ -433,6 +437,10 @@ macro_rules! acc (
   (1, $tup:expr) => ($tup.1);
   (2, $tup:expr) => ($tup.2);
   (3, $tup:expr) => ($tup.3);
+  (4, $tup:expr) => ($tup.4);
+  (5, $tup:expr) => ($tup.5);
+  (6, $tup:expr) => ($tup.6);
+  (7, $tup:expr) => ($tup.7);
 );
 
 #[doc(hidden)]
