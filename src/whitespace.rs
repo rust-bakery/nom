@@ -390,6 +390,18 @@ macro_rules! sep (
       terminated_sep!($separator, $($rest)*)
     )
   };
+  ($i:expr,  $separator:ident, do_parse ! ($($rest:tt)*) ) => {
+    wrap_sep!($i,
+      $separator,
+      do_parse_sep!($separator, $($rest)*)
+    )
+  };
+  ($i:expr,  $separator:ident, permutation ! ($($rest:tt)*) ) => {
+    wrap_sep!($i,
+      $separator,
+      permutation_sep!($separator, $($rest)*)
+    )
+  };
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* )) => {
     wrap_sep!($i, $separator, $submac!($($args)*))
   };
