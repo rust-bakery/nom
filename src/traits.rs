@@ -251,7 +251,8 @@ pub enum CompareResult {
 }
 
 pub trait Compare<T> {
-  fn compare(&self, t:T) -> CompareResult;
+  fn compare(&self, t:T)         -> CompareResult;
+  fn compare_no_case(&self, t:T) -> CompareResult;
 }
 
 impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
@@ -271,6 +272,31 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
       CompareResult::Ok
     }
   }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b[u8]) -> CompareResult {
+    let len     = self.len();
+    let blen    = t.len();
+    let m       = if len < blen { len } else { blen };
+    let reduced = &self[..m];
+    let other   = &t[..m];
+
+    if !reduced.iter().zip(other).all(|(a, b)| {
+      match (*a,*b) {
+        (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
+        (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122 ) |(97...122, 65...90) => {
+          *a & 0b01000000 == *b & 0b01000000
+        }
+        _ => false
+      }
+    }) {
+      CompareResult::Error
+    } else if m < blen {
+      CompareResult::Incomplete
+    } else {
+      CompareResult::Ok
+    }
+  }
 }
 
 #[cfg(not(feature = "core"))]
@@ -278,6 +304,10 @@ impl<'a,'b> Compare<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
     self.compare(str::as_bytes(t))
+  }
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b str) -> CompareResult {
+    self.compare_no_case(str::as_bytes(t))
   }
 }
 
@@ -292,6 +322,25 @@ impl<'a,'b> Compare<&'b str> for &'a str {
     let b       = &t[..m];
 
     if reduced != b {
+      CompareResult::Error
+    } else if m < blen {
+      CompareResult::Incomplete
+    } else {
+      CompareResult::Ok
+    }
+  }
+
+  //FIXME: this version is too simple and does not use the current locale
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b str) -> CompareResult {
+    let len     = self.len();
+    let blen    = t.len();
+    let m       = if len < blen { len } else { blen };
+    let reduced = &self[..m];
+    let b       = &t[..m];
+
+    //println!("compare_no_case({}, {}) => {} / {}", self, t, reduced.to_lowercase(), b.to_lowercase());
+    if !(reduced.to_lowercase() == b.to_lowercase()) {
       CompareResult::Error
     } else if m < blen {
       CompareResult::Incomplete

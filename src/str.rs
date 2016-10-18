@@ -26,6 +26,31 @@ macro_rules! tag_s (
   );
 );
 
+/// `tag_no_case_s!(&str) => &str -> IResult<&str, &str>`
+/// declares a case-insensitive string as a suite to recognize
+///
+/// consumes the recognized characters
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self,Done};
+/// # fn main() {
+///  fn test(input: &str) -> IResult<&str, &str> {
+///    tag_no_case_s!(input, "ABcd")
+///  }
+///  let r = test("aBCdefgh");
+///  assert_eq!(r, Done("efgh", "aBCd"));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! tag_no_case_s (
+  ($i:expr, $tag: expr) => (
+    {
+      tag_no_case!($i, $tag)
+    }
+  );
+);
+
 /// `take_s!(nb) => &str -> IResult<&str, &str>`
 /// generates a parser consuming the specified number of characters
 ///
@@ -587,5 +612,16 @@ mod test {
 
     }
 
+  #[test]
+  fn case_insensitive() {
+    named!(test<&str,&str>, tag_no_case!("ABcd"));
+    assert_eq!(test("aBCdefgh"), Done("efgh", "aBCd"));
+    assert_eq!(test("abcdefgh"), Done("efgh", "abcd"));
+    assert_eq!(test("ABCDefgh"), Done("efgh", "ABCD"));
 
+    named!(test2<&str,&str>, tag_no_case!("ABcd"));
+    assert_eq!(test2("aBCdefgh"), Done("efgh", "aBCd"));
+    assert_eq!(test2("abcdefgh"), Done("efgh", "abcd"));
+    assert_eq!(test2("ABCDefgh"), Done("efgh", "ABCD"));
+  }
 }
