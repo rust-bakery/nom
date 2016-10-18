@@ -86,27 +86,27 @@ fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
     })
 }
 
-named!(term< Expr >, chain!(
-    initial: factor ~
+named!(term< Expr >, do_parse!(
+    initial: factor >>
     remainder: many0!(
            alt!(
-             chain!(tag!("*") ~ mul: factor, || { (Oper::Mul, mul) }) |
-             chain!(tag!("/") ~ div: factor, || { (Oper::Div, div) })
+             do_parse!(tag!("*") >> mul: factor >> (Oper::Mul, mul)) |
+             do_parse!(tag!("/") >> div: factor >> (Oper::Div, div))
            )
-         ),
-    || fold_exprs(initial, remainder))
-);
+         ) >>
+    (fold_exprs(initial, remainder))
+));
 
-named!(expr< Expr >, chain!(
-    initial: term ~
+named!(expr< Expr >, do_parse!(
+    initial: term >>
     remainder: many0!(
            alt!(
-             chain!(tag!("+") ~ add: term, || { (Oper::Add, add) }) |
-             chain!(tag!("-") ~ sub: term, || { (Oper::Sub, sub) })
+             do_parse!(tag!("+") >> add: term >> (Oper::Add, add)) |
+             do_parse!(tag!("-") >> sub: term >> (Oper::Sub, sub))
            )
-         ),
-    || fold_exprs(initial, remainder))
-);
+         ) >>
+    (fold_exprs(initial, remainder))
+));
 
 #[test]
 fn factor_test() {
