@@ -270,7 +270,7 @@ Here are some basic combining macros available:
 
 Please refer to the documentation for an exhaustive list of combinators.
 
-There are more complex (and more useful) parsers like `chain!` and `tuple!`, which are used to apply a series of parsers then assemble their results.
+There are more complex (and more useful) parsers like `do_parse!` and `tuple!`, which are used to apply a series of parsers then assemble their results.
 
 Example with `tuple!`:
 
@@ -295,7 +295,7 @@ let input = &b"abcdejk"[..];
 assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
 ```
 
-Example with `chain!`:
+Example with `do_parse!`:
 
 ```rust
 #[derive(Debug, PartialEq)]
@@ -308,15 +308,15 @@ fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) }
 fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) }
 
 named!(f<&[u8],A>,
-  chain!(    // the parser takes a byte array as input, and returns an A struct
-    tag!("abcd")  ~      // begins with "abcd"
-    tag!("abcd")? ~      // the question mark indicates an optional parser
-    aa: ret_int1  ~      // the return value of ret_int1, if it does not fail, will be stored in aa
-    tag!("efgh")  ~
-    bb: ret_int2  ~
-    tag!("efgh")  ,      // end the chain with a comma
+  do_parse!(    // the parser takes a byte array as input, and returns an A struct
+    tag!("abcd")       >>      // begins with "abcd"
+    opt!(tag!("abcd")) >>      // this is an optional parser
+    aa: ret_int1       >>      // the return value of ret_int1, if it does not fail, will be stored in aa
+    tag!("efgh")       >>
+    bb: ret_int2       >>
+    tag!("efgh")       >>
 
-    ||{A{a: aa, b: bb}} // the final closure will be able to use the variable defined previously
+    (A{a: aa, b: bb})          // the final tuple will be able to use the variable defined previously
   )
 );
 
