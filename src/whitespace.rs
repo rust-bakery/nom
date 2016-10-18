@@ -157,6 +157,97 @@ macro_rules! tuple_sep (
 );
 
 #[macro_export]
+macro_rules! do_parse_sep (
+  (__impl $i:expr, $separator:ident, $consumed:expr, ( $($rest:expr),* )) => (
+    $crate::IResult::Done($i, ( $($rest),* ))
+  );
+
+  (__impl $i:expr, $separator:ident, $consumed:expr, $e:ident >> $($rest:tt)*) => (
+    do_parse_sep!(__impl $i, $separator, $consumed, call!($e) >> $($rest)*);
+  );
+  (__impl $i:expr, $separator:ident, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+    {
+      match sep!($i, $separator, $submac!($($args)*)) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
+          $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
+          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,_)     => {
+          do_parse_sep!(__impl i, $separator,
+            $consumed + ($crate::InputLength::input_len(&($i)) -
+                         $crate::InputLength::input_len(&i)), $($rest)*)
+        },
+      }
+    }
+  );
+
+  (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
+    do_parse_sep!(__impl $i, $separator, $consumed, $field: call!($e) >> $($rest)*);
+  );
+
+  (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+    {
+      match sep!($i, $separator,$submac!($($args)*)) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
+          $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
+          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Done(i,o)     => {
+          let $field = o;
+          do_parse_sep!(__impl i, $separator,
+            $consumed + ($crate::InputLength::input_len(&($i)) -
+                         $crate::InputLength::input_len(&i)), $($rest)*)
+        },
+      }
+    }
+  );
+
+  // ending the chain
+  (__impl $i:expr, $separator:ident, $consumed:expr, $e:ident >> ( $($rest:tt)* )) => (
+    do_parse_sep!(__impl $i, $separator, $consumed, call!($e) >> ( $($rest)* ));
+  );
+
+  (__impl $i:expr, $separator:ident, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+    match sep!($i, $separator, $submac!($($args)*)) {
+      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
+        $crate::IResult::Incomplete($crate::Needed::Unknown),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
+        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Done(i,_)     => {
+        $crate::IResult::Done(i, ( $($rest)* ))
+      },
+    }
+  );
+
+  (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
+    do_parse_sep!(__impl $i, $separator, $consumed, $field: call!($e) >> ( $($rest)* ) );
+  );
+
+  (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+    match sep!($i, $separator, $submac!($($args)*)) {
+      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
+        $crate::IResult::Incomplete($crate::Needed::Unknown),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
+        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Done(i,o)     => {
+        let $field = o;
+        $crate::IResult::Done(i, ( $($rest)* ))
+      },
+    }
+  );
+
+  ($i:expr, $separator:ident, $($rest:tt)*) => (
+    {
+      do_parse_sep!(__impl $i, $separator, 0usize, $($rest)*)
+    }
+  );
+);
+
+#[macro_export]
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
@@ -229,6 +320,7 @@ macro_rules! ws (
 #[cfg(test)]
 mod tests {
   use internal::IResult::*;
+  use internal::{IResult,Needed};
   use super::sp;
 
   #[test]
@@ -291,4 +383,31 @@ mod tests {
 
     assert_eq!(level_2(&b" \t abc de fg \t hi "[..]),  Done(&b"hi "[..], (&b"abc"[..], (&b"de"[..], &b"fg "[..]))));
   }
+
+  #[test]
+  fn do_parse() {
+    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
+    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
+
+    //trace_macros!(true);
+    named!(do_parser<&[u8], (u8, u8)>,
+      ws!(do_parse!(
+        tag!("abcd")       >>
+        opt!(tag!("abcd")) >>
+        aa: ret_int1       >>
+        tag!("efgh")       >>
+        bb: ret_int2       >>
+        tag!("efgh")       >>
+        (aa, bb)
+      ))
+    );
+
+    //trace_macros!(false);
+
+    assert_eq!(do_parser(&b"abcd abcd\tefghefghX"[..]), Done(&b"X"[..], (1, 2)));
+    assert_eq!(do_parser(&b"abcd\tefgh      efgh X"[..]), Done(&b"X"[..], (1, 2)));
+    assert_eq!(do_parser(&b"abcd  ab"[..]), Incomplete(Needed::Size(10)));
+    assert_eq!(do_parser(&b"abcd\tefgh\tef"[..]), Incomplete(Needed::Size(14)));
+  }
+
 }
