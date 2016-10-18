@@ -1047,11 +1047,11 @@ mod tests {
 
   #[allow(dead_code)]
   pub fn compile_count_fixed(input: &[u8]) -> IResult<&[u8], ()> {
-    chain!(input,
-      tag!("abcd")                   ~
-      count_fixed!( u16, le_u16, 4 ) ~
-      eof!()                         ,
-      || { () }
+    do_parse!(input,
+      tag!("abcd")                   >>
+      count_fixed!( u16, le_u16, 4 ) >>
+      eof!()                         >>
+      ()
     )
   }
 
