@@ -1,5 +1,20 @@
 //! Support for whitespace delimited formats
 //!
+//! supporting a new combinator:
+//! * copy the combinator's code here,  with the _sep suffix
+//! * add the `$separator:expr` as second argument
+//! * wrap any sub parsers with sep!($separator, $submac!($($args)*))
+//! * reference it in the definition of `sep!` as follows:
+//!
+//! ```ignore
+//!  ($i:expr,  $separator:ident, my_combinator ! ($($rest:tt)*) ) => {
+//!    wrap_sep!($i,
+//!      $separator,
+//!      my_combinator_sep!($separator, $($rest)*)
+//!    )
+//!  };
+//! ```
+//!
 
 #[macro_export]
 macro_rules! wrap_sep (
