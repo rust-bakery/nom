@@ -91,10 +91,10 @@ Sometimes, you want to provide an error code at a specific point in the parser t
 ```rust
     named!(err_test,
       preceded!(tag!("efgh"), add_error!(ErrorKind::Custom(42),
-          chain!(
-                 tag!("ijkl")              ~    
-            res: add_error!(ErrorKind::Custom(128), tag!("mnop")) ,
-            || { res }
+          do_parse!(
+                 tag!("ijkl")                                     >>
+            res: add_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+            (res)
           )    
         )    
     ));  
@@ -124,10 +124,10 @@ named!(err_test, alt!(
     tag!("efgh"),
     error!(
       42,
-      chain!(
-             tag!("ijkl")              ~
-        res: error!(128, tag!("mnop")) ,
-        || { res }
+      do_parse!(
+             tag!("ijkl")              >>
+        res: error!(128, tag!("mnop")) >>
+        (res)
       )
     )
   )
@@ -267,10 +267,10 @@ named!(err_test, alt!(
   tag!("abcd") |
   error!(12,
     preceded!(tag!("efgh"), error!(42,
-        chain!(
-               tag!("ijk")              ~
-          res: error!(128, tag!("mnop")) ,
-          || { res }
+        do_parse!(
+               tag!("ijk")               >>
+          res: error!(128, tag!("mnop")) >>
+          (res)
         )
       )
     )
