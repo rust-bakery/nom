@@ -1,9 +1,6 @@
 /// Character level parsers
 
 use internal::{IResult,Needed};
-use util::ErrorKind;
-use std::ops::{Range,RangeFrom,RangeTo};
-use traits::{AsChar,Compare,CompareResult,IterIndices,Slice};
 
 /// matches one of the provided characters
 #[macro_export]
@@ -46,7 +43,6 @@ macro_rules! one_of_bytes (
         if found {
           $crate::IResult::Done(&$i[1..], $i[0] as char)
         } else {
-          //$crate::IResult::Error($crate::Err::Position($crate::ErrorKind::OneOf, $i))
           $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i))
         }
       }
