@@ -208,10 +208,10 @@ macro_rules! apply (
 ///     named!(err_test, alt!(
 ///       tag!("abcd") |
 ///       preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42),
-///           chain!(
-///                  tag!("ijkl")              ~
-///             res: return_error!(ErrorKind::Custom(128), tag!("mnop")) ,
-///             || { res }
+///           do_parse!(
+///                  tag!("ijkl")                                        >>
+///             res: return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+///             (res)
 ///           )
 ///         )
 ///       )
@@ -333,7 +333,7 @@ macro_rules! complete (
 
 /// A bit like `std::try!`, this macro will return the remaining input and parsed value if the child parser returned `Done`,
 /// and will do an early return for `Error` and `Incomplete`
-/// this can provide more flexibility than `chain!` if needed
+/// this can provide more flexibility than `do_parse!` if needed
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -536,11 +536,11 @@ macro_rules! expr_res (
 /// # use nom::{be_u8,ErrorKind};
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
-///    chain!(input,
-///      sz:     be_u8                             ~
-///      length: expr_opt!(size.checked_add(sz))   ~ // checking for integer overflow (returns an Option)
-///      data:   take!(length)                     ,
-///      ||{ data }
+///    do_parse!(input,
+///      sz:     be_u8                             >>
+///      length: expr_opt!(size.checked_add(sz))   >> // checking for integer overflow (returns an Option)
+///      data:   take!(length)                     >>
+///      (data)
 ///    )
 ///  }
 /// # fn main() {
@@ -645,8 +645,8 @@ macro_rules! opt_res (
 /// parser.
 ///
 /// This is especially useful if a parser depends
-/// on the value return by a preceding parser in
-/// a `chain!`.
+/// on the value returned by a preceding parser in
+/// a `do_parse!`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -698,8 +698,8 @@ macro_rules! cond_with_error(
 /// parser.
 ///
 /// This is especially useful if a parser depends
-/// on the value return by a preceding parser in
-/// a `chain!`.
+/// on the value returned by a preceding parser in
+/// a `do_parse!`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -750,8 +750,8 @@ macro_rules! cond(
 /// an error if the condition is false
 ///
 /// This is especially useful if a parser depends
-/// on the value return by a preceding parser in
-/// a `chain!`.
+/// on the value returned by a preceding parser in
+/// a `do_parse!`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -836,10 +836,11 @@ macro_rules! peek(
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
-/// named!(not_e, chain!(
-///     res: tag!("abc") ~
-///          not!(char!('e')),
-///     || { res }));
+/// named!(not_e, do_parse!(
+///     res: tag!("abc")      >>
+///          not!(char!('e')) >>
+///     (res)
+/// ));
 ///
 /// let r = not_e(&b"abcd"[..]);
 /// assert_eq!(r, Done(&b"d"[..], &b"abc"[..]));
