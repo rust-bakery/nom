@@ -480,6 +480,41 @@ macro_rules! alt_complete_sep (
 );
 
 #[macro_export]
+macro_rules! switch_sep (
+  (__impl $i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
+    {
+      match sep!($i, $separator, $submac!($($args)*)) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error(error_node_position!(
+            $crate::ErrorKind::Switch, $i, e
+        )),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i, o)    => {
+          match o {
+            $($p => match sep!(i, $separator, $subrule!($($args2)*)) {
+              $crate::IResult::Error(e) => $crate::IResult::Error(error_node_position!(
+                  $crate::ErrorKind::Switch, $i, e
+              )),
+              a => a,
+            }),*,
+            _    => $crate::IResult::Error(error_position!($crate::ErrorKind::Switch,$i))
+          }
+        }
+      }
+    }
+  );
+  ($i:expr, $separator:ident, $submac:ident!( $($args:tt)*), $($rest:tt)*) => (
+    {
+      switch_sep!(__impl $i, $separator, $submac!($($args)*), $($rest)*)
+    }
+  );
+  ($i:expr, $separator:ident, $e:ident, $($rest:tt)*) => (
+    {
+      switch_sep!(__impl $i, $separator, call!($e), $($rest)*)
+    }
+  );
+);
+
+#[macro_export]
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
@@ -550,6 +585,12 @@ macro_rules! sep (
     wrap_sep!($i,
       $separator,
       alt_complete_sep!($separator, $($rest)*)
+    )
+  };
+  ($i:expr,  $separator:ident, switch ! ($($rest:tt)*) ) => {
+    wrap_sep!($i,
+      $separator,
+      switch_sep!($separator, $($rest)*)
     )
   };
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* )) => {
@@ -744,6 +785,25 @@ mod tests {
     assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
     let a = &b" cde"[..];
     assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
+  }
+
+  #[allow(unused_variables)]
+  #[test]
+  fn switch() {
+    named!(sw,
+      ws!(switch!(take!(4),
+        b"abcd" => take!(2) |
+        b"efgh" => take!(4)
+      ))
+    );
+
+    let a = &b" abcd ef gh"[..];
+    assert_eq!(sw(a), Done(&b"gh"[..], &b"ef"[..]));
+
+    let b = &b"\tefgh ijkl "[..];
+    assert_eq!(sw(b), Done(&b""[..], &b"ijkl"[..]));
+    let c = &b"afghijkl"[..];
+    assert_eq!(sw(c), Error(error_position!(ErrorKind::Switch, &b"afghijkl"[..])));
   }
 
 }
