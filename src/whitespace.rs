@@ -188,7 +188,7 @@ macro_rules! do_parse_sep (
 
   (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
-      match sep!($i, $separator,$submac!($($args)*)) {
+      match sep!($i, $separator, $submac!($($args)*)) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -246,6 +246,98 @@ macro_rules! do_parse_sep (
     }
   );
 );
+
+#[macro_export]
+macro_rules! permutation_sep (
+  ($i:expr, $separator:ident, $($rest:tt)*) => (
+    {
+      let mut res    = permutation_init!((), $($rest)*);
+      let mut input  = $i;
+      let mut error  = ::std::option::Option::None;
+      let mut needed = ::std::option::Option::None;
+
+      loop {
+        let mut all_done = true;
+        permutation_iterator_sep!(0, input, $separator, all_done, needed, res, $($rest)*);
+
+        //if we reach that part, it means none of the parsers were able to read anything
+        if !all_done {
+          //FIXME: should wrap the error returned by the child parser
+          error = ::std::option::Option::Some(error_position!($crate::ErrorKind::Permutation, input));
+        }
+        break;
+      }
+
+      if let ::std::option::Option::Some(need) = needed {
+        if let $crate::Needed::Size(sz) = need {
+          $crate::IResult::Incomplete(
+            $crate::Needed::Size(
+              $crate::InputLength::input_len(&($i))  -
+              $crate::InputLength::input_len(&input) +
+              sz
+            )
+          )
+        } else {
+          $crate::IResult::Incomplete($crate::Needed::Unknown)
+        }
+      } else if let ::std::option::Option::Some(e) = error {
+        $crate::IResult::Error(e)
+      } else {
+        let unwrapped_res = permutation_unwrap!(0, (), res, $($rest)*);
+        $crate::IResult::Done(input, unwrapped_res)
+      }
+    }
+  );
+);
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! permutation_iterator_sep (
+  ($it:tt,$i:expr, $separator:ident, $all_done:expr, $needed:expr, $res:expr, $e:ident, $($rest:tt)*) => (
+    permutation_iterator_sep!($it, $i, $separator, $all_done, $needed, $res, call!($e), $($rest)*);
+  );
+  ($it:tt, $i:expr, $separator:ident, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
+    if acc!($it, $res) == ::std::option::Option::None {
+      match sep!($i, $separator, $submac!($($args)*)) {
+        $crate::IResult::Done(i,o)     => {
+          $i = i;
+          acc!($it, $res) = ::std::option::Option::Some(o);
+          continue;
+        },
+        $crate::IResult::Error(_) => {
+          $all_done = false;
+        },
+        $crate::IResult::Incomplete(i) => {
+          $needed = ::std::option::Option::Some(i);
+          break;
+        }
+      };
+    }
+    succ!($it, permutation_iterator_sep!($i, $separator, $all_done, $needed, $res, $($rest)*));
+  };
+  ($it:tt,$i:expr, $separator:ident, $all_done:expr, $needed:expr, $res:expr, $e:ident) => (
+    permutation_iterator_sep!($it, $i, $separator, $all_done, $res, call!($e));
+  );
+  ($it:tt, $i:expr, $separator:ident, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
+    if acc!($it, $res) == ::std::option::Option::None {
+      match sep!($i, $separator, $submac!($($args)*)) {
+        $crate::IResult::Done(i,o)     => {
+          $i = i;
+          acc!($it, $res) = ::std::option::Option::Some(o);
+          continue;
+        },
+        $crate::IResult::Error(_) => {
+          $all_done = false;
+        },
+        $crate::IResult::Incomplete(i) => {
+          $needed = ::std::option::Option::Some(i);
+          break;
+        }
+      };
+    }
+  };
+);
+
 
 #[macro_export]
 macro_rules! eat_separator (
@@ -322,6 +414,7 @@ mod tests {
   use internal::IResult::*;
   use internal::{IResult,Needed};
   use super::sp;
+  use util::ErrorKind;
 
   #[test]
   fn spaaaaace() {
@@ -407,7 +500,30 @@ mod tests {
     assert_eq!(do_parser(&b"abcd abcd\tefghefghX"[..]), Done(&b"X"[..], (1, 2)));
     assert_eq!(do_parser(&b"abcd\tefgh      efgh X"[..]), Done(&b"X"[..], (1, 2)));
     assert_eq!(do_parser(&b"abcd  ab"[..]), Incomplete(Needed::Size(10)));
-    assert_eq!(do_parser(&b"abcd\tefgh\tef"[..]), Incomplete(Needed::Size(14)));
+    assert_eq!(do_parser(&b" abcd\tefgh\tef"[..]), Incomplete(Needed::Size(15)));
   }
 
+  #[test]
+  fn permutation() {
+    //trace_macros!(true);
+    named!(perm<(&[u8], &[u8], &[u8])>,
+      ws!(permutation!(tag!("abcd"), tag!("efg"), tag!("hi")))
+    );
+    //trace_macros!(false);
+
+    let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
+
+    let a = &b"abcd\tefg \thijk"[..];
+    assert_eq!(perm(a), Done(&b"jk"[..], expected));
+    let b = &b"  efg  \tabcdhi jk"[..];
+    assert_eq!(perm(b), Done(&b"jk"[..], expected));
+    let c = &b" hi   efg\tabcdjk"[..];
+    assert_eq!(perm(c), Done(&b"jk"[..], expected));
+
+    let d = &b"efg  xyzabcdefghi"[..];
+    assert_eq!(perm(d), Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..])));
+
+    let e = &b" efg \tabc"[..];
+    assert_eq!(perm(e), Incomplete(Needed::Size(10)));
+  }
 }
