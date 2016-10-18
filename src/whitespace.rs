@@ -355,6 +355,129 @@ macro_rules! permutation_iterator_sep (
   };
 );
 
+#[macro_export]
+macro_rules! alt_sep (
+  (__impl $i:expr, $separator:ident, $e:ident | $($rest:tt)*) => (
+    alt_sep!(__impl $i, call!($e) | $($rest)*);
+  );
+
+  (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
+    {
+      let res = sep!($i, $separator, $subrule!($($args)*));
+      match res {
+        $crate::IResult::Done(_,_)     => res,
+        $crate::IResult::Incomplete(_) => res,
+        _                              => alt_sep!(__impl $i, $separator, $($rest)*)
+      }
+    }
+  );
+
+  (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+    {
+      match sep!($i, $separator, $subrule!( $($args)* )) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Error(_)      => {
+          alt_sep!(__impl $i, $separator, $($rest)*)
+        }
+      }
+    }
+  );
+
+  (__impl $i:expr, $separator:ident, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_sep!(__impl $i, $separator, call!($e) => { $gen } | $($rest)*);
+  );
+
+  (__impl $i:expr, $separator:ident, $e:ident => { $gen:expr }) => (
+    alt_sep!(__impl $i, $separator, call!($e) => { $gen });
+  );
+
+  (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+    {
+      match sep!($i, $separator, $subrule!( $($args)* )) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Error(_)      => {
+          alt_sep!(__impl $i)
+        }
+      }
+    }
+  );
+
+  (__impl $i:expr, $e:ident) => (
+    alt!(__impl $i, call!($e));
+  );
+
+  (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)*)) => (
+    {
+      match sep!($i, $separator, $subrule!( $($args)* )) {
+        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
+        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
+        $crate::IResult::Error(_)      => {
+          alt!(__impl $i)
+        }
+      }
+    }
+  );
+
+  (__impl $i:expr) => (
+    $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
+  );
+
+  ($i:expr, $separator:ident, $($rest:tt)*) => (
+    {
+      alt_sep!(__impl $i, $separator, $($rest)*)
+    }
+  );
+);
+
+#[macro_export]
+macro_rules! alt_complete_sep (
+  ($i:expr, $separator:ident, $e:ident | $($rest:tt)*) => (
+    alt_complete_sep!($i, $separator, complete!(call!($e)) | $($rest)*);
+  );
+
+  ($i:expr, $separator:ident, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
+    {
+      let res = complete!($i, sep!($separator, $subrule!($($args)*)));
+      match res {
+        $crate::IResult::Done(_,_) => res,
+        _ => alt_complete_sep!($i, $separator, $($rest)*),
+      }
+    }
+  );
+
+  ($i:expr, $separator:ident, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+    {
+      match complete!($i, sep!($separator, $subrule!($($args)*))) {
+        $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
+        _ => alt_complete_sep!($i, $separator, $($rest)*),
+      }
+    }
+  );
+
+  ($i:expr, $separator:ident, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt_complete_sep!($i, $separator, complete!(call!($e)) => { $gen } | $($rest)*);
+  );
+
+  // Tail (non-recursive) rules
+
+  ($i:expr, $separator:ident, $e:ident => { $gen:expr }) => (
+    alt_complete_sep!($i, $separator, call!($e) => { $gen });
+  );
+
+  ($i:expr, $separator:ident, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+    alt_sep!(__impl $i, $separator, $subrule!($($args)*) => { $gen })
+  );
+
+  ($i:expr, $separator:ident, $e:ident) => (
+    alt_complete_sep!($i, $separator, call!($e));
+  );
+
+  ($i:expr, $separator:ident, $subrule:ident!( $($args:tt)*)) => (
+    alt_sep!(__impl $i, $separator, $subrule!($($args)*))
+  );
+);
 
 #[macro_export]
 macro_rules! eat_separator (
@@ -415,6 +538,18 @@ macro_rules! sep (
     wrap_sep!($i,
       $separator,
       permutation_sep!($separator, $($rest)*)
+    )
+  };
+  ($i:expr,  $separator:ident, alt ! ($($rest:tt)*) ) => {
+    wrap_sep!($i,
+      $separator,
+      alt_sep!($separator, $($rest)*)
+    )
+  };
+  ($i:expr,  $separator:ident, alt_complete ! ($($rest:tt)*) ) => {
+    wrap_sep!($i,
+      $separator,
+      alt_complete_sep!($separator, $($rest)*)
     )
   };
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* )) => {
@@ -555,4 +690,60 @@ mod tests {
     let e = &b" efg \tabc"[..];
     assert_eq!(perm(e), Incomplete(Needed::Size(10)));
   }
+
+  #[test]
+  fn alt() {
+    fn work(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
+      Done(&b""[..], input)
+    }
+
+    #[allow(unused_variables)]
+    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8],&'static str> {
+      Error(error_code!(ErrorKind::Custom("abcd")))
+    }
+
+    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
+      Done(input, &b""[..])
+    }
+
+    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+      alt!(i, dont_work | dont_work)
+    }
+    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+      alt!(i, dont_work | work)
+    }
+    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+      alt!(i, dont_work | dont_work | work2 | dont_work)
+    }
+
+    let a = &b"\tabcd"[..];
+    assert_eq!(alt1(a), Error(error_position!(ErrorKind::Alt, a)));
+    assert_eq!(alt2(a), Done(&b""[..], a));
+    assert_eq!(alt3(a), Done(a, &b""[..]));
+
+    named!(alt4, ws!(alt!(tag!("abcd") | tag!("efgh"))));
+    let b = &b"  efgh "[..];
+    assert_eq!(alt4(a), Done(&b""[..], &b"abcd"[..]));
+    assert_eq!(alt4(b), Done(&b""[..], &b"efgh"[..]));
+
+    // test the alternative syntax
+    named!(alt5<bool>, ws!(alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true })));
+    assert_eq!(alt5(a), Done(&b""[..], false));
+    assert_eq!(alt5(b), Done(&b""[..], true));
+  }
+
+  #[test]
+  fn alt_complete() {
+    named!(ac<&[u8], &[u8]>,
+      ws!(alt_complete!(tag!("abcd") | tag!("ef") | tag!("ghi") | tag!("kl")))
+    );
+
+    let a = &b""[..];
+    assert_eq!(ac(a), Incomplete(Needed::Size(2)));
+    let a = &b" \tef "[..];
+    assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
+    let a = &b" cde"[..];
+    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
+  }
+
 }
