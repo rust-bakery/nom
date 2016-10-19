@@ -401,7 +401,7 @@ macro_rules! tuple_parser (
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
           tuple_parser!(i,
-            $consumed + ($crate::InputLength::input_len($i) -
+            $consumed + ($crate::InputLength::input_len(&($i)) -
                          $crate::InputLength::input_len(&i)), (o), $($rest)*)
         }
       }
@@ -418,7 +418,7 @@ macro_rules! tuple_parser (
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
           tuple_parser!(i,
-            $consumed + ($crate::InputLength::input_len($i) -
+            $consumed + ($crate::InputLength::input_len(&($i)) -
                          $crate::InputLength::input_len(&i)), ($($parsed)* , o), $($rest)*)
         }
       }
@@ -677,8 +677,8 @@ macro_rules! do_parse (
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,_)     => {
           do_parse!(__impl i,
-            $consumed + ($crate::InputLength::input_len($i) -
-                         $crate::InputLength::input_len(i)), $($rest)*)
+            $consumed + ($crate::InputLength::input_len(&($i)) -
+                         $crate::InputLength::input_len(&i)), $($rest)*)
         },
       }
     }
@@ -699,8 +699,8 @@ macro_rules! do_parse (
         $crate::IResult::Done(i,o)     => {
           let $field = o;
           do_parse!(__impl i,
-            $consumed + ($crate::InputLength::input_len($i) -
-                         $crate::InputLength::input_len(i)), $($rest)*)
+            $consumed + ($crate::InputLength::input_len(&($i)) -
+                         $crate::InputLength::input_len(&i)), $($rest)*)
         },
       }
     }
