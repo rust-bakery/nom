@@ -6,6 +6,7 @@
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
+      use $crate::InputLength;
       let mut res   = ::std::vec::Vec::new();
       let mut input = $i;
 
@@ -14,7 +15,7 @@ macro_rules! separated_list(
         $crate::IResult::Error(_)      => $crate::IResult::Done(input, ::std::vec::Vec::new()),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
-          if i.len() == input.len() {
+          if i.input_len() == input.input_len() {
             $crate::IResult::Error(error_position!($crate::ErrorKind::SeparatedList,input))
           } else {
             res.push(o);
@@ -23,13 +24,13 @@ macro_rules! separated_list(
             loop {
               // get the separator first
               if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
-                if i2.len() == input.len() {
+                if i2.input_len() == input.input_len() {
                   break;
                 }
 
                 // get the element next
                 if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
-                  if i3.len() == i2.len() {
+                  if i3.input_len() == i2.input_len() {
                     break;
                   }
                   res.push(o3);
@@ -64,6 +65,7 @@ macro_rules! separated_list(
 macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
+      use $crate::InputLength;
       let mut res   = ::std::vec::Vec::new();
       let mut input = $i;
 
@@ -72,7 +74,7 @@ macro_rules! separated_nonempty_list(
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
-          if i.len() == input.len() {
+          if i.input_len() == input.input_len() {
             $crate::IResult::Error(error_position!($crate::ErrorKind::SeparatedNonEmptyList,input))
           } else {
             res.push(o);
@@ -80,12 +82,12 @@ macro_rules! separated_nonempty_list(
 
             loop {
               if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
-                if i2.len() == input.len() {
+                if i2.input_len() == input.input_len() {
                   break;
                 }
 
                 if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
-                  if i3.len() == i2.len() {
+                  if i3.input_len() == i2.input_len() {
                     break;
                   }
                   res.push(o3);
@@ -488,12 +490,13 @@ macro_rules! count_fixed (
 macro_rules! length_value_impl(
   ($i:expr, $f:expr, $g:ident!( $($args:tt)* ), $lenpat:pat, $lenexpr:expr) => (
     {
+      use $crate::InputLength;
       match $f($i) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(inum, onum)   => {
           let ret;
-          let length_token = $i.len() - inum.len();
+          let length_token = $i.input_len() - inum.input_len();
           let mut input    = inum;
           let mut res      = ::std::vec::Vec::new();
 
@@ -658,7 +661,7 @@ macro_rules! fold_many1(
         $crate::IResult::Done(i1,o1)   => {
           let acc = $init;
           let f = $f;
-          if i1.len() == 0 {
+          if i1.input_len() == 0 {
             let acc = f(acc, o1);
             $crate::IResult::Done(i1,acc)
           } else {
@@ -831,7 +834,9 @@ mod tests {
     ($i:expr, $bytes: expr) => (
       {
         use std::cmp::min;
-        let len = $i.len();
+        use $crate::InputLength;
+        
+        let len = $i.input_len();
         let blen = $bytes.len();
         let m   = min(len, blen);
         let reduced = &$i[..m];
@@ -853,7 +858,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
+        let res:$crate::IResult<&[u8],&[u8]> = if $i.input_len() < cnt {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt))
         } else {
           $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
