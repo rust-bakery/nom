@@ -1,7 +1,75 @@
 //! Support for whitespace delimited formats
 //!
-//! supporting a new combinator:
-//! * copy the combinator's code here,  with the _sep suffix
+//! a lot of textual formats allows spaces and other
+//! types of separators between tokens. Handling it
+//! manually with nom means wrapping all parsers
+//! like this:
+//!
+//! ```ignore
+//! named!(token, delimited!(space, tk, space));
+//! ```
+//!
+//! To ease the development of such parsers, you
+//! can use the whitespace parsing facility, which works
+//! as follows:
+//!
+//! ```
+//! # #[macro_use] extern crate nom;
+//! # use nom::IResult::Done;
+//! # fn main() {
+//! named!(tuple<&[u8], (&[u8], &[u8]) >,
+//!   ws!(tuple!( take!(3), tag!("de") ))
+//! );
+//!
+//! assert_eq!(
+//!   tuple(&b" \t abc de fg"[..]),
+//!   Done(&b"fg"[..], (&b"abc"[..], &b"de"[..]))
+//! );
+//! # }
+//! ```
+//!
+//! The `ws!` combinator will modify the parser to
+//! intersperse space parsers everywhere. By default,
+//! it will consume the following characters: " \t\r\n".
+//!
+//! If you want to modify that behaviour, you can make
+//! your own whitespace wrapper. As an example, if
+//! you don't want to consume ends of lines, only
+//! spaces and tabs, you can do it like this:
+//!
+//! ```
+//! # #[macro_use] extern crate nom;
+//! # use nom::IResult::Done;
+//! named!(pub space, eat_separator!(b" \t"));
+//!
+//! #[macro_export]
+//! macro_rules! sp (
+//!   ($i:expr, $($args:tt)*) => (
+//!     {
+//!       sep!($i, space, $($args)*)
+//!     }
+//!   )
+//! );
+//!
+//! # fn main() {
+//! named!(tuple<&[u8], (&[u8], &[u8]) >,
+//!   sp!(tuple!( take!(3), tag!("de") ))
+//! );
+//!
+//! assert_eq!(
+//!   tuple(&b" \t abc de fg"[..]),
+//!   Done(&b"fg"[..], (&b"abc"[..], &b"de"[..]))
+//! );
+//! # }
+//! ```
+//!
+//! This combinator works by replacing each combinator with
+//! a version that supports wrapping with separator parsers.
+//! It will not support the combinators you wrote in your
+//! own code. You can still manually wrap them with the separator
+//! you want, or you can copy the macros defined in src/whitespace.rs
+//! and modify them to support a new combinator:
+//! * copy the combinator's code here, add the _sep suffix
 //! * add the `$separator:expr` as second argument
 //! * wrap any sub parsers with sep!($separator, $submac!($($args)*))
 //! * reference it in the definition of `sep!` as follows:
@@ -603,6 +671,33 @@ macro_rules! sep (
 
 named!(pub sp, eat_separator!(b" \t\r\n"));
 
+/// `ws!(I -> IResult<I,O>) => I -> IResult<I, O>`
+///
+/// transforms a parser to automatically consume
+/// whitespace between each token. By default,
+/// it takes the following characters: " \t\r\n".
+///
+/// If you need a whitespace parser consuming a
+/// different set of characters, you can make
+/// your own by reusing the `sep!` combinator.
+///
+/// To use `ws!`, pass your parser as argument:
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+/// named!(tuple<&[u8], (&[u8], &[u8]) >,
+///   ws!(tuple!( take!(3), tag!("de") ))
+/// );
+///
+/// assert_eq!(
+///   tuple(&b" \t abc de fg"[..]),
+///   Done(&b"fg"[..], (&b"abc"[..], &b"de"[..]))
+/// );
+/// # }
+/// ```
+///
 #[macro_export]
 macro_rules! ws (
   ($i:expr, $($args:tt)*) => (
@@ -612,7 +707,6 @@ macro_rules! ws (
     }
   )
 );
-
 
 #[cfg(test)]
 mod tests {
