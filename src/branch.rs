@@ -118,82 +118,77 @@
 ///
 #[macro_export]
 macro_rules! alt (
-  ($i:expr, $($rest:tt)*) => (
-    {
-      alt_parser!($i, $($rest)*)
-    }
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! alt_parser (
-  ($i:expr, $e:ident | $($rest:tt)*) => (
-    alt_parser!($i, call!($e) | $($rest)*);
+  (__impl $i:expr, $e:ident | $($rest:tt)*) => (
+    alt!(__impl $i, call!($e) | $($rest)*);
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
       let res = $subrule!($i, $($args)*);
       match res {
         $crate::IResult::Done(_,_)     => res,
         $crate::IResult::Incomplete(_) => res,
-        _                              => alt_parser!($i, $($rest)*)
+        _                              => alt!(__impl $i, $($rest)*)
       }
     }
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt_parser!($i, $($rest)*)
+          alt!(__impl $i, $($rest)*)
         }
       }
     }
   );
 
-  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
-    alt_parser!($i, call!($e) => { $gen } | $($rest)*);
+  (__impl $i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+    alt!(__impl $i, call!($e) => { $gen } | $($rest)*);
   );
 
-  ($i:expr, $e:ident => { $gen:expr }) => (
-    alt_parser!($i, call!($e) => { $gen });
+  (__impl $i:expr, $e:ident => { $gen:expr }) => (
+    alt!(__impl $i, call!($e) => { $gen });
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
     {
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt_parser!($i)
+          alt!(__impl $i)
         }
       }
     }
   );
 
-  ($i:expr, $e:ident) => (
-    alt_parser!($i, call!($e));
+  (__impl $i:expr, $e:ident) => (
+    alt!(__impl $i, call!($e));
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)*)) => (
     {
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt_parser!($i)
+          alt!(__impl $i)
         }
       }
     }
   );
 
-  ($i:expr) => (
+  (__impl $i:expr) => (
     $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
+  );
+
+  ($i:expr, $($rest:tt)*) => (
+    {
+      alt!(__impl $i, $($rest)*)
+    }
   );
 );
 
@@ -240,7 +235,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt_parser!($i, $subrule!($($args)*) => { $gen })
+    alt!(__impl $i, $subrule!($($args)*) => { $gen })
   );
 
   ($i:expr, $e:ident) => (
@@ -248,7 +243,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
-    alt_parser!($i, $subrule!($($args)*))
+    alt!(__impl $i, $subrule!($($args)*))
   );
 );
 
@@ -310,7 +305,6 @@ macro_rules! alt_complete (
 ///
 #[macro_export]
 macro_rules! switch (
-  // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       match $submac!($i, $($args)*) {
@@ -344,30 +338,63 @@ macro_rules! switch (
   );
 );
 
+///
+///
+/// `permutation!(I -> IResult<I,A>, I -> IResult<I,B>, ... I -> IResult<I,X> ) => I -> IResult<I, (A,B,...X)>`
+/// applies its sub parsers in a sequence, but independent from their order
+/// this parser will only succeed if all of its sub parsers succeed
+///
+/// the tuple of results is in the same order as the parsers are declared
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error,Incomplete};
+/// # use nom::{ErrorKind,Needed};
+/// # fn main() {
+/// named!(perm<(&[u8], &[u8], &[u8])>,
+///   permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
+/// );
+///
+/// // whatever the order, if the parser succeeds, each
+/// // tag should have matched correctly
+/// let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
+///
+/// let a = &b"abcdefghijk"[..];
+/// assert_eq!(perm(a), Done(&b"jk"[..], expected));
+/// let b = &b"efgabcdhijkl"[..];
+/// assert_eq!(perm(b), Done(&b"jkl"[..], expected));
+/// let c = &b"hiefgabcdjklm"[..];
+/// assert_eq!(perm(c), Done(&b"jklm"[..], expected));
+///
+/// let d = &b"efgxyzabcdefghi"[..];
+/// assert_eq!(perm(d), Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..])));
+///
+/// let e = &b"efgabc"[..];
+/// assert_eq!(perm(e), Incomplete(Needed::Size(7)));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
-      use util::HexDisplay;
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
-      let mut error  = None;
-      let mut needed = None;
+      let mut error  = ::std::option::Option::None;
+      let mut needed = ::std::option::Option::None;
 
       loop {
         let mut all_done = true;
-        println!("res = {:?}, input:\n{}", res, input.to_hex(16));
         permutation_iterator!(0, input, all_done, needed, res, $($rest)*);
 
         //if we reach that part, it means none of the parsers were able to read anything
         if !all_done {
           //FIXME: should wrap the error returned by the child parser
-          error = Some(error_position!($crate::ErrorKind::Permutation, input));
+          error = ::std::option::Option::Some(error_position!($crate::ErrorKind::Permutation, input));
         }
         break;
       }
 
-      if let Some(need) = needed {
+      if let ::std::option::Option::Some(need) = needed {
         if let $crate::Needed::Size(sz) = need {
           $crate::IResult::Incomplete(
             $crate::Needed::Size(
@@ -379,7 +406,7 @@ macro_rules! permutation (
         } else {
           $crate::IResult::Incomplete($crate::Needed::Unknown)
         }
-      } else if let Some(e) = error {
+      } else if let ::std::option::Option::Some(e) = error {
         $crate::IResult::Error(e)
       } else {
         let unwrapped_res = permutation_unwrap!(0, (), res, $($rest)*);
@@ -394,22 +421,22 @@ macro_rules! permutation (
 #[macro_export]
 macro_rules! permutation_init (
   ((), $e:ident, $($rest:tt)*) => (
-    permutation_init!((None), $($rest)*)
+    permutation_init!((::std::option::Option::None), $($rest)*)
   );
   ((), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!((None), $($rest)*)
+    permutation_init!((::std::option::Option::None), $($rest)*)
   );
   (($($parsed:expr),*), $e:ident, $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , None), $($rest)*);
+    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , None), $($rest)*);
+    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $e:ident) => (
-    ($($parsed),* , None)
+    ($($parsed),* , ::std::option::Option::None)
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
-    ($($parsed),* , None)
+    ($($parsed),* , ::std::option::Option::None)
   );
   (($($parsed:expr),*),) => (
     ($($parsed),*)
@@ -423,10 +450,14 @@ macro_rules! succ (
   (1, $submac:ident ! ($($rest:tt)*)) => ($submac!(2, $($rest)*));
   (2, $submac:ident ! ($($rest:tt)*)) => ($submac!(3, $($rest)*));
   (3, $submac:ident ! ($($rest:tt)*)) => ($submac!(4, $($rest)*));
+  (4, $submac:ident ! ($($rest:tt)*)) => ($submac!(5, $($rest)*));
+  (5, $submac:ident ! ($($rest:tt)*)) => ($submac!(6, $($rest)*));
+  (6, $submac:ident ! ($($rest:tt)*)) => ($submac!(7, $($rest)*));
+  (7, $submac:ident ! ($($rest:tt)*)) => ($submac!(8, $($rest)*));
 );
 
 // HACK: for some reason, Rust 1.11 does not accept $res.$it in
-// permutation_unwrap. This is a bit ugly, but it will have None
+// permutation_unwrap. This is a bit ugly, but it will have no
 // impact on the generated code
 #[doc(hidden)]
 #[macro_export]
@@ -435,6 +466,10 @@ macro_rules! acc (
   (1, $tup:expr) => ($tup.1);
   (2, $tup:expr) => ($tup.2);
   (3, $tup:expr) => ($tup.3);
+  (4, $tup:expr) => ($tup.4);
+  (5, $tup:expr) => ($tup.5);
+  (6, $tup:expr) => ($tup.6);
+  (7, $tup:expr) => ($tup.7);
 );
 
 #[doc(hidden)]
@@ -464,18 +499,18 @@ macro_rules! permutation_iterator (
     permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e), $($rest)*);
   );
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
-    if acc!($it, $res) == None {
+    if acc!($it, $res) == ::std::option::Option::None {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,o)     => {
           $i = i;
-          acc!($it, $res) = Some(o);
+          acc!($it, $res) = ::std::option::Option::Some(o);
           continue;
         },
         $crate::IResult::Error(_) => {
           $all_done = false;
         },
         $crate::IResult::Incomplete(i) => {
-          $needed = Some(i);
+          $needed = ::std::option::Option::Some(i);
           break;
         }
       };
@@ -486,18 +521,18 @@ macro_rules! permutation_iterator (
     permutation_iterator!($it, $i, $all_done, $res, call!($e));
   );
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
-    if acc!($it, $res) == None {
+    if acc!($it, $res) == ::std::option::Option::None {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,o)     => {
           $i = i;
-          acc!($it, $res) = Some(o);
+          acc!($it, $res) = ::std::option::Option::Some(o);
           continue;
         },
         $crate::IResult::Error(_) => {
           $all_done = false;
         },
         $crate::IResult::Incomplete(i) => {
-          $needed = Some(i);
+          $needed = ::std::option::Option::Some(i);
           break;
         }
       };
@@ -641,6 +676,7 @@ mod tests {
     assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
   }
 
+  #[allow(unused_variables)]
   #[test]
   fn switch() {
     named!(sw,

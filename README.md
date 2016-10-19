@@ -352,11 +352,15 @@ Here is a list of known projects using nom:
 - Document formats:
  * [TAR](https://github.com/Keruspe/tar-parser.rs)
  * [torrent files](https://github.com/jag426/bittorrent)
-- Database formats: 
+- Database formats:
  * [Redis database files](https://github.com/badboy/rdb-rs)
-- Network protocol formats: 
+- Network protocol formats:
  * [IRC](https://github.com/Detegr/RBot-parser)
  * [Pcap-NG](https://github.com/richo/pcapng-rs)
+ * [NTP](https://github.com/rusticata/ntp-parser)
+ * [SNMP](https://github.com/rusticata/snmp-parser)
+ * [DER](https://github.com/rusticata/der-parser)
+ * [TLS](https://github.com/rusticata/tls-parser)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 

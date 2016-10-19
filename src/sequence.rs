@@ -588,6 +588,76 @@ macro_rules! delimited(
   );
 );
 
+/// `do_parse!(I->IResult<I,A> >> I->IResult<I,B> >> ... I->IResult<I,X> , ( O ) ) => I -> IResult<I, O>`
+/// do_parse applies sub parsers in a sequence.
+/// it can store intermediary results and make them available
+/// for later parsers
+///
+/// The input type `I` must implement `nom::InputLength`.
+///
+/// This combinator will count how much data is consumed by every child parser
+/// and take it into account if there is not enough data
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self, Done, Incomplete};
+/// # use nom::Needed;
+/// use nom::be_u8;
+///
+/// // this parser implements a common pattern in binary formats,
+/// // the TAG-LENGTH-VALUE, where you first recognize a specific
+/// // byte slice, then the next bytes indicate the length of
+/// // the data, then you take that slice and return it
+/// //
+/// // here, we match the tag 42, take the length in the next byte
+/// // and store it in `length`, then use `take!` with `length`
+/// // to obtain the subslice that we store in `bytes`, then return
+/// // `bytes`
+/// named!(tag_length_value,
+///   do_parse!(
+///     tag!( &[ 42u8 ][..] ) >>
+///     length: be_u8         >>
+///     bytes:  take!(length) >>
+///     (bytes)
+///   )
+/// );
+///
+/// # fn main() {
+/// let a: Vec<u8>        = vec!(42, 2, 3, 4, 5);
+/// let result_a: Vec<u8> = vec!(3, 4);
+/// let rest_a: Vec<u8>   = vec!(5);
+/// assert_eq!(tag_length_value(&a[..]), Done(&rest_a[..], &result_a[..]));
+///
+/// // here, the length is 5, but there are only 3 bytes afterwards (3, 4 and 5),
+/// // so the parser will tell you that you need 7 bytes: one for the tag,
+/// // one for the length, then 5 bytes
+/// let b: Vec<u8>     = vec!(42, 5, 3, 4, 5);
+/// assert_eq!(tag_length_value(&b[..]), Incomplete(Needed::Size(7)));
+/// # }
+/// ```
+///
+/// the result is a tuple, so you can return multiple sub results, like
+/// this:
+/// `do_parse!(I->IResult<I,A> >> I->IResult<I,B> >> ... I->IResult<I,X> , ( O, P ) ) => I -> IResult<I, (O,P)>`
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self, Done, Incomplete};
+/// # use nom::Needed;
+/// use nom::be_u8;
+/// named!(tag_length_value<(u8, &[u8])>,
+///   do_parse!(
+///     tag!( &[ 42u8 ][..] ) >>
+///     length: be_u8         >>
+///     bytes:  take!(length) >>
+///     (length, bytes)
+///   )
+/// );
+///
+/// # fn main() {
+/// # }
+/// ```
+///
 #[macro_export]
 macro_rules! do_parse (
   (__impl $i:expr, $consumed:expr, ( $($rest:expr),* )) => (
@@ -688,9 +758,6 @@ mod tests {
 
   #[cfg(feature = "verbose-errors")]
   use verbose_errors::Err;
-
-  #[cfg(not(feature = "verbose-errors"))]
-  use simple_errors::Err;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (

@@ -1055,6 +1055,7 @@ mod tests {
     )
   }
 
+  #[allow(unused_variables)]
   #[test]
   fn count_fixed_no_type() {
     const TIMES: usize = 2;

@@ -1,7 +1,6 @@
 /// Character level parsers
 
 use internal::{IResult,Needed};
-use util::ErrorKind;
 
 /// matches one of the provided characters
 #[macro_export]
@@ -44,7 +43,6 @@ macro_rules! one_of_bytes (
         if found {
           $crate::IResult::Done(&$i[1..], $i[0] as char)
         } else {
-          //$crate::IResult::Error($crate::Err::Position($crate::ErrorKind::OneOf, $i))
           $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i))
         }
       }
@@ -121,19 +119,6 @@ macro_rules! char (
 
 named!(pub newline<char>, char!('\n'));
 
-pub fn crlf(input:&[u8]) -> IResult<&[u8], char> {
-  if input.len() < 2 {
-    IResult::Incomplete(Needed::Size(2))
-  } else {
-    if &input[0..2] == &b"\r\n"[..] {
-      IResult::Done(&input[2..], '\n')
-    } else {
-      IResult::Error(error_position!(ErrorKind::CrLf, input))
-    }
-  }
-}
-
-named!(pub eol<char>, alt!(crlf | newline));
 named!(pub tab<char>, char!('\t'));
 
 pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
@@ -181,4 +166,5 @@ mod tests {
     let b = &b"cde"[..];
     assert_eq!(f(b), Done(&b"de"[..], 'c'));
   }
+
 }

@@ -23,7 +23,7 @@ include = [
 [features]
 core = []
 nightly = []
-default = ["stream", "verbose-errors"]
+default = ["stream"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
 stream = []

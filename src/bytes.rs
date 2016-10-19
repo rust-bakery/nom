@@ -38,6 +38,44 @@ macro_rules! tag (
   );
 );
 
+/// `tag_no_case!(&[T]) => &[T] -> IResult<&[T], &[T]>`
+/// declares a case insensitive ascii string as a suite to recognize
+///
+/// consumes the recognized characters
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self,Done};
+/// # fn main() {
+///  named!(test, tag_no_case!("ABcd"));
+///
+///  let r = test(&b"aBCdefgh"[..]);
+///  assert_eq!(r, Done(&b"efgh"[..], &b"aBCd"[..]));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! tag_no_case (
+  ($i:expr, $tag: expr) => (
+    {
+      use $crate::{Compare,CompareResult,Slice};
+      let res: $crate::IResult<_,_> = match ($i).compare_no_case($tag) {
+        CompareResult::Ok => {
+          let blen = $tag.len();
+          $crate::IResult::Done($i.slice(blen..), $i.slice(..blen))
+        },
+        CompareResult::Incomplete => {
+          $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
+        },
+        CompareResult::Error => {
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
+        }
+      };
+      res
+    }
+  );
+);
+
+
 /// `is_not!(&[T:AsBytes]) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes that do not appear in the provided array
 ///
@@ -663,6 +701,7 @@ mod tests {
     assert_eq!(a_or_b(f), Done(&b""[..], &b"fghi"[..]));
   }
 
+  #[allow(unused_variables)]
   #[test]
   fn escaping() {
     named!(esc, escaped!(call!(alpha), '\\', is_a!("\"n\\")));
@@ -677,6 +716,7 @@ mod tests {
       error_position!(ErrorKind::IsA, &b"A"[..]))));
   }
 
+  #[cfg(feature = "verbose-errors")]
   fn to_s(i:Vec<u8>) -> String {
     String::from_utf8_lossy(&i).into_owned()
   }
@@ -900,5 +940,18 @@ mod tests {
     assert_eq!(y(b"magic\x02.."), Done(&[][..], &b".."[..]));
     assert_eq!(y(b"magic\x02."), Incomplete(Needed::Size(8)));
     assert_eq!(y(b"magic\x02"), Incomplete(Needed::Size(8)));
+  }
+
+  #[test]
+  fn case_insensitive() {
+    named!(test, tag_no_case!("ABcd"));
+    assert_eq!(test(&b"aBCdefgh"[..]), Done(&b"efgh"[..], &b"aBCd"[..]));
+    assert_eq!(test(&b"abcdefgh"[..]), Done(&b"efgh"[..], &b"abcd"[..]));
+    assert_eq!(test(&b"ABCDefgh"[..]), Done(&b"efgh"[..], &b"ABCD"[..]));
+
+    named!(test2, tag_no_case!("ABcd"));
+    assert_eq!(test2(&b"aBCdefgh"[..]), Done(&b"efgh"[..], &b"aBCd"[..]));
+    assert_eq!(test2(&b"abcdefgh"[..]), Done(&b"efgh"[..], &b"abcd"[..]));
+    assert_eq!(test2(&b"ABCDefgh"[..]), Done(&b"efgh"[..], &b"ABCD"[..]));
   }
 }

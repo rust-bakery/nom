@@ -130,11 +130,40 @@ impl<'a,'b> Compare<&'b[u8]> for BlockSlice<'a> {
       CompareResult::Ok
     }
   }
+
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b[u8]) -> CompareResult {
+    let len     = self.end - self.start;
+    let blen    = t.len();
+    let m       = if len < blen { len } else { blen };
+    let reduced = self.slice(..m);
+    let other   = &t[..m];
+
+    if !reduced.cursor().zip(other).all(|(a, b)| {
+      match (a,*b) {
+        (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == *b,
+        (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122 ) |(97...122, 65...90) => {
+          a & 0b01000000 == *b & 0b01000000
+        }
+        _ => false
+      }
+    }) {
+      CompareResult::Error
+    } else if m < blen {
+      CompareResult::Incomplete
+    } else {
+      CompareResult::Ok
+    }
+  }
 }
 
 impl<'a,'b> Compare<&'b str> for BlockSlice<'a> {
   fn compare(&self, t: &'b str) -> CompareResult {
     self.compare(str::as_bytes(t))
+  }
+  fn compare_no_case(&self, t: &'b str) -> CompareResult {
+    self.compare_no_case(str::as_bytes(t))
   }
 }
 

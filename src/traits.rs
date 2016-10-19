@@ -41,13 +41,13 @@ use std::str::CharIndices;
 
 pub trait AsChar {
     #[inline]
-    fn as_char(self)     -> char;
+    fn as_char(self)      -> char;
     #[inline]
-    fn is_alpha(self)    -> bool;
+    fn is_alpha(self)     -> bool;
     #[inline]
-    fn is_alphanum(self) -> bool;
+    fn is_alphanum(self)  -> bool;
     #[inline]
-    fn is_0_to_9(self)   -> bool;
+    fn is_dec_digit(self) -> bool;
     #[inline]
     fn is_hex_digit(self) -> bool;
     #[inline]
@@ -56,15 +56,15 @@ pub trait AsChar {
 
 impl AsChar for u8 {
     #[inline]
-    fn as_char(self)     -> char { self as char }
+    fn as_char(self)      -> char { self as char }
     #[inline]
-    fn is_alpha(self)    -> bool {
+    fn is_alpha(self)     -> bool {
       (self >= 0x41 && self <= 0x5A) || (self >= 0x61 && self <= 0x7A)
     }
     #[inline]
-    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
     #[inline]
-    fn is_0_to_9(self)   -> bool {
+    fn is_dec_digit(self) -> bool {
       self >= 0x30 && self <= 0x39
     }
     #[inline]
@@ -74,21 +74,21 @@ impl AsChar for u8 {
       (self >= 0x61 && self <= 0x66)
     }
     #[inline]
-    fn is_oct_digit(self)   -> bool {
+    fn is_oct_digit(self) -> bool {
       self >= 0x30 && self <= 0x37
     }
 }
 impl<'a> AsChar for &'a u8 {
     #[inline]
-    fn as_char(self)     -> char { *self as char }
+    fn as_char(self)      -> char { *self as char }
     #[inline]
-    fn is_alpha(self)    -> bool {
+    fn is_alpha(self)     -> bool {
       (*self >= 0x41 && *self <= 0x5A) || (*self >= 0x61 && *self <= 0x7A)
     }
     #[inline]
-    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
     #[inline]
-    fn is_0_to_9(self)   -> bool {
+    fn is_dec_digit(self) -> bool {
       *self >= 0x30 && *self <= 0x39
     }
     #[inline]
@@ -105,13 +105,13 @@ impl<'a> AsChar for &'a u8 {
 
 impl AsChar for char {
     #[inline]
-    fn as_char(self)     -> char { self }
+    fn as_char(self)      -> char { self }
     #[inline]
-    fn is_alpha(self)    -> bool { self.is_alphabetic() }
+    fn is_alpha(self)     -> bool { self.is_alphabetic() }
     #[inline]
-    fn is_alphanum(self) -> bool { self.is_alpha() || self.is_0_to_9() }
+    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
     #[inline]
-    fn is_0_to_9(self)   -> bool { self.is_digit(10) }
+    fn is_dec_digit(self) -> bool { self.is_digit(10) }
     #[inline]
     fn is_hex_digit(self) -> bool { self.is_digit(16) }
     #[inline]
@@ -243,6 +243,7 @@ impl IterTake for str {
     }
 }
 
+#[derive(Debug,PartialEq)]
 pub enum CompareResult {
   Ok,
   Incomplete,
@@ -250,7 +251,8 @@ pub enum CompareResult {
 }
 
 pub trait Compare<T> {
-  fn compare(&self, t:T) -> CompareResult;
+  fn compare(&self, t:T)         -> CompareResult;
+  fn compare_no_case(&self, t:T) -> CompareResult;
 }
 
 impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
@@ -270,6 +272,31 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
       CompareResult::Ok
     }
   }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b[u8]) -> CompareResult {
+    let len     = self.len();
+    let blen    = t.len();
+    let m       = if len < blen { len } else { blen };
+    let reduced = &self[..m];
+    let other   = &t[..m];
+
+    if !reduced.iter().zip(other).all(|(a, b)| {
+      match (*a,*b) {
+        (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
+        (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122 ) |(97...122, 65...90) => {
+          *a & 0b01000000 == *b & 0b01000000
+        }
+        _ => false
+      }
+    }) {
+      CompareResult::Error
+    } else if m < blen {
+      CompareResult::Incomplete
+    } else {
+      CompareResult::Ok
+    }
+  }
 }
 
 #[cfg(not(feature = "core"))]
@@ -277,6 +304,10 @@ impl<'a,'b> Compare<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
     self.compare(str::as_bytes(t))
+  }
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b str) -> CompareResult {
+    self.compare_no_case(str::as_bytes(t))
   }
 }
 
@@ -291,6 +322,25 @@ impl<'a,'b> Compare<&'b str> for &'a str {
     let b       = &t[..m];
 
     if reduced != b {
+      CompareResult::Error
+    } else if m < blen {
+      CompareResult::Incomplete
+    } else {
+      CompareResult::Ok
+    }
+  }
+
+  //FIXME: this version is too simple and does not use the current locale
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b str) -> CompareResult {
+    let len     = self.len();
+    let blen    = t.len();
+    let m       = if len < blen { len } else { blen };
+    let reduced = &self[..m];
+    let b       = &t[..m];
+
+    //println!("compare_no_case({}, {}) => {} / {}", self, t, reduced.to_lowercase(), b.to_lowercase());
+    if !(reduced.to_lowercase() == b.to_lowercase()) {
       CompareResult::Error
     } else if m < blen {
       CompareResult::Incomplete
