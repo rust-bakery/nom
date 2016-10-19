@@ -140,7 +140,7 @@ macro_rules! separated_nonempty_list(
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::InputLength;
+      use $crate::{InputLength, Offset};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
@@ -168,7 +168,7 @@ macro_rules! many0(
           },
           $crate::IResult::Done(i, o)                          => {
             // loop trip must always consume (otherwise infinite loops)
-            if i == input {
+            if input.offset(&i) == 0 {
               ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Many0,input));
               break;
             }
@@ -573,7 +573,7 @@ macro_rules! length_value(
 macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
-      use $crate::InputLength;
+      use $crate::{InputLength, Offset};
       let ret;
       let f         = $f;
       let mut res   = $init;
@@ -601,7 +601,7 @@ macro_rules! fold_many0(
           },
           $crate::IResult::Done(i, o)                          => {
             // loop trip must always consume (otherwise infinite loops)
-            if i == input {
+            if input.offset(&i) == 0 {
               ret = $crate::IResult::Error(
                 error_position!($crate::ErrorKind::Many0,input)
               );

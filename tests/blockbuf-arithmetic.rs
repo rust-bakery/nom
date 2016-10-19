@@ -3,7 +3,7 @@ extern crate nom;
 
 extern crate bytes;
 
-use nom::{Compare,CompareResult,InputLength,IterIndices,Slice,HexDisplay};
+use nom::{Compare,CompareResult,InputLength,IterIndices,Offset,Slice,HexDisplay};
 
 use std::str;
 use std::str::FromStr;
@@ -43,6 +43,12 @@ impl<'a> PartialEq for BlockSlice<'a> {
   fn eq(&self, other: &BlockSlice<'a>) -> bool {
     let bufs = (self.buf as *const BlockBuf) == (other.buf as *const BlockBuf);
     self.start == other.start && self.end == other.end && bufs
+  }
+}
+impl<'a> Offset for BlockSlice<'a> {
+  fn offset(&self, other: &BlockSlice<'a>) -> usize {
+    assert_eq!(self.buf as *const BlockBuf, other.buf as *const BlockBuf);
+    other.start - self.start
   }
 }
 
