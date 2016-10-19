@@ -41,6 +41,18 @@ impl Needed {
 ///
 /// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
 ///
+/// Depending on a compilation flag, the content of the `Error` variant
+/// can change. By default, it will be a `ErrorKind<E=u32>` (with `E` configurable).
+///
+/// If you activate the `verbose-errors` compilation flags, it will be an
+/// enum that contains an error code, optionally, an input position,
+/// and an error sent by child parsers.
+///
+/// The verbose errors feature allows very flexible error management:
+/// you can know precisely which parser got to which part of the input.
+/// The main drawback is that it is a lot slower than default error
+/// management.
+///
 #[derive(Debug,PartialEq,Eq,Clone)]
 pub enum IResult<I,O,E=u32> {
    /// indicates a correct parsing, the first field containing the rest of the unparsed data, the second field contains the parsed data

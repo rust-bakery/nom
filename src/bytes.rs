@@ -20,7 +20,7 @@
 macro_rules! tag (
   ($i:expr, $tag: expr) => (
     {
-      use $crate::{Compare,CompareResult,Slice};
+      use $crate::{Compare,CompareResult,InputLength,Slice};
       let res: $crate::IResult<_,_> = match ($i).compare($tag) {
         CompareResult::Ok => {
           let blen = $tag.input_len();
@@ -57,7 +57,7 @@ macro_rules! tag (
 macro_rules! tag_no_case (
   ($i:expr, $tag: expr) => (
     {
-      use $crate::{Compare,CompareResult,Slice};
+      use $crate::{Compare,CompareResult,InputLength,Slice};
       let res: $crate::IResult<_,_> = match ($i).compare_no_case($tag) {
         CompareResult::Ok => {
           let blen = $tag.input_len();
@@ -383,7 +383,7 @@ macro_rules! escaped_transform (
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::{IterIndices,Slice};
+      use $crate::{InputLength,IterIndices,Slice};
       let input = $input;
 
       match input.position(|c| !$submac!(c, $($args)*)) {
@@ -631,7 +631,7 @@ macro_rules! take_until_either (
 macro_rules! length_bytes(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::Slice;
+      use $crate::{Slice,InputLength};
       let input: &[u8] = $i;
 
       match  $submac!(input, $($args)*) {
