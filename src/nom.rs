@@ -37,7 +37,7 @@ pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
 }
 
 #[inline]
-pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
+pub fn begin<T>(input: T) -> IResult<(), T> {
   Done((), input)
 }
 
@@ -57,8 +57,8 @@ pub fn crlf<T>(input: T) -> IResult<T, T> where T: Sized,
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
-pub fn not_line_ending<T>(input: T) -> IResult<T, T> where
-    T:Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+pub fn not_line_ending<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
     T: IterIndices + InputLength,
     T: Compare<&'static str> {
       match input.iter_elements().position(|item| {
@@ -1053,10 +1053,11 @@ mod tests {
     assert_eq!(crlf(&b"\r\na"[..]), Done(&b"a"[..], &b"\r\n"[..]));
     assert_eq!(crlf(&b"\r"[..]),    Incomplete(Needed::Size(2)));
     assert_eq!(crlf(&b"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
-
-    assert_eq!(crlf("\r\na"), Done("a", "\r\n"));
-    assert_eq!(crlf("\r"),    Incomplete(Needed::Size(2)));
-    assert_eq!(crlf("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
+    
+    assert_eq!(crlf(&"\r\na"[..]), Done(&"a"[..], &"\r\n"[..]));
+    assert_eq!(crlf(&"\r"[..]),    Incomplete(Needed::Size(2)));
+    assert_eq!(crlf(&"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &"\ra"[..])));
+    
   }
 
   #[test]
@@ -1066,9 +1067,9 @@ mod tests {
     assert_eq!(eol(&b"\r"[..]),    Incomplete(Needed::Size(2)));
     assert_eq!(eol(&b"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
 
-    assert_eq!(eol("\na"),   Done("a", "\n"));
-    assert_eq!(eol("\r\na"), Done("a", "\r\n"));
-    assert_eq!(eol("\r"),    Incomplete(Needed::Size(2)));
-    assert_eq!(eol("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
+    assert_eq!(eol(&"\na"[..]),   Done(&"a"[..], &"\n"[..]));
+    assert_eq!(eol(&"\r\na"[..]), Done(&"a"[..], &"\r\n"[..]));
+    assert_eq!(eol(&"\r"[..]),    Incomplete(Needed::Size(2)));
+    assert_eq!(eol(&"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &"\ra"[..])));
   }
 }

@@ -631,7 +631,7 @@ macro_rules! take_until_either (
 macro_rules! length_bytes(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::{Slice,InputLength};
+      use $crate::{Slice, InputLength};
       let input: &[u8] = $i;
 
       match  $submac!(input, $($args)*) {

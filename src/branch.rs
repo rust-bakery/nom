@@ -124,7 +124,7 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      let res = $subrule!($i, $($args)*);
+      let res = $subrule!($i.clone(), $($args)*);
       match res {
         $crate::IResult::Done(_,_)     => res,
         $crate::IResult::Incomplete(_) => res,
@@ -135,7 +135,7 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
-      match $subrule!( $i, $($args)* ) {
+      match $subrule!( $i.clone(), $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
@@ -155,7 +155,7 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
     {
-      match $subrule!( $i, $($args)* ) {
+      match $subrule!( $i.clone(), $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
@@ -171,7 +171,7 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)*)) => (
     {
-      match $subrule!( $i, $($args)* ) {
+      match $subrule!( $i.clone(), $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
@@ -207,7 +207,7 @@ macro_rules! alt_complete (
 
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      let res = complete!($i, $subrule!($($args)*));
+      let res = complete!($i.clone(), $subrule!($($args)*));
       match res {
         $crate::IResult::Done(_,_) => res,
         _ => alt_complete!($i, $($rest)*),
@@ -217,7 +217,7 @@ macro_rules! alt_complete (
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
-      match complete!($i, $subrule!($($args)*)) {
+      match complete!($i.clone(), $subrule!($($args)*)) {
         $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
         _ => alt_complete!($i, $($rest)*),
       }
@@ -307,7 +307,7 @@ macro_rules! alt_complete (
 macro_rules! switch (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
-      match $submac!($i, $($args)*) {
+      match $submac!($i.clone(), $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(error_node_position!(
             $crate::ErrorKind::Switch, $i, e
         )),
