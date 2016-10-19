@@ -5,6 +5,10 @@ use std::boxed::Box;
 
 /// Contains the error that a parser can return
 ///
+/// If you use the `verbose-errors` compilation feature,
+/// the error type will be the enum defined here,
+/// otherwise, it will amount to a `ErrorKind<E=u32>`.
+///
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
 /// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, u32)
 #[derive(Debug,PartialEq,Eq,Clone)]
