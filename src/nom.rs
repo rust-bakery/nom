@@ -14,10 +14,9 @@ use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 use util::ErrorKind;
-use traits::{AsChar,InputLength,IterIndices};
+use traits::{AsChar,InputLength,IterIndices,Compare,CompareResult,Slice};
 use std::mem::transmute;
 use std::ops::{Index,Range,RangeFrom,RangeTo};
-use traits::{Compare,CompareResult,Slice};
 
 #[inline]
 pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]> + 'a> {
@@ -42,10 +41,10 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
   Done((), input)
 }
 
-pub fn crlf<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-  &'a T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-  &'a T: IterIndices,
-  &'a T: Compare<&'static str> {
+pub fn crlf<T>(input: T) -> IResult<T, T> where T: Sized,
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: IterIndices,
+  T: Compare<&'static str> {
     match input.compare("\r\n") {
       //FIXME: is this the right index?
       CompareResult::Ok         => {
@@ -58,10 +57,10 @@ pub fn crlf<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
-pub fn not_line_ending<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength,
-    &'a T: Compare<&'static str> {
+pub fn not_line_ending<T>(input: T) -> IResult<T, T> where
+    T:Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength,
+    T: Compare<&'static str> {
       match input.iter_elements().position(|item| {
         let c = item.as_char();
         c == '\r' || c == '\n'
@@ -87,10 +86,10 @@ pub fn not_line_ending<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> wher
 }
 
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
-pub fn line_ending<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength,
-    &'a T: Compare<&'static str> {
+pub fn line_ending<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength,
+    T: Compare<&'static str> {
 
   match input.compare("\n") {
     CompareResult::Ok         => Done(input.slice(1..), input.slice(0..1)),
@@ -104,10 +103,10 @@ pub fn line_ending<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
   }
 }
 
-pub fn eol<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength,
-    &'a T: Compare<&'static str> {
+pub fn eol<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength,
+    T: Compare<&'static str> {
   line_ending(input)
 }
 
@@ -157,9 +156,9 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(alphanumeric is_alphanumeric)
 
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
-pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength {
+pub fn alpha<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -178,9 +177,9 @@ pub fn alpha<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 }
 
 /// Recognizes numerical characters: 0-9
-pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength {
+pub fn digit<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -199,9 +198,9 @@ pub fn digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 }
 
 /// Recognizes hexadecimal numerical characters: 0-9, A-F, a-f
-pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength {
+pub fn hex_digit<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -220,9 +219,9 @@ pub fn hex_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 }
 
 /// Recognizes octal characters: 0-7
-pub fn oct_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength {
+pub fn oct_digit<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -241,9 +240,9 @@ pub fn oct_digit<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
-pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength {
+pub fn alphanumeric<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -262,9 +261,9 @@ pub fn alphanumeric<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 }
 
 /// Recognizes spaces and tabs
-pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength {
+pub fn space<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -284,9 +283,9 @@ pub fn space<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
 }
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
-pub fn multispace<'a, T: ?Sized>(input:&'a T) -> IResult<&'a T, &'a T> where
-    &'a T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    &'a T: IterIndices+InputLength {
+pub fn multispace<T>(input: T) -> IResult<T, T> where T: Sized,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: IterIndices + InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -587,26 +586,22 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes non empty buffers
 #[inline]
-pub fn non_empty<'a, T:?Sized>(input: &'a T) -> IResult<&'a T,&'a T> where
-    T:Index<Range<usize>, Output=T>+Index<RangeFrom<usize>, Output=T>,
-    &'a T: InputLength {
+pub fn non_empty<T>(input: T) -> IResult<T,T> where T: Sized,
+    T: Index<Range<usize>, Output=T> + Index<RangeFrom<usize>, Output=T>,
+    T: InputLength + Slice<RangeFrom<usize>> {
   if input.input_len() == 0 {
     Error(error_position!(ErrorKind::NonEmpty, input))
   } else {
-    Done(&input[input.input_len()..], input)
+    Done(input.slice(input.input_len()..), input)
   }
 }
 
 /// Return the remaining input.
 #[inline]
-pub fn rest(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    IResult::Done(&input[input.len()..], input)
-}
-
-/// Return the remaining input, for strings.
-#[inline]
-pub fn rest_s(input: &str) -> IResult<&str, &str> {
-    IResult::Done(&input[input.len()..], input)
+pub fn rest<T>(input: T) -> IResult<T, T> where
+    T: Slice<RangeFrom<usize>> + InputLength 
+{
+    IResult::Done(input.slice(input.input_len()..), input)
 }
 
 #[cfg(test)]
