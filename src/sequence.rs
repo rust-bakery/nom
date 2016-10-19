@@ -392,7 +392,8 @@ macro_rules! tuple_parser (
   ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use $crate::InputLength;
-      match $submac!($i.clone(), $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)                            =>
           $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
@@ -409,7 +410,8 @@ macro_rules! tuple_parser (
   ($i:expr, $consumed:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use $crate::InputLength;
-      match $submac!($i.clone(), $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)                            =>
           $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
@@ -670,7 +672,7 @@ macro_rules! do_parse (
   (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use $crate::InputLength;
-      match $submac!($i, $($args)*) {
+      match $submac!($i.clone(), $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -691,7 +693,8 @@ macro_rules! do_parse (
   (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use $crate::InputLength;
-      match  $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match  $submac!(input, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),

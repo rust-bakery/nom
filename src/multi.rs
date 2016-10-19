@@ -11,7 +11,8 @@ macro_rules! separated_list(
       let mut input = $i;
 
       // get the first element
-      match $submac!(input, $($args2)*) {
+      let input_ = input.clone();
+      match $submac!(input_, $($args2)*) {
         $crate::IResult::Error(_)      => $crate::IResult::Done(input, ::std::vec::Vec::new()),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
@@ -23,7 +24,8 @@ macro_rules! separated_list(
 
             loop {
               // get the separator first
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
+              let input_ = input.clone();
+              if let $crate::IResult::Done(i2,_) = $sep!(input_, $($args)*) {
                 if i2.input_len() == input.input_len() {
                   break;
                 }
@@ -152,7 +154,7 @@ macro_rules! many0(
           break;
         }
 
-        match $submac!(input, $($args)*) {
+        match $submac!(input.clone(), $($args)*) {
           $crate::IResult::Error(_)                            => {
             ret = $crate::IResult::Done(input, res);
             break;
@@ -214,7 +216,7 @@ macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::InputLength;
-      match $submac!($i, $($args)*) {
+      match $submac!($i.clone(), $($args)*) {
         $crate::IResult::Error(_)      => $crate::IResult::Error(
           error_position!($crate::ErrorKind::Many1,$i)
         ),
@@ -233,7 +235,7 @@ macro_rules! many1(
               if input.input_len() == 0 {
                 break;
               }
-              match $submac!(input, $($args)*) {
+              match $submac!(input.clone(), $($args)*) {
                 $crate::IResult::Error(_)                    => {
                   break;
                 },
@@ -309,7 +311,7 @@ macro_rules! many_m_n(
       let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
       loop {
         if count == $n { break }
-        match $submac!(input, $($args)*) {
+        match $submac!(input.clone(), $($args)*) {
           $crate::IResult::Done(i, o) => {
             // do not allow parsers that do not consume input (causes infinite loops)
             if i.input_len() == input.input_len() {
