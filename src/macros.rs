@@ -931,7 +931,7 @@ macro_rules! recognize (
       use $crate::Slice;
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
-          let index = ($i).offset(i);
+          let index = ($i).offset(&i);
           $crate::IResult::Done(i, ($i).slice(..index))
         },
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
