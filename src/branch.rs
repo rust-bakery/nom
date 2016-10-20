@@ -124,7 +124,8 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      let res = $subrule!($i.clone(), $($args)*);
+      let input = $i.clone();
+      let res = $subrule!(input, $($args)*);
       match res {
         $crate::IResult::Done(_,_)     => res,
         $crate::IResult::Incomplete(_) => res,
@@ -135,7 +136,8 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
-      match $subrule!( $i.clone(), $($args)* ) {
+      let input = $i.clone();
+      match $subrule!(input, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
@@ -155,7 +157,8 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
     {
-      match $subrule!( $i.clone(), $($args)* ) {
+      let input = $i.clone();
+      match $subrule!(input, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
@@ -171,7 +174,8 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)*)) => (
     {
-      match $subrule!( $i.clone(), $($args)* ) {
+      let input = $i.clone();
+      match $subrule!(input, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {

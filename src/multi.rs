@@ -31,7 +31,7 @@ macro_rules! separated_list(
                 }
 
                 // get the element next
-                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
+                if let $crate::IResult::Done(i3,o3) = $submac!(i2.clone(), $($args2)*) {
                   if i3.input_len() == i2.input_len() {
                     break;
                   }
@@ -72,7 +72,8 @@ macro_rules! separated_nonempty_list(
       let mut input = $i;
 
       // get the first element
-      match $submac!(input, $($args2)*) {
+      let input_ = input.clone();
+      match $submac!(input_, $($args2)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
@@ -83,12 +84,13 @@ macro_rules! separated_nonempty_list(
             input = i;
 
             loop {
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
+              let input_ = input.clone();
+              if let $crate::IResult::Done(i2,_) = $sep!(input_, $($args)*) {
                 if i2.input_len() == input.input_len() {
                   break;
                 }
 
-                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
+                if let $crate::IResult::Done(i3,o3) = $submac!(i2.clone(), $($args2)*) {
                   if i3.input_len() == i2.input_len() {
                     break;
                   }
@@ -146,7 +148,7 @@ macro_rules! many0(
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
+      let mut input = $i.clone();
 
       loop {
         if input.input_len() == 0 {
@@ -154,7 +156,8 @@ macro_rules! many0(
           break;
         }
 
-        match $submac!(input.clone(), $($args)*) {
+        let input_ = input.clone();
+        match $submac!(input_, $($args)*) {
           $crate::IResult::Error(_)                            => {
             ret = $crate::IResult::Done(input, res);
             break;
@@ -216,7 +219,8 @@ macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::InputLength;
-      match $submac!($i.clone(), $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(_)      => $crate::IResult::Error(
           error_position!($crate::ErrorKind::Many1,$i)
         ),
@@ -235,7 +239,8 @@ macro_rules! many1(
               if input.input_len() == 0 {
                 break;
               }
-              match $submac!(input.clone(), $($args)*) {
+              let input_ = input.clone();
+              match $submac!(input_, $($args)*) {
                 $crate::IResult::Error(_)                    => {
                   break;
                 },
@@ -391,7 +396,7 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let ret;
-      let mut input = $i;
+      let mut input = $i.clone();
       let mut res   = ::std::vec::Vec::with_capacity($count);
 
       loop {
@@ -453,7 +458,7 @@ macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let ret;
-      let mut input = $i;
+      let mut input = $i.clone();
       // `$typ` must be Copy, and thus having no destructor, this is panic safe
       let mut res: [$typ; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
       let mut cnt: usize = 0;

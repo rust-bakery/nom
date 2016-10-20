@@ -401,7 +401,7 @@ macro_rules! tuple_parser (
         $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
-          tuple_parser!(i,
+          tuple_parser!(i.clone(),
             $consumed + $i.input_len() - i.input_len(), (o), $($rest)*)
         }
       }
@@ -419,7 +419,7 @@ macro_rules! tuple_parser (
         $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
-          tuple_parser!(i,
+          tuple_parser!(i.clone(),
             $consumed + $i.input_len() - i.input_len(),
             ($($parsed)* , o), $($rest)*)
         }
@@ -672,7 +672,8 @@ macro_rules! do_parse (
   (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use $crate::InputLength;
-      match $submac!($i.clone(), $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
