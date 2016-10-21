@@ -178,3 +178,6 @@ mod stream;
 
 #[cfg(not(feature = "core"))]
 mod str;
+
+#[cfg(feature = "slug")]
+#[macro_use] pub mod slug;

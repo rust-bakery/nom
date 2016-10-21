@@ -40,7 +40,3 @@ optional = true
 [dev-dependencies.bytes]
 git = "https://github.com/carllerche/bytes"
 
-[dev-dependencies]
-unicode_categories = "0.1.0"
-slog = "*"
-slog-term = "*"
