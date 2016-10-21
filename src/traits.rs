@@ -123,8 +123,8 @@ pub trait IterIndices {
     type RawItem  : AsChar;
     type Iter     : Iterator<Item=(usize, Self::Item)>;
     type IterElem : Iterator<Item=Self::Item>;
-    fn iter_indices(self)  -> Self::Iter;
-    fn iter_elements(self) -> Self::IterElem;
+    fn iter_indices(&self)  -> Self::Iter;
+    fn iter_elements(&self) -> Self::IterElem;
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool;
     fn index(&self, count:usize) -> Option<usize>;
 }
@@ -140,11 +140,11 @@ impl<'a> IterIndices for &'a [u8] {
     type Iter     = Enumerate<::std::slice::Iter<'a, u8>>;
     type IterElem = ::std::slice::Iter<'a, u8>;
     #[inline]
-    fn iter_indices(self) -> Enumerate<::std::slice::Iter<'a, u8>> {
+    fn iter_indices(&self) -> Enumerate<::std::slice::Iter<'a, u8>> {
         self.iter().enumerate()
     }
     #[inline]
-    fn iter_elements(self) -> ::std::slice::Iter<'a,u8> {
+    fn iter_elements(&self) -> ::std::slice::Iter<'a,u8> {
       self.iter()
     }
     #[inline]
@@ -187,11 +187,11 @@ impl<'a> IterIndices for &'a str {
     type Iter     = CharIndices<'a>;
     type IterElem = Chars<'a>;
     #[inline]
-    fn iter_indices(self) -> CharIndices<'a> {
+    fn iter_indices(&self) -> CharIndices<'a> {
         self.char_indices()
     }
     #[inline]
-    fn iter_elements(self) -> Chars<'a> {
+    fn iter_elements(&self) -> Chars<'a> {
       self.chars()
     }
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {

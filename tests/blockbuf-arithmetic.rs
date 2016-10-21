@@ -86,10 +86,10 @@ impl<'a> IterIndices for BlockSlice<'a> {
     type Iter     = Enumerate<WrapCursor<'a>>;
     type IterElem = WrapCursor<'a>;
 
-    fn iter_indices(self)  -> Self::Iter {
+    fn iter_indices(&self)  -> Self::Iter {
       self.cursor().enumerate()
     }
-    fn iter_elements(self) -> Self::IterElem {
+    fn iter_elements(&self) -> Self::IterElem {
       self.cursor()
     }
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
@@ -227,7 +227,7 @@ macro_rules! block_named (
   );
 );
 
-block_named!(sp, block_eat_separator!(b" \t\r\n")); 
+block_named!(sp, block_eat_separator!(&b" \t\r\n"[..]));
 
 macro_rules! block_ws (
   ($i:expr, $($args:tt)*) => (
