@@ -516,6 +516,7 @@ pub enum ErrorKind<E=u32> {
   SeparatedNonEmptyList,
   Many0,
   Many1,
+  ManyTill,
   Count,
   TakeUntilAndConsume,
   TakeUntil,
@@ -621,6 +622,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::Many0                     => 62,
     ErrorKind::Not                       => 63,
     ErrorKind::Permutation               => 64,
+    ErrorKind::ManyTill                  => 65,
   }
 }
 
@@ -683,6 +685,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
         ErrorKind::OctDigit                  => "Octal digit",
         ErrorKind::Not                       => "Negation",
         ErrorKind::Permutation               => "Permutation",
+        ErrorKind::ManyTill                  => "ManyTill",
       }
 
     }
