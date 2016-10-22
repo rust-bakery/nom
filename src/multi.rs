@@ -269,6 +269,86 @@ macro_rules! many1(
   );
 );
 
+/// `many_till!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (Vec<O>, P)>`
+/// Applies the first parser until the second applies returns a tuple containong the list
+/// of results from the first in a Vec and the result of the second.
+///
+/// the first embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Error};
+/// # #[cfg(feature = "verbose-errors")]
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///    named!(multi<&[u8], (Vec<&[u8]>, &[u8]) >, many_till!( tag!( "abcd" ), tag!( "efgh" ) ) );
+///
+///    let a = b"abcdabcdefghabcd";
+///    let b = b"efghabcd";
+///    let c = b"azerty";
+///
+///    let res_a = (vec![&b"abcd"[..], &b"abcd"[..]], &b"efgh"[..]);
+///    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
+///    assert_eq!(multi(&a[..]), Done(&b"abcd"[..], res_a));
+///    assert_eq!(multi(&b[..]), Done(&b"abcd"[..], res_b));
+///    assert_eq!(multi(&c[..]), Error(error_position!(ErrorKind::ManyTill,&c[..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! many_till(
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      use $crate::InputLength;
+
+      let ret;
+      let mut res   = ::std::vec::Vec::new();
+      let mut input = $i;
+
+      loop {
+        match $submac2!(input, $($args2)*) {
+          $crate::IResult::Done(i, o) => {
+            ret = $crate::IResult::Done(i, (res, o));
+            break;
+          },
+          _                           => {
+            match $submac1!(input, $($args1)*) {
+              $crate::IResult::Error(_)                            => {
+                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::ManyTill,input));
+                break;
+              },
+              $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+                break;
+              },
+              $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                let size = i + ($i).input_len() - input.input_len();
+                ret = $crate::IResult::Incomplete($crate::Needed::Size(size));
+                break;
+              },
+              $crate::IResult::Done(i, o)                          => {
+                // loop trip must always consume (otherwise infinite loops)
+                if i == input {
+                  ret = $crate::IResult::Error(error_position!($crate::ErrorKind::ManyTill,input));
+                  break;
+                }
+
+                res.push(o);
+                input = i;
+              },
+            }
+          },
+        }
+      }
+
+      ret
+    }
+  );
+  ($i:expr, $f:expr, $g: expr) => (
+    many_till!($i, call!($f), call!($g));
+  );
+);
+
 /// `many_m_n!(usize, usize, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// Applies the parser between m and n times (n included) and returns the list of
 /// results in a Vec
@@ -947,6 +1027,21 @@ mod tests {
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Error(error_position!(ErrorKind::Many1,c)));
     assert_eq!(multi(d), Incomplete(Needed::Size(8)));
+  }
+
+  #[test]
+  fn many_till() {
+    named!(multi<&[u8], (Vec<&[u8]>, &[u8]) >, many_till!( tag!( "abcd" ), tag!( "efgh" ) ) );
+
+    let a = b"abcdabcdefghabcd";
+    let b = b"efghabcd";
+    let c = b"azerty";
+
+    let res_a = (vec![&b"abcd"[..], &b"abcd"[..]], &b"efgh"[..]);
+    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
+    assert_eq!(multi(&a[..]), Done(&b"abcd"[..], res_a));
+    assert_eq!(multi(&b[..]), Done(&b"abcd"[..], res_b));
+    assert_eq!(multi(&c[..]), Error(error_position!(ErrorKind::ManyTill,&c[..])));
   }
 
   #[test]
