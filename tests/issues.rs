@@ -24,23 +24,21 @@ pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
 #[allow(dead_code)]
 named!(range<&[u8], Range>,
     alt!(
-        chain!(
-            start: take_char ~
-            tag!("-") ~
-            end: take_char,
-            || {
-                Range {
-                    start: start,
-                    end: end,
-                }
-            }
+        do_parse!(
+            start: take_char >>
+            tag!("-")        >>
+            end: take_char   >>
+            (Range {
+                start: start,
+                end:   end,
+            })
         ) |
         map!(
             take_char,
             |c| {
                 Range {
                     start: c,
-                    end: c,
+                    end:   c,
                 }
             }
         )
@@ -70,10 +68,10 @@ named!(parse_ints< Vec<i32> >, many0!(spaces_or_int));
 
 fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32>{
   println!("{}", input.to_hex(8));
-  chain!(input,
-    opt!(complete!(space)) ~
-    x:   complete!(digit),
-    || {
+  do_parse!(input,
+    opt!(complete!(space)) >>
+    res: map!(complete!(digit),
+    |x| {
       println!("x: {:?}", x);
       let result = str::from_utf8(x).unwrap();
       println!("Result: {}", result);
@@ -82,7 +80,8 @@ fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32>{
         Ok(i) => i,
         Err(_) =>  panic!("UH OH! NOT A DIGIT!")
       }
-    }
+    }) >>
+    (res)
   )
 }
 

@@ -935,7 +935,7 @@ mod tests {
     assert_eq!(x(b"\x02."), Incomplete(Needed::Size(3)));
     assert_eq!(x(b"\x02"), Incomplete(Needed::Size(3)));
 
-    named!(y, chain!(tag!("magic") ~ b: length_bytes!(le_u8), || b));
+    named!(y, do_parse!(tag!("magic") >> b: length_bytes!(le_u8) >> (b)));
     assert_eq!(y(b"magic\x02..>>"), Done(&b">>"[..], &b".."[..]));
     assert_eq!(y(b"magic\x02.."), Done(&[][..], &b".."[..]));
     assert_eq!(y(b"magic\x02."), Incomplete(Needed::Size(8)));
