@@ -28,6 +28,7 @@ regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
 stream = []
 verbose-errors = []
+slug = []
 
 [dependencies.regex]
 version = "^0.1.56"
