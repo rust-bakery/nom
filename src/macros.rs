@@ -94,6 +94,9 @@ macro_rules! closure (
 /// ```
 #[macro_export]
 macro_rules! named (
+    (#$($args:tt)*) => (
+        named_attr!(#$($args)*);
+    );
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
             $submac!(i, $($args)*)
@@ -140,6 +143,84 @@ macro_rules! named (
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+);
+
+/// Makes a function from a parser combination, with attributes
+///
+/// The usage of this macro is almost identical to `named!`, except that
+/// you also pass attributes to be attached to the generated function.
+/// This is ideal for adding documentation to your parser.
+///
+/// ```ignore
+/// // Create my_function as if you wrote it with the doc comment /// My Func
+/// named_attr!(#[doc = "My Func"], my_function( &[u8] ) -> &[u8], tag!("abcd"));
+/// // Also works for pub functions, and multiple lines
+/// named!(#[doc = "My Func\nRecognise abcd"], pub my_function, tag!("abcd"));
+/// // Multiple attributes can be passed if required
+/// named!(#[doc = "My Func"] #[inline(always)], pub my_function, tag!("abcd"));
+/// ```
+#[macro_export]
+macro_rules! named_attr (
+    ($(#[$attr:meta])*, $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, $name:ident, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
@@ -208,10 +289,10 @@ macro_rules! apply (
 ///     named!(err_test, alt!(
 ///       tag!("abcd") |
 ///       preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42),
-///           chain!(
-///                  tag!("ijkl")              ~
-///             res: return_error!(ErrorKind::Custom(128), tag!("mnop")) ,
-///             || { res }
+///           do_parse!(
+///                  tag!("ijkl")                                        >>
+///             res: return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+///             (res)
 ///           )
 ///         )
 ///       )
@@ -334,7 +415,7 @@ macro_rules! complete (
 
 /// A bit like `std::try!`, this macro will return the remaining input and parsed value if the child parser returned `Done`,
 /// and will do an early return for `Error` and `Incomplete`
-/// this can provide more flexibility than `chain!` if needed
+/// this can provide more flexibility than `do_parse!` if needed
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -539,11 +620,11 @@ macro_rules! expr_res (
 /// # use nom::{be_u8,ErrorKind};
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
-///    chain!(input,
-///      sz:     be_u8                             ~
-///      length: expr_opt!(size.checked_add(sz))   ~ // checking for integer overflow (returns an Option)
-///      data:   take!(length)                     ,
-///      ||{ data }
+///    do_parse!(input,
+///      sz:     be_u8                             >>
+///      length: expr_opt!(size.checked_add(sz))   >> // checking for integer overflow (returns an Option)
+///      data:   take!(length)                     >>
+///      (data)
 ///    )
 ///  }
 /// # fn main() {
@@ -650,8 +731,8 @@ macro_rules! opt_res (
 /// parser.
 ///
 /// This is especially useful if a parser depends
-/// on the value return by a preceding parser in
-/// a `chain!`.
+/// on the value returned by a preceding parser in
+/// a `do_parse!`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -703,8 +784,8 @@ macro_rules! cond_with_error(
 /// parser.
 ///
 /// This is especially useful if a parser depends
-/// on the value return by a preceding parser in
-/// a `chain!`.
+/// on the value returned by a preceding parser in
+/// a `do_parse!`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -756,8 +837,8 @@ macro_rules! cond(
 /// an error if the condition is false
 ///
 /// This is especially useful if a parser depends
-/// on the value return by a preceding parser in
-/// a `chain!`.
+/// on the value returned by a preceding parser in
+/// a `do_parse!`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -843,10 +924,11 @@ macro_rules! peek(
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
-/// named!(not_e, chain!(
-///     res: tag!("abc") ~
-///          not!(char!('e')),
-///     || { res }));
+/// named!(not_e, do_parse!(
+///     res: tag!("abc")      >>
+///          not!(char!('e')) >>
+///     (res)
+/// ));
 ///
 /// let r = not_e(&b"abcd"[..]);
 /// assert_eq!(r, Done(&b"d"[..], &b"abc"[..]));

@@ -40,7 +40,7 @@
 //! ```
 //! # #[macro_use] extern crate nom;
 //! # use nom::IResult::Done;
-//! named!(pub space, eat_separator!(b" \t"));
+//! named!(pub space, eat_separator!(&b" \t"[..]));
 //!
 //! #[macro_export]
 //! macro_rules! sp (
@@ -669,7 +669,7 @@ macro_rules! sep (
   };
 );
 
-named!(pub sp, eat_separator!(b" \t\r\n"));
+named!(pub sp, eat_separator!(&b" \t\r\n"[..]));
 
 /// `ws!(I -> IResult<I,O>) => I -> IResult<I, O>`
 ///

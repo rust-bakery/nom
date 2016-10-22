@@ -220,11 +220,11 @@ mod tests {
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
-    chain!(
-      tag_bits!(u8, 3, 0b101) ~
-      x: take_bits!(u8, 4)    ~
-      y: take_bits!(u8, 5)    ,
-      || { (x,y) }
+    do_parse!(
+      tag_bits!(u8, 3, 0b101) >>
+      x: take_bits!(u8, 4)    >>
+      y: take_bits!(u8, 5)    >>
+      (x,y)
     )
   );
 

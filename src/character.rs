@@ -117,9 +117,9 @@ macro_rules! char (
   );
 );
 
-named!(pub newline<char>, char!('\n'));
+named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'));
 
-named!(pub tab<char>, char!('\t'));
+named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 
 pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
   if input.is_empty() {
