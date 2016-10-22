@@ -1,4 +1,4 @@
-/// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
+/// `do_parse!(I->IResult<I,A> >> I->IResult<I,B> >> ... I->IResult<I,X>  >> || (O1, O2) ) => I -> IResult<I, (O1, O2)>`
 /// chains parsers and assemble the results through a closure
 ///
 /// The input type `I` must implement `nom::InputLength`.
@@ -25,13 +25,12 @@
 /// named!(ret_y<&[u8], u8>, map!(y, |_| 1)); // return 1 if the "efgh" tag is found
 ///
 ///  named!(z<&[u8], B>,
-///    chain!(
-///      tag!("abcd")  ~     // the '~' character is used as separator
-///      aa: ret_int   ~     // the result of that parser will be used in the closure
-///      tag!("abcd")? ~     // this parser is optional
-///      bb: ret_y?    ,     // the result of that parser is an option
-///                          // the last parser in the chain is followed by a ','
-///      ||{B{a: aa, b: bb}}
+///    do_parse!(
+///      tag!("abcd")       >>     // '>>' is used as separator
+///      aa: ret_int        >>     // the result of that parser will be used in the final tuple
+///      opt!(tag!("abcd")) >>     // this parser is optional
+///      bb: opt!(ret_y)    >>     // the result of that parser is an option
+///      (B{a: aa, b: bb})         // The last item is the tuple our parse will return
 ///    )
 ///  );
 ///
