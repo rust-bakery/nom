@@ -961,10 +961,10 @@ mod tests {
     named!(err_test, alt!(
       tag!("abcd") |
       preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42),
-          chain!(
-                 tag!("ijkl")              ~
-            res: return_error!(ErrorKind::Custom(128), tag!("mnop")) ,
-            || { res }
+          do_parse!(
+                 tag!("ijkl")                                        >>
+            res: return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+            (res)
           )
         )
       )
@@ -1016,10 +1016,10 @@ mod tests {
   fn add_err() {
     named!(err_test,
       preceded!(tag!("efgh"), add_error!(ErrorKind::Custom(42),
-          chain!(
-                 tag!("ijkl")              ~
-            res: add_error!(ErrorKind::Custom(128), tag!("mnop")) ,
-            || { res }
+          do_parse!(
+                 tag!("ijkl")                                     >>
+            res: add_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+            (res)
           )
         )
     ));
@@ -1040,10 +1040,10 @@ mod tests {
   #[test]
   fn complete() {
     named!(err_test,
-      chain!(
-             tag!("ijkl")              ~
-        res: complete!(tag!("mnop")) ,
-        || { res }
+      do_parse!(
+             tag!("ijkl")            >>
+        res: complete!(tag!("mnop")) >>
+        (res)
       )
     );
     let a = &b"ijklmn"[..];
