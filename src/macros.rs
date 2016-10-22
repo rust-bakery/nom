@@ -94,6 +94,9 @@ macro_rules! closure (
 /// ```
 #[macro_export]
 macro_rules! named (
+    (#$($args:tt)*) => (
+        named_attr!(#$($args)*);
+    );
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
             $submac!(i, $($args)*)
@@ -140,6 +143,84 @@ macro_rules! named (
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+);
+
+/// Makes a function from a parser combination, with attributes
+///
+/// The usage of this macro is almost identical to `named!`, except that
+/// you also pass attributes to be attached to the generated function.
+/// This is ideal for adding documentation to your parser.
+///
+/// ```ignore
+/// // Create my_function as if you wrote it with the doc comment /// My Func
+/// named_attr!(#[doc = "My Func"], my_function( &[u8] ) -> &[u8], tag!("abcd"));
+/// // Also works for pub functions, and multiple lines
+/// named!(#[doc = "My Func\nRecognise abcd"], pub my_function, tag!("abcd"));
+/// // Multiple attributes can be passed if required
+/// named!(#[doc = "My Func"] #[inline(always)], pub my_function, tag!("abcd"));
+/// ```
+#[macro_export]
+macro_rules! named_attr (
+    ($(#[$attr:meta])*, $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, $name:ident, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
         pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
