@@ -133,6 +133,38 @@ macro_rules! pair_sep (
 );
 
 #[macro_export]
+macro_rules! delimited_sep (
+  ($i:expr, $separator:ident, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => (
+    match tuple_sep!($i, $separator, 0usize, (), $submac1!($($args1)*), $($rest)*) {
+      $crate::IResult::Error(a)                   => $crate::IResult::Error(a),
+      $crate::IResult::Incomplete(i)              => $crate::IResult::Incomplete(i),
+      $crate::IResult::Done(remaining, (_,o,_)) => {
+        $crate::IResult::Done(remaining, o)
+      }
+    }
+  );
+  ($i:expr, $separator:ident, $f:expr, $($rest:tt)+) => (
+    delimited_sep!($i, $separator, call!($f), $($rest)*);
+  );
+);
+
+#[macro_export]
+macro_rules! separated_pair_sep (
+  ($i:expr, $separator:ident, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => (
+    match tuple_sep!($i, $separator, 0usize, (), $submac1!($($args1)*), $($rest)*) {
+      $crate::IResult::Error(a)                   => $crate::IResult::Error(a),
+      $crate::IResult::Incomplete(i)              => $crate::IResult::Incomplete(i),
+      $crate::IResult::Done(remaining, (o1,_,o2)) => {
+        $crate::IResult::Done(remaining, (o1,o2))
+      }
+    }
+  );
+  ($i:expr, $separator:ident, $f:expr, $($rest:tt)+) => (
+    separated_pair_sep!($i, $separator, call!($f), $($rest)*);
+  );
+);
+
+#[macro_export]
 macro_rules! preceded_sep (
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     match pair_sep!($i, $separator, $submac!($($args)*), $submac2!($($args2)*)) {
@@ -617,6 +649,18 @@ macro_rules! sep (
     wrap_sep!($i,
       $separator,
       pair_sep!($separator, $($rest)*)
+    )
+  };
+  ($i:expr,  $separator:ident, delimited ! ($($rest:tt)*) ) => {
+    wrap_sep!($i,
+      $separator,
+      delimited_sep!($separator, $($rest)*)
+    )
+  };
+  ($i:expr,  $separator:ident, separated_pair ! ($($rest:tt)*) ) => {
+    wrap_sep!($i,
+      $separator,
+      separated_pair_sep!($separator, $($rest)*)
     )
   };
   ($i:expr,  $separator:ident, preceded ! ($($rest:tt)*) ) => {
