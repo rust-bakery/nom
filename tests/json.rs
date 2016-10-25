@@ -1,4 +1,4 @@
-#![feature(trace_macros)]
+//#![feature(trace_macros)]
 
 #[macro_use]
 extern crate nom;
@@ -71,7 +71,6 @@ named!(key_value<(&str,JsonValue)>,
     )
   )
 );
-trace_macros!(false);
 
 named!(hash< HashMap<String,JsonValue> >,
   ws!(
@@ -103,7 +102,6 @@ named!(value<JsonValue>,
   )
 );
 
-//trace_macros!(false);
 
 
 #[test]
@@ -114,7 +112,7 @@ fn hash_test() {
 
 //FIXME: top level value must be an object?
   println!("{:?}", value(&test[..]));
-  assert!(false);
+  //assert!(false);
 }
 
 #[test]
@@ -127,6 +125,6 @@ fn parse_example_test() {
 
 //FIXME: top level value must be an object?
   println!("{:?}", value(&test[..]));
-  assert!(false);
+  //assert!(false);
 }
 
