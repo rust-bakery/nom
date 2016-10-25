@@ -615,6 +615,26 @@ macro_rules! switch_sep (
 );
 
 #[macro_export]
+macro_rules! separated_list_sep (
+  ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    separated_list!(
+      $i,
+      sep!($separator, $submac!($($args)*)),
+      sep!($separator, $submac2!($($args2)*))
+    )
+  );
+  ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    separated_list_sep!($i, $separator, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $separator:ident, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    separated_list_sep!($i, $separator, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $separator:ident, $f:expr, $g:expr) => (
+    separated_list_sep!($i, $separator, call!($f), call!($g));
+  );
+);
+
+#[macro_export]
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
@@ -705,6 +725,21 @@ macro_rules! sep (
       switch_sep!($separator, $($rest)*)
     )
   };
+  ($i:expr,  $separator:ident, separated_list ! ($($rest:tt)*) ) => {
+    wrap_sep!($i,
+      $separator,
+      separated_list_sep!($separator, $($rest)*)
+    )
+  };
+  ($i:expr,  $separator:ident, many0 ! ($($rest:tt)*) ) => {
+    many0!($i, wrap_sep!($separator, $($rest)*))
+  };
+  ($i:expr,  $separator:ident, many1 ! ($($rest:tt)*) ) => {
+    many1!($i, wrap_sep!($separator, $($rest)*))
+  };
+//FIXME: missing separated_nonempty_list,
+// many_till, many_m_n, count, count_fixed, fold_many0, fold_many1,
+// fold_many_m_n
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* )) => {
     wrap_sep!($i, $separator, $submac!($($args)*))
   };
