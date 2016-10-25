@@ -23,7 +23,7 @@ pub enum JsonValue {
 named!(unsigned_float <f32>, map_res!(
   map_res!(
     recognize!(
-      alt!(
+      alt_complete!(
         delimited!(digit, tag!("."), opt!(complete!(digit))) |
         delimited!(opt!(digit), tag!("."), digit)            |
         digit
