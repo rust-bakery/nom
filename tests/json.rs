@@ -45,12 +45,10 @@ named!(float<f32>, map!(
 
 //FIXME: verify how json strings are formatted
 named!(string<&str>,
-  dbg_dmp!(
   delimited!(
     tag!("\""),
     map_res!(escaped!(call!(alphanumeric), '\\', is_a!("\"n\\")), str::from_utf8),
     tag!("\"")
-  )
   )
 );
 
@@ -64,7 +62,6 @@ named!(array < Vec<JsonValue> >,
   )
 );
 
-trace_macros!(true);
 named!(key_value<(&str,JsonValue)>,
   ws!(
     separated_pair!(
@@ -77,7 +74,6 @@ named!(key_value<(&str,JsonValue)>,
 trace_macros!(false);
 
 named!(hash< HashMap<String,JsonValue> >,
-  dbg_dmp!(
   ws!(
     map!(
       delimited!(
@@ -94,13 +90,12 @@ named!(hash< HashMap<String,JsonValue> >,
       }
     )
   )
-  )
 );
 
 named!(value<JsonValue>,
   ws!(
     alt!(
-      dbg_dmp!(hash)   => { |h|   JsonValue::Object(h)            } |
+      hash   => { |h|   JsonValue::Object(h)            } |
       array  => { |v|   JsonValue::Array(v)             } |
       string => { |s|   JsonValue::Str(String::from(s)) } |
       float  => { |num| JsonValue::Num(num)             }
