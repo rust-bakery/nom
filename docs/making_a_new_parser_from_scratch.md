@@ -20,7 +20,7 @@ Usually, you can separate the parsing functions in their own module, so you coul
 #[macro_use]
 extern crate nom;
 
-pub mode parser;
+pub mod parser;
 ```
 
 And use the methods and structure from `parser` there. The `src/parser.rs` would then import nom functions and structures if needed:
