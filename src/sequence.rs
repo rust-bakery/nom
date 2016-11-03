@@ -205,8 +205,7 @@ macro_rules! chaining_parser (
           (::std::option::Option::None,$i)
         };
         chaining_parser!(input,
-          $consumed + $crate::InputLength::input_len(&($i)) -
-                      $crate::InputLength::input_len(&input), $($rest)*)
+          $consumed + $i.input_len() - input.input_len(), $($rest)*)
       }
     }
   );
@@ -392,7 +391,9 @@ macro_rules! tuple_parser (
   );
   ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      match $submac!($i, $($args)*) {
+      use $crate::InputLength;
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)                            =>
           $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
@@ -400,16 +401,17 @@ macro_rules! tuple_parser (
         $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
-          tuple_parser!(i,
-            $consumed + ($crate::InputLength::input_len(&($i)) -
-                         $crate::InputLength::input_len(&i)), (o), $($rest)*)
+          tuple_parser!(i.clone(),
+            $consumed + $i.input_len() - i.input_len(), (o), $($rest)*)
         }
       }
     }
   );
   ($i:expr, $consumed:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      match $submac!($i, $($args)*) {
+      use $crate::InputLength;
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)                            =>
           $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
@@ -417,9 +419,9 @@ macro_rules! tuple_parser (
         $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,o)     => {
-          tuple_parser!(i,
-            $consumed + ($crate::InputLength::input_len(&($i)) -
-                         $crate::InputLength::input_len(&i)), ($($parsed)* , o), $($rest)*)
+          tuple_parser!(i.clone(),
+            $consumed + $i.input_len() - i.input_len(),
+            ($($parsed)* , o), $($rest)*)
         }
       }
     }
@@ -669,7 +671,9 @@ macro_rules! do_parse (
   );
   (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
-      match $submac!($i, $($args)*) {
+      use $crate::InputLength;
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -677,8 +681,7 @@ macro_rules! do_parse (
           $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
         $crate::IResult::Done(i,_)     => {
           do_parse!(__impl i,
-            $consumed + ($crate::InputLength::input_len(&($i)) -
-                         $crate::InputLength::input_len(&i)), $($rest)*)
+            $consumed + $i.input_len() - i.input_len(), $($rest)*)
         },
       }
     }
@@ -690,7 +693,9 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
-      match  $submac!($i, $($args)*) {
+      use $crate::InputLength;
+      let input = $i.clone();
+      match  $submac!(input, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -699,8 +704,7 @@ macro_rules! do_parse (
         $crate::IResult::Done(i,o)     => {
           let $field = o;
           do_parse!(__impl i,
-            $consumed + ($crate::InputLength::input_len(&($i)) -
-                         $crate::InputLength::input_len(&i)), $($rest)*)
+            $consumed + $i.input_len() - i.input_len(), $($rest)*)
         },
       }
     }

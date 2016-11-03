@@ -398,7 +398,8 @@ macro_rules! add_error (
 macro_rules! complete (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(_) =>  {
@@ -490,7 +491,8 @@ macro_rules! map_res (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
@@ -522,7 +524,8 @@ macro_rules! map_opt (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
@@ -669,7 +672,8 @@ macro_rules! expr_opt (
 macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
         $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
@@ -705,7 +709,8 @@ macro_rules! opt(
 macro_rules! opt_res (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,  ::std::result::Result::Ok(o)),
         $crate::IResult::Error(e)      => $crate::IResult::Done($i, ::std::result::Result::Err(e)),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
@@ -808,7 +813,8 @@ macro_rules! cond(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       if $cond {
-        match $submac!($i, $($args)*) {
+        let input = $i.clone();
+        match $submac!(input, $($args)*) {
           $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
           $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
           $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
@@ -894,7 +900,8 @@ macro_rules! cond_reduce(
 macro_rules! peek(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Done(_,o)     => $crate::IResult::Done($i, o),
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
@@ -935,7 +942,8 @@ macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::Slice;
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Done(_, _)    => $crate::IResult::Error(error_position!($crate::ErrorKind::Not, $i)),
         $crate::IResult::Error(_)      => $crate::IResult::Done($i, ($i).slice(..0)),
         $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, ($i).slice(..0))
@@ -985,7 +993,7 @@ macro_rules! eof (
     {
       use $crate::InputLength;
       if ($i).input_len() == 0 {
-        $crate::IResult::Done($i, $i)
+        $crate::IResult::Done($i.clone(), $i)
       } else {
         $crate::IResult::Error(error_position!($crate::ErrorKind::Eof, $i))
       }
@@ -1011,9 +1019,10 @@ macro_rules! recognize (
     {
       use $crate::Offset;
       use $crate::Slice;
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Done(i,_)     => {
-          let index = ($i).offset(i);
+          let index = ($i).offset(&i);
           $crate::IResult::Done(i, ($i).slice(..index))
         },
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),

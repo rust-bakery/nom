@@ -263,16 +263,17 @@ macro_rules! apply_m (
 #[cfg(test)]
 mod tests {
   use internal::IResult::*;
+  use traits::{Slice, IterIndices, InputLength};
 
   // reproduce the tag_s and take_s macros, because of module import order
   macro_rules! tag_s (
     ($i:expr, $tag: expr) => (
       {
-        let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
-          $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
+        let res: $crate::IResult<_,_> = if $tag.input_len() > $i.input_len() {
+          $crate::IResult::Incomplete($crate::Needed::Size($tag.input_len()))
         //} else if &$i[0..$tag.len()] == $tag {
         } else if ($i).starts_with($tag) {
-          $crate::IResult::Done(&$i[$tag.len()..], &$i[0..$tag.len()])
+          $crate::IResult::Done($i.slice($tag.input_len()..), $i.slice(0..$tag.input_len()))
         } else {
           $crate::IResult::Error(error_position!($crate::ErrorKind::TagStr, $i))
         };
@@ -285,10 +286,10 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
+        let res: $crate::IResult<_,_> = if $i.iter_elements().count() < cnt {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt))
         } else {
-          let mut offset = $i.len();
+          let mut offset = $i.input_len();
           let mut count = 0;
           for (o, _) in $i.char_indices() {
             if count == cnt {
@@ -297,7 +298,7 @@ mod tests {
             }
             count += 1;
           }
-          $crate::IResult::Done(&$i[offset..], &$i[..offset])
+          $crate::IResult::Done($i.slice(offset..), $i.slice(..offset))
         };
         res
       }

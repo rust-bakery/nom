@@ -161,6 +161,46 @@ impl<'a> IterIndices for &'a [u8] {
     }
 }
 
+macro_rules! array_impls {
+  ($($N:expr)+) => {
+    $(
+      impl<'a> IterIndices for &'a [u8; $N] {
+        type Item     = &'a u8;
+        type RawItem  = u8;
+        type Iter     = Enumerate<::std::slice::Iter<'a, u8>>;
+        type IterElem = ::std::slice::Iter<'a, u8>;
+        #[inline]
+        fn iter_indices(&self) -> Enumerate<::std::slice::Iter<'a, u8>> {
+            self.iter().enumerate()
+        }
+        #[inline]
+        fn iter_elements(&self) -> ::std::slice::Iter<'a, u8> {
+            self.iter()
+        }
+        #[inline]
+        fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
+            self.iter().position(|b| predicate(*b))
+        }
+        #[inline]
+        fn index(&self, count:usize) -> Option<usize> {
+            if self.len() >= count {
+                Some(count)
+            } else {
+                None
+            }
+        }
+      }
+    )+
+  };
+}
+
+array_impls! {
+     0  1  2  3  4  5  6  7  8  9
+    10 11 12 13 14 15 16 17 18 19
+    20 21 22 23 24 25 26 27 28 29
+    30 31 32
+}
+
 impl IterTake for [u8] {
     #[inline]
     fn take<P>(&self, count: usize) -> Option<&Self> {

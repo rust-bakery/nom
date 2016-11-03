@@ -18,6 +18,7 @@ use std::string::ToString;
 #[cfg(not(feature = "core"))]
 pub trait Offset {
   /// offset between the first byte of self and the first byte of the argument
+  /// the the argument is required to be a subslice of self
   fn offset(&self, second:&Self) -> usize;
 }
 
@@ -37,21 +38,31 @@ static CHARS: &'static[u8] = b"0123456789abcdef";
 #[cfg(not(feature = "core"))]
 impl Offset for [u8] {
   fn offset(&self, second:&[u8]) -> usize {
-    let fst = self.as_ptr();
-    let snd = second.as_ptr();
+    let fst = self.as_ptr() as usize;
+    let snd = second.as_ptr() as usize;
 
-    snd as usize - fst as usize
+    assert!(snd >= fst,
+      "the argument is not a subslice (starts before)");
+    assert!(snd + second.len() <= fst + self.len(),
+      "the argument is not a subslice (extends past the end)");
+        
+    snd - fst
   }
 }
 
 #[cfg(not(feature = "core"))]
 impl Offset for str {
-    fn offset(&self, second: &Self) -> usize {
-      let fst = self.as_ptr();
-      let snd = second.as_ptr();
-
-      snd as usize - fst as usize
-    }
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr() as usize;
+    let snd = second.as_ptr() as usize;
+    
+    assert!(snd >= fst,
+      "the argument is not a subslice (starts before)");
+    assert!(snd + second.len() <= fst + self.len(),
+      "the argument is not a subslice (extends past the end)");
+    
+    snd - fst
+  }
 }
 
 #[cfg(not(feature = "core"))]
@@ -558,6 +569,7 @@ pub enum ErrorKind<E=u32> {
   TakeWhile1Str,
   NonEmpty,
   ManyMN,
+  TableParser,
   TakeUntilAndConsumeStr,
   TakeUntilStr,
   Not,
@@ -623,6 +635,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::Not                       => 63,
     ErrorKind::Permutation               => 64,
     ErrorKind::ManyTill                  => 65,
+    ErrorKind::TableParser               => 66,
   }
 }
 
@@ -686,6 +699,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
         ErrorKind::Not                       => "Negation",
         ErrorKind::Permutation               => "Permutation",
         ErrorKind::ManyTill                  => "ManyTill",
+        ErrorKind::TableParser               => "TableParser",
       }
 
     }

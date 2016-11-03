@@ -520,7 +520,8 @@ macro_rules! take_until_and_consume (
       let res: $crate::IResult<_,_> = if $substr.input_len() > $i.input_len() {
         $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
       } else {
-        match ($i).find_substring($substr) {
+        let input = $i.clone();
+        match (input).find_substring($substr) {
           None => {
             $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsume,$i))
           },
@@ -547,7 +548,8 @@ macro_rules! take_until (
       let res: $crate::IResult<_,_> = if $substr.input_len() > $i.input_len() {
         $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
       } else {
-        match ($i).find_substring($substr) {
+        let input = $i.clone();
+        match (input).find_substring($substr) {
           None => {
             $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntil,$i))
           },
@@ -631,7 +633,7 @@ macro_rules! take_until_either (
 macro_rules! length_bytes(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::{Slice,InputLength};
+      use $crate::{Slice, InputLength};
       let input: &[u8] = $i;
 
       match  $submac!(input, $($args)*) {

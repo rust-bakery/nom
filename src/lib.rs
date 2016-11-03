@@ -162,6 +162,8 @@ mod traits;
 #[macro_use] mod nom;
 #[macro_use] mod character;
 
+#[macro_use] mod table;
+
 #[macro_use]
 #[cfg(not(feature = "core"))]
 pub mod whitespace;
@@ -176,3 +178,6 @@ mod stream;
 
 #[cfg(not(feature = "core"))]
 mod str;
+
+#[cfg(feature = "slug")]
+#[macro_use] pub mod slug;

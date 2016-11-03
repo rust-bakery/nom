@@ -7,13 +7,12 @@ macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use $crate::InputLength;
-
-      //FIXME: use crate vec
       let mut res   = ::std::vec::Vec::new();
       let mut input = $i;
 
       // get the first element
-      match $submac!(input, $($args2)*) {
+      let input_ = input.clone();
+      match $submac!(input_, $($args2)*) {
         $crate::IResult::Error(_)      => $crate::IResult::Done(input, ::std::vec::Vec::new()),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
@@ -25,13 +24,14 @@ macro_rules! separated_list(
 
             loop {
               // get the separator first
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
+              let input_ = input.clone();
+              if let $crate::IResult::Done(i2,_) = $sep!(input_, $($args)*) {
                 if i2.input_len() == input.input_len() {
                   break;
                 }
 
                 // get the element next
-                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
+                if let $crate::IResult::Done(i3,o3) = $submac!(i2.clone(), $($args2)*) {
                   if i3.input_len() == i2.input_len() {
                     break;
                   }
@@ -68,28 +68,29 @@ macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use $crate::InputLength;
-
       let mut res   = ::std::vec::Vec::new();
       let mut input = $i;
 
       // get the first element
-      match $submac!(input, $($args2)*) {
+      let input_ = input.clone();
+      match $submac!(input_, $($args2)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
-          if i.input_len() == input.len() {
+          if i.input_len() == input.input_len() {
             $crate::IResult::Error(error_position!($crate::ErrorKind::SeparatedNonEmptyList,input))
           } else {
             res.push(o);
             input = i;
 
             loop {
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
+              let input_ = input.clone();
+              if let $crate::IResult::Done(i2,_) = $sep!(input_, $($args)*) {
                 if i2.input_len() == input.input_len() {
                   break;
                 }
 
-                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
+                if let $crate::IResult::Done(i3,o3) = $submac!(i2.clone(), $($args2)*) {
                   if i3.input_len() == i2.input_len() {
                     break;
                   }
@@ -143,11 +144,11 @@ macro_rules! separated_nonempty_list(
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::InputLength;
+      use $crate::{InputLength, Offset};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
+      let mut input = $i.clone();
 
       loop {
         if input.input_len() == 0 {
@@ -155,7 +156,8 @@ macro_rules! many0(
           break;
         }
 
-        match $submac!(input, $($args)*) {
+        let input_ = input.clone();
+        match $submac!(input_, $($args)*) {
           $crate::IResult::Error(_)                            => {
             ret = $crate::IResult::Done(input, res);
             break;
@@ -171,7 +173,7 @@ macro_rules! many0(
           },
           $crate::IResult::Done(i, o)                          => {
             // loop trip must always consume (otherwise infinite loops)
-            if i == input {
+            if input.offset(&i) == 0 {
               ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Many0,input));
               break;
             }
@@ -217,7 +219,8 @@ macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::InputLength;
-      match $submac!($i, $($args)*) {
+      let input = $i.clone();
+      match $submac!(input, $($args)*) {
         $crate::IResult::Error(_)      => $crate::IResult::Error(
           error_position!($crate::ErrorKind::Many1,$i)
         ),
@@ -236,7 +239,8 @@ macro_rules! many1(
               if input.input_len() == 0 {
                 break;
               }
-              match $submac!(input, $($args)*) {
+              let input_ = input.clone();
+              match $submac!(input_, $($args)*) {
                 $crate::IResult::Error(_)                    => {
                   break;
                 },
@@ -271,86 +275,6 @@ macro_rules! many1(
   );
   ($i:expr, $f:expr) => (
     many1!($i, call!($f));
-  );
-);
-
-/// `many_till!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (Vec<O>, P)>`
-/// Applies the first parser until the second applies returns a tuple containong the list
-/// of results from the first in a Vec and the result of the second.
-///
-/// the first embedded parser may return Incomplete
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
-/// # use nom::ErrorKind;
-/// # fn main() {
-///    named!(multi<&[u8], (Vec<&[u8]>, &[u8]) >, many_till!( tag!( "abcd" ), tag!( "efgh" ) ) );
-///
-///    let a = b"abcdabcdefghabcd";
-///    let b = b"efghabcd";
-///    let c = b"azerty";
-///
-///    let res_a = (vec![&b"abcd"[..], &b"abcd"[..]], &b"efgh"[..]);
-///    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
-///    assert_eq!(multi(&a[..]), Done(&b"abcd"[..], res_a));
-///    assert_eq!(multi(&b[..]), Done(&b"abcd"[..], res_b));
-///    assert_eq!(multi(&c[..]), Error(error_position!(ErrorKind::ManyTill,&c[..])));
-/// # }
-/// ```
-#[macro_export]
-macro_rules! many_till(
-  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::InputLength;
-
-      let ret;
-      let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
-
-      loop {
-        match $submac2!(input, $($args2)*) {
-          $crate::IResult::Done(i, o) => {
-            ret = $crate::IResult::Done(i, (res, o));
-            break;
-          },
-          _                           => {
-            match $submac1!(input, $($args1)*) {
-              $crate::IResult::Error(_)                            => {
-                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::ManyTill,input));
-                break;
-              },
-              $crate::IResult::Incomplete($crate::Needed::Unknown) => {
-                ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
-                break;
-              },
-              $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-                let size = i + ($i).input_len() - input.input_len();
-                ret = $crate::IResult::Incomplete($crate::Needed::Size(size));
-                break;
-              },
-              $crate::IResult::Done(i, o)                          => {
-                // loop trip must always consume (otherwise infinite loops)
-                if i == input {
-                  ret = $crate::IResult::Error(error_position!($crate::ErrorKind::ManyTill,input));
-                  break;
-                }
-
-                res.push(o);
-                input = i;
-              },
-            }
-          },
-        }
-      }
-
-      ret
-    }
-  );
-  ($i:expr, $f:expr, $g: expr) => (
-    many_till!($i, call!($f), call!($g));
   );
 );
 
@@ -392,7 +316,7 @@ macro_rules! many_m_n(
       let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
       loop {
         if count == $n { break }
-        match $submac!(input, $($args)*) {
+        match $submac!(input.clone(), $($args)*) {
           $crate::IResult::Done(i, o) => {
             // do not allow parsers that do not consume input (causes infinite loops)
             if i.input_len() == input.input_len() {
@@ -472,7 +396,7 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let ret;
-      let mut input = $i;
+      let mut input = $i.clone();
       let mut res   = ::std::vec::Vec::with_capacity($count);
 
       loop {
@@ -534,7 +458,7 @@ macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let ret;
-      let mut input = $i;
+      let mut input = $i.clone();
       // `$typ` must be Copy, and thus having no destructor, this is panic safe
       let mut res: [$typ; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
       let mut cnt: usize = 0;
@@ -656,7 +580,7 @@ macro_rules! length_value(
 macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
-      use $crate::InputLength;
+      use $crate::{InputLength, Offset};
       let ret;
       let f         = $f;
       let mut res   = $init;
@@ -684,7 +608,7 @@ macro_rules! fold_many0(
           },
           $crate::IResult::Done(i, o)                          => {
             // loop trip must always consume (otherwise infinite loops)
-            if i == input {
+            if input.offset(&i) == 0 {
               ret = $crate::IResult::Error(
                 error_position!($crate::ErrorKind::Many0,input)
               );
@@ -917,7 +841,9 @@ mod tests {
     ($i:expr, $bytes: expr) => (
       {
         use std::cmp::min;
-        let len = $i.len();
+        use $crate::InputLength;
+        
+        let len = $i.input_len();
         let blen = $bytes.len();
         let m   = min(len, blen);
         let reduced = &$i[..m];
@@ -939,7 +865,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
+        let res:$crate::IResult<&[u8],&[u8]> = if $i.input_len() < cnt {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt))
         } else {
           $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
@@ -1033,21 +959,6 @@ mod tests {
     assert_eq!(multi(b), Done(&b"efgh"[..], res2));
     assert_eq!(multi(c), Error(error_position!(ErrorKind::Many1,c)));
     assert_eq!(multi(d), Incomplete(Needed::Size(8)));
-  }
-
-  #[test]
-  fn many_till() {
-    named!(multi<&[u8], (Vec<&[u8]>, &[u8]) >, many_till!( tag!( "abcd" ), tag!( "efgh" ) ) );
-
-    let a = b"abcdabcdefghabcd";
-    let b = b"efghabcd";
-    let c = b"azerty";
-
-    let res_a = (vec![&b"abcd"[..], &b"abcd"[..]], &b"efgh"[..]);
-    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
-    assert_eq!(multi(&a[..]), Done(&b"abcd"[..], res_a));
-    assert_eq!(multi(&b[..]), Done(&b"abcd"[..], res_b));
-    assert_eq!(multi(&c[..]), Error(error_position!(ErrorKind::ManyTill,&c[..])));
   }
 
   #[test]
@@ -1148,11 +1059,11 @@ mod tests {
 
   #[allow(dead_code)]
   pub fn compile_count_fixed(input: &[u8]) -> IResult<&[u8], ()> {
-    do_parse!(input,
-      tag!("abcd")                   >>
-      count_fixed!( u16, le_u16, 4 ) >>
-      eof!()                         >>
-      ()
+    chain!(input,
+      tag!("abcd")                   ~
+      count_fixed!( u16, le_u16, 4 ) ~
+      eof!()                         ,
+      || { () }
     )
   }
 
