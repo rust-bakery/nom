@@ -39,3 +39,4 @@ optional = true
 
 [dev-dependencies.bytes]
 git = "https://github.com/carllerche/bytes"
+rev = "a7d38e29"
