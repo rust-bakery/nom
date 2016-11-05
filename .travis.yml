@@ -33,7 +33,6 @@ script:
 after_success:
   - travis-cargo bench
   - travis-cargo coveralls --no-sudo
-after_success:
   - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
       cargo bench;
     fi
