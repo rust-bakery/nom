@@ -3,7 +3,7 @@ extern crate nom;
 
 extern crate bytes;
 
-use nom::{Compare,CompareResult,InputLength,IterIndices,Slice,HexDisplay};
+use nom::{Compare,CompareResult,InputLength,InputIter,Slice,HexDisplay};
 
 use std::str;
 use std::str::FromStr;
@@ -80,7 +80,7 @@ impl<'a> Slice<RangeFull> for BlockSlice<'a> {
 }
 
 
-impl<'a> IterIndices for BlockSlice<'a> {
+impl<'a> InputIter for BlockSlice<'a> {
     type Item     = u8;
     type RawItem  = u8;
     type Iter     = Enumerate<WrapCursor<'a>>;
@@ -191,7 +191,7 @@ impl<'a> Iterator for WrapCursor<'a> {
 macro_rules! block_eat_separator (
   ($i:expr, $arr:expr) => (
     {
-      use nom::{InputLength,IterIndices,Slice};
+      use nom::{InputLength,InputIter,Slice};
       if ($i).input_len() == 0 {
         nom::IResult::Done($i, ($i).slice(0..0))
       } else {

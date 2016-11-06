@@ -14,7 +14,7 @@ use std::fmt::Debug;
 use internal::*;
 use internal::IResult::*;
 use util::ErrorKind;
-use traits::{AsChar,InputLength,IterIndices};
+use traits::{AsChar,InputLength,InputIter};
 use std::mem::transmute;
 use std::ops::{Range,RangeFrom,RangeTo};
 use traits::{Compare,CompareResult,Slice};
@@ -44,7 +44,7 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
 
 pub fn crlf<T>(input:T) -> IResult<T,T> where
   T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-  T: IterIndices,
+  T: InputIter,
   T: Compare<&'static str> {
     match input.compare("\r\n") {
       //FIXME: is this the right index?
@@ -60,7 +60,7 @@ pub fn crlf<T>(input:T) -> IResult<T,T> where
 // public methods
 pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
     T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength,
+    T: InputIter+InputLength,
     T: Compare<&'static str> {
       match input.iter_elements().position(|item| {
         let c = item.as_char();
@@ -89,7 +89,7 @@ pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn line_ending<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength,
+    T: InputIter+InputLength,
     T: Compare<&'static str> {
 
   match input.compare("\n") {
@@ -106,7 +106,7 @@ pub fn line_ending<T>(input:T) -> IResult<T, T> where
 
 pub fn eol<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength,
+    T: InputIter+InputLength,
     T: Compare<&'static str> {
   line_ending(input)
 }
@@ -159,7 +159,7 @@ pub fn is_space(chr:u8) -> bool {
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength {
+    T: InputIter+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -180,7 +180,7 @@ pub fn alpha<T>(input:T) -> IResult<T, T> where
 /// Recognizes numerical characters: 0-9
 pub fn digit<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength {
+    T: InputIter+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -201,7 +201,7 @@ pub fn digit<T>(input:T) -> IResult<T, T> where
 /// Recognizes hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength {
+    T: InputIter+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -222,7 +222,7 @@ pub fn hex_digit<T>(input:T) -> IResult<T,T> where
 /// Recognizes octal characters: 0-7
 pub fn oct_digit<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength {
+    T: InputIter+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -243,7 +243,7 @@ pub fn oct_digit<T>(input:T) -> IResult<T,T> where
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength {
+    T: InputIter+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -264,7 +264,7 @@ pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
 /// Recognizes spaces and tabs
 pub fn space<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength {
+    T: InputIter+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -286,7 +286,7 @@ pub fn space<T>(input:T) -> IResult<T,T> where
 /// Recognizes spaces, tabs, carriage returns and line feeds
 pub fn multispace<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: IterIndices+InputLength {
+    T: InputIter+InputLength {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);

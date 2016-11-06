@@ -94,7 +94,7 @@ macro_rules! is_not(
   ($input:expr, $arr:expr) => (
     {
       use $crate::InputLength;
-      use $crate::IterIndices;
+      use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
 
@@ -136,7 +136,7 @@ macro_rules! is_a (
   ($input:expr, $arr:expr) => (
     {
       use $crate::InputLength;
-      use $crate::IterIndices;
+      use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
 
@@ -191,7 +191,7 @@ macro_rules! escaped (
             } else {
               index = $i.offset(i);
             }
-            //FIXME: should use index() from IterIndices?
+            //FIXME: should use index() from InputIter?
           } else if $i[index] == $control_char as u8 {
             if index + 1 >= $i.input_len() {
               return $crate::IResult::Error(error_position!($crate::ErrorKind::Escaped,$i.slice(index..)));
@@ -383,7 +383,7 @@ macro_rules! escaped_transform (
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::{InputLength,IterIndices,Slice};
+      use $crate::{InputLength,InputIter,Slice};
       let input = $input;
 
       match input.position(|c| !$submac!(c, $($args)*)) {
@@ -413,7 +413,7 @@ macro_rules! take_while1 (
       let input = $input;
 
       use $crate::InputLength;
-      use $crate::IterIndices;
+      use $crate::InputIter;
       use $crate::Slice;
       if input.input_len() == 0 {
         $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1,input))
@@ -446,7 +446,7 @@ macro_rules! take_till (
       let input = $input;
 
       use $crate::InputLength;
-      use $crate::IterIndices;
+      use $crate::InputIter;
       use $crate::Slice;
       match input.position(|c| $submac!(c, $($args)*)) {
         Some(n) => $crate::IResult::Done(input.slice(n..), input.slice(..n)),
@@ -478,7 +478,7 @@ macro_rules! take_till (
 macro_rules! take (
   ($i:expr, $count:expr) => (
     {
-      use $crate::IterIndices;
+      use $crate::InputIter;
       use $crate::Slice;
       let input = $i;
 
@@ -486,7 +486,7 @@ macro_rules! take (
 
       let res: $crate::IResult<_,_> = match input.index(cnt) {
         None        => $crate::IResult::Incomplete($crate::Needed::Size(cnt)),
-        //FIXME: use the IterTake trait
+        //FIXME: use the InputTake trait
         Some(index) => $crate::IResult::Done(input.slice(index..), input.slice(..index))
       };
       res
@@ -568,7 +568,7 @@ macro_rules! take_until_either_and_consume (
   ($input:expr, $arr:expr) => (
     {
       use $crate::InputLength;
-      use $crate::IterIndices;
+      use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
 
@@ -599,7 +599,7 @@ macro_rules! take_until_either (
   ($input:expr, $arr:expr) => (
     {
       use $crate::InputLength;
-      use $crate::IterIndices;
+      use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
 

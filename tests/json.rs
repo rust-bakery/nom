@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult, digit, alphanumeric};
+use nom::{digit, alphanumeric};
 
 use std::str::{self,FromStr};
 use std::collections::HashMap;

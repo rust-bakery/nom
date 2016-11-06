@@ -638,7 +638,7 @@ macro_rules! separated_list_sep (
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
-      use $crate::{InputLength,IterIndices,Slice};
+      use $crate::{InputLength,InputIter,Slice};
       if ($i).input_len() == 0 {
         $crate::IResult::Done($i, ($i).slice(0..0))
       } else {

@@ -118,27 +118,29 @@ impl AsChar for char {
     fn is_oct_digit(self) -> bool { self.is_digit(8) }
 }
 
-pub trait IterIndices {
+pub trait InputIter {
     type Item     : AsChar;
     type RawItem  : AsChar;
     type Iter     : Iterator<Item=(usize, Self::Item)>;
     type IterElem : Iterator<Item=Self::Item>;
+
     fn iter_indices(&self)  -> Self::Iter;
     fn iter_elements(&self) -> Self::IterElem;
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool;
     fn index(&self, count:usize) -> Option<usize>;
 }
 
-pub trait IterTake {
+pub trait InputTake {
     fn take<P>(&self, count: usize)  -> Option<&Self>;
     fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)>;
 }
 
-impl<'a> IterIndices for &'a [u8] {
+impl<'a> InputIter for &'a [u8] {
     type Item     = &'a u8;
     type RawItem  = u8;
     type Iter     = Enumerate<::std::slice::Iter<'a, u8>>;
     type IterElem = ::std::slice::Iter<'a, u8>;
+
     #[inline]
     fn iter_indices(&self) -> Enumerate<::std::slice::Iter<'a, u8>> {
         self.iter().enumerate()
@@ -161,7 +163,7 @@ impl<'a> IterIndices for &'a [u8] {
     }
 }
 
-impl IterTake for [u8] {
+impl InputTake for [u8] {
     #[inline]
     fn take<P>(&self, count: usize) -> Option<&Self> {
       if self.len() >= count {
@@ -181,7 +183,7 @@ impl IterTake for [u8] {
 }
 
 #[cfg(not(feature = "core"))]
-impl<'a> IterIndices for &'a str {
+impl<'a> InputIter for &'a str {
     type Item     = char;
     type RawItem  = char;
     type Iter     = CharIndices<'a>;
@@ -219,7 +221,7 @@ impl<'a> IterIndices for &'a str {
 }
 
 #[cfg(not(feature = "core"))]
-impl IterTake for str {
+impl InputTake for str {
     #[inline]
     fn take<P>(&self, count: usize) -> Option<&Self> {
       let mut cnt    = 0;
