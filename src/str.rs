@@ -64,6 +64,10 @@ macro_rules! tag_no_case_s (
 ///  let a = "abcdefgh";
 ///
 ///  assert_eq!(take5(a), Done("fgh", "abcde"));
+///
+///  let b = "12345";
+///
+///  assert_eq!(take5(b), Done("", "12345"));
 /// # }
 /// ```
 #[macro_export]

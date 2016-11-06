@@ -211,6 +211,9 @@ impl<'a> IterIndices for &'a str {
         }
         cnt += 1;
       }
+      if cnt == count {
+        return Some(self.len())
+      }
       None
     }
 }
