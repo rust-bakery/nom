@@ -5,7 +5,7 @@
 /// ```
 /// All the parsers must have the same return type.
 ///
-/// If one of the parser returns `Incomplete`, `alt!` will return `Incomplete`, to retry
+/// If one of the parsers returns `Incomplete`, `alt!` will return `Incomplete`, to retry
 /// once you get more input. Note that it is better for performance to know the
 /// minimum size of data you need before you get into `alt!`.
 ///
@@ -242,11 +242,26 @@ macro_rules! alt (
   );
 );
 
-/// This is a combination of the `alt!` and `complete!` combinators. Rather
-/// than returning `Incomplete` on partial input, `alt_complete!` will try the
-/// next alternative in the chain. You should use this only if you know you
+/// Is equivalent to the `alt!` combinator, except that it will not return `Incomplete`
+/// when one of the constituting parsers returns `Incomplete`. Instead, it will try the
+/// next alternative in the chain.
+///
+/// You should use this combinator only if you know you
 /// will not receive partial input for the rules you're trying to match (this
 /// is almost always the case for parsing programming languages).
+///
+/// ```rust,ignore
+/// alt_complete!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>
+/// ```
+/// All the parsers must have the same return type.
+///
+/// If one of the parsers return `Incomplete`, `alt_complete!` will try the next alternative.
+/// If there is no other parser left to try, an `Error` will be returned.
+///
+/// ```rust,ignore
+/// alt_complete!(parser_1 | parser_2 | ... | parser_n)
+/// ```
+/// **For more in depth examples, refer to the documentation of `alt!`**
 #[macro_export]
 macro_rules! alt_complete (
   // Recursive rules (must include `complete!` around the head)
