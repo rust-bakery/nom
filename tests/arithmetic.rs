@@ -20,29 +20,51 @@ named!(factor<i64>, alt!(
   )
 );
 
-named!(term <i64>, chain!(
-    mut acc: factor  ~
-             many0!(
-               alt!(
-                 tap!(mul: preceded!(tag!("*"), factor) => acc = acc * mul) |
-                 tap!(div: preceded!(tag!("/"), factor) => acc = acc / div)
-               )
-             ),
-    || { return acc }
-  )
-);
+fn term_1(i: &[u8], acc: i64) -> IResult<&[u8], i64> {
+    alt!(i,
+        map!(preceded!(tag!("*"), factor), |mul| acc * mul) |
+        map!(preceded!(tag!("/"), factor), |div| acc / div)
+    )
+}
 
-named!(expr <i64>, chain!(
-    mut acc: term  ~
-             many0!(
-               alt!(
-                 tap!(add: preceded!(tag!("+"), term) => acc = acc + add) |
-                 tap!(sub: preceded!(tag!("-"), term) => acc = acc - sub)
-               )
-             ),
-    || { return acc }
-  )
-);
+fn term_0(i: &[u8], ini: i64) -> IResult<&[u8], i64> {
+    let mut acc   = ini;
+    let mut input = i;
+    while let IResult::Done(i, res) = term_1(input, acc) {
+        input = i;
+        acc   = res;
+    }
+    IResult::Done(input, acc)
+}
+
+named!(term <i64>, do_parse!(
+    ini: factor              >>
+    res: apply!(term_0, ini) >>
+    (res)
+));
+
+fn expr_1(i: &[u8], acc: i64) -> IResult<&[u8], i64> {
+    alt!(i,
+        map!(preceded!(tag!("+"), term), |add| acc + add) |
+        map!(preceded!(tag!("-"), term), |sub| acc - sub)
+    )
+}
+
+fn expr_0(i: &[u8], ini: i64) -> IResult<&[u8], i64> {
+    let mut acc   = ini;
+    let mut input = i;
+    while let IResult::Done(i, res) = expr_1(input, acc) {
+        input = i;
+        acc   = res;
+    }
+    IResult::Done(input, acc)
+}
+
+named!(expr <i64>, do_parse!(
+    ini: term                >>
+    res: apply!(expr_0, ini) >>
+    (res)
+));
 
 #[test]
 fn factor_test() {
