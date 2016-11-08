@@ -130,7 +130,7 @@ fn parse(data:&[u8]) -> Option<Vec<(Request, Vec<Header>)>> {
           break;
         }
       },
-      IResult::Error(e) => return None/*panic!("{:?}", e)*/,
+      IResult::Error(_) => return None/*panic!("{:?}", e)*/,
       IResult::Incomplete(_) => return None/*panic!("Incomplete!")*/,
     }
   }
@@ -183,7 +183,7 @@ fn main() {
         let _ = file.read_to_end(&mut contents).unwrap();
     }
     
-    let mut buf = &contents[..];
+    let buf = &contents[..];
     loop { parse(buf); }
 }
 
