@@ -1,3 +1,5 @@
+% How nom macros work
+
 nom uses Rust macros heavily to provide a nice syntax and generate parsing code. This has multiple advantages:
 
 * it gives the apparence of combining functions without the runtime cost of closures
