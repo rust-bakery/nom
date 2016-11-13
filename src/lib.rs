@@ -5,6 +5,13 @@
 //!
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!
+//! There are a few [guides](home.html) with more details
+//! about [the design of nom](how_nom_macros_work.html),
+//! [how to write parsers](making_a_new_parser_from_scratch.html),
+//! or the [error management system](error_management.html).
+//!
+//! See also the [FAQ](FAQ.html).
+//!
 //! # Example
 //!
 //! ```
