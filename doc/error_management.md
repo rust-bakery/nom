@@ -28,7 +28,7 @@ fn main() {
 Result:
 
 ```ignore
-Error(Position(0, [101, 102, 103, 104])) at l.5 by ' tag ! ( "abcd" ) '
+Error(Position(0, [101, 102, 103, 104])) at l.5 by " tag ! ( "abcd" ) "
 ```
 
 The result sent by `dbg_dmp!` is slightly different:
@@ -47,7 +47,7 @@ fn main() {
 It will print, along with the result and the parser, a hexdump of the input buffer passed to the parser.
 
 ```ignore
-Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by ' tag ! ( "abcd" ) '
+Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by " tag ! ( "abcd" ) "
 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
 ```
 
