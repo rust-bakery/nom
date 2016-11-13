@@ -11,12 +11,20 @@ nom uses Rust macros heavily to provide a nice syntax and generate parsing code.
 Let's take the `opt!` macro as example: `opt!` returns `IResult<I,Option<O>>`, producing a `Some(o)` if the child parser succeeded, and None otherwise. Here is how you could use it:
 
 ```rust
+# #[macro_use] extern crate nom;
+# use nom::{IResult,digit};
+# fn main() {
+# }
 named!(opt_tag<Option<&[u8]>>, opt!(digit));
 ```
 
 And here is how it is defined:
 
 ```rust
+# #[macro_use] extern crate nom;
+# use nom::IResult;
+# fn main() {
+# }
 #[macro_export]
 macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -36,7 +44,7 @@ macro_rules! opt(
 
 To define a Rust macro, you indicate the name of the macro, then each pattern it is meant to apply to:
 
-```rust
+```ignore
 macro_rules! my_macro (
   (<pattern1>) => ( <generated code for pattern1> );
   (<pattern2>) => ( <generated code for pattern2> );
@@ -47,25 +55,33 @@ macro_rules! my_macro (
 
 The first thing you can see in `opt!` is that the pattern have an additional parameter that you do not use:
 
-```rust
+```ignore
 ($i:expr, $f:expr)
 ```
 
 while you call:
 
-```rust
+```ignore
 opt!(digit)
 ```
 
 This is the first trick of nom macros: the first parameter, usually `$i` or `$input`, is the input data, passed by the parent parser. The expression using `named!` will translate like this:
 
 ```rust
+# #[macro_use] extern crate nom;
+# use nom::digit;
+# fn main() {
+# }
 named!(opt_tag<Option<&[u8]>>, opt!(digit));
 ```
 
 to
 
 ```rust
+# #[macro_use] extern crate nom;
+# use nom::{IResult,digit};
+# fn main() {
+# }
 fn opt_tag(input:&[u8]) -> IResult<&[u8], Option<&[u8]>> {
   opt!(input, digit)
 }
@@ -76,6 +92,10 @@ This is how combinators hide all the plumbing: they receive the input automatica
 When you have multiple submacros, such as this example, the input is always passed to the first, top level combinator:
 
 ```rust
+# #[macro_use] extern crate nom;
+# use nom::IResult;
+# fn main() {
+# }
 macro_rules! multispaced (
     ($i:expr, $submac:ident!( $($args:tt)* )) => (
         delimited!($i, opt!(multispace), $submac!($($args)*), opt!(multispace));
@@ -92,7 +112,7 @@ Here, `delimited!` will apply `opt!(multispace)` on the input, and if successful
 
 The second trick you can see is the two patterns:
 
-```rust
+```ignore
 #[macro_export]
 macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -106,19 +126,19 @@ macro_rules! opt(
 
 The first pattern is used to receive a macro as child parser, like this:
 
-```rust
+```ignore
 opt!(tag!("abcd"))
 ```
 
 The second pattern can receive a function, and transforms it in a macro, then calls itself again. This is done to avoid repeating code. Applying `opt!` with `digit` as argument would be transformed from this:
 
-```rust
+```ignore
 opt!(digit)
 ```
 
 transformed with the second pattern:
 
-```rust
+```ignore
 opt!(call!(digit))
 ```
 
@@ -128,7 +148,7 @@ The `call!` macro transforms `call!(input, f)` into `f(i)`. If you need to pass 
 
 The macro argument is decomposed into `$submac:ident!`, the macro's name and a bang, and `( $($args:tt)* )`, the tokens contained between the parenthesis of the macro call.
 
-```rust
+```ignore
 ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -144,23 +164,23 @@ The macro is called with the input we got, as first argument, then we pattern ma
 
 As an example, see how the `preceded!` macro works:
 
-```rust
-($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => ( 
-    {    
+```ignore
+($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,_)    => { 
+        $crate::IResult::Done(i1,_)    => {
           match $submac2!(i1, $($args2)*) {
             $crate::IResult::Error(a)      => $crate::IResult::Error(a),
             $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-            $crate::IResult::Done(i2,o2)   => { 
+            $crate::IResult::Done(i2,o2)   => {
               $crate::IResult::Done(i2, o2)
-            }    
-          }    
-        },   
-      }    
-    }    
+            }
+          }
+        },
+      }
+    }
   );
 ```
 

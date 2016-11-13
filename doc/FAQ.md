@@ -1,6 +1,8 @@
+% FAQ
+
 ### The compiler indicates `error: expected an item keyword` then points to the function's return type in `named!`:
 
-```
+```ignore
 error: expected an item keyword
 named!(multi<Vec<&str>>, many0!( map_res!(tag!( "abcd" ), str::from_utf8) ) );
              ^~~
@@ -12,7 +14,7 @@ This happens because the macro processor mistakes `>>` for an operator. It will 
 
 Typically, the error would look like this:
 
-```
+```ignore
 src/stream.rs:74:44: 74:64 error: the parameter type `E` may not live long enough [E0309]
 src/stream.rs:74     if let &ConsumerState::Done(_,ref o) = self.apply(consumer) {
                                                             ^~~~~~~~~~~~~~~~~~~~
