@@ -592,11 +592,11 @@ macro_rules! length_count(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           match count!(i, $submac2!($($args2)*), o as usize) {
-            $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-            $crate::IResult::Incomplete(Needed::Unknown) => $crate::IResult::Incomplete(Needed::Unknown),
-            $crate::IResult::Incomplete(Needed::Size(n)) => {
-              $crate::IResult::Incomplete(Needed::Size(
-                n +$crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+            $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+            $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+            $crate::IResult::Incomplete($crate::Needed::Size(n)) => {
+              $crate::IResult::Incomplete($crate::Needed::Size(
+                n + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
               ))
             },
             $crate::IResult::Done(i2, o2)  =>  $crate::IResult::Done(i2, o2)
@@ -631,10 +631,10 @@ macro_rules! length_data(
       $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
       $crate::IResult::Done(i, o)    => {
         match take!(i, o as usize) {
-          $crate::IResult::Error(e)                    => $crate::IResult::Error(e),
-          $crate::IResult::Incomplete(Needed::Unknown) => $crate::IResult::Incomplete(Needed::Unknown),
-          $crate::IResult::Incomplete(Needed::Size(n)) => {
-            $crate::IResult::Incomplete(Needed::Size(
+          $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+          $crate::IResult::Incomplete($crate::Needed::Size(n)) => {
+            $crate::IResult::Incomplete($crate::Needed::Size(
               n +$crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
             ))
           },
@@ -662,10 +662,10 @@ macro_rules! length_value(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           match take!(i, o as usize) {
-            $crate::IResult::Error(e)                    => $crate::IResult::Error(e),
-            $crate::IResult::Incomplete(Needed::Unknown) => $crate::IResult::Incomplete(Needed::Unknown),
-            $crate::IResult::Incomplete(Needed::Size(n)) => {
-              $crate::IResult::Incomplete(Needed::Size(
+            $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+            $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+            $crate::IResult::Incomplete($crate::Needed::Size(n)) => {
+              $crate::IResult::Incomplete($crate::Needed::Size(
                 n +$crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
               ))
             },
