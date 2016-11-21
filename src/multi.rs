@@ -490,8 +490,14 @@ macro_rules! count(
             ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Count,$i));
             break;
           },
-          $crate::IResult::Incomplete(_) => {
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
             ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+            break;
+          }
+          $crate::IResult::Incomplete($crate::Needed::Size(sz)) => {
+            ret = $crate::IResult::Incomplete($crate::Needed::Size(
+              sz + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)
+            ));
             break;
           }
         }
@@ -554,8 +560,14 @@ macro_rules! count_fixed (
             ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Count,$i));
             break;
           },
-          $crate::IResult::Incomplete(_) => {
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
             ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+            break;
+          }
+          $crate::IResult::Incomplete($crate::Needed::Size(sz)) => {
+            ret = $crate::IResult::Incomplete($crate::Needed::Size(
+              sz + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)
+            ));
             break;
           }
         }
@@ -563,7 +575,7 @@ macro_rules! count_fixed (
 
       ret
     }
-  );
+);
   ($i:expr, $typ: ty, $f:ident, $count: expr) => (
     count_fixed!($i, $typ, call!($f), $count);
   );
@@ -1150,8 +1162,8 @@ mod tests {
     named!( cnt_2<&[u8], Vec<&[u8]> >, count!(tag_abc, TIMES ) );
 
     assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Done(&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]));
-    assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Unknown));
-    assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Size(6)));
     assert_eq!(cnt_2(&b"xxx"[..]), Error(error_position!(ErrorKind::Count, &b"xxx"[..])));
     assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(error_position!(ErrorKind::Count, &b"xxxabcabcdef"[..])));
     assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(error_position!(ErrorKind::Count, &b"abcxxxabcdef"[..])));
@@ -1195,8 +1207,8 @@ mod tests {
     named!( cnt_2<&[u8], [&[u8]; TIMES] >, count_fixed!(&[u8], tag_abc, TIMES ) );
 
     assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Done(&b"abcdef"[..], [&b"abc"[..], &b"abc"[..]]));
-    assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Unknown));
-    assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt_2(&b"ab"[..]), Incomplete(Needed::Size(3)));
+    assert_eq!(cnt_2(&b"abcab"[..]), Incomplete(Needed::Size(6)));
     assert_eq!(cnt_2(&b"xxx"[..]), Error(error_position!(ErrorKind::Count, &b"xxx"[..])));
     assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Error(error_position!(ErrorKind::Count, &b"xxxabcabcdef"[..])));
     assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Error(error_position!(ErrorKind::Count, &b"abcxxxabcdef"[..])));
@@ -1231,8 +1243,8 @@ mod tests {
     let error_2_remain = &b"abcxxxabcdef"[..];
 
     assert_eq!(counter_2(done), Done(rest, parsed_main));
-    assert_eq!(counter_2(incomplete_1), Incomplete(Needed::Unknown));
-    assert_eq!(counter_2(incomplete_2), Incomplete(Needed::Unknown));
+    assert_eq!(counter_2(incomplete_1), Incomplete(Needed::Size(3)));
+    assert_eq!(counter_2(incomplete_2), Incomplete(Needed::Size(6)));
     assert_eq!(counter_2(error), Error(error_position!(ErrorKind::Count, error)));
     assert_eq!(counter_2(error_1), Error(error_position!(ErrorKind::Count, error_1_remain)));
     assert_eq!(counter_2(error_2), Error(error_position!(ErrorKind::Count, error_2_remain)));
@@ -1252,8 +1264,8 @@ mod tests {
     named!( cnt<&[u8], Vec<&[u8]> >, length_count!(number, tag_abc) );
 
     assert_eq!(cnt(&b"2abcabcabcdef"[..]), Done(&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]));
-    assert_eq!(cnt(&b"2ab"[..]), Incomplete(Needed::Unknown));
-    assert_eq!(cnt(&b"3abcab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt(&b"2ab"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(cnt(&b"3abcab"[..]), Incomplete(Needed::Size(7)));
     assert_eq!(cnt(&b"xxx"[..]), Error(error_position!(ErrorKind::Digit, &b"xxx"[..])));
     assert_eq!(cnt(&b"2abcxxx"[..]), Error(error_position!(ErrorKind::Count, &b"xxx"[..])));
   }
