@@ -319,20 +319,6 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   }
 }
 
-pub fn length_value(input:&[u8]) -> IResult<&[u8], &[u8]> {
-  let input_len = input.len();
-  if input_len == 0 {
-    return Incomplete(Needed::Unknown);
-  }
-
-  let len = input[0] as usize;
-  if input_len - 1 >= len {
-    IResult::Done(&input[len+1..], &input[1..len+1])
-  } else {
-    IResult::Incomplete(Needed::Size(1+len))
-  }
-}
-
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 #[inline]
 pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
@@ -789,26 +775,6 @@ mod tests {
     let res = d.flat_map(print);
     assert_eq!(res, Done(&v2[..], ()));
   }*/
-
-  #[test]
-  fn length_value_test() {
-    let i1 = vec![7,8];
-    let o1 = vec![4, 5, 6];
-    let arr1:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
-    let res1 = length_value(&arr1);
-    assert_eq!(Done(&i1[..], &o1[..]), res1);
-
-    let i2:Vec<u8> = vec![4,5,6,7,8];
-    let o2: &[u8] = b"";
-    let arr2:[u8; 6usize] = [0, 4, 5, 6, 7, 8];
-    let res2 = length_value(&arr2);
-    assert_eq!(Done(&i2[..], o2), res2);
-
-    let arr3:[u8; 7usize] = [8, 4, 5, 6, 7, 8, 9];
-    let res3 = length_value(&arr3);
-    //FIXME: should be incomplete
-    assert_eq!(Incomplete(Needed::Size(9)), res3);
-  }
 
   #[test]
   fn i8_tests() {
