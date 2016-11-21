@@ -568,53 +568,72 @@ macro_rules! count_fixed (
     count_fixed!($i, $typ, call!($f), $count);
   );
 );
+
+/// `length_count!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// gets a number from the first parser, then applies the second parser that many times
 #[macro_export]
-#[doc(hidden)]
-macro_rules! length_value_impl(
-  ($i:expr, $f:expr, $g:ident!( $($args:tt)* ), $lenpat:pat, $lenexpr:expr) => (
+macro_rules! length_count(
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      use $crate::InputLength;
-      match $f($i) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(inum, onum)   => {
-          let ret;
-          let length_token = $i.input_len() - inum.input_len();
-          let mut input    = inum;
-          let mut res      = ::std::vec::Vec::new();
-
-          loop {
-            if res.len() == onum as usize {
-              ret = $crate::IResult::Done(input, res); break;
-            }
-
-            match $g!(input, $($args)*) {
-              $crate::IResult::Done(iparse, oparse) => {
-                res.push(oparse);
-                input = iparse;
-              },
-              $crate::IResult::Error(_)      => {
-                ret = $crate::IResult::Error(error_position!($crate::ErrorKind::LengthValue,$i));
-                break;
-              },
-              $crate::IResult::Incomplete(a) => {
-                ret = match a {
-                  $crate::Needed::Unknown => $crate::IResult::Incomplete(
-                    $crate::Needed::Unknown
-                  ),
-                  $crate::Needed::Size($lenpat) => $crate::IResult::Incomplete(
-                    $crate::Needed::Size(length_token + onum as usize * $lenexpr)
-                  )
-                };
-                break;
-              }
-            }
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i, o)    => {
+          match count!(i, $submac2!($($args2)*), o as usize) {
+            $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+            $crate::IResult::Incomplete(Needed::Unknown) => $crate::IResult::Incomplete(Needed::Unknown),
+            $crate::IResult::Incomplete(Needed::Size(n)) => {
+              $crate::IResult::Incomplete(Needed::Size(
+                n +$crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+              ))
+            },
+            $crate::IResult::Done(i2, o2)  =>  $crate::IResult::Done(i2, o2)
           }
-
-          ret
         }
       }
     }
+  );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    length_count!($i, $submac!($($args)*), call!($g));
+  );
+
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    length_count!($i, call!($f), $submac!($($args)*));
+  );
+
+  ($i:expr, $f:expr, $g:expr) => (
+    length_count!($i, call!($f), call!($g));
+  );
+);
+
+/// `length_data!(I -> IResult<I, nb>) => O`
+///
+/// `length_data` gets a number from the first parser, than takes a subslice of the input
+/// of that size, and returns that subslice
+#[macro_export]
+macro_rules! length_data(
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    match $submac!($i, $($args)*) {
+      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+      $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+      $crate::IResult::Done(i, o)    => {
+        match take!(i, o as usize) {
+          $crate::IResult::Error(e)                    => $crate::IResult::Error(e),
+          $crate::IResult::Incomplete(Needed::Unknown) => $crate::IResult::Incomplete(Needed::Unknown),
+          $crate::IResult::Incomplete(Needed::Size(n)) => {
+            $crate::IResult::Incomplete(Needed::Size(
+              n +$crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+            ))
+          },
+          $crate::IResult::Done(i2, o2)  =>  $crate::IResult::Done(i2, o2)
+        }
+      }
+    }
+  );
+
+  ($i:expr, $f:expr) => (
+    length_data!($i, call!($f));
   );
 );
 
@@ -1217,6 +1236,36 @@ mod tests {
     assert_eq!(counter_2(error), Error(error_position!(ErrorKind::Count, error)));
     assert_eq!(counter_2(error_1), Error(error_position!(ErrorKind::Count, error_1_remain)));
     assert_eq!(counter_2(error_2), Error(error_position!(ErrorKind::Count, error_2_remain)));
+  }
+
+  named!(pub number<u32>, map_res!(
+    map_res!(
+      digit,
+      str::from_utf8
+    ),
+    FromStr::from_str
+  ));
+
+  #[test]
+  fn length_count() {
+    named!(tag_abc, tag!(&b"abc"[..]) );
+    named!( cnt<&[u8], Vec<&[u8]> >, length_count!(number, tag_abc) );
+
+    assert_eq!(cnt(&b"2abcabcabcdef"[..]), Done(&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]));
+    assert_eq!(cnt(&b"2ab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt(&b"3abcab"[..]), Incomplete(Needed::Unknown));
+    assert_eq!(cnt(&b"xxx"[..]), Error(error_position!(ErrorKind::Digit, &b"xxx"[..])));
+    assert_eq!(cnt(&b"2abcxxx"[..]), Error(error_position!(ErrorKind::Count, &b"xxx"[..])));
+  }
+
+  #[test]
+  fn length_data() {
+    named!( take<&[u8], &[u8]>, length_data!(number) );
+
+    assert_eq!(take(&b"6abcabcabcdef"[..]), Done(&b"abcdef"[..], &b"abcabc"[..]));
+    assert_eq!(take(&b"3ab"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(take(&b"xxx"[..]), Error(error_position!(ErrorKind::Digit, &b"xxx"[..])));
+    assert_eq!(take(&b"2abcxxx"[..]), Done(&b"cxxx"[..], &b"ab"[..]));
   }
 
   #[test]
