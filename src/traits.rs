@@ -320,37 +320,30 @@ impl<'a,'b> Compare<&'b str> for &'a [u8] {
 impl<'a,'b> Compare<&'b str> for &'a str {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
-    let len     = self.len();
-    let blen    = t.len();
-    let m       = if len < blen { len } else { blen };
-    let reduced = &self[..m];
-    let b       = &t[..m];
+    let pos = self.chars().zip(t.chars()).position(|(a,b)| a != b);
 
-    if reduced != b {
-      CompareResult::Error
-    } else if m < blen {
-      CompareResult::Incomplete
-    } else {
-      CompareResult::Ok
+    match pos {
+      Some(_) => CompareResult::Error,
+      None    => if self.len() >= t.len() {
+        CompareResult::Ok
+      } else {
+        CompareResult::Incomplete
+      }
     }
   }
 
   //FIXME: this version is too simple and does not use the current locale
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    let len     = self.len();
-    let blen    = t.len();
-    let m       = if len < blen { len } else { blen };
-    let reduced = &self[..m];
-    let b       = &t[..m];
+    let pos = self.to_lowercase().chars().zip(t.to_lowercase().chars()).position(|(a,b)| a != b);
 
-    //println!("compare_no_case({}, {}) => {} / {}", self, t, reduced.to_lowercase(), b.to_lowercase());
-    if !(reduced.to_lowercase() == b.to_lowercase()) {
-      CompareResult::Error
-    } else if m < blen {
-      CompareResult::Incomplete
-    } else {
-      CompareResult::Ok
+    match pos {
+      Some(_) => CompareResult::Error,
+      None    => if self.len() >= t.len() {
+        CompareResult::Ok
+      } else {
+        CompareResult::Incomplete
+      }
     }
   }
 }

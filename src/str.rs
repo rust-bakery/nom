@@ -616,6 +616,15 @@ mod test {
 
     }
 
+    #[test]
+    fn utf8_indexing() {
+      named!(dot(&str) -> &str,
+        tag_s!(".")
+      );
+
+      dot("點");
+    }
+
   #[test]
   fn case_insensitive() {
     named!(test<&str,&str>, tag_no_case!("ABcd"));
