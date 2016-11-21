@@ -619,13 +619,49 @@ macro_rules! length_value_impl(
 );
 
 /// `length_value!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// gets a number from the first parser, then applies the second parser that many times
+/// gets a number from the first parser, takes a subslice of the input of that size,
+/// then applies the second parser on that subslice. If the second parser returns
+/// `Incomplete`, `length_value` will return an error
 #[macro_export]
 macro_rules! length_value(
-  ($i:expr, $f:expr, $g:ident!( $($args:tt)* )) => (length_value_impl!($i, $f, $g!($($args)*), length, length));
-  ($i:expr, $f:expr, $g:ident!( $($args:tt)* ), $length:expr) => (length_value_impl!($i, $f, $g!($($args)*), _, $length));
-  ($i:expr, $f:expr, $g:expr) => (length_value_impl!($i, $f, call!($g), length, length));
-  ($i:expr, $f:expr, $g:expr, $length:expr) => (length_value_impl!($i, $f, call!($g), _, $length));
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        $crate::IResult::Done(i, o)    => {
+          match take!(i, o as usize) {
+            $crate::IResult::Error(e)                    => $crate::IResult::Error(e),
+            $crate::IResult::Incomplete(Needed::Unknown) => $crate::IResult::Incomplete(Needed::Unknown),
+            $crate::IResult::Incomplete(Needed::Size(n)) => {
+              $crate::IResult::Incomplete(Needed::Size(
+                n +$crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+              ))
+            },
+            $crate::IResult::Done(i2, o2)  => {
+              match complete!(o2, $submac2!($($args2)*)) {
+                $crate::IResult::Error(e)      => $crate::IResult::Error(e),
+                $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+                $crate::IResult::Done(_, o3)   => $crate::IResult::Done(i2, o3)
+              }
+            }
+          }
+        }
+      }
+    }
+  );
+
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    length_value!($i, $submac!($($args)*), call!($g));
+  );
+
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    length_value!($i, call!($f), $submac!($($args)*));
+  );
+
+  ($i:expr, $f:expr, $g:expr) => (
+    length_value!($i, call!($f), call!($g));
+  );
 );
 
 /// `fold_many0!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
@@ -894,7 +930,8 @@ mod tests {
 
   use internal::IResult::*;
   use util::ErrorKind;
-  use nom::{be_u8,be_u16,le_u16};
+  use nom::{be_u8,be_u16,le_u16,digit};
+  use std::str::{self,FromStr};
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -1184,40 +1221,24 @@ mod tests {
 
   #[test]
   fn length_value_test() {
-    named!(length_value_1<&[u8], Vec<u16> >, length_value!(be_u8, be_u16));
-    named!(length_value_2<&[u8], Vec<u16> >, length_value!(be_u8, be_u16, 2));
-    named!(length_value_3<&[u8], Vec<(u8, u8)> >, length_value!(be_u8, tuple!(be_u8, be_u8)));
-    named!(length_value_4<&[u8], Vec<(u8, u8)> >, length_value!(be_u8, tuple!(be_u8, be_u8), 2));
+    named!(length_value_1<&[u8], u16 >, length_value!(be_u8, be_u16));
+    named!(length_value_2<&[u8], (u8, u8) >, length_value!(be_u8, tuple!(be_u8, be_u8)));
 
     let i1 = vec![0, 5, 6];
-    assert_eq!(length_value_1(&i1), IResult::Done(&i1[1..], vec![]));
-    assert_eq!(length_value_2(&i1), IResult::Done(&i1[1..], vec![]));
-    assert_eq!(length_value_3(&i1), IResult::Done(&i1[1..], vec![]));
-    assert_eq!(length_value_4(&i1), IResult::Done(&i1[1..], vec![]));
+    assert_eq!(length_value_1(&i1), IResult::Error(error_position!(ErrorKind::Complete, &b""[..])));
+    assert_eq!(length_value_2(&i1), IResult::Error(error_position!(ErrorKind::Complete, &b""[..])));
 
     let i2 = vec![1, 5, 6, 3];
-    assert_eq!(length_value_1(&i2), IResult::Done(&i2[3..], vec![1286]));
-    assert_eq!(length_value_2(&i2), IResult::Done(&i2[3..], vec![1286]));
-    assert_eq!(length_value_3(&i2), IResult::Done(&i2[3..], vec![(5, 6)]));
-    assert_eq!(length_value_4(&i2), IResult::Done(&i2[3..], vec![(5, 6)]));
+    assert_eq!(length_value_1(&i2), IResult::Error(error_position!(ErrorKind::Complete, &i2[1..])));
+    assert_eq!(length_value_2(&i2), IResult::Error(error_position!(ErrorKind::Complete, &i2[1..])));
 
     let i3 = vec![2, 5, 6, 3, 4, 5, 7];
-    assert_eq!(length_value_1(&i3), IResult::Done(&i3[5..], vec![1286, 772]));
-    assert_eq!(length_value_2(&i3), IResult::Done(&i3[5..], vec![1286, 772]));
-    assert_eq!(length_value_3(&i3), IResult::Done(&i3[5..], vec![(5, 6), (3, 4)]));
-    assert_eq!(length_value_4(&i3), IResult::Done(&i3[5..], vec![(5, 6), (3, 4)]));
+    assert_eq!(length_value_1(&i3), IResult::Done(&i3[3..], 1286));
+    assert_eq!(length_value_2(&i3), IResult::Done(&i3[3..], (5, 6)));
 
-    let i4 = vec![2, 5, 6, 3];
-    assert_eq!(length_value_1(&i4), IResult::Incomplete(Needed::Size(5)));
-    assert_eq!(length_value_2(&i4), IResult::Incomplete(Needed::Size(5)));
-    assert_eq!(length_value_3(&i4), IResult::Incomplete(Needed::Size(5)));
-    assert_eq!(length_value_4(&i4), IResult::Incomplete(Needed::Size(5)));
-
-    let i5 = vec![3, 5, 6, 3, 4, 5];
-    assert_eq!(length_value_1(&i5), IResult::Incomplete(Needed::Size(7)));
-    assert_eq!(length_value_2(&i5), IResult::Incomplete(Needed::Size(7)));
-    assert_eq!(length_value_3(&i5), IResult::Incomplete(Needed::Size(7)));
-    assert_eq!(length_value_4(&i5), IResult::Incomplete(Needed::Size(7)));
+    let i4 = vec![3, 5, 6, 3, 4, 5];
+    assert_eq!(length_value_1(&i4), IResult::Done(&i4[4..], 1286));
+    assert_eq!(length_value_2(&i4), IResult::Done(&i4[4..], (5, 6)));
   }
 
   #[test]
