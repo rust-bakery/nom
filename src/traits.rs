@@ -323,7 +323,7 @@ impl<'a,'b> Compare<&'b str> for &'a str {
     let len     = self.len();
     let blen    = t.len();
     let m       = if len < blen { len } else { blen };
-    let reduced = &self[..m];
+    let reduced = unsafe { self.slice_unchecked(0, m) };
     let b       = &t[..m];
 
     if reduced != b {
@@ -341,7 +341,7 @@ impl<'a,'b> Compare<&'b str> for &'a str {
     let len     = self.len();
     let blen    = t.len();
     let m       = if len < blen { len } else { blen };
-    let reduced = &self[..m];
+    let reduced = unsafe { self.slice_unchecked(0, m) };
     let b       = &t[..m];
 
     //println!("compare_no_case({}, {}) => {} / {}", self, t, reduced.to_lowercase(), b.to_lowercase());
