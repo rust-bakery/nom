@@ -484,7 +484,7 @@ macro_rules! take (
 
       let cnt = $count as usize;
 
-      let res: $crate::IResult<_,_> = match input.index(cnt) {
+      let res: $crate::IResult<_,_> = match input.slice_index(cnt) {
         None        => $crate::IResult::Incomplete($crate::Needed::Size(cnt)),
         //FIXME: use the InputTake trait
         Some(index) => $crate::IResult::Done(input.slice(index..), input.slice(..index))

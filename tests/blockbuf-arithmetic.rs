@@ -95,7 +95,7 @@ impl<'a> InputIter for BlockSlice<'a> {
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
       self.cursor().position(|b| predicate(b))
     }
-    fn index(&self, count:usize) -> Option<usize> {
+    fn slice_index(&self, count:usize) -> Option<usize> {
       if self.end - self.start >= count {
         Some(count)
       } else {

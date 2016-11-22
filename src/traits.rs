@@ -127,7 +127,7 @@ pub trait InputIter {
     fn iter_indices(&self)  -> Self::Iter;
     fn iter_elements(&self) -> Self::IterElem;
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool;
-    fn index(&self, count:usize) -> Option<usize>;
+    fn slice_index(&self, count:usize) -> Option<usize>;
 }
 
 pub trait InputTake {
@@ -154,7 +154,7 @@ impl<'a> InputIter for &'a [u8] {
       self.iter().position(|b| predicate(*b))
     }
     #[inline]
-    fn index(&self, count:usize) -> Option<usize> {
+    fn slice_index(&self, count:usize) -> Option<usize> {
       if self.len() >= count {
         Some(count)
       } else {
@@ -205,7 +205,7 @@ impl<'a> InputIter for &'a str {
       None
     }
     #[inline]
-    fn index(&self, count:usize) -> Option<usize> {
+    fn slice_index(&self, count:usize) -> Option<usize> {
       let mut cnt    = 0;
       for (index, _) in self.char_indices() {
         if cnt == count {
