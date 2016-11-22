@@ -47,6 +47,24 @@ impl<I,O,E> IResult<I,O,E> {
   }
 }
 
+#[cfg(not(feature = "core"))]
+use std::any::Any;
+#[cfg(not(feature = "core"))]
+use std::{error,fmt};
+#[cfg(not(feature = "core"))]
+impl<E: fmt::Debug+Any> error::Error for Err<E> {
+  fn description(&self) -> &str {
+    self.description()
+  }
+}
+
+#[cfg(not(feature = "core"))]
+impl<E: fmt::Debug> fmt::Display for Err<E> {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{}", self.description())
+  }
+}
+
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
 /// ```
