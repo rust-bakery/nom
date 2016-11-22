@@ -356,6 +356,7 @@ Here is a list of known projects using nom:
 - Database formats:
  * [Redis database files](https://github.com/badboy/rdb-rs)
 - Network protocol formats:
+ * [Bencode](https://github.com/jbaum98/bencode.rs)
  * [IRC](https://github.com/Detegr/RBot-parser)
  * [Pcap-NG](https://github.com/richo/pcapng-rs)
  * [NTP](https://github.com/rusticata/ntp-parser)
