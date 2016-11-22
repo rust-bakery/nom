@@ -1,8 +1,10 @@
 % Upgrading to nom 2.0
 
+# Upgrading to nom 2.0
+
 The 2.0 release of nom adds a lot of new features, but it was also time for a big cleanup of badly named functions and macros, awkwardly written features and redundant functionality. So this release has some breaking changes, but most of them are harmless.
 
-# Simple VS verbose errors
+## Simple VS verbose errors
 
 The error management system of nom 1.0 is powerful: it allows you to aggregate errors as you backtrack in the parser tree, and gives you clear indications about which combinators worked on which part of the input. Unfortunately, this slowed down the parsers a bit, since a lot of code was generated to drop the error list when it was not used.
 
@@ -55,7 +57,7 @@ nom             = { version = "^2.0.0", features = ["verbose-errors"] }
 
 If you only use `Err::Code` to make your custom error codes, you could switch to the simple errors, since it replaces the `Err<Input,E=u32>` enum, which contained an `ErrorKind<E=u32>`, with the `ErrorKind<E=u32>` type directly.
 
-# the eof function was removed
+## the eof function was removed
 
 The eof implementation was linked too much to the input type. This is now a macro combinator, called `eof!()`.
 
@@ -68,7 +70,7 @@ error[E0432]: unresolved import `nom::eof`
   |                    ^^^ no `eof` in `nom`. Did you mean to use `eol`?
 ```
 
-# parsers returning `Incomplete` instead of an error on empty input
+## parsers returning `Incomplete` instead of an error on empty input
 
 `alpha`, `digit`, `alphanumeric`, `hex_digit`, `oct_digit`, `space`, `multispace`, `sized_buffer` will now return `Incomplete` if they get an empty input. If you get the following error message, you can wrap those calls with `complete!`, a combinator that transforms `Incomplete` to `Error`.
 
@@ -79,7 +81,7 @@ error[E0432]: unresolved import `nom::eof`
 
 This change was implemented to make these basic parsers more consistent. Please note that parsing the basic elements of a format, like the alphabet of a token, is always very specific to that format, and those functions may not always fit your needs. In that case, you can easily make your own with [`take_while`](take_while.m.html) and a function that test for the characters or bytes you need.
 
-# `take_till!` iterates on bytes or chars, not on references to them
+## `take_till!` iterates on bytes or chars, not on references to them
 
 The input types must now conform to a trait which requires changes to `take_till!`. If you get the following error:
 
@@ -104,7 +106,7 @@ you can fix it with:
 +    c == 0x0
 ```
 
-# length_value, length_bytes refactoring
+## length_value, length_bytes refactoring
 
 The "length-value" pattern usually indicates that we get a length from the input, then take a slice of that size from the input, and convert that to a value of the type we need. The `length_value!` macro was using the length parameter to apply the value parser a specific number of times.
 
@@ -131,7 +133,7 @@ error[E0308]: mismatched types
          sig_hash_algs_len: be_u16 ~
 ```
 
-# error! does not exist anymore
+## error! does not exist anymore
 
 The `error!` macro, that was used to return a parsing error without backtracking through the parser tree, is now called `return_error!`. This change was done because the "log" crate also uses an `error!` macro, and they complained about the name conflict to nom instead of complaining to log, much to my dismay.
 
@@ -156,15 +158,15 @@ It is fixed by:
         map_res!(flat_map!(take_s!(1), digit), FromStr::from_str))));
 ```
 
-# the `offset()` method was moved to the `Offset` trait
+## the `offset()` method was moved to the `Offset` trait
 
 There is now an implementation of `Offset` for `&str`. The `HexDisplay` trait is now reserved for `&[u8]`.
 
-# `AsChar::is_0_to_9` is now `AsChar::is_dec_digit`
+## `AsChar::is_0_to_9` is now `AsChar::is_dec_digit`
 
 This makes the method naming more consistent.
 
-# the number parsing macros with configurable endianness now take an enum as argument instead of a boolean
+## the number parsing macros with configurable endianness now take an enum as argument instead of a boolean
 
 Using a boolean to specify endianness was confusing, there is now the `nom::Endianness` enum:
 
@@ -175,6 +177,6 @@ Using a boolean to specify endianness was confusing, there is now the `nom::Endi
 +    named!(le_tst32<u32>, u32!(Endianness::Little));
 ```
 
-# end of line parsing
+## end of line parsing
 
 There were different, incompatible ways to parse line endings. Now, the `eol`, `line_ending` and `not_line_ending` all have the same behaviour. First, test for '\n', then if it is not the right character, test for "\r\n". This fixes the length issues.
