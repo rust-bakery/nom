@@ -471,6 +471,13 @@ macro_rules! array_impls {
         }
       }
 
+      impl<'a> InputLength for &'a [u8; $N] {
+        #[inline]
+        fn input_len(&self) -> usize {
+          self.len()
+        }
+      }
+
       impl<'a> Compare<[u8; $N]> for &'a [u8] {
         #[inline(always)]
         fn compare(&self, t: [u8; $N]) -> CompareResult {
@@ -479,6 +486,18 @@ macro_rules! array_impls {
 
         #[inline(always)]
         fn compare_no_case(&self, t: [u8;$N]) -> CompareResult {
+          self.compare_no_case(&t[..])
+        }
+      }
+
+      impl<'a,'b> Compare<&'b [u8; $N]> for &'a [u8] {
+        #[inline(always)]
+        fn compare(&self, t: &'b [u8; $N]) -> CompareResult {
+          self.compare(&t[..])
+        }
+
+        #[inline(always)]
+        fn compare_no_case(&self, t: &'b [u8;$N]) -> CompareResult {
           self.compare_no_case(&t[..])
         }
       }
