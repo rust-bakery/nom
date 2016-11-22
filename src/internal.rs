@@ -228,41 +228,6 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   }
 }
 
-#[cfg(not(feature = "core"))]
-#[cfg(feature = "verbose-errors")]
-use std::any::Any;
-#[cfg(not(feature = "core"))]
-#[cfg(feature = "verbose-errors")]
-use std::{error,fmt};
-#[cfg(not(feature = "core"))]
-#[cfg(feature = "verbose-errors")]
-use std::fmt::Debug;
-#[cfg(not(feature = "core"))]
-#[cfg(feature = "verbose-errors")]
-impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
-  fn description(&self) -> &str {
-    let kind = match *self {
-      Err::Code(ref e) | Err::Node(ref e, _) | Err::Position(ref e, _) | Err::NodePosition(ref e, _, _) => e
-    };
-    kind.description()
-  }
-}
-
-#[cfg(not(feature = "core"))]
-#[cfg(feature = "verbose-errors")]
-impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match *self {
-      Err::Code(ref e) | Err::Node(ref e, _) => {
-        write!(f, "{:?}", e)
-      },
-      Err::Position(ref e, ref p) | Err::NodePosition(ref e, ref p, _) => {
-        write!(f, "{:?}:{:?}", p, e)
-      }
-    }
-  }
-}
-
 #[cfg(feature = "verbose-errors")]
 #[macro_export]
 macro_rules! error_code(

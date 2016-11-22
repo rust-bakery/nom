@@ -66,6 +66,37 @@ impl<I,O,E> IResult<I,O,E> {
   }
 }
 
+#[cfg(not(feature = "core"))]
+use std::any::Any;
+#[cfg(not(feature = "core"))]
+use std::{error,fmt};
+#[cfg(not(feature = "core"))]
+use std::fmt::Debug;
+#[cfg(not(feature = "core"))]
+impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
+  fn description(&self) -> &str {
+    let kind = match *self {
+      Err::Code(ref e) | Err::Node(ref e, _) | Err::Position(ref e, _) | Err::NodePosition(ref e, _, _) => e
+    };
+    kind.description()
+  }
+}
+
+#[cfg(not(feature = "core"))]
+impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match *self {
+      Err::Code(ref e) | Err::Node(ref e, _) => {
+        write!(f, "{:?}", e)
+      },
+      Err::Position(ref e, ref p) | Err::NodePosition(ref e, ref p, _) => {
+        write!(f, "{:?}:{:?}", p, e)
+      }
+    }
+  }
+}
+
+
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
 /// ```
