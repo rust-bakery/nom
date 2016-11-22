@@ -91,7 +91,13 @@ fix with:
 +    c == 0x0
 ```
 
-# length_value was replaced by length_count
+# length_value, length_bytes refactoring
+
+The "length-value" pattern usually indicates that we get a length from the input, then take a slice of that size from the input, and convert that to a value of the type we need. The `length_value!` macro was using the length parameter to apply the value parser a specific number of times.
+
+- the `length_value!` macro was replaced by `length_count!`
+- the new `length_value!` macros takes a slice of the size obtained by the first child parser, then applies the second child parser on this slice. If the second parser returns incomplete, the parser fails
+- `length_data!` gets a length from its child parser, then returns a subslice of that length
 
 ```ignore
 error[E0308]: mismatched types
@@ -130,3 +136,24 @@ error: macro undefined: 'error!'
 +       return_error!(Custom(ParseError::RepeatNotNumeric), fix!(
         map_res!(flat_map!(take_s!(1), digit), FromStr::from_str))));
 ```
+
+# the `offset()` method was moved to the `Offset` trait
+
+There is now an implementation of `Offset` for `&str`. The `HexDisplay` trait is now reserved for `&[u8]`.
+
+# `AsChar::is_0_to_9` is now `AsChar::is_dec_digit`
+
+# the number parsing macros with configurable endianness now take an enum as argument instead of a boolean
+
+Using a boolean was confusing, there is now the `nom::Endianness` enum:
+
+```diff
+-    named!(be_tst32<u32>, u32!(true));
+-    named!(le_tst32<u32>, u32!(false));
++    named!(be_tst32<u32>, u32!(Endianness::Big));
++    named!(le_tst32<u32>, u32!(Endianness::Little));
+```
+
+# end of line parsing
+
+There were different, incompatible ways to parse line endings. Now, the `eol`, `line_ending` and `not_line_ending` all have the same behaviour. First, test for '\n', then if it is not the right character, test for "\r\n". This fixes the length issues.
