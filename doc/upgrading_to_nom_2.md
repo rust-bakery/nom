@@ -4,6 +4,12 @@ The 2.0 release of nom adds a lot of new features, but it was also time for a bi
 
 # Simple VS verbose errors
 
+The error management system of nom 1.0 is powerful: it allows you to aggregate errors as you backtrack in the parser tree, and gives you clear indications about which combinators worked on which part of the input. Unfortunately, this slowed down the parsers a bit, since a lot of code was generated to drop the error list when it was not used.
+
+Not everybody uses that feature, so it was moved behind a compilation feature called "verbose-errors". For projects that do not use the `Err` enum and do not try to make their own custom error codes, it should build correctly out of the box. You can get between 30% and 50% perf gains on some parsers by updating to 2.0.
+
+For the parsers using it, you will probably get something like the following compilation error:
+
 ```ignore
 error: no associated item named `Code` found for type `nom::ErrorKind<_>` in the current scope
    --> src/metadata/parser.rs:309:31
@@ -40,15 +46,20 @@ error: no associated item named `Position` found for type `nom::ErrorKind<_>` in
     |               - in this macro invocation
 ```
 
+It is rather easy to fix, just activate the "verbose-errors" feature:
+
 ```diff
 -nom             = "^1.0.0"
 nom             = { version = "^2.0.0", features = ["verbose-errors"] }
 ```
 
-If you only use `Err::Code`, you could switch to the simple errors, since it replaces the `Err` enum with `ErrorKind`.
+If you only use `Err::Code` to make your custom error codes, you could switch to the simple errors, since it replaces the `Err<Input,E=u32>` enum, which contained an `ErrorKind<E=u32>`, with the `ErrorKind<E=u32>` type directly.
 
 # the eof function was removed
 
+The eof implementation was linked too much to the input type. This is now a macro combinator, called `eof!()`.
+
+If you see the following error, remove the `eof` import and replace all `eof` calls by `eof!()`.
 ```ìgnore
 error[E0432]: unresolved import `nom::eof`
  --> src/parser.rs:1:20
@@ -56,8 +67,6 @@ error[E0432]: unresolved import `nom::eof`
 1 | use nom::{IResult, eof, line_ending, not_line_ending, space};
   |                    ^^^ no `eof` in `nom`. Did you mean to use `eol`?
 ```
-
-The `eof` function was replaced by the `eof!` macro to make it easier to adapt to new input types.
 
 # parsers returning `Incomplete` instead of an error on empty input
 
@@ -68,7 +77,11 @@ The `eof` function was replaced by the `eof!` macro to make it easier to adapt t
         thread 'rules::literals::tests::case_invalid_hexadecimal_no_number' panicked at 'assertion failed: `(left == right)` (left: `Incomplete(Unknown)`, right: `Error(Position(HexDigit, []))`)', source/rules/literals.rs:726
 ```
 
+This change was implemented to make these basic parsers more consistent. Please note that parsing the basic elements of a format, like the alphabet of a token, is always very specific to that format, and those functions may not always fit your needs. In that case, you can easily make your own with [`take_while`](take_while.m.html) and a function that test for the characters or bytes you need.
+
 # `take_till!` iterates on bytes or chars, not on references to them
+
+The input types must now conform to a trait which requires changes to `take_till!`. If you get the following error:
 
 ```ignore
 error[E0308]: mismatched types
@@ -82,7 +95,7 @@ error[E0308]: mismatched types
    = note: this error originates in a macro outside of the current crate
 ```
 
-fix with:
+you can fix it with:
 
 ```diff
 -fn is_nul_byte(c: &u8) -> bool {
@@ -120,7 +133,11 @@ error[E0308]: mismatched types
 
 # error! does not exist anymore
 
-it has been replaced with return_error
+The `error!` macro, that was used to return a parsing error without backtracking through the parser tree, is now called `return_error!`. This change was done because the "log" crate also uses an `error!` macro, and they complained about the name conflict to nom instead of complaining to log, much to my dismay.
+
+The `add_error!` macro has also been renamed to `add_return_error!`.
+
+The compilation error you could get would be:
 
 ```
 error: macro undefined: 'error!'
@@ -129,6 +146,8 @@ error: macro undefined: 'error!'
 205 |     error!(Custom(ParseError::InvalidData),
     |          ^
 ```
+
+It is fixed by:
 
 ```diff
  named!(repeat<&str, u8, ParseError>,
@@ -143,9 +162,11 @@ There is now an implementation of `Offset` for `&str`. The `HexDisplay` trait is
 
 # `AsChar::is_0_to_9` is now `AsChar::is_dec_digit`
 
+This makes the method naming more consistent.
+
 # the number parsing macros with configurable endianness now take an enum as argument instead of a boolean
 
-Using a boolean was confusing, there is now the `nom::Endianness` enum:
+Using a boolean to specify endianness was confusing, there is now the `nom::Endianness` enum:
 
 ```diff
 -    named!(be_tst32<u32>, u32!(true));
