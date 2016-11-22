@@ -460,3 +460,36 @@ impl<'a> Slice<RangeFull> for &'a str {
     &self[range]
   }
 }
+
+macro_rules! array_impls {
+  ($($N:expr)+) => {
+    $(
+      impl InputLength for [u8; $N] {
+        #[inline]
+        fn input_len(&self) -> usize {
+          self.len()
+        }
+      }
+
+      impl<'a> Compare<[u8; $N]> for &'a [u8] {
+        #[inline(always)]
+        fn compare(&self, t: [u8; $N]) -> CompareResult {
+          self.compare(&t[..])
+        }
+
+        #[inline(always)]
+        fn compare_no_case(&self, t: [u8;$N]) -> CompareResult {
+          self.compare_no_case(&t[..])
+        }
+      }
+    )+
+  };
+}
+
+
+array_impls! {
+     0  1  2  3  4  5  6  7  8  9
+    10 11 12 13 14 15 16 17 18 19
+    20 21 22 23 24 25 26 27 28 29
+    30 31 32
+}

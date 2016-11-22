@@ -954,4 +954,11 @@ mod tests {
     assert_eq!(test2(&b"abcdefgh"[..]), Done(&b"efgh"[..], &b"abcd"[..]));
     assert_eq!(test2(&b"ABCDefgh"[..]), Done(&b"efgh"[..], &b"ABCD"[..]));
   }
+
+  #[test]
+  fn tag_fixed_size_array() {
+    named!(test, tag!([0x42]));
+    let input = vec!(0x42, 0x00);
+    assert_eq!(test(&input), Done(&b"\x00"[..], &b"\x42"[..]));
+  }
 }
