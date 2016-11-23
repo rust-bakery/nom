@@ -4,6 +4,61 @@
 
 ### Changed
 
+## 2.0 - ??
+
+The 2.0 release is one of the biggest yet. It was a good opportunity to clean up some badly named combinators and fix invalid behaviours.
+
+Since this version introduces a few breaking changes, an [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md) is available, detailing the steps to fix the most common migration issues. After testing on a set of 30 crates, most of them will build directly, a large part will just need to activate the "verbose-errors" compilation feature. The remaining fixes are documented.
+
+This version also adds a lot of interesting features, like the permutation combinator or whitespace separated formats support.
+### Thanks
+
+- @lu-zero for license help
+- @adamgreig for type inference fixes
+- @keruspe for documentation and example fixes, for the `IResult => Result` conversion work, making `AsChar`'s method more consistent, and adding `many_till!`
+- @jdeeny for implementing `Offset` on `&str`
+- @vickenty for documentation fixes and his refactoring of `length_value!` and `length_bytes!`
+- @overdrivenpotato for refactoring some combinators
+- @taralx for documentation fixes
+- @keeperofdakeys for fixing eol behaviour, writing documentation and adding `named_attr!`
+- @jturner314 for writing documentation
+- @bozaro for fixing compilation errors
+- @uniphil for adding a `crates.io` badge
+- @badboy for documentation fixes
+- @jugglerchris for fixing `take_s!`
+- @AndyShiue for implementing `Error` and `Display` on `ErrorKind` and detecting incorrect UTF-8 string indexing
+
+### Added
+
+- the "simple" error management system does not accumulates errors when backtracking. This is a big perf gain, and is activated by default in nom 2.0
+- nom can now work on any type that implement the traits defined in `src/traits.rs`: `InputLength`, `InputIter`, `InputTake`, `Compare`, `FindToken`, `FindSubstring`, `Slice`
+- the documentation from Github's wiki has been moved to the `doc/` directory. They are markdown files that you can build with [cargo-external-doc](https://crates.io/crates/cargo-external-doc)
+- whitespace separated format support: with the `ws!` combinator, you can automatically introduce whitespace parsers between all parsers and combinators
+- the `permutation!` combinator applies its child parsers in any order, as long as they all succeed once, and return a tuple of the results
+- `do_parse!` is a simpler alternative to `chain!`, which is now deprecated
+- you can now transform an `IResult` in a `std::result::Result`
+- `length_data!` parses a length, and returns a subslice of that length
+- `tag_no_case!` provides case independent comparison. It works nicely, without any allocation, for ASCII strings, but for UTF-8 strings, it defaults to an unsatisfying (and incorrect) comparison by lowercasing both strings
+- `named_attr!` creates functions like `named!` but can add attributes like documentation
+- `many_till!` applies repeatedly its first child parser until the second succeeds
+
+### Changed
+
+- the "verbose" error management that was available in previous versions is now activated by the "verbose-errors" compilation feature
+- code reorganization: most of the parsers were moved in separate files to make the source easier to navigate
+- most of the combinators are now independent from the input type
+- the `eof` function was replaced with the `eof!` macro
+- `error!` and `add_error!` were replaced with `return_error!` and `add_return_error!` to fix the name conflict with the log crate
+- the `offset()` method is now in the `Offset` trait
+- `length_value!` has been renamed to `length_count!`. The new `length_value!` selects a slice and applies the second parser once on that slice
+- `AsChar::is_0_to_9` is now `AsChar::is_dec_digit`
+- the combinators with configurable endianness now take an enum instead of a boolean as parameter
+
+### Fixed
+- the `count!`, `count_fixed!` and `length_*!` combinator calculate incomplete data needs correctly
+- `eol`, `line_ending` and `not_line_ending` now have a consistent behaviour that works correctly with incomplete data
+- `take_s!` didn't correctly handle the case when the slice is exactly the right length
+
 ## 1.2.4 - 2016-07-20
 
 ### Thanks
@@ -521,8 +576,9 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/1.2.4...HEAD
-* [1.2.3]: https://github.com/Geal/nom/compare/1.2.3...1.2.4
+* [unreleased]: https://github.com/Geal/nom/compare/2.0.0...HEAD
+* [2.0.0]: https://github.com/Geal/nom/compare/1.2.4...2.0.0
+* [1.2.4]: https://github.com/Geal/nom/compare/1.2.3...1.2.4
 * [1.2.3]: https://github.com/Geal/nom/compare/1.2.2...1.2.3
 * [1.2.2]: https://github.com/Geal/nom/compare/1.2.1...1.2.2
 * [1.2.1]: https://github.com/Geal/nom/compare/1.2.0...1.2.1
