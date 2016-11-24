@@ -14,7 +14,7 @@ If you need any help developing your parsers, please ping `geal` on IRC (mozilla
 
 Reference documentation is available [here](http://rust.unhandledexpression.com/nom/).
 
-Various design documents and tutorials can be found in the [docs directory](https://github.com/Geal/nom/tree/master/docs).
+Various design documents and tutorials can be found in the [doc directory](https://github.com/Geal/nom/tree/master/doc).
 
 ## Features
 
