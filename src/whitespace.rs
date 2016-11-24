@@ -112,6 +112,7 @@ macro_rules! wrap_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! pair_sep (
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -132,6 +133,7 @@ macro_rules! pair_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! delimited_sep (
   ($i:expr, $separator:ident, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => (
@@ -148,6 +150,7 @@ macro_rules! delimited_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! separated_pair_sep (
   ($i:expr, $separator:ident, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => (
@@ -164,6 +167,7 @@ macro_rules! separated_pair_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! preceded_sep (
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -186,6 +190,7 @@ macro_rules! preceded_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! terminated_sep (
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -198,7 +203,7 @@ macro_rules! terminated_sep (
     }
   );
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    terminated_wrap!($i, $separator, $submac!($($args)*), call!($g));
+    terminated_sep!($i, $separator, $submac!($($args)*), call!($g));
   );
   ($i:expr, $separator:ident, $f:expr, $submac:ident!( $($args:tt)* )) => (
     terminated_sep!($i, $separator, call!($f), $submac!($($args)*));
@@ -273,6 +278,7 @@ macro_rules! tuple_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! do_parse_sep (
   (__impl $i:expr, $separator:ident, $consumed:expr, ( $($rest:expr),* )) => (
@@ -364,6 +370,7 @@ macro_rules! do_parse_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_sep (
   ($i:expr, $separator:ident, $($rest:tt)*) => (
@@ -455,6 +462,7 @@ macro_rules! permutation_iterator_sep (
   };
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! alt_sep (
   (__impl $i:expr, $separator:ident, $e:ident | $($rest:tt)*) => (
@@ -531,6 +539,7 @@ macro_rules! alt_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! alt_complete_sep (
   ($i:expr, $separator:ident, $e:ident | $($rest:tt)*) => (
@@ -579,6 +588,7 @@ macro_rules! alt_complete_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! switch_sep (
   (__impl $i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
@@ -614,6 +624,7 @@ macro_rules! switch_sep (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! separated_list_sep (
   ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -660,6 +671,22 @@ macro_rules! eat_separator (
   );
 );
 
+/// sep is the parser rewriting macro for whitespace separated formats
+///
+/// it takes as argument a space eating function and a parser tree,
+/// and will intersperse the space parser everywhere
+///
+/// ```ignore
+/// #[macro_export]
+/// macro_rules! ws (
+///   ($i:expr, $($args:tt)*) => (
+///     {
+///       use $crate::sp;
+///       sep!($i, sp, $($args)*)
+///     }
+///   )
+/// );
+/// ```
 #[macro_export]
 macro_rules! sep (
   ($i:expr,  $separator:ident, tuple ! ($($rest:tt)*) ) => {
