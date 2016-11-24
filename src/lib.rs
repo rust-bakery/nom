@@ -10,6 +10,9 @@
 //! [how to write parsers](making_a_new_parser_from_scratch.html),
 //! or the [error management system](error_management.html).
 //!
+//! If you are upgrading to nom 2.0, please read the
+//! [migration document](upgrading_to_nom_2.html).
+//!
 //! See also the [FAQ](FAQ.html).
 //!
 //! # Example
