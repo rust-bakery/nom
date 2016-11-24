@@ -84,14 +84,14 @@ This version also adds a lot of interesting features, like the permutation combi
 - `take_bits!` is now more precise
 - `many1` inccorectly used the `len` function instead of `input_len`
 - the INI parser is simpler
-- `recognize!` had an early `return` taht is removed now
+- `recognize!` had an early `return` that is removed now
 
 ## 1.2.3 - 2016-05-10
 
 ### Thanks
 - @lu-zero for the contribution guidelines
 - @GuillaumeGomez for fixes on `length_bytes` and some documentation
-- @Hywan for ducomentation and test fixes
+- @Hywan for documentation and test fixes
 - @Xirdus for correct trait import issues
 - @mspiegel for the new AST example
 - @cholcombe973 for adding the `cond_with_error!` combinator
@@ -118,7 +118,7 @@ This version also adds a lot of interesting features, like the permutation combi
 ## 1.2.2 - 2016-03-09
 
 ### Thanks
-- @conradev for fixing take_until_s!`
+- @conradev for fixing `take_until_s!`
 - @GuillaumeGomez for some documentation fixes
 - @frewsxcv for some documentation fixes
 - @tstorch for some test refactorings
@@ -176,7 +176,7 @@ This version also adds a lot of interesting features, like the permutation combi
 - there were type inference issues in a few combinators. They will now be easier to compile
 - `peek!` compilation with bare functions
 - `&str` parsers were splitting data at the byte level, not at the char level, which can result in inconsistencies in parsing UTF-8 characters. They now use character indexes
-- some method implementations were missing on `ÌResult<I,O,E>` (with specified error type instead of implicit)
+- some method implementations were missing on `IResult<I,O,E>` (with specified error type instead of implicit)
 
 ## 1.1.0 - 2016-01-01
 
@@ -192,11 +192,11 @@ There are also a few performance improvements and documentation fixes.
 - @meh for fixing `Option` and `Vec` imports
 - @hoodie for a documentation fix
 - @joelself for some documentation fixes
-- @vberger for his traits magic making `nom functions more generic
+- @vberger for his traits magic making nom functions more generic
 
 ### Added
 
-- string related parsers: `tag_s!`, `take_s!`, `is_a_s!`, `is_not_s!`, `take_while_s!`, `take_while1_s!`, `take_till_s!
+- string related parsers: `tag_s!`, `take_s!`, `is_a_s!`, `is_not_s!`, `take_while_s!`, `take_while1_s!`, `take_till_s!`
 - `value!` is a combinator that always returns the same value. If a child parser is passed as second argument, that value is returned when the child parser succeeds
 
 ### Changed
