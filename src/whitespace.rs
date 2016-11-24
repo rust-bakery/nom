@@ -645,6 +645,14 @@ macro_rules! separated_list_sep (
   );
 );
 
+/// helper macros to build a separator parser
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// named!(pub space, eat_separator!(&b" \t"[..]));
+/// # fn main() {}
+/// ```
 #[macro_export]
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (

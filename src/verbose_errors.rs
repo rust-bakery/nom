@@ -1,3 +1,20 @@
+//! Error management
+//!
+//! there are two ways to handle errors in nom. The first one,
+//! activated by default, uses the `nom::ErrorKind<E=u32>` enum
+//! in the error branch of `IResult`. This enum can hold either
+//! a parser specific error code, or a custom error type you
+//! specify.
+//!
+//! If you need more advanced error management, you can activate
+//! the "verbose-errors" compilation feature, which will give you
+//! the error system available in nom 1.0. The verbose errors
+//! accumulate error codes and positions as you backtrack through
+//! the parser tree. From there, you can precisely identify which
+//! parts of the input triggered the error case.
+//!
+//! Please note that the verbose error management is a bit slower
+//! than the simple one.
 use util::ErrorKind;
 use internal::{IResult, IError};
 use internal::IResult::*;
@@ -6,7 +23,7 @@ use std::boxed::Box;
 /// Contains the error that a parser can return
 ///
 /// If you use the `verbose-errors` compilation feature,
-/// the error type will be the enum defined here,
+/// `nom::Err` will be the enum defined here,
 /// otherwise, it will amount to a `ErrorKind<E=u32>`.
 ///
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.

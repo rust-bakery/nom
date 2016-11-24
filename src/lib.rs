@@ -157,9 +157,9 @@ pub use self::str::*;
 #[macro_use] mod util;
 mod traits;
 
-#[cfg(feature = "verbose-errors")] #[macro_use] mod verbose_errors;
+#[cfg(feature = "verbose-errors")] #[macro_use] pub mod verbose_errors;
 
-#[cfg(not(feature = "verbose-errors"))] #[macro_use] mod simple_errors;
+#[cfg(not(feature = "verbose-errors"))] #[macro_use] pub mod simple_errors;
 
 #[macro_use] mod internal;
 #[macro_use] mod macros;

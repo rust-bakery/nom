@@ -229,24 +229,34 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
 }
 
 #[cfg(feature = "verbose-errors")]
+/// creates a parse error from a `nom::ErrorKind`
 #[macro_export]
 macro_rules! error_code(
   ($code:expr) => ($crate::Err::Code($code));
 );
 
 #[cfg(not(feature = "verbose-errors"))]
+/// creates a parse error from a `nom::ErrorKind`
 #[macro_export]
 macro_rules! error_code(
   ($code:expr) => ($code);
 );
 
 #[cfg(feature = "verbose-errors")]
+/// creates a parse error from a `nom::ErrorKind`
+/// and the next error in the parsing tree.
+/// if "verbose-errors" is not activated,
+/// it default to only the error code
 #[macro_export]
 macro_rules! error_node(
   ($code:expr, $next:expr) => ($crate::Err::Node($code, ::std::boxed::Box::new($next)));
 );
 
 #[cfg(not(feature = "verbose-errors"))]
+/// creates a parse error from a `nom::ErrorKind`
+/// and the next error in the parsing tree.
+/// if "verbose-errors" is not activated,
+/// it default to only the error code
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node(
@@ -254,12 +264,20 @@ macro_rules! error_node(
 );
 
 #[cfg(feature = "verbose-errors")]
+/// creates a parse error from a `nom::ErrorKind`
+/// and the position in the input
+/// if "verbose-errors" is not activated,
+/// it default to only the error code
 #[macro_export]
 macro_rules! error_position(
   ($code:expr, $input:expr) => ($crate::Err::Position($code, $input));
 );
 
 #[cfg(not(feature = "verbose-errors"))]
+/// creates a parse error from a `nom::ErrorKind`
+/// and the position in the input
+/// if "verbose-errors" is not activated,
+/// it default to only the error code
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_position(
@@ -267,12 +285,22 @@ macro_rules! error_position(
 );
 
 #[cfg(feature = "verbose-errors")]
+/// creates a parse error from a `nom::ErrorKind`,
+/// the position in the input and the next error in
+/// the parsing tree.
+/// if "verbose-errors" is not activated,
+/// it default to only the error code
 #[macro_export]
 macro_rules! error_node_position(
   ($code:expr, $input:expr, $next:expr) => ($crate::Err::NodePosition($code, $input, ::std::boxed::Box::new($next)));
 );
 
 #[cfg(not(feature = "verbose-errors"))]
+/// creates a parse error from a `nom::ErrorKind`,
+/// the position in the input and the next error in
+/// the parsing tree.
+/// if "verbose-errors" is not activated,
+/// it default to only the error code
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node_position(

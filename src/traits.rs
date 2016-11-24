@@ -1,11 +1,18 @@
 //! Traits input types have to implement to work with nom combinators
 //!
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
+use std::iter::Enumerate;
 
 #[cfg(not(feature = "core"))]
 use std::str::Chars;
+#[cfg(not(feature = "core"))]
+use std::str::CharIndices;
 
+
+/// abstract method to calculate the input length
 pub trait InputLength {
+  /// calculates the input length, as indicated by its name,
+  /// and the name of the trait itself
   #[inline]
   fn input_len(&self) -> usize;
 }
@@ -35,21 +42,30 @@ impl<'a> InputLength for (&'a [u8], usize) {
   }
 }
 
-use std::iter::Enumerate;
-#[cfg(not(feature = "core"))]
-use std::str::CharIndices;
-
+/// transforms common types to a char for basic token parsing
 pub trait AsChar {
+    /// makes a char from self
     #[inline]
     fn as_char(self)      -> char;
+
+    /// tests that self is an alphabetic character
+    ///
+    /// warning: for `&str` it recognizes alphabetic
+    /// characters outside of the 52 ASCII letters
     #[inline]
     fn is_alpha(self)     -> bool;
+
+    /// tests that self is an alphabetic character
+    /// or a decimal digit
     #[inline]
     fn is_alphanum(self)  -> bool;
+    /// tests that self is a decimal digit
     #[inline]
     fn is_dec_digit(self) -> bool;
+    /// tests that self is an hex digit
     #[inline]
     fn is_hex_digit(self) -> bool;
+    /// tests that self is an octal digit
     #[inline]
     fn is_oct_digit(self) -> bool;
 }
@@ -118,20 +134,31 @@ impl AsChar for char {
     fn is_oct_digit(self) -> bool { self.is_digit(8) }
 }
 
+/// abstracts common iteration operations on the input type
+///
+/// it needs a distinction between `Item` and `RawItem` because
+/// `&[T]` iterates on references
 pub trait InputIter {
     type Item     : AsChar;
     type RawItem  : AsChar;
     type Iter     : Iterator<Item=(usize, Self::Item)>;
     type IterElem : Iterator<Item=Self::Item>;
 
+    /// returns an iterator over the elements and their byte offsets
     fn iter_indices(&self)  -> Self::Iter;
+    /// returns an iterator over the elements
     fn iter_elements(&self) -> Self::IterElem;
+    /// finds the byte position of the element
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool;
+    /// get the byte offset from the element's position in the stream
     fn slice_index(&self, count:usize) -> Option<usize>;
 }
 
+/// abstracts slicing operations
 pub trait InputTake {
+    /// returns a slice of `count` bytes
     fn take<P>(&self, count: usize)  -> Option<&Self>;
+    /// split the stream at the `count` byte offset
     fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)>;
 }
 
@@ -248,6 +275,8 @@ impl InputTake for str {
     }
 }
 
+/// indicates wether a comparison was successful, an error, or
+/// if more data was needed
 #[derive(Debug,PartialEq)]
 pub enum CompareResult {
   Ok,
@@ -255,8 +284,17 @@ pub enum CompareResult {
   Error
 }
 
+/// abstracts comparison operations
 pub trait Compare<T> {
+  /// compares self to another value for equality
   fn compare(&self, t:T)         -> CompareResult;
+  /// compares self to another value for equality
+  /// independently of the case.
+  ///
+  /// warning: for `&str`, the comparison is done
+  /// by lowercasing both strings and comparing
+  /// the result. This is a temporary solution until
+  /// a better one appears
   fn compare_no_case(&self, t:T) -> CompareResult;
 }
 
@@ -348,13 +386,14 @@ impl<'a,'b> Compare<&'b str> for &'a str {
   }
 }
 
+/// look for self in the given input stream
 pub trait FindToken<T> {
-  fn find_token(&self, list: T) -> bool;
+  fn find_token(&self, input: T) -> bool;
 }
 
 impl<'a> FindToken<&'a[u8]> for u8 {
-  fn find_token(&self, list: &[u8]) -> bool {
-    for &i in list.iter() {
+  fn find_token(&self, input: &[u8]) -> bool {
+    for &i in input.iter() {
       if *self == i { return true }
     }
     false
@@ -363,21 +402,22 @@ impl<'a> FindToken<&'a[u8]> for u8 {
 
 #[cfg(not(feature = "core"))]
 impl<'a> FindToken<&'a str> for u8 {
-  fn find_token(&self, list: &str) -> bool {
-    self.find_token(str::as_bytes(list))
+  fn find_token(&self, input: &str) -> bool {
+    self.find_token(str::as_bytes(input))
   }
 }
 
 #[cfg(not(feature = "core"))]
 impl<'a> FindToken<&'a str> for char {
-  fn find_token(&self, list: &str) -> bool {
-    for i in list.chars() {
+  fn find_token(&self, input: &str) -> bool {
+    for i in input.chars() {
       if *self == i { return true }
     }
     false
   }
 }
 
+/// look for a substring in self
 pub trait FindSubstring<T> {
   fn find_substring(&self, substr: T) -> Option<usize>;
 }
@@ -408,6 +448,11 @@ impl<'a,'b> FindSubstring<&'b str> for &'a str {
   }
 }
 
+/// slicing operations using ranges
+///
+/// this trait is loosely based on
+/// `Index`, but can actually return
+/// something else than a `&[T]` or `&str`
 pub trait Slice<R> {
   #[inline(always)]
   fn slice(&self, range: R) -> Self;
