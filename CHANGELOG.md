@@ -4,7 +4,7 @@
 
 ### Changed
 
-## 2.0 - ??
+## 2.0 - 2016-11-25
 
 The 2.0 release is one of the biggest yet. It was a good opportunity to clean up some badly named combinators and fix invalid behaviours.
 

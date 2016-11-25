@@ -43,7 +43,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "^1.2.4"
+nom = "^2.0"
 ```
 
 Then include it in your code like this:
@@ -53,20 +53,20 @@ Then include it in your code like this:
 extern crate nom;
 ```
 
-**NOTE: if you have existing code using nom below the 1.0 version, please take a look at the [upgrading documentation](https://github.com/Geal/nom/wiki/Upgrading-to-nom-1.0) to
-handle the breaking changes.**
+**NOTE: if you have existing code using nom below the 2.0 version, please take a look at the [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md) to handle the breaking changes.**
 
 There are a few compilation features:
 
 * `core`: enables `no_std` builds
 * `regexp`: enables regular expression parsers with the `regex` crate
 * `regexp_macros`: enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
+* `verbose-errors`: accumulate error codes and input positions as you backtrack through the parser tree. This gives you precise information about which part of the parser was affected by which part of the input
 
 You can activate those features like this:
 
 ```toml
 [dependencies.nom]
-version = "^1.2.3"
+version = "^2.0"
 features = ["regexp"]
 ```
 
