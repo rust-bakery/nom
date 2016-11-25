@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate nom;
-
+/*
 extern crate bytes;
 
 use nom::{Compare,CompareResult,InputLength,InputIter,Slice,HexDisplay};
@@ -294,10 +294,8 @@ fn sl<'a>(input: &'a BlockBuf) -> BlockSlice<'a> {
 }
 
 fn to_i64<'a>(input: BlockSlice<'a>) -> Result<i64, ()> {
-  //println!("got input: {:?}", input);
   let v: Vec<u8> = input.cursor().collect();
 
-  //println!("collected: {}", &v.to_hex(16));
   match str::from_utf8(&v) {
     Err(_) => Err(()),
     Ok(s) => match FromStr::from_str(s) {
@@ -309,40 +307,15 @@ fn to_i64<'a>(input: BlockSlice<'a>) -> Result<i64, ()> {
 
 #[test]
 fn factor_test() {
-  //assert_eq!(factor(&b" 12"[..]), IResult::Done(&b""[..], 12));
-  //assert_eq!(factor(&b"537  "[..]), IResult::Done(&b""[..], 537));
-  //assert_eq!(factor(&b"  24   "[..]), IResult::Done(&b""[..], 24));
-
   let a = blockbuf_from(&b"3"[..]);
-  //let empty = blockbuf_from(&b""[..]);
   println!("calculated: {:?}", factor(sl(&a)));
-  //assert_eq!(factor(sl(&a)), IResult::Done(sl(&empty),3));
 }
 
-/*
-#[test]
-fn term_test() {
-  assert_eq!(term(&b" 12 *2 /  3"[..]), IResult::Done(&b""[..], 8));
-  assert_eq!(term(&b" 2* 3  *2 *2 /  3"[..]), IResult::Done(&b""[..], 8));
-  assert_eq!(term(&b" 48 /  3/2"[..]), IResult::Done(&b""[..], 8));
-}
-
-#[test]
-fn expr_test() {
-  assert_eq!(expr(&b" 1 +  2 "[..]), IResult::Done(&b""[..], 3));
-  assert_eq!(expr(&b" 12 + 6 - 4+  3"[..]), IResult::Done(&b""[..], 17));
-  assert_eq!(expr(&b" 1 + 2*3 + 4"[..]), IResult::Done(&b""[..], 11));
-}
-*/
 #[test]
 fn parens_test() {
-  //assert_eq!(expr(&b" (  2 )"[..]), IResult::Done(&b""[..], 2));
-  //assert_eq!(expr(&b" 2* (  3 + 4 ) "[..]), IResult::Done(&b""[..], 14));
   let input1 = blockbuf_from(&b" 2* (  3 + 4 ) "[..]);
   println!("calculated 1: {:?}", expr(sl(&input1)));
   let input2 = blockbuf_from(&b"  2*2 / ( 5 - 1) + 3"[..]);
-  //let empty = blockbuf_from(&b""[..]);
   println!("calculated 2: {:?}", expr(sl(&input2)));
-  //assert_eq!(expr(sl(&input2)), IResult::Done(sl(&empty), 4));
 }
-
+*/

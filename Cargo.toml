@@ -37,6 +37,6 @@ optional = true
 version = "^0.2.2"
 optional = true
 
-[dev-dependencies.bytes]
-git = "https://github.com/carllerche/bytes"
-rev = "a7d38e29"
+#[dev-dependencies.bytes]
+#git = "https://github.com/carllerche/bytes"
+#rev = "a7d38e29"
