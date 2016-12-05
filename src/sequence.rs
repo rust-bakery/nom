@@ -1015,10 +1015,10 @@ mod tests {
   #[test]
   fn add_err() {
     named!(err_test,
-      preceded!(tag!("efgh"), add_error!(ErrorKind::Custom(42),
+      preceded!(tag!("efgh"), add_return_error!(ErrorKind::Custom(42),
           do_parse!(
                  tag!("ijkl")                                     >>
-            res: add_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+            res: add_return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
             (res)
           )
         )
