@@ -1,5 +1,14 @@
-/// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
+/// [DEPRECATED] `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
 /// chains parsers and assemble the results through a closure
+///
+/// this parser is deprecated and will be removed in nom 3.0. You can
+/// now replace it with `do_parse!`. The `?` syntax to make a parser
+/// optional can be done with the `opt!` combinator.
+///
+/// There are also combinators available for specific patterns like
+/// `pair!`, `tuple!`, `preceded!`, `terminated!`, `delimited!`, etc.
+///
+/// In lots of cases, there are better solutions than using `chain!`.
 ///
 /// The input type `I` must implement `nom::InputLength`.
 ///
