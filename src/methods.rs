@@ -251,8 +251,8 @@ macro_rules! call_m (
 );
 
 
-/// emulate function currying for method calls on structs 
-/// `apply!(self.my_function, arg1, arg2, ...)` becomes `self.my_function(input, arg1, arg2, ...)`
+/// emulate function currying for method calls on structs
+/// `apply_m!(self.my_function, arg1, arg2, ...)` becomes `self.my_function(input, arg1, arg2, ...)`
 ///
 /// Supports up to 6 arguments
 #[macro_export]
