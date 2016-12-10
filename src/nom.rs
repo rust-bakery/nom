@@ -599,6 +599,7 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
 mod tests {
   use super::*;
   use internal::{Needed,IResult};
+  use internal::IResult::*;
   use util::ErrorKind;
 
   #[test]
