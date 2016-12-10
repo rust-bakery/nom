@@ -995,11 +995,17 @@ mod tests {
     assert_eq!(test(&b"aBCdefgh"[..]), Done(&b"efgh"[..], &b"aBCd"[..]));
     assert_eq!(test(&b"abcdefgh"[..]), Done(&b"efgh"[..], &b"abcd"[..]));
     assert_eq!(test(&b"ABCDefgh"[..]), Done(&b"efgh"[..], &b"ABCD"[..]));
+    assert_eq!(test(&b"ab"[..]), Incomplete(Needed::Size(4)));
+    assert_eq!(test(&b"Hello"[..]), Error(error_code!(ErrorKind::Tag)));
+    assert_eq!(test(&b"Hel"[..]), Error(error_code!(ErrorKind::Tag)));
 
-    named!(test2, tag_no_case!("ABcd"));
-    assert_eq!(test2(&b"aBCdefgh"[..]), Done(&b"efgh"[..], &b"aBCd"[..]));
-    assert_eq!(test2(&b"abcdefgh"[..]), Done(&b"efgh"[..], &b"abcd"[..]));
-    assert_eq!(test2(&b"ABCDefgh"[..]), Done(&b"efgh"[..], &b"ABCD"[..]));
+    named!(test2<&str, &str>, tag_no_case!("ABcd"));
+    assert_eq!(test2("aBCdefgh"), Done("efgh", "aBCd"));
+    assert_eq!(test2("abcdefgh"), Done("efgh", "abcd"));
+    assert_eq!(test2("ABCDefgh"), Done("efgh", "ABCD"));
+    assert_eq!(test2("ab"), Incomplete(Needed::Size(4)));
+    assert_eq!(test2("Hello"), Error(error_code!(ErrorKind::Tag)));
+    assert_eq!(test2("Hel"), Error(error_code!(ErrorKind::Tag)));
   }
 
   #[test]
