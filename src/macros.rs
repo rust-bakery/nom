@@ -942,6 +942,9 @@ macro_rules! not(
       }
     }
   );
+  ($i:expr, $f:expr) => (
+    not!($i, call!($f));
+  );
 );
 
 /// `tap!(name: I -> IResult<I,O> => { block }) => I -> IResult<I, O>`
