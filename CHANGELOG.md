@@ -4,6 +4,25 @@
 
 ### Changed
 
+## 2.0.1 - 2016-12-10
+
+Bugfix release
+
+*Warning*: there is a small breaking change, `add_error!` is renamed to `add_return_error!`. This was planned for the 2.0 release but was forgotten. This is a small change in a feature that not many people use, for a release that is not yet widely in use, so there will be no 3.0 release for that change.
+
+### Thanks
+
+- @nickbabcock for catching and fixing the `add_error!` mixup
+- @lucab for documentation fixes
+- @jtdowney for noticing that `tag_no_case!` was not working at all for byte slices
+
+### Fixed
+
+- `add_error!` has been renamed to `add_return_error!`
+- the `not!` combinator now accepts functions
+- `tag_no_case!` is now working as accepted (before, it accepted everything)
+
+
 ## 2.0 - 2016-11-25
 
 The 2.0 release is one of the biggest yet. It was a good opportunity to clean up some badly named combinators and fix invalid behaviours.
@@ -11,6 +30,7 @@ The 2.0 release is one of the biggest yet. It was a good opportunity to clean up
 Since this version introduces a few breaking changes, an [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md) is available, detailing the steps to fix the most common migration issues. After testing on a set of 30 crates, most of them will build directly, a large part will just need to activate the "verbose-errors" compilation feature. The remaining fixes are documented.
 
 This version also adds a lot of interesting features, like the permutation combinator or whitespace separated formats support.
+
 ### Thanks
 
 - @lu-zero for license help
