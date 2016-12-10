@@ -33,6 +33,7 @@ script:
 after_success:
   - travis-cargo bench
   - travis-cargo coveralls --no-sudo
+  - ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/*
   - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
       cargo bench;
     fi
