@@ -95,21 +95,22 @@ Sometimes, you want to provide an error code at a specific point in the parser t
 # use nom::ErrorKind;
 # use nom::Err::*;
 # use nom::IResult::Error;
-    named!(err_test,
-      preceded!(tag!("efgh"), add_return_error!(ErrorKind::Custom(42),
-          do_parse!(
-                 tag!("ijkl")                                     >>
-            res: add_return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
-            (res)
-          )
-        )
-    ));
-#fn main() {
-    let a = &b"efghblah"[..];
-    let blah = &b"blah"[..];
+named!(err_test,
+  preceded!(tag!("efgh"), add_return_error!(ErrorKind::Custom(42),
+      do_parse!(
+             tag!("ijkl")                                     >>
+        res: add_return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+        (res)
+      )
+    )
+));
 
-    let res_a = err_test(a);
-    assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), blah, Box::new(Position(ErrorKind::Tag, blah)))));
+# fn main() {
+let a = &b"efghblah"[..];
+let blah = &b"blah"[..];
+
+let res_a = err_test(a);
+assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), blah, Box::new(Position(ErrorKind::Tag, blah)))));
 # }
 ```
 
@@ -123,12 +124,11 @@ If another `return_error!` call is present in the parent parsing chain, it will 
 
 Here is how it works in practice:
 
-```ignor
+```ignore
 # #[macro_use] extern crate nom;
 # use nom::ErrorKind;
 # use nom::IResult::Error;
 # use nom::Err::*;
-
 named!(err_test, alt!(
   tag!("abcd") |
   preceded!(
