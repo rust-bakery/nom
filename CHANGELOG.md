@@ -596,7 +596,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/2.0.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/2.0.1...HEAD
+* [2.0.1]: https://github.com/Geal/nom/compare/2.0.0...2.0.1
 * [2.0.0]: https://github.com/Geal/nom/compare/1.2.4...2.0.0
 * [1.2.4]: https://github.com/Geal/nom/compare/1.2.3...1.2.4
 * [1.2.3]: https://github.com/Geal/nom/compare/1.2.2...1.2.3
