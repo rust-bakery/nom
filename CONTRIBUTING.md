@@ -43,6 +43,10 @@ get to full coverage is pretty welcome.
 Help in making sure the code does not have performance regression, by improving the benchmark suite or just by
 running it weekly, is welcome as well.
 
+### Documentation
+
+To preview changes to the documentation: use `cargo doc` with [`cargo
+external-doc`](https://github.com/Geal/cargo-external-doc)
 
 ## Style
 
