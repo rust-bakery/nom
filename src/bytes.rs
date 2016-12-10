@@ -168,7 +168,7 @@ macro_rules! is_a (
 /// # use nom::IResult::Done;
 /// # use nom::alpha;
 /// # fn main() {
-///  named!(esc, escaped!(call!(alpha), '\\', is_a!("\"n\\")));
+///  named!(esc, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
 ///  assert_eq!(esc(&b"abcd"[..]), Done(&b""[..], &b"abcd"[..]));
 ///  assert_eq!(esc(&b"ab\\\"cd"[..]), Done(&b""[..], &b"ab\\\"cd"[..]));
 /// # }
@@ -661,6 +661,50 @@ mod tests {
   use util::ErrorKind;
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
 
+  macro_rules! one_of (
+    ($i:expr, $inp: expr) => (
+      {
+        if $i.is_empty() {
+          $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
+        } else {
+          #[inline(always)]
+          fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
+            b.as_bytes()
+          }
+
+          let expected = $inp;
+          let bytes = as_bytes(&expected);
+          one_of_bytes!($i, bytes)
+        }
+      }
+    );
+  );
+
+  macro_rules! one_of_bytes (
+    ($i:expr, $bytes: expr) => (
+      {
+        if $i.is_empty() {
+          $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
+        } else {
+          let mut found = false;
+
+          for &i in $bytes {
+            if i == $i[0] {
+              found = true;
+              break;
+            }
+          }
+
+          if found {
+            $crate::IResult::Done(&$i[1..], $i[0] as char)
+          } else {
+            $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i))
+          }
+        }
+      }
+    );
+  );
+
   #[test]
   fn is_a() {
     named!(a_or_b, is_a!(&b"ab"[..]));
@@ -704,7 +748,7 @@ mod tests {
   #[allow(unused_variables)]
   #[test]
   fn escaping() {
-    named!(esc, escaped!(call!(alpha), '\\', is_a!("\"n\\")));
+    named!(esc, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
     assert_eq!(esc(&b"abcd"[..]), Done(&b""[..], &b"abcd"[..]));
     assert_eq!(esc(&b"ab\\\"cd"[..]), Done(&b""[..], &b"ab\\\"cd"[..]));
     assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], &b"\\\"abcd"[..]));
@@ -714,6 +758,9 @@ mod tests {
       error_position!(ErrorKind::Escaped, &b"\\"[..]))));
     assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\A"[..],
       error_position!(ErrorKind::IsA, &b"A"[..]))));
+
+    named!(esc2, escaped!(call!(digit), '\\', one_of!("\"n\\")));
+    assert_eq!(esc2(&b"12\\nnn34"[..]), Done(&b"nn34"[..], &b"12\\n"[..]));
   }
 
   #[cfg(feature = "verbose-errors")]
