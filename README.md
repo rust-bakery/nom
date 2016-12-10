@@ -350,6 +350,7 @@ Here is a list of known projects using nom:
  * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
  * [GIF](https://github.com/Geal/gif.rs)
+ * [MagicaVoxel .vox](https://github.com/davidedmonds/dot_vox)
 - Document formats:
  * [TAR](https://github.com/Keruspe/tar-parser.rs)
  * [torrent files](https://github.com/jag426/bittorrent)
