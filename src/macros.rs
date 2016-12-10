@@ -338,7 +338,7 @@ macro_rules! return_error (
 /// Add an error if the child parser fails
 ///
 /// While error! does an early return and avoids backtracking,
-/// add_error! backtracks normally. It just provides more context
+/// add_return_error! backtracks normally. It just provides more context
 /// for an error
 ///
 /// ```
@@ -349,7 +349,7 @@ macro_rules! return_error (
 /// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
 /// # fn main() {
-///     named!(err_test, add_error!(ErrorKind::Custom(42), tag!("abcd")));
+///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
 ///
 ///     let a = &b"efghblah"[..];
 ///     let res_a = err_test(a);
@@ -358,7 +358,7 @@ macro_rules! return_error (
 /// ```
 ///
 #[macro_export]
-macro_rules! add_error (
+macro_rules! add_return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
@@ -371,7 +371,7 @@ macro_rules! add_error (
     }
   );
   ($i:expr, $code:expr, $f:expr) => (
-    add_error!($i, $code, call!($f));
+    add_return_error!($i, $code, call!($f));
   );
 );
 
