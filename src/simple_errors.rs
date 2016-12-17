@@ -54,7 +54,7 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
-  /// Convert the IResult to a std::result::Result
+  /// Convert the IResult to a std::result::Result, or panic if the `IResult` is `Incomplete`
   pub fn to_result(self) -> Result<O, Err<E>> {
     match self {
       Done(_, o)    => Ok(o),
