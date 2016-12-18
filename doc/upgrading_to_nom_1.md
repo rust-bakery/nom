@@ -1,10 +1,10 @@
-% Upgrading to nom 1.0
+# Upgrading to nom 1.0
 
 The 1.0 release of nom is one of the biggest since the beginning of the project. Its goal was to rework some core parts to be more flexible, and clean code that was awkward or unclear. This resulted in breaking changes, that I hope will not happen again in the future (but hey, we are Rust developers, breaking changes are FUN for us!).
 
 Here are a few tips to update your code to run with nom 1.0:
 
-# Error typing
+## Error typing
 
 `nom::Err` now depends on two generic types, the position `P` and the error type `E`:
 
@@ -38,7 +38,7 @@ fix_error!(CustomErrorType, alphabetic)
 
 Since the error type is now an enum instead of a `u32`, you can now **replace any `ErrorCode::Tag as u32` by `ErrorKind::Tag`**.
 
-# Lifetime elision
+## Lifetime elision
 
 The error type is now completely generic over the input type, so the lifetime that appeared in `IResult` is not necessary anymore. It changes function declarations like this:
 
@@ -49,11 +49,11 @@ fn parse_status<'a>(i: &'a [u8]) -> IResult<'a, &'a [u8], Status>
 fn parse_status(i: &[u8]) -> IResult<&[u8], Status>
 ```
 
-# Producers and consumers
+## Producers and consumers
 
 The old implementation was not flexible, and a bit slow (because of allocations). The new implementation can be driven more precisely outside of the consumer, step by step if needed, can return a result, has custom error types, and can combine consumers. You can see [an example in the repository](https://github.com/Geal/nom/blob/master/tests/omnom.rs#).
 
-# Changes around `Incomplete`
+## Changes around `Incomplete`
 
 * `chain!` will now count how much data has been consumed before a child parser returns `Incomplete`, and return an `Incomplete` with the added data size
 * an optional parser (in `opt!` or `chain!`) will return `Incomplete` if the child parser returned `Incomplete`, instead of stopping there. This is the correct behaviour, because the result will be the same if the data comes in chunks or complete from the start
@@ -61,7 +61,7 @@ The old implementation was not flexible, and a bit slow (because of allocations)
 
 In the cases where you know that the data you get is complete, you can wrap a parser with `complete!`. This combinator will transform `Incomplete` in an `Error`.
 
-# Other changes
+## Other changes
 
 `filter!` has been renamed to `take_while!`
 
