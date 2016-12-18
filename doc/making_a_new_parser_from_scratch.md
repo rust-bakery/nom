@@ -1,4 +1,4 @@
-% Making a new parser from scratch
+# Making a new parser from scratch
 
 Writing a parser is a very fun, interactive process, but sometimes a daunting task. How do you test it? How to  see ambiguities in specifications?
 
@@ -6,13 +6,13 @@ nom is designed to abstract data manipulation (counting array offsets, convertin
 
 This document is here to help you in getting started with nom. If you need more specific help, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
-# First step: the initial research
+## First step: the initial research
 
 A big part of the initial work lies in accumulating enough documentation and samples to understand the format. The specification is useful, but specifications represent an "official" point of view, that may not be the real world usage. Any blog post or open source code is useful, because it shows how people understand the format, and how they work around each other's bugs (if you think a specification ensures every implementation is consistent with the others, think again).
 
 You should get a lot of samples (file or network traces) to test your code. The easy way is to use a small number of samples coming from the same source and develop everything around them, to realize later that they share a very specific bug.
 
-# Code organization
+## Code organization
 
 While it is tempting to insert the parsing code right inside the rest of the logic, it usually results in  unmaintainable code, and makes testing challenging. Parser combinators, the parsing technique used in nom, assemble a lot of small functions to make powerful parsers. This means that those functions only depend on their input, not on an external state. This makes it easy to parse the input partially, and to test those functions independently.
 
@@ -45,7 +45,7 @@ use nom::{be_u16, be_u32};
 # fn main() {}
 ```
 
-# Writing a first parser
+## Writing a first parser
 
 Let's parse a simple expression like `(12345)`. nom parsers are functions that use the `nom::IResult` type everywhere. As an example, a parser taking a byte slice `&[u8]` and returning a 32 bits unsigned integer `u32` would have this signature: `fn parse_u32(input: &[u8]) -> IResult<&[u8], u32>`.
 
@@ -157,7 +157,7 @@ A lot of complex patterns are implemented that way: generic macros combining oth
 
 Since it is easy to combine small parsers, I encourage you to write small functions corresponding to specific parts of the format, test them independently, then combine them in more general parsers.
 
-# Finding the right combinator
+## Finding the right combinator
 
 nom has a lot of different combinators, depending on the use case. They are all described in the [reference](http://rust.unhandledexpression.com/nom/).
 
@@ -175,7 +175,7 @@ Character related macros are in [src/character.rs](https://github.com/Geal/nom/b
 
 Regular expression related macros are in [src/regexp.rs](https://github.com/Geal/nom/blob/master/src/regexp.rs).
 
-# Testing the parsers
+## Testing the parsers
 
 Once you have a parser function, a good trick is to test it on a lot of the samples you gathered, and integrate this to your unit tests. To that end, put all of the test files in a folder like `assets` and refer to test files like this:
 
@@ -203,7 +203,7 @@ fn factor_test() {
 
 The more samples and test cases you get, the more you can experiment with your parser design.
 
-# Debugging the parsers
+## Debugging the parsers
 
 While Rust macros are really useful to get a simpler syntax, they can sometimes give cryptic errors. As an example, `named!(manytag, many0!(take!(5)));` would result in the following error:
 
