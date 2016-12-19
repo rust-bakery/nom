@@ -624,8 +624,8 @@ macro_rules! take_until_either (
   );
 );
 
-/// `length_bytes!(&[T] -> IResult<&[T], nb>) => &[T] -> IResult<&[T], &[T]>
-/// gets a number from the first parser, then extracts that many bytes from the
+/// `length_bytes!(&[T] -> IResult<&[T], nb>) => &[T] -> IResult<&[T], &[T]>`
+/// Gets a number from the first parser, then extracts that many bytes from the
 /// remaining stream
 #[macro_export]
 macro_rules! length_bytes(
