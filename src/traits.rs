@@ -458,53 +458,45 @@ pub trait Slice<R> {
   fn slice(&self, range: R) -> Self;
 }
 
-impl<'a,T> Slice<Range<usize>> for &'a [T] {
-  fn slice(&self, range:Range<usize>) -> Self {
-    &self[range]
-  }
+macro_rules! impl_fn_slice {
+    ( $ty:ty ) => {
+        fn slice(&self, range:$ty) -> Self {
+            &self[range]
+        }
+    }
 }
 
-impl<'a,T> Slice<RangeTo<usize>> for &'a [T] {
-  fn slice(&self, range:RangeTo<usize>) -> Self {
-    &self[range]
-  }
+macro_rules! slice_range_impl {
+    ( [ $for_type:ident ], $ty:ty ) => {
+        impl<'a, $for_type> Slice<$ty> for &'a [$for_type] {
+            impl_fn_slice!( $ty );
+        }
+    };
+    ( $for_type:ty, $ty:ty ) => {
+        impl<'a> Slice<$ty> for &'a $for_type {
+            impl_fn_slice!( $ty );
+        }
+    }
 }
 
-impl<'a,T> Slice<RangeFrom<usize>> for &'a [T] {
-  fn slice(&self, range:RangeFrom<usize>) -> Self {
-    &self[range]
-  }
+macro_rules! slice_ranges_impl {
+    ( [ $for_type:ident ] ) => {
+        slice_range_impl! {[$for_type], Range<usize>}
+        slice_range_impl! {[$for_type], RangeTo<usize>}
+        slice_range_impl! {[$for_type], RangeFrom<usize>}
+        slice_range_impl! {[$for_type], RangeFull}
+    };
+    ( $for_type:ty ) => {
+        slice_range_impl! {$for_type, Range<usize>}
+        slice_range_impl! {$for_type, RangeTo<usize>}
+        slice_range_impl! {$for_type, RangeFrom<usize>}
+        slice_range_impl! {$for_type, RangeFull}
+    }
 }
 
-impl<'a,T> Slice<RangeFull> for &'a [T] {
-  fn slice(&self, range:RangeFull) -> Self {
-    &self[range]
-  }
-}
+slice_ranges_impl! {str}
+slice_ranges_impl! {[T]}
 
-impl<'a> Slice<Range<usize>> for &'a str {
-  fn slice(&self, range:Range<usize>) -> Self {
-    &self[range]
-  }
-}
-
-impl<'a> Slice<RangeTo<usize>> for &'a str {
-  fn slice(&self, range:RangeTo<usize>) -> Self {
-    &self[range]
-  }
-}
-
-impl<'a> Slice<RangeFrom<usize>> for &'a str {
-  fn slice(&self, range:RangeFrom<usize>) -> Self {
-    &self[range]
-  }
-}
-
-impl<'a> Slice<RangeFull> for &'a str {
-  fn slice(&self, range:RangeFull) -> Self {
-    &self[range]
-  }
-}
 
 macro_rules! array_impls {
   ($($N:expr)+) => {
