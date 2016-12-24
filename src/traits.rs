@@ -512,14 +512,14 @@ macro_rules! array_impls {
       impl InputLength for [u8; $N] {
         #[inline]
         fn input_len(&self) -> usize {
-          self.len()
+          $N
         }
       }
 
       impl<'a> InputLength for &'a [u8; $N] {
         #[inline]
         fn input_len(&self) -> usize {
-          self.len()
+          $N
         }
       }
 
