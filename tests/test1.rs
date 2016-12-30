@@ -40,5 +40,6 @@ fn is_not() {
 #[test]
 fn exported_public_method_defined_by_macro() {
   let a = &b"ab12cd\nefgh"[..];
-  assert_eq!(not_line_ending(a), IResult::Done(&b"\nefgh"[..], &b"ab12cd"[..]));
+  let expected: IResult<_, _> = IResult::Done(&b"\nefgh"[..], &b"ab12cd"[..]);
+  assert_eq!(not_line_ending(a), expected);
 }

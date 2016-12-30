@@ -288,7 +288,7 @@ mod tests {
   macro_rules! tag_s (
     ($i:expr, $tag: expr) => (
       {
-        let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
+        let res: $crate::IResult<_, _, _> = if $tag.len() > $i.len() {
           $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
         //} else if &$i[0..$tag.len()] == $tag {
         } else if ($i).starts_with($tag) {
@@ -305,7 +305,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
+        let res: $crate::IResult<_, _, _> = if $i.chars().count() < cnt {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt))
         } else {
           let mut offset = $i.len();

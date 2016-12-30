@@ -795,7 +795,7 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: $crate::IResult<_,_> = if reduced != b {
+        let res: $crate::IResult<_, _, u32> = if reduced != b {
           $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
         } else if m < blen {
           $crate::IResult::Incomplete($crate::Needed::Size(blen))

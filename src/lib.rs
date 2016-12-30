@@ -179,3 +179,12 @@ mod stream;
 
 #[cfg(not(feature = "core"))]
 mod str;
+
+/// tells rustc to use same error type for `_ignored_err` and `res`
+///
+/// only used for error type assertion.
+#[doc(hidden)]
+#[inline(always)]
+pub fn propagate_error_type<I,O,E>(_ignored_err: Err<E>, res: IResult<I, O, E>) -> IResult<I, O, E> {
+    res
+}

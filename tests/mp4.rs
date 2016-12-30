@@ -265,7 +265,7 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   res
 }
 
-fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
+fn unknown_box_type<E>(input:&[u8]) -> IResult<&[u8], MP4BoxType, E> {
   Done(input, MP4BoxType::Unknown)
 }
 

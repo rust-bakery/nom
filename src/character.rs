@@ -104,7 +104,7 @@ macro_rules! char (
   ($i:expr, $c: expr) => (
     {
       if $i.is_empty() {
-        let res: $crate::IResult<&[u8], char> = $crate::IResult::Incomplete($crate::Needed::Size(1));
+        let res: $crate::IResult<&[u8], char, _> = $crate::IResult::Incomplete($crate::Needed::Size(1));
         res
       } else {
         if $i[0] == $c as u8 {
@@ -121,7 +121,7 @@ named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'
 
 named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 
-pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
+pub fn anychar<E>(input:&[u8]) -> IResult<&[u8], char, E> {
   if input.is_empty() {
     IResult::Incomplete(Needed::Size(1))
   } else {

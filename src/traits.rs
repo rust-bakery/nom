@@ -17,6 +17,13 @@ pub trait InputLength {
   fn input_len(&self) -> usize;
 }
 
+impl<T> InputLength for [T] {
+  #[inline]
+  fn input_len(&self) -> usize {
+    self.len()
+  }
+}
+
 impl<'a, T> InputLength for &'a[T] {
   #[inline]
   fn input_len(&self) -> usize {
