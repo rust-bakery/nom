@@ -275,7 +275,7 @@ macro_rules! many1(
 );
 
 /// `many_till!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (Vec<O>, P)>`
-/// Applies the first parser until the second applies returns a tuple containong the list
+/// Applies the first parser until the second applies returns a tuple containing the list
 /// of results from the first in a Vec and the result of the second.
 ///
 /// the first embedded parser may return Incomplete
