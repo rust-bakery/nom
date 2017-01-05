@@ -246,7 +246,7 @@ macro_rules! named_attr (
 ///   fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> { take!(input, i * 10) }
 ///
 ///   // will make a parser taking 20 bytes
-///   named!(parser, apply!(take_wrapper, 2));
+///   named!(parser, call!(take_wrapper, 2));
 /// # }
 /// ```
 #[macro_export]
