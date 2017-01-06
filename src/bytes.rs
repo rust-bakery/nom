@@ -180,39 +180,42 @@ macro_rules! escaped (
     {
       use $crate::InputLength;
       use $crate::Slice;
-      let cl = || {
+      let cl = || -> $crate::IResult<_,_,_> {
         use $crate::Offset;
         let mut index  = 0;
 
         while index < $i.input_len() {
-          if let $crate::IResult::Done(i,_) = $normal!($i.slice(index..), $($args)*) {
-            if i.is_empty() {
-              return $crate::IResult::Done($i.slice($i.input_len()..), $i)
-            } else {
-              index = $i.offset(i);
-            }
-            //FIXME: should use index() from InputIter?
-          } else if $i[index] == $control_char as u8 {
-            if index + 1 >= $i.input_len() {
-              return $crate::IResult::Error(error_position!($crate::ErrorKind::Escaped,$i.slice(index..)));
-            } else {
-              match $escapable!($i.slice(index+1..), $($args2)*) {
-                $crate::IResult::Done(i,_) => {
-                  if i.is_empty() {
-                    return $crate::IResult::Done($i.slice($i.input_len()..), $i)
-                  } else {
-                    index = $i.offset(i);
-                  }
-                },
-                $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
-                $crate::IResult::Error(e)      => return $crate::IResult::Error(e)
+          match $normal!($i.slice(index..), $($args)*) {
+            $crate::IResult::Done(i, _) => {
+              if i.is_empty() {
+                return $crate::IResult::Done($i.slice($i.input_len()..), $i)
+              } else {
+                index = $i.offset(i);
               }
-            }
-          } else {
-            if index == 0 {
-              return $crate::IResult::Error(error_position!($crate::ErrorKind::Escaped,$i.slice(index..)))
-            } else {
-              return $crate::IResult::Done($i.slice(index..), $i.slice(..index))
+            },
+            $crate::IResult::Incomplete(i) => {
+              return $crate::IResult::Incomplete(i)
+            },
+            $crate::IResult::Error(e) => {
+              if $i[index] == $control_char as u8 {
+                if index + 1 >= $i.input_len() {
+                  return $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i.slice(index..), e));
+                } else {
+                  match $escapable!($i.slice(index+1..), $($args2)*) {
+                    $crate::IResult::Done(i,_) => {
+                      if i.is_empty() {
+                        return $crate::IResult::Done($i.slice($i.input_len()..), $i)
+                      } else {
+                        index = $i.offset(i);
+                      }
+                    },
+                    $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
+                    $crate::IResult::Error(e2)     => return $crate::IResult::Error(e2)
+                  }
+                }
+              } else {
+                return $crate::IResult::Done($i.slice(index..), $i.slice(..index));
+              }
             }
           }
         }
