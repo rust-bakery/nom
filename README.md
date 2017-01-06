@@ -351,6 +351,7 @@ Here is a list of known projects using nom:
 - Audio, video and image formats:
  * [GIF](https://github.com/Geal/gif.rs)
  * [MagicaVoxel .vox](https://github.com/davidedmonds/dot_vox)
+ * [midi](https://github.com/derekdreery/nom-midi-rs)
 - Document formats:
  * [TAR](https://github.com/Keruspe/tar-parser.rs)
  * [torrent files](https://github.com/jag426/bittorrent)
