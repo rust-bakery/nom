@@ -170,7 +170,7 @@ There is already a large list of basic parsers available, like:
 - **be_f32**, **be_f64** to parse big endian floating point numbers
 - **eof**: a parser that is successful only if the input is over. In any other case, it returns an error.
 
-Please refer to the documentation for an exhaustive list of parsers.
+Please refer to the [documentation](http://rust.unhandledexpression.com/nom/) for an exhaustive list of parsers.
 
 #### Making new parsers with macros
 
