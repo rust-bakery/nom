@@ -328,7 +328,7 @@ let r2 = f(b"abcdefghefghX");
 assert_eq!(r2, Done(&b"X"[..], A{a: 1, b: 2}));
 ```
 
-The tilde `~` is used as separator between every parser in the sequence, the comma `,` indicates the parser chain ended, and the last closure can see the variables storing the result of parsers.
+The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers.
 
 More examples of chain and tuple usage can be found in the [INI file parser example](tests/ini.rs).
 
