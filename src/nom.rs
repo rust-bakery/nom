@@ -20,8 +20,8 @@ use std::ops::{Range,RangeFrom,RangeTo};
 use traits::{Compare,CompareResult,Slice};
 
 #[inline]
-pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]> + 'a> {
-  Box::new(move |i: &'b[u8]| -> IResult<&'b[u8], &'b[u8]> {
+pub fn tag_cl<'a, 'b, E>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8], E> + 'a> {
+  Box::new(move |i: &'b[u8]| -> IResult<&'b[u8], &'b[u8], E> {
     if i.len() >= rec.len() && &i[0..rec.len()] == rec {
       Done(&i[rec.len()..], &i[0..rec.len()])
     } else {
@@ -32,17 +32,17 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8
 
 #[cfg(not(feature = "core"))]
 #[inline]
-pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
+pub fn print<T: Debug, E: Debug>(input: T) -> IResult<T, (), E> {
   println!("{:?}", input);
   Done(input, ())
 }
 
 #[inline]
-pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
+pub fn begin<E>(input: &[u8]) -> IResult<(), &[u8], E> {
   Done((), input)
 }
 
-pub fn crlf<T>(input:T) -> IResult<T,T> where
+pub fn crlf<T, E>(input:T) -> IResult<T,T,E> where
   T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
   T: InputIter,
   T: Compare<&'static str> {
@@ -58,7 +58,7 @@ pub fn crlf<T>(input:T) -> IResult<T,T> where
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
-pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
+pub fn not_line_ending<T, E>(input:T) -> IResult<T, T, E> where
     T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength,
     T: Compare<&'static str> {
@@ -87,7 +87,7 @@ pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
 }
 
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
-pub fn line_ending<T>(input:T) -> IResult<T, T> where
+pub fn line_ending<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength,
     T: Compare<&'static str> {
@@ -104,7 +104,7 @@ pub fn line_ending<T>(input:T) -> IResult<T, T> where
   }
 }
 
-pub fn eol<T>(input:T) -> IResult<T,T> where
+pub fn eol<T, E>(input:T) -> IResult<T,T,E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength,
     T: Compare<&'static str> {
@@ -157,7 +157,7 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(alphanumeric is_alphanumeric)
 
 /// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
-pub fn alpha<T>(input:T) -> IResult<T, T> where
+pub fn alpha<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
   let input_length = input.input_len();
@@ -178,7 +178,7 @@ pub fn alpha<T>(input:T) -> IResult<T, T> where
 }
 
 /// Recognizes numerical characters: 0-9
-pub fn digit<T>(input:T) -> IResult<T, T> where
+pub fn digit<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
   let input_length = input.input_len();
@@ -199,7 +199,7 @@ pub fn digit<T>(input:T) -> IResult<T, T> where
 }
 
 /// Recognizes hexadecimal numerical characters: 0-9, A-F, a-f
-pub fn hex_digit<T>(input:T) -> IResult<T,T> where
+pub fn hex_digit<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
   let input_length = input.input_len();
@@ -220,7 +220,7 @@ pub fn hex_digit<T>(input:T) -> IResult<T,T> where
 }
 
 /// Recognizes octal characters: 0-7
-pub fn oct_digit<T>(input:T) -> IResult<T,T> where
+pub fn oct_digit<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
   let input_length = input.input_len();
@@ -241,7 +241,7 @@ pub fn oct_digit<T>(input:T) -> IResult<T,T> where
 }
 
 /// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
-pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
+pub fn alphanumeric<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
   let input_length = input.input_len();
@@ -262,7 +262,7 @@ pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
 }
 
 /// Recognizes spaces and tabs
-pub fn space<T>(input:T) -> IResult<T,T> where
+pub fn space<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
   let input_length = input.input_len();
@@ -284,7 +284,7 @@ pub fn space<T>(input:T) -> IResult<T,T> where
 }
 
 /// Recognizes spaces, tabs, carriage returns and line feeds
-pub fn multispace<T>(input:T) -> IResult<T,T> where
+pub fn multispace<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
   let input_length = input.input_len();
@@ -305,7 +305,7 @@ pub fn multispace<T>(input:T) -> IResult<T,T> where
   Done(input.slice(input_length..), input)
 }
 
-pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
+pub fn sized_buffer<E>(input:&[u8]) -> IResult<&[u8], &[u8], E> {
   if input.is_empty() {
     return Incomplete(Needed::Unknown)
   }
@@ -321,7 +321,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 #[inline]
-pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
+pub fn be_u8<E>(i: &[u8]) -> IResult<&[u8], u8, E> {
   if i.len() < 1 {
     Incomplete(Needed::Size(1))
   } else {
@@ -331,7 +331,7 @@ pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
 
 /// Recognizes big endian unsigned 2 bytes integer
 #[inline]
-pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
+pub fn be_u16<E>(i: &[u8]) -> IResult<&[u8], u16, E> {
   if i.len() < 2 {
     Incomplete(Needed::Size(2))
   } else {
@@ -342,7 +342,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
 
 /// Recognizes big endian unsigned 4 bytes integer
 #[inline]
-pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
+pub fn be_u32<E>(i: &[u8]) -> IResult<&[u8], u32, E> {
   if i.len() < 4 {
     Incomplete(Needed::Size(4))
   } else {
@@ -353,7 +353,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes big endian unsigned 8 bytes integer
 #[inline]
-pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
+pub fn be_u64<E>(i: &[u8]) -> IResult<&[u8], u64, E> {
   if i.len() < 8 {
     Incomplete(Needed::Size(8))
   } else {
@@ -365,31 +365,31 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
 
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
 #[inline]
-pub fn be_i8(i:&[u8]) -> IResult<&[u8], i8> {
+pub fn be_i8<E>(i:&[u8]) -> IResult<&[u8], i8, E> {
   map!(i, be_u8, | x | { x as i8 })
 }
 
 /// Recognizes big endian signed 2 bytes integer
 #[inline]
-pub fn be_i16(i:&[u8]) -> IResult<&[u8], i16> {
+pub fn be_i16<E>(i:&[u8]) -> IResult<&[u8], i16, E> {
   map!(i, be_u16, | x | { x as i16 })
 }
 
 /// Recognizes big endian signed 4 bytes integer
 #[inline]
-pub fn be_i32(i:&[u8]) -> IResult<&[u8], i32> {
+pub fn be_i32<E>(i:&[u8]) -> IResult<&[u8], i32, E> {
   map!(i, be_u32, | x | { x as i32 })
 }
 
 /// Recognizes big endian signed 8 bytes integer
 #[inline]
-pub fn be_i64(i:&[u8]) -> IResult<&[u8], i64> {
+pub fn be_i64<E>(i:&[u8]) -> IResult<&[u8], i64, E> {
   map!(i, be_u64, | x | { x as i64 })
 }
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 #[inline]
-pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
+pub fn le_u8<E>(i: &[u8]) -> IResult<&[u8], u8, E> {
   if i.len() < 1 {
     Incomplete(Needed::Size(1))
   } else {
@@ -399,7 +399,7 @@ pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
 
 /// Recognizes little endian unsigned 2 bytes integer
 #[inline]
-pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
+pub fn le_u16<E>(i: &[u8]) -> IResult<&[u8], u16, E> {
   if i.len() < 2 {
     Incomplete(Needed::Size(2))
   } else {
@@ -410,7 +410,7 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
 
 /// Recognizes little endian unsigned 4 bytes integer
 #[inline]
-pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
+pub fn le_u32<E>(i: &[u8]) -> IResult<&[u8], u32, E> {
   if i.len() < 4 {
     Incomplete(Needed::Size(4))
   } else {
@@ -421,7 +421,7 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes little endian unsigned 8 bytes integer
 #[inline]
-pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
+pub fn le_u64<E>(i: &[u8]) -> IResult<&[u8], u64, E> {
   if i.len() < 8 {
     Incomplete(Needed::Size(8))
   } else {
@@ -433,25 +433,25 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
 
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
 #[inline]
-pub fn le_i8(i:&[u8]) -> IResult<&[u8], i8> {
+pub fn le_i8<E>(i:&[u8]) -> IResult<&[u8], i8, E> {
   map!(i, le_u8, | x | { x as i8 })
 }
 
 /// Recognizes little endian signed 2 bytes integer
 #[inline]
-pub fn le_i16(i:&[u8]) -> IResult<&[u8], i16> {
+pub fn le_i16<E>(i:&[u8]) -> IResult<&[u8], i16, E> {
   map!(i, le_u16, | x | { x as i16 })
 }
 
 /// Recognizes little endian signed 4 bytes integer
 #[inline]
-pub fn le_i32(i:&[u8]) -> IResult<&[u8], i32> {
+pub fn le_i32<E>(i:&[u8]) -> IResult<&[u8], i32, E> {
   map!(i, le_u32, | x | { x as i32 })
 }
 
 /// Recognizes little endian signed 8 bytes integer
 #[inline]
-pub fn le_i64(i:&[u8]) -> IResult<&[u8], i64> {
+pub fn le_i64<E>(i:&[u8]) -> IResult<&[u8], i64, E> {
   map!(i, le_u64, | x | { x as i64 })
 }
 
@@ -490,7 +490,7 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $
 
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
-pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
+pub fn be_f32<E>(input: &[u8]) -> IResult<&[u8], f32, E> {
   match be_u32(input) {
     Error(e)      => Error(e),
     Incomplete(e) => Incomplete(e),
@@ -504,7 +504,7 @@ pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
 
 /// Recognizes big endian 8 bytes floating point number
 #[inline]
-pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
+pub fn be_f64<E>(input: &[u8]) -> IResult<&[u8], f64, E> {
   match be_u64(input) {
     Error(e)      => Error(e),
     Incomplete(e) => Incomplete(e),
@@ -518,7 +518,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 
 /// Recognizes little endian 4 bytes floating point number
 #[inline]
-pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
+pub fn le_f32<E>(input: &[u8]) -> IResult<&[u8], f32, E> {
   match le_u32(input) {
     Error(e)      => Error(e),
     Incomplete(e) => Incomplete(e),
@@ -532,7 +532,7 @@ pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
 
 /// Recognizes little endian 8 bytes floating point number
 #[inline]
-pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
+pub fn le_f64<E>(input: &[u8]) -> IResult<&[u8], f64, E> {
   match le_u64(input) {
     Error(e)      => Error(e),
     Incomplete(e) => Incomplete(e),
@@ -546,7 +546,7 @@ pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
 
 /// Recognizes a hex-encoded integer
 #[inline]
-pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
+pub fn hex_u32<E>(input: &[u8]) -> IResult<&[u8], u32, E> {
   match is_a!(input, &b"0123456789abcdef"[..]) {
     Error(e)    => Error(e),
     Incomplete(e) => Incomplete(e),
@@ -573,7 +573,7 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes non empty buffers
 #[inline]
-pub fn non_empty<T>(input:T) -> IResult<T,T> where
+pub fn non_empty<T, E>(input:T) -> IResult<T, T, E> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputLength {
   if input.input_len() == 0 {
@@ -585,13 +585,13 @@ pub fn non_empty<T>(input:T) -> IResult<T,T> where
 
 /// Return the remaining input.
 #[inline]
-pub fn rest(input: &[u8]) -> IResult<&[u8], &[u8]> {
+pub fn rest<E>(input: &[u8]) -> IResult<&[u8], &[u8], E> {
     IResult::Done(&input[input.len()..], input)
 }
 
 /// Return the remaining input, for strings.
 #[inline]
-pub fn rest_s(input: &str) -> IResult<&str, &str> {
+pub fn rest_s<E>(input: &str) -> IResult<&str, &str, E> {
     IResult::Done(&input[input.len()..], input)
 }
 
@@ -601,10 +601,27 @@ mod tests {
   use internal::{Needed,IResult};
   use internal::IResult::*;
   use util::ErrorKind;
+  use simple_errors::Err;
+
+  /// specifies type of error (as u32).
+  fn done<I, O>(i: I, o: O) -> IResult<I, O, u32> {
+    Done(i, o)
+  }
+
+  /// specifies type of error (as u32).
+  fn incomplete<I, O>(n: Needed) -> IResult<I, O, u32> {
+    Incomplete(n)
+  }
+
+
+  /// specifies type of error (as u32).
+  fn error<I, O>(e: Err<u32>) -> IResult<I, O, u32> {
+    Error(e)
+  }
 
   #[test]
   fn tag_closure() {
-    let x = tag_cl(&b"abcd"[..]);
+    let x = tag_cl::<u32>(&b"abcd"[..]);
     let r = x(&b"abcdabcdefgh"[..]);
     assert_eq!(r, Done(&b"abcdefgh"[..], &b"abcd"[..]));
 
@@ -620,28 +637,28 @@ mod tests {
     let c: &[u8] = b"a123";
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
-    assert_eq!(alpha(a), Done(empty, a));
-    assert_eq!(alpha(b), Error(error_position!(ErrorKind::Alpha,b)));
-    assert_eq!(alpha(c), Done(&c[1..], &b"a"[..]));
-    assert_eq!(alpha(d), Done("é12".as_bytes(), &b"az"[..]));
-    assert_eq!(digit(a), Error(error_position!(ErrorKind::Digit,a)));
-    assert_eq!(digit(b), Done(empty, b));
-    assert_eq!(digit(c), Error(error_position!(ErrorKind::Digit,c)));
-    assert_eq!(digit(d), Error(error_position!(ErrorKind::Digit,d)));
-    assert_eq!(hex_digit(a), Done(empty, a));
-    assert_eq!(hex_digit(b), Done(empty, b));
-    assert_eq!(hex_digit(c), Done(empty, c));
-    assert_eq!(hex_digit(d), Done("zé12".as_bytes(), &b"a"[..]));
-    assert_eq!(hex_digit(e), Error(error_position!(ErrorKind::HexDigit,e)));
-    assert_eq!(oct_digit(a), Error(error_position!(ErrorKind::OctDigit,a)));
-    assert_eq!(oct_digit(b), Done(empty, b));
-    assert_eq!(oct_digit(c), Error(error_position!(ErrorKind::OctDigit,c)));
-    assert_eq!(oct_digit(d), Error(error_position!(ErrorKind::OctDigit,d)));
-    assert_eq!(alphanumeric(a), Done(empty, a));
-    assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
-    assert_eq!(alphanumeric(c), Done(empty, c));
-    assert_eq!(alphanumeric(d), Done("é12".as_bytes(), &b"az"[..]));
-    assert_eq!(space(e), Done(&b""[..], &b" "[..]));
+    assert_eq!(alpha(a), done(empty, a));
+    assert_eq!(alpha(b), error(error_position!(ErrorKind::Alpha,b)));
+    assert_eq!(alpha(c), done(&c[1..], &b"a"[..]));
+    assert_eq!(alpha(d), done("é12".as_bytes(), &b"az"[..]));
+    assert_eq!(digit(a), error(error_position!(ErrorKind::Digit,a)));
+    assert_eq!(digit(b), done(empty, b));
+    assert_eq!(digit(c), error(error_position!(ErrorKind::Digit,c)));
+    assert_eq!(digit(d), error(error_position!(ErrorKind::Digit,d)));
+    assert_eq!(hex_digit(a), done(empty, a));
+    assert_eq!(hex_digit(b), done(empty, b));
+    assert_eq!(hex_digit(c), done(empty, c));
+    assert_eq!(hex_digit(d), done("zé12".as_bytes(), &b"a"[..]));
+    assert_eq!(hex_digit(e), error(error_position!(ErrorKind::HexDigit,e)));
+    assert_eq!(oct_digit(a), error(error_position!(ErrorKind::OctDigit,a)));
+    assert_eq!(oct_digit(b), done(empty, b));
+    assert_eq!(oct_digit(c), error(error_position!(ErrorKind::OctDigit,c)));
+    assert_eq!(oct_digit(d), error(error_position!(ErrorKind::OctDigit,d)));
+    assert_eq!(alphanumeric(a), done(empty, a));
+    assert_eq!(fix_error!(b, (), alphanumeric::<_, u32>), Done(empty, b));
+    assert_eq!(alphanumeric(c), done(empty, c));
+    assert_eq!(alphanumeric(d), done("é12".as_bytes(), &b"az"[..]));
+    assert_eq!(space(e), done(&b""[..], &b" "[..]));
   }
 
   #[test]
@@ -652,28 +669,28 @@ mod tests {
     let c     = "a123";
     let d     = "azé12";
     let e     = " ";
-    assert_eq!(alpha(a), Done(empty, a));
-    assert_eq!(alpha(b), Error(error_position!(ErrorKind::Alpha,b)));
-    assert_eq!(alpha(c), Done(&c[1..], &"a"[..]));
-    assert_eq!(alpha(d), Done("12", &"azé"[..]));
-    assert_eq!(digit(a), Error(error_position!(ErrorKind::Digit,a)));
-    assert_eq!(digit(b), Done(empty, b));
-    assert_eq!(digit(c), Error(error_position!(ErrorKind::Digit,c)));
-    assert_eq!(digit(d), Error(error_position!(ErrorKind::Digit,d)));
-    assert_eq!(hex_digit(a), Done(empty, a));
-    assert_eq!(hex_digit(b), Done(empty, b));
-    assert_eq!(hex_digit(c), Done(empty, c));
-    assert_eq!(hex_digit(d), Done("zé12", &"a"[..]));
-    assert_eq!(hex_digit(e), Error(error_position!(ErrorKind::HexDigit,e)));
-    assert_eq!(oct_digit(a), Error(error_position!(ErrorKind::OctDigit,a)));
-    assert_eq!(oct_digit(b), Done(empty, b));
-    assert_eq!(oct_digit(c), Error(error_position!(ErrorKind::OctDigit,c)));
-    assert_eq!(oct_digit(d), Error(error_position!(ErrorKind::OctDigit,d)));
-    assert_eq!(alphanumeric(a), Done(empty, a));
-    assert_eq!(fix_error!(b,(), alphanumeric), Done(empty, b));
-    assert_eq!(alphanumeric(c), Done(empty, c));
-    assert_eq!(alphanumeric(d), Done("", &"azé12"[..]));
-    assert_eq!(space(e), Done(&""[..], &" "[..]));
+    assert_eq!(alpha(a), done(empty, a));
+    assert_eq!(alpha(b), error(error_position!(ErrorKind::Alpha,b)));
+    assert_eq!(alpha(c), done(&c[1..], &"a"[..]));
+    assert_eq!(alpha(d), done("12", &"azé"[..]));
+    assert_eq!(digit(a), error(error_position!(ErrorKind::Digit,a)));
+    assert_eq!(digit(b), done(empty, b));
+    assert_eq!(digit(c), error(error_position!(ErrorKind::Digit,c)));
+    assert_eq!(digit(d), error(error_position!(ErrorKind::Digit,d)));
+    assert_eq!(hex_digit(a), done(empty, a));
+    assert_eq!(hex_digit(b), done(empty, b));
+    assert_eq!(hex_digit(c), done(empty, c));
+    assert_eq!(hex_digit(d), done("zé12", &"a"[..]));
+    assert_eq!(hex_digit(e), error(error_position!(ErrorKind::HexDigit,e)));
+    assert_eq!(oct_digit(a), error(error_position!(ErrorKind::OctDigit,a)));
+    assert_eq!(oct_digit(b), done(empty, b));
+    assert_eq!(oct_digit(c), error(error_position!(ErrorKind::OctDigit,c)));
+    assert_eq!(oct_digit(d), error(error_position!(ErrorKind::OctDigit,d)));
+    assert_eq!(alphanumeric(a), done(empty, a));
+    assert_eq!(fix_error!(b,(), alphanumeric::<_, u32>), Done(empty, b));
+    assert_eq!(alphanumeric(c), done(empty, c));
+    assert_eq!(alphanumeric(d), done("", &"azé12"[..]));
+    assert_eq!(space(e), done(&""[..], &" "[..]));
   }
 
   use util::Offset;
@@ -686,31 +703,31 @@ mod tests {
     let e = &b" \t\r\n"[..];
     let f = &b"123abcDEF"[..];
 
-    match alpha(a) {
+    match alpha::<_, u32>(a) {
         Done(i, _)  => { assert_eq!(a.offset(i) + i.len(), a.len()); }
         _           => { panic!("wrong return type in offset test for alpha") }
     }
-    match digit(b) {
+    match digit::<_, u32>(b) {
         Done(i, _)  => { assert_eq!(b.offset(i) + i.len(), b.len()); }
         _           => { panic!("wrong return type in offset test for digit") }
     }
-    match alphanumeric(c) {
+    match alphanumeric::<_, u32>(c) {
         Done(i, _)  => { assert_eq!(c.offset(i) + i.len(), c.len()); }
         _           => { panic!("wrong return type in offset test for alphanumeric") }
     }
-    match space(d) {
+    match space::<_, u32>(d) {
         Done(i, _)  => { assert_eq!(d.offset(i) + i.len(), d.len()); }
         _           => { panic!("wrong return type in offset test for space") }
     }
-    match multispace(e) {
+    match multispace::<_, u32>(e) {
         Done(i, _)  => { assert_eq!(e.offset(i) + i.len(), e.len()); }
         _           => { panic!("wrong return type in offset test for multispace") }
     }
-    match hex_digit(f) {
+    match hex_digit::<_, u32>(f) {
         Done(i, _)  => { assert_eq!(f.offset(i) + i.len(), f.len()); }
         _           => { panic!("wrong return type in offset test for hex_digit") }
     }
-    match oct_digit(f) {
+    match oct_digit::<_, u32>(f) {
         Done(i, _)  => { assert_eq!(f.offset(i) + i.len(), f.len()); }
         _           => { panic!("wrong return type in offset test for oct_digit") }
     }
@@ -719,16 +736,16 @@ mod tests {
   #[test]
   fn is_not_line_ending_bytes() {
     let a: &[u8] = b"ab12cd\nefgh";
-    assert_eq!(not_line_ending(a), Done(&b"\nefgh"[..], &b"ab12cd"[..]));
+    assert_eq!(not_line_ending(a), done(&b"\nefgh"[..], &b"ab12cd"[..]));
 
     let b: &[u8] = b"ab12cd\nefgh\nijkl";
-    assert_eq!(not_line_ending(b), Done(&b"\nefgh\nijkl"[..], &b"ab12cd"[..]));
+    assert_eq!(not_line_ending(b), done(&b"\nefgh\nijkl"[..], &b"ab12cd"[..]));
 
     let c: &[u8] = b"ab12cd\r\nefgh\nijkl";
-    assert_eq!(not_line_ending(c), Done(&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..]));
+    assert_eq!(not_line_ending(c), done(&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..]));
 
     let d: &[u8] = b"ab12cd";
-    assert_eq!(not_line_ending(d), Done(&b""[..], d));
+    assert_eq!(not_line_ending(d), done(&b""[..], d));
   }
 
   #[test]
@@ -751,10 +768,10 @@ mod tests {
     */
 
     let f = "βèƒôřè\rÂßÇáƒƭèř";
-    assert_eq!(not_line_ending(f), Error(error_position!(ErrorKind::Tag,f)));
+    assert_eq!(not_line_ending(f), error(error_position!(ErrorKind::Tag,f)));
 
     let g: &str = "ab12cd";
-    assert_eq!(not_line_ending(g), Done("", g));
+    assert_eq!(not_line_ending(g), done("", g));
   }
 
   #[test]
@@ -764,7 +781,7 @@ mod tests {
     //let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
     let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
     let res = sized_buffer(&arr[..]);
-    assert_eq!(res, Done(&i[..], &o[..]))
+    assert_eq!(res, done(&i[..], &o[..]))
   }
 
   /*#[test]
@@ -778,102 +795,102 @@ mod tests {
 
   #[test]
   fn i8_tests() {
-    assert_eq!(be_i8(&[0x00]), Done(&b""[..], 0));
-    assert_eq!(be_i8(&[0x7f]), Done(&b""[..], 127));
-    assert_eq!(be_i8(&[0xff]), Done(&b""[..], -1));
-    assert_eq!(be_i8(&[0x80]), Done(&b""[..], -128));
+    assert_eq!(be_i8(&[0x00]), done(&b""[..], 0));
+    assert_eq!(be_i8(&[0x7f]), done(&b""[..], 127));
+    assert_eq!(be_i8(&[0xff]), done(&b""[..], -1));
+    assert_eq!(be_i8(&[0x80]), done(&b""[..], -128));
   }
 
   #[test]
   fn i16_tests() {
-    assert_eq!(be_i16(&[0x00, 0x00]), Done(&b""[..], 0));
-    assert_eq!(be_i16(&[0x7f, 0xff]), Done(&b""[..], 32767_i16));
-    assert_eq!(be_i16(&[0xff, 0xff]), Done(&b""[..], -1));
-    assert_eq!(be_i16(&[0x80, 0x00]), Done(&b""[..], -32768_i16));
+    assert_eq!(be_i16(&[0x00, 0x00]), done(&b""[..], 0));
+    assert_eq!(be_i16(&[0x7f, 0xff]), done(&b""[..], 32767_i16));
+    assert_eq!(be_i16(&[0xff, 0xff]), done(&b""[..], -1));
+    assert_eq!(be_i16(&[0x80, 0x00]), done(&b""[..], -32768_i16));
   }
 
   #[test]
   fn i32_tests() {
-    assert_eq!(be_i32(&[0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0));
-    assert_eq!(be_i32(&[0x7f, 0xff, 0xff, 0xff]), Done(&b""[..], 2147483647_i32));
-    assert_eq!(be_i32(&[0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
-    assert_eq!(be_i32(&[0x80, 0x00, 0x00, 0x00]), Done(&b""[..], -2147483648_i32));
+    assert_eq!(be_i32(&[0x00, 0x00, 0x00, 0x00]), done(&b""[..], 0));
+    assert_eq!(be_i32(&[0x7f, 0xff, 0xff, 0xff]), done(&b""[..], 2147483647_i32));
+    assert_eq!(be_i32(&[0xff, 0xff, 0xff, 0xff]), done(&b""[..], -1));
+    assert_eq!(be_i32(&[0x80, 0x00, 0x00, 0x00]), done(&b""[..], -2147483648_i32));
   }
 
   #[test]
   fn i64_tests() {
-    assert_eq!(be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0));
-    assert_eq!(be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Done(&b""[..], 9223372036854775807_i64));
-    assert_eq!(be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
-    assert_eq!(be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], -9223372036854775808_i64));
+    assert_eq!(be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), done(&b""[..], 0));
+    assert_eq!(be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), done(&b""[..], 9223372036854775807_i64));
+    assert_eq!(be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), done(&b""[..], -1));
+    assert_eq!(be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), done(&b""[..], -9223372036854775808_i64));
   }
 
   #[test]
   fn le_i8_tests() {
-    assert_eq!(le_i8(&[0x00]), Done(&b""[..], 0));
-    assert_eq!(le_i8(&[0x7f]), Done(&b""[..], 127));
-    assert_eq!(le_i8(&[0xff]), Done(&b""[..], -1));
-    assert_eq!(le_i8(&[0x80]), Done(&b""[..], -128));
+    assert_eq!(le_i8(&[0x00]), done(&b""[..], 0));
+    assert_eq!(le_i8(&[0x7f]), done(&b""[..], 127));
+    assert_eq!(le_i8(&[0xff]), done(&b""[..], -1));
+    assert_eq!(le_i8(&[0x80]), done(&b""[..], -128));
   }
 
   #[test]
   fn le_i16_tests() {
-    assert_eq!(le_i16(&[0x00, 0x00]), Done(&b""[..], 0));
-    assert_eq!(le_i16(&[0xff, 0x7f]), Done(&b""[..], 32767_i16));
-    assert_eq!(le_i16(&[0xff, 0xff]), Done(&b""[..], -1));
-    assert_eq!(le_i16(&[0x00, 0x80]), Done(&b""[..], -32768_i16));
+    assert_eq!(le_i16(&[0x00, 0x00]), done(&b""[..], 0));
+    assert_eq!(le_i16(&[0xff, 0x7f]), done(&b""[..], 32767_i16));
+    assert_eq!(le_i16(&[0xff, 0xff]), done(&b""[..], -1));
+    assert_eq!(le_i16(&[0x00, 0x80]), done(&b""[..], -32768_i16));
   }
 
   #[test]
   fn le_i32_tests() {
-    assert_eq!(le_i32(&[0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0));
-    assert_eq!(le_i32(&[0xff, 0xff, 0xff, 0x7f]), Done(&b""[..], 2147483647_i32));
-    assert_eq!(le_i32(&[0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
-    assert_eq!(le_i32(&[0x00, 0x00, 0x00, 0x80]), Done(&b""[..], -2147483648_i32));
+    assert_eq!(le_i32(&[0x00, 0x00, 0x00, 0x00]), done(&b""[..], 0));
+    assert_eq!(le_i32(&[0xff, 0xff, 0xff, 0x7f]), done(&b""[..], 2147483647_i32));
+    assert_eq!(le_i32(&[0xff, 0xff, 0xff, 0xff]), done(&b""[..], -1));
+    assert_eq!(le_i32(&[0x00, 0x00, 0x00, 0x80]), done(&b""[..], -2147483648_i32));
   }
 
   #[test]
   fn le_i64_tests() {
-    assert_eq!(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0));
-    assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]), Done(&b""[..], 9223372036854775807_i64));
-    assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Done(&b""[..], -1));
-    assert_eq!(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]), Done(&b""[..], -9223372036854775808_i64));
+    assert_eq!(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), done(&b""[..], 0));
+    assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]), done(&b""[..], 9223372036854775807_i64));
+    assert_eq!(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), done(&b""[..], -1));
+    assert_eq!(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]), done(&b""[..], -9223372036854775808_i64));
   }
 
   #[test]
   fn be_f32_tests() {
-    assert_eq!(be_f32(&[0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0_f32));
-    assert_eq!(be_f32(&[0x4d, 0x31, 0x1f, 0xd8]), Done(&b""[..], 185728392_f32));
+    assert_eq!(be_f32(&[0x00, 0x00, 0x00, 0x00]), done(&b""[..], 0_f32));
+    assert_eq!(be_f32(&[0x4d, 0x31, 0x1f, 0xd8]), done(&b""[..], 185728392_f32));
   }
 
   #[test]
   fn be_f64_tests() {
-    assert_eq!(be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0_f64));
-    assert_eq!(be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00]), Done(&b""[..], 185728392_f64));
+    assert_eq!(be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), done(&b""[..], 0_f64));
+    assert_eq!(be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00]), done(&b""[..], 185728392_f64));
   }
 
   #[test]
   fn le_f32_tests() {
-    assert_eq!(le_f32(&[0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0_f32));
-    assert_eq!(le_f32(&[0xd8, 0x1f, 0x31, 0x4d]), Done(&b""[..], 185728392_f32));
+    assert_eq!(le_f32(&[0x00, 0x00, 0x00, 0x00]), done(&b""[..], 0_f32));
+    assert_eq!(le_f32(&[0xd8, 0x1f, 0x31, 0x4d]), done(&b""[..], 185728392_f32));
   }
 
   #[test]
   fn le_f64_tests() {
-    assert_eq!(le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0_f64));
-    assert_eq!(le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41]), Done(&b""[..], 185728392_f64));
+    assert_eq!(le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), done(&b""[..], 0_f64));
+    assert_eq!(le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41]), done(&b""[..], 185728392_f64));
   }
 
   #[test]
   fn hex_u32_tests() {
-    assert_eq!(hex_u32(&b""[..]), Done(&b""[..], 0));
-    assert_eq!(hex_u32(&b"ff"[..]), Done(&b""[..], 255));
-    assert_eq!(hex_u32(&b"1be2"[..]), Done(&b""[..], 7138));
-    assert_eq!(hex_u32(&b"c5a31be2"[..]), Done(&b""[..], 3315801058));
-    assert_eq!(hex_u32(&b"00c5a31be2"[..]), Done(&b"e2"[..], 12952347));
-    assert_eq!(hex_u32(&b"c5a31be201"[..]), Done(&b"01"[..], 3315801058));
-    assert_eq!(hex_u32(&b"ffffffff"[..]), Done(&b""[..], 4294967295));
-    assert_eq!(hex_u32(&b"0x1be2"[..]), Done(&b"x1be2"[..], 0));
+    assert_eq!(hex_u32(&b""[..]), done(&b""[..], 0));
+    assert_eq!(hex_u32(&b"ff"[..]), done(&b""[..], 255));
+    assert_eq!(hex_u32(&b"1be2"[..]), done(&b""[..], 7138));
+    assert_eq!(hex_u32(&b"c5a31be2"[..]), done(&b""[..], 3315801058));
+    assert_eq!(hex_u32(&b"00c5a31be2"[..]), done(&b"e2"[..], 12952347));
+    assert_eq!(hex_u32(&b"c5a31be201"[..]), done(&b"01"[..], 3315801058));
+    assert_eq!(hex_u32(&b"ffffffff"[..]), done(&b""[..], 4294967295));
+    assert_eq!(hex_u32(&b"0x1be2"[..]), done(&b"x1be2"[..], 0));
   }
 
     #[test]
@@ -893,33 +910,33 @@ mod tests {
   fn configurable_endianness() {
     named!(be_tst16<u16>, u16!(Endianness::Big));
     named!(le_tst16<u16>, u16!(Endianness::Little));
-    assert_eq!(be_tst16(&[0x80, 0x00]), Done(&b""[..], 32768_u16));
-    assert_eq!(le_tst16(&[0x80, 0x00]), Done(&b""[..], 128_u16));
+    assert_eq!(be_tst16(&[0x80, 0x00]), done(&b""[..], 32768_u16));
+    assert_eq!(le_tst16(&[0x80, 0x00]), done(&b""[..], 128_u16));
 
     named!(be_tst32<u32>, u32!(Endianness::Big));
     named!(le_tst32<u32>, u32!(Endianness::Little));
-    assert_eq!(be_tst32(&[0x12, 0x00, 0x60, 0x00]), Done(&b""[..], 302014464_u32));
-    assert_eq!(le_tst32(&[0x12, 0x00, 0x60, 0x00]), Done(&b""[..], 6291474_u32));
+    assert_eq!(be_tst32(&[0x12, 0x00, 0x60, 0x00]), done(&b""[..], 302014464_u32));
+    assert_eq!(le_tst32(&[0x12, 0x00, 0x60, 0x00]), done(&b""[..], 6291474_u32));
 
     named!(be_tst64<u64>, u64!(Endianness::Big));
     named!(le_tst64<u64>, u64!(Endianness::Little));
-    assert_eq!(be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 1297142246100992000_u64));
-    assert_eq!(le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 36028874334666770_u64));
+    assert_eq!(be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), done(&b""[..], 1297142246100992000_u64));
+    assert_eq!(le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), done(&b""[..], 36028874334666770_u64));
 
     named!(be_tsti16<i16>, i16!(Endianness::Big));
     named!(le_tsti16<i16>, i16!(Endianness::Little));
-    assert_eq!(be_tsti16(&[0x00, 0x80]), Done(&b""[..], 128_i16));
-    assert_eq!(le_tsti16(&[0x00, 0x80]), Done(&b""[..], -32768_i16));
+    assert_eq!(be_tsti16(&[0x00, 0x80]), done(&b""[..], 128_i16));
+    assert_eq!(le_tsti16(&[0x00, 0x80]), done(&b""[..], -32768_i16));
 
     named!(be_tsti32<i32>, i32!(Endianness::Big));
     named!(le_tsti32<i32>, i32!(Endianness::Little));
-    assert_eq!(be_tsti32(&[0x00, 0x12, 0x60, 0x00]), Done(&b""[..], 1204224_i32));
-    assert_eq!(le_tsti32(&[0x00, 0x12, 0x60, 0x00]), Done(&b""[..], 6296064_i32));
+    assert_eq!(be_tsti32(&[0x00, 0x12, 0x60, 0x00]), done(&b""[..], 1204224_i32));
+    assert_eq!(le_tsti32(&[0x00, 0x12, 0x60, 0x00]), done(&b""[..], 6296064_i32));
 
     named!(be_tsti64<i64>, i64!(Endianness::Big));
     named!(le_tsti64<i64>, i64!(Endianness::Little));
-    assert_eq!(be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 71881672479506432_i64));
-    assert_eq!(le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Done(&b""[..], 36028874334732032_i64));
+    assert_eq!(be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), done(&b""[..], 71881672479506432_i64));
+    assert_eq!(le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), done(&b""[..], 36028874334732032_i64));
 
   }
 
@@ -932,12 +949,12 @@ mod tests {
       Box::new(le_u16)
     };
     println!("{:?}", int_parse(&b"3"[..]));
-    assert_eq!(int_parse(&[0x80, 0x00]), Done(&b""[..], 128_u16));
+    assert_eq!(int_parse(&[0x80, 0x00]), done(&b""[..], 128_u16));
   }
 
   #[allow(dead_code)]
   fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], ()> {
-    fix_error!(input, (), alphanumeric)
+    fix_error!(input, (), alphanumeric::<_, u32>)
   }
 
   #[test]
@@ -945,13 +962,13 @@ mod tests {
     let empty = &b""[..];
 
     let i = &b"0123456789abcdefABCDEF"[..];
-    assert_eq!(hex_digit(i), Done(empty, i));
+    assert_eq!(hex_digit(i), done(empty, i));
 
     let i = &b"g"[..];
-    assert_eq!(hex_digit(i), Error(error_position!(ErrorKind::HexDigit,i)));
+    assert_eq!(hex_digit(i), error(error_position!(ErrorKind::HexDigit,i)));
 
     let i = &b"G"[..];
-    assert_eq!(hex_digit(i), Error(error_position!(ErrorKind::HexDigit,i)));
+    assert_eq!(hex_digit(i), error(error_position!(ErrorKind::HexDigit,i)));
 
     assert!(is_hex_digit(b'0'));
     assert!(is_hex_digit(b'9'));
@@ -972,10 +989,10 @@ mod tests {
     let empty = &b""[..];
 
     let i = &b"01234567"[..];
-    assert_eq!(oct_digit(i), Done(empty, i));
+    assert_eq!(oct_digit(i), done(empty, i));
 
     let i = &b"8"[..];
-    assert_eq!(oct_digit(i), Error(error_position!(ErrorKind::OctDigit,i)));
+    assert_eq!(oct_digit(i), error(error_position!(ErrorKind::OctDigit,i)));
 
     assert!(is_oct_digit(b'0'));
     assert!(is_oct_digit(b'7'));
@@ -994,7 +1011,7 @@ mod tests {
     named!(take_full_line<(&[u8], &[u8])>, tuple!(not_line_ending, line_ending));
     let input = b"abc\r\n";
     let output = take_full_line(input);
-    assert_eq!(output, Done(&b""[..], (&b"abc"[..], &b"\r\n"[..])));
+    assert_eq!(output, done(&b""[..], (&b"abc"[..], &b"\r\n"[..])));
   }
 
   #[test]
@@ -1002,44 +1019,44 @@ mod tests {
     named!(take_full_line<(&[u8], &[u8])>, tuple!(not_line_ending, line_ending));
     let input = b"abc\n";
     let output = take_full_line(input);
-    assert_eq!(output, Done(&b""[..], (&b"abc"[..], &b"\n"[..])));
+    assert_eq!(output, done(&b""[..], (&b"abc"[..], &b"\n"[..])));
   }
 
   #[test]
   fn check_windows_lineending() {
     let input = b"\r\n";
     let output = line_ending(&input[..]);
-    assert_eq!(output, Done(&b""[..], &b"\r\n"[..]));
+    assert_eq!(output, done(&b""[..], &b"\r\n"[..]));
   }
 
   #[test]
   fn check_unix_lineending() {
     let input = b"\n";
     let output = line_ending(&input[..]);
-    assert_eq!(output, Done(&b""[..], &b"\n"[..]));
+    assert_eq!(output, done(&b""[..], &b"\n"[..]));
   }
 
   #[test]
   fn cr_lf() {
-    assert_eq!(crlf(&b"\r\na"[..]), Done(&b"a"[..], &b"\r\n"[..]));
-    assert_eq!(crlf(&b"\r"[..]),    Incomplete(Needed::Size(2)));
-    assert_eq!(crlf(&b"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
+    assert_eq!(crlf(&b"\r\na"[..]), done(&b"a"[..], &b"\r\n"[..]));
+    assert_eq!(crlf(&b"\r"[..]),    incomplete(Needed::Size(2)));
+    assert_eq!(crlf(&b"\ra"[..]),   error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
 
-    assert_eq!(crlf("\r\na"), Done("a", "\r\n"));
-    assert_eq!(crlf("\r"),    Incomplete(Needed::Size(2)));
-    assert_eq!(crlf("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
+    assert_eq!(crlf("\r\na"), done("a", "\r\n"));
+    assert_eq!(crlf("\r"),    incomplete(Needed::Size(2)));
+    assert_eq!(crlf("\ra"),   error(error_position!(ErrorKind::CrLf, "\ra")));
   }
 
   #[test]
   fn end_of_line() {
-    assert_eq!(eol(&b"\na"[..]),   Done(&b"a"[..], &b"\n"[..]));
-    assert_eq!(eol(&b"\r\na"[..]), Done(&b"a"[..], &b"\r\n"[..]));
-    assert_eq!(eol(&b"\r"[..]),    Incomplete(Needed::Size(2)));
-    assert_eq!(eol(&b"\ra"[..]),   Error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
+    assert_eq!(eol(&b"\na"[..]),   done(&b"a"[..], &b"\n"[..]));
+    assert_eq!(eol(&b"\r\na"[..]), done(&b"a"[..], &b"\r\n"[..]));
+    assert_eq!(eol(&b"\r"[..]),    incomplete(Needed::Size(2)));
+    assert_eq!(eol(&b"\ra"[..]),   error(error_position!(ErrorKind::CrLf, &b"\ra"[..])));
 
-    assert_eq!(eol("\na"),   Done("a", "\n"));
-    assert_eq!(eol("\r\na"), Done("a", "\r\n"));
-    assert_eq!(eol("\r"),    Incomplete(Needed::Size(2)));
-    assert_eq!(eol("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
+    assert_eq!(eol("\na"),   done("a", "\n"));
+    assert_eq!(eol("\r\na"), done("a", "\r\n"));
+    assert_eq!(eol("\r"),    incomplete(Needed::Size(2)));
+    assert_eq!(eol("\ra"),   error(error_position!(ErrorKind::CrLf, "\ra")));
   }
 }

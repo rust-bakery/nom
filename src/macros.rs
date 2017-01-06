@@ -68,10 +68,10 @@
 #[macro_export]
 macro_rules! closure (
     ($ty:ty, $submac:ident!( $($args:tt)* )) => (
-        |i: $ty| { $submac!(i, $($args)*) }
+        |i: $ty| -> $crate::IResult<_, _, _> { $submac!(i, $($args)*) }
     );
     ($submac:ident!( $($args:tt)* )) => (
-        |i| { $submac!(i, $($args)*) }
+        |i| -> $crate::IResult<_, _, _> { $submac!(i, $($args)*) }
     );
 );
 
@@ -408,13 +408,15 @@ macro_rules! add_return_error (
 macro_rules! complete (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let res: $crate::IResult<_, _, _> = match $submac!($i, $($args)*) {
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(_) =>  {
           $crate::IResult::Error(error_position!($crate::ErrorKind::Complete, $i))
         },
-      }
+      };
+
+      res
     }
   );
   ($i:expr, $f:expr) => (
@@ -500,7 +502,7 @@ macro_rules! map_res (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let res: $crate::IResult<_, _, _> = match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
@@ -508,7 +510,8 @@ macro_rules! map_res (
           Ok(output) => $crate::IResult::Done(i, output),
           Err(_)     => $crate::IResult::Error(error_position!($crate::ErrorKind::MapRes, $i))
         }
-      }
+      };
+      res
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
@@ -679,11 +682,14 @@ macro_rules! expr_opt (
 macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      match $submac!($i, $($args)*) {
+      let res: $crate::IResult<_, _, _> = match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
+        $crate::IResult::Error(opt_err)      => { 
+          $crate::propagate_error_type(opt_err, $crate::IResult::Done($i, ::std::option::Option::None))
+        },
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
-      }
+      };
+      res
     }
   );
   ($i:expr, $f:expr) => (
@@ -818,11 +824,14 @@ macro_rules! cond(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       if $cond {
-        match $submac!($i, $($args)*) {
+        let res: $crate::IResult<_, _, _> = match $submac!($i, $($args)*) {
           $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
-          $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
+          $crate::IResult::Error(cond_err)      => {
+            $crate::propagate_error_type(cond_err, $crate::IResult::Done($i, ::std::option::Option::None))
+          },
           $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
-        }
+        };
+        res
       } else {
         $crate::IResult::Done($i, ::std::option::Option::None)
       }
@@ -947,7 +956,7 @@ macro_rules! not(
       use $crate::Slice;
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(_, _)    => $crate::IResult::Error(error_position!($crate::ErrorKind::Not, $i)),
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, ($i).slice(..0)),
+        $crate::IResult::Error(not_err)      => $crate::propagate_error_type(not_err, $crate::IResult::Done($i, ($i).slice(..0))),
         $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, ($i).slice(..0))
       }
     }
@@ -1001,11 +1010,13 @@ macro_rules! eof (
   ($i:expr,) => (
     {
       use $crate::InputLength;
-      if ($i).input_len() == 0 {
+      let res: IResult<_, _, _> = if ($i).input_len() == 0 {
         $crate::IResult::Done($i, $i)
       } else {
         $crate::IResult::Error(error_position!($crate::ErrorKind::Eof, $i))
-      }
+      };
+
+      res
     }
   );
 );
@@ -1028,14 +1039,16 @@ macro_rules! recognize (
     {
       use $crate::Offset;
       use $crate::Slice;
-      match $submac!($i, $($args)*) {
+      let res: $crate::IResult<_, _, _> = match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
           let index = ($i).offset(i);
           $crate::IResult::Done(i, ($i).slice(..index))
         },
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
-      }
+      };
+
+      res
     }
   );
   ($i:expr, $f:expr) => (
@@ -1083,7 +1096,7 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: $crate::IResult<_,_> = if reduced != b {
+        let res: $crate::IResult<_, _, _> = if reduced != b {
           $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
         } else if m < blen {
           $crate::IResult::Incomplete($crate::Needed::Size(blen))
@@ -1099,7 +1112,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
+        let res:$crate::IResult<&[u8], &[u8], _> = if $i.len() < cnt {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt))
         } else {
           $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
@@ -1188,7 +1201,7 @@ mod tests {
   #[test]
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
-    named!( tag_abcd, tag!("abcd") );
+    named!( tag_abcd<&[u8], &[u8], &str>, tag!("abcd") );
     let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag_abcd ) ));
     let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag_abcd ) ));
     //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );

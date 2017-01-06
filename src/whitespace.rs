@@ -485,8 +485,8 @@ macro_rules! alt_sep (
       match sep!($i, $separator, $subrule!( $($args)* )) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt_sep!(__impl $i, $separator, $($rest)*)
+        $crate::IResult::Error(alt_sep_err)      => {
+          $crate::propagate_error_type(alt_sep_err, alt_sep!(__impl $i, $separator, $($rest)*))
         }
       }
     }
@@ -505,8 +505,8 @@ macro_rules! alt_sep (
       match sep!($i, $separator, $subrule!( $($args)* )) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt_sep!(__impl $i)
+        $crate::IResult::Error(alt_sep_err)      => {
+          $crate::propagate_error_type(alt_sep_err, alt_sep!(__impl $i))
         }
       }
     }

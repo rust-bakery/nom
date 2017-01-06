@@ -119,7 +119,7 @@ macro_rules! take_bits (
       use std::ops::Div;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
-      let res : $crate::IResult<(&[u8],usize), $t> = if $count == 0 {
+      let res : $crate::IResult<(&[u8],usize), $t, _> = if $count == 0 {
         $crate::IResult::Done( (input, bit_offset), 0)
       } else {
         let cnt = ($count as usize + bit_offset).div(8);
@@ -169,14 +169,14 @@ macro_rules! tag_bits (
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           if let $p = o {
-            let res: $crate::IResult<(&[u8],usize),$t> = $crate::IResult::Done(i, o);
+            let res: $crate::IResult<(&[u8],usize),$t,_> = $crate::IResult::Done(i, o);
             res
           } else {
             $crate::IResult::Error(error_position!($crate::ErrorKind::TagBits, $i))
           }
         },
-        _                              => {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::TagBits, $i))
+        $crate::IResult::Error(tag_bits_err) => {
+          $crate::propagate_error_type(tag_bits_err, $crate::IResult::Error(error_position!($crate::ErrorKind::TagBits, $i)))
         }
       }
     }
@@ -188,26 +188,36 @@ mod tests {
   use internal::{IResult,Needed};
   use ErrorKind;
 
+  /// specifies type of error (as u32).
+  fn done<I, O>(i: I, o: O) -> IResult<I, O, u32> {
+    IResult::Done(i, o)
+  }
+
+  /// specifies type of error (as u32).
+  fn incomplete<I, O>(n: Needed) -> IResult<I, O, u32> {
+    IResult::Incomplete(n)
+  }
+
   #[test]
   fn take_bits() {
     let input = vec![0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
 
-    assert_eq!(take_bits!( (sl, 0), u8,   0 ), IResult::Done((sl, 0), 0));
-    assert_eq!(take_bits!( (sl, 0), u8,   8 ), IResult::Done((&sl[1..], 0), 170));
-    assert_eq!(take_bits!( (sl, 0), u8,   3 ), IResult::Done((&sl[0..], 3), 5));
-    assert_eq!(take_bits!( (sl, 0), u8,   6 ), IResult::Done((&sl[0..], 6), 42));
-    assert_eq!(take_bits!( (sl, 1), u8,   1 ), IResult::Done((&sl[0..], 2), 0));
-    assert_eq!(take_bits!( (sl, 1), u8,   2 ), IResult::Done((&sl[0..], 3), 1));
-    assert_eq!(take_bits!( (sl, 1), u8,   3 ), IResult::Done((&sl[0..], 4), 2));
-    assert_eq!(take_bits!( (sl, 6), u8,   3 ), IResult::Done((&sl[1..], 1), 5));
-    assert_eq!(take_bits!( (sl, 0), u16, 10 ), IResult::Done((&sl[1..], 2), 683));
-    assert_eq!(take_bits!( (sl, 0), u16,  8 ), IResult::Done((&sl[1..], 0), 170));
-    assert_eq!(take_bits!( (sl, 6), u16, 10 ), IResult::Done((&sl[2..], 0), 752));
-    assert_eq!(take_bits!( (sl, 6), u16, 11 ), IResult::Done((&sl[2..], 1), 1504));
-    assert_eq!(take_bits!( (sl, 0), u32, 20 ), IResult::Done((&sl[2..], 4), 700163));
-    assert_eq!(take_bits!( (sl, 4), u32, 20 ), IResult::Done((&sl[3..], 0), 716851));
-    assert_eq!(take_bits!( (sl, 4), u32, 22 ), IResult::Incomplete(Needed::Size(22)));
+    assert_eq!(take_bits!( (sl, 0), u8,   0 ), done((sl, 0), 0));
+    assert_eq!(take_bits!( (sl, 0), u8,   8 ), done((&sl[1..], 0), 170));
+    assert_eq!(take_bits!( (sl, 0), u8,   3 ), done((&sl[0..], 3), 5));
+    assert_eq!(take_bits!( (sl, 0), u8,   6 ), done((&sl[0..], 6), 42));
+    assert_eq!(take_bits!( (sl, 1), u8,   1 ), done((&sl[0..], 2), 0));
+    assert_eq!(take_bits!( (sl, 1), u8,   2 ), done((&sl[0..], 3), 1));
+    assert_eq!(take_bits!( (sl, 1), u8,   3 ), done((&sl[0..], 4), 2));
+    assert_eq!(take_bits!( (sl, 6), u8,   3 ), done((&sl[1..], 1), 5));
+    assert_eq!(take_bits!( (sl, 0), u16, 10 ), done((&sl[1..], 2), 683));
+    assert_eq!(take_bits!( (sl, 0), u16,  8 ), done((&sl[1..], 0), 170));
+    assert_eq!(take_bits!( (sl, 6), u16, 10 ), done((&sl[2..], 0), 752));
+    assert_eq!(take_bits!( (sl, 6), u16, 11 ), done((&sl[2..], 1), 1504));
+    assert_eq!(take_bits!( (sl, 0), u32, 20 ), done((&sl[2..], 4), 700163));
+    assert_eq!(take_bits!( (sl, 4), u32, 20 ), done((&sl[3..], 0), 716851));
+    assert_eq!(take_bits!( (sl, 4), u32, 22 ), incomplete(Needed::Size(22)));
   }
 
   #[test]
@@ -215,8 +225,8 @@ mod tests {
     let input = vec![0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
 
-    assert_eq!(tag_bits!( (sl, 0), u8,   3, 0b101), IResult::Done((&sl[0..], 3), 5));
-    assert_eq!(tag_bits!( (sl, 0), u8,   4, 0b1010), IResult::Done((&sl[0..], 4), 10));
+    assert_eq!(tag_bits!( (sl, 0), u8,   3, 0b101), done((&sl[0..], 3), 5));
+    assert_eq!(tag_bits!( (sl, 0), u8,   4, 0b1010), done((&sl[0..], 4), 10));
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
@@ -232,16 +242,16 @@ mod tests {
   fn chain_bits() {
     let input = vec![0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
-    assert_eq!(ch((&input[..],0)), IResult::Done((&sl[1..], 4), (5,15)));
-    assert_eq!(ch((&input[..],4)), IResult::Done((&sl[2..], 0), (7,16)));
-    assert_eq!(ch((&input[..1],0)), IResult::Incomplete(Needed::Size(12)));
+    assert_eq!(ch((&input[..],0)), done((&sl[1..], 4), (5,15)));
+    assert_eq!(ch((&input[..],4)), done((&sl[2..], 0), (7,16)));
+    assert_eq!(ch((&input[..1],0)), incomplete(Needed::Size(12)));
   }
 
   named!(ch_bytes<(u8,u8)>, bits!(ch));
   #[test]
   fn bits_to_bytes() {
     let input = vec![0b10101010, 0b11110000, 0b00110011];
-    assert_eq!(ch_bytes(&input[..]), IResult::Done(&input[2..], (5,15)));
+    assert_eq!(ch_bytes(&input[..]), done(&input[2..], (5,15)));
     assert_eq!(ch_bytes(&input[..1]), IResult::Incomplete(Needed::Size(2)));
     assert_eq!(ch_bytes(&input[1..]), IResult::Error(error_position!(ErrorKind::TagBits, &input[1..])));
   }

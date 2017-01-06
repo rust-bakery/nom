@@ -126,7 +126,7 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 /// # fn main() {
 ///     // will add a Custom(42) error to the error chain
 ///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
-///     // Convert to IREsult<&[u8], &[u8], &str>
+///     // Convert to IResult<&[u8], &[u8], &str>
 ///     named!(parser<&[u8], &[u8], &str>, add_return_error!(ErrorKind::Custom("custom error message"), fix_error!(&str, err_test)));
 ///
 ///     let a = &b"efghblah"[..];

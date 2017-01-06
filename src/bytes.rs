@@ -21,7 +21,7 @@ macro_rules! tag (
   ($i:expr, $tag: expr) => (
     {
       use $crate::{Compare,CompareResult,InputLength,Slice};
-      let res: $crate::IResult<_,_> = match ($i).compare($tag) {
+      let res: $crate::IResult<_, _, _> = match ($i).compare($tag) {
         CompareResult::Ok => {
           let blen = $tag.input_len();
           $crate::IResult::Done($i.slice(blen..), $i.slice(..blen))
@@ -58,7 +58,7 @@ macro_rules! tag_no_case (
   ($i:expr, $tag: expr) => (
     {
       use $crate::{Compare,CompareResult,InputLength,Slice};
-      let res: $crate::IResult<_,_> = match ($i).compare_no_case($tag) {
+      let res: $crate::IResult<_, _, _> = match ($i).compare_no_case($tag) {
         CompareResult::Ok => {
           let blen = $tag.input_len();
           $crate::IResult::Done($i.slice(blen..), $i.slice(..blen))
@@ -98,7 +98,7 @@ macro_rules! is_not(
       use $crate::FindToken;
       use $crate::Slice;
 
-      let res: $crate::IResult<_,_> = match $input.position(|c| {
+      let res: $crate::IResult<_, _, _> = match $input.position(|c| {
         c.find_token($arr)
       }) {
         Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::IsNot,$input)),
@@ -140,12 +140,12 @@ macro_rules! is_a (
       use $crate::FindToken;
       use $crate::Slice;
 
-      let res: $crate::IResult<_,_> = match $input.position(|c| {
+      let res: $crate::IResult<_, _, _> = match $input.position(|c| {
         !c.find_token($arr)
       }) {
         Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::IsA,$input)),
         Some(n) => {
-          let res: $crate::IResult<_,_> = $crate::IResult::Done($input.slice(n..), $input.slice(..n));
+          let res: $crate::IResult<_, _, _> = $crate::IResult::Done($input.slice(n..), $input.slice(..n));
           res
         },
         None    => {
@@ -185,7 +185,7 @@ macro_rules! escaped (
         let mut index  = 0;
 
         while index < $i.input_len() {
-          if let $crate::IResult::Done(i,_) = $normal!($i.slice(index..), $($args)*) {
+          if let $crate::IResult::Done(i, _) = $normal!($i.slice(index..), $($args)*) {
             if i.is_empty() {
               return $crate::IResult::Done($i.slice($i.input_len()..), $i)
             } else {
@@ -388,7 +388,7 @@ macro_rules! take_while (
 
       match input.position(|c| !$submac!(c, $($args)*)) {
         Some(n) => {
-          let res:$crate::IResult<_,_> = $crate::IResult::Done(input.slice(n..), input.slice(..n));
+          let res: $crate::IResult<_, _, _> = $crate::IResult::Done(input.slice(n..), input.slice(..n));
           res
         },
         None    => {
@@ -484,7 +484,7 @@ macro_rules! take (
 
       let cnt = $count as usize;
 
-      let res: $crate::IResult<_,_> = match input.slice_index(cnt) {
+      let res: $crate::IResult<_, _, _> = match input.slice_index(cnt) {
         None        => $crate::IResult::Incomplete($crate::Needed::Size(cnt)),
         //FIXME: use the InputTake trait
         Some(index) => $crate::IResult::Done(input.slice(index..), input.slice(..index))
@@ -517,7 +517,7 @@ macro_rules! take_until_and_consume (
       use $crate::FindSubstring;
       use $crate::Slice;
 
-      let res: $crate::IResult<_,_> = if $substr.input_len() > $i.input_len() {
+      let res: $crate::IResult<_, _, _> = if $substr.input_len() > $i.input_len() {
         $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
       } else {
         match ($i).find_substring($substr) {
@@ -544,7 +544,7 @@ macro_rules! take_until (
       use $crate::FindSubstring;
       use $crate::Slice;
 
-      let res: $crate::IResult<_,_> = if $substr.input_len() > $i.input_len() {
+      let res: $crate::IResult<_, _, _> = if $substr.input_len() > $i.input_len() {
         $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
       } else {
         match ($i).find_substring($substr) {
@@ -575,7 +575,7 @@ macro_rules! take_until_either_and_consume (
       if $input.input_len() == 0 {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
-        let res: $crate::IResult<_,_> = match $input.position(|c| {
+        let res: $crate::IResult<_, _, _> = match $input.position(|c| {
           c.find_token($arr)
         }) {
           Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilEitherAndConsume,$input)),
@@ -606,7 +606,7 @@ macro_rules! take_until_either (
       if $input.input_len() == 0 {
         $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
-        let res: $crate::IResult<_,_> = match $input.position(|c| {
+        let res: $crate::IResult<_, _, _> = match $input.position(|c| {
           c.find_token($arr)
         }) {
           Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilEither,$input)),
@@ -657,7 +657,7 @@ macro_rules! length_bytes(
 #[cfg(test)]
 mod tests {
   use internal::Needed;
-  use internal::IResult::*;
+  use internal::IResult::{self, Error, Done, Incomplete};
   use util::ErrorKind;
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
 
@@ -704,6 +704,16 @@ mod tests {
       }
     );
   );
+
+  /// specifies type of error (as u32).
+  fn done<I, O>(i: I, o: O) -> IResult<I, O, u32> {
+    Done(i, o)
+  }
+
+  /// specifies type of error (as u32).
+  fn incomplete<I, O>(n: Needed) -> IResult<I, O, u32> {
+    Incomplete(n)
+  }
 
   #[test]
   fn is_a() {
@@ -805,20 +815,21 @@ mod tests {
 
   #[test]
   fn issue_84() {
-    let r0 = is_a!(&b"aaaaefgh"[..], "abcd");
-    assert_eq!(r0, Done(&b"efgh"[..], &b"aaaa"[..]));
-    let r1 = is_a!(&b"aaaa"[..], "abcd");
-    assert_eq!(r1, Done(&b""[..], &b"aaaa"[..]));
-    let r2 = is_a!(&b"1"[..], "123456789");
-    assert_eq!(r2, Done(&b""[..], &b"1"[..]));
+    named!(abcd, is_a!("abcd"));
+
+    assert_eq!(abcd(&b"aaaaefgh"[..]), Done(&b"efgh"[..], &b"aaaa"[..]));
+    assert_eq!(abcd(&b"aaaa"[..]), Done(&b""[..], &b"aaaa"[..]));
+
+    named!(non_zero_digit, is_a!("123456789"));
+    assert_eq!(non_zero_digit(&b"1"[..]), Done(&b""[..], &b"1"[..]));
   }
 
   #[test]
   fn take_str_test() {
     let a = b"omnomnom";
 
-    assert_eq!(take_str!(&a[..], 5), Done(&b"nom"[..], "omnom"));
-    assert_eq!(take_str!(&a[..], 9), Incomplete(Needed::Size(9)));
+    assert_eq!(take_str!(&a[..], 5), done(&b"nom"[..], "omnom"));
+    assert_eq!(take_str!(&a[..], 9), incomplete(Needed::Size(9)));
   }
 
   #[test]

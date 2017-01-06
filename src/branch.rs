@@ -124,9 +124,9 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      let res = $subrule!($i, $($args)*);
+      let res: $crate::IResult<_, _, _> = $subrule!($i, $($args)*);
       match res {
-        $crate::IResult::Done(_,_)     => res,
+        $crate::IResult::Done(_, _)     => res,
         $crate::IResult::Incomplete(_) => res,
         _                              => alt!(__impl $i, $($rest)*)
       }
@@ -138,8 +138,8 @@ macro_rules! alt (
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i, $($rest)*)
+        $crate::IResult::Error(_alt_err)      => {
+          $crate::propagate_error_type(_alt_err, alt!(__impl $i, $($rest)*))
         }
       }
     }
@@ -158,8 +158,8 @@ macro_rules! alt (
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
+        $crate::IResult::Error(_alt_err)      => {
+          $crate::propagate_error_type(_alt_err, alt!(__impl $i))
         }
       }
     }
@@ -174,15 +174,15 @@ macro_rules! alt (
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
+        $crate::IResult::Error(_alt_err)      => {
+          $crate::propagate_error_type(_alt_err, alt!(__impl $i))
         }
       }
     }
   );
 
   (__impl $i:expr) => (
-    $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
+    $crate::IResult::Error(error_position!($crate::ErrorKind::Alt, $i))
   );
 
   ($i:expr, $($rest:tt)*) => (
@@ -191,6 +191,8 @@ macro_rules! alt (
     }
   );
 );
+
+
 
 /// This is a combination of the `alt!` and `complete!` combinators. Rather
 /// than returning `Incomplete` on partial input, `alt_complete!` will try the
@@ -573,7 +575,7 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: $crate::IResult<_,_> = if reduced != b {
+        let res: $crate::IResult<_, _, u32> = if reduced != b {
           $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
         } else if m < blen {
           $crate::IResult::Incomplete($crate::Needed::Size(blen))
@@ -589,7 +591,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
+        let res:$crate::IResult<&[u8], &[u8], u32> = if $i.len() < cnt {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt))
         } else {
           $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])

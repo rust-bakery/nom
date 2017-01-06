@@ -228,6 +228,10 @@ macro_rules! take_until_s (
 mod test {
     use ::IResult;
 
+    fn iresult<I, O>(v: IResult<I, O, u32>) -> IResult<I, O, u32> {
+        v
+    }
+
     #[test]
     fn tag_str_succeed() {
         const INPUT: &'static str = "Hello World!";
@@ -252,8 +256,8 @@ mod test {
     fn tag_str_incomplete() {
         const INPUT: &'static str = "Hello";
         const TAG: &'static str = "Hello World!";
-
-        match tag_s!(INPUT, TAG) {
+        let res: IResult<_, _, u32> = tag_s!(INPUT, TAG);
+        match res {
             IResult::Incomplete(_) => (),
             other => {
                 panic!("Parser `tag_s` didn't require more input when it should have. \
@@ -266,8 +270,8 @@ mod test {
     fn tag_str_error() {
         const INPUT: &'static str = "Hello World!";
         const TAG: &'static str = "Random"; // TAG must be closer than INPUT.
-
-        match tag_s!(INPUT, TAG) {
+        let res: IResult<_, _, u32> = tag_s!(INPUT, TAG);
+        match res {
             IResult::Error(_) => (),
             other => {
                 panic!("Parser `tag_s` didn't fail when it should have. Got `{:?}`.`", other);
@@ -280,8 +284,8 @@ mod test {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const CONSUMED: &'static str = "βèƒôřèÂßÇ";
         const LEFTOVER: &'static str = "áƒƭèř";
-
-        match take_s!(INPUT, 9) {
+        let res: IResult<_, _, u32> = take_s!(INPUT, 9);
+        match res {
              IResult::Done(extra, output) => {
                 assert!(extra == LEFTOVER, "Parser `take_s` consumed leftover input. Leftover `{}`.", extra);
                 assert!(output == CONSUMED,
@@ -299,8 +303,8 @@ mod test {
         const FIND: &'static str = "ÂßÇ∂";
         const CONSUMED: &'static str = "βèƒôřè";
         const LEFTOVER: &'static str = "ÂßÇ∂áƒƭèř";
-
-        match take_until_s!(INPUT, FIND) {
+        let res: IResult<_, _, u32> = take_until_s!(INPUT, FIND);
+        match res {
             IResult::Done(extra, output) => {
                 assert!(extra == LEFTOVER, "Parser `take_until_s`\
                   consumed leftover input. Leftover `{}`.", extra);
@@ -316,8 +320,8 @@ mod test {
     #[test]
     fn take_s_incomplete() {
         const INPUT: &'static str = "βèƒôřèÂßÇá";
-
-        match take_s!(INPUT, 13) {
+        let res: IResult<_, _, u32> = take_s!(INPUT, 13);
+        match res {
             IResult::Incomplete(_) => (),
             other => panic!("Parser `take_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
@@ -431,8 +435,8 @@ mod test {
     const FIND: &'static str = "ÂßÇ";
     const OUTPUT: &'static str = "βèƒôřè";
     const LEFTOVER: &'static str = "áƒƭèř";
-
-    match take_until_and_consume_s!(INPUT, FIND) {
+    let res: IResult<_, _, u32> = take_until_and_consume_s!(INPUT, FIND);
+    match res {
       IResult::Done(extra, output) => {
         assert!(extra == LEFTOVER, "Parser `take_until_and_consume_s`\
                     consumed leftover input. Leftover `{}`.", extra);
@@ -510,8 +514,8 @@ mod test {
     fn take_until_and_consume_s_incomplete() {
         const INPUT: &'static str = "βèƒôřè";
         const FIND: &'static str = "βèƒôřèÂßÇ";
-
-        match take_until_and_consume_s!(INPUT, FIND) {
+        let res: IResult<_, _, u32> = take_until_and_consume_s!(INPUT, FIND);
+        match res {
             IResult::Incomplete(_) => (),
             other => panic!("Parser `take_until_and_consume_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
@@ -522,8 +526,8 @@ mod test {
     fn take_until_s_incomplete() {
         const INPUT: &'static str = "βèƒôřè";
         const FIND: &'static str = "βèƒôřèÂßÇ";
-
-        match take_until_s!(INPUT, FIND) {
+        let res: IResult<_, _, u32> = take_until_s!(INPUT, FIND);
+        match res {
             IResult::Incomplete(_) => (),
             other => panic!("Parser `take_until_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
@@ -585,7 +589,7 @@ mod test {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const FIND: &'static str = "Ráñδô₥";
 
-        match take_until_and_consume_s!(INPUT, FIND) {
+        match iresult(take_until_and_consume_s!(INPUT, FIND)) {
             IResult::Error(_) => (),
             other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
                              Got `{:?}`.", other),
@@ -597,7 +601,7 @@ mod test {
         const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
         const FIND: &'static str = "Ráñδô₥";
 
-        match take_until_s!(INPUT, FIND) {
+        match iresult(take_until_s!(INPUT, FIND)) {
             IResult::Error(_) => (),
             other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
                              Got `{:?}`.", other),

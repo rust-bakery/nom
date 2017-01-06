@@ -98,7 +98,9 @@ fn issue_142(){
 
 #[test]
 fn usize_length_bytes_issue(){
-  length_bytes!(b"012346", be_u16);
+  named!(typed_iresult, length_bytes!(be_u16));
+
+  typed_iresult(b"012346");
 }
 
 /*
