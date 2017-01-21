@@ -557,6 +557,47 @@ macro_rules! map_opt (
   );
 );
 
+/// `verify!(I -> IResult<I,O>, O -> bool) => I -> IResult<I, O>`
+/// returns the result of the child parser if it satisfies a verifcation function
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::be_u32;
+/// # fn main() {
+///  named!(check<u32>, verify!(be_u32, |val:u32| val >= 0 && val < 3));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! verify (
+  // Internal parser, do not use directly
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      match $submac!($i, $($args)*) {
+        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
+        $crate::IResult::Done(i, o)                          => if $submac2!(o, $($args2)*) {
+          $crate::IResult::Done(i, o)
+        } else {
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Verify, $i))
+        }
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    verify!(__impl $i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    verify!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    verify!(__impl $i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    verify!(__impl $i, call!($f), $submac!($($args)*));
+  );
+);
+
 /// `value!(T, R -> IResult<R, S> ) => R -> IResult<R, T>`
 ///
 /// or `value!(T) => R -> IResult<R, T>`
@@ -1219,4 +1260,11 @@ mod tests {
     assert_eq!(not_aaa(&b"abcd"[..]), Done(&b"abcd"[..], &b""[..]));
   }
 
+  #[test]
+  fn verify() {
+    named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == 'a' as u8));
+    assert_eq!(test(&b"bcd"[..]), Incomplete(Needed::Size(5)));
+    assert_eq!(test(&b"bcdefg"[..]), Error(error_position!(ErrorKind::Verify, &b"bcdefg"[..])));
+    assert_eq!(test(&b"abcdefg"[..]), Done(&b"fg"[..], &b"abcde"[..]));
+  }
 }
