@@ -454,6 +454,18 @@ macro_rules! succ (
   (5, $submac:ident ! ($($rest:tt)*)) => ($submac!(6, $($rest)*));
   (6, $submac:ident ! ($($rest:tt)*)) => ($submac!(7, $($rest)*));
   (7, $submac:ident ! ($($rest:tt)*)) => ($submac!(8, $($rest)*));
+  (8, $submac:ident ! ($($rest:tt)*)) => ($submac!(9, $($rest)*));
+  (9, $submac:ident ! ($($rest:tt)*)) => ($submac!(10, $($rest)*));
+  (10, $submac:ident ! ($($rest:tt)*)) => ($submac!(11, $($rest)*));
+  (11, $submac:ident ! ($($rest:tt)*)) => ($submac!(12, $($rest)*));
+  (12, $submac:ident ! ($($rest:tt)*)) => ($submac!(13, $($rest)*));
+  (13, $submac:ident ! ($($rest:tt)*)) => ($submac!(14, $($rest)*));
+  (14, $submac:ident ! ($($rest:tt)*)) => ($submac!(15, $($rest)*));
+  (15, $submac:ident ! ($($rest:tt)*)) => ($submac!(16, $($rest)*));
+  (16, $submac:ident ! ($($rest:tt)*)) => ($submac!(17, $($rest)*));
+  (17, $submac:ident ! ($($rest:tt)*)) => ($submac!(18, $($rest)*));
+  (18, $submac:ident ! ($($rest:tt)*)) => ($submac!(19, $($rest)*));
+  (19, $submac:ident ! ($($rest:tt)*)) => ($submac!(20, $($rest)*));
 );
 
 // HACK: for some reason, Rust 1.11 does not accept $res.$it in
@@ -470,6 +482,19 @@ macro_rules! acc (
   (5, $tup:expr) => ($tup.5);
   (6, $tup:expr) => ($tup.6);
   (7, $tup:expr) => ($tup.7);
+  (8, $tup:expr) => ($tup.8);
+  (9, $tup:expr) => ($tup.9);
+  (10, $tup:expr) => ($tup.10);
+  (11, $tup:expr) => ($tup.11);
+  (12, $tup:expr) => ($tup.12);
+  (13, $tup:expr) => ($tup.13);
+  (14, $tup:expr) => ($tup.14);
+  (15, $tup:expr) => ($tup.15);
+  (16, $tup:expr) => ($tup.16);
+  (17, $tup:expr) => ($tup.17);
+  (18, $tup:expr) => ($tup.18);
+  (19, $tup:expr) => ($tup.19);
+  (20, $tup:expr) => ($tup.20);
 );
 
 #[doc(hidden)]
