@@ -86,7 +86,7 @@ pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
       }
 }
 
-/// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
+/// Recognizes an end of line (both '\n' and '\r\n')
 pub fn line_ending<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength,
