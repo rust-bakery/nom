@@ -9,6 +9,7 @@ repository = "https://github.com/Geal/nom"
 readme = "README.md"
 documentation = "http://rust.unhandledexpression.com/nom/"
 keywords = ["parser", "parser-combinators", "parsing", "streaming", "bit"]
+categories = ["parsing"]
 
 include = [
   "CHANGELOG.md",
