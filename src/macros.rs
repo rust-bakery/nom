@@ -61,7 +61,7 @@
 //!     take_while!($input, call!($f));
 //!   );
 //! );
-//!
+//! ```
 #[allow(unused_variables)]
 
 /// Wraps a parser in a closure

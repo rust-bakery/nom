@@ -3,6 +3,15 @@
 use internal::{IResult,Needed};
 
 /// matches one of the provided characters
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+/// named!(a_or_b<char>, one_of!("ab"));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! one_of (
   ($i:expr, $inp: expr) => (
