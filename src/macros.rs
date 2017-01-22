@@ -159,6 +159,31 @@ macro_rules! named (
     );
 );
 
+/// Makes a function from a parser combination with arguments.
+#[macro_export]
+macro_rules! named_args {
+    (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        pub fn $func_name(input: &[u8], $( $arg : $typ ),*) -> IResult<&[u8], $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
+    (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        pub fn $func_name<'a>(input: &'a [u8], $( $arg : $typ ),*) -> IResult<&'a [u8], $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
+    ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        fn $func_name(input: &[u8], $( $arg : $typ ),*) -> IResult<&[u8], $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
+    ($func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        fn $func_name<'a>(input: &'a [u8], $( $arg : $typ ),*) -> IResult<&'a [u8], $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
+}
+
 /// Makes a function from a parser combination, with attributes
 ///
 /// The usage of this macro is almost identical to `named!`, except that
