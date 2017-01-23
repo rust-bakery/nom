@@ -340,6 +340,17 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   }
 }
 
+/// Recognizes big endian unsigned 3 byte integer
+#[inline]
+pub fn be_u24(i: &[u8]) -> IResult<&[u8], usize> {
+  if i.len() < 3 {
+    Incomplete(Needed::Size(3))
+  } else {
+    let res = ((i[0] as usize) << 16) + ((i[1] as usize) << 8) + (i[2] as usize);
+    Done(&i[3..], res)
+  }
+}
+
 /// Recognizes big endian unsigned 4 bytes integer
 #[inline]
 pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
