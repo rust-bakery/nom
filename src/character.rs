@@ -9,7 +9,11 @@ use internal::{IResult,Needed};
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// # fn main() {
-/// named!(a_or_b<char>, one_of!("ab"));
+/// named!(simple<char>, one_of!(b"abc"));
+/// assert_eq!(simple(b"a123"), IResult::Done(&b"123"[..], 'a'));
+///
+/// named!(a_or_b<&str, char>, one_of!("ab汉"));
+/// assert_eq!(a_or_b("汉jiosfe"), IResult::Done("jiosfe", '汉'));
 /// # }
 /// ```
 #[macro_export]
