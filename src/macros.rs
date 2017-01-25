@@ -559,6 +559,7 @@ macro_rules! map_opt (
 
 /// `verify!(I -> IResult<I,O>, O -> bool) => I -> IResult<I, O>`
 /// returns the result of the child parser if it satisfies a verifcation function
+///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
