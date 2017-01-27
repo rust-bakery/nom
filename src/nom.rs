@@ -596,6 +596,7 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
 }
 
 /// Recognizes floating point number in a byte string and returs a f32
+#[cfg(not(feature = "core"))]
 pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
   flat_map!(input,
     recognize!(
@@ -618,6 +619,7 @@ pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
 }
 
 /// Recognizes floating point number in a string and returs a f32
+#[cfg(not(feature = "core"))]
 pub fn float_s(input: &str) -> IResult<&str,f32> {
   flat_map!(input,
     recognize!(
@@ -640,6 +642,7 @@ pub fn float_s(input: &str) -> IResult<&str,f32> {
 }
 
 /// Recognizes floating point number in a byte string and returs a f64
+#[cfg(not(feature = "core"))]
 pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
   flat_map!(input,
     recognize!(
@@ -662,6 +665,7 @@ pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
 }
 
 /// Recognizes floating point number in a string and returs a f64
+#[cfg(not(feature = "core"))]
 pub fn double_s(input: &str) -> IResult<&str,f64> {
   flat_map!(input,
     recognize!(
