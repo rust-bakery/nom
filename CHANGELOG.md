@@ -4,6 +4,32 @@
 
 ### Changed
 
+## 2.1.0 - 2017-01-27
+
+### Thanks
+
+- @nickbabcock for documentation fixes
+- @derekdreery for documentation fixes
+- @DirkyJerky for documentation fixes
+- @saschagrunert for documentation fixes
+- @lucab for documentation fixes
+- @hyone for documentation fixes
+- @tstorch for factoring `Slice`
+- @shepmaster for adding crate categories
+- @antoyo for adding `named_args!`
+
+### Added
+
+- `verify!` uses a first parser, then applies a function to check that its result satisfies some conditions
+- `named_args!` creates a parser function that can accept other arguments along with the input
+- `parse_to!` will use the `parse` method from `FromStr` to parse a value. It will automatically translate the input to a string if necessary
+- `float`, `float_s`, `double`, `double_s` can recognize floating point numbers in text
+
+### Changed
+
+- `escaped!` will now return `Incomplete` if needed
+- `permutation!` supports up to 20 child parsers
+
 ## 2.0.1 - 2016-12-10
 
 Bugfix release
@@ -596,7 +622,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/2.0.1...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/2.1.0...HEAD
+* [2.1.0]: https://github.com/Geal/nom/compare/2.0.1...2.1.0
 * [2.0.1]: https://github.com/Geal/nom/compare/2.0.0...2.0.1
 * [2.0.0]: https://github.com/Geal/nom/compare/1.2.4...2.0.0
 * [1.2.4]: https://github.com/Geal/nom/compare/1.2.3...1.2.4
