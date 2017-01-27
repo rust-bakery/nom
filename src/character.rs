@@ -98,21 +98,28 @@ macro_rules! none_of_bytes (
   );
 );
 
-/// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
+/// matches one character: `char!(char) => T -> IResult<T, char>
 #[macro_export]
 macro_rules! char (
   ($i:expr, $c: expr) => (
     {
-      if $i.is_empty() {
-        let res: $crate::IResult<&[u8], char> = $crate::IResult::Incomplete($crate::Needed::Size(1));
-        res
+      #[inline(always)]
+      fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
+        b.as_bytes()
+      }
+
+      let res: $crate::IResult<_,_> = if $i.is_empty() {
+        $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
-        if $i[0] == $c as u8 {
-          $crate::IResult::Done(&$i[1..], $i[0] as char)
+        let bytes = as_bytes(&$i);
+          
+        if bytes[0] == $c as u8 {
+          $crate::IResult::Done(&$i[1..], bytes[0] as char)
         } else {
           $crate::IResult::Error(error_position!($crate::ErrorKind::Char, $i))
         }
-      }
+      };
+      res
     }
   );
 );
@@ -165,6 +172,14 @@ mod tests {
 
     let b = &b"cde"[..];
     assert_eq!(f(b), Done(&b"de"[..], 'c'));
+    
+    named!(x<&str, char>, char!('x'));
+	
+	let c = "xyz";
+    assert_eq!(x(c), Done("yz", 'x'));
+    
+    let d = "abc";
+    assert_eq!(x(d), Error(error_position!(ErrorKind::Char, d)));
   }
 
 }
