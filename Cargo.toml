@@ -31,7 +31,7 @@ stream = []
 verbose-errors = []
 
 [dependencies.regex]
-version = "^0.1.56"
+version = "^0.2"
 optional = true
 
 [dependencies.lazy_static]
