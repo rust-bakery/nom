@@ -23,6 +23,18 @@ macro_rules! regex_bytes (
 /// Returns the whole input if a match is found
 ///
 /// requires the `regexp` feature
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done,Error};
+/// # fn main() {
+/// named!(rm< &str,Vec<&str> >, re_matches_static!(r"\d{4}-\d{2}-\d{2}"));
+/// assert_eq!(rm("2015-09-07"), Done("", vec!["2015-09-07"]));
+/// assert_eq!(rm("blah"), Error(error_code!(ErrorKind::RegexpMatches)));
+/// assert_eq!(rm("aaa2015-09-07blah2015-09-09pouet"), Done("pouet", vec!["2015-09-07", "2015-09-09"]));
+/// # }
+/// ```
+///
 #[macro_export]
 macro_rules! re_match (
   ($i:expr, $re:expr) => (
