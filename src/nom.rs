@@ -595,6 +595,94 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
     IResult::Done(&input[input.len()..], input)
 }
 
+/// Recognizes floating point number in a byte string and returs a f32
+pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
+  flat_map!(input,
+    recognize!(
+      tuple!(
+        opt!(alt!(tag!("+") | tag!("-"))),
+        alt!(
+          delimited!(digit, tag!("."), opt!(digit))
+          | delimited!(opt!(digit), tag!("."), digit)
+        ),
+        opt!(complete!(tuple!(
+          alt!(tag!("e") | tag!("E")),
+          opt!(alt!(tag!("+") | tag!("-"))),
+          digit
+          )
+        ))
+      )
+    ),
+    parse_to!(f32)
+  )
+}
+
+/// Recognizes floating point number in a string and returs a f32
+pub fn float_s(input: &str) -> IResult<&str,f32> {
+  flat_map!(input,
+    recognize!(
+      tuple!(
+        opt!(alt!(tag!("+") | tag!("-"))),
+        alt!(
+          delimited!(digit, tag!("."), opt!(digit))
+          | delimited!(opt!(digit), tag!("."), digit)
+        ),
+        opt!(complete!(tuple!(
+          alt!(tag!("e") | tag!("E")),
+          opt!(alt!(tag!("+") | tag!("-"))),
+          digit
+          )
+        ))
+      )
+    ),
+    parse_to!(f32)
+  )
+}
+
+/// Recognizes floating point number in a byte string and returs a f64
+pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
+  flat_map!(input,
+    recognize!(
+      tuple!(
+        opt!(alt!(tag!("+") | tag!("-"))),
+        alt!(
+          delimited!(digit, tag!("."), opt!(digit))
+          | delimited!(opt!(digit), tag!("."), digit)
+        ),
+        opt!(complete!(tuple!(
+          alt!(tag!("e") | tag!("E")),
+          opt!(alt!(tag!("+") | tag!("-"))),
+          digit
+          )
+        ))
+      )
+    ),
+    parse_to!(f64)
+  )
+}
+
+/// Recognizes floating point number in a string and returs a f64
+pub fn double_s(input: &str) -> IResult<&str,f64> {
+  flat_map!(input,
+    recognize!(
+      tuple!(
+        opt!(alt!(tag!("+") | tag!("-"))),
+        alt!(
+          delimited!(digit, tag!("."), opt!(digit))
+          | delimited!(opt!(digit), tag!("."), digit)
+        ),
+        opt!(complete!(tuple!(
+          alt!(tag!("e") | tag!("E")),
+          opt!(alt!(tag!("+") | tag!("-"))),
+          digit
+          )
+        ))
+      )
+    ),
+    parse_to!(f64)
+  )
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -1041,5 +1129,18 @@ mod tests {
     assert_eq!(eol("\r\na"), Done("a", "\r\n"));
     assert_eq!(eol("\r"),    Incomplete(Needed::Size(2)));
     assert_eq!(eol("\ra"),   Error(error_position!(ErrorKind::CrLf, "\ra")));
+  }
+
+  #[test]
+  fn float_test() {
+    assert_eq!(float(&b"+3.14"[..]),   Done(&b""[..], 3.14));
+    assert_eq!(float_s(&"3.14"[..]),   Done(&""[..], 3.14));
+    assert_eq!(double(&b"3.14"[..]),   Done(&b""[..], 3.14));
+    assert_eq!(double_s(&"3.14"[..]),   Done(&""[..], 3.14));
+
+    assert_eq!(float(&b"-1.234E-12"[..]),   Done(&b""[..], -1.234E-12));
+    assert_eq!(float_s(&"-1.234E-12"[..]),   Done(&""[..], -1.234E-12));
+    assert_eq!(double(&b"-1.234E-12"[..]),   Done(&b""[..], -1.234E-12));
+    assert_eq!(double_s(&"-1.234E-12"[..]),   Done(&""[..], -1.234E-12));
   }
 }
