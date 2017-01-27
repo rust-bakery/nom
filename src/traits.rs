@@ -7,6 +7,10 @@ use std::iter::Enumerate;
 use std::str::Chars;
 #[cfg(not(feature = "core"))]
 use std::str::CharIndices;
+#[cfg(not(feature = "core"))]
+use std::str::FromStr;
+#[cfg(not(feature = "core"))]
+use std::str::from_utf8;
 
 
 /// abstract method to calculate the input length
@@ -445,6 +449,26 @@ impl<'a,'b> FindSubstring<&'b str> for &'a str {
   //returns byte index
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.find(substr)
+  }
+}
+
+/// abstract method to calculate the input length
+#[cfg(not(feature = "core"))]
+pub trait ParseTo<R> {
+  fn parse_to(&self) -> Option<R>;
+}
+
+#[cfg(not(feature = "core"))]
+impl<'a,R: FromStr> ParseTo<R> for &'a[u8] {
+  fn parse_to(&self) -> Option<R> {
+    from_utf8(self).ok().and_then(|s| s.parse().ok())
+  }
+}
+
+#[cfg(not(feature = "core"))]
+impl<'a,R:FromStr> ParseTo<R> for &'a str {
+  fn parse_to(&self) -> Option<R> {
+    self.parse().ok()
   }
 }
 

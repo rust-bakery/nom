@@ -582,6 +582,25 @@ macro_rules! map_opt (
   );
 );
 
+/// `parse_to!(O) => I -> IResult<I, O>`
+/// uses the `parse` method from `std::str::FromStr` to convert the current
+/// input to the specified type
+///
+/// this will completely consume the input
+#[macro_export]
+macro_rules! parse_to (
+  ($i:expr, $t:ty ) => (
+    {
+      use $crate::ParseTo;
+      use $crate::InputLength;
+      match ($i).parse_to() {
+        ::std::option::Option::Some(output) => $crate::IResult::Done($i.slice(..$i.input_len()), output),
+        ::std::option::Option::None         => $crate::IResult::Error(error_position!($crate::ErrorKind::MapOpt, $i))
+      }
+    }
+  );
+);
+
 /// `verify!(I -> IResult<I,O>, O -> bool) => I -> IResult<I, O>`
 /// returns the result of the child parser if it satisfies a verifcation function
 ///
