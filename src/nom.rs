@@ -342,14 +342,18 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
 
 /// Recognizes big endian unsigned 3 byte integer
 #[inline]
-pub fn be_u24(i: &[u8]) -> IResult<&[u8], usize> {
+pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
     Incomplete(Needed::Size(3))
   } else {
-    let res = ((i[0] as usize) << 16) + ((i[1] as usize) << 8) + (i[2] as usize);
+    let res = ((i[0] as u32) << 16) + ((i[1] as u32) << 8) + (i[2] as u32);
     Done(&i[3..], res)
   }
 }
+
+
+
+
 
 /// Recognizes big endian unsigned 4 bytes integer
 #[inline]
@@ -416,6 +420,17 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   } else {
     let res = ((i[1] as u16) << 8) + i[0] as u16;
     Done(&i[2..], res)
+  }
+}
+
+/// Recongnizes little endan unsigned 3 byte integer
+#[inline]
+pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
+  if i.len() < 3 {
+    Incomplete(Needed::Size(3))
+  } else {
+    let res = (i[0] as u32) + ((i[3] as u32) << 8) + ((i[2] as u32) << 16);
+    Done(&i[3..], res)
   }
 }
 
