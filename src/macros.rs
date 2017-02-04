@@ -163,22 +163,22 @@ macro_rules! named (
 #[macro_export]
 macro_rules! named_args {
     (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        pub fn $func_name(input: &[u8], $( $arg : $typ ),*) -> IResult<&[u8], $return_type> {
+        pub fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
     (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        pub fn $func_name<'a>(input: &'a [u8], $( $arg : $typ ),*) -> IResult<&'a [u8], $return_type> {
+        pub fn $func_name<'a>(input: &'a [u8], $( $arg : $typ ),*) -> $crate::IResult<&'a [u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
     ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        fn $func_name(input: &[u8], $( $arg : $typ ),*) -> IResult<&[u8], $return_type> {
+        fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
     ($func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        fn $func_name<'a>(input: &'a [u8], $( $arg : $typ ),*) -> IResult<&'a [u8], $return_type> {
+        fn $func_name<'a>(input: &'a [u8], $( $arg : $typ ),*) -> $crate::IResult<&'a [u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
