@@ -3,13 +3,9 @@
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
 use std::iter::Enumerate;
 
-#[cfg(not(feature = "core"))]
 use std::str::Chars;
-#[cfg(not(feature = "core"))]
 use std::str::CharIndices;
-#[cfg(not(feature = "core"))]
 use std::str::FromStr;
-#[cfg(not(feature = "core"))]
 use std::str::from_utf8;
 
 
@@ -28,7 +24,6 @@ impl<'a, T> InputLength for &'a[T] {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a> InputLength for &'a str {
   #[inline]
   fn input_len(&self) -> usize {
@@ -213,7 +208,6 @@ impl InputTake for [u8] {
     }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a> InputIter for &'a str {
     type Item     = char;
     type RawItem  = char;
@@ -251,7 +245,6 @@ impl<'a> InputIter for &'a str {
     }
 }
 
-#[cfg(not(feature = "core"))]
 impl InputTake for str {
     #[inline]
     fn take<P>(&self, count: usize) -> Option<&Self> {
@@ -346,7 +339,6 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> Compare<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
@@ -358,7 +350,6 @@ impl<'a,'b> Compare<&'b str> for &'a [u8] {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> Compare<&'b str> for &'a str {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
@@ -404,14 +395,12 @@ impl<'a> FindToken<&'a[u8]> for u8 {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a> FindToken<&'a str> for u8 {
   fn find_token(&self, input: &str) -> bool {
     self.find_token(str::as_bytes(input))
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a> FindToken<&'a str> for char {
   fn find_token(&self, input: &str) -> bool {
     for i in input.chars() {
@@ -437,14 +426,12 @@ impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> FindSubstring<&'b str> for &'a[u8] {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.find_substring(str::as_bytes(substr))
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> FindSubstring<&'b str> for &'a str {
   //returns byte index
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
@@ -453,19 +440,16 @@ impl<'a,'b> FindSubstring<&'b str> for &'a str {
 }
 
 /// abstract method to calculate the input length
-#[cfg(not(feature = "core"))]
 pub trait ParseTo<R> {
   fn parse_to(&self) -> Option<R>;
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,R: FromStr> ParseTo<R> for &'a[u8] {
   fn parse_to(&self) -> Option<R> {
     from_utf8(self).ok().and_then(|s| s.parse().ok())
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,R:FromStr> ParseTo<R> for &'a str {
   fn parse_to(&self) -> Option<R> {
     self.parse().ok()
