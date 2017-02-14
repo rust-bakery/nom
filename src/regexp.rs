@@ -315,7 +315,7 @@ macro_rules! re_capture_static (
       use $crate::Slice;
       regex!(RE, $re);
       if let Some(c) = RE.captures($i) {
-        let v:Vec<&str> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
+        let v:Vec<&str> = c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
         let offset = {
           let end = v.last().unwrap();
           end.as_ptr() as usize + end.len() - $i.as_ptr() as usize
@@ -364,7 +364,7 @@ macro_rules! re_bytes_capture_static (
       use $crate::Slice;
       regex_bytes!(RE, $re);
       if let Some(c) = RE.captures($i) {
-        let v:Vec<&[u8]> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
+        let v:Vec<&[u8]> = c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
         let offset = {
           let end = v.last().unwrap();
           end.as_ptr() as usize + end.len() - $i.as_ptr() as usize
@@ -412,7 +412,7 @@ macro_rules! re_captures_static (
     {
       use $crate::Slice;
       regex!(RE, $re);
-      let v:Vec<Vec<&str>> = RE.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&str>> = RE.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -461,7 +461,7 @@ macro_rules! re_bytes_captures_static (
     {
       use $crate::Slice;
       regex_bytes!(RE, $re);
-      let v:Vec<Vec<&[u8]>> = RE.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&[u8]>> = RE.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
