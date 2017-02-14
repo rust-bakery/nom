@@ -23,18 +23,6 @@ macro_rules! regex_bytes (
 /// Returns the whole input if a match is found
 ///
 /// requires the `regexp` feature
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done,Error};
-/// # fn main() {
-/// named!(rm< &str,Vec<&str> >, re_matches_static!(r"\d{4}-\d{2}-\d{2}"));
-/// assert_eq!(rm("2015-09-07"), Done("", vec!["2015-09-07"]));
-/// assert_eq!(rm("blah"), Error(error_code!(ErrorKind::RegexpMatches)));
-/// assert_eq!(rm("aaa2015-09-07blah2015-09-09pouet"), Done("pouet", vec!["2015-09-07", "2015-09-09"]));
-/// # }
-/// ```
-///
 #[macro_export]
 macro_rules! re_match (
   ($i:expr, $re:expr) => (
@@ -123,8 +111,8 @@ macro_rules! re_find (
     {
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
-      if let Some((begin, end)) = re.find($i) {
-        $crate::IResult::Done($i.slice(end..), $i.slice(begin..end))
+      if let Some(m) = re.find($i) {
+        $crate::IResult::Done($i.slice(m.end()..), $i.slice(m.start()..m.end()))
       } else {
         $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind))
       }
@@ -143,8 +131,8 @@ macro_rules! re_find_static (
     {
       use $crate::Slice;
       regex!(RE, $re);
-      if let Some((begin, end)) = RE.find($i) {
-        $crate::IResult::Done($i.slice(end..), $i.slice(begin..end))
+      if let Some(m) = RE.find($i) {
+        $crate::IResult::Done($i.slice(m.end()..), $i.slice(m.start()..m.end()))
       } else {
         $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind))
       }
@@ -163,8 +151,8 @@ macro_rules! re_bytes_find (
     {
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
-      if let Some((begin, end)) = re.find($i) {
-        $crate::IResult::Done($i.slice(end..), $i.slice(begin..end))
+      if let Some(m) = re.find($i) {
+        $crate::IResult::Done($i.slice(m.end()..), $i.slice(m.start()..m.end()))
       } else {
         $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind))
       }
@@ -183,8 +171,8 @@ macro_rules! re_bytes_find_static (
     {
       use $crate::Slice;
       regex_bytes!(RE, $re);
-      if let Some((begin, end)) = RE.find($i) {
-        $crate::IResult::Done($i.slice(end..), $i.slice(begin..end))
+      if let Some(m) = RE.find($i) {
+        $crate::IResult::Done($i.slice(m.end()..), $i.slice(m.start()..m.end()))
       } else {
         $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind))
       }
@@ -203,7 +191,7 @@ macro_rules! re_matches (
     {
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
-      let v: Vec<&str> = re.find_iter($i).map(|(begin,end)| $i.slice(begin..end)).collect();
+      let v: Vec<&str> = re.find_iter($i).map(|m| $i.slice(m.start()..m.end())).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap();
@@ -228,7 +216,7 @@ macro_rules! re_matches_static (
     {
       use $crate::Slice;
       regex!(RE, $re);
-      let v: Vec<&str> = RE.find_iter($i).map(|(begin,end)| $i.slice(begin..end)).collect();
+      let v: Vec<&str> = RE.find_iter($i).map(|m| $i.slice(m.start()..m.end())).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap();
@@ -252,7 +240,7 @@ macro_rules! re_bytes_matches (
     {
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
-      let v: Vec<&[u8]> = re.find_iter($i).map(|(begin,end)| $i.slice(begin..end)).collect();
+      let v: Vec<&[u8]> = re.find_iter($i).map(|m| $i.slice(m.start()..m.end())).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap();
@@ -277,7 +265,7 @@ macro_rules! re_bytes_matches_static (
     {
       use $crate::Slice;
       regex_bytes!(RE, $re);
-      let v: Vec<&[u8]> = RE.find_iter($i).map(|(begin,end)| $i.slice(begin..end)).collect();
+      let v: Vec<&[u8]> = RE.find_iter($i).map(|m| $i.slice(m.start()..m.end())).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap();
@@ -302,7 +290,7 @@ macro_rules! re_capture (
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
       if let Some(c) = re.captures($i) {
-        let v:Vec<&str> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| $i.slice(begin..end)).collect();
+        let v:Vec<&str> = c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
         let offset = {
           let end = v.last().unwrap();
           end.as_ptr() as usize + end.len() - $i.as_ptr() as usize
@@ -327,7 +315,7 @@ macro_rules! re_capture_static (
       use $crate::Slice;
       regex!(RE, $re);
       if let Some(c) = RE.captures($i) {
-        let v:Vec<&str> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| $i.slice(begin..end)).collect();
+        let v:Vec<&str> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
         let offset = {
           let end = v.last().unwrap();
           end.as_ptr() as usize + end.len() - $i.as_ptr() as usize
@@ -351,7 +339,7 @@ macro_rules! re_bytes_capture (
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
       if let Some(c) = re.captures($i) {
-        let v:Vec<&[u8]> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| $i.slice(begin..end)).collect();
+        let v:Vec<&[u8]> = c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
         let offset = {
           let end = v.last().unwrap();
           end.as_ptr() as usize + end.len() - $i.as_ptr() as usize
@@ -376,7 +364,7 @@ macro_rules! re_bytes_capture_static (
       use $crate::Slice;
       regex_bytes!(RE, $re);
       if let Some(c) = RE.captures($i) {
-        let v:Vec<&[u8]> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| $i.slice(begin..end)).collect();
+        let v:Vec<&[u8]> = c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
         let offset = {
           let end = v.last().unwrap();
           end.as_ptr() as usize + end.len() - $i.as_ptr() as usize
@@ -399,7 +387,7 @@ macro_rules! re_captures (
     {
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
-      let v:Vec<Vec<&str>> = re.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| $i.slice(begin..end)).collect()).collect();
+      let v:Vec<Vec<&str>> = re.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -424,7 +412,7 @@ macro_rules! re_captures_static (
     {
       use $crate::Slice;
       regex!(RE, $re);
-      let v:Vec<Vec<&str>> = RE.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| $i.slice(begin..end)).collect()).collect();
+      let v:Vec<Vec<&str>> = RE.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -448,7 +436,7 @@ macro_rules! re_bytes_captures (
     {
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
-      let v:Vec<Vec<&[u8]>> = re.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| $i.slice(begin..end)).collect()).collect();
+      let v:Vec<Vec<&[u8]>> = re.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -473,7 +461,7 @@ macro_rules! re_bytes_captures_static (
     {
       use $crate::Slice;
       regex_bytes!(RE, $re);
-      let v:Vec<Vec<&[u8]>> = RE.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|(begin,end)| $i.slice(begin..end)).collect()).collect();
+      let v:Vec<Vec<&[u8]>> = RE.captures_iter($i).map(|c| c.iter_pos().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -544,7 +532,7 @@ mod tests {
 
   #[test]
   fn re_capture() {
-    named!(rm< &str,Vec<&str> >, re_capture!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
+    named!(rm< &str,Vec<&str> >, re_capture!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm("blah nom 0.3.11pouet"), Done("pouet", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]));
     assert_eq!(rm("blah"), Error(error_code!(ErrorKind::RegexpCapture)));
     assert_eq!(rm("hello nom 0.3.11 world regex 0.1.41"), Done(" world regex 0.1.41", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]));
@@ -553,7 +541,7 @@ mod tests {
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_capture_static() {
-    named!(rm< &str,Vec<&str> >, re_capture_static!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
+    named!(rm< &str,Vec<&str> >, re_capture_static!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm("blah nom 0.3.11pouet"), Done("pouet", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]));
     assert_eq!(rm("blah"), Error(error_code!(ErrorKind::RegexpCapture)));
     assert_eq!(rm("hello nom 0.3.11 world regex 0.1.41"), Done(" world regex 0.1.41", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]));
@@ -561,7 +549,7 @@ mod tests {
 
   #[test]
   fn re_captures() {
-    named!(rm< &str,Vec<Vec<&str>> >, re_captures!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
+    named!(rm< &str,Vec<Vec<&str>> >, re_captures!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm("blah nom 0.3.11pouet"), Done("pouet", vec![vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]]));
     assert_eq!(rm("blah"), Error(error_code!(ErrorKind::RegexpCapture)));
     assert_eq!(rm("hello nom 0.3.11 world regex 0.1.41 aaa"), Done(" aaa", vec![
@@ -573,7 +561,7 @@ mod tests {
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_captures_static() {
-    named!(rm< &str,Vec<Vec<&str>> >, re_captures_static!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
+    named!(rm< &str,Vec<Vec<&str>> >, re_captures_static!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm("blah nom 0.3.11pouet"), Done("pouet", vec![vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]]));
     assert_eq!(rm("blah"), Error(error_code!(ErrorKind::RegexpCapture)));
     assert_eq!(rm("hello nom 0.3.11 world regex 0.1.41 aaa"), Done(" aaa", vec![
@@ -635,7 +623,7 @@ mod tests {
 
   #[test]
   fn re_bytes_capture() {
-    named!(rm<Vec<&[u8]> >, re_bytes_capture!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
+    named!(rm<Vec<&[u8]> >, re_bytes_capture!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]), Done(&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]));
     assert_eq!(rm(&b"blah"[..]), Error(error_code!(ErrorKind::RegexpCapture)));
     assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]), Done(&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]));
@@ -644,7 +632,7 @@ mod tests {
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_bytes_capture_static() {
-    named!(rm< Vec<&[u8]> >, re_bytes_capture_static!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
+    named!(rm< Vec<&[u8]> >, re_bytes_capture_static!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]), Done(&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]));
     assert_eq!(rm(&b"blah"[..]), Error(error_code!(ErrorKind::RegexpCapture)));
     assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]), Done(&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]));
@@ -652,7 +640,7 @@ mod tests {
 
   #[test]
   fn re_bytes_captures() {
-    named!(rm< Vec<Vec<&[u8]>> >, re_bytes_captures!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
+    named!(rm< Vec<Vec<&[u8]>> >, re_bytes_captures!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]), Done(&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]]));
     assert_eq!(rm(&b"blah"[..]), Error(error_code!(ErrorKind::RegexpCapture)));
     assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41 aaa"[..]), Done(&b" aaa"[..], vec![
@@ -664,7 +652,7 @@ mod tests {
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_bytes_captures_static() {
-    named!(rm< Vec<Vec<&[u8]>> >, re_bytes_captures_static!(r"([:alpha:]+)\s+((\d+).(\d+).(\d+))"));
+    named!(rm< Vec<Vec<&[u8]>> >, re_bytes_captures_static!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]), Done(&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]]));
     assert_eq!(rm(&b"blah"[..]), Error(error_code!(ErrorKind::RegexpCapture)));
     assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41 aaa"[..]), Done(&b" aaa"[..], vec![
