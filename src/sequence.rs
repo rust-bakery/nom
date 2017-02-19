@@ -578,6 +578,23 @@ macro_rules! terminated(
 
 /// `delimited!(I -> IResult<I,T>, I -> IResult<I,O>, I -> IResult<I,U>) => I -> IResult<I, O>`
 /// delimited(opening, X, closing) returns X
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{self, Done};
+/// named!(bracketed,
+///     delimited!(
+///         tag!("("),
+///         take_until!(")"),
+///         tag!(")")
+///     )
+/// );
+///
+/// # fn main() {
+/// let input = &b"(test)"[..];
+/// assert_eq!(bracketed(input), Done(&b""[..], &b"test"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
