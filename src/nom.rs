@@ -547,7 +547,7 @@ pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
 /// Recognizes a hex-encoded integer
 #[inline]
 pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
-  match is_a!(input, &b"0123456789abcdef"[..]) {
+  match is_a!(input, &b"0123456789abcdefABCDEF"[..]) {
     Error(e)    => Error(e),
     Incomplete(e) => Incomplete(e),
     Done(i,o) => {
@@ -962,6 +962,7 @@ mod tests {
     assert_eq!(hex_u32(&b"ff"[..]), Done(&b""[..], 255));
     assert_eq!(hex_u32(&b"1be2"[..]), Done(&b""[..], 7138));
     assert_eq!(hex_u32(&b"c5a31be2"[..]), Done(&b""[..], 3315801058));
+    assert_eq!(hex_u32(&b"C5A31be2"[..]), Done(&b""[..], 3315801058));
     assert_eq!(hex_u32(&b"00c5a31be2"[..]), Done(&b"e2"[..], 12952347));
     assert_eq!(hex_u32(&b"c5a31be201"[..]), Done(&b"01"[..], 3315801058));
     assert_eq!(hex_u32(&b"ffffffff"[..]), Done(&b""[..], 4294967295));
