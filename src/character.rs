@@ -7,44 +7,18 @@ use internal::{IResult,Needed};
 macro_rules! one_of (
   ($i:expr, $inp: expr) => (
     {
-      if $i.is_empty() {
-        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
-      } else {
-        #[inline(always)]
-        fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-          b.as_bytes()
-        }
+      use $crate::Slice;
+      use $crate::AsChar;
+      use $crate::FindToken;
+      use $crate::InputIter;
 
-        let expected = $inp;
-        let bytes = as_bytes(&expected);
-        one_of_bytes!($i, bytes)
-      }
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! one_of_bytes (
-  ($i:expr, $bytes: expr) => (
-    {
-      if $i.is_empty() {
-        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
-      } else {
-        let mut found = false;
-
-        for &i in $bytes {
-          if i == $i[0] {
-            found = true;
-            break;
-          }
-        }
-
-        if found {
-          $crate::IResult::Done(&$i[1..], $i[0] as char)
-        } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i))
-        }
+      match ($i).iter_elements().next().map(|c| {
+        c.find_token($inp)
+      }) {
+        None        => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
+        Some(false) => $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i)),
+        //the unwrap should be safe here
+        Some(true)  => $crate::IResult::Done($i.slice(1..), $i.iter_elements().next().unwrap().as_char())
       }
     }
   );
@@ -55,44 +29,18 @@ macro_rules! one_of_bytes (
 macro_rules! none_of (
   ($i:expr, $inp: expr) => (
     {
-      if $i.is_empty() {
-        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
-      } else {
-        #[inline(always)]
-        fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-          b.as_bytes()
-        }
+      use $crate::Slice;
+      use $crate::AsChar;
+      use $crate::FindToken;
+      use $crate::InputIter;
 
-        let expected = $inp;
-        let bytes = as_bytes(&expected);
-        none_of_bytes!($i, bytes)
-      }
-    }
-  );
-);
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! none_of_bytes (
-  ($i:expr, $bytes: expr) => (
-    {
-      if $i.is_empty() {
-        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
-      } else {
-        let mut found = false;
-
-        for &i in $bytes {
-          if i == $i[0] {
-            found = true;
-            break;
-          }
-        }
-
-        if !found {
-          $crate::IResult::Done(&$i[1..], $i[0] as char)
-        } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::NoneOf, $i))
-        }
+      match ($i).iter_elements().next().map(|c| {
+        !c.find_token($inp)
+      }) {
+        None        => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
+        Some(false) => $crate::IResult::Error(error_position!($crate::ErrorKind::NoneOf, $i)),
+        //the unwrap should be safe here
+        Some(true)  => $crate::IResult::Done($i.slice(1..), $i.iter_elements().next().unwrap().as_char())
       }
     }
   );
@@ -103,15 +51,17 @@ macro_rules! none_of_bytes (
 macro_rules! char (
   ($i:expr, $c: expr) => (
     {
-      if $i.is_empty() {
-        let res: $crate::IResult<&[u8], char> = $crate::IResult::Incomplete($crate::Needed::Size(1));
-        res
-      } else {
-        if $i[0] == $c as u8 {
-          $crate::IResult::Done(&$i[1..], $i[0] as char)
-        } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::Char, $i))
-        }
+      use $crate::Slice;
+      use $crate::AsChar;
+      use $crate::InputIter;
+
+      match ($i).iter_elements().next().map(|c| {
+        c.as_char() == $c
+      }) {
+        None        => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
+        Some(false) => $crate::IResult::Error(error_position!($crate::ErrorKind::Char, $i)),
+        //the unwrap should be safe here
+        Some(true)  => $crate::IResult::Done($i.slice(1..), $i.iter_elements().next().unwrap().as_char())
       }
     }
   );
