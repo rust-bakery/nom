@@ -138,6 +138,21 @@ impl AsChar for char {
     fn is_oct_digit(self) -> bool { self.is_digit(8) }
 }
 
+impl<'a> AsChar for &'a char {
+    #[inline]
+    fn as_char(self)      -> char { self.clone() }
+    #[inline]
+    fn is_alpha(self)     -> bool { self.is_alphabetic() }
+    #[inline]
+    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
+    #[inline]
+    fn is_dec_digit(self) -> bool { self.is_digit(10) }
+    #[inline]
+    fn is_hex_digit(self) -> bool { self.is_digit(16) }
+    #[inline]
+    fn is_oct_digit(self) -> bool { self.is_digit(8) }
+}
+
 /// abstracts common iteration operations on the input type
 ///
 /// it needs a distinction between `Item` and `RawItem` because
@@ -406,6 +421,22 @@ impl<'a> FindToken<&'a[u8]> for u8 {
 
 #[cfg(not(feature = "core"))]
 impl<'a> FindToken<&'a str> for u8 {
+  fn find_token(&self, input: &str) -> bool {
+    self.find_token(str::as_bytes(input))
+  }
+}
+
+impl<'a,'b> FindToken<&'a[u8]> for &'b u8 {
+  fn find_token(&self, input: &[u8]) -> bool {
+    for &i in input.iter() {
+      if **self == i { return true }
+    }
+    false
+  }
+}
+
+#[cfg(not(feature = "core"))]
+impl<'a,'b> FindToken<&'a str> for &'b u8 {
   fn find_token(&self, input: &str) -> bool {
     self.find_token(str::as_bytes(input))
   }
