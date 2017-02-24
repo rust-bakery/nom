@@ -657,21 +657,22 @@ macro_rules! separated_list_sep (
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
-      use $crate::{InputLength,InputIter,Slice};
+      use $crate::{AsChar,InputLength,InputIter,Slice};
       if ($i).input_len() == 0 {
-        $crate::IResult::Done($i, ($i).slice(0..0))
+        $crate::IResult::Done(($i).slice(0..), ($i).slice(0..0))
       } else {
         match ($i).iter_indices().position(|(_, item)| {
+          let i = item.as_char();
           for (_,c) in ($arr).iter_indices() {
-            if c == item { return false; }
+            if c.as_char() == i { return false; }
           }
           true
         }) {
-          Some(index) => {
+          ::std::option::Option::Some(index) => {
             $crate::IResult::Done(($i).slice(index..), ($i).slice(..index))
           },
-          None        => {
-            $crate::IResult::Done(($i).slice(($i).input_len()..), $i)
+          ::std::option::Option::None        => {
+            $crate::IResult::Done(($i).slice(($i).input_len()..), ($i))
           }
         }
       }
@@ -783,7 +784,14 @@ macro_rules! sep (
   };
 );
 
-named!(pub sp, eat_separator!(&b" \t\r\n"[..]));
+use std::ops::{Range,RangeFrom,RangeTo};
+use internal::IResult;
+#[allow(unused_imports)]
+pub fn sp<'a,T>(input:T) -> IResult<T, T> where
+  T: ::traits::Slice<Range<usize>>+::traits::Slice<RangeFrom<usize>>+::traits::Slice<RangeTo<usize>>,
+  T: ::traits::InputIter+::traits::InputLength {
+    eat_separator!(input, &b" \t\r\n"[..])
+}
 
 /// `ws!(I -> IResult<I,O>) => I -> IResult<I, O>`
 ///
@@ -1014,4 +1022,10 @@ mod tests {
     assert_eq!(sw(c), Error(error_position!(ErrorKind::Switch, &b"afghijkl"[..])));
   }
 
+  named!(str_parse(&str) -> &str, ws!(tag!("test")));
+  #[allow(unused_variables)]
+  #[test]
+  fn str_test() {
+    assert_eq!(str_parse(" \n   test\t a\nb"), Done("a\nb", "test"));
+  }
 }
