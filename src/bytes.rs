@@ -462,6 +462,35 @@ macro_rules! take_till (
   );
 );
 
+/// `take_till1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns the longest non empty list of bytes until the provided function succeeds
+///
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+#[macro_export]
+macro_rules! take_till1 (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let input = $input;
+
+      use $crate::InputLength;
+      use $crate::InputIter;
+      use $crate::Slice;
+      if input.input_len() == 0 {
+        $crate::IResult::Incomplete($crate::Needed::Size(1))
+      } else {
+        match input.position(|c| $submac!(c, $($args)*)) {
+          Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::TakeTill1,input)),
+          Some(n) => $crate::IResult::Done(input.slice(n..), input.slice(..n)),
+          None    => $crate::IResult::Done(input.slice(input.input_len()..), input)
+        }
+      }
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_till1!($input, call!($f));
+  );
+);
+
 /// `take!(nb) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming the specified number of bytes
 ///
@@ -951,6 +980,36 @@ mod tests {
     assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
     assert_eq!(f(&c[..]), Done(&b"123"[..], &b[..]));
     assert_eq!(f(&d[..]), Error(error_position!(ErrorKind::TakeWhile1, &d[..])));
+  }
+
+  #[test]
+  fn take_till() {
+    use nom::is_alphabetic;
+    named!(f, take_till!(is_alphabetic));
+    let a = b"";
+    let b = b"abcd";
+    let c = b"123abcd";
+    let d = b"123";
+
+    assert_eq!(f(&a[..]), Done(&b""[..], &b""[..]));
+    assert_eq!(f(&b[..]), Done(&b"abcd"[..], &b""[..]));
+    assert_eq!(f(&c[..]), Done(&b"abcd"[..], &b"123"[..]));
+    assert_eq!(f(&d[..]), Done(&b""[..], &b"123"[..]));
+  }
+
+  #[test]
+  fn take_till1() {
+    use nom::is_alphabetic;
+    named!(f, take_till1!(is_alphabetic));
+    let a = b"";
+    let b = b"abcd";
+    let c = b"123abcd";
+    let d = b"123";
+
+    assert_eq!(f(&a[..]), Incomplete(Needed::Size(1)));
+    assert_eq!(f(&b[..]), Error(error_position!(ErrorKind::TakeTill1, &b""[..])));
+    assert_eq!(f(&c[..]), Done(&b"abcd"[..], &b"123"[..]));
+    assert_eq!(f(&d[..]), Done(&b""[..], &b"123"[..]));
   }
 
   #[cfg(feature = "nightly")]

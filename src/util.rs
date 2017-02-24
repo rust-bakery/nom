@@ -563,6 +563,7 @@ pub enum ErrorKind<E=u32> {
   Not,
   Permutation,
   Verify,
+  TakeTill1,
 }
 
 pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
@@ -625,6 +626,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::Permutation               => 64,
     ErrorKind::ManyTill                  => 65,
     ErrorKind::Verify                    => 66,
+    ErrorKind::TakeTill1                 => 67,
   }
 }
 
@@ -689,6 +691,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
         ErrorKind::Permutation               => "Permutation",
         ErrorKind::ManyTill                  => "ManyTill",
         ErrorKind::Verify                    => "predicate verification",
+        ErrorKind::TakeTill1                 => "TakeTill1",
       }
 
     }

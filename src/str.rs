@@ -202,6 +202,22 @@ macro_rules! take_till_s (
   );
 );
 
+/// `take_till1_s!(&str -> bool) => &str -> IResult<&str, &str>`
+/// returns the longest non empty list of characters until the provided function succeeds
+///
+/// The argument is either a function `char -> bool` or a macro returning a `bool
+#[macro_export]
+macro_rules! take_till1_s (
+  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      take_till1!($input, $submac!($($args)*))
+    }
+  );
+  ($input:expr, $f:expr) => (
+    take_till1_s!($input, call!($f));
+  );
+);
+
 /// `take_until_and_consume_s!(&str) => &str -> IResult<&str, &str>`
 /// generates a parser consuming all chars until the specified string is found and consumes it
 #[macro_export]
