@@ -419,7 +419,7 @@ macro_rules! take_while1 (
       use $crate::InputIter;
       use $crate::Slice;
       if input.input_len() == 0 {
-        $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1,input))
+        $crate::IResult::Incomplete($crate::Needed::Size(1))
       } else {
         match input.position(|c| !$submac!(c, $($args)*)) {
           Some(0) => $crate::IResult::Error(error_position!($crate::ErrorKind::TakeWhile1,input)),
@@ -976,7 +976,7 @@ mod tests {
     let c = b"abcd123";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Error(error_position!(ErrorKind::TakeWhile1, &b""[..])));
+    assert_eq!(f(&a[..]), Incomplete(Needed::Size(1)));
     assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
     assert_eq!(f(&c[..]), Done(&b"123"[..], &b[..]));
     assert_eq!(f(&d[..]), Error(error_position!(ErrorKind::TakeWhile1, &d[..])));

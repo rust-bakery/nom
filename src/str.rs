@@ -340,7 +340,8 @@ mod test {
         }
     }
 
-  use internal::IResult::{Done, Error};
+  use internal::IResult::{Done, Error, Incomplete};
+  use internal::Needed;
   use util::ErrorKind;
 
   pub fn is_alphabetic(c:char) -> bool {
@@ -368,7 +369,7 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Error(error_position!(ErrorKind::TakeWhile1, &""[..])));
+    assert_eq!(f(&a[..]), Incomplete(Needed::Size(1)));
     assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
     assert_eq!(f(&c[..]), Done(&"123"[..], &b[..]));
     assert_eq!(f(&d[..]), Error(error_position!(ErrorKind::TakeWhile1, &d[..])));
