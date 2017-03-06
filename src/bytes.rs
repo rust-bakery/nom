@@ -157,7 +157,8 @@ macro_rules! is_a (
   );
 );
 
-/// `escaped!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], &[T]>`
+/// `escaped!(T -> IResult<T, T>, U, T -> IResult<T, T>) => T -> IResult<T, T> where T: InputIter,
+/// U: AsChar`
 /// matches a byte string with escaped characters.
 ///
 /// The first argument matches the normal characters (it must not accept the control character), the second argument is the control character (like `\` in most languages),
@@ -178,14 +179,18 @@ macro_rules! escaped (
   // Internal parser, do not use directly
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
+      use $crate::AsChar;
+      use $crate::InputIter;
       use $crate::InputLength;
       use $crate::Slice;
       let cl = || -> $crate::IResult<_,_,_> {
         use $crate::Offset;
         let mut index  = 0;
+        let control_char = $control_char.as_char();
 
         while index < $i.input_len() {
-          match $normal!($i.slice(index..), $($args)*) {
+          let remainder = $i.slice(index..);
+          match $normal!(remainder, $($args)*) {
             $crate::IResult::Done(i, _) => {
               if i.is_empty() {
                 return $crate::IResult::Done($i.slice($i.input_len()..), $i)
@@ -197,11 +202,13 @@ macro_rules! escaped (
               return $crate::IResult::Incomplete(i)
             },
             $crate::IResult::Error(e) => {
-              if $i[index] == $control_char as u8 {
-                if index + 1 >= $i.input_len() {
-                  return $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i.slice(index..), e));
+              // unwrap() should be safe here since index < $i.input_len()
+              if remainder.iter_elements().next().unwrap().as_char() == control_char {
+                let next = index + control_char.len_utf8();
+                if next >= $i.input_len() {
+                  return $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, remainder, e));
                 } else {
-                  match $escapable!($i.slice(index+1..), $($args2)*) {
+                  match $escapable!($i.slice(next..), $($args2)*) {
                     $crate::IResult::Done(i,_) => {
                       if i.is_empty() {
                         return $crate::IResult::Done($i.slice($i.input_len()..), $i)
@@ -214,12 +221,12 @@ macro_rules! escaped (
                   }
                 }
               } else {
-                return $crate::IResult::Done($i.slice(index..), $i.slice(..index));
+                return $crate::IResult::Done(remainder, $i.slice(..index));
               }
             }
           }
         }
-        $crate::IResult::Done(&$i[index..], &$i[..index])
+        $crate::IResult::Done(&$i.slice(index..), &$i.slice(..index))
       };
       match cl() {
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
@@ -242,9 +249,7 @@ macro_rules! escaped (
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
-      let input: &[u8] = $i;
-
-      escaped!(__impl_1 input, $submac!($($args)*), $control_char, $($rest)*)
+      escaped!(__impl_1 $i, $submac!($($args)*), $control_char, $($rest)*)
     }
   );
 
@@ -696,46 +701,22 @@ mod tests {
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
       {
-        if $i.is_empty() {
-          $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
-        } else {
-          #[inline(always)]
-          fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-            b.as_bytes()
-          }
+        use $crate::Slice;
+        use $crate::AsChar;
+        use $crate::FindToken;
+        use $crate::InputIter;
 
-          let expected = $inp;
-          let bytes = as_bytes(&expected);
-          one_of_bytes!($i, bytes)
+        match ($i).iter_elements().next().map(|c| {
+          c.find_token($inp)
+        }) {
+          None        => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
+          Some(false) => $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i)),
+          //the unwrap should be safe here
+          Some(true)  => $crate::IResult::Done($i.slice(1..), $i.iter_elements().next().unwrap().as_char())
         }
       }
+      );
     );
-  );
-
-  macro_rules! one_of_bytes (
-    ($i:expr, $bytes: expr) => (
-      {
-        if $i.is_empty() {
-          $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
-        } else {
-          let mut found = false;
-
-          for &i in $bytes {
-            if i == $i[0] {
-              found = true;
-              break;
-            }
-          }
-
-          if found {
-            $crate::IResult::Done(&$i[1..], $i[0] as char)
-          } else {
-            $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i))
-          }
-        }
-      }
-    );
-  );
 
   #[test]
   fn is_a() {
@@ -793,6 +774,26 @@ mod tests {
 
     named!(esc2, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2(&b"12\\nnn34"[..]), Done(&b"nn34"[..], &b"12\\n"[..]));
+  }
+
+  #[test]
+  fn escaping_str() {
+    named!(esc<&str, &str>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
+    assert_eq!(esc("abcd"), Done("", "abcd"));
+    assert_eq!(esc("ab\\\"cd"), Done("", "ab\\\"cd"));
+    assert_eq!(esc("\\\"abcd"), Done("", "\\\"abcd"));
+    assert_eq!(esc("\\n"), Done("", "\\n"));
+    assert_eq!(esc("ab\\\"12"), Done("12", "ab\\\""));
+    assert_eq!(esc("AB\\"), Error(error_node_position!(ErrorKind::Escaped, "AB\\",
+      error_position!(ErrorKind::Escaped, "\\"))));
+    assert_eq!(esc("AB\\A"), Error(error_node_position!(ErrorKind::Escaped, "AB\\A",
+      error_position!(ErrorKind::IsA, "A"))));
+
+    named!(esc2<&str, &str>, escaped!(call!(digit), '\\', one_of!("\"n\\")));
+    assert_eq!(esc2("12\\nnn34"), Done("nn34", "12\\n"));
+
+    named!(esc3<&str, &str>, escaped!(call!(alpha), '\u{241b}', one_of!("\"n")));
+    assert_eq!(esc3("ab␛ncd"), Done("", "ab␛ncd"));
   }
 
   #[cfg(feature = "verbose-errors")]
