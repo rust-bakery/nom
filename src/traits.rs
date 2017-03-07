@@ -181,6 +181,7 @@ pub trait InputTake {
     fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)>;
 }
 
+
 impl<'a> InputIter for &'a [u8] {
     type Item     = &'a u8;
     type RawItem  = u8;
@@ -227,6 +228,7 @@ impl InputTake for [u8] {
       }
     }
 }
+
 
 #[cfg(not(feature = "core"))]
 impl<'a> InputIter for &'a str {
@@ -604,3 +606,47 @@ array_impls! {
     20 21 22 23 24 25 26 27 28 29
     30 31 32
 }
+
+/// abtracts something which can extend an `Extend`
+pub trait ExtendInto {
+    type Item;
+    type Extender: Extend<Self::Item>;
+
+    /// create a new `Extend` of the correct type
+    #[inline]
+    fn new_builder(&self) -> Self::Extender;
+    /// accumulate the input into an accumulator
+    #[inline]
+    fn extend_into(&self, acc: &mut Self::Extender);
+}
+
+
+impl ExtendInto for [u8] {
+    type Item = u8;
+    type Extender = Vec<u8>;
+
+    #[inline]
+    fn new_builder(&self) -> Vec<u8> {
+        Vec::new()
+    }
+    #[inline]
+    fn extend_into(&self, acc: &mut Vec<u8>) {
+        acc.extend(self.iter().cloned());
+    }
+}
+
+#[cfg(not(feature = "core"))]
+impl ExtendInto for str {
+    type Item = char;
+    type Extender = String;
+
+    #[inline]
+    fn new_builder(&self) -> String {
+        String::new()
+    }
+    #[inline]
+    fn extend_into(&self, acc: &mut String) {
+        acc.push_str(self);
+    }
+}
+

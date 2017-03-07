@@ -232,7 +232,7 @@ macro_rules! escaped (
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
-          return $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i, e))
+          $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i, e))
         }
       }
     }
@@ -298,42 +298,54 @@ macro_rules! escaped_transform (
   // Internal parser, do not use directly
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
-      use $crate::{InputLength,Slice};
-      let cl = || {
+      use $crate::AsChar;
+      use $crate::ExtendInto;
+      use $crate::InputIter;
+      use $crate::InputLength;
+      use $crate::Slice;
+      let cl = || -> $crate::IResult<_,_,_> {
         use $crate::Offset;
         let mut index  = 0;
-        let mut res = Vec::new();
+        let mut res = $i.new_builder();
+        let control_char = $control_char.as_char();
 
         while index < $i.input_len() {
-          if let $crate::IResult::Done(i,o) = $normal!($i.slice(index..), $($args)*) {
-            res.extend(o.iter().cloned());
-            if i.is_empty() {
-              return $crate::IResult::Done($i.slice($i.input_len()..), res);
-            } else {
-              index = $i.offset(i);
-            }
-          } else if $i[index] == $control_char as u8 {
-            if index + 1 >= $i.input_len() {
-              return $crate::IResult::Error(error_position!($crate::ErrorKind::EscapedTransform,$i.slice(index..)));
-            } else {
-              match $transform!($i.slice(index+1..), $($args2)*) {
-                $crate::IResult::Done(i,o) => {
-                  res.extend(o.iter().cloned());
-                  if i.is_empty() {
-                    return $crate::IResult::Done($i.slice($i.input_len()..), res)
-                  } else {
-                    index = $i.offset(i);
-                  }
-                },
-                $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
-                $crate::IResult::Error(e)      => return $crate::IResult::Error(e)
+          let remainder = $i.slice(index..);
+          match $normal!(remainder, $($args)*) {
+            $crate::IResult::Done(i,o) => {
+              o.extend_into(&mut res);
+              if i.is_empty() {
+                return $crate::IResult::Done($i.slice($i.input_len()..), res);
+              } else {
+                index = $i.offset(i);
               }
-            }
-          } else {
-            if index == 0 {
-              return $crate::IResult::Error(error_position!($crate::ErrorKind::EscapedTransform,$i.slice(index..)))
-            } else {
-              return $crate::IResult::Done($i.slice(index..), res)
+            },
+            $crate::IResult::Incomplete(i) => {
+              return $crate::IResult::Incomplete(i)
+            },
+            $crate::IResult::Error(e) => {
+              // unwrap() should be safe here since index < $i.input_len()
+              if remainder.iter_elements().next().unwrap().as_char() == control_char {
+                let next = index + control_char.len_utf8();
+                if next >= $i.input_len() {
+                  return $crate::IResult::Error(error_node_position!($crate::ErrorKind::EscapedTransform, remainder, e));
+                } else {
+                  match $transform!($i.slice(next..), $($args2)*) {
+                    $crate::IResult::Done(i,o) => {
+                      o.extend_into(&mut res);
+                      if i.is_empty() {
+                        return $crate::IResult::Done($i.slice($i.input_len()..), res)
+                      } else {
+                        index = $i.offset(i);
+                      }
+                    },
+                    $crate::IResult::Incomplete(i) => return $crate::IResult::Incomplete(i),
+                    $crate::IResult::Error(e)      => return $crate::IResult::Error(e)
+                  }
+                }
+              } else {
+                return $crate::IResult::Done(remainder, res)
+              }
             }
           }
         }
@@ -343,7 +355,7 @@ macro_rules! escaped_transform (
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
-          return $crate::IResult::Error(error_node_position!($crate::ErrorKind::EscapedTransform, $i, e))
+          $crate::IResult::Error(error_node_position!($crate::ErrorKind::EscapedTransform, $i, e))
         }
       }
     }
@@ -360,9 +372,7 @@ macro_rules! escaped_transform (
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
-      let input: &[u8] = $i;
-
-      escaped_transform!(__impl_1 input, $submac!($($args)*), $control_char, $($rest)*)
+      escaped_transform!(__impl_1 $i, $submac!($($args)*), $control_char, $($rest)*)
     }
   );
 
@@ -768,9 +778,9 @@ mod tests {
     assert_eq!(esc(&b"\\n"[..]), Done(&b""[..], &b"\\n"[..]));
     assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], &b"ab\\\""[..]));
     assert_eq!(esc(&b"AB\\"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\"[..],
-      error_position!(ErrorKind::Escaped, &b"\\"[..]))));
+      error_node_position!(ErrorKind::Escaped, &b"\\"[..], error_position!(ErrorKind::Alpha, &b"\\"[..])))));
     assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\A"[..],
-      error_position!(ErrorKind::IsA, &b"A"[..]))));
+      error_position!(ErrorKind::OneOf, &b"A"[..]))));
 
     named!(esc2, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2(&b"12\\nnn34"[..]), Done(&b"nn34"[..], &b"12\\n"[..]));
@@ -785,9 +795,9 @@ mod tests {
     assert_eq!(esc("\\n"), Done("", "\\n"));
     assert_eq!(esc("ab\\\"12"), Done("12", "ab\\\""));
     assert_eq!(esc("AB\\"), Error(error_node_position!(ErrorKind::Escaped, "AB\\",
-      error_position!(ErrorKind::Escaped, "\\"))));
+      error_node_position!(ErrorKind::Escaped, "\\", error_position!(ErrorKind::Alpha, "\\")))));
     assert_eq!(esc("AB\\A"), Error(error_node_position!(ErrorKind::Escaped, "AB\\A",
-      error_position!(ErrorKind::IsA, "A"))));
+      error_position!(ErrorKind::OneOf, "A"))));
 
     named!(esc2<&str, &str>, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2("12\\nnn34"), Done("nn34", "12\\n"));
@@ -819,7 +829,7 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], String::from("\"abcd")));
     assert_eq!(esc(&b"\\n"[..]), Done(&b""[..], String::from("\n")));
     assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], String::from("ab\"")));
-    assert_eq!(esc(&b"AB\\"[..]), Error(error_node_position!(ErrorKind::EscapedTransform, &b"AB\\"[..], error_position!(ErrorKind::EscapedTransform, &b"\\"[..]))));
+    assert_eq!(esc(&b"AB\\"[..]), Error(error_node_position!(ErrorKind::EscapedTransform, &b"AB\\"[..], error_node_position!(ErrorKind::EscapedTransform, &b"\\"[..], error_position!(ErrorKind::Alpha, &b"\\"[..])))));
     assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::EscapedTransform, &b"AB\\A"[..],
       error_position!(ErrorKind::Alt, &b"A"[..]))));
 
@@ -836,11 +846,47 @@ mod tests {
     assert_eq!(esc2(&b"ab&egrave;D&agrave;EF"[..]), Done(&b""[..], String::from("abèDàEF")));
   }
 
+  #[cfg(feature = "verbose-errors")]
   #[test]
-  fn issue_84() {
-    let r0 = is_a!(&b"aaaaefgh"[..], "abcd");
-    assert_eq!(r0, Done(&b"efgh"[..], &b"aaaa"[..]));
-    let r1 = is_a!(&b"aaaa"[..], "abcd");
+  fn escape_transform_str() {
+    named!(esc<&str, String>, escaped_transform!(alpha, '\\',
+      alt!(
+          tag!("\\")       => { |_| "\\" }
+        | tag!("\"")       => { |_| "\"" }
+        | tag!("n")        => { |_| "\n" }
+      ))
+    );
+
+    assert_eq!(esc("abcd"), Done("", String::from("abcd")));
+    assert_eq!(esc("ab\\\"cd"), Done("", String::from("ab\"cd")));
+    assert_eq!(esc("\\\"abcd"), Done("", String::from("\"abcd")));
+    assert_eq!(esc("\\n"), Done("", String::from("\n")));
+    assert_eq!(esc("ab\\\"12"), Done("12", String::from("ab\"")));
+    assert_eq!(esc("AB\\"), Error(error_node_position!(ErrorKind::EscapedTransform, "AB\\", error_node_position!(ErrorKind::EscapedTransform, "\\", error_position!(ErrorKind::Alpha, "\\")))));
+    assert_eq!(esc("AB\\A"), Error(error_node_position!(ErrorKind::EscapedTransform, "AB\\A",
+      error_position!(ErrorKind::Alt, "A"))));
+
+    named!(esc2<&str, String>, escaped_transform!(alpha, '&',
+      alt!(
+          tag!("egrave;") => { |_| "è" }
+        | tag!("agrave;") => { |_| "à" }
+      ))
+    );
+    assert_eq!(esc2("ab&egrave;DEF"), Done("", String::from("abèDEF")));
+    assert_eq!(esc2("ab&egrave;D&agrave;EF"), Done("", String::from("abèDàEF")));
+
+    named!(esc3<&str, String>, escaped_transform!(alpha, '␛',
+      alt!(
+        tag!("0") => { |_| "\0" } |
+        tag!("n") => { |_| "\n" })));
+    assert_eq!(esc3("a␛0bc␛n"), Done("", String::from("a\0bc\n")));
+}
+
+#[test]
+fn issue_84() {
+  let r0 = is_a!(&b"aaaaefgh"[..], "abcd");
+  assert_eq!(r0, Done(&b"efgh"[..], &b"aaaa"[..]));
+  let r1 = is_a!(&b"aaaa"[..], "abcd");
     assert_eq!(r1, Done(&b""[..], &b"aaaa"[..]));
     let r2 = is_a!(&b"1"[..], "123456789");
     assert_eq!(r2, Done(&b""[..], &b"1"[..]));
