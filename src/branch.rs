@@ -307,14 +307,14 @@ macro_rules! alt_complete (
 macro_rules! switch (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
-      match $submac!($i, $($args)*) {
+      match map!($i, $submac!($($args)*), |o| Some(o)) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(error_node_position!(
             $crate::ErrorKind::Switch, $i, e
         )),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i, o)    => {
           match o {
-            $($p => match $subrule!(i, $($args2)*) {
+            $(Some($p) => match $subrule!(i, $($args2)*) {
               $crate::IResult::Error(e) => $crate::IResult::Error(error_node_position!(
                   $crate::ErrorKind::Switch, $i, e
               )),
