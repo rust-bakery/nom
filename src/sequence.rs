@@ -1,4 +1,4 @@
-/// [DEPRECATED] `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
+/// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
 /// chains parsers and assemble the results through a closure
 ///
 /// this parser is deprecated and will be removed in nom 3.0. You can
@@ -63,6 +63,7 @@
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since="0.2.0", note="please use [`do_parse!`](macro.do_parse.html) instead")]
 macro_rules! chain (
   ($i:expr, $($rest:tt)*) => (
     {
