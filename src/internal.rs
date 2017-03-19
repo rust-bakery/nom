@@ -120,6 +120,14 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
+  pub fn or(self, other: IResult<I, O, E>) -> IResult<I, O, E> {
+    if self.is_done() {
+      self
+    } else {
+      other
+    }
+  }
+
   /// Maps a `IResult<I, O, E>` to `IResult<I, N, E>` by appling a function
   /// to a contained `Done` value, leaving `Error` and `Incomplete` value
   /// untouched.
@@ -316,6 +324,13 @@ mod tests {
   const DONE: IResult<&'static [u8], u32> = IResult::Done(&REST, 5);
   const ERROR: IResult<&'static [u8], u32> = IResult::Error(error_code!(ErrorKind::Tag));
   const INCOMPLETE: IResult<&'static [u8], u32> = IResult::Incomplete(Needed::Unknown);
+
+  #[test]
+  fn iresult_or() {
+    assert_eq!(DONE.or(ERROR), DONE);
+    assert_eq!(ERROR.or(DONE), DONE);
+    assert_eq!(INCOMPLETE.or(ERROR), ERROR);
+  }
 
   #[test]
   fn needed_map() {
