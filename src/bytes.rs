@@ -566,6 +566,31 @@ macro_rules! take_until_and_consume (
   );
 );
 
+/// `take_until_and_consume1!(tag) => &[T] -> IResult<&[T], &[T]>`
+/// generates a parser consuming bytes (at least 1) until the specified byte sequence is found, and consumes it
+#[macro_export]
+macro_rules! take_until_and_consume1 (
+  ($i:expr, $substr:expr) => (
+    {
+      use $crate::InputLength;
+
+      let res: $crate::IResult<_,_> = if 1 + $substr.input_len() > $i.input_len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
+      } else {
+        match ($i).find_substring($substr) {
+          None => {
+            $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsume,$i))
+          },
+          Some(index) => {
+            $crate::IResult::Done($i.slice(index+$substr.input_len()..), $i.slice(0..index))
+          },
+        }
+      };
+      res
+    }
+  );
+);
+
 /// `take_until!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// consumes data until it finds the specified tag
 #[macro_export]
@@ -577,6 +602,33 @@ macro_rules! take_until (
       use $crate::Slice;
 
       let res: $crate::IResult<_,_> = if $substr.input_len() > $i.input_len() {
+        $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
+      } else {
+        match ($i).find_substring($substr) {
+          None => {
+            $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntil,$i))
+          },
+          Some(index) => {
+            $crate::IResult::Done($i.slice(index..), $i.slice(0..index))
+          },
+        }
+      };
+      res
+    }
+  );
+);
+
+/// `take_until1!(tag) => &[T] -> IResult<&[T], &[T]>`
+/// consumes data until it finds the specified tag
+#[macro_export]
+macro_rules! take_until1 (
+  ($i:expr, $substr:expr) => (
+    {
+      use $crate::InputLength;
+      use $crate::FindSubstring;
+      use $crate::Slice;
+
+      let res: $crate::IResult<_,_> = if 1+$substr.input_len() > $i.input_len() {
         $crate::IResult::Incomplete($crate::Needed::Size($substr.input_len()))
       } else {
         match ($i).find_substring($substr) {
