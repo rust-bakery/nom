@@ -11,6 +11,7 @@ rust:
   - nightly
   - beta
   - stable
+  - 1.2.0
 
 env:
   - FEATURES="--features \"regexp regexp_macros\""
@@ -19,7 +20,9 @@ env:
 
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
-  - cargo install cargo-travis && export PATH=$HOME/.cargo/bin:$PATH
+  - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
+      cargo install cargo-travis && export PATH=$HOME/.cargo/bin:$PATH;
+    fi
 
 script:
   - travis-cargo --only 1.2     test  -- --features regexp
@@ -32,7 +35,9 @@ script:
 
 after_success:
   - travis-cargo bench
-  - cargo coveralls --verbose
+  - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
+      cargo coveralls --verbose;
+    fi
   - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
       cargo bench;
     fi
