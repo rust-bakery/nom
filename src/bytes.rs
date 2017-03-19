@@ -405,7 +405,7 @@ macro_rules! take_while (
   );
 );
 
-/// `take_while1!(&[T] -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// `take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest (non empty) list of bytes until the provided function fails.
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
