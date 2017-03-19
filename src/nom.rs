@@ -156,7 +156,7 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(oct_digit is_oct_digit)
 //pub filter!(alphanumeric is_alphanumeric)
 
-/// Recognizes lowercase and uppercase alphabetic characters: a-zA-Z
+/// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
@@ -177,7 +177,7 @@ pub fn alpha<T>(input:T) -> IResult<T, T> where
   Done(input.slice(input_length..), input)
 }
 
-/// Recognizes numerical characters: 0-9
+/// Recognizes one or more numerical characters: 0-9
 pub fn digit<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
@@ -198,7 +198,7 @@ pub fn digit<T>(input:T) -> IResult<T, T> where
   Done(input.slice(input_length..), input)
 }
 
-/// Recognizes hexadecimal numerical characters: 0-9, A-F, a-f
+/// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
@@ -219,7 +219,7 @@ pub fn hex_digit<T>(input:T) -> IResult<T,T> where
   Done(input.slice(input_length..), input)
 }
 
-/// Recognizes octal characters: 0-7
+/// Recognizes one or more octal characters: 0-7
 pub fn oct_digit<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
@@ -240,7 +240,7 @@ pub fn oct_digit<T>(input:T) -> IResult<T,T> where
   Done(input.slice(input_length..), input)
 }
 
-/// Recognizes numerical and alphabetic characters: 0-9a-zA-Z
+/// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
@@ -261,7 +261,7 @@ pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
   Done(input.slice(input_length..), input)
 }
 
-/// Recognizes spaces and tabs
+/// Recognizes one or more spaces and tabs
 pub fn space<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
@@ -283,7 +283,7 @@ pub fn space<T>(input:T) -> IResult<T,T> where
   Done(input.slice(input_length..), input)
 }
 
-/// Recognizes spaces, tabs, carriage returns and line feeds
+/// Recognizes one or more spaces, tabs, carriage returns and line feeds
 pub fn multispace<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength {
