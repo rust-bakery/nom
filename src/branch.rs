@@ -278,6 +278,27 @@ macro_rules! alt_complete (
 ///  # }
 /// ```
 ///
+/// You can specify a default case like with a normal match, using `_`
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(sw,
+///    switch!(take!(4),
+///      b"abcd" => tag!("XYZ") |
+///      _       => value!(&b"default"[..])
+///    )
+///  );
+///
+///  let a = b"abcdXYZ123";
+///  let b = b"blah";
+///
+///  assert_eq!(sw(&a[..]), Done(&b"123"[..], &b"XYZ"[..]));
+///  assert_eq!(sw(&b[..]), Done(&b""[..], &b"default"[..]));
+///  # }
+/// ```
+///
 /// Due to limitations in Rust macros, it is not possible to have simple functions on the right hand
 /// side of pattern, like this:
 ///
