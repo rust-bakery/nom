@@ -11,7 +11,6 @@ rust:
   - nightly
   - beta
   - stable
-  - 1.2.0
 
 env:
   - FEATURES="--features \"regexp regexp_macros\""
@@ -20,6 +19,7 @@ env:
 
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+  - cargo install cargo-travis && export PATH=$HOME/.cargo/bin:$PATH
 
 script:
   - travis-cargo --only 1.2     test  -- --features regexp
@@ -32,12 +32,7 @@ script:
 
 after_success:
   - travis-cargo bench
-  - travis-cargo coveralls --no-sudo
-  - ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/nom-*
-  - ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/arithmetic*
-  - ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/ini*
-  - ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/mp4*
-  - ./kcov/build/src/kcov --verify --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/json*
+  - cargo coveralls --verbose
   - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
       cargo bench;
     fi
@@ -49,7 +44,6 @@ after_success:
         cargo bench > benches-control;
         cargo benchcmp benches-control benches-variable;
     fi
-
 
 notifications:
   webhooks:
@@ -65,4 +59,16 @@ env:
     # override the default `--features unstable` used for the nightly branch (optional)
     - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
 
+dist: trusty
 sudo: false
+
+addons:
+    apt:
+        packages:
+            - libcurl4-openssl-dev
+            - libelf-dev
+            - libdw-dev
+            - binutils-dev
+            - cmake
+        sources:
+            - kalakris-cmake
