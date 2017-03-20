@@ -63,7 +63,7 @@
 /// # }
 /// ```
 #[macro_export]
-#[deprecated(since="0.2.0", note="please use [`do_parse!`](macro.do_parse.html) instead")]
+#[deprecated(since="2.0.0", note="please use [`do_parse!`](macro.do_parse.html) instead")]
 macro_rules! chain (
   ($i:expr, $($rest:tt)*) => (
     {
