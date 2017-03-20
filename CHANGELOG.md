@@ -4,6 +4,38 @@
 
 ### Changed
 
+## 2.2.0 - 2017-03-20
+
+### Thanks
+
+- @seppo0010 for fixing `named_args`
+- @keruspe for implementing or() on `IResult`, adding the option of default cases in `switch!`, adding support for `cargo-travis`
+- @timlyo for documentation fixes
+- @JayKickliter for extending `hex_u32`
+- @1011X for fixing regex integration
+- @Kerollmops for actually marking `chain!` as deprecated
+- @joliss for documentation fixes
+- @utkarshkukreti for tests refactoring and performance improvement
+- @tmccombs for documentation fixes
+
+### Added
+
+- `IResult` gets an `or()` method
+- `take_until1`, `take_until_and_consume1`, `take_till1!` and `take_till1_s!` require at least 1 character
+
+### Changed
+
+- `hex_u32` accepts uppercase digits as well
+- the character based combinators leverage the input traits
+- the whitespace parsers now work on &str and other types
+- `take_while1` returns `Incomplete` on empty input
+- `switch!` can now take a default case
+
+### Fixed
+
+- `named_args!` now imports `IResult` directly
+- the upgrade to regex 0.2 broke the regex combinators, they work now
+
 ## 2.1.0 - 2017-01-27
 
 ### Thanks
@@ -622,7 +654,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/2.1.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/2.2.0...HEAD
+* [2.2.0]: https://github.com/Geal/nom/compare/2.1.0...2.2.0
 * [2.1.0]: https://github.com/Geal/nom/compare/2.0.1...2.1.0
 * [2.0.1]: https://github.com/Geal/nom/compare/2.0.0...2.0.1
 * [2.0.0]: https://github.com/Geal/nom/compare/1.2.4...2.0.0
