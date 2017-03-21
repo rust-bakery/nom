@@ -23,7 +23,7 @@ env:
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
   - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
-      cargo install cargo-travis && export PATH=$HOME/.cargo/bin:$PATH;
+      cargo install cargo-travis --force && export PATH=$HOME/.cargo/bin:$PATH;
     fi
 
 script:
