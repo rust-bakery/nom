@@ -1,3 +1,7 @@
+#![cfg_attr(feature = "nightly", feature(test))]
+
+#[cfg(feature = "nightly")]
+extern crate test;
 
 #[macro_use]
 extern crate nom;
@@ -221,4 +225,21 @@ key4 = value4
   expected_h.insert("abcd",     expected_1);
   expected_h.insert("category", expected_2);
   assert_eq!(res, IResult::Done(ini_after_parser, expected_h));
+}
+
+#[cfg(feature = "nightly")]
+#[bench]
+fn bench_ini(b: &mut test::Bencher) {
+  let str = "[owner]
+name=John Doe
+organization=Acme Widgets Inc.
+
+[database]
+server=192.0.2.62
+port=143
+file=payroll.dat
+";
+
+  b.iter(|| categories(str.as_bytes()).unwrap());
+  b.bytes = str.len() as u64;
 }
