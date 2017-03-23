@@ -55,7 +55,16 @@ named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
 
 named!(categories<&[u8], HashMap<&str, HashMap<&str,&str> > >,
   map!(
-    many0!(category_and_keys),
+    many0!(
+      pair!(
+        category,
+        //keys_and_values
+        map!(
+          many0!(key_value),
+          |vec: Vec<_>| vec.into_iter().collect()
+        )
+      )
+    ),
     |vec: Vec<_>| vec.into_iter().collect()
   )
 );
