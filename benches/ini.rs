@@ -10,12 +10,10 @@ use std::str;
 use std::collections::HashMap;
 
 named!(category<&str>, map_res!(
-    terminated!(
-        delimited!(
-          char!('['),
-          take_while!(call!(|c| c != ']' as u8)),
-          char!(']')),
-        opt!(multispace)
+    delimited!(
+      char!('['),
+      take_while!(call!(|c| c != ']' as u8)),
+      char!(']')
     ),
     str::from_utf8
 ));
@@ -31,7 +29,6 @@ named!(key_value    <&[u8],(&str,&str)>,
            str::from_utf8
          )
   >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != '\n' as u8))))
-  >>      opt!(multispace)
   >>      (key, val)
   )
 );
@@ -39,7 +36,7 @@ named!(key_value    <&[u8],(&str,&str)>,
 
 named!(keys_and_values<&[u8], HashMap<&str, &str> >,
   map!(
-    many0!(key_value),
+    many0!(terminated!(key_value, opt!(multispace))),
     |vec: Vec<_>| vec.into_iter().collect()
   )
 );
@@ -47,8 +44,9 @@ named!(keys_and_values<&[u8], HashMap<&str, &str> >,
 
 named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
   do_parse!(
-    category: category    >>
-    keys: keys_and_values >>
+    category: category         >>
+              opt!(multispace) >>
+    keys: keys_and_values      >>
     (category, keys)
   )
 );
@@ -56,11 +54,11 @@ named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
 named!(categories<&[u8], HashMap<&str, HashMap<&str,&str> > >,
   map!(
     many0!(
-      pair!(
+      separated_pair!(
         category,
-        //keys_and_values
+        opt!(multispace),
         map!(
-          many0!(key_value),
+          many0!(terminated!(key_value, opt!(multispace))),
           |vec: Vec<_>| vec.into_iter().collect()
         )
       )
