@@ -19,37 +19,28 @@ named!(category<&str>, map_res!(
 
 named!(key_value    <&[u8],(&str,&str)>,
   do_parse!(
-    key: map_res!(alphanumeric, std::str::from_utf8) >>
-         opt!(space)                                 >>
-         tag!("=")                                   >>
-         opt!(space)                                 >>
-    val: map_res!(
-           take_until_either!("\n;"),
+     key: map_res!(alphanumeric, str::from_utf8)
+  >>      opt!(space)
+  >>      tag!("=")
+  >>      opt!(space)
+  >> val: map_res!(
+           take_while!(call!(|c| c != '\n' as u8 && c != ';' as u8)),
            str::from_utf8
-         )                                           >>
-         opt!(space)                                 >>
-         opt!(do_parse!(
-           tag!(";")                                 >>
-           not_line_ending                           >>
-           ()
-         ))                                          >>
-         opt!(multispace)                            >>
-    (key, val)
+         )
+  >>      opt!(pair!(tag!(";"), take_until!("\n")))
+  >>      opt!(multispace)
+  >>      (key, val)
   )
 );
 
 
-named!(keys_and_values_aggregator<&[u8], Vec<(&str,&str)> >, many0!(key_value));
+named!(keys_and_values<&[u8], HashMap<&str, &str> >,
+  map!(
+    many0!(key_value),
+    |vec: Vec<_>| vec.into_iter().collect()
+  )
+);
 
-fn keys_and_values(input:&[u8]) -> IResult<&[u8], HashMap<&str, &str> > {
-  match keys_and_values_aggregator(input) {
-    IResult::Done(i,tuple_vec) => {
-      IResult::Done(i, tuple_vec.into_iter().collect())
-    },
-    IResult::Incomplete(a)     => IResult::Incomplete(a),
-    IResult::Error(a)          => IResult::Error(a)
-  }
-}
 
 named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
   do_parse!(
@@ -59,17 +50,12 @@ named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
   )
 );
 
-named!(categories_aggregator<&[u8], Vec<(&str, HashMap<&str,&str>)> >, many0!(category_and_keys));
-
-fn categories(input: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str> > > {
-  match categories_aggregator(input) {
-    IResult::Done(i,tuple_vec) => {
-      IResult::Done(i, tuple_vec.into_iter().collect())
-    },
-    IResult::Incomplete(a)     => IResult::Incomplete(a),
-    IResult::Error(a)          => IResult::Error(a)
-  }
-}
+named!(categories<&[u8], HashMap<&str, HashMap<&str,&str> > >,
+  map!(
+    many0!(category_and_keys),
+    |vec: Vec<_>| vec.into_iter().collect()
+  )
+);
 
 #[test]
 fn parse_category_test() {
@@ -248,7 +234,9 @@ port=143
 file=payroll.dat
 ";
 
-  b.iter(|| keys_and_values_aggregator(str.as_bytes()).unwrap());
+  named!(acc< Vec<(&str,&str)> >, many0!(key_value));
+
+  b.iter(|| acc(str.as_bytes()).unwrap());
   b.bytes = str.len() as u64;
 }
 
