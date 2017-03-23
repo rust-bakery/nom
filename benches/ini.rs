@@ -4,7 +4,7 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,not_line_ending, space, alphanumeric, multispace};
+use nom::{IResult, space, alphanumeric, multispace};
 
 use std::str;
 use std::collections::HashMap;
@@ -13,7 +13,7 @@ named!(category<&str>, map_res!(
     terminated!(
         delimited!(
           char!('['),
-          take_until!("]"),
+          take_while!(call!(|c| c != ']' as u8)),
           char!(']')),
         opt!(multispace)
     ),
@@ -30,7 +30,7 @@ named!(key_value    <&[u8],(&str,&str)>,
            take_while!(call!(|c| c != '\n' as u8 && c != ';' as u8)),
            str::from_utf8
          )
-  >>      opt!(pair!(char!(';'), take_until!("\n")))
+  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != '\n' as u8))))
   >>      opt!(multispace)
   >>      (key, val)
   )
