@@ -1,72 +1,68 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,not_line_ending, space, alphanumeric, multispace};
+use nom::{IResult, space, alphanumeric, multispace};
 
 use std::str;
 use std::collections::HashMap;
 
 named!(category<&str>, map_res!(
-    terminated!(
-        delimited!(tag!("["), take_until!("]"), tag!("]")),
-        opt!(multispace)
+    delimited!(
+      char!('['),
+      take_while!(call!(|c| c != ']' as u8)),
+      char!(']')
     ),
     str::from_utf8
 ));
 
 named!(key_value    <&[u8],(&str,&str)>,
   do_parse!(
-    key: map_res!(alphanumeric, std::str::from_utf8) >>
-         opt!(space)                                 >>
-         tag!("=")                                   >>
-         opt!(space)                                 >>
-    val: map_res!(
-           take_until_either!("\n;"),
+     key: map_res!(alphanumeric, str::from_utf8)
+  >>      opt!(space)
+  >>      char!('=')
+  >>      opt!(space)
+  >> val: map_res!(
+           take_while!(call!(|c| c != '\n' as u8 && c != ';' as u8)),
            str::from_utf8
-         )                                           >>
-         opt!(space)                                 >>
-         opt!(do_parse!(
-           tag!(";")                                 >>
-           not_line_ending                           >>
-           ()
-         ))                                          >>
-         opt!(multispace)                            >>
-    (key, val)
+         )
+  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != '\n' as u8))))
+  >>      (key, val)
   )
 );
 
 
-named!(keys_and_values_aggregator<&[u8], Vec<(&str,&str)> >, many0!(key_value));
+named!(keys_and_values<&[u8], HashMap<&str, &str> >,
+  map!(
+    many0!(terminated!(key_value, opt!(multispace))),
+    |vec: Vec<_>| vec.into_iter().collect()
+  )
+);
 
-fn keys_and_values(input:&[u8]) -> IResult<&[u8], HashMap<&str, &str> > {
-  match keys_and_values_aggregator(input) {
-    IResult::Done(i,tuple_vec) => {
-      IResult::Done(i, tuple_vec.into_iter().collect())
-    },
-    IResult::Incomplete(a)     => IResult::Incomplete(a),
-    IResult::Error(a)          => IResult::Error(a)
-  }
-}
 
 named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
   do_parse!(
-    category: category    >>
-    keys: keys_and_values >>
+    category: category         >>
+              opt!(multispace) >>
+    keys: keys_and_values      >>
     (category, keys)
   )
 );
 
-named!(categories_aggregator<&[u8], Vec<(&str, HashMap<&str,&str>)> >, many0!(category_and_keys));
-
-fn categories(input: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str> > > {
-  match categories_aggregator(input) {
-    IResult::Done(i,tuple_vec) => {
-      IResult::Done(i, tuple_vec.into_iter().collect())
-    },
-    IResult::Incomplete(a)     => IResult::Incomplete(a),
-    IResult::Error(a)          => IResult::Error(a)
-  }
-}
+named!(categories<&[u8], HashMap<&str, HashMap<&str,&str> > >,
+  map!(
+    many0!(
+      separated_pair!(
+        category,
+        opt!(multispace),
+        map!(
+          many0!(terminated!(key_value, opt!(multispace))),
+          |vec: Vec<_>| vec.into_iter().collect()
+        )
+      )
+    ),
+    |vec: Vec<_>| vec.into_iter().collect()
+  )
+);
 
 #[test]
 fn parse_category_test() {
@@ -75,7 +71,7 @@ fn parse_category_test() {
 parameter=value
 key = value2"[..];
 
-  let ini_without_category = &b"parameter=value
+  let ini_without_category = &b"\n\nparameter=value
 key = value2"[..];
 
   let res = category(ini_file);
@@ -93,7 +89,7 @@ fn parse_key_value_test() {
   let ini_file = &b"parameter=value
 key = value2"[..];
 
-  let ini_without_key_value = &b"key = value2"[..];
+  let ini_without_key_value = &b"\nkey = value2"[..];
 
   let res = key_value(ini_file);
   println!("{:?}", res);
@@ -111,7 +107,7 @@ fn parse_key_value_with_space_test() {
   let ini_file = &b"parameter = value
 key = value2"[..];
 
-  let ini_without_key_value = &b"key = value2"[..];
+  let ini_without_key_value = &b"\nkey = value2"[..];
 
   let res = key_value(ini_file);
   println!("{:?}", res);
@@ -128,7 +124,7 @@ fn parse_key_value_with_comment_test() {
   let ini_file = &b"parameter=value;abc
 key = value2"[..];
 
-  let ini_without_key_value = &b"key = value2"[..];
+  let ini_without_key_value = &b"\nkey = value2"[..];
 
   let res = key_value(ini_file);
   println!("{:?}", res);
