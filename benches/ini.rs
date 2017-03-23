@@ -11,7 +11,10 @@ use std::collections::HashMap;
 
 named!(category<&str>, map_res!(
     terminated!(
-        delimited!(tag!("["), take_until!("]"), tag!("]")),
+        delimited!(
+          char!('['),
+          take_until!("]"),
+          char!(']')),
         opt!(multispace)
     ),
     str::from_utf8
@@ -21,13 +24,13 @@ named!(key_value    <&[u8],(&str,&str)>,
   do_parse!(
      key: map_res!(alphanumeric, str::from_utf8)
   >>      opt!(space)
-  >>      tag!("=")
+  >>      char!('=')
   >>      opt!(space)
   >> val: map_res!(
            take_while!(call!(|c| c != '\n' as u8 && c != ';' as u8)),
            str::from_utf8
          )
-  >>      opt!(pair!(tag!(";"), take_until!("\n")))
+  >>      opt!(pair!(char!(';'), take_until!("\n")))
   >>      opt!(multispace)
   >>      (key, val)
   )
