@@ -129,7 +129,7 @@ fn parser(input: I) -> IResult<I, O>;
 - an error `Error(Err)` with `Err` an enum that can represent an error with, optionally, position information and a chain of accumulated errors
 - an `Incomplete(Needed)` indicating that more input is necessary. `Needed` can indicate how much data is needed
 
-````rust
+```rust
 pub enum IResult<I,O,E=u32> {
   Done(I,O),
   Error(Err<I,E>),
