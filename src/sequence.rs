@@ -700,8 +700,13 @@ macro_rules! do_parse (
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Error($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,_)     => {
           do_parse!(__impl i,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -721,8 +726,13 @@ macro_rules! do_parse (
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,o)     => {
           let $field = o;
           do_parse!(__impl i,
