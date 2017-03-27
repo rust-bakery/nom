@@ -133,7 +133,7 @@ macro_rules! alt (
     }
   );
 
-  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)*) => (
     {
       match $subrule!( $i, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
@@ -149,45 +149,13 @@ macro_rules! alt (
     alt!(__impl $i, call!($e) => { $gen } | $($rest)*);
   );
 
-  (__impl $i:expr, $e:ident => { $gen:expr }) => (
-    alt!(__impl $i, call!($e) => { $gen });
-  );
-
-  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    {
-      match $subrule!( $i, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
-        }
-      }
-    }
-  );
-
-  (__impl $i:expr, $e:ident) => (
-    alt!(__impl $i, call!($e));
-  );
-
-  (__impl $i:expr, $subrule:ident!( $($args:tt)*)) => (
-    {
-      match $subrule!( $i, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
-        }
-      }
-    }
-  );
-
-  (__impl $i:expr) => (
+  (__impl $i:expr, __end) => (
     $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
   );
 
   ($i:expr, $($rest:tt)*) => (
     {
-      alt!(__impl $i, $($rest)*)
+      alt!(__impl $i, $($rest)* | __end)
     }
   );
 );
@@ -235,7 +203,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt!(__impl $i, $subrule!($($args)*) => { $gen })
+    alt!(__impl $i, $subrule!($($args)*) => { $gen } | __end)
   );
 
   ($i:expr, $e:ident) => (
@@ -243,7 +211,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
-    alt!(__impl $i, $subrule!($($args)*))
+    alt!(__impl $i, $subrule!($($args)*) | __end)
   );
 );
 

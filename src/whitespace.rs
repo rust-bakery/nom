@@ -513,7 +513,7 @@ macro_rules! alt_sep (
   );
 
   (__impl $i:expr, $e:ident) => (
-    alt!(__impl $i, call!($e));
+    alt!(__impl $i, call!($e) | __end);
   );
 
   (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)*)) => (
@@ -522,7 +522,7 @@ macro_rules! alt_sep (
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
+          alt!(__impl $i, __end)
         }
       }
     }
