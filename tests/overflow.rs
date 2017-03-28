@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed,be_u64};
+use nom::{IResult,Needed,be_u8,be_u64};
 
 // Parser definition
 
@@ -81,4 +81,32 @@ fn overflow_incomplete_many_m_n() {
 
  // Trigger an overflow in many_m_n
  assert_eq!(multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]), IResult::Incomplete(Needed::Unknown));
+}
+
+#[test]
+fn overflow_incomplete_count() {
+ named!(counter<&[u8], Vec<&[u8]> >, count!( length_bytes!(be_u64), 2 ) );
+
+ assert_eq!(counter(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]), IResult::Incomplete(Needed::Unknown));
+}
+
+#[test]
+fn overflow_incomplete_count_fixed() {
+ named!(counter< [&[u8]; 2] >, count_fixed!( &[u8], length_bytes!(be_u64), 2 ) );
+
+ assert_eq!(counter(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]), IResult::Incomplete(Needed::Unknown));
+}
+
+#[test]
+fn overflow_incomplete_length_count() {
+ named!(multi<&[u8], Vec<&[u8]> >, length_count!( be_u8, length_bytes!(be_u64) ) );
+
+ assert_eq!(multi(&b"\x04\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xee\xaa"[..]), IResult::Incomplete(Needed::Unknown));
+}
+
+#[test]
+fn overflow_incomplete_length_data() {
+ named!(multi<&[u8], Vec<&[u8]> >, many0!( length_data!(be_u64) ) );
+
+ assert_eq!(multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xff\xaa"[..]), IResult::Incomplete(Needed::Unknown));
 }
