@@ -4,6 +4,18 @@
 
 ### Changed
 
+## 2.2.1 - 2017-04-03
+
+### Thanks
+
+- @Victor-Savu for formatting fixes in the README
+- @chifflier for detecting and fixing integer overflows
+- @utkarshkukreti for some performance improvements in benchmarks
+
+### Changed
+
+- when calculating how much data is needed in `IResult::Incomplete`, the addition could overflow (it is stored as a usize). This would apparently not result in any security vulnerability on release code
+
 ## 2.2.0 - 2017-03-20
 
 ### Thanks
@@ -654,7 +666,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/2.2.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/2.2.1...HEAD
+* [2.2.1]: https://github.com/Geal/nom/compare/2.2.0...2.2.1
 * [2.2.0]: https://github.com/Geal/nom/compare/2.1.0...2.2.0
 * [2.1.0]: https://github.com/Geal/nom/compare/2.0.1...2.1.0
 * [2.0.1]: https://github.com/Geal/nom/compare/2.0.0...2.0.1
