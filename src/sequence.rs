@@ -85,8 +85,13 @@ macro_rules! chaining_parser (
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,_)     => {
           chaining_parser!(i,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -107,8 +112,13 @@ macro_rules! chaining_parser (
         match inc {
           $crate::Needed::Unknown =>
             $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::Needed::Size(i) =>
-            $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+          $crate::Needed::Size(i) => {
+            let (needed,overflowed) = $consumed.overflowing_add(i);
+            match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+            }
+          },
         }
       } else {
         let input = if let $crate::IResult::Done(i,_) = res {
@@ -133,8 +143,13 @@ macro_rules! chaining_parser (
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,o)     => {
           let $field = o;
           chaining_parser!(i,
@@ -155,8 +170,13 @@ macro_rules! chaining_parser (
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,o)     => {
           let mut $field = o;
           chaining_parser!(i,
@@ -178,8 +198,13 @@ macro_rules! chaining_parser (
         match inc {
           $crate::Needed::Unknown =>
             $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::Needed::Size(i) =>
-            $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+          $crate::Needed::Size(i) => {
+            let (needed,overflowed) = $consumed.overflowing_add(i);
+            match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+            }
+          },
         }
       } else {
         let ($field,input) = if let $crate::IResult::Done(i,o) = res {
@@ -205,8 +230,13 @@ macro_rules! chaining_parser (
         match inc {
           $crate::Needed::Unknown =>
             $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::Needed::Size(i) =>
-            $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+          $crate::Needed::Size(i) => {
+            let (needed,overflowed) = $consumed.overflowing_add(i);
+            match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+            }
+          },
         }
       } else {
         let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
@@ -231,8 +261,13 @@ macro_rules! chaining_parser (
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
         $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        let (needed,overflowed) = $consumed.overflowing_add(i);
+        match overflowed {
+            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+        }
+      },
       $crate::IResult::Done(i,_)     => {
         $crate::IResult::Done(i, $assemble())
       }
@@ -249,8 +284,13 @@ macro_rules! chaining_parser (
       match inc {
         $crate::Needed::Unknown =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::Needed::Size(i) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::Needed::Size(i) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
       }
     } else {
       let input = if let $crate::IResult::Done(i,_) = res {
@@ -271,8 +311,13 @@ macro_rules! chaining_parser (
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
         $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        let (needed,overflowed) = $consumed.overflowing_add(i);
+        match overflowed {
+            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+        }
+      },
       $crate::IResult::Done(i,o)     => {
         let $field = o;
         $crate::IResult::Done(i, $assemble())
@@ -289,8 +334,13 @@ macro_rules! chaining_parser (
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
         $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        let (needed,overflowed) = $consumed.overflowing_add(i);
+        match overflowed {
+            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+        }
+      },
       $crate::IResult::Done(i,o)     => {
         let mut $field = o;
         $crate::IResult::Done(i, $assemble())
@@ -308,8 +358,13 @@ macro_rules! chaining_parser (
       match inc {
         $crate::Needed::Unknown =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::Needed::Size(i) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::Needed::Size(i) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
       }
     } else {
       let ($field,input) = if let $crate::IResult::Done(i,o) = res {
@@ -331,8 +386,13 @@ macro_rules! chaining_parser (
       match inc {
         $crate::Needed::Unknown =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::Needed::Size(i) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::Needed::Size(i) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
       }
     } else {
       let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
@@ -407,8 +467,13 @@ macro_rules! tuple_parser (
           $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,o)     => {
           tuple_parser!(i,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -424,8 +489,13 @@ macro_rules! tuple_parser (
           $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,o)     => {
           tuple_parser!(i,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -444,8 +514,13 @@ macro_rules! tuple_parser (
           $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,o)     => {
           $crate::IResult::Done(i, (o))
         }
@@ -459,8 +534,13 @@ macro_rules! tuple_parser (
           $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,o)     => {
           $crate::IResult::Done(i, ($($parsed),* , o))
         }
@@ -700,8 +780,13 @@ macro_rules! do_parse (
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,_)     => {
           do_parse!(__impl i,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -721,8 +806,13 @@ macro_rules! do_parse (
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) =>
           $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-          $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          let (needed,overflowed) = $consumed.overflowing_add(i);
+          match overflowed {
+              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+          }
+        },
         $crate::IResult::Done(i,o)     => {
           let $field = o;
           do_parse!(__impl i,
@@ -743,8 +833,13 @@ macro_rules! do_parse (
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
         $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        let (needed,overflowed) = $consumed.overflowing_add(i);
+        match overflowed {
+            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+        }
+      },
       $crate::IResult::Done(i,_)     => {
         $crate::IResult::Done(i, ( $($rest)* ))
       },
@@ -760,8 +855,13 @@ macro_rules! do_parse (
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
         $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) =>
-        $crate::IResult::Incomplete($crate::Needed::Size($consumed + i)),
+      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        let (needed,overflowed) = $consumed.overflowing_add(i);
+        match overflowed {
+            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+        }
+      },
       $crate::IResult::Done(i,o)     => {
         let $field = o;
         $crate::IResult::Done(i, ( $($rest)* ))

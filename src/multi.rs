@@ -165,8 +165,11 @@ macro_rules! many0(
             break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-            let size = i + ($i).input_len() - input.input_len();
-            ret = $crate::IResult::Incomplete($crate::Needed::Size(size));
+            let (size,overflowed) = i.overflowing_add(($i).input_len() - input.input_len());
+            ret = match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+            };
             break;
           },
           $crate::IResult::Done(i, o)                          => {
@@ -245,8 +248,12 @@ macro_rules! many1(
                   break;
                 },
                 $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                  let (size,overflowed) = i.overflowing_add(($i).input_len() - input.input_len());
                   incomplete = ::std::option::Option::Some(
-                    $crate::Needed::Size(i + ($i).input_len() - input.input_len())
+                    match overflowed {
+                        true  => $crate::Needed::Unknown,
+                        false => $crate::Needed::Size(size),
+                    }
                   );
                   break;
                 },
@@ -327,8 +334,11 @@ macro_rules! many_till(
                 break;
               },
               $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-                let size = i + ($i).input_len() - input.input_len();
-                ret = $crate::IResult::Incomplete($crate::Needed::Size(size));
+                let (size,overflowed) = i.overflowing_add(($i).input_len() - input.input_len());
+                ret = match overflowed {
+                    true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                    false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+                };
                 break;
               },
               $crate::IResult::Done(i, o)                          => {
@@ -411,8 +421,12 @@ macro_rules! many_m_n(
             break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            let (size,overflowed) = i.overflowing_add(($i).input_len() - input.input_len());
             incomplete = ::std::option::Option::Some(
-              $crate::Needed::Size(i + ($i).input_len() - input.input_len())
+              match overflowed {
+                  true  => $crate::Needed::Unknown,
+                  false => $crate::Needed::Size(size),
+              }
             );
             break;
           },
@@ -495,9 +509,13 @@ macro_rules! count(
             break;
           }
           $crate::IResult::Incomplete($crate::Needed::Size(sz)) => {
-            ret = $crate::IResult::Incomplete($crate::Needed::Size(
-              sz + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)
-            ));
+            let (size,overflowed) = sz.overflowing_add(
+              $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)
+            );
+            ret = match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+            };
             break;
           }
         }
@@ -565,9 +583,13 @@ macro_rules! count_fixed (
             break;
           }
           $crate::IResult::Incomplete($crate::Needed::Size(sz)) => {
-            ret = $crate::IResult::Incomplete($crate::Needed::Size(
-              sz + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)
-            ));
+            let (size,overflowed) = sz.overflowing_add(
+              $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)
+            );
+            ret = match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+            };
             break;
           }
         }
@@ -595,9 +617,13 @@ macro_rules! length_count(
             $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
             $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
             $crate::IResult::Incomplete($crate::Needed::Size(n)) => {
-              $crate::IResult::Incomplete($crate::Needed::Size(
-                n + $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
-              ))
+              let (size,overflowed) = n.overflowing_add(
+                $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+              );
+              match overflowed {
+                  true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                  false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+              }
             },
             $crate::IResult::Done(i2, o2)  =>  $crate::IResult::Done(i2, o2)
           }
@@ -634,9 +660,13 @@ macro_rules! length_data(
           $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
           $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
           $crate::IResult::Incomplete($crate::Needed::Size(n)) => {
-            $crate::IResult::Incomplete($crate::Needed::Size(
-              n +$crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
-            ))
+            let (size,overflowed) = n.overflowing_add(
+              $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+            );
+            match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+            }
           },
           $crate::IResult::Done(i2, o2)  =>  $crate::IResult::Done(i2, o2)
         }
@@ -665,9 +695,13 @@ macro_rules! length_value(
             $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
             $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
             $crate::IResult::Incomplete($crate::Needed::Size(n)) => {
-              $crate::IResult::Incomplete($crate::Needed::Size(
-                n +$crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
-              ))
+              let (size,overflowed) = n.overflowing_add(
+                $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+              );
+              match overflowed {
+                  true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                  false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+              }
             },
             $crate::IResult::Done(i2, o2)  => {
               match complete!(o2, $submac2!($($args2)*)) {
@@ -745,8 +779,11 @@ macro_rules! fold_many0(
             break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-            let size = i + ($i).input_len() - input.input_len();
-            ret = $crate::IResult::Incomplete($crate::Needed::Size(size));
+            let (size,overflowed) = i.overflowing_add( ($i).input_len() - input.input_len() );
+            ret = match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+            };
             break;
           },
           $crate::IResult::Done(i, o)                          => {
@@ -832,8 +869,12 @@ macro_rules! fold_many1(
                   break;
                 },
                 $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+                  let (size,overflowed) = i.overflowing_add( ($i).input_len() - input.input_len() );
                   incomplete = ::std::option::Option::Some(
-                    $crate::Needed::Size(i + ($i).input_len() - input.input_len())
+                      match overflowed {
+                          true  => $crate::Needed::Unknown,
+                          false => $crate::Needed::Size(size),
+                      }
                   );
                   break;
                 },
@@ -922,8 +963,12 @@ macro_rules! fold_many_m_n(
             break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            let (size,overflowed) = i.overflowing_add( ($i).input_len() - input.input_len() );
             incomplete = ::std::option::Option::Some(
-              $crate::Needed::Size(i + ($i).input_len() - input.input_len())
+              match overflowed {
+                  true  => $crate::Needed::Unknown,
+                  false => $crate::Needed::Size(size),
+              }
             );
             break;
           },

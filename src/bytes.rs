@@ -725,7 +725,11 @@ macro_rules! length_bytes(
           let nb = nb as usize;
           if i1.input_len() < nb {
             use $crate::Offset;
-            $crate::IResult::Incomplete($crate::Needed::Size($i.offset(i1) + nb))
+            let (size,overflowed) = $i.offset(i1).overflowing_add(nb);
+            match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+            }
           } else {
             $crate::IResult::Done(i1.slice(nb..), i1.slice(..nb))
           }
