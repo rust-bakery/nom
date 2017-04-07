@@ -1,7 +1,7 @@
 //! Parsers for applying parsers multiple times
 
 /// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_list(sep, X) returns Vec<X>
+/// separated_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
 #[macro_export]
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
@@ -23,28 +23,65 @@ macro_rules! separated_list(
             res.push(o);
             input = i;
 
+            let ret;
+
             loop {
               // get the separator first
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
-                if i2.input_len() == input.input_len() {
+              match $sep!(input, $($args)*) {
+                $crate::IResult::Error(_) => {
+                  ret = $crate::IResult::Done(input, res);
                   break;
                 }
-
-                // get the element next
-                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
-                  if i3.input_len() == i2.input_len() {
+                $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                  ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Size(needed)) => {
+                  let (size,overflowed) = needed.overflowing_add(($i).input_len() - input.input_len());
+                  ret = match overflowed {
+                    true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                    false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+                  };
+                  break;
+                },
+                $crate::IResult::Done(i2,_)     => {
+                  if i2.input_len() == input.input_len() {
+                    ret = $crate::IResult::Done(input, res);
                     break;
                   }
-                  res.push(o3);
-                  input = i3;
-                } else {
-                  break;
+
+                  // get the element next
+                  match $submac!(i2, $($args2)*) {
+                    $crate::IResult::Error(_) => {
+                      ret = $crate::IResult::Done(input, res);
+                      break;
+                    },
+                    $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                      ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+                      break;
+                    },
+                    $crate::IResult::Incomplete($crate::Needed::Size(needed)) => {
+                      let (size,overflowed) = needed.overflowing_add(($i).input_len() - i2.input_len());
+                      ret = match overflowed {
+                        true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                        false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+                      };
+                      break;
+                    },
+                    $crate::IResult::Done(i3,o3)    => {
+                      if i3.input_len() == i2.input_len() {
+                        ret = $crate::IResult::Done(input, res);
+                        break;
+                      }
+                      res.push(o3);
+                      input = i3;
+                    }
+                  }
                 }
-              } else {
-                break;
               }
             }
-            $crate::IResult::Done(input, res)
+
+            ret
           }
         },
       }
@@ -62,7 +99,7 @@ macro_rules! separated_list(
 );
 
 /// `separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_nonempty_list(sep, X) returns Vec<X>
+/// separated_nonempty_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
 #[macro_export]
 macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
@@ -83,26 +120,65 @@ macro_rules! separated_nonempty_list(
             res.push(o);
             input = i;
 
+            let ret;
+
             loop {
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
-                if i2.input_len() == input.input_len() {
+              // get the separator first
+              match $sep!(input, $($args)*) {
+                $crate::IResult::Error(_) => {
+                  ret = $crate::IResult::Done(input, res);
                   break;
                 }
-
-                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
-                  if i3.input_len() == i2.input_len() {
+                $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                  ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+                  break;
+                },
+                $crate::IResult::Incomplete($crate::Needed::Size(needed)) => {
+                  let (size,overflowed) = needed.overflowing_add(($i).input_len() - input.input_len());
+                  ret = match overflowed {
+                    true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                    false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+                  };
+                  break;
+                },
+                $crate::IResult::Done(i2,_)     => {
+                  if i2.input_len() == input.input_len() {
+                    ret = $crate::IResult::Done(input, res);
                     break;
                   }
-                  res.push(o3);
-                  input = i3;
-                } else {
-                  break;
+
+                  // get the element next
+                  match $submac!(i2, $($args2)*) {
+                    $crate::IResult::Error(_) => {
+                      ret = $crate::IResult::Done(input, res);
+                      break;
+                    },
+                    $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+                      ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+                      break;
+                    },
+                    $crate::IResult::Incomplete($crate::Needed::Size(needed)) => {
+                      let (size,overflowed) = needed.overflowing_add(($i).input_len() - i2.input_len());
+                      ret = match overflowed {
+                        true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                        false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+                      };
+                      break;
+                    },
+                    $crate::IResult::Done(i3,o3)    => {
+                      if i3.input_len() == i2.input_len() {
+                        ret = $crate::IResult::Done(input, res);
+                        break;
+                      }
+                      res.push(o3);
+                      input = i3;
+                    }
+                  }
                 }
-              } else {
-                break;
               }
             }
-            $crate::IResult::Done(input, res)
+
+            ret
           }
         },
       }
@@ -1066,12 +1142,16 @@ mod tests {
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
     named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
+    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list!(tag!(".."), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
     let d = &b",,abc"[..];
     let e = &b"abcd,abcd,ef"[..];
+    let f = &b"abc"[..];
+    let g = &b"abcd."[..];
+    let h = &b"abcd,abc"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
@@ -1083,16 +1163,25 @@ mod tests {
     //assert_eq!(multi_empty(d), Done(&b"abc"[..], res3));
     let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(e), Done(&b",ef"[..], res4));
+
+    assert_eq!(multi(f), Incomplete(Needed::Size(4)));
+    assert_eq!(multi_longsep(g), Incomplete(Needed::Size(6)));
+    assert_eq!(multi(h), Incomplete(Needed::Size(9)));
   }
 
   #[test]
   fn separated_nonempty_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(","), tag!("abcd")));
+    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list!(tag!(".."), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"azerty"[..];
     let d = &b"abcd,abcd,ef"[..];
+
+    let f = &b"abc"[..];
+    let g = &b"abcd."[..];
+    let h = &b"abcd,abc"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Done(&b"ef"[..], res1));
@@ -1101,6 +1190,10 @@ mod tests {
     assert_eq!(multi(c), Error(error_position!(ErrorKind::Tag,c)));
     let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(d), Done(&b",ef"[..], res3));
+
+    assert_eq!(multi(f), Incomplete(Needed::Size(4)));
+    assert_eq!(multi_longsep(g), Incomplete(Needed::Size(6)));
+    assert_eq!(multi(h), Incomplete(Needed::Size(9)));
   }
 
   #[test]
