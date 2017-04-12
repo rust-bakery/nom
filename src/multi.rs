@@ -10,10 +10,11 @@ macro_rules! separated_list(
 
       //FIXME: use crate vec
       let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
+      let mut input = $i.clone();
 
       // get the first element
-      match $submac!(input, $($args2)*) {
+      let input_ = input.clone();
+      match $submac!(input_, $($args2)*) {
         $crate::IResult::Error(_)      => $crate::IResult::Done(input, ::std::vec::Vec::new()),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
@@ -25,13 +26,15 @@ macro_rules! separated_list(
 
             loop {
               // get the separator first
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
+              let input_ = input.clone();
+              if let $crate::IResult::Done(i2,_) = $sep!(input_, $($args)*) {
                 if i2.input_len() == input.input_len() {
                   break;
                 }
 
                 // get the element next
-                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
+                let i2_ = i2.clone();
+                if let $crate::IResult::Done(i3,o3) = $submac!(i2_, $($args2)*) {
                   if i3.input_len() == i2.input_len() {
                     break;
                   }
@@ -70,10 +73,11 @@ macro_rules! separated_nonempty_list(
       use $crate::InputLength;
 
       let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
+      let mut input = $i.clone();
 
       // get the first element
-      match $submac!(input, $($args2)*) {
+      let input_ = input.clone();
+      match $submac!(input_, $($args2)*) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
@@ -84,12 +88,14 @@ macro_rules! separated_nonempty_list(
             input = i;
 
             loop {
-              if let $crate::IResult::Done(i2,_) = $sep!(input, $($args)*) {
+              let input_ = input.clone();
+              if let $crate::IResult::Done(i2,_) = $sep!(input_, $($args)*) {
                 if i2.input_len() == input.input_len() {
                   break;
                 }
-
-                if let $crate::IResult::Done(i3,o3) = $submac!(i2, $($args2)*) {
+                
+                let i2_ = i2.clone();
+                if let $crate::IResult::Done(i3,o3) = $submac!(i2_, $($args2)*) {
                   if i3.input_len() == i2.input_len() {
                     break;
                   }
@@ -147,7 +153,7 @@ macro_rules! many0(
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
+      let mut input = $i.clone();
 
       loop {
         if input.input_len() == 0 {
@@ -155,7 +161,8 @@ macro_rules! many0(
           break;
         }
 
-        match $submac!(input, $($args)*) {
+        let input_ = input.clone();
+        match $submac!(input_, $($args)*) {
           $crate::IResult::Error(_)                            => {
             ret = $crate::IResult::Done(input, res);
             break;
@@ -220,7 +227,8 @@ macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::InputLength;
-      match $submac!($i, $($args)*) {
+      let i_ = $i.clone();
+      match $submac!(i_, $($args)*) {
         $crate::IResult::Error(_)      => $crate::IResult::Error(
           error_position!($crate::ErrorKind::Many1,$i)
         ),
@@ -239,7 +247,8 @@ macro_rules! many1(
               if input.input_len() == 0 {
                 break;
               }
-              match $submac!(input, $($args)*) {
+              let input_ = input.clone();
+              match $submac!(input_, $($args)*) {
                 $crate::IResult::Error(_)                    => {
                   break;
                 },
@@ -315,7 +324,7 @@ macro_rules! many_till(
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
-      let mut input = $i;
+      let mut input = $i.clone();
 
       loop {
         match $submac2!(input, $($args2)*) {
@@ -396,13 +405,14 @@ macro_rules! many_m_n(
     {
       use $crate::InputLength;
       let mut res          = ::std::vec::Vec::with_capacity($m);
-      let mut input        = $i;
+      let mut input        = $i.clone();
       let mut count: usize = 0;
       let mut err          = false;
       let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
       loop {
         if count == $n { break }
-        match $submac!(input, $($args)*) {
+        let i_ = input.clone();
+        match $submac!(i_, $($args)*) {
           $crate::IResult::Done(i, o) => {
             // do not allow parsers that do not consume input (causes infinite loops)
             if i.input_len() == input.input_len() {
@@ -421,7 +431,7 @@ macro_rules! many_m_n(
             break;
           },
           $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-            let (size,overflowed) = i.overflowing_add(($i).input_len() - input.input_len());
+            let (size,overflowed) = i.overflowing_add($i.input_len() - input.input_len());
             incomplete = ::std::option::Option::Some(
               match overflowed {
                   true  => $crate::Needed::Unknown,
@@ -486,7 +496,7 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let ret;
-      let mut input = $i;
+      let mut input = $i.clone();
       let mut res   = ::std::vec::Vec::with_capacity($count);
 
       loop {
@@ -495,7 +505,8 @@ macro_rules! count(
           break;
         }
 
-        match $submac!(input, $($args)*) {
+        let input_ = input.clone();
+        match $submac!(input_, $($args)*) {
           $crate::IResult::Done(i,o) => {
             res.push(o);
             input = i;
@@ -558,7 +569,7 @@ macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       let ret;
-      let mut input = $i;
+      let mut input = $i.clone();
       // `$typ` must be Copy, and thus having no destructor, this is panic safe
       let mut res: [$typ; $count] = unsafe{[::std::mem::uninitialized(); $count as usize]};
       let mut cnt: usize = 0;
@@ -761,7 +772,7 @@ macro_rules! fold_many0(
       let ret;
       let f         = $f;
       let mut res   = $init;
-      let mut input = $i;
+      let mut input = $i.clone();
 
       loop {
         if input.input_len() == 0 {
@@ -938,7 +949,7 @@ macro_rules! fold_many_m_n(
       use $crate::InputLength;
       let mut acc          = $init;
       let     f            = $f;
-      let mut input        = $i;
+      let mut input        = $i.clone();
       let mut count: usize = 0;
       let mut err          = false;
       let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
