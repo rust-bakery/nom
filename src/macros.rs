@@ -685,7 +685,7 @@ macro_rules! value (
 );
 
 /// `expr_res!(Result<E,O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Ok
+/// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Some
 ///
 /// See expr_opt for an example
 #[macro_export]
