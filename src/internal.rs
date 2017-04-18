@@ -312,7 +312,12 @@ macro_rules! error_node_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input: expr, $next:expr) => ($code);
+  ($code:expr, $input: expr, $next:expr) => (
+    {
+      let (_, _) = ($input, $next);
+      $code
+    }
+  );
 );
 
 #[cfg(test)]
