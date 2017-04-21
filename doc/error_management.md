@@ -1,6 +1,6 @@
-% Error management
-
 # Error management
+
+## Error management
 
 Parser combinators are useful tools to build parsers, but they are notoriously bad at error reporting. This happens because a tree of parser acts as a single parser, and the only error you get will come from the root parser.
 

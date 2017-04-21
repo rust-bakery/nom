@@ -1,4 +1,4 @@
-% How nom macros work
+# How nom macros work
 
 nom uses Rust macros heavily to provide a nice syntax and generate parsing code. This has multiple advantages:
 
@@ -6,7 +6,7 @@ nom uses Rust macros heavily to provide a nice syntax and generate parsing code.
 * it helps Rust's code inference and borrow checking (less lifetime issues than iterator based solutions)
 * the generated code is very linear, just a large chain of pattern matching
 
-# Defining a new macro
+## Defining a new macro
 
 Let's take the `opt!` macro as example: `opt!` returns `IResult<I,Option<O>>`, producing a `Some(o)` if the child parser succeeded, and None otherwise. Here is how you could use it:
 
