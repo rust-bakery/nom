@@ -366,6 +366,7 @@ Here is a list of known projects using nom:
   * [DER](https://github.com/rusticata/der-parser)
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
+- [using nom as lexer and parser](https://github.com/Rydgel/monkey-rust)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
