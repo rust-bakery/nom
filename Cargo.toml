@@ -30,6 +30,9 @@ regexp_macros = ["regexp", "lazy_static"]
 stream = []
 verbose-errors = []
 
+[dependencies]
+byteorder = "^0.5.3"
+
 [dependencies.regex]
 version = "^0.2"
 optional = true

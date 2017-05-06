@@ -93,6 +93,7 @@
 #![cfg_attr(feature = "nightly", feature(const_fn))]
 //#![warn(missing_docs)]
 
+extern crate byteorder;
 #[cfg(feature = "core")]
 extern crate collections;
 #[cfg(feature = "regexp")]

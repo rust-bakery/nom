@@ -19,6 +19,8 @@ use std::mem::transmute;
 use std::ops::{Range,RangeFrom,RangeTo};
 use traits::{Compare,CompareResult,Slice};
 
+use byteorder::{ByteOrder, LittleEndian, BigEndian};
+
 #[inline]
 pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]> + 'a> {
   Box::new(move |i: &'b[u8]| -> IResult<&'b[u8], &'b[u8]> {
@@ -335,7 +337,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     Incomplete(Needed::Size(2))
   } else {
-    let res = ((i[0] as u16) << 8) + i[1] as u16;
+    let res = BigEndian::read_u16(i);
     Done(&i[2..], res)
   }
 }
@@ -346,7 +348,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     Incomplete(Needed::Size(4))
   } else {
-    let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
+    let res = BigEndian::read_u32(i);
     Done(&i[4..], res)
   }
 }
@@ -357,8 +359,7 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     Incomplete(Needed::Size(8))
   } else {
-    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
-      ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
+    let res = BigEndian::read_u64(i);
     Done(&i[8..], res)
   }
 }
@@ -403,7 +404,7 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     Incomplete(Needed::Size(2))
   } else {
-    let res = ((i[1] as u16) << 8) + i[0] as u16;
+    let res = LittleEndian::read_u16(i);
     Done(&i[2..], res)
   }
 }
@@ -414,7 +415,7 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     Incomplete(Needed::Size(4))
   } else {
-    let res = ((i[3] as u32) << 24) + ((i[2] as u32) << 16) + ((i[1] as u32) << 8) + i[0] as u32;
+    let res = LittleEndian::read_u32(i);
     Done(&i[4..], res)
   }
 }
@@ -425,8 +426,7 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     Incomplete(Needed::Size(8))
   } else {
-    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) +
-      ((i[3] as u64) << 24) + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
+    let res = LittleEndian::read_u64(i);
     Done(&i[8..], res)
   }
 }
