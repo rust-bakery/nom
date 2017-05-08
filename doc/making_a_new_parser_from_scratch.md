@@ -16,17 +16,19 @@ You should get a lot of samples (file or network traces) to test your code. The 
 
 While it is tempting to insert the parsing code right inside the rest of the logic, it usually results in  unmaintainable code, and makes testing challenging. Parser combinators, the parsing technique used in nom, assemble a lot of small functions to make powerful parsers. This means that those functions only depend on their input, not on an external state. This makes it easy to parse the input partially, and to test those functions independently.
 
-Usually, you can separate the parsing functions in their own module, so you could have a `src/lib.rs`file containing this:
+Usually, you can separate the parsing functions in their own module, so you could have a `src/lib.rs` file containing this:
 
 
 ```rust
 # #[macro_use] extern crate nom;
 # use nom::IResult;
 # fn main() {
-  fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> { take!(input, i * 10) }
+fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> {
+    take!(input, i * 10)
+}
 
 // will make a parser taking 20 bytes
-  named!(parser, apply!(take_wrapper, 2));
+named!(parser, apply!(take_wrapper, 2));
 # }
 
 ```
@@ -70,7 +72,7 @@ nom provides a macro for function definition, called `named!`:
 ```rust
 # #[macro_use] extern crate nom;
 # fn main() {}
-named!(my_function( &[u8] ) -> &[u8], tag!("abcd"));
+named!(my_function(&[u8]) -> &[u8], tag!("abcd"));
 
 named!(my_function2<&[u8], &[u8]>, tag!("abcd"));
 
@@ -180,11 +182,12 @@ Regular expression related macros are in [src/regexp.rs](https://github.com/Geal
 Once you have a parser function, a good trick is to test it on a lot of the samples you gathered, and integrate this to your unit tests. To that end, put all of the test files in a folder like `assets` and refer to test files like this:
 
 ```ignore
-  #[test]
-  fn header_test() {
-    let data = include_bytes!("../assets/axolotl-piano.gif");
-    println!("bytes:\n{}", &data[0..100].to_hex(8));
-    let res = header(data);
+#[test]
+fn header_test() {
+  let data = include_bytes!("../assets/axolotl-piano.gif");
+  println!("bytes:\n{}", &data[0..100].to_hex(8));
+  let res = header(data);
+  // ...
 ```
 
 The `include_bytes!` macro (provided by Rust's standard library) will integrate the file as a byte slice in your code. You can then just refer to the part of the input the parser has to handle via its offset. Here, we take the first 100 bytes of a GIF file to parse its header (complete code [here](https://github.com/Geal/gif.rs/blob/master/src/parser.rs#L305-L309)).
@@ -253,26 +256,24 @@ It will print the `manytag` function like this:
 # #[macro_use] extern crate nom;
 # fn main() {}
 fn manytag(i: &[u8]) -> ::nom::IResult<&[u8], Vec<&[u8]>> {
-    {
-        let mut res = Vec::new();
-        let mut input = i;
-        while let ::nom::IResult::Done(i, o) =
-                  {
-                      let cnt = 5 as usize;
-                      let res: ::nom::IResult<&[u8], &[u8]> =
-                          if input.len() < cnt {
-                              ::nom::IResult::Incomplete(::nom::Needed::Size(cnt))
-                          } else {
-                              ::nom::IResult::Done(&input[cnt..],
-                                                   &input[0..cnt])
-                          };
-                      res
-                  } {
-            if i.len() == input.len() { break ; }
-            res.push(o);
-            input = i;
-        }
-        ::nom::IResult::Done(input, res)
+    let mut res = Vec::new();
+    let mut input = i;
+    while let ::nom::IResult::Done(i, o) =
+              {
+                  let cnt = 5 as usize;
+                  let res: ::nom::IResult<&[u8], &[u8]> =
+                      if input.len() < cnt {
+                          ::nom::IResult::Incomplete(::nom::Needed::Size(cnt))
+                      } else {
+                          ::nom::IResult::Done(&input[cnt..],
+                                               &input[0..cnt])
+                      };
+                  res
+              } {
+        if i.len() == input.len() { break ; }
+        res.push(o);
+        input = i;
     }
+    ::nom::IResult::Done(input, res)
 }
 ```

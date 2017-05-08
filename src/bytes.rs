@@ -199,7 +199,7 @@ macro_rules! escaped (
             $crate::IResult::Error(e) => {
               if $i[index] == $control_char as u8 {
                 if index + 1 >= $i.input_len() {
-                  return $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i.slice(index..), e));
+                  return $crate::IResult::Incomplete($crate::Needed::Unknown)
                 } else {
                   match $escapable!($i.slice(index+1..), $($args2)*) {
                     $crate::IResult::Done(i,_) => {
@@ -842,8 +842,7 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], &b"\\\"abcd"[..]));
     assert_eq!(esc(&b"\\n"[..]), Done(&b""[..], &b"\\n"[..]));
     assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], &b"ab\\\""[..]));
-    assert_eq!(esc(&b"AB\\"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\"[..],
-      error_position!(ErrorKind::Escaped, &b"\\"[..]))));
+    assert_eq!(esc(&b"AB\\"[..]), Incomplete(Needed::Unknown));
     assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\A"[..],
       error_position!(ErrorKind::IsA, &b"A"[..]))));
 

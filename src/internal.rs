@@ -163,6 +163,16 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
+  /// Unwrap the contained `Done(I, O)` value or a default if the `IResult` is not
+  /// `Done`.
+  pub fn unwrap_or(self, default: (I, O)) -> (I, O) {
+    match self {
+      Done(i, o)    => (i, o),
+      Incomplete(_) => default,
+      Error(_)      => default
+    }
+  }
+
   /// Unwrap the contained `Incomplete(n)` value, or panic if the `IResult` is not
   /// `Incomplete`.
   pub fn unwrap_inc(self) -> Needed {
@@ -386,6 +396,21 @@ mod tests {
   #[should_panic]
   fn iresult_unwrap_on_inc() {
     INCOMPLETE.unwrap();
+  }
+
+  #[test]
+  fn iresult_unwrap_or_on_done() {
+    assert_eq!(DONE.unwrap_or((&b""[..], 2)), (&b""[..], 5));
+  }
+
+  #[test]
+  fn iresult_unwrap_or_on_err() {
+    assert_eq!(ERROR.unwrap_or((&b""[..], 2)), (&b""[..], 2));
+  }
+
+  #[test]
+  fn iresult_unwrap_or_on_inc() {
+    assert_eq!(INCOMPLETE.unwrap_or((&b""[..], 2)), (&b""[..], 2));
   }
 
   #[test]

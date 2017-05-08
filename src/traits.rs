@@ -158,8 +158,8 @@ impl<'a> AsChar for &'a char {
 /// it needs a distinction between `Item` and `RawItem` because
 /// `&[T]` iterates on references
 pub trait InputIter {
-    type Item     : AsChar;
-    type RawItem  : AsChar;
+    type Item;
+    type RawItem;
     type Iter     : Iterator<Item=(usize, Self::Item)>;
     type IterElem : Iterator<Item=Self::Item>;
 
