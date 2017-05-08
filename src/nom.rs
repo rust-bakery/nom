@@ -464,7 +464,7 @@ pub fn le_i64(i:&[u8]) -> IResult<&[u8], i64> {
 }
 
 /// Configurable endianness
-#[derive(PartialEq)]
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
 pub enum Endianness {
   Big,
   Little,
