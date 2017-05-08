@@ -134,14 +134,23 @@ macro_rules! alt (
     }
   );
 
-  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)*) => (
     {
       let i_ = $i.clone();
       match $subrule!(i_, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i, $($rest)*)
+        $crate::IResult::Error(e)      => {
+          let out = alt!(__impl $i, $($rest)*);
+
+          // Compile-time hack to ensure that res's E type is not under-specified.
+          // This all has no effect at runtime.
+          fn unify_types<T>(_: &T, _: &T) {}
+          if let $crate::IResult::Error(ref e2) = out {
+            unify_types(&e, e2);
+          }
+
+          out
         }
       }
     }
@@ -151,47 +160,13 @@ macro_rules! alt (
     alt!(__impl $i, call!($e) => { $gen } | $($rest)*);
   );
 
-  (__impl $i:expr, $e:ident => { $gen:expr }) => (
-    alt!(__impl $i, call!($e) => { $gen });
-  );
-
-  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    {
-      let i_ = $i.clone();
-      match $subrule!(i_, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
-        }
-      }
-    }
-  );
-
-  (__impl $i:expr, $e:ident) => (
-    alt!(__impl $i, call!($e));
-  );
-
-  (__impl $i:expr, $subrule:ident!( $($args:tt)*)) => (
-    {
-      let i_ = $i.clone();
-      match $subrule!(i_, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
-        }
-      }
-    }
-  );
-
-  (__impl $i:expr) => (
+  (__impl $i:expr, __end) => (
     $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
   );
 
   ($i:expr, $($rest:tt)*) => (
     {
-      alt!(__impl $i, $($rest)*)
+      alt!(__impl $i, $($rest)* | __end)
     }
   );
 );
@@ -241,7 +216,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt!(__impl $i, $subrule!($($args)*) => { $gen })
+    alt!(__impl $i, $subrule!($($args)*) => { $gen } | __end)
   );
 
   ($i:expr, $e:ident) => (
@@ -249,7 +224,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
-    alt!(__impl $i, $subrule!($($args)*))
+    alt!(__impl $i, $subrule!($($args)*) | __end)
   );
 );
 
@@ -694,6 +669,11 @@ mod tests {
     named!(alt5<bool>, alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true }));
     assert_eq!(alt5(a), Done(&b""[..], false));
     assert_eq!(alt5(b), Done(&b""[..], true));
+
+    // compile-time test guarding against an underspecified E generic type (#474)
+    named!(alt_eof1, alt!(eof!() | eof!()));
+    named!(alt_eof2, alt!(eof!() => {|x| x} | eof!() => {|x| x}));
+    let _ = (alt_eof1, alt_eof2);
 
   }
 
