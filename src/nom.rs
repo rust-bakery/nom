@@ -61,7 +61,8 @@ pub fn crlf<T>(input:T) -> IResult<T,T> where
 pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
     T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength,
-    T: Compare<&'static str> {
+    T: Compare<&'static str>,
+    <T as InputIter>::Item: AsChar {
       match input.iter_elements().position(|item| {
         let c = item.as_char();
         c == '\r' || c == '\n'
@@ -159,7 +160,8 @@ pub fn is_space(chr:u8) -> bool {
 /// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength {
+    T: InputIter+InputLength,
+    <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -180,7 +182,8 @@ pub fn alpha<T>(input:T) -> IResult<T, T> where
 /// Recognizes one or more numerical characters: 0-9
 pub fn digit<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength {
+    T: InputIter+InputLength,
+    <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -201,7 +204,8 @@ pub fn digit<T>(input:T) -> IResult<T, T> where
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength {
+    T: InputIter+InputLength,
+    <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -222,7 +226,8 @@ pub fn hex_digit<T>(input:T) -> IResult<T,T> where
 /// Recognizes one or more octal characters: 0-7
 pub fn oct_digit<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength {
+    T: InputIter+InputLength,
+    <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -243,7 +248,8 @@ pub fn oct_digit<T>(input:T) -> IResult<T,T> where
 /// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength {
+    T: InputIter+InputLength,
+    <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -264,7 +270,8 @@ pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
 /// Recognizes one or more spaces and tabs
 pub fn space<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength {
+    T: InputIter+InputLength,
+    <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
@@ -286,7 +293,8 @@ pub fn space<T>(input:T) -> IResult<T,T> where
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
 pub fn multispace<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength {
+    T: InputIter+InputLength,
+    <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
     return Incomplete(Needed::Unknown);
