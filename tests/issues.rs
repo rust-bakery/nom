@@ -146,11 +146,11 @@ named!(issue_308(&str) -> bool,
         ) >>
         (b) ));
 
-/*
+
 fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>> > {
     do_parse!(input,
         entries: cond!(true, count!(le_u64, 3)) >>
         ( entries )
     )
 }
-*/
+
