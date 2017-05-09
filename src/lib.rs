@@ -105,7 +105,7 @@ extern crate test;
 #[cfg(feature = "core")]
 mod std {
 #[macro_use]
-  pub use core::{fmt, iter, option, ops, slice, mem};
+  pub use core::{fmt, iter, option, ops, slice, str, mem};
   pub use collections::{boxed, vec, string};
   pub mod prelude {
     pub use core::prelude as v1;
@@ -133,7 +133,6 @@ pub use self::bits::*;
 pub use self::nom::*;
 pub use self::character::*;
 
-#[cfg(not(feature = "core"))]
 pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
@@ -143,7 +142,6 @@ pub use self::regexp::*;
 #[cfg(feature = "stream")]
 pub use self::stream::*;
 
-#[cfg(not(feature = "core"))]
 pub use self::str::*;
 
 #[macro_use] mod util;
@@ -166,7 +164,6 @@ mod traits;
 #[macro_use] mod character;
 
 #[macro_use]
-#[cfg(not(feature = "core"))]
 pub mod whitespace;
 
 #[cfg(feature = "regexp")]
@@ -177,5 +174,4 @@ pub mod whitespace;
 #[cfg(feature = "stream")]
 mod stream;
 
-#[cfg(not(feature = "core"))]
 mod str;
