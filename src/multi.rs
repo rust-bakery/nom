@@ -1426,7 +1426,7 @@ mod tests {
     assert_eq!(cnt(&b"2ab"[..]), Incomplete(Needed::Size(4)));
     assert_eq!(cnt(&b"3abcab"[..]), Incomplete(Needed::Size(7)));
     assert_eq!(cnt(&b"xxx"[..]), Error(error_position!(ErrorKind::Digit, &b"xxx"[..])));
-    assert_eq!(cnt(&b"2abcxxx"[..]), Error(error_position!(ErrorKind::Count, &b"xxx"[..])));
+    assert_eq!(cnt(&b"2abcxxx"[..]), Error(error_position!(ErrorKind::Count, &b"abcxxx"[..])));
   }
 
   #[test]
@@ -1449,8 +1449,8 @@ mod tests {
     assert_eq!(length_value_2(&i1), IResult::Error(error_position!(ErrorKind::Complete, &b""[..])));
 
     let i2 = [1, 5, 6, 3];
-    assert_eq!(length_value_1(&i2), IResult::Error(error_position!(ErrorKind::Complete, &i2[1..])));
-    assert_eq!(length_value_2(&i2), IResult::Error(error_position!(ErrorKind::Complete, &i2[1..])));
+    assert_eq!(length_value_1(&i2), IResult::Error(error_position!(ErrorKind::Complete, &i2[1..2])));
+    assert_eq!(length_value_2(&i2), IResult::Error(error_position!(ErrorKind::Complete, &i2[1..2])));
 
     let i3 = [2, 5, 6, 3, 4, 5, 7];
     assert_eq!(length_value_1(&i3), IResult::Done(&i3[3..], 1286));

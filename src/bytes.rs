@@ -844,7 +844,7 @@ mod tests {
     assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], &b"ab\\\""[..]));
     assert_eq!(esc(&b"AB\\"[..]), Incomplete(Needed::Unknown));
     assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\A"[..],
-      error_position!(ErrorKind::IsA, &b"A"[..]))));
+      error_position!(ErrorKind::OneOf, &b"A"[..]))));
 
     named!(esc2, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2(&b"12\\nnn34"[..]), Done(&b"nn34"[..], &b"12\\n"[..]));
@@ -1063,7 +1063,7 @@ mod tests {
     let d = b"123";
 
     assert_eq!(f(&a[..]), Incomplete(Needed::Size(1)));
-    assert_eq!(f(&b[..]), Error(error_position!(ErrorKind::TakeTill1, &b""[..])));
+    assert_eq!(f(&b[..]), Error(error_position!(ErrorKind::TakeTill1, &b[..])));
     assert_eq!(f(&c[..]), Done(&b"abcd"[..], &b"123"[..]));
     assert_eq!(f(&d[..]), Done(&b""[..], &b"123"[..]));
   }
@@ -1115,16 +1115,16 @@ mod tests {
     assert_eq!(test(&b"abcdefgh"[..]), Done(&b"efgh"[..], &b"abcd"[..]));
     assert_eq!(test(&b"ABCDefgh"[..]), Done(&b"efgh"[..], &b"ABCD"[..]));
     assert_eq!(test(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(test(&b"Hello"[..]), Error(error_code!(ErrorKind::Tag)));
-    assert_eq!(test(&b"Hel"[..]), Error(error_code!(ErrorKind::Tag)));
+    assert_eq!(test(&b"Hello"[..]), Error(error_position!(ErrorKind::Tag, &b"Hello"[..])));
+    assert_eq!(test(&b"Hel"[..]), Error(error_position!(ErrorKind::Tag, &b"Hel"[..])));
 
     named!(test2<&str, &str>, tag_no_case!("ABcd"));
     assert_eq!(test2("aBCdefgh"), Done("efgh", "aBCd"));
     assert_eq!(test2("abcdefgh"), Done("efgh", "abcd"));
     assert_eq!(test2("ABCDefgh"), Done("efgh", "ABCD"));
     assert_eq!(test2("ab"), Incomplete(Needed::Size(4)));
-    assert_eq!(test2("Hello"), Error(error_code!(ErrorKind::Tag)));
-    assert_eq!(test2("Hel"), Error(error_code!(ErrorKind::Tag)));
+    assert_eq!(test2("Hello"), Error(error_position!(ErrorKind::Tag, &"Hello"[..])));
+    assert_eq!(test2("Hel"), Error(error_position!(ErrorKind::Tag, &"Hel"[..])));
   }
 
   #[test]

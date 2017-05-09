@@ -1001,7 +1001,7 @@ mod tests {
     let a = &b" \tef "[..];
     assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
     let a = &b" cde"[..];
-    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
+    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, &a[1..])));
   }
 
   #[allow(unused_variables)]
