@@ -773,8 +773,11 @@ macro_rules! opt(
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        _                              => {
+          let res: $crate::IResult<_,_> = $crate::IResult::Done($i, ::std::option::Option::None);
+          res
+        },
       }
     }
   );
