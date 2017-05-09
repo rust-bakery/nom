@@ -267,7 +267,29 @@ macro_rules! error_code(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_node(
-  ($code:expr, $next:expr) => ($crate::Err::Node($code, ::std::boxed::Box::new($next)));
+  ($code:expr, $next:expr) => {
+    let next_errors = match $next {
+      $crate::Err::Code(e) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Code(e));
+        v
+      },
+      $crate::Err::Position(e, p) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Position(e,p));
+        v
+      },
+      $crate::Err::Node(e, mut next) => {
+        next.push($crate::Err::Code(e));
+        next
+      },
+      $crate::Err::NodePosition(e, p, mut next) => {
+        next.push($crate::Err::Position(e,p));
+        next
+      },
+    };
+    $crate::Err::Node($code, next_errors)
+  };
 );
 
 #[cfg(not(feature = "verbose-errors"))]
@@ -310,7 +332,31 @@ macro_rules! error_position(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input:expr, $next:expr) => ($crate::Err::NodePosition($code, $input, ::std::boxed::Box::new($next)));
+  ($code:expr, $input:expr, $next:expr) => {
+    {
+    let next_errors = match $next {
+      $crate::Err::Code(e) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Code(e));
+        v
+      },
+      $crate::Err::Position(e, p) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Position(e,p));
+        v
+      },
+      $crate::Err::Node(e, mut next) => {
+        next.push($crate::Err::Code(e));
+        next
+      },
+      $crate::Err::NodePosition(e, p, mut next) => {
+        next.push($crate::Err::Position(e,p));
+        next
+      }
+    };
+    $crate::Err::NodePosition($code, $input, next_errors)
+    }
+  }
 );
 
 #[cfg(not(feature = "verbose-errors"))]

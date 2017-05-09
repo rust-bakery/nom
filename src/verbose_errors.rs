@@ -18,7 +18,6 @@
 use util::ErrorKind;
 use internal::{IResult, IError};
 use internal::IResult::*;
-use std::boxed::Box;
 
 /// Contains the error that a parser can return
 ///
@@ -33,11 +32,11 @@ pub enum Err<P,E=u32>{
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
   Code(ErrorKind<E>),
   /// An error code, and the next error
-  Node(ErrorKind<E>, Box<Err<P,E>>),
+  Node(ErrorKind<E>, Vec<Err<P,E>>),
   /// An error code, and the input position
   Position(ErrorKind<E>, P),
   /// An error code, the input position and the next error
-  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
+  NodePosition(ErrorKind<E>, P, Vec<Err<P,E>>)
 }
 
 impl<I,O,E> IResult<I,O,E> {
@@ -122,7 +121,6 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 /// # use nom::IResult::Error;
 /// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
-/// # use std::boxed::Box;
 /// # fn main() {
 ///     // will add a Custom(42) error to the error chain
 ///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
@@ -131,7 +129,7 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 ///
 ///     let a = &b"efghblah"[..];
 ///     let res_a = parser(a);
-///     assert_eq!(res_a,  Error(NodePosition( ErrorKind::Custom("custom error message"), a, Box::new(Position(ErrorKind::Fix, a)))));
+///     assert_eq!(res_a,  Error(NodePosition( ErrorKind::Custom("custom error message"), a, vec!(Position(ErrorKind::Fix, a)))));
 /// # }
 /// ```
 #[macro_export]

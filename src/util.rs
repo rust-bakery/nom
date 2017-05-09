@@ -187,19 +187,27 @@ macro_rules! dbg_dmp (
 #[cfg(feature = "verbose-errors")]
 pub fn error_to_list<P,E:Clone>(e:&Err<P,E>) -> Vec<ErrorKind<E>> {
   let mut v:Vec<ErrorKind<E>> = Vec::new();
-  let mut err = e;
-  loop {
-    match *err {
-      Err::Code(ref i) | Err::Position(ref i,_)                  => {
+  match e {
+     &Err::Code(ref i) | &Err::Position(ref i,_) => {
         v.push(i.clone());
         return v;
-      },
-      Err::Node(ref i, ref next) | Err::NodePosition(ref i, _, ref next) => {
-        v.push(i.clone());
-        err = &*next;
-      }
-    }
+     },
+     &Err::Node(ref i, ref next) | &Err::NodePosition(ref i, _, ref next) => {
+       //v.push(i.clone());
+       for error in next.iter() {
+         if let &Err::Code(ref i2) = error {
+           v.push(i2.clone());
+         }
+         if let &Err::Position(ref i2,_) = error {
+           v.push(i2.clone());
+         }
+       }
+       v.push(i.clone());
+       v.reverse()
+     }
   }
+
+  v
 }
 
 #[cfg(feature = "verbose-errors")]
@@ -236,27 +244,28 @@ pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Opti
   if let IResult::Error(e) = res {
     let mut v:Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
     let mut err = e.clone();
-    loop {
-      match err {
-        Err::Position(i,s)            => {
-          let (o1, o2) = slice_to_offsets(input, s);
+
+    match e {
+       Err::Code(_) => {},
+       Err::Position(i, p) => {
+         let (o1, o2) = slice_to_offsets(input, p);
           v.push((i, o1, o2));
-          //println!("v is: {:?}", v);
-          break;
-        },
-        Err::NodePosition(i, s, next) => {
-          let (o1, o2) = slice_to_offsets(input, s);
-          v.push((i, o1, o2));
-          err = *next;
-        },
-        Err::Node(_, next)            => {
-          err = *next;
-        },
-        Err::Code(_)                  => {
-          break;
-        }
-      }
+       },
+       Err::Node(_, _) => {},
+       Err::NodePosition(i, p, next) => {
+         //v.push(i.clone());
+         for error in next.iter() {
+           if let &Err::Position(ref i2, ref p2) = error {
+              let (o1, o2) = slice_to_offsets(input, p2);
+             v.push((i2.clone(), o1, o2));
+           }
+         }
+        let (o1, o2) = slice_to_offsets(input, p);
+         v.push((i, o1, o2));
+         v.reverse()
+       }
     }
+
     v.sort_by(|a, b| a.1.cmp(&b.1));
     Some(v)
   } else {
