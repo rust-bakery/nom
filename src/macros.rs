@@ -674,7 +674,8 @@ macro_rules! value (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
-          $crate::IResult::Done(i, $res)
+          let res: $crate::IResult<_,_> = $crate::IResult::Done(i, $res);
+          res
         },
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
@@ -685,7 +686,10 @@ macro_rules! value (
     value!($i, $res, call!($f))
   );
   ($i:expr, $res:expr) => (
-    $crate::IResult::Done($i, $res)
+    {
+      let res: $crate::IResult<_,_> = $crate::IResult::Done($i, $res);
+      res
+    }
   );
 );
 
@@ -867,7 +871,8 @@ macro_rules! cond_with_error(
           $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
         }
       } else {
-        $crate::IResult::Done($i, ::std::option::Option::None)
+        let res: $crate::IResult<_,_> = $crate::IResult::Done($i, ::std::option::Option::None);
+        res
       }
     }
   );
@@ -917,11 +922,15 @@ macro_rules! cond(
         let i_ = $i.clone();
         match $submac!(i_, $($args)*) {
           $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
-          $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
-          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Error(_)      => {
+            let res: $crate::IResult<_,_> = $crate::IResult::Done($i, ::std::option::Option::None);
+            res
+          },
         }
       } else {
-        $crate::IResult::Done($i, ::std::option::Option::None)
+        let res: $crate::IResult<_,_> = $crate::IResult::Done($i, ::std::option::Option::None);
+        res
       }
     }
   );
@@ -1273,8 +1282,10 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn cond() {
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag!("abcd") ) ));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag!("abcd") ) ));
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>>  =
+      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( true, tag!("abcd") ) )));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> =
+      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( false, tag!("abcd") ) )));
     //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
 
     assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
@@ -1291,8 +1302,10 @@ mod tests {
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
     named!( tag_abcd, tag!("abcd") );
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag_abcd ) ));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag_abcd ) ));
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>>  =
+      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( true, tag_abcd ) )));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> =
+      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( false, tag_abcd ) )));
     //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
     assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));

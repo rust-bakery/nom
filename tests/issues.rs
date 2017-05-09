@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed,space,digit,be_u16};
+use nom::{IResult,Needed,space,digit,be_u16,le_u64};
 
 #[allow(dead_code)]
 struct Range {
@@ -134,3 +134,23 @@ fn take_till_issue() {
     assert_eq!(nothing(b""), IResult::Done(&b""[..], &b""[..]));
     assert_eq!(nothing(b"abc"), IResult::Done(&b"abc"[..], &b""[..]));
 }
+
+named!(issue_498< Vec<&[u8]> >, separated_nonempty_list!( opt!(space), tag!("abcd") ));
+
+named!(issue_308(&str) -> bool,
+    do_parse! (
+        tag_s! ("foo") >>
+        b: alt_complete! (
+            map! (tag_s! ("1"), |_: &str|->bool {true}) |
+            value! (false)
+        ) >>
+        (b) ));
+
+/*
+fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>> > {
+    do_parse!(input,
+        entries: cond!(true, count!(le_u64, 3)) >>
+        ( entries )
+    )
+}
+*/

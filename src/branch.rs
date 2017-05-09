@@ -129,7 +129,18 @@ macro_rules! alt (
       match res {
         $crate::IResult::Done(_,_)     => res,
         $crate::IResult::Incomplete(_) => res,
-        _                              => alt!(__impl $i, $($rest)*)
+        $crate::IResult::Error(e)      => {
+          let out = alt!(__impl $i, $($rest)*);
+
+          // Compile-time hack to ensure that res's E type is not under-specified.
+          // This all has no effect at runtime.
+          fn unify_types<T>(_: &T, _: &T) {}
+          if let $crate::IResult::Error(ref e2) = out {
+            unify_types(&e, e2);
+          }
+
+          out
+        }
       }
     }
   );
@@ -190,7 +201,18 @@ macro_rules! alt_complete (
       let res = complete!(i_, $subrule!($($args)*));
       match res {
         $crate::IResult::Done(_,_) => res,
-        _ => alt_complete!($i, $($rest)*),
+        e => {
+          let out = alt_complete!($i, $($rest)*);
+
+          // Compile-time hack to ensure that res's E type is not under-specified.
+          // This all has no effect at runtime.
+          fn unify_types<T>(_: &T, _: &T) {}
+          if out.is_err() {
+            unify_types(&e, &out);
+          }
+
+          out
+        },
       }
     }
   );
@@ -200,7 +222,18 @@ macro_rules! alt_complete (
       let i_ = $i.clone();
       match complete!(i_, $subrule!($($args)*)) {
         $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
-        _ => alt_complete!($i, $($rest)*),
+        e => {
+          let out = alt_complete!($i, $($rest)*);
+
+          // Compile-time hack to ensure that res's E type is not under-specified.
+          // This all has no effect at runtime.
+          fn unify_types<T>(_: &T, _: &T) {}
+          if out.is_err() {
+            unify_types(&e, &out);
+          }
+
+          out
+        },
       }
     }
   );
