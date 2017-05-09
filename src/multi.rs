@@ -309,7 +309,9 @@ macro_rules! many1(
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i1,o1)   => {
           if i1.input_len() == 0 {
-            $crate::IResult::Done(i1,vec![o1])
+            let mut res = ::std::vec::Vec::new();
+            res.push(o1);
+            $crate::IResult::Done(i1,res)
           } else {
 
             let mut res    = ::std::vec::Vec::with_capacity(4);
@@ -1148,6 +1150,7 @@ mod tests {
   );
 
   #[test]
+  #[cfg(feature = "std")]
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
     named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
@@ -1179,6 +1182,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn separated_nonempty_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(","), tag!("abcd")));
     named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list!(tag!(".."), tag!("abcd")));
@@ -1206,6 +1210,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn many0() {
     named!( tag_abcd, tag!("abcd") );
     named!( tag_empty, tag!("") );
@@ -1234,6 +1239,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn many1() {
     named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
 
@@ -1251,6 +1257,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn many_till() {
     named!(multi<&[u8], (Vec<&[u8]>, &[u8]) >, many_till!( tag!( "abcd" ), tag!( "efgh" ) ) );
 
@@ -1266,6 +1273,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn infinite_many() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       println!("input: {:?}", input);
@@ -1283,6 +1291,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn many_m_n() {
     named!(multi<&[u8],Vec<&[u8]> >, many_m_n!(2, 4, tag!("Abcd")));
 
@@ -1303,6 +1312,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn count() {
     const TIMES: usize = 2;
     named!( tag_abc, tag!("abc") );
@@ -1317,6 +1327,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn count_zero() {
     const TIMES: usize = 0;
     named!( tag_abc, tag!("abc") );
@@ -1406,6 +1417,7 @@ mod tests {
   ));
 
   #[test]
+  #[cfg(feature = "std")]
   fn length_count() {
     named!(tag_abc, tag!(&b"abc"[..]) );
     named!( cnt<&[u8], Vec<&[u8]> >, length_count!(number, tag_abc) );
@@ -1432,24 +1444,25 @@ mod tests {
     named!(length_value_1<&[u8], u16 >, length_value!(be_u8, be_u16));
     named!(length_value_2<&[u8], (u8, u8) >, length_value!(be_u8, tuple!(be_u8, be_u8)));
 
-    let i1 = vec![0, 5, 6];
+    let i1 = [0, 5, 6];
     assert_eq!(length_value_1(&i1), IResult::Error(error_position!(ErrorKind::Complete, &b""[..])));
     assert_eq!(length_value_2(&i1), IResult::Error(error_position!(ErrorKind::Complete, &b""[..])));
 
-    let i2 = vec![1, 5, 6, 3];
+    let i2 = [1, 5, 6, 3];
     assert_eq!(length_value_1(&i2), IResult::Error(error_position!(ErrorKind::Complete, &i2[1..])));
     assert_eq!(length_value_2(&i2), IResult::Error(error_position!(ErrorKind::Complete, &i2[1..])));
 
-    let i3 = vec![2, 5, 6, 3, 4, 5, 7];
+    let i3 = [2, 5, 6, 3, 4, 5, 7];
     assert_eq!(length_value_1(&i3), IResult::Done(&i3[3..], 1286));
     assert_eq!(length_value_2(&i3), IResult::Done(&i3[3..], (5, 6)));
 
-    let i4 = vec![3, 5, 6, 3, 4, 5];
+    let i4 = [3, 5, 6, 3, 4, 5];
     assert_eq!(length_value_1(&i4), IResult::Done(&i4[4..], 1286));
     assert_eq!(length_value_2(&i4), IResult::Done(&i4[4..], (5, 6)));
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn fold_many0() {
     fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
       acc.push(item);
@@ -1470,6 +1483,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn fold_many1() {
     fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
       acc.push(item);
@@ -1491,6 +1505,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn fold_many_m_n() {
     fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
       acc.push(item);

@@ -22,9 +22,9 @@ include = [
 ]
 
 [features]
-core = []
+std = []
 nightly = []
-default = ["stream"]
+default = ["std", "stream"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
 stream = []

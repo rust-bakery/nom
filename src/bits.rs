@@ -190,7 +190,7 @@ mod tests {
 
   #[test]
   fn take_bits() {
-    let input = vec![0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
 
     assert_eq!(take_bits!( (sl, 0), u8,   0 ), IResult::Done((sl, 0), 0));
@@ -212,7 +212,7 @@ mod tests {
 
   #[test]
   fn tag_bits() {
-    let input = vec![0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
 
     assert_eq!(tag_bits!( (sl, 0), u8,   3, 0b101), IResult::Done((&sl[0..], 3), 5));
@@ -230,7 +230,7 @@ mod tests {
 
   #[test]
   fn chain_bits() {
-    let input = vec![0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
     assert_eq!(ch((&input[..],0)), IResult::Done((&sl[1..], 4), (5,15)));
     assert_eq!(ch((&input[..],4)), IResult::Done((&sl[2..], 0), (7,16)));
@@ -240,7 +240,7 @@ mod tests {
   named!(ch_bytes<(u8,u8)>, bits!(ch));
   #[test]
   fn bits_to_bytes() {
-    let input = vec![0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10101010, 0b11110000, 0b00110011];
     assert_eq!(ch_bytes(&input[..]), IResult::Done(&input[2..], (5,15)));
     assert_eq!(ch_bytes(&input[..1]), IResult::Incomplete(Needed::Size(2)));
     assert_eq!(ch_bytes(&input[1..]), IResult::Error(error_position!(ErrorKind::TagBits, &input[1..])));

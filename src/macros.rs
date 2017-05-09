@@ -1268,6 +1268,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn cond() {
     let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag!("abcd") ) ));
     let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag!("abcd") ) ));
@@ -1283,6 +1284,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
     named!( tag_abcd, tag!("abcd") );

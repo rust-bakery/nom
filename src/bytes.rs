@@ -909,6 +909,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn take_until_test() {
     named!(x, take_until_and_consume!("efgh"));
     let r = x(&b"abcdabcdefghijkl"[..]);
@@ -1081,6 +1082,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn recognize_take_while() {
     use nom::is_alphanumeric;
     named!(x, take_while!(is_alphanumeric));
@@ -1129,7 +1131,7 @@ mod tests {
   fn tag_fixed_size_array() {
     named!(test, tag!([0x42]));
     named!(test2, tag!(&[0x42]));
-    let input = vec!(0x42, 0x00);
+    let input = [0x42, 0x00];
     assert_eq!(test(&input), Done(&b"\x00"[..], &b"\x42"[..]));
     assert_eq!(test2(&input), Done(&b"\x00"[..], &b"\x42"[..]));
   }

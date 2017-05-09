@@ -83,13 +83,13 @@ impl<I,O,E> IResult<I,O,E> {
   }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::any::Any;
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::{error,fmt};
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::fmt::Debug;
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
   fn description(&self) -> &str {
     let kind = match *self {
@@ -99,7 +99,7 @@ impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
   }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match *self {

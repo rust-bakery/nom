@@ -622,6 +622,7 @@ mod test {
     }
 
     #[test]
+  #[cfg(feature = "std")]
     fn recognize_is_a_s() {
     let a = "aabbab";
     let b = "ababcd";

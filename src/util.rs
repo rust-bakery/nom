@@ -5,23 +5,22 @@ use internal::IResult;
 #[cfg(feature = "verbose-errors")]
 use verbose_errors::Err;
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::collections::HashMap;
 
-#[cfg(feature = "core")]
+#[cfg(not(feature = "std"))]
 use std::prelude::v1::*;
 
 use std::vec::Vec;
 use std::string::ToString;
 
 /// useful functions to calculate the offset between slices and show a hexdump of a slice
-#[cfg(not(feature = "core"))]
 pub trait Offset {
   /// offset between the first byte of self and the first byte of the argument
   fn offset(&self, second:&Self) -> usize;
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 pub trait HexDisplay {
   /// Converts the value of `self` to a hex dump, returning the owned
   /// string.
@@ -34,7 +33,6 @@ pub trait HexDisplay {
 
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
-#[cfg(not(feature = "core"))]
 impl Offset for [u8] {
   fn offset(&self, second:&[u8]) -> usize {
     let fst = self.as_ptr();
@@ -44,7 +42,6 @@ impl Offset for [u8] {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl Offset for str {
     fn offset(&self, second: &Self) -> usize {
       let fst = self.as_ptr();
@@ -54,7 +51,7 @@ impl Offset for str {
     }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl HexDisplay for [u8] {
   #[allow(unused_variables)]
   fn to_hex(&self, chunk_size: usize) -> String {
@@ -150,7 +147,7 @@ macro_rules! dbg (
 ///
 /// It also displays the input in hexdump format
 ///
-/// ```
+/// ```ignore
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
 ///    named!(f, dbg_dmp!( tag!( "abcd" ) ) );
@@ -211,11 +208,11 @@ pub fn compare_error_paths<P,E:Clone+PartialEq>(e1:&Err<P,E>, e2:&Err<P,E>) -> b
 }
 
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 use std::hash::Hash;
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 pub fn add_error_pattern<'a,I,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<ErrorKind<E>>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
   if let IResult::Error(e) = res {
@@ -233,7 +230,7 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
   (off1, off2)
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Option<Vec<(ErrorKind<E>, usize, usize)> > {
   if let IResult::Error(e) = res {
@@ -267,7 +264,7 @@ pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Opti
   }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 pub fn print_error<O,E:Clone>(input: &[u8], res: IResult<&[u8],O,E>) {
   if let Some(v) = prepare_errors(input, res) {
@@ -280,7 +277,7 @@ pub fn print_error<O,E:Clone>(input: &[u8], res: IResult<&[u8],O,E>) {
   }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 pub fn generate_colors<E>(v: &[(ErrorKind<E>, usize, usize)]) -> HashMap<u32, u8> {
   let mut h: HashMap<u32, u8> = HashMap::new();
@@ -333,7 +330,7 @@ pub fn write_color(v: &mut Vec<u8>, color: u8) {
   v.push('m' as u8);
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> String {
   let mut v = Vec::new();
   for (code, &color) in &colors {
@@ -355,7 +352,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
   String::from_utf8_lossy(&v[..]).into_owned()
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usize, usize)]) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);

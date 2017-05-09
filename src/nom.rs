@@ -6,7 +6,7 @@
 //! but the macros system makes no promises.
 //!
 
-#[cfg(feature = "core")]
+#[cfg(not(feature = "std"))]
 use std::prelude::v1::*;
 use std::boxed::Box;
 
@@ -30,7 +30,7 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8
   })
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 #[inline]
 pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
   println!("{:?}", input);
@@ -630,7 +630,7 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
 }
 
 /// Recognizes floating point number in a byte string and returs a f32
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
   flat_map!(input,
     recognize!(
@@ -653,7 +653,7 @@ pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
 }
 
 /// Recognizes floating point number in a string and returs a f32
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 pub fn float_s(input: &str) -> IResult<&str,f32> {
   flat_map!(input,
     recognize!(
@@ -676,7 +676,7 @@ pub fn float_s(input: &str) -> IResult<&str,f32> {
 }
 
 /// Recognizes floating point number in a byte string and returs a f64
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
   flat_map!(input,
     recognize!(
@@ -699,7 +699,7 @@ pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
 }
 
 /// Recognizes floating point number in a string and returs a f64
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 pub fn double_s(input: &str) -> IResult<&str,f64> {
   flat_map!(input,
     recognize!(
@@ -884,6 +884,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn buffer_with_size() {
     let i:Vec<u8> = vec![7,8];
     let o:Vec<u8> = vec![4,5,6];
@@ -1058,6 +1059,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn manual_configurable_endianness_test() {
     let x = 1;
     let int_parse: Box<Fn(&[u8]) -> IResult<&[u8], u16> > = if x == 2 {
@@ -1178,6 +1180,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn float_test() {
     assert_eq!(float(&b"+3.14"[..]),   Done(&b""[..], 3.14));
     assert_eq!(float_s(&"3.14"[..]),   Done(&""[..], 3.14));

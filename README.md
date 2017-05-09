@@ -57,7 +57,7 @@ extern crate nom;
 
 There are a few compilation features:
 
-* `core`: enables `no_std` builds
+* `std`: if disabled, nom can work in `no_std` builds
 * `regexp`: enables regular expression parsers with the `regex` crate
 * `regexp_macros`: enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
 * `verbose-errors`: accumulate error codes and input positions as you backtrack through the parser tree. This gives you precise information about which part of the parser was affected by which part of the input

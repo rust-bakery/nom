@@ -3,7 +3,7 @@
 use self::IResult::*;
 use self::Needed::*;
 
-#[cfg(feature = "core")]
+#[cfg(not(feature = "std"))]
 use std::prelude::v1::*;
 
 #[cfg(feature = "verbose-errors")]
@@ -370,6 +370,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn iresult_map_err() {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     struct Error(u32);

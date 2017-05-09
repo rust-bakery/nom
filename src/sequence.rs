@@ -1327,10 +1327,10 @@ mod tests {
       )
     );
 
-    let a: Vec<u8>     = vec!(2, 3, 4, 5);
-    let res_a: Vec<u8> = vec!(3, 4);
+    let a = [2u8, 3, 4, 5];
+    let res_a = [3u8, 4];
     assert_eq!(length_value(&a[..]), Done(&a[3..], &res_a[..]));
-    let b: Vec<u8>     = vec!(5, 3, 4, 5);
+    let b = [5u8, 3, 4, 5];
     assert_eq!(length_value(&b[..]), Incomplete(Needed::Size(6)));
   }
 }
