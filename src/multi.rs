@@ -571,7 +571,7 @@ macro_rules! many_m_n(
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
-      let ret: IResult<_,_>;
+      let ret: $crate::IResult<_,_>;
       let mut input = $i.clone();
       let mut res   = ::std::vec::Vec::with_capacity($count);
 
