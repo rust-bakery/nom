@@ -2,6 +2,7 @@
 //!
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
 use std::iter::Enumerate;
+use std::slice::Iter;
 
 use std::str::Chars;
 use std::str::CharIndices;
@@ -179,15 +180,15 @@ pub trait InputTake {
 impl<'a> InputIter for &'a [u8] {
     type Item     = &'a u8;
     type RawItem  = u8;
-    type Iter     = Enumerate<::std::slice::Iter<'a, u8>>;
-    type IterElem = ::std::slice::Iter<'a, u8>;
+    type Iter     = Enumerate<Iter<'a, Self::RawItem>>;
+    type IterElem = Iter<'a, Self::RawItem>;
 
     #[inline]
-    fn iter_indices(&self) -> Enumerate<::std::slice::Iter<'a, u8>> {
+    fn iter_indices(&self) -> Self::Iter {
         self.iter().enumerate()
     }
     #[inline]
-    fn iter_elements(&self) -> ::std::slice::Iter<'a,u8> {
+    fn iter_elements(&self) -> Self::IterElem {
       self.iter()
     }
     #[inline]
@@ -229,11 +230,11 @@ impl<'a> InputIter for &'a str {
     type Iter     = CharIndices<'a>;
     type IterElem = Chars<'a>;
     #[inline]
-    fn iter_indices(&self) -> CharIndices<'a> {
+    fn iter_indices(&self) -> Self::Iter {
         self.char_indices()
     }
     #[inline]
-    fn iter_elements(&self) -> Chars<'a> {
+    fn iter_elements(&self) -> Self::IterElem {
       self.chars()
     }
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
