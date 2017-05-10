@@ -9,6 +9,8 @@ use std::str::CharIndices;
 use std::str::FromStr;
 use std::str::from_utf8;
 
+use memchr::memchr;
+
 
 /// abstract method to calculate the input length
 pub trait InputLength {
@@ -404,10 +406,7 @@ pub trait FindToken<T> {
 
 impl<'a> FindToken<&'a[u8]> for u8 {
   fn find_token(&self, input: &[u8]) -> bool {
-    for &i in input.iter() {
-      if *self == i { return true }
-    }
-    false
+    memchr(*self, input).is_some()
   }
 }
 
@@ -419,10 +418,7 @@ impl<'a> FindToken<&'a str> for u8 {
 
 impl<'a,'b> FindToken<&'a[u8]> for &'b u8 {
   fn find_token(&self, input: &[u8]) -> bool {
-    for &i in input.iter() {
-      if **self == i { return true }
-    }
-    false
+    memchr(**self, input).is_some()
   }
 }
 

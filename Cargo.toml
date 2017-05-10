@@ -38,6 +38,9 @@ optional = true
 version = "^0.2.2"
 optional = true
 
+[dependencies.memchr]
+version = "^1.0.1"
+
 #[dev-dependencies.bytes]
 #git = "https://github.com/carllerche/bytes"
 #rev = "a7d38e29"
