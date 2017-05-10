@@ -79,11 +79,11 @@ The resulting code is small, and looks like the grammar you would have written w
 
 This has a few advantages:
 
-- the parsers are small and easy to write;
-- the parsers components are easy to reuse (if they're general enough, please add them to nom!);
-- the parsers components are easy to test separately (unit tests and property-based tests);
-- the parser combination code looks close to the grammar you would have written;
-- you can build partial parsers, specific to the data you need at the moment, and ignore the rest.
+- the parsers are small and easy to write
+- the parsers components are easy to reuse (if they're general enough, please add them to nom!)
+- the parsers components are easy to test separately (unit tests and property-based tests)
+- the parser combination code looks close to the grammar you would have written
+- you can build partial parsers, specific to the data you need at the moment, and ignore the rest
 
 Here is an example of one such parser, to recognize text between parentheses:
 
@@ -167,7 +167,7 @@ There is already a large list of basic parsers available, like:
 - **`space`**: will return the longest array containing only spaces
 - **`multispace`**: will return the longest array containing space, \r or \n
 - **`be_u8`**, **`be_u16`**, **`be_u32`**, **`be_u64`** to parse big endian unsigned integers of multiple sizes
-- **`be_i8`**, **`be_i16`**, **be_i32``**, **`be_i64`** to parse big endian signed integers of multiple sizes
+- **`be_i8`**, **`be_i16`**, **`be_i32`**, **`be_i64`** to parse big endian signed integers of multiple sizes
 - **`be_f32`**, **`be_f64`** to parse big endian floating point numbers
 - **`eof`**: a parser that is successful only if the input is over. In any other case, it returns an error.
 
