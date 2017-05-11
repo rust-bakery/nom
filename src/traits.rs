@@ -470,7 +470,7 @@ impl<'a,'b> FindSubstring<&'b str> for &'a str {
   }
 }
 
-/// abstract method to calculate the input length
+/// used to integrate str's parse() method
 pub trait ParseTo<R> {
   fn parse_to(&self) -> Option<R>;
 }
