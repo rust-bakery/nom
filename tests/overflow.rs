@@ -15,16 +15,7 @@ named!(parser01<&[u8],()>,
 );
 
 // We request a length that would trigger an overflow if computing consumed + requested
-named!(parser02<&[u8],()>,
-    chain!(
-        hdr: take!(1) ~
-        data: take!(18446744073709551615),
-        || ()
-    )
-);
-
-// We request a length that would trigger an overflow if computing consumed + requested
-named!(parser03<&[u8],(&[u8],&[u8])>,
+named!(parser02<&[u8],(&[u8],&[u8])>,
     tuple!(take!(1),take!(18446744073709551615))
 );
 
@@ -34,13 +25,8 @@ fn overflow_incomplete_do_parse() {
 }
 
 #[test]
-fn overflow_incomplete_chain() {
-  assert_eq!(parser02(&b"3"[..]), IResult::Incomplete(Needed::Unknown));
-}
-
-#[test]
 fn overflow_incomplete_tuple() {
-  assert_eq!(parser03(&b"3"[..]), IResult::Incomplete(Needed::Unknown));
+  assert_eq!(parser02(&b"3"[..]), IResult::Incomplete(Needed::Unknown));
 }
 
 #[test]

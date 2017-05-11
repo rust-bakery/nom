@@ -28,6 +28,7 @@
 - `InputIter` does not require `AsChar` on its `Item` type anymore
 - the `core` feature that was putting nom in `no_std` mode has been removed. There is now a `std` feature, activated by default. If it is not activated, nom is in `no_std`
 - in `verbose-errors` mode, the error list is now stored in a `Vec` instead of a box based linked list
+- `chain!` has finally been removed
 
 ### Changed
 
