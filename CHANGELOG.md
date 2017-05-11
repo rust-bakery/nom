@@ -4,6 +4,49 @@
 
 ### Changed
 
+## 3.0.0 - 2017-05-11
+
+### Thanks
+
+- Chris Pick for some `Incomplete` related refactors
+- @drbgn for documentation fixes
+- @valarauca for adding `be_u24`
+- @ithinuel for usability fixes
+- @evuez for README readability fixes and improvements to `IResult`
+- @s3bk for allowing non-`Copy` types as input
+- @keruspe for documentation fixes
+- @0xd34d10cc for trait fixes on `InputIter`
+- @sdleffler for lifetime shenanigans on `named_args`
+- @chengsun for type inference fixes in `alt`
+- @iBelieve for adding str to no_std
+- @Hywan for simplifying code in input traits
+- @azerupi for extensive documentation of `alt` and `alt_complete`
+
+### Breaking Changes
+
+- `escaped`, `separated_list` and `separated_nonempty_list` can now return `Incomplete` when necessary
+- `InputIter` does not require `AsChar` on its `Item` type anymore
+- the `core` feature that was putting nom in `no_std` mode has been removed. There is now a `std` feature, activated by default. If it is not activated, nom is in `no_std`
+- in `verbose-errors` mode, the error list is now stored in a `Vec` instead of a box based linked list
+
+### Changed
+
+- `Endianness` now implements `Debug`, `PartialEq`, `Eq`, `Clone` and `Copy`
+- custom input types can now be cloned if they're not `Copy`
+- the infamous 'Cannot infer type for E' error should happen less often now
+- `str` is now available in `no_std` mode
+
+### Fixed
+
+- `FileProducer` will be marked as `Eof` on full buffer
+- `named_args!` now has lifetimes that cannot conflict with the lifetimes from other arguments
+
+### Added
+
+- `be_u24`: big endian 24 bit unsigned integer parsing
+- `IResult` now has a `unwrap_or` method
+
+
 ## 2.2.1 - 2017-04-03
 
 ### Thanks
@@ -666,7 +709,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/2.2.1...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/3.0.0...HEAD
+* [3.0.0]: https://github.com/Geal/nom/compare/2.2.1...3.0.0
 * [2.2.1]: https://github.com/Geal/nom/compare/2.2.0...2.2.1
 * [2.2.0]: https://github.com/Geal/nom/compare/2.1.0...2.2.0
 * [2.1.0]: https://github.com/Geal/nom/compare/2.0.1...2.1.0
