@@ -33,7 +33,8 @@ macro_rules! re_match (
       if re.is_match($i) {
         $crate::IResult::Done($i.slice($i.input_len()..), $i)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatch))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatch));
+        res
       }
     }
   )
@@ -54,7 +55,8 @@ macro_rules! re_match_static (
       if RE.is_match($i) {
         $crate::IResult::Done($i.slice($i.input_len()..), $i)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatch))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatch));
+        res
       }
     }
   )
@@ -74,7 +76,8 @@ macro_rules! re_bytes_match (
       if re.is_match($i) {
         $crate::IResult::Done($i.slice($i.input_len()..), $i)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatch))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatch));
+        res
       }
     }
   )
@@ -95,7 +98,8 @@ macro_rules! re_bytes_match_static (
       if RE.is_match($i) {
         $crate::IResult::Done($i.slice($i.input_len()..), $i)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatch))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatch));
+        res
       }
     }
   )
@@ -114,7 +118,8 @@ macro_rules! re_find (
       if let Some(m) = re.find($i) {
         $crate::IResult::Done($i.slice(m.end()..), $i.slice(m.start()..m.end()))
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind));
+        res
       }
     }
   )
@@ -134,7 +139,8 @@ macro_rules! re_find_static (
       if let Some(m) = RE.find($i) {
         $crate::IResult::Done($i.slice(m.end()..), $i.slice(m.start()..m.end()))
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind));
+        res
       }
     }
 
@@ -154,7 +160,8 @@ macro_rules! re_bytes_find (
       if let Some(m) = re.find($i) {
         $crate::IResult::Done($i.slice(m.end()..), $i.slice(m.start()..m.end()))
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind));
+        res
       }
     }
   )
@@ -174,7 +181,8 @@ macro_rules! re_bytes_find_static (
       if let Some(m) = RE.find($i) {
         $crate::IResult::Done($i.slice(m.end()..), $i.slice(m.start()..m.end()))
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpFind));
+        res
       }
     }
 
@@ -199,7 +207,8 @@ macro_rules! re_matches (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatches))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatches));
+        res
       }
     }
   )
@@ -224,7 +233,8 @@ macro_rules! re_matches_static (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatches))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatches));
+        res
       }
     }
   )
@@ -248,7 +258,8 @@ macro_rules! re_bytes_matches (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatches))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatches));
+        res
       }
     }
   )
@@ -273,7 +284,8 @@ macro_rules! re_bytes_matches_static (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatches))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpMatches));
+        res
       }
     }
   )
@@ -297,7 +309,8 @@ macro_rules! re_capture (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture));
+        res
       }
     }
   )
@@ -322,7 +335,8 @@ macro_rules! re_capture_static (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture));
+        res
       }
     }
   )
@@ -346,7 +360,8 @@ macro_rules! re_bytes_capture (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture));
+        res
       }
     }
   )
@@ -371,7 +386,8 @@ macro_rules! re_bytes_capture_static (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture));
+        res
       }
     }
   )
@@ -395,7 +411,8 @@ macro_rules! re_captures (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture));
+        res
       }
     }
   )
@@ -420,7 +437,8 @@ macro_rules! re_captures_static (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture));
+        res
       }
     }
   )
@@ -444,7 +462,8 @@ macro_rules! re_bytes_captures (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture));
+        res
       }
     }
   )
@@ -469,7 +488,8 @@ macro_rules! re_bytes_captures_static (
         };
         $crate::IResult::Done($i.slice(offset..), v)
       } else {
-        $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture))
+        let res: $crate::IResult<_,_> = $crate::IResult::Error(error_code!($crate::ErrorKind::RegexpCapture));
+        res
       }
     }
   )

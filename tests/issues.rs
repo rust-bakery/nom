@@ -1,6 +1,9 @@
 //#![feature(trace_macros)]
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate lazy_static;
+extern crate regex;
 
 use nom::{IResult,Needed,space,digit,be_u16,le_u64};
 
@@ -154,3 +157,19 @@ fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>> > {
     )
 }
 
+struct Node<'a> {
+    prefix: Option<&'a str>,
+    content: &'a str,
+}
+
+fn is_char(ch: char) -> bool {
+    true
+}
+
+named!(parse_node<&str, Node>,
+  do_parse!(
+    prefix: opt!(re_find_static!(r"(\s*|(?m://.*$))*")) >>
+    content: take_while_s!(is_char) >>
+    (Node {prefix, content})
+  )
+);
