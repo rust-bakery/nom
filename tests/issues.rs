@@ -5,7 +5,7 @@ extern crate nom;
 extern crate lazy_static;
 extern crate regex;
 
-use nom::{IResult,Needed,space,digit,be_u16,le_u64};
+use nom::{IResult,Needed,space,be_u16,le_u64};
 
 #[allow(dead_code)]
 struct Range {
@@ -69,7 +69,7 @@ fn issue_58() {
 #[cfg(feature = "std")]
 mod parse_int {
   use nom::HexDisplay;
-  use nom::{IResult,Needed,space,digit,be_u16};
+  use nom::{IResult,space,digit};
   use std::str;
 
   named!(parse_ints< Vec<i32> >, many0!(spaces_or_int));
