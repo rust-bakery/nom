@@ -359,10 +359,6 @@ pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
   }
 }
 
-
-
-
-
 /// Recognizes big endian unsigned 4 bytes integer
 #[inline]
 pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
