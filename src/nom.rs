@@ -434,13 +434,13 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   }
 }
 
-/// Recongnizes little endan unsigned 3 byte integer
+/// Recognizes little endian unsigned 3 byte integer
 #[inline]
 pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
     Incomplete(Needed::Size(3))
   } else {
-    let res = (i[0] as u32) + ((i[3] as u32) << 8) + ((i[2] as u32) << 16);
+    let res = (i[0] as u32) + ((i[1] as u32) << 8) + ((i[2] as u32) << 16);
     Done(&i[3..], res)
   }
 }
@@ -927,7 +927,7 @@ mod tests {
     assert_eq!(be_i16(&[0xff, 0xff]), Done(&b""[..], -1));
     assert_eq!(be_i16(&[0x80, 0x00]), Done(&b""[..], -32768_i16));
   }
-  
+
   #[test]
   fn u24_tests() {
     assert_eq!(be_u24(&[0x00, 0x00, 0x00]), Done(&b""[..], 0));
@@ -965,6 +965,13 @@ mod tests {
     assert_eq!(le_i16(&[0xff, 0x7f]), Done(&b""[..], 32767_i16));
     assert_eq!(le_i16(&[0xff, 0xff]), Done(&b""[..], -1));
     assert_eq!(le_i16(&[0x00, 0x80]), Done(&b""[..], -32768_i16));
+  }
+
+  #[test]
+  fn le_u24_tests() {
+    assert_eq!(le_u24(&[0x00, 0x00, 0x00]), Done(&b""[..], 0));
+    assert_eq!(le_u24(&[0xFF, 0xFF, 0x00]), Done(&b""[..], 65535_u32));
+    assert_eq!(le_u24(&[0x56, 0x34, 0x12]), Done(&b""[..], 1193046_u32));
   }
 
   #[test]
