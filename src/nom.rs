@@ -936,6 +936,13 @@ mod tests {
   }
 
   #[test]
+  fn i24_tests() {
+    assert_eq!(be_i24(&[0xFF, 0xFF, 0xFF]), Done(&b""[..], -1_i32));
+    assert_eq!(be_i24(&[0xFF, 0x00, 0x00]), Done(&b""[..], -65536_i32));
+    assert_eq!(be_i24(&[0xED, 0xCB, 0xAA]), Done(&b""[..], -1193046_i32));
+  }
+
+  #[test]
   fn i32_tests() {
     assert_eq!(be_i32(&[0x00, 0x00, 0x00, 0x00]), Done(&b""[..], 0));
     assert_eq!(be_i32(&[0x7f, 0xff, 0xff, 0xff]), Done(&b""[..], 2147483647_i32));
@@ -972,6 +979,13 @@ mod tests {
     assert_eq!(le_u24(&[0x00, 0x00, 0x00]), Done(&b""[..], 0));
     assert_eq!(le_u24(&[0xFF, 0xFF, 0x00]), Done(&b""[..], 65535_u32));
     assert_eq!(le_u24(&[0x56, 0x34, 0x12]), Done(&b""[..], 1193046_u32));
+  }
+
+  #[test]
+  fn le_i24_tests() {
+    assert_eq!(le_i24(&[0xFF, 0xFF, 0xFF]), Done(&b""[..], -1_i32));
+    assert_eq!(le_i24(&[0x00, 0x00, 0xFF]), Done(&b""[..], -65536_i32));
+    assert_eq!(le_i24(&[0xAA, 0xCB, 0xED]), Done(&b""[..], -1193046_i32));
   }
 
   #[test]
