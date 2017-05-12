@@ -394,6 +394,13 @@ pub fn be_i16(i:&[u8]) -> IResult<&[u8], i16> {
   map!(i, be_u16, | x | { x as i16 })
 }
 
+/// Recognizes big endian signed 3 bytes integer
+#[inline]
+pub fn be_i24(i: &[u8]) -> IResult<&[u8], i32> {
+  // Same as the unsigned version but we need to sign-extend manually here
+  map!(i, be_u24, | x | if x & 0x80_00_00 != 0 { (x | 0xff_00_00_00) as i32 } else { x as i32 })
+}
+
 /// Recognizes big endian signed 4 bytes integer
 #[inline]
 pub fn be_i32(i:&[u8]) -> IResult<&[u8], i32> {
@@ -471,6 +478,13 @@ pub fn le_i8(i:&[u8]) -> IResult<&[u8], i8> {
 #[inline]
 pub fn le_i16(i:&[u8]) -> IResult<&[u8], i16> {
   map!(i, le_u16, | x | { x as i16 })
+}
+
+/// Recognizes little endian signed 3 bytes integer
+#[inline]
+pub fn le_i24(i: &[u8]) -> IResult<&[u8], i32> {
+  // Same as the unsigned version but we need to sign-extend manually here
+  map!(i, le_u24, | x | if x & 0x80_00_00 != 0 { (x | 0xff_00_00_00) as i32 } else { x as i32 })
 }
 
 /// Recognizes little endian signed 4 bytes integer
