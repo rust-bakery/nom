@@ -359,10 +359,6 @@ pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
   }
 }
 
-
-
-
-
 /// Recognizes big endian unsigned 4 bytes integer
 #[inline]
 pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
@@ -398,6 +394,13 @@ pub fn be_i16(i:&[u8]) -> IResult<&[u8], i16> {
   map!(i, be_u16, | x | { x as i16 })
 }
 
+/// Recognizes big endian signed 3 bytes integer
+#[inline]
+pub fn be_i24(i: &[u8]) -> IResult<&[u8], i32> {
+  // Same as the unsigned version but we need to sign-extend manually here
+  map!(i, be_u24, | x | if x & 0x80_00_00 != 0 { (x | 0xff_00_00_00) as i32 } else { x as i32 })
+}
+
 /// Recognizes big endian signed 4 bytes integer
 #[inline]
 pub fn be_i32(i:&[u8]) -> IResult<&[u8], i32> {
@@ -431,13 +434,13 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   }
 }
 
-/// Recongnizes little endan unsigned 3 byte integer
+/// Recognizes little endian unsigned 3 byte integer
 #[inline]
 pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
     Incomplete(Needed::Size(3))
   } else {
-    let res = (i[0] as u32) + ((i[3] as u32) << 8) + ((i[2] as u32) << 16);
+    let res = (i[0] as u32) + ((i[1] as u32) << 8) + ((i[2] as u32) << 16);
     Done(&i[3..], res)
   }
 }
@@ -475,6 +478,13 @@ pub fn le_i8(i:&[u8]) -> IResult<&[u8], i8> {
 #[inline]
 pub fn le_i16(i:&[u8]) -> IResult<&[u8], i16> {
   map!(i, le_u16, | x | { x as i16 })
+}
+
+/// Recognizes little endian signed 3 bytes integer
+#[inline]
+pub fn le_i24(i: &[u8]) -> IResult<&[u8], i32> {
+  // Same as the unsigned version but we need to sign-extend manually here
+  map!(i, le_u24, | x | if x & 0x80_00_00 != 0 { (x | 0xff_00_00_00) as i32 } else { x as i32 })
 }
 
 /// Recognizes little endian signed 4 bytes integer
@@ -917,12 +927,19 @@ mod tests {
     assert_eq!(be_i16(&[0xff, 0xff]), Done(&b""[..], -1));
     assert_eq!(be_i16(&[0x80, 0x00]), Done(&b""[..], -32768_i16));
   }
-  
+
   #[test]
   fn u24_tests() {
     assert_eq!(be_u24(&[0x00, 0x00, 0x00]), Done(&b""[..], 0));
     assert_eq!(be_u24(&[0x00, 0xFF, 0xFF]), Done(&b""[..], 65535_u32));
     assert_eq!(be_u24(&[0x12, 0x34, 0x56]), Done(&b""[..], 1193046_u32));
+  }
+
+  #[test]
+  fn i24_tests() {
+    assert_eq!(be_i24(&[0xFF, 0xFF, 0xFF]), Done(&b""[..], -1_i32));
+    assert_eq!(be_i24(&[0xFF, 0x00, 0x00]), Done(&b""[..], -65536_i32));
+    assert_eq!(be_i24(&[0xED, 0xCB, 0xAA]), Done(&b""[..], -1193046_i32));
   }
 
   #[test]
@@ -955,6 +972,20 @@ mod tests {
     assert_eq!(le_i16(&[0xff, 0x7f]), Done(&b""[..], 32767_i16));
     assert_eq!(le_i16(&[0xff, 0xff]), Done(&b""[..], -1));
     assert_eq!(le_i16(&[0x00, 0x80]), Done(&b""[..], -32768_i16));
+  }
+
+  #[test]
+  fn le_u24_tests() {
+    assert_eq!(le_u24(&[0x00, 0x00, 0x00]), Done(&b""[..], 0));
+    assert_eq!(le_u24(&[0xFF, 0xFF, 0x00]), Done(&b""[..], 65535_u32));
+    assert_eq!(le_u24(&[0x56, 0x34, 0x12]), Done(&b""[..], 1193046_u32));
+  }
+
+  #[test]
+  fn le_i24_tests() {
+    assert_eq!(le_i24(&[0xFF, 0xFF, 0xFF]), Done(&b""[..], -1_i32));
+    assert_eq!(le_i24(&[0x00, 0x00, 0xFF]), Done(&b""[..], -65536_i32));
+    assert_eq!(le_i24(&[0xAA, 0xCB, 0xED]), Done(&b""[..], -1193046_i32));
   }
 
   #[test]
