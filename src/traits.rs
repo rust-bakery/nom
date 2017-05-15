@@ -448,7 +448,13 @@ pub trait FindSubstring<T> {
 
 impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
   fn find_substring(&self, substr: &'b[u8]) -> Option<usize> {
-    for (index,win) in self.windows(substr.len()).enumerate() {
+    let substr_len = substr.len();
+
+    if substr_len == 0 {
+        return None;
+    }
+
+    for (index,win) in self.windows(substr_len).enumerate() {
       if win == substr {
         return Some(index)
       }
