@@ -269,11 +269,11 @@ macro_rules! alt_complete (
         e => {
           let out = alt_complete!($i, $($rest)*);
 
-          // Compile-time hack to ensure that res's E type is not under-specified.
-          // This all has no effect at runtime.
-          fn unify_types<T>(_: &T, _: &T) {}
-          if out.is_err() {
-            unify_types(&e, &out);
+          if let (&$crate::IResult::Error(ref e1), &$crate::IResult::Error(ref e2)) = (&e, &out) {
+            // Compile-time hack to ensure that res's E type is not under-specified.
+            // This all has no effect at runtime.
+            fn unify_types<T>(_: &T, _: &T) {}
+            unify_types(e1, e2);
           }
 
           out
@@ -290,11 +290,11 @@ macro_rules! alt_complete (
         e => {
           let out = alt_complete!($i, $($rest)*);
 
-          // Compile-time hack to ensure that res's E type is not under-specified.
-          // This all has no effect at runtime.
-          fn unify_types<T>(_: &T, _: &T) {}
-          if out.is_err() {
-            unify_types(&e, &out);
+          if let (&$crate::IResult::Error(ref e1), &$crate::IResult::Error(ref e2)) = (&e, &out) {
+            // Compile-time hack to ensure that res's E type is not under-specified.
+            // This all has no effect at runtime.
+            fn unify_types<T>(_: &T, _: &T) {}
+            unify_types(e1, e2);
           }
 
           out
