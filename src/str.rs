@@ -240,6 +240,38 @@ macro_rules! take_until_s (
   );
 );
 
+/// Matches one of the characters in a string
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+/// let test = one_of_s!("汉 some more input", "汉012");
+/// assert_eq!(test, IResult::Done(" some more input", '汉'));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! one_of_s (
+  ($i:expr, $inp:expr) => (
+    {
+      let mut iter = $i.chars();
+      let first_op = iter.next();
+      if let Some(first) = first_op {
+        if let Some(_) = $inp.chars().find(|&ch| ch == first) {
+          let rest = iter.as_str();
+          $crate::IResult::Done(rest, first)
+        } else {
+          $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i))
+        }
+      } else {
+        $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1))
+      }
+    }
+  );
+);
+
+
 #[cfg(test)]
 mod test {
     use ::IResult;
