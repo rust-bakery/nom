@@ -642,92 +642,108 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
 /// Recognizes floating point number in a byte string and returs a f32
 #[cfg(feature = "std")]
 pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
-  flat_map!(input,
-    recognize!(
-      tuple!(
-        opt!(alt!(tag!("+") | tag!("-"))),
+  do_parse!(input,
+    sign: opt!(alt!(tag!("+") | tag!("-"))) >>
+    opt!(tag!(" ")) >>
+    number: flat_map!(
+      recognize!(tuple!(
         alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
+          delimited!(digit, tag!("."), opt!(digit)) |
+          delimited!(opt!(digit), tag!("."), digit)
         ),
         opt!(complete!(tuple!(
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
-          )
-        ))
-      )
-    ),
-    parse_to!(f32)
+        )))
+      )),
+      parse_to!(f32)
+    ) >>
+    ({
+      let num:f32 = number;
+      sign.and_then(|s| if s[0] == ('-' as u8) { Some(-1f32) } else { None }).unwrap_or(1f32) * num
+    })
   )
 }
 
 /// Recognizes floating point number in a string and returs a f32
 #[cfg(feature = "std")]
 pub fn float_s(input: &str) -> IResult<&str,f32> {
-  flat_map!(input,
-    recognize!(
-      tuple!(
-        opt!(alt!(tag!("+") | tag!("-"))),
+  do_parse!(input,
+    sign: opt!(alt!(tag!("+") | tag!("-"))) >>
+    opt!(tag!(" ")) >>
+    number: flat_map!(
+      recognize!(tuple!(
         alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
+          delimited!(digit, tag!("."), opt!(digit)) |
+          delimited!(opt!(digit), tag!("."), digit)
         ),
         opt!(complete!(tuple!(
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
-          )
-        ))
-      )
-    ),
-    parse_to!(f32)
+        )))
+      )),
+      parse_to!(f32)
+    ) >>
+    ({
+      let num:f32 = number;
+      sign.and_then(|s| if s.as_bytes()[0] == ('-' as u8) { Some(-1f32) } else { None }).unwrap_or(1f32) * num
+    })
   )
 }
 
 /// Recognizes floating point number in a byte string and returs a f64
 #[cfg(feature = "std")]
 pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
-  flat_map!(input,
-    recognize!(
-      tuple!(
-        opt!(alt!(tag!("+") | tag!("-"))),
+  do_parse!(input,
+    sign: opt!(alt!(tag!("+") | tag!("-"))) >>
+    opt!(tag!(" ")) >>
+    number: flat_map!(
+      recognize!(tuple!(
         alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
+          delimited!(digit, tag!("."), opt!(digit)) |
+          delimited!(opt!(digit), tag!("."), digit)
         ),
         opt!(complete!(tuple!(
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
-          )
-        ))
-      )
-    ),
-    parse_to!(f64)
+        )))
+      )),
+      parse_to!(f32)
+    ) >>
+    ({
+      let num:f64 = number;
+      sign.and_then(|s| if s[0] == ('-' as u8) { Some(-1f64) } else { None }).unwrap_or(1f64) * num
+    })
   )
 }
 
 /// Recognizes floating point number in a string and returs a f64
 #[cfg(feature = "std")]
 pub fn double_s(input: &str) -> IResult<&str,f64> {
-  flat_map!(input,
-    recognize!(
-      tuple!(
-        opt!(alt!(tag!("+") | tag!("-"))),
+  do_parse!(input,
+    sign: opt!(alt!(tag!("+") | tag!("-"))) >>
+    opt!(tag!(" ")) >>
+    number: flat_map!(
+      recognize!(tuple!(
         alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
+          delimited!(digit, tag!("."), opt!(digit)) |
+          delimited!(opt!(digit), tag!("."), digit)
         ),
         opt!(complete!(tuple!(
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
-          )
-        ))
-      )
-    ),
-    parse_to!(f64)
+        )))
+      )),
+      parse_to!(f64)
+    ) >>
+    ({
+      let num:f64 = number;
+      sign.and_then(|s| if s.as_bytes()[0] == ('-' as u8) { Some(-1f64) } else { None }).unwrap_or(1f64) * num
+    })
   )
 }
 
@@ -1218,8 +1234,10 @@ mod tests {
     assert_eq!(double_s(&"3.14"[..]),   Done(&""[..], 3.14));
 
     assert_eq!(float(&b"-1.234E-12"[..]),   Done(&b""[..], -1.234E-12));
+    assert_eq!(float(&b"- 1.234E-12"[..]),   Done(&b""[..], -1.234E-12));
     assert_eq!(float_s(&"-1.234E-12"[..]),   Done(&""[..], -1.234E-12));
     assert_eq!(double(&b"-1.234E-12"[..]),   Done(&b""[..], -1.234E-12));
+    assert_eq!(double(&b"- 1.234E-12"[..]),   Done(&b""[..], -1.234E-12));
     assert_eq!(double_s(&"-1.234E-12"[..]),   Done(&""[..], -1.234E-12));
   }
 }
