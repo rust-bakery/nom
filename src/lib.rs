@@ -99,6 +99,7 @@ extern crate collections;
 extern crate regex;
 #[cfg(feature = "regexp_macros")]
 #[macro_use] extern crate lazy_static;
+extern crate memchr;
 #[cfg(feature = "nightly")]
 extern crate test;
 

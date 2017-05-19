@@ -9,6 +9,8 @@ use std::str::CharIndices;
 use std::str::FromStr;
 use std::str::from_utf8;
 
+use memchr;
+
 
 /// abstract method to calculate the input length
 pub trait InputLength {
@@ -404,10 +406,7 @@ pub trait FindToken<T> {
 
 impl<'a> FindToken<&'a[u8]> for u8 {
   fn find_token(&self, input: &[u8]) -> bool {
-    for &i in input.iter() {
-      if *self == i { return true }
-    }
-    false
+    memchr::memchr(*self, input).is_some()
   }
 }
 
@@ -419,10 +418,7 @@ impl<'a> FindToken<&'a str> for u8 {
 
 impl<'a,'b> FindToken<&'a[u8]> for &'b u8 {
   fn find_token(&self, input: &[u8]) -> bool {
-    for &i in input.iter() {
-      if **self == i { return true }
-    }
-    false
+    memchr::memchr(**self, input).is_some()
   }
 }
 
@@ -448,12 +444,34 @@ pub trait FindSubstring<T> {
 
 impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
   fn find_substring(&self, substr: &'b[u8]) -> Option<usize> {
-    for (index,win) in self.windows(substr.len()).enumerate() {
-      if win == substr {
-        return Some(index)
+    let substr_len = substr.len();
+
+    if substr_len == 0 {
+      None
+    } else if substr_len == 1 {
+      memchr::memchr(substr[0], self)
+    } else {
+      let max = self.len() - substr_len;
+      let mut offset = 0;
+      let mut haystack = &self[..];
+
+      while let Some(position) = memchr::memchr(substr[0], haystack) {
+        offset += position;
+
+        if offset > max {
+          return None
+        }
+
+        if &haystack[position..position + substr_len] == substr {
+          return Some(offset)
+        }
+
+        haystack  = &haystack[position + 1..];
+        offset   += 1;
       }
+
+      None
     }
-    None
   }
 }
 
