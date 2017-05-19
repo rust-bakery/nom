@@ -106,7 +106,7 @@ extern crate test;
 #[cfg(not(feature = "std"))]
 mod std {
 #[macro_use]
-  pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem};
+  pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
   pub use collections::{boxed, vec, string};
   pub mod prelude {
     pub use core::prelude as v1;

@@ -117,17 +117,18 @@ macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
       use std::ops::Div;
+      use std::convert::Into;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
       let res : $crate::IResult<(&[u8],usize), $t> = if $count == 0 {
-        $crate::IResult::Done( (input, bit_offset), 0)
+        $crate::IResult::Done( (input, bit_offset), (0 as u8).into())
       } else {
         let cnt = ($count as usize + bit_offset).div(8);
         if input.len() * 8 < $count as usize + bit_offset {
           //println!("returning incomplete: {}", $count as usize + bit_offset);
           $crate::IResult::Incomplete($crate::Needed::Size($count as usize))
         } else {
-          let mut acc:$t            = 0;
+          let mut acc:$t            = (0 as u8).into();
           let mut offset: usize     = bit_offset;
           let mut remaining: usize  = $count;
           let mut end_offset: usize = 0;
@@ -137,9 +138,9 @@ macro_rules! take_bits (
               break;
             }
             let val: $t = if offset == 0 {
-              *byte as $t
+              (*byte as u8).into()
             } else {
-              ((*byte << offset) as u8 >> offset) as $t
+              (((*byte as u8) << offset) as u8 >> offset).into()
             };
 
             if remaining < 8 - offset {
@@ -185,6 +186,7 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
+  use std::ops::{Shr,Shl,AddAssign};
   use internal::{IResult,Needed};
   use ErrorKind;
 
@@ -244,5 +246,51 @@ mod tests {
     assert_eq!(ch_bytes(&input[..]), IResult::Done(&input[2..], (5,15)));
     assert_eq!(ch_bytes(&input[..1]), IResult::Incomplete(Needed::Size(2)));
     assert_eq!(ch_bytes(&input[1..]), IResult::Error(error_position!(ErrorKind::TagBits, &input[1..])));
+  }
+
+  #[derive(PartialEq,Debug)]
+  struct FakeUint(u32);
+
+  impl AddAssign for FakeUint {
+
+      fn add_assign(&mut self, other: FakeUint) {
+          *self = FakeUint(&self.0 + other.0);
+      }
+
+  }
+
+  impl Shr<usize> for FakeUint {
+      type Output = FakeUint;
+
+      fn shr(self, shift: usize) -> FakeUint {
+          FakeUint(&self.0 >> shift)
+      }
+
+  }
+
+  impl Shl<usize> for FakeUint {
+      type Output = FakeUint;
+
+      fn shl(self, shift: usize) -> FakeUint {
+          FakeUint(&self.0 << shift)
+      }
+
+  }
+
+  impl From<u8> for FakeUint {
+
+      fn from(i: u8) -> FakeUint {
+          FakeUint(u32::from(i))
+      }
+  }
+
+  #[test]
+  fn non_privitive_type() {
+    let input = [0b10101010, 0b11110000, 0b00110011];
+    let sl    = &input[..];
+
+    assert_eq!(take_bits!( (sl, 0), FakeUint, 20 ), IResult::Done((&sl[2..], 4), FakeUint(700163)));
+    assert_eq!(take_bits!( (sl, 4), FakeUint, 20 ), IResult::Done((&sl[3..], 0), FakeUint(716851)));
+    assert_eq!(take_bits!( (sl, 4), FakeUint, 22 ), IResult::Incomplete(Needed::Size(22)));
   }
 }
