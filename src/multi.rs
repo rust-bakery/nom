@@ -1183,6 +1183,25 @@ mod tests {
 
   #[test]
   #[cfg(feature = "std")]
+  fn separated_list_complete() {
+    use nom::alpha;
+    named!(multi<&[u8],Vec<&[u8]> >, separated_list!(complete!(tag!(",")), complete!(alpha)));
+    let a = &b"abcdef"[..];
+    let b = &b"abcd,abcdef"[..];
+    let c = &b"abcd,abcd,ef"[..];
+    let d = &b"abc."[..];
+    let e = &b"abcd,ef."[..];
+
+    assert_eq!(multi(a), Done(&b""[..], vec!(a)));
+    assert_eq!(multi(b), Done(&b""[..], vec!(&b"abcd"[..], &b"abcdef"[..])));
+    assert_eq!(multi(c), Done(&b""[..], vec!(&b"abcd"[..], &b"abcd"[..], &b"ef"[..])));
+    assert_eq!(multi(d), Done(&b"."[..], vec!(&b"abc"[..])));
+    assert_eq!(multi(e), Done(&b"."[..], vec!(&b"abcd"[..], &b"ef"[..])));
+  }
+
+
+  #[test]
+  #[cfg(feature = "std")]
   fn separated_nonempty_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(","), tag!("abcd")));
     named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list!(tag!(".."), tag!("abcd")));
