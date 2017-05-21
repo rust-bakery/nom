@@ -186,7 +186,7 @@ macro_rules! take_while1_s (
 );
 
 
-/// `take_till_s!(&str -> bool) => &str -> IResult<&str, &str>`
+/// `take_till_s!(char -> bool) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters until the provided function succeeds
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool
@@ -202,7 +202,7 @@ macro_rules! take_till_s (
   );
 );
 
-/// `take_till1_s!(&str -> bool) => &str -> IResult<&str, &str>`
+/// `take_till1_s!(char -> bool) => &str -> IResult<&str, &str>`
 /// returns the longest non empty list of characters until the provided function succeeds
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool
