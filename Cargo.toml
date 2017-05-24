@@ -22,7 +22,7 @@ include = [
 ]
 
 [features]
-std = []
+std = ["memchr/use_std"]
 nightly = []
 default = ["std", "stream"]
 regexp = ["regex"]
@@ -40,6 +40,7 @@ optional = true
 
 [dependencies.memchr]
 version = "^1.0.1"
+default-features = false
 
 #[dev-dependencies.bytes]
 #git = "https://github.com/carllerche/bytes"
