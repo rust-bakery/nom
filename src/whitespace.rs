@@ -659,7 +659,7 @@ macro_rules! eat_separator (
     {
       use $crate::{AsChar,InputLength,InputIter,Slice};
       if ($i).input_len() == 0 {
-        $crate::IResult::Done(($i).slice(0..), ($i).slice(0..0))
+        $crate::IResult::Done(($i).slice(..), ($i).slice(..0))
       } else {
         match ($i).iter_indices().position(|(_, item)| {
           let i = item.as_char();
@@ -784,11 +784,11 @@ macro_rules! sep (
   };
 );
 
-use std::ops::{Range,RangeFrom,RangeTo};
+use std::ops::{RangeFull,RangeFrom,RangeTo};
 use internal::IResult;
 #[allow(unused_imports)]
 pub fn sp<'a,T>(input:T) -> IResult<T, T> where
-  T: ::traits::Slice<Range<usize>>+::traits::Slice<RangeFrom<usize>>+::traits::Slice<RangeTo<usize>>,
+  T: ::traits::Slice<RangeFull>+::traits::Slice<RangeFrom<usize>>+::traits::Slice<RangeTo<usize>>,
     T: ::traits::InputIter+::traits::InputLength,
     <T as ::traits::InputIter>::Item: ::traits::AsChar {
     eat_separator!(input, &b" \t\r\n"[..])

@@ -557,7 +557,7 @@ macro_rules! take_until_and_consume (
             $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsume,$i))
           },
           Some(index) => {
-            $crate::IResult::Done($i.slice(index+$substr.input_len()..), $i.slice(0..index))
+            $crate::IResult::Done($i.slice(index+$substr.input_len()..), $i.slice(..index))
           },
         }
       };
@@ -582,7 +582,7 @@ macro_rules! take_until_and_consume1 (
             $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntilAndConsume,$i))
           },
           Some(index) => {
-            $crate::IResult::Done($i.slice(index+$substr.input_len()..), $i.slice(0..index))
+            $crate::IResult::Done($i.slice(index+$substr.input_len()..), $i.slice(..index))
           },
         }
       };
@@ -609,7 +609,7 @@ macro_rules! take_until (
             $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntil,$i))
           },
           Some(index) => {
-            $crate::IResult::Done($i.slice(index..), $i.slice(0..index))
+            $crate::IResult::Done($i.slice(index..), $i.slice(..index))
           },
         }
       };
@@ -636,7 +636,7 @@ macro_rules! take_until1 (
             $crate::IResult::Error(error_position!($crate::ErrorKind::TakeUntil,$i))
           },
           Some(index) => {
-            $crate::IResult::Done($i.slice(index..), $i.slice(0..index))
+            $crate::IResult::Done($i.slice(index..), $i.slice(..index))
           },
         }
       };

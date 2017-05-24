@@ -1142,7 +1142,7 @@ mod tests {
         let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
           $crate::IResult::Incomplete($crate::Needed::Size(cnt))
         } else {
-          $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
+          $crate::IResult::Done(&$i[cnt..],&$i[..cnt])
         };
         res
       }

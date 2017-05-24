@@ -211,7 +211,7 @@ impl InputTake for [u8] {
     #[inline]
     fn take<P>(&self, count: usize) -> Option<&Self> {
       if self.len() >= count {
-        Some(&self[0..count])
+        Some(&self[..count])
       } else {
         None
       }
