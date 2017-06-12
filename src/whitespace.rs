@@ -466,7 +466,7 @@ macro_rules! permutation_iterator_sep (
 #[macro_export]
 macro_rules! alt_sep (
   (__impl $i:expr, $separator:ident, $e:ident | $($rest:tt)*) => (
-    alt_sep!(__impl $i, call!($e) | $($rest)*);
+    alt_sep!(__impl $i, $separator, call!($e) | $($rest)*);
   );
 
   (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
@@ -506,14 +506,14 @@ macro_rules! alt_sep (
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt_sep!(__impl $i)
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
         }
       }
     }
   );
 
-  (__impl $i:expr, $e:ident) => (
-    alt!(__impl $i, call!($e) | __end);
+  (__impl $i:expr, $separator:ident, $e:ident) => (
+    alt_sep!(__impl $i, $separator, call!($e));
   );
 
   (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)*)) => (
@@ -522,13 +522,17 @@ macro_rules! alt_sep (
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt!(__impl $i, __end)
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
         }
       }
     }
   );
 
   (__impl $i:expr) => (
+    $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
+  );
+
+  (__impl $i:expr, $separator:ident) => (
     $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
   );
 
@@ -832,6 +836,7 @@ macro_rules! ws (
 );
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod tests {
   use internal::IResult::*;
   use internal::{IResult,Needed};
@@ -1029,4 +1034,23 @@ mod tests {
   fn str_test() {
     assert_eq!(str_parse(" \n   test\t a\nb"), Done("a\nb", "test"));
   }
+
+  // test whitespace parser generation for alt
+  named!(space, tag!(" "));
+  named!(pipeline_statement<&[u8], ()>,
+    ws!(
+      do_parse!(
+      tag!("pipeline") >>
+      attributes: delimited!(char!('{'),
+                             separated_list!(char!(','), alt!(
+                               space |
+                               space
+                             )),
+                             char!('}')) >>
+
+      ( () )
+    )
+  )
+  );
+
 }
