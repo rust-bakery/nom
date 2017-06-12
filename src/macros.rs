@@ -596,6 +596,7 @@ macro_rules! parse_to (
   ($i:expr, $t:ty ) => (
     {
       use $crate::ParseTo;
+      use $crate::Slice;
       use $crate::InputLength;
       match ($i).parse_to() {
         ::std::option::Option::Some(output) => $crate::IResult::Done($i.slice(..$i.input_len()), output),
