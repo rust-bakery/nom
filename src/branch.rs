@@ -168,6 +168,19 @@
 ///
 #[macro_export]
 macro_rules! alt (
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)* ) => (
+    compiler_error!("alt uses '|' as separator, not ',':
+
+      alt!(
+        tag!(\"abcd\") |
+        tag!(\"efgh\") |
+        tag!(\"ijkl\")
+      )
+    ");
+  );
+  (__impl $i:expr, $e:ident, $($rest:tt)* ) => (
+    alt!(__impl $i, call!($e) , $($rest)*);
+  );
   (__impl $i:expr, $e:ident | $($rest:tt)*) => (
     alt!(__impl $i, call!($e) | $($rest)*);
   );
@@ -849,4 +862,10 @@ mod tests {
     let e = &b"efgabc"[..];
     assert_eq!(perm(e), Incomplete(Needed::Size(7)));
   }
+
+  /*
+  named!(does_not_compile,
+    alt!(tag!("abcd"), tag!("efgh"))
+  );
+  */
 }
