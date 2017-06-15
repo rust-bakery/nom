@@ -388,6 +388,19 @@ macro_rules! do_parse (
     ");
   );
 
+  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+    compiler_error!("do_parse uses >> as separator, not ~");
+  );
+  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+    compiler_error!("do_parse uses >> as separator, not ~");
+  );
+  (__impl $i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
+    do_parse!(__impl $i, $consumed, $field: call!($e) ~ $($rest)*);
+  );
+  (__impl $i:expr, $consumed:expr, $e:ident ~ $($rest:tt)*) => (
+    do_parse!(__impl $i, $consumed, call!($e) ~ $($rest)*);
+  );
+
   (__impl $i:expr, $consumed:expr, $e:ident >> $($rest:tt)*) => (
     do_parse!(__impl $i, $consumed, call!($e) >> $($rest)*);
   );
@@ -849,6 +862,13 @@ mod tests {
     do_parse!(
       length: be_u8         >>
       bytes:  take!(length)
+    )
+  );
+  named!(does_not_compile_either,
+    do_parse!(
+      length: be_u8         ~
+      bytes:  take!(length) ~
+      ( () )
     )
   );
   */
