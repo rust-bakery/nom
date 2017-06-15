@@ -365,15 +365,7 @@ macro_rules! do_parse (
   );
 
   (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ) => (
-    compiler_error!("do_parse is missing the return value. A do_parse call must end
-      with a return value between parenthesis, as follows:
-
-      do_parse!(
-        a: tag!(\"abcd\") >>
-        b: tag!(\"efgh\") >>
-
-        ( Value { a: a, b: b } )
-    ");
+    do_parse!(__impl $i, $consumed, $submac!( $($args)* ))
   );
 
   (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ) => (
@@ -507,6 +499,19 @@ macro_rules! do_parse (
     {
       do_parse!(__impl $i, 0usize, $($rest)*)
     }
+  );
+  ($submac:ident!( $($args:tt)* ) >> $($rest:tt)* ) => (
+    compiler_error!("if you are using do_parse outside of a named! macro, you must
+        pass the input data as first argument, like this:
+
+        let res = do_parse!(input,
+          a: tag!(\"abcd\") >>
+          b: tag!(\"efgh\") >>
+          ( Value { a: a, b: b } )
+        );");
+  );
+  ($e:ident! >> $($rest:tt)* ) => (
+    do_parse!( call!($e) >> $($rest)*);
   );
 );
 
@@ -871,5 +876,14 @@ mod tests {
       ( () )
     )
   );
+  fn still_does_not_compile() {
+    let data = b"abcd";
+
+    let res = do_parse!(
+      tag!("abcd") >>
+      tag!("efgh") >>
+      ( () )
+    );
+  }
   */
 }
