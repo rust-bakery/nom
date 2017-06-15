@@ -364,6 +364,30 @@ macro_rules! do_parse (
     $crate::IResult::Done($i, ( $($rest),* ))
   );
 
+  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ) => (
+    compiler_error!("do_parse is missing the return value. A do_parse call must end
+      with a return value between parenthesis, as follows:
+
+      do_parse!(
+        a: tag!(\"abcd\") >>
+        b: tag!(\"efgh\") >>
+
+        ( Value { a: a, b: b } )
+    ");
+  );
+
+  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ) => (
+    compiler_error!("do_parse is missing the return value. A do_parse call must end
+      with a return value between parenthesis, as follows:
+
+      do_parse!(
+        a: tag!(\"abcd\") >>
+        b: tag!(\"efgh\") >>
+
+        ( Value { a: a, b: b } )
+    ");
+  );
+
   (__impl $i:expr, $consumed:expr, $e:ident >> $($rest:tt)*) => (
     do_parse!(__impl $i, $consumed, call!($e) >> $($rest)*);
   );
@@ -819,4 +843,13 @@ mod tests {
     let b = [5u8, 3, 4, 5];
     assert_eq!(length_value(&b[..]), Incomplete(Needed::Size(6)));
   }
+
+  /*
+  named!(does_not_compile,
+    do_parse!(
+      length: be_u8         >>
+      bytes:  take!(length)
+    )
+  );
+  */
 }

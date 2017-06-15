@@ -1,5 +1,70 @@
 % FAQ
 
+### Using nightly to get better error messages
+
+If you got the following error when compiling your nom parser:
+
+```
+error[E0425]: cannot find value `INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ` in this scope
+   --> src/lib.rs:111:7
+    |
+111 |         INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/master/doc/FAQ.md#using-nightly-to-get-better-error-messages
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
+```
+
+It means that you are using Rust stable, and that one of your nom parsers has an invalid syntax.
+If you can switch to a nightly Rust compiler (as an example, with `rustup default nightly`),
+and if you activate the `nightly` feature on your nom dependency like this:
+
+```toml
+[dependencies.nom]
+version = "^3"
+features = ["nightly"]
+```
+
+You can get more helpful error messages, such as this one:
+
+```
+$ cargo test --features nightly
+   Compiling compiler_error v0.1.1
+   Compiling nom v3.0.0 (file:///Users/geal/dev/rust/projects/nom)
+error: "do_parse is missing the return value. A do_parse call must end
+      with a return value between parenthesis, as follows:
+
+      do_parse!(
+        a: tag!(\"abcd\") >>
+        b: tag!(\"efgh\") >>
+
+        ( Value { a: a, b: b } )
+    "
+   --> src/sequence.rs:368:5
+    |
+368 | /     compiler_error!("do_parse is missing the return value. A do_parse call must end
+369 | |       with a return value between parenthesis, as follows:
+370 | |
+371 | |       do_parse!(
+...   |
+375 | |         ( Value { a: a, b: b } )
+376 | |     ");
+    | |______^
+...
+851 | /         named!(no_compiler,
+852 | |                 do_parse!(
+853 | |                         length: be_u8         >>
+854 | |                         bytes:  take!(length)
+855 | |                 )
+856 | |         );
+    | |___- in this macro invocation
+
+error: aborting due to previous error(s)
+
+error: Could not compile `nom`.
+```
+
+If the error message is not helpful, please reach out on the [Gitter chat](https://gitter.im/Geal/nom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) or the IRC channel (#nom on freenode), and show
+your code and the error message you got.
+
+
 ### The compiler indicates `error: expected an item keyword` then points to the function's return type in `named!`:
 
 ```ignore
