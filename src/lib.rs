@@ -91,6 +91,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(feature = "nightly", feature(const_fn))]
+#![cfg_attr(feature = "nightly", feature(plugin))]
+#![cfg_attr(feature = "nightly", plugin(compiler_error))]
 //#![warn(missing_docs)]
 
 #[cfg(not(feature = "std"))]
@@ -102,6 +104,11 @@ extern crate regex;
 extern crate memchr;
 #[cfg(feature = "nightly")]
 extern crate test;
+
+#[cfg(not(feature = "nightly"))]
+macro_rules! compiler_error {
+    ($e:expr) => { ERROR }
+}
 
 #[cfg(not(feature = "std"))]
 mod std {
