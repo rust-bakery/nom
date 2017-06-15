@@ -5,15 +5,15 @@
 //!
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!
-//! There are a few [guides](home.html) with more details
-//! about [the design of nom](how_nom_macros_work.html),
-//! [how to write parsers](making_a_new_parser_from_scratch.html),
-//! or the [error management system](error_management.html).
+//! There are a few [guides](http://rust.unhandledexpression.com/nom/home.html) with more details
+//! about [the design of nom](http://rust.unhandledexpression.com/nom/how_nom_macros_work.html),
+//! [how to write parsers](http://rust.unhandledexpression.com/nom/making_a_new_parser_from_scratch.html),
+//! or the [error management system](http://rust.unhandledexpression.com/nom/error_management.html).
 //!
 //! If you are upgrading to nom 2.0, please read the
-//! [migration document](upgrading_to_nom_2.html).
+//! [migration document](http://rust.unhandledexpression.com/nom/upgrading_to_nom_2.html).
 //!
-//! See also the [FAQ](FAQ.html).
+//! See also the [FAQ](http://rust.unhandledexpression.com/nom/FAQ.html).
 //!
 //! # Example
 //!
