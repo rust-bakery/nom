@@ -4,6 +4,36 @@
 
 ### Changed
 
+## 3.1.0 - 2017-06-16
+
+### Thanks
+
+- @sdroege: implementing be_i24 and le_i24
+- @Hywan: integrating faster substring search using memchr
+- @nizox: fixing type issues in bit stream parsing
+- @grissiom: documentation fixes
+- @doomrobo: implementing separated_list_complete and separated_nonempty_list_complete
+- @CWood1: fixing memchr integration in no_std
+- @lu_zero: integrating the compiler_error crate
+- @dtolnay: helping debug a type inference issue in map
+
+### Changed
+
+- memchr is used for substring search if possible
+- if building on nightly, some common syntax errors will display a specific error message. If building no stable, display the documentation to activate those messages
+- `count` no longer preallocates its vector
+
+### Fixed
+
+- better type inference in alt_complete
+- `alt` should now work with whitespace parsing
+- `map` should not make type inference errors anymore
+
+### Added
+
+- be_i24 and le_i24, parsing big endian and little endian signed 24 bit integers
+- `separated_list_complete` and `separated_nonempty_list_complete` will treat incomplete from sub parsers as error
+
 ## 3.0.0 - 2017-05-12
 
 ### Thanks
@@ -710,7 +740,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/3.0.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/3.1.0...HEAD
+* [3.1.0]: https://github.com/Geal/nom/compare/3.0.0...3.1.0
 * [3.0.0]: https://github.com/Geal/nom/compare/2.2.1...3.0.0
 * [2.2.1]: https://github.com/Geal/nom/compare/2.2.0...2.2.1
 * [2.2.0]: https://github.com/Geal/nom/compare/2.1.0...2.2.0
