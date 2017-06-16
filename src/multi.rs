@@ -199,6 +199,46 @@ macro_rules! separated_nonempty_list(
   );
 );
 
+/// `separated_list_complete!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// This is equivalent to the `separated_list!` combinator, except that it will return `Error`
+/// when either the separator or element subparser returns `Incomplete`.
+#[macro_export]
+macro_rules! separated_list_complete {
+    ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => ({
+        separated_list!($i, complete!($sep!($($args)*)), complete!($submac!($($args2)*)))
+    });
+
+    ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+        separated_list_complete!($i, $submac!($($args)*), call!($g));
+    );
+    ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+        separated_list_complete!($i, call!($f), $submac!($($args)*));
+    );
+    ($i:expr, $f:expr, $g:expr) => (
+        separated_list_complete!($i, call!($f), call!($g));
+    );
+}
+
+/// `separated_nonempty_list_complete!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// This is equivalent to the `separated_nonempty_list!` combinator, except that it will return
+/// `Error` when either the separator or element subparser returns `Incomplete`.
+#[macro_export]
+macro_rules! separated_nonempty_list_complete {
+    ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => ({
+        separated_nonempty_list!($i, complete!($sep!($($args)*)), complete!($submac!($($args2)*)))
+    });
+
+    ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+        separated_nonempty_list_complete!($i, $submac!($($args)*), call!($g));
+    );
+    ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+        separated_nonempty_list_complete!($i, call!($f), $submac!($($args)*));
+    );
+    ($i:expr, $f:expr, $g:expr) => (
+        separated_nonempty_list_complete!($i, call!($f), call!($g));
+    );
+}
+
 /// `many0!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// Applies the parser 0 or more times and returns the list of results in a Vec
 ///
@@ -1093,7 +1133,7 @@ mod tests {
 
   use internal::IResult::*;
   use util::ErrorKind;
-  use nom::{be_u8,be_u16,le_u16,digit};
+  use nom::{alpha,be_u8,be_u16,le_u16,digit};
   use std::str::{self,FromStr};
 
   // reproduce the tag and take macros, because of module import order
@@ -1184,19 +1224,20 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn separated_list_complete() {
-    use nom::alpha;
-    named!(multi<&[u8],Vec<&[u8]> >, separated_list!(complete!(tag!(",")), complete!(alpha)));
+    named!(multi<&[u8],Vec<&[u8]> >, separated_list_complete!(tag!(","), alpha));
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
     let c = &b"abcd,abcd,ef"[..];
     let d = &b"abc."[..];
     let e = &b"abcd,ef."[..];
+    let f = &b"123"[..];
 
     assert_eq!(multi(a), Done(&b""[..], vec!(a)));
     assert_eq!(multi(b), Done(&b""[..], vec!(&b"abcd"[..], &b"abcdef"[..])));
     assert_eq!(multi(c), Done(&b""[..], vec!(&b"abcd"[..], &b"abcd"[..], &b"ef"[..])));
     assert_eq!(multi(d), Done(&b"."[..], vec!(&b"abc"[..])));
     assert_eq!(multi(e), Done(&b"."[..], vec!(&b"abcd"[..], &b"ef"[..])));
+    assert_eq!(multi(f), Done(&b"123"[..], Vec::new()));
   }
 
 
@@ -1204,7 +1245,7 @@ mod tests {
   #[cfg(feature = "std")]
   fn separated_nonempty_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(","), tag!("abcd")));
-    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list!(tag!(".."), tag!("abcd")));
+    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(".."), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
@@ -1227,6 +1268,26 @@ mod tests {
     assert_eq!(multi_longsep(g), Incomplete(Needed::Size(6)));
     assert_eq!(multi(h), Incomplete(Needed::Size(9)));
   }
+
+  #[test]
+  #[cfg(feature = "std")]
+  fn separated_nonempty_list_complete() {
+    named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list_complete!(tag!(","), alpha));
+    let a = &b"abcdef"[..];
+    let b = &b"abcd,abcdef"[..];
+    let c = &b"abcd,abcd,ef"[..];
+    let d = &b"abc."[..];
+    let e = &b"abcd,ef."[..];
+    let f = &b"123"[..];
+
+    assert_eq!(multi(a), Done(&b""[..], vec!(a)));
+    assert_eq!(multi(b), Done(&b""[..], vec!(&b"abcd"[..], &b"abcdef"[..])));
+    assert_eq!(multi(c), Done(&b""[..], vec!(&b"abcd"[..], &b"abcd"[..], &b"ef"[..])));
+    assert_eq!(multi(d), Done(&b"."[..], vec!(&b"abc"[..])));
+    assert_eq!(multi(e), Done(&b"."[..], vec!(&b"abcd"[..], &b"ef"[..])));
+    assert_eq!(multi(f), Error(error_position!(ErrorKind::Alpha, &b"123"[..])));
+  }
+
 
   #[test]
   #[cfg(feature = "std")]
