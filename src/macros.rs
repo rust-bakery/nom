@@ -496,27 +496,24 @@ macro_rules! try_parse (
 #[macro_export]
 macro_rules! map(
   // Internal parser, do not use directly
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     {
+      pub fn _unify<T, R, F: FnOnce(T) -> R>(f: F, t: T) -> R {
+       f(t)
+      }
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o)                          => $crate::IResult::Done(i, $submac2!(o, $($args2)*))
+        $crate::IResult::Done(i, o)                          => $crate::IResult::Done(i, _unify($g, o))
       }
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map!(__impl $i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+    map!(__impl $i, $submac!($($args)*), $g);
   );
   ($i:expr, $f:expr, $g:expr) => (
-    map!(__impl $i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map!(__impl $i, call!($f), $submac!($($args)*));
+    map!(__impl $i, call!($f), $g);
   );
 );
 
