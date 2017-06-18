@@ -144,30 +144,22 @@
 //! * **is_not!, is_not_s!**: matches a sequence of none of the characters passed as arguments
 //! * **one_of!**: matches one of the provided characters. `one_of!("abc")` could recognize 'a', 'b', or 'c'. It also works with non ASCII characters
 //! * **none_of!**: matches anything but the provided characters
-//! * tag	tag!(&[T]: nom::AsBytes) => &[T] -> IResult<&[T], &[T]> declares a byte array as a suite to recognize
-//! * tag_no_case	tag_no_case!(&[T]) => &[T] -> IResult<&[T], &[T]> declares a case insensitive ascii string as a suite to recognize
-//! * tag_no_case_s	tag_no_case_s!(&str) => &str -> IResult<&str, &str> declares a case-insensitive string as a suite to recognize
-//! * tag_s	tag_s!(&str) => &str -> IResult<&str, &str> declares a string as a suite to recognize
-//! * take	take!(nb) => &[T] -> IResult<&[T], &[T]> generates a parser consuming the specified number of bytes
-//! * take_s	take_s!(nb) => &str -> IResult<&str, &str> generates a parser consuming the specified number of characters
-//! * take_str	take!(nb) => &[T] -> IResult<&[T], &str> same as take! but returning a &str
-//! * take_till	take_till!(T -> bool) => &[T] -> IResult<&[T], &[T]> returns the longest list of bytes until the provided function succeeds
-//! * take_till1	take_till1!(T -> bool) => &[T] -> IResult<&[T], &[T]> returns the longest non empty list of bytes until the provided function succeeds
-//! * take_till1_s	take_till1_s!(char -> bool) => &str -> IResult<&str, &str> returns the longest non empty list of characters until the provided function succeeds
-//! * take_till_s	take_till_s!(char -> bool) => &str -> IResult<&str, &str> returns the longest list of characters until the provided function succeeds
-//! * take_until	take_until!(tag) => &[T] -> IResult<&[T], &[T]> consumes data until it finds the specified tag
-//! * take_until1	take_until1!(tag) => &[T] -> IResult<&[T], &[T]> consumes data until it finds the specified tag
-//! * take_until_and_consume	take_until_and_consume!(tag) => &[T] -> IResult<&[T], &[T]> generates a parser consuming bytes until the specified byte sequence is found, and consumes it
-//! * take_until_and_consume1	take_until_and_consume1!(tag) => &[T] -> IResult<&[T], &[T]> generates a parser consuming bytes (at least 1) until the specified byte sequence is found, and consumes it
-//! * take_until_and_consume_s	take_until_and_consume_s!(&str) => &str -> IResult<&str, &str> generates a parser consuming all chars until the specified string is found and consumes it
-//! * take_until_either	take_until_either!(tag) => &[T] -> IResult<&[T], &[T]>
-//! * take_until_either_and_consume	take_until_either_and_consume!(tag) => &[T] -> IResult<&[T], &[T]> consumes data until it finds any of the specified characters, and consume it
-//! * take_until_s	take_until_s!(&str) => &str -> IResult<&str, &str> generates a parser consuming all chars until the specified string is found and leaves it in the remaining input
-//! * take_while	take_while!(T -> bool) => &[T] -> IResult<&[T], &[T]> returns the longest list of bytes until the provided function fails.
-//! * take_while1	take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]> returns the longest (non empty) list of bytes until the provided function fails.
-//! * take_while1_s	take_while1_s!(char -> bool) => &str -> IResult<&str, &str> returns the longest (non empty) list of characters until the provided function fails.
-//! * take_while_s	take_while_s!(char -> bool) => &str -> IResult<&str, &str> returns the longest list of characters until the provided function fails.
-//! * value	value!(T, R -> IResult<R, S> ) => R -> IResult<R, T>
+//! * **tag!, tag_s!**: recognizes a specific suite of characters or bytes. `tag!("hello")` matches "hello"
+//! * **tag_no_case!**: recognizes a suite of ASCII characters, case insensitive. `tag_no_case!("hello")` could match "hello", "Hello" or even "HeLlO"
+//! * **tag_no_case_s!** works like `tag_no_case` but on UTF-8 characters too (uses `&str` as input). Note that case insensitive comparison is not well defined for unicode, and that you might have bad surprises. Also, this combinator allocates a new string for the comparison. Ponder for a bit before using this combinator
+//! * **take!, take_s!**: takes a specific number of bytes or characters. `take!(5)` would return "hello" from the string "hello world"
+//! * **take_str!**: same as `take!` but returning a `&str`
+//! * **take_till!, take_till_s!**: returns the longest list of bytes until the provided function succeeds. `take_till!(is_alphabetic)` with input "123abc" would return "123"
+//! * **take_till1!, take_till1_s!**: same as `take_till!`, but the result must not be empty: `take_till1!(is_alphabetic)` would fail on "abc"
+//! * **take_until!, take_until_s!**: returns the longest list of bytes until the provided tag is found. `take_until!("world")` with input "Hello world!" would return "Hello " and leave "world!" as remaining input
+//! * **take_until1!**: same as `take_until!`, but cannot return an empty result
+//! * **take_until_and_consume!, take_until_and_consume_s!**: same as `take_until!` but consumes the tag. `take_until_and_consume!("world")` with input "Hello world!" would return "Hello " and leave "!" as remaining input
+//! * **take_until_and_consume1!**: same as `take_until_and_consume!`, but cannot return an empty result
+//! * **take_until_either!**: returns the longest list of bytes until any of the provided characters are found
+//! * **take_until_either_and_consume!**: same as `take_until_either!`, but consumes the terminating character
+//! * **take_while!, take_while_s!**: returns the longest list of bytes for which the function is true. `take_while!(is_alphabetic)` with input "abc123" would return "abc"
+//! * **take_while1!, take_while1_s!**: same as `take_while!`, but cannot return an empty result
+//! * **value!**: you can use `value!` to always return the same result value without consuming input, like this: `value!(42)`. Or you can replace the result of a child parser with a predefined value, like this: `value!(42, tag!("abcd"))` which would replace, if successful, the return value from "abcd", to 42
 //!
 //! Parsing integers from binary formats can be done in two ways: with parser functions, or combinators with configurable endianness:
 //!
