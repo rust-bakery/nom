@@ -138,20 +138,12 @@
 //! Those are used to recognize the lowest level elements of your grammar, like, "here is a dot", or
 //! "here is an big endian integer".
 //!
-//! * char	matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
-//! * eof	eof!(i) returns i if it is at the end of input data
-//! * i16	if the parameter is nom::Endianness::Big, parse a big endian i16 integer, otherwise a little endian i16 integer
-//! * i32	if the parameter is nom::Endianness::Big, parse a big endian i32 integer, otherwise a little endian i32 integer
-//! * i64	if the parameter is nom::Endianness::Big, parse a big endian i64 integer, otherwise a little endian i64 integer
-//! * u16	if the parameter is nom::Endianness::Big, parse a big endian u16 integer, otherwise a little endian u16 integer
-//! * u32	if the parameter is nom::Endianness::Big, parse a big endian u32 integer, otherwise a little endian u32 integer
-//! * u64	if the parameter is nom::Endianness::Big, parse a big endian u64 integer, otherwise a little endian u64 integer
-//! * is_a	is_a!(&[T]) => &[T] -> IResult<&[T], &[T]> returns the longest list of bytes that appear in the provided array
-//! * is_a_s	is_a_s!(&str) => &str -> IResult<&str, &str> returns the longest list of characters that appear in the provided array
-//! * is_not	is_not!(&[T:AsBytes]) => &[T] -> IResult<&[T], &[T]> returns the longest list of bytes that do not appear in the provided array
-//! * is_not_s	is_not_s!(&str) => &str -> IResult<&str, &str> returns the longest list of characters that do not appear in the provided array
-//! * none_of	matches anything but the provided characters
-//! * one_of	matches one of the provided characters
+//! * **char!**: matches one character: `char!('a')` will make a parser that recognizes the letter 'a' (works with non ASCII chars too)
+//! * **eof!**: `eof!()` returns its input if it is at the end of input data
+//! * **is_a!, is_a_s!**: matches a sequence of any of the characters passed as arguments. `is_a!("ab1")` could recognize `ababa` or `1bb`. `is_a_s!` is a legacy combinator, it does exactly the same thing as `is_a`
+//! * **is_not!, is_not_s!**: matches a sequence of none of the characters passed as arguments
+//! * **one_of!**: matches one of the provided characters. `one_of!("abc")` could recognize 'a', 'b', or 'c'. It also works with non ASCII characters
+//! * **none_of!**: matches anything but the provided characters
 //! * tag	tag!(&[T]: nom::AsBytes) => &[T] -> IResult<&[T], &[T]> declares a byte array as a suite to recognize
 //! * tag_no_case	tag_no_case!(&[T]) => &[T] -> IResult<&[T], &[T]> declares a case insensitive ascii string as a suite to recognize
 //! * tag_no_case_s	tag_no_case_s!(&str) => &str -> IResult<&str, &str> declares a case-insensitive string as a suite to recognize
@@ -176,6 +168,17 @@
 //! * take_while1_s	take_while1_s!(char -> bool) => &str -> IResult<&str, &str> returns the longest (non empty) list of characters until the provided function fails.
 //! * take_while_s	take_while_s!(char -> bool) => &str -> IResult<&str, &str> returns the longest list of characters until the provided function fails.
 //! * value	value!(T, R -> IResult<R, S> ) => R -> IResult<R, T>
+//!
+//! Parsing integers from binary formats can be done in two ways: with parser functions, or combinators with configurable endianness:
+//!
+//! * configurable endianness: **i16!, i32!, i64!, u16!, u32!, u64!** are combinators that take as argument a `nom::Endianness`,
+//! like this: `i16!(endianness)`. If the parameter is nom::Endianness::Big, parse a big endian i16 integer, otherwise a little endian i16 integer
+//! * fixed endianness: the functions are prefixed by "be_" for big endian numbers, and by "le_" for little endian numbers, and the suffix is the type they parse to. As an example, "be_u32" parses a big endian unsigned integer stored in 32 bits.
+//!   * **be_f32, be_f64, le_f32, le_f64**: recognize floating point numbers
+//!   * **be_i8, be_i16, be_i32, be_i24, be_i32, be_i64**: big endian signed integers
+//!   * **be_u8, be_u16, be_u32, be_u24, be_u32, be_u64**: big endian unsigned integers
+//!   * **le_i8, le_i16, le_i32, le_i24, le_i32, le_i64**: little endian signed integers
+//!   * **le_u8, le_u16, le_u32, le_u24, le_u32, le_u64**: little endian unsigned integers
 //!
 //! ## Modifiers
 //!
@@ -281,6 +284,41 @@
 //! * named_args	Makes a function from a parser combination with arguments.
 //! * named_attr	Makes a function from a parser combination, with attributes
 //! * try_parse	A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Done, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
+//!
+//! ## Remaining functions (srot those out in the other categories)
+//!
+//! * alpha	Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
+//! * alphanumeric	Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
+//! * anychar	
+//! * begin	
+//! * crlf	
+//! * digit	Recognizes one or more numerical characters: 0-9
+//! * double	Recognizes floating point number in a byte string and returs a f64
+//! * double_s	Recognizes floating point number in a string and returs a f64
+//! * eol	
+//! * float	Recognizes floating point number in a byte string and returs a f32
+//! * float_s	Recognizes floating point number in a string and returs a f32
+//! * hex_digit	Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
+//! * hex_u32	Recognizes a hex-encoded integer
+//! * is_alphabetic	Tests if byte is ASCII alphabetic: A-Z, a-z
+//! * is_alphanumeric	Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9
+//! * is_digit	Tests if byte is ASCII digit: 0-9
+//! * is_hex_digit	Tests if byte is ASCII hex digit: 0-9, A-F, a-f
+//! * is_oct_digit	Tests if byte is ASCII octal digit: 0-7
+//! * is_space	Tests if byte is ASCII space or tab
+//! * line_ending	Recognizes an end of line (both '\n' and "\r\n")
+//! * multispace	Recognizes one or more spaces, tabs, carriage returns and line feeds
+//! * newline	Matches a newline character '\n'
+//! * non_empty	Recognizes non empty buffers
+//! * not_line_ending	
+//! * oct_digit	Recognizes one or more octal characters: 0-7
+//! * rest	Return the remaining input.
+//! * rest_s	Return the remaining input, for strings.
+//! * shift	
+//! * sized_buffer	
+//! * space	Recognizes one or more spaces and tabs
+//! * tab	Matches a tab character '\t'
+//! * tag_cl	
 //!
 //! # Example
 //!
