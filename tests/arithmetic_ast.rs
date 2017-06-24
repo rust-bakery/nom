@@ -64,7 +64,7 @@ named!(factor< Expr >, alt_complete!(
     map!(
       map_res!(
         map_res!(
-          delimited!(opt!(multispace), digit, opt!(multispace)),
+          ws!(digit),
           str::from_utf8
         ),
       FromStr::from_str
@@ -110,6 +110,12 @@ named!(expr< Expr >, do_parse!(
 
 #[test]
 fn factor_test() {
+    assert_eq!(factor(&b"3"[..]).map(|x| format!("{:?}", x)),
+               IResult::Done(&b""[..], String::from("3")));
+    assert_eq!(factor(&b"  3"[..]).map(|x| format!("{:?}", x)),
+               IResult::Done(&b""[..], String::from("3"))); 
+    assert_eq!(factor(&b"3   "[..]).map(|x| format!("{:?}", x)),
+               IResult::Done(&b""[..], String::from("3")));                                   
     assert_eq!(factor(&b"  3  "[..]).map(|x| format!("{:?}", x)),
                IResult::Done(&b""[..], String::from("3")));
 }
@@ -118,6 +124,8 @@ fn factor_test() {
 fn term_test() {
     assert_eq!(term(&b" 3 *  5   "[..]).map(|x| format!("{:?}", x)),
                IResult::Done(&b""[..], String::from("(3 * 5)")));
+    assert_eq!(term(&b"3*5"[..]).map(|x| format!("{:?}", x)),
+               IResult::Done(&b""[..], String::from("(3 * 5)")));               
 }
 
 #[test]
