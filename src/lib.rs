@@ -254,6 +254,7 @@
 //! ## Bit stream parsing
 //!
 //! * bits	bits!( parser ) => ( &[u8], (&[u8], usize) -> IResult<(&[u8], usize), T> ) -> IResult<&[u8], T> transforms its byte slice input into a bit stream for the underlying parsers
+//! * bytes  bytes!( parser ) => ( (&[u8], usize), &[u8] -> IResult<&[u8], T> ) -> IResult<(&[u8], usize), T> transforms its bits stream input back into a byte slice for the underlying parsers.
 //! * tag_bits	matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
 //! * take_bits	take_bits!(type, nb) => ( (&[T], usize), U, usize) -> IResult<(&[T], usize), U> generates a parser consuming the specified number of bits.
 //!
