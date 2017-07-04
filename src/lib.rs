@@ -404,6 +404,7 @@ extern crate test;
 
 #[cfg(not(feature = "nightly"))]
 #[allow(unused_macros)]
+#[macro_export]
 macro_rules! compiler_error {
     ($e:expr) => {
       INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/master/doc/FAQ.md#using-nightly-to-get-better-error-messages
