@@ -70,6 +70,9 @@ pub trait AsChar {
     /// tests that self is an octal digit
     #[inline]
     fn is_oct_digit(self) -> bool;
+    /// gets the len in bytes for self
+    #[inline]
+    fn len(self) -> usize;
 }
 
 impl AsChar for u8 {
@@ -95,6 +98,10 @@ impl AsChar for u8 {
     fn is_oct_digit(self) -> bool {
       self >= 0x30 && self <= 0x37
     }
+    #[inline]
+    fn len(self) -> usize {
+      1
+    }
 }
 impl<'a> AsChar for &'a u8 {
     #[inline]
@@ -119,6 +126,10 @@ impl<'a> AsChar for &'a u8 {
     fn is_oct_digit(self)   -> bool {
       *self >= 0x30 && *self <= 0x37
     }
+    #[inline]
+    fn len(self) -> usize {
+      1
+    }
 }
 
 impl AsChar for char {
@@ -134,6 +145,8 @@ impl AsChar for char {
     fn is_hex_digit(self) -> bool { self.is_digit(16) }
     #[inline]
     fn is_oct_digit(self) -> bool { self.is_digit(8) }
+    #[inline]
+    fn len(self) -> usize { self.len_utf8() }
 }
 
 impl<'a> AsChar for &'a char {
@@ -149,6 +162,8 @@ impl<'a> AsChar for &'a char {
     fn is_hex_digit(self) -> bool { self.is_digit(16) }
     #[inline]
     fn is_oct_digit(self) -> bool { self.is_digit(8) }
+    #[inline]
+    fn len(self) -> usize { self.len_utf8() }
 }
 
 /// abstracts common iteration operations on the input type

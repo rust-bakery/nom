@@ -13,12 +13,12 @@ macro_rules! one_of (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        c.find_token($inp)
+        (c, c.find_token($inp))
       }) {
-        None        => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
-        Some(false) => $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i)),
+        None             => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
+        Some((_, false)) => $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i)),
         //the unwrap should be safe here
-        Some(true)  => $crate::IResult::Done($i.slice(1..), $i.iter_elements().next().unwrap().as_char())
+        Some((c, true))  => $crate::IResult::Done($i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char())
       }
     }
   );
@@ -35,12 +35,12 @@ macro_rules! none_of (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        !c.find_token($inp)
+        (c, !c.find_token($inp))
       }) {
-        None        => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
-        Some(false) => $crate::IResult::Error(error_position!($crate::ErrorKind::NoneOf, $i)),
+        None             => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
+        Some((_, false)) => $crate::IResult::Error(error_position!($crate::ErrorKind::NoneOf, $i)),
         //the unwrap should be safe here
-        Some(true)  => $crate::IResult::Done($i.slice(1..), $i.iter_elements().next().unwrap().as_char())
+        Some((c, true))  => $crate::IResult::Done($i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char())
       }
     }
   );
@@ -56,12 +56,12 @@ macro_rules! char (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        c.as_char() == $c
+        (c, c.as_char() == $c)
       }) {
-        None        => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
-        Some(false) => $crate::IResult::Error(error_position!($crate::ErrorKind::Char, $i)),
+        None             => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
+        Some((_, false)) => $crate::IResult::Error(error_position!($crate::ErrorKind::Char, $i)),
         //the unwrap should be safe here
-        Some(true)  => $crate::IResult::Done($i.slice(1..), $i.iter_elements().next().unwrap().as_char())
+        Some((c, true))  => $crate::IResult::Done($i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char())
       }
     }
   );
@@ -93,6 +93,12 @@ mod tests {
 
     let b = &b"cde"[..];
     assert_eq!(f(b), Error(error_position!(ErrorKind::OneOf, b)));
+
+    named!(utf8(&str) -> char,
+      one_of!("+\u{FF0B}"));
+
+    assert!(utf8("+").is_done());
+    assert!(utf8("\u{FF0B}").is_done());
   }
 
   #[test]

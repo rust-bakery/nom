@@ -155,4 +155,3 @@ fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>> > {
         ( entries )
     )
 }
-
