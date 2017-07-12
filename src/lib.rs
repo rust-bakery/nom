@@ -384,6 +384,7 @@
 //! }
 //! ```
 #![cfg_attr(not(feature = "std"), feature(no_std))]
+#![cfg_attr(not(feature = "std"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), feature(collections))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(test))]
@@ -392,6 +393,8 @@
 #![cfg_attr(feature = "nightly", plugin(compiler_error))]
 //#![warn(missing_docs)]
 
+#[cfg(not(feature = "std"))]
+extern crate alloc;
 #[cfg(not(feature = "std"))]
 extern crate collections;
 #[cfg(feature = "regexp")]
@@ -415,7 +418,8 @@ macro_rules! compiler_error {
 mod std {
 #[macro_use]
   pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
-  pub use collections::{boxed, vec, string};
+  pub use alloc::boxed;
+  pub use collections::{vec, string};
   pub mod prelude {
     pub use core::prelude as v1;
   }
