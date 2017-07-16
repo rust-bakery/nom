@@ -285,11 +285,11 @@
 //! * begin	
 //! * crlf	
 //! * digit	Recognizes one or more numerical characters: 0-9
-//! * double	Recognizes floating point number in a byte string and returs a f64
-//! * double_s	Recognizes floating point number in a string and returs a f64
+//! * double	Recognizes floating point number in a byte string and returns a f64
+//! * double_s	Recognizes floating point number in a string and returns a f64
 //! * eol	
-//! * float	Recognizes floating point number in a byte string and returs a f32
-//! * float_s	Recognizes floating point number in a string and returs a f32
+//! * float	Recognizes floating point number in a byte string and returns a f32
+//! * float_s	Recognizes floating point number in a string and returns a f32
 //! * hex_digit	Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 //! * hex_u32	Recognizes a hex-encoded integer
 //! * is_alphabetic	Tests if byte is ASCII alphabetic: A-Z, a-z

@@ -639,7 +639,7 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
     IResult::Done(&input[input.len()..], input)
 }
 
-/// Recognizes floating point number in a byte string and returs a f32
+/// Recognizes floating point number in a byte string and returns a f32
 #[cfg(feature = "std")]
 pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
   flat_map!(input,
@@ -662,7 +662,7 @@ pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
   )
 }
 
-/// Recognizes floating point number in a string and returs a f32
+/// Recognizes floating point number in a string and returns a f32
 #[cfg(feature = "std")]
 pub fn float_s(input: &str) -> IResult<&str,f32> {
   flat_map!(input,
@@ -685,7 +685,7 @@ pub fn float_s(input: &str) -> IResult<&str,f32> {
   )
 }
 
-/// Recognizes floating point number in a byte string and returs a f64
+/// Recognizes floating point number in a byte string and returns a f64
 #[cfg(feature = "std")]
 pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
   flat_map!(input,
@@ -708,7 +708,7 @@ pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
   )
 }
 
-/// Recognizes floating point number in a string and returs a f64
+/// Recognizes floating point number in a string and returns a f64
 #[cfg(feature = "std")]
 pub fn double_s(input: &str) -> IResult<&str,f64> {
   flat_map!(input,
