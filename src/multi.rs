@@ -47,7 +47,8 @@ macro_rules! separated_list(
                   break;
                 },
                 $crate::IResult::Done(i2,_)     => {
-                  if i2.input_len() == input.input_len() {
+                  let i2_len = i2.input_len();
+                  if i2_len == input.input_len() {
                     ret = $crate::IResult::Done(input, res);
                     break;
                   }
@@ -63,7 +64,7 @@ macro_rules! separated_list(
                       break;
                     },
                     $crate::IResult::Incomplete($crate::Needed::Size(needed)) => {
-                      let (size,overflowed) = needed.overflowing_add(($i).input_len() - i2.input_len());
+                      let (size,overflowed) = needed.overflowing_add(($i).input_len() - i2_len);
                       ret = match overflowed {
                         true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
                         false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
@@ -71,7 +72,7 @@ macro_rules! separated_list(
                       break;
                     },
                     $crate::IResult::Done(i3,o3)    => {
-                      if i3.input_len() == i2.input_len() {
+                      if i3.input_len() == i2_len {
                         ret = $crate::IResult::Done(input, res);
                         break;
                       }
@@ -146,7 +147,8 @@ macro_rules! separated_nonempty_list(
                   break;
                 },
                 $crate::IResult::Done(i2,_)     => {
-                  if i2.input_len() == input.input_len() {
+                  let i2_len = i2.input_len();
+                  if i2_len == input.input_len() {
                     ret = $crate::IResult::Done(input, res);
                     break;
                   }
@@ -162,7 +164,7 @@ macro_rules! separated_nonempty_list(
                       break;
                     },
                     $crate::IResult::Incomplete($crate::Needed::Size(needed)) => {
-                      let (size,overflowed) = needed.overflowing_add(($i).input_len() - i2.input_len());
+                      let (size,overflowed) = needed.overflowing_add(($i).input_len() - i2_len);
                       ret = match overflowed {
                         true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
                         false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
@@ -170,7 +172,7 @@ macro_rules! separated_nonempty_list(
                       break;
                     },
                     $crate::IResult::Done(i3,o3)    => {
-                      if i3.input_len() == i2.input_len() {
+                      if i3.input_len() == i2_len {
                         ret = $crate::IResult::Done(input, res);
                         break;
                       }
