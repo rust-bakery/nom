@@ -45,7 +45,7 @@ macro_rules! bits_impl (
     {
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        $crate::IResult::Error(e)                            => {
+        $crate::IResult::Error(e) => {
           let err = match e {
             $crate::Err::Code(k) | $crate::Err::Node(k, _) => $crate::Err::Code(k),
             $crate::Err::Position(k, (i,b)) | $crate::Err::NodePosition(k, (i,b), _) => {
@@ -78,7 +78,7 @@ macro_rules! bits_impl (
     {
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        $crate::IResult::Error(e)                            => {
+        $crate::IResult::Error(e) => {
           $crate::IResult::Error(e)
         }
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
@@ -90,6 +90,104 @@ macro_rules! bits_impl (
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
           $crate::IResult::Done(&i[byte_index..], o)
+        }
+      }
+    }
+  );
+);
+
+/// Counterpart to bits,
+/// `bytes!( parser ) => ( (&[u8], usize), &[u8] -> IResult<&[u8], T> ) -> IResult<(&[u8], usize), T>`,
+/// transforms its bits stream input into a byte slice for the underlying parsers. If we start in the
+/// middle of a byte throws away the bits until the end of the byte.
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::rest;
+/// # fn main() {
+///  named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
+///    take_bits!(u8, 4),
+///    take_bits!(u8, 8),
+///    bytes!(rest)
+/// )));
+///
+///  let input = &[0xde, 0xad, 0xbe, 0xaf];
+///
+///  assert_eq!(parse( input ), Done(&[][..], (0xd, 0xea, &[0xbe, 0xaf][..])));
+/// # }
+#[macro_export]
+macro_rules! bytes (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    bytes_impl!($i, $submac!($($args)*));
+  );
+  ($i:expr, $f:expr) => (
+    bytes_impl!($i, call!($f));
+  );
+);
+
+#[cfg(feature = "verbose-errors")]
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! bytes_impl (
+  ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let inp;
+      if $macro_i.1 % 8 != 0 {
+        inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
+      }
+      else {
+        inp = & $macro_i.0[$macro_i.1 / 8 ..];
+      }
+
+      match $submac!(inp, $($args)*) {
+        $crate::IResult::Error(e) => {
+          let err = match e {
+            $crate::Err::Code(k) | $crate::Err::Node(k, _) => $crate::Err::Code(k),
+            $crate::Err::Position(k, i) | $crate::Err::NodePosition(k, i, _) => {
+              $crate::Err::Position(k, (i, 0))
+            }
+          };
+          $crate::IResult::Error(err)
+        }
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          $crate::IResult::Incomplete($crate::Needed::Size(i * 8))
+        },
+        $crate::IResult::Done(i, o) => {
+          $crate::IResult::Done((i, 0), o)
+        }
+      }
+    }
+  );
+);
+
+#[cfg(not(feature = "verbose-errors"))]
+/// Internal parser, do not use directly
+#[doc(hidden)]
+#[macro_export]
+macro_rules! bytes_impl (
+  ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      let inp;
+      if $macro_i.1 % 8 != 0 {
+        inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
+      }
+      else {
+        inp = & $macro_i.0[$macro_i.1 / 8 ..];
+      }
+
+      match $submac!(inp, $($args)*) {
+        $crate::IResult::Error(e) => {
+          $crate::IResult::Error(e)
+        }
+        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
+        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+          $crate::IResult::Incomplete($crate::Needed::Size(i * 8))
+        },
+        $crate::IResult::Done(i, o) => {
+          $crate::IResult::Done((i, 0), o)
         }
       }
     }
