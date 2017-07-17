@@ -1,6 +1,8 @@
 /// Character level parsers
 
 use internal::{IResult,Needed};
+use traits::{AsChar,InputIter,InputLength,Slice};
+use std::ops::RangeFrom;
 
 /// matches one of the provided characters
 ///
@@ -84,11 +86,13 @@ named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'
 
 named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 
-pub fn anychar(input:&[u8]) -> IResult<&[u8], char> {
-  if input.is_empty() {
+pub fn anychar<T>(input: T) -> IResult<T, char> where
+  T: InputIter+InputLength+Slice<RangeFrom<usize>>,
+  <T as InputIter>::Item: AsChar {
+  if input.input_len() == 0 {
     IResult::Incomplete(Needed::Size(1))
   } else {
-    IResult::Done(&input[1..], input[0] as char)
+    IResult::Done(input.slice(1..), input.iter_elements().next().expect("slice should contain at least one element").as_char())
   }
 }
 
