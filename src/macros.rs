@@ -1097,7 +1097,7 @@ macro_rules! tap (
   );
 );
 
-/// `eof!(i)` returns `i` if it is at the end of input data
+/// `eof!()` returns its input if it is at the end of input data
 ///
 /// please note that for now, eof only means there's no more
 /// data available, it does not work yet with smarter input
