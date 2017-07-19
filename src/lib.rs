@@ -242,8 +242,8 @@
 //!
 //! ## Text parsing
 //!
-//! * escaped	escaped!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], &[T]> matches a byte string with escaped characters.
-//! * escaped_transform	escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>> matches a byte string with escaped characters.
+//! * **escaped!**: matches a byte string with escaped characters.
+//! * **escaped_transform!**: matches a byte string with escaped characters, and returns a new string with the escaped characters replaced
 //!
 //! ## Binary format parsing
 //!
