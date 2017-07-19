@@ -247,9 +247,9 @@
 //!
 //! ## Binary format parsing
 //!
-//! * length_bytes	length_bytes!(&[T] -> IResult<&[T], nb>) => &[T] -> IResult<&[T], &[T]> Gets a number from the first parser, then extracts that many bytes from the remaining stream
-//! * length_data	length_data!(I -> IResult<I, nb>) => O
-//! * length_value	length_value!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>> gets a number from the first parser, takes a subslice of the input of that size, then applies the second parser on that subslice. If the second parser returns Incomplete, length_value will return an error
+//! * **length_data!**: gets a number from the first parser, than takes a subslice of the input of that size, and returns that subslice
+//! * **length_bytes!**: alias for `length_data`
+//! * **length_value!**: gets a number from the first parser, takes a subslice of the input of that size, then applies the second parser on that subslice. If the second parser returns Incomplete, length_value will return an error
 //!
 //! ## Bit stream parsing
 //!
