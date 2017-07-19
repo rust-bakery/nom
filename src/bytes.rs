@@ -715,30 +715,11 @@ macro_rules! take_until_either (
 macro_rules! length_bytes(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::{Slice,InputLength};
-      let input: &[u8] = $i;
-
-      match  $submac!(input, $($args)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,nb)   => {
-          let nb = nb as usize;
-          if i1.input_len() < nb {
-            use $crate::Offset;
-            let (size,overflowed) = $i.offset(i1).overflowing_add(nb);
-            match overflowed {
-                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
-            }
-          } else {
-            $crate::IResult::Done(i1.slice(nb..), i1.slice(..nb))
-          }
-        }
-      }
+      length_data!($i, $submac!($($args)*))
     }
   );
   ($i:expr, $f:expr) => (
-    length_bytes!($i, call!($f))
+    length_data!($i, call!($f))
   )
 );
 
