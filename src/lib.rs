@@ -174,71 +174,70 @@
 //!
 //! ## Modifiers
 //!
-//! * complete	replaces a Incomplete returned by the child parser with an Error
-//! * cond	cond!(bool, I -> IResult<I,O>) => I -> IResult<I, Option<O>> Conditional combinator
-//! * cond_reduce	cond_reduce!(bool, I -> IResult<I,O>) => I -> IResult<I, O> Conditional combinator with error
-//! * cond_with_error	cond_with_error!(bool, I -> IResult<I,O>) => I -> IResult<I, Option<O>> Conditional combinator
-//! * consumer_from_parser	
-//! * expr_opt	expr_opt!(Option<O>) => I -> IResult<I, O> evaluate an expression that returns a Option and returns a IResult::Done(I,T) if Some
-//! * expr_res	expr_res!(Result<E,O>) => I -> IResult<I, O> evaluate an expression that returns a Result and returns a IResult::Done(I,T) if Ok
-//! * flat_map	flat_map!(R -> IResult<R,S>, S -> IResult<S,T>) => R -> IResult<R, T>
-//! * map	map!(I -> IResult<I,O>, O -> P) => I -> IResult<I, P> maps a function on the result of a parser
-//! * map_opt	map_opt!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P> maps a function returning an Option on the output of a parser
-//! * map_res	map_res!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P> maps a function returning a Result on the output of a parser
-//! * not	not!(I -> IResult<I,O>) => I -> IResult<I, O> returns a result only if the embedded parser returns Error or Incomplete does not consume the input
-//! * opt	opt!(I -> IResult<I,O>) => I -> IResult<I, Option<O>> make the underlying parser optional
-//! * opt_res	opt_res!(I -> IResult<I,O>) => I -> IResult<I, Result<nom::Err,O>> make the underlying parser optional
-//! * parse_to	parse_to!(O) => I -> IResult<I, O> uses the parse method from std::str::FromStr to convert the current input to the specified type
-//! * peek	peek!(I -> IResult<I,O>) => I -> IResult<I, O> returns a result without consuming the input
-//! * recognize	recognize!(I -> IResult<I, O> ) => I -> IResult<I, I> if the child parser was successful, return the consumed input as produced value
-//! * return_error	Prevents backtracking if the child parser fails
-//! * tap	tap!(name: I -> IResult<I,O> => { block }) => I -> IResult<I, O> allows access to the parser's result without affecting it
-//! * verify	verify!(I -> IResult<I,O>, O -> bool) => I -> IResult<I, O> returns the result of the child parser if it satisfies a verifcation function
+//! * **complete!**: replaces a Incomplete returned by the child parser with an Error
+//! * **cond!**: conditional combinator
+//! * **cond_reduce!**: Conditional combinator with error
+//! * **cond_with_error!**: Conditional combinator
+//! * **expr_opt!**: evaluates an expression that returns a Option and returns a IResult::Done(I,T) if Some
+//! * **expr_res!**: evaluates an expression that returns a Result and returns a IResult::Done(I,T) if Ok
+//! * **flat_map!**:
+//! * **map!**: maps a function on the result of a parser
+//! * **map_opt!**: maps a function returning an Option on the output of a parser
+//! * **map_res!**: maps a function returning a Result on the output of a parser
+//! * **not!**: returns a result only if the embedded parser returns Error or Incomplete does not consume the input
+//! * **opt!**: make the underlying parser optional
+//! * **opt_res!**: make the underlying parser optional
+//! * **parse_to!**: uses the parse method from std::str::FromStr to convert the current input to the specified type
+//! * **peek!**: returns a result without consuming the input
+//! * **recognize!**: if the child parser was successful, return the consumed input as produced value
+//! * **return_error!**: prevents backtracking if the child parser fails
+//! * **tap!**: allows access to the parser's result without affecting it
+//! * **verify!**: returns the result of the child parser if it satisfies a verifcation function
 //!
 //! ## Error management and debugging
 //!
-//! * add_return_error	Add an error if the child parser fails
-//! * dbg	Prints a message if the parser fails
-//! * dbg_dmp	Prints a message and the input if the parser fails
-//! * error_code	creates a parse error from a nom::ErrorKind
-//! * error_node	creates a parse error from a nom::ErrorKind and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
-//! * error_node_position	creates a parse error from a nom::ErrorKind, the position in the input and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
-//! * error_position	creates a parse error from a nom::ErrorKind and the position in the input if "verbose-errors" is not activated, it default to only the error code
-//! * fix_error	translate parser result from IResult to IResult with a custom type
+//! * **add_return_error!**: Add an error if the child parser fails
+//! * **dbg!**: Prints a message if the parser fails
+//! * **dbg_dmp!**: Prints a message and the input if the parser fails
+//! * **error_code!**: creates a parse error from a nom::ErrorKind
+//! * **error_node!**: creates a parse error from a nom::ErrorKind and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
+//! * **error_node_position!**: creates a parse error from a nom::ErrorKind, the position in the input and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
+//! * **error_position!**: creates a parse error from a nom::ErrorKind and the position in the input if "verbose-errors" is not activated, it default to only the error code
+//! * **fix_error!**: translate parser result from IResult to IResult with a custom type
 //!
 //! ## Choice combinators
 //!
-//! * alt	Try a list of parsers and return the result of the first successful one
-//! * alt_complete	Is equivalent to the alt! combinator, except that it will not return Incomplete when one of the constituting parsers returns Incomplete. Instead, it will try the next alternative in the chain.
-//! * switch	switch!(I -> IResult<I,P>, P => I -> IResult<I,O> | ... | P => I -> IResult<I,O> ) => I -> IResult<I, O> choose the next parser depending on the result of the first one, if successful, and returns the result of the second parser
+//! * **alt!**: try a list of parsers and return the result of the first successful one
+//! * **alt_complete!**: is equivalent to the alt! combinator, except that it will not return Incomplete when one of the constituting parsers returns Incomplete. Instead, it will try the next alternative in the chain.
+//! * **switch!**: choose the next parser depending on the result of the first one, if successful, and returns the result of the second parser
 //!
 //! # Sequence combinators
 //!
-//! * delimited	delimited!(I -> IResult<I,T>, I -> IResult<I,O>, I -> IResult<I,U>) => I -> IResult<I, O> delimited(opening, X, closing) returns X
-//! * do_parse	do_parse!(I->IResult<I,A> >> I->IResult<I,B> >> ... I->IResult<I,X> , ( O ) ) => I -> IResult<I, O> do_parse applies sub parsers in a sequence. it can store intermediary results and make them available for later parsers
-//! * pair	pair!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (O,P)> pair(X,Y), returns (x,y)
-//! * permutation	permutation!(I -> IResult<I,A>, I -> IResult<I,B>, ... I -> IResult<I,X> ) => I -> IResult<I, (A,B,...X)> applies its sub parsers in a sequence, but independent from their order this parser will only succeed if all of its sub parsers succeed
-//! * preceded	preceded!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, O> preceded(opening, X) returns X
-//! * separated_pair	separated_pair!(I -> IResult<I,O>, I -> IResult<I, T>, I -> IResult<I,P>) => I -> IResult<I, (O,P)> separated_pair(X,sep,Y) returns (x,y)
-//! * terminated	terminated!(I -> IResult<I,O>, I -> IResult<I,T>) => I -> IResult<I, O> terminated(X, closing) returns X
-//! * tuple	tuple!(I->IResult<I,A>, I->IResult<I,B>, ... I->IResult<I,X>) => I -> IResult<I, (A, B, ..., X)> chains parsers and assemble the sub results in a tuple.
+//! * **delimited!**: delimited(opening, X, closing) returns X
+//! * **do_parse!**: do_parse applies sub parsers in a sequence. it can store intermediary results and make them available for later parsers
+//! * **pair!**: pair(X,Y), returns (x,y)
+//! * **permutation!**: applies its sub parsers in a sequence, but independent from their order this parser will only succeed if all of its sub parsers succeed
+//! * **preceded!**: preceded(opening, X) returns X
+//! * **separated_pair!**: separated_pair(X,sep,Y) returns (x,y)
+//! * **terminated!**: terminated(X, closing) returns X
+//! * **tuple!**: chains parsers and assemble the sub results in a tuple.
 //!
 //! ## Applying a parser multiple times
 //!
-//! * count	count!(I -> IResult<I,O>, nb) => I -> IResult<I, Vec<O>> Applies the child parser a specified number of times
-//! * count_fixed	count_fixed!(O, I -> IResult<I,O>, nb) => I -> IResult<I, [O; nb]> Applies the child parser a fixed number of times and returns a fixed size array The type must be specified and it must be Copy
-//! * fold_many0	fold_many0!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R> Applies the parser 0 or more times and folds the list of return values
-//! * fold_many1	fold_many1!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R> Applies the parser 1 or more times and folds the list of return values
-//! * fold_many_m_n	fold_many_m_n!(usize, usize, I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R> Applies the parser between m and n times (n included) and folds the list of return value
-//! * length_count	length_count!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>> gets a number from the first parser, then applies the second parser that many times
-//! * many0	many0!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>> Applies the parser 0 or more times and returns the list of results in a Vec
-//! * many1	many1!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>> Applies the parser 1 or more times and returns the list of results in a Vec
-//! * many_m_n	many_m_n!(usize, usize, I -> IResult<I,O>) => I -> IResult<I, Vec<O>> Applies the parser between m and n times (n included) and returns the list of results in a Vec
-//! * many_till	many_till!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (Vec<O>, P)> Applies the first parser until the second applies. Returns a tuple containing the list of results from the first in a Vec and the result of the second.
-//! * separated_list	separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>> separated_list(sep, X) returns Vec will return Incomplete if there may be more elements
-//! * separated_list_complete	separated_list_complete!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>> This is equivalent to the separated_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
-//! * separated_nonempty_list	separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>> separated_nonempty_list(sep, X) returns Vec will return Incomplete if there may be more elements
-//! * separated_nonempty_list_complete	separated_nonempty_list_complete!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>> This is equivalent to the separated_nonempty_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
+//! * **count!**: Applies the child parser a specified number of times
+//! * **count_fixed!**: Applies the child parser a fixed number of times and returns a fixed size array The type must be specified and it must be Copy
+//! * **fold_many0!**: Applies the parser 0 or more times and folds the list of return values
+//! * **fold_many1!**: Applies the parser 1 or more times and folds the list of return values
+//! * **fold_many_m_n!**: Applies the parser between m and n times (n included) and folds the list of return value
+//! * **length_count!**: gets a number from the first parser, then applies the second parser that many times
+//! * **many0!**: Applies the parser 0 or more times and returns the list of results in a Vec
+//! * **many1!**: Applies the parser 1 or more times and returns the list of results in a Vec
+//! * **many_m_n!**: Applies the parser between m and n times (n included) and returns the list of results in a Vec
+//! * **many_till!**: Applies the first parser until the second applies. Returns a tuple containing the list of results from the first in a Vec and the result of the second.
+//! * **separated_list!**: separated_list(sep, X) returns Vec will return Incomplete if there may be more elements
+//! * **separated_list_complete!**: This is equivalent to the separated_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
+//! * **separated_nonempty_list!**: separated_nonempty_list(sep, X) returns Vec will return Incomplete if there may be more elements
+//! * **separated_nonempty_list_complete!**: This is equivalent to the separated_nonempty_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
 //!
 //! ## Text parsing
 //!
@@ -260,58 +259,63 @@
 //!
 //! ## Whitespace delimited formats parsing
 //!
-//! * eat_separator	helper macros to build a separator parser
-//! * sep	sep is the parser rewriting macro for whitespace separated formats
-//! * wrap_sep	
-//! * ws
+//! * **eat_separator!**: helper macros to build a separator parser
+//! * **sep!**: sep is the parser rewriting macro for whitespace separated formats
+//! * **wrap_sep!**:
+//! * **ws!**:
 //!
 //! ## Remaining combinators
 //!
-//! * apply	emulate function currying: apply!(my_function, arg1, arg2, ...) becomes my_function(input, arg1, arg2, ...)
-//! * apply_m	emulate function currying for method calls on structs apply_m!(self.my_function, arg1, arg2, ...) becomes self.my_function(input, arg1, arg2, ...)
-//! * call	Used to wrap common expressions and function as macros
-//! * call_m	Used to called methods then move self back into self
-//! * closure	Wraps a parser in a closure
-//! * method	Makes a method from a parser combination
-//! * named	Makes a function from a parser combination
-//! * named_args	Makes a function from a parser combination with arguments.
-//! * named_attr	Makes a function from a parser combination, with attributes
-//! * try_parse	A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Done, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
+//! * **apply!**: emulate function currying: apply!(my_function, arg1, arg2, ...) becomes my_function(input, arg1, arg2, ...)
+//! * **apply_m!**: emulate function currying for method calls on structs apply_m!(self.my_function, arg1, arg2, ...) becomes self.my_function(input, arg1, arg2, ...)
+//! * **call!**: Used to wrap common expressions and function as macros
+//! * **call_m!**: Used to called methods then move self back into self
+//! * **closure!**: Wraps a parser in a closure
+//! * **method!**: Makes a method from a parser combination
+//! * **named!**: Makes a function from a parser combination
+//! * **named_args!**: Makes a function from a parser combination with arguments.
+//! * **named_attr!**: Makes a function from a parser combination, with attributes
+//! * **try_parse!**: A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Done, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
 //!
-//! ## Remaining functions (srot those out in the other categories)
+//! ## Character test functions
 //!
-//! * alpha	Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
-//! * alphanumeric	Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
-//! * anychar	
-//! * begin	
-//! * crlf	
-//! * digit	Recognizes one or more numerical characters: 0-9
-//! * double	Recognizes floating point number in a byte string and returns a f64
-//! * double_s	Recognizes floating point number in a string and returns a f64
-//! * eol	
-//! * float	Recognizes floating point number in a byte string and returns a f32
-//! * float_s	Recognizes floating point number in a string and returns a f32
-//! * hex_digit	Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
-//! * hex_u32	Recognizes a hex-encoded integer
-//! * is_alphabetic	Tests if byte is ASCII alphabetic: A-Z, a-z
-//! * is_alphanumeric	Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9
-//! * is_digit	Tests if byte is ASCII digit: 0-9
-//! * is_hex_digit	Tests if byte is ASCII hex digit: 0-9, A-F, a-f
-//! * is_oct_digit	Tests if byte is ASCII octal digit: 0-7
-//! * is_space	Tests if byte is ASCII space or tab
-//! * line_ending	Recognizes an end of line (both '\n' and "\r\n")
-//! * multispace	Recognizes one or more spaces, tabs, carriage returns and line feeds
-//! * newline	Matches a newline character '\n'
-//! * non_empty	Recognizes non empty buffers
-//! * not_line_ending	
-//! * oct_digit	Recognizes one or more octal characters: 0-7
-//! * rest	Return the remaining input.
-//! * rest_s	Return the remaining input, for strings.
-//! * shift	
-//! * sized_buffer	
-//! * space	Recognizes one or more spaces and tabs
-//! * tab	Matches a tab character '\t'
-//! * tag_cl	
+//! use those functions with a combinator like `take_while!`:
+//!
+//! * **is_alphabetic**: Tests if byte is ASCII alphabetic: A-Z, a-z
+//! * **is_alphanumeric**: Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9
+//! * **is_digit**: Tests if byte is ASCII digit: 0-9
+//! * **is_hex_digit**: Tests if byte is ASCII hex digit: 0-9, A-F, a-f
+//! * **is_oct_digit**: Tests if byte is ASCII octal digit: 0-7
+//! * **is_space**: Tests if byte is ASCII space or tab
+//!
+//! ## Remaining functions (sort those out in the other categories)
+//!
+//! * **alpha**: Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
+//! * **alphanumeric**: Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
+//! * **anychar**: 
+//! * **begin**: 
+//! * **crlf**: 
+//! * **digit**: Recognizes one or more numerical characters: 0-9
+//! * **double**: Recognizes floating point number in a byte string and returns a f64
+//! * **double_s**: Recognizes floating point number in a string and returns a f64
+//! * **eol**: 
+//! * **float**: Recognizes floating point number in a byte string and returns a f32
+//! * **float_s**: Recognizes floating point number in a string and returns a f32
+//! * **hex_digit**: Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
+//! * **hex_u32**: Recognizes a hex-encoded integer
+//! * **line_ending**: Recognizes an end of line (both '\n' and "\r\n")
+//! * **multispace**: Recognizes one or more spaces, tabs, carriage returns and line feeds
+//! * **newline**: Matches a newline character '\n'
+//! * **non_empty**: Recognizes non empty buffers
+//! * **not_line_ending**: 
+//! * **oct_digit**: Recognizes one or more octal characters: 0-7
+//! * **rest**: Return the remaining input.
+//! * **rest_s**: Return the remaining input, for strings.
+//! * **shift**: 
+//! * **sized_buffer**: 
+//! * **space**: Recognizes one or more spaces and tabs
+//! * **tab**: Matches a tab character '\t'
+//! * **tag_cl**: 
 //!
 //! # Example
 //!
