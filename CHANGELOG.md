@@ -4,6 +4,31 @@
 
 ### Changed
 
+## 3.2.0 - 2017-07-24
+
+### Thanks
+
+- @jedireza for documentation fixes
+- @gmorenz for the `bytes` combinator
+- @meh for character combinator fixes for UTF-8
+- @jethrogb for avoiding move issues in `separated_list`
+
+### Changed
+
+- new layout for the main page of documentation
+- `anychar` can now work on any input type
+- `length_bytes` is now an alias for `length_data`
+
+### Fixed
+
+- `one_of`, `none_of` and `char` will now index correctly UTF-8 characters
+- the `compiler_error` macro is now correctly exported
+
+
+### Added
+
+- the `bytes` combinator transforms a bit stream back to a byte slice for child parsers
+
 ## 3.1.0 - 2017-06-16
 
 ### Thanks
