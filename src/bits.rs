@@ -12,19 +12,22 @@
 //! to see a byte slice as a bit stream, and parse code points of arbitrary bit length.
 
 
+/// Transforms its byte slice input into a bit stream for the underlying parser. This allows the
+/// given bit-slice parser to work on a byte-slice input.
+///
+/// Signature:
 /// `bits!( parser ) => ( &[u8], (&[u8], usize) -> IResult<(&[u8], usize), T> ) -> IResult<&[u8], T>`
-/// transforms its byte slice input into a bit stream for the underlying parsers
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
 /// # fn main() {
-///  named!( take_3_bits<u8>, bits!( take_bits!( u8, 3 ) ) );
+///  named!( take_4_bits<u8>, bits!( take_bits!( u8, 4 ) ) );
 ///
-///  let input = vec![0b10101010, 0b11110000, 0b00110011];
+///  let input = vec![0xAB, 0xCD, 0xEF, 0x12];
 ///  let sl    = &input[..];
 ///
-///  assert_eq!(take_3_bits( sl ), Done(&sl[1..], 5) );
+///  assert_eq!(take_4_bits( sl ), Done(&sl[1..], 0xA) );
 /// # }
 #[macro_export]
 macro_rules! bits (
@@ -96,11 +99,14 @@ macro_rules! bits_impl (
   );
 );
 
-/// Counterpart to bits,
-/// `bytes!( parser ) => ( (&[u8], usize), &[u8] -> IResult<&[u8], T> ) -> IResult<(&[u8], usize), T>`,
-/// transforms its bits stream input into a byte slice for the underlying parsers. If we start in the
-/// middle of a byte throws away the bits until the end of the byte.
+/// Counterpart to bits, bytes! transforms its bit stream input into a byte slice for the underlying
+/// parser, allowing byte-slice parsers to work on bit streams.
 ///
+/// Signature:
+/// `bytes!( parser ) => ( (&[u8], usize), &[u8] -> IResult<&[u8], T> ) -> IResult<(&[u8], usize), T>`,
+///
+/// A partial byte remaining in the input will be ignored and the given parser will start parsing
+/// at the next full byte.
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
@@ -194,20 +200,21 @@ macro_rules! bytes_impl (
   );
 );
 
-/// `take_bits!(type, nb) => ( (&[T], usize), U, usize) -> IResult<(&[T], usize), U>`
-/// generates a parser consuming the specified number of bits.
+/// Consumes the specified number of bits and returns them as the specified type.
 ///
+/// Signature:
+/// `take_bits!(type, count) => ( (&[T], usize), U, usize) -> IResult<(&[T], usize), U>`
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
 /// # fn main() {
-///  named!( take_pair<(u8, u8)>, bits!( pair!( take_bits!( u8, 3 ), take_bits!(u8, 5) ) ) );
+///  named!( take_pair<(u8, u8)>, bits!( pair!( take_bits!(u8, 4), take_bits!(u8, 4) ) ) );
 ///
-///  let input = vec![0b10101010, 0b11110000, 0b00110011];
+///  let input = vec![0xAB, 0xCD, 0xEF];
 ///  let sl    = &input[..];
 ///
-///  assert_eq!(take_pair( sl ),       Done(&sl[1..], (5, 10)) );
-///  assert_eq!(take_pair( &sl[1..] ), Done(&sl[2..], (7, 16)) );
+///  assert_eq!(take_pair( sl ),       Done(&sl[1..], (0xA, 0xB)) );
+///  assert_eq!(take_pair( &sl[1..] ), Done(&sl[2..], (0xC, 0xD)) );
 /// # }
 /// ```
 #[macro_export]
@@ -259,7 +266,25 @@ macro_rules! take_bits (
   );
 );
 
-/// matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
+/// Matches the given bit pattern.
+///
+/// Signature:
+/// `tag_bits!(type, count, pattern) => ( (&[T], usize), U, usize, U) -> IResult<(&[T], usize), U>`
+///
+/// The caller must specify the number of bits to consume. The matched value is included in the
+/// result on success.
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!( take_a<u8>, bits!( tag_bits!(u8, 4, 0xA) ) );
+///
+///  let input = vec![0xAB, 0xCD, 0xEF];
+///  let sl    = &input[..];
+///
+///  assert_eq!(take_a( sl ),       Done(&sl[1..], 0xA) );
+/// # }
+/// ```
 #[macro_export]
 macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
