@@ -348,6 +348,8 @@ Here is a list of known projects using nom:
   * [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config)
   * [torrc configuration file](https://github.com/dhuseby/torrc-rs)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
+- Programming languages:
+  * [GLSL](https://github.com/phaazon/glsl)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
