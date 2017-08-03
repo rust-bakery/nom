@@ -2,18 +2,19 @@
 //!
 //! Bit parsing is handled by tweaking the input in most macros.
 //! In byte level parsing, the input is generally a `&[u8]` passed from combinator
-//! to combinator until the slices are manipulated.
+//! to combinator as the slices are manipulated.
 //!
-//! Bit parsers take a `(&[u8], usize)` as input. The first part of the tuple is an byte slice,
+//! Bit parsers take a `(&[u8], usize)` as input. The first part of the tuple is a byte slice,
 //! the second part is a bit offset in the first byte of the slice.
 //!
-//! By passing a pair like this, we can leverage most of the combinators, and avoid
+//! By passing a pair like this, we can leverage most of the existing combinators, and avoid
 //! transforming the whole slice to a vector of booleans. This should make it easy
 //! to see a byte slice as a bit stream, and parse code points of arbitrary bit length.
+//!
 
 
 /// Transforms its byte slice input into a bit stream for the underlying parser. This allows the
-/// given bit-slice parser to work on a byte-slice input.
+/// given bit stream parser to work on a byte slice input.
 ///
 /// Signature:
 /// `bits!( parser ) => ( &[u8], (&[u8], usize) -> IResult<(&[u8], usize), T> ) -> IResult<&[u8], T>`

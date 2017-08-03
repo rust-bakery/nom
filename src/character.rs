@@ -40,6 +40,16 @@ macro_rules! one_of (
 );
 
 /// matches anything but the provided characters
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+/// named!(simple<char>, none_of!(&b"abc"[..]));
+/// assert_eq!(simple(b"123a"), IResult::Done(&b"23a"[..], '1'));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! none_of (
   ($i:expr, $inp: expr) => (
@@ -62,6 +72,16 @@ macro_rules! none_of (
 );
 
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+/// named!(simple<char>, char!('a'));
+/// assert_eq!(simple(b"a123"), IResult::Done(&b"123"[..], 'a'));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! char (
   ($i:expr, $c: expr) => (
