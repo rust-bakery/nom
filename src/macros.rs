@@ -604,7 +604,7 @@ macro_rules! parse_to (
 );
 
 /// `verify!(I -> IResult<I,O>, O -> bool) => I -> IResult<I, O>`
-/// returns the result of the child parser if it satisfies a verifcation function
+/// returns the result of the child parser if it satisfies a verification function
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
