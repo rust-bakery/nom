@@ -350,6 +350,7 @@ Here is a list of known projects using nom:
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
 - Programming languages:
   * [GLSL](https://github.com/phaazon/glsl)
+  * [Lua](https://github.com/doomrobo/nom-lua53)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
