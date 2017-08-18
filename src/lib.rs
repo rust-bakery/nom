@@ -192,7 +192,7 @@
 //! * **recognize!**: if the child parser was successful, return the consumed input as produced value
 //! * **return_error!**: prevents backtracking if the child parser fails
 //! * **tap!**: allows access to the parser's result without affecting it
-//! * **verify!**: returns the result of the child parser if it satisfies a verifcation function
+//! * **verify!**: returns the result of the child parser if it satisfies a verification function
 //!
 //! ## Error management and debugging
 //!
