@@ -360,15 +360,38 @@ macro_rules! delimited(
 ///
 #[macro_export]
 macro_rules! do_parse (
-  (__impl $i:expr, $consumed:expr, ( $($rest:expr),* )) => (
+  ($i:expr, $($rest:tt)*) => (
+    {
+      __nom_do_parse_impl!($i, 0usize, $($rest)*)
+    }
+  );
+  ($submac:ident!( $($args:tt)* ) >> $($rest:tt)* ) => (
+    compiler_error!("if you are using do_parse outside of a named! macro, you must
+        pass the input data as first argument, like this:
+
+        let res = do_parse!(input,
+          a: tag!(\"abcd\") >>
+          b: tag!(\"efgh\") >>
+          ( Value { a: a, b: b } )
+        );");
+  );
+  ($e:ident! >> $($rest:tt)* ) => (
+    do_parse!( call!($e) >> $($rest)*);
+  );
+);
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __nom_do_parse_impl (
+  ($i:expr, $consumed:expr, ( $($rest:expr),* )) => (
     $crate::IResult::Done($i, ( $($rest),* ))
   );
 
-  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ) => (
-    do_parse!(__impl $i, $consumed, $submac!( $($args)* ))
+  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ) => (
+    __nom_do_parse_impl!($i, $consumed, $submac!( $($args)* ))
   );
 
-  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ) => (
+  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ) => (
     compiler_error!("do_parse is missing the return value. A do_parse call must end
       with a return value between parenthesis, as follows:
 
@@ -380,23 +403,23 @@ macro_rules! do_parse (
     ");
   );
 
-  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
     compiler_error!("do_parse uses >> as separator, not ~");
   );
-  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
     compiler_error!("do_parse uses >> as separator, not ~");
   );
-  (__impl $i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
-    do_parse!(__impl $i, $consumed, $field: call!($e) ~ $($rest)*);
+  ($i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
+    __nom_do_parse_impl!($i, $consumed, $field: call!($e) ~ $($rest)*);
   );
-  (__impl $i:expr, $consumed:expr, $e:ident ~ $($rest:tt)*) => (
-    do_parse!(__impl $i, $consumed, call!($e) ~ $($rest)*);
+  ($i:expr, $consumed:expr, $e:ident ~ $($rest:tt)*) => (
+    __nom_do_parse_impl!($i, $consumed, call!($e) ~ $($rest)*);
   );
 
-  (__impl $i:expr, $consumed:expr, $e:ident >> $($rest:tt)*) => (
-    do_parse!(__impl $i, $consumed, call!($e) >> $($rest)*);
+  ($i:expr, $consumed:expr, $e:ident >> $($rest:tt)*) => (
+    __nom_do_parse_impl!($i, $consumed, call!($e) >> $($rest)*);
   );
-  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -412,7 +435,7 @@ macro_rules! do_parse (
         },
         $crate::IResult::Done(i,_)     => {
           let i_ = i.clone();
-          do_parse!(__impl i_,
+          __nom_do_parse_impl!(i_,
             $consumed + ($crate::InputLength::input_len(&($i)) -
                          $crate::InputLength::input_len(&i)), $($rest)*)
         },
@@ -420,11 +443,11 @@ macro_rules! do_parse (
     }
   );
 
-  (__impl $i:expr, $consumed:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
-    do_parse!(__impl $i, $consumed, $field: call!($e) >> $($rest)*);
+  ($i:expr, $consumed:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
+    __nom_do_parse_impl!($i, $consumed, $field: call!($e) >> $($rest)*);
   );
 
-  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       let i_ = $i.clone();
       match  $submac!(i_, $($args)*) {
@@ -441,7 +464,7 @@ macro_rules! do_parse (
         $crate::IResult::Done(i,o)     => {
           let $field = o;
           let i_ = i.clone();
-          do_parse!(__impl i_,
+          __nom_do_parse_impl!(i_,
             $consumed + ($crate::InputLength::input_len(&($i)) -
                          $crate::InputLength::input_len(&i)), $($rest)*)
         },
@@ -450,11 +473,11 @@ macro_rules! do_parse (
   );
 
   // ending the chain
-  (__impl $i:expr, $consumed:expr, $e:ident >> ( $($rest:tt)* )) => (
-    do_parse!(__impl $i, $consumed, call!($e) >> ( $($rest)* ));
+  ($i:expr, $consumed:expr, $e:ident >> ( $($rest:tt)* )) => (
+    __nom_do_parse_impl!($i, $consumed, call!($e) >> ( $($rest)* ));
   );
 
-  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
     match $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
@@ -472,11 +495,11 @@ macro_rules! do_parse (
     }
   );
 
-  (__impl $i:expr, $consumed:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
-    do_parse!(__impl $i, $consumed, $field: call!($e) >> ( $($rest)* ) );
+  ($i:expr, $consumed:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
+    __nom_do_parse_impl!($i, $consumed, $field: call!($e) >> ( $($rest)* ) );
   );
 
-  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
     match $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete($crate::Needed::Unknown) =>
@@ -493,25 +516,6 @@ macro_rules! do_parse (
         $crate::IResult::Done(i, ( $($rest)* ))
       },
     }
-  );
-
-  ($i:expr, $($rest:tt)*) => (
-    {
-      do_parse!(__impl $i, 0usize, $($rest)*)
-    }
-  );
-  ($submac:ident!( $($args:tt)* ) >> $($rest:tt)* ) => (
-    compiler_error!("if you are using do_parse outside of a named! macro, you must
-        pass the input data as first argument, like this:
-
-        let res = do_parse!(input,
-          a: tag!(\"abcd\") >>
-          b: tag!(\"efgh\") >>
-          ( Value { a: a, b: b } )
-        );");
-  );
-  ($e:ident! >> $($rest:tt)* ) => (
-    do_parse!( call!($e) >> $($rest)*);
   );
 );
 
