@@ -24,7 +24,7 @@ macro_rules! separated_list(
             res.push(o);
             input = i;
 
-            let ret;
+            let ret: $crate::IResult<_,_,$crate::ErrorKind>;
 
             loop {
               // get the separator first
