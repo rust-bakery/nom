@@ -475,7 +475,7 @@ impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
       memchr::Memchr::new(first_needle_char, haystack)
         // Then compare with the rest of the needle characters
         .find(|offset| {
-            &self[(*offset)..(offset+substr_len-1)] == rest_needle_chars
+            (&self[(*offset)..]).starts_with(rest_needle_chars)
         })
         // And finally remove one to the offset so we don't consume the first needle char
         .map(|offset| offset - 1)
