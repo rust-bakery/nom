@@ -2,13 +2,6 @@ language: rust
 
 cache: cargo
 
-addons:
-  apt:
-    packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-
 rust:
   - nightly
   - beta
@@ -16,6 +9,9 @@ rust:
   - 1.2.0
 
 env:
+  global:
+    # override the default `--features unstable` used for the nightly branch (optional)
+    - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
   - FEATURES="--features \"regexp regexp_macros\""
   - FEATURES="--features \"stream regexp regexp_macros\""
   - FEATURES="--features \"stream regexp regexp_macros\" --no-default-features"
@@ -60,22 +56,16 @@ notifications:
     on_failure: always
     on_start: false
 
-
-env:
-  global:
-    # override the default `--features unstable` used for the nightly branch (optional)
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
-
 dist: trusty
 sudo: false
 
 addons:
-    apt:
-        packages:
-            - libcurl4-openssl-dev
-            - libelf-dev
-            - libdw-dev
-            - binutils-dev
-            - cmake
-        sources:
-            - kalakris-cmake
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - binutils-dev
+      - cmake
+    sources:
+      - kalakris-cmake
