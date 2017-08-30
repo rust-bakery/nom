@@ -10,6 +10,7 @@ rust:
 
 env:
   matrix:
+    - FEATURES=''
     - FEATURES='--features "regexp regexp_macros"'
     - FEATURES='--features "stream regexp regexp_macros"'
     - FEATURES='--features "stream regexp regexp_macros" --no-default-features'
