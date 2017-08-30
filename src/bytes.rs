@@ -225,7 +225,7 @@ macro_rules! escaped (
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
-          return $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i, e))
+          $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i, e))
         }
       }
     }
@@ -338,7 +338,7 @@ macro_rules! escaped_transform (
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
         $crate::IResult::Error(e)      => {
-          return $crate::IResult::Error(error_node_position!($crate::ErrorKind::EscapedTransform, $i, e))
+          $crate::IResult::Error(error_node_position!($crate::ErrorKind::EscapedTransform, $i, e))
         }
       }
     }
@@ -1115,5 +1115,34 @@ mod tests {
     let input = [0x42, 0x00];
     assert_eq!(test(&input), Done(&b"\x00"[..], &b"\x42"[..]));
     assert_eq!(test2(&input), Done(&b"\x00"[..], &b"\x42"[..]));
+  }
+
+  #[cfg(feature = "verbose-errors")]
+  struct Parser {
+  }
+
+  #[cfg(feature = "verbose-errors")]
+  impl Parser {
+    pub fn new() -> Parser {
+      Parser{}
+    }
+
+    method!(esc<Parser, &[u8]>, self, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
+    method!(esc2<Parser, String>, self, map!(escaped_transform!(call!(alpha), '&',
+      alt!(
+          tag!("egrave;") => { |_| str::as_bytes("è") }
+        | tag!("agrave;") => { |_| str::as_bytes("à") }
+      )), to_s)
+    );
+  }
+
+  #[cfg(feature = "verbose-errors")]
+  #[test]
+  fn method_escaped() {
+    let p = Parser::new();
+    let (p2, res) = p.esc(&b"abcd"[..]);
+    let (_, res2) = p2.esc2(&b"ab&egrave;D&agrave;EF"[..]);
+    assert_eq!(res, Done(&b""[..], &b"abcd"[..]));
+    assert_eq!(res2, Done(&b""[..], String::from("abèDàEF")));
   }
 }
