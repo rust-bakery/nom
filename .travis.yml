@@ -12,9 +12,10 @@ env:
   global:
     # override the default `--features unstable` used for the nightly branch (optional)
     - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
-  - FEATURES="--features \"regexp regexp_macros\""
-  - FEATURES="--features \"stream regexp regexp_macros\""
-  - FEATURES="--features \"stream regexp regexp_macros\" --no-default-features"
+  matrix:
+    - FEATURES='--features "regexp regexp_macros"'
+    - FEATURES='--features "stream regexp regexp_macros"'
+    - FEATURES='--features "stream regexp regexp_macros" --no-default-features'
 
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
@@ -23,11 +24,12 @@ before_script:
     fi
 
 script:
+  - eval "features_args=( $FEATURES )"
   - travis-cargo --only 1.2     test  -- --features regexp
   - travis-cargo --only nightly build -- --features "nightly regexp"
-  - travis-cargo --only stable  test  -- $FEATURES
-  - travis-cargo --only beta    test  -- $FEATURES
-  - travis-cargo --only nightly test  -- $FEATURES
+  - travis-cargo --only stable  test  -- ${features_args[@]}
+  - travis-cargo --only beta    test  -- ${features_args[@]}
+  - travis-cargo --only nightly test  -- ${features_args[@]}
   - travis-cargo bench
   - travis-cargo --only stable doc -- --features "std stream regexp regexp_macros" --no-default-features
 
