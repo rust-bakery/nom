@@ -9,38 +9,27 @@ rust:
   - 1.2.0
 
 env:
-  global:
-    # override the default `--features unstable` used for the nightly branch (optional)
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
   matrix:
     - FEATURES='--features "regexp regexp_macros"'
     - FEATURES='--features "stream regexp regexp_macros"'
     - FEATURES='--features "stream regexp regexp_macros" --no-default-features'
 
 before_script:
-  - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
   - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
       cargo install cargo-travis --force && export PATH=$HOME/.cargo/bin:$PATH;
     fi
 
 script:
-  - eval "features_args=( $FEATURES )"
-  - travis-cargo --only 1.2     test  -- --features regexp
-  - travis-cargo --only nightly build -- --features "nightly regexp"
-  - travis-cargo --only stable  test  -- ${features_args[@]}
-  - travis-cargo --only beta    test  -- ${features_args[@]}
-  - travis-cargo --only nightly test  -- ${features_args[@]}
-  - travis-cargo bench
-  - travis-cargo --only stable doc -- --features "std stream regexp regexp_macros" --no-default-features
+  - '[ $TRAVIS_RUST_VERSION != 1.2.0   ] || cargo test --verbose --features "regexp"'
+  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo build --verbose --features "nightly regexp"'
+  - '[ $TRAVIS_RUST_VERSION == 1.2.0   ] || eval cargo test --verbose $FEATURES'
+  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
+  - '[ $TRAVIS_RUST_VERSION != stable  ] || cargo doc --verbose --features "std stream regexp regexp_macros" --no-default-features'
 
 after_success:
-  - travis-cargo bench
-  - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
-      cargo coveralls --verbose;
-    fi
-  - if [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
-      cargo bench;
-    fi
+  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
+  - '[ $TRAVIS_RUST_VERSION == 1.2.0   ] || cargo coveralls --verbose'
+  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
   - if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
         cargo install cargo-benchcmp --force;
         cargo bench > benches-variable;
