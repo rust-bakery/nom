@@ -13,7 +13,7 @@
 
 
 /// `bits!( parser ) => ( &[u8], (&[u8], usize) -> IResult<(&[u8], usize), T> ) -> IResult<&[u8], T>`
-/// transforms its byte slice input into a bit stream for the underlying parsers
+/// Transforms its byte slice input into a bit stream for the underlying parsers.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -21,11 +21,32 @@
 /// # fn main() {
 ///  named!( take_3_bits<u8>, bits!( take_bits!( u8, 3 ) ) );
 ///
-///  let input = vec![0b10101010, 0b11110000, 0b00110011];
-///  let sl    = &input[..];
+///  let bytes = vec![0b1010_1010, 0b1111_0000, 0b0011_0011];
+///  let slice = &bytes[..];
 ///
-///  assert_eq!(take_3_bits( sl ), Done(&sl[1..], 5) );
+///  assert_eq!( take_3_bits( slice ), Done(&slice[1..], 5) );
 /// # }
+/// ```
+///
+/// The consumed bits counter is local to a `bits!` macro invocation, so the remaining result
+/// is not `(&[u8], usize)` anymore. Second element is bit index in the stream - esentional to parse
+/// all the bits or else they will be dropped.
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!( take_z_word<(u8, u16)>,
+///      bits!(
+///          tuple!( take_bits!( u8, 5 ), take_bits!( u16, 10 ) )
+///      )
+///      // the last one bit of input remains unconsumed (as 5 + 10 != 16) and bit index is dropped
+///  );
+///
+///  let bytes = &[0b1100_1011, 0b0101_0101];
+///  assert_eq!( take_z_word( bytes ), Done(&bytes[2..], (25, 426)) );
+/// # }
+/// ```
 #[macro_export]
 macro_rules! bits (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
