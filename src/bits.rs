@@ -29,7 +29,7 @@
 /// ```
 ///
 /// The consumed bits counter is local to a `bits!` macro invocation, so the remaining result
-/// is not `(&[u8], usize)` anymore. Second element is bit index in the stream - esentional to parse
+/// is not `(&[u8], usize)` anymore. Second element is bit index in the stream - essential to parse
 /// all the bits or else they will be dropped.
 ///
 /// ```
