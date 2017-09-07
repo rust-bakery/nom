@@ -88,7 +88,7 @@
 macro_rules! wrap_sep (
   ($i:expr, $separator:expr, $submac:ident!( $($args:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,Needed,InputLength};
+    use $crate::Err;
 
     match ($separator)($i) {
       Err(Err::Error(e))      => Err(Err::Error(e)),
@@ -96,13 +96,11 @@ macro_rules! wrap_sep (
       Ok((i1,_))    => {
         match $submac!(i1, $($args)*) {
           Err(Err::Error(e))      => Err(Err::Error(e)),
-          Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-          Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size(i + (InputLength::input_len(&($i))) - InputLength::input_len(&i1)))),
+          Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
           Ok((i2,o))    => {
             match ($separator)(i2) {
               Err(Err::Error(e))      => Err(Err::Error(e)),
-              Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-              Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size(i + (InputLength::input_len(&($i))) - InputLength::input_len(&i2)))),
+              Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
               Ok((i3,_))    => Ok((i3, o))
             }
           }
@@ -143,7 +141,7 @@ macro_rules! delimited_sep (
     use ::std::result::Result::*;
     use $crate::Err;
 
-    match tuple_sep!($i, $separator, 0usize, (), $submac1!($($args1)*), $($rest)*) {
+    match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)*) {
       Err(Err::Error(a))                   => Err(Err::Error(a)),
       Err(Err::Incomplete(i))              => Err(Err::Incomplete(i)),
       Ok((remaining, (_,o,_))) => {
@@ -163,7 +161,7 @@ macro_rules! separated_pair_sep (
     use ::std::result::Result::*;
     use $crate::{Err,ErrorKind,Needed,IResult};
 
-    match tuple_sep!($i, $separator, 0usize, (), $submac1!($($args1)*), $($rest)*) {
+    match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)*) {
       Err(Err::Error(a))                   => Err(Err::Error(a)),
       Err(Err::Incomplete(i))              => Err(Err::Incomplete(i)),
       Ok((remaining, (o1,_,o2))) => {
@@ -232,73 +230,69 @@ macro_rules! terminated_sep (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! tuple_sep (
-  ($i:expr, $separator:ident, $consumed:expr, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => (
-    tuple_sep!($i, $separator, $consumed, ($($parsed),*), call!($e), $($rest)*);
+  ($i:expr, $separator:ident, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => (
+    tuple_sep!($i, $separator, ($($parsed),*), call!($e), $($rest)*);
   );
-  ($i:expr, $separator:ident, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+  ($i:expr, $separator:ident, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::Err;
 
       match sep!($i, $separator, $submac!($($args)*)) {
-        Err(Err::Error(e))                            => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size($consumed + i))),
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i,o))     => {
-          tuple_sep!(i, $separator, $consumed + ($crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)), (o), $($rest)*)
+          tuple_sep!(i, $separator, (o), $($rest)*)
         }
       }
     }
   );
-  ($i:expr, $separator:ident, $consumed:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+  ($i:expr, $separator:ident, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,InputLength};
+      use $crate::Err;
 
       match sep!($i, $separator, $submac!($($args)*)) {
-        Err(Err::Error(e))                            => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size($consumed + i))),
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i,o))     => {
-          tuple_sep!(i, $separator, $consumed + (InputLength::input_len(&($i)) - InputLength::input_len(&i)), ($($parsed)* , o), $($rest)*)
+          tuple_sep!(i, $separator, ($($parsed)* , o), $($rest)*)
         }
       }
     }
   );
-  ($i:expr, $separator:ident, $consumed:expr, ($($parsed:tt),*), $e:ident) => (
-    tuple_sep!($i, $separator,  $consumed, ($($parsed),*), call!($e));
+  ($i:expr, $separator:ident, ($($parsed:tt),*), $e:ident) => (
+    tuple_sep!($i, $separator, ($($parsed),*), call!($e));
   );
-  ($i:expr, $separator:ident, $consumed:expr, (), $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $separator:ident, (), $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult,InputLength};
+      use $crate::Err;
 
       match sep!($i, $separator, $submac!($($args)*)) {
-        Err(Err::Error(e))                            => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size($consumed + i))),
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i,o))     => {
           Ok((i, (o)))
         }
       }
     }
   );
-  ($i:expr, $separator:ident, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $separator:ident, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::Err;
 
       match sep!($i, $separator, $submac!($($args)*)) {
-        Err(Err::Error(e))                            => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size($consumed + i))),
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i,o))     => {
           Ok((i, ($($parsed),* , o)))
         }
       }
     }
   );
-  ($i:expr, $separator:ident, $consumed:expr, ($($parsed:expr),*)) => (
+  ($i:expr, $separator:ident, ($($parsed:expr),*)) => (
     {
       ::sts::result::Result::Ok(($i, ($($parsed),*)))
     }
@@ -308,93 +302,77 @@ macro_rules! tuple_sep (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! do_parse_sep (
-  (__impl $i:expr, $separator:ident, $consumed:expr, ( $($rest:expr),* )) => (
+  (__impl $i:expr, $separator:ident, ( $($rest:expr),* )) => (
     ::std::result::Result::Ok(($i, ( $($rest),* )))
   );
 
-  (__impl $i:expr, $separator:ident, $consumed:expr, $e:ident >> $($rest:tt)*) => (
-    do_parse_sep!(__impl $i, $separator, $consumed, call!($e) >> $($rest)*);
+  (__impl $i:expr, $separator:ident, $e:ident >> $($rest:tt)*) => (
+    do_parse_sep!(__impl $i, $separator, call!($e) >> $($rest)*);
   );
-  (__impl $i:expr, $separator:ident, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+  (__impl $i:expr, $separator:ident, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::Err;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) =>
-          Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) =>
-          Err(Err::Incomplete(Needed::Size($consumed + i))),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i,_))     => {
-          do_parse_sep!(__impl i, $separator,
-            $consumed + ($crate::InputLength::input_len(&($i)) -
-                         $crate::InputLength::input_len(&i)), $($rest)*)
+          do_parse_sep!(__impl i, $separator, $($rest)*)
         },
       }
     }
   );
 
-  (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
-    do_parse_sep!(__impl $i, $separator, $consumed, $field: call!($e) >> $($rest)*);
+  (__impl $i:expr, $separator:ident, $field:ident : $e:ident >> $($rest:tt)*) => (
+    do_parse_sep!(__impl $i, $separator, $field: call!($e) >> $($rest)*);
   );
 
-  (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+  (__impl $i:expr, $separator:ident, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::Err;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) =>
-          Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) =>
-          Err(Err::Incomplete(Needed::Size($consumed + i))),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i,o))     => {
           let $field = o;
-          do_parse_sep!(__impl i, $separator,
-            $consumed + (InputLength::input_len(&($i)) -
-                         InputLength::input_len(&i)), $($rest)*)
+          do_parse_sep!(__impl i, $separator, $($rest)*)
         },
       }
     }
   );
 
   // ending the chain
-  (__impl $i:expr, $separator:ident, $consumed:expr, $e:ident >> ( $($rest:tt)* )) => (
-    do_parse_sep!(__impl $i, $separator, $consumed, call!($e) >> ( $($rest)* ));
+  (__impl $i:expr, $separator:ident, $e:ident >> ( $($rest:tt)* )) => (
+    do_parse_sep!(__impl $i, $separator, call!($e) >> ( $($rest)* ));
   );
 
-  (__impl $i:expr, $separator:ident, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
+  (__impl $i:expr, $separator:ident, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,ErrorKind,Needed,IResult};
+    use $crate::Err;
 
     match sep!($i, $separator, $submac!($($args)*)) {
       Err(Err::Error(e))      => Err(Err::Error(e)),
-      Err(Err::Incomplete(Needed::Unknown)) =>
-        Err(Err::Incomplete(Needed::Unknown)),
-      Err(Err::Incomplete(Needed::Size(i))) =>
-        Err(Err::Incomplete(Needed::Size($consumed + i))),
+      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
       Ok((i,_))     => {
         Ok((i, ( $($rest)* )))
       },
     }
   });
 
-  (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
-    do_parse_sep!(__impl $i, $separator, $consumed, $field: call!($e) >> ( $($rest)* ) );
+  (__impl $i:expr, $separator:ident, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
+    do_parse_sep!(__impl $i, $separator, $field: call!($e) >> ( $($rest)* ) );
   );
 
-  (__impl $i:expr, $separator:ident, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
+  (__impl $i:expr, $separator:ident, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,ErrorKind,Needed,IResult};
+    use $crate::Err;
 
     match sep!($i, $separator, $submac!($($args)*)) {
       Err(Err::Error(e))      => Err(Err::Error(e)),
-      Err(Err::Incomplete(Needed::Unknown)) =>
-        Err(Err::Incomplete(Needed::Unknown)),
-      Err(Err::Incomplete(Needed::Size(i))) =>
-        Err(Err::Incomplete(Needed::Size($consumed + i))),
+      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
       Ok((i,o))     => {
         let $field = o;
         Ok((i, ( $($rest)* )))
@@ -404,7 +382,7 @@ macro_rules! do_parse_sep (
 
   ($i:expr, $separator:ident, $($rest:tt)*) => (
     {
-      do_parse_sep!(__impl $i, $separator, 0usize, $($rest)*)
+      do_parse_sep!(__impl $i, $separator, $($rest)*)
     }
   );
 );
@@ -415,7 +393,7 @@ macro_rules! permutation_sep (
   ($i:expr, $separator:ident, $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed};
+      use $crate::{Err,ErrorKind};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
@@ -435,17 +413,7 @@ macro_rules! permutation_sep (
       }
 
       if let ::std::option::Option::Some(need) = needed {
-        if let Needed::Size(sz) = need {
-          Err(Err::Incomplete(
-            Needed::Size(
-              InputLength::input_len(&($i))  -
-              InputLength::input_len(&input) +
-              sz
-            )
-          ))
-        } else {
-          Err(Err::Incomplete(Needed::Unknown))
-        }
+        Err(Err::Incomplete(need))
       } else if let ::std::option::Option::Some(e) = error {
         Err(Err::Error(e))
       } else {
@@ -524,9 +492,9 @@ macro_rules! alt_sep (
 
       let res = sep!($i, $separator, $subrule!($($args)*));
       match res {
-        Ok((_,_))     => res,
+        Ok((_,_))               => res,
         Err(Err::Incomplete(_)) => res,
-        _                              => alt_sep!(__impl $i, $separator, $($rest)*)
+        _                       => alt_sep!(__impl $i, $separator, $($rest)*)
       }
     }
   );
@@ -537,7 +505,7 @@ macro_rules! alt_sep (
       use $crate::Err;
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
-        Ok((i,o))     => Ok((i,$gen(o))),
+        Ok((i,o))               => Ok((i,$gen(o))),
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Err(Err::Error(_))      => {
           alt_sep!(__impl $i, $separator, $($rest)*)
@@ -780,7 +748,7 @@ macro_rules! eat_separator (
 #[macro_export]
 macro_rules! sep (
   ($i:expr,  $separator:ident, tuple ! ($($rest:tt)*) ) => {
-    tuple_sep!($i, $separator, 0usize, (), $($rest)*)
+    tuple_sep!($i, $separator, (), $($rest)*)
   };
   ($i:expr,  $separator:ident, pair ! ($($rest:tt)*) ) => {
     wrap_sep!($i,
@@ -1003,8 +971,8 @@ mod tests {
 
     assert_eq!(do_parser(&b"abcd abcd\tefghefghX"[..]),Ok((&b"X"[..], (1, 2))));
     assert_eq!(do_parser(&b"abcd\tefgh      efgh X"[..]),Ok((&b"X"[..], (1, 2))));
-    assert_eq!(do_parser(&b"abcd  ab"[..]), Err(Err::Incomplete(Needed::Size(10))));
-    assert_eq!(do_parser(&b" abcd\tefgh\tef"[..]), Err(Err::Incomplete(Needed::Size(15))));
+    assert_eq!(do_parser(&b"abcd  ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(do_parser(&b" abcd\tefgh\tef"[..]), Err(Err::Incomplete(Needed::Size(4))));
   }
 
   #[test]
@@ -1028,7 +996,7 @@ mod tests {
     assert_eq!(perm(d), Err(Err::Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..]))));
 
     let e = &b" efg \tabc"[..];
-    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(10))));
+    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
   }
 
   #[test]

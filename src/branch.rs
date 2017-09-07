@@ -512,7 +512,7 @@ macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,IResult,ErrorKind,Needed,InputLength};
+      use $crate::{Err,IResult,ErrorKind,Needed};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
@@ -532,17 +532,7 @@ macro_rules! permutation (
       }
 
       if let ::std::option::Option::Some(need) = needed {
-        if let Needed::Size(sz) = need {
-          Err(Err::Incomplete(
-            Needed::Size(
-              InputLength::input_len(&($i))  -
-              InputLength::input_len(&input) +
-              sz
-            )
-          ))
-        } else {
-          Err(Err::Incomplete(Needed::Unknown))
-        }
+        Err(Err::Incomplete(need))
       } else if let ::std::option::Option::Some(e) = error {
         Err(Err::Error(e))
       } else {
@@ -884,7 +874,7 @@ mod tests {
     assert_eq!(perm(d), Err(Err::Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..]))));
 
     let e = &b"efgabc"[..];
-    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(7))));
+    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
   }
 
   /*

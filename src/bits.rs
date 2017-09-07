@@ -353,7 +353,7 @@ mod tests {
     let sl    = &input[..];
     assert_eq!(ch((&input[..],0)), Ok(((&sl[1..], 4), (5,15))));
     assert_eq!(ch((&input[..],4)), Ok(((&sl[2..], 0), (7,16))));
-    assert_eq!(ch((&input[..1],0)), Err(Err::Incomplete(Needed::Size(12))));
+    assert_eq!(ch((&input[..1],0)), Err(Err::Incomplete(Needed::Size(5))));
   }
 
   named!(ch_bytes<(u8,u8)>, bits!(ch));
@@ -361,7 +361,7 @@ mod tests {
   fn bits_to_bytes() {
     let input = [0b10101010, 0b11110000, 0b00110011];
     assert_eq!(ch_bytes(&input[..]), Ok( (&input[2..], (5,15))) );
-    assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(ch_bytes(&input[1..]), Err(Err::Error(error_position!(ErrorKind::TagBits, &input[1..]))));
   }
 

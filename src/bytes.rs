@@ -447,7 +447,7 @@ macro_rules! take_while1 (
       use $crate::InputIter;
       use $crate::Slice;
       if input.input_len() == 0 {
-        Err(Err::Incomplete(Needed::Size(1)))
+        Err(Err::Incomplete(Needed::Unknown))
       } else {
         match input.position(|c| !$submac!(c, $($args)*)) {
           Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeWhile1,input))),
@@ -511,7 +511,7 @@ macro_rules! take_till1 (
       use $crate::InputIter;
       use $crate::Slice;
       if input.input_len() == 0 {
-        Err(Err::Incomplete(Needed::Size(1)))
+        Err(Err::Incomplete(Needed::Unknown))
       } else {
         match input.position(|c| $submac!(c, $($args)*)) {
           Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeTill1,input))),
@@ -716,7 +716,7 @@ macro_rules! take_until_either_and_consume (
       use $crate::Slice;
 
       if $input.input_len() == 0 {
-        Err(Err::Incomplete(Needed::Size(1)))
+        Err(Err::Incomplete(Needed::Unknown))
       } else {
         let res: IResult<_,_> = match $input.position(|c| {
           c.find_token($arr)
@@ -751,7 +751,7 @@ macro_rules! take_until_either (
       use $crate::Slice;
 
       if $input.input_len() == 0 {
-        Err(Err::Incomplete(Needed::Size(1)))
+        Err(Err::Incomplete(Needed::Unknown))
       } else {
         let res: IResult<_,_> = match $input.position(|c| {
           c.find_token($arr)
@@ -797,7 +797,7 @@ mod tests {
     ($i:expr, $inp: expr) => (
       {
         if $i.is_empty() {
-          Err::<_,_>(Err::Incomplete(Needed::Size(1)))
+          Err::<_,_>(Err::Incomplete(Needed::Unknown))
         } else {
           #[inline(always)]
           fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -816,7 +816,7 @@ mod tests {
     ($i:expr, $bytes: expr) => (
       {
         if $i.is_empty() {
-          Err::<_,_>(Err::Incomplete(Needed::Size(1)))
+          Err::<_,_>(Err::Incomplete(Needed::Unknown))
         } else {
           let mut found = false;
 
@@ -1076,7 +1076,7 @@ mod tests {
     let c = b"abcd123";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
     assert_eq!(f(&b[..]), Ok((&a[..], &b[..])));
     assert_eq!(f(&c[..]), Ok((&b"123"[..], &b[..])));
     assert_eq!(f(&d[..]), Err(Err::Error(error_position!(ErrorKind::TakeWhile1, &d[..]))));
@@ -1106,7 +1106,7 @@ mod tests {
     let c = b"123abcd";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
     assert_eq!(f(&b[..]), Err(Err::Error(error_position!(ErrorKind::TakeTill1, &b[..]))));
     assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
     assert_eq!(f(&d[..]), Ok((&b""[..], &b"123"[..])));
@@ -1142,14 +1142,14 @@ mod tests {
     named!(x, length_bytes!(le_u8));
     assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));
-    assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::Size(2))));
 
     named!(y, do_parse!(tag!("magic") >> b: length_bytes!(le_u8) >> (b)));
     assert_eq!(y(b"magic\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(y(b"magic\x02.."), Ok((&[][..], &b".."[..])));
-    assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::Size(8))));
-    assert_eq!(y(b"magic\x02"), Err(Err::Incomplete(Needed::Size(8))));
+    assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(y(b"magic\x02"), Err(Err::Incomplete(Needed::Size(2))));
   }
 
   #[test]

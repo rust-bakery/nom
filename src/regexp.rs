@@ -28,7 +28,7 @@ macro_rules! re_match (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -53,7 +53,7 @@ macro_rules! re_match_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -77,7 +77,7 @@ macro_rules! re_bytes_match (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -102,7 +102,7 @@ macro_rules! re_bytes_match_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -126,7 +126,7 @@ macro_rules! re_find (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
@@ -150,7 +150,7 @@ macro_rules! re_find_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       regex!(RE, $re);
@@ -174,7 +174,7 @@ macro_rules! re_bytes_find (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
@@ -198,7 +198,7 @@ macro_rules! re_bytes_find_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
@@ -222,7 +222,7 @@ macro_rules! re_matches (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
@@ -251,7 +251,7 @@ macro_rules! re_matches_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       regex!(RE, $re);
@@ -279,7 +279,7 @@ macro_rules! re_bytes_matches (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
@@ -308,7 +308,7 @@ macro_rules! re_bytes_matches_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
@@ -336,7 +336,7 @@ macro_rules! re_capture (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
@@ -365,7 +365,7 @@ macro_rules! re_capture_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       regex!(RE, $re);
@@ -393,7 +393,7 @@ macro_rules! re_bytes_capture (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
@@ -422,7 +422,7 @@ macro_rules! re_bytes_capture_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
@@ -450,7 +450,7 @@ macro_rules! re_captures (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
@@ -479,7 +479,7 @@ macro_rules! re_captures_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       regex!(RE, $re);
@@ -507,7 +507,7 @@ macro_rules! re_bytes_captures (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
@@ -536,7 +536,7 @@ macro_rules! re_bytes_captures_static (
   ($i:expr, $re:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
       regex_bytes!(RE, $re);

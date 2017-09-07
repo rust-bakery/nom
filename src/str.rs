@@ -369,7 +369,7 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
     assert_eq!(f(&b[..]),Ok((&a[..], &b[..])));
     assert_eq!(f(&c[..]),Ok((&"123"[..], &b[..])));
     assert_eq!(f(&d[..]), Err(Err::Error(error_position!(ErrorKind::TakeWhile1, &d[..]))));
