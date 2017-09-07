@@ -511,16 +511,15 @@ macro_rules! map(
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::Err;
 
       pub fn _unify<T, R, F: FnOnce(T) -> R>(f: F, t: T) -> R {
        f(t)
       }
       match $submac!($i, $($args)*) {
-        Err(Err::Error(e))                    => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size(i))),
-        Ok((i, o))                            => Ok((i, _unify($g, o)))
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i, o))              => Ok((i, _unify($g, o)))
       }
     }
   );
@@ -540,14 +539,13 @@ macro_rules! map_res (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,ErrorKind};
+      use $crate::{Err,ErrorKind};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(Err::Error(e))                    => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size(i))),
-        Ok((i, o))                            => match $submac2!(o, $($args2)*) {
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i, o))              => match $submac2!(o, $($args2)*) {
           Ok(output) => Ok((i, output)),
           Err(_)     => Err(Err::Error(error_position!(ErrorKind::MapRes, $i)))
         }
@@ -576,14 +574,13 @@ macro_rules! map_opt (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,ErrorKind};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(Err::Error(e))                    => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size(i))),
-        Ok((i, o))                            => match $submac2!(o, $($args2)*) {
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i, o))              => match $submac2!(o, $($args2)*) {
           ::std::option::Option::Some(output)   => Ok((i, output)),
           ::std::option::Option::None           => Err(Err::Error(error_position!(ErrorKind::MapOpt, $i)))
         }

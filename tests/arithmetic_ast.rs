@@ -7,7 +7,7 @@ use std::fmt::{Display, Debug, Formatter};
 use std::str;
 use std::str::FromStr;
 
-use nom::{IResult, digit, multispace};
+use nom::{digit, multispace};
 
 pub enum Expr {
     Value(i64),

@@ -286,7 +286,7 @@ macro_rules! alt_complete (
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,IResult};
+      use $crate::Err;
 
       let i_ = $i.clone();
       let res = complete!(i_, $subrule!($($args)*));
@@ -311,7 +311,7 @@ macro_rules! alt_complete (
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,IResult,ErrorKind};
+      use $crate::Err;
 
       let i_ = $i.clone();
       match complete!(i_, $subrule!($($args)*)) {
