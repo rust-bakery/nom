@@ -439,7 +439,7 @@ macro_rules! take_while1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,ErrorKind,Needed};
 
       let input = $input;
 
