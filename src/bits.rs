@@ -43,26 +43,29 @@ macro_rules! bits (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e)) => {
+        Err(Err::Error(e)) => {
           let err = match e {
-            $crate::Err::Code(k) | $crate::Err::Node(k, _) => $crate::Err::Code(k),
-            $crate::Err::Position(k, (i,b)) | $crate::Err::NodePosition(k, (i,b), _) => {
-              $crate::Err::Position(k, &i[b/8..])
+            Err::Code(k) | Err::Node(k, _) => Err::Code(k),
+            Err::Position(k, (i,b)) | Err::NodePosition(k, (i,b), _) => {
+              Err::Position(k, &i[b/8..])
             }
           };
-          ::std::result::Result::Err($crate::Err::Error(err))
+          Err(Err::Error(err))
         }
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
           //println!("bits parser returned Needed::Size({})", i);
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i / 8 + 1)))
+          Err(Err::Incomplete(Needed::Size(i / 8 + 1)))
         },
-        ::std::result::Result::Ok(((i, bit_index), o))             => {
+        Ok(((i, bit_index), o))             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          ::std::result::Result::Ok((&i[byte_index..], o))
+          Ok((&i[byte_index..], o))
         }
       }
     }
@@ -76,20 +79,23 @@ macro_rules! bits_impl (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e)) => {
-          ::std::result::Result::Err($crate::Err::Error(e))
+        Err(Err::Error(e)) => {
+          Err(Err::Error(e))
         }
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
           //println!("bits parser returned Needed::Size({})", i);
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i / 8 + 1)))
+          Err(Err::Incomplete(Needed::Size(i / 8 + 1)))
         },
-        ::std::result::Result::Ok(((i, bit_index), o))             => {
+        Ok(((i, bit_index), o))             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          ::std::result::Result::Ok((&i[byte_index..], o))
+          Ok((&i[byte_index..], o))
         }
       }
     }
@@ -133,6 +139,9 @@ macro_rules! bytes (
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let inp;
       if $macro_i.1 % 8 != 0 {
         inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
@@ -142,21 +151,21 @@ macro_rules! bytes_impl (
       }
 
       match $submac!(inp, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e)) => {
+        Err(Err::Error(e)) => {
           let err = match e {
-            $crate::Err::Code(k) | $crate::Err::Node(k, _) => $crate::Err::Code(k),
-            $crate::Err::Position(k, i) | $crate::Err::NodePosition(k, i, _) => {
-              $crate::Err::Position(k, (i, 0))
+            Err::Code(k) | Err::Node(k, _) => Err::Code(k),
+            Err::Position(k, i) | Err::NodePosition(k, i, _) => {
+              Err::Position(k, (i, 0))
             }
           };
-          ::std::result::Result::Err($crate::Err::Error(err))
+          Err(Err::Error(err))
         }
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i * 8)))
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i * 8)))
         },
-        ::std::result::Result::Ok((i, o)) => {
-          ::std::result::Result::Ok(((i, 0), o))
+        Ok((i, o)) => {
+          Ok(((i, 0), o))
         }
       }
     }
@@ -170,6 +179,9 @@ macro_rules! bytes_impl (
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let inp;
       if $macro_i.1 % 8 != 0 {
         inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
@@ -179,15 +191,15 @@ macro_rules! bytes_impl (
       }
 
       match $submac!(inp, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e)) => {
-          ::std::result::Result::Err($crate::Err::Error(e))
+        Err(Err::Error(e)) => {
+          Err(Err::Error(e))
         }
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i * 8)))
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i * 8)))
         },
-        ::std::result::Result::Ok((i, o)) => {
-          ::std::result::Result::Ok(((i, 0), o))
+        Ok((i, o)) => {
+          Ok(((i, 0), o))
         }
       }
     }
@@ -214,17 +226,20 @@ macro_rules! bytes_impl (
 macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed,IResult};
+
       use std::ops::Div;
       use std::convert::Into;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
-      let res : $crate::IResult<(&[u8],usize), $t> = if $count == 0 {
-        ::std::result::Result::Ok(( (input, bit_offset), (0 as u8).into()))
+      let res : IResult<(&[u8],usize), $t> = if $count == 0 {
+        Ok(( (input, bit_offset), (0 as u8).into()))
       } else {
         let cnt = ($count as usize + bit_offset).div(8);
         if input.len() * 8 < $count as usize + bit_offset {
           //println!("returning incomplete: {}", $count as usize + bit_offset);
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size($count as usize)))
+          Err(Err::Incomplete(Needed::Size($count as usize)))
         } else {
           let mut acc:$t            = (0 as u8).into();
           let mut offset: usize     = bit_offset;
@@ -251,7 +266,7 @@ macro_rules! take_bits (
               offset = 0;
             }
           }
-          ::std::result::Result::Ok(( (&input[cnt..], end_offset) , acc))
+          Ok(( (&input[cnt..], end_offset) , acc))
         }
       };
       res
@@ -264,18 +279,21 @@ macro_rules! take_bits (
 macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,IResult};
+
       match take_bits!($i, $t, $count) {
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i, o))    => {
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i, o))    => {
           if let $p = o {
-            let res: $crate::IResult<(&[u8],usize),$t> = ::std::result::Result::Ok((i, o));
+            let res: IResult<(&[u8],usize),$t> = Ok((i, o));
             res
           } else {
-            ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::TagBits, $i)))
+            Err(Err::Error(error_position!(ErrorKind::TagBits, $i)))
           }
         },
         _                              => {
-          ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::TagBits, $i)))
+          Err(Err::Error(error_position!(ErrorKind::TagBits, $i)))
         }
       }
     }

@@ -50,20 +50,23 @@ macro_rules! tuple_parser (
   );
   ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))                            =>
-          ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+        Err(Err::Error(e))                            =>
+          Err(Err::Error(e)),
+        Err(Err::Incomplete(Needed::Unknown)) =>
+          Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
+              true  => Err(Err::Incomplete(Needed::Unknown)),
+              false =>  Err(Err::Incomplete(Needed::Size(needed))),
           }
         },
-        ::std::result::Result::Ok((i,o))     => {
+        Ok((i,o))     => {
           let i_ = i.clone();
           tuple_parser!(i_,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -74,20 +77,23 @@ macro_rules! tuple_parser (
   );
   ($i:expr, $consumed:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))                            =>
-          ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+        Err(Err::Error(e))                            =>
+          Err(Err::Error(e)),
+        Err(Err::Incomplete(Needed::Unknown)) =>
+          Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
+              true  => Err(Err::Incomplete(Needed::Unknown)),
+              false =>  Err(Err::Incomplete(Needed::Size(needed))),
           }
         },
-        ::std::result::Result::Ok((i,o))     => {
+        Ok((i,o))     => {
           let i_ = i.clone();
           tuple_parser!(i_,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -101,41 +107,47 @@ macro_rules! tuple_parser (
   );
   ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed,IResult};
+
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))                            =>
-          ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+        Err(Err::Error(e))                            =>
+          Err(Err::Error(e)),
+        Err(Err::Incomplete(Needed::Unknown)) =>
+          Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
+              true  => Err(Err::Incomplete(Needed::Unknown)),
+              false =>  Err(Err::Incomplete(Needed::Size(needed))),
           }
         },
-        ::std::result::Result::Ok((i,o))     => {
-          ::std::result::Result::Ok((i, (o)))
+        Ok((i,o))     => {
+          Ok((i, (o)))
         }
       }
     }
   );
   ($i:expr, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       match $submac!($i, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))                            =>
-          ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+        Err(Err::Error(e))                            =>
+          Err(Err::Error(e)),
+        Err(Err::Incomplete(Needed::Unknown)) =>
+          Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
+              true  => Err(Err::Incomplete(Needed::Unknown)),
+              false =>  Err(Err::Incomplete(Needed::Size(needed))),
           }
         },
-        ::std::result::Result::Ok((i,o))     => {
-          ::std::result::Result::Ok((i, ($($parsed),* , o)))
+        Ok((i,o))     => {
+          Ok((i, ($($parsed),* , o)))
         }
       }
     }
@@ -177,11 +189,14 @@ macro_rules! pair(
 macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
+      use ::std::result::Result::*;
+      use $crate::Err;
+
       match tuple_parser!($i, 0usize, (), $submac!($($args)*), $($rest)*) {
-        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i1, (o1, _, o2)))   => {
-          ::std::result::Result::Ok((i1, (o1, o2)))
+        Err(Err::Error(a))      => Err(Err::Error(a)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i1, (o1, _, o2)))   => {
+          Ok((i1, (o1, o2)))
         }
       }
     }
@@ -198,11 +213,14 @@ macro_rules! separated_pair(
 macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::Err;
+
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((remaining, (_,o)))    => {
-          ::std::result::Result::Ok((remaining, o))
+        Err(Err::Error(a))      => Err(Err::Error(a)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((remaining, (_,o)))    => {
+          Ok((remaining, o))
         }
       }
     }
@@ -227,11 +245,14 @@ macro_rules! preceded(
 macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::Err;
+
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((remaining, (o,_)))    => {
-          ::std::result::Result::Ok((remaining, o))
+        Err(Err::Error(a))      => Err(Err::Error(a)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((remaining, (o,_)))    => {
+          Ok((remaining, o))
         }
       }
     }
@@ -273,11 +294,14 @@ macro_rules! terminated(
 macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
+      use ::std::result::Result::*;
+      use $crate::Err;
+
       match tuple_parser!($i, 0usize, (), $submac!($($args)*), $($rest)*) {
-        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i1, (_, o, _)))   => {
-          ::std::result::Result::Ok((i1, o))
+        Err(Err::Error(a))      => Err(Err::Error(a)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i1, (_, o, _)))   => {
+          Ok((i1, o))
         }
       }
     }
@@ -398,19 +422,22 @@ macro_rules! do_parse (
   );
   (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(Needed::Unknown)) =>
+          Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
+              true  => Err(Err::Incomplete(Needed::Unknown)),
+              false =>  Err(Err::Incomplete(Needed::Size(needed))),
           }
         },
-        ::std::result::Result::Ok((i,_))     => {
+        Ok((i,_))     => {
           let i_ = i.clone();
           do_parse!(__impl i_,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -426,19 +453,22 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let i_ = $i.clone();
       match  $submac!(i_, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(Needed::Unknown)) =>
+          Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
+              true  => Err(Err::Incomplete(Needed::Unknown)),
+              false =>  Err(Err::Incomplete(Needed::Size(needed))),
           }
         },
-        ::std::result::Result::Ok((i,o))     => {
+        Ok((i,o))     => {
           let $field = o;
           let i_ = i.clone();
           do_parse!(__impl i_,
@@ -454,46 +484,52 @@ macro_rules! do_parse (
     do_parse!(__impl $i, $consumed, call!($e) >> ( $($rest)* ));
   );
 
-  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
+    use ::std::result::Result::*;
+    use $crate::{Err,ErrorKind,Needed,IResult};
+
     match $submac!($i, $($args)*) {
-      ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
-      ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-      ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+      Err(Err::Error(e))      => Err(Err::Error(e)),
+      Err(Err::Incomplete(Needed::Unknown)) =>
+        Err(Err::Incomplete(Needed::Unknown)),
+      Err(Err::Incomplete(Needed::Size(i))) => {
         let (needed,overflowed) = $consumed.overflowing_add(i);
         match overflowed {
-            true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-            false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
+            true  => Err(Err::Incomplete(Needed::Unknown)),
+            false =>  Err(Err::Incomplete(Needed::Size(needed))),
         }
       },
-      ::std::result::Result::Ok((i,_))     => {
-        ::std::result::Result::Ok((i, ( $($rest)* )))
+      Ok((i,_))     => {
+        Ok((i, ( $($rest)* )))
       },
     }
-  );
+  });
 
   (__impl $i:expr, $consumed:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
     do_parse!(__impl $i, $consumed, $field: call!($e) >> ( $($rest)* ) );
   );
 
-  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
+  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
+    use ::std::result::Result::*;
+    use $crate::{Err,ErrorKind,Needed,IResult};
+
     match $submac!($i, $($args)*) {
-      ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
-      ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-      ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+      Err(Err::Error(e))      => Err(Err::Error(e)),
+      Err(Err::Incomplete(Needed::Unknown)) =>
+        Err(Err::Incomplete(Needed::Unknown)),
+      Err(Err::Incomplete(Needed::Size(i))) => {
         let (needed,overflowed) = $consumed.overflowing_add(i);
         match overflowed {
-            true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-            false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
+            true  => Err(Err::Incomplete(Needed::Unknown)),
+            false =>  Err(Err::Incomplete(Needed::Size(needed))),
         }
       },
-      ::std::result::Result::Ok((i,o))     => {
+      Ok((i,o))     => {
         let $field = o;
-        ::std::result::Result::Ok((i, ( $($rest)* )))
+        Ok((i, ( $($rest)* )))
       },
     }
-  );
+  });
 
   ($i:expr, $($rest:tt)*) => (
     {
@@ -553,12 +589,12 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: $crate::IResult<_,_> = if reduced != b {
-          ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag, $i)))
+        let res: IResult<_,_> = if reduced != b {
+          Err(Err::Error(error_position!(ErrorKind::Tag, $i)))
         } else if m < blen {
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(blen)))
+          Err(Err::Incomplete(Needed::Size(blen)))
         } else {
-          ::std::result::Result::Ok((&$i[blen..], reduced))
+          Ok((&$i[blen..], reduced))
         };
         res
       }
@@ -569,10 +605,10 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(cnt)))
+        let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
+          Err(Err::Incomplete(Needed::Size(cnt)))
         } else {
-          ::std::result::Result::Ok((&$i[cnt..],&$i[0..cnt]))
+          Ok((&$i[cnt..],&$i[0..cnt]))
         };
         res
       }

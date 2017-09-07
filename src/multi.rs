@@ -6,6 +6,9 @@
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed,ErrorKind};
+
       use $crate::InputLength;
 
       //FIXME: use crate vec
@@ -15,11 +18,11 @@ macro_rules! separated_list(
       // get the first element
       let input_ = input.clone();
       match $submac!(input_, $($args2)*) {
-        ::std::result::Result::Err($crate::Err::Error(_))      => ::std::result::Result::Ok((input, ::std::vec::Vec::new())),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i,o))     => {
+        Err(Err::Error(_))      => Ok((input, ::std::vec::Vec::new())),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i,o))     => {
           if i.input_len() == input.input_len() {
-            ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::SeparatedList,input)))
+            Err(Err::Error(error_position!(ErrorKind::SeparatedList,input)))
           } else {
             res.push(o);
             input = i;
@@ -30,50 +33,50 @@ macro_rules! separated_list(
               // get the separator first
               let input_ = input.clone();
               match $sep!(input_, $($args)*) {
-                ::std::result::Result::Err($crate::Err::Error(_)) => {
-                  ret = ::std::result::Result::Ok((input, res));
+                Err(Err::Error(_)) => {
+                  ret = Ok((input, res));
                   break;
                 }
-                ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-                  ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+                Err(Err::Incomplete(Needed::Unknown)) => {
+                  ret = Err(Err::Incomplete(Needed::Unknown));
                   break;
                 },
-                ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))) => {
+                Err(Err::Incomplete(Needed::Size(needed))) => {
                   let (size,overflowed) = needed.overflowing_add(($i).input_len() - input.input_len());
                   ret = match overflowed {
-                    true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                    false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                    true  => Err(Err::Incomplete(Needed::Unknown)),
+                    false => Err(Err::Incomplete(Needed::Size(size))),
                   };
                   break;
                 },
-                ::std::result::Result::Ok((i2,_))     => {
+                Ok((i2,_))     => {
                   let i2_len = i2.input_len();
                   if i2_len == input.input_len() {
-                    ret = ::std::result::Result::Ok((input, res));
+                    ret = Ok((input, res));
                     break;
                   }
 
                   // get the element next
                   match $submac!(i2, $($args2)*) {
-                    ::std::result::Result::Err($crate::Err::Error(_)) => {
-                      ret = ::std::result::Result::Ok((input, res));
+                    Err(Err::Error(_)) => {
+                      ret = Ok((input, res));
                       break;
                     },
-                    ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-                      ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+                    Err(Err::Incomplete(Needed::Unknown)) => {
+                      ret = Err(Err::Incomplete(Needed::Unknown));
                       break;
                     },
-                    ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))) => {
+                    Err(Err::Incomplete(Needed::Size(needed))) => {
                       let (size,overflowed) = needed.overflowing_add(($i).input_len() - i2_len);
                       ret = match overflowed {
-                        true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                        false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                        true  => Err(Err::Incomplete(Needed::Unknown)),
+                        false => Err(Err::Incomplete(Needed::Size(size))),
                       };
                       break;
                     },
-                    ::std::result::Result::Ok((i3,o3))    => {
+                    Ok((i3,o3))    => {
                       if i3.input_len() == i2_len {
-                        ret = ::std::result::Result::Ok((input, res));
+                        ret = Ok((input, res));
                         break;
                       }
                       res.push(o3);
@@ -107,6 +110,9 @@ macro_rules! separated_list(
 macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed,IResult};
+
       use $crate::InputLength;
 
       let mut res   = ::std::vec::Vec::new();
@@ -115,11 +121,11 @@ macro_rules! separated_nonempty_list(
       // get the first element
       let input_ = input.clone();
       match $submac!(input_, $($args2)*) {
-        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i,o))     => {
+        Err(Err::Error(a))      => Err(Err::Error(a)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i,o))     => {
           if i.input_len() == input.len() {
-            ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::SeparatedNonEmptyList,input)))
+            Err(Err::Error(error_position!(ErrorKind::SeparatedNonEmptyList,input)))
           } else {
             res.push(o);
             input = i;
@@ -130,50 +136,50 @@ macro_rules! separated_nonempty_list(
               // get the separator first
               let input_ = input.clone();
               match $sep!(input_, $($args)*) {
-                ::std::result::Result::Err($crate::Err::Error(_)) => {
-                  ret = ::std::result::Result::Ok((input, res));
+                Err(Err::Error(_)) => {
+                  ret = Ok((input, res));
                   break;
                 }
-                ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-                  ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+                Err(Err::Incomplete(Needed::Unknown)) => {
+                  ret = Err(Err::Incomplete(Needed::Unknown));
                   break;
                 },
-                ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))) => {
+                Err(Err::Incomplete(Needed::Size(needed))) => {
                   let (size,overflowed) = needed.overflowing_add(($i).input_len() - input.input_len());
                   ret = match overflowed {
-                    true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                    false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                    true  => Err(Err::Incomplete(Needed::Unknown)),
+                    false => Err(Err::Incomplete(Needed::Size(size))),
                   };
                   break;
                 },
-                ::std::result::Result::Ok((i2,_))     => {
+                Ok((i2,_))     => {
                   let i2_len = i2.input_len();
                   if i2_len == input.input_len() {
-                    ret = ::std::result::Result::Ok((input, res));
+                    ret = Ok((input, res));
                     break;
                   }
 
                   // get the element next
                   match $submac!(i2, $($args2)*) {
-                    ::std::result::Result::Err($crate::Err::Error(_)) => {
-                      ret = ::std::result::Result::Ok((input, res));
+                    Err(Err::Error(_)) => {
+                      ret = Ok((input, res));
                       break;
                     },
-                    ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-                      ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+                    Err(Err::Incomplete(Needed::Unknown)) => {
+                      ret = Err(Err::Incomplete(Needed::Unknown));
                       break;
                     },
-                    ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))) => {
+                    Err(Err::Incomplete(Needed::Size(needed))) => {
                       let (size,overflowed) = needed.overflowing_add(($i).input_len() - i2_len);
                       ret = match overflowed {
-                        true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                        false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                        true  => Err(Err::Incomplete(Needed::Unknown)),
+                        false => Err(Err::Incomplete(Needed::Size(size))),
                       };
                       break;
                     },
-                    ::std::result::Result::Ok((i3,o3))    => {
+                    Ok((i3,o3))    => {
                       if i3.input_len() == i2_len {
-                        ret = ::std::result::Result::Ok((input, res));
+                        ret = Ok((input, res));
                         break;
                       }
                       res.push(o3);
@@ -265,6 +271,9 @@ macro_rules! separated_nonempty_list_complete {
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed,ErrorKind};
+
       use $crate::InputLength;
 
       let ret;
@@ -273,32 +282,32 @@ macro_rules! many0(
 
       loop {
         if input.input_len() == 0 {
-          ret = ::std::result::Result::Ok((input, res));
+          ret = Ok((input, res));
           break;
         }
 
         let input_ = input.clone();
         match $submac!(input_, $($args)*) {
-          ::std::result::Result::Err($crate::Err::Error(_))                            => {
-            ret = ::std::result::Result::Ok((input, res));
+          Err(Err::Error(_))                            => {
+            ret = Ok((input, res));
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-            ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+          Err(Err::Incomplete(Needed::Unknown)) => {
+            ret = Err(Err::Incomplete(Needed::Unknown));
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i))) => {
             let (size,overflowed) = i.overflowing_add(($i).input_len() - input.input_len());
             ret = match overflowed {
-                true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                true  => Err(Err::Incomplete(Needed::Unknown)),
+                false => Err(Err::Incomplete(Needed::Size(size))),
             };
             break;
           },
-          ::std::result::Result::Ok((i, o))                          => {
+          Ok((i, o))                          => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::Many0,input)));
+              ret = Err(Err::Error(error_position!(ErrorKind::Many0,input)));
               break;
             }
 
@@ -342,24 +351,27 @@ macro_rules! many0(
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed};
+
       use $crate::InputLength;
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(_))      => ::std::result::Result::Err($crate::Err::Error(
-          error_position!($crate::ErrorKind::Many1,$i)
+        Err(Err::Error(_))      => Err(Err::Error(
+          error_position!(ErrorKind::Many1,$i)
         )),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i1,o1))   => {
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i1,o1))   => {
           if i1.input_len() == 0 {
             let mut res = ::std::vec::Vec::new();
             res.push(o1);
-            ::std::result::Result::Ok((i1,res))
+            Ok((i1,res))
           } else {
 
             let mut res    = ::std::vec::Vec::with_capacity(4);
             res.push(o1);
             let mut input  = i1;
-            let mut incomplete: ::std::option::Option<$crate::Needed> =
+            let mut incomplete: ::std::option::Option<Needed> =
               ::std::option::Option::None;
             loop {
               if input.input_len() == 0 {
@@ -367,24 +379,24 @@ macro_rules! many1(
               }
               let input_ = input.clone();
               match $submac!(input_, $($args)*) {
-                ::std::result::Result::Err($crate::Err::Error(_))                    => {
+                Err(Err::Error(_))                    => {
                   break;
                 },
-                ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-                  incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+                Err(Err::Incomplete(Needed::Unknown)) => {
+                  incomplete = ::std::option::Option::Some(Needed::Unknown);
                   break;
                 },
-                ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+                Err(Err::Incomplete(Needed::Size(i))) => {
                   let (size,overflowed) = i.overflowing_add(($i).input_len() - input.input_len());
                   incomplete = ::std::option::Option::Some(
                     match overflowed {
-                        true  => $crate::Needed::Unknown,
-                        false => $crate::Needed::Size(size),
+                        true  => Needed::Unknown,
+                        false => Needed::Size(size),
                     }
                   );
                   break;
                 },
-                ::std::result::Result::Ok((i, o)) => {
+                Ok((i, o)) => {
                   if i.input_len() == input.input_len() {
                     break;
                   }
@@ -395,8 +407,8 @@ macro_rules! many1(
             }
 
             match incomplete {
-              ::std::option::Option::Some(i) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-              ::std::option::Option::None    => ::std::result::Result::Ok((input, res))
+              ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+              ::std::option::Option::None    => Ok((input, res))
             }
           }
         }
@@ -438,6 +450,9 @@ macro_rules! many1(
 macro_rules! many_till(
   ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed,IResult};
+
       use $crate::InputLength;
 
       let ret;
@@ -446,32 +461,32 @@ macro_rules! many_till(
 
       loop {
         match $submac2!(input, $($args2)*) {
-          ::std::result::Result::Ok((i, o)) => {
-            ret = ::std::result::Result::Ok((i, (res, o)));
+          Ok((i, o)) => {
+            ret = Ok((i, (res, o)));
             break;
           },
           _                           => {
             match $submac1!(input, $($args1)*) {
-              ::std::result::Result::Err($crate::Err::Error(err))                            => {
-                ret = ::std::result::Result::Err($crate::Err::Error(error_node_position!($crate::ErrorKind::ManyTill,input, err)));
+              Err(Err::Error(err))                            => {
+                ret = Err(Err::Error(error_node_position!(ErrorKind::ManyTill,input, err)));
                 break;
               },
-              ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-                ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+              Err(Err::Incomplete(Needed::Unknown)) => {
+                ret = Err(Err::Incomplete(Needed::Unknown));
                 break;
               },
-              ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+              Err(Err::Incomplete(Needed::Size(i))) => {
                 let (size,overflowed) = i.overflowing_add(($i).input_len() - input.input_len());
                 ret = match overflowed {
-                    true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                    false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                    true  => Err(Err::Incomplete(Needed::Unknown)),
+                    false => Err(Err::Incomplete(Needed::Size(size))),
                 };
                 break;
               },
-              ::std::result::Result::Ok((i, o))                          => {
+              Ok((i, o))                          => {
                 // loop trip must always consume (otherwise infinite loops)
                 if i == input {
-                  ret = ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::ManyTill,input)));
+                  ret = Err(Err::Error(error_position!(ErrorKind::ManyTill,input)));
                   break;
                 }
 
@@ -521,17 +536,20 @@ macro_rules! many_till(
 macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed,IResult};
+
       use $crate::InputLength;
       let mut res          = ::std::vec::Vec::with_capacity($m);
       let mut input        = $i.clone();
       let mut count: usize = 0;
       let mut err          = false;
-      let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+      let mut incomplete: ::std::option::Option<Needed> = ::std::option::Option::None;
       loop {
         if count == $n { break }
         let i_ = input.clone();
         match $submac!(i_, $($args)*) {
-          ::std::result::Result::Ok((i, o)) => {
+          Ok((i, o)) => {
             // do not allow parsers that do not consume input (causes infinite loops)
             if i.input_len() == input.input_len() {
               break;
@@ -540,20 +558,20 @@ macro_rules! many_m_n(
             input  = i;
             count += 1;
           }
-          ::std::result::Result::Err($crate::Err::Error(_))                    => {
+          Err(Err::Error(_))                    => {
             err = true;
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-            incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+          Err(Err::Incomplete(Needed::Unknown)) => {
+            incomplete = ::std::option::Option::Some(Needed::Unknown);
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i))) => {
             let (size,overflowed) = i.overflowing_add($i.input_len() - input.input_len());
             incomplete = ::std::option::Option::Some(
               match overflowed {
-                  true  => $crate::Needed::Unknown,
-                  false => $crate::Needed::Size(size),
+                  true  => Needed::Unknown,
+                  false => Needed::Size(size),
               }
             );
             break;
@@ -566,19 +584,19 @@ macro_rules! many_m_n(
 
       if count < $m {
         if err {
-          ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::ManyMN,$i)))
+          Err(Err::Error(error_position!(ErrorKind::ManyMN,$i)))
         } else {
           match incomplete {
-            ::std::option::Option::Some(i) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-            ::std::option::Option::None    => ::std::result::Result::Err($crate::Err::Incomplete(
-              $crate::Needed::Unknown
+            ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+            ::std::option::Option::None    => Err(Err::Incomplete(
+              Needed::Unknown
             ))
           }
         }
       } else {
         match incomplete {
-          ::std::option::Option::Some(i) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-          ::std::option::Option::None    => ::std::result::Result::Ok((input, res))
+          ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+          ::std::option::Option::None    => Ok((input, res))
         }
       }
     }
@@ -613,37 +631,40 @@ macro_rules! many_m_n(
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
-      let ret: $crate::IResult<_,_>;
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed,IResult,InputLength};
+
+      let ret: IResult<_,_>;
       let mut input = $i.clone();
       let mut res   = ::std::vec::Vec::new();
 
       loop {
         if res.len() == $count {
-          ret = ::std::result::Result::Ok((input, res));
+          ret = Ok((input, res));
           break;
         }
 
         let input_ = input.clone();
         match $submac!(input_, $($args)*) {
-          ::std::result::Result::Ok((i,o)) => {
+          Ok((i,o)) => {
             res.push(o);
             input = i;
           },
-          ::std::result::Result::Err($crate::Err::Error(_))  => {
-            ret = ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::Count,$i)));
+          Err(Err::Error(_))  => {
+            ret = Err(Err::Error(error_position!(ErrorKind::Count,$i)));
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-            ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+          Err(Err::Incomplete(Needed::Unknown)) => {
+            ret = Err(Err::Incomplete(Needed::Unknown));
             break;
           }
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(sz))) => {
+          Err(Err::Incomplete(Needed::Size(sz))) => {
             let (size,overflowed) = sz.overflowing_add(
-              $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)
+              InputLength::input_len(&($i)) - InputLength::input_len(&input)
             );
             ret = match overflowed {
-                true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                true  => Err(Err::Incomplete(Needed::Unknown)),
+                false => Err(Err::Incomplete(Needed::Size(size))),
             };
             break;
           }
@@ -686,6 +707,9 @@ macro_rules! count(
 macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed};
+
       let ret;
       let mut input = $i.clone();
       // `$typ` must be Copy, and thus having no destructor, this is panic safe
@@ -694,30 +718,30 @@ macro_rules! count_fixed (
 
       loop {
         if cnt == $count {
-          ret = ::std::result::Result::Ok((input, res)); break;
+          ret = Ok((input, res)); break;
         }
 
         match $submac!(input, $($args)*) {
-          ::std::result::Result::Ok((i,o)) => {
+          Ok((i,o)) => {
             res[cnt] = o;
             cnt += 1;
             input = i;
           },
-          ::std::result::Result::Err($crate::Err::Error(_))  => {
-            ret = ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::Count,$i)));
+          Err(Err::Error(_))  => {
+            ret = Err(Err::Error(error_position!(ErrorKind::Count,$i)));
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-            ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+          Err(Err::Incomplete(Needed::Unknown)) => {
+            ret = Err(Err::Incomplete(Needed::Unknown));
             break;
           }
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(sz))) => {
+          Err(Err::Incomplete(Needed::Size(sz))) => {
             let (size,overflowed) = sz.overflowing_add(
               $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&input)
             );
             ret = match overflowed {
-                true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                true  => Err(Err::Incomplete(Needed::Unknown)),
+                false => Err(Err::Incomplete(Needed::Size(size))),
             };
             break;
           }
@@ -738,23 +762,26 @@ macro_rules! count_fixed (
 macro_rules! length_count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed,InputLength};
+
       match $submac!($i, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i, o))    => {
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i, o))    => {
           match count!(i, $submac2!($($args2)*), o as usize) {
-            ::std::result::Result::Err($crate::Err::Error(e))                            => ::std::result::Result::Err($crate::Err::Error(e)),
-            ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-            ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(n))) => {
+            Err(Err::Error(e))                            => Err(Err::Error(e)),
+            Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+            Err(Err::Incomplete(Needed::Size(n))) => {
               let (size,overflowed) = n.overflowing_add(
-                $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+                InputLength::input_len(&($i)) - InputLength::input_len(&i)
               );
               match overflowed {
-                  true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                  false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                  true  => Err(Err::Incomplete(Needed::Unknown)),
+                  false => Err(Err::Incomplete(Needed::Size(size))),
               }
             },
-            ::std::result::Result::Ok((i2, o2))  =>  ::std::result::Result::Ok((i2, o2))
+            Ok((i2, o2))  =>  Ok((i2, o2))
           }
         }
       }
@@ -780,28 +807,31 @@ macro_rules! length_count(
 /// of that size, and returns that subslice
 #[macro_export]
 macro_rules! length_data(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => ({
+    use ::std::result::Result::*;
+    use $crate::{Err,Needed};
+
     match $submac!($i, $($args)*) {
-      ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
-      ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-      ::std::result::Result::Ok((i, o))    => {
+      Err(Err::Error(e))      => Err(Err::Error(e)),
+      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+      Ok((i, o))    => {
         match take!(i, o as usize) {
-          ::std::result::Result::Err($crate::Err::Error(e))                            => ::std::result::Result::Err($crate::Err::Error(e)),
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(n))) => {
+          Err(Err::Error(e))                    => Err(Err::Error(e)),
+          Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+          Err(Err::Incomplete(Needed::Size(n))) => {
             let (size,overflowed) = n.overflowing_add(
               $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
             );
             match overflowed {
-                true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                true  => Err(Err::Incomplete(Needed::Unknown)),
+                false => Err(Err::Incomplete(Needed::Size(size))),
             }
           },
-          ::std::result::Result::Ok((i2, o2))  =>  ::std::result::Result::Ok((i2, o2))
+          Ok((i2, o2))  =>  Ok((i2, o2))
         }
       }
     }
-  );
+  });
 
   ($i:expr, $f:expr) => (
     length_data!($i, call!($f));
@@ -816,27 +846,30 @@ macro_rules! length_data(
 macro_rules! length_value(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed,IResult,InputLength};
+
       match $submac!($i, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i, o))    => {
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i, o))    => {
           match take!(i, o as usize) {
-            ::std::result::Result::Err($crate::Err::Error(e))                            => ::std::result::Result::Err($crate::Err::Error(e)),
-            ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-            ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(n))) => {
+            Err(Err::Error(e))                            => Err(Err::Error(e)),
+            Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+            Err(Err::Incomplete(Needed::Size(n))) => {
               let (size,overflowed) = n.overflowing_add(
-                $crate::InputLength::input_len(&($i)) - $crate::InputLength::input_len(&i)
+                InputLength::input_len(&($i)) - InputLength::input_len(&i)
               );
               match overflowed {
-                  true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                  false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                  true  => Err(Err::Incomplete(Needed::Unknown)),
+                  false => Err(Err::Incomplete(Needed::Size(size))),
               }
             },
-            ::std::result::Result::Ok((i2, o2))  => {
+            Ok((i2, o2))  => {
               match complete!(o2, $submac2!($($args2)*)) {
-                ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
-                ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-                ::std::result::Result::Ok((_, o3))   => ::std::result::Result::Ok((i2, o3))
+                Err(Err::Error(e))      => Err(Err::Error(e)),
+                Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+                Ok((_, o3))   => Ok((i2, o3))
               }
             }
           }
@@ -886,7 +919,9 @@ macro_rules! length_value(
 macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
-      use $crate::InputLength;
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed,InputLength};
+
       let ret;
       let f         = $f;
       let mut res   = $init;
@@ -894,32 +929,32 @@ macro_rules! fold_many0(
 
       loop {
         if input.input_len() == 0 {
-          ret = ::std::result::Result::Ok((input, res));
+          ret = Ok((input, res));
           break;
         }
 
         match $submac!(input, $($args)*) {
-          ::std::result::Result::Err($crate::Err::Error(_))                            => {
-            ret = ::std::result::Result::Ok((input, res));
+          Err(Err::Error(_))                            => {
+            ret = Ok((input, res));
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-            ret = ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown));
+          Err(Err::Incomplete(Needed::Unknown)) => {
+            ret = Err(Err::Incomplete(Needed::Unknown));
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i))) => {
             let (size,overflowed) = i.overflowing_add( ($i).input_len() - input.input_len() );
             ret = match overflowed {
-                true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-                false => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(size))),
+                true  => Err(Err::Incomplete(Needed::Unknown)),
+                false => Err(Err::Incomplete(Needed::Size(size))),
             };
             break;
           },
-          ::std::result::Result::Ok((i, o))                          => {
+          Ok((i, o))                          => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = ::std::result::Result::Err($crate::Err::Error(
-                error_position!($crate::ErrorKind::Many0,input)
+              ret = Err(Err::Error(
+                error_position!(ErrorKind::Many0,input)
               ));
               break;
             }
@@ -968,46 +1003,48 @@ macro_rules! fold_many0(
 macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
-      use $crate::InputLength;
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed,IResult,InputLength};
+
       match $submac!($i, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(_))      => ::std::result::Result::Err($crate::Err::Error(
-          error_position!($crate::ErrorKind::Many1,$i)
+        Err(Err::Error(_))      => Err(Err::Error(
+          error_position!(ErrorKind::Many1,$i)
         )),
-        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-        ::std::result::Result::Ok((i1,o1))   => {
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i1,o1))   => {
           let acc = $init;
           let f = $f;
           if i1.input_len() == 0 {
             let acc = f(acc, o1);
-            ::std::result::Result::Ok((i1,acc))
+            Ok((i1,acc))
           } else {
             let mut acc = f(acc, o1);
             let mut input  = i1;
-            let mut incomplete: ::std::option::Option<$crate::Needed> =
+            let mut incomplete: ::std::option::Option<Needed> =
               ::std::option::Option::None;
             loop {
               if input.input_len() == 0 {
                 break;
               }
               match $submac!(input, $($args)*) {
-                ::std::result::Result::Err($crate::Err::Error(_))                    => {
+                Err(Err::Error(_))                    => {
                   break;
                 },
-                ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-                  incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+                Err(Err::Incomplete(Needed::Unknown)) => {
+                  incomplete = ::std::option::Option::Some(Needed::Unknown);
                   break;
                 },
-                ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+                Err(Err::Incomplete(Needed::Size(i))) => {
                   let (size,overflowed) = i.overflowing_add( ($i).input_len() - input.input_len() );
                   incomplete = ::std::option::Option::Some(
                       match overflowed {
-                          true  => $crate::Needed::Unknown,
-                          false => $crate::Needed::Size(size),
+                          true  => Needed::Unknown,
+                          false => Needed::Size(size),
                       }
                   );
                   break;
                 },
-                ::std::result::Result::Ok((i, o)) => {
+                Ok((i, o)) => {
                   if i.input_len() == input.input_len() {
                     break;
                   }
@@ -1018,8 +1055,8 @@ macro_rules! fold_many1(
             }
 
             match incomplete {
-              ::std::option::Option::Some(i) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-              ::std::option::Option::None    => ::std::result::Result::Ok((input, acc))
+              ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+              ::std::option::Option::None    => Ok((input, acc))
             }
           }
         }
@@ -1064,17 +1101,20 @@ macro_rules! fold_many1(
 macro_rules! fold_many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Needed,IResult};
+
       use $crate::InputLength;
       let mut acc          = $init;
       let     f            = $f;
       let mut input        = $i.clone();
       let mut count: usize = 0;
       let mut err          = false;
-      let mut incomplete: ::std::option::Option<$crate::Needed> = ::std::option::Option::None;
+      let mut incomplete: ::std::option::Option<Needed> = ::std::option::Option::None;
       loop {
         if count == $n { break }
         match $submac!(input, $($args)*) {
-          ::std::result::Result::Ok((i, o)) => {
+          Ok((i, o)) => {
             // do not allow parsers that do not consume input (causes infinite loops)
             if i.input_len() == input.input_len() {
               break;
@@ -1083,20 +1123,20 @@ macro_rules! fold_many_m_n(
             input  = i;
             count += 1;
           }
-          ::std::result::Result::Err($crate::Err::Error(_))                    => {
+          Err(Err::Error(_))                    => {
             err = true;
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => {
-            incomplete = ::std::option::Option::Some($crate::Needed::Unknown);
+          Err(Err::Incomplete(Needed::Unknown)) => {
+            incomplete = ::std::option::Option::Some(Needed::Unknown);
             break;
           },
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i))) => {
             let (size,overflowed) = i.overflowing_add( ($i).input_len() - input.input_len() );
             incomplete = ::std::option::Option::Some(
               match overflowed {
-                  true  => $crate::Needed::Unknown,
-                  false => $crate::Needed::Size(size),
+                  true  => Needed::Unknown,
+                  false => Needed::Size(size),
               }
             );
             break;
@@ -1109,17 +1149,17 @@ macro_rules! fold_many_m_n(
 
       if count < $m {
         if err {
-          ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::ManyMN,$i)))
+          Err(Err::Error(error_position!(ErrorKind::ManyMN,$i)))
         } else {
           match incomplete {
-            ::std::option::Option::Some(i) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-            ::std::option::Option::None    => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown))
+            ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+            ::std::option::Option::None    => Err(Err::Incomplete(Needed::Unknown))
           }
         }
       } else {
         match incomplete {
-          ::std::option::Option::Some(i) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
-          ::std::option::Option::None    => ::std::result::Result::Ok((input, acc))
+          ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+          ::std::option::Option::None    => Ok((input, acc))
         }
       }
     }
@@ -1165,12 +1205,12 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: $crate::IResult<_,_> = if reduced != b {
-          ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag, $i)))
+        let res: IResult<_,_> = if reduced != b {
+          Err(Err::Error(error_position!(ErrorKind::Tag, $i)))
         } else if m < blen {
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(blen)))
+          Err(Err::Incomplete(Needed::Size(blen)))
         } else {
-          ::std::result::Result::Ok((&$i[blen..], reduced))
+          Ok((&$i[blen..], reduced))
         };
         res
       }
@@ -1181,10 +1221,10 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(cnt)))
+        let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
+          Err(Err::Incomplete(Needed::Size(cnt)))
         } else {
-          ::std::result::Result::Ok((&$i[cnt..],&$i[0..cnt]))
+          Ok((&$i[cnt..],&$i[0..cnt]))
         };
         res
       }

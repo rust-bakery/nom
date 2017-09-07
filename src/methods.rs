@@ -30,7 +30,7 @@
 //! ```ignore
 //! macro_rules! method (
 //!   ($name:ident<$a:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
-//!     fn $name( $self_: $a, i: &[u8] ) -> $crate::IResult<&[u8], &[u8]> {
+//!     fn $name( $self_: $a, i: &[u8] ) -> IResult<&[u8], &[u8]> {
 //!       $submac!(i, $($args)*)
 //!     }
 //!   );
@@ -282,19 +282,20 @@ macro_rules! apply_m (
 
 #[cfg(test)]
 mod tests {
-  use simple_errors::Err;
-
   // reproduce the tag_s and take_s macros, because of module import order
   macro_rules! tag_s (
     ($i:expr, $tag: expr) => (
       {
-        let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size($tag.len())))
+        use ::std::result::Result::*;
+        use $crate::{Err,Needed,IResult,ErrorKind};
+
+        let res: IResult<_,_> = if $tag.len() > $i.len() {
+          Err(Err::Incomplete(Needed::Size($tag.len())))
         //} else if &$i[0..$tag.len()] == $tag {
         } else if ($i).starts_with($tag) {
-          ::std::result::Result::Ok((&$i[$tag.len()..], &$i[0..$tag.len()]))
+          Ok((&$i[$tag.len()..], &$i[0..$tag.len()]))
         } else {
-          ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::TagStr, $i)))
+          Err(Err::Error(error_position!(ErrorKind::TagStr, $i)))
         };
         res
       }
@@ -304,9 +305,12 @@ mod tests {
   macro_rules! take_s (
     ($i:expr, $count:expr) => (
       {
+        use ::std::result::Result::*;
+        use $crate::{Err,Needed,IResult};
+
         let cnt = $count as usize;
-        let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(cnt)))
+        let res: IResult<_,_> = if $i.chars().count() < cnt {
+          Err(Err::Incomplete(Needed::Size(cnt)))
         } else {
           let mut offset = $i.len();
           let mut count = 0;
@@ -317,7 +321,7 @@ mod tests {
             }
             count += 1;
           }
-          ::std::result::Result::Ok((&$i[offset..], &$i[..offset]))
+          Ok((&$i[offset..], &$i[..offset]))
         };
         res
       }

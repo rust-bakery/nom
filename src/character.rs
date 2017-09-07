@@ -22,6 +22,10 @@ use std::ops::RangeFrom;
 macro_rules! one_of (
   ($i:expr, $inp: expr) => (
     {
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::{Err,Needed,ErrorKind};
+
       use $crate::Slice;
       use $crate::AsChar;
       use $crate::FindToken;
@@ -30,10 +34,10 @@ macro_rules! one_of (
       match ($i).iter_elements().next().map(|c| {
         (c, c.find_token($inp))
       }) {
-        None             => ::std::result::Result::Err::<_,_>(Err::Incomplete($crate::Needed::Size(1))),
-        Some((_, false)) => ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::OneOf, $i))),
+        None             => Err::<_,_>(Err::Incomplete(Needed::Size(1))),
+        Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::OneOf, $i))),
         //the unwrap should be safe here
-        Some((c, true))  => ::std::result::Result::Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
+        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
     }
   );
@@ -44,6 +48,10 @@ macro_rules! one_of (
 macro_rules! none_of (
   ($i:expr, $inp: expr) => (
     {
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::{Err,Needed,ErrorKind};
+
       use $crate::Slice;
       use $crate::AsChar;
       use $crate::FindToken;
@@ -52,10 +60,10 @@ macro_rules! none_of (
       match ($i).iter_elements().next().map(|c| {
         (c, !c.find_token($inp))
       }) {
-        None             => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(1))),
-        Some((_, false)) => ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::NoneOf, $i))),
+        None             => Err(Err::Incomplete(Needed::Size(1))),
+        Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::NoneOf, $i))),
         //the unwrap should be safe here
-        Some((c, true))  => ::std::result::Result::Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
+        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
     }
   );
@@ -66,6 +74,10 @@ macro_rules! none_of (
 macro_rules! char (
   ($i:expr, $c: expr) => (
     {
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::{Err,Needed,ErrorKind};
+
       use $crate::Slice;
       use $crate::AsChar;
       use $crate::InputIter;
@@ -73,10 +85,10 @@ macro_rules! char (
       match ($i).iter_elements().next().map(|c| {
         (c, c.as_char() == $c)
       }) {
-        None             => ::std::result::Result::Err::<_,_>($crate::Err::Incomplete($crate::Needed::Size(1))),
-        Some((_, false)) => ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::Char, $i))),
+        None             => Err::<_,_>(Err::Incomplete(Needed::Size(1))),
+        Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::Char, $i))),
         //the unwrap should be safe here
-        Some((c, true))  => ::std::result::Result::Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
+        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
     }
   );
