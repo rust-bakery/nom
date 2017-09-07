@@ -14,7 +14,7 @@
 ///    tag_s!(input, "abcd")
 ///  }
 ///  let r = test("abcdefgh");
-///  assert_eq!(r, Done("efgh", "abcd"));
+///  assert_eq!(r,Ok(("efgh", "abcd")));
 /// # }
 /// ```
 #[macro_export]
@@ -39,7 +39,7 @@ macro_rules! tag_s (
 ///    tag_no_case_s!(input, "ABcd")
 ///  }
 ///  let r = test("aBCdefgh");
-///  assert_eq!(r, Done("efgh", "aBCd"));
+///  assert_eq!(r,Ok(("efgh", "aBCd")));
 /// # }
 /// ```
 #[macro_export]
@@ -63,11 +63,11 @@ macro_rules! tag_no_case_s (
 ///
 ///  let a = "abcdefgh";
 ///
-///  assert_eq!(take5(a), Done("fgh", "abcde"));
+///  assert_eq!(take5(a),Ok(("fgh", "abcde")));
 ///
 ///  let b = "12345";
 ///
-///  assert_eq!(take5(b), Done("", "12345"));
+///  assert_eq!(take5(b),Ok(("", "12345")));
 /// # }
 /// ```
 #[macro_export]
@@ -92,7 +92,7 @@ macro_rules! take_s (
 ///  named!( not_space<&str,&str>, is_not_s!( " \t\r\n" ) );
 ///
 ///  let r = not_space("abcdefgh\nijkl");
-///  assert_eq!(r, Done("\nijkl", "abcdefgh"));
+///  assert_eq!(r,Ok(("\nijkl", "abcdefgh")));
 ///  # }
 /// ```
 #[macro_export]
@@ -114,10 +114,10 @@ macro_rules! is_not_s (
 ///  named!(abcd<&str, &str>, is_a_s!( "abcd" ));
 ///
 ///  let r1 = abcd("aaaaefgh");
-///  assert_eq!(r1, Done("efgh", "aaaa"));
+///  assert_eq!(r1,Ok(("efgh", "aaaa")));
 ///
 ///  let r2 = abcd("dcbaefgh");
-///  assert_eq!(r2, Done("efgh", "dcba"));
+///  assert_eq!(r2,Ok(("efgh", "dcba")));
 /// # }
 /// ```
 #[macro_export]
@@ -144,7 +144,7 @@ macro_rules! is_a_s (
 ///  named!( alpha<&str,&str>, take_while_s!( alphabetic ) );
 ///
 ///  let r = alpha("abcd\nefgh");
-///  assert_eq!(r, Done("\nefgh", "abcd"));
+///  assert_eq!(r,Ok(("\nefgh", "abcd")));
 /// # }
 /// ```
 #[macro_export]
@@ -172,7 +172,7 @@ macro_rules! take_while_s (
 ///  named!( alpha<&str,&str>, take_while1_s!( alphabetic ) );
 ///
 ///  let r = alpha("abcd\nefgh");
-///  assert_eq!(r, Done("\nefgh", "abcd"));
+///  assert_eq!(r,Ok(("\nefgh", "abcd")));
 /// # }
 /// ```
 #[macro_export]
@@ -243,6 +243,7 @@ macro_rules! take_until_s (
 #[cfg(test)]
 mod test {
     use ::IResult;
+    use simple_errors::Err;
 
     #[test]
     fn tag_str_succeed() {
@@ -253,7 +254,7 @@ mod test {
         }
 
         match test(INPUT) {
-            IResult::Done(extra, output) => {
+            Ok((extra, output)) => {
                 assert!(extra == " World!", "Parser `tag_s` consumed leftover input.");
                 assert!(output == TAG,
                     "Parser `tag_s` doesn't return the tag it matched on success. \
@@ -270,7 +271,7 @@ mod test {
         const TAG: &'static str = "Hello World!";
 
         match tag_s!(INPUT, TAG) {
-            IResult::Incomplete(_) => (),
+            Err(Err::Incomplete(_)) => (),
             other => {
                 panic!("Parser `tag_s` didn't require more input when it should have. \
                         Got `{:?}`.", other);
@@ -284,7 +285,7 @@ mod test {
         const TAG: &'static str = "Random"; // TAG must be closer than INPUT.
 
         match tag_s!(INPUT, TAG) {
-            IResult::Error(_) => (),
+            Err(Err::Error(_)) => (),
             other => {
                 panic!("Parser `tag_s` didn't fail when it should have. Got `{:?}`.`", other);
             },
@@ -298,7 +299,7 @@ mod test {
         const LEFTOVER: &'static str = "áƒƭèř";
 
         match take_s!(INPUT, 9) {
-             IResult::Done(extra, output) => {
+             Ok((extra, output)) => {
                 assert!(extra == LEFTOVER, "Parser `take_s` consumed leftover input. Leftover `{}`.", extra);
                 assert!(output == CONSUMED,
                     "Parser `take_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
@@ -317,7 +318,7 @@ mod test {
         const LEFTOVER: &'static str = "ÂßÇ∂áƒƭèř";
 
         match take_until_s!(INPUT, FIND) {
-            IResult::Done(extra, output) => {
+            Ok((extra, output)) => {
                 assert!(extra == LEFTOVER, "Parser `take_until_s`\
                   consumed leftover input. Leftover `{}`.", extra);
                 assert!(output == CONSUMED, "Parser `take_until_s`\
@@ -334,13 +335,12 @@ mod test {
         const INPUT: &'static str = "βèƒôřèÂßÇá";
 
         match take_s!(INPUT, 13) {
-            IResult::Incomplete(_) => (),
+            Err(Err::Incomplete(_)) => (),
             other => panic!("Parser `take_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
         }
     }
 
-  use internal::IResult::{Done, Error, Incomplete};
   use internal::Needed;
   use util::ErrorKind;
 
@@ -355,10 +355,10 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Done(&a[..], &a[..]));
-    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
-    assert_eq!(f(&c[..]), Done(&d[..], &b[..]));
-    assert_eq!(f(&d[..]), Done(&d[..], &a[..]));
+    assert_eq!(f(&a[..]),Ok((&a[..], &a[..])));
+    assert_eq!(f(&b[..]),Ok((&a[..], &b[..])));
+    assert_eq!(f(&c[..]),Ok((&d[..], &b[..])));
+    assert_eq!(f(&d[..]),Ok((&d[..], &a[..])));
   }
 
   #[test]
@@ -369,10 +369,10 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Incomplete(Needed::Size(1)));
-    assert_eq!(f(&b[..]), Done(&a[..], &b[..]));
-    assert_eq!(f(&c[..]), Done(&"123"[..], &b[..]));
-    assert_eq!(f(&d[..]), Error(error_position!(ErrorKind::TakeWhile1, &d[..])));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&b[..]),Ok((&a[..], &b[..])));
+    assert_eq!(f(&c[..]),Ok((&"123"[..], &b[..])));
+    assert_eq!(f(&d[..]), Err(Err::Error(error_position!(ErrorKind::TakeWhile1, &d[..]))));
   }
 
   #[test]
@@ -387,7 +387,7 @@ mod test {
       take_till_s!(input, till_s)
     }
     match test(INPUT) {
-      IResult::Done(extra, output) => {
+      Ok((extra, output)) => {
         assert!(extra == LEFTOVER, "Parser `take_till_s` consumed leftover input.");
         assert!(output == CONSUMED,
         "Parser `take_till_s` doesn't return the string it consumed on success. \
@@ -410,7 +410,7 @@ mod test {
       take_while_s!(input, while_s)
     }
     match test(INPUT) {
-      IResult::Done(extra, output) => {
+      Ok((extra, output)) => {
         assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
         assert!(output == CONSUMED,
         "Parser `take_while_s` doesn't return the string it consumed on success. \
@@ -431,7 +431,7 @@ mod test {
       is_not_s!(input, AVOID)
     }
     match test(INPUT) {
-      IResult::Done(extra, output) => {
+      Ok((extra, output)) => {
         assert!(extra == LEFTOVER, "Parser `is_not_s` consumed leftover input. Leftover `{}`.", extra);
         assert!(output == CONSUMED,
         "Parser `is_not_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
@@ -450,7 +450,7 @@ mod test {
     const LEFTOVER: &'static str = "áƒƭèř";
 
     match take_until_and_consume_s!(INPUT, FIND) {
-      IResult::Done(extra, output) => {
+      Ok((extra, output)) => {
         assert!(extra == LEFTOVER, "Parser `take_until_and_consume_s`\
                     consumed leftover input. Leftover `{}`.", extra);
         assert!(output == OUTPUT, "Parser `take_until_and_consume_s`\
@@ -475,7 +475,7 @@ mod test {
           take_while_s!(input, while_s)
         }
         match test(INPUT) {
-            IResult::Done(extra, output) => {
+            Ok((extra, output)) => {
                 assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
                 assert!(output == CONSUMED,
                     "Parser `take_while_s` doesn't return the string it consumed on success. \
@@ -494,7 +494,7 @@ mod test {
             is_not_s!(input, AVOID)
         }
         match test(INPUT) {
-            IResult::Error(_) => (),
+            Err(Err::Error(_)) => (),
             other => panic!("Parser `is_not_s` didn't fail when it should have. Got `{:?}`.", other),
         };
     }
@@ -512,7 +512,7 @@ mod test {
           take_while1_s!(input, while1_s)
         }
         match test(INPUT) {
-            IResult::Done(extra, output) => {
+            Ok((extra, output)) => {
                 assert!(extra == LEFTOVER, "Parser `take_while1_s` consumed leftover input.");
                 assert!(output == CONSUMED,
                     "Parser `take_while1_s` doesn't return the string it consumed on success. \
@@ -529,7 +529,7 @@ mod test {
         const FIND: &'static str = "βèƒôřèÂßÇ";
 
         match take_until_and_consume_s!(INPUT, FIND) {
-            IResult::Incomplete(_) => (),
+            Err(Err::Incomplete(_)) => (),
             other => panic!("Parser `take_until_and_consume_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
         };
@@ -541,7 +541,7 @@ mod test {
         const FIND: &'static str = "βèƒôřèÂßÇ";
 
         match take_until_s!(INPUT, FIND) {
-            IResult::Incomplete(_) => (),
+            Err(Err::Incomplete(_)) => (),
             other => panic!("Parser `take_until_s` didn't require more input when it should have. \
                              Got `{:?}`.", other),
         };
@@ -557,7 +557,7 @@ mod test {
             is_a_s!(input, MATCH)
         }
         match test(INPUT) {
-             IResult::Done(extra, output) => {
+             Ok((extra, output)) => {
                 assert!(extra == LEFTOVER, "Parser `is_a_s` consumed leftover input. Leftover `{}`.", extra);
                 assert!(output == CONSUMED,
                     "Parser `is_a_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
@@ -578,7 +578,7 @@ mod test {
           take_while1_s!(input, while1_s)
         }
         match test(INPUT) {
-            IResult::Error(_) => (),
+            Err(Err::Error(_)) => (),
             other => panic!("Parser `take_while1_s` didn't fail when it should have. \
                              Got `{:?}`.", other),
         };
@@ -592,7 +592,7 @@ mod test {
             is_a_s!(input, MATCH)
         }
         match test(INPUT) {
-            IResult::Error(_) => (),
+            Err(Err::Error(_)) => (),
             other => panic!("Parser `is_a_s` didn't fail when it should have. Got `{:?}`.", other),
         };
     }
@@ -603,7 +603,7 @@ mod test {
         const FIND: &'static str = "Ráñδô₥";
 
         match take_until_and_consume_s!(INPUT, FIND) {
-            IResult::Error(_) => (),
+            Err(Err::Error(_)) => (),
             other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
                              Got `{:?}`.", other),
         };
@@ -615,7 +615,7 @@ mod test {
         const FIND: &'static str = "Ráñδô₥";
 
         match take_until_s!(INPUT, FIND) {
-            IResult::Error(_) => (),
+            Err(Err::Error(_)) => (),
             other => panic!("Parser `take_until_and_consume_s` didn't fail when it should have. \
                              Got `{:?}`.", other),
         };
@@ -629,8 +629,8 @@ mod test {
 
     named!(f <&str,&str>, recognize!(many1!(alt!( tag_s!("a") | tag_s!("b") ))));
 
-    assert_eq!(f(&a[..]), Done(&a[6..], &a[..]));
-    assert_eq!(f(&b[..]), Done(&b[4..], &b[..4]));
+    assert_eq!(f(&a[..]),Ok((&a[6..], &a[..])));
+    assert_eq!(f(&b[..]),Ok((&b[4..], &b[..4])));
 
     }
 
@@ -646,13 +646,13 @@ mod test {
   #[test]
   fn case_insensitive() {
     named!(test<&str,&str>, tag_no_case!("ABcd"));
-    assert_eq!(test("aBCdefgh"), Done("efgh", "aBCd"));
-    assert_eq!(test("abcdefgh"), Done("efgh", "abcd"));
-    assert_eq!(test("ABCDefgh"), Done("efgh", "ABCD"));
+    assert_eq!(test("aBCdefgh"),Ok(("efgh", "aBCd")));
+    assert_eq!(test("abcdefgh"),Ok(("efgh", "abcd")));
+    assert_eq!(test("ABCDefgh"),Ok(("efgh", "ABCD")));
 
     named!(test2<&str,&str>, tag_no_case!("ABcd"));
-    assert_eq!(test2("aBCdefgh"), Done("efgh", "aBCd"));
-    assert_eq!(test2("abcdefgh"), Done("efgh", "abcd"));
-    assert_eq!(test2("ABCDefgh"), Done("efgh", "ABCD"));
+    assert_eq!(test2("aBCdefgh"),Ok(("efgh", "aBCd")));
+    assert_eq!(test2("abcdefgh"),Ok(("efgh", "abcd")));
+    assert_eq!(test2("ABCDefgh"),Ok(("efgh", "ABCD")));
   }
 }

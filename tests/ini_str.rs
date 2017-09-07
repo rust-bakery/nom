@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::IResult;
+use nom::{Err,IResult};
 
 use std::collections::HashMap;
 
@@ -62,11 +62,11 @@ named!(keys_and_values_aggregator<&str, Vec<(&str,&str)> >, many0!(key_value));
 
 fn keys_and_values(input:&str) -> IResult<&str, HashMap<&str, &str> > {
   match keys_and_values_aggregator(input) {
-    IResult::Done(i,tuple_vec) => {
-      IResult::Done(i, tuple_vec.into_iter().collect())
+    Ok((i,tuple_vec)) => {
+      Ok((i, tuple_vec.into_iter().collect()))
     },
-    IResult::Incomplete(a)     => IResult::Incomplete(a),
-    IResult::Error(a)          => IResult::Error(a)
+    Err(Err::Incomplete(a))     => Err(Err::Incomplete(a)),
+    Err(Err::Error(a))          => Err(Err::Error(a))
   }
 }
 
@@ -79,11 +79,11 @@ named!(categories_aggregator<&str, Vec<(&str, HashMap<&str,&str>)> >, many0!(cat
 
 fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str> > > {
   match categories_aggregator(input) {
-    IResult::Done(i,tuple_vec) => {
-      IResult::Done(i, tuple_vec.into_iter().collect())
+    Ok((i,tuple_vec)) => {
+      Ok((i, tuple_vec.into_iter().collect()))
     },
-    IResult::Incomplete(a)     => IResult::Incomplete(a),
-    IResult::Error(a)          => IResult::Error(a)
+    Err(Err::Incomplete(a))     => Err(Err::Incomplete(a)),
+    Err(Err::Error(a))          => Err(Err::Error(a))
   }
 }
 
@@ -101,11 +101,11 @@ key = value2";
   let res = category(ini_file);
   println!("{:?}", res);
   match res {
-    IResult::Done(i, o) => println!("i: {} | o: {:?}", i, o),
+    Ok((i, o)) => println!("i: {} | o: {:?}", i, o),
     _ => println!("error")
   }
 
-  assert_eq!(res, IResult::Done(ini_without_category, "category"));
+  assert_eq!(res, Ok((ini_without_category, "category")));
 }
 
 #[test]
@@ -118,11 +118,11 @@ key = value2";
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({:?},{:?})", i, o1, o2),
+    Ok((i, (o1, o2))) => println!("i: {} | o: ({:?},{:?})", i, o1, o2),
     _ => println!("error")
   }
 
-  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
+  assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
 }
 
 #[test]
@@ -135,11 +135,11 @@ key = value2";
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({:?},{:?})", i, o1, o2),
+    Ok((i, (o1, o2))) => println!("i: {} | o: ({:?},{:?})", i, o1, o2),
     _ => println!("error")
   }
 
-  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
+  assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
 }
 
 #[test]
@@ -152,11 +152,11 @@ key = value2";
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    IResult::Done(i, (o1, o2)) => println!("i: {} | o: ({:?},{:?})", i, o1, o2),
+    Ok((i, (o1, o2))) => println!("i: {} | o: ({:?},{:?})", i, o1, o2),
     _ => println!("error")
   }
 
-  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
+  assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
 }
 
 #[test]
@@ -172,14 +172,14 @@ key = value2
   let res = keys_and_values(ini_file);
   println!("{:?}", res);
   match res {
-    IResult::Done(i, ref o) => println!("i: {} | o: {:?}", i, o),
+    Ok((i, ref o)) => println!("i: {} | o: {:?}", i, o),
     _ => println!("error")
   }
 
   let mut expected: HashMap<&str, &str> = HashMap::new();
   expected.insert("parameter", "value");
   expected.insert("key", "value2");
-  assert_eq!(res, IResult::Done(ini_without_key_value, expected));
+  assert_eq!(res, Ok((ini_without_key_value, expected)));
 }
 
 #[test]
@@ -197,14 +197,14 @@ key = value2
   let res = category_and_keys(ini_file);
   println!("{:?}", res);
   match res {
-    IResult::Done(i, ref o) => println!("i: {} | o: {:?}", i, o),
+    Ok((i, ref o)) => println!("i: {} | o: {:?}", i, o),
     _ => println!("error")
   }
 
   let mut expected_h: HashMap<&str, &str> = HashMap::new();
   expected_h.insert("parameter", "value");
   expected_h.insert("key", "value2");
-  assert_eq!(res, IResult::Done(ini_after_parser, ("abcd", expected_h)));
+  assert_eq!(res, Ok((ini_after_parser, ("abcd", expected_h))));
 }
 
 #[test]
@@ -223,7 +223,7 @@ key4 = value4
   let res = categories(ini_file);
   //println!("{:?}", res);
   match res {
-    IResult::Done(i, ref o) => println!("i: {} | o: {:?}", i, o),
+    Ok((i, ref o)) => println!("i: {} | o: {:?}", i, o),
     _ => println!("error")
   }
 
@@ -236,5 +236,5 @@ key4 = value4
   let mut expected_h: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
   expected_h.insert("abcd",     expected_1);
   expected_h.insert("category", expected_2);
-  assert_eq!(res, IResult::Done("", expected_h));
+  assert_eq!(res, Ok(("", expected_h)));
 }

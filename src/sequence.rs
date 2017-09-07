@@ -52,18 +52,18 @@ macro_rules! tuple_parser (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        $crate::IResult::Error(e)                            =>
-          $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        ::std::result::Result::Err($crate::Err::Error(e))                            =>
+          ::std::result::Result::Err($crate::Err::Error(e)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
           }
         },
-        $crate::IResult::Done(i,o)     => {
+        ::std::result::Result::Ok((i,o))     => {
           let i_ = i.clone();
           tuple_parser!(i_,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -76,18 +76,18 @@ macro_rules! tuple_parser (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        $crate::IResult::Error(e)                            =>
-          $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        ::std::result::Result::Err($crate::Err::Error(e))                            =>
+          ::std::result::Result::Err($crate::Err::Error(e)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
           }
         },
-        $crate::IResult::Done(i,o)     => {
+        ::std::result::Result::Ok((i,o))     => {
           let i_ = i.clone();
           tuple_parser!(i_,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -103,19 +103,19 @@ macro_rules! tuple_parser (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        $crate::IResult::Error(e)                            =>
-          $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        ::std::result::Result::Err($crate::Err::Error(e))                            =>
+          ::std::result::Result::Err($crate::Err::Error(e)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
           }
         },
-        $crate::IResult::Done(i,o)     => {
-          $crate::IResult::Done(i, (o))
+        ::std::result::Result::Ok((i,o))     => {
+          ::std::result::Result::Ok((i, (o)))
         }
       }
     }
@@ -123,26 +123,26 @@ macro_rules! tuple_parser (
   ($i:expr, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)                            =>
-          $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        ::std::result::Result::Err($crate::Err::Error(e))                            =>
+          ::std::result::Result::Err($crate::Err::Error(e)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
           }
         },
-        $crate::IResult::Done(i,o)     => {
-          $crate::IResult::Done(i, ($($parsed),* , o))
+        ::std::result::Result::Ok((i,o))     => {
+          ::std::result::Result::Ok((i, ($($parsed),* , o)))
         }
       }
     }
   );
   ($i:expr, $consumed:expr, ($($parsed:expr),*)) => (
     {
-      $crate::IResult::Done($i, ($($parsed),*))
+      ::std::result::Result::Ok(($i, ($($parsed),*)))
     }
   );
 );
@@ -178,10 +178,10 @@ macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       match tuple_parser!($i, 0usize, (), $submac!($($args)*), $($rest)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1, (o1, _, o2))   => {
-          $crate::IResult::Done(i1, (o1, o2))
+        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
+        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
+        ::std::result::Result::Ok((i1, (o1, _, o2)))   => {
+          ::std::result::Result::Ok((i1, (o1, o2)))
         }
       }
     }
@@ -199,10 +199,10 @@ macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(remaining, (_,o))    => {
-          $crate::IResult::Done(remaining, o)
+        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
+        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
+        ::std::result::Result::Ok((remaining, (_,o)))    => {
+          ::std::result::Result::Ok((remaining, o))
         }
       }
     }
@@ -228,10 +228,10 @@ macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(remaining, (o,_))    => {
-          $crate::IResult::Done(remaining, o)
+        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
+        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
+        ::std::result::Result::Ok((remaining, (o,_)))    => {
+          ::std::result::Result::Ok((remaining, o))
         }
       }
     }
@@ -266,7 +266,7 @@ macro_rules! terminated(
 ///
 /// # fn main() {
 /// let input = &b"(test)"[..];
-/// assert_eq!(bracketed(input), Done(&b""[..], &b"test"[..]));
+/// assert_eq!(bracketed(input), Ok((&b""[..], &b"test"[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -274,10 +274,10 @@ macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       match tuple_parser!($i, 0usize, (), $submac!($($args)*), $($rest)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1, (_, o, _))   => {
-          $crate::IResult::Done(i1, o)
+        ::std::result::Result::Err($crate::Err::Error(a))      => ::std::result::Result::Err($crate::Err::Error(a)),
+        ::std::result::Result::Err($crate::Err::Incomplete(i)) => ::std::result::Result::Err($crate::Err::Incomplete(i)),
+        ::std::result::Result::Ok((i1, (_, o, _)))   => {
+          ::std::result::Result::Ok((i1, o))
         }
       }
     }
@@ -326,7 +326,7 @@ macro_rules! delimited(
 /// let a: Vec<u8>        = vec!(42, 2, 3, 4, 5);
 /// let result_a: Vec<u8> = vec!(3, 4);
 /// let rest_a: Vec<u8>   = vec!(5);
-/// assert_eq!(tag_length_value(&a[..]), Done(&rest_a[..], &result_a[..]));
+/// assert_eq!(tag_length_value(&a[..]), Ok((&rest_a[..], &result_a[..])));
 ///
 /// // here, the length is 5, but there are only 3 bytes afterwards (3, 4 and 5),
 /// // so the parser will tell you that you need 7 bytes: one for the tag,
@@ -361,7 +361,7 @@ macro_rules! delimited(
 #[macro_export]
 macro_rules! do_parse (
   (__impl $i:expr, $consumed:expr, ( $($rest:expr),* )) => (
-    $crate::IResult::Done($i, ( $($rest),* ))
+    ::std::result::Result::Ok(($i, ( $($rest),* )))
   );
 
   (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ) => (
@@ -400,17 +400,17 @@ macro_rules! do_parse (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
           }
         },
-        $crate::IResult::Done(i,_)     => {
+        ::std::result::Result::Ok((i,_))     => {
           let i_ = i.clone();
           do_parse!(__impl i_,
             $consumed + ($crate::InputLength::input_len(&($i)) -
@@ -428,17 +428,17 @@ macro_rules! do_parse (
     {
       let i_ = $i.clone();
       match  $submac!(i_, $($args)*) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+        ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
           let (needed,overflowed) = $consumed.overflowing_add(i);
           match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+              true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+              false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
           }
         },
-        $crate::IResult::Done(i,o)     => {
+        ::std::result::Result::Ok((i,o))     => {
           let $field = o;
           let i_ = i.clone();
           do_parse!(__impl i_,
@@ -456,18 +456,18 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
     match $submac!($i, $($args)*) {
-      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-        $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+      ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
+      ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+      ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
         let (needed,overflowed) = $consumed.overflowing_add(i);
         match overflowed {
-            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+            true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+            false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
         }
       },
-      $crate::IResult::Done(i,_)     => {
-        $crate::IResult::Done(i, ( $($rest)* ))
+      ::std::result::Result::Ok((i,_))     => {
+        ::std::result::Result::Ok((i, ( $($rest)* )))
       },
     }
   );
@@ -478,19 +478,19 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => (
     match $submac!($i, $($args)*) {
-      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-        $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+      ::std::result::Result::Err($crate::Err::Error(e))      => ::std::result::Result::Err($crate::Err::Error(e)),
+      ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) =>
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+      ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => {
         let (needed,overflowed) = $consumed.overflowing_add(i);
         match overflowed {
-            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
+            true  => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+            false =>  ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(needed))),
         }
       },
-      $crate::IResult::Done(i,o)     => {
+      ::std::result::Result::Ok((i,o))     => {
         let $field = o;
-        $crate::IResult::Done(i, ( $($rest)* ))
+        ::std::result::Result::Ok((i, ( $($rest)* )))
       },
     }
   );
@@ -518,10 +518,11 @@ macro_rules! do_parse (
 #[cfg(test)]
 mod tests {
   use internal::{Needed,IResult};
-  use internal::IResult::*;
   use util::ErrorKind;
   use nom::be_u16;
 
+  use simple_errors::Err;
+  
   #[cfg(feature = "verbose-errors")]
   use verbose_errors::Err;
 
@@ -553,11 +554,11 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: $crate::IResult<_,_> = if reduced != b {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
+          ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag, $i)))
         } else if m < blen {
-          $crate::IResult::Incomplete($crate::Needed::Size(blen))
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(blen)))
         } else {
-          $crate::IResult::Done(&$i[blen..], reduced)
+          ::std::result::Result::Ok((&$i[blen..], reduced))
         };
         res
       }
@@ -569,9 +570,9 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          $crate::IResult::Incomplete($crate::Needed::Size(cnt))
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(cnt)))
         } else {
-          $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
+          ::std::result::Result::Ok((&$i[cnt..],&$i[0..cnt]))
         };
         res
       }
@@ -655,7 +656,7 @@ mod tests {
     let res_c = err_test(c);
     assert_eq!(res_a, Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah))));
     assert_eq!(res_b, Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah)))));
-    assert_eq!(res_c, Done(&b""[..], &b"mnop"[..]));
+    assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
 
     // Merr-like error matching
     let mut err_map = collections::HashMap::new();
@@ -707,9 +708,9 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah))));
-    assert_eq!(res_b, Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah)))));
-    assert_eq!(res_c, Done(&b""[..], &b"mnop"[..]));
+    assert_eq!(res_a, Err(Err::Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah)))));
+    assert_eq!(res_b, Err(Err::Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah))))));
+    assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
   }
 
   #[test]
@@ -724,7 +725,7 @@ mod tests {
     let a = &b"ijklmn"[..];
 
     let res_a = err_test(a);
-    assert_eq!(res_a, Error(error_position!(ErrorKind::Complete, &b"mn"[..])));
+    assert_eq!(res_a, Err(Err::Error(error_position!(ErrorKind::Complete, &b"mn"[..]))));
   }
 
   #[test]
@@ -733,12 +734,12 @@ mod tests {
     named!( tag_def, tag!("def") );
     named!( pair_abc_def<&[u8],(&[u8], &[u8])>, pair!(tag_abc, tag_def) );
 
-    assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
-    assert_eq!(pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
-    assert_eq!(pair_abc_def(&b"abcd"[..]), Incomplete(Needed::Size(6)));
-    assert_eq!(pair_abc_def(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(pair_abc_def(&b"xxxdef"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxdef"[..])));
-    assert_eq!(pair_abc_def(&b"abcxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
+    assert_eq!(pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(pair_abc_def(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(6))));
+    assert_eq!(pair_abc_def(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(pair_abc_def(&b"xxxdef"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxdef"[..]))));
+    assert_eq!(pair_abc_def(&b"abcxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
   }
 
   #[test]
@@ -748,12 +749,12 @@ mod tests {
     named!( tag_separator, tag!(",") );
     named!( sep_pair_abc_def<&[u8],(&[u8], &[u8])>, separated_pair!(tag_abc, tag_separator, tag_def) );
 
-    assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]), Done(&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])));
-    assert_eq!(sep_pair_abc_def(&b"ab"[..]), Incomplete(Needed::Size(3)));
-    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Incomplete(Needed::Size(7)));
-    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx,def"[..])));
-    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]), Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
+    assert_eq!(sep_pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Err(Err::Incomplete(Needed::Size(7))));
+    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx,def"[..]))));
+    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
   }
 
   #[test]
@@ -762,12 +763,12 @@ mod tests {
     named!( tag_efgh, tag!("efgh") );
     named!( preceded_abcd_efgh<&[u8], &[u8]>, preceded!(tag_abcd, tag_efgh) );
 
-    assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Done(&b"ijkl"[..], &b"efgh"[..]));
-    assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Incomplete(Needed::Size(8)));
-    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxxdef"[..])));
-    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"efgh"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(8))));
+    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxxdef"[..]))));
+    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
   }
 
   #[test]
@@ -776,12 +777,12 @@ mod tests {
     named!( tag_efgh, tag!("efgh") );
     named!( terminated_abcd_efgh<&[u8], &[u8]>, terminated!(tag_abcd, tag_efgh) );
 
-    assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]), Done(&b"ijkl"[..], &b"abcd"[..]));
-    assert_eq!(terminated_abcd_efgh(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(terminated_abcd_efgh(&b"abcde"[..]), Incomplete(Needed::Size(8)));
-    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxxdef"[..])));
-    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxx"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"abcd"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(terminated_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(8))));
+    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxxdef"[..]))));
+    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxx"[..]))));
   }
 
   #[test]
@@ -791,14 +792,14 @@ mod tests {
     named!( tag_ghi, tag!("ghi") );
     named!( delimited_abc_def_ghi<&[u8], &[u8]>, delimited!(tag_abc, tag_def, tag_ghi) );
 
-    assert_eq!(delimited_abc_def_ghi(&b"abcdefghijkl"[..]), Done(&b"jkl"[..], &b"def"[..]));
-    assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Incomplete(Needed::Size(3)));
-    assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Incomplete(Needed::Size(6)));
-    assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Incomplete(Needed::Size(9)));
-    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
-    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxdefghi"[..])));
-    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Error(error_position!(ErrorKind::Tag, &b"xxxghi"[..])));
-    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefghijkl"[..]), Ok((&b"jkl"[..], &b"def"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(6))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Err(Err::Incomplete(Needed::Size(9))));
+    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxdefghi"[..]))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxghi"[..]))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
   }
 
   #[test]
@@ -806,16 +807,16 @@ mod tests {
     named!(tuple_3<&[u8], (u16, &[u8], &[u8]) >,
     tuple!( be_u16 , take!(3), tag!("fg") ) );
 
-    assert_eq!(tuple_3(&b"abcdefgh"[..]), Done(&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])));
-    assert_eq!(tuple_3(&b"abcd"[..]), Incomplete(Needed::Size(5)));
-    assert_eq!(tuple_3(&b"abcde"[..]), Incomplete(Needed::Size(7)));
-    assert_eq!(tuple_3(&b"abcdejk"[..]), Error(error_position!(ErrorKind::Tag, &b"jk"[..])));
+    assert_eq!(tuple_3(&b"abcdefgh"[..]), Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..]))));
+    assert_eq!(tuple_3(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
+    assert_eq!(tuple_3(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(7))));
+    assert_eq!(tuple_3(&b"abcdejk"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"jk"[..]))));
   }
 
   #[test]
   fn do_parse() {
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
+    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,1)) };
+    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,2)) };
 
     //trace_macros!(true);
     named!(do_parser<&[u8], (u8, u8)>,
@@ -837,10 +838,10 @@ mod tests {
 
     //trace_macros!(false);
 
-    assert_eq!(do_parser(&b"abcdabcdefghefghX"[..]), Done(&b"X"[..], (1, 2)));
-    assert_eq!(do_parser(&b"abcdefghefghX"[..]), Done(&b"X"[..], (1, 2)));
-    assert_eq!(do_parser(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
-    assert_eq!(do_parser(&b"abcdefghef"[..]), Incomplete(Needed::Size(12)));
+    assert_eq!(do_parser(&b"abcdabcdefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
+    assert_eq!(do_parser(&b"abcdefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
+    assert_eq!(do_parser(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(8))));
+    assert_eq!(do_parser(&b"abcdefghef"[..]), Err(Err::Incomplete(Needed::Size(12))));
   }
 
   #[test]
@@ -857,9 +858,9 @@ mod tests {
 
     let a = [2u8, 3, 4, 5];
     let res_a = [3u8, 4];
-    assert_eq!(length_value(&a[..]), Done(&a[3..], &res_a[..]));
+    assert_eq!(length_value(&a[..]), Ok((&a[3..], &res_a[..])));
     let b = [5u8, 3, 4, 5];
-    assert_eq!(length_value(&b[..]), Incomplete(Needed::Size(6)));
+    assert_eq!(length_value(&b[..]), Err(Err::Incomplete(Needed::Size(6))));
   }
 
   /*

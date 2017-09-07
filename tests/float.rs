@@ -31,16 +31,16 @@ named!(float <f32>, map!(
 
 #[test]
 fn unsigned_float_test() {
-  assert_eq!(unsigned_float(&b"123.456"[..]), IResult::Done(&b""[..], 123.456));
-  assert_eq!(unsigned_float(&b"0.123"[..]),   IResult::Done(&b""[..], 0.123));
-  assert_eq!(unsigned_float(&b"123.0"[..]),   IResult::Done(&b""[..], 123.0));
-  assert_eq!(unsigned_float(&b"123."[..]),    IResult::Done(&b""[..], 123.0));
-  assert_eq!(unsigned_float(&b".123"[..]),    IResult::Done(&b""[..], 0.123));
+  assert_eq!(unsigned_float(&b"123.456"[..]), Ok((&b""[..], 123.456)));
+  assert_eq!(unsigned_float(&b"0.123"[..]),   Ok((&b""[..], 0.123)));
+  assert_eq!(unsigned_float(&b"123.0"[..]),   Ok((&b""[..], 123.0)));
+  assert_eq!(unsigned_float(&b"123."[..]),    Ok((&b""[..], 123.0)));
+  assert_eq!(unsigned_float(&b".123"[..]),    Ok((&b""[..], 0.123)));
 }
 
 #[test]
 fn float_test() {
-  assert_eq!(float(&b"123.456"[..]),  IResult::Done(&b""[..], 123.456));
-  assert_eq!(float(&b"+123.456"[..]), IResult::Done(&b""[..], 123.456));
-  assert_eq!(float(&b"-123.456"[..]), IResult::Done(&b""[..], -123.456));
+  assert_eq!(float(&b"123.456"[..]),  Ok((&b""[..], 123.456)));
+  assert_eq!(float(&b"+123.456"[..]), Ok((&b""[..], 123.456)));
+  assert_eq!(float(&b"-123.456"[..]), Ok((&b""[..], -123.456)));
 }

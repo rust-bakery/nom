@@ -30,10 +30,10 @@ macro_rules! one_of (
       match ($i).iter_elements().next().map(|c| {
         (c, c.find_token($inp))
       }) {
-        None             => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
-        Some((_, false)) => $crate::IResult::Error(error_position!($crate::ErrorKind::OneOf, $i)),
+        None             => ::std::result::Result::Err::<_,_>(Err::Incomplete($crate::Needed::Size(1))),
+        Some((_, false)) => ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::OneOf, $i))),
         //the unwrap should be safe here
-        Some((c, true))  => $crate::IResult::Done($i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char())
+        Some((c, true))  => ::std::result::Result::Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
     }
   );
@@ -52,10 +52,10 @@ macro_rules! none_of (
       match ($i).iter_elements().next().map(|c| {
         (c, !c.find_token($inp))
       }) {
-        None             => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
-        Some((_, false)) => $crate::IResult::Error(error_position!($crate::ErrorKind::NoneOf, $i)),
+        None             => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(1))),
+        Some((_, false)) => ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::NoneOf, $i))),
         //the unwrap should be safe here
-        Some((c, true))  => $crate::IResult::Done($i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char())
+        Some((c, true))  => ::std::result::Result::Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
     }
   );
@@ -73,10 +73,10 @@ macro_rules! char (
       match ($i).iter_elements().next().map(|c| {
         (c, c.as_char() == $c)
       }) {
-        None             => $crate::IResult::Incomplete::<_, _>($crate::Needed::Size(1)),
-        Some((_, false)) => $crate::IResult::Error(error_position!($crate::ErrorKind::Char, $i)),
+        None             => ::std::result::Result::Err::<_,_>($crate::Err::Incomplete($crate::Needed::Size(1))),
+        Some((_, false)) => ::std::result::Result::Err($crate::Err::Error(error_position!($crate::ErrorKind::Char, $i))),
         //the unwrap should be safe here
-        Some((c, true))  => $crate::IResult::Done($i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char())
+        Some((c, true))  => ::std::result::Result::Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
     }
   );
@@ -89,16 +89,17 @@ named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 pub fn anychar<T>(input: T) -> IResult<T, char> where
   T: InputIter+InputLength+Slice<RangeFrom<usize>>,
   <T as InputIter>::Item: AsChar {
+  use simple_errors::Err;
   if input.input_len() == 0 {
-    IResult::Incomplete(Needed::Size(1))
+    Err(Err::Incomplete(Needed::Size(1)))
   } else {
-    IResult::Done(input.slice(1..), input.iter_elements().next().expect("slice should contain at least one element").as_char())
+    Ok((input.slice(1..), input.iter_elements().next().expect("slice should contain at least one element").as_char()))
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use internal::IResult::*;
+  use simple_errors::Err;
   use util::ErrorKind;
 
   #[test]
@@ -106,16 +107,16 @@ mod tests {
     named!(f<char>, one_of!("ab"));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a), Done(&b"bcd"[..], 'a'));
+    assert_eq!(f(a),Ok((&b"bcd"[..], 'a')));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b), Error(error_position!(ErrorKind::OneOf, b)));
+    assert_eq!(f(b), Err(Err::Error(error_position!(ErrorKind::OneOf, b))));
 
     named!(utf8(&str) -> char,
       one_of!("+\u{FF0B}"));
 
-    assert!(utf8("+").is_done());
-    assert!(utf8("\u{FF0B}").is_done());
+    assert!(utf8("+").is_ok());
+    assert!(utf8("\u{FF0B}").is_ok());
   }
 
   #[test]
@@ -123,10 +124,10 @@ mod tests {
     named!(f<char>, none_of!("ab"));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a), Error(error_position!(ErrorKind::NoneOf, a)));
+    assert_eq!(f(a), Err(Err::Error(error_position!(ErrorKind::NoneOf, a))));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b), Done(&b"de"[..], 'c'));
+    assert_eq!(f(b),Ok((&b"de"[..], 'c')));
   }
 
   #[test]
@@ -134,10 +135,10 @@ mod tests {
     named!(f<char>, char!('c'));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a), Error(error_position!(ErrorKind::Char, a)));
+    assert_eq!(f(a), Err(Err::Error(error_position!(ErrorKind::Char, a))));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b), Done(&b"de"[..], 'c'));
+    assert_eq!(f(b),Ok((&b"de"[..], 'c')));
   }
 
 }

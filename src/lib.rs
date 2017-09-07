@@ -441,6 +441,7 @@ pub use self::branch::*;
 pub use self::sequence::*;
 pub use self::multi::*;
 pub use self::methods::*;
+
 pub use self::bytes::*;
 pub use self::bits::*;
 
@@ -451,11 +452,11 @@ pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
 pub use self::regexp::*;
-
+/*
 #[cfg(feature = "std")]
 #[cfg(feature = "stream")]
 pub use self::stream::*;
-
+*/
 pub use self::str::*;
 
 #[macro_use] mod util;
@@ -471,6 +472,7 @@ mod traits;
 #[macro_use] mod sequence;
 #[macro_use] mod multi;
 #[macro_use] pub mod methods;
+
 #[macro_use] mod bytes;
 #[macro_use] pub mod bits;
 
@@ -483,9 +485,9 @@ pub mod whitespace;
 #[cfg(feature = "regexp")]
 #[macro_use] mod regexp;
 
-#[macro_use]
+/*#[macro_use]
 #[cfg(feature = "std")]
 #[cfg(feature = "stream")]
 mod stream;
-
+*/
 mod str;

@@ -16,11 +16,17 @@
 //! Please note that the verbose error management is a bit slower
 //! than the simple one.
 use util::ErrorKind;
-use internal::{IResult, IError};
-use internal::IResult::*;
+//use internal::{IResult, IError, Needed};
+//use internal::IResult::*;
+use internal::Needed;
 
-pub type Err<E=u32> = ErrorKind<E>;
+#[derive(Debug,Clone,PartialEq)]
+pub enum Err<E=u32> {
+  Incomplete(Needed),
+  Error(ErrorKind<E>),
+}
 
+/*
 impl<I,O,E> IResult<I,O,E> {
   /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
   /// to a contained `Error` value, leaving `Done` and `Incomplete` value
@@ -81,6 +87,7 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
     write!(f, "{}", self.description())
   }
 }
+*/
 
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
@@ -105,11 +112,11 @@ macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
-        $crate::IResult::Error(_) => {
+        ::std::result::Result::Err($crate::Err::Incomplete(x)) => ::std::result::Result::Err($crate::Err::Incomplete(x)),
+        ::std::result::Result::Ok((i, o))    => ::std::result::Result::Ok((i, o)),
+        ::std::result::Result::Err($crate::Err::Error(_)) => {
           let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-          $crate::IResult::Error(e)
+          ::std::result::Result::Err($crate::Err::Error(e))
         }
       }
     }
@@ -129,14 +136,14 @@ macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
-          $crate::IResult::Error(e)                                 => $crate::IResult::Error(e),
-          $crate::IResult::Incomplete($crate::Needed::Unknown)      => $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::IResult::Incomplete($crate::Needed::Size(ref i2)) => $crate::IResult::Incomplete($crate::Needed::Size(*i2)),
-          $crate::IResult::Done(_, o2)                              => $crate::IResult::Done(i, o2)
+        ::std::result::Result::Err($crate::Err::Error(e))                            => ::std::result::Result::Err($crate::Err::Error(e)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))),
+        ::std::result::Result::Ok((i, o))                         => match $submac2!(o, $($args2)*) {
+          ::std::result::Result::Err($crate::Err::Error(e))                                 => ::std::result::Result::Err($crate::Err::Error(e)),
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown))      => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
+          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(ref i2))) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(*i2))),
+          ::std::result::Result::Ok((_, o2))                              => ::std::result::Result::Ok((i, o2))
         }
       }
     }

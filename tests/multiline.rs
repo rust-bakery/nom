@@ -14,7 +14,7 @@ named!(read_lines <Vec<&str> >, many0!(read_line));
 
 #[test]
 fn read_lines_test() {
-  let res = IResult::Done(&b""[..], vec!["Duck", "Dog", "Cow"]);
+  let res = Ok((&b""[..], vec!["Duck", "Dog", "Cow"]));
 
   assert_eq!(read_lines(&b"Duck\nDog\nCow\n"[..]), res);
   assert_eq!(read_lines(&b"Duck\nDog\nCow"[..]),   res);

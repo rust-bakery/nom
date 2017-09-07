@@ -1,6 +1,6 @@
 //! Basic types to build the parsers
 
-use self::IResult::*;
+//use self::IResult::*;
 use self::Needed::*;
 
 #[cfg(not(feature = "std"))]
@@ -68,6 +68,9 @@ pub enum IResult<I,O,E=u32> {
 ///
 /// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
 ///
+
+pub type IResult<I,O,E=u32> = Result<(I,O), Err<E>>;
+/*
 #[derive(Debug,PartialEq,Eq,Clone)]
 pub enum IResult<I,O,E=u32> {
    /// indicates a correct parsing, the first field containing the rest of the unparsed data, the second field contains the parsed data
@@ -76,8 +79,9 @@ pub enum IResult<I,O,E=u32> {
   Error(Err<E>),
   /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
   Incomplete(Needed)
-}
+}*/
 
+/*
 #[cfg(feature = "verbose-errors")]
 /// This is the same as IResult, but without Done
 ///
@@ -244,7 +248,7 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
       _          => None
     }
   }
-}
+}*/
 
 #[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`
@@ -377,10 +381,11 @@ mod tests {
   use util::ErrorKind;
 
   const REST: [u8; 0] = [];
-  const DONE: IResult<&'static [u8], u32> = IResult::Done(&REST, 5);
-  const ERROR: IResult<&'static [u8], u32> = IResult::Error(error_code!(ErrorKind::Tag));
-  const INCOMPLETE: IResult<&'static [u8], u32> = IResult::Incomplete(Needed::Unknown);
+  const DONE: IResult<&'static [u8], u32> = Ok((&REST, 5));
+  const ERROR: IResult<&'static [u8], u32> = Err(Err::Error(error_code!(ErrorKind::Tag)));
+  const INCOMPLETE: IResult<&'static [u8], u32> = Err(Err::Incomplete(Needed::Unknown));
 
+/*
   #[test]
   fn iresult_or() {
     assert_eq!(DONE.or(ERROR), DONE);
@@ -512,4 +517,5 @@ mod tests {
     assert_eq!(INCOMPLETE.to_full_result(), Err(IError::Incomplete(Needed::Unknown)));
     assert_eq!(ERROR.to_full_result(), Err(IError::Error(error_code!(ErrorKind::Tag))));
   }
+  */
 }
