@@ -69,7 +69,7 @@ pub enum IResult<I,O,E=u32> {
 /// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
 ///
 
-pub type IResult<I,O,E=u32> = Result<(I,O), Err<E>>;
+pub type IResult<I,O,E=u32> = Result<(I,O), Err<I,E>>;
 /*
 #[derive(Debug,PartialEq,Eq,Clone)]
 pub enum IResult<I,O,E=u32> {
@@ -250,6 +250,7 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   }
 }*/
 
+/*
 #[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`
 #[macro_export]
@@ -306,6 +307,7 @@ macro_rules! error_node(
 macro_rules! error_node(
   ($code:expr, $next:expr) => ($code);
 );
+*/
 
 #[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`
@@ -325,7 +327,7 @@ macro_rules! error_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_position(
-  ($code:expr, $input:expr) => ($code);
+  ($code:expr, $input:expr) => ($crate::Context::Code($input, $code));
 );
 
 #[cfg(feature = "verbose-errors")]
@@ -372,18 +374,21 @@ macro_rules! error_node_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input: expr, $next:expr) => ($code);
+  ($code:expr, $input: expr, $next:expr) => ($crate::Context::Code($input, $code));
 );
 
 #[cfg(test)]
 mod tests {
   use super::*;
   use util::ErrorKind;
+  use Context;
 
+  /*
   const REST: [u8; 0] = [];
   const DONE: IResult<&'static [u8], u32> = Ok((&REST, 5));
-  const ERROR: IResult<&'static [u8], u32> = Err(Err::Error(error_code!(ErrorKind::Tag)));
+  const ERROR: IResult<&'static [u8], u32> = Err(Err::Error(Context::Code(&b""[..], ErrorKind::Tag)));
   const INCOMPLETE: IResult<&'static [u8], u32> = Err(Err::Incomplete(Needed::Unknown));
+  */
 
 /*
   #[test]

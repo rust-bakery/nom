@@ -1329,7 +1329,7 @@ mod tests {
   #[cfg(not(feature = "verbose-errors"))]
   #[test]
   fn opt_res() {
-    named!(opt_res_abcd<&[u8], Result<&[u8], Err<u32>> >, opt_res!(tag!("abcd")));
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8], u32>> >, opt_res!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];

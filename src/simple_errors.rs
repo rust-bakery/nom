@@ -21,9 +21,14 @@ use util::ErrorKind;
 use internal::Needed;
 
 #[derive(Debug,Clone,PartialEq)]
-pub enum Err<E=u32> {
+pub enum Err<I,E=u32> {
   Incomplete(Needed),
-  Error(ErrorKind<E>),
+  Error(Context<I,E>),
+}
+
+#[derive(Debug,Clone,PartialEq)]
+pub enum Context<I,E=u32> {
+  Code(I, ErrorKind<E>),
 }
 
 /*
@@ -116,7 +121,7 @@ macro_rules! fix_error (
         ::std::result::Result::Ok((i, o))    => ::std::result::Result::Ok((i, o)),
         ::std::result::Result::Err($crate::Err::Error(_)) => {
           let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-          ::std::result::Result::Err($crate::Err::Error(e))
+          ::std::result::Result::Err($crate::Err::Error(error_position!(e, $i))) //$crate::Err::Error(e))
         }
       }
     }

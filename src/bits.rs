@@ -80,12 +80,13 @@ macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::{Err,Needed,Context};
 
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
         Err(Err::Error(e)) => {
-          Err(Err::Error(e))
+          let Context::Code(_,err) = e;
+          Err(Err::Error(error_position!(err, $i)))
         }
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {

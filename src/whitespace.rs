@@ -1007,7 +1007,7 @@ mod tests {
 
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8],&'static str> {
-      Err(Err::Error(error_code!(ErrorKind::Custom("abcd"))))
+      Err(Err::Error(error_position!(ErrorKind::Custom("abcd"), &b""[..])))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {

@@ -28,17 +28,20 @@ use internal::IResult::*;
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
 /// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, u32)
 #[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<P,E=u32>{
+pub enum Err<I,E=u32>{
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
-  Code(ErrorKind<E>),
+  Code(I,ErrorKind<E>),
+  List(Vec<(I, ErrorKind<E>)>),
+  /*
   /// An error code, and the next error
   Node(ErrorKind<E>, Vec<Err<P,E>>),
   /// An error code, and the input position
   Position(ErrorKind<E>, P),
   /// An error code, the input position and the next error
   NodePosition(ErrorKind<E>, P, Vec<Err<P,E>>)
+    */
 }
-
+/*
 impl<I,O,E> IResult<I,O,E> {
   /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
   /// to a contained `Error` value, leaving `Done` and `Incomplete` value
@@ -111,7 +114,7 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
     }
   }
 }
-
+*/
 
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
