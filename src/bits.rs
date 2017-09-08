@@ -44,15 +44,15 @@ macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::{Context,Err,Needed};
 
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
         Err(Err::Error(e)) => {
           let err = match e {
-            Err::Code(k) | Err::Node(k, _) => Err::Code(k),
-            Err::Position(k, (i,b)) | Err::NodePosition(k, (i,b), _) => {
-              Err::Position(k, &i[b/8..])
+            Context::Code((i,b), kind) => Context::Code(&i[b/8..], kind),
+            Context::List(mut v) => {
+              Context::List(v.drain(..).map(|((i,b), kind)| (&i[b/8..], kind)).collect())
             }
           };
           Err(Err::Error(err))
@@ -304,8 +304,7 @@ macro_rules! tag_bits (
 #[cfg(test)]
 mod tests {
   use std::ops::{Shr,Shl,AddAssign};
-  use internal::Needed;
-  use simple_errors::Err;
+  use internal::{Err,Needed};
   use ErrorKind;
 
   #[test]

@@ -694,10 +694,8 @@ macro_rules! permutation_iterator (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Needed,IResult};
-  //use internal::IResult::*;
+  use internal::{Err,Needed,IResult};
   use util::ErrorKind;
-  use simple_errors::Err;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (

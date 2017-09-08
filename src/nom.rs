@@ -17,7 +17,6 @@ use traits::{AsChar,InputLength,InputIter};
 use std::mem::transmute;
 use std::ops::{Range,RangeFrom,RangeTo};
 use traits::{Compare,CompareResult,Slice};
-use simple_errors::Err;
 
 #[inline]
 pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]> + 'a> {
@@ -734,9 +733,8 @@ pub fn double_s(input: &str) -> IResult<&str,f64> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Needed,IResult};
+  use internal::{Err,Needed,IResult};
   use util::ErrorKind;
-  use simple_errors::Err;
 
   #[test]
   fn tag_closure() {

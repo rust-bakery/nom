@@ -616,7 +616,9 @@ macro_rules! parse_to (
       use $crate::ParseTo;
       use $crate::Slice;
       use $crate::InputLength;
-      match ($i).parse_to() {
+
+      let res: ::std::option::Option<$t> = ($i).parse_to();
+      match res {
         ::std::option::Option::Some(output) => Ok(($i.slice(..$i.input_len()), output)),
         ::std::option::Option::None         => Err(Err::Error(error_position!(ErrorKind::MapOpt, $i)))
       }
@@ -1215,14 +1217,7 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Needed,IResult};
-  #[cfg(feature = "verbose-errors")]
-  use verbose_errors::Err;
-
-  //#[cfg(not(feature = "verbose-errors"))]
-  use simple_errors::Err;
-
-  //use internal::IResult::*;
+  use internal::{Err,Needed,IResult};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order

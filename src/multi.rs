@@ -516,9 +516,7 @@ macro_rules! many_m_n(
         } else {
           match incomplete {
             ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
-            ::std::option::Option::None    => Err(Err::Incomplete(
-              Needed::Unknown
-            ))
+            ::std::option::Option::None    => Err(Err::Incomplete(Needed::Unknown))
           }
         }
       } else {
@@ -1024,12 +1022,10 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Needed,IResult};
-
+  use internal::{Err,Needed,IResult};
   use util::ErrorKind;
   use nom::{alpha,be_u8,be_u16,le_u16,digit};
   use std::str::{self,FromStr};
-  use simple_errors::Err;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -1244,7 +1240,7 @@ mod tests {
     let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
     assert_eq!(multi(&a[..]),Ok((&b"abcd"[..], res_a)));
     assert_eq!(multi(&b[..]),Ok((&b"abcd"[..], res_b)));
-    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..], error_position(ErrorKind::Tag,&c[..])))));
+    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..], error_position!(ErrorKind::Tag,&c[..])))));
   }
 
   #[test]

@@ -16,8 +16,6 @@
 //! Please note that the verbose error management is a bit slower
 //! than the simple one.
 use util::ErrorKind;
-use internal::{IResult, IError};
-use internal::IResult::*;
 
 /// Contains the error that a parser can return
 ///
@@ -28,19 +26,12 @@ use internal::IResult::*;
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
 /// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, u32)
 #[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<I,E=u32>{
+pub enum Context<I,E=u32>{
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
-  Code(I,ErrorKind<E>),
+  Code(I, ErrorKind<E>),
   List(Vec<(I, ErrorKind<E>)>),
-  /*
-  /// An error code, and the next error
-  Node(ErrorKind<E>, Vec<Err<P,E>>),
-  /// An error code, and the input position
-  Position(ErrorKind<E>, P),
-  /// An error code, the input position and the next error
-  NodePosition(ErrorKind<E>, P, Vec<Err<P,E>>)
-    */
 }
+
 /*
 impl<I,O,E> IResult<I,O,E> {
   /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
@@ -139,33 +130,26 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,ErrorKind,Context};
+
       match $submac!($i, $($args)*) {
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
-        $crate::IResult::Error(e) => {
+        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
+        Ok((i, o))              => Ok((i, o)),
+        Err(Err::Error(e)) => {
           let err = match e {
-            $crate::Err::Code($crate::ErrorKind::Custom(_)) |
-              $crate::Err::Node($crate::ErrorKind::Custom(_), _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Code(e)
+            Context::Code(p, _) => {
+              let e: ErrorKind<$t> = ErrorKind::Fix;
+              Context::Code(p, e)
             },
-            $crate::Err::Position($crate::ErrorKind::Custom(_), p) |
-              $crate::Err::NodePosition($crate::ErrorKind::Custom(_), p, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Position(e, p)
-            },
-            $crate::Err::Code(_) |
-              $crate::Err::Node(_, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Code(e)
-            },
-            $crate::Err::Position(_, p) |
-              $crate::Err::NodePosition(_, p, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Position(e, p)
+            Context::List(mut v) => {
+              Context::List(v.drain(..).map(|(p,_)| {
+                let e: ErrorKind<$t> = ErrorKind::Fix;
+                (p, e)
+              }).collect())
             },
           };
-          $crate::IResult::Error(err)
+          Err(Err::Error(err))
         }
       }
     }
@@ -184,23 +168,29 @@ macro_rules! fix_error (
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Context};
+
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
-          $crate::IResult::Error(e)                                 => {
-            let err = match e {
-              $crate::Err::Code(k) | $crate::Err::Node(k, _) | $crate::Err::Position(k, _) | $crate::Err::NodePosition(k, _, _) => {
-                $crate::Err::Position(k, $i)
-              }
+        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
+        Err(Err::Error(e))      => Err(Err::Error(e)),
+        Ok((i, o))              => match $submac2!(o, $($args2)*) {
+          Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
+          Err(Err::Error(e)) => {
+            let err  = match e {
+              Context::Code(_, kind) => {
+                Context::Code($i, kind)
+              },
+              Context::List(mut v) => {
+                Context::List(v.drain(..).map(|(_,e)| {
+                  ($i, e)
+                }).collect())
+              },
             };
-            $crate::IResult::Error(err)
+            Err(Err::Error(err))
           },
-          $crate::IResult::Incomplete($crate::Needed::Unknown)      => $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::IResult::Incomplete($crate::Needed::Size(ref i2)) => $crate::IResult::Incomplete($crate::Needed::Size(*i2)),
-          $crate::IResult::Done(_, o2)                              => $crate::IResult::Done(i, o2)
-        }
+          Ok((_,o2)) => Ok((i,o2)),
+        },
       }
     }
   );

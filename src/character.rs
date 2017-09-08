@@ -101,7 +101,7 @@ named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 pub fn anychar<T>(input: T) -> IResult<T, char> where
   T: InputIter+InputLength+Slice<RangeFrom<usize>>,
   <T as InputIter>::Item: AsChar {
-  use simple_errors::Err;
+  use internal::Err;
   if input.input_len() == 0 {
     Err(Err::Incomplete(Needed::Size(1)))
   } else {
@@ -111,7 +111,7 @@ pub fn anychar<T>(input: T) -> IResult<T, char> where
 
 #[cfg(test)]
 mod tests {
-  use simple_errors::Err;
+  use internal::Err;
   use util::ErrorKind;
 
   #[test]

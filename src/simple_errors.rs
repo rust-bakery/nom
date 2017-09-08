@@ -16,15 +16,6 @@
 //! Please note that the verbose error management is a bit slower
 //! than the simple one.
 use util::ErrorKind;
-//use internal::{IResult, IError, Needed};
-//use internal::IResult::*;
-use internal::Needed;
-
-#[derive(Debug,Clone,PartialEq)]
-pub enum Err<I,E=u32> {
-  Incomplete(Needed),
-  Error(Context<I,E>),
-}
 
 #[derive(Debug,Clone,PartialEq)]
 pub enum Context<I,E=u32> {

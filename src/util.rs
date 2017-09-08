@@ -1,9 +1,7 @@
-
 #[cfg(feature = "verbose-errors")]
-use internal::IResult;
-
+use internal::{Err,IResult};
 #[cfg(feature = "verbose-errors")]
-use verbose_errors::Err;
+use verbose_errors::Context;
 
 #[cfg(feature = "std")]
 use std::collections::HashMap;
@@ -185,33 +183,23 @@ macro_rules! dbg_dmp (
 );
 
 #[cfg(feature = "verbose-errors")]
-pub fn error_to_list<P,E:Clone>(e:&Err<P,E>) -> Vec<ErrorKind<E>> {
-  let mut v:Vec<ErrorKind<E>> = Vec::new();
+pub fn error_to_list<P:Clone,E:Clone>(e:&Context<P,E>) -> Vec<(P,ErrorKind<E>)> {
   match e {
-     &Err::Code(ref i) | &Err::Position(ref i,_) => {
-        v.push(i.clone());
+     &Context::Code(ref i, ref err) => {
+        let mut v = Vec::new();
+        v.push((i.clone(), err.clone()));
         return v;
      },
-     &Err::Node(ref i, ref next) | &Err::NodePosition(ref i, _, ref next) => {
-       //v.push(i.clone());
-       for error in next.iter() {
-         if let &Err::Code(ref i2) = error {
-           v.push(i2.clone());
-         }
-         if let &Err::Position(ref i2,_) = error {
-           v.push(i2.clone());
-         }
-       }
-       v.push(i.clone());
-       v.reverse()
+     &Context::List(ref v) => {
+       let mut v2 = v.clone();
+       v2.reverse();
+       v2
      }
   }
-
-  v
 }
 
 #[cfg(feature = "verbose-errors")]
-pub fn compare_error_paths<P,E:Clone+PartialEq>(e1:&Err<P,E>, e2:&Err<P,E>) -> bool {
+pub fn compare_error_paths<P:Clone+PartialEq, E:Clone+PartialEq>(e1:&Context<P,E>, e2:&Context<P,E>) -> bool {
   error_to_list(e1) == error_to_list(e2)
 }
 
@@ -222,8 +210,8 @@ use std::hash::Hash;
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-pub fn add_error_pattern<'a,I,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<ErrorKind<E>>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
-  if let IResult::Error(e) = res {
+pub fn add_error_pattern<'a,I: Clone+Hash+Eq,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<(I,ErrorKind<E>)>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
+  if let Err(Err::Error(e)) = res {
     h.insert(error_to_list(&e), message);
     true
   } else {
@@ -241,29 +229,22 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Option<Vec<(ErrorKind<E>, usize, usize)> > {
-  if let IResult::Error(e) = res {
+  if let Err(Err::Error(e)) = res {
     let mut v:Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
-    let mut err = e.clone();
 
     match e {
-       Err::Code(_) => {},
-       Err::Position(i, p) => {
+       Context::Code(p, kind) => {
          let (o1, o2) = slice_to_offsets(input, p);
-          v.push((i, o1, o2));
+          v.push((kind, o1, o2));
        },
-       Err::Node(_, _) => {},
-       Err::NodePosition(i, p, next) => {
-         //v.push(i.clone());
-         for error in next.iter() {
-           if let &Err::Position(ref i2, ref p2) = error {
-              let (o1, o2) = slice_to_offsets(input, p2);
-             v.push((i2.clone(), o1, o2));
-           }
+       Context::List(mut l) => {
+         for (p, kind) in l.drain(..) {
+           let (o1, o2) = slice_to_offsets(input, p);
+           v.push((kind, o1, o2));
          }
-        let (o1, o2) = slice_to_offsets(input, p);
-         v.push((i, o1, o2));
+
          v.reverse()
-       }
+       },
     }
 
     v.sort_by(|a, b| a.1.cmp(&b.1));

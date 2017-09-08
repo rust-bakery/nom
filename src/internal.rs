@@ -7,35 +7,12 @@ use self::Needed::*;
 use std::prelude::v1::*;
 
 #[cfg(feature = "verbose-errors")]
-use verbose_errors::Err;
+use verbose_errors::Context;
 
 #[cfg(not(feature = "verbose-errors"))]
-use simple_errors::Err;
+use simple_errors::Context;
 
-/// Contains information on needed data if a parser returned `Incomplete`
-#[derive(Debug,PartialEq,Eq,Clone,Copy)]
-pub enum Needed {
-  /// needs more data, but we do not know how much
-  Unknown,
-  /// contains the required data size
-  Size(usize)
-}
-
-impl Needed {
-  pub fn is_known(&self) -> bool {
-    *self != Unknown
-  }
-
-  /// Maps a `Needed` to `Needed` by appling a function to a contained `Size` value.
-  #[inline]
-  pub fn map<F: FnOnce(usize) -> usize>(self, f: F) -> Needed {
-    match self {
-      Unknown => Unknown,
-      Size(n) => Size(f(n)),
-    }
-  }
-}
-
+/*
 #[cfg(feature = "verbose-errors")]
 /// Holds the result of parsing functions
 ///
@@ -68,8 +45,41 @@ pub enum IResult<I,O,E=u32> {
 ///
 /// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
 ///
-
+///
+///
+*/
 pub type IResult<I,O,E=u32> = Result<(I,O), Err<I,E>>;
+
+/// Contains information on needed data if a parser returned `Incomplete`
+#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+pub enum Needed {
+  /// needs more data, but we do not know how much
+  Unknown,
+  /// contains the required data size
+  Size(usize)
+}
+
+impl Needed {
+  pub fn is_known(&self) -> bool {
+    *self != Unknown
+  }
+
+  /// Maps a `Needed` to `Needed` by appling a function to a contained `Size` value.
+  #[inline]
+  pub fn map<F: FnOnce(usize) -> usize>(self, f: F) -> Needed {
+    match self {
+      Unknown => Unknown,
+      Size(n) => Size(f(n)),
+    }
+  }
+}
+
+#[derive(Debug,Clone,PartialEq)]
+pub enum Err<I,E=u32> {
+  Incomplete(Needed),
+  Error(Context<I,E>),
+}
+
 /*
 #[derive(Debug,PartialEq,Eq,Clone)]
 pub enum IResult<I,O,E=u32> {
@@ -316,7 +326,7 @@ macro_rules! error_node(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_position(
-  ($code:expr, $input:expr) => ($crate::Err::Position($code, $input));
+  ($code:expr, $input:expr) => ($crate::Context::Code($input, $code));
 );
 
 #[cfg(not(feature = "verbose-errors"))]
@@ -340,27 +350,19 @@ macro_rules! error_position(
 macro_rules! error_node_position(
   ($code:expr, $input:expr, $next:expr) => {
     {
-    let next_errors = match $next {
-      $crate::Err::Code(e) => {
+    let mut error_vec = match $next {
+      $crate::Context::Code(i, e) => {
         let mut v = ::std::vec::Vec::new();
-        v.push($crate::Err::Code(e));
+        v.push((i, e));
         v
       },
-      $crate::Err::Position(e, p) => {
-        let mut v = ::std::vec::Vec::new();
-        v.push($crate::Err::Position(e,p));
+      $crate::Context::List(v) => {
         v
       },
-      $crate::Err::Node(e, mut next) => {
-        next.push($crate::Err::Code(e));
-        next
-      },
-      $crate::Err::NodePosition(e, p, mut next) => {
-        next.push($crate::Err::Position(e,p));
-        next
-      }
     };
-    $crate::Err::NodePosition($code, $input, next_errors)
+
+    error_vec.push(($input, $code));
+    $crate::Context::List(error_vec)
     }
   }
 );
@@ -379,9 +381,6 @@ macro_rules! error_node_position(
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use util::ErrorKind;
-  use Context;
 
   /*
   const REST: [u8; 0] = [];

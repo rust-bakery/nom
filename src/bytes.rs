@@ -311,7 +311,7 @@ macro_rules! escaped_transform (
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,ErrorKind};
 
       use $crate::{InputLength,Slice};
       let cl = || {
@@ -323,7 +323,7 @@ macro_rules! escaped_transform (
           if let Ok((i,o)) = $normal!($i.slice(index..), $($args)*) {
             res.extend(o.iter().cloned());
             if i.is_empty() {
-              return Ok(($i.slice($i.input_len())..), res);
+              return Ok(($i.slice($i.input_len()..), res));
             } else {
               index = $i.offset(i);
             }
@@ -788,10 +788,9 @@ macro_rules! length_bytes(
 
 #[cfg(test)]
 mod tests {
-  use internal::Needed;
+  use internal::{Err,Needed};
   use util::ErrorKind;
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
-  use simple_errors::Err;
 
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
@@ -918,8 +917,8 @@ mod tests {
     assert_eq!(esc(&b"\\n"[..]), Ok((&b""[..], String::from("\n"))));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], String::from("ab\""))));
     assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_node_position!(ErrorKind::EscapedTransform, &b"AB\\"[..], error_position!(ErrorKind::EscapedTransform, &b"\\"[..])))));
-    assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::EscapedTransform, &b"AB\\A"[..],
-      error_position!(ErrorKind::Alt, &b"A"[..]))));
+    assert_eq!(esc(&b"AB\\A"[..]), Err(Err::Error(error_node_position!(ErrorKind::EscapedTransform, &b"AB\\A"[..],
+      error_position!(ErrorKind::Alt, &b"A"[..])))));
 
     let e = "è";
     let a = "à";

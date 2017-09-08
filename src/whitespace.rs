@@ -883,8 +883,7 @@ macro_rules! ws (
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
-  use internal::{IResult,Needed};
-  use simple_errors::Err;
+  use internal::{Err,IResult,Needed};
   use super::sp;
   use util::ErrorKind;
 
