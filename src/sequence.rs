@@ -52,12 +52,12 @@ macro_rules! tuple_parser (
     {
       use ::std::result::Result::*;
       use $crate::Err;
+      use $crate::Convert;
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i,o))     => {
+        Err(e)    => Err(Err::convert(e)),
+        Ok((i,o)) => {
           let i_ = i.clone();
           tuple_parser!(i_, (o), $($rest)*)
         }

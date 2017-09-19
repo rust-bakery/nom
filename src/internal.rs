@@ -80,6 +80,17 @@ pub enum Err<I,E=u32> {
   Error(Context<I,E>),
 }
 
+use util::Convert;
+
+impl<I,E: From<u32>> Convert<Err<I,u32>> for Err<I,E> {
+  fn convert(e: Err<I,u32>) -> Self {
+    match e {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Error(c)      => Err::Error(Context::convert(c)),
+    }
+  }
+}
+
 /*
 #[derive(Debug,PartialEq,Eq,Clone)]
 pub enum IResult<I,O,E=u32> {

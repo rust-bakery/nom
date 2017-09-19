@@ -15,12 +15,25 @@
 //!
 //! Please note that the verbose error management is a bit slower
 //! than the simple one.
-use util::ErrorKind;
+use util::{ErrorKind,Convert};
+use std::convert::From;
 
 #[derive(Debug,Clone,PartialEq)]
 pub enum Context<I,E=u32> {
   Code(I, ErrorKind<E>),
 }
+
+
+impl<I,E: From<u32>> Convert<Context<I,u32>> for Context<I,E> {
+
+  fn convert(c: Context<I,u32>) -> Self {
+    let Context::Code(i, e) = c;
+
+    Context::Code(i, ErrorKind::convert(e))
+  }
+
+}
+
 
 /*
 impl<I,O,E> IResult<I,O,E> {
@@ -107,13 +120,13 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::Err;
+      use $crate::Convert;
+
       match $submac!($i, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Incomplete(x)) => ::std::result::Result::Err($crate::Err::Incomplete(x)),
-        ::std::result::Result::Ok((i, o))    => ::std::result::Result::Ok((i, o)),
-        ::std::result::Result::Err($crate::Err::Error(_)) => {
-          let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-          ::std::result::Result::Err($crate::Err::Error(error_position!(e, $i))) //$crate::Err::Error(e))
-        }
+        Ok((i,o)) => Ok((i,o)),
+        Err(e) => Err(Err::convert(e))
       }
     }
   );
