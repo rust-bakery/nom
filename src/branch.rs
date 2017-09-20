@@ -750,28 +750,44 @@ mod tests {
     );
   );
 
-#[test]
+  #[derive(Debug,Clone,PartialEq)]
+  pub struct ErrorStr(String);
+
+  impl From<u32> for ErrorStr {
+    fn from(i: u32) -> Self {
+      ErrorStr(format!("custom error code: {}", i))
+    }
+  }
+
+  impl<'a> From<&'a str> for ErrorStr {
+    fn from(i: &'a str) -> Self {
+      ErrorStr(format!("custom error message: {}", i))
+    }
+  }
+
+  #[test]
   fn alt() {
-    fn work(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
+    fn work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
       Ok((&b""[..], input))
     }
 
     #[allow(unused_variables)]
-    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8],&'static str> {
-      Err(Err::Error(error_position!(ErrorKind::Custom("abcd"), &b""[..])))
+    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
+      use ::Context;
+      Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
     }
 
-    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
+    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
       Ok((input, &b""[..]))
     }
 
-    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
       alt!(i, dont_work | dont_work)
     }
-    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
       alt!(i, dont_work | work)
     }
-    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
       alt!(i, dont_work | dont_work | work2 | dont_work)
     }
     //named!(alt1, alt!(dont_work | dont_work));

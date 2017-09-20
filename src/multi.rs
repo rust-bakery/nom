@@ -1353,12 +1353,21 @@ mod tests {
     )
   }
 
+  #[derive(Debug,Clone,PartialEq)]
+  pub struct NilError;
+
+  impl From<u32> for NilError {
+    fn from(_: u32) -> Self {
+      NilError
+    }
+  }
+
   #[allow(unused_variables)]
   #[test]
   fn count_fixed_no_type() {
     const TIMES: usize = 2;
     named!( tag_abc, tag!("abc") );
-    named!( counter_2<&[u8], [&[u8]; TIMES], () >, count_fixed!(&[u8], tag_abc, TIMES ) );
+    named!( counter_2<&[u8], [&[u8]; TIMES], NilError >, count_fixed!(&[u8], tag_abc, TIMES ) );
 
     let done = &b"abcabcabcdef"[..];
     let parsed_main = [&b"abc"[..], &b"abc"[..]];
