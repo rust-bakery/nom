@@ -243,7 +243,6 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Option<Vec<(ErrorKind<E>, usize, usize)> > {
   if let IResult::Error(e) = res {
     let mut v:Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
-    let mut err = e.clone();
 
     match e {
        Err::Code(_) => {},

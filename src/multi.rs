@@ -431,7 +431,7 @@ macro_rules! many1(
 ///    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
 ///    assert_eq!(multi(&a[..]), Done(&b"abcd"[..], res_a));
 ///    assert_eq!(multi(&b[..]), Done(&b"abcd"[..], res_b));
-///    assert_eq!(multi(&c[..]), Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position(ErrorKind::Tag,&c[..]))));
+///    assert_eq!(multi(&c[..]), Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position!(ErrorKind::Tag,&c[..]))));
 /// # }
 /// ```
 #[macro_export]
@@ -1351,7 +1351,7 @@ mod tests {
     let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
     assert_eq!(multi(&a[..]), Done(&b"abcd"[..], res_a));
     assert_eq!(multi(&b[..]), Done(&b"abcd"[..], res_b));
-    assert_eq!(multi(&c[..]), Error(error_node_position!(ErrorKind::ManyTill,&c[..], error_position(ErrorKind::Tag,&c[..]))));
+    assert_eq!(multi(&c[..]), Error(error_node_position!(ErrorKind::ManyTill,&c[..], error_position!(ErrorKind::Tag,&c[..]))));
   }
 
   #[test]
