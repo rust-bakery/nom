@@ -15,7 +15,8 @@
 //!
 //! Please note that the verbose error management is a bit slower
 //! than the simple one.
-use util::ErrorKind;
+use util::{ErrorKind,Convert};
+use std::convert::From;
 
 /// Contains the error that a parser can return
 ///
@@ -30,6 +31,15 @@ pub enum Context<I,E=u32>{
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
   Code(I, ErrorKind<E>),
   List(Vec<(I, ErrorKind<E>)>),
+}
+
+impl<I,E: From<u32>> Convert<Context<I,u32>> for Context<I,E> {
+  fn convert(c: Context<I,u32>) -> Self {
+    match c {
+      Context::Code(i, e)  => Context::Code(i, ErrorKind::convert(e)),
+      Context::List(mut v) => Context::List(v.drain(..).map(|(i, e)| (i, ErrorKind::convert(e))).collect())
+    }
+  }
 }
 
 /*

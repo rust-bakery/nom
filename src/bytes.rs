@@ -250,8 +250,8 @@ macro_rules! escaped (
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
-          let e = ErrorKind::Escaped;
-          return Err(Err::Error(error_node_position!(e, $i, e)))
+          let e2 = ErrorKind::Escaped;
+          return Err(Err::Error(error_node_position!(e2, $i, e)))
         }
       }
     }
@@ -369,8 +369,8 @@ macro_rules! escaped_transform (
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
-          let e = ErrorKind::EscapedTransform;
-          return Err(Err::Error(error_node_position!(e, $i, e)))
+          let e2 = ErrorKind::EscapedTransform;
+          return Err(Err::Error(error_node_position!(e2, $i, e)))
         }
       }
     }

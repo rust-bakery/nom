@@ -589,6 +589,8 @@ mod tests {
 
   #[cfg(feature = "verbose-errors")]
   use std::collections;
+  #[cfg(feature = "verbose-errors")]
+  use util::ErrorKind;
 
   #[cfg(feature = "verbose-errors")]
   #[test]
