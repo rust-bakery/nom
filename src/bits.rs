@@ -305,7 +305,6 @@ macro_rules! tag_bits (
 mod tests {
   use std::ops::{Shr,Shl,AddAssign};
   use internal::{Err,Needed};
-  use ErrorKind;
 
   #[test]
   fn take_bits() {

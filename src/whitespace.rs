@@ -159,7 +159,7 @@ macro_rules! delimited_sep (
 macro_rules! separated_pair_sep (
   ($i:expr, $separator:ident, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,ErrorKind,Needed,IResult};
+    use $crate::{Err,Needed,IResult};
 
     match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)*) {
       Err(Err::Error(a))                   => Err(Err::Error(a)),
@@ -393,7 +393,7 @@ macro_rules! permutation_sep (
   ($i:expr, $separator:ident, $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
@@ -525,7 +525,7 @@ macro_rules! alt_sep (
   (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
         Ok((i,o))     => Ok((i,$gen(o))),
@@ -544,7 +544,7 @@ macro_rules! alt_sep (
   (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)*)) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
         Ok((i,o))     => Ok((i,o)),
@@ -558,14 +558,14 @@ macro_rules! alt_sep (
 
   (__impl $i:expr) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,ErrorKind,Needed,IResult};
+    use $crate::{Err,Needed,IResult};
 
     Err(Err::Error(error_position!(ErrorKind::Alt,$i)))
   });
 
   (__impl $i:expr, $separator:ident) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,ErrorKind,Needed,IResult};
+    use $crate::{Err,Needed,IResult};
 
     Err(Err::Error(error_position!(ErrorKind::Alt,$i)))
   });
@@ -599,7 +599,7 @@ macro_rules! alt_complete_sep (
   ($i:expr, $separator:ident, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,Needed,IResult};
 
       match complete!($i, sep!($separator, $subrule!($($args)*))) {
         Ok((i,o)) => Ok((i,$gen(o))),
@@ -637,7 +637,7 @@ macro_rules! switch_sep (
   (__impl $i:expr, $separator:ident, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(Err::Error(e))      => Err(Err::Error(error_node_position!(
@@ -704,7 +704,7 @@ macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,Needed,IResult};
 
       use $crate::{AsChar,InputLength,InputIter,Slice};
       if ($i).input_len() == 0 {

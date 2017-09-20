@@ -33,7 +33,8 @@ macro_rules! tag (
           Err(Err::Incomplete(Needed::Size($tag.input_len())))
         },
         CompareResult::Error => {
-          Err(Err::Error(error_position!(ErrorKind::Tag, $i)))
+          let e = ErrorKind::Tag;
+          Err(Err::Error(error_position!(e, $i)))
         }
       };
       res
@@ -73,7 +74,8 @@ macro_rules! tag_no_case (
           Err(Err::Incomplete(Needed::Size($tag.input_len())))
         },
         CompareResult::Error => {
-          Err(Err::Error(error_position!(ErrorKind::Tag, $i)))
+          let e = ErrorKind::Tag;
+          Err(Err::Error(error_position!(e, $i)))
         }
       };
       res
@@ -111,7 +113,10 @@ macro_rules! is_not(
       let res: IResult<_,_> = match $input.position(|c| {
         c.find_token($arr)
       }) {
-        Some(0) => Err(Err::Error(error_position!(ErrorKind::IsNot,$input))),
+        Some(0) => {
+          let e = ErrorKind::IsNot;
+          Err(Err::Error(error_position!(e,$input)))
+        },
         Some(n) => {
           let res = Ok(($input.slice(n..), $input.slice(..n)));
           res
@@ -157,7 +162,10 @@ macro_rules! is_a (
       let res: IResult<_,_> = match $input.position(|c| {
         !c.find_token($arr)
       }) {
-        Some(0) => Err(Err::Error(error_position!(ErrorKind::IsA,$input))),
+        Some(0) => {
+          let e = ErrorKind::IsA;
+          Err(Err::Error(error_position!(e,$input)))
+        },
         Some(n) => {
           let res: IResult<_,_, u32> = Ok(($input.slice(n..), $input.slice(..n)));
           res
@@ -242,7 +250,8 @@ macro_rules! escaped (
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
-          return Err(Err::Error(error_node_position!(ErrorKind::Escaped, $i, e)))
+          let e = ErrorKind::Escaped;
+          return Err(Err::Error(error_node_position!(e, $i, e)))
         }
       }
     }
@@ -329,7 +338,8 @@ macro_rules! escaped_transform (
             }
           } else if $i[index] == $control_char as u8 {
             if index + 1 >= $i.input_len() {
-              return Err(Err::Error(error_position!(ErrorKind::EscapedTransform,$i.slice(index..))));
+              let e = ErrorKind::EscapedTransform;
+              return Err(Err::Error(error_position!(e,$i.slice(index..))));
             } else {
               match $transform!($i.slice(index+1..), $($args2)*) {
                 Ok((i,o)) => {
@@ -346,7 +356,8 @@ macro_rules! escaped_transform (
             }
           } else {
             if index == 0 {
-              return Err(Err::Error(error_position!(ErrorKind::EscapedTransform,$i.slice(index..))))
+              let e = ErrorKind::EscapedTransform;
+              return Err(Err::Error(error_position!(e,$i.slice(index..))))
             } else {
               return Ok(($i.slice(index..), res))
             }
@@ -358,7 +369,8 @@ macro_rules! escaped_transform (
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
-          return Err(Err::Error(error_node_position!(ErrorKind::EscapedTransform, $i, e)))
+          let e = ErrorKind::EscapedTransform;
+          return Err(Err::Error(error_node_position!(e, $i, e)))
         }
       }
     }
@@ -450,7 +462,10 @@ macro_rules! take_while1 (
         Err(Err::Incomplete(Needed::Unknown))
       } else {
         match input.position(|c| !$submac!(c, $($args)*)) {
-          Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeWhile1,input))),
+          Some(0) => {
+            let e = ErrorKind::TakeWhile1;
+            Err(Err::Error(error_position!(e,input)))
+          },
           Some(n) => {
             Ok((input.slice(n..), input.slice(..n)))
           },
@@ -514,7 +529,10 @@ macro_rules! take_till1 (
         Err(Err::Incomplete(Needed::Unknown))
       } else {
         match input.position(|c| $submac!(c, $($args)*)) {
-          Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeTill1,input))),
+          Some(0) => {
+            let e = ErrorKind::TakeTill1;
+            Err(Err::Error(error_position!(e,input)))
+          },
           Some(n) => Ok((input.slice(n..), input.slice(..n))),
           None    => Ok((input.slice(input.input_len()..), input))
         }
@@ -597,7 +615,8 @@ macro_rules! take_until_and_consume (
       } else {
         match ($i).find_substring($substr) {
           None => {
-            Err(Err::Error(error_position!(ErrorKind::TakeUntilAndConsume,$i)))
+            let e = ErrorKind::TakeUntilAndConsume;
+            Err(Err::Error(error_position!(e,$i)))
           },
           Some(index) => {
             Ok(($i.slice(index+$substr.input_len()..), $i.slice(0..index)))
@@ -626,7 +645,8 @@ macro_rules! take_until_and_consume1 (
       } else {
         match ($i).find_substring($substr) {
           None => {
-            Err(Err::Error(error_position!(ErrorKind::TakeUntilAndConsume,$i)))
+            let e = ErrorKind::TakeUntilAndConsume;
+            Err(Err::Error(error_position!(e,$i)))
           },
           Some(index) => {
             Ok(($i.slice(index+$substr.input_len()..), $i.slice(0..index)))
@@ -657,7 +677,8 @@ macro_rules! take_until (
       } else {
         match ($i).find_substring($substr) {
           None => {
-            Err(Err::Error(error_position!(ErrorKind::TakeUntil,$i)))
+            let e = ErrorKind::TakeUntil;
+            Err(Err::Error(error_position!(e,$i)))
           },
           Some(index) => {
             Ok(($i.slice(index..), $i.slice(0..index)))
@@ -677,7 +698,7 @@ macro_rules! take_until1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       use $crate::InputLength;
       use $crate::FindSubstring;
@@ -708,7 +729,7 @@ macro_rules! take_until_either_and_consume (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       use $crate::InputLength;
       use $crate::InputIter;
@@ -743,7 +764,7 @@ macro_rules! take_until_either (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       use $crate::InputLength;
       use $crate::InputIter;
@@ -789,7 +810,6 @@ macro_rules! length_bytes(
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed};
-  use util::ErrorKind;
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
 
   macro_rules! one_of (

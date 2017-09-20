@@ -353,7 +353,7 @@ macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       let i_ = $i.clone();
       let cl = || {
@@ -401,7 +401,7 @@ macro_rules! add_return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       match $submac!($i, $($args)*) {
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
@@ -441,7 +441,7 @@ macro_rules! complete (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -490,7 +490,7 @@ macro_rules! complete (
 macro_rules! try_parse (
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,Needed,IResult,ErrorKind};
+    use $crate::{Err,Needed,IResult};
 
     match $submac!($i, $($args)*) {
       Ok((i,o))     => (i,o),
@@ -539,7 +539,7 @@ macro_rules! map_res (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -574,7 +574,7 @@ macro_rules! map_opt (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,ErrorKind};
+      use $crate::Err;
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -611,7 +611,7 @@ macro_rules! parse_to (
   ($i:expr, $t:ty ) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       use $crate::ParseTo;
       use $crate::Slice;
@@ -643,7 +643,7 @@ macro_rules! verify (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -697,7 +697,7 @@ macro_rules! value (
   ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       match $submac!($i, $($args)*) {
         Ok((i,_))     => {
@@ -729,7 +729,7 @@ macro_rules! expr_res (
   ($i:expr, $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       match $e {
         Ok(output) => Ok(($i, output)),
@@ -775,7 +775,7 @@ macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       match $e {
         ::std::option::Option::Some(output) => Ok(($i, output)),
@@ -904,7 +904,7 @@ macro_rules! cond_with_error(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       if $cond {
         match $submac!($i, $($args)*) {
@@ -1021,7 +1021,7 @@ macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       if $cond {
         match $submac!($i, $($args)*) {
@@ -1103,7 +1103,7 @@ macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       use $crate::Slice;
       let i_ = $i.clone();
@@ -1137,7 +1137,7 @@ macro_rules! tap (
   ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult};
 
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
@@ -1165,7 +1165,7 @@ macro_rules! eof (
   ($i:expr,) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       use $crate::InputLength;
       if ($i).input_len() == 0 {
@@ -1218,7 +1218,6 @@ macro_rules! recognize (
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed,IResult};
-  use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -1338,7 +1337,7 @@ mod tests {
   #[derive(Debug,PartialEq)]
   pub struct CustomError(&'static str);
   impl From<u32> for CustomError {
-    fn from(e: u32) -> Self {
+    fn from(_: u32) -> Self {
       CustomError("test")
     }
   }

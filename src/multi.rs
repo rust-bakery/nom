@@ -7,7 +7,7 @@ macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       use $crate::InputLength;
 
@@ -95,7 +95,7 @@ macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,Needed,IResult};
 
       use $crate::InputLength;
 
@@ -240,7 +240,7 @@ macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,InputLength};
+      use $crate::{Err,InputLength};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
@@ -310,7 +310,7 @@ macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed};
+      use $crate::{Err,Needed};
 
       use $crate::InputLength;
       let i_ = $i.clone();
@@ -399,7 +399,7 @@ macro_rules! many_till(
   ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,IResult};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
@@ -475,7 +475,7 @@ macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,Needed,IResult};
 
       use $crate::InputLength;
       let mut res          = ::std::vec::Vec::with_capacity($m);
@@ -558,7 +558,7 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,IResult};
 
       let ret: IResult<_,_>;
       let mut input = $i.clone();
@@ -624,7 +624,7 @@ macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::Err;
 
       let ret;
       let mut input = $i.clone();
@@ -799,7 +799,7 @@ macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,InputLength};
+      use $crate::{Err,InputLength};
 
       let ret;
       let f         = $f;
@@ -875,7 +875,7 @@ macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult,InputLength};
+      use $crate::{Err,Needed,IResult,InputLength};
 
       match $submac!($i, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
@@ -963,7 +963,7 @@ macro_rules! fold_many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
+      use $crate::{Err,Needed,IResult};
 
       use $crate::InputLength;
       let mut acc          = $init;
@@ -1023,7 +1023,6 @@ macro_rules! fold_many_m_n(
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed,IResult};
-  use util::ErrorKind;
   use nom::{alpha,be_u8,be_u16,le_u16,digit};
   use std::str::{self,FromStr};
 

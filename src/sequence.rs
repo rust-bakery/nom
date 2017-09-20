@@ -478,7 +478,6 @@ macro_rules! do_parse (
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed,IResult};
-  use util::ErrorKind;
   use nom::be_u16;
 
   // reproduce the tag and take macros, because of module import order

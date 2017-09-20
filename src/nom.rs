@@ -12,7 +12,6 @@ use std::boxed::Box;
 
 use std::fmt::Debug;
 use internal::*;
-use util::ErrorKind;
 use traits::{AsChar,InputLength,InputIter};
 use std::mem::transmute;
 use std::ops::{Range,RangeFrom,RangeTo};
@@ -734,7 +733,6 @@ pub fn double_s(input: &str) -> IResult<&str,f64> {
 mod tests {
   use super::*;
   use internal::{Err,Needed,IResult};
-  use util::ErrorKind;
 
   #[test]
   fn tag_closure() {
@@ -1102,7 +1100,7 @@ mod tests {
 
   use std::convert::From;
   impl From<u32> for CustomError {
-    fn from(e: u32) -> Self {
+    fn from(_: u32) -> Self {
       CustomError
     }
   }

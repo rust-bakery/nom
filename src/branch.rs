@@ -243,8 +243,9 @@ macro_rules! alt (
   (__impl $i:expr, __end) => (
     {
       use $crate::{Err,ErrorKind};
+      let e = ErrorKind::Alt;
 
-      Err(Err::Error(error_position!(ErrorKind::Alt,$i)))
+      Err(Err::Error(error_position!(e,$i)))
     }
   );
 
@@ -438,7 +439,7 @@ macro_rules! switch (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,IResult,ErrorKind};
+      use $crate::{Err,IResult};
 
       let i_ = $i.clone();
       match map!(i_, $submac!($($args)*), |o| Some(o)) {
@@ -512,7 +513,7 @@ macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,IResult,ErrorKind,Needed};
+      use $crate::{Err,IResult,Needed};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;

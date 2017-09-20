@@ -24,7 +24,7 @@ macro_rules! one_of (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,ErrorKind};
+      use $crate::{Err,Needed};
 
       use $crate::Slice;
       use $crate::AsChar;
@@ -50,7 +50,7 @@ macro_rules! none_of (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,ErrorKind};
+      use $crate::{Err,Needed};
 
       use $crate::Slice;
       use $crate::AsChar;
@@ -76,7 +76,7 @@ macro_rules! char (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,ErrorKind};
+      use $crate::{Err,Needed};
 
       use $crate::Slice;
       use $crate::AsChar;
@@ -112,7 +112,6 @@ pub fn anychar<T>(input: T) -> IResult<T, char> where
 #[cfg(test)]
 mod tests {
   use internal::Err;
-  use util::ErrorKind;
 
   #[test]
   fn one_of() {

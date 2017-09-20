@@ -341,7 +341,6 @@ mod test {
     }
 
   use internal::Needed;
-  use util::ErrorKind;
 
   pub fn is_alphabetic(c:char) -> bool {
     (c as u8 >= 0x41 && c as u8 <= 0x5A) || (c as u8 >= 0x61 && c as u8 <= 0x7A)
@@ -639,7 +638,7 @@ mod test {
         tag_s!(".")
       );
 
-      dot("點");
+      let _ = dot("點");
     }
 
   #[test]
