@@ -39,6 +39,20 @@ pub enum Err<P,E=u32>{
   NodePosition(ErrorKind<E>, P, Vec<Err<P,E>>)
 }
 
+impl<P,E> Err<P,E> {
+  /// Convert Err into ErrorKind.
+  ///
+  /// This allows application code to use ErrorKind and stay independent from the verbose-errors features activation.
+  pub fn into_error_kind(self) -> ErrorKind<E> {
+    match self {
+      Err::Code(kind) => kind,
+      Err::Node(kind, _) => kind,
+      Err::Position(kind, _) => kind,
+      Err::NodePosition(kind, _, _) => kind,
+    }
+  }
+}
+
 impl<I,O,E> IResult<I,O,E> {
   /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
   /// to a contained `Error` value, leaving `Done` and `Incomplete` value
