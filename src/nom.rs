@@ -156,7 +156,7 @@ pub fn is_space(chr:u8) -> bool {
 //pub filter!(alphanumeric is_alphanumeric)
 
 /// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
-pub fn alpha<T>(input:T) -> IResult<T, T> where
+pub fn alpha<T>(input:T) -> IResult<T, T, u32> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputIter+InputLength,
     <T as InputIter>::Item: AsChar {

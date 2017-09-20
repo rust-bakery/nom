@@ -33,7 +33,7 @@ macro_rules! tag (
           Err(Err::Incomplete(Needed::Size($tag.input_len())))
         },
         CompareResult::Error => {
-          let e = ErrorKind::Tag;
+          let e:ErrorKind<u32> = ErrorKind::Tag;
           Err(Err::Error(error_position!(e, $i)))
         }
       };
@@ -74,7 +74,7 @@ macro_rules! tag_no_case (
           Err(Err::Incomplete(Needed::Size($tag.input_len())))
         },
         CompareResult::Error => {
-          let e = ErrorKind::Tag;
+          let e:ErrorKind<u32> = ErrorKind::Tag;
           Err(Err::Error(error_position!(e, $i)))
         }
       };
@@ -573,7 +573,7 @@ macro_rules! take (
 
       let cnt = $count as usize;
 
-      let res: IResult<_,_> = match input.slice_index(cnt) {
+      let res: IResult<_,_,u32> = match input.slice_index(cnt) {
         None        => Err(Err::Incomplete(Needed::Size(cnt))),
         //FIXME: use the InputTake trait
         Some(index) => Ok((input.slice(index..), input.slice(..index)))

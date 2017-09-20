@@ -490,11 +490,11 @@ macro_rules! complete (
 macro_rules! try_parse (
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,Needed,IResult};
+    use $crate::{Convert,Context,Err,Needed,IResult};
 
     match $submac!($i, $($args)*) {
       Ok((i,o))     => (i,o),
-      Err(Err::Error(e))      => return Err(Err::Error(e)),
+      Err(Err::Error(e))      => return Err(Err::Error(Context::convert(e))),
       Err(Err::Incomplete(i)) => return Err(Err::Incomplete(i))
     }
     });
@@ -510,17 +510,13 @@ macro_rules! map(
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     {
-      use ::std::result::Result::*;
-      use $crate::Err;
-
       pub fn _unify<T, R, F: FnOnce(T) -> R>(f: F, t: T) -> R {
        f(t)
       }
-      match $submac!($i, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i, o))              => Ok((i, _unify($g, o)))
-      }
+
+      ($submac!($i, $($args)*)).map(|(i,o)| {
+        (i, _unify($g, o))
+      })
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
@@ -542,14 +538,12 @@ macro_rules! map_res (
       use $crate::Err;
 
       let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i, o))              => match $submac2!(o, $($args2)*) {
+      ($submac!(i_, $($args)*)).and_then(|(i,o)| {
+        match $submac2!(o, $($args2)*) {
           Ok(output) => Ok((i, output)),
           Err(_)     => Err(Err::Error(error_position!(ErrorKind::MapRes, $i)))
         }
-      }
+      })
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
@@ -643,14 +637,12 @@ macro_rules! verify (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Convert,Err,Needed,IResult};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(Err::Error(e))                            => Err(Err::Error(e)),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size(i))),
-        Ok((i, o))                          => if $submac2!(o, $($args2)*) {
+        Err(e)     => Err(Err::convert(e)),
+        Ok((i, o)) => if $submac2!(o, $($args2)*) {
           Ok((i, o))
         } else {
           Err(Err::Error(error_position!(ErrorKind::Verify, $i)))
@@ -697,15 +689,14 @@ macro_rules! value (
   ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Convert,Err,Needed,IResult};
 
       match $submac!($i, $($args)*) {
-        Ok((i,_))     => {
+        Ok((i,_)) => {
           let res: IResult<_,_> = Ok((i, $res));
           res
         },
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i))
+        Err(e) => Err(Err::convert(e)),
       }
     }
   );
@@ -714,7 +705,7 @@ macro_rules! value (
   );
   ($i:expr, $res:expr) => (
     {
-      let res: $crate::IResult<_,_> = Ok(($i, $res));
+      let res: $crate::IResult<_,_,u32> = Ok(($i, $res));
       res
     }
   );
@@ -904,13 +895,12 @@ macro_rules! cond_with_error(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Convert,Err,Needed,IResult};
 
       if $cond {
         match $submac!($i, $($args)*) {
-          Ok((i,o))     => Ok((i, ::std::option::Option::Some(o))),
-          Err(Err::Error(e))      => Err(Err::Error(e)),
-          Err(Err::Incomplete(i)) => Err(Err::Incomplete(i))
+          Ok((i,o)) => Ok((i, ::std::option::Option::Some(o))),
+          Err(e)    => Err(Err::convert(e)),
         }
       } else {
         let res: ::std::result::Result<_,_> = Ok(($i, ::std::option::Option::None));
@@ -1021,13 +1011,12 @@ macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Convert,Err,Needed,IResult};
 
       if $cond {
         match $submac!($i, $($args)*) {
-          Ok((i,o))     => Ok((i, o)),
-          Err(Err::Error(e))      => Err(Err::Error(e)),
-          Err(Err::Incomplete(i)) => Err(Err::Incomplete(i))
+          Ok((i,o)) => Ok((i, o)),
+          Err(e)    => Err(Err::convert(e)),
         }
       } else {
         Err(Err::Error(error_position!(ErrorKind::CondReduce, $i)))
@@ -1059,13 +1048,12 @@ macro_rules! peek(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Convert,Err};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Ok((_,o))     => Ok(($i, o)),
-        Err(Err::Error(a))      => Err(Err::Error(a)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((_,o)) => Ok(($i, o)),
+        Err(e)    => Err(Err::convert(e)),
       }
     }
   );
@@ -1137,16 +1125,15 @@ macro_rules! tap (
   ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Convert,Err,Needed,IResult};
 
       match $submac!($i, $($args)*) {
-        Ok((i,o))     => {
+        Ok((i,o)) => {
           let $name = o;
           $e;
           Ok((i, $name))
         },
-        Err(Err::Error(a))      => Err(Err::Error(a)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i))
+        Err(e)    => Err(Err::convert(e)),
       }
     }
   );
@@ -1194,18 +1181,17 @@ macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Convert,Err};
 
       use $crate::Offset;
       use $crate::Slice;
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Ok((i,_))     => {
+        Ok((i,_)) => {
           let index = (&$i).offset(&i);
           Ok((i, ($i).slice(..index)))
         },
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i))
+        Err(e)    => Err(Err::convert(e))
       }
     }
   );

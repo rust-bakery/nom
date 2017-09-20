@@ -7,7 +7,7 @@ macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,ErrorKind};
 
       use $crate::InputLength;
 
@@ -22,7 +22,8 @@ macro_rules! separated_list(
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i,o))     => {
           if i.input_len() == input.input_len() {
-            Err(Err::Error(error_position!(ErrorKind::SeparatedList,input)))
+            let e:ErrorKind<u32> = ErrorKind::SeparatedList;
+            Err(Err::Error(error_position!(e,input)))
           } else {
             res.push(o);
             input = i;
@@ -95,7 +96,7 @@ macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Err,ErrorKind,Needed,IResult};
 
       use $crate::InputLength;
 
@@ -109,7 +110,8 @@ macro_rules! separated_nonempty_list(
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i,o))     => {
           if i.input_len() == input.len() {
-            Err(Err::Error(error_position!(ErrorKind::SeparatedNonEmptyList,input)))
+            let e:ErrorKind<u32> = ErrorKind::SeparatedNonEmptyList;
+            Err(Err::Error(error_position!(e,input)))
           } else {
             res.push(o);
             input = i;

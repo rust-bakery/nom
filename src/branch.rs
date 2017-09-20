@@ -725,10 +725,13 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: IResult<_,_> = if reduced != b {
-          Err(Err::Error(error_position!(ErrorKind::Tag, $i)))
+        let res: IResult<_,_,u32> = if reduced != b {
+          let e: ErrorKind<u32> = ErrorKind::Tag;
+          Err(Err::Error(error_position!(e, $i)))
         } else if m < blen {
-          Err(Err::Incomplete(Needed::Size(blen)))
+          let e:Err<&[u8], u32> = Err::Incomplete(Needed::Size(blen));
+          Err(e)
+          //Err(Err::Incomplete(Needed::Size(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -741,7 +744,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
+        let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
           Err(Err::Incomplete(Needed::Size(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
