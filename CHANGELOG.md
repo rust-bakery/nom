@@ -4,6 +4,12 @@
 
 ### Changed
 
+## Unreleased
+
+### Changed
+
+- the `compiler_error` macro now uses the stdlib `compile_error` macro on nightly.
+
 ## 3.2.0 - 2017-07-24
 
 ### Thanks
