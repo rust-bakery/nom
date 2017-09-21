@@ -76,8 +76,14 @@ impl Needed {
 
 #[derive(Debug,Clone,PartialEq)]
 pub enum Err<I,E=u32> {
+  /// There was not enough data
   Incomplete(Needed),
+  /// The parser had an error (recoverable)
   Error(Context<I,E>),
+  /// The parser had an unrecoverable error: we got to the right
+  /// branch and we know other branches won't work, so backtrack
+  /// as fast as possible
+  Failure(Context<I,E>),
 }
 
 use util::Convert;
