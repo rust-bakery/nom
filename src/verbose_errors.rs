@@ -141,26 +141,11 @@ macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Context};
+      use $crate::{Err,Convert};
 
       match $submac!($i, $($args)*) {
-        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
-        Ok((i, o))              => Ok((i, o)),
-        Err(Err::Error(e)) => {
-          let err = match e {
-            Context::Code(p, _) => {
-              let e: ErrorKind<$t> = ErrorKind::Fix;
-              Context::Code(p, e)
-            },
-            Context::List(mut v) => {
-              Context::List(v.drain(..).map(|(p,_)| {
-                let e: ErrorKind<$t> = ErrorKind::Fix;
-                (p, e)
-              }).collect())
-            },
-          };
-          Err(Err::Error(err))
-        }
+        Err(e)     => Err(Err::convert(e)),
+        Ok((i, o)) => Ok((i, o)),
       }
     }
   );
@@ -179,26 +164,12 @@ macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Context};
+      use $crate::{Err,Convert};
 
       match $submac!($i, $($args)*) {
-        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Ok((i, o))              => match $submac2!(o, $($args2)*) {
-          Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
-          Err(Err::Error(e)) => {
-            let err  = match e {
-              Context::Code(_, kind) => {
-                Context::Code($i, kind)
-              },
-              Context::List(mut v) => {
-                Context::List(v.drain(..).map(|(_,e)| {
-                  ($i, e)
-                }).collect())
-              },
-            };
-            Err(Err::Error(err))
-          },
+        Err(e)     => Err(Err::convert(e)),
+        Ok((i, o)) => match $submac2!(o, $($args2)*) {
+          Err(e)     => Err(Err::convert(e)),
           Ok((_,o2)) => Ok((i,o2)),
         },
       }

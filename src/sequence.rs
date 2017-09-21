@@ -606,8 +606,8 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Err(Err::Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah)))));
-    assert_eq!(res_b, Err(Err::Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah))))));
+    assert_eq!(res_a, Err(Err::Failure(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah)))));
+    assert_eq!(res_b, Err(Err::Failure(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah))))));
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
 
     // Merr-like error matching
@@ -617,7 +617,7 @@ mod tests {
 
     let res_a2 = res_a.clone();
     match res_a {
-      Err(Err::Error(e)) => {
+      Err(Err::Error(e)) | Err(Err::Failure(e)) => {
         let collected: Vec<ErrorKind<u32>> = error_to_list(&e).iter().map(|&(_,ref e)| e.clone()).collect();
         assert_eq!(collected, [ErrorKind::Custom(42), ErrorKind::Tag]);
         assert_eq!(error_to_string(&e), "missing `ijkl` tag");
@@ -630,7 +630,7 @@ mod tests {
 
     let res_b2 = res_b.clone();
     match res_b {
-      Err(Err::Error(e)) => {
+      Err(Err::Error(e)) | Err(Err::Failure(e)) => {
         let collected: Vec<ErrorKind<u32>> = error_to_list(&e).iter().map(|&(_,ref e)| e.clone()).collect();
         assert_eq!(collected, [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag]);
         assert_eq!(error_to_string(&e), "missing `mnop` tag after `ijkl`");

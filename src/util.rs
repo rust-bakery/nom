@@ -211,11 +211,13 @@ use std::hash::Hash;
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 pub fn add_error_pattern<'a,I: Clone+Hash+Eq,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<(I,ErrorKind<E>)>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
-  if let Err(Err::Error(e)) = res {
-    h.insert(error_to_list(&e), message);
-    true
-  } else {
-    false
+  match res {
+    Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+      h.insert(error_to_list(&e), message);
+      true
+    },
+    _ => false
+
   }
 }
 
