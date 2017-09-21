@@ -360,6 +360,7 @@ Here is a list of known projects using nom:
 - Document formats:
   * [TAR](https://github.com/Keruspe/tar-parser.rs)
   * [torrent files](https://github.com/jag426/bittorrent)
+  * [GZ](https://github.com/nharward/nom-gzip)
 - Database formats:
   * [Redis database files](https://github.com/badboy/rdb-rs)
 - Network protocol formats:
