@@ -243,7 +243,6 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Option<Vec<(ErrorKind<E>, usize, usize)> > {
   if let IResult::Error(e) = res {
     let mut v:Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
-    let mut err = e.clone();
 
     match e {
        Err::Code(_) => {},
@@ -700,6 +699,12 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
         ErrorKind::TakeTill1                 => "TakeTill1",
       }
 
+    }
+    /// Convert Err into an ErrorKind.
+    ///
+    /// This allows application code to use ErrorKind and stay independent from the `verbose-errors` features activation.
+    pub fn into_error_kind(self) -> ErrorKind<E> {
+      self
     }
   }
 
