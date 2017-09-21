@@ -327,7 +327,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt!(__impl $i, $subrule!($($args)*) => { $gen } | __end)
+    alt!(__impl $i, complete!($subrule!($($args)*)) => { $gen } | __end)
   );
 
   ($i:expr, $e:ident) => (
@@ -335,7 +335,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
-    alt!(__impl $i, $subrule!($($args)*) | __end)
+    alt!(__impl $i, complete!($subrule!($($args)*)) | __end)
   );
 );
 
@@ -813,7 +813,7 @@ mod tests {
     );
 
     let a = &b""[..];
-    assert_eq!(ac(a), Incomplete(Needed::Size(2)));
+    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
     let a = &b"ef"[..];
     assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
     let a = &b"cde"[..];
