@@ -56,7 +56,16 @@ macro_rules! bits_impl (
             }
           };
           Err(Err::Error(err))
-        }
+        },
+        Err(Err::Failure(e)) => {
+          let err = match e {
+            Context::Code((i,b), kind) => Context::Code(&i[b/8..], kind),
+            Context::List(mut v) => {
+              Context::List(v.drain(..).map(|((i,b), kind)| (&i[b/8..], kind)).collect())
+            }
+          };
+          Err(Err::Failure(err))
+        },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
           //println!("bits parser returned Needed::Size({})", i);
@@ -87,7 +96,11 @@ macro_rules! bits_impl (
         Err(Err::Error(e)) => {
           let Context::Code(_,err) = e;
           Err(Err::Error(error_position!(err, $i)))
-        }
+        },
+        Err(Err::Failure(e)) => {
+          let Context::Code(_,err) = e;
+          Err(Err::Failure(error_position!(err, $i)))
+        },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
           //println!("bits parser returned Needed::Size({})", i);
@@ -160,7 +173,16 @@ macro_rules! bytes_impl (
             }
           };
           Err(Err::Error(err))
-        }
+        },
+        Err(Err::Failure(e)) => {
+          let err = match e {
+            Err::Code(k) | Err::Node(k, _) => Err::Code(k),
+            Err::Position(k, i) | Err::NodePosition(k, i, _) => {
+              Err::Position(k, (i, 0))
+            }
+          };
+          Err(Err::Failure(err))
+        },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
           Err(Err::Incomplete(Needed::Size(i * 8)))
@@ -192,16 +214,13 @@ macro_rules! bytes_impl (
       }
 
       match $submac!(inp, $($args)*) {
-        Err(Err::Error(e)) => {
-          Err(Err::Error(e))
-        }
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
           Err(Err::Incomplete(Needed::Size(i * 8)))
         },
         Ok((i, o)) => {
           Ok(((i, 0), o))
-        }
+        },
+        Err(e) => Err(e)
       }
     }
   );

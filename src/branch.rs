@@ -193,8 +193,6 @@ macro_rules! alt (
       let i_ = $i.clone();
       let res = $subrule!(i_, $($args)*);
       match res {
-        Ok((_,_))     => res,
-        Err(Err::Incomplete(_)) => res,
         Err(Err::Error(e))      => {
           let out = alt!(__impl $i, $($rest)*);
 
@@ -206,7 +204,9 @@ macro_rules! alt (
           }
 
           out
-        }
+        },
+        Err(e) => Err(e),
+        Ok(o) => Ok(o),
       }
     }
   );
@@ -218,9 +218,8 @@ macro_rules! alt (
 
       let i_ = $i.clone();
       match $subrule!(i_, $($args)* ) {
-        Ok((i,o))     => Ok((i,$gen(o))),
-        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
-        Err(Err::Error(e))      => {
+        Ok((i,o))         => Ok((i,$gen(o))),
+        Err(Err::Error(e)) => {
           let out = alt!(__impl $i, $($rest)*);
 
           // Compile-time hack to ensure that res's E type is not under-specified.
@@ -231,7 +230,8 @@ macro_rules! alt (
           }
 
           out
-        }
+        },
+        Err(e) => Err(e),
       }
     }
   );
@@ -244,8 +244,9 @@ macro_rules! alt (
     {
       use $crate::{Err,ErrorKind};
       let e = ErrorKind::Alt;
+      let err = Err::Error(error_position!(e,$i));
 
-      Err(Err::Error(error_position!(e,$i)))
+      Err(err)
     }
   );
 
@@ -287,12 +288,13 @@ macro_rules! alt_complete (
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Convert,Context,Err};
 
       let i_ = $i.clone();
       let res = complete!(i_, $subrule!($($args)*));
       match res {
         Ok((_,_)) => res,
+        Err(Err::Failure(e)) => Err(Err::Failure(Context::convert(e))),
         e => {
           let out = alt_complete!($i, $($rest)*);
 
@@ -312,11 +314,12 @@ macro_rules! alt_complete (
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Convert,Context,Err};
 
       let i_ = $i.clone();
       match complete!(i_, $subrule!($($args)*)) {
         Ok((i,o)) => Ok((i,$gen(o))),
+        Err(Err::Failure(e)) => Err(Err::Failure(Context::convert(e))),
         e => {
           let out = alt_complete!($i, $($rest)*);
 
@@ -439,21 +442,22 @@ macro_rules! switch (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,IResult};
+      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match map!(i_, $submac!($($args)*), |o| Some(o)) {
         Err(Err::Error(e))      => Err(Err::Error(error_node_position!(
             ErrorKind::Switch, $i, e
         ))),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(e) => Err(Err::convert(e)),
         Ok((i, o))    => {
           match o {
             $(Some($p) => match $subrule!(i, $($args2)*) {
               Err(Err::Error(e)) => Err(Err::Error(error_node_position!(
                   ErrorKind::Switch, $i, e
               ))),
-              a => a,
+              Ok(o) => Ok(o),
+              Err(e) => Err(Err::convert(e)),
             }),*,
             _    => Err(Err::Error(error_position!(ErrorKind::Switch,$i)))
           }
@@ -513,7 +517,7 @@ macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,IResult,Needed};
+      use $crate::{Err,Convert,Needed};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
@@ -533,7 +537,7 @@ macro_rules! permutation (
       }
 
       if let ::std::option::Option::Some(need) = needed {
-        Err(Err::Incomplete(need))
+        Err(Err::convert(need))
       } else if let ::std::option::Option::Some(e) = error {
         Err(Err::Error(e))
       } else {
@@ -662,8 +666,8 @@ macro_rules! permutation_iterator (
         Err(Err::Error(_)) => {
           $all_done = false;
         },
-        Err(Err::Incomplete(i)) => {
-          $needed = ::std::option::Option::Some(i);
+        Err(e) => {
+          $needed = ::std::option::Option::Some(e);
           break;
         }
       };
@@ -684,8 +688,8 @@ macro_rules! permutation_iterator (
         Err(Err::Error(_)) => {
           $all_done = false;
         },
-        Err(Err::Incomplete(i)) => {
-          $needed = ::std::option::Option::Some(i);
+        Err(e) => {
+          $needed = ::std::option::Option::Some(e);
           break;
         }
       };

@@ -218,9 +218,6 @@ macro_rules! escaped (
                 index = $i.offset(i);
               }
             },
-            Err(Err::Incomplete(i)) => {
-              return Err(Err::Incomplete(i))
-            },
             Err(Err::Error(e)) => {
               if $i[index] == $control_char as u8 {
                 if index + 1 >= $i.input_len() {
@@ -234,13 +231,15 @@ macro_rules! escaped (
                         index = $i.offset(i);
                       }
                     },
-                    Err(Err::Incomplete(i)) => return Err(Err::Incomplete(i)),
-                    Err(Err::Error(e2))     => return Err(Err::Error(e2))
+                    Err(e) => return Err(e)
                   }
                 }
               } else {
                 return Ok(($i.slice(index..), $i.slice(..index)));
               }
+            },
+            Err(e) => {
+              return Err(e)
             }
           }
         }
@@ -252,6 +251,10 @@ macro_rules! escaped (
         Err(Err::Error(e))      => {
           let e2 = ErrorKind::Escaped;
           return Err(Err::Error(error_node_position!(e2, $i, e)))
+        },
+        Err(Err::Failure(e))      => {
+          let e2 = ErrorKind::Escaped;
+          return Err(Err::Failure(error_node_position!(e2, $i, e)))
         }
       }
     }
@@ -350,8 +353,7 @@ macro_rules! escaped_transform (
                     index = $i.offset(i);
                   }
                 },
-                Err(Err::Incomplete(i)) => return Err(Err::Incomplete(i)),
-                Err(Err::Error(e))      => return Err(Err::Error(e))
+                Err(e) => return Err(e)
               }
             }
           } else {
@@ -371,6 +373,10 @@ macro_rules! escaped_transform (
         Err(Err::Error(e))      => {
           let e2 = ErrorKind::EscapedTransform;
           return Err(Err::Error(error_node_position!(e2, $i, e)))
+        },
+        Err(Err::Failure(e))      => {
+          let e2 = ErrorKind::EscapedTransform;
+          return Err(Err::Failure(error_node_position!(e2, $i, e)))
         }
       }
     }

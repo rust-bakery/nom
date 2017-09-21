@@ -4,13 +4,12 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,Offset,Needed,IResult,be_u16,be_u32,be_u64,be_f32,ErrorKind};
+use nom::{Needed,IResult,be_u16,be_u32,be_u64,be_f32};
 //use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer,FileProducerState};
 //use nom::IResult;
 use nom::Err;
 
 use std::str;
-use std::io::SeekFrom;
 
 fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
   match be_u32(input) {
@@ -22,8 +21,7 @@ fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
         Err(Err::Incomplete(Needed::Size(offset as usize + 4)))
       }
     }
-    Err(Err::Error(e))      => Err(Err::Error(e)),
-    Err(Err::Incomplete(e)) => Err(Err::Incomplete(e))
+    Err(e) => Err(e)
   }
 }
 

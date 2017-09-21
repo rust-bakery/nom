@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,digit};
+use nom::digit;
 
 // Parser definition
 

@@ -51,8 +51,7 @@ macro_rules! tuple_parser (
   ($i:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
-      use $crate::Convert;
+      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -67,13 +66,15 @@ macro_rules! tuple_parser (
   ($i:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i,o))     => {
+        Err(e)    => Err(Err::convert(e)),
+        Ok((i,o)) => {
+          //fn unify_types<T>(_: &T, _: &T) {}
+          //unify_types(i_, i);
+
           let i_ = i.clone();
           tuple_parser!(i_, ($($parsed)* , o), $($rest)*)
         }
@@ -86,13 +87,12 @@ macro_rules! tuple_parser (
   ($i:expr, (), $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i,o))     => {
+        Err(e)    => Err(Err::convert(e)),
+        Ok((i,o)) => {
           Ok((i, (o)))
         }
       }
@@ -101,12 +101,11 @@ macro_rules! tuple_parser (
   ($i:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       match $submac!($i, $($args)*) {
-        Err(Err::Error(e))     => Err(Err::Error(e)),
-        Err(Err::Incomplete(i))=> Err(Err::Incomplete(i)),
-        Ok((i,o))     => {
+        Err(e)    => Err(Err::convert(e)),
+        Ok((i,o)) => {
           Ok((i, ($($parsed),* , o)))
         }
       }
@@ -150,12 +149,11 @@ macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-        Err(Err::Error(a))      => Err(Err::Error(a)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i1, (o1, _, o2)))   => {
+        Err(e)    => Err(Err::convert(e)),
+        Ok((i1, (o1, _, o2))) => {
           Ok((i1, (o1, o2)))
         }
       }
@@ -174,11 +172,10 @@ macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        Err(Err::Error(a))      => Err(Err::Error(a)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(e) => Err(Err::convert(e)),
         Ok((remaining, (_,o)))    => {
           Ok((remaining, o))
         }
@@ -206,11 +203,10 @@ macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        Err(Err::Error(a))      => Err(Err::Error(a)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(e) => Err(Err::convert(e)),
         Ok((remaining, (o,_)))    => {
           Ok((remaining, o))
         }
@@ -255,11 +251,10 @@ macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-        Err(Err::Error(a))      => Err(Err::Error(a)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(e) => Err(Err::convert(e)),
         Ok((i1, (_, o, _)))   => {
           Ok((i1, o))
         }
@@ -383,12 +378,11 @@ macro_rules! do_parse (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(e) => Err(Err::convert(e)),
         Ok((i,_))     => {
           let i_ = i.clone();
           do_parse!(__impl i_, $($rest)*)
@@ -404,12 +398,11 @@ macro_rules! do_parse (
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match  $submac!(i_, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(e) => Err(Err::convert(e)),
         Ok((i,o))     => {
           let $field = o;
           let i_ = i.clone();
@@ -426,11 +419,10 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::Err;
+    use $crate::{Err,Convert};
 
     match $submac!($i, $($args)*) {
-      Err(Err::Error(e))      => Err(Err::Error(e)),
-      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+      Err(e) => Err(Err::convert(e)),
       Ok((i,_))     => {
         Ok((i, ( $($rest)* )))
       },
@@ -443,11 +435,10 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::Err;
+    use $crate::{Err,Convert};
 
     match $submac!($i, $($args)*) {
-      Err(Err::Error(e))      => Err(Err::Error(e)),
-      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+      Err(e) => Err(Err::convert(e)),
       Ok((i,o))     => {
         let $field = o;
         Ok((i, ( $($rest)* )))
@@ -507,10 +498,10 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: IResult<_,_> = if reduced != b {
-          Err(Err::Error(error_position!(ErrorKind::Tag, $i)))
+        let res: IResult<_,_,u32> = if reduced != b {
+          Err($crate::Err::Error(error_position!(ErrorKind::Tag, $i)))
         } else if m < blen {
-          Err(Err::Incomplete(Needed::Size(blen)))
+          Err($crate::Err::Incomplete(Needed::Size(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -523,8 +514,8 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          Err(Err::Incomplete(Needed::Size(cnt)))
+        let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
+          Err($crate::Err::Incomplete(Needed::Size(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };

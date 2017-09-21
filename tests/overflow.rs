@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Err,IResult,Needed,be_u8,be_u64};
+use nom::{Err,Needed,be_u8,be_u64};
 
 // Parser definition
 

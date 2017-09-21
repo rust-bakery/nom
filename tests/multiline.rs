@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,alphanumeric,eol};
+use nom::{alphanumeric,eol};
 
 use std::str;
 

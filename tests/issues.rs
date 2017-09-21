@@ -106,7 +106,7 @@ mod parse_int {
 
 #[test]
 fn usize_length_bytes_issue(){
-  length_bytes!(b"012346", be_u16);
+  let _: IResult<&[u8],&[u8], u32> = length_bytes!(b"012346", be_u16);
 }
 
 /*

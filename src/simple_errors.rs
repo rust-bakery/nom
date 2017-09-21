@@ -144,15 +144,13 @@ macro_rules! fix_error (
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Convert,Err};
       match $submac!($i, $($args)*) {
-        ::std::result::Result::Err($crate::Err::Error(e))                            => ::std::result::Result::Err($crate::Err::Error(e)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-        ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(i))),
-        ::std::result::Result::Ok((i, o))                         => match $submac2!(o, $($args2)*) {
-          ::std::result::Result::Err($crate::Err::Error(e))                                 => ::std::result::Result::Err($crate::Err::Error(e)),
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown))      => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Unknown)),
-          ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(ref i2))) => ::std::result::Result::Err($crate::Err::Incomplete($crate::Needed::Size(*i2))),
-          ::std::result::Result::Ok((_, o2))                              => ::std::result::Result::Ok((i, o2))
+        Err(e)     => Err(Err::convert(e)),
+        Ok((i, o)) => match $submac2!(o, $($args2)*) {
+          Err(e)      => Err(Err::convert(e)),
+          Ok((_, o2)) => Ok((i, o2))
         }
       }
     }

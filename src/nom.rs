@@ -534,8 +534,7 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_i64($i
 #[inline]
 pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
   match be_u32(input) {
-    Err(Err::Error(e))      => Err(Err::Error(e)),
-    Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
+    Err(e) => Err(e),
     Ok((i,o)) => {
       unsafe {
         Ok((i, transmute::<u32, f32>(o)))
@@ -548,8 +547,7 @@ pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
 #[inline]
 pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   match be_u64(input) {
-    Err(Err::Error(e))      => Err(Err::Error(e)),
-    Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
+    Err(e) => Err(e),
     Ok((i,o)) => {
       unsafe {
         Ok((i, transmute::<u64, f64>(o)))
@@ -562,8 +560,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 #[inline]
 pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
   match le_u32(input) {
-    Err(Err::Error(e))      => Err(Err::Error(e)),
-    Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
+    Err(e) => Err(e),
     Ok((i,o)) => {
       unsafe {
         Ok((i, transmute::<u32, f32>(o)))
@@ -576,8 +573,7 @@ pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
 #[inline]
 pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
   match le_u64(input) {
-    Err(Err::Error(e))      => Err(Err::Error(e)),
-    Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
+    Err(e) => Err(e),
     Ok((i,o)) => {
       unsafe {
         Ok((i, transmute::<u64, f64>(o)))
@@ -590,8 +586,7 @@ pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
 #[inline]
 pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
   match is_a!(input, &b"0123456789abcdefABCDEF"[..]) {
-    Err(Err::Error(e))      => Err(Err::Error(e)),
-    Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
+    Err(e) => Err(e),
     Ok((i,o)) => {
       let mut res = 0u32;
 

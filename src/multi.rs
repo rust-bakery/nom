@@ -7,7 +7,7 @@ macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,Convert,ErrorKind};
 
       use $crate::InputLength;
 
@@ -18,8 +18,8 @@ macro_rules! separated_list(
       // get the first element
       let input_ = input.clone();
       match $submac!(input_, $($args2)*) {
-        Err(Err::Error(_))      => Ok((input, ::std::vec::Vec::new())),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(Err::Error(_)) => Ok((input, ::std::vec::Vec::new())),
+        Err(e)             => Err(Err::convert(e)),
         Ok((i,o))     => {
           if i.input_len() == input.input_len() {
             let e:ErrorKind<u32> = ErrorKind::SeparatedList;
@@ -38,8 +38,8 @@ macro_rules! separated_list(
                   ret = Ok((input, res));
                   break;
                 }
-                Err(Err::Incomplete(i)) => {
-                  ret = Err(Err::Incomplete(i));
+                Err(e) => {
+                  ret = Err(Err::convert(e));
                   break;
                 },
                 Ok((i2,_))     => {
@@ -55,8 +55,8 @@ macro_rules! separated_list(
                       ret = Ok((input, res));
                       break;
                     },
-                    Err(Err::Incomplete(i)) => {
-                      ret = Err(Err::Incomplete(i));
+                    Err(e) => {
+                      ret = Err(Err::convert(e));
                       break;
                     },
                     Ok((i3,o3))    => {
@@ -96,8 +96,7 @@ macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,ErrorKind,Needed,IResult};
-
+      use $crate::{Convert,Err,ErrorKind};
       use $crate::InputLength;
 
       let mut res   = ::std::vec::Vec::new();
@@ -106,9 +105,8 @@ macro_rules! separated_nonempty_list(
       // get the first element
       let input_ = input.clone();
       match $submac!(input_, $($args2)*) {
-        Err(Err::Error(a))      => Err(Err::Error(a)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i,o))     => {
+        Err(e)    => Err(Err::convert(e)),
+        Ok((i,o)) => {
           if i.input_len() == input.len() {
             let e:ErrorKind<u32> = ErrorKind::SeparatedNonEmptyList;
             Err(Err::Error(error_position!(e,input)))
@@ -126,8 +124,8 @@ macro_rules! separated_nonempty_list(
                   ret = Ok((input, res));
                   break;
                 }
-                Err(Err::Incomplete(i)) => {
-                  ret = Err(Err::Incomplete(i));
+                Err(e) => {
+                  ret = Err(Err::convert(e));
                   break;
                 },
                 Ok((i2,_))     => {
@@ -143,8 +141,8 @@ macro_rules! separated_nonempty_list(
                       ret = Ok((input, res));
                       break;
                     },
-                    Err(Err::Incomplete(i)) => {
-                      ret = Err(Err::Incomplete(i));
+                    Err(e) => {
+                      ret = Err(Err::convert(e));
                       break;
                     },
                     Ok((i3,o3))    => {
@@ -242,7 +240,7 @@ macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,InputLength};
+      use $crate::{Err,Convert,InputLength};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
@@ -260,8 +258,8 @@ macro_rules! many0(
             ret = Ok((input, res));
             break;
           },
-          Err(Err::Incomplete(i)) => {
-            ret = Err(Err::Incomplete(i));
+          Err(e) => {
+            ret = Err(Err::convert(e));
             break;
           },
           Ok((i, o))              => {
@@ -312,15 +310,18 @@ macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::{Err,Convert};
 
       use $crate::InputLength;
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
-          error_position!(ErrorKind::Many1,$i)
+          error_position!(ErrorKind::Many1,i_)
         )),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(Err::Failure(_))      => Err(Err::Failure(
+          error_position!(ErrorKind::Many1,i_)
+        )),
+        Err(i) => Err(Err::convert(i)),
         Ok((i1,o1))   => {
           if i1.input_len() == 0 {
             let mut res = ::std::vec::Vec::new();
@@ -331,8 +332,7 @@ macro_rules! many1(
             let mut res    = ::std::vec::Vec::with_capacity(4);
             res.push(o1);
             let mut input  = i1;
-            let mut incomplete: ::std::option::Option<Needed> =
-              ::std::option::Option::None;
+            let mut error = ::std::option::Option::None;
             loop {
               if input.input_len() == 0 {
                 break;
@@ -342,8 +342,8 @@ macro_rules! many1(
                 Err(Err::Error(_))                    => {
                   break;
                 },
-                Err(Err::Incomplete(i)) => {
-                  incomplete = ::std::option::Option::Some(i);
+                Err(e) => {
+                  error = ::std::option::Option::Some(e);
                   break;
                 },
                 Ok((i, o)) => {
@@ -356,8 +356,8 @@ macro_rules! many1(
               }
             }
 
-            match incomplete {
-              ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+            match error {
+              ::std::option::Option::Some(e) => Err(Err::convert(e)),
               ::std::option::Option::None    => Ok((input, res))
             }
           }
@@ -401,7 +401,7 @@ macro_rules! many_till(
   ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,IResult};
+      use $crate::{Err,Convert};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
@@ -419,8 +419,8 @@ macro_rules! many_till(
                 ret = Err(Err::Error(error_node_position!(ErrorKind::ManyTill,input, err)));
                 break;
               },
-              Err(Err::Incomplete(i)) => {
-                ret = Err(Err::Incomplete(i));
+              Err(e) => {
+                ret = Err(Err::convert(e));
                 break;
               },
               Ok((i, o))                          => {
@@ -477,7 +477,7 @@ macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Context,Err,Needed};
 
       use $crate::InputLength;
       let mut res          = ::std::vec::Vec::with_capacity($m);
@@ -485,6 +485,7 @@ macro_rules! many_m_n(
       let mut count: usize = 0;
       let mut err          = false;
       let mut incomplete: ::std::option::Option<Needed> = ::std::option::Option::None;
+      let mut failure:    ::std::option::Option<Context<_,_>> = ::std::option::Option::None;
       loop {
         if count == $n { break }
         let i_ = input.clone();
@@ -506,6 +507,10 @@ macro_rules! many_m_n(
             incomplete = ::std::option::Option::Some(i);
             break;
           },
+          Err(Err::Failure(e)) => {
+            failure = ::std::option::Option::Some(e);
+            break;
+          },
         }
         if input.input_len() == 0 {
           break;
@@ -516,15 +521,21 @@ macro_rules! many_m_n(
         if err {
           Err(Err::Error(error_position!(ErrorKind::ManyMN,$i)))
         } else {
-          match incomplete {
-            ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
-            ::std::option::Option::None    => Err(Err::Incomplete(Needed::Unknown))
+          match failure {
+            ::std::option::Option::Some(i) => Err(Err::Failure(i)),
+            ::std::option::Option::None => match incomplete {
+              ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+              ::std::option::Option::None    => Err(Err::Incomplete(Needed::Unknown))
+            }
           }
         }
       } else {
-        match incomplete {
-          ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
-          ::std::option::Option::None    => Ok((input, res))
+        match failure {
+          ::std::option::Option::Some(i) => Err(Err::Failure(i)),
+          ::std::option::Option::None => match incomplete {
+            ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+            ::std::option::Option::None    => Ok((input, res))
+          }
         }
       }
     }
@@ -560,9 +571,9 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,IResult};
+      use $crate::{Err,Convert};
 
-      let ret: IResult<_,_>;
+      let ret;
       let mut input = $i.clone();
       let mut res   = ::std::vec::Vec::new();
 
@@ -582,8 +593,8 @@ macro_rules! count(
             ret = Err(Err::Error(error_position!(ErrorKind::Count,$i)));
             break;
           },
-          Err(Err::Incomplete(i)) => {
-            ret = Err(Err::Incomplete(i));
+          Err(e) => {
+            ret = Err(Err::convert(e));
             break;
           },
         }
@@ -626,7 +637,7 @@ macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Convert,Err};
 
       let ret;
       let mut input = $i.clone();
@@ -649,8 +660,8 @@ macro_rules! count_fixed (
             ret = Err(Err::Error(error_position!(ErrorKind::Count,$i)));
             break;
           },
-          Err(Err::Incomplete(i)) => {
-            ret = Err(Err::Incomplete(i));
+          Err(e) => {
+            ret = Err(Err::convert(e));
             break;
           },
         }
@@ -671,16 +682,14 @@ macro_rules! length_count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       match $submac!($i, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i, o))    => {
+        Err(e)     => Err(Err::convert(e)),
+        Ok((i, o)) => {
           match count!(i, $submac2!($($args2)*), o as usize) {
-            Err(Err::Error(e))      => Err(Err::Error(e)),
-            Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-            Ok((i2, o2))            => Ok((i2, o2))
+            Err(e)       => Err(Err::convert(e)),
+            Ok((i2, o2)) => Ok((i2, o2))
           }
         }
       }
@@ -708,16 +717,14 @@ macro_rules! length_count(
 macro_rules! length_data(
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::Err;
+    use $crate::{Convert,Err};
 
     match $submac!($i, $($args)*) {
-      Err(Err::Error(e))      => Err(Err::Error(e)),
-      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-      Ok((i, o))    => {
+      Err(e)     => Err(Err::convert(e)),
+      Ok((i, o)) => {
         match take!(i, o as usize) {
-          Err(Err::Error(e))      => Err(Err::Error(e)),
-          Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-          Ok((i2, o2))            => Ok((i2, o2))
+          Err(e)       => Err(Err::convert(e)),
+          Ok((i2, o2)) => Ok((i2, o2))
         }
       }
     }
@@ -737,20 +744,17 @@ macro_rules! length_value(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,Convert};
 
       match $submac!($i, $($args)*) {
-        Err(Err::Error(e))      => Err(Err::Error(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i, o))    => {
+        Err(e)     => Err(Err::convert(e)),
+        Ok((i, o)) => {
           match take!(i, o as usize) {
-            Err(Err::Error(e))      => Err(Err::Error(e)),
-            Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-            Ok((i2, o2))  => {
+            Err(e)       => Err(Err::convert(e)),
+            Ok((i2, o2)) => {
               match complete!(o2, $submac2!($($args2)*)) {
-                Err(Err::Error(e))      => Err(Err::Error(e)),
-                Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-                Ok((_, o3))             => Ok((i2, o3))
+                Err(e)      => Err(Err::convert(e)),
+                Ok((_, o3)) => Ok((i2, o3))
               }
             }
           }
@@ -801,7 +805,7 @@ macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,InputLength};
+      use $crate::{Err,InputLength,Convert};
 
       let ret;
       let f         = $f;
@@ -819,8 +823,8 @@ macro_rules! fold_many0(
             ret = Ok((input, res));
             break;
           },
-          Err(Err::Incomplete(i)) => {
-            ret = Err(Err::Incomplete(i));
+          Err(e) => {
+            ret = Err(Err::convert(e));
             break;
           },
           Ok((i, o))                          => {
@@ -877,10 +881,13 @@ macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,InputLength};
+      use $crate::{Err,Needed,IResult,InputLength,Context};
 
       match $submac!($i, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
+          error_position!(ErrorKind::Many1,$i)
+        )),
+        Err(Err::Failure(_))      => Err(Err::Failure(
           error_position!(ErrorKind::Many1,$i)
         )),
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
@@ -895,6 +902,8 @@ macro_rules! fold_many1(
             let mut input  = i1;
             let mut incomplete: ::std::option::Option<Needed> =
               ::std::option::Option::None;
+            let mut failure: ::std::option::Option<Context<_,_>> =
+              ::std::option::Option::None;
             loop {
               if input.input_len() == 0 {
                 break;
@@ -907,6 +916,10 @@ macro_rules! fold_many1(
                   incomplete = ::std::option::Option::Some(i);
                   break;
                 },
+                Err(Err::Failure(e)) => {
+                  failure = ::std::option::Option::Some(e);
+                  break;
+                },
                 Ok((i, o)) => {
                   if i.input_len() == input.input_len() {
                     break;
@@ -917,9 +930,12 @@ macro_rules! fold_many1(
               }
             }
 
-            match incomplete {
-              ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
-              ::std::option::Option::None    => Ok((input, acc))
+            match failure {
+              ::std::option::Option::Some(e) => Err(Err::Failure(e)),
+              ::std::option::Option::None    => match incomplete {
+                ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+                ::std::option::Option::None    => Ok((input, acc))
+              }
             }
           }
         }
@@ -986,7 +1002,8 @@ macro_rules! fold_many_m_n(
             input  = i;
             count += 1;
           }
-          Err(Err::Error(_))                    => {
+          //FIXME: handle failure properly
+          Err(Err::Error(_)) | Err(Err::Failure(_)) => {
             err = true;
             break;
           },
@@ -1055,10 +1072,10 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: IResult<_,_> = if reduced != b {
-          Err(Err::Error(error_position!(ErrorKind::Tag, $i)))
+        let res: IResult<_,_,u32> = if reduced != b {
+          Err($crate::Err::Error(error_position!(ErrorKind::Tag, $i)))
         } else if m < blen {
-          Err(Err::Incomplete(Needed::Size(blen)))
+          Err($crate::Err::Incomplete(Needed::Size(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -1067,12 +1084,12 @@ mod tests {
     );
   );
 
-  macro_rules! take(
+  macro_rules! take (
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          Err(Err::Incomplete(Needed::Size(cnt)))
+        let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
+          Err($crate::Err::Incomplete(Needed::Size(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };

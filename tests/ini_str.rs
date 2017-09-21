@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Err,IResult};
+use nom::IResult;
 
 use std::collections::HashMap;
 
@@ -65,8 +65,7 @@ fn keys_and_values(input:&str) -> IResult<&str, HashMap<&str, &str> > {
     Ok((i,tuple_vec)) => {
       Ok((i, tuple_vec.into_iter().collect()))
     },
-    Err(Err::Incomplete(a))     => Err(Err::Incomplete(a)),
-    Err(Err::Error(a))          => Err(Err::Error(a))
+    Err(e) => Err(e)
   }
 }
 
@@ -82,8 +81,7 @@ fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str> > 
     Ok((i,tuple_vec)) => {
       Ok((i, tuple_vec.into_iter().collect()))
     },
-    Err(Err::Incomplete(a))     => Err(Err::Incomplete(a)),
-    Err(Err::Error(a))          => Err(Err::Error(a))
+    Err(e) => Err(e)
   }
 }
 
