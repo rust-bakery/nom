@@ -3,6 +3,7 @@
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
 use std::iter::Enumerate;
 use std::slice::Iter;
+use std::iter::Map;
 
 use std::str::Chars;
 use std::str::CharIndices;
@@ -195,21 +196,21 @@ pub trait InputTake {
 }
 
 impl<'a> InputIter for &'a [u8] {
-    type Item     = &'a u8;
+    type Item     = u8;
     type RawItem  = u8;
-    type Iter     = Enumerate<Iter<'a, Self::RawItem>>;
-    type IterElem = Iter<'a, Self::RawItem>;
+    type Iter     = Enumerate<Self::IterElem>;
+    type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
 
     #[inline]
     fn iter_indices(&self) -> Self::Iter {
-        self.iter().enumerate()
+        self.iter_elements().enumerate()
     }
     #[inline]
     fn iter_elements(&self) -> Self::IterElem {
-      self.iter()
+      self.iter().map(|r_u8| *r_u8)
     }
     #[inline]
-    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
+    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::Item) -> bool {
       self.iter().position(|b| predicate(*b))
     }
     #[inline]
