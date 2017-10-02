@@ -38,23 +38,27 @@
 //!
 //! ```
 //! # #[macro_use] extern crate nom;
-//! # use nom::{Err,Needed};
+//! # use nom::{Context,Needed};
 //! # fn main() {}
-//! pub enum IResult<I,O,E=u32> {
-//!   Done(I,O),
-//!   Error(Err<E>), // indicates the parser encountered an error. E is a custom error type you can redefine
-//!   /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
-//!   Incomplete(Needed) // if the parser did not have enough data to decide
+//! pub type IResult<I,O,E=u32> = Result<(I,O), Err<I,E>>;
+//!
+//! pub enum Err<I,E=u32> {
+//!   Incomplete(Needed),
+//!   Error(Context<I,E>),
+//!   Failure(Context<I,E>),
 //! }
 //! ```
 //!
 //! What it means:
 //!
-//! * `Done(i,o)` means the parser was successful. `i` is the remaining part of the input, `o` is the correctly parsed value
+//! * `Ok((i,o))` means the parser was successful. `i` is the remaining part of the input, `o` is the correctly parsed value
 //! The remaining part can then be used as input for other parsers called in a sequence
-//! * `Error(e)` indicates the parser encountered an error. The `Err<E>` type is an enum of possible parser errors,
+//! * `Err(Err::Error(e))` indicates the parser encountered an error. The `Context<I,E>` type is an enum of possible parser errors,
 //! that can also contain a custom error that you'd specify, by redefining the `E` error type
-//! * `Incomplete(i)` means the parser did not have enough information to decide, and tells you, if possible,
+//! * `Err(Err::Failure(e))` indicates the parser encountered an error that we cannot recover from (to prevent `alt` and other
+//! combinators from trying alternatives. The `Context<I,E>` type is an enum of possible parser errors, that can also contain
+//! a custom error that you'd specify, by redefining the `E` error type
+//! * `Err(Err::Incomplete(i))` means the parser did not have enough information to decide, and tells you, if possible,
 //! how much data it needs
 //!
 //! That way, you could write your own parser that recognizes the letter 'a' like this:
