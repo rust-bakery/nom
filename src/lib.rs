@@ -67,13 +67,13 @@
 //! fn a(input: &[u8]) -> IResult<&[u8], char> {
 //!  // if there is not enough data, we return Ìncomplete
 //!  if input.len() == 0 {
-//!    IResult::Incomplete(Needed::Size(1))
+//!    Err(Err::Incomplete(Needed::Size(1)))
 //!  } else {
 //!    if input[0] == 'a' as u8 {
 //!      // the first part of the returned value is the remaining slice
-//!      IResult::Done(&input[1..], 'a')
+//!      Ok((&input[1..], 'a'))
 //!    } else {
-//!      IResult::Error(error_code!(ErrorKind::Custom(42)))
+//!      Err(Err::Error(error_position!(ErrorKind::Custom(42), input)))
 //!    }
 //!  }
 //! }
@@ -91,7 +91,7 @@
 //! named!(hello, preceded!(tag!("Hello "), alpha));
 //! # use nom::IResult;
 //! # fn main() {
-//! #  assert_eq!(hello(b"Hello nom."), IResult::Done(&b"."[..], &b"nom"[..]));
+//! #  assert_eq!(hello(b"Hello nom."), Ok((&b"."[..], &b"nom"[..])));
 //! # }
 //! ```
 //!
@@ -109,7 +109,7 @@
 //!     tag!("Hello "), alpha)
 //! }
 //! # fn main() {
-//! #  assert_eq!(hello(b"Hello nom."), IResult::Done(&b"."[..], &b"nom"[..]));
+//! #  assert_eq!(hello(b"Hello nom."), Ok((&b"."[..], &b"nom"[..])));
 //! # }
 //! ```
 //!
@@ -178,8 +178,8 @@
 //! * **cond!**: conditional combinator
 //! * **cond_reduce!**: Conditional combinator with error
 //! * **cond_with_error!**: Conditional combinator
-//! * **expr_opt!**: evaluates an expression that returns a Option and returns a IResult::Done(I,T) if Some
-//! * **expr_res!**: evaluates an expression that returns a Result and returns a IResult::Done(I,T) if Ok
+//! * **expr_opt!**: evaluates an expression that returns a Option and returns a Ok((I,T)) if Some
+//! * **expr_res!**: evaluates an expression that returns a Result and returns a Ok((I,T)) if Ok
 //! * **flat_map!**:
 //! * **map!**: maps a function on the result of a parser
 //! * **map_opt!**: maps a function returning an Option on the output of a parser
@@ -275,7 +275,7 @@
 //! * **named!**: Makes a function from a parser combination
 //! * **named_args!**: Makes a function from a parser combination with arguments.
 //! * **named_attr!**: Makes a function from a parser combination, with attributes
-//! * **try_parse!**: A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Done, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
+//! * **try_parse!**: A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Ok, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
 //!
 //! ## Character test functions
 //!
@@ -379,13 +379,13 @@
 //! );
 //!
 //! fn main() {
-//!   assert_eq!(expr(b"1+2"),         IResult::Done(&b""[..], 3));
-//!   assert_eq!(expr(b"12+6-4+3"),    IResult::Done(&b""[..], 17));
-//!   assert_eq!(expr(b"1+2*3+4"),     IResult::Done(&b""[..], 11));
+//!   assert_eq!(expr(b"1+2"),         Ok((&b""[..], 3)));
+//!   assert_eq!(expr(b"12+6-4+3"),    Ok((&b""[..], 17)));
+//!   assert_eq!(expr(b"1+2*3+4"),     Ok((&b""[..], 11)));
 //!
-//!   assert_eq!(expr(b"(2)"),         IResult::Done(&b""[..], 2));
-//!   assert_eq!(expr(b"2*(3+4)"),     IResult::Done(&b""[..], 14));
-//!   assert_eq!(expr(b"2*2/(5-1)+3"), IResult::Done(&b""[..], 4));
+//!   assert_eq!(expr(b"(2)"),         Ok((&b""[..], 2)));
+//!   assert_eq!(expr(b"2*(3+4)"),     Ok((&b""[..], 14)));
+//!   assert_eq!(expr(b"2*2/(5-1)+3"), Ok((&b""[..], 4)));
 //! }
 //! ```
 #![cfg_attr(not(feature = "std"), feature(no_std))]

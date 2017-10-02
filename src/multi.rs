@@ -222,7 +222,6 @@ macro_rules! separated_nonempty_list_complete {
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many0!( tag!( "abcd" ) ) );
 ///
@@ -290,9 +289,7 @@ macro_rules! many0(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
@@ -378,9 +375,7 @@ macro_rules! many1(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///    named!(multi<&[u8], (Vec<&[u8]>, &[u8]) >, many_till!( tag!( "abcd" ), tag!( "efgh" ) ) );
@@ -393,7 +388,7 @@ macro_rules! many1(
 ///    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
 ///    assert_eq!(multi(&a[..]),Ok((&b"abcd"[..], res_a)));
 ///    assert_eq!(multi(&b[..]),Ok((&b"abcd"[..], res_b)));
-///    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position(ErrorKind::Tag,&c[..])))));
+///    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position!(ErrorKind::Tag,&c[..])))));
 /// # }
 /// ```
 #[macro_export]
@@ -454,9 +449,7 @@ macro_rules! many_till(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many_m_n!(2, 4, tag!( "abcd" ) ) );
@@ -465,7 +458,7 @@ macro_rules! many_till(
 ///  let b = b"abcdabcdefgh";
 ///  let c = b"abcdabcdabcdabcdabcdefgh";
 ///
-///  assert_eq!(multi(&a[..]),Error(error_position!(ErrorKind::ManyMN,&a[..])));
+///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(ErrorKind::ManyMN,&a[..]))));
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&b[..]),Ok((&b"efgh"[..], res)));
 ///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
@@ -550,9 +543,7 @@ macro_rules! many_m_n(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done,Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(counter< Vec<&[u8]> >, count!( tag!( "abcd" ), 2 ) );
@@ -614,9 +605,7 @@ macro_rules! count(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done,Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(counter< [&[u8]; 2] >, count_fixed!( &[u8], tag!( "abcd" ), 2 ) );
@@ -783,7 +772,6 @@ macro_rules! length_value(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >,
 ///    fold_many0!( tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
@@ -857,9 +845,7 @@ macro_rules! fold_many0(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >,
@@ -954,9 +940,7 @@ macro_rules! fold_many1(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >,
@@ -969,7 +953,7 @@ macro_rules! fold_many1(
 ///  let b = b"abcdabcdefgh";
 ///  let c = b"abcdabcdabcdabcdabcdefgh";
 ///
-///  assert_eq!(multi(&a[..]),Error(error_position!(ErrorKind::ManyMN,&a[..])));
+///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(ErrorKind::ManyMN,&a[..]))));
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&b[..]),Ok((&b"efgh"[..], res)));
 ///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];

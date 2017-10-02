@@ -8,7 +8,7 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self,Done};
+/// # use nom::IResult;
 /// # fn main() {
 ///  fn test(input: &str) -> IResult<&str, &str> {
 ///    tag_s!(input, "abcd")
@@ -33,7 +33,8 @@ macro_rules! tag_s (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self,Done};
+/// # use nom::IResult;
+/// # use nom::InputLength;
 /// # fn main() {
 ///  fn test(input: &str) -> IResult<&str, &str> {
 ///    tag_no_case_s!(input, "ABcd")
@@ -56,7 +57,6 @@ macro_rules! tag_no_case_s (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  // Desmond parser
 ///  named!(take5<&str,&str>, take_s!( 5 ) );
@@ -87,7 +87,6 @@ macro_rules! take_s (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( not_space<&str,&str>, is_not_s!( " \t\r\n" ) );
 ///
@@ -109,7 +108,6 @@ macro_rules! is_not_s (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(abcd<&str, &str>, is_a_s!( "abcd" ));
 ///
@@ -137,8 +135,6 @@ macro_rules! is_a_s (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
-/// # use nom::is_alphanumeric;
 /// # fn main() {
 ///  fn alphabetic(chr: char) -> bool { (chr >= 0x41 as char && chr <= 0x5A as char) || (chr >= 0x61 as char && chr <= 0x7A as char) }
 ///  named!( alpha<&str,&str>, take_while_s!( alphabetic ) );

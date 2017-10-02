@@ -315,15 +315,12 @@ macro_rules! apply (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use std::collections;
-/// # use nom::IResult::Error;
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::{Position,NodePosition};
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///     named!(err_test, alt!(
+///     named!(err_test<&[u8],&[u8],u32>, alt!(
 ///       tag!("abcd") |
-///       preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42),
+///       preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42u32),
 ///           do_parse!(
 ///                  tag!("ijkl")                                        >>
 ///             res: return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
@@ -341,10 +338,10 @@ macro_rules! apply (
 ///     let res_a = err_test(a);
 ///     let res_b = err_test(b);
 ///     let res_c = err_test(c);
-///     assert_eq!(res_a, Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah))));
-///     assert_eq!(res_b, Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..],
+///     assert_eq!(res_a, Err(Err::Failure(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah)))));
+///     assert_eq!(res_b, Err(Err::Failure(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..],
 ///       error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah))))
-///     );
+///     ));
 /// # }
 /// ```
 ///
@@ -353,17 +350,20 @@ macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Convert,Context,Err,ErrorKind};
 
       let i_ = $i.clone();
       let cl = || {
         $submac!(i_, $($args)*)
       };
 
+      fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
+
       match cl() {
-        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
+        Err(Err::Incomplete(x)) => Err(Err::convert(Err::Incomplete(x))),
         Ok((i, o))              => Ok((i, o)),
         Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+          unify_types(&e, &Context::Code($i, $code));
           return Err(Err::Failure(error_node_position!($code, $i, e)))
         }
       }
@@ -383,16 +383,14 @@ macro_rules! return_error (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use std::collections;
-/// # use nom::IResult::Error;
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::{Position,NodePosition};
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
+///     named!(err_test, add_return_error!(ErrorKind::Custom(42u32), tag!("abcd")));
 ///
 ///     let a = &b"efghblah"[..];
 ///     let res_a = err_test(a);
-///     assert_eq!(res_a, Error(error_node_position!(ErrorKind::Custom(42), a, error_position!(ErrorKind::Tag, a))));
+///     assert_eq!(res_a, Err(Err::Error(error_node_position!(ErrorKind::Custom(42), a, error_position!(ErrorKind::Tag, a)))));
 /// # }
 /// ```
 ///
@@ -401,14 +399,17 @@ macro_rules! add_return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
+      use $crate::{Err,Convert,Context,ErrorKind};
 
+      fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
       match $submac!($i, $($args)*) {
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
+          unify_types(&e, &Context::Code($i, $code));
           Err(Err::Error(error_node_position!($code, $i, e)))
         },
         Err(Err::Failure(e))      => {
+          unify_types(&e, &Context::Code($i, $code));
           Err(Err::Failure(error_node_position!($code, $i, e)))
         },
         Err(e) => Err(Err::convert(e)),
@@ -426,16 +427,14 @@ macro_rules! add_return_error (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use std::collections;
-/// # use nom::IResult::Error;
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::{Position,NodePosition};
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///     named!(take_5, complete!(take!(5)));
 ///
 ///     let a = &b"abcd"[..];
 ///     let res_a = take_5(a);
-///     assert_eq!(res_a,  Error(error_position!(ErrorKind::Complete, a)));
+///     assert_eq!(res_a, Err(Err::Error(error_position!(ErrorKind::Complete, a))));
 /// # }
 /// ```
 ///
@@ -466,26 +465,25 @@ macro_rules! complete (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self, Ok(, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::{be_u8,ErrorKind};
+/// # use nom::IResult;
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
 ///    let (i1, sz)     = try_parse!(input, be_u8);
 ///    let (i2, length) = try_parse!(i1, expr_opt!(size.checked_add(sz)));
 ///    let (i3, data)   = try_parse!(i2, take!(length));
-///    return Ok((i3, data);
+///    return Ok((i3, data));
 ///  }
 /// # fn main() {
 /// let arr1 = [1, 2, 3, 4, 5];
 /// let r1 = take_add(&arr1[..], 1);
-/// assert_eq!(r1, Ok((&[4,5][..], &[2,3][..]));
+/// assert_eq!(r1, Ok((&[4,5][..], &[2,3][..])));
 ///
 /// let arr2 = [0xFE, 2, 3, 4, 5];
 /// // size is overflowing
 /// let r1 = take_add(&arr2[..], 42);
-/// assert_eq!(r1, Error(error_position!(ErrorKind::ExprOpt,&[2,3,4,5][..])));
+/// assert_eq!(r1, Err(Err::Error(error_position!(ErrorKind::ExprOpt,&[2,3,4,5][..]))));
 /// # }
 /// ```
 #[macro_export]
@@ -627,7 +625,6 @@ macro_rules! parse_to (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::be_u32;
 /// # fn main() {
 ///  named!(check<u32>, verify!(be_u32, |val:u32| val >= 0 && val < 3));
@@ -675,15 +672,14 @@ macro_rules! verify (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(x<u8>, value!(42, delimited!(tag!("<!--"), take!(5), tag!("-->"))));
 ///  named!(y<u8>, delimited!(tag!("<!--"), value!(42), tag!("-->")));
 ///  let r = x(&b"<!-- abc --> aaa"[..]);
-///  assert_eq!(r, Ok((&b" aaa"[..], 42));
+///  assert_eq!(r, Ok((&b" aaa"[..], 42)));
 ///
 ///  let r2 = y(&b"<!----> aaa"[..]);
-///  assert_eq!(r2, Ok((&b" aaa"[..], 42));
+///  assert_eq!(r2, Ok((&b" aaa"[..], 42)));
 /// # }
 /// ```
 #[macro_export]
@@ -739,9 +735,8 @@ macro_rules! expr_res (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self, Ok(, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
+/// # use nom::IResult;
 /// # use nom::{be_u8,ErrorKind};
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
@@ -755,12 +750,12 @@ macro_rules! expr_res (
 /// # fn main() {
 /// let arr1 = [1, 2, 3, 4, 5];
 /// let r1 = take_add(&arr1[..], 1);
-/// assert_eq!(r1, Ok((&[4,5][..], &[2,3][..]));
+/// assert_eq!(r1, Ok((&[4,5][..], &[2,3][..])));
 ///
 /// let arr2 = [0xFE, 2, 3, 4, 5];
 /// // size is overflowing
 /// let r1 = take_add(&arr2[..], 42);
-/// assert_eq!(r1, Error(error_position!(ErrorKind::ExprOpt,&[2,3,4,5][..])));
+/// assert_eq!(r1, Err(Err::Error(error_position!(ErrorKind::ExprOpt,&[2,3,4,5][..]))));
 /// # }
 /// ```
 #[macro_export]
@@ -786,14 +781,13 @@ macro_rules! expr_opt (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( o<&[u8], Option<&[u8]> >, opt!( tag!( "abcd" ) ) );
 ///
 ///  let a = b"abcdef";
 ///  let b = b"bcdefg";
-///  assert_eq!(o(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..])));
-///  assert_eq!(o(&b[..]), Ok((&b"bcdefg"[..], None));
+///  assert_eq!(o(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
+///  assert_eq!(o(&b[..]), Ok((&b"bcdefg"[..], None)));
 ///  # }
 /// ```
 #[macro_export]
@@ -801,13 +795,14 @@ macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
+      use ::std::option::Option::*;
       use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Ok((i,o)) => Ok((i, ::std::option::Option::Some(o))),
-        Err(Err::Error(_)) => Ok(($i, ::std::option::Option::None)),
-        Err(e) => Err(Err::convert(e)),
+        Ok((i,o))          => Ok((i, Some(o))),
+        Err(Err::Error(_)) => Ok(($i, None)),
+        Err(e)             => Err(Err::convert(e)),
       }
     }
   );
@@ -871,7 +866,6 @@ macro_rules! opt_res (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::IResult;
 /// # fn main() {
 ///  let b = true;
@@ -880,13 +874,13 @@ macro_rules! opt_res (
 ///  );
 ///
 ///  let a = b"abcdef";
-///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..])));
+///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
 ///
 ///  let b2 = false;
 ///  let f2:Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
 ///    cond!( b2, tag!("abcd") ))
 ///  );
-///  assert_eq!(f2(&a[..]), Ok((&b"abcdef"[..], None));
+///  assert_eq!(f2(&a[..]), Ok((&b"abcdef"[..], None)));
 ///  # }
 /// ```
 ///
@@ -927,7 +921,6 @@ macro_rules! cond_with_error(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::IResult;
 /// # fn main() {
 ///  let b = true;
@@ -936,13 +929,13 @@ macro_rules! cond_with_error(
 ///  );
 ///
 ///  let a = b"abcdef";
-///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..])));
+///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
 ///
 ///  let b2 = false;
 ///  let f2:Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
 ///    cond!( b2, tag!("abcd") ))
 ///  );
-///  assert_eq!(f2(&a[..]), Ok((&b"abcdef"[..], None));
+///  assert_eq!(f2(&a[..]), Ok((&b"abcdef"[..], None)));
 ///  # }
 /// ```
 ///
@@ -987,8 +980,7 @@ macro_rules! cond(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done,Error};
-/// # use nom::{Err,ErrorKind};
+/// # use nom::{Err,ErrorKind,IResult};
 /// # fn main() {
 ///  let b = true;
 ///  let f = closure!(&'static[u8],
@@ -996,13 +988,13 @@ macro_rules! cond(
 ///  );
 ///
 ///  let a = b"abcdef";
-///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], &b"abcd"[..]));
+///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], &b"abcd"[..])));
 ///
 ///  let b2 = false;
 ///  let f2 = closure!(&'static[u8],
 ///    cond_reduce!( b2, tag!("abcd") )
 ///  );
-///  assert_eq!(f2(&a[..]), Error(error_position!(ErrorKind::CondReduce, &a[..])));
+///  assert_eq!(f2(&a[..]), Err(Err::Error(error_position!(ErrorKind::CondReduce, &a[..]))));
 ///  # }
 /// ```
 ///
@@ -1011,15 +1003,20 @@ macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err,Needed,IResult};
+      use $crate::{Convert,Err};
+      let default_err = Err(Err::Error(error_position!(ErrorKind::CondReduce, $i)));
 
       if $cond {
-        match $submac!($i, $($args)*) {
+        let sub_res = $submac!($i, $($args)*);
+        fn unify_types<I,O,E>(_: &IResult<I,O,E>, _: &IResult<I,O,E>) {}
+        unify_types(&sub_res, &default_err);
+
+        match sub_res {
           Ok((i,o)) => Ok((i, o)),
           Err(e)    => Err(Err::convert(e)),
         }
       } else {
-        Err(Err::Error(error_position!(ErrorKind::CondReduce, $i)))
+        default_err
       }
     }
   );
@@ -1035,12 +1032,11 @@ macro_rules! cond_reduce(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(ptag, peek!( tag!( "abcd" ) ) );
 ///
 ///  let r = ptag(&b"abcdefgh"[..]);
-///  assert_eq!(r, Ok((&b"abcdefgh"[..], &b"abcd"[..]));
+///  assert_eq!(r, Ok((&b"abcdefgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -1068,9 +1064,7 @@ macro_rules! peek(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 /// named!(not_e, do_parse!(
@@ -1080,10 +1074,10 @@ macro_rules! peek(
 /// ));
 ///
 /// let r = not_e(&b"abcd"[..]);
-/// assert_eq!(r, Ok((&b"d"[..], &b"abc"[..]));
+/// assert_eq!(r, Ok((&b"d"[..], &b"abc"[..])));
 ///
 /// let r2 = not_e(&b"abce"[..]);
-/// assert_eq!(r2, Error(error_position!(ErrorKind::Not, &b"e"[..])));
+/// assert_eq!(r2, Err(Err::Error(error_position!(ErrorKind::Not, &b"e"[..]))));
 /// # }
 /// ```
 #[macro_export]
@@ -1091,14 +1085,24 @@ macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Context,Convert,Err,IResult};
 
       use $crate::Slice;
       let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Ok(_)  => Err(Err::Error(error_position!(ErrorKind::Not, $i))),
+
+      //we need this to avoid type inference errors
+      fn unify_types<I,O,P,E>(_: &IResult<I,O,E>, _: &IResult<I,P,E>) {}
+
+      let sub_res = $submac!(i_, $($args)*);
+      let res = match sub_res {
+        Ok(_)  => {
+          let c: Context<_,_> = error_position!(ErrorKind::Not, $i);
+          Err(Err::convert(Err::Error(c)))
+        },
         Err(_) => Ok(($i, ($i).slice(..0))),
-      }
+      };
+      unify_types(&sub_res, &res);
+      res
     }
   );
   ($i:expr, $f:expr) => (
@@ -1106,18 +1110,18 @@ macro_rules! not(
   );
 );
 
+
 /// `tap!(name: I -> IResult<I,O> => { block }) => I -> IResult<I, O>`
 /// allows access to the parser's result without affecting it
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use std::str;
 /// # fn main() {
 ///  named!(ptag, tap!(res: tag!( "abcd" ) => { println!("recognized {}", str::from_utf8(res).unwrap()) } ) );
 ///
 ///  let r = ptag(&b"abcdefgh"[..]);
-///  assert_eq!(r, Ok((&b"efgh"[..], &b"abcd"[..]));
+///  assert_eq!(r, Ok((&b"efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -1169,11 +1173,10 @@ macro_rules! eof (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
 ///  let r = x(&b"<!-- abc --> aaa"[..]);
-///  assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..]));
+///  assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..])));
 /// # }
 /// ```
 #[macro_export]

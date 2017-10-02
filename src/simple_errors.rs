@@ -102,18 +102,31 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use std::collections;
-/// # use nom::IResult::Error;
+/// # use nom::IResult;
+/// # use std::convert::From;
+/// # use nom::Context;
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///     // will add a Custom(42) error to the error chain
-///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
-///     // Convert to IREsult<&[u8], &[u8], &str>
-///     named!(parser<&[u8], &[u8], &str>, add_return_error!(ErrorKind::Custom("custom error message"), fix_error!(&str, err_test)));
+///     named!(err_test, add_return_error!(ErrorKind::Custom(42u32), tag!("abcd")));
+///
+///     #[derive(Debug,Clone,PartialEq)]
+///     pub struct ErrorStr(String);
+///
+///     // Convert to IResult<&[u8], &[u8], ErrorStr>
+///     impl From<u32> for ErrorStr {
+///       fn from(i: u32) -> Self {
+///         ErrorStr(format!("custom error code: {}", i))
+///       }
+///     }
+///
+///     named!(parser<&[u8], &[u8], ErrorStr>,
+///         fix_error!(ErrorStr, err_test)
+///       );
 ///
 ///     let a = &b"efghblah"[..];
-///     let res_a = parser(a);
-///     assert_eq!(res_a,  Error(error_node_position!( ErrorKind::Custom("custom error message"), a, Position(ErrorKind::Fix, a))));
+///     assert_eq!(parser(a), Err(Err::Error(Context::Code(a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))))));
 /// # }
 /// ```
 #[macro_export]
@@ -122,11 +135,26 @@ macro_rules! fix_error (
     {
       use ::std::result::Result::*;
       use $crate::Err;
-      use $crate::Convert;
+      use $crate::{Convert,Context,ErrorKind};
 
       match $submac!($i, $($args)*) {
         Ok((i,o)) => Ok((i,o)),
-        Err(e) => Err(Err::convert(e))
+        Err(e) => {
+          let e2 = match e {
+            Err::Error(err) => {
+              let Context::Code(i, code) = err;
+              let code2: ErrorKind<$t> = ErrorKind::convert(code);
+              Err::Error(Context::Code(i, code2))
+            },
+            Err::Failure(err) => {
+              let Context::Code(i, code) = err;
+              let code2: ErrorKind<$t> = ErrorKind::convert(code);
+              Err::Failure(Context::Code(i, code2))
+            },
+            Err::Incomplete(e) => Err::Incomplete(e),
+          };
+          Err(e2)
+        }
       }
     }
   );

@@ -118,17 +118,14 @@ impl HexDisplay for [u8] {
 macro_rules! dbg (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
       let l = line!();
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(a) => {
-          println!("Error({:?}) at l.{} by ' {} '", a, l, stringify!($submac!($($args)*)));
-          $crate::IResult::Error(a)
+        Err(e) => {
+          println!("Err({:?}) at l.{} by ' {} '", e, l, stringify!($submac!($($args)*)));
+          Err(e)
         },
-        $crate::IResult::Incomplete(a) => {
-          println!("Incomplete({:?}) at {} by ' {} '", a, l, stringify!($submac!($($args)*)));
-          $crate::IResult::Incomplete(a)
-        },
-        a => a
+        a => a,
       }
     }
   );
@@ -164,15 +161,11 @@ macro_rules! dbg_dmp (
       use $crate::HexDisplay;
       let l = line!();
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(a) => {
-          println!("Error({:?}) at l.{} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
-          $crate::IResult::Error(a)
+        Err(e) => {
+          println!("Error({:?}) at l.{} by ' {} '\n{}", e, l, stringify!($submac!($($args)*)), $i.to_hex(8));
+          Err(e)
         },
-        $crate::IResult::Incomplete(a) => {
-          println!("Incomplete({:?}) at {} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
-          $crate::IResult::Incomplete(a)
-        },
-        a => a
+        a => a,
       }
     }
   );
@@ -757,7 +750,6 @@ impl<E: From<u32>> Convert<ErrorKind<u32>> for ErrorKind<E> {
     }
   }
 }
-
 
 #[cfg(test)]
 mod tests {

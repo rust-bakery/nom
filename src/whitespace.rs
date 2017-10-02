@@ -15,7 +15,6 @@
 //!
 //! ```
 //! # #[macro_use] extern crate nom;
-//! # use nom::IResult::Done;
 //! # fn main() {
 //! named!(tuple<&[u8], (&[u8], &[u8]) >,
 //!   ws!(tuple!( take!(3), tag!("de") ))
@@ -39,7 +38,6 @@
 //!
 //! ```
 //! # #[macro_use] extern crate nom;
-//! # use nom::IResult::Done;
 //! named!(pub space, eat_separator!(&b" \t"[..]));
 //!
 //! #[macro_export]
@@ -686,7 +684,6 @@ macro_rules! separated_list_sep (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// named!(pub space, eat_separator!(&b" \t"[..]));
 /// # fn main() {}
 /// ```
@@ -848,7 +845,6 @@ pub fn sp<'a,T>(input:T) -> IResult<T, T> where
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 /// named!(tuple<&[u8], (&[u8], &[u8]) >,
 ///   ws!(tuple!( take!(3), tag!("de") ))

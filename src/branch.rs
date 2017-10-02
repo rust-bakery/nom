@@ -44,7 +44,6 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 /// #
 /// // We create an enum to represent our creatures
@@ -365,9 +364,7 @@ macro_rules! alt_complete (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done,Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::{Position, NodePosition};
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(sw,
@@ -383,10 +380,10 @@ macro_rules! alt_complete (
 ///  let d = b"blah";
 ///
 ///  assert_eq!(sw(&a[..]), Ok((&b"123"[..], &b"XYZ"[..])));
-///  assert_eq!(sw(&b[..]), Error(error_node_position!(ErrorKind::Switch, &b"abcdef"[..],
-///    error_position!(ErrorKind::Tag, &b"ef"[..]))));
+///  assert_eq!(sw(&b[..]), Err(Err::Error(error_node_position!(ErrorKind::Switch, &b"abcdef"[..],
+///    error_position!(ErrorKind::Tag, &b"ef"[..])))));
 ///  assert_eq!(sw(&c[..]), Ok((&b""[..], &b"123"[..])));
-///  assert_eq!(sw(&d[..]), Error(error_position!(ErrorKind::Switch, &b"blah"[..])));
+///  assert_eq!(sw(&d[..]), Err(Err::Error(error_position!(ErrorKind::Switch, &b"blah"[..]))));
 ///  # }
 /// ```
 ///
@@ -394,7 +391,6 @@ macro_rules! alt_complete (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(sw,
 ///    switch!(take!(4),
@@ -487,8 +483,7 @@ macro_rules! switch (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done,Error,Incomplete};
-/// # use nom::{ErrorKind,Needed};
+/// # use nom::{Err,ErrorKind,Needed};
 /// # fn main() {
 /// named!(perm<(&[u8], &[u8], &[u8])>,
 ///   permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
@@ -506,10 +501,10 @@ macro_rules! switch (
 /// assert_eq!(perm(c), Ok((&b"jklm"[..], expected)));
 ///
 /// let d = &b"efgxyzabcdefghi"[..];
-/// assert_eq!(perm(d), Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..])));
+/// assert_eq!(perm(d), Err(Err::Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..]))));
 ///
 /// let e = &b"efgabc"[..];
-/// assert_eq!(perm(e), Incomplete(Needed::Size(7)));
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
 /// # }
 /// ```
 #[macro_export]

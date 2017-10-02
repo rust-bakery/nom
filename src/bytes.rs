@@ -9,7 +9,6 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(x, tag!("abcd"));
 ///  let r = x(&b"abcdefgh"[..]);
@@ -22,8 +21,8 @@ macro_rules! tag (
     {
       use ::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind};
-
       use $crate::{Compare,CompareResult,InputLength,Slice};
+
       let res: IResult<_,_> = match ($i).compare($tag) {
         CompareResult::Ok => {
           let blen = $tag.input_len();
@@ -49,7 +48,6 @@ macro_rules! tag (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self,Done};
 /// # fn main() {
 ///  named!(test, tag_no_case!("ABcd"));
 ///
@@ -63,8 +61,8 @@ macro_rules! tag_no_case (
     {
       use ::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Compare,CompareResult,InputLength,Slice};
 
-      use {Compare,CompareResult,InputLength,Slice};
       let res: IResult<_,_> = match ($i).compare_no_case($tag) {
         CompareResult::Ok => {
           let blen = $tag.input_len();
@@ -89,7 +87,6 @@ macro_rules! tag_no_case (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( not_space, is_not!( " \t\r\n" ) );
 ///
@@ -135,7 +132,6 @@ macro_rules! is_not(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(abcd, is_a!( "abcd" ));
 ///
@@ -187,7 +183,6 @@ macro_rules! is_a (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::alpha;
 /// # fn main() {
 ///  named!(esc, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
@@ -411,7 +406,6 @@ macro_rules! escaped_transform (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::is_alphanumeric;
 /// # fn main() {
 ///  named!( alpha, take_while!( is_alphanumeric ) );
@@ -555,7 +549,6 @@ macro_rules! take_till1 (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  // Desmond parser
 ///  named!(take5, take!( 5 ) );

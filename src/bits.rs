@@ -17,7 +17,6 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( take_3_bits<u8>, bits!( take_bits!( u8, 3 ) ) );
 ///
@@ -123,7 +122,6 @@ macro_rules! bits_impl (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::rest;
 /// # fn main() {
 ///  named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
@@ -134,7 +132,7 @@ macro_rules! bits_impl (
 ///
 ///  let input = &[0xde, 0xad, 0xbe, 0xaf];
 ///
-///  assert_eq!(parse( input ),Ok((&[][..], (0xd, 0xea, &[0xbe, 0xaf][..]))));
+///  assert_eq!(parse( input ), Ok(( &[][..], (0xd, 0xea, &[0xbe, 0xaf][..]) )));
 /// # }
 #[macro_export]
 macro_rules! bytes (
@@ -164,24 +162,34 @@ macro_rules! bytes_impl (
         inp = & $macro_i.0[$macro_i.1 / 8 ..];
       }
 
-      match $submac!(inp, $($args)*) {
+      let sub = $submac!(inp, $($args)*);
+      let res = match sub {
+        Err(Err::Incomplete(Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i * 8)))
+        },
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Ok((i, o)) => {
+          Ok(((i, 0), o))
+        },
         Err(Err::Error(e)) => {
           let err = match e {
-            Err::Code(k) | Err::Node(k, _) => Err::Code(k),
-            Err::Position(k, i) | Err::NodePosition(k, i, _) => {
-              Err::Position(k, (i, 0))
+            Context::Code(i, c) => Context::Code((i,0), c),
+            Context::List(mut v) => {
+              let (i, c) = v.remove(0);
+              Context::Code((i,0), c)
             }
           };
           Err(Err::Error(err))
         },
         Err(Err::Failure(e)) => {
           let err = match e {
-            Err::Code(k) | Err::Node(k, _) => Err::Code(k),
-            Err::Position(k, i) | Err::NodePosition(k, i, _) => {
-              Err::Position(k, (i, 0))
+            Context::Code(i, c) => Context::Code((i,0), c),
+            Context::List(mut v) => {
+              let (i, c) = v.remove(0);
+              Context::Code((i,0), c)
             }
           };
-          Err(Err::Failure(err))
+          Err(Err::Error(err))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
@@ -190,7 +198,8 @@ macro_rules! bytes_impl (
         Ok((i, o)) => {
           Ok(((i, 0), o))
         }
-      }
+      };
+      res
     }
   );
 );
@@ -213,15 +222,25 @@ macro_rules! bytes_impl (
         inp = & $macro_i.0[$macro_i.1 / 8 ..];
       }
 
-      match $submac!(inp, $($args)*) {
+      let sub = $submac!(inp, $($args)*);
+      let res = match sub {
         Err(Err::Incomplete(Needed::Size(i))) => {
           Err(Err::Incomplete(Needed::Size(i * 8)))
         },
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Ok((i, o)) => {
           Ok(((i, 0), o))
         },
-        Err(e) => Err(e)
-      }
+        Err(Err::Error(e)) => {
+          let Context::Code(i, c) = e;
+          Err(Err::Error(Context::Code((i,0), c)))
+        },
+        Err(Err::Failure(e)) => {
+          let Context::Code(i, c) = e;
+          Err(Err::Failure(Context::Code((i,0), c)))
+        },
+      };
+      res
     }
   );
 );
@@ -231,7 +250,6 @@ macro_rules! bytes_impl (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( take_pair<(u8, u8)>, bits!( pair!( take_bits!( u8, 3 ), take_bits!(u8, 5) ) ) );
 ///

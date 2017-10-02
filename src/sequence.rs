@@ -8,9 +8,6 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self, Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # use nom::be_u16;
 /// // the return type depends of the children parsers
@@ -25,10 +22,10 @@
 /// # fn main() {
 /// assert_eq!(
 ///   parser(&b"abcdefgh"[..]),
-///   Done(
+///   Ok((
 ///     &b"h"[..],
 ///     (0x6162u16, &b"cde"[..], &b"fg"[..])
-///   )
+///   ))
 /// );
 /// # }
 /// ```
@@ -232,7 +229,6 @@ macro_rules! terminated(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self, Done};
 /// named!(bracketed,
 ///     delimited!(
 ///         tag!("("),
@@ -279,8 +275,7 @@ macro_rules! delimited(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self, Done, Incomplete};
-/// # use nom::Needed;
+/// # use nom::{Err,Needed};
 /// use nom::be_u8;
 ///
 /// // this parser implements a common pattern in binary formats,
@@ -311,7 +306,7 @@ macro_rules! delimited(
 /// // so the parser will tell you that you need 7 bytes: one for the tag,
 /// // one for the length, then 5 bytes
 /// let b: Vec<u8>     = vec!(42, 5, 3, 4, 5);
-/// assert_eq!(tag_length_value(&b[..]), Incomplete(Needed::Size(7)));
+/// assert_eq!(tag_length_value(&b[..]), Err(Err::Incomplete(Needed::Size(5))));
 /// # }
 /// ```
 ///
@@ -321,8 +316,6 @@ macro_rules! delimited(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self, Done, Incomplete};
-/// # use nom::Needed;
 /// use nom::be_u8;
 /// named!(tag_length_value<(u8, &[u8])>,
 ///   do_parse!(
@@ -469,6 +462,7 @@ macro_rules! do_parse (
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed,IResult};
+  use util::ErrorKind;
   use nom::be_u16;
 
   // reproduce the tag and take macros, because of module import order
@@ -580,8 +574,6 @@ mod tests {
 
   #[cfg(feature = "verbose-errors")]
   use std::collections;
-  #[cfg(feature = "verbose-errors")]
-  use util::ErrorKind;
 
   #[cfg(feature = "verbose-errors")]
   #[test]

@@ -121,19 +121,33 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use std::collections;
-/// # use nom::IResult::Error;
-/// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
+/// # use nom::Context;
+/// # use nom::Err;
 /// # fn main() {
+///     #[derive(Debug,Clone,PartialEq)]
+///     pub struct ErrorStr(String);
+///
+///     // Convert to IResult<&[u8], &[u8], ErrorStr>
+///     impl From<u32> for ErrorStr {
+///       fn from(i: u32) -> Self {
+///         ErrorStr(format!("custom error code: {}", i))
+///       }
+///     }
+///
 ///     // will add a Custom(42) error to the error chain
 ///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
-///     // Convert to IREsult<&[u8], &[u8], &str>
-///     named!(parser<&[u8], &[u8], &str>, add_return_error!(ErrorKind::Custom("custom error message"), fix_error!(&str, err_test)));
+///
+///     // Convert to IResult<&[u8], &[u8], ErrorStr>
+///     named!(parser<&[u8], &[u8], ErrorStr>, fix_error!(ErrorStr, err_test));
 ///
 ///     let a = &b"efghblah"[..];
-///     let res_a = parser(a);
-///     assert_eq!(res_a,  Error(NodePosition( ErrorKind::Custom("custom error message"), a, vec!(Position(ErrorKind::Fix, a)))));
+///     //assert_eq!(parser(a), Err(Err::Error(Context::Code(a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))))));
+///     let list = vec!((a, ErrorKind::Tag), (a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))));
+///     assert_eq!(
+///       parser(a),
+///       Err(Err::Error(Context::List(list)))
+///     );
 /// # }
 /// ```
 #[macro_export]
@@ -141,10 +155,45 @@ macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
+      use $crate::{Err,Convert,ErrorKind,Context};
 
       match $submac!($i, $($args)*) {
-        Err(e)     => Err(Err::convert(e)),
+        Err(e)     => {
+          let e2 = match e {
+            Err::Error(err) => {
+              let err2 = match err {
+                Context::Code(i, code) => {
+                  let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                  Context::Code(i, code2)
+                },
+                Context::List(mut v) => {
+                  Context::List(v.drain(..).map(|(i, code)| {
+                    let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                    (i, code2)
+                  }).collect())
+                }
+              };
+              Err::Error(err2)
+            },
+            Err::Failure(err) => {
+              let err2 = match err {
+                Context::Code(i, code) => {
+                  let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                  Context::Code(i, code2)
+                },
+                Context::List(mut v) => {
+                  Context::List(v.drain(..).map(|(i, code)| {
+                    let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                    (i, code2)
+                  }).collect())
+                }
+              };
+              Err::Failure(err2)
+            },
+            Err::Incomplete(i) => Err::Incomplete(i),
+          };
+          Err(e2)
+        },
         Ok((i, o)) => Ok((i, o)),
       }
     }
