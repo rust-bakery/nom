@@ -189,9 +189,9 @@ pub trait InputIter {
 /// abstracts slicing operations
 pub trait InputTake {
     /// returns a slice of `count` bytes
-    fn take<P>(&self, count: usize)  -> Option<&Self>;
+    fn take(&self, count: usize)  -> Option<&Self>;
     /// split the stream at the `count` byte offset
-    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)>;
+    fn take_split(&self, count: usize) -> Option<(&Self,&Self)>;
 }
 
 impl<'a> InputIter for &'a [u8] {
@@ -224,7 +224,7 @@ impl<'a> InputIter for &'a [u8] {
 
 impl InputTake for [u8] {
     #[inline]
-    fn take<P>(&self, count: usize) -> Option<&Self> {
+    fn take(&self, count: usize) -> Option<&Self> {
       if self.len() >= count {
         Some(&self[0..count])
       } else {
@@ -232,7 +232,7 @@ impl InputTake for [u8] {
       }
     }
     #[inline]
-    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)> {
+    fn take_split(&self, count: usize) -> Option<(&Self,&Self)> {
       if self.len() >= count {
         Some((&self[count..],&self[..count]))
       } else {
@@ -280,7 +280,7 @@ impl<'a> InputIter for &'a str {
 
 impl InputTake for str {
     #[inline]
-    fn take<P>(&self, count: usize) -> Option<&Self> {
+    fn take(&self, count: usize) -> Option<&Self> {
       let mut cnt    = 0;
       for (index, _) in self.char_indices() {
         if cnt == count {
@@ -293,7 +293,7 @@ impl InputTake for str {
 
     // return byte index
     #[inline]
-    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)> {
+    fn take_split(&self, count: usize) -> Option<(&Self,&Self)> {
       let mut cnt    = 0;
       for (index, _) in self.char_indices() {
         if cnt == count {
