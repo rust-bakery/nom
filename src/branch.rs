@@ -177,10 +177,10 @@ macro_rules! alt (
       )
     ");
   );
-  (__impl $i:expr, $e:ident, $($rest:tt)* ) => (
+  (__impl $i:expr, $e:path, $($rest:tt)* ) => (
     alt!(__impl $i, call!($e) , $($rest)*);
   );
-  (__impl $i:expr, $e:ident | $($rest:tt)*) => (
+  (__impl $i:expr, $e:path | $($rest:tt)*) => (
     alt!(__impl $i, call!($e) | $($rest)*);
   );
 
@@ -235,7 +235,7 @@ macro_rules! alt (
     }
   );
 
-  (__impl $i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+  (__impl $i:expr, $e:path => { $gen:expr } | $($rest:tt)*) => (
     alt!(__impl $i, call!($e) => { $gen } | $($rest)*);
   );
 
@@ -280,7 +280,7 @@ macro_rules! alt (
 macro_rules! alt_complete (
   // Recursive rules (must include `complete!` around the head)
 
-  ($i:expr, $e:ident | $($rest:tt)*) => (
+  ($i:expr, $e:path | $($rest:tt)*) => (
     alt_complete!($i, complete!(call!($e)) | $($rest)*);
   );
 
@@ -335,13 +335,13 @@ macro_rules! alt_complete (
     }
   );
 
-  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+  ($i:expr, $e:path => { $gen:expr } | $($rest:tt)*) => (
     alt_complete!($i, complete!(call!($e)) => { $gen } | $($rest)*);
   );
 
   // Tail (non-recursive) rules
 
-  ($i:expr, $e:ident => { $gen:expr }) => (
+  ($i:expr, $e:path => { $gen:expr }) => (
     alt_complete!($i, call!($e) => { $gen });
   );
 
@@ -349,7 +349,7 @@ macro_rules! alt_complete (
     alt!(__impl $i, complete!($subrule!($($args)*)) => { $gen } | __end)
   );
 
-  ($i:expr, $e:ident) => (
+  ($i:expr, $e:path) => (
     alt_complete!($i, call!($e));
   );
 
@@ -466,7 +466,7 @@ macro_rules! switch (
       switch!(__impl $i, $submac!($($args)*), $($rest)*)
     }
   );
-  ($i:expr, $e:ident, $($rest:tt)*) => (
+  ($i:expr, $e:path, $($rest:tt)*) => (
     {
       switch!(__impl $i, call!($e), $($rest)*)
     }
@@ -553,13 +553,13 @@ macro_rules! permutation_init (
   ((), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     permutation_init!((::std::option::Option::None), $($rest)*)
   );
-  (($($parsed:expr),*), $e:ident, $($rest:tt)*) => (
+  (($($parsed:expr),*), $e:path, $($rest:tt)*) => (
     permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
-  (($($parsed:expr),*), $e:ident) => (
+  (($($parsed:expr),*), $e:path) => (
     ($($parsed),* , ::std::option::Option::None)
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
@@ -630,13 +630,13 @@ macro_rules! permutation_unwrap (
   ($it:tt,  (), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     succ!($it, permutation_unwrap!((acc!($it, $res).unwrap()), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident, $($rest:tt)*) => (
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:path, $($rest:tt)*) => (
     succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res).unwrap()), $res, $($rest)*));
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res).unwrap()), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident) => (
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:path) => (
     ($($parsed),* , { acc!($it, $res).unwrap() })
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )) => (
@@ -647,7 +647,7 @@ macro_rules! permutation_unwrap (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_iterator (
-  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident, $($rest:tt)*) => (
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:path, $($rest:tt)*) => (
     permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e), $($rest)*);
   );
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
@@ -669,7 +669,7 @@ macro_rules! permutation_iterator (
     }
     succ!($it, permutation_iterator!($i, $all_done, $needed, $res, $($rest)*));
   };
-  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident) => (
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:path) => (
     permutation_iterator!($it, $i, $all_done, $res, call!($e));
   );
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {

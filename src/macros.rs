@@ -466,11 +466,11 @@ macro_rules! complete (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::{be_u8,ErrorKind};
+/// # use nom::ErrorKind;
 /// # use nom::IResult;
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
-///    let (i1, sz)     = try_parse!(input, be_u8);
+///    let (i1, sz)     = try_parse!(input, nom::be_u8);
 ///    let (i2, length) = try_parse!(i1, expr_opt!(size.checked_add(sz)));
 ///    let (i3, data)   = try_parse!(i2, take!(length));
 ///    return Ok((i3, data));
@@ -490,7 +490,7 @@ macro_rules! complete (
 macro_rules! try_parse (
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Convert,Context,Err,Needed,IResult};
+    use $crate::{Convert,Context,Err};
 
     match $submac!($i, $($args)*) {
       Ok((i,o))     => (i,o),
@@ -625,9 +625,8 @@ macro_rules! parse_to (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::be_u32;
 /// # fn main() {
-///  named!(check<u32>, verify!(be_u32, |val:u32| val >= 0 && val < 3));
+///  named!(check<u32>, verify!(nom::be_u32, |val:u32| val >= 0 && val < 3));
 /// # }
 /// ```
 #[macro_export]

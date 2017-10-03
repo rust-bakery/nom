@@ -659,7 +659,7 @@ macro_rules! count_fixed (
       ret
     }
 );
-  ($i:expr, $typ: ty, $f:ident, $count: expr) => (
+  ($i:expr, $typ: ty, $f:expr, $count: expr) => (
     count_fixed!($i, $typ, call!($f), $count);
   );
 );

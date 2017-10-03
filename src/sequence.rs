@@ -42,7 +42,7 @@ macro_rules! tuple (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! tuple_parser (
-  ($i:expr, ($($parsed:tt),*), $e:ident, $($rest:tt)*) => (
+  ($i:expr, ($($parsed:tt),*), $e:path, $($rest:tt)*) => (
     tuple_parser!($i, ($($parsed),*), call!($e), $($rest)*);
   );
   ($i:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
@@ -78,7 +78,7 @@ macro_rules! tuple_parser (
       }
     }
   );
-  ($i:expr, ($($parsed:tt),*), $e:ident) => (
+  ($i:expr, ($($parsed:tt),*), $e:path) => (
     tuple_parser!($i, ($($parsed),*), call!($e));
   );
   ($i:expr, (), $submac:ident!( $($args:tt)* )) => (
@@ -287,6 +287,9 @@ macro_rules! delimited(
 /// // and store it in `length`, then use `take!` with `length`
 /// // to obtain the subslice that we store in `bytes`, then return
 /// // `bytes`
+/// // you can use other macro combinators inside do_parse (like the `tag`
+/// // one here), or a function (like `be_u8` here), but you cannot use a
+/// // module path (like `nom::be_u8`) there, because of limitations in macros
 /// named!(tag_length_value,
 ///   do_parse!(
 ///     tag!( &[ 42u8 ][..] ) >>
