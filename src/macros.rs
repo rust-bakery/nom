@@ -779,6 +779,14 @@ macro_rules! expr_opt (
 /// returns an Option of the returned type. This parser returns `Some(result)` if the child parser
 /// succeeds,`None` if it fails, and `Incomplete` if it did not have enough data to decide
 ///
+/// *Warning*: if you are using `opt` for some kind of optional ending token (like an end of line),
+/// you should combine it with `complete` to make sure it works.
+///
+/// As an example, `opt!(tag!("\r\n"))` will return `Incomplete` if it receives an empty input,
+/// because `tag` does not have enough input to decide.
+/// On the contrary, `opt!(complete!(tag!("\r\n")))` would return `None` as produced value,
+/// since `complete!` transforms an `Incomplete` in an `Error`.
+///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
