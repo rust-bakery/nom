@@ -456,11 +456,6 @@ pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
 pub use self::regexp::*;
-/*
-#[cfg(feature = "std")]
-#[cfg(feature = "stream")]
-pub use self::stream::*;
-*/
 pub use self::str::*;
 
 #[macro_use] mod util;
@@ -489,9 +484,4 @@ pub mod whitespace;
 #[cfg(feature = "regexp")]
 #[macro_use] mod regexp;
 
-/*#[macro_use]
-#[cfg(feature = "std")]
-#[cfg(feature = "stream")]
-mod stream;
-*/
 mod str;
