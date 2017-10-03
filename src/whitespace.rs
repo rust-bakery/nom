@@ -604,7 +604,7 @@ macro_rules! alt_complete_sep (
   );
 
   ($i:expr, $separator:ident, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt_sep!(__impl $i, $separator, $subrule!($($args)*) => { $gen })
+    alt_sep!(__impl $i, $separator, complete!($subrule!($($args)*)) => { $gen })
   );
 
   ($i:expr, $separator:ident, $e:ident) => (
@@ -612,7 +612,7 @@ macro_rules! alt_complete_sep (
   );
 
   ($i:expr, $separator:ident, $subrule:ident!( $($args:tt)*)) => (
-    alt_sep!(__impl $i, $separator, $subrule!($($args)*))
+    alt_sep!(__impl $i, $separator, complete!($subrule!($($args)*)))
   );
 );
 
@@ -1050,7 +1050,7 @@ mod tests {
     );
 
     let a = &b""[..];
-    assert_eq!(ac(a), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(ac(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
     let a = &b" \tef "[..];
     assert_eq!(ac(a),Ok((&b""[..], &b"ef"[..])));
     let a = &b" cde"[..];
