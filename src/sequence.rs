@@ -462,7 +462,6 @@ macro_rules! do_parse (
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed,IResult};
-  use util::ErrorKind;
   use nom::be_u16;
 
   // reproduce the tag and take macros, because of module import order
@@ -534,6 +533,8 @@ mod tests {
   use util::{error_to_list, add_error_pattern, print_error};
   #[cfg(feature = "verbose-errors")]
   use verbose_errors::Context;
+  #[cfg(feature = "verbose-errors")]
+  use util::ErrorKind;
 
   #[cfg(feature = "verbose-errors")]
   fn error_to_string<P:Clone+PartialEq>(e: &Context<P,u32>) -> &'static str {
