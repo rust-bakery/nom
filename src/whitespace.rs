@@ -86,12 +86,15 @@
 macro_rules! wrap_sep (
   ($i:expr, $separator:expr, $submac:ident!( $($args:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,Convert};
+    use $crate::{Err,Convert,IResult};
 
-    match ($separator)($i) {
+    fn unify_types<I,O,P,E>(_: &IResult<I,O,E>, _: &IResult<I,P,E>) {}
+
+    let sep_res = ($separator)($i);
+    match sep_res {
       Err(e) => Err(Err::convert(e)),
       Ok((i1,_))    => {
-        match $submac!(i1, $($args)*) {
+        let res = match $submac!(i1, $($args)*) {
           Err(e) => Err(Err::convert(e)),
           Ok((i2,o))    => {
             match ($separator)(i2) {
@@ -99,7 +102,9 @@ macro_rules! wrap_sep (
               Ok((i3,_))    => Ok((i3, o))
             }
           }
-        }
+        };
+        unify_types(&sep_res, &res);
+        res
       }
     }
   });
@@ -1101,4 +1106,5 @@ mod tests {
   )
   );
 
+  named!(fail<&[u8]>, map!(many_till!(take!(1), ws!(tag!("."))), |(r, _)| r[0]));
 }
