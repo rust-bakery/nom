@@ -50,7 +50,7 @@
 //!
 //! What it means:
 //!
-//! * `Done(i,o)` means the parser was successful. `i` is the remaining part of the input, `o` is the correctly parsed value
+//! * `Done(i,o)` means the parser was successful. `i` is the remaining part of the input (called *remainder*), `o` is the correctly parsed value
 //! The remaining part can then be used as input for other parsers called in a sequence
 //! * `Error(e)` indicates the parser encountered an error. The `Err<E>` type is an enum of possible parser errors,
 //! that can also contain a custom error that you'd specify, by redefining the `E` error type

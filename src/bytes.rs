@@ -541,6 +541,9 @@ macro_rules! take_str (
 
 /// `take_until_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming bytes until the specified byte sequence is found, and consumes it
+///
+/// The parsed input and the tag are removed from the remainder.
+/// (As opposed to `take_until!` that does not remove the tag from the remainder.)
 #[macro_export]
 macro_rules! take_until_and_consume (
   ($i:expr, $substr:expr) => (
@@ -568,6 +571,9 @@ macro_rules! take_until_and_consume (
 
 /// `take_until_and_consume1!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming bytes (at least 1) until the specified byte sequence is found, and consumes it
+///
+/// The parsed input and the tag are removed from the remainder.
+/// (As opposed to `take_until1!` that does not remove the tag from the remainder.)
 #[macro_export]
 macro_rules! take_until_and_consume1 (
   ($i:expr, $substr:expr) => (
@@ -592,7 +598,10 @@ macro_rules! take_until_and_consume1 (
 );
 
 /// `take_until!(tag) => &[T] -> IResult<&[T], &[T]>`
-/// consumes data until it finds the specified tag
+/// consumes data until it finds the specified tag.
+///
+/// The remainder still contains the tag.
+/// (As opposed to `take_until!` which removes it from the remainder.)
 #[macro_export]
 macro_rules! take_until (
   ($i:expr, $substr:expr) => (
@@ -620,6 +629,9 @@ macro_rules! take_until (
 
 /// `take_until1!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// consumes data until it finds the specified tag
+///
+/// The remainder still contains the tag.
+/// (As opposed to `take_until_and_consume1!` which removes it from the remainder.)
 #[macro_export]
 macro_rules! take_until1 (
   ($i:expr, $substr:expr) => (
@@ -647,6 +659,9 @@ macro_rules! take_until1 (
 
 /// `take_until_either_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// consumes data until it finds any of the specified characters, and consume it
+///
+/// The parsed input and the tag are removed from the remainder.
+/// (As opposed to `take_until_either!` that does not remove the tag from the remainder.)
 #[macro_export]
 macro_rules! take_until_either_and_consume (
   ($input:expr, $arr:expr) => (
@@ -678,6 +693,9 @@ macro_rules! take_until_either_and_consume (
 );
 
 /// `take_until_either!(tag) => &[T] -> IResult<&[T], &[T]>`
+///
+/// The remainder still contains the tag.
+/// (As opposed to `take_until_either_and_consume!` which removes it from the remainder.)
 #[macro_export]
 macro_rules! take_until_either (
   ($input:expr, $arr:expr) => (
