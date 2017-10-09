@@ -466,7 +466,7 @@ macro_rules! permutation_iterator_sep (
 #[macro_export]
 macro_rules! alt_sep (
   (__impl $i:expr, $separator:ident, $e:ident | $($rest:tt)*) => (
-    alt_sep!(__impl $i, call!($e) | $($rest)*);
+    alt_sep!(__impl $i, $separator, call!($e) | $($rest)*);
   );
 
   (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
@@ -506,14 +506,14 @@ macro_rules! alt_sep (
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt_sep!(__impl $i)
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
         }
       }
     }
   );
 
-  (__impl $i:expr, $e:ident) => (
-    alt!(__impl $i, call!($e));
+  (__impl $i:expr, $separator:ident, $e:ident) => (
+    alt_sep!(__impl $i, $separator, call!($e));
   );
 
   (__impl $i:expr, $separator:ident, $subrule:ident!( $($args:tt)*)) => (
@@ -522,13 +522,17 @@ macro_rules! alt_sep (
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
         $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
+          $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
         }
       }
     }
   );
 
   (__impl $i:expr) => (
+    $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
+  );
+
+  (__impl $i:expr, $separator:ident) => (
     $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
   );
 
@@ -789,7 +793,8 @@ use internal::IResult;
 #[allow(unused_imports)]
 pub fn sp<'a,T>(input:T) -> IResult<T, T> where
   T: ::traits::Slice<Range<usize>>+::traits::Slice<RangeFrom<usize>>+::traits::Slice<RangeTo<usize>>,
-  T: ::traits::InputIter+::traits::InputLength {
+    T: ::traits::InputIter+::traits::InputLength,
+    <T as ::traits::InputIter>::Item: ::traits::AsChar {
     eat_separator!(input, &b" \t\r\n"[..])
 }
 
@@ -831,6 +836,7 @@ macro_rules! ws (
 );
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod tests {
   use internal::IResult::*;
   use internal::{IResult,Needed};
@@ -1000,7 +1006,7 @@ mod tests {
     let a = &b" \tef "[..];
     assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
     let a = &b" cde"[..];
-    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
+    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, &a[1..])));
   }
 
   #[allow(unused_variables)]
@@ -1028,4 +1034,23 @@ mod tests {
   fn str_test() {
     assert_eq!(str_parse(" \n   test\t a\nb"), Done("a\nb", "test"));
   }
+
+  // test whitespace parser generation for alt
+  named!(space, tag!(" "));
+  named!(pipeline_statement<&[u8], ()>,
+    ws!(
+      do_parse!(
+      tag!("pipeline") >>
+      attributes: delimited!(char!('{'),
+                             separated_list!(char!(','), alt!(
+                               space |
+                               space
+                             )),
+                             char!('}')) >>
+
+      ( () )
+    )
+  )
+  );
+
 }

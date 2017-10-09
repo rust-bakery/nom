@@ -1,47 +1,97 @@
-/// `alt!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>`
-/// try a list of parsers, return the result of the first successful one
+/// Try a list of parsers and return the result of the first successful one
 ///
-/// If one of the parser returns Incomplete, alt will return Incomplete, to retry
+/// ```rust,ignore
+/// alt!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>
+/// ```
+/// All the parsers must have the same return type.
+///
+/// If one of the parsers returns `Incomplete`, `alt!` will return `Incomplete`, to retry
 /// once you get more input. Note that it is better for performance to know the
-/// minimum size of data you need before you get into alt.
+/// minimum size of data you need before you get into `alt!`.
+///
+/// The `alt!` combinator is used in the following way:
+///
+/// ```rust,ignore
+/// alt!(parser_1 | parser_2 | ... | parser_n)
+/// ```
+///
+/// # Basic example
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
-///  named!( test, alt!( tag!( "abcd" ) | tag!( "efgh" ) ) );
-///  let r1 = test(b"abcdefgh");
-///  assert_eq!(r1, Done(&b"efgh"[..], &b"abcd"[..]));
-///  let r2 = test(&b"efghijkl"[..]);
-///  assert_eq!(r2, Done(&b"ijkl"[..], &b"efgh"[..]));
+///  // Create a parser that will match either "dragon" or "beast"
+///  named!( dragon_or_beast, alt!( tag!( "dragon" ) | tag!( "beast" ) ) );
+///
+///  // Given the input "dragon slayer", the parser will match "dragon"
+///  // and the rest will be " slayer"
+///  let (rest, result) = dragon_or_beast(b"dragon slayer").unwrap();
+///  assert_eq!(result, b"dragon");
+///  assert_eq!(rest, b" slayer");
+///
+///  // Given the input "beast of Gevaudan", the parser will match "beast"
+///  // and the rest will be " of Gevaudan"
+///  let (rest, result) = dragon_or_beast(&b"beast of Gevaudan"[..]).unwrap();
+///  assert_eq!(result, b"beast");
+///  assert_eq!(rest, b" of Gevaudan");
 ///  # }
 /// ```
 ///
-/// There is another syntax for alt allowing a block to manipulate the result:
+/// # Manipulate results
+///
+/// There exists another syntax for `alt!` that gives you the ability to
+/// manipulate the result from each parser:
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
 /// # fn main() {
-///     #[derive(Debug,PartialEq,Eq)]
-///     enum Tagged {
-///       Abcd,
-///       Efgh,
-///       Took(usize)
-///     }
-///     named!(test<Tagged>, alt!(
-///         tag!("abcd") => { |_|          Tagged::Abcd }
-///       | tag!("efgh") => { |_|          Tagged::Efgh }
-///       | take!(5)     => { |res: &[u8]| Tagged::Took(res.len()) } // the closure takes the result as argument if the parser is successful
-///     ));
-///     let r1 = test(b"abcdefgh");
-///     assert_eq!(r1, Done(&b"efgh"[..], Tagged::Abcd));
-///     let r2 = test(&b"efghijkl"[..]);
-///     assert_eq!(r2, Done(&b"ijkl"[..], Tagged::Efgh));
-///     let r3 = test(&b"mnopqrst"[..]);
-///     assert_eq!(r3, Done(&b"rst"[..],  Tagged::Took(5)));
+/// #
+/// // We create an enum to represent our creatures
+/// #[derive(Debug,PartialEq,Eq)]
+/// enum Creature {
+///     Dragon,
+///     Beast,
+///     Unknown(usize)
+/// }
+///
+/// // Let's make a helper function that returns true when not a space
+/// // we are required to do this because the `take_while!` macro is limited
+/// // to idents, so we can't negate `ìs_space` at the call site
+/// fn is_not_space(c: u8) -> bool { ! nom::is_space(c) }
+///
+/// // Our parser will return the `Dragon` variant when matching "dragon",
+/// // the `Beast` variant when matching "beast" and otherwise it will consume
+/// // the input until a space is found and return an `Unknown` creature with
+/// // the size of it's name.
+/// named!(creature<Creature>, alt!(
+///     tag!("dragon")            => { |_| Creature::Dragon } |
+///     tag!("beast")             => { |_| Creature::Beast }  |
+///     take_while!(is_not_space) => { |r: &[u8]| Creature::Unknown(r.len()) }
+///     // the closure takes the result as argument if the parser is successful
+/// ));
+///
+/// // Given the input "dragon slayer" the parser will return `Creature::Dragon`
+/// // and the rest will be " slayer"
+/// let (rest, result) = creature(b"dragon slayer").unwrap();
+/// assert_eq!(result, Creature::Dragon);
+/// assert_eq!(rest, b" slayer");
+///
+/// // Given the input "beast of Gevaudan" the parser will return `Creature::Beast`
+/// // and the rest will be " of Gevaudan"
+/// let (rest, result) = creature(b"beast of Gevaudan").unwrap();
+/// assert_eq!(result, Creature::Beast);
+/// assert_eq!(rest, b" of Gevaudan");
+///
+/// // Given the input "demon hunter" the parser will return `Creature::Unkown(5)`
+/// // and the rest will be " hunter"
+/// let (rest, result) = creature(b"demon hunter").unwrap();
+/// assert_eq!(result, Creature::Unknown(5));
+/// assert_eq!(rest, b" hunter");
 /// # }
 /// ```
+///
+/// # Behaviour of `alt!`
 ///
 /// **BE CAREFUL** there is a case where the behaviour of `alt!` can be confusing:
 ///
@@ -118,6 +168,19 @@
 ///
 #[macro_export]
 macro_rules! alt (
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)* ) => (
+    compiler_error!("alt uses '|' as separator, not ',':
+
+      alt!(
+        tag!(\"abcd\") |
+        tag!(\"efgh\") |
+        tag!(\"ijkl\")
+      )
+    ");
+  );
+  (__impl $i:expr, $e:ident, $($rest:tt)* ) => (
+    alt!(__impl $i, call!($e) , $($rest)*);
+  );
   (__impl $i:expr, $e:ident | $($rest:tt)*) => (
     alt!(__impl $i, call!($e) | $($rest)*);
   );
@@ -129,19 +192,39 @@ macro_rules! alt (
       match res {
         $crate::IResult::Done(_,_)     => res,
         $crate::IResult::Incomplete(_) => res,
-        _                              => alt!(__impl $i, $($rest)*)
+        $crate::IResult::Error(e)      => {
+          let out = alt!(__impl $i, $($rest)*);
+
+          // Compile-time hack to ensure that res's E type is not under-specified.
+          // This all has no effect at runtime.
+          fn unify_types<T>(_: &T, _: &T) {}
+          if let $crate::IResult::Error(ref e2) = out {
+            unify_types(&e, e2);
+          }
+
+          out
+        }
       }
     }
   );
 
-  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
+  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)*) => (
     {
       let i_ = $i.clone();
       match $subrule!(i_, $($args)* ) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i, $($rest)*)
+        $crate::IResult::Error(e)      => {
+          let out = alt!(__impl $i, $($rest)*);
+
+          // Compile-time hack to ensure that res's E type is not under-specified.
+          // This all has no effect at runtime.
+          fn unify_types<T>(_: &T, _: &T) {}
+          if let $crate::IResult::Error(ref e2) = out {
+            unify_types(&e, e2);
+          }
+
+          out
         }
       }
     }
@@ -151,56 +234,37 @@ macro_rules! alt (
     alt!(__impl $i, call!($e) => { $gen } | $($rest)*);
   );
 
-  (__impl $i:expr, $e:ident => { $gen:expr }) => (
-    alt!(__impl $i, call!($e) => { $gen });
-  );
-
-  (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    {
-      let i_ = $i.clone();
-      match $subrule!(i_, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
-        }
-      }
-    }
-  );
-
-  (__impl $i:expr, $e:ident) => (
-    alt!(__impl $i, call!($e));
-  );
-
-  (__impl $i:expr, $subrule:ident!( $($args:tt)*)) => (
-    {
-      let i_ = $i.clone();
-      match $subrule!(i_, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,o),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(_)      => {
-          alt!(__impl $i)
-        }
-      }
-    }
-  );
-
-  (__impl $i:expr) => (
+  (__impl $i:expr, __end) => (
     $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
   );
 
   ($i:expr, $($rest:tt)*) => (
     {
-      alt!(__impl $i, $($rest)*)
+      alt!(__impl $i, $($rest)* | __end)
     }
   );
 );
 
-/// This is a combination of the `alt!` and `complete!` combinators. Rather
-/// than returning `Incomplete` on partial input, `alt_complete!` will try the
-/// next alternative in the chain. You should use this only if you know you
+/// Is equivalent to the `alt!` combinator, except that it will not return `Incomplete`
+/// when one of the constituting parsers returns `Incomplete`. Instead, it will try the
+/// next alternative in the chain.
+///
+/// You should use this combinator only if you know you
 /// will not receive partial input for the rules you're trying to match (this
 /// is almost always the case for parsing programming languages).
+///
+/// ```rust,ignore
+/// alt_complete!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>
+/// ```
+/// All the parsers must have the same return type.
+///
+/// If one of the parsers return `Incomplete`, `alt_complete!` will try the next alternative.
+/// If there is no other parser left to try, an `Error` will be returned.
+///
+/// ```rust,ignore
+/// alt_complete!(parser_1 | parser_2 | ... | parser_n)
+/// ```
+/// **For more in depth examples, refer to the documentation of `alt!`**
 #[macro_export]
 macro_rules! alt_complete (
   // Recursive rules (must include `complete!` around the head)
@@ -215,7 +279,18 @@ macro_rules! alt_complete (
       let res = complete!(i_, $subrule!($($args)*));
       match res {
         $crate::IResult::Done(_,_) => res,
-        _ => alt_complete!($i, $($rest)*),
+        e => {
+          let out = alt_complete!($i, $($rest)*);
+
+          if let (&$crate::IResult::Error(ref e1), &$crate::IResult::Error(ref e2)) = (&e, &out) {
+            // Compile-time hack to ensure that res's E type is not under-specified.
+            // This all has no effect at runtime.
+            fn unify_types<T>(_: &T, _: &T) {}
+            unify_types(e1, e2);
+          }
+
+          out
+        },
       }
     }
   );
@@ -225,7 +300,18 @@ macro_rules! alt_complete (
       let i_ = $i.clone();
       match complete!(i_, $subrule!($($args)*)) {
         $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
-        _ => alt_complete!($i, $($rest)*),
+        e => {
+          let out = alt_complete!($i, $($rest)*);
+
+          if let (&$crate::IResult::Error(ref e1), &$crate::IResult::Error(ref e2)) = (&e, &out) {
+            // Compile-time hack to ensure that res's E type is not under-specified.
+            // This all has no effect at runtime.
+            fn unify_types<T>(_: &T, _: &T) {}
+            unify_types(e1, e2);
+          }
+
+          out
+        },
       }
     }
   );
@@ -241,7 +327,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt!(__impl $i, $subrule!($($args)*) => { $gen })
+    alt!(__impl $i, complete!($subrule!($($args)*)) => { $gen } | __end)
   );
 
   ($i:expr, $e:ident) => (
@@ -249,7 +335,7 @@ macro_rules! alt_complete (
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*)) => (
-    alt!(__impl $i, $subrule!($($args)*))
+    alt!(__impl $i, complete!($subrule!($($args)*)) | __end)
   );
 );
 
@@ -695,6 +781,11 @@ mod tests {
     assert_eq!(alt5(a), Done(&b""[..], false));
     assert_eq!(alt5(b), Done(&b""[..], true));
 
+    // compile-time test guarding against an underspecified E generic type (#474)
+    named!(alt_eof1, alt!(eof!() | eof!()));
+    named!(alt_eof2, alt!(eof!() => {|x| x} | eof!() => {|x| x}));
+    let _ = (alt_eof1, alt_eof2);
+
   }
 
   #[test]
@@ -722,7 +813,7 @@ mod tests {
     );
 
     let a = &b""[..];
-    assert_eq!(ac(a), Incomplete(Needed::Size(2)));
+    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
     let a = &b"ef"[..];
     assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
     let a = &b"cde"[..];
@@ -771,4 +862,10 @@ mod tests {
     let e = &b"efgabc"[..];
     assert_eq!(perm(e), Incomplete(Needed::Size(7)));
   }
+
+  /*
+  named!(does_not_compile,
+    alt!(tag!("abcd"), tag!("efgh"))
+  );
+  */
 }

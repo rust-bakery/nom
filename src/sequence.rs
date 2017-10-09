@@ -1,415 +1,3 @@
-/// `chain!(I->IResult<I,A> ~ I->IResult<I,B> ~ ... I->IResult<I,X> , || { return O } ) => I -> IResult<I, O>`
-/// chains parsers and assemble the results through a closure
-///
-/// this parser is deprecated and will be removed in nom 3.0. You can
-/// now replace it with `do_parse!`. The `?` syntax to make a parser
-/// optional can be done with the `opt!` combinator.
-///
-/// There are also combinators available for specific patterns like
-/// `pair!`, `tuple!`, `preceded!`, `terminated!`, `delimited!`, etc.
-///
-/// In lots of cases, there are better solutions than using `chain!`.
-///
-/// The input type `I` must implement `nom::InputLength`.
-///
-/// This combinator will count how much data is consumed by every child parser
-/// and take it into account if
-/// there is not enough data
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{self, Done, Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
-/// # use nom::ErrorKind;
-/// #[derive(PartialEq,Eq,Debug)]
-/// struct B {
-///   a: u8,
-///   b: Option<u8>
-/// }
-///
-/// named!(y, tag!("efgh"));
-///
-/// fn ret_int(i:&[u8]) -> IResult<&[u8], u8> { Done(i, 1) }
-/// named!(ret_y<&[u8], u8>, map!(y, |_| 1)); // return 1 if the "efgh" tag is found
-///
-///  named!(z<&[u8], B>,
-///    chain!(
-///      tag!("abcd")  ~     // the '~' character is used as separator
-///      aa: ret_int   ~     // the result of that parser will be used in the closure
-///      tag!("abcd")? ~     // this parser is optional
-///      bb: ret_y?    ,     // the result of that parser is an option
-///                          // the last parser in the chain is followed by a ','
-///      ||{B{a: aa, b: bb}}
-///    )
-///  );
-///
-/// # fn main() {
-/// // the first "abcd" tag is not present, we have an error
-/// let r1 = z(&b"efgh"[..]);
-/// assert_eq!(r1, Error(error_position!(ErrorKind::Tag,&b"efgh"[..])));
-///
-/// // everything is present, everything is parsed
-/// let r2 = z(&b"abcdabcdefgh"[..]);
-/// assert_eq!(r2, Done(&b""[..], B{a: 1, b: Some(1)}));
-///
-/// // the second "abcd" tag is optional
-/// let r3 = z(&b"abcdefgh"[..]);
-/// assert_eq!(r3, Done(&b""[..], B{a: 1, b: Some(1)}));
-///
-/// // the result of ret_y is optional, as seen in the B structure
-/// let r4 = z(&b"abcdabcdwxyz"[..]);
-/// assert_eq!(r4, Done(&b"wxyz"[..], B{a: 1, b: None}));
-/// # }
-/// ```
-#[macro_export]
-#[deprecated(since="2.0.0", note="please use [`do_parse!`](macro.do_parse.html) instead")]
-macro_rules! chain (
-  ($i:expr, $($rest:tt)*) => (
-    {
-      chaining_parser!($i, 0usize, $($rest)*)
-    }
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export]
-macro_rules! chaining_parser (
-  ($i:expr, $consumed:expr, $e:ident ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, call!($e) ~ $($rest)*);
-  );
-  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
-    {
-      match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          let (needed,overflowed) = $consumed.overflowing_add(i);
-          match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-          }
-        },
-        $crate::IResult::Done(i,_)     => {
-          chaining_parser!(i,
-            $consumed + ($crate::InputLength::input_len(&($i)) -
-                         $crate::InputLength::input_len(&i)), $($rest)*)
-        }
-      }
-    }
-);
-
-  ($i:expr, $consumed:expr, $e:ident ? ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, call!($e) ? ~ $($rest)*);
-  );
-
-  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
-    {
-      let res = $submac!($i, $($args)*);
-      if let $crate::IResult::Incomplete(inc) = res {
-        match inc {
-          $crate::Needed::Unknown =>
-            $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::Needed::Size(i) => {
-            let (needed,overflowed) = $consumed.overflowing_add(i);
-            match overflowed {
-                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-                false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-            }
-          },
-        }
-      } else {
-        let input = if let $crate::IResult::Done(i,_) = res {
-          i
-        } else {
-          $i
-        };
-        chaining_parser!(input,
-          $consumed + ($crate::InputLength::input_len(&($i)) -
-                       $crate::InputLength::input_len(&input)), $($rest)*)
-      }
-    }
-  );
-
-  ($i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, $field: call!($e) ~ $($rest)*);
-  );
-
-  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
-    {
-      match  $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          let (needed,overflowed) = $consumed.overflowing_add(i);
-          match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-          }
-        },
-        $crate::IResult::Done(i,o)     => {
-          let $field = o;
-          chaining_parser!(i,
-            $consumed + ($crate::InputLength::input_len(&($i)) -
-                         $crate::InputLength::input_len(&i)), $($rest)*)
-        }
-      }
-    }
-  );
-
-  ($i:expr, $consumed:expr, mut $field:ident : $e:ident ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, mut $field: call!($e) ~ $($rest)*);
-  );
-
-  ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)*) => (
-    {
-      match  $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          let (needed,overflowed) = $consumed.overflowing_add(i);
-          match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-          }
-        },
-        $crate::IResult::Done(i,o)     => {
-          let mut $field = o;
-          chaining_parser!(i,
-            $consumed + $crate::InputLength::input_len(&($i)) -
-                        $crate::InputLength::input_len(&i), $($rest)*)
-        }
-      }
-    }
-  );
-
-  ($i:expr, $consumed:expr, $field:ident : $e:ident ? ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, $field : call!($e) ? ~ $($rest)*);
-  );
-
-  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
-    {
-      let res = $submac!($i, $($args)*);
-      if let $crate::IResult::Incomplete(inc) = res {
-        match inc {
-          $crate::Needed::Unknown =>
-            $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::Needed::Size(i) => {
-            let (needed,overflowed) = $consumed.overflowing_add(i);
-            match overflowed {
-                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-                false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-            }
-          },
-        }
-      } else {
-        let ($field,input) = if let $crate::IResult::Done(i,o) = res {
-          (::std::option::Option::Some(o),i)
-        } else {
-          (::std::option::Option::None,$i)
-        };
-        chaining_parser!(input,
-          $consumed + $crate::InputLength::input_len(&($i)) -
-                      $crate::InputLength::input_len(&input), $($rest)*)
-      }
-    }
-  );
-
-  ($i:expr, $consumed:expr, mut $field:ident : $e:ident ? ~ $($rest:tt)*) => (
-    chaining_parser!($i, $consumed, mut $field : call!($e) ? ~ $($rest)*);
-  );
-
-  ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? ~ $($rest:tt)*) => (
-    {
-      let res = $submac!($i, $($args)*);
-      if let $crate::IResult::Incomplete(inc) = res {
-        match inc {
-          $crate::Needed::Unknown =>
-            $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::Needed::Size(i) => {
-            let (needed,overflowed) = $consumed.overflowing_add(i);
-            match overflowed {
-                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-                false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-            }
-          },
-        }
-      } else {
-        let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
-          (::std::option::Option::Some(o),i)
-        } else {
-          (::std::option::Option::None,$i)
-        };
-        chaining_parser!(input,
-          $consumed + $crate::InputLength::input_len(&($i)) -
-                      $crate::InputLength::input_len(&input), $($rest)*)
-      }
-    }
-  );
-
-  // ending the chain
-  ($i:expr, $consumed:expr, $e:ident, $assemble:expr) => (
-    chaining_parser!($i, $consumed, call!($e), $assemble);
-  );
-
-  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ), $assemble:expr) => (
-    match $submac!($i, $($args)*) {
-      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-        $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-        let (needed,overflowed) = $consumed.overflowing_add(i);
-        match overflowed {
-            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-        }
-      },
-      $crate::IResult::Done(i,_)     => {
-        $crate::IResult::Done(i, $assemble())
-      }
-    }
-  );
-
-  ($i:expr, $consumed:expr, $e:ident ?, $assemble:expr) => (
-    chaining_parser!($i, $consumed, call!($e) ?, $assemble);
-  );
-
-  ($i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ?, $assemble:expr) => ({
-    let res = $submac!($i, $($args)*);
-    if let $crate::IResult::Incomplete(inc) = res {
-      match inc {
-        $crate::Needed::Unknown =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::Needed::Size(i) => {
-          let (needed,overflowed) = $consumed.overflowing_add(i);
-          match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-          }
-        },
-      }
-    } else {
-      let input = if let $crate::IResult::Done(i,_) = res {
-        i
-      } else {
-        $i
-      };
-      $crate::IResult::Done(input, $assemble())
-    }
-  });
-
-  ($i:expr, $consumed:expr, $field:ident : $e:ident, $assemble:expr) => (
-    chaining_parser!($i, $consumed, $field: call!($e), $assemble);
-  );
-
-  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ), $assemble:expr) => (
-    match $submac!($i, $($args)*) {
-      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-        $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-        let (needed,overflowed) = $consumed.overflowing_add(i);
-        match overflowed {
-            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-        }
-      },
-      $crate::IResult::Done(i,o)     => {
-        let $field = o;
-        $crate::IResult::Done(i, $assemble())
-      }
-    }
-  );
-
-  ($i:expr, $consumed:expr, mut $field:ident : $e:ident, $assemble:expr) => (
-    chaining_parser!($i, $consumed, mut $field: call!($e), $assemble);
-  );
-
-  ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ), $assemble:expr) => (
-    match $submac!($i, $($args)*) {
-      $crate::IResult::Error(e)      => $crate::IResult::Error(e),
-      $crate::IResult::Incomplete($crate::Needed::Unknown) =>
-        $crate::IResult::Incomplete($crate::Needed::Unknown),
-      $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-        let (needed,overflowed) = $consumed.overflowing_add(i);
-        match overflowed {
-            true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-            false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-        }
-      },
-      $crate::IResult::Done(i,o)     => {
-        let mut $field = o;
-        $crate::IResult::Done(i, $assemble())
-      }
-    }
-  );
-
-  ($i:expr, $consumed:expr, $field:ident : $e:ident ? , $assemble:expr) => (
-    chaining_parser!($i, $consumed, $field : call!($e) ? , $assemble);
-  );
-
-  ($i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => ({
-    let res = $submac!($i, $($args)*);
-    if let $crate::IResult::Incomplete(inc) = res {
-      match inc {
-        $crate::Needed::Unknown =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::Needed::Size(i) => {
-          let (needed,overflowed) = $consumed.overflowing_add(i);
-          match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-          }
-        },
-      }
-    } else {
-      let ($field,input) = if let $crate::IResult::Done(i,o) = res {
-        (::std::option::Option::Some(o), i)
-      } else {
-        (::std::option::Option::None, $i)
-      };
-      $crate::IResult::Done(input, $assemble())
-    }
-  });
-
-  ($i:expr, $consumed:expr, mut $field:ident : $e:ident ? , $assemble:expr) => (
-    chaining_parser!($i, $consumed, $field : call!($e) ? , $assemble);
-  );
-
-  ($i:expr, $consumed:expr, mut $field:ident : $submac:ident!( $($args:tt)* ) ? , $assemble:expr) => ({
-    let res = $submac!($i, $($args)*);
-    if let $crate::IResult::Incomplete(inc) = res {
-      match inc {
-        $crate::Needed::Unknown =>
-          $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::Needed::Size(i) => {
-          let (needed,overflowed) = $consumed.overflowing_add(i);
-          match overflowed {
-              true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-              false =>  $crate::IResult::Incomplete($crate::Needed::Size(needed)),
-          }
-        },
-      }
-    } else {
-      let (mut $field,input) = if let $crate::IResult::Done(i,o) = res {
-        (::std::option::Option::Some(o), i)
-      } else {
-        (::std::option::Option::None, $i)
-      };
-      $crate::IResult::Done(input, $assemble())
-    }
-  });
-
-  ($i:expr, $consumed:expr, $assemble:expr) => (
-    $crate::IResult::Done($i, $assemble())
-  )
-);
-
-
 /// `tuple!(I->IResult<I,A>, I->IResult<I,B>, ... I->IResult<I,X>) => I -> IResult<I, (A, B, ..., X)>`
 /// chains parsers and assemble the sub results in a tuple.
 ///
@@ -776,6 +364,35 @@ macro_rules! do_parse (
     $crate::IResult::Done($i, ( $($rest),* ))
   );
 
+  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ) => (
+    do_parse!(__impl $i, $consumed, $submac!( $($args)* ))
+  );
+
+  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ) => (
+    compiler_error!("do_parse is missing the return value. A do_parse call must end
+      with a return value between parenthesis, as follows:
+
+      do_parse!(
+        a: tag!(\"abcd\") >>
+        b: tag!(\"efgh\") >>
+
+        ( Value { a: a, b: b } )
+    ");
+  );
+
+  (__impl $i:expr, $consumed:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+    compiler_error!("do_parse uses >> as separator, not ~");
+  );
+  (__impl $i:expr, $consumed:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+    compiler_error!("do_parse uses >> as separator, not ~");
+  );
+  (__impl $i:expr, $consumed:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
+    do_parse!(__impl $i, $consumed, $field: call!($e) ~ $($rest)*);
+  );
+  (__impl $i:expr, $consumed:expr, $e:ident ~ $($rest:tt)*) => (
+    do_parse!(__impl $i, $consumed, call!($e) ~ $($rest)*);
+  );
+
   (__impl $i:expr, $consumed:expr, $e:ident >> $($rest:tt)*) => (
     do_parse!(__impl $i, $consumed, call!($e) >> $($rest)*);
   );
@@ -883,6 +500,19 @@ macro_rules! do_parse (
       do_parse!(__impl $i, 0usize, $($rest)*)
     }
   );
+  ($submac:ident!( $($args:tt)* ) >> $($rest:tt)* ) => (
+    compiler_error!("if you are using do_parse outside of a named! macro, you must
+        pass the input data as first argument, like this:
+
+        let res = do_parse!(input,
+          a: tag!(\"abcd\") >>
+          b: tag!(\"efgh\") >>
+          ( Value { a: a, b: b } )
+        );");
+  );
+  ($e:ident! >> $($rest:tt)* ) => (
+    do_parse!( call!($e) >> $($rest)*);
+  );
 );
 
 #[cfg(test)]
@@ -954,101 +584,10 @@ mod tests {
     b: u8
   }
 
-  #[test]
-  fn chain2() {
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-
-    named!(chain_parser<&[u8],B>,
-      chain!(
-        tag!("abcd")   ~
-        tag!("abcd")?  ~
-        aa: ret_int1   ~
-        tag!("efgh")   ~
-        bb: ret_int2   ~
-        tag!("efgh")   ,
-        ||{B{a: aa, b: bb}}
-      )
-    );
-
-    assert_eq!(chain_parser(&b"abcdabcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
-    assert_eq!(chain_parser(&b"abcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
-    assert_eq!(chain_parser(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
-    assert_eq!(chain_parser(&b"abcdefghef"[..]), Incomplete(Needed::Size(12)));
-  }
-
-  #[test]
-  fn nested_chain() {
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) };
-
-    named!(chain_parser<&[u8],B>,
-      chain!(
-        chain!(
-          tag!("abcd")   ~
-          tag!("abcd")?  ,
-          || {}
-        )              ~
-        aa: ret_int1   ~
-        tag!("efgh")   ~
-        bb: ret_int2   ~
-        tag!("efgh")   ,
-        ||{B{a: aa, b: bb}}
-      )
-    );
-
-    assert_eq!(chain_parser(&b"abcdabcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
-    assert_eq!(chain_parser(&b"abcdefghefghX"[..]), Done(&b"X"[..], B{a: 1, b: 2}));
-    assert_eq!(chain_parser(&b"abcdab"[..]), Incomplete(Needed::Size(8)));
-    assert_eq!(chain_parser(&b"abcdefghef"[..]), Incomplete(Needed::Size(12)));
-  }
-
   #[derive(PartialEq,Eq,Debug)]
   struct C {
     a: u8,
     b: Option<u8>
-  }
-
-  #[test]
-  fn chain_mut() {
-    fn ret_b1_2(i:&[u8]) -> IResult<&[u8], B> { Done(i,B{a:1,b:2}) };
-    named!(f<&[u8],B>,
-      chain!(
-        tag!("abcd")     ~
-        tag!("abcd")?    ~
-        tag!("efgh")     ~
-        mut bb: ret_b1_2 ~
-        tag!("efgh")   ,
-        ||{
-          bb.b = 3;
-          bb
-        }
-      )
-    );
-
-    let r = f(&b"abcdabcdefghefghX"[..]);
-    assert_eq!(r, Done(&b"X"[..], B{a: 1, b: 3}));
-  }
-
-  #[test]
-  fn chain_opt() {
-    named!(y, tag!("efgh"));
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) };
-    named!(ret_y<&[u8], u8>, map!(y, |_| 2));
-
-    named!(chain_parser<&[u8],C>,
-      chain!(
-        tag!("abcd") ~
-        aa: ret_int1 ~
-        bb: ret_y?   ,
-        ||{C{a: aa, b: bb}}
-      )
-    );
-
-    assert_eq!(chain_parser(&b"abcdefghX"[..]), Done(&b"X"[..], C{a: 1, b: Some(2)}));
-    assert_eq!(chain_parser(&b"abcdWXYZ"[..]), Done(&b"WXYZ"[..], C{a: 1, b: None}));
-    assert_eq!(chain_parser(&b"abcdX"[..]), Done(&b"X"[..], C{ a: 1, b: None }));
-    assert_eq!(chain_parser(&b"abcdef"[..]), Incomplete(Needed::Size(8)));
   }
 
   #[cfg(feature = "verbose-errors")]
@@ -1262,17 +801,6 @@ mod tests {
     assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
   }
 
-    #[test]
-  fn chain_incomplete() {
-    let res = chain!(&b"abcdefgh"[..],
-      a: take!(4) ~
-      b: take!(8),
-      ||{(a,b )}
-    );
-
-    assert_eq!(res, IResult::Incomplete(Needed::Size(12)));
-  }
-
   #[test]
   fn tuple_test() {
     named!(tuple_3<&[u8], (u16, &[u8], &[u8]) >,
@@ -1327,10 +855,35 @@ mod tests {
       )
     );
 
-    let a: Vec<u8>     = vec!(2, 3, 4, 5);
-    let res_a: Vec<u8> = vec!(3, 4);
+    let a = [2u8, 3, 4, 5];
+    let res_a = [3u8, 4];
     assert_eq!(length_value(&a[..]), Done(&a[3..], &res_a[..]));
-    let b: Vec<u8>     = vec!(5, 3, 4, 5);
+    let b = [5u8, 3, 4, 5];
     assert_eq!(length_value(&b[..]), Incomplete(Needed::Size(6)));
   }
+
+  /*
+  named!(does_not_compile,
+    do_parse!(
+      length: be_u8         >>
+      bytes:  take!(length)
+    )
+  );
+  named!(does_not_compile_either,
+    do_parse!(
+      length: be_u8         ~
+      bytes:  take!(length) ~
+      ( () )
+    )
+  );
+  fn still_does_not_compile() {
+    let data = b"abcd";
+
+    let res = do_parse!(
+      tag!("abcd") >>
+      tag!("efgh") >>
+      ( () )
+    );
+  }
+  */
 }

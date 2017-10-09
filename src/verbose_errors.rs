@@ -18,7 +18,6 @@
 use util::ErrorKind;
 use internal::{IResult, IError};
 use internal::IResult::*;
-use std::boxed::Box;
 
 /// Contains the error that a parser can return
 ///
@@ -33,11 +32,25 @@ pub enum Err<P,E=u32>{
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
   Code(ErrorKind<E>),
   /// An error code, and the next error
-  Node(ErrorKind<E>, Box<Err<P,E>>),
+  Node(ErrorKind<E>, Vec<Err<P,E>>),
   /// An error code, and the input position
   Position(ErrorKind<E>, P),
   /// An error code, the input position and the next error
-  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
+  NodePosition(ErrorKind<E>, P, Vec<Err<P,E>>)
+}
+
+impl<P,E> Err<P,E> {
+  /// Convert Err into ErrorKind.
+  ///
+  /// This allows application code to use ErrorKind and stay independent from the verbose-errors features activation.
+  pub fn into_error_kind(self) -> ErrorKind<E> {
+    match self {
+      Err::Code(kind) => kind,
+      Err::Node(kind, _) => kind,
+      Err::Position(kind, _) => kind,
+      Err::NodePosition(kind, _, _) => kind,
+    }
+  }
 }
 
 impl<I,O,E> IResult<I,O,E> {
@@ -83,13 +96,13 @@ impl<I,O,E> IResult<I,O,E> {
   }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::any::Any;
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::{error,fmt};
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::fmt::Debug;
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
   fn description(&self) -> &str {
     let kind = match *self {
@@ -99,7 +112,7 @@ impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
   }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match *self {
@@ -122,7 +135,6 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 /// # use nom::IResult::Error;
 /// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
-/// # use std::boxed::Box;
 /// # fn main() {
 ///     // will add a Custom(42) error to the error chain
 ///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
@@ -131,7 +143,7 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 ///
 ///     let a = &b"efghblah"[..];
 ///     let res_a = parser(a);
-///     assert_eq!(res_a,  Error(NodePosition( ErrorKind::Custom("custom error message"), a, Box::new(Position(ErrorKind::Fix, a)))));
+///     assert_eq!(res_a,  Error(NodePosition( ErrorKind::Custom("custom error message"), a, vec!(Position(ErrorKind::Fix, a)))));
 /// # }
 /// ```
 #[macro_export]

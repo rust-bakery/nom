@@ -199,7 +199,7 @@ macro_rules! escaped (
             $crate::IResult::Error(e) => {
               if $i[index] == $control_char as u8 {
                 if index + 1 >= $i.input_len() {
-                  return $crate::IResult::Error(error_node_position!($crate::ErrorKind::Escaped, $i.slice(index..), e));
+                  return $crate::IResult::Incomplete($crate::Needed::Unknown)
                 } else {
                   match $escapable!($i.slice(index+1..), $($args2)*) {
                     $crate::IResult::Done(i,_) => {
@@ -526,7 +526,7 @@ macro_rules! take (
   );
 );
 
-/// `take!(nb) => &[T] -> IResult<&[T], &str>`
+/// `take_str!(nb) => &[T] -> IResult<&[T], &str>`
 /// same as take! but returning a &str
 #[macro_export]
 macro_rules! take_str (
@@ -715,30 +715,11 @@ macro_rules! take_until_either (
 macro_rules! length_bytes(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::{Slice,InputLength};
-      let input: &[u8] = $i;
-
-      match  $submac!(input, $($args)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,nb)   => {
-          let nb = nb as usize;
-          if i1.input_len() < nb {
-            use $crate::Offset;
-            let (size,overflowed) = $i.offset(i1).overflowing_add(nb);
-            match overflowed {
-                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
-                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
-            }
-          } else {
-            $crate::IResult::Done(i1.slice(nb..), i1.slice(..nb))
-          }
-        }
-      }
+      length_data!($i, $submac!($($args)*))
     }
   );
   ($i:expr, $f:expr) => (
-    length_bytes!($i, call!($f))
+    length_data!($i, call!($f))
   )
 );
 
@@ -842,10 +823,9 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Done(&b""[..], &b"\\\"abcd"[..]));
     assert_eq!(esc(&b"\\n"[..]), Done(&b""[..], &b"\\n"[..]));
     assert_eq!(esc(&b"ab\\\"12"[..]), Done(&b"12"[..], &b"ab\\\""[..]));
-    assert_eq!(esc(&b"AB\\"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\"[..],
-      error_position!(ErrorKind::Escaped, &b"\\"[..]))));
+    assert_eq!(esc(&b"AB\\"[..]), Incomplete(Needed::Unknown));
     assert_eq!(esc(&b"AB\\A"[..]), Error(error_node_position!(ErrorKind::Escaped, &b"AB\\A"[..],
-      error_position!(ErrorKind::IsA, &b"A"[..]))));
+      error_position!(ErrorKind::OneOf, &b"A"[..]))));
 
     named!(esc2, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2(&b"12\\nnn34"[..]), Done(&b"nn34"[..], &b"12\\n"[..]));
@@ -910,6 +890,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn take_until_test() {
     named!(x, take_until_and_consume!("efgh"));
     let r = x(&b"abcdabcdefghijkl"[..]);
@@ -1063,7 +1044,7 @@ mod tests {
     let d = b"123";
 
     assert_eq!(f(&a[..]), Incomplete(Needed::Size(1)));
-    assert_eq!(f(&b[..]), Error(error_position!(ErrorKind::TakeTill1, &b""[..])));
+    assert_eq!(f(&b[..]), Error(error_position!(ErrorKind::TakeTill1, &b[..])));
     assert_eq!(f(&c[..]), Done(&b"abcd"[..], &b"123"[..]));
     assert_eq!(f(&d[..]), Done(&b""[..], &b"123"[..]));
   }
@@ -1082,6 +1063,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn recognize_take_while() {
     use nom::is_alphanumeric;
     named!(x, take_while!(is_alphanumeric));
@@ -1114,23 +1096,23 @@ mod tests {
     assert_eq!(test(&b"abcdefgh"[..]), Done(&b"efgh"[..], &b"abcd"[..]));
     assert_eq!(test(&b"ABCDefgh"[..]), Done(&b"efgh"[..], &b"ABCD"[..]));
     assert_eq!(test(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(test(&b"Hello"[..]), Error(error_code!(ErrorKind::Tag)));
-    assert_eq!(test(&b"Hel"[..]), Error(error_code!(ErrorKind::Tag)));
+    assert_eq!(test(&b"Hello"[..]), Error(error_position!(ErrorKind::Tag, &b"Hello"[..])));
+    assert_eq!(test(&b"Hel"[..]), Error(error_position!(ErrorKind::Tag, &b"Hel"[..])));
 
     named!(test2<&str, &str>, tag_no_case!("ABcd"));
     assert_eq!(test2("aBCdefgh"), Done("efgh", "aBCd"));
     assert_eq!(test2("abcdefgh"), Done("efgh", "abcd"));
     assert_eq!(test2("ABCDefgh"), Done("efgh", "ABCD"));
     assert_eq!(test2("ab"), Incomplete(Needed::Size(4)));
-    assert_eq!(test2("Hello"), Error(error_code!(ErrorKind::Tag)));
-    assert_eq!(test2("Hel"), Error(error_code!(ErrorKind::Tag)));
+    assert_eq!(test2("Hello"), Error(error_position!(ErrorKind::Tag, &"Hello"[..])));
+    assert_eq!(test2("Hel"), Error(error_position!(ErrorKind::Tag, &"Hel"[..])));
   }
 
   #[test]
   fn tag_fixed_size_array() {
     named!(test, tag!([0x42]));
     named!(test2, tag!(&[0x42]));
-    let input = vec!(0x42, 0x00);
+    let input = [0x42, 0x00];
     assert_eq!(test(&input), Done(&b"\x00"[..], &b"\x42"[..]));
     assert_eq!(test2(&input), Done(&b"\x00"[..], &b"\x42"[..]));
   }

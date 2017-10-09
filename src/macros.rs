@@ -61,7 +61,7 @@
 //!     take_while!($input, call!($f));
 //!   );
 //! );
-//!
+//! ```
 #[allow(unused_variables)]
 
 /// Wraps a parser in a closure
@@ -168,7 +168,7 @@ macro_rules! named_args {
         }
     };
     (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        pub fn $func_name<'a>(input: &'a [u8], $( $arg : $typ ),*) -> $crate::IResult<&'a [u8], $return_type> {
+        pub fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
@@ -178,7 +178,7 @@ macro_rules! named_args {
         }
     };
     ($func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        fn $func_name<'a>(input: &'a [u8], $( $arg : $typ ),*) -> $crate::IResult<&'a [u8], $return_type> {
+        fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
@@ -496,27 +496,24 @@ macro_rules! try_parse (
 #[macro_export]
 macro_rules! map(
   // Internal parser, do not use directly
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     {
+      pub fn _unify<T, R, F: FnOnce(T) -> R>(f: F, t: T) -> R {
+       f(t)
+      }
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
         $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
         $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o)                          => $crate::IResult::Done(i, $submac2!(o, $($args2)*))
+        $crate::IResult::Done(i, o)                          => $crate::IResult::Done(i, _unify($g, o))
       }
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map!(__impl $i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+    map!(__impl $i, $submac!($($args)*), $g);
   );
   ($i:expr, $f:expr, $g:expr) => (
-    map!(__impl $i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map!(__impl $i, call!($f), $submac!($($args)*));
+    map!(__impl $i, call!($f), $g);
   );
 );
 
@@ -596,6 +593,7 @@ macro_rules! parse_to (
   ($i:expr, $t:ty ) => (
     {
       use $crate::ParseTo;
+      use $crate::Slice;
       use $crate::InputLength;
       match ($i).parse_to() {
         ::std::option::Option::Some(output) => $crate::IResult::Done($i.slice(..$i.input_len()), output),
@@ -606,7 +604,7 @@ macro_rules! parse_to (
 );
 
 /// `verify!(I -> IResult<I,O>, O -> bool) => I -> IResult<I, O>`
-/// returns the result of the child parser if it satisfies a verifcation function
+/// returns the result of the child parser if it satisfies a verification function
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -674,7 +672,8 @@ macro_rules! value (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
-          $crate::IResult::Done(i, $res)
+          let res: $crate::IResult<_,_> = $crate::IResult::Done(i, $res);
+          res
         },
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
@@ -685,7 +684,10 @@ macro_rules! value (
     value!($i, $res, call!($f))
   );
   ($i:expr, $res:expr) => (
-    $crate::IResult::Done($i, $res)
+    {
+      let res: $crate::IResult<_,_> = $crate::IResult::Done($i, $res);
+      res
+    }
   );
 );
 
@@ -773,8 +775,11 @@ macro_rules! opt(
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+        _                              => {
+          let res: $crate::IResult<_,_> = $crate::IResult::Done($i, ::std::option::Option::None);
+          res
+        },
       }
     }
   );
@@ -864,7 +869,8 @@ macro_rules! cond_with_error(
           $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
         }
       } else {
-        $crate::IResult::Done($i, ::std::option::Option::None)
+        let res: $crate::IResult<_,_> = $crate::IResult::Done($i, ::std::option::Option::None);
+        res
       }
     }
   );
@@ -914,11 +920,15 @@ macro_rules! cond(
         let i_ = $i.clone();
         match $submac!(i_, $($args)*) {
           $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, ::std::option::Option::Some(o)),
-          $crate::IResult::Error(_)      => $crate::IResult::Done($i, ::std::option::Option::None),
-          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i)
+          $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
+          $crate::IResult::Error(_)      => {
+            let res: $crate::IResult<_,_> = $crate::IResult::Done($i, ::std::option::Option::None);
+            res
+          },
         }
       } else {
-        $crate::IResult::Done($i, ::std::option::Option::None)
+        let res: $crate::IResult<_,_> = $crate::IResult::Done($i, ::std::option::Option::None);
+        res
       }
     }
   );
@@ -1087,7 +1097,7 @@ macro_rules! tap (
   );
 );
 
-/// `eof!(i)` returns `i` if it is at the end of input data
+/// `eof!()` returns its input if it is at the end of input data
 ///
 /// please note that for now, eof only means there's no more
 /// data available, it does not work yet with smarter input
@@ -1268,9 +1278,12 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn cond() {
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag!("abcd") ) ));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag!("abcd") ) ));
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>>  =
+      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( true, tag!("abcd") ) )));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> =
+      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( false, tag!("abcd") ) )));
     //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
 
     assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
@@ -1283,11 +1296,14 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
     named!( tag_abcd, tag!("abcd") );
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( true, tag_abcd ) ));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> = Box::new(closure!(&'static [u8], cond!( false, tag_abcd ) ));
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>>  =
+      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( true, tag_abcd ) )));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> =
+      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( false, tag_abcd ) )));
     //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
     assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));

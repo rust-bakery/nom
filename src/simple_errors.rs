@@ -64,18 +64,18 @@ impl<I,O,E> IResult<I,O,E> {
   }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::any::Any;
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 use std::{error,fmt};
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl<E: fmt::Debug+Any> error::Error for Err<E> {
   fn description(&self) -> &str {
     self.description()
   }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl<E: fmt::Debug> fmt::Display for Err<E> {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "{}", self.description())

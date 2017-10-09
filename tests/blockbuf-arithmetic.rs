@@ -1,6 +1,6 @@
+/*
 #[macro_use]
 extern crate nom;
-/*
 extern crate bytes;
 
 use nom::{Compare,CompareResult,InputLength,InputIter,Slice,HexDisplay};

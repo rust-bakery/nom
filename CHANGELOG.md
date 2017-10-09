@@ -4,6 +4,105 @@
 
 ### Changed
 
+## 3.2.0 - 2017-07-24
+
+### Thanks
+
+- @jedireza for documentation fixes
+- @gmorenz for the `bytes` combinator
+- @meh for character combinator fixes for UTF-8
+- @jethrogb for avoiding move issues in `separated_list`
+
+### Changed
+
+- new layout for the main page of documentation
+- `anychar` can now work on any input type
+- `length_bytes` is now an alias for `length_data`
+
+### Fixed
+
+- `one_of`, `none_of` and `char` will now index correctly UTF-8 characters
+- the `compiler_error` macro is now correctly exported
+
+
+### Added
+
+- the `bytes` combinator transforms a bit stream back to a byte slice for child parsers
+
+## 3.1.0 - 2017-06-16
+
+### Thanks
+
+- @sdroege: implementing be_i24 and le_i24
+- @Hywan: integrating faster substring search using memchr
+- @nizox: fixing type issues in bit stream parsing
+- @grissiom: documentation fixes
+- @doomrobo: implementing separated_list_complete and separated_nonempty_list_complete
+- @CWood1: fixing memchr integration in no_std
+- @lu_zero: integrating the compiler_error crate
+- @dtolnay: helping debug a type inference issue in map
+
+### Changed
+
+- memchr is used for substring search if possible
+- if building on nightly, some common syntax errors will display a specific error message. If building no stable, display the documentation to activate those messages
+- `count` no longer preallocates its vector
+
+### Fixed
+
+- better type inference in alt_complete
+- `alt` should now work with whitespace parsing
+- `map` should not make type inference errors anymore
+
+### Added
+
+- be_i24 and le_i24, parsing big endian and little endian signed 24 bit integers
+- `separated_list_complete` and `separated_nonempty_list_complete` will treat incomplete from sub parsers as error
+
+## 3.0.0 - 2017-05-12
+
+### Thanks
+
+- Chris Pick for some `Incomplete` related refactors
+- @drbgn for documentation fixes
+- @valarauca for adding `be_u24`
+- @ithinuel for usability fixes
+- @evuez for README readability fixes and improvements to `IResult`
+- @s3bk for allowing non-`Copy` types as input
+- @keruspe for documentation fixes
+- @0xd34d10cc for trait fixes on `InputIter`
+- @sdleffler for lifetime shenanigans on `named_args`
+- @chengsun for type inference fixes in `alt`
+- @iBelieve for adding str to no_std
+- @Hywan for simplifying code in input traits
+- @azerupi for extensive documentation of `alt` and `alt_complete`
+
+### Breaking Changes
+
+- `escaped`, `separated_list` and `separated_nonempty_list` can now return `Incomplete` when necessary
+- `InputIter` does not require `AsChar` on its `Item` type anymore
+- the `core` feature that was putting nom in `no_std` mode has been removed. There is now a `std` feature, activated by default. If it is not activated, nom is in `no_std`
+- in `verbose-errors` mode, the error list is now stored in a `Vec` instead of a box based linked list
+- `chain!` has finally been removed
+
+### Changed
+
+- `Endianness` now implements `Debug`, `PartialEq`, `Eq`, `Clone` and `Copy`
+- custom input types can now be cloned if they're not `Copy`
+- the infamous 'Cannot infer type for E' error should happen less often now
+- `str` is now available in `no_std` mode
+
+### Fixed
+
+- `FileProducer` will be marked as `Eof` on full buffer
+- `named_args!` now has lifetimes that cannot conflict with the lifetimes from other arguments
+
+### Added
+
+- `be_u24`: big endian 24 bit unsigned integer parsing
+- `IResult` now has a `unwrap_or` method
+
+
 ## 2.2.1 - 2017-04-03
 
 ### Thanks
@@ -666,7 +765,10 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/2.2.1...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/3.2.0...HEAD
+* [3.2.0]: https://github.com/Geal/nom/compare/3.1.0...3.2.0
+* [3.1.0]: https://github.com/Geal/nom/compare/3.0.0...3.1.0
+* [3.0.0]: https://github.com/Geal/nom/compare/2.2.1...3.0.0
 * [2.2.1]: https://github.com/Geal/nom/compare/2.2.0...2.2.1
 * [2.2.0]: https://github.com/Geal/nom/compare/2.1.0...2.2.0
 * [2.1.0]: https://github.com/Geal/nom/compare/2.0.1...2.1.0

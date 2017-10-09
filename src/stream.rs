@@ -261,7 +261,15 @@ impl FileProducer {
     shift(&mut self.v, self.start, self.end);
     self.end = self.end - self.start;
     self.start = 0;
-    match self.file.read(&mut self.v[self.end..]) {
+
+    let remaining = &mut self.v[self.end..];
+
+    // already full, prevents erroneous Eof below
+    if remaining.is_empty() {
+      return Some(0);
+    }
+
+    match self.file.read(remaining) {
       Err(_) => {
         self.state = FileProducerState::Error;
         None
@@ -938,6 +946,27 @@ mod tests {
       }
     }
     //assert!(false);
+  }
+
+  #[test]
+  fn small_buffer() {
+    let mut f = FileProducer::new("LICENSE", 10 /* smaller than a line */).unwrap();
+    let mut a  = LineConsumer::new();
+
+    for i in 0..2 {
+      match f.apply(&mut a) {
+        &ConsumerState::Continue(Move::Await(_)) => {}
+        _ => assert!(false, "LineConsumer should be awaiting more input: {}", i),
+      }
+      assert_eq!(FileProducerState::Normal, f.state());
+    }
+
+    f.resize(200 /* large enough for a line */);
+    match f.apply(&mut a) {
+      &ConsumerState::Done(..) => {}
+      _ => assert!(false, "LineConsumer should have succeeded"),
+    }
+    assert_eq!(FileProducerState::Normal, f.state());
   }
 
   #[derive(Debug,Clone,Copy,PartialEq,Eq)]

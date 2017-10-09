@@ -2,15 +2,14 @@
 //!
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
 use std::iter::Enumerate;
+use std::slice::Iter;
 
-#[cfg(not(feature = "core"))]
 use std::str::Chars;
-#[cfg(not(feature = "core"))]
 use std::str::CharIndices;
-#[cfg(not(feature = "core"))]
 use std::str::FromStr;
-#[cfg(not(feature = "core"))]
 use std::str::from_utf8;
+
+use memchr;
 
 
 /// abstract method to calculate the input length
@@ -28,7 +27,6 @@ impl<'a, T> InputLength for &'a[T] {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a> InputLength for &'a str {
   #[inline]
   fn input_len(&self) -> usize {
@@ -72,6 +70,9 @@ pub trait AsChar {
     /// tests that self is an octal digit
     #[inline]
     fn is_oct_digit(self) -> bool;
+    /// gets the len in bytes for self
+    #[inline]
+    fn len(self) -> usize;
 }
 
 impl AsChar for u8 {
@@ -97,6 +98,10 @@ impl AsChar for u8 {
     fn is_oct_digit(self) -> bool {
       self >= 0x30 && self <= 0x37
     }
+    #[inline]
+    fn len(self) -> usize {
+      1
+    }
 }
 impl<'a> AsChar for &'a u8 {
     #[inline]
@@ -121,6 +126,10 @@ impl<'a> AsChar for &'a u8 {
     fn is_oct_digit(self)   -> bool {
       *self >= 0x30 && *self <= 0x37
     }
+    #[inline]
+    fn len(self) -> usize {
+      1
+    }
 }
 
 impl AsChar for char {
@@ -136,6 +145,8 @@ impl AsChar for char {
     fn is_hex_digit(self) -> bool { self.is_digit(16) }
     #[inline]
     fn is_oct_digit(self) -> bool { self.is_digit(8) }
+    #[inline]
+    fn len(self) -> usize { self.len_utf8() }
 }
 
 impl<'a> AsChar for &'a char {
@@ -151,6 +162,8 @@ impl<'a> AsChar for &'a char {
     fn is_hex_digit(self) -> bool { self.is_digit(16) }
     #[inline]
     fn is_oct_digit(self) -> bool { self.is_digit(8) }
+    #[inline]
+    fn len(self) -> usize { self.len_utf8() }
 }
 
 /// abstracts common iteration operations on the input type
@@ -158,8 +171,8 @@ impl<'a> AsChar for &'a char {
 /// it needs a distinction between `Item` and `RawItem` because
 /// `&[T]` iterates on references
 pub trait InputIter {
-    type Item     : AsChar;
-    type RawItem  : AsChar;
+    type Item;
+    type RawItem;
     type Iter     : Iterator<Item=(usize, Self::Item)>;
     type IterElem : Iterator<Item=Self::Item>;
 
@@ -184,15 +197,15 @@ pub trait InputTake {
 impl<'a> InputIter for &'a [u8] {
     type Item     = &'a u8;
     type RawItem  = u8;
-    type Iter     = Enumerate<::std::slice::Iter<'a, u8>>;
-    type IterElem = ::std::slice::Iter<'a, u8>;
+    type Iter     = Enumerate<Iter<'a, Self::RawItem>>;
+    type IterElem = Iter<'a, Self::RawItem>;
 
     #[inline]
-    fn iter_indices(&self) -> Enumerate<::std::slice::Iter<'a, u8>> {
+    fn iter_indices(&self) -> Self::Iter {
         self.iter().enumerate()
     }
     #[inline]
-    fn iter_elements(&self) -> ::std::slice::Iter<'a,u8> {
+    fn iter_elements(&self) -> Self::IterElem {
       self.iter()
     }
     #[inline]
@@ -228,18 +241,17 @@ impl InputTake for [u8] {
     }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a> InputIter for &'a str {
     type Item     = char;
     type RawItem  = char;
     type Iter     = CharIndices<'a>;
     type IterElem = Chars<'a>;
     #[inline]
-    fn iter_indices(&self) -> CharIndices<'a> {
+    fn iter_indices(&self) -> Self::Iter {
         self.char_indices()
     }
     #[inline]
-    fn iter_elements(&self) -> Chars<'a> {
+    fn iter_elements(&self) -> Self::IterElem {
       self.chars()
     }
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
@@ -266,7 +278,6 @@ impl<'a> InputIter for &'a str {
     }
 }
 
-#[cfg(not(feature = "core"))]
 impl InputTake for str {
     #[inline]
     fn take<P>(&self, count: usize) -> Option<&Self> {
@@ -361,7 +372,6 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> Compare<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
@@ -373,7 +383,6 @@ impl<'a,'b> Compare<&'b str> for &'a [u8] {
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> Compare<&'b str> for &'a str {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
@@ -412,14 +421,10 @@ pub trait FindToken<T> {
 
 impl<'a> FindToken<&'a[u8]> for u8 {
   fn find_token(&self, input: &[u8]) -> bool {
-    for &i in input.iter() {
-      if *self == i { return true }
-    }
-    false
+    memchr::memchr(*self, input).is_some()
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a> FindToken<&'a str> for u8 {
   fn find_token(&self, input: &str) -> bool {
     self.find_token(str::as_bytes(input))
@@ -428,21 +433,16 @@ impl<'a> FindToken<&'a str> for u8 {
 
 impl<'a,'b> FindToken<&'a[u8]> for &'b u8 {
   fn find_token(&self, input: &[u8]) -> bool {
-    for &i in input.iter() {
-      if **self == i { return true }
-    }
-    false
+    memchr::memchr(**self, input).is_some()
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> FindToken<&'a str> for &'b u8 {
   fn find_token(&self, input: &str) -> bool {
     self.find_token(str::as_bytes(input))
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a> FindToken<&'a str> for char {
   fn find_token(&self, input: &str) -> bool {
     for i in input.chars() {
@@ -459,23 +459,43 @@ pub trait FindSubstring<T> {
 
 impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
   fn find_substring(&self, substr: &'b[u8]) -> Option<usize> {
-    for (index,win) in self.windows(substr.len()).enumerate() {
-      if win == substr {
-        return Some(index)
+    let substr_len = substr.len();
+
+    if substr_len == 0 {
+      None
+    } else if substr_len == 1 {
+      memchr::memchr(substr[0], self)
+    } else {
+      let max = self.len() - substr_len;
+      let mut offset = 0;
+      let mut haystack = &self[..];
+
+      while let Some(position) = memchr::memchr(substr[0], haystack) {
+        offset += position;
+
+        if offset > max {
+          return None
+        }
+
+        if &haystack[position..position + substr_len] == substr {
+          return Some(offset)
+        }
+
+        haystack  = &haystack[position + 1..];
+        offset   += 1;
       }
+
+      None
     }
-    None
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> FindSubstring<&'b str> for &'a[u8] {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.find_substring(str::as_bytes(substr))
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,'b> FindSubstring<&'b str> for &'a str {
   //returns byte index
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
@@ -483,20 +503,17 @@ impl<'a,'b> FindSubstring<&'b str> for &'a str {
   }
 }
 
-/// abstract method to calculate the input length
-#[cfg(not(feature = "core"))]
+/// used to integrate str's parse() method
 pub trait ParseTo<R> {
   fn parse_to(&self) -> Option<R>;
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,R: FromStr> ParseTo<R> for &'a[u8] {
   fn parse_to(&self) -> Option<R> {
     from_utf8(self).ok().and_then(|s| s.parse().ok())
   }
 }
 
-#[cfg(not(feature = "core"))]
 impl<'a,R:FromStr> ParseTo<R> for &'a str {
   fn parse_to(&self) -> Option<R> {
     self.parse().ok()

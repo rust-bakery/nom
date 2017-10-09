@@ -3,7 +3,7 @@
 use self::IResult::*;
 use self::Needed::*;
 
-#[cfg(feature = "core")]
+#[cfg(not(feature = "std"))]
 use std::prelude::v1::*;
 
 #[cfg(feature = "verbose-errors")]
@@ -163,6 +163,16 @@ impl<I,O,E> IResult<I,O,E> {
     }
   }
 
+  /// Unwrap the contained `Done(I, O)` value or a default if the `IResult` is not
+  /// `Done`.
+  pub fn unwrap_or(self, default: (I, O)) -> (I, O) {
+    match self {
+      Done(i, o)    => (i, o),
+      Incomplete(_) => default,
+      Error(_)      => default
+    }
+  }
+
   /// Unwrap the contained `Incomplete(n)` value, or panic if the `IResult` is not
   /// `Incomplete`.
   pub fn unwrap_inc(self) -> Needed {
@@ -257,7 +267,29 @@ macro_rules! error_code(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_node(
-  ($code:expr, $next:expr) => ($crate::Err::Node($code, ::std::boxed::Box::new($next)));
+  ($code:expr, $next:expr) => {
+    let next_errors = match $next {
+      $crate::Err::Code(e) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Code(e));
+        v
+      },
+      $crate::Err::Position(e, p) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Position(e,p));
+        v
+      },
+      $crate::Err::Node(e, mut next) => {
+        next.push($crate::Err::Code(e));
+        next
+      },
+      $crate::Err::NodePosition(e, p, mut next) => {
+        next.push($crate::Err::Position(e,p));
+        next
+      },
+    };
+    $crate::Err::Node($code, next_errors)
+  };
 );
 
 #[cfg(not(feature = "verbose-errors"))]
@@ -300,7 +332,31 @@ macro_rules! error_position(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input:expr, $next:expr) => ($crate::Err::NodePosition($code, $input, ::std::boxed::Box::new($next)));
+  ($code:expr, $input:expr, $next:expr) => {
+    {
+    let next_errors = match $next {
+      $crate::Err::Code(e) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Code(e));
+        v
+      },
+      $crate::Err::Position(e, p) => {
+        let mut v = ::std::vec::Vec::new();
+        v.push($crate::Err::Position(e,p));
+        v
+      },
+      $crate::Err::Node(e, mut next) => {
+        next.push($crate::Err::Code(e));
+        next
+      },
+      $crate::Err::NodePosition(e, p, mut next) => {
+        next.push($crate::Err::Position(e,p));
+        next
+      }
+    };
+    $crate::Err::NodePosition($code, $input, next_errors)
+    }
+  }
 );
 
 #[cfg(not(feature = "verbose-errors"))]
@@ -360,6 +416,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(feature = "std")]
   fn iresult_map_err() {
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     struct Error(u32);
@@ -386,6 +443,21 @@ mod tests {
   #[should_panic]
   fn iresult_unwrap_on_inc() {
     INCOMPLETE.unwrap();
+  }
+
+  #[test]
+  fn iresult_unwrap_or_on_done() {
+    assert_eq!(DONE.unwrap_or((&b""[..], 2)), (&b""[..], 5));
+  }
+
+  #[test]
+  fn iresult_unwrap_or_on_err() {
+    assert_eq!(ERROR.unwrap_or((&b""[..], 2)), (&b""[..], 2));
+  }
+
+  #[test]
+  fn iresult_unwrap_or_on_inc() {
+    assert_eq!(INCOMPLETE.unwrap_or((&b""[..], 2)), (&b""[..], 2));
   }
 
   #[test]

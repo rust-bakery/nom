@@ -5,8 +5,8 @@
 /// The solution here wraps `IResult` in a `Result`: a `Ok` indicates usual
 /// backtracking, `Err` indicates that we must "cut".
 
-#[macro_use]
-extern crate nom;
+#[allow(unused_imports)]
+#[macro_use] extern crate nom;
 
 #[cfg(feature = "verbose_errors")]
 macro_rules! n (
