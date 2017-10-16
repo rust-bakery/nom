@@ -442,6 +442,17 @@ macro_rules! take_while1 (
 /// returns the longest list of bytes until the provided function succeeds
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!( till_colon, take_till!(|ch| ch == b":"[0]) );
+///
+///  let r = till_colon(&b"abcd:efgh"[..]);
+///  assert_eq!(r, Done(&b":efgh"[..], &b"abcd"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
