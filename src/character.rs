@@ -40,6 +40,19 @@ macro_rules! one_of (
 );
 
 /// matches anything but the provided characters
+/// 
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+/// named!(no_letter_a<char>, none_of!(&b"abc"[..]));
+/// assert_eq!(no_letter_a(b"123"), IResult::Done(&b"23"[..], '1'));
+///
+/// named!(err_on_single_quote<char>, none_of!(&b"'"[..]));
+/// assert_eq!(err_on_single_quote(b"'jios'fe"), IResult::Error(nom::ErrorKind::NoneOf));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! none_of (
   ($i:expr, $inp: expr) => (
