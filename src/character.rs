@@ -50,7 +50,7 @@ macro_rules! one_of (
 /// assert_eq!(no_letter_a(b"123"), IResult::Done(&b"23"[..], '1'));
 ///
 /// named!(err_on_single_quote<char>, none_of!(&b"'"[..]));
-/// assert_eq!(err_on_single_quote(b"'jios'fe"), IResult::Error(nom::ErrorKind::NoneOf));
+/// assert_eq!(err_on_single_quote(b"'jiosfe"), IResult::Error(nom::ErrorKind::NoneOf));
 /// # }
 /// ```
 #[macro_export]
@@ -75,6 +75,18 @@ macro_rules! none_of (
 );
 
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
+/// 
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+/// named!(match_letter_a<char>, char!('a'));
+/// assert_eq!(match_letter_a(b"abc"), IResult::Done(&b"bc"[..],'a'));
+///
+/// assert_eq!(match_letter_a(b"123cdef"), IResult::Error(nom::ErrorKind::Char));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! char (
   ($i:expr, $c: expr) => (
@@ -99,6 +111,18 @@ named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'
 
 named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 
+/// matches one byte as a character. Note that the input type will
+/// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
+/// 
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # use nom::anychar;
+/// # fn main() {
+/// assert_eq!(anychar("abc"), IResult::Done("bc",'a'));
+/// # }
+/// ```
 pub fn anychar<T>(input: T) -> IResult<T, char> where
   T: InputIter+InputLength+Slice<RangeFrom<usize>>,
   <T as InputIter>::Item: AsChar {
