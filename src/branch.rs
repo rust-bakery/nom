@@ -512,7 +512,7 @@ macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert,Needed};
+      use $crate::{Err,Convert};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;

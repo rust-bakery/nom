@@ -635,7 +635,7 @@ macro_rules! verify (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err,Needed,IResult};
+      use $crate::{Convert,Err};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
