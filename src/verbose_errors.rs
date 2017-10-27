@@ -38,6 +38,20 @@ impl<I,E: From<u32>> Convert<Context<I,u32>> for Context<I,E> {
     match c {
       Context::Code(i, e)  => Context::Code(i, ErrorKind::convert(e)),
       Context::List(mut v) => Context::List(v.drain(..).map(|(i, e)| (i, ErrorKind::convert(e))).collect())
+  }
+}
+
+impl<I,E> Context<I,E> {
+  /// Convert Err into ErrorKind.
+  ///
+  /// This allows application code to use ErrorKind and stay independent from the verbose-errors features activation.
+  pub fn into_error_kind(self) -> ErrorKind<E> {
+    match self {
+      Err::Code(kind) => kind,
+      Err(List(v))    => {
+        let (_, kind) = v.get(0);
+        kind
+      },
     }
   }
 }

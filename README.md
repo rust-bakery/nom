@@ -330,7 +330,7 @@ let r2 = f(b"abcdefghefghX");
 assert_eq!(r2, Done(&b"X"[..], A{a: 1, b: 2}));
 ```
 
-The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers.
+The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers. Unless the specified return type is already a tuple, the final line should be that type wrapped in a tuple.
 
 More examples of [`do_parse!`](http://rust.unhandledexpression.com/nom/macro.do_parse.html) and [`tuple!`](http://rust.unhandledexpression.com/nom/macro.tuple.html) usage can be found in the [INI file parser example](tests/ini.rs).
 
@@ -360,6 +360,7 @@ Here is a list of known projects using nom:
 - Document formats:
   * [TAR](https://github.com/Keruspe/tar-parser.rs)
   * [torrent files](https://github.com/jag426/bittorrent)
+  * [GZ](https://github.com/nharward/nom-gzip)
 - Database formats:
   * [Redis database files](https://github.com/badboy/rdb-rs)
 - Network protocol formats:

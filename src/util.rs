@@ -677,6 +677,12 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
       }
 
     }
+    /// Convert Err into an ErrorKind.
+    ///
+    /// This allows application code to use ErrorKind and stay independent from the `verbose-errors` features activation.
+    pub fn into_error_kind(self) -> ErrorKind<E> {
+      self
+    }
   }
 
 

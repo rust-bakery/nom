@@ -582,7 +582,7 @@ macro_rules! take (
   );
 );
 
-/// `take!(nb) => &[T] -> IResult<&[T], &str>`
+/// `take_str!(nb) => &[T] -> IResult<&[T], &str>`
 /// same as take! but returning a &str
 #[macro_export]
 macro_rules! take_str (
