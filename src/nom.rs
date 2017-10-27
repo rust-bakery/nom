@@ -646,9 +646,10 @@ pub fn float(input: &[u8]) -> IResult<&[u8],f32> {
     recognize!(
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
-        alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
+        alt_complete!(
+          delimited!(opt!(digit), tag!("."), digit)
+          | preceded!(digit, tag!("."))
+          | digit
         ),
         opt!(complete!(tuple!(
           alt!(tag!("e") | tag!("E")),
@@ -669,9 +670,10 @@ pub fn float_s(input: &str) -> IResult<&str,f32> {
     recognize!(
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
-        alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
+        alt_complete!(
+          delimited!(opt!(digit), tag!("."), digit)
+          | preceded!(digit, tag!("."))
+          | digit
         ),
         opt!(complete!(tuple!(
           alt!(tag!("e") | tag!("E")),
@@ -692,9 +694,10 @@ pub fn double(input: &[u8]) -> IResult<&[u8],f64> {
     recognize!(
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
-        alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
+        alt_complete!(
+          delimited!(opt!(digit), tag!("."), digit)
+          | preceded!(digit, tag!("."))
+          | digit
         ),
         opt!(complete!(tuple!(
           alt!(tag!("e") | tag!("E")),
@@ -715,9 +718,10 @@ pub fn double_s(input: &str) -> IResult<&str,f64> {
     recognize!(
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
-        alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
+        alt_complete!(
+          delimited!(opt!(digit), tag!("."), digit)
+          | preceded!(digit, tag!("."))
+          | digit
         ),
         opt!(complete!(tuple!(
           alt!(tag!("e") | tag!("E")),
@@ -1212,14 +1216,89 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn float_test() {
-    assert_eq!(float(&b"+3.14"[..]),   Done(&b""[..], 3.14));
-    assert_eq!(float_s(&"3.14"[..]),   Done(&""[..], 3.14));
-    assert_eq!(double(&b"3.14"[..]),   Done(&b""[..], 3.14));
-    assert_eq!(double_s(&"3.14"[..]),   Done(&""[..], 3.14));
+    assert_eq!(float(&b""[..]),            Incomplete(Needed::Size(1)));
 
-    assert_eq!(float(&b"-1.234E-12"[..]),   Done(&b""[..], -1.234E-12));
-    assert_eq!(float_s(&"-1.234E-12"[..]),   Done(&""[..], -1.234E-12));
-    assert_eq!(double(&b"-1.234E-12"[..]),   Done(&b""[..], -1.234E-12));
-    assert_eq!(double_s(&"-1.234E-12"[..]),   Done(&""[..], -1.234E-12));
+    assert_eq!(float(&b"0"[..]),           Done(&b""[..], 0.0));
+    assert_eq!(float_s(&"0"[..]),          Done(&""[..], 0.0));
+
+    assert_eq!(float(&b"-"[..]),           Incomplete(Needed::Unknown));
+    assert_eq!(float_s(&"-"[..]),          Incomplete(Needed::Unknown));
+
+    assert_eq!(float(&b"-1.234E-"[..]),    Done(&b"E-"[..], -1.234));
+    assert_eq!(float_s(&"-1.234E-"[..]),   Done(&"E-"[..], -1.234));
+
+    assert_eq!(float(&b"-0"[..]),          Done(&b""[..], 0.0));
+    assert_eq!(float_s(&"-1"[..]),         Done(&""[..], -1.0));
+
+    assert_eq!(float(&b"123"[..]),         Done(&b""[..], 123.0));
+    assert_eq!(float_s(&"123"[..]),        Done(&""[..], 123.0));
+
+    assert_eq!(float(&b"-123"[..]),        Done(&b""[..], -123.0));
+    assert_eq!(float_s(&"-123"[..]),       Done(&""[..], -123.0));
+
+    assert_eq!(float(&b"+3."[..]),         Done(&b""[..], 3.0));
+    assert_eq!(float_s(&"+3."[..]),        Done(&""[..], 3.0));
+
+    assert_eq!(float(&b"+3.14"[..]),       Done(&b""[..], 3.14));
+    assert_eq!(float_s(&"3.14"[..]),       Done(&""[..], 3.14));
+
+    assert_eq!(float(&b".5"[..]),          Done(&b""[..], 0.5));
+    assert_eq!(float_s(&".5"[..]),         Done(&""[..], 0.5));
+
+    assert_eq!(float(&b"-.5"[..]),         Done(&b""[..], -0.5));
+    assert_eq!(float_s(&"-.5"[..]),        Done(&""[..], -0.5));
+
+    assert_eq!(float(&b"-1.234E12"[..]),   Done(&b""[..], -1.234E12));
+    assert_eq!(float_s(&"-1.234E12"[..]),  Done(&""[..], -1.234E12));
+
+    assert_eq!(float(&b"-1.234E-"[..]),    Done(&b"E-"[..], -1.234));
+    assert_eq!(float_s(&"-1.234E-"[..]),   Done(&"E-"[..], -1.234));
+
+    assert_eq!(float(&b"-1.234E-12"[..]),  Done(&b""[..], -1.234E-12));
+    assert_eq!(float_s(&"-1.234E-12"[..]), Done(&""[..], -1.234E-12));
+  }
+
+  #[test]
+  fn double_test() {
+    assert_eq!(double(&b""[..]),            Incomplete(Needed::Size(1)));
+
+    assert_eq!(double(&b"0"[..]),           Done(&b""[..], 0.0));
+    assert_eq!(double_s(&"0"[..]),          Done(&""[..], 0.0));
+
+    assert_eq!(double(&b"-"[..]),           Incomplete(Needed::Unknown));
+    assert_eq!(double_s(&"-"[..]),          Incomplete(Needed::Unknown));
+
+    assert_eq!(double(&b"-1.234E-"[..]),    Done(&b"E-"[..], -1.234));
+    assert_eq!(double_s(&"-1.234E-"[..]),   Done(&"E-"[..], -1.234));
+
+    assert_eq!(double(&b"-0"[..]),          Done(&b""[..], 0.0));
+    assert_eq!(double_s(&"-1"[..]),         Done(&""[..], -1.0));
+
+    assert_eq!(double(&b"123"[..]),         Done(&b""[..], 123.0));
+    assert_eq!(double_s(&"123"[..]),        Done(&""[..], 123.0));
+
+    assert_eq!(double(&b"-123"[..]),        Done(&b""[..], -123.0));
+    assert_eq!(double_s(&"-123"[..]),       Done(&""[..], -123.0));
+
+    assert_eq!(double(&b"+3."[..]),         Done(&b""[..], 3.0));
+    assert_eq!(double_s(&"+3."[..]),        Done(&""[..], 3.0));
+
+    assert_eq!(double(&b"+3.14"[..]),       Done(&b""[..], 3.14));
+    assert_eq!(double_s(&"3.14"[..]),       Done(&""[..], 3.14));
+
+    assert_eq!(double(&b".5"[..]),          Done(&b""[..], 0.5));
+    assert_eq!(double_s(&".5"[..]),         Done(&""[..], 0.5));
+
+    assert_eq!(double(&b"-.5"[..]),         Done(&b""[..], -0.5));
+    assert_eq!(double_s(&"-.5"[..]),        Done(&""[..], -0.5));
+
+    assert_eq!(double(&b"-1.234E12"[..]),   Done(&b""[..], -1.234E12));
+    assert_eq!(double_s(&"-1.234E12"[..]),  Done(&""[..], -1.234E12));
+
+    assert_eq!(double(&b"-1.234E-"[..]),    Done(&b"E-"[..], -1.234));
+    assert_eq!(double_s(&"-1.234E-"[..]),   Done(&"E-"[..], -1.234));
+
+    assert_eq!(double(&b"-1.234E-12"[..]),  Done(&b""[..], -1.234E-12));
+    assert_eq!(double_s(&"-1.234E-12"[..]), Done(&""[..], -1.234E-12));
   }
 }
