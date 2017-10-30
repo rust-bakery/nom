@@ -398,7 +398,6 @@
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(feature = "nightly", feature(const_fn))]
 #![cfg_attr(feature = "nightly", feature(plugin))]
-#![cfg_attr(feature = "nightly", plugin(compiler_error))]
 //#![warn(missing_docs)]
 
 #[cfg(not(feature = "std"))]
@@ -410,15 +409,6 @@ extern crate regex;
 extern crate memchr;
 #[cfg(feature = "nightly")]
 extern crate test;
-
-#[cfg(not(feature = "nightly"))]
-#[allow(unused_macros)]
-#[macro_export]
-macro_rules! compiler_error {
-    ($e:expr) => {
-      INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/master/doc/FAQ.md#using-nightly-to-get-better-error-messages
-    }
-}
 
 #[cfg(not(feature = "std"))]
 mod std {

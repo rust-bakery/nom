@@ -23,7 +23,7 @@ include = [
 
 [features]
 std = ["memchr/use_std"]
-nightly = ["compiler_error"]
+nightly = []
 default = ["std", "stream"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
@@ -45,10 +45,6 @@ default-features = false
 #[dev-dependencies.bytes]
 #git = "https://github.com/carllerche/bytes"
 #rev = "a7d38e29"
-
-[dependencies.compiler_error]
-version = "0.1.1"
-optional = true
 
 [badges]
 travis-ci = { repository = "Geal/nom" }
