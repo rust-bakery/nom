@@ -1,20 +1,18 @@
 //! Error management
 //!
-//! there are two ways to handle errors in nom. The first one,
-//! activated by default, uses the `nom::ErrorKind<E=u32>` enum
-//! in the error branch of `IResult`. This enum can hold either
-//! a parser specific error code, or a custom error type you
-//! specify.
+//! Depending on a compilation flag, the content of the `Context` enum
+//! can change. In the default case, it will only have one variant:
+//! `Context::Code(I, ErrorKind<E=u32>)` (with `I` and `E` configurable).
+//! It contains an error code and the input position that triggered it.
 //!
-//! If you need more advanced error management, you can activate
-//! the "verbose-errors" compilation feature, which will give you
-//! the error system available in nom 1.0. The verbose errors
-//! accumulate error codes and positions as you backtrack through
-//! the parser tree. From there, you can precisely identify which
-//! parts of the input triggered the error case.
-//!
-//! Please note that the verbose error management is a bit slower
-//! than the simple one.
+//! If you activate the `verbose-errors` compilation flags, it will add another
+//! variant to the enum: `Context::List(Vec<(I, ErrorKind<E>)>)`.
+//! This variant aggregates positions and error codes as the code backtracks
+//! through the nested parsers.
+//! The verbose errors feature allows for very flexible error management:
+//! you can know precisely which parser got to which part of the input.
+//! The main drawback is that it is a lot slower than default error
+//! management.
 use util::{ErrorKind,Convert};
 use std::convert::From;
 
