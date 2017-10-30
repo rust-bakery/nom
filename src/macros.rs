@@ -182,6 +182,16 @@ macro_rules! named_args {
             $submac!(input, $($args)*)
         }
     };
+    (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        pub fn $func_name(input: $input_type, $( $arg : $typ ),*) -> $crate::IResult<$input_type, $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
+    ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        fn $func_name(input: $input_type, $( $arg : $typ ),*) -> $crate::IResult<$input_type, $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
 }
 
 /// Makes a function from a parser combination, with attributes
