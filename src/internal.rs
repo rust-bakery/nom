@@ -12,42 +12,13 @@ use verbose_errors::Context;
 #[cfg(not(feature = "verbose-errors"))]
 use simple_errors::Context;
 
-/*
-#[cfg(feature = "verbose-errors")]
 /// Holds the result of parsing functions
 ///
 /// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
 ///
-/// Depending on a compilation flag, the content of the `Error` variant
-/// can change. By default, it will be a `ErrorKind<E=u32>` (with `E` configurable).
+/// The `Ok` side is an enum containing the remainder of the input (the part of the data that
+/// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
 ///
-/// If you activate the `verbose-errors` compilation flags, it will be an
-/// enum that contains an error code, optionally, an input position,
-/// and an error sent by child parsers.
-///
-/// The verbose errors feature allows very flexible error management:
-/// you can know precisely which parser got to which part of the input.
-/// The main drawback is that it is a lot slower than default error
-/// management.
-///
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IResult<I,O,E=u32> {
-   /// indicates a correct parsing, the first field containing the rest of the unparsed data, the second field contains the parsed data
-  Done(I,O),
-  /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
-  Error(Err<I,E>),
-  /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
-  Incomplete(Needed)
-}
-
-#[cfg(not(feature = "verbose-errors"))]
-/// Holds the result of parsing functions
-///
-/// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
-///
-///
-///
-*/
 pub type IResult<I,O,E=u32> = Result<(I,O), Err<I,E>>;
 
 /// Contains information on needed data if a parser returned `Incomplete`
@@ -74,6 +45,30 @@ impl Needed {
   }
 }
 
+/// The `Err` enum indicates the parser was not successful, and has three cases:
+/// * `Incomplete` indicates that more data is needed to decide. The `Needed` enum
+/// can contain how many additional bytes are necessary. If you are sure your parser
+/// is working on full data, you can wrap your parser with the `complete` combinator
+/// to transform that case in `Error`
+/// * `Error` means some parser did not succeed, but another one might (as an example,
+/// when testing different branches of an `alt` combinator)
+/// * `Failure` indicates an unrecoverable error. As an example, if you recognize a prefix
+/// to decide on the next parser to apply, and that parser fails, you know there's no need
+/// to try other parsers, you were already in the right branch, so the data is invalid
+///
+/// Depending on a compilation flag, the content of the `Context` enum
+/// can change. In the default case, it will only have one variant:
+/// `Context::Code(I, ErrorKind<E=u32>)` (with `I` and `E` configurable).
+/// It contains an error code and the input position that triggered it.
+///
+/// If you activate the `verbose-errors` compilation flags, it will add another
+/// variant to the enum: `Context::List(Vec<(I, ErrorKind<E>)>)`.
+/// This variant aggregates positions and error codes as the code backtracks
+/// through the nested parsers.
+/// The verbose errors feature allows for very flexible error management:
+/// you can know precisely which parser got to which part of the input.
+/// The main drawback is that it is a lot slower than default error
+/// management.
 #[derive(Debug,Clone,PartialEq)]
 pub enum Err<I,E=u32> {
   /// There was not enough data
@@ -97,17 +92,6 @@ impl<I,E: From<u32>> Convert<Err<I,u32>> for Err<I,E> {
     }
   }
 }
-
-/*
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IResult<I,O,E=u32> {
-   /// indicates a correct parsing, the first field containing the rest of the unparsed data, the second field contains the parsed data
-  Done(I,O),
-  /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
-  Error(Err<E>),
-  /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
-  Incomplete(Needed)
-}*/
 
 /*
 #[cfg(feature = "verbose-errors")]
