@@ -393,7 +393,7 @@ macro_rules! many1(
 /// ```
 #[macro_export]
 macro_rules! many_till(
-  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  (__impl $i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
       use $crate::{Err,Convert};
@@ -436,8 +436,17 @@ macro_rules! many_till(
       ret
     }
   );
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    many_till!(__impl $i, $submac1!($($args1)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $g:expr) => (
+    many_till!(__impl $i, $submac1!($($args1)*), call!($g));
+  );
+  ($i:expr, $f:expr, $submac2:ident!( $($args2:tt)* )) => (
+    many_till!(__impl $i, call!($f), $submac2!($($args2)*));
+  );
   ($i:expr, $f:expr, $g: expr) => (
-    many_till!($i, call!($f), call!($g));
+    many_till!(__impl $i, call!($f), call!($g));
   );
 );
 
