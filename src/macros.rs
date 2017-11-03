@@ -178,6 +178,12 @@ macro_rules! named_args {
             $submac!(input, $($args)*)
         }
     };
+    (pub $func_name:ident < 'a >  ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
+        #[allow(unused_variables)]
+        pub fn $func_name<'this_is_probably_unique_i_hope_please, 'a>( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(input, $($args)*)
+        }
+    );
     ($func_name:ident ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
         #[allow(unused_variables)]
         fn $func_name( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
@@ -194,6 +200,12 @@ macro_rules! named_args {
             $submac!(input, $($args)*)
         }
     };
+    ($func_name:ident < 'a >  ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
+        #[allow(unused_variables)]
+        fn $func_name<'this_is_probably_unique_i_hope_please, 'a>( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(input, $($args)*)
+        }
+    );
 }
 
 /// Makes a function from a parser combination, with attributes
