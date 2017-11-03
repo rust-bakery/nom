@@ -25,7 +25,7 @@ impl Operator {
 }
 
 // Parse the specified `Operator`.
-named_args!(operator(op: Operator) <&[u8], &[u8]>,
+named_args!(operator<'a>(op: &'a Operator) <&'a [u8], &'a [u8]>,
     tag!(op.to_str())
 );
 
@@ -54,7 +54,7 @@ named!(factor<i64>, alt!(
 named!(term <i64>, do_parse!(
     init: factor >>
     res:  fold_many0!(
-        pair!(alt!(call!(operator, Star) | call!(operator, Slash)), factor),
+        pair!(alt!(call!(operator, &Star) | call!(operator, &Slash)), factor),
         init,
         |acc, (op, val): (&[u8], i64)| {
             if (op[0] as char) == '*' { acc * val } else { acc / val }
