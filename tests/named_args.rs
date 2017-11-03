@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,digit};
+use nom::{IResult, digit};
 
 // Parser definition
 
@@ -25,7 +25,7 @@ impl Operator {
 }
 
 // Parse the specified `Operator`.
-named_args!(operator(op: Operator) <&[u8]>,
+named_args!(operator(op: Operator) <&[u8], &[u8]>,
     tag!(op.to_str())
 );
 
@@ -79,30 +79,30 @@ named!(expr <i64>, do_parse!(
 
 #[test]
 fn factor_test() {
-  assert_eq!(factor(&b"3"[..]), IResult::Done(&b""[..], 3));
-  assert_eq!(factor(&b" 12"[..]), IResult::Done(&b""[..], 12));
-  assert_eq!(factor(&b"537  "[..]), IResult::Done(&b""[..], 537));
-  assert_eq!(factor(&b"  24   "[..]), IResult::Done(&b""[..], 24));
+    assert_eq!(factor(&b"3"[..]), IResult::Done(&b""[..], 3));
+    assert_eq!(factor(&b" 12"[..]), IResult::Done(&b""[..], 12));
+    assert_eq!(factor(&b"537  "[..]), IResult::Done(&b""[..], 537));
+    assert_eq!(factor(&b"  24   "[..]), IResult::Done(&b""[..], 24));
 }
 
 
 #[test]
 fn term_test() {
-  assert_eq!(term(&b" 12 *2 /  3"[..]), IResult::Done(&b""[..], 8));
-  assert_eq!(term(&b" 2* 3  *2 *2 /  3"[..]), IResult::Done(&b""[..], 8));
-  assert_eq!(term(&b" 48 /  3/2"[..]), IResult::Done(&b""[..], 8));
+    assert_eq!(term(&b" 12 *2 /  3"[..]), IResult::Done(&b""[..], 8));
+    assert_eq!(term(&b" 2* 3  *2 *2 /  3"[..]), IResult::Done(&b""[..], 8));
+    assert_eq!(term(&b" 48 /  3/2"[..]), IResult::Done(&b""[..], 8));
 }
 
 #[test]
 fn expr_test() {
-  assert_eq!(expr(&b" 1 +  2 "[..]), IResult::Done(&b""[..], 3));
-  assert_eq!(expr(&b" 12 + 6 - 4+  3"[..]), IResult::Done(&b""[..], 17));
-  assert_eq!(expr(&b" 1 + 2*3 + 4"[..]), IResult::Done(&b""[..], 11));
+    assert_eq!(expr(&b" 1 +  2 "[..]), IResult::Done(&b""[..], 3));
+    assert_eq!(expr(&b" 12 + 6 - 4+  3"[..]), IResult::Done(&b""[..], 17));
+    assert_eq!(expr(&b" 1 + 2*3 + 4"[..]), IResult::Done(&b""[..], 11));
 }
 
 #[test]
 fn parens_test() {
-  assert_eq!(expr(&b" (  2 )"[..]), IResult::Done(&b""[..], 2));
-  assert_eq!(expr(&b" 2* (  3 + 4 ) "[..]), IResult::Done(&b""[..], 14));
-  assert_eq!(expr(&b"  2*2 / ( 5 - 1) + 3"[..]), IResult::Done(&b""[..], 4));
+    assert_eq!(expr(&b" (  2 )"[..]), IResult::Done(&b""[..], 2));
+    assert_eq!(expr(&b" 2* (  3 + 4 ) "[..]), IResult::Done(&b""[..], 14));
+    assert_eq!(expr(&b"  2*2 / ( 5 - 1) + 3"[..]), IResult::Done(&b""[..], 4));
 }

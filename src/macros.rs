@@ -162,6 +162,12 @@ macro_rules! named (
 /// Makes a function from a parser combination with arguments.
 #[macro_export]
 macro_rules! named_args {
+    (pub $func_name:ident ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
+        #[allow(unused_variables)]
+        pub fn $func_name( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(input, $($args)*)
+        }
+    );
     (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         pub fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
@@ -172,6 +178,12 @@ macro_rules! named_args {
             $submac!(input, $($args)*)
         }
     };
+    ($func_name:ident ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
+        #[allow(unused_variables)]
+        fn $func_name( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(input, $($args)*)
+        }
+    );
     ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
@@ -1153,18 +1165,18 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Needed,IResult};
-  #[cfg(feature = "verbose-errors")]
-  use verbose_errors::Err;
+    use internal::{Needed, IResult};
+    #[cfg(feature = "verbose-errors")]
+    use verbose_errors::Err;
 
-  #[cfg(not(feature = "verbose-errors"))]
-  use simple_errors::Err;
+    #[cfg(not(feature = "verbose-errors"))]
+    use simple_errors::Err;
 
-  use internal::IResult::*;
-  use util::ErrorKind;
+    use internal::IResult::*;
+    use util::ErrorKind;
 
-  // reproduce the tag and take macros, because of module import order
-  macro_rules! tag (
+    // reproduce the tag and take macros, because of module import order
+    macro_rules! tag (
     ($i:expr, $inp: expr) => (
       {
         #[inline(always)]
@@ -1180,7 +1192,7 @@ mod tests {
     );
   );
 
-  macro_rules! tag_bytes (
+    macro_rules! tag_bytes (
     ($i:expr, $bytes: expr) => (
       {
         use std::cmp::min;
@@ -1202,7 +1214,7 @@ mod tests {
     );
   );
 
-  macro_rules! take(
+    macro_rules! take(
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
@@ -1217,126 +1229,134 @@ mod tests {
   );
 
 
-  mod pub_named_mod {
-    named!(pub tst, tag!("abcd"));
-  }
+    mod pub_named_mod {
+        named!(pub tst, tag!("abcd"));
+    }
 
-  #[test]
-  fn pub_named_test() {
-    let a = &b"abcd"[..];
-    let res = pub_named_mod::tst(a);
-    assert_eq!(res, Done(&b""[..], a));
-  }
+    #[test]
+    fn pub_named_test() {
+        let a = &b"abcd"[..];
+        let res = pub_named_mod::tst(a);
+        assert_eq!(res, Done(&b""[..], a));
+    }
 
-  #[test]
-  fn apply_test() {
-    fn sum2(a:u8, b:u8)       -> u8 { a + b }
-    fn sum3(a:u8, b:u8, c:u8) -> u8 { a + b + c }
-    let a = apply!(1, sum2, 2);
-    let b = apply!(1, sum3, 2, 3);
+    #[test]
+    fn apply_test() {
+        fn sum2(a: u8, b: u8) -> u8 {
+            a + b
+        }
+        fn sum3(a: u8, b: u8, c: u8) -> u8 {
+            a + b + c
+        }
+        let a = apply!(1, sum2, 2);
+        let b = apply!(1, sum3, 2, 3);
 
-    assert_eq!(a, 3);
-    assert_eq!(b, 6);
-  }
+        assert_eq!(a, 3);
+        assert_eq!(b, 6);
+    }
 
-  #[test]
-  fn opt() {
-    named!(opt_abcd<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
+    #[test]
+    fn opt() {
+        named!(opt_abcd<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
 
-    let a = &b"abcdef"[..];
-    let b = &b"bcdefg"[..];
-    let c = &b"ab"[..];
-    assert_eq!(opt_abcd(a), Done(&b"ef"[..], Some(&b"abcd"[..])));
-    assert_eq!(opt_abcd(b), Done(&b"bcdefg"[..], None));
-    assert_eq!(opt_abcd(c), Incomplete(Needed::Size(4)));
-  }
+        let a = &b"abcdef"[..];
+        let b = &b"bcdefg"[..];
+        let c = &b"ab"[..];
+        assert_eq!(opt_abcd(a), Done(&b"ef"[..], Some(&b"abcd"[..])));
+        assert_eq!(opt_abcd(b), Done(&b"bcdefg"[..], None));
+        assert_eq!(opt_abcd(c), Incomplete(Needed::Size(4)));
+    }
 
-  #[cfg(feature = "verbose-errors")]
-  #[test]
-  fn opt_res() {
-    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]> > >, opt_res!(tag!("abcd")));
+    #[cfg(feature = "verbose-errors")]
+    #[test]
+    fn opt_res() {
+        named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]> > >, opt_res!(tag!("abcd")));
 
-    let a = &b"abcdef"[..];
-    let b = &b"bcdefg"[..];
-    let c = &b"ab"[..];
-    assert_eq!(opt_res_abcd(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
-    assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(error_position!(ErrorKind::Tag, b))));
-    assert_eq!(opt_res_abcd(c), Incomplete(Needed::Size(4)));
-  }
+        let a = &b"abcdef"[..];
+        let b = &b"bcdefg"[..];
+        let c = &b"ab"[..];
+        assert_eq!(opt_res_abcd(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
+        assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(error_position!(ErrorKind::Tag, b))));
+        assert_eq!(opt_res_abcd(c), Incomplete(Needed::Size(4)));
+    }
 
-  #[cfg(not(feature = "verbose-errors"))]
-  #[test]
-  fn opt_res() {
-    named!(opt_res_abcd<&[u8], Result<&[u8], Err<u32>> >, opt_res!(tag!("abcd")));
+    #[cfg(not(feature = "verbose-errors"))]
+    #[test]
+    fn opt_res() {
+        named!(opt_res_abcd<&[u8], Result<&[u8], Err<u32>> >, opt_res!(tag!("abcd")));
 
-    let a = &b"abcdef"[..];
-    let b = &b"bcdefg"[..];
-    let c = &b"ab"[..];
-    assert_eq!(opt_res_abcd(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
-    assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(error_position!(ErrorKind::Tag, b))));
-    assert_eq!(opt_res_abcd(c), Incomplete(Needed::Size(4)));
-  }
+        let a = &b"abcdef"[..];
+        let b = &b"bcdefg"[..];
+        let c = &b"ab"[..];
+        assert_eq!(opt_res_abcd(a), Done(&b"ef"[..], Ok(&b"abcd"[..])));
+        assert_eq!(opt_res_abcd(b), Done(&b"bcdefg"[..], Err(error_position!(ErrorKind::Tag, b))));
+        assert_eq!(opt_res_abcd(c), Incomplete(Needed::Size(4)));
+    }
 
-  #[test]
-  #[cfg(feature = "std")]
-  fn cond() {
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>>  =
-      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( true, tag!("abcd") ) )));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> =
-      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( false, tag!("abcd") ) )));
-    //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
+    #[test]
+    #[cfg(feature = "std")]
+    fn cond() {
+        let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, &str>> = Box::new(
+            closure!(&'static [u8], fix_error!(&str, cond!( true, tag!("abcd") ) )),
+        );
+        let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, &str>> = Box::new(
+            closure!(&'static [u8], fix_error!(&str, cond!( false, tag!("abcd") ) )),
+        );
+        //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
 
-    assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
-    assert_eq!(f_true(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(f_true(&b"xxx"[..]), Done(&b"xxx"[..], None));
+        assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+        assert_eq!(f_true(&b"ab"[..]), Incomplete(Needed::Size(4)));
+        assert_eq!(f_true(&b"xxx"[..]), Done(&b"xxx"[..], None));
 
-    assert_eq!(f_false(&b"abcdef"[..]), Done(&b"abcdef"[..], None));
-    assert_eq!(f_false(&b"ab"[..]), Done(&b"ab"[..], None));
-    assert_eq!(f_false(&b"xxx"[..]), Done(&b"xxx"[..], None));
-  }
+        assert_eq!(f_false(&b"abcdef"[..]), Done(&b"abcdef"[..], None));
+        assert_eq!(f_false(&b"ab"[..]), Done(&b"ab"[..], None));
+        assert_eq!(f_false(&b"xxx"[..]), Done(&b"xxx"[..], None));
+    }
 
-  #[test]
-  #[cfg(feature = "std")]
-  fn cond_wrapping() {
-    // Test that cond!() will wrap a given identifier in the call!() macro.
-    named!( tag_abcd, tag!("abcd") );
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>>  =
-      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( true, tag_abcd ) )));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, &str>> =
-      Box::new(closure!(&'static [u8], fix_error!(&str, cond!( false, tag_abcd ) )));
-    //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
+    #[test]
+    #[cfg(feature = "std")]
+    fn cond_wrapping() {
+        // Test that cond!() will wrap a given identifier in the call!() macro.
+        named!( tag_abcd, tag!("abcd") );
+        let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, &str>> = Box::new(
+            closure!(&'static [u8], fix_error!(&str, cond!( true, tag_abcd ) )),
+        );
+        let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, &str>> = Box::new(
+            closure!(&'static [u8], fix_error!(&str, cond!( false, tag_abcd ) )),
+        );
+        //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
-    assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
-    assert_eq!(f_true(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(f_true(&b"xxx"[..]), Done(&b"xxx"[..], None));
+        assert_eq!(f_true(&b"abcdef"[..]), Done(&b"ef"[..], Some(&b"abcd"[..])));
+        assert_eq!(f_true(&b"ab"[..]), Incomplete(Needed::Size(4)));
+        assert_eq!(f_true(&b"xxx"[..]), Done(&b"xxx"[..], None));
 
-    assert_eq!(f_false(&b"abcdef"[..]), Done(&b"abcdef"[..], None));
-    assert_eq!(f_false(&b"ab"[..]), Done(&b"ab"[..], None));
-    assert_eq!(f_false(&b"xxx"[..]), Done(&b"xxx"[..], None));
-  }
+        assert_eq!(f_false(&b"abcdef"[..]), Done(&b"abcdef"[..], None));
+        assert_eq!(f_false(&b"ab"[..]), Done(&b"ab"[..], None));
+        assert_eq!(f_false(&b"xxx"[..]), Done(&b"xxx"[..], None));
+    }
 
-  #[test]
-  fn peek() {
-    named!(peek_tag<&[u8],&[u8]>, peek!(tag!("abcd")));
+    #[test]
+    fn peek() {
+        named!(peek_tag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
-    assert_eq!(peek_tag(&b"abcdef"[..]), Done(&b"abcdef"[..], &b"abcd"[..]));
-    assert_eq!(peek_tag(&b"ab"[..]), Incomplete(Needed::Size(4)));
-    assert_eq!(peek_tag(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
-  }
+        assert_eq!(peek_tag(&b"abcdef"[..]), Done(&b"abcdef"[..], &b"abcd"[..]));
+        assert_eq!(peek_tag(&b"ab"[..]), Incomplete(Needed::Size(4)));
+        assert_eq!(peek_tag(&b"xxx"[..]), Error(error_position!(ErrorKind::Tag, &b"xxx"[..])));
+    }
 
-  #[test]
-  fn not() {
-    named!(not_aaa, not!(tag!("aaa")));
-    assert_eq!(not_aaa(&b"aaa"[..]), Error(error_position!(ErrorKind::Not, &b"aaa"[..])));
-    assert_eq!(not_aaa(&b"aa"[..]), Done(&b"aa"[..], &b""[..]));
-    assert_eq!(not_aaa(&b"abcd"[..]), Done(&b"abcd"[..], &b""[..]));
-  }
+    #[test]
+    fn not() {
+        named!(not_aaa, not!(tag!("aaa")));
+        assert_eq!(not_aaa(&b"aaa"[..]), Error(error_position!(ErrorKind::Not, &b"aaa"[..])));
+        assert_eq!(not_aaa(&b"aa"[..]), Done(&b"aa"[..], &b""[..]));
+        assert_eq!(not_aaa(&b"abcd"[..]), Done(&b"abcd"[..], &b""[..]));
+    }
 
-  #[test]
-  fn verify() {
-    named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == 'a' as u8));
-    assert_eq!(test(&b"bcd"[..]), Incomplete(Needed::Size(5)));
-    assert_eq!(test(&b"bcdefg"[..]), Error(error_position!(ErrorKind::Verify, &b"bcdefg"[..])));
-    assert_eq!(test(&b"abcdefg"[..]), Done(&b"fg"[..], &b"abcde"[..]));
-  }
+    #[test]
+    fn verify() {
+        named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == 'a' as u8));
+        assert_eq!(test(&b"bcd"[..]), Incomplete(Needed::Size(5)));
+        assert_eq!(test(&b"bcdefg"[..]), Error(error_position!(ErrorKind::Verify, &b"bcdefg"[..])));
+        assert_eq!(test(&b"abcdefg"[..]), Done(&b"fg"[..], &b"abcde"[..]));
+    }
 }
