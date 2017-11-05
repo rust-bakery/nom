@@ -193,7 +193,7 @@ macro_rules! fix_error (
 /// parser R -> IResult<R,T>
 #[macro_export]
 macro_rules! flat_map(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
@@ -215,13 +215,13 @@ macro_rules! flat_map(
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     flat_map!($i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     flat_map!($i, call!($f), call!($g));
   );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     flat_map!($i, call!($f), $submac!($($args)*));
   );
 );

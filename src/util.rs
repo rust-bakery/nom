@@ -118,7 +118,7 @@ impl HexDisplay for [u8] {
 /// ```
 #[macro_export]
 macro_rules! dbg (
-  ($i: expr, $submac:ident!( $($args:tt)* )) => (
+  ($i: expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let l = line!();
       match $submac!($i, $($args)*) {
@@ -135,7 +135,7 @@ macro_rules! dbg (
     }
   );
 
-  ($i:expr, $f:ident) => (
+  ($i:expr, $f:ident $(,)*) => (
       dbg!($i, call!($f));
   );
 );
@@ -161,7 +161,7 @@ macro_rules! dbg (
 /// # }
 #[macro_export]
 macro_rules! dbg_dmp (
-  ($i: expr, $submac:ident!( $($args:tt)* )) => (
+  ($i: expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       use $crate::HexDisplay;
       let l = line!();
@@ -179,7 +179,7 @@ macro_rules! dbg_dmp (
     }
   );
 
-  ($i:expr, $f:ident) => (
+  ($i:expr, $f:ident $(,)*) => (
       dbg_dmp!($i, call!($f));
   );
 );

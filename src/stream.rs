@@ -490,7 +490,7 @@ impl<'a,'b,R,S:Clone,T:Clone,E:Clone,M:Clone,C1:Consumer<R,S,E,M>, C2:Consumer<S
 #[macro_export]
 macro_rules! consumer_from_parser (
   //FIXME: should specify the error and move type
-  ($name:ident<$input:ty, $output:ty>, $submac:ident!( $($args:tt)* )) => (
+  ($name:ident<$input:ty, $output:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
     #[derive(Debug)]
     struct $name {
       state: $crate::ConsumerState<$output, (), $crate::Move>
@@ -531,7 +531,7 @@ macro_rules! consumer_from_parser (
       }
     }
   );
-  ($name:ident<$output:ty>, $submac:ident!( $($args:tt)* )) => (
+  ($name:ident<$output:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
     #[derive(Debug)]
     struct $name {
       state: $crate::ConsumerState<$output, (),  $crate::Move>
@@ -574,10 +574,10 @@ macro_rules! consumer_from_parser (
       }
     }
   );
-  ($name:ident<$input:ty, $output:ty>, $f:expr) => (
+  ($name:ident<$input:ty, $output:ty>, $f:expr $(,)*) => (
     consumer_from_parser!($name<$input, $output>, call!($f));
   );
-  ($name:ident<$output:ty>, $f:expr) => (
+  ($name:ident<$output:ty>, $f:expr $(,)*) => (
     consumer_from_parser!($name<$output>, call!($f));
   );
 

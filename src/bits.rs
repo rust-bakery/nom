@@ -28,10 +28,10 @@
 /// # }
 #[macro_export]
 macro_rules! bits (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     bits_impl!($i, $submac!($($args)*));
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     bits_impl!($i, call!($f));
   );
 );
@@ -118,10 +118,10 @@ macro_rules! bits_impl (
 /// # }
 #[macro_export]
 macro_rules! bytes (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     bytes_impl!($i, $submac!($($args)*));
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     bytes_impl!($i, call!($f));
   );
 );
@@ -212,7 +212,7 @@ macro_rules! bytes_impl (
 /// ```
 #[macro_export]
 macro_rules! take_bits (
-  ($i:expr, $t:ty, $count:expr) => (
+  ($i:expr, $t:ty, $count:expr $(,)*) => (
     {
       use std::ops::Div;
       use std::convert::Into;
@@ -262,7 +262,7 @@ macro_rules! take_bits (
 /// matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
 #[macro_export]
 macro_rules! tag_bits (
-  ($i:expr, $t:ty, $count:expr, $p: pat) => (
+  ($i:expr, $t:ty, $count:expr, $p: pat $(,)*) => (
     {
       match take_bits!($i, $t, $count) {
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),

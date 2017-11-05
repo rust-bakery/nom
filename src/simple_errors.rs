@@ -92,7 +92,7 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 /// # fn main() {
 ///     // will add a Custom(42) error to the error chain
 ///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
-///     // Convert to IREsult<&[u8], &[u8], &str>
+///     // Convert to IResult<&[u8], &[u8], &str>
 ///     named!(parser<&[u8], &[u8], &str>, add_return_error!(ErrorKind::Custom("custom error message"), fix_error!(&str, err_test)));
 ///
 ///     let a = &b"efghblah"[..];
@@ -102,7 +102,7 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 /// ```
 #[macro_export]
 macro_rules! fix_error (
-  ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $t:ty, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
@@ -126,7 +126,7 @@ macro_rules! fix_error (
 /// parser R -> IResult<R,T>
 #[macro_export]
 macro_rules! flat_map(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
@@ -141,13 +141,13 @@ macro_rules! flat_map(
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     flat_map!($i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     flat_map!($i, call!($f), call!($g));
   );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     flat_map!($i, call!($f), $submac!($($args)*));
   );
 );

@@ -234,7 +234,7 @@ macro_rules! alt (
     alt!(__impl $i, call!($e) => { $gen } | $($rest)*);
   );
 
-  (__impl $i:expr, __end) => (
+  (__impl $i:expr, $(|)* __end) => (
     $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
   );
 
@@ -322,19 +322,19 @@ macro_rules! alt_complete (
 
   // Tail (non-recursive) rules
 
-  ($i:expr, $e:ident => { $gen:expr }) => (
+  ($i:expr, $e:ident => { $gen:expr } $(|)*) => (
     alt_complete!($i, call!($e) => { $gen });
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
+  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } $(|)*) => (
     alt!(__impl $i, complete!($subrule!($($args)*)) => { $gen } | __end)
   );
 
-  ($i:expr, $e:ident) => (
+  ($i:expr, $e:ident $(|)*) => (
     alt_complete!($i, call!($e));
   );
 
-  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
+  ($i:expr, $subrule:ident!( $($args:tt)*) $(|)*) => (
     alt!(__impl $i, complete!($subrule!($($args)*)) | __end)
   );
 );
@@ -418,7 +418,7 @@ macro_rules! alt_complete (
 ///
 #[macro_export]
 macro_rules! switch (
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* $(|)*) => (
     {
       let i_ = $i.clone();
       match map!(i_, $submac!($($args)*), |o| Some(o)) {
@@ -546,13 +546,13 @@ macro_rules! permutation_init (
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
-  (($($parsed:expr),*), $e:ident) => (
+  (($($parsed:expr),*), $e:ident $(,)*) => (
     ($($parsed),* , ::std::option::Option::None)
   );
-  (($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
+  (($($parsed:expr),*), $submac:ident!( $($args:tt)* ) $(,)*) => (
     ($($parsed),* , ::std::option::Option::None)
   );
-  (($($parsed:expr),*),) => (
+  (($($parsed:expr),*) $(,)+) => (
     ($($parsed),*)
   );
 );

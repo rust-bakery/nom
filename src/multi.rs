@@ -4,7 +4,7 @@
 /// separated_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
 #[macro_export]
 macro_rules! separated_list(
-  ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
+  ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* ) $(,)*) => (
     {
       use $crate::InputLength;
 
@@ -90,13 +90,13 @@ macro_rules! separated_list(
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     separated_list!($i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     separated_list!($i, call!($f), $submac!($($args)*));
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     separated_list!($i, call!($f), call!($g));
   );
 );
@@ -105,7 +105,7 @@ macro_rules! separated_list(
 /// separated_nonempty_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
 #[macro_export]
 macro_rules! separated_nonempty_list(
-  ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
+  ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* ) $(,)*) => (
     {
       use $crate::InputLength;
 
@@ -190,13 +190,13 @@ macro_rules! separated_nonempty_list(
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     separated_nonempty_list!($i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     separated_nonempty_list!($i, call!($f), $submac!($($args)*));
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     separated_nonempty_list!($i, call!($f), call!($g));
   );
 );
@@ -206,17 +206,17 @@ macro_rules! separated_nonempty_list(
 /// when either the separator or element subparser returns `Incomplete`.
 #[macro_export]
 macro_rules! separated_list_complete {
-    ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => ({
+    ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* ) $(,)*) => ({
         separated_list!($i, complete!($sep!($($args)*)), complete!($submac!($($args2)*)))
     });
 
-    ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
         separated_list_complete!($i, $submac!($($args)*), call!($g));
     );
-    ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
         separated_list_complete!($i, call!($f), $submac!($($args)*));
     );
-    ($i:expr, $f:expr, $g:expr) => (
+    ($i:expr, $f:expr, $g:expr $(,)*) => (
         separated_list_complete!($i, call!($f), call!($g));
     );
 }
@@ -226,17 +226,17 @@ macro_rules! separated_list_complete {
 /// `Error` when either the separator or element subparser returns `Incomplete`.
 #[macro_export]
 macro_rules! separated_nonempty_list_complete {
-    ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => ({
+    ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* ) $(,)*) => ({
         separated_nonempty_list!($i, complete!($sep!($($args)*)), complete!($submac!($($args2)*)))
     });
 
-    ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
         separated_nonempty_list_complete!($i, $submac!($($args)*), call!($g));
     );
-    ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
         separated_nonempty_list_complete!($i, call!($f), $submac!($($args)*));
     );
-    ($i:expr, $f:expr, $g:expr) => (
+    ($i:expr, $f:expr, $g:expr $(,)*) => (
         separated_nonempty_list_complete!($i, call!($f), call!($g));
     );
 }
@@ -263,7 +263,7 @@ macro_rules! separated_nonempty_list_complete {
 /// 0 or more
 #[macro_export]
 macro_rules! many0(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       use $crate::InputLength;
 
@@ -311,7 +311,7 @@ macro_rules! many0(
       ret
     }
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     many0!($i, call!($f));
   );
 );
@@ -340,7 +340,7 @@ macro_rules! many0(
 /// ```
 #[macro_export]
 macro_rules! many1(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       use $crate::InputLength;
       let i_ = $i.clone();
@@ -403,7 +403,7 @@ macro_rules! many1(
       }
     }
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     many1!($i, call!($f));
   );
 );
@@ -436,7 +436,7 @@ macro_rules! many1(
 /// ```
 #[macro_export]
 macro_rules! many_till(
-  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     {
       use $crate::InputLength;
 
@@ -486,7 +486,13 @@ macro_rules! many_till(
       ret
     }
   );
-  ($i:expr, $f:expr, $g: expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $f:expr $(,)*) => (
+    many_till!($i, $submac!($($args)*), call!($f));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
+    many_till!($i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $f:expr, $g: expr $(,)*) => (
     many_till!($i, call!($f), call!($g));
   );
 );
@@ -519,7 +525,7 @@ macro_rules! many_till(
 /// ```
 #[macro_export]
 macro_rules! many_m_n(
-  ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       use $crate::InputLength;
       let mut res          = ::std::vec::Vec::with_capacity($m);
@@ -583,7 +589,7 @@ macro_rules! many_m_n(
       }
     }
   );
-  ($i:expr, $m:expr, $n: expr, $f:expr) => (
+  ($i:expr, $m:expr, $n: expr, $f:expr $(,)*) => (
     many_m_n!($i, $m, $n, call!($f));
   );
 );
@@ -653,7 +659,7 @@ macro_rules! count(
       ret
     }
   );
-  ($i:expr, $f:expr, $count: expr) => (
+  ($i:expr, $f:expr, $count: expr $(,)*) => (
     count!($i, call!($f), $count);
   );
 );
@@ -684,7 +690,7 @@ macro_rules! count(
 ///
 #[macro_export]
 macro_rules! count_fixed (
-  ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
+  ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr $(,)*) => (
     {
       let ret;
       let mut input = $i.clone();
@@ -727,7 +733,7 @@ macro_rules! count_fixed (
       ret
     }
 );
-  ($i:expr, $typ: ty, $f:ident, $count: expr) => (
+  ($i:expr, $typ: ty, $f:ident, $count: expr $(,)*) => (
     count_fixed!($i, $typ, call!($f), $count);
   );
 );
@@ -736,7 +742,7 @@ macro_rules! count_fixed (
 /// gets a number from the first parser, then applies the second parser that many times
 #[macro_export]
 macro_rules! length_count(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
@@ -761,15 +767,15 @@ macro_rules! length_count(
     }
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     length_count!($i, $submac!($($args)*), call!($g));
   );
 
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     length_count!($i, call!($f), $submac!($($args)*));
   );
 
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     length_count!($i, call!($f), call!($g));
   );
 );
@@ -780,7 +786,7 @@ macro_rules! length_count(
 /// of that size, and returns that subslice
 #[macro_export]
 macro_rules! length_data(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     match $submac!($i, $($args)*) {
       $crate::IResult::Error(e)      => $crate::IResult::Error(e),
       $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
@@ -803,7 +809,7 @@ macro_rules! length_data(
     }
   );
 
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     length_data!($i, call!($f));
   );
 );
@@ -814,7 +820,7 @@ macro_rules! length_data(
 /// `Incomplete`, `length_value` will return an error
 #[macro_export]
 macro_rules! length_value(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(e),
@@ -845,15 +851,15 @@ macro_rules! length_value(
     }
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     length_value!($i, $submac!($($args)*), call!($g));
   );
 
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     length_value!($i, call!($f), $submac!($($args)*));
   );
 
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     length_value!($i, call!($f), call!($g));
   );
 );
@@ -884,7 +890,7 @@ macro_rules! length_value(
 /// 0 or more
 #[macro_export]
 macro_rules! fold_many0(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr $(,)*) => (
     {
       use $crate::InputLength;
       let ret;
@@ -933,7 +939,7 @@ macro_rules! fold_many0(
       ret
     }
   );
-  ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
+  ($i:expr, $f:expr, $init:expr, $fold_f:expr $(,)*) => (
     fold_many0!($i, call!($f), $init, $fold_f);
   );
 );
@@ -966,7 +972,7 @@ macro_rules! fold_many0(
 /// ```
 #[macro_export]
 macro_rules! fold_many1(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr $(,)*) => (
     {
       use $crate::InputLength;
       match $submac!($i, $($args)*) {
@@ -1026,7 +1032,7 @@ macro_rules! fold_many1(
       }
     }
   );
-  ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
+  ($i:expr, $f:expr, $init:expr, $fold_f:expr $(,)*) => (
     fold_many1!($i, call!($f), $init, $fold_f);
   );
 );
@@ -1062,7 +1068,7 @@ macro_rules! fold_many1(
 /// ```
 #[macro_export]
 macro_rules! fold_many_m_n(
-  ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
+  ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr $(,)*) => (
     {
       use $crate::InputLength;
       let mut acc          = $init;
@@ -1124,7 +1130,7 @@ macro_rules! fold_many_m_n(
       }
     }
   );
-  ($i:expr, $m:expr, $n: expr, $f:expr, $init:expr, $fold_f:expr) => (
+  ($i:expr, $m:expr, $n: expr, $f:expr, $init:expr, $fold_f:expr $(,)*) => (
     fold_many_m_n!($i, $m, $n, call!($f), $init, $fold_f);
   );
 );
