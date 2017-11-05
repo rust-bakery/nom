@@ -20,7 +20,7 @@ use std::ops::RangeFrom;
 /// ```
 #[macro_export]
 macro_rules! one_of (
-  ($i:expr, $inp: expr) => (
+  ($i:expr, $inp: expr $(,)*) => (
     {
       use $crate::Slice;
       use $crate::AsChar;
@@ -42,7 +42,7 @@ macro_rules! one_of (
 /// matches anything but the provided characters
 #[macro_export]
 macro_rules! none_of (
-  ($i:expr, $inp: expr) => (
+  ($i:expr, $inp: expr $(,)*) => (
     {
       use $crate::Slice;
       use $crate::AsChar;
@@ -64,7 +64,7 @@ macro_rules! none_of (
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
 #[macro_export]
 macro_rules! char (
-  ($i:expr, $c: expr) => (
+  ($i:expr, $c: expr $(,)*) => (
     {
       use $crate::Slice;
       use $crate::AsChar;

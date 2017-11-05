@@ -149,12 +149,12 @@ macro_rules! is_a_s (
 /// ```
 #[macro_export]
 macro_rules! take_while_s (
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+  ($input:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       take_while!($input, $submac!($($args)*))
     }
   );
-  ($input:expr, $f:expr) => (
+  ($input:expr, $f:expr $(,)*) => (
     take_while_s!($input, call!($f));
   );
 );
@@ -177,10 +177,10 @@ macro_rules! take_while_s (
 /// ```
 #[macro_export]
 macro_rules! take_while1_s (
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+  ($input:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     take_while1!($input, $submac!($($args)*))
   );
-  ($input:expr, $f:expr) => (
+  ($input:expr, $f:expr $(,)*) => (
     take_while1_s!($input, call!($f));
   );
 );
@@ -192,12 +192,12 @@ macro_rules! take_while1_s (
 /// The argument is either a function `char -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_till_s (
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+  ($input:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       take_till!($input, $submac!($($args)*))
     }
   );
-  ($input:expr, $f:expr) => (
+  ($input:expr, $f:expr $(,)*) => (
     take_till_s!($input, call!($f));
   );
 );
@@ -208,12 +208,12 @@ macro_rules! take_till_s (
 /// The argument is either a function `char -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_till1_s (
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+  ($input:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       take_till1!($input, $submac!($($args)*))
     }
   );
-  ($input:expr, $f:expr) => (
+  ($input:expr, $f:expr $(,)*) => (
     take_till1_s!($input, call!($f));
   );
 );

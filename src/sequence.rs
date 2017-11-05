@@ -96,10 +96,10 @@ macro_rules! tuple_parser (
       }
     }
   );
-  ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident) => (
+  ($i:expr, $consumed:expr, ($($parsed:tt),*), $e:ident $(,)*) => (
     tuple_parser!($i, $consumed, ($($parsed),*), call!($e));
   );
-  ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $consumed:expr, (), $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -120,7 +120,7 @@ macro_rules! tuple_parser (
       }
     }
   );
-  ($i:expr, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $consumed:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Error(e)                            =>
@@ -140,7 +140,7 @@ macro_rules! tuple_parser (
       }
     }
   );
-  ($i:expr, $consumed:expr, ($($parsed:expr),*)) => (
+  ($i:expr, $consumed:expr, ($($parsed:expr),*) $(,)*) => (
     {
       $crate::IResult::Done($i, ($($parsed),*))
     }
@@ -152,21 +152,21 @@ macro_rules! tuple_parser (
 ///
 #[macro_export]
 macro_rules! pair(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     {
       tuple!($i, $submac!($($args)*), $submac2!($($args2)*))
     }
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     pair!($i, $submac!($($args)*), call!($g));
   );
 
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     pair!($i, call!($f), $submac!($($args)*));
   );
 
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     pair!($i, call!($f), call!($g));
   );
 );
@@ -196,7 +196,7 @@ macro_rules! separated_pair(
 /// preceded(opening, X) returns X
 #[macro_export]
 macro_rules! preceded(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     {
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
@@ -208,15 +208,15 @@ macro_rules! preceded(
     }
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     preceded!($i, $submac!($($args)*), call!($g));
   );
 
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     preceded!($i, call!($f), $submac!($($args)*));
   );
 
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     preceded!($i, call!($f), call!($g));
   );
 );
@@ -225,7 +225,7 @@ macro_rules! preceded(
 /// terminated(X, closing) returns X
 #[macro_export]
 macro_rules! terminated(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     {
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
@@ -237,15 +237,15 @@ macro_rules! terminated(
     }
   );
 
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     terminated!($i, $submac!($($args)*), call!($g));
   );
 
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     terminated!($i, call!($f), $submac!($($args)*));
   );
 
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     terminated!($i, call!($f), call!($g));
   );
 );

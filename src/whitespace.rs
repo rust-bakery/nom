@@ -702,85 +702,85 @@ macro_rules! eat_separator (
 /// ```
 #[macro_export]
 macro_rules! sep (
-  ($i:expr,  $separator:ident, tuple ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, tuple ! ($($rest:tt)*) $(,)*) => {
     tuple_sep!($i, $separator, 0usize, (), $($rest)*)
   };
-  ($i:expr,  $separator:ident, pair ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, pair ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       pair_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, delimited ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, delimited ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       delimited_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, separated_pair ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, separated_pair ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       separated_pair_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, preceded ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, preceded ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       preceded_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, terminated ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, terminated ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       terminated_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, do_parse ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, do_parse ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       do_parse_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, permutation ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, permutation ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       permutation_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, alt ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, alt ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       alt_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, alt_complete ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, alt_complete ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       alt_complete_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, switch ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, switch ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       switch_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, separated_list ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, separated_list ! ($($rest:tt)*) $(,)*) => {
     wrap_sep!($i,
       $separator,
       separated_list_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:ident, many0 ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, many0 ! ($($rest:tt)*) $(,)*) => {
     many0!($i, wrap_sep!($separator, $($rest)*))
   };
-  ($i:expr,  $separator:ident, many1 ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:ident, many1 ! ($($rest:tt)*) $(,)*) => {
     many1!($i, wrap_sep!($separator, $($rest)*))
   };
 //FIXME: missing separated_nonempty_list,
 // many_till, many_m_n, count, count_fixed, fold_many0, fold_many1,
 // fold_many_m_n
-  ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* )) => {
+  ($i:expr, $separator:ident, $submac:ident!( $($args:tt)* ) $(,)*) => {
     wrap_sep!($i, $separator, $submac!($($args)*))
   };
   ($i:expr, $separator:ident, $f:expr) => {

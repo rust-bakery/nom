@@ -67,10 +67,10 @@
 /// Wraps a parser in a closure
 #[macro_export]
 macro_rules! closure (
-    ($ty:ty, $submac:ident!( $($args:tt)* )) => (
+    ($ty:ty, $submac:ident!( $($args:tt)* ) $(,)*) => (
         |i: $ty| { $submac!(i, $($args)*) }
     );
-    ($submac:ident!( $($args:tt)* )) => (
+    ($submac:ident!( $($args:tt)* ) $(,)*) => (
         |i| { $submac!(i, $($args)*) }
     );
 );
@@ -97,61 +97,61 @@ macro_rules! named (
     (#$($args:tt)*) => (
         named_attr!(#$($args)*);
     );
-    ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+    ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($name:ident, $submac:ident!( $($args:tt)* )) => (
+    ($name:ident, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+    (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+    (pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+    (pub $name:ident, $submac:ident!( $($args:tt)* ) $(,)*) => (
         #[allow(unused_variables)]
         pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
@@ -162,22 +162,22 @@ macro_rules! named (
 /// Makes a function from a parser combination with arguments.
 #[macro_export]
 macro_rules! named_args {
-    (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+    (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) $(,)*) => {
         pub fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
-    (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+    (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) $(,)*) => {
         pub fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
-    ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+    ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) $(,)*) => {
         fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
         }
     };
-    ($func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+    ($func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) $(,)*) => {
         fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
             $submac!(input, $($args)*)
         }
@@ -200,61 +200,61 @@ macro_rules! named_args {
 /// ```
 #[macro_export]
 macro_rules! named_attr (
-    ($(#[$attr:meta])*, $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, $name:ident<$o:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, $name:ident, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, $name:ident, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, pub $name:ident, $submac:ident!( $($args:tt)* )) => (
+    ($(#[$attr:meta])*, pub $name:ident, $submac:ident!( $($args:tt)* ) $(,)*) => (
         $(#[$attr])*
         pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
@@ -276,8 +276,8 @@ macro_rules! named_attr (
 /// ```
 #[macro_export]
 macro_rules! call (
-  ($i:expr, $fun:expr) => ( $fun( $i ) );
-  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
+  ($i:expr, $fun:expr $(,)*) => ( $fun( $i ) );
+  ($i:expr, $fun:expr, $($args:expr),* $(,)*) => ( $fun( $i, $($args),* ) );
 );
 
 /// emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
@@ -294,7 +294,7 @@ macro_rules! call (
 /// ```
 #[macro_export]
 macro_rules! apply (
-  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
+  ($i:expr, $fun:expr, $($args:expr),* $(,)*) => ( $fun( $i, $($args),* ) );
 );
 
 /// Prevents backtracking if the child parser fails
@@ -350,7 +350,7 @@ macro_rules! apply (
 ///
 #[macro_export]
 macro_rules! return_error (
-  ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $code:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let i_ = $i.clone();
       let cl = || {
@@ -395,7 +395,7 @@ macro_rules! return_error (
 ///
 #[macro_export]
 macro_rules! add_return_error (
-  ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $code:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
@@ -432,7 +432,7 @@ macro_rules! add_return_error (
 ///
 #[macro_export]
 macro_rules! complete (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -479,7 +479,7 @@ macro_rules! complete (
 /// ```
 #[macro_export]
 macro_rules! try_parse (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     match $submac!($i, $($args)*) {
       $crate::IResult::Done(i,o)     => (i,o),
       $crate::IResult::Error(e)      => return $crate::IResult::Error(e),
@@ -509,10 +509,10 @@ macro_rules! map(
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     map!(__impl $i, $submac!($($args)*), $g);
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     map!(__impl $i, call!($f), $g);
   );
 );
@@ -536,16 +536,16 @@ macro_rules! map_res (
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     map_res!(__impl $i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     map_res!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     map_res!(__impl $i, call!($f), call!($g));
   );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     map_res!(__impl $i, call!($f), $submac!($($args)*));
   );
 );
@@ -569,16 +569,16 @@ macro_rules! map_opt (
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     map_opt!(__impl $i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     map_opt!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     map_opt!(__impl $i, call!($f), call!($g));
   );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     map_opt!(__impl $i, call!($f), $submac!($($args)*));
   );
 );
@@ -590,7 +590,7 @@ macro_rules! map_opt (
 /// this will completely consume the input
 #[macro_export]
 macro_rules! parse_to (
-  ($i:expr, $t:ty ) => (
+  ($i:expr, $t:ty $(,)*) => (
     {
       use $crate::ParseTo;
       use $crate::Slice;
@@ -632,16 +632,16 @@ macro_rules! verify (
       }
     }
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr $(,)*) => (
     verify!(__impl $i, $submac!($($args)*), call!($g));
   );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* ) $(,)*) => (
     verify!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
   );
-  ($i:expr, $f:expr, $g:expr) => (
+  ($i:expr, $f:expr, $g:expr $(,)*) => (
     verify!(__impl $i, call!($f), call!($g));
   );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     verify!(__impl $i, call!($f), $submac!($($args)*));
   );
 );
@@ -668,7 +668,7 @@ macro_rules! verify (
 /// ```
 #[macro_export]
 macro_rules! value (
-  ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $res:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,_)     => {
@@ -680,10 +680,10 @@ macro_rules! value (
       }
     }
   );
-  ($i:expr, $res:expr, $f:expr) => (
+  ($i:expr, $res:expr, $f:expr $(,)*) => (
     value!($i, $res, call!($f))
   );
-  ($i:expr, $res:expr) => (
+  ($i:expr, $res:expr $(,)*) => (
     {
       let res: $crate::IResult<_,_> = $crate::IResult::Done($i, $res);
       res
@@ -697,7 +697,7 @@ macro_rules! value (
 /// See expr_opt for an example
 #[macro_export]
 macro_rules! expr_res (
-  ($i:expr, $e:expr) => (
+  ($i:expr, $e:expr $(,)*) => (
     {
       match $e {
         Ok(output) => $crate::IResult::Done($i, output),
@@ -740,7 +740,7 @@ macro_rules! expr_res (
 /// ```
 #[macro_export]
 macro_rules! expr_opt (
-  ($i:expr, $e:expr) => (
+  ($i:expr, $e:expr $(,)*) => (
     {
       match $e {
         ::std::option::Option::Some(output) => $crate::IResult::Done($i, output),
@@ -770,7 +770,7 @@ macro_rules! expr_opt (
 /// ```
 #[macro_export]
 macro_rules! opt(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -783,7 +783,7 @@ macro_rules! opt(
       }
     }
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     opt!($i, call!($f));
   );
 );
@@ -810,7 +810,7 @@ macro_rules! opt(
 /// ```
 #[macro_export]
 macro_rules! opt_res (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -820,7 +820,7 @@ macro_rules! opt_res (
       }
     }
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     opt_res!($i, call!($f));
   );
 );
@@ -860,7 +860,7 @@ macro_rules! opt_res (
 ///
 #[macro_export]
 macro_rules! cond_with_error(
-  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       if $cond {
         match $submac!($i, $($args)*) {
@@ -874,7 +874,7 @@ macro_rules! cond_with_error(
       }
     }
   );
-  ($i:expr, $cond:expr, $f:expr) => (
+  ($i:expr, $cond:expr, $f:expr $(,)*) => (
     cond_with_error!($i, $cond, call!($f));
   );
 );
@@ -914,7 +914,7 @@ macro_rules! cond_with_error(
 ///
 #[macro_export]
 macro_rules! cond(
-  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       if $cond {
         let i_ = $i.clone();
@@ -932,7 +932,7 @@ macro_rules! cond(
       }
     }
   );
-  ($i:expr, $cond:expr, $f:expr) => (
+  ($i:expr, $cond:expr, $f:expr $(,)*) => (
     cond!($i, $cond, call!($f));
   );
 );
@@ -971,7 +971,7 @@ macro_rules! cond(
 ///
 #[macro_export]
 macro_rules! cond_reduce(
-  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       if $cond {
         match $submac!($i, $($args)*) {
@@ -984,7 +984,7 @@ macro_rules! cond_reduce(
       }
     }
   );
-  ($i:expr, $cond:expr, $f:expr) => (
+  ($i:expr, $cond:expr, $f:expr $(,)*) => (
     cond_reduce!($i, $cond, call!($f));
   );
 );
@@ -1006,7 +1006,7 @@ macro_rules! cond_reduce(
 /// ```
 #[macro_export]
 macro_rules! peek(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -1016,7 +1016,7 @@ macro_rules! peek(
       }
     }
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     peek!($i, call!($f));
   );
 );
@@ -1047,7 +1047,7 @@ macro_rules! peek(
 /// ```
 #[macro_export]
 macro_rules! not(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       use $crate::Slice;
       let i_ = $i.clone();
@@ -1058,7 +1058,7 @@ macro_rules! not(
       }
     }
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     not!($i, call!($f));
   );
 );
@@ -1079,7 +1079,7 @@ macro_rules! not(
 /// ```
 #[macro_export]
 macro_rules! tap (
-  ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr) => (
+  ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr $(,)*) => (
     {
       match $submac!($i, $($args)*) {
         $crate::IResult::Done(i,o)     => {
@@ -1092,7 +1092,7 @@ macro_rules! tap (
       }
     }
   );
-  ($i:expr, $name: ident: $f:expr => $e:expr) => (
+  ($i:expr, $name: ident: $f:expr => $e:expr $(,)*) => (
     tap!($i, $name: call!($f) => $e);
   );
 );
@@ -1130,7 +1130,7 @@ macro_rules! eof (
 /// ```
 #[macro_export]
 macro_rules! recognize (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       use $crate::Offset;
       use $crate::Slice;
@@ -1145,7 +1145,7 @@ macro_rules! recognize (
       }
     }
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     recognize!($i, call!($f))
   );
 );
@@ -1165,7 +1165,7 @@ mod tests {
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
-    ($i:expr, $inp: expr) => (
+    ($i:expr, $inp: expr $(,)*) => (
       {
         #[inline(always)]
         fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
@@ -1181,7 +1181,7 @@ mod tests {
   );
 
   macro_rules! tag_bytes (
-    ($i:expr, $bytes: expr) => (
+    ($i:expr, $bytes: expr $(,)*) => (
       {
         use std::cmp::min;
         let len = $i.len();
@@ -1203,7 +1203,7 @@ mod tests {
   );
 
   macro_rules! take(
-    ($i:expr, $count:expr) => (
+    ($i:expr, $count:expr $(,)*) => (
       {
         let cnt = $count as usize;
         let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {

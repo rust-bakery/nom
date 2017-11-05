@@ -18,7 +18,7 @@
 /// ```
 #[macro_export]
 macro_rules! tag (
-  ($i:expr, $tag: expr) => (
+  ($i:expr, $tag: expr $(,)*) => (
     {
       use $crate::{Compare,CompareResult,InputLength,Slice};
       let res: $crate::IResult<_,_> = match ($i).compare($tag) {
@@ -55,7 +55,7 @@ macro_rules! tag (
 /// ```
 #[macro_export]
 macro_rules! tag_no_case (
-  ($i:expr, $tag: expr) => (
+  ($i:expr, $tag: expr $(,)*) => (
     {
       use $crate::{Compare,CompareResult,InputLength,Slice};
       let res: $crate::IResult<_,_> = match ($i).compare_no_case($tag) {
@@ -91,7 +91,7 @@ macro_rules! tag_no_case (
 /// ```
 #[macro_export]
 macro_rules! is_not(
-  ($input:expr, $arr:expr) => (
+  ($input:expr, $arr:expr $(,)*) => (
     {
       use $crate::InputLength;
       use $crate::InputIter;
@@ -133,7 +133,7 @@ macro_rules! is_not(
 /// ```
 #[macro_export]
 macro_rules! is_a (
-  ($input:expr, $arr:expr) => (
+  ($input:expr, $arr:expr $(,)*) => (
     {
       use $crate::InputLength;
       use $crate::InputIter;
@@ -176,7 +176,7 @@ macro_rules! is_a (
 #[macro_export]
 macro_rules! escaped (
   // Internal parser, do not use directly
-  (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
+  (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* ) $(,)*) => (
     {
       use $crate::InputLength;
       use $crate::Slice;
@@ -231,13 +231,13 @@ macro_rules! escaped (
     }
   );
   // Internal parser, do not use directly
-  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) $(,)*) => (
     {
      escaped!(__impl $i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
     }
   );
   // Internal parser, do not use directly
-  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr $(,)*) => (
      escaped!(__impl $i, $submac1!($($args)*), $control_char, call!($g))
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
@@ -344,13 +344,13 @@ macro_rules! escaped_transform (
     }
   );
   // Internal parser, do not use directly
-  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) $(,)*) => (
     {
      escaped_transform!(__impl $i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
     }
   );
   // Internal parser, do not use directly
-  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
+  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr $(,)*) => (
      escaped_transform_impl!($i, $submac1!($($args)*), $control_char, call!($g))
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
@@ -384,7 +384,7 @@ macro_rules! escaped_transform (
 /// ```
 #[macro_export]
 macro_rules! take_while (
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+  ($input:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       use $crate::{InputLength,InputIter,Slice};
       let input = $input;
@@ -400,7 +400,7 @@ macro_rules! take_while (
       }
     }
   );
-  ($input:expr, $f:expr) => (
+  ($input:expr, $f:expr $(,)*) => (
     take_while!($input, call!($f));
   );
 );
@@ -411,7 +411,7 @@ macro_rules! take_while (
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_while1 (
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+  ($input:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let input = $input;
 
@@ -433,7 +433,7 @@ macro_rules! take_while1 (
       }
     }
   );
-  ($input:expr, $f:expr) => (
+  ($input:expr, $f:expr $(,)*) => (
     take_while1!($input, call!($f));
   );
 );
@@ -444,7 +444,7 @@ macro_rules! take_while1 (
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_till (
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+  ($input:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let input = $input;
 
@@ -457,7 +457,7 @@ macro_rules! take_till (
       }
     }
   );
-  ($input:expr, $f:expr) => (
+  ($input:expr, $f:expr $(,)*) => (
     take_till!($input, call!($f));
   );
 );
@@ -468,7 +468,7 @@ macro_rules! take_till (
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 #[macro_export]
 macro_rules! take_till1 (
-  ($input:expr, $submac:ident!( $($args:tt)* )) => (
+  ($input:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       let input = $input;
 
@@ -486,7 +486,7 @@ macro_rules! take_till1 (
       }
     }
   );
-  ($input:expr, $f:expr) => (
+  ($input:expr, $f:expr $(,)*) => (
     take_till1!($input, call!($f));
   );
 );
@@ -508,7 +508,7 @@ macro_rules! take_till1 (
 /// ```
 #[macro_export]
 macro_rules! take (
-  ($i:expr, $count:expr) => (
+  ($i:expr, $count:expr $(,)*) => (
     {
       use $crate::InputIter;
       use $crate::Slice;
@@ -530,7 +530,7 @@ macro_rules! take (
 /// same as take! but returning a &str
 #[macro_export]
 macro_rules! take_str (
- ( $i:expr, $size:expr ) => (
+ ( $i:expr, $size:expr $(,)*) => (
     {
       let input: &[u8] = $i;
 
@@ -543,7 +543,7 @@ macro_rules! take_str (
 /// generates a parser consuming bytes until the specified byte sequence is found, and consumes it
 #[macro_export]
 macro_rules! take_until_and_consume (
-  ($i:expr, $substr:expr) => (
+  ($i:expr, $substr:expr $(,)*) => (
     {
       use $crate::InputLength;
       use $crate::FindSubstring;
@@ -570,7 +570,7 @@ macro_rules! take_until_and_consume (
 /// generates a parser consuming bytes (at least 1) until the specified byte sequence is found, and consumes it
 #[macro_export]
 macro_rules! take_until_and_consume1 (
-  ($i:expr, $substr:expr) => (
+  ($i:expr, $substr:expr $(,)*) => (
     {
       use $crate::InputLength;
 
@@ -595,7 +595,7 @@ macro_rules! take_until_and_consume1 (
 /// consumes data until it finds the specified tag
 #[macro_export]
 macro_rules! take_until (
-  ($i:expr, $substr:expr) => (
+  ($i:expr, $substr:expr $(,)*) => (
     {
       use $crate::InputLength;
       use $crate::FindSubstring;
@@ -622,7 +622,7 @@ macro_rules! take_until (
 /// consumes data until it finds the specified tag
 #[macro_export]
 macro_rules! take_until1 (
-  ($i:expr, $substr:expr) => (
+  ($i:expr, $substr:expr $(,)*) => (
     {
       use $crate::InputLength;
       use $crate::FindSubstring;
@@ -649,7 +649,7 @@ macro_rules! take_until1 (
 /// consumes data until it finds any of the specified characters, and consume it
 #[macro_export]
 macro_rules! take_until_either_and_consume (
-  ($input:expr, $arr:expr) => (
+  ($input:expr, $arr:expr $(,)*) => (
     {
       use $crate::InputLength;
       use $crate::InputIter;
@@ -680,7 +680,7 @@ macro_rules! take_until_either_and_consume (
 /// `take_until_either!(tag) => &[T] -> IResult<&[T], &[T]>`
 #[macro_export]
 macro_rules! take_until_either (
-  ($input:expr, $arr:expr) => (
+  ($input:expr, $arr:expr $(,)*) => (
     {
       use $crate::InputLength;
       use $crate::InputIter;
@@ -713,12 +713,12 @@ macro_rules! take_until_either (
 /// remaining stream
 #[macro_export]
 macro_rules! length_bytes(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+  ($i:expr, $submac:ident!( $($args:tt)* ) $(,)*) => (
     {
       length_data!($i, $submac!($($args)*))
     }
   );
-  ($i:expr, $f:expr) => (
+  ($i:expr, $f:expr $(,)*) => (
     length_data!($i, call!($f))
   )
 );
