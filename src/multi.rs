@@ -118,7 +118,7 @@ macro_rules! separated_nonempty_list(
         $crate::IResult::Error(a)      => $crate::IResult::Error(a),
         $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
         $crate::IResult::Done(i,o)     => {
-          if i.input_len() == input.len() {
+          if i.input_len() == input.input_len() {
             $crate::IResult::Error(error_position!($crate::ErrorKind::SeparatedNonEmptyList,input))
           } else {
             res.push(o);
