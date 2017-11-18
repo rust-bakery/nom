@@ -388,8 +388,7 @@
 //!   assert_eq!(expr(b"2*2/(5-1)+3"), IResult::Done(&b""[..], 4));
 //! }
 //! ```
-#![cfg_attr(not(feature = "std"), feature(no_std))]
-#![cfg_attr(not(feature = "std"), feature(collections))]
+#![cfg_attr(not(feature = "std"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(feature = "nightly", feature(const_fn))]
@@ -398,7 +397,7 @@
 //#![warn(missing_docs)]
 
 #[cfg(not(feature = "std"))]
-extern crate collections;
+extern crate alloc;
 #[cfg(feature = "regexp")]
 extern crate regex;
 #[cfg(feature = "regexp_macros")]
@@ -419,8 +418,8 @@ macro_rules! compiler_error {
 #[cfg(not(feature = "std"))]
 mod std {
 #[macro_use]
+  pub use alloc::{boxed, vec, string};
   pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
-  pub use collections::{boxed, vec, string};
   pub mod prelude {
     pub use core::prelude as v1;
   }
