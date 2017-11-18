@@ -39,7 +39,7 @@ version = "^0.2.2"
 optional = true
 
 [dependencies.memchr]
-version = "^1.0.1"
+version = "^2"
 default-features = false
 
 #[dev-dependencies.bytes]
