@@ -2,7 +2,14 @@
 
 ## [Unreleased][unreleased]
 
-### Changed
+### Fixed
+
+- `take_until_and_consume1!` no longer results in "no method named \`find_substring\`" and "no method named \`slice\`" compilation errors
+- `take_until_and_consume1!` returns the correct Incomplete(Needed) amount
+
+### Added
+
+- `ErrorKind::TakeUntilAndConsume1`
 
 ## 3.2.1 - 2017-10-27
 
