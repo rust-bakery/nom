@@ -1179,6 +1179,7 @@ macro_rules! eof (
       if ($i).input_len() == 0 {
         Ok(($i, $i))
       } else {
+        //FIXME what do we do with need_more?
         Err(Err::Error(error_position!(ErrorKind::Eof, $i)))
       }
     }
@@ -1255,7 +1256,7 @@ mod tests {
         let res: $crate::IResult<_,_,u32> = if reduced != b {
           Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag, $i)))
         } else if m < blen {
-          Err($crate::Err::Incomplete($crate::Needed::Size(blen)))
+          $crate::need_more($i, $crate::Needed::Size(blen))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -1269,7 +1270,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          Err(Err::Incomplete(Needed::Size(cnt)))
+          $crate::need_more($i, $crate::Needed::Size(cnt))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };
