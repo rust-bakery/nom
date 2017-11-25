@@ -1034,6 +1034,7 @@ mod tests {
     assert_eq!(hex_u32(&b"0x1be2"[..]), Ok((&b"x1be2"[..], 0)));
   }
 
+  /*
     #[test]
     fn end_of_input() {
         let not_over = &b"Hello, world!"[..];
@@ -1046,6 +1047,7 @@ mod tests {
         let res_over = eof_test(is_over);
         assert_eq!(res_over, Ok((is_over, is_over)));
     }
+    */
 
   #[test]
   fn configurable_endianness() {
