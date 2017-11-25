@@ -2,80 +2,9 @@
 extern crate nom;
 
 use nom::{AtEof,Compare,CompareResult,InputLength,InputIter,Slice};
+use nom::types::CompleteStr;
 
-use std::str;
-use std::str::{Chars,CharIndices,FromStr};
-use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
-use std::iter::Iterator;
-use std::fmt;
-
-#[derive(Clone,Copy,Debug,PartialEq)]
-pub struct CompleteStr<'a>(&'a str);
-
-impl<'a> AtEof for CompleteStr<'a> {
-  fn at_eof(&self) -> bool { true }
-}
-
-impl<'a> Slice<Range<usize>> for CompleteStr<'a> {
-  fn slice(&self, range:Range<usize>) -> Self {
-    CompleteStr(self.0.slice(range))
-  }
-}
-
-impl<'a> Slice<RangeTo<usize>> for CompleteStr<'a> {
-  fn slice(&self, range:RangeTo<usize>) -> Self {
-    CompleteStr(self.0.slice(range))
-  }
-}
-
-impl<'a> Slice<RangeFrom<usize>> for CompleteStr<'a> {
-  fn slice(&self, range:RangeFrom<usize>) -> Self {
-    CompleteStr(self.0.slice(range))
-  }
-}
-
-impl<'a> Slice<RangeFull> for CompleteStr<'a> {
-  fn slice(&self, range:RangeFull) -> Self {
-    CompleteStr(self.0.slice(range))
-  }
-}
-
-
-impl<'a> InputIter for CompleteStr<'a> {
-  type Item     = char;
-  type RawItem  = char;
-  type Iter     = CharIndices<'a>;
-  type IterElem = Chars<'a>;
-
-  fn iter_indices(&self)  -> Self::Iter {
-    self.0.iter_indices()
-  }
-  fn iter_elements(&self) -> Self::IterElem {
-    self.0.iter_elements()
-  }
-  fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
-    self.0.position(predicate)
-  }
-  fn slice_index(&self, count:usize) -> Option<usize> {
-    self.0.slice_index(count)
-  }
-}
-
-
-impl<'a> InputLength for CompleteStr<'a> {
-  fn input_len(&self) -> usize {
-    self.0.input_len()
-  }
-}
-
-impl<'a,'b> Compare<&'b str> for CompleteStr<'a> {
-  fn compare(&self, t: &'b str) -> CompareResult {
-    self.0.compare(t)
-  }
-  fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    self.0.compare_no_case(t)
-  }
-}
+use std::str::FromStr;
 
 #[macro_export]
 macro_rules! complete_named (

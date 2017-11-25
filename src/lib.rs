@@ -479,3 +479,5 @@ pub mod whitespace;
 #[macro_use] mod regexp;
 
 mod str;
+
+pub mod types;

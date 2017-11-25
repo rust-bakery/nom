@@ -1225,4 +1225,9 @@ mod tests {
     assert_eq!(double(&b"-1.234E-12"[..]),   Ok((&b""[..], -1.234E-12)));
     assert_eq!(double_s(&"-1.234E-12"[..]),   Ok((&""[..], -1.234E-12)));
   }
+
+  use types::CompleteStr;
+  pub fn end_of_line_completestr<'a>(input: CompleteStr<'a>) -> IResult<CompleteStr<'a>, CompleteStr<'a>> {
+    alt!(input, eof!() | eol)
+  }
 }

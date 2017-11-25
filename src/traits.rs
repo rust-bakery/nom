@@ -601,20 +601,6 @@ impl<'a> AtEof for &'a str {
   fn at_eof(&self) -> bool { false }
 }
 
-/*
-pub struct CompleteSlice(&'a [u8]);
-pub struct CompleteStr(&'a str);
-
-impl<'a> AtEof for CompleteSlice(&'a [u8]) {
-  fn at_eof(&self) -> bool { self.0.is_empty() }
-}
-
-impl<'a> AtEof for CompleteSlice(&'a str) {
-  fn at_eof(&self) -> bool { self.0.is_empty() }
-}
-*/
-
-
 macro_rules! array_impls {
   ($($N:expr)+) => {
     $(
