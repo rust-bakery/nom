@@ -2,12 +2,16 @@
 use internal::{Err,IResult};
 #[cfg(feature = "verbose-errors")]
 use verbose_errors::Context;
+#[cfg(not(feature = "verbose-errors"))]
+use simple_errors::Context;
 
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
 #[cfg(not(feature = "std"))]
 use std::prelude::v1::*;
+
+use internal::{Err,IResult,Needed};
 
 use std::vec::Vec;
 use std::string::ToString;
@@ -423,6 +427,44 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
 
   String::from_utf8_lossy(&v[..]).into_owned()
 }
+
+pub trait AtEof {
+  fn at_eof(&self) -> bool;
+}
+
+pub fn need_more<I: AtEof, O, E>(input: I, needed: Needed) -> IResult<I, O, E> {
+  if input.at_eof() {
+    Err(Err::Error(Context::Code(input, ErrorKind::Eof)))
+  } else {
+    Err(Err::Incomplete(needed))
+  }
+}
+
+// Tuple for bit parsing
+impl<I: AtEof, T> AtEof for (I, T) {
+  fn at_eof(&self) -> bool { self.0.at_eof() }
+}
+
+impl<'a> AtEof for &'a [u8] {
+  fn at_eof(&self) -> bool { false }
+}
+
+impl<'a> AtEof for &'a str {
+  fn at_eof(&self) -> bool { false }
+}
+
+/*
+pub struct CompleteSlice(&'a [u8]);
+pub struct CompleteStr(&'a str);
+
+impl<'a> AtEof for CompleteSlice(&'a [u8]) {
+  fn at_eof(&self) -> bool { self.0.is_empty() }
+}
+
+impl<'a> AtEof for CompleteSlice(&'a str) {
+  fn at_eof(&self) -> bool { self.0.is_empty() }
+}
+*/
 
 pub trait AsBytes {
   fn as_bytes(&self) -> &[u8];

@@ -13,6 +13,7 @@ use std::boxed::Box;
 use std::fmt::Debug;
 use internal::*;
 use traits::{AsChar,InputLength,InputIter};
+use util::{need_more, AtEof};
 use std::mem::transmute;
 use std::ops::{Range,RangeFrom,RangeTo};
 use traits::{Compare,CompareResult,Slice};
@@ -268,11 +269,11 @@ pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
 /// Recognizes one or more spaces and tabs
 pub fn space<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength,
+    T: InputIter+InputLength+AtEof,
     <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Err(Err::Incomplete(Needed::Unknown));
+    return need_more(input, Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -291,11 +292,11 @@ pub fn space<T>(input:T) -> IResult<T,T> where
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
 pub fn multispace<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength,
+    T: InputIter+InputLength+AtEof,
     <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Err(Err::Incomplete(Needed::Unknown));
+    return need_more(input, Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -321,7 +322,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.len() >= len + 1 {
     Ok((&input[len+1..], &input[1..len+1]))
   } else {
-    Err(Err::Incomplete(Needed::Size(1 + len)))
+    need_more(input, Needed::Size(1+len))
   }
 }
 
@@ -329,7 +330,7 @@ pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
 #[inline]
 pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
-    Err(Err::Incomplete(Needed::Size(1)))
+    need_more(i, Needed::Size(1))
   } else {
     Ok((&i[1..], i[0]))
   }
@@ -339,7 +340,7 @@ pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
 #[inline]
 pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
-    Err(Err::Incomplete(Needed::Size(2)))
+    need_more(i, Needed::Size(2))
   } else {
     let res = ((i[0] as u16) << 8) + i[1] as u16;
     Ok((&i[2..], res))
@@ -361,7 +362,7 @@ pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
 #[inline]
 pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
-    Err(Err::Incomplete(Needed::Size(4)))
+    need_more(i, Needed::Size(4))
   } else {
     let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
     Ok((&i[4..], res))
@@ -372,7 +373,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
 #[inline]
 pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
-    Err(Err::Incomplete(Needed::Size(8)))
+    need_more(i, Needed::Size(8))
   } else {
     let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
       ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
@@ -415,7 +416,7 @@ pub fn be_i64(i:&[u8]) -> IResult<&[u8], i64> {
 #[inline]
 pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
   if i.len() < 1 {
-    Err(Err::Incomplete(Needed::Size(1)))
+    need_more(i, Needed::Size(1))
   } else {
     Ok((&i[1..], i[0]))
   }
@@ -425,7 +426,7 @@ pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
 #[inline]
 pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
-    Err(Err::Incomplete(Needed::Size(2)))
+    need_more(i, Needed::Size(2))
   } else {
     let res = ((i[1] as u16) << 8) + i[0] as u16;
     Ok((&i[2..], res))
@@ -447,7 +448,7 @@ pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
 #[inline]
 pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
-    Err(Err::Incomplete(Needed::Size(4)))
+    need_more(i, Needed::Size(4))
   } else {
     let res = ((i[3] as u32) << 24) + ((i[2] as u32) << 16) + ((i[1] as u32) << 8) + i[0] as u32;
     Ok((&i[4..], res))
@@ -458,7 +459,7 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
 #[inline]
 pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
-    Err(Err::Incomplete(Needed::Size(8)))
+    need_more(i, Needed::Size(8))
   } else {
     let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) +
       ((i[3] as u64) << 24) + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;

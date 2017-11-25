@@ -3,6 +3,7 @@
 use internal::{IResult,Needed};
 use traits::{AsChar,InputIter,InputLength,Slice};
 use std::ops::RangeFrom;
+use util::{need_more,AtEof};
 
 /// matches one of the provided characters
 ///
@@ -33,7 +34,7 @@ macro_rules! one_of (
       match ($i).iter_elements().next().map(|c| {
         (c, c.find_token($inp))
       }) {
-        None             => Err::<_,_>(Err::Incomplete(Needed::Size(1))),
+        None             => $crate::need_more($i, Needed::Size(1)),
         Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::OneOf, $i))),
         //the unwrap should be safe here
         Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
@@ -59,7 +60,7 @@ macro_rules! none_of (
       match ($i).iter_elements().next().map(|c| {
         (c, !c.find_token($inp))
       }) {
-        None             => Err(Err::Incomplete(Needed::Size(1))),
+        None             => $crate::need_more($i, Needed::Size(1)),
         Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::NoneOf, $i))),
         //the unwrap should be safe here
         Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
@@ -84,7 +85,7 @@ macro_rules! char (
       match ($i).iter_elements().next().map(|c| {
         (c, c.as_char() == $c)
       }) {
-        None             => Err::<_,_>(Err::Incomplete(Needed::Size(1))),
+        None             => $crate::need_more($i, Needed::Size(1)),
         Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::Char, $i))),
         //the unwrap should be safe here
         Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
@@ -98,11 +99,10 @@ named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'
 named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 
 pub fn anychar<T>(input: T) -> IResult<T, char> where
-  T: InputIter+InputLength+Slice<RangeFrom<usize>>,
+  T: InputIter+InputLength+Slice<RangeFrom<usize>>+AtEof,
   <T as InputIter>::Item: AsChar {
-  use internal::Err;
   if input.input_len() == 0 {
-    Err(Err::Incomplete(Needed::Size(1)))
+    need_more(input, Needed::Size(1))
   } else {
     Ok((input.slice(1..), input.iter_elements().next().expect("slice should contain at least one element").as_char()))
   }

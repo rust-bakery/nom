@@ -69,7 +69,7 @@ macro_rules! tag_no_case (
           Ok(($i.slice(blen..), $i.slice(..blen)))
         },
         CompareResult::Incomplete => {
-          Err(Err::Incomplete(Needed::Size($tag.input_len())))
+          $crate::need_more($i, Needed::Size($tag.input_len()))
         },
         CompareResult::Error => {
           let e:ErrorKind<u32> = ErrorKind::Tag;
@@ -564,7 +564,7 @@ macro_rules! take (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Needed,IResult};
 
       use $crate::InputIter;
       use $crate::Slice;
@@ -573,7 +573,7 @@ macro_rules! take (
       let cnt = $count as usize;
 
       let res: IResult<_,_,u32> = match input.slice_index(cnt) {
-        None        => Err(Err::Incomplete(Needed::Size(cnt))),
+        None        => $crate::need_more($i, Needed::Size(cnt)),
         //FIXME: use the InputTake trait
         Some(index) => Ok((input.slice(index..), input.slice(..index)))
       };
@@ -698,7 +698,6 @@ macro_rules! take_until1 (
       use ::std::result::Result::*;
       use ::std::option::Option::*;
       use $crate::{Err,Needed,IResult};
-
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
