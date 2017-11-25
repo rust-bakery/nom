@@ -13,7 +13,7 @@ use std::boxed::Box;
 use std::fmt::Debug;
 use internal::*;
 use traits::{AsChar,InputLength,InputIter};
-use util::{need_more, AtEof};
+use traits::{need_more, AtEof};
 use std::mem::transmute;
 use std::ops::{Range,RangeFrom,RangeTo};
 use traits::{Compare,CompareResult,Slice};

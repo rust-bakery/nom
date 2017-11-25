@@ -3,7 +3,7 @@
 use internal::{IResult,Needed};
 use traits::{AsChar,InputIter,InputLength,Slice};
 use std::ops::RangeFrom;
-use util::{need_more,AtEof};
+use traits::{need_more,AtEof};
 
 /// matches one of the provided characters
 ///

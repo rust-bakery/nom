@@ -1,5 +1,6 @@
 //! Traits input types have to implement to work with nom combinators
 //!
+use internal::{Err,IResult,Needed};
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
 use std::iter::Enumerate;
 use std::slice::Iter;
@@ -11,6 +12,12 @@ use std::str::from_utf8;
 
 use memchr;
 
+#[cfg(feature = "verbose-errors")]
+use verbose_errors::Context;
+#[cfg(not(feature = "verbose-errors"))]
+use simple_errors::Context;
+
+use util::ErrorKind;
 
 /// abstract method to calculate the input length
 pub trait InputLength {
@@ -568,6 +575,44 @@ macro_rules! slice_ranges_impl {
 
 slice_ranges_impl! {str}
 slice_ranges_impl! {[T]}
+
+pub trait AtEof {
+  fn at_eof(&self) -> bool;
+}
+
+pub fn need_more<I: AtEof, O, E>(input: I, needed: Needed) -> IResult<I, O, E> {
+  if input.at_eof() {
+    Err(Err::Error(Context::Code(input, ErrorKind::Eof)))
+  } else {
+    Err(Err::Incomplete(needed))
+  }
+}
+
+// Tuple for bit parsing
+impl<I: AtEof, T> AtEof for (I, T) {
+  fn at_eof(&self) -> bool { self.0.at_eof() }
+}
+
+impl<'a> AtEof for &'a [u8] {
+  fn at_eof(&self) -> bool { false }
+}
+
+impl<'a> AtEof for &'a str {
+  fn at_eof(&self) -> bool { false }
+}
+
+/*
+pub struct CompleteSlice(&'a [u8]);
+pub struct CompleteStr(&'a str);
+
+impl<'a> AtEof for CompleteSlice(&'a [u8]) {
+  fn at_eof(&self) -> bool { self.0.is_empty() }
+}
+
+impl<'a> AtEof for CompleteSlice(&'a str) {
+  fn at_eof(&self) -> bool { self.0.is_empty() }
+}
+*/
 
 
 macro_rules! array_impls {
