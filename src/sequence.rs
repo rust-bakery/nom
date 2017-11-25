@@ -487,7 +487,9 @@ mod tests {
   macro_rules! tag_bytes (
     ($i:expr, $bytes: expr) => (
       {
+        use $crate::need_more;
         use std::cmp::min;
+
         let len = $i.len();
         let blen = $bytes.len();
         let m   = min(len, blen);
@@ -497,7 +499,7 @@ mod tests {
         let res: IResult<_,_,u32> = if reduced != b {
           Err($crate::Err::Error(error_position!(ErrorKind::Tag, $i)))
         } else if m < blen {
-          Err($crate::Err::Incomplete(Needed::Size(blen)))
+          need_more($i, Needed::Size(blen))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -509,9 +511,10 @@ mod tests {
   macro_rules! take (
     ($i:expr, $count:expr) => (
       {
+        use $crate::need_more;
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
-          Err($crate::Err::Incomplete(Needed::Size(cnt)))
+          need_more($i, Needed::Size(cnt))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };

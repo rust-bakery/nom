@@ -287,10 +287,10 @@ mod tests {
     ($i:expr, $tag: expr) => (
       {
         use ::std::result::Result::*;
-        use $crate::{Err,Needed,IResult};
+        use $crate::{Err,Needed,IResult, need_more};
 
         let res: IResult<_,_> = if $tag.len() > $i.len() {
-          Err(Err::Incomplete(Needed::Size($tag.len())))
+          need_more($i, Needed::Size($tag.len()))
         //} else if &$i[0..$tag.len()] == $tag {
         } else if ($i).starts_with($tag) {
           Ok((&$i[$tag.len()..], &$i[0..$tag.len()]))
@@ -306,11 +306,11 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         use ::std::result::Result::*;
-        use $crate::{Err,Needed,IResult};
+        use $crate::{Err,Needed,IResult,need_more};
 
         let cnt = $count as usize;
         let res: IResult<_,_> = if $i.chars().count() < cnt {
-          Err(Err::Incomplete(Needed::Size(cnt)))
+          need_more($i, Needed::Size(cnt))
         } else {
           let mut offset = $i.len();
           let mut count = 0;

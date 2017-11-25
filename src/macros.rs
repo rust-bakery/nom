@@ -1173,10 +1173,10 @@ macro_rules! eof (
   ($i:expr,) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{AtEof,Err};
 
       use $crate::InputLength;
-      if ($i).input_len() == 0 {
+      if ($i).at_eof() && ($i).input_len() == 0 {
         Ok(($i, $i))
       } else {
         //FIXME what do we do with need_more?

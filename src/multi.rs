@@ -526,8 +526,8 @@ macro_rules! many_m_n(
           match failure {
             ::std::option::Option::Some(i) => Err(Err::Failure(i)),
             ::std::option::Option::None => match incomplete {
-              ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
-              ::std::option::Option::None    => Err(Err::Incomplete(Needed::Unknown))
+              ::std::option::Option::Some(i) => $crate::need_more($i, i),
+              ::std::option::Option::None    => $crate::need_more($i, Needed::Unknown)
             }
           }
         }
@@ -535,7 +535,7 @@ macro_rules! many_m_n(
         match failure {
           ::std::option::Option::Some(i) => Err(Err::Failure(i)),
           ::std::option::Option::None => match incomplete {
-            ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+            ::std::option::Option::Some(i) => $crate::need_more($i, i),
             ::std::option::Option::None    => Ok((input, res))
           }
         }
@@ -928,7 +928,7 @@ macro_rules! fold_many1(
             match failure {
               ::std::option::Option::Some(e) => Err(Err::Failure(e)),
               ::std::option::Option::None    => match incomplete {
-                ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
+                ::std::option::Option::Some(i) => $crate::need_more($i, i),
                 ::std::option::Option::None    => Ok((input, acc))
               }
             }

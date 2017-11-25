@@ -21,7 +21,7 @@ macro_rules! tag (
     {
       use ::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind};
-      use $crate::{Compare,CompareResult,InputLength,Slice};
+      use $crate::{Compare,CompareResult,InputLength,Slice,need_more};
 
       let res: IResult<_,_> = match ($i).compare($tag) {
         CompareResult::Ok => {
@@ -29,7 +29,7 @@ macro_rules! tag (
           Ok(($i.slice(blen..), $i.slice(..blen)))
         },
         CompareResult::Incomplete => {
-          Err(Err::Incomplete(Needed::Size($tag.input_len())))
+          need_more($i, Needed::Size($tag.input_len()))
         },
         CompareResult::Error => {
           let e:ErrorKind<u32> = ErrorKind::Tag;
@@ -196,7 +196,7 @@ macro_rules! escaped (
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult,ErrorKind,need_more};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -216,7 +216,7 @@ macro_rules! escaped (
             Err(Err::Error(e)) => {
               if $i[index] == $control_char as u8 {
                 if index + 1 >= $i.input_len() {
-                  return Err(Err::Incomplete(Needed::Unknown))
+                  return need_more($i, Needed::Unknown)
                 } else {
                   match $escapable!($i.slice(index+1..), $($args2)*) {
                     Ok((i,_)) => {
@@ -451,7 +451,7 @@ macro_rules! take_while1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,ErrorKind,Needed};
+      use $crate::{Err,ErrorKind,Needed,need_more};
 
       let input = $input;
 
@@ -459,7 +459,7 @@ macro_rules! take_while1 (
       use $crate::InputIter;
       use $crate::Slice;
       if input.input_len() == 0 {
-        Err(Err::Incomplete(Needed::Unknown))
+        need_more(input, Needed::Unknown)
       } else {
         match input.position(|c| !$submac!(c, $($args)*)) {
           Some(0) => {
@@ -518,7 +518,7 @@ macro_rules! take_till1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,ErrorKind};
+      use $crate::{Err,Needed,ErrorKind,need_more};
 
       let input = $input;
 
@@ -526,7 +526,7 @@ macro_rules! take_till1 (
       use $crate::InputIter;
       use $crate::Slice;
       if input.input_len() == 0 {
-        Err(Err::Incomplete(Needed::Unknown))
+        need_more(input, Needed::Unknown)
       } else {
         match input.position(|c| $submac!(c, $($args)*)) {
           Some(0) => {
@@ -603,14 +603,14 @@ macro_rules! take_until_and_consume (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult,ErrorKind,need_more};
 
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
 
       let res: IResult<_,_> = if $substr.input_len() > $i.input_len() {
-        Err(Err::Incomplete(Needed::Size($substr.input_len())))
+        need_more($i, Needed::Size($substr.input_len()))
       } else {
         match ($i).find_substring($substr) {
           None => {
@@ -635,12 +635,12 @@ macro_rules! take_until_and_consume1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult,ErrorKind,need_more};
 
       use $crate::InputLength;
 
       let res: IResult<_,_> = if 1 + $substr.input_len() > $i.input_len() {
-        Err(Err::Incomplete(Needed::Size($substr.input_len())))
+        need_more(Needed::Size($substr.input_len()))
       } else {
         match ($i).find_substring($substr) {
           None => {
@@ -665,14 +665,14 @@ macro_rules! take_until (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult,ErrorKind,need_more};
 
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
 
       let res: IResult<_,_> = if $substr.input_len() > $i.input_len() {
-        Err(Err::Incomplete(Needed::Size($substr.input_len())))
+        need_more($i, Needed::Size($substr.input_len()))
       } else {
         match ($i).find_substring($substr) {
           None => {
@@ -697,13 +697,13 @@ macro_rules! take_until1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Err,Needed,IResult,need_more};
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
 
       let res: IResult<_,_> = if 1+$substr.input_len() > $i.input_len() {
-        Err(Err::Incomplete(Needed::Size($substr.input_len())))
+        need_more(Needed::Size($substr.input_len()))
       } else {
         match ($i).find_substring($substr) {
           None => {
@@ -727,7 +727,7 @@ macro_rules! take_until_either_and_consume (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Err,Needed,IResult,need_more};
 
       use $crate::InputLength;
       use $crate::InputIter;
@@ -735,7 +735,7 @@ macro_rules! take_until_either_and_consume (
       use $crate::Slice;
 
       if $input.input_len() == 0 {
-        Err(Err::Incomplete(Needed::Unknown))
+        need_more($input, Needed::Unknown)
       } else {
         let res: IResult<_,_> = match $input.position(|c| {
           c.find_token($arr)
@@ -762,7 +762,7 @@ macro_rules! take_until_either (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Err,Needed,IResult,need_more};
 
       use $crate::InputLength;
       use $crate::InputIter;
@@ -770,7 +770,7 @@ macro_rules! take_until_either (
       use $crate::Slice;
 
       if $input.input_len() == 0 {
-        Err(Err::Incomplete(Needed::Unknown))
+        need_more($input, Needed::Unknown)
       } else {
         let res: IResult<_,_> = match $input.position(|c| {
           c.find_token($arr)

@@ -43,14 +43,14 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
 
 pub fn crlf<T>(input:T) -> IResult<T,T> where
   T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-  T: InputIter,
+  T: InputIter+AtEof,
   T: Compare<&'static str> {
     match input.compare("\r\n") {
       //FIXME: is this the right index?
       CompareResult::Ok         => {
         Ok((input.slice(2..), input.slice(0..2)))
       },
-      CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(2))),
+      CompareResult::Incomplete => need_more(input, Needed::Size(2)),
       CompareResult::Error      => Err(Err::Error(error_position!(ErrorKind::CrLf, input)))
     }
 }
@@ -59,7 +59,7 @@ pub fn crlf<T>(input:T) -> IResult<T,T> where
 // public methods
 pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
     T:Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength,
+    T: InputIter+InputLength+AtEof,
     T: Compare<&'static str>,
     <T as InputIter>::Item: AsChar {
       match input.iter_elements().position(|item| {
@@ -75,7 +75,7 @@ pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
             let comp   = sliced.compare("\r\n");
             match comp {
               //FIXME: calculate the right index
-              CompareResult::Incomplete => Err(Err::Incomplete(Needed::Unknown)),
+              CompareResult::Incomplete => need_more(input, Needed::Unknown),
               CompareResult::Error      => Err(Err::Error(error_position!(ErrorKind::Tag, input))),
               CompareResult::Ok         => Ok((input.slice(index..), input.slice(..index)))
             }
@@ -89,16 +89,16 @@ pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
 /// Recognizes an end of line (both '\n' and '\r\n')
 pub fn line_ending<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength,
+    T: InputIter+InputLength+AtEof,
     T: Compare<&'static str> {
 
   match input.compare("\n") {
     CompareResult::Ok         => Ok((input.slice(1..), input.slice(0..1))),
-    CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(1))),
+    CompareResult::Incomplete => need_more(input, Needed::Size(1)),
     CompareResult::Error      => match input.compare("\r\n") {
       //FIXME: is this the right index?
       CompareResult::Ok         => Ok((input.slice(2..), input.slice(0..2))),
-      CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(2))),
+      CompareResult::Incomplete => need_more(input, Needed::Size(2)),
       CompareResult::Error      => Err(Err::Error(error_position!(ErrorKind::CrLf, input)))
     }
   }
@@ -106,7 +106,7 @@ pub fn line_ending<T>(input:T) -> IResult<T, T> where
 
 pub fn eol<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength,
+    T: InputIter+InputLength+AtEof,
     T: Compare<&'static str> {
   line_ending(input)
 }
@@ -159,11 +159,11 @@ pub fn is_space(chr:u8) -> bool {
 /// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<T>(input:T) -> IResult<T, T, u32> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength,
+    T: InputIter+InputLength+AtEof,
     <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Err(Err::Incomplete(Needed::Unknown));
+    return need_more(input, Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -181,11 +181,11 @@ pub fn alpha<T>(input:T) -> IResult<T, T, u32> where
 /// Recognizes one or more numerical characters: 0-9
 pub fn digit<T>(input:T) -> IResult<T, T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength,
+    T: InputIter+InputLength+AtEof,
     <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Err(Err::Incomplete(Needed::Unknown));
+    return need_more(input, Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -203,11 +203,11 @@ pub fn digit<T>(input:T) -> IResult<T, T> where
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
-    T: InputIter+InputLength,
+    T: InputIter+InputLength+AtEof,
     <T as InputIter>::Item: AsChar {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Err(Err::Incomplete(Needed::Unknown));
+    return need_more(input, Needed::Unknown);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -314,7 +314,7 @@ pub fn multispace<T>(input:T) -> IResult<T,T> where
 
 pub fn sized_buffer(input:&[u8]) -> IResult<&[u8], &[u8]> {
   if input.is_empty() {
-    return Err(Err::Incomplete(Needed::Unknown))
+    return need_more(input, Needed::Unknown)
   }
 
   let len = input[0] as usize;
@@ -351,7 +351,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
 #[inline]
 pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
-    Err(Err::Incomplete(Needed::Size(3)))
+    need_more(i, Needed::Size(3))
   } else {
     let res = ((i[0] as u32) << 16) + ((i[1] as u32) << 8) + (i[2] as u32);
     Ok((&i[3..], res))
@@ -437,7 +437,7 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
 #[inline]
 pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
-    Err(Err::Incomplete(Needed::Size(3)))
+    need_more(i, Needed::Size(3))
   } else {
     let res = (i[0] as u32) + ((i[1] as u32) << 8) + ((i[2] as u32) << 16);
     Ok((&i[3..], res))
