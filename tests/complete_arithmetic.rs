@@ -1,14 +1,13 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{AtEof,Compare,CompareResult,InputLength,InputIter,Slice,HexDisplay};
+use nom::{AtEof,Compare,CompareResult,InputLength,InputIter,Slice};
 
 use std::str;
 use std::str::{Chars,CharIndices,FromStr};
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
-use std::iter::{Enumerate,Iterator};
+use std::iter::Iterator;
 use std::fmt;
-use std::cmp::{min,PartialEq};
 
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub struct CompleteStr<'a>(&'a str);
@@ -155,5 +154,5 @@ fn parens_test() {
   assert_eq!(expr(input2), Ok((CompleteStr(""), 4)));
 
   let input3 = CompleteStr("  2*2 / ( 5 - 1) +   ");
-  assert_eq!(expr(input3), Ok((CompleteStr("+  "), 1)));
+  assert_eq!(expr(input3), Ok((CompleteStr("+   "), 1)));
 }

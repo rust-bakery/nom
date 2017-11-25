@@ -5,7 +5,6 @@ extern crate nom;
 
 use nom::{IResult,not_line_ending};
 
-use std::str;
 use std::fmt::Debug;
 
 /*
