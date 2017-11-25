@@ -421,7 +421,7 @@ macro_rules! switch (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       let i_ = $i.clone();
-      match map!(i_, $submac!($($args)*), |o| Some(o)) {
+      match map!(i_, $submac!($($args)*), Some) {
         $crate::IResult::Error(e)      => $crate::IResult::Error(error_node_position!(
             $crate::ErrorKind::Switch, $i, e
         )),
