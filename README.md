@@ -378,6 +378,4 @@ Want to create a new parser using `nom`? A list of not yet implemented formats i
 
 Want to add your parser here? Create a pull request for it!
 
-### TODO: example for new producers and consumers
-
 [doc]: http://rust.unhandledexpression.com/nom/
