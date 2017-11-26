@@ -623,8 +623,12 @@ pub fn non_empty<T>(input:T) -> IResult<T,T> where
 
 /// Return the remaining input.
 #[inline]
-pub fn rest(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    Ok((&input[input.len()..], input))
+pub fn rest<T>(input: T) -> IResult<T, T>
+where
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: InputLength,
+{
+    Ok((input.slice(input.input_len()..), input))
 }
 
 /// Return the remaining input, for strings.
@@ -1048,6 +1052,20 @@ mod tests {
         assert_eq!(res_over, Ok((is_over, is_over)));
     }
     */
+
+  #[test]
+  fn rest_on_slices() {
+    let input: &[u8] = &b"Hello, world!"[..];
+    let empty: &[u8] = &b""[..];
+    assert_eq!(rest(input), Done(empty, input));
+  }
+
+  #[test]
+  fn rest_on_strs() {
+    let input: &str = "Hello, world!";
+    let empty: &str = "";
+    assert_eq!(rest(input), Done(empty, input));
+  }
 
   #[test]
   fn configurable_endianness() {
