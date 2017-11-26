@@ -1,5 +1,6 @@
 //! Traits input types have to implement to work with nom combinators
 //!
+use internal::{Err,IResult,Needed};
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
 use std::iter::Enumerate;
 use std::slice::Iter;
@@ -11,6 +12,12 @@ use std::str::from_utf8;
 
 use memchr;
 
+#[cfg(feature = "verbose-errors")]
+use verbose_errors::Context;
+#[cfg(not(feature = "verbose-errors"))]
+use simple_errors::Context;
+
+use util::ErrorKind;
 
 /// abstract method to calculate the input length
 pub trait InputLength {
@@ -187,11 +194,11 @@ pub trait InputIter {
 }
 
 /// abstracts slicing operations
-pub trait InputTake {
+pub trait InputTake: Sized {
     /// returns a slice of `count` bytes
-    fn take<P>(&self, count: usize)  -> Option<&Self>;
+    fn take(&self, count: usize)  -> Option<Self>;
     /// split the stream at the `count` byte offset
-    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)>;
+    fn take_split(&self, count: usize) -> Option<(Self,Self)>;
 }
 
 impl<'a> InputIter for &'a [u8] {
@@ -222,9 +229,9 @@ impl<'a> InputIter for &'a [u8] {
     }
 }
 
-impl InputTake for [u8] {
+impl<'a> InputTake for &'a [u8] {
     #[inline]
-    fn take<P>(&self, count: usize) -> Option<&Self> {
+    fn take(&self, count: usize) -> Option<Self> {
       if self.len() >= count {
         Some(&self[0..count])
       } else {
@@ -232,7 +239,7 @@ impl InputTake for [u8] {
       }
     }
     #[inline]
-    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)> {
+    fn take_split(&self, count: usize) -> Option<(Self,Self)> {
       if self.len() >= count {
         Some((&self[count..],&self[..count]))
       } else {
@@ -278,9 +285,9 @@ impl<'a> InputIter for &'a str {
     }
 }
 
-impl InputTake for str {
+impl<'a> InputTake for &'a str {
     #[inline]
-    fn take<P>(&self, count: usize) -> Option<&Self> {
+    fn take(&self, count: usize) -> Option<Self> {
       let mut cnt    = 0;
       for (index, _) in self.char_indices() {
         if cnt == count {
@@ -293,7 +300,7 @@ impl InputTake for str {
 
     // return byte index
     #[inline]
-    fn take_split<P>(&self, count: usize) -> Option<(&Self,&Self)> {
+    fn take_split(&self, count: usize) -> Option<(Self,Self)> {
       let mut cnt    = 0;
       for (index, _) in self.char_indices() {
         if cnt == count {
@@ -569,6 +576,31 @@ macro_rules! slice_ranges_impl {
 slice_ranges_impl! {str}
 slice_ranges_impl! {[T]}
 
+pub trait AtEof {
+  #[inline]
+  fn at_eof(&self) -> bool;
+}
+
+pub fn need_more<I: AtEof, O, E>(input: I, needed: Needed) -> IResult<I, O, E> {
+  if input.at_eof() {
+    Err(Err::Error(Context::Code(input, ErrorKind::Eof)))
+  } else {
+    Err(Err::Incomplete(needed))
+  }
+}
+
+// Tuple for bit parsing
+impl<I: AtEof, T> AtEof for (I, T) {
+  fn at_eof(&self) -> bool { self.0.at_eof() }
+}
+
+impl<'a> AtEof for &'a [u8] {
+  fn at_eof(&self) -> bool { false }
+}
+
+impl<'a> AtEof for &'a str {
+  fn at_eof(&self) -> bool { false }
+}
 
 macro_rules! array_impls {
   ($($N:expr)+) => {
