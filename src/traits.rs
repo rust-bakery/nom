@@ -577,6 +577,7 @@ slice_ranges_impl! {str}
 slice_ranges_impl! {[T]}
 
 pub trait AtEof {
+  #[inline]
   fn at_eof(&self) -> bool;
 }
 
