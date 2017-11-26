@@ -51,7 +51,7 @@
 //!
 //! What it means:
 //!
-//! * `Ok((i,o))` means the parser was successful. `i` is the remaining part of the input, `o` is the correctly parsed value
+//! * `Ok((i,o))` means the parser was successful. `i` is the remaining part of the input (called *remainder*), `o` is the correctly parsed value
 //! The remaining part can then be used as input for other parsers called in a sequence
 //! * `Err(Err::Error(e))` indicates the parser encountered an error. The `Context<I,E>` type is an enum of possible parser errors,
 //! that can also contain a custom error that you'd specify, by redefining the `E` error type
@@ -405,6 +405,8 @@
 extern crate alloc;
 #[cfg(not(feature = "std"))]
 extern crate collections;
+#[cfg(not(feature = "std"))]
+extern crate alloc;
 #[cfg(feature = "regexp")]
 extern crate regex;
 #[cfg(feature = "regexp_macros")]
