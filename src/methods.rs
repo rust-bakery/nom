@@ -306,7 +306,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         use ::std::result::Result::*;
-        use $crate::{Err,Needed,IResult,need_more};
+        use $crate::{Needed,IResult,need_more};
 
         let cnt = $count as usize;
         let res: IResult<_,_> = if $i.chars().count() < cnt {

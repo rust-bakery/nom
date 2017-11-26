@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{AtEof,Compare,CompareResult,InputLength,InputIter,Slice};
 use nom::types::CompleteStr;
 
 use std::str::FromStr;
