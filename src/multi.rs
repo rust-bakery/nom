@@ -107,7 +107,7 @@ macro_rules! separated_nonempty_list(
       match $submac!(input_, $($args2)*) {
         Err(e)    => Err(Err::convert(e)),
         Ok((i,o)) => {
-          if i.input_len() == input.len() {
+          if i.input_len() == input.input_len() {
             let e:ErrorKind<u32> = ErrorKind::SeparatedNonEmptyList;
             Err(Err::Error(error_position!(e,input)))
           } else {
