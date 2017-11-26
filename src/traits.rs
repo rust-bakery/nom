@@ -194,11 +194,11 @@ pub trait InputIter {
 }
 
 /// abstracts slicing operations
-pub trait InputTake {
+pub trait InputTake: Sized {
     /// returns a slice of `count` bytes
-    fn take(&self, count: usize)  -> Option<&Self>;
+    fn take(&self, count: usize)  -> Option<Self>;
     /// split the stream at the `count` byte offset
-    fn take_split(&self, count: usize) -> Option<(&Self,&Self)>;
+    fn take_split(&self, count: usize) -> Option<(Self,Self)>;
 }
 
 impl<'a> InputIter for &'a [u8] {
@@ -229,9 +229,9 @@ impl<'a> InputIter for &'a [u8] {
     }
 }
 
-impl InputTake for [u8] {
+impl<'a> InputTake for &'a [u8] {
     #[inline]
-    fn take(&self, count: usize) -> Option<&Self> {
+    fn take(&self, count: usize) -> Option<Self> {
       if self.len() >= count {
         Some(&self[0..count])
       } else {
@@ -239,7 +239,7 @@ impl InputTake for [u8] {
       }
     }
     #[inline]
-    fn take_split(&self, count: usize) -> Option<(&Self,&Self)> {
+    fn take_split(&self, count: usize) -> Option<(Self,Self)> {
       if self.len() >= count {
         Some((&self[count..],&self[..count]))
       } else {
@@ -285,9 +285,9 @@ impl<'a> InputIter for &'a str {
     }
 }
 
-impl InputTake for str {
+impl<'a> InputTake for &'a str {
     #[inline]
-    fn take(&self, count: usize) -> Option<&Self> {
+    fn take(&self, count: usize) -> Option<Self> {
       let mut cnt    = 0;
       for (index, _) in self.char_indices() {
         if cnt == count {
@@ -300,7 +300,7 @@ impl InputTake for str {
 
     // return byte index
     #[inline]
-    fn take_split(&self, count: usize) -> Option<(&Self,&Self)> {
+    fn take_split(&self, count: usize) -> Option<(Self,Self)> {
       let mut cnt    = 0;
       for (index, _) in self.char_indices() {
         if cnt == count {
@@ -582,7 +582,7 @@ pub trait AtEof {
 
 pub fn need_more<I: AtEof, O, E>(input: I, needed: Needed) -> IResult<I, O, E> {
   if input.at_eof() {
-    Err(Err::Error(Context::Code(input, ErrorKind::Eof)))
+    Err(Err::Failure(Context::Code(input, ErrorKind::Eof)))
   } else {
     Err(Err::Incomplete(needed))
   }

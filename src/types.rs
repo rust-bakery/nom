@@ -1,4 +1,5 @@
 use traits::{AtEof,Compare,CompareResult,InputLength,InputIter,InputTake,Slice,FindSubstring,ParseTo};
+use util::Offset;
 
 use std::str::{self,FromStr,Chars,CharIndices};
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
@@ -56,17 +57,15 @@ impl<'a> InputIter for CompleteStr<'a> {
   }
 }
 
-/*
 impl<'a> InputTake for CompleteStr<'a> {
-  fn take(&self, count: usize)  -> Option<&Self> {
-    self.0.take(count).map(|s| &CompleteStr(s))
+  fn take(&self, count: usize)  -> Option<Self> {
+    self.0.take(count).map(|s| CompleteStr(s))
   }
 
-  fn take_split(&self, count: usize) -> Option<(&Self,&Self)> {
-    self.0.take_split(count).map(|(s1, s2)| (&CompleteStr(s1), &CompleteStr(s2)))
+  fn take_split(&self, count: usize) -> Option<(Self,Self)> {
+    self.0.take_split(count).map(|(s1, s2)| (CompleteStr(s1), CompleteStr(s2)))
   }
 }
-*/
 
 impl<'a> InputLength for CompleteStr<'a> {
   fn input_len(&self) -> usize {
@@ -147,17 +146,15 @@ impl<'a> InputIter for CompleteByteSlice<'a> {
   }
 }
 
-/*
 impl<'a> InputTake for CompleteByteSlice<'a> {
-  fn take(&self, count: usize)  -> Option<&Self> {
-    self.0.take(count).map(|s| &CompleteByteSlice(s))
+  fn take(&self, count: usize)  -> Option<Self> {
+    self.0.take(count).map(|s| CompleteByteSlice(s))
   }
 
-  fn take_split(&self, count: usize) -> Option<(&Self,&Self)> {
-    self.0.take_split(count).map(|(s1, s2)| (&CompleteByteSlice(s1), &CompleteByteSlice(s2)))
+  fn take_split(&self, count: usize) -> Option<(Self,Self)> {
+    self.0.take_split(count).map(|(s1, s2)| (CompleteByteSlice(s1), CompleteByteSlice(s2)))
   }
 }
-*/
 
 impl<'a> InputLength for CompleteByteSlice<'a> {
   fn input_len(&self) -> usize {
