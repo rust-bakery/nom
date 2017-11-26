@@ -351,6 +351,7 @@ Here is a list of known projects using nom:
 - Programming languages:
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
+  * [SQL](https://github.com/ms705/nom-sql)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
