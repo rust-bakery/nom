@@ -120,7 +120,7 @@ fn parse(data:&[u8]) -> Option<Vec<(Request, Vec<Header>)>> {
   let mut v = Vec::new();
   loop {
     match request(buf) {
-      IResult::Done(b, r) => {
+      Ok((b, r)) => {
         buf = b;
         v.push(r);
 
@@ -130,8 +130,7 @@ fn parse(data:&[u8]) -> Option<Vec<(Request, Vec<Header>)>> {
           break;
         }
       },
-      IResult::Error(_) => return None/*panic!("{:?}", e)*/,
-      IResult::Incomplete(_) => return None/*panic!("Incomplete!")*/,
+      Err(_) => return None,
     }
   }
 

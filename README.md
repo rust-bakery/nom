@@ -8,7 +8,7 @@
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing*, *zero copy* parsing, *push streaming*, *pull streaming*, and provides macros and traits to abstract most of the error prone plumbing.
 
-nom can handle any format, binary or textual, with grammars from regular to context sensitive. There are already a lot of [example parsers](https://github.com/Geal/nom/issues/14) available on Github.
+nom can handle any format, binary or textual, with grammar from regular to context sensitive. There are already a lot of [example parsers](https://github.com/Geal/nom/issues/14) available on Github.
 
 If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
@@ -330,7 +330,7 @@ let r2 = f(b"abcdefghefghX");
 assert_eq!(r2, Done(&b"X"[..], A{a: 1, b: 2}));
 ```
 
-The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers.
+The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers. Unless the specified return type is already a tuple, the final line should be that type wrapped in a tuple.
 
 More examples of [`do_parse!`](http://rust.unhandledexpression.com/nom/macro.do_parse.html) and [`tuple!`](http://rust.unhandledexpression.com/nom/macro.tuple.html) usage can be found in the [INI file parser example](tests/ini.rs).
 
@@ -351,6 +351,7 @@ Here is a list of known projects using nom:
 - Programming languages:
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
+  * [SQL](https://github.com/ms705/nom-sql)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
@@ -360,10 +361,12 @@ Here is a list of known projects using nom:
 - Document formats:
   * [TAR](https://github.com/Keruspe/tar-parser.rs)
   * [torrent files](https://github.com/jag426/bittorrent)
+  * [GZ](https://github.com/nharward/nom-gzip)
 - Database formats:
   * [Redis database files](https://github.com/badboy/rdb-rs)
 - Network protocol formats:
   * [Bencode](https://github.com/jbaum98/bencode.rs)
+  * [IMAP](https://github.com/djc/imap-proto)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
   * [NTP](https://github.com/rusticata/ntp-parser)
@@ -371,12 +374,12 @@ Here is a list of known projects using nom:
   * [DER](https://github.com/rusticata/der-parser)
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
+- Language specifications:
+  * [BNF](https://github.com/snewt/bnf)  
 - [using nom as lexer and parser](https://github.com/Rydgel/monkey-rust)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
 Want to add your parser here? Create a pull request for it!
-
-### TODO: example for new producers and consumers
 
 [doc]: http://rust.unhandledexpression.com/nom/

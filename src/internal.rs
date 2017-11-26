@@ -1,16 +1,25 @@
 //! Basic types to build the parsers
 
-use self::IResult::*;
+//use self::IResult::*;
 use self::Needed::*;
 
 #[cfg(not(feature = "std"))]
 use std::prelude::v1::*;
 
 #[cfg(feature = "verbose-errors")]
-use verbose_errors::Err;
+use verbose_errors::Context;
 
 #[cfg(not(feature = "verbose-errors"))]
-use simple_errors::Err;
+use simple_errors::Context;
+
+/// Holds the result of parsing functions
+///
+/// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
+///
+/// The `Ok` side is an enum containing the remainder of the input (the part of the data that
+/// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
+///
+pub type IResult<I,O,E=u32> = Result<(I,O), Err<I,E>>;
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
@@ -36,48 +45,55 @@ impl Needed {
   }
 }
 
-#[cfg(feature = "verbose-errors")]
-/// Holds the result of parsing functions
+/// The `Err` enum indicates the parser was not successful, and has three cases:
+/// * `Incomplete` indicates that more data is needed to decide. The `Needed` enum
+/// can contain how many additional bytes are necessary. If you are sure your parser
+/// is working on full data, you can wrap your parser with the `complete` combinator
+/// to transform that case in `Error`
+/// * `Error` means some parser did not succeed, but another one might (as an example,
+/// when testing different branches of an `alt` combinator)
+/// * `Failure` indicates an unrecoverable error. As an example, if you recognize a prefix
+/// to decide on the next parser to apply, and that parser fails, you know there's no need
+/// to try other parsers, you were already in the right branch, so the data is invalid
 ///
-/// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
+/// Depending on a compilation flag, the content of the `Context` enum
+/// can change. In the default case, it will only have one variant:
+/// `Context::Code(I, ErrorKind<E=u32>)` (with `I` and `E` configurable).
+/// It contains an error code and the input position that triggered it.
 ///
-/// Depending on a compilation flag, the content of the `Error` variant
-/// can change. By default, it will be a `ErrorKind<E=u32>` (with `E` configurable).
-///
-/// If you activate the `verbose-errors` compilation flags, it will be an
-/// enum that contains an error code, optionally, an input position,
-/// and an error sent by child parsers.
-///
-/// The verbose errors feature allows very flexible error management:
+/// If you activate the `verbose-errors` compilation flags, it will add another
+/// variant to the enum: `Context::List(Vec<(I, ErrorKind<E>)>)`.
+/// This variant aggregates positions and error codes as the code backtracks
+/// through the nested parsers.
+/// The verbose errors feature allows for very flexible error management:
 /// you can know precisely which parser got to which part of the input.
 /// The main drawback is that it is a lot slower than default error
 /// management.
-///
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IResult<I,O,E=u32> {
-   /// indicates a correct parsing, the first field containing the rest of the unparsed data, the second field contains the parsed data
-  Done(I,O),
-  /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
-  Error(Err<I,E>),
-  /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
-  Incomplete(Needed)
+#[derive(Debug,Clone,PartialEq)]
+pub enum Err<I,E=u32> {
+  /// There was not enough data
+  Incomplete(Needed),
+  /// The parser had an error (recoverable)
+  Error(Context<I,E>),
+  /// The parser had an unrecoverable error: we got to the right
+  /// branch and we know other branches won't work, so backtrack
+  /// as fast as possible
+  Failure(Context<I,E>),
 }
 
-#[cfg(not(feature = "verbose-errors"))]
-/// Holds the result of parsing functions
-///
-/// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
-///
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IResult<I,O,E=u32> {
-   /// indicates a correct parsing, the first field containing the rest of the unparsed data, the second field contains the parsed data
-  Done(I,O),
-  /// contains a Err, an enum that can indicate an error code, a position in the input, and a pointer to another error, making a list of errors in the parsing tree
-  Error(Err<E>),
-  /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
-  Incomplete(Needed)
+use util::Convert;
+
+impl<I,E: From<u32>> Convert<Err<I,u32>> for Err<I,E> {
+  fn convert(e: Err<I,u32>) -> Self {
+    match e {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Failure(c)    => Err::Failure(Context::convert(c)),
+      Err::Error(c)      => Err::Error(Context::convert(c)),
+    }
+  }
 }
 
+/*
 #[cfg(feature = "verbose-errors")]
 /// This is the same as IResult, but without Done
 ///
@@ -244,8 +260,9 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
       _          => None
     }
   }
-}
+}*/
 
+/*
 #[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`
 #[macro_export]
@@ -302,6 +319,7 @@ macro_rules! error_node(
 macro_rules! error_node(
   ($code:expr, $next:expr) => ($code);
 );
+*/
 
 #[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`
@@ -310,7 +328,10 @@ macro_rules! error_node(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_position(
-  ($code:expr, $input:expr) => ($crate::Err::Position($code, $input));
+  ($code:expr, $input:expr) => ({
+    use $crate::{ErrorKind,Convert};
+    $crate::Context::Code($input, ErrorKind::convert($code))
+  });
 );
 
 #[cfg(not(feature = "verbose-errors"))]
@@ -321,7 +342,10 @@ macro_rules! error_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_position(
-  ($code:expr, $input:expr) => ($code);
+  ($code:expr, $input:expr) => ({
+    use $crate::{ErrorKind,Convert};
+    $crate::Context::Code($input, ErrorKind::convert($code))
+  });
 );
 
 #[cfg(feature = "verbose-errors")]
@@ -334,27 +358,21 @@ macro_rules! error_position(
 macro_rules! error_node_position(
   ($code:expr, $input:expr, $next:expr) => {
     {
-    let next_errors = match $next {
-      $crate::Err::Code(e) => {
+    use $crate::{ErrorKind,Convert};
+
+    let mut error_vec = match $next {
+      $crate::Context::Code(i, e) => {
         let mut v = ::std::vec::Vec::new();
-        v.push($crate::Err::Code(e));
+        v.push((i, ErrorKind::convert(e)));
         v
       },
-      $crate::Err::Position(e, p) => {
-        let mut v = ::std::vec::Vec::new();
-        v.push($crate::Err::Position(e,p));
+      $crate::Context::List(v) => {
         v
       },
-      $crate::Err::Node(e, mut next) => {
-        next.push($crate::Err::Code(e));
-        next
-      },
-      $crate::Err::NodePosition(e, p, mut next) => {
-        next.push($crate::Err::Position(e,p));
-        next
-      }
     };
-    $crate::Err::NodePosition($code, $input, next_errors)
+
+    error_vec.push(($input, $code));
+    $crate::Context::List(error_vec)
     }
   }
 );
@@ -368,19 +386,23 @@ macro_rules! error_node_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input: expr, $next:expr) => ($code);
+  ($code:expr, $input: expr, $next:expr) => ({
+    use $crate::{ErrorKind,Convert};
+    $crate::Context::Code($input, ErrorKind::convert($code))
+  });
 );
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use util::ErrorKind;
 
+  /*
   const REST: [u8; 0] = [];
-  const DONE: IResult<&'static [u8], u32> = IResult::Done(&REST, 5);
-  const ERROR: IResult<&'static [u8], u32> = IResult::Error(error_code!(ErrorKind::Tag));
-  const INCOMPLETE: IResult<&'static [u8], u32> = IResult::Incomplete(Needed::Unknown);
+  const DONE: IResult<&'static [u8], u32> = Ok((&REST, 5));
+  const ERROR: IResult<&'static [u8], u32> = Err(Err::Error(Context::Code(&b""[..], ErrorKind::Tag)));
+  const INCOMPLETE: IResult<&'static [u8], u32> = Err(Err::Incomplete(Needed::Unknown));
+  */
 
+/*
   #[test]
   fn iresult_or() {
     assert_eq!(DONE.or(ERROR), DONE);
@@ -512,4 +534,5 @@ mod tests {
     assert_eq!(INCOMPLETE.to_full_result(), Err(IError::Incomplete(Needed::Unknown)));
     assert_eq!(ERROR.to_full_result(), Err(IError::Error(error_code!(ErrorKind::Tag))));
   }
+  */
 }

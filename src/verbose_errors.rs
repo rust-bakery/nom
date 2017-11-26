@@ -1,23 +1,20 @@
 //! Error management
 //!
-//! there are two ways to handle errors in nom. The first one,
-//! activated by default, uses the `nom::ErrorKind<E=u32>` enum
-//! in the error branch of `IResult`. This enum can hold either
-//! a parser specific error code, or a custom error type you
-//! specify.
+//! Depending on a compilation flag, the content of the `Context` enum
+//! can change. In the default case, it will only have one variant:
+//! `Context::Code(I, ErrorKind<E=u32>)` (with `I` and `E` configurable).
+//! It contains an error code and the input position that triggered it.
 //!
-//! If you need more advanced error management, you can activate
-//! the "verbose-errors" compilation feature, which will give you
-//! the error system available in nom 1.0. The verbose errors
-//! accumulate error codes and positions as you backtrack through
-//! the parser tree. From there, you can precisely identify which
-//! parts of the input triggered the error case.
-//!
-//! Please note that the verbose error management is a bit slower
-//! than the simple one.
-use util::ErrorKind;
-use internal::{IResult, IError};
-use internal::IResult::*;
+//! If you activate the `verbose-errors` compilation flags, it will add another
+//! variant to the enum: `Context::List(Vec<(I, ErrorKind<E>)>)`.
+//! This variant aggregates positions and error codes as the code backtracks
+//! through the nested parsers.
+//! The verbose errors feature allows for very flexible error management:
+//! you can know precisely which parser got to which part of the input.
+//! The main drawback is that it is a lot slower than default error
+//! management.
+use util::{ErrorKind,Convert};
+use std::convert::From;
 
 /// Contains the error that a parser can return
 ///
@@ -28,17 +25,36 @@ use internal::IResult::*;
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
 /// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, u32)
 #[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<P,E=u32>{
+pub enum Context<I,E=u32>{
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
-  Code(ErrorKind<E>),
-  /// An error code, and the next error
-  Node(ErrorKind<E>, Vec<Err<P,E>>),
-  /// An error code, and the input position
-  Position(ErrorKind<E>, P),
-  /// An error code, the input position and the next error
-  NodePosition(ErrorKind<E>, P, Vec<Err<P,E>>)
+  Code(I, ErrorKind<E>),
+  List(Vec<(I, ErrorKind<E>)>),
 }
 
+impl<I,E: From<u32>> Convert<Context<I,u32>> for Context<I,E> {
+  fn convert(c: Context<I,u32>) -> Self {
+    match c {
+      Context::Code(i, e)  => Context::Code(i, ErrorKind::convert(e)),
+      Context::List(mut v) => Context::List(v.drain(..).map(|(i, e)| (i, ErrorKind::convert(e))).collect())
+  }
+}
+
+impl<I,E> Context<I,E> {
+  /// Convert Err into ErrorKind.
+  ///
+  /// This allows application code to use ErrorKind and stay independent from the verbose-errors features activation.
+  pub fn into_error_kind(self) -> ErrorKind<E> {
+    match self {
+      Err::Code(kind) => kind,
+      Err(List(v))    => {
+        let (_, kind) = v.get(0);
+        kind
+      },
+    }
+  }
+}
+
+/*
 impl<I,O,E> IResult<I,O,E> {
   /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
   /// to a contained `Error` value, leaving `Done` and `Incomplete` value
@@ -111,59 +127,86 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
     }
   }
 }
-
+*/
 
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use std::collections;
-/// # use nom::IResult::Error;
-/// # use nom::Err::{Position,NodePosition};
 /// # use nom::ErrorKind;
+/// # use nom::Context;
+/// # use nom::Err;
 /// # fn main() {
+///     #[derive(Debug,Clone,PartialEq)]
+///     pub struct ErrorStr(String);
+///
+///     // Convert to IResult<&[u8], &[u8], ErrorStr>
+///     impl From<u32> for ErrorStr {
+///       fn from(i: u32) -> Self {
+///         ErrorStr(format!("custom error code: {}", i))
+///       }
+///     }
+///
 ///     // will add a Custom(42) error to the error chain
 ///     named!(err_test, add_return_error!(ErrorKind::Custom(42), tag!("abcd")));
-///     // Convert to IREsult<&[u8], &[u8], &str>
-///     named!(parser<&[u8], &[u8], &str>, add_return_error!(ErrorKind::Custom("custom error message"), fix_error!(&str, err_test)));
+///
+///     // Convert to IResult<&[u8], &[u8], ErrorStr>
+///     named!(parser<&[u8], &[u8], ErrorStr>, fix_error!(ErrorStr, err_test));
 ///
 ///     let a = &b"efghblah"[..];
-///     let res_a = parser(a);
-///     assert_eq!(res_a,  Error(NodePosition( ErrorKind::Custom("custom error message"), a, vec!(Position(ErrorKind::Fix, a)))));
+///     //assert_eq!(parser(a), Err(Err::Error(Context::Code(a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))))));
+///     let list = vec!((a, ErrorKind::Tag), (a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))));
+///     assert_eq!(
+///       parser(a),
+///       Err(Err::Error(Context::List(list)))
+///     );
 /// # }
 /// ```
 #[macro_export]
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Convert,ErrorKind,Context};
+
       match $submac!($i, $($args)*) {
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Done(i, o)    => $crate::IResult::Done(i, o),
-        $crate::IResult::Error(e) => {
-          let err = match e {
-            $crate::Err::Code($crate::ErrorKind::Custom(_)) |
-              $crate::Err::Node($crate::ErrorKind::Custom(_), _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Code(e)
+        Err(e)     => {
+          let e2 = match e {
+            Err::Error(err) => {
+              let err2 = match err {
+                Context::Code(i, code) => {
+                  let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                  Context::Code(i, code2)
+                },
+                Context::List(mut v) => {
+                  Context::List(v.drain(..).map(|(i, code)| {
+                    let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                    (i, code2)
+                  }).collect())
+                }
+              };
+              Err::Error(err2)
             },
-            $crate::Err::Position($crate::ErrorKind::Custom(_), p) |
-              $crate::Err::NodePosition($crate::ErrorKind::Custom(_), p, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Position(e, p)
+            Err::Failure(err) => {
+              let err2 = match err {
+                Context::Code(i, code) => {
+                  let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                  Context::Code(i, code2)
+                },
+                Context::List(mut v) => {
+                  Context::List(v.drain(..).map(|(i, code)| {
+                    let code2: ErrorKind<$t> = ErrorKind::convert(code);
+                    (i, code2)
+                  }).collect())
+                }
+              };
+              Err::Failure(err2)
             },
-            $crate::Err::Code(_) |
-              $crate::Err::Node(_, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Code(e)
-            },
-            $crate::Err::Position(_, p) |
-              $crate::Err::NodePosition(_, p, _) => {
-              let e: $crate::ErrorKind<$t> = $crate::ErrorKind::Fix;
-              $crate::Err::Position(e, p)
-            },
+            Err::Incomplete(i) => Err::Incomplete(i),
           };
-          $crate::IResult::Error(err)
-        }
+          Err(e2)
+        },
+        Ok((i, o)) => Ok((i, o)),
       }
     }
   );
@@ -181,23 +224,15 @@ macro_rules! fix_error (
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Convert};
+
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(e)                            => $crate::IResult::Error(e),
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => $crate::IResult::Incomplete($crate::Needed::Size(i)),
-        $crate::IResult::Done(i, o)                          => match $submac2!(o, $($args2)*) {
-          $crate::IResult::Error(e)                                 => {
-            let err = match e {
-              $crate::Err::Code(k) | $crate::Err::Node(k, _) | $crate::Err::Position(k, _) | $crate::Err::NodePosition(k, _, _) => {
-                $crate::Err::Position(k, $i)
-              }
-            };
-            $crate::IResult::Error(err)
-          },
-          $crate::IResult::Incomplete($crate::Needed::Unknown)      => $crate::IResult::Incomplete($crate::Needed::Unknown),
-          $crate::IResult::Incomplete($crate::Needed::Size(ref i2)) => $crate::IResult::Incomplete($crate::Needed::Size(*i2)),
-          $crate::IResult::Done(_, o2)                              => $crate::IResult::Done(i, o2)
-        }
+        Err(e)     => Err(Err::convert(e)),
+        Ok((i, o)) => match $submac2!(o, $($args2)*) {
+          Err(e)     => Err(Err::convert(e)),
+          Ok((_,o2)) => Ok((i,o2)),
+        },
       }
     }
   );

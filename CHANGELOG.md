@@ -4,6 +4,23 @@
 
 ### Changed
 
+## 3.2.1 - 2017-10-27
+
+### Thanks
+
+- @ordian for `alt_complete` fixes
+- @friedm for documentation fixes
+- @kali for improving error management
+
+### Fixed
+
+- there were cases where `alt_complete` could return `Incomplete`
+
+### Added
+
+- an `into_error_kind` method can be used to transform any error to a common value. This helps when the library is included multiple times as dependency with different feature sets
+
+
 ## 3.2.0 - 2017-07-24
 
 ### Thanks
@@ -64,7 +81,7 @@
 ### Thanks
 
 - Chris Pick for some `Incomplete` related refactors
-- @drbgn for documentation fixes
+- @dbrgn for documentation fixes
 - @valarauca for adding `be_u24`
 - @ithinuel for usability fixes
 - @evuez for README readability fixes and improvements to `IResult`
@@ -765,7 +782,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/3.2.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/3.2.1...HEAD
+* [3.2.1]: https://github.com/Geal/nom/compare/3.2.0...3.2.1
 * [3.2.0]: https://github.com/Geal/nom/compare/3.1.0...3.2.0
 * [3.1.0]: https://github.com/Geal/nom/compare/3.0.0...3.1.0
 * [3.0.0]: https://github.com/Geal/nom/compare/2.2.1...3.0.0
