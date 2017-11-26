@@ -44,7 +44,6 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 /// #
 /// // We create an enum to represent our creatures
@@ -169,7 +168,7 @@
 #[macro_export]
 macro_rules! alt (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)* ) => (
-    compiler_error!("alt uses '|' as separator, not ',':
+    compile_error!("alt uses '|' as separator, not ',':
 
       alt!(
         tag!(\"abcd\") |
@@ -178,64 +177,76 @@ macro_rules! alt (
       )
     ");
   );
-  (__impl $i:expr, $e:ident, $($rest:tt)* ) => (
+  (__impl $i:expr, $e:path, $($rest:tt)* ) => (
     alt!(__impl $i, call!($e) , $($rest)*);
   );
-  (__impl $i:expr, $e:ident | $($rest:tt)*) => (
+  (__impl $i:expr, $e:path | $($rest:tt)*) => (
     alt!(__impl $i, call!($e) | $($rest)*);
   );
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
+      use ::std::result::Result::*;
+      use $crate::Err;
+
       let i_ = $i.clone();
       let res = $subrule!(i_, $($args)*);
       match res {
-        $crate::IResult::Done(_,_)     => res,
-        $crate::IResult::Incomplete(_) => res,
-        $crate::IResult::Error(e)      => {
+        Err(Err::Error(e))      => {
           let out = alt!(__impl $i, $($rest)*);
 
           // Compile-time hack to ensure that res's E type is not under-specified.
           // This all has no effect at runtime.
           fn unify_types<T>(_: &T, _: &T) {}
-          if let $crate::IResult::Error(ref e2) = out {
+          if let Err(Err::Error(ref e2)) = out {
             unify_types(&e, e2);
           }
 
           out
-        }
+        },
+        Err(e) => Err(e),
+        Ok(o) => Ok(o),
       }
     }
   );
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)*) => (
     {
+      use ::std::result::Result::*;
+      use $crate::Err;
+
       let i_ = $i.clone();
       match $subrule!(i_, $($args)* ) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i,$gen(o)),
-        $crate::IResult::Incomplete(x) => $crate::IResult::Incomplete(x),
-        $crate::IResult::Error(e)      => {
+        Ok((i,o))         => Ok((i,$gen(o))),
+        Err(Err::Error(e)) => {
           let out = alt!(__impl $i, $($rest)*);
 
           // Compile-time hack to ensure that res's E type is not under-specified.
           // This all has no effect at runtime.
           fn unify_types<T>(_: &T, _: &T) {}
-          if let $crate::IResult::Error(ref e2) = out {
+          if let Err(Err::Error(ref e2)) = out {
             unify_types(&e, e2);
           }
 
           out
-        }
+        },
+        Err(e) => Err(e),
       }
     }
   );
 
-  (__impl $i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+  (__impl $i:expr, $e:path => { $gen:expr } | $($rest:tt)*) => (
     alt!(__impl $i, call!($e) => { $gen } | $($rest)*);
   );
 
   (__impl $i:expr, __end) => (
-    $crate::IResult::Error(error_position!($crate::ErrorKind::Alt,$i))
+    {
+      use $crate::{Err,ErrorKind};
+      let e = ErrorKind::Alt;
+      let err = Err::Error(error_position!(e,$i));
+
+      Err(err)
+    }
   );
 
   ($i:expr, $($rest:tt)*) => (
@@ -269,20 +280,24 @@ macro_rules! alt (
 macro_rules! alt_complete (
   // Recursive rules (must include `complete!` around the head)
 
-  ($i:expr, $e:ident | $($rest:tt)*) => (
+  ($i:expr, $e:path | $($rest:tt)*) => (
     alt_complete!($i, complete!(call!($e)) | $($rest)*);
   );
 
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Convert,Context,Err};
+
       let i_ = $i.clone();
       let res = complete!(i_, $subrule!($($args)*));
       match res {
-        $crate::IResult::Done(_,_) => res,
+        Ok((_,_)) => res,
+        Err(Err::Failure(e)) => Err(Err::Failure(Context::convert(e))),
         e => {
           let out = alt_complete!($i, $($rest)*);
 
-          if let (&$crate::IResult::Error(ref e1), &$crate::IResult::Error(ref e2)) = (&e, &out) {
+          if let (&Err(Err::Error(ref e1)), &Err(Err::Error(ref e2))) = (&e, &out) {
             // Compile-time hack to ensure that res's E type is not under-specified.
             // This all has no effect at runtime.
             fn unify_types<T>(_: &T, _: &T) {}
@@ -297,13 +312,17 @@ macro_rules! alt_complete (
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Convert,Context,Err};
+
       let i_ = $i.clone();
       match complete!(i_, $subrule!($($args)*)) {
-        $crate::IResult::Done(i,o) => $crate::IResult::Done(i,$gen(o)),
+        Ok((i,o)) => Ok((i,$gen(o))),
+        Err(Err::Failure(e)) => Err(Err::Failure(Context::convert(e))),
         e => {
           let out = alt_complete!($i, $($rest)*);
 
-          if let (&$crate::IResult::Error(ref e1), &$crate::IResult::Error(ref e2)) = (&e, &out) {
+          if let (&Err(Err::Error(ref e1)), &Err(Err::Error(ref e2))) = (&e, &out) {
             // Compile-time hack to ensure that res's E type is not under-specified.
             // This all has no effect at runtime.
             fn unify_types<T>(_: &T, _: &T) {}
@@ -316,13 +335,13 @@ macro_rules! alt_complete (
     }
   );
 
-  ($i:expr, $e:ident => { $gen:expr } | $($rest:tt)*) => (
+  ($i:expr, $e:path => { $gen:expr } | $($rest:tt)*) => (
     alt_complete!($i, complete!(call!($e)) => { $gen } | $($rest)*);
   );
 
   // Tail (non-recursive) rules
 
-  ($i:expr, $e:ident => { $gen:expr }) => (
+  ($i:expr, $e:path => { $gen:expr }) => (
     alt_complete!($i, call!($e) => { $gen });
   );
 
@@ -330,7 +349,7 @@ macro_rules! alt_complete (
     alt!(__impl $i, complete!($subrule!($($args)*)) => { $gen } | __end)
   );
 
-  ($i:expr, $e:ident) => (
+  ($i:expr, $e:path) => (
     alt_complete!($i, call!($e));
   );
 
@@ -345,9 +364,7 @@ macro_rules! alt_complete (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done,Error};
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::{Position, NodePosition};
+/// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(sw,
@@ -362,11 +379,11 @@ macro_rules! alt_complete (
 ///  let c = b"efgh123";
 ///  let d = b"blah";
 ///
-///  assert_eq!(sw(&a[..]), Done(&b"123"[..], &b"XYZ"[..]));
-///  assert_eq!(sw(&b[..]), Error(error_node_position!(ErrorKind::Switch, &b"abcdef"[..],
-///    error_position!(ErrorKind::Tag, &b"ef"[..]))));
-///  assert_eq!(sw(&c[..]), Done(&b""[..], &b"123"[..]));
-///  assert_eq!(sw(&d[..]), Error(error_position!(ErrorKind::Switch, &b"blah"[..])));
+///  assert_eq!(sw(&a[..]), Ok((&b"123"[..], &b"XYZ"[..])));
+///  assert_eq!(sw(&b[..]), Err(Err::Error(error_node_position!(ErrorKind::Switch, &b"abcdef"[..],
+///    error_position!(ErrorKind::Tag, &b"ef"[..])))));
+///  assert_eq!(sw(&c[..]), Ok((&b""[..], &b"123"[..])));
+///  assert_eq!(sw(&d[..]), Err(Err::Error(error_position!(ErrorKind::Switch, &b"blah"[..]))));
 ///  # }
 /// ```
 ///
@@ -374,7 +391,6 @@ macro_rules! alt_complete (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(sw,
 ///    switch!(take!(4),
@@ -386,8 +402,8 @@ macro_rules! alt_complete (
 ///  let a = b"abcdXYZ123";
 ///  let b = b"blah";
 ///
-///  assert_eq!(sw(&a[..]), Done(&b"123"[..], &b"XYZ"[..]));
-///  assert_eq!(sw(&b[..]), Done(&b""[..], &b"default"[..]));
+///  assert_eq!(sw(&a[..]), Ok((&b"123"[..], &b"XYZ"[..])));
+///  assert_eq!(sw(&b[..]), Ok((&b""[..], &b"default"[..])));
 ///  # }
 /// ```
 ///
@@ -420,21 +436,27 @@ macro_rules! alt_complete (
 macro_rules! switch (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::{Err,Convert};
+
       let i_ = $i.clone();
       match map!(i_, $submac!($($args)*), Some) {
-        $crate::IResult::Error(e)      => $crate::IResult::Error(error_node_position!(
-            $crate::ErrorKind::Switch, $i, e
-        )),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i, o)    => {
+        Err(Err::Error(e))      => Err(Err::Error(error_node_position!(
+            ErrorKind::Switch, $i, e
+        ))),
+        Err(e) => Err(Err::convert(e)),
+        Ok((i, o))    => {
+
           match o {
             $(Some($p) => match $subrule!(i, $($args2)*) {
-              $crate::IResult::Error(e) => $crate::IResult::Error(error_node_position!(
-                  $crate::ErrorKind::Switch, $i, e
-              )),
-              a => a,
+              Err(Err::Error(e)) => Err(Err::Error(error_node_position!(
+                  ErrorKind::Switch, $i, e
+              ))),
+              Ok(o) => Ok(o),
+              Err(e) => Err(Err::convert(e)),
             }),*,
-            _    => $crate::IResult::Error(error_position!($crate::ErrorKind::Switch,$i))
+            _    => Err(Err::Error(error_position!(ErrorKind::Switch,$i)))
           }
         }
       }
@@ -445,7 +467,7 @@ macro_rules! switch (
       switch!(__impl $i, $submac!($($args)*), $($rest)*)
     }
   );
-  ($i:expr, $e:ident, $($rest:tt)*) => (
+  ($i:expr, $e:path, $($rest:tt)*) => (
     {
       switch!(__impl $i, call!($e), $($rest)*)
     }
@@ -462,8 +484,7 @@ macro_rules! switch (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done,Error,Incomplete};
-/// # use nom::{ErrorKind,Needed};
+/// # use nom::{Err,ErrorKind,Needed};
 /// # fn main() {
 /// named!(perm<(&[u8], &[u8], &[u8])>,
 ///   permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
@@ -474,23 +495,26 @@ macro_rules! switch (
 /// let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
 ///
 /// let a = &b"abcdefghijk"[..];
-/// assert_eq!(perm(a), Done(&b"jk"[..], expected));
+/// assert_eq!(perm(a), Ok((&b"jk"[..], expected)));
 /// let b = &b"efgabcdhijkl"[..];
-/// assert_eq!(perm(b), Done(&b"jkl"[..], expected));
+/// assert_eq!(perm(b), Ok((&b"jkl"[..], expected)));
 /// let c = &b"hiefgabcdjklm"[..];
-/// assert_eq!(perm(c), Done(&b"jklm"[..], expected));
+/// assert_eq!(perm(c), Ok((&b"jklm"[..], expected)));
 ///
 /// let d = &b"efgxyzabcdefghi"[..];
-/// assert_eq!(perm(d), Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..])));
+/// assert_eq!(perm(d), Err(Err::Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..]))));
 ///
 /// let e = &b"efgabc"[..];
-/// assert_eq!(perm(e), Incomplete(Needed::Size(7)));
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
 /// # }
 /// ```
 #[macro_export]
 macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Convert};
+
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
       let mut error  = ::std::option::Option::None;
@@ -503,28 +527,18 @@ macro_rules! permutation (
         //if we reach that part, it means none of the parsers were able to read anything
         if !all_done {
           //FIXME: should wrap the error returned by the child parser
-          error = ::std::option::Option::Some(error_position!($crate::ErrorKind::Permutation, input));
+          error = ::std::option::Option::Some(error_position!(ErrorKind::Permutation, input));
         }
         break;
       }
 
       if let ::std::option::Option::Some(need) = needed {
-        if let $crate::Needed::Size(sz) = need {
-          $crate::IResult::Incomplete(
-            $crate::Needed::Size(
-              $crate::InputLength::input_len(&($i))  -
-              $crate::InputLength::input_len(&input) +
-              sz
-            )
-          )
-        } else {
-          $crate::IResult::Incomplete($crate::Needed::Unknown)
-        }
+        Err(Err::convert(need))
       } else if let ::std::option::Option::Some(e) = error {
-        $crate::IResult::Error(e)
+        Err(Err::Error(e))
       } else {
         let unwrapped_res = permutation_unwrap!(0, (), res, $($rest)*);
-        $crate::IResult::Done(input, unwrapped_res)
+        Ok((input, unwrapped_res))
       }
     }
   );
@@ -540,13 +554,13 @@ macro_rules! permutation_init (
   ((), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     permutation_init!((::std::option::Option::None), $($rest)*)
   );
-  (($($parsed:expr),*), $e:ident, $($rest:tt)*) => (
+  (($($parsed:expr),*), $e:path, $($rest:tt)*) => (
     permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
-  (($($parsed:expr),*), $e:ident) => (
+  (($($parsed:expr),*), $e:path) => (
     ($($parsed),* , ::std::option::Option::None)
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
@@ -617,13 +631,13 @@ macro_rules! permutation_unwrap (
   ($it:tt,  (), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     succ!($it, permutation_unwrap!((acc!($it, $res).unwrap()), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident, $($rest:tt)*) => (
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:path, $($rest:tt)*) => (
     succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res).unwrap()), $res, $($rest)*));
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res).unwrap()), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident) => (
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:path) => (
     ($($parsed),* , { acc!($it, $res).unwrap() })
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )) => (
@@ -634,44 +648,44 @@ macro_rules! permutation_unwrap (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_iterator (
-  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident, $($rest:tt)*) => (
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:path, $($rest:tt)*) => (
     permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e), $($rest)*);
   );
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
     if acc!($it, $res) == ::std::option::Option::None {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Done(i,o)     => {
+        Ok((i,o))     => {
           $i = i;
           acc!($it, $res) = ::std::option::Option::Some(o);
           continue;
         },
-        $crate::IResult::Error(_) => {
+        Err(Err::Error(_)) => {
           $all_done = false;
         },
-        $crate::IResult::Incomplete(i) => {
-          $needed = ::std::option::Option::Some(i);
+        Err(e) => {
+          $needed = ::std::option::Option::Some(e);
           break;
         }
       };
     }
     succ!($it, permutation_iterator!($i, $all_done, $needed, $res, $($rest)*));
   };
-  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident) => (
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:path) => (
     permutation_iterator!($it, $i, $all_done, $res, call!($e));
   );
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
     if acc!($it, $res) == ::std::option::Option::None {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Done(i,o)     => {
+        Ok((i,o))     => {
           $i = i;
           acc!($it, $res) = ::std::option::Option::Some(o);
           continue;
         },
-        $crate::IResult::Error(_) => {
+        Err(Err::Error(_)) => {
           $all_done = false;
         },
-        $crate::IResult::Incomplete(i) => {
-          $needed = ::std::option::Option::Some(i);
+        Err(e) => {
+          $needed = ::std::option::Option::Some(e);
           break;
         }
       };
@@ -681,8 +695,7 @@ macro_rules! permutation_iterator (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Needed,IResult};
-  use internal::IResult::*;
+  use internal::{Err,Needed,IResult};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -705,19 +718,24 @@ mod tests {
   macro_rules! tag_bytes (
     ($i:expr, $bytes: expr) => (
       {
+        use $crate::need_more;
         use std::cmp::min;
+
         let len = $i.len();
         let blen = $bytes.len();
         let m   = min(len, blen);
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: $crate::IResult<_,_> = if reduced != b {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::Tag, $i))
+        let res: IResult<_,_,u32> = if reduced != b {
+          let e: ErrorKind<u32> = ErrorKind::Tag;
+          Err(Err::Error(error_position!(e, $i)))
         } else if m < blen {
-          $crate::IResult::Incomplete($crate::Needed::Size(blen))
+          //let e:Err<&[u8], u32> = need_more($i, Needed::Size(blen));
+          //Err(e)
+          need_more($i, Needed::Size(blen))
         } else {
-          $crate::IResult::Done(&$i[blen..], reduced)
+          Ok((&$i[blen..], reduced))
         };
         res
       }
@@ -727,39 +745,57 @@ mod tests {
   macro_rules! take(
     ($i:expr, $count:expr) => (
       {
+        use $crate::need_more;
+
         let cnt = $count as usize;
-        let res:$crate::IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          $crate::IResult::Incomplete($crate::Needed::Size(cnt))
+        let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
+          need_more($i, Needed::Size(cnt))
         } else {
-          $crate::IResult::Done(&$i[cnt..],&$i[0..cnt])
+          Ok((&$i[cnt..],&$i[0..cnt]))
         };
         res
       }
     );
   );
 
-#[test]
+  #[derive(Debug,Clone,PartialEq)]
+  pub struct ErrorStr(String);
+
+  impl From<u32> for ErrorStr {
+    fn from(i: u32) -> Self {
+      ErrorStr(format!("custom error code: {}", i))
+    }
+  }
+
+  impl<'a> From<&'a str> for ErrorStr {
+    fn from(i: &'a str) -> Self {
+      ErrorStr(format!("custom error message: {}", i))
+    }
+  }
+
+  #[test]
   fn alt() {
-    fn work(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
-      Done(&b""[..], input)
+    fn work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
+      Ok((&b""[..], input))
     }
 
     #[allow(unused_variables)]
-    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8],&'static str> {
-      Error(error_code!(ErrorKind::Custom("abcd")))
+    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
+      use ::Context;
+      Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
     }
 
-    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], &'static str> {
-      Done(input, &b""[..])
+    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
+      Ok((input, &b""[..]))
     }
 
-    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
       alt!(i, dont_work | dont_work)
     }
-    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
       alt!(i, dont_work | work)
     }
-    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], &'static str> {
+    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
       alt!(i, dont_work | dont_work | work2 | dont_work)
     }
     //named!(alt1, alt!(dont_work | dont_work));
@@ -767,19 +803,19 @@ mod tests {
     //named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
-    assert_eq!(alt1(a), Error(error_position!(ErrorKind::Alt, a)));
-    assert_eq!(alt2(a), Done(&b""[..], a));
-    assert_eq!(alt3(a), Done(a, &b""[..]));
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
+    assert_eq!(alt2(a), Ok((&b""[..], a)));
+    assert_eq!(alt3(a), Ok((a, &b""[..])));
 
     named!(alt4, alt!(tag!("abcd") | tag!("efgh")));
     let b = &b"efgh"[..];
-    assert_eq!(alt4(a), Done(&b""[..], a));
-    assert_eq!(alt4(b), Done(&b""[..], b));
+    assert_eq!(alt4(a), Ok((&b""[..], a)));
+    assert_eq!(alt4(b), Ok((&b""[..], b)));
 
     // test the alternative syntax
     named!(alt5<bool>, alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true }));
-    assert_eq!(alt5(a), Done(&b""[..], false));
-    assert_eq!(alt5(b), Done(&b""[..], true));
+    assert_eq!(alt5(a), Ok((&b""[..], false)));
+    assert_eq!(alt5(b), Ok((&b""[..], true)));
 
     // compile-time test guarding against an underspecified E generic type (#474)
     named!(alt_eof1, alt!(eof!() | eof!()));
@@ -793,17 +829,17 @@ mod tests {
     named!(alt1, alt!(tag!("a") | tag!("bc") | tag!("def")));
 
     let a = &b""[..];
-    assert_eq!(alt1(a), Incomplete(Needed::Size(1)));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(1))));
     let a = &b"b"[..];
-    assert_eq!(alt1(a), Incomplete(Needed::Size(2)));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(2))));
     let a = &b"bcd"[..];
-    assert_eq!(alt1(a), Done(&b"d"[..], &b"bc"[..]));
+    assert_eq!(alt1(a), Ok((&b"d"[..], &b"bc"[..])));
     let a = &b"cde"[..];
-    assert_eq!(alt1(a), Error(error_position!(ErrorKind::Alt, a)));
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
     let a = &b"de"[..];
-    assert_eq!(alt1(a), Incomplete(Needed::Size(3)));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(3))));
     let a = &b"defg"[..];
-    assert_eq!(alt1(a), Done(&b"g"[..], &b"def"[..]));
+    assert_eq!(alt1(a), Ok((&b"g"[..], &b"def"[..])));
   }
 
   #[test]
@@ -813,11 +849,11 @@ mod tests {
     );
 
     let a = &b""[..];
-    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
+    assert_eq!(ac(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
     let a = &b"ef"[..];
-    assert_eq!(ac(a), Done(&b""[..], &b"ef"[..]));
+    assert_eq!(ac(a), Ok((&b""[..], &b"ef"[..])));
     let a = &b"cde"[..];
-    assert_eq!(ac(a), Error(error_position!(ErrorKind::Alt, a)));
+    assert_eq!(ac(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
   }
 
   #[allow(unused_variables)]
@@ -831,12 +867,12 @@ mod tests {
     );
 
     let a = &b"abcdefgh"[..];
-    assert_eq!(sw(a), Done(&b"gh"[..], &b"ef"[..]));
+    assert_eq!(sw(a), Ok((&b"gh"[..], &b"ef"[..])));
 
     let b = &b"efghijkl"[..];
-    assert_eq!(sw(b), Done(&b""[..], &b"ijkl"[..]));
+    assert_eq!(sw(b), Ok((&b""[..], &b"ijkl"[..])));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Error(error_position!(ErrorKind::Switch, &b"afghijkl"[..])));
+    assert_eq!(sw(c), Err(Err::Error(error_position!(ErrorKind::Switch, &b"afghijkl"[..]))));
   }
 
   #[test]
@@ -850,17 +886,17 @@ mod tests {
     let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
 
     let a = &b"abcdefghijk"[..];
-    assert_eq!(perm(a), Done(&b"jk"[..], expected));
+    assert_eq!(perm(a), Ok((&b"jk"[..], expected)));
     let b = &b"efgabcdhijk"[..];
-    assert_eq!(perm(b), Done(&b"jk"[..], expected));
+    assert_eq!(perm(b), Ok((&b"jk"[..], expected)));
     let c = &b"hiefgabcdjk"[..];
-    assert_eq!(perm(c), Done(&b"jk"[..], expected));
+    assert_eq!(perm(c), Ok((&b"jk"[..], expected)));
 
     let d = &b"efgxyzabcdefghi"[..];
-    assert_eq!(perm(d), Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..])));
+    assert_eq!(perm(d), Err(Err::Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..]))));
 
     let e = &b"efgabc"[..];
-    assert_eq!(perm(e), Incomplete(Needed::Size(7)));
+    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
   }
 
   /*

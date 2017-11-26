@@ -1,9 +1,7 @@
-
 #[cfg(feature = "verbose-errors")]
-use internal::IResult;
-
+use internal::{Err,IResult};
 #[cfg(feature = "verbose-errors")]
-use verbose_errors::Err;
+use verbose_errors::Context;
 
 #[cfg(feature = "std")]
 use std::collections::HashMap;
@@ -120,17 +118,14 @@ impl HexDisplay for [u8] {
 macro_rules! dbg (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
       let l = line!();
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(a) => {
-          println!("Error({:?}) at l.{} by ' {} '", a, l, stringify!($submac!($($args)*)));
-          $crate::IResult::Error(a)
+        Err(e) => {
+          println!("Err({:?}) at l.{} by ' {} '", e, l, stringify!($submac!($($args)*)));
+          Err(e)
         },
-        $crate::IResult::Incomplete(a) => {
-          println!("Incomplete({:?}) at {} by ' {} '", a, l, stringify!($submac!($($args)*)));
-          $crate::IResult::Incomplete(a)
-        },
-        a => a
+        a => a,
       }
     }
   );
@@ -166,15 +161,11 @@ macro_rules! dbg_dmp (
       use $crate::HexDisplay;
       let l = line!();
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(a) => {
-          println!("Error({:?}) at l.{} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
-          $crate::IResult::Error(a)
+        Err(e) => {
+          println!("Error({:?}) at l.{} by ' {} '\n{}", e, l, stringify!($submac!($($args)*)), $i.to_hex(8));
+          Err(e)
         },
-        $crate::IResult::Incomplete(a) => {
-          println!("Incomplete({:?}) at {} by ' {} '\n{}", a, l, stringify!($submac!($($args)*)), $i.to_hex(8));
-          $crate::IResult::Incomplete(a)
-        },
-        a => a
+        a => a,
       }
     }
   );
@@ -185,33 +176,23 @@ macro_rules! dbg_dmp (
 );
 
 #[cfg(feature = "verbose-errors")]
-pub fn error_to_list<P,E:Clone>(e:&Err<P,E>) -> Vec<ErrorKind<E>> {
-  let mut v:Vec<ErrorKind<E>> = Vec::new();
+pub fn error_to_list<P:Clone,E:Clone>(e:&Context<P,E>) -> Vec<(P,ErrorKind<E>)> {
   match e {
-     &Err::Code(ref i) | &Err::Position(ref i,_) => {
-        v.push(i.clone());
+     &Context::Code(ref i, ref err) => {
+        let mut v = Vec::new();
+        v.push((i.clone(), err.clone()));
         return v;
      },
-     &Err::Node(ref i, ref next) | &Err::NodePosition(ref i, _, ref next) => {
-       //v.push(i.clone());
-       for error in next.iter() {
-         if let &Err::Code(ref i2) = error {
-           v.push(i2.clone());
-         }
-         if let &Err::Position(ref i2,_) = error {
-           v.push(i2.clone());
-         }
-       }
-       v.push(i.clone());
-       v.reverse()
+     &Context::List(ref v) => {
+       let mut v2 = v.clone();
+       v2.reverse();
+       v2
      }
   }
-
-  v
 }
 
 #[cfg(feature = "verbose-errors")]
-pub fn compare_error_paths<P,E:Clone+PartialEq>(e1:&Err<P,E>, e2:&Err<P,E>) -> bool {
+pub fn compare_error_paths<P:Clone+PartialEq, E:Clone+PartialEq>(e1:&Context<P,E>, e2:&Context<P,E>) -> bool {
   error_to_list(e1) == error_to_list(e2)
 }
 
@@ -222,12 +203,14 @@ use std::hash::Hash;
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-pub fn add_error_pattern<'a,I,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<ErrorKind<E>>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
-  if let IResult::Error(e) = res {
-    h.insert(error_to_list(&e), message);
-    true
-  } else {
-    false
+pub fn add_error_pattern<'a,I: Clone+Hash+Eq,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<(I,ErrorKind<E>)>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
+  match res {
+    Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+      h.insert(error_to_list(&e), message);
+      true
+    },
+    _ => false
+
   }
 }
 
@@ -241,28 +224,22 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Option<Vec<(ErrorKind<E>, usize, usize)> > {
-  if let IResult::Error(e) = res {
+  if let Err(Err::Error(e)) = res {
     let mut v:Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
 
     match e {
-       Err::Code(_) => {},
-       Err::Position(i, p) => {
+       Context::Code(p, kind) => {
          let (o1, o2) = slice_to_offsets(input, p);
-          v.push((i, o1, o2));
+          v.push((kind, o1, o2));
        },
-       Err::Node(_, _) => {},
-       Err::NodePosition(i, p, next) => {
-         //v.push(i.clone());
-         for error in next.iter() {
-           if let &Err::Position(ref i2, ref p2) = error {
-              let (o1, o2) = slice_to_offsets(input, p2);
-             v.push((i2.clone(), o1, o2));
-           }
+       Context::List(mut l) => {
+         for (p, kind) in l.drain(..) {
+           let (o1, o2) = slice_to_offsets(input, p);
+           v.push((kind, o1, o2));
          }
-        let (o1, o2) = slice_to_offsets(input, p);
-         v.push((i, o1, o2));
+
          v.reverse()
-       }
+       },
     }
 
     v.sort_by(|a, b| a.1.cmp(&b.1));
@@ -707,6 +684,78 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
       self
     }
   }
+
+
+pub trait Convert<T> {
+  fn convert(T) -> Self;
+}
+
+impl<E: From<u32>> Convert<ErrorKind<u32>> for ErrorKind<E> {
+
+  fn convert(e: ErrorKind<u32>) -> Self {
+    match e {
+      ErrorKind::Custom(c)                 => ErrorKind::Custom(E::from(c)),
+      ErrorKind::Tag                       => ErrorKind::Tag,
+      ErrorKind::MapRes                    => ErrorKind::MapRes,
+      ErrorKind::MapOpt                    => ErrorKind::MapOpt,
+      ErrorKind::Alt                       => ErrorKind::Alt,
+      ErrorKind::IsNot                     => ErrorKind::IsNot,
+      ErrorKind::IsA                       => ErrorKind::IsA,
+      ErrorKind::SeparatedList             => ErrorKind::SeparatedList,
+      ErrorKind::SeparatedNonEmptyList     => ErrorKind::SeparatedNonEmptyList,
+      ErrorKind::Many1                     => ErrorKind::Many1,
+      ErrorKind::Count                     => ErrorKind::Count,
+      ErrorKind::TakeUntilAndConsume       => ErrorKind::TakeUntilAndConsume,
+      ErrorKind::TakeUntil                 => ErrorKind::TakeUntil,
+      ErrorKind::TakeUntilEitherAndConsume => ErrorKind::TakeUntilEitherAndConsume,
+      ErrorKind::TakeUntilEither           => ErrorKind::TakeUntilEither,
+      ErrorKind::LengthValue               => ErrorKind::LengthValue,
+      ErrorKind::TagClosure                => ErrorKind::TagClosure,
+      ErrorKind::Alpha                     => ErrorKind::Alpha,
+      ErrorKind::Digit                     => ErrorKind::Digit,
+      ErrorKind::AlphaNumeric              => ErrorKind::AlphaNumeric,
+      ErrorKind::Space                     => ErrorKind::Space,
+      ErrorKind::MultiSpace                => ErrorKind::MultiSpace,
+      ErrorKind::LengthValueFn             => ErrorKind::LengthValueFn,
+      ErrorKind::Eof                       => ErrorKind::Eof,
+      ErrorKind::ExprOpt                   => ErrorKind::ExprOpt,
+      ErrorKind::ExprRes                   => ErrorKind::ExprRes,
+      ErrorKind::CondReduce                => ErrorKind::CondReduce,
+      ErrorKind::Switch                    => ErrorKind::Switch,
+      ErrorKind::TagBits                   => ErrorKind::TagBits,
+      ErrorKind::OneOf                     => ErrorKind::OneOf,
+      ErrorKind::NoneOf                    => ErrorKind::NoneOf,
+      ErrorKind::Char                      => ErrorKind::Char,
+      ErrorKind::CrLf                      => ErrorKind::CrLf,
+      ErrorKind::RegexpMatch               => ErrorKind::RegexpMatch,
+      ErrorKind::RegexpMatches             => ErrorKind::RegexpMatches,
+      ErrorKind::RegexpFind                => ErrorKind::RegexpFind,
+      ErrorKind::RegexpCapture             => ErrorKind::RegexpCapture,
+      ErrorKind::RegexpCaptures            => ErrorKind::RegexpCaptures,
+      ErrorKind::TakeWhile1                => ErrorKind::TakeWhile1,
+      ErrorKind::Complete                  => ErrorKind::Complete,
+      ErrorKind::Fix                       => ErrorKind::Fix,
+      ErrorKind::Escaped                   => ErrorKind::Escaped,
+      ErrorKind::EscapedTransform          => ErrorKind::EscapedTransform,
+      ErrorKind::TagStr                    => ErrorKind::TagStr,
+      ErrorKind::IsNotStr                  => ErrorKind::IsNotStr,
+      ErrorKind::IsAStr                    => ErrorKind::IsAStr,
+      ErrorKind::TakeWhile1Str             => ErrorKind::TakeWhile1Str,
+      ErrorKind::NonEmpty                  => ErrorKind::NonEmpty,
+      ErrorKind::ManyMN                    => ErrorKind::ManyMN,
+      ErrorKind::TakeUntilAndConsumeStr    => ErrorKind::TakeUntilAndConsumeStr,
+      ErrorKind::HexDigit                  => ErrorKind::HexDigit,
+      ErrorKind::TakeUntilStr              => ErrorKind::TakeUntilStr,
+      ErrorKind::OctDigit                  => ErrorKind::OctDigit,
+      ErrorKind::Many0                     => ErrorKind::Many0,
+      ErrorKind::Not                       => ErrorKind::Not,
+      ErrorKind::Permutation               => ErrorKind::Permutation,
+      ErrorKind::ManyTill                  => ErrorKind::ManyTill,
+      ErrorKind::Verify                    => ErrorKind::Verify,
+      ErrorKind::TakeTill1                 => ErrorKind::TakeTill1,
+    }
+  }
+}
 
 #[cfg(test)]
 mod tests {

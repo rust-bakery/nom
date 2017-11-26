@@ -81,7 +81,7 @@
 ### Thanks
 
 - Chris Pick for some `Incomplete` related refactors
-- @drbgn for documentation fixes
+- @dbrgn for documentation fixes
 - @valarauca for adding `be_u24`
 - @ithinuel for usability fixes
 - @evuez for README readability fixes and improvements to `IResult`

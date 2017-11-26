@@ -17,14 +17,13 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( take_3_bits<u8>, bits!( take_bits!( u8, 3 ) ) );
 ///
 ///  let input = vec![0b10101010, 0b11110000, 0b00110011];
 ///  let sl    = &input[..];
 ///
-///  assert_eq!(take_3_bits( sl ), Done(&sl[1..], 5) );
+///  assert_eq!(take_3_bits( sl ),Ok((&sl[1..], 5)) );
 /// # }
 #[macro_export]
 macro_rules! bits (
@@ -43,26 +42,38 @@ macro_rules! bits (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Context,Err,Needed};
+
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        $crate::IResult::Error(e) => {
+        Err(Err::Error(e)) => {
           let err = match e {
-            $crate::Err::Code(k) | $crate::Err::Node(k, _) => $crate::Err::Code(k),
-            $crate::Err::Position(k, (i,b)) | $crate::Err::NodePosition(k, (i,b), _) => {
-              $crate::Err::Position(k, &i[b/8..])
+            Context::Code((i,b), kind) => Context::Code(&i[b/8..], kind),
+            Context::List(mut v) => {
+              Context::List(v.drain(..).map(|((i,b), kind)| (&i[b/8..], kind)).collect())
             }
           };
-          $crate::IResult::Error(err)
-        }
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          //println!("bits parser returned Needed::Size({})", i);
-          $crate::IResult::Incomplete($crate::Needed::Size(i / 8 + 1))
+          Err(Err::Error(err))
         },
-        $crate::IResult::Done((i, bit_index), o)             => {
+        Err(Err::Failure(e)) => {
+          let err = match e {
+            Context::Code((i,b), kind) => Context::Code(&i[b/8..], kind),
+            Context::List(mut v) => {
+              Context::List(v.drain(..).map(|((i,b), kind)| (&i[b/8..], kind)).collect())
+            }
+          };
+          Err(Err::Failure(err))
+        },
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
+          //println!("bits parser returned Needed::Size({})", i);
+          Err(Err::Incomplete(Needed::Size(i / 8 + 1)))
+        },
+        Ok(((i, bit_index), o))             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          $crate::IResult::Done(&i[byte_index..], o)
+          Ok((&i[byte_index..], o))
         }
       }
     }
@@ -76,20 +87,28 @@ macro_rules! bits_impl (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed,Context};
+
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        $crate::IResult::Error(e) => {
-          $crate::IResult::Error(e)
-        }
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          //println!("bits parser returned Needed::Size({})", i);
-          $crate::IResult::Incomplete($crate::Needed::Size(i / 8 + 1))
+        Err(Err::Error(e)) => {
+          let Context::Code(_,err) = e;
+          Err(Err::Error(error_position!(err, $i)))
         },
-        $crate::IResult::Done((i, bit_index), o)             => {
+        Err(Err::Failure(e)) => {
+          let Context::Code(_,err) = e;
+          Err(Err::Failure(error_position!(err, $i)))
+        },
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
+          //println!("bits parser returned Needed::Size({})", i);
+          $crate::need_more($i, $crate::Needed::Size(i / 8 + 1))
+        },
+        Ok(((i, bit_index), o))             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          $crate::IResult::Done(&i[byte_index..], o)
+          Ok((&i[byte_index..], o))
         }
       }
     }
@@ -103,7 +122,6 @@ macro_rules! bits_impl (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::rest;
 /// # fn main() {
 ///  named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
@@ -114,7 +132,7 @@ macro_rules! bits_impl (
 ///
 ///  let input = &[0xde, 0xad, 0xbe, 0xaf];
 ///
-///  assert_eq!(parse( input ), Done(&[][..], (0xd, 0xea, &[0xbe, 0xaf][..])));
+///  assert_eq!(parse( input ), Ok(( &[][..], (0xd, 0xea, &[0xbe, 0xaf][..]) )));
 /// # }
 #[macro_export]
 macro_rules! bytes (
@@ -133,6 +151,9 @@ macro_rules! bytes (
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let inp;
       if $macro_i.1 % 8 != 0 {
         inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
@@ -141,24 +162,44 @@ macro_rules! bytes_impl (
         inp = & $macro_i.0[$macro_i.1 / 8 ..];
       }
 
-      match $submac!(inp, $($args)*) {
-        $crate::IResult::Error(e) => {
+      let sub = $submac!(inp, $($args)*);
+      let res = match sub {
+        Err(Err::Incomplete(Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i * 8)))
+        },
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Ok((i, o)) => {
+          Ok(((i, 0), o))
+        },
+        Err(Err::Error(e)) => {
           let err = match e {
-            $crate::Err::Code(k) | $crate::Err::Node(k, _) => $crate::Err::Code(k),
-            $crate::Err::Position(k, i) | $crate::Err::NodePosition(k, i, _) => {
-              $crate::Err::Position(k, (i, 0))
+            Context::Code(i, c) => Context::Code((i,0), c),
+            Context::List(mut v) => {
+              let (i, c) = v.remove(0);
+              Context::Code((i,0), c)
             }
           };
-          $crate::IResult::Error(err)
-        }
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          $crate::IResult::Incomplete($crate::Needed::Size(i * 8))
+          Err(Err::Error(err))
         },
-        $crate::IResult::Done(i, o) => {
-          $crate::IResult::Done((i, 0), o)
+        Err(Err::Failure(e)) => {
+          let err = match e {
+            Context::Code(i, c) => Context::Code((i,0), c),
+            Context::List(mut v) => {
+              let (i, c) = v.remove(0);
+              Context::Code((i,0), c)
+            }
+          };
+          Err(Err::Error(err))
+        },
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i * 8)))
+        },
+        Ok((i, o)) => {
+          Ok(((i, 0), o))
         }
-      }
+      };
+      res
     }
   );
 );
@@ -170,6 +211,9 @@ macro_rules! bytes_impl (
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed};
+
       let inp;
       if $macro_i.1 % 8 != 0 {
         inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
@@ -178,18 +222,25 @@ macro_rules! bytes_impl (
         inp = & $macro_i.0[$macro_i.1 / 8 ..];
       }
 
-      match $submac!(inp, $($args)*) {
-        $crate::IResult::Error(e) => {
-          $crate::IResult::Error(e)
-        }
-        $crate::IResult::Incomplete($crate::Needed::Unknown) => $crate::IResult::Incomplete($crate::Needed::Unknown),
-        $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
-          $crate::IResult::Incomplete($crate::Needed::Size(i * 8))
+      let sub = $submac!(inp, $($args)*);
+      let res = match sub {
+        Err(Err::Incomplete(Needed::Size(i))) => {
+          Err(Err::Incomplete(Needed::Size(i * 8)))
         },
-        $crate::IResult::Done(i, o) => {
-          $crate::IResult::Done((i, 0), o)
-        }
-      }
+        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+        Ok((i, o)) => {
+          Ok(((i, 0), o))
+        },
+        Err(Err::Error(e)) => {
+          let Context::Code(i, c) = e;
+          Err(Err::Error(Context::Code((i,0), c)))
+        },
+        Err(Err::Failure(e)) => {
+          let Context::Code(i, c) = e;
+          Err(Err::Failure(Context::Code((i,0), c)))
+        },
+      };
+      res
     }
   );
 );
@@ -199,32 +250,34 @@ macro_rules! bytes_impl (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( take_pair<(u8, u8)>, bits!( pair!( take_bits!( u8, 3 ), take_bits!(u8, 5) ) ) );
 ///
 ///  let input = vec![0b10101010, 0b11110000, 0b00110011];
 ///  let sl    = &input[..];
 ///
-///  assert_eq!(take_pair( sl ),       Done(&sl[1..], (5, 10)) );
-///  assert_eq!(take_pair( &sl[1..] ), Done(&sl[2..], (7, 16)) );
+///  assert_eq!(take_pair( sl ),      Ok((&sl[1..], (5, 10))) );
+///  assert_eq!(take_pair( &sl[1..] ),Ok((&sl[2..], (7, 16))) );
 /// # }
 /// ```
 #[macro_export]
 macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Needed,IResult};
+
       use std::ops::Div;
       use std::convert::Into;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
-      let res : $crate::IResult<(&[u8],usize), $t> = if $count == 0 {
-        $crate::IResult::Done( (input, bit_offset), (0 as u8).into())
+      let res : IResult<(&[u8],usize), $t> = if $count == 0 {
+        Ok(( (input, bit_offset), (0 as u8).into()))
       } else {
         let cnt = ($count as usize + bit_offset).div(8);
         if input.len() * 8 < $count as usize + bit_offset {
           //println!("returning incomplete: {}", $count as usize + bit_offset);
-          $crate::IResult::Incomplete($crate::Needed::Size($count as usize))
+          $crate::need_more($i, Needed::Size($count as usize))
         } else {
           let mut acc:$t            = (0 as u8).into();
           let mut offset: usize     = bit_offset;
@@ -251,7 +304,7 @@ macro_rules! take_bits (
               offset = 0;
             }
           }
-          $crate::IResult::Done( (&input[cnt..], end_offset) , acc)
+          Ok(( (&input[cnt..], end_offset) , acc))
         }
       };
       res
@@ -264,18 +317,21 @@ macro_rules! take_bits (
 macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
     {
+      use ::std::result::Result::*;
+      use $crate::{Err,IResult};
+
       match take_bits!($i, $t, $count) {
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i, o)    => {
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Ok((i, o))    => {
           if let $p = o {
-            let res: $crate::IResult<(&[u8],usize),$t> = $crate::IResult::Done(i, o);
+            let res: IResult<(&[u8],usize),$t> = Ok((i, o));
             res
           } else {
-            $crate::IResult::Error(error_position!($crate::ErrorKind::TagBits, $i))
+            Err(Err::Error(error_position!(ErrorKind::TagBits, $i)))
           }
         },
         _                              => {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::TagBits, $i))
+          Err(Err::Error(error_position!(ErrorKind::TagBits, $i)))
         }
       }
     }
@@ -285,29 +341,28 @@ macro_rules! tag_bits (
 #[cfg(test)]
 mod tests {
   use std::ops::{Shr,Shl,AddAssign};
-  use internal::{IResult,Needed};
-  use ErrorKind;
+  use internal::{Err,Needed};
 
   #[test]
   fn take_bits() {
     let input = [0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
 
-    assert_eq!(take_bits!( (sl, 0), u8,   0 ), IResult::Done((sl, 0), 0));
-    assert_eq!(take_bits!( (sl, 0), u8,   8 ), IResult::Done((&sl[1..], 0), 170));
-    assert_eq!(take_bits!( (sl, 0), u8,   3 ), IResult::Done((&sl[0..], 3), 5));
-    assert_eq!(take_bits!( (sl, 0), u8,   6 ), IResult::Done((&sl[0..], 6), 42));
-    assert_eq!(take_bits!( (sl, 1), u8,   1 ), IResult::Done((&sl[0..], 2), 0));
-    assert_eq!(take_bits!( (sl, 1), u8,   2 ), IResult::Done((&sl[0..], 3), 1));
-    assert_eq!(take_bits!( (sl, 1), u8,   3 ), IResult::Done((&sl[0..], 4), 2));
-    assert_eq!(take_bits!( (sl, 6), u8,   3 ), IResult::Done((&sl[1..], 1), 5));
-    assert_eq!(take_bits!( (sl, 0), u16, 10 ), IResult::Done((&sl[1..], 2), 683));
-    assert_eq!(take_bits!( (sl, 0), u16,  8 ), IResult::Done((&sl[1..], 0), 170));
-    assert_eq!(take_bits!( (sl, 6), u16, 10 ), IResult::Done((&sl[2..], 0), 752));
-    assert_eq!(take_bits!( (sl, 6), u16, 11 ), IResult::Done((&sl[2..], 1), 1504));
-    assert_eq!(take_bits!( (sl, 0), u32, 20 ), IResult::Done((&sl[2..], 4), 700163));
-    assert_eq!(take_bits!( (sl, 4), u32, 20 ), IResult::Done((&sl[3..], 0), 716851));
-    assert_eq!(take_bits!( (sl, 4), u32, 22 ), IResult::Incomplete(Needed::Size(22)));
+    assert_eq!(take_bits!( (sl, 0), u8,   0 ), Ok(((sl, 0), 0)));
+    assert_eq!(take_bits!( (sl, 0), u8,   8 ), Ok(((&sl[1..], 0), 170)));
+    assert_eq!(take_bits!( (sl, 0), u8,   3 ), Ok(((&sl[0..], 3), 5)));
+    assert_eq!(take_bits!( (sl, 0), u8,   6 ), Ok(((&sl[0..], 6), 42)));
+    assert_eq!(take_bits!( (sl, 1), u8,   1 ), Ok(((&sl[0..], 2), 0)));
+    assert_eq!(take_bits!( (sl, 1), u8,   2 ), Ok(((&sl[0..], 3), 1)));
+    assert_eq!(take_bits!( (sl, 1), u8,   3 ), Ok(((&sl[0..], 4), 2)));
+    assert_eq!(take_bits!( (sl, 6), u8,   3 ), Ok(((&sl[1..], 1), 5)));
+    assert_eq!(take_bits!( (sl, 0), u16, 10 ), Ok(((&sl[1..], 2), 683)));
+    assert_eq!(take_bits!( (sl, 0), u16,  8 ), Ok(((&sl[1..], 0), 170)));
+    assert_eq!(take_bits!( (sl, 6), u16, 10 ), Ok(((&sl[2..], 0), 752)));
+    assert_eq!(take_bits!( (sl, 6), u16, 11 ), Ok(((&sl[2..], 1), 1504)));
+    assert_eq!(take_bits!( (sl, 0), u32, 20 ), Ok(((&sl[2..], 4), 700163)));
+    assert_eq!(take_bits!( (sl, 4), u32, 20 ), Ok(((&sl[3..], 0), 716851)));
+    assert_eq!(take_bits!( (sl, 4), u32, 22 ), Err(Err::Incomplete(Needed::Size(22))));
   }
 
   #[test]
@@ -315,8 +370,8 @@ mod tests {
     let input = [0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
 
-    assert_eq!(tag_bits!( (sl, 0), u8,   3, 0b101), IResult::Done((&sl[0..], 3), 5));
-    assert_eq!(tag_bits!( (sl, 0), u8,   4, 0b1010), IResult::Done((&sl[0..], 4), 10));
+    assert_eq!(tag_bits!( (sl, 0), u8,   3, 0b101), Ok(((&sl[0..], 3), 5)));
+    assert_eq!(tag_bits!( (sl, 0), u8,   4, 0b1010), Ok(((&sl[0..], 4), 10)));
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
@@ -332,18 +387,18 @@ mod tests {
   fn chain_bits() {
     let input = [0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
-    assert_eq!(ch((&input[..],0)), IResult::Done((&sl[1..], 4), (5,15)));
-    assert_eq!(ch((&input[..],4)), IResult::Done((&sl[2..], 0), (7,16)));
-    assert_eq!(ch((&input[..1],0)), IResult::Incomplete(Needed::Size(12)));
+    assert_eq!(ch((&input[..],0)), Ok(((&sl[1..], 4), (5,15))));
+    assert_eq!(ch((&input[..],4)), Ok(((&sl[2..], 0), (7,16))));
+    assert_eq!(ch((&input[..1],0)), Err(Err::Incomplete(Needed::Size(5))));
   }
 
   named!(ch_bytes<(u8,u8)>, bits!(ch));
   #[test]
   fn bits_to_bytes() {
     let input = [0b10101010, 0b11110000, 0b00110011];
-    assert_eq!(ch_bytes(&input[..]), IResult::Done(&input[2..], (5,15)));
-    assert_eq!(ch_bytes(&input[..1]), IResult::Incomplete(Needed::Size(2)));
-    assert_eq!(ch_bytes(&input[1..]), IResult::Error(error_position!(ErrorKind::TagBits, &input[1..])));
+    assert_eq!(ch_bytes(&input[..]), Ok( (&input[2..], (5,15))) );
+    assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(ch_bytes(&input[1..]), Err(Err::Error(error_position!(ErrorKind::TagBits, &input[1..]))));
   }
 
   #[derive(PartialEq,Debug)]
@@ -387,8 +442,8 @@ mod tests {
     let input = [0b10101010, 0b11110000, 0b00110011];
     let sl    = &input[..];
 
-    assert_eq!(take_bits!( (sl, 0), FakeUint, 20 ), IResult::Done((&sl[2..], 4), FakeUint(700163)));
-    assert_eq!(take_bits!( (sl, 4), FakeUint, 20 ), IResult::Done((&sl[3..], 0), FakeUint(716851)));
-    assert_eq!(take_bits!( (sl, 4), FakeUint, 22 ), IResult::Incomplete(Needed::Size(22)));
+    assert_eq!(take_bits!( (sl, 0), FakeUint, 20 ), Ok( ((&sl[2..], 4), FakeUint(700163))) );
+    assert_eq!(take_bits!( (sl, 4), FakeUint, 20 ), Ok( ((&sl[3..], 0), FakeUint(716851))) );
+    assert_eq!(take_bits!( (sl, 4), FakeUint, 22 ), Err(Err::Incomplete(Needed::Size(22))) );
   }
 }
