@@ -441,12 +441,13 @@ macro_rules! switch (
       use $crate::{Err,Convert};
 
       let i_ = $i.clone();
-      match map!(i_, $submac!($($args)*), |o| Some(o)) {
+      match map!(i_, $submac!($($args)*), Some) {
         Err(Err::Error(e))      => Err(Err::Error(error_node_position!(
             ErrorKind::Switch, $i, e
         ))),
         Err(e) => Err(Err::convert(e)),
         Ok((i, o))    => {
+
           match o {
             $(Some($p) => match $subrule!(i, $($args2)*) {
               Err(Err::Error(e)) => Err(Err::Error(error_node_position!(
