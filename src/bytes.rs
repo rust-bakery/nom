@@ -296,7 +296,6 @@ macro_rules! escaped (
 /// # Example
 /// ```ignore
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::alpha;
 /// # use std::str::from_utf8;
 /// # fn main() {
@@ -456,17 +455,15 @@ macro_rules! take_while (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
-/// # use nom::IResult::Error;
-/// # use nom::ErrorKind;
+/// # use nom::{Err,ErrorKind};
 /// # use nom::is_alphanumeric;
 /// # fn main() {
 ///  named!( alpha, take_while1!( is_alphanumeric ) );
 ///
 ///  let r = alpha(&b"abcd\nefgh"[..]);
-///  assert_eq!(r, Done(&b"\nefgh"[..], &b"abcd"[..]));
+///  assert_eq!(r, Ok((&b"\nefgh"[..], &b"abcd"[..])));
 ///  let r = alpha(&b"\nefgh"[..]);
-///  assert_eq!(r, Error(ErrorKind::TakeWhile1));
+///  assert_eq!(r, Err(Err::Error(error_position!(ErrorKind::TakeWhile1, &b"\nefgh"[..]))));
 /// # }
 /// ```
 #[macro_export]
@@ -641,13 +638,12 @@ macro_rules! take (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(take5( &[u8] ) -> &str, take_str!( 5 ) );
 ///
 ///  let a = b"abcdefgh";
 ///
-///  assert_eq!(take5(&a[..]), Done(&b"fgh"[..], "abcde"));
+///  assert_eq!(take5(&a[..]), Ok((&b"fgh"[..], "abcde")));
 /// # }
 /// ```
 #[macro_export]
@@ -670,11 +666,10 @@ macro_rules! take_str (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(x, take_until_and_consume!("foo"));
 ///  let r = x(&b"abcd foo efgh"[..]);
-///  assert_eq!(r, Done(&b" efgh"[..], &b"abcd "[..]));
+///  assert_eq!(r, Ok((&b" efgh"[..], &b"abcd "[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -716,13 +711,10 @@ macro_rules! take_until_and_consume (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
-/// # use nom::IResult::Error;
-/// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(x, take_until_and_consume!("foo"));
 ///  let r = x(&b"abcd foo efgh"[..]);
-///  assert_eq!(r, Done(&b" efgh"[..], &b"abcd "[..]));
+///  assert_eq!(r, Ok((&b" efgh"[..], &b"abcd "[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -762,11 +754,10 @@ macro_rules! take_until_and_consume1 (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(x, take_until!("foo"));
 ///  let r = x(&b"abcd foo efgh"[..]);
-///  assert_eq!(r, Done(&b"foo efgh"[..], &b"abcd "[..]));
+///  assert_eq!(r, Ok((&b"foo efgh"[..], &b"abcd "[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -808,13 +799,12 @@ macro_rules! take_until (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
-/// # use nom::IResult::Error;
-/// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!(x, take_until1!("foo"));
+///
 ///  let r = x(&b"abcd foo efgh"[..]);
-///  assert_eq!(r, Done(&b"foo efgh"[..], &b"abcd "[..]));
+///
+///  assert_eq!(r, Ok((&b"foo efgh"[..], &b"abcd "[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -829,7 +819,7 @@ macro_rules! take_until1 (
       use $crate::Slice;
 
       let res: IResult<_,_> = if 1+$substr.input_len() > $i.input_len() {
-        need_more(Needed::Size($substr.input_len()))
+        need_more($i, Needed::Size($substr.input_len()))
       } else {
         match ($i).find_substring($substr) {
           None => {
@@ -854,11 +844,10 @@ macro_rules! take_until1 (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(x, take_until_either_and_consume!("012"));
 ///  let r = x(&b"abcd2efgh"[..]);
-///  assert_eq!(r, Done(&b"efgh"[..], &b"abcd"[..]));
+///  assert_eq!(r, Ok((&b"efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -905,11 +894,10 @@ macro_rules! take_until_either_and_consume (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!(x, take_until_either!("012"));
 ///  let r = x(&b"abcd2efgh"[..]);
-///  assert_eq!(r, Done(&b"2efgh"[..], &b"abcd"[..]));
+///  assert_eq!(r, Ok((&b"2efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -953,12 +941,11 @@ macro_rules! take_until_either (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::be_u8;
 /// # fn main() {
 ///  named!(with_length, length_bytes!( be_u8 ));
 ///  let r = with_length(&b"\x05abcdefgh"[..]);
-///  assert_eq!(r, Done(&b"fgh"[..], &b"abcde"[..]));
+///  assert_eq!(r, Ok((&b"fgh"[..], &b"abcde"[..])));
 /// # }
 /// ```
 #[macro_export]
