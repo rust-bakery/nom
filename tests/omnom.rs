@@ -1,5 +1,5 @@
 #![cfg(feature = "stream")]
-
+/*
 #[macro_use]
 extern crate nom;
 
@@ -144,6 +144,7 @@ fn no_nomnom() {
   assert_eq!(c.counter, 0);
   assert_eq!(c.state, State::Done);
 }
+*/
 
 /*
 #[test]

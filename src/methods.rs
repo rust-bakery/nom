@@ -30,7 +30,7 @@
 //! ```ignore
 //! macro_rules! method (
 //!   ($name:ident<$a:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
-//!     fn $name( $self_: $a, i: &[u8] ) -> $crate::IResult<&[u8], &[u8]> {
+//!     fn $name( $self_: $a, i: &[u8] ) -> IResult<&[u8], &[u8]> {
 //!       $submac!(i, $($args)*)
 //!     }
 //!   );
@@ -282,19 +282,20 @@ macro_rules! apply_m (
 
 #[cfg(test)]
 mod tests {
-  use internal::IResult::*;
-
   // reproduce the tag_s and take_s macros, because of module import order
   macro_rules! tag_s (
     ($i:expr, $tag: expr) => (
       {
-        let res: $crate::IResult<_,_> = if $tag.len() > $i.len() {
-          $crate::IResult::Incomplete($crate::Needed::Size($tag.len()))
+        use ::std::result::Result::*;
+        use $crate::{Err,Needed,IResult, need_more};
+
+        let res: IResult<_,_> = if $tag.len() > $i.len() {
+          need_more($i, Needed::Size($tag.len()))
         //} else if &$i[0..$tag.len()] == $tag {
         } else if ($i).starts_with($tag) {
-          $crate::IResult::Done(&$i[$tag.len()..], &$i[0..$tag.len()])
+          Ok((&$i[$tag.len()..], &$i[0..$tag.len()]))
         } else {
-          $crate::IResult::Error(error_position!($crate::ErrorKind::TagStr, $i))
+          Err(Err::Error(error_position!(ErrorKind::TagStr, $i)))
         };
         res
       }
@@ -304,9 +305,12 @@ mod tests {
   macro_rules! take_s (
     ($i:expr, $count:expr) => (
       {
+        use ::std::result::Result::*;
+        use $crate::{Needed,IResult,need_more};
+
         let cnt = $count as usize;
-        let res: $crate::IResult<_,_> = if $i.chars().count() < cnt {
-          $crate::IResult::Incomplete($crate::Needed::Size(cnt))
+        let res: IResult<_,_> = if $i.chars().count() < cnt {
+          need_more($i, Needed::Size(cnt))
         } else {
           let mut offset = $i.len();
           let mut count = 0;
@@ -317,7 +321,7 @@ mod tests {
             }
             count += 1;
           }
-          $crate::IResult::Done(&$i[offset..], &$i[..offset])
+          Ok((&$i[offset..], &$i[..offset]))
         };
         res
       }
@@ -368,7 +372,7 @@ mod tests {
     let leftover: &str = "δèƒϱλïJƙ";
     let(_, res) = p.tag_abc(input);
     match res {
-      Done(extra, output) => { assert!(extra == leftover, "`Parser.tag_abc` consumed leftover input. leftover: {}", extra);
+     Ok((extra, output)) => { assert!(extra == leftover, "`Parser.tag_abc` consumed leftover input. leftover: {}", extra);
                                assert!(output == consumed, "`Parser.tag_abc` doesnt return the string it consumed \
                                 on success. Expected `{}`, got `{}`.", consumed, output);
                              },
@@ -385,7 +389,7 @@ mod tests {
     let leftover: &str = "èƒϱλïJƙ";
     let(_, res) = p.tag_bcd(input);
     match res {
-      Done(extra, output) => { assert!(extra == leftover, "`Parser.tag_bcd` consumed leftover input. leftover: {}", extra);
+     Ok((extra, output)) => { assert!(extra == leftover, "`Parser.tag_bcd` consumed leftover input. leftover: {}", extra);
                                assert!(output == consumed, "`Parser.tag_bcd` doesn't return the string it consumed \
                                 on success. Expected `{}`, got `{}`.", consumed, output);
                              },
@@ -402,7 +406,7 @@ mod tests {
     let leftover: &str = "ƙℓ₥ñôƥ9řƨ";
     let(_, res) = p.tag_hij(input);
     match res {
-      Done(extra, output) => { assert!(extra == leftover, "`Parser.tag_hij` consumed leftover input. leftover: {}", extra);
+     Ok((extra, output)) => { assert!(extra == leftover, "`Parser.tag_hij` consumed leftover input. leftover: {}", extra);
                                assert!(output == consumed, "`Parser.tag_hij` doesn't return the string it consumed \
                                 on success. Expected `{}`, got `{}`.", consumed, output);
                              },
@@ -419,7 +423,7 @@ mod tests {
     let leftover: &str = "ℓ₥ñôƥ9řƨ";
     let(_, res) = p.tag_ijk(input);
     match res {
-      Done(extra, output) => { assert!(extra == leftover, "`Parser.tag_ijk` consumed leftover input. leftover: {}", extra);
+     Ok((extra, output)) => { assert!(extra == leftover, "`Parser.tag_ijk` consumed leftover input. leftover: {}", extra);
                                assert!(output == consumed, "`Parser.tag_ijk` doesn't return the string it consumed \
                                 on success. Expected `{}`, got `{}`.", consumed, output);
                              },
@@ -435,7 +439,7 @@ mod tests {
     let leftover: &str = "δèƒϱλïJƙ";
     let(_, res) = p.simple_call(input);
     match res {
-      Done(extra, output) => { assert!(extra == leftover, "`Parser.simple_call` consumed leftover input. leftover: {}", extra);
+     Ok((extra, output)) => { assert!(extra == leftover, "`Parser.simple_call` consumed leftover input. leftover: {}", extra);
                                assert!(output == consumed, "`Parser.simple_call` doesn't return the string it consumed \
                                 on success. Expected `{}`, got `{}`.", consumed, output);
                              },
@@ -453,7 +457,7 @@ mod tests {
     let(tmp, res) = p.use_apply(input);
     p = tmp;
     match res {
-      Done(extra, output) => { assert!(extra == leftover, "`Parser.use_apply` consumed leftover input. leftover: {}", extra);
+     Ok((extra, output)) => { assert!(extra == leftover, "`Parser.use_apply` consumed leftover input. leftover: {}", extra);
                                assert!(output == consumed, "`Parser.use_apply` doesn't return the string it was supposed to \
                                 on success. Expected `{}`, got `{}`.", leftover, output);
                                assert!(p.bcd == "βçδ", "Parser.use_apply didn't modify the parser field correctly: {}", p.bcd);
@@ -470,7 +474,7 @@ mod tests {
     let consumed: &str = "ж¥ƺ";
     let(_, res) = p.simple_peek(input);
     match res {
-      Done(extra, output) => { assert!(extra == input, "`Parser.simple_peek` consumed leftover input. leftover: {}", extra);
+     Ok((extra, output)) => { assert!(extra == input, "`Parser.simple_peek` consumed leftover input. leftover: {}", extra);
                                assert!(output == consumed, "`Parser.simple_peek` doesn't return the string it consumed \
                                 on success. Expected `{}`, got `{}`.", consumed, output);
                              },
@@ -488,7 +492,7 @@ mod tests {
     let(tmp, res) = p.simple_chain(input);
     p = tmp;
     match res {
-      Done(extra, out) => { assert!(extra == leftover, "`Parser.simple_chain` consumed leftover input. leftover: {}", extra);
+     Ok((extra, out)) => { assert!(extra == leftover, "`Parser.simple_chain` consumed leftover input. leftover: {}", extra);
                                assert!(out == output, "`Parser.simple_chain` doesn't return the string it was supposed to \
                                 on success. Expected `{}`, got `{}`.", output, out);
                                assert!(p.bcd == "βçδ", "Parser.simple_chain didn't modify the parser field correctly: {}", p.bcd);

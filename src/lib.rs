@@ -38,23 +38,27 @@
 //!
 //! ```
 //! # #[macro_use] extern crate nom;
-//! # use nom::{Err,Needed};
+//! # use nom::{Context,Needed};
 //! # fn main() {}
-//! pub enum IResult<I,O,E=u32> {
-//!   Done(I,O),
-//!   Error(Err<E>), // indicates the parser encountered an error. E is a custom error type you can redefine
-//!   /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
-//!   Incomplete(Needed) // if the parser did not have enough data to decide
+//! pub type IResult<I,O,E=u32> = Result<(I,O), Err<I,E>>;
+//!
+//! pub enum Err<I,E=u32> {
+//!   Incomplete(Needed),
+//!   Error(Context<I,E>),
+//!   Failure(Context<I,E>),
 //! }
 //! ```
 //!
 //! What it means:
 //!
-//! * `Done(i,o)` means the parser was successful. `i` is the remaining part of the input (called *remainder*), `o` is the correctly parsed value
+//! * `Ok((i,o))` means the parser was successful. `i` is the remaining part of the input (called *remainder*), `o` is the correctly parsed value
 //! The remaining part can then be used as input for other parsers called in a sequence
-//! * `Error(e)` indicates the parser encountered an error. The `Err<E>` type is an enum of possible parser errors,
+//! * `Err(Err::Error(e))` indicates the parser encountered an error. The `Context<I,E>` type is an enum of possible parser errors,
 //! that can also contain a custom error that you'd specify, by redefining the `E` error type
-//! * `Incomplete(i)` means the parser did not have enough information to decide, and tells you, if possible,
+//! * `Err(Err::Failure(e))` indicates the parser encountered an error that we cannot recover from (to prevent `alt` and other
+//! combinators from trying alternatives. The `Context<I,E>` type is an enum of possible parser errors, that can also contain
+//! a custom error that you'd specify, by redefining the `E` error type
+//! * `Err(Err::Incomplete(i))` means the parser did not have enough information to decide, and tells you, if possible,
 //! how much data it needs
 //!
 //! That way, you could write your own parser that recognizes the letter 'a' like this:
@@ -67,13 +71,13 @@
 //! fn a(input: &[u8]) -> IResult<&[u8], char> {
 //!  // if there is not enough data, we return Ìncomplete
 //!  if input.len() == 0 {
-//!    IResult::Incomplete(Needed::Size(1))
+//!    Err(Err::Incomplete(Needed::Size(1)))
 //!  } else {
 //!    if input[0] == 'a' as u8 {
 //!      // the first part of the returned value is the remaining slice
-//!      IResult::Done(&input[1..], 'a')
+//!      Ok((&input[1..], 'a'))
 //!    } else {
-//!      IResult::Error(error_code!(ErrorKind::Custom(42)))
+//!      Err(Err::Error(error_position!(ErrorKind::Custom(42), input)))
 //!    }
 //!  }
 //! }
@@ -91,7 +95,7 @@
 //! named!(hello, preceded!(tag!("Hello "), alpha));
 //! # use nom::IResult;
 //! # fn main() {
-//! #  assert_eq!(hello(b"Hello nom."), IResult::Done(&b"."[..], &b"nom"[..]));
+//! #  assert_eq!(hello(b"Hello nom."), Ok((&b"."[..], &b"nom"[..])));
 //! # }
 //! ```
 //!
@@ -109,7 +113,7 @@
 //!     tag!("Hello "), alpha)
 //! }
 //! # fn main() {
-//! #  assert_eq!(hello(b"Hello nom."), IResult::Done(&b"."[..], &b"nom"[..]));
+//! #  assert_eq!(hello(b"Hello nom."), Ok((&b"."[..], &b"nom"[..])));
 //! # }
 //! ```
 //!
@@ -178,8 +182,8 @@
 //! * **cond!**: conditional combinator
 //! * **cond_reduce!**: Conditional combinator with error
 //! * **cond_with_error!**: Conditional combinator
-//! * **expr_opt!**: evaluates an expression that returns a Option and returns a IResult::Done(I,T) if Some
-//! * **expr_res!**: evaluates an expression that returns a Result and returns a IResult::Done(I,T) if Ok
+//! * **expr_opt!**: evaluates an expression that returns a Option and returns a Ok((I,T)) if Some
+//! * **expr_res!**: evaluates an expression that returns a Result and returns a Ok((I,T)) if Ok
 //! * **flat_map!**:
 //! * **map!**: maps a function on the result of a parser
 //! * **map_opt!**: maps a function returning an Option on the output of a parser
@@ -275,7 +279,7 @@
 //! * **named!**: Makes a function from a parser combination
 //! * **named_args!**: Makes a function from a parser combination with arguments.
 //! * **named_attr!**: Makes a function from a parser combination, with attributes
-//! * **try_parse!**: A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Done, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
+//! * **try_parse!**: A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Ok, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
 //!
 //! ## Character test functions
 //!
@@ -379,23 +383,26 @@
 //! );
 //!
 //! fn main() {
-//!   assert_eq!(expr(b"1+2"),         IResult::Done(&b""[..], 3));
-//!   assert_eq!(expr(b"12+6-4+3"),    IResult::Done(&b""[..], 17));
-//!   assert_eq!(expr(b"1+2*3+4"),     IResult::Done(&b""[..], 11));
+//!   assert_eq!(expr(b"1+2"),         Ok((&b""[..], 3)));
+//!   assert_eq!(expr(b"12+6-4+3"),    Ok((&b""[..], 17)));
+//!   assert_eq!(expr(b"1+2*3+4"),     Ok((&b""[..], 11)));
 //!
-//!   assert_eq!(expr(b"(2)"),         IResult::Done(&b""[..], 2));
-//!   assert_eq!(expr(b"2*(3+4)"),     IResult::Done(&b""[..], 14));
-//!   assert_eq!(expr(b"2*2/(5-1)+3"), IResult::Done(&b""[..], 4));
+//!   assert_eq!(expr(b"(2)"),         Ok((&b""[..], 2)));
+//!   assert_eq!(expr(b"2*(3+4)"),     Ok((&b""[..], 14)));
+//!   assert_eq!(expr(b"2*2/(5-1)+3"), Ok((&b""[..], 4)));
 //! }
 //! ```
-#![cfg_attr(not(feature = "std"), feature(collections, alloc))]
+#![cfg_attr(not(feature = "std"), feature(no_std))]
+#![cfg_attr(not(feature = "std"), feature(alloc))]
+#![cfg_attr(not(feature = "std"), feature(collections))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(feature = "nightly", feature(const_fn))]
 #![cfg_attr(feature = "nightly", feature(plugin))]
-#![cfg_attr(feature = "nightly", plugin(compiler_error))]
 //#![warn(missing_docs)]
 
+#[cfg(not(feature = "std"))]
+extern crate alloc;
 #[cfg(not(feature = "std"))]
 extern crate collections;
 #[cfg(not(feature = "std"))]
@@ -408,23 +415,15 @@ extern crate memchr;
 #[cfg(feature = "nightly")]
 extern crate test;
 
-#[cfg(not(feature = "nightly"))]
-#[allow(unused_macros)]
-#[macro_export]
-macro_rules! compiler_error {
-    ($e:expr) => {
-      INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/master/doc/FAQ.md#using-nightly-to-get-better-error-messages
-    }
-}
-
 #[cfg(not(feature = "std"))]
 mod std {
-    pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
-    pub use alloc::boxed;
-    pub use collections::{vec, string};
-    pub mod prelude {
-        pub use core::prelude as v1;
-    }
+#[macro_use]
+  pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
+  pub use alloc::boxed;
+  pub use collections::{vec, string};
+  pub mod prelude {
+    pub use core::prelude as v1;
+  }
 }
 
 pub use self::util::*;
@@ -442,6 +441,7 @@ pub use self::branch::*;
 pub use self::sequence::*;
 pub use self::multi::*;
 pub use self::methods::*;
+
 pub use self::bytes::*;
 pub use self::bits::*;
 
@@ -452,11 +452,6 @@ pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
 pub use self::regexp::*;
-
-#[cfg(feature = "std")]
-#[cfg(feature = "stream")]
-pub use self::stream::*;
-
 pub use self::str::*;
 
 #[macro_use] mod util;
@@ -472,6 +467,7 @@ mod traits;
 #[macro_use] mod sequence;
 #[macro_use] mod multi;
 #[macro_use] pub mod methods;
+
 #[macro_use] mod bytes;
 #[macro_use] pub mod bits;
 
@@ -484,9 +480,6 @@ pub mod whitespace;
 #[cfg(feature = "regexp")]
 #[macro_use] mod regexp;
 
-#[macro_use]
-#[cfg(feature = "std")]
-#[cfg(feature = "stream")]
-mod stream;
-
 mod str;
+
+pub mod types;

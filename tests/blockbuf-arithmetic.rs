@@ -193,7 +193,7 @@ macro_rules! block_eat_separator (
     {
       use nom::{InputLength,InputIter,Slice};
       if ($i).input_len() == 0 {
-        nom::IResult::Done($i, ($i).slice(0..0))
+        Ok(($i, ($i).slice(0..0)))
       } else {
         match ($i).iter_indices().position(|(_, item)| {
           for (_,c) in ($arr).iter_indices() {
@@ -202,10 +202,10 @@ macro_rules! block_eat_separator (
           true
         }) {
           Some(index) => {
-            nom::IResult::Done(($i).slice(index..), ($i).slice(..index))
+            Ok((($i).slice(index..), ($i).slice(..index)))
           },
           None => {
-            nom::IResult::Done(($i).slice(($i).input_len()..), $i)
+            Ok((($i).slice(($i).input_len()..), $i))
           }
         }
       }
