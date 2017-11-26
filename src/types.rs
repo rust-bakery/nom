@@ -95,6 +95,12 @@ impl<'a, R:FromStr> ParseTo<R> for CompleteStr<'a> {
   }
 }
 
+impl<'a> Offset for CompleteStr<'a> {
+  fn offset(&self, second:&CompleteStr<'a>) -> usize {
+    self.0.offset(second.0)
+  }
+}
+
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
 
@@ -198,3 +204,8 @@ impl<'a, R:FromStr> ParseTo<R> for CompleteByteSlice<'a> {
   }
 }
 
+impl<'a> Offset for CompleteByteSlice<'a> {
+  fn offset(&self, second:&CompleteByteSlice<'a>) -> usize {
+    self.0.offset(second.0)
+  }
+}
