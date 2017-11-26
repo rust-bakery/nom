@@ -7,6 +7,7 @@
 ///
 /// consumes the recognized characters
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
@@ -46,6 +47,7 @@ macro_rules! tag (
 ///
 /// consumes the recognized characters
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
@@ -85,6 +87,7 @@ macro_rules! tag_no_case (
 /// `is_not!(&[T:AsBytes]) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes that do not appear in the provided array
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
@@ -130,6 +133,7 @@ macro_rules! is_not(
 /// `is_a!(&[T]) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes that appear in the provided array
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
@@ -181,6 +185,7 @@ macro_rules! is_a (
 /// The first argument matches the normal characters (it must not accept the control character), the second argument is the control character (like `\` in most languages),
 /// the third argument matches the escaped characters
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::alpha;
@@ -288,6 +293,7 @@ macro_rules! escaped (
 /// WARNING: if you do not use the `verbose-errors` feature, this combinator will currently fail to build
 /// because of a type inference error
 ///
+/// # Example
 /// ```ignore
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult::Done;
@@ -404,6 +410,7 @@ macro_rules! escaped_transform (
 ///
 /// The argument is either a function `T -> bool` or a macro returning a `bool`.
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::is_alphanumeric;
@@ -444,7 +451,24 @@ macro_rules! take_while (
 /// `take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest (non empty) list of bytes until the provided function fails.
 ///
-/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::IResult::Error;
+/// # use nom::ErrorKind;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
+///  named!( alpha, take_while1!( is_alphanumeric ) );
+///
+///  let r = alpha(&b"abcd\nefgh"[..]);
+///  assert_eq!(r, Done(&b"\nefgh"[..], &b"abcd"[..]));
+///  let r = alpha(&b"\nefgh"[..]);
+///  assert_eq!(r, Error(ErrorKind::TakeWhile1));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -486,6 +510,7 @@ macro_rules! take_while1 (
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
@@ -525,6 +550,7 @@ macro_rules! take_till (
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err,ErrorKind};
@@ -573,6 +599,7 @@ macro_rules! take_till1 (
 /// `take!(nb) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming the specified number of bytes
 ///
+/// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
@@ -610,6 +637,19 @@ macro_rules! take (
 
 /// `take_str!(nb) => &[T] -> IResult<&[T], &str>`
 /// same as take! but returning a &str
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(take5( &[u8] ) -> &str, take_str!( 5 ) );
+///
+///  let a = b"abcdefgh";
+///
+///  assert_eq!(take5(&a[..]), Done(&b"fgh"[..], "abcde"));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_str (
  ( $i:expr, $size:expr ) => (
@@ -623,6 +663,17 @@ macro_rules! take_str (
 
 /// `take_until_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming bytes until the specified byte sequence is found, and consumes it
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(x, take_until_and_consume!("foo"));
+///  let r = x(&b"abcd foo efgh"[..]);
+///  assert_eq!(r, Done(&b" efgh"[..], &b"abcd "[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_until_and_consume (
   ($i:expr, $substr:expr) => (
@@ -655,6 +706,19 @@ macro_rules! take_until_and_consume (
 
 /// `take_until_and_consume1!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// generates a parser consuming bytes (at least 1) until the specified byte sequence is found, and consumes it
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::IResult::Error;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(x, take_until_and_consume!("foo"));
+///  let r = x(&b"abcd foo efgh"[..]);
+///  assert_eq!(r, Done(&b" efgh"[..], &b"abcd "[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_until_and_consume1 (
   ($i:expr, $substr:expr) => (
@@ -685,6 +749,17 @@ macro_rules! take_until_and_consume1 (
 
 /// `take_until!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// consumes data until it finds the specified tag
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(x, take_until!("foo"));
+///  let r = x(&b"abcd foo efgh"[..]);
+///  assert_eq!(r, Done(&b"foo efgh"[..], &b"abcd "[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_until (
   ($i:expr, $substr:expr) => (
@@ -716,7 +791,20 @@ macro_rules! take_until (
 );
 
 /// `take_until1!(tag) => &[T] -> IResult<&[T], &[T]>`
-/// consumes data until it finds the specified tag
+/// consumes data (at least one byte) until it finds the specified tag
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::IResult::Error;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(x, take_until1!("foo"));
+///  let r = x(&b"abcd foo efgh"[..]);
+///  assert_eq!(r, Done(&b"foo efgh"[..], &b"abcd "[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_until1 (
   ($i:expr, $substr:expr) => (
@@ -747,6 +835,17 @@ macro_rules! take_until1 (
 
 /// `take_until_either_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
 /// consumes data until it finds any of the specified characters, and consume it
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(x, take_until_either_and_consume!("012"));
+///  let r = x(&b"abcd2efgh"[..]);
+///  assert_eq!(r, Done(&b"efgh"[..], &b"abcd"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_until_either_and_consume (
   ($input:expr, $arr:expr) => (
@@ -782,6 +881,18 @@ macro_rules! take_until_either_and_consume (
 );
 
 /// `take_until_either!(tag) => &[T] -> IResult<&[T], &[T]>`
+/// consumes data until it finds any of the specified characters
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!(x, take_until_either!("012"));
+///  let r = x(&b"abcd2efgh"[..]);
+///  assert_eq!(r, Done(&b"2efgh"[..], &b"abcd"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_until_either (
   ($input:expr, $arr:expr) => (
@@ -819,6 +930,18 @@ macro_rules! take_until_either (
 /// `length_bytes!(&[T] -> IResult<&[T], nb>) => &[T] -> IResult<&[T], &[T]>`
 /// Gets a number from the first parser, then extracts that many bytes from the
 /// remaining stream
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # use nom::be_u8;
+/// # fn main() {
+///  named!(with_length, length_bytes!( be_u8 ));
+///  let r = with_length(&b"\x05abcdefgh"[..]);
+///  assert_eq!(r, Done(&b"fgh"[..], &b"abcde"[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! length_bytes(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
