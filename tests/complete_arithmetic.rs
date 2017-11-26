@@ -59,6 +59,10 @@ complete_named!(expr <i64>, do_parse!(
   )
 );
 
+complete_named!(root_expr<i64>,
+  terminated!(expr, eof!())
+);
+
 
 fn to_i64<'a>(input: CompleteStr<'a>) -> Result<i64, ()> {
   match FromStr::from_str(input.0) {
@@ -82,5 +86,5 @@ fn parens_test() {
   assert_eq!(expr(input2), Ok((CompleteStr(""), 4)));
 
   let input3 = CompleteStr("  2*2 / ( 5 - 1) +   ");
-  assert_eq!(expr(input3), Err(nom::Err::Failure(error_position!(ErrorKind::Eof, CompleteStr("")))));
+  assert_eq!(root_expr(input3), Err(nom::Err::Error(error_position!(ErrorKind::Eof, CompleteStr("+   ")))));
 }

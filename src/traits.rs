@@ -582,7 +582,7 @@ pub trait AtEof {
 
 pub fn need_more<I: AtEof, O, E>(input: I, needed: Needed) -> IResult<I, O, E> {
   if input.at_eof() {
-    Err(Err::Failure(Context::Code(input, ErrorKind::Eof)))
+    Err(Err::Error(Context::Code(input, ErrorKind::Eof)))
   } else {
     Err(Err::Incomplete(needed))
   }
