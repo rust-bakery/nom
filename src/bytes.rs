@@ -488,14 +488,13 @@ macro_rules! take_while1 (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
-///  named!( till_colon, take_till!(|ch| ch == b":"[0]) );
+///  named!( till_colon, take_till!(|ch| ch == b':') );
 ///
 ///  let r = till_colon(&b"abcd:efgh"[..]);
-///  assert_eq!(r, Done(&b":efgh"[..], &b"abcd"[..]));
+///  assert_eq!(r, Ok((&b":efgh"[..], &b"abcd"[..])));
 ///  let r2 = till_colon(&b":abcdefgh"[..]); // empty match is allowed
-///  assert_eq!(r2, Done(&b":abcdefgh"[..], &b""[..]));
+///  assert_eq!(r2, Ok((&b":abcdefgh"[..], &b""[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -528,14 +527,15 @@ macro_rules! take_till (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::{Done, Error};
+/// # use nom::{Err,ErrorKind};
 /// # fn main() {
-///  named!( till1_colon, take_till1!(|ch| ch == b":"[0]) );
+///  named!( till1_colon, take_till1!(|ch| ch == b':') );
 ///
 ///  let r = till1_colon(&b"abcd:efgh"[..]);
-///  assert_eq!(r, Done(&b":efgh"[..], &b"abcd"[..]));
+///  assert_eq!(r, Ok((&b":efgh"[..], &b"abcd"[..])));
+///
 ///  let r2 = till1_colon(&b":abcdefgh"[..]); // empty match is error
-///  assert_eq!(r2, Error(nom::ErrorKind::TakeTill1));
+///  assert_eq!(r2, Err(Err::Error(error_position!(ErrorKind::TakeTill1, &b":abcdefgh"[..]))));
 /// # }
 /// ```
 #[macro_export]
