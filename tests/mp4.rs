@@ -4,25 +4,24 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{HexDisplay,Offset,Needed,IResult,be_u16,be_u32,be_u64,be_f32,ErrorKind};
-use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer,FileProducerState};
-use nom::IResult::*;
+use nom::{Needed,IResult,be_u16,be_u32,be_u64,be_f32};
+//use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer,FileProducerState};
+//use nom::IResult;
+use nom::Err;
 
 use std::str;
-use std::io::SeekFrom;
 
 fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
   match be_u32(input) {
-    Done(i, offset) => {
+    Ok((i, offset)) => {
       let sz: usize = offset as usize;
       if i.len() >= sz - 4 {
-        Done(&i[(sz-4)..], &i[0..(sz-4)])
+        Ok((&i[(sz-4)..], &i[0..(sz-4)]))
       } else {
-        Incomplete(Needed::Size(offset as usize + 4))
+        Err(Err::Incomplete(Needed::Size(offset as usize + 4)))
       }
     }
-    Error(e)      => Error(e),
-    Incomplete(e) => Incomplete(e)
+    Err(e) => Err(e)
   }
 }
 
@@ -253,20 +252,20 @@ named!(filetype_parser<&[u8], FileType>,
 
 fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   let res = if input.len() < 100 {
-    Incomplete(Needed::Size(100))
+    Err(Err::Incomplete(Needed::Size(100)))
   } else if input.len() == 100 {
     mvhd32(input)
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Error(error_position!(ErrorKind::Custom(32),input))
+    Err(Err::Error(error_position!(ErrorKind::Custom(32),input)))
   };
   println!("res: {:?}", res);
   res
 }
 
 fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
-  Done(input, MP4BoxType::Unknown)
+  Ok((input, MP4BoxType::Unknown))
 }
 
 //named!(box_type<&[u8], MP4BoxType>,
@@ -315,6 +314,7 @@ named!(moov_header<&[u8],MP4BoxHeader>,
   )
 );
 
+/*
 #[derive(Debug,PartialEq,Eq)]
 enum MP4State {
   Main,
@@ -340,22 +340,22 @@ impl MP4Consumer {
       Input::Empty     => ConsumerState::Continue(Move::Consume(0)),
       Input::Element(sl) |  Input::Eof(Some(sl)) => {
         match box_header(sl) {
-          Done(i, header) => {
+          Ok((i, header)) => {
             match header.tag {
               MP4BoxType::Ftyp    => {
                 println!("-> FTYP");
                 match filetype_parser(&i[0..(header.length as usize - 8)]) {
-                  Done(rest, filetype_header) => {
+                  Ok((rest, filetype_header)) => {
                     println!("filetype header: {:?}", filetype_header);
                     //return ConsumerState::Await(header.length as usize, header.length as usize - 8);
                     return ConsumerState::Continue(Move::Consume(sl.offset(rest)));
                   }
-                  Error(a) => {
+                  Err(Err::Error(a)) => {
                     println!("ftyp parsing error: {:?}", a);
                     assert!(false);
                     return ConsumerState::Error(());
                   },
-                  Incomplete(n) => {
+                  Err(Err::Incomplete(n)) => {
                     println!("ftyp incomplete -> await: {}", sl.len());
                     return ConsumerState::Continue(Move::Await(n));
                     //return ConsumerState::Await(0, input.len() + 100);
@@ -381,12 +381,12 @@ impl MP4Consumer {
             }
             return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length) as i64)))
           },
-          Error(a) => {
+          Err(Err::Error(a)) => {
             println!("mp4 parsing error: {:?}", a);
             assert!(false);
             return ConsumerState::Error(());
           },
-          Incomplete(i) => {
+          Err(Err::Incomplete(i)) => {
             // FIXME: incomplete should send the required size
             println!("mp4 incomplete -> await: {}", sl.len());
             return ConsumerState::Continue(Move::Await(i));
@@ -408,7 +408,7 @@ impl MP4Consumer {
           return ConsumerState::Continue(Move::Consume(0));
         }
         match moov_header(sl) {
-          Done(i, header) => {
+          Ok((i, header)) => {
             match header.tag {
               MP4BoxType::Mvhd    => {
                 println!("-> MVHD");
@@ -435,13 +435,13 @@ impl MP4Consumer {
             println!("remaining moov_bytes: {}", self.moov_bytes);
             return ConsumerState::Continue(Move::Seek(SeekFrom::Current((header.length) as i64)))
           },
-          Error(a) => {
+          Err(Err::Error(a)) => {
             println!("moov parsing error: {:?}", a);
             println!("data:\n{}", sl.to_hex(8));
             assert!(false);
             return ConsumerState::Error(());
           },
-          Incomplete(i) => {
+          Err(Err::Incomplete(i)) => {
             println!("moov incomplete -> await: {}", sl.len());
             return ConsumerState::Continue(Move::Await(i));
           }
@@ -523,6 +523,6 @@ fn small_test() {
 fn big_bunny_test() {
   explore_mp4_file("assets/bigbuckbunny.mp4");
 }
-
+*/
 
 

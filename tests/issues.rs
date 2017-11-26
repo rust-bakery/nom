@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,Needed,space,be_u16,le_u64};
+use nom::{Err,IResult,Needed,space,be_u16,le_u64};
 
 #[allow(dead_code)]
 struct Range {
@@ -14,9 +14,9 @@ struct Range {
 
 pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
   if input.len() > 0 {
-    IResult::Done(&input[1..], input[0] as char)
+    Ok((&input[1..], input[0] as char))
   } else {
-    IResult::Incomplete(Needed::Size(1))
+    Err(Err::Incomplete(Needed::Size(1)))
   }
 }
 
@@ -95,18 +95,18 @@ mod parse_int {
   #[test]
   fn issue_142(){
      let subject = parse_ints(&b"12 34 5689"[..]);
-     let expected = IResult::Done(&b""[..], vec![12, 34, 5689]);
+     let expected = Ok((&b""[..], vec![12, 34, 5689]));
      assert_eq!(subject, expected);
 
      let subject = parse_ints(&b"12 34 5689 "[..]);
-     let expected = IResult::Done(&b" "[..], vec![12, 34, 5689]);
+     let expected = Ok((&b" "[..], vec![12, 34, 5689]));
      assert_eq!(subject, expected)
   }
 }
 
 #[test]
 fn usize_length_bytes_issue(){
-  length_bytes!(b"012346", be_u16);
+  let _: IResult<&[u8],&[u8], u32> = length_bytes!(b"012346", be_u16);
 }
 
 /*
@@ -133,8 +133,8 @@ fn take_till_issue() {
         take_till!(call!(|_| true))
     );
 
-    assert_eq!(nothing(b""), IResult::Done(&b""[..], &b""[..]));
-    assert_eq!(nothing(b"abc"), IResult::Done(&b"abc"[..], &b""[..]));
+    assert_eq!(nothing(b""), Ok((&b""[..], &b""[..])));
+    assert_eq!(nothing(b"abc"), Ok((&b"abc"[..], &b""[..])));
 }
 
 named!(issue_498< Vec<&[u8]> >, separated_nonempty_list!( opt!(space), tag!("abcd") ));
