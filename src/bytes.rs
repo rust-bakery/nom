@@ -485,6 +485,19 @@ macro_rules! take_while1 (
 /// returns the longest list of bytes until the provided function succeeds
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::Done;
+/// # fn main() {
+///  named!( till_colon, take_till!(|ch| ch == b":"[0]) );
+///
+///  let r = till_colon(&b"abcd:efgh"[..]);
+///  assert_eq!(r, Done(&b":efgh"[..], &b"abcd"[..]));
+///  let r2 = till_colon(&b":abcdefgh"[..]); // empty match is allowed
+///  assert_eq!(r2, Done(&b":abcdefgh"[..], &b""[..]));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -512,6 +525,19 @@ macro_rules! take_till (
 /// returns the longest non empty list of bytes until the provided function succeeds
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Error};
+/// # fn main() {
+///  named!( till1_colon, take_till1!(|ch| ch == b":"[0]) );
+///
+///  let r = till1_colon(&b"abcd:efgh"[..]);
+///  assert_eq!(r, Done(&b":efgh"[..], &b"abcd"[..]));
+///  let r2 = till1_colon(&b":abcdefgh"[..]); // empty match is error
+///  assert_eq!(r2, Error(nom::ErrorKind::TakeTill1));
+/// # }
+/// ```
 #[macro_export]
 macro_rules! take_till1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
