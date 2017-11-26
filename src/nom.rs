@@ -1057,14 +1057,14 @@ mod tests {
   fn rest_on_slices() {
     let input: &[u8] = &b"Hello, world!"[..];
     let empty: &[u8] = &b""[..];
-    assert_eq!(rest(input), Done(empty, input));
+    assert_eq!(rest(input), Ok((empty, input)));
   }
 
   #[test]
   fn rest_on_strs() {
     let input: &str = "Hello, world!";
     let empty: &str = "";
-    assert_eq!(rest(input), Done(empty, input));
+    assert_eq!(rest(input), Ok((empty, input)));
   }
 
   #[test]
