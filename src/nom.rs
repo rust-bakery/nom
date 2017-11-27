@@ -146,7 +146,7 @@ pub fn is_alphanumeric(chr: u8) -> bool {
 /// Tests if byte is ASCII space or tab
 #[inline]
 pub fn is_space(chr:u8) -> bool {
-  chr == ' ' as u8 || chr == '\t' as u8
+  chr == b' ' || chr == b'\t'
 }
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export

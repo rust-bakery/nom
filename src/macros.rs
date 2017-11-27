@@ -1406,7 +1406,7 @@ mod tests {
 
   #[test]
   fn verify() {
-    named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == 'a' as u8));
+    named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == b'a'));
     assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
     assert_eq!(test(&b"bcdefg"[..]), Err(Err::Error(error_position!(ErrorKind::Verify, &b"bcdefg"[..]))));
     assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));

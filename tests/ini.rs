@@ -9,7 +9,7 @@ use std::collections::HashMap;
 named!(category<&str>, map_res!(
     delimited!(
       char!('['),
-      take_while!(call!(|c| c != ']' as u8)),
+      take_while!(call!(|c| c != b']')),
       char!(']')
     ),
     str::from_utf8
@@ -22,10 +22,10 @@ named!(key_value    <&[u8],(&str,&str)>,
   >>      char!('=')
   >>      opt!(space)
   >> val: map_res!(
-           take_while!(call!(|c| c != '\n' as u8 && c != ';' as u8)),
+           take_while!(call!(|c| c != b'\n' && c != b';')),
            str::from_utf8
          )
-  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != '\n' as u8))))
+  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != b'\n'))))
   >>      (key, val)
   )
 );
