@@ -221,7 +221,7 @@ impl<'a> InputIter for &'a [u8] {
     }
     #[inline]
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
-      self.iter().position(|b| predicate(*b))
+      self.iter().cloned().position(predicate)
     }
     #[inline]
     fn slice_index(&self, count:usize) -> Option<usize> {
