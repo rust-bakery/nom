@@ -296,13 +296,13 @@
 //!
 //! * **alpha**: Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 //! * **alphanumeric**: Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
-//! * **anychar**: 
-//! * **begin**: 
-//! * **crlf**: 
+//! * **anychar**:
+//! * **begin**:
+//! * **crlf**:
 //! * **digit**: Recognizes one or more numerical characters: 0-9
 //! * **double**: Recognizes floating point number in a byte string and returns a f64
 //! * **double_s**: Recognizes floating point number in a string and returns a f64
-//! * **eol**: 
+//! * **eol**:
 //! * **float**: Recognizes floating point number in a byte string and returns a f32
 //! * **float_s**: Recognizes floating point number in a string and returns a f32
 //! * **hex_digit**: Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
@@ -311,15 +311,15 @@
 //! * **multispace**: Recognizes one or more spaces, tabs, carriage returns and line feeds
 //! * **newline**: Matches a newline character '\n'
 //! * **non_empty**: Recognizes non empty buffers
-//! * **not_line_ending**: 
+//! * **not_line_ending**:
 //! * **oct_digit**: Recognizes one or more octal characters: 0-7
 //! * **rest**: Return the remaining input.
 //! * **rest_s**: Return the remaining input, for strings.
-//! * **shift**: 
-//! * **sized_buffer**: 
+//! * **shift**:
+//! * **sized_buffer**:
 //! * **space**: Recognizes one or more spaces and tabs
 //! * **tab**: Matches a tab character '\t'
-//! * **tag_cl**: 
+//! * **tag_cl**:
 //!
 //! # Example
 //!
