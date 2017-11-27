@@ -1245,7 +1245,7 @@ mod tests {
   }
 
   use types::CompleteStr;
-  pub fn end_of_line_completestr<'a>(input: CompleteStr<'a>) -> IResult<CompleteStr<'a>, CompleteStr<'a>> {
+  pub fn end_of_line_completestr(input: CompleteStr) -> IResult<CompleteStr, CompleteStr> {
     alt!(input, eof!() | eol)
   }
 }
