@@ -342,7 +342,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     need_more(i, Needed::Size(2))
   } else {
-    let res = ((i[0] as u16) << 8) + i[1] as u16;
+    let res = i[..2].iter().rev().enumerate().map(|(k,&v)| u16::from(v) << (k*8) ).sum();
     Ok((&i[2..], res))
   }
 }
@@ -353,7 +353,7 @@ pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
     need_more(i, Needed::Size(3))
   } else {
-    let res = ((i[0] as u32) << 16) + ((i[1] as u32) << 8) + (i[2] as u32);
+    let res = i[..3].iter().rev().enumerate().map(|(k,&v)| u32::from(v) << (k*8) ).sum();
     Ok((&i[3..], res))
   }
 }
@@ -364,7 +364,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     need_more(i, Needed::Size(4))
   } else {
-    let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
+    let res = i[..4].iter().rev().enumerate().map(|(k,&v)| u32::from(v) << (k*8) ).sum();
     Ok((&i[4..], res))
   }
 }
@@ -375,8 +375,7 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
-      ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
+    let res = i[..8].iter().rev().enumerate().map(|(k,&v)| u64::from(v) << (k*8) ).sum();
     Ok((&i[8..], res))
   }
 }
@@ -428,7 +427,7 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     need_more(i, Needed::Size(2))
   } else {
-    let res = ((i[1] as u16) << 8) + i[0] as u16;
+    let res = i[..2].iter().enumerate().map(|(k,&v)| u16::from(v) << (k*8) ).sum();
     Ok((&i[2..], res))
   }
 }
@@ -439,7 +438,7 @@ pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
     need_more(i, Needed::Size(3))
   } else {
-    let res = (i[0] as u32) + ((i[1] as u32) << 8) + ((i[2] as u32) << 16);
+    let res = i[..3].iter().enumerate().map(|(k,&v)| u32::from(v) << (k*8) ).sum();
     Ok((&i[3..], res))
   }
 }
@@ -450,7 +449,7 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     need_more(i, Needed::Size(4))
   } else {
-    let res = ((i[3] as u32) << 24) + ((i[2] as u32) << 16) + ((i[1] as u32) << 8) + i[0] as u32;
+    let res = i[..4].iter().enumerate().map(|(k,&v)| u32::from(v) << (k*8) ).sum();
     Ok((&i[4..], res))
   }
 }
@@ -461,8 +460,7 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) +
-      ((i[3] as u64) << 24) + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
+    let res = i[..8].iter().enumerate().map(|(k,&v)| u64::from(v) << (k*8) ).sum();
     Ok((&i[8..], res))
   }
 }
