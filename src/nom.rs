@@ -13,7 +13,6 @@ use std::fmt::Debug;
 use internal::*;
 use traits::{AsChar,InputLength,InputIter};
 use traits::{need_more, AtEof};
-use std::mem::transmute;
 use std::ops::{Range,RangeFrom,RangeTo};
 use traits::{Compare,CompareResult,Slice};
 use util::ErrorKind;
