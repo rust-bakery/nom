@@ -312,15 +312,12 @@ mod tests {
         let res: IResult<_,_> = if $i.chars().count() < cnt {
           need_more($i, Needed::Size(cnt))
         } else {
-          let mut offset = $i.len();
-          let mut count = 0;
-          for (o, _) in $i.char_indices() {
-            if count == cnt {
-              offset = o;
-              break;
-            }
-            count += 1;
-          }
+          let split_char = $i.char_indices().enumerate()
+            .find(|&(count,(_offset, _value))| count == cnt);
+          let offset = match split_char {
+            Some((_count, (offset, _value))) => offset,
+            None => $i.len()
+          };
           Ok((&$i[offset..], &$i[..offset]))
         };
         res
