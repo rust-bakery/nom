@@ -158,7 +158,7 @@ impl AsChar for char {
 
 impl<'a> AsChar for &'a char {
     #[inline]
-    fn as_char(self)      -> char { self.clone() }
+    fn as_char(self)      -> char { *self }
     #[inline]
     fn is_alpha(self)     -> bool { self.is_alphabetic() }
     #[inline]
