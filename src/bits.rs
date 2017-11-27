@@ -433,7 +433,7 @@ mod tests {
   impl AddAssign for FakeUint {
 
       fn add_assign(&mut self, other: FakeUint) {
-          *self = FakeUint(&self.0 + other.0);
+          *self = FakeUint(self.0 + other.0);
       }
 
   }
@@ -442,7 +442,7 @@ mod tests {
       type Output = FakeUint;
 
       fn shr(self, shift: usize) -> FakeUint {
-          FakeUint(&self.0 >> shift)
+          FakeUint(self.0 >> shift)
       }
 
   }
@@ -451,7 +451,7 @@ mod tests {
       type Output = FakeUint;
 
       fn shl(self, shift: usize) -> FakeUint {
-          FakeUint(&self.0 << shift)
+          FakeUint(self.0 << shift)
       }
 
   }
