@@ -242,8 +242,8 @@ mod test {
 
     #[test]
     fn tag_str_succeed() {
-        const INPUT: &'static str = "Hello World!";
-        const TAG: &'static str = "Hello";
+        const INPUT: &str = "Hello World!";
+        const TAG: &str = "Hello";
         fn test(input: &str) -> IResult<&str, &str> {
           tag_s!(input, TAG)
         }
@@ -262,8 +262,8 @@ mod test {
 
     #[test]
     fn tag_str_incomplete() {
-        const INPUT: &'static str = "Hello";
-        const TAG: &'static str = "Hello World!";
+        const INPUT: &str = "Hello";
+        const TAG: &str = "Hello World!";
 
         match tag_s!(INPUT, TAG) {
             Err(Err::Incomplete(_)) => (),
@@ -276,8 +276,8 @@ mod test {
 
     #[test]
     fn tag_str_error() {
-        const INPUT: &'static str = "Hello World!";
-        const TAG: &'static str = "Random"; // TAG must be closer than INPUT.
+        const INPUT: &str = "Hello World!";
+        const TAG: &str = "Random"; // TAG must be closer than INPUT.
 
         match tag_s!(INPUT, TAG) {
             Err(Err::Error(_)) => (),
@@ -289,9 +289,9 @@ mod test {
 
     #[test]
     fn take_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &str = "áƒƭèř";
 
         match take_s!(INPUT, 9) {
              Ok((extra, output)) => {
@@ -307,10 +307,10 @@ mod test {
 
     #[test]
     fn take_until_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇ∂áƒƭèř";
-        const FIND: &'static str = "ÂßÇ∂";
-        const CONSUMED: &'static str = "βèƒôřè";
-        const LEFTOVER: &'static str = "ÂßÇ∂áƒƭèř";
+        const INPUT: &str = "βèƒôřèÂßÇ∂áƒƭèř";
+        const FIND: &str = "ÂßÇ∂";
+        const CONSUMED: &str = "βèƒôřè";
+        const LEFTOVER: &str = "ÂßÇ∂áƒƭèř";
 
         match take_until_s!(INPUT, FIND) {
             Ok((extra, output)) => {
@@ -327,7 +327,7 @@ mod test {
 
     #[test]
     fn take_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřèÂßÇá";
+        const INPUT: &str = "βèƒôřèÂßÇá";
 
         match take_s!(INPUT, 13) {
             Err(Err::Incomplete(_)) => (),
@@ -371,9 +371,9 @@ mod test {
 
   #[test]
   fn take_till_s_succeed() {
-    const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-    const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-    const LEFTOVER: &'static str = "áƒƭèř";
+    const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+    const CONSUMED: &str = "βèƒôřèÂßÇ";
+    const LEFTOVER: &str = "áƒƭèř";
     fn till_s(c: char) -> bool {
       c == 'á'
     }
@@ -394,9 +394,9 @@ mod test {
 
   #[test]
   fn take_while_s_succeed_none() {
-    const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-    const CONSUMED: &'static str = "";
-    const LEFTOVER: &'static str = "βèƒôřèÂßÇáƒƭèř";
+    const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+    const CONSUMED: &str = "";
+    const LEFTOVER: &str = "βèƒôřèÂßÇáƒƭèř";
     fn while_s(c: char) -> bool {
       c == '9'
     }
@@ -417,10 +417,10 @@ mod test {
 
   #[test]
   fn is_not_s_succeed() {
-    const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-    const AVOID: &'static str = "£úçƙ¥á";
-    const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-    const LEFTOVER: &'static str = "áƒƭèř";
+    const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+    const AVOID: &str = "£úçƙ¥á";
+    const CONSUMED: &str = "βèƒôřèÂßÇ";
+    const LEFTOVER: &str = "áƒƭèř";
     fn test(input: &str) -> IResult<&str, &str> {
       is_not_s!(input, AVOID)
     }
@@ -438,10 +438,10 @@ mod test {
 
   #[test]
   fn take_until_and_consume_s_succeed() {
-    const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-    const FIND: &'static str = "ÂßÇ";
-    const OUTPUT: &'static str = "βèƒôřè";
-    const LEFTOVER: &'static str = "áƒƭèř";
+    const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+    const FIND: &str = "ÂßÇ";
+    const OUTPUT: &str = "βèƒôřè";
+    const LEFTOVER: &str = "áƒƭèř";
 
     match take_until_and_consume_s!(INPUT, FIND) {
       Ok((extra, output)) => {
@@ -458,9 +458,9 @@ mod test {
 
     #[test]
     fn take_while_s_succeed_some() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &str = "áƒƭèř";
         fn while_s(c: char) -> bool {
             c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
             c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
@@ -482,8 +482,8 @@ mod test {
 
     #[test]
     fn is_not_s_fail() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const AVOID: &'static str = "βúçƙ¥";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+        const AVOID: &str = "βúçƙ¥";
         fn test(input: &str) -> IResult<&str, &str> {
             is_not_s!(input, AVOID)
         }
@@ -495,9 +495,9 @@ mod test {
 
     #[test]
     fn take_while1_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+        const CONSUMED: &str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &str = "áƒƭèř";
         fn while1_s(c: char) -> bool {
             c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' ||
             c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
@@ -519,8 +519,8 @@ mod test {
 
     #[test]
     fn take_until_and_consume_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřè";
-        const FIND: &'static str = "βèƒôřèÂßÇ";
+        const INPUT: &str = "βèƒôřè";
+        const FIND: &str = "βèƒôřèÂßÇ";
 
         match take_until_and_consume_s!(INPUT, FIND) {
             Err(Err::Incomplete(_)) => (),
@@ -531,8 +531,8 @@ mod test {
 
     #[test]
     fn take_until_s_incomplete() {
-        const INPUT: &'static str = "βèƒôřè";
-        const FIND: &'static str = "βèƒôřèÂßÇ";
+        const INPUT: &str = "βèƒôřè";
+        const FIND: &str = "βèƒôřèÂßÇ";
 
         match take_until_s!(INPUT, FIND) {
             Err(Err::Incomplete(_)) => (),
@@ -543,10 +543,10 @@ mod test {
 
     #[test]
     fn is_a_s_succeed() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const MATCH: &'static str = "βèƒôřèÂßÇ";
-        const CONSUMED: &'static str = "βèƒôřèÂßÇ";
-        const LEFTOVER: &'static str = "áƒƭèř";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+        const MATCH: &str = "βèƒôřèÂßÇ";
+        const CONSUMED: &str = "βèƒôřèÂßÇ";
+        const LEFTOVER: &str = "áƒƭèř";
         fn test(input: &str) -> IResult<&str, &str> {
             is_a_s!(input, MATCH)
         }
@@ -564,7 +564,7 @@ mod test {
 
     #[test]
     fn take_while1_s_fail() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
         fn while1_s(c: char) -> bool {
             c == '9'
         }
@@ -580,8 +580,8 @@ mod test {
 
     #[test]
     fn is_a_s_fail() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const MATCH: &'static str = "Ûñℓúçƙ¥";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+        const MATCH: &str = "Ûñℓúçƙ¥";
         fn test(input: &str) -> IResult<&str, &str> {
             is_a_s!(input, MATCH)
         }
@@ -593,8 +593,8 @@ mod test {
 
     #[test]
     fn take_until_and_consume_s_error() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "Ráñδô₥";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+        const FIND: &str = "Ráñδô₥";
 
         match take_until_and_consume_s!(INPUT, FIND) {
             Err(Err::Error(_)) => (),
@@ -605,8 +605,8 @@ mod test {
 
     #[test]
     fn take_until_s_error() {
-        const INPUT: &'static str = "βèƒôřèÂßÇáƒƭèř";
-        const FIND: &'static str = "Ráñδô₥";
+        const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
+        const FIND: &str = "Ráñδô₥";
 
         match take_until_s!(INPUT, FIND) {
             Err(Err::Error(_)) => (),
