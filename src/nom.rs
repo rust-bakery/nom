@@ -543,11 +543,7 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_i64($i
 pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
   match be_u32(input) {
     Err(e) => Err(e),
-    Ok((i,o)) => {
-      unsafe {
-        Ok((i, transmute::<u32, f32>(o)))
-      }
-    }
+    Ok((i,o)) => Ok((i, f32::from_bits(o)))
   }
 }
 
@@ -556,11 +552,7 @@ pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
 pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
   match be_u64(input) {
     Err(e) => Err(e),
-    Ok((i,o)) => {
-      unsafe {
-        Ok((i, transmute::<u64, f64>(o)))
-      }
-    }
+    Ok((i,o)) => Ok((i, f64::from_bits(o)))
   }
 }
 
@@ -569,11 +561,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
   match le_u32(input) {
     Err(e) => Err(e),
-    Ok((i,o)) => {
-      unsafe {
-        Ok((i, transmute::<u32, f32>(o)))
-      }
-    }
+    Ok((i,o)) => Ok((i, f32::from_bits(o)))
   }
 }
 
@@ -582,11 +570,7 @@ pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
 pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
   match le_u64(input) {
     Err(e) => Err(e),
-    Ok((i,o)) => {
-      unsafe {
-        Ok((i, transmute::<u64, f64>(o)))
-      }
-    }
+    Ok((i,o)) => Ok((i, f64::from_bits(o)))
   }
 }
 
