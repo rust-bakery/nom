@@ -774,3 +774,32 @@ impl ExtendInto for str {
     acc.push_str(self);
   }
 }
+
+#[cfg(test)]
+mod test {
+    use ::InputTake;
+    use std::fmt::Debug;
+    #[test]
+    fn inputtake_take_and_take_split() {
+        fn tester<T: InputTake + PartialEq + Debug>(input: &T, count: usize, expected: Option<(T, T)>) {
+            // first test ::take_split
+            let splitted = input.take_split(count);
+            assert_eq!(expected, splitted);
+            match splitted {
+                // ::take returns the same as ::take_split except for there no .0 part
+                Some(pair) => assert_eq!(Some(pair.1), input.take(count)),
+                None => assert_eq!(None, input.take(count))
+            }
+        }
+        // tests for &str
+        tester(&"test me", 4, Some((" me", "test"))); // ASCII
+        tester(&"test me", 42, None); // out of range
+        tester(&"βèƒôřèÂßÇáƒƭèř", 6, Some(("ÂßÇáƒƭèř", "βèƒôřè"))); // UTF-8
+        tester(&"βèƒôřèÂßÇáƒƭèř", 42, None); // UTF-8 out of range
+        tester(&"제가 한국말을 못하는 원성이에요", 2, Some((" 한국말을 못하는 원성이에요", "제가")));
+        // tests for &u8
+        tester(&&[1u8][..], 42, None); // out of range
+        tester(&&[1u8,2u8,3u8,4u8,5u8][..], 4, Some((&[5u8][..], &[1u8,2u8,3u8,4u8][..])));
+        tester(&"제가".as_bytes(), 2, Some((&[156, 234, 176, 128][..], &[236, 160][..]))); // UTF-8 &[u8]
+    }
+}
