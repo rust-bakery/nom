@@ -571,21 +571,18 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
   match is_a!(input, &b"0123456789abcdefABCDEF"[..]) {
     Err(e) => Err(e),
     Ok((i,o)) => {
-      let mut res = 0u32;
-
       // Do not parse more than 8 characters for a u32
-      let mut remaining = i;
-      let mut parsed    = o;
-      if o.len() > 8 {
-        remaining = &input[8..];
-        parsed    = &input[..8];
-      }
+      let (parsed, remaining) = if o.len() <= 8 {
+          (o, i)
+        } else {
+          (&input[..8], &input[8..])
+        };
 
-      for &e in parsed {
-        let digit = e as char;
-        let value = digit.to_digit(16).unwrap_or(0);
-        res = value + (res << 4);
-      }
+      let res = parsed.iter().rev().enumerate().map(|(k,&v)| {
+        let digit = v as char;
+        digit.to_digit(16).unwrap_or(0) << (k*4)
+      }).sum();
+
       Ok((remaining, res))
     }
   }
