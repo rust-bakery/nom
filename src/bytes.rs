@@ -118,8 +118,7 @@ macro_rules! is_not(
           Err(Err::Error(error_position!($input, e)))
         },
         Some(n) => {
-          let res = Ok(($input.slice(n..), $input.slice(..n)));
-          res
+          Ok(($input.slice(n..), $input.slice(..n)))
         },
         None    => {
           Ok(($input.slice($input.input_len()..), $input))
@@ -905,8 +904,7 @@ macro_rules! take_until_either_and_consume (
         }) {
           Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEitherAndConsume::<u32>))),
           Some(n) => {
-            let res = Ok(($input.slice(n+1..), $input.slice(..n)));
-            res
+            Ok(($input.slice(n+1..), $input.slice(..n)))
           },
           None    => {
             Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEitherAndConsume::<u32>)))
@@ -955,8 +953,7 @@ macro_rules! take_until_either (
         }) {
           Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEither::<u32>))),
           Some(n) => {
-            let res = Ok(($input.slice(n..), $input.slice(..n)));
-            res
+            Ok(($input.slice(n..), $input.slice(..n)))
           },
           None    => {
             Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEither::<u32>)))
