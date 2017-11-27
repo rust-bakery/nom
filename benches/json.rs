@@ -110,7 +110,7 @@ named!(value<JsonValue>,
 fn json_bench(b: &mut Bencher) {
   let data = &b"  { \"a\"\t: 42,
   \"b\": [ \"x\", \"y\", 12 ] ,
-  \"c\": { \"hello\" : \"world\" 
+  \"c\": { \"hello\" : \"world\"
   }
   }  ";
 
@@ -119,4 +119,3 @@ fn json_bench(b: &mut Bencher) {
     value(&data[..])
   });
 }
-
