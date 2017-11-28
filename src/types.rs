@@ -89,6 +89,12 @@ impl<'a,'b> FindSubstring<&'b str> for CompleteStr<'a> {
   }
 }
 
+impl<'a> FindToken<CompleteStr<'a>> for char {
+  fn find_token(&self, input: CompleteStr<'a>) -> bool {
+    self.find_token(input.0)
+  }
+}
+
 impl<'a> FindToken<CompleteStr<'a>> for u8 {
   fn find_token(&self, input: CompleteStr<'a>) -> bool {
     self.find_token(input.0)
@@ -207,6 +213,12 @@ impl<'a,'b> FindSubstring<&'b [u8]> for CompleteByteSlice<'a> {
 impl<'a,'b> FindSubstring<&'b str> for CompleteByteSlice<'a> {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.0.find_substring(substr)
+  }
+}
+
+impl<'a> FindToken<CompleteByteSlice<'a>> for char {
+  fn find_token(&self, input: CompleteByteSlice<'a>) -> bool {
+    self.find_token(input.0)
   }
 }
 
