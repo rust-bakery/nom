@@ -450,6 +450,12 @@ impl<'a,'b> FindToken<&'a str> for &'b u8 {
   }
 }
 
+impl<'a> FindToken<&'a[u8]> for char {
+  fn find_token(&self, input: &[u8]) -> bool {
+    memchr::memchr(*self as u8, input).is_some()
+  }
+}
+
 impl<'a> FindToken<&'a str> for char {
   fn find_token(&self, input: &str) -> bool {
     for i in input.chars() {
