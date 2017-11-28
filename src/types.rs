@@ -95,6 +95,12 @@ impl<'a> FindToken<CompleteStr<'a>> for u8 {
   }
 }
 
+impl<'a, 'b> FindToken<CompleteStr<'a>> for &'b u8 {
+  fn find_token(&self, input: CompleteStr<'a>) -> bool {
+    self.find_token(input.0)
+  }
+}
+
 impl<'a, R:FromStr> ParseTo<R> for CompleteStr<'a> {
   fn parse_to(&self) -> Option<R> {
     self.0.parse().ok()
@@ -205,6 +211,12 @@ impl<'a,'b> FindSubstring<&'b str> for CompleteByteSlice<'a> {
 }
 
 impl<'a> FindToken<CompleteByteSlice<'a>> for u8 {
+  fn find_token(&self, input: CompleteByteSlice<'a>) -> bool {
+    self.find_token(input.0)
+  }
+}
+
+impl<'a, 'b> FindToken<CompleteByteSlice<'a>> for &'b u8 {
   fn find_token(&self, input: CompleteByteSlice<'a>) -> bool {
     self.find_token(input.0)
   }
