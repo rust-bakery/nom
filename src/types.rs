@@ -1,4 +1,4 @@
-use traits::{AtEof,Compare,CompareResult,InputLength,InputIter,InputTake,Slice,FindSubstring,ParseTo};
+use traits::{AtEof,Compare,CompareResult,InputLength,InputIter,InputTake,Slice,FindSubstring,FindToken,ParseTo};
 use util::Offset;
 
 use std::str::{self,FromStr,Chars,CharIndices};
@@ -86,6 +86,12 @@ impl<'a,'b> Compare<&'b str> for CompleteStr<'a> {
 impl<'a,'b> FindSubstring<&'b str> for CompleteStr<'a> {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.0.find_substring(substr)
+  }
+}
+
+impl<'a> FindToken<CompleteStr<'a>> for u8 {
+  fn find_token(&self, input: CompleteStr<'a>) -> bool {
+    self.find_token(input.0)
   }
 }
 
@@ -195,6 +201,12 @@ impl<'a,'b> FindSubstring<&'b [u8]> for CompleteByteSlice<'a> {
 impl<'a,'b> FindSubstring<&'b str> for CompleteByteSlice<'a> {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.0.find_substring(substr)
+  }
+}
+
+impl<'a> FindToken<CompleteByteSlice<'a>> for u8 {
+  fn find_token(&self, input: CompleteByteSlice<'a>) -> bool {
+    self.find_token(input.0)
   }
 }
 
