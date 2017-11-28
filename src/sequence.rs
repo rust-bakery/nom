@@ -48,30 +48,29 @@ macro_rules! tuple_parser (
   ($i:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(e)    => Err(Err::convert(e)),
+      let res = $submac!(i_, $($args)*);
+
+      let ret = match res {
+        Err(e)    => Err(e),
         Ok((i,o)) => {
           let i_ = i.clone();
-          tuple_parser!(i_, (o), $($rest)*)
+          let res2 = tuple_parser!(i_, (o), $($rest)*);
+          res2
         }
-      }
+      };
+      ret
     }
   );
   ($i:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(e)    => Err(Err::convert(e)),
+        Err(e)    => Err(e),
         Ok((i,o)) => {
-          //fn unify_types<T>(_: &T, _: &T) {}
-          //unify_types(i_, i);
-
           let i_ = i.clone();
           tuple_parser!(i_, ($($parsed)* , o), $($rest)*)
         }
@@ -84,11 +83,10 @@ macro_rules! tuple_parser (
   ($i:expr, (), $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(e)    => Err(Err::convert(e)),
+        Err(e)    => Err(e),
         Ok((i,o)) => {
           Ok((i, (o)))
         }
@@ -98,10 +96,9 @@ macro_rules! tuple_parser (
   ($i:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       match $submac!($i, $($args)*) {
-        Err(e)    => Err(Err::convert(e)),
+        Err(e)    => Err(e),
         Ok((i,o)) => {
           Ok((i, ($($parsed),* , o)))
         }
@@ -146,10 +143,9 @@ macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-        Err(e)    => Err(Err::convert(e)),
+        Err(e)    => Err(e),
         Ok((i1, (o1, _, o2))) => {
           Ok((i1, (o1, o2)))
         }
@@ -169,10 +165,9 @@ macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        Err(e) => Err(Err::convert(e)),
+        Err(e) => Err(e),
         Ok((remaining, (_,o)))    => {
           Ok((remaining, o))
         }
@@ -200,10 +195,9 @@ macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        Err(e) => Err(Err::convert(e)),
+        Err(e) => Err(e),
         Ok((remaining, (o,_)))    => {
           Ok((remaining, o))
         }
@@ -247,10 +241,9 @@ macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-        Err(e) => Err(Err::convert(e)),
+        Err(e) => Err(e),
         Ok((i1, (_, o, _)))   => {
           Ok((i1, o))
         }
@@ -374,11 +367,10 @@ macro_rules! do_parse (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(e) => Err(Err::convert(e)),
+        Err(e) => Err(e),
         Ok((i,_))     => {
           let i_ = i.clone();
           do_parse!(__impl i_, $($rest)*)
@@ -394,11 +386,10 @@ macro_rules! do_parse (
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
 
       let i_ = $i.clone();
       match  $submac!(i_, $($args)*) {
-        Err(e) => Err(Err::convert(e)),
+        Err(e) => Err(e),
         Ok((i,o))     => {
           let $field = o;
           let i_ = i.clone();
@@ -415,10 +406,9 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,Convert};
 
     match $submac!($i, $($args)*) {
-      Err(e) => Err(Err::convert(e)),
+      Err(e) => Err(e),
       Ok((i,_))     => {
         Ok((i, ( $($rest)* )))
       },
@@ -431,10 +421,9 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Err,Convert};
 
     match $submac!($i, $($args)*) {
-      Err(e) => Err(Err::convert(e)),
+      Err(e) => Err(e),
       Ok((i,o))     => {
         let $field = o;
         Ok((i, ( $($rest)* )))
@@ -465,6 +454,7 @@ macro_rules! do_parse (
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed,IResult};
+  use util::ErrorKind;
   use nom::be_u16;
 
   // reproduce the tag and take macros, because of module import order
@@ -497,7 +487,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error(error_position!(ErrorKind::Tag, $i)))
+          Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag::<u32>, $i)))
         } else if m < blen {
           need_more($i, Needed::Size(blen))
         } else {
@@ -649,10 +639,10 @@ mod tests {
   #[test]
   fn add_err() {
     named!(err_test,
-      preceded!(tag!("efgh"), add_return_error!(ErrorKind::Custom(42),
+      preceded!(tag!("efgh"), add_return_error!(ErrorKind::Custom(42u32),
           do_parse!(
                  tag!("ijkl")                                     >>
-            res: add_return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+            res: add_return_error!(ErrorKind::Custom(128u32), tag!("mnop")) >>
             (res)
           )
         )
@@ -666,8 +656,8 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Err(Err::Error(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah)))));
-    assert_eq!(res_b, Err(Err::Error(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah))))));
+    assert_eq!(res_a, Err(Err::Error(error_node_position!(ErrorKind::Custom(42u32), blah, error_position!(ErrorKind::Tag, blah)))));
+    assert_eq!(res_b, Err(Err::Error(error_node_position!(ErrorKind::Custom(42u32), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128u32), blah, error_position!(ErrorKind::Tag, blah))))));
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
   }
 
@@ -699,6 +689,7 @@ mod tests {
     assert_eq!(pair_abc_def(&b"xxxdef"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxdef"[..]))));
     assert_eq!(pair_abc_def(&b"abcxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
   }
+
 
   #[test]
   fn separated_pair() {

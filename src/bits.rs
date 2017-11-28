@@ -353,11 +353,13 @@ macro_rules! tag_bits (
             let res: IResult<(&[u8],usize),$t> = Ok((i, o));
             res
           } else {
-            Err(Err::Error(error_position!(ErrorKind::TagBits, $i)))
+            let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
+            Err(Err::Error(error_position!(e, $i)))
           }
         },
         _                              => {
-          Err(Err::Error(error_position!(ErrorKind::TagBits, $i)))
+          let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
+          Err(Err::Error(error_position!(e, $i)))
         }
       }
     }
@@ -368,6 +370,7 @@ macro_rules! tag_bits (
 mod tests {
   use std::ops::{Shr,Shl,AddAssign};
   use internal::{Err,Needed};
+  use util::ErrorKind;
 
   #[test]
   fn take_bits() {

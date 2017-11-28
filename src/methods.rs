@@ -287,7 +287,7 @@ mod tests {
     ($i:expr, $tag: expr) => (
       {
         use ::std::result::Result::*;
-        use $crate::{Err,Needed,IResult, need_more};
+        use $crate::{Err,ErrorKind,Needed,IResult, need_more};
 
         let res: IResult<_,_> = if $tag.len() > $i.len() {
           need_more($i, Needed::Size($tag.len()))

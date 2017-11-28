@@ -7,7 +7,7 @@ macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert,ErrorKind};
+      use $crate::Err;
 
       use $crate::InputLength;
 
@@ -19,11 +19,10 @@ macro_rules! separated_list(
       let input_ = input.clone();
       match $submac!(input_, $($args2)*) {
         Err(Err::Error(_)) => Ok((input, ::std::vec::Vec::new())),
-        Err(e)             => Err(Err::convert(e)),
+        Err(e)             => Err(e),
         Ok((i,o))     => {
           if i.input_len() == input.input_len() {
-            let e:ErrorKind<u32> = ErrorKind::SeparatedList;
-            Err(Err::Error(error_position!(e,input)))
+            Err(Err::Error(error_position!($crate::ErrorKind::SeparatedList,input)))
           } else {
             res.push(o);
             input = i;
@@ -39,7 +38,7 @@ macro_rules! separated_list(
                   break;
                 }
                 Err(e) => {
-                  ret = Err(Err::convert(e));
+                  ret = Err(e);
                   break;
                 },
                 Ok((i2,_))     => {
@@ -56,7 +55,7 @@ macro_rules! separated_list(
                       break;
                     },
                     Err(e) => {
-                      ret = Err(Err::convert(e));
+                      ret = Err(e);
                       break;
                     },
                     Ok((i3,o3))    => {
@@ -96,7 +95,7 @@ macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err,ErrorKind};
+      use $crate::{Err,ErrorKind};
       use $crate::InputLength;
 
       let mut res   = ::std::vec::Vec::new();
@@ -105,10 +104,10 @@ macro_rules! separated_nonempty_list(
       // get the first element
       let input_ = input.clone();
       match $submac!(input_, $($args2)*) {
-        Err(e)    => Err(Err::convert(e)),
+        Err(e)    => Err(e),
         Ok((i,o)) => {
           if i.input_len() == input.input_len() {
-            let e:ErrorKind<u32> = ErrorKind::SeparatedNonEmptyList;
+            let e = ErrorKind::SeparatedNonEmptyList;
             Err(Err::Error(error_position!(e,input)))
           } else {
             res.push(o);
@@ -125,7 +124,7 @@ macro_rules! separated_nonempty_list(
                   break;
                 }
                 Err(e) => {
-                  ret = Err(Err::convert(e));
+                  ret = Err(e);
                   break;
                 },
                 Ok((i2,_))     => {
@@ -142,7 +141,7 @@ macro_rules! separated_nonempty_list(
                       break;
                     },
                     Err(e) => {
-                      ret = Err(Err::convert(e));
+                      ret = Err(e);
                       break;
                     },
                     Ok((i3,o3))    => {
@@ -239,7 +238,7 @@ macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert,InputLength};
+      use $crate::{Err,InputLength};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
@@ -258,13 +257,13 @@ macro_rules! many0(
             break;
           },
           Err(e) => {
-            ret = Err(Err::convert(e));
+            ret = Err(e);
             break;
           },
           Ok((i, o))              => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = Err(Err::Error(error_position!(ErrorKind::Many0,input)));
+              ret = Err(Err::Error(error_position!($crate::ErrorKind::Many0,input)));
               break;
             }
 
@@ -307,18 +306,18 @@ macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
+      use $crate::{Err};
 
       use $crate::InputLength;
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
-          error_position!(ErrorKind::Many1,i_)
+          error_position!($crate::ErrorKind::Many1,i_)
         )),
         Err(Err::Failure(_))      => Err(Err::Failure(
-          error_position!(ErrorKind::Many1,i_)
+          error_position!($crate::ErrorKind::Many1,i_)
         )),
-        Err(i) => Err(Err::convert(i)),
+        Err(i) => Err(i),
         Ok((i1,o1))   => {
           if i1.input_len() == 0 {
             let mut res = ::std::vec::Vec::new();
@@ -354,7 +353,7 @@ macro_rules! many1(
             }
 
             match error {
-              ::std::option::Option::Some(e) => Err(Err::convert(e)),
+              ::std::option::Option::Some(e) => Err(e),
               ::std::option::Option::None    => Ok((input, res))
             }
           }
@@ -388,7 +387,7 @@ macro_rules! many1(
 ///    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
 ///    assert_eq!(multi(&a[..]),Ok((&b"abcd"[..], res_a)));
 ///    assert_eq!(multi(&b[..]),Ok((&b"abcd"[..], res_b)));
-///    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position!(ErrorKind::Tag,&c[..])))));
+///    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position!($crate::ErrorKind::Tag,&c[..])))));
 /// # }
 /// ```
 #[macro_export]
@@ -396,7 +395,7 @@ macro_rules! many_till(
   (__impl $i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
+      use $crate::{Err,ErrorKind};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
@@ -408,20 +407,23 @@ macro_rules! many_till(
             ret = Ok((i, (res, o)));
             break;
           },
-          _                           => {
+          Err(e1)    => {
             match $submac1!(input, $($args1)*) {
               Err(Err::Error(err))                => {
+                fn unify_types<T>(_: &T, _: &T) {}
+                unify_types(&e1, &Err::Error(err));
+
                 ret = Err(Err::Error(error_node_position!(ErrorKind::ManyTill,input, err)));
                 break;
               },
               Err(e) => {
-                ret = Err(Err::convert(e));
+                ret = Err(e);
                 break;
               },
               Ok((i, o))                          => {
                 // loop trip must always consume (otherwise infinite loops)
                 if i == input {
-                  ret = Err(Err::Error(error_position!(ErrorKind::ManyTill,input)));
+                  ret = Err(Err::Error(error_position!($crate::ErrorKind::ManyTill,input)));
                   break;
                 }
 
@@ -521,7 +523,7 @@ macro_rules! many_m_n(
 
       if count < $m {
         if err {
-          Err(Err::Error(error_position!(ErrorKind::ManyMN,$i)))
+          Err(Err::Error(error_position!($crate::ErrorKind::ManyMN,$i)))
         } else {
           match failure {
             ::std::option::Option::Some(i) => Err(Err::Failure(i)),
@@ -571,7 +573,7 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
+      use $crate::{Err};
 
       let ret;
       let mut input = $i.clone();
@@ -589,12 +591,16 @@ macro_rules! count(
             res.push(o);
             input = i;
           },
-          Err(Err::Error(_))  => {
-            ret = Err(Err::Error(error_position!(ErrorKind::Count,$i)));
+          Err(Err::Error(e))  => {
+            fn unify_types<T>(_: &T, _: &T) {}
+            let e2 = error_position!($crate::ErrorKind::Count,$i);
+            unify_types(&e, &e2);
+
+            ret = Err(Err::Error(e2));
             break;
           },
           Err(e) => {
-            ret = Err(Err::convert(e));
+            ret = Err(e);
             break;
           },
         }
@@ -635,7 +641,7 @@ macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err};
+      use $crate::{Err};
 
       let ret;
       let mut input = $i.clone();
@@ -654,12 +660,15 @@ macro_rules! count_fixed (
             cnt += 1;
             input = i;
           },
-          Err(Err::Error(_))  => {
-            ret = Err(Err::Error(error_position!(ErrorKind::Count,$i)));
+          Err(Err::Error(e))  => {
+            fn unify_types<T>(_: &T, _: &T) {}
+            let e2 = error_position!($crate::ErrorKind::Count,$i);
+            unify_types(&e, &e2);
+            ret = Err(Err::Error(e2));
             break;
           },
           Err(e) => {
-            ret = Err(Err::convert(e));
+            ret = Err(e);
             break;
           },
         }
@@ -718,7 +727,7 @@ macro_rules! length_data(
     use $crate::{Convert,Err};
 
     match $submac!($i, $($args)*) {
-      Err(e)     => Err(Err::convert(e)),
+      Err(e)     => Err(e),
       Ok((i, o)) => {
         match take!(i, o as usize) {
           Err(e)       => Err(Err::convert(e)),
@@ -745,7 +754,7 @@ macro_rules! length_value(
       use $crate::{Err,Convert};
 
       match $submac!($i, $($args)*) {
-        Err(e)     => Err(Err::convert(e)),
+        Err(e)     => Err(e),
         Ok((i, o)) => {
           match take!(i, o as usize) {
             Err(e)       => Err(Err::convert(e)),
@@ -802,7 +811,7 @@ macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,InputLength,Convert};
+      use $crate::{Err,InputLength};
 
       let ret;
       let f         = $f;
@@ -816,19 +825,19 @@ macro_rules! fold_many0(
         }
 
         match $submac!(input, $($args)*) {
-          Err(Err::Error(_))                            => {
+          Err(Err::Error(_)) => {
             ret = Ok((input, res));
             break;
           },
           Err(e) => {
-            ret = Err(Err::convert(e));
+            ret = Err(e);
             break;
           },
-          Ok((i, o))                          => {
+          Ok((i, o)) => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
               ret = Err(Err::Error(
-                error_position!(ErrorKind::Many0,input)
+                error_position!($crate::ErrorKind::Many0,input)
               ));
               break;
             }
@@ -880,10 +889,10 @@ macro_rules! fold_many1(
 
       match $submac!($i, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
-          error_position!(ErrorKind::Many1,$i)
+          error_position!($crate::ErrorKind::Many1,$i)
         )),
         Err(Err::Failure(_))      => Err(Err::Failure(
-          error_position!(ErrorKind::Many1,$i)
+          error_position!($crate::ErrorKind::Many1,$i)
         )),
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i1,o1))   => {
@@ -1012,7 +1021,7 @@ macro_rules! fold_many_m_n(
 
       if count < $m {
         if err {
-          Err(Err::Error(error_position!(ErrorKind::ManyMN,$i)))
+          Err(Err::Error(error_position!($crate::ErrorKind::ManyMN,$i)))
         } else {
           match incomplete {
             ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
@@ -1037,6 +1046,7 @@ mod tests {
   use internal::{Err,Needed,IResult};
   use nom::{alpha,be_u8,be_u16,le_u16,digit};
   use std::str::{self,FromStr};
+  use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -1066,7 +1076,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error(error_position!(ErrorKind::Tag, $i)))
+          Err($crate::Err::Error($crate::Context::Code($i, $crate::ErrorKind::Tag::<u32>)))
         } else if m < blen {
           Err($crate::Err::Incomplete(Needed::Size(blen)))
         } else {
@@ -1259,7 +1269,7 @@ mod tests {
   fn infinite_many() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       println!("input: {:?}", input);
-      Err(Err::Error(error_position!(ErrorKind::Custom(0),input)))
+      Err(Err::Error(error_position!(ErrorKind::Custom(0u32),input)))
     }
 
     // should not go into an infinite loop
@@ -1378,7 +1388,7 @@ mod tests {
   fn count_fixed_no_type() {
     const TIMES: usize = 2;
     named!( tag_abc, tag!("abc") );
-    named!( counter_2<&[u8], [&[u8]; TIMES], NilError >, count_fixed!(&[u8], tag_abc, TIMES ) );
+    named!( counter_2<&[u8], [&[u8]; TIMES], NilError >, count_fixed!(&[u8], fix_error!(NilError, tag_abc), TIMES ) );
 
     let done = &b"abcabcabcdef"[..];
     let parsed_main = [&b"abc"[..], &b"abc"[..]];

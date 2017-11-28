@@ -238,7 +238,7 @@ macro_rules! take_until_s (
 
 #[cfg(test)]
 mod test {
-    use ::{Err,IResult};
+    use ::{Err,IResult,ErrorKind};
 
     #[test]
     fn tag_str_succeed() {

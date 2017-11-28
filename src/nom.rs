@@ -17,6 +17,7 @@ use traits::{need_more, AtEof};
 use std::mem::transmute;
 use std::ops::{Range,RangeFrom,RangeTo};
 use traits::{Compare,CompareResult,Slice};
+use util::ErrorKind;
 
 #[inline]
 pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8]> + 'a> {
@@ -24,7 +25,8 @@ pub fn tag_cl<'a,'b>(rec:&'a[u8]) ->  Box<Fn(&'b[u8]) -> IResult<&'b[u8], &'b[u8
     if i.len() >= rec.len() && &i[0..rec.len()] == rec {
       Ok((&i[rec.len()..], &i[0..rec.len()]))
     } else {
-      Err(Err::Error(error_position!(ErrorKind::TagClosure, i)))
+      let e: ErrorKind<u32> = ErrorKind::TagClosure;
+      Err(Err::Error(error_position!(e, i)))
     }
   })
 }
@@ -51,7 +53,10 @@ pub fn crlf<T>(input:T) -> IResult<T,T> where
         Ok((input.slice(2..), input.slice(0..2)))
       },
       CompareResult::Incomplete => need_more(input, Needed::Size(2)),
-      CompareResult::Error      => Err(Err::Error(error_position!(ErrorKind::CrLf, input)))
+      CompareResult::Error      => {
+        let e: ErrorKind<u32> = ErrorKind::CrLf;
+        Err(Err::Error(error_position!(e, input)))
+      }
     }
 }
 
@@ -76,7 +81,10 @@ pub fn not_line_ending<T>(input:T) -> IResult<T,T> where
             match comp {
               //FIXME: calculate the right index
               CompareResult::Incomplete => need_more(input, Needed::Unknown),
-              CompareResult::Error      => Err(Err::Error(error_position!(ErrorKind::Tag, input))),
+              CompareResult::Error      => {
+                let e: ErrorKind<u32> = ErrorKind::Tag;
+                Err(Err::Error(error_position!(e, input)))
+              },
               CompareResult::Ok         => Ok((input.slice(index..), input.slice(..index)))
             }
           } else {
@@ -99,7 +107,7 @@ pub fn line_ending<T>(input:T) -> IResult<T, T> where
       //FIXME: is this the right index?
       CompareResult::Ok         => Ok((input.slice(2..), input.slice(0..2))),
       CompareResult::Incomplete => need_more(input, Needed::Size(2)),
-      CompareResult::Error      => Err(Err::Error(error_position!(ErrorKind::CrLf, input)))
+      CompareResult::Error      => Err(Err::Error(error_position!(ErrorKind::CrLf::<u32>, input)))
     }
   }
 }
@@ -169,7 +177,7 @@ pub fn alpha<T>(input:T) -> IResult<T, T, u32> where
   for (idx, item) in input.iter_indices() {
     if ! item.is_alpha() {
       if idx == 0 {
-        return Err(Err::Error(error_position!(ErrorKind::Alpha, input)))
+        return Err(Err::Error(error_position!(ErrorKind::Alpha::<u32>, input)))
       } else {
         return Ok((input.slice(idx..), input.slice(0..idx)))
       }
@@ -191,7 +199,7 @@ pub fn digit<T>(input:T) -> IResult<T, T> where
   for (idx, item) in input.iter_indices() {
     if ! item.is_dec_digit() {
       if idx == 0 {
-        return Err(Err::Error(error_position!(ErrorKind::Digit, input)))
+        return Err(Err::Error(error_position!(ErrorKind::Digit::<u32>, input)))
       } else {
         return Ok((input.slice(idx..), input.slice(0..idx)))
       }
@@ -213,7 +221,7 @@ pub fn hex_digit<T>(input:T) -> IResult<T,T> where
   for (idx, item) in input.iter_indices() {
     if ! item.is_hex_digit() {
       if idx == 0 {
-        return Err(Err::Error(error_position!(ErrorKind::HexDigit, input)))
+        return Err(Err::Error(error_position!(ErrorKind::HexDigit::<u32>, input)))
       } else {
         return Ok((input.slice(idx..), input.slice(0..idx)))
       }
@@ -235,7 +243,7 @@ pub fn oct_digit<T>(input:T) -> IResult<T,T> where
   for (idx, item) in input.iter_indices() {
     if ! item.is_oct_digit() {
       if idx == 0 {
-        return Err(Err::Error(error_position!(ErrorKind::OctDigit, input)))
+        return Err(Err::Error(error_position!(ErrorKind::OctDigit::<u32>, input)))
       } else {
         return Ok((input.slice(idx..), input.slice(0..idx)))
       }
@@ -257,7 +265,7 @@ pub fn alphanumeric<T>(input:T) -> IResult<T,T> where
   for (idx, item) in input.iter_indices() {
     if ! item.is_alphanum() {
       if idx == 0 {
-        return Err(Err::Error(error_position!(ErrorKind::AlphaNumeric, input)))
+        return Err(Err::Error(error_position!(ErrorKind::AlphaNumeric::<u32>, input)))
       } else {
         return Ok((input.slice(idx..), input.slice(0..idx)))
       }
@@ -280,7 +288,7 @@ pub fn space<T>(input:T) -> IResult<T,T> where
     let chr = item.as_char();
     if ! (chr == ' ' || chr == '\t')  {
       if idx == 0 {
-        return Err(Err::Error(error_position!(ErrorKind::Space, input)))
+        return Err(Err::Error(error_position!(ErrorKind::Space::<u32>, input)))
       } else {
         return Ok((input.slice(idx..), input.slice(0..idx)))
       }
@@ -303,7 +311,7 @@ pub fn multispace<T>(input:T) -> IResult<T,T> where
     let chr = item.as_char();
     if ! (chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n')  {
       if idx == 0 {
-        return Err(Err::Error(error_position!(ErrorKind::MultiSpace, input)))
+        return Err(Err::Error(error_position!(ErrorKind::MultiSpace::<u32>, input)))
       } else {
         return Ok((input.slice(idx..), input.slice(0..idx)))
       }
@@ -371,7 +379,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes big endian unsigned 8 bytes integer
 #[inline]
-pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64> {
+pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
@@ -615,7 +623,7 @@ pub fn non_empty<T>(input:T) -> IResult<T,T> where
     T: Slice<Range<usize>>+Slice<RangeFrom<usize>>+Slice<RangeTo<usize>>,
     T: InputLength {
   if input.input_len() == 0 {
-    Err(Err::Error(error_position!(ErrorKind::NonEmpty, input)))
+    Err(Err::Error(error_position!(ErrorKind::NonEmpty::<u32>, input)))
   } else {
     Ok((input.slice(input.input_len()..), input))
   }

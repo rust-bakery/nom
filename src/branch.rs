@@ -242,8 +242,8 @@ macro_rules! alt (
   (__impl $i:expr, __end) => (
     {
       use $crate::{Err,ErrorKind};
-      let e = ErrorKind::Alt;
-      let err = Err::Error(error_position!(e,$i));
+      let e2 = ErrorKind::Alt;
+      let err = Err::Error(error_position!(e2,$i));
 
       Err(err)
     }
@@ -287,13 +287,13 @@ macro_rules! alt_complete (
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Context,Err};
+      use $crate::Err;
 
       let i_ = $i.clone();
       let res = complete!(i_, $subrule!($($args)*));
       match res {
         Ok((_,_)) => res,
-        Err(Err::Failure(e)) => Err(Err::Failure(Context::convert(e))),
+        Err(Err::Failure(e)) => Err(Err::Failure(e)),
         e => {
           let out = alt_complete!($i, $($rest)*);
 
@@ -313,12 +313,12 @@ macro_rules! alt_complete (
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Context,Err};
+      use $crate::Err;
 
       let i_ = $i.clone();
       match complete!(i_, $subrule!($($args)*)) {
         Ok((i,o)) => Ok((i,$gen(o))),
-        Err(Err::Failure(e)) => Err(Err::Failure(Context::convert(e))),
+        Err(Err::Failure(e)) => Err(Err::Failure(e)),
         e => {
           let out = alt_complete!($i, $($rest)*);
 
@@ -438,25 +438,35 @@ macro_rules! switch (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Convert};
+      use $crate::{Err,Convert,ErrorKind};
 
       let i_ = $i.clone();
       match map!(i_, $submac!($($args)*), Some) {
-        Err(Err::Error(e))      => Err(Err::Error(error_node_position!(
-            ErrorKind::Switch, $i, e
-        ))),
-        Err(e) => Err(Err::convert(e)),
+        Err(Err::Error(err))      => {
+          fn unify_types<T>(_: &T, _: &T) {}
+          let e1 = ErrorKind::Switch;
+          let e2 = error_position!(e1.clone(),$i);
+          unify_types(&err, &e2);
+
+          Err(Err::Error(error_node_position!(e1, $i, err)))
+        },
+        Err(e) => Err(e),
         Ok((i, o))    => {
 
           match o {
             $(Some($p) => match $subrule!(i, $($args2)*) {
-              Err(Err::Error(e)) => Err(Err::Error(error_node_position!(
-                  ErrorKind::Switch, $i, e
-              ))),
+              Err(Err::Error(err)) => {
+                fn unify_types<T>(_: &T, _: &T) {}
+                let e1 = ErrorKind::Switch;
+                let e2 = error_position!(e1.clone(),$i);
+                unify_types(&err, &e2);
+
+                Err(Err::Error(error_node_position!(e1, $i, err)))
+              },
               Ok(o) => Ok(o),
-              Err(e) => Err(Err::convert(e)),
+              Err(e) => Err(e),
             }),*,
-            _    => Err(Err::Error(error_position!(ErrorKind::Switch,$i)))
+            _    => Err(Err::convert(Err::Error(error_position!(ErrorKind::Switch::<u32>,$i))))
           }
         }
       }
@@ -728,7 +738,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: IResult<_,_,u32> = if reduced != b {
-          let e: ErrorKind<u32> = ErrorKind::Tag;
+          let e: ErrorKind<u32> = ErrorKind::Tag::<u32>;
           Err(Err::Error(error_position!(e, $i)))
         } else if m < blen {
           //let e:Err<&[u8], u32> = need_more($i, Needed::Size(blen));

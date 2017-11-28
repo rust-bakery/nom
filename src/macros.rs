@@ -360,7 +360,7 @@ macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Context,Err,ErrorKind};
+      use $crate::{Context,Err,ErrorKind};
 
       let i_ = $i.clone();
       let cl = || {
@@ -370,7 +370,7 @@ macro_rules! return_error (
       fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
 
       match cl() {
-        Err(Err::Incomplete(x)) => Err(Err::convert(Err::Incomplete(x))),
+        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))              => Ok((i, o)),
         Err(Err::Error(e)) | Err(Err::Failure(e)) => {
           unify_types(&e, &Context::Code($i, $code));
@@ -409,7 +409,7 @@ macro_rules! add_return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert,Context,ErrorKind};
+      use $crate::{Err,Context,ErrorKind};
 
       fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
       match $submac!($i, $($args)*) {
@@ -422,7 +422,7 @@ macro_rules! add_return_error (
           unify_types(&e, &Context::Code($i, $code));
           Err(Err::Failure(error_node_position!($code, $i, e)))
         },
-        Err(e) => Err(Err::convert(e)),
+        Err(e) => Err(e),
       }
     }
   );
@@ -453,12 +453,12 @@ macro_rules! complete (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,ErrorKind};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         Err(Err::Incomplete(_)) =>  {
-          Err(Err::Error(error_position!(ErrorKind::Complete, $i)))
+          Err(Err::Error(error_position!(ErrorKind::Complete::<u32>, $i)))
         },
         rest => rest
       }
@@ -503,10 +503,8 @@ macro_rules! try_parse (
     use $crate::{Convert,Context,Err};
 
     match $submac!($i, $($args)*) {
-      Ok((i,o))     => (i,o),
-      Err(Err::Failure(e))    => return Err(Err::Failure(Context::convert(e))),
-      Err(Err::Error(e))      => return Err(Err::Error(Context::convert(e))),
-      Err(Err::Incomplete(i)) => return Err(Err::Incomplete(i))
+      Ok((i,o)) => (i,o),
+      Err(e)    => return Err(e),
     }
     });
   ($i:expr, $f:expr) => (
@@ -552,7 +550,10 @@ macro_rules! map_res (
       ($submac!(i_, $($args)*)).and_then(|(i,o)| {
         match $submac2!(o, $($args2)*) {
           Ok(output) => Ok((i, output)),
-          Err(_) => Err(Err::Error(error_position!(ErrorKind::MapRes, $i))),
+          Err(_) => {
+            let e = $crate::ErrorKind::MapRes;
+            Err(Err::Error(error_position!(e, $i)))
+          },
         }
       })
     }
@@ -579,15 +580,19 @@ macro_rules! map_opt (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
+      use ::std::option::Option::*;
+      use $crate::{Err,ErrorKind};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         Ok((i, o))              => match $submac2!(o, $($args2)*) {
-          ::std::option::Option::Some(output)   => Ok((i, output)),
-          ::std::option::Option::None           => Err(Err::Error(error_position!(ErrorKind::MapOpt, $i)))
+          Some(output) => Ok((i, output)),
+          None         => {
+            let e = ErrorKind::MapOpt;
+            Err(Err::Error(error_position!(e, $i)))
+        }
         },
-        Err(e) => Err(Err::convert(e))
+        Err(e) => Err(e)
       }
     }
   );
@@ -615,16 +620,18 @@ macro_rules! parse_to (
   ($i:expr, $t:ty ) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use ::std::option::Option;
+      use ::std::option::Option::*;
+      use $crate::{Err,ErrorKind,Context};
 
       use $crate::ParseTo;
       use $crate::Slice;
       use $crate::InputLength;
 
-      let res: ::std::option::Option<$t> = ($i).parse_to();
+      let res: Option<$t> = ($i).parse_to();
       match res {
-        ::std::option::Option::Some(output) => Ok(($i.slice(..$i.input_len()), output)),
-        ::std::option::Option::None         => Err(Err::Error(error_position!(ErrorKind::MapOpt, $i)))
+        Some(output) => Ok(($i.slice(..$i.input_len()), output)),
+        None         => Err(Err::Error(Context::Code($i, ErrorKind::MapOpt::<u32>)))
       }
     }
   );
@@ -645,11 +652,11 @@ macro_rules! verify (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err};
+      use $crate::{Err,ErrorKind};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(e)     => Err(Err::convert(e)),
+        Err(e)     => Err(e),
         Ok((i, o)) => if $submac2!(o, $($args2)*) {
           Ok((i, o))
         } else {
@@ -700,10 +707,9 @@ macro_rules! value (
 
       match $submac!($i, $($args)*) {
         Ok((i,_)) => {
-          let res: IResult<_,_> = Ok((i, $res));
-          res
+          Ok((i, $res))
         },
-        Err(e) => Err(Err::convert(e)),
+        Err(e) => Err(e),
       }
     }
   );
@@ -712,8 +718,7 @@ macro_rules! value (
   );
   ($i:expr, $res:expr) => (
     {
-      let res: $crate::IResult<_,_,u32> = Ok(($i, $res));
-      res
+      Ok(($i, $res))
     }
   );
 );
@@ -727,11 +732,11 @@ macro_rules! expr_res (
   ($i:expr, $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Err,Needed,IResult,ErrorKind};
 
       match $e {
         Ok(output) => Ok(($i, output)),
-        Err(_)     => Err(Err::Error(error_position!(ErrorKind::ExprRes, $i)))
+        Err(_)     => Err(Err::Error(error_position!(ErrorKind::ExprRes::<u32>, $i)))
       }
     }
   );
@@ -772,11 +777,11 @@ macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Err,Needed,IResult,ErrorKind};
 
       match $e {
         ::std::option::Option::Some(output) => Ok(($i, output)),
-        ::std::option::Option::None         => Err(Err::Error(error_position!(ErrorKind::ExprOpt, $i)))
+        ::std::option::Option::None         => Err(Err::Error(error_position!(ErrorKind::ExprOpt::<u32>, $i)))
       }
     }
   );
@@ -813,13 +818,13 @@ macro_rules! opt(
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Convert};
+      use $crate::Err;
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         Ok((i,o))          => Ok((i, Some(o))),
         Err(Err::Error(_)) => Ok(($i, None)),
-        Err(e)             => Err(Err::convert(e)),
+        Err(e)             => Err(e),
       }
     }
   );
@@ -857,10 +862,10 @@ macro_rules! opt_res (
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Ok((i,o))     => Ok((i,  Ok(o))),
-        Err(Err::Error(e))      => Ok(($i, Err(Err::Error(e)))),
+        Ok((i,o))          => Ok((i,  Ok(o))),
+        Err(Err::Error(e)) => Ok(($i, Err(Err::Error(e)))),
         // in case of failure, we return a real error
-        Err(e) => Err(e)
+        Err(e)             => Err(e)
       }
     }
   );
@@ -911,7 +916,7 @@ macro_rules! cond_with_error(
       if $cond {
         match $submac!($i, $($args)*) {
           Ok((i,o)) => Ok((i, ::std::option::Option::Some(o))),
-          Err(e)    => Err(Err::convert(e)),
+          Err(e)    => Err(e),
         }
       } else {
         let res: ::std::result::Result<_,_> = Ok(($i, ::std::option::Option::None));
@@ -961,21 +966,20 @@ macro_rules! cond(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err,IResult};
+      use ::std::option::Option::*;
+      use $crate::Err;
 
       if $cond {
         let i_ = $i.clone();
         match $submac!(i_, $($args)*) {
-          Ok((i,o))               => Ok((i, ::std::option::Option::Some(o))),
+          Ok((i,o))               => Ok((i, Some(o))),
           Err(Err::Error(_))      => {
-            let res: IResult<_,_,u32> = Ok(($i, ::std::option::Option::None));
-            res
+            Ok(($i, None))
           },
-          Err(e) => Err(Err::convert(e)),
+          Err(e) => Err(e),
         }
       } else {
-        let res: ::std::result::Result<_,_> = Ok(($i, ::std::option::Option::None));
-        res
+        Ok(($i, None))
       }
     }
   );
@@ -1020,8 +1024,8 @@ macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err};
-      let default_err = Err(Err::Error(error_position!(ErrorKind::CondReduce, $i)));
+      use $crate::{Convert,Err,ErrorKind,IResult};
+      let default_err = Err(Err::convert(Err::Error(error_position!(ErrorKind::CondReduce::<u32>, $i))));
 
       if $cond {
         let sub_res = $submac!($i, $($args)*);
@@ -1030,7 +1034,7 @@ macro_rules! cond_reduce(
 
         match sub_res {
           Ok((i,o)) => Ok((i, o)),
-          Err(e)    => Err(Err::convert(e)),
+          Err(e)    => Err(e),
         }
       } else {
         default_err
@@ -1076,7 +1080,7 @@ macro_rules! peek(
 );
 
 /// `not!(I -> IResult<I,O>) => I -> IResult<I, O>`
-/// returns a result only if the embedded parser returns Error or Err(Err::Incomplete
+/// returns a result only if the embedded parser returns Error or Err(Err::Incomplete)
 /// does not consume the input
 ///
 /// ```
@@ -1102,7 +1106,7 @@ macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Context,Convert,Err,IResult};
+      use $crate::{Context,ErrorKind,Err,IResult};
 
       use $crate::Slice;
       let i_ = $i.clone();
@@ -1113,8 +1117,8 @@ macro_rules! not(
       let sub_res = $submac!(i_, $($args)*);
       let res = match sub_res {
         Ok(_)  => {
-          let c: Context<_,_> = error_position!(ErrorKind::Not, $i);
-          Err(Err::convert(Err::Error(c)))
+          let c = Context::Code($i, ErrorKind::Not);
+          Err(Err::Error(c))
         },
         Err(_) => Ok(($i, ($i).slice(..0))),
       };
@@ -1173,14 +1177,14 @@ macro_rules! eof (
   ($i:expr,) => (
     {
       use ::std::result::Result::*;
-      use $crate::{AtEof,Err};
+      use $crate::{AtEof,Err,ErrorKind};
 
       use $crate::InputLength;
       if ($i).at_eof() && ($i).input_len() == 0 {
         Ok(($i, $i))
       } else {
         //FIXME what do we do with need_more?
-        Err(Err::Error(error_position!(ErrorKind::Eof, $i)))
+        Err(Err::Error(error_position!(ErrorKind::Eof::<u32>, $i)))
       }
     }
   );
@@ -1202,7 +1206,6 @@ macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err};
 
       use $crate::Offset;
       use $crate::Slice;
@@ -1212,7 +1215,7 @@ macro_rules! recognize (
           let index = (&$i).offset(&i);
           Ok((i, ($i).slice(..index)))
         },
-        Err(e)    => Err(Err::convert(e))
+        Err(e)    => Err(e)
       }
     }
   );
@@ -1225,6 +1228,7 @@ macro_rules! recognize (
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed,IResult};
+  use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -1254,7 +1258,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: $crate::IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag, $i)))
+          Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag::<u32>, $i)))
         } else if m < blen {
           $crate::need_more($i, $crate::Needed::Size(blen))
         } else {
@@ -1398,10 +1402,10 @@ mod tests {
 
   #[test]
   fn not() {
-    named!(not_aaa, not!(tag!("aaa")));
+    named!(not_aaa<()>, not!(tag!("aaa")));
     assert_eq!(not_aaa(&b"aaa"[..]), Err(Err::Error(error_position!(ErrorKind::Not, &b"aaa"[..]))));
-    assert_eq!(not_aaa(&b"aa"[..]), Ok((&b"aa"[..], &b""[..])));
-    assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], &b""[..])));
+    assert_eq!(not_aaa(&b"aa"[..]), Ok((&b"aa"[..], ())));
+    assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
   }
 
   #[test]
