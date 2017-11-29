@@ -111,7 +111,7 @@ macro_rules! is_not(
       use $crate::Slice;
 
       let res: IResult<_,_> = match $input.position(|c| {
-        c.find_token($arr)
+        $arr.find_token(c)
       }) {
         Some(0) => {
           let e = ErrorKind::IsNot::<u32>;
@@ -160,7 +160,7 @@ macro_rules! is_a (
       use $crate::Slice;
 
       let res: IResult<_,_> = match $input.position(|c| {
-        !c.find_token($arr)
+        !$arr.find_token(c)
       }) {
         Some(0) => {
           let e: ErrorKind<u32> = ErrorKind::IsA;
@@ -867,7 +867,7 @@ macro_rules! take_until_either_and_consume (
         need_more($input, Needed::Unknown)
       } else {
         let res: IResult<_,_> = match $input.position(|c| {
-          c.find_token($arr)
+          $arr.find_token(c)
         }) {
           Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeUntilEitherAndConsume::<u32>,$input))),
           Some(n) => {
@@ -917,7 +917,7 @@ macro_rules! take_until_either (
         need_more($input, Needed::Unknown)
       } else {
         let res: IResult<_,_> = match $input.position(|c| {
-          c.find_token($arr)
+          $arr.find_token(c)
         }) {
           Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeUntilEither::<u32>,$input))),
           Some(n) => {

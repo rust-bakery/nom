@@ -89,21 +89,21 @@ impl<'a,'b> FindSubstring<&'b str> for CompleteStr<'a> {
   }
 }
 
-impl<'a> FindToken<CompleteStr<'a>> for char {
-  fn find_token(&self, input: CompleteStr<'a>) -> bool {
-    self.find_token(input.0)
+impl<'a> FindToken<char> for CompleteStr<'a> {
+  fn find_token(&self, token: char) -> bool {
+    self.0.find_token(token)
   }
 }
 
-impl<'a> FindToken<CompleteStr<'a>> for u8 {
-  fn find_token(&self, input: CompleteStr<'a>) -> bool {
-    self.find_token(input.0)
+impl<'a> FindToken<u8> for CompleteStr<'a> {
+  fn find_token(&self, token: u8) -> bool {
+    self.0.find_token(token)
   }
 }
 
-impl<'a, 'b> FindToken<CompleteStr<'a>> for &'b u8 {
-  fn find_token(&self, input: CompleteStr<'a>) -> bool {
-    self.find_token(input.0)
+impl<'a, 'b> FindToken<&'a u8> for CompleteStr<'b> {
+  fn find_token(&self, token: &u8) -> bool {
+    self.0.find_token(token)
   }
 }
 
@@ -216,21 +216,21 @@ impl<'a,'b> FindSubstring<&'b str> for CompleteByteSlice<'a> {
   }
 }
 
-impl<'a> FindToken<CompleteByteSlice<'a>> for char {
-  fn find_token(&self, input: CompleteByteSlice<'a>) -> bool {
-    self.find_token(input.0)
+impl<'a> FindToken<char> for CompleteByteSlice<'a> {
+  fn find_token(&self, token: char) -> bool {
+    self.0.find_token(token)
   }
 }
 
-impl<'a> FindToken<CompleteByteSlice<'a>> for u8 {
-  fn find_token(&self, input: CompleteByteSlice<'a>) -> bool {
-    self.find_token(input.0)
+impl<'a> FindToken<u8> for CompleteByteSlice<'a> {
+  fn find_token(&self, token: u8) -> bool {
+    self.0.find_token(token)
   }
 }
 
-impl<'a, 'b> FindToken<CompleteByteSlice<'a>> for &'b u8 {
-  fn find_token(&self, input: CompleteByteSlice<'a>) -> bool {
-    self.find_token(input.0)
+impl<'a, 'b> FindToken<&'a u8> for CompleteByteSlice<'b> {
+  fn find_token(&self, token: &u8) -> bool {
+    self.0.find_token(token)
   }
 }
 
