@@ -387,7 +387,7 @@ macro_rules! many1(
 ///    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
 ///    assert_eq!(multi(&a[..]),Ok((&b"abcd"[..], res_a)));
 ///    assert_eq!(multi(&b[..]),Ok((&b"abcd"[..], res_b)));
-///    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position!($crate::ErrorKind::Tag,&c[..])))));
+///    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position!(ErrorKind::Tag,&c[..])))));
 /// # }
 /// ```
 #[macro_export]
@@ -411,9 +411,10 @@ macro_rules! many_till(
             match $submac1!(input, $($args1)*) {
               Err(Err::Error(err))                => {
                 fn unify_types<T>(_: &T, _: &T) {}
-                unify_types(&e1, &Err::Error(err));
+                let e = Err::Error(error_node_position!(ErrorKind::ManyTill,input, err));
+                unify_types(&e1, &e);
 
-                ret = Err(Err::Error(error_node_position!(ErrorKind::ManyTill,input, err)));
+                ret = Err(e);
                 break;
               },
               Err(e) => {

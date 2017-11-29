@@ -329,8 +329,7 @@ macro_rules! error_node(
 #[macro_export]
 macro_rules! error_position(
   ($code:expr, $input:expr) => ({
-    use $crate::{ErrorKind,Convert};
-    $crate::Context::Code($input, ErrorKind::convert($code))
+    $crate::Context::Code($input, $code)
   });
 );
 
@@ -357,12 +356,10 @@ macro_rules! error_position(
 macro_rules! error_node_position(
   ($code:expr, $input:expr, $next:expr) => {
     {
-    use $crate::{ErrorKind,Convert};
-
     let mut error_vec = match $next {
       $crate::Context::Code(i, e) => {
         let mut v = ::std::vec::Vec::new();
-        v.push((i, ErrorKind::convert(e)));
+        v.push((i, e));
         v
       },
       $crate::Context::List(v) => {

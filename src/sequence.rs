@@ -529,8 +529,6 @@ mod tests {
   use util::{error_to_list, add_error_pattern, print_error};
   #[cfg(feature = "verbose-errors")]
   use verbose_errors::Context;
-  #[cfg(feature = "verbose-errors")]
-  use util::ErrorKind;
 
   #[cfg(feature = "verbose-errors")]
   fn error_to_string<P:Clone+PartialEq>(e: &Context<P,u32>) -> &'static str {
