@@ -1108,7 +1108,6 @@ macro_rules! not(
       use ::std::result::Result::*;
       use $crate::{Context,ErrorKind,Err,IResult};
 
-      use $crate::Slice;
       let i_ = $i.clone();
 
       //we need this to avoid type inference errors
@@ -1120,7 +1119,7 @@ macro_rules! not(
           let c = Context::Code($i, ErrorKind::Not);
           Err(Err::Error(c))
         },
-        Err(_) => Ok(($i, ($i).slice(..0))),
+        Err(_) => Ok(($i, ())),
       };
       unify_types(&sub_res, &res);
       res
