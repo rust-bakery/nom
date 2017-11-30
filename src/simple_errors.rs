@@ -22,9 +22,9 @@ pub enum Context<I,E=u32> {
 }
 
 
-impl<I,E: From<u32>> Convert<Context<I,u32>> for Context<I,E> {
+impl<I,F,E: From<F>> Convert<Context<I,F>> for Context<I,E> {
 
-  fn convert(c: Context<I,u32>) -> Self {
+  fn convert(c: Context<I,F>) -> Self {
     let Context::Code(i, e) = c;
 
     Context::Code(i, ErrorKind::convert(e))

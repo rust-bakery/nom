@@ -690,9 +690,9 @@ pub trait Convert<T> {
   fn convert(T) -> Self;
 }
 
-impl<E: From<u32>> Convert<ErrorKind<u32>> for ErrorKind<E> {
+impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
 
-  fn convert(e: ErrorKind<u32>) -> Self {
+  fn convert(e: ErrorKind<F>) -> Self {
     match e {
       ErrorKind::Custom(c)                 => ErrorKind::Custom(E::from(c)),
       ErrorKind::Tag                       => ErrorKind::Tag,

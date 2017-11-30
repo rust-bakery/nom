@@ -7,7 +7,7 @@ extern crate nom;
 use nom::{Needed,IResult,be_u16,be_u32,be_u64,be_f32};
 //use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer,FileProducerState};
 //use nom::IResult;
-use nom::Err;
+use nom::{Err,ErrorKind};
 
 use std::str;
 
@@ -258,7 +258,7 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Err(Err::Error(error_position!(ErrorKind::Custom(32),input)))
+    Err(Err::Error(error_position!(ErrorKind::Custom(32u32),input)))
   };
   println!("res: {:?}", res);
   res

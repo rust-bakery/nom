@@ -34,7 +34,7 @@ macro_rules! tag (
         },
         CompareResult::Error => {
           let e:ErrorKind<u32> = ErrorKind::Tag;
-          Err(Err::Error(error_position!(e, $i)))
+          Err(Err::Error($crate::Context::Code($i, e)))
         }
       };
       res
@@ -75,7 +75,7 @@ macro_rules! tag_no_case (
         },
         CompareResult::Error => {
           let e:ErrorKind<u32> = ErrorKind::Tag;
-          Err(Err::Error(error_position!(e, $i)))
+          Err(Err::Error($crate::Context::Code($i, e)))
         }
       };
       res
@@ -114,7 +114,7 @@ macro_rules! is_not(
         c.find_token($arr)
       }) {
         Some(0) => {
-          let e = ErrorKind::IsNot;
+          let e = ErrorKind::IsNot::<u32>;
           Err(Err::Error(error_position!(e,$input)))
         },
         Some(n) => {
@@ -163,7 +163,7 @@ macro_rules! is_a (
         !c.find_token($arr)
       }) {
         Some(0) => {
-          let e = ErrorKind::IsA;
+          let e: ErrorKind<u32> = ErrorKind::IsA;
           Err(Err::Error(error_position!(e,$input)))
         },
         Some(n) => {
@@ -249,11 +249,11 @@ macro_rules! escaped (
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
-          let e2 = ErrorKind::Escaped;
+          let e2 = ErrorKind::Escaped::<u32>;
           return Err(Err::Error(error_node_position!(e2, $i, e)))
         },
         Err(Err::Failure(e))      => {
-          let e2 = ErrorKind::Escaped;
+          let e2 = ErrorKind::Escaped::<u32>;
           return Err(Err::Failure(error_node_position!(e2, $i, e)))
         }
       }
@@ -341,7 +341,7 @@ macro_rules! escaped_transform (
             }
           } else if $i[index] == $control_char as u8 {
             if index + 1 >= $i.input_len() {
-              let e = ErrorKind::EscapedTransform;
+              let e = ErrorKind::EscapedTransform::<u32>;
               return Err(Err::Error(error_position!(e,$i.slice(index..))));
             } else {
               match $transform!($i.slice(index+1..), $($args2)*) {
@@ -358,7 +358,7 @@ macro_rules! escaped_transform (
             }
           } else {
             if index == 0 {
-              let e = ErrorKind::EscapedTransform;
+              let e = ErrorKind::EscapedTransform::<u32>;
               return Err(Err::Error(error_position!(e,$i.slice(index..))))
             } else {
               return Ok(($i.slice(index..), res))
@@ -371,11 +371,11 @@ macro_rules! escaped_transform (
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
-          let e2 = ErrorKind::EscapedTransform;
+          let e2 = ErrorKind::EscapedTransform::<u32>;
           return Err(Err::Error(error_node_position!(e2, $i, e)))
         },
         Err(Err::Failure(e))      => {
-          let e2 = ErrorKind::EscapedTransform;
+          let e2 = ErrorKind::EscapedTransform::<u32>;
           return Err(Err::Failure(error_node_position!(e2, $i, e)))
         }
       }
@@ -484,7 +484,7 @@ macro_rules! take_while1 (
       } else {
         match input.position(|c| !$submac!(c, $($args)*)) {
           Some(0) => {
-            let e = ErrorKind::TakeWhile1;
+            let e = ErrorKind::TakeWhile1::<u32>;
             Err(Err::Error(error_position!(e,input)))
           },
           Some(n) => {
@@ -579,7 +579,7 @@ macro_rules! take_till1 (
       } else {
         match input.position(|c| $submac!(c, $($args)*)) {
           Some(0) => {
-            let e = ErrorKind::TakeTill1;
+            let e = ErrorKind::TakeTill1::<u32>;
             Err(Err::Error(error_position!(e,input)))
           },
           Some(n) => Ok((input.slice(n..), input.slice(..n))),
@@ -689,7 +689,7 @@ macro_rules! take_until_and_consume (
       } else {
         match ($i).find_substring($substr) {
           None => {
-            let e = ErrorKind::TakeUntilAndConsume;
+            let e = ErrorKind::TakeUntilAndConsume::<u32>;
             Err(Err::Error(error_position!(e,$i)))
           },
           Some(index) => {
@@ -732,7 +732,7 @@ macro_rules! take_until_and_consume1 (
       } else {
         match ($i).find_substring($substr) {
           None => {
-            let e = ErrorKind::TakeUntilAndConsume;
+            let e = ErrorKind::TakeUntilAndConsume::<u32>;
             Err(Err::Error(error_position!(e,$i)))
           },
           Some(index) => {
@@ -777,7 +777,7 @@ macro_rules! take_until (
       } else {
         match ($i).find_substring($substr) {
           None => {
-            let e = ErrorKind::TakeUntil;
+            let e = ErrorKind::TakeUntil::<u32>;
             Err(Err::Error(error_position!(e,$i)))
           },
           Some(index) => {
@@ -813,7 +813,7 @@ macro_rules! take_until1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more};
+      use $crate::{Err,Needed,IResult,need_more,ErrorKind};
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
@@ -823,7 +823,7 @@ macro_rules! take_until1 (
       } else {
         match ($i).find_substring($substr) {
           None => {
-            Err(Err::Error(error_position!(ErrorKind::TakeUntil,$i)))
+            Err(Err::Error(error_position!(ErrorKind::TakeUntil::<u32>,$i)))
           },
           Some(index) => {
             Ok(($i.slice(index..), $i.slice(0..index)))
@@ -856,7 +856,7 @@ macro_rules! take_until_either_and_consume (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more};
+      use $crate::{Err,Needed,IResult,need_more,ErrorKind};
 
       use $crate::InputLength;
       use $crate::InputIter;
@@ -869,13 +869,13 @@ macro_rules! take_until_either_and_consume (
         let res: IResult<_,_> = match $input.position(|c| {
           c.find_token($arr)
         }) {
-          Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeUntilEitherAndConsume,$input))),
+          Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeUntilEitherAndConsume::<u32>,$input))),
           Some(n) => {
             let res = Ok(($input.slice(n+1..), $input.slice(..n)));
             res
           },
           None    => {
-            Err(Err::Error(error_position!(ErrorKind::TakeUntilEitherAndConsume,$input)))
+            Err(Err::Error(error_position!(ErrorKind::TakeUntilEitherAndConsume::<u32>,$input)))
           }
         };
         res
@@ -906,7 +906,7 @@ macro_rules! take_until_either (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more};
+      use $crate::{Err,Needed,IResult,need_more,ErrorKind};
 
       use $crate::InputLength;
       use $crate::InputIter;
@@ -919,13 +919,13 @@ macro_rules! take_until_either (
         let res: IResult<_,_> = match $input.position(|c| {
           c.find_token($arr)
         }) {
-          Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeUntilEither,$input))),
+          Some(0) => Err(Err::Error(error_position!(ErrorKind::TakeUntilEither::<u32>,$input))),
           Some(n) => {
             let res = Ok(($input.slice(n..), $input.slice(..n)));
             res
           },
           None    => {
-            Err(Err::Error(error_position!(ErrorKind::TakeUntilEither,$input)))
+            Err(Err::Error(error_position!(ErrorKind::TakeUntilEither::<u32>,$input)))
           }
         };
         res
@@ -964,6 +964,7 @@ macro_rules! length_bytes(
 mod tests {
   use internal::{Err,Needed};
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
+  use util::ErrorKind;
 
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
@@ -1002,7 +1003,7 @@ mod tests {
           if found {
             Ok((&$i[1..], $i[0] as char))
           } else {
-            Err(Err::Error(error_position!(ErrorKind::OneOf, $i)))
+            Err(Err::Error(error_position!(ErrorKind::OneOf::<u32>, $i)))
           }
         }
       }
@@ -1020,7 +1021,7 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"cde"[..], &b"b"[..])));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(ErrorKind::IsA,c))));
+    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(ErrorKind::IsA::<u32>,c))));
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Ok((&b"cdef"[..], &b"ba"[..])));

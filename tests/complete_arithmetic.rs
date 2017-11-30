@@ -79,6 +79,8 @@ fn factor_test() {
 
 #[test]
 fn parens_test() {
+  use nom::ErrorKind;
+
   let input1 = CompleteStr(" 2* (  3 + 4 ) ");
   assert_eq!(expr(input1), Ok((CompleteStr(""), 14)));
 

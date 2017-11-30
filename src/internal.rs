@@ -83,8 +83,8 @@ pub enum Err<I,E=u32> {
 
 use util::Convert;
 
-impl<I,E: From<u32>> Convert<Err<I,u32>> for Err<I,E> {
-  fn convert(e: Err<I,u32>) -> Self {
+impl<I,F,E: From<F>> Convert<Err<I,F>> for Err<I,E> {
+  fn convert(e: Err<I,F>) -> Self {
     match e {
       Err::Incomplete(n) => Err::Incomplete(n),
       Err::Failure(c)    => Err::Failure(Context::convert(c)),
@@ -329,8 +329,7 @@ macro_rules! error_node(
 #[macro_export]
 macro_rules! error_position(
   ($code:expr, $input:expr) => ({
-    use $crate::{ErrorKind,Convert};
-    $crate::Context::Code($input, ErrorKind::convert($code))
+    $crate::Context::Code($input, $code)
   });
 );
 
@@ -343,8 +342,7 @@ macro_rules! error_position(
 #[macro_export]
 macro_rules! error_position(
   ($code:expr, $input:expr) => ({
-    use $crate::{ErrorKind,Convert};
-    $crate::Context::Code($input, ErrorKind::convert($code))
+    $crate::Context::Code($input, $code)
   });
 );
 
@@ -358,12 +356,10 @@ macro_rules! error_position(
 macro_rules! error_node_position(
   ($code:expr, $input:expr, $next:expr) => {
     {
-    use $crate::{ErrorKind,Convert};
-
     let mut error_vec = match $next {
       $crate::Context::Code(i, e) => {
         let mut v = ::std::vec::Vec::new();
-        v.push((i, ErrorKind::convert(e)));
+        v.push((i, e));
         v
       },
       $crate::Context::List(v) => {
@@ -387,8 +383,7 @@ macro_rules! error_node_position(
 #[macro_export]
 macro_rules! error_node_position(
   ($code:expr, $input: expr, $next:expr) => ({
-    use $crate::{ErrorKind,Convert};
-    $crate::Context::Code($input, ErrorKind::convert($code))
+    $crate::Context::Code($input, $code)
   });
 );
 

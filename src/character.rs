@@ -35,7 +35,7 @@ macro_rules! one_of (
         (c, c.find_token($inp))
       }) {
         None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::OneOf, $i))),
+        Some((_, false)) => Err(Err::Error(error_position!($crate::ErrorKind::OneOf::<u32>, $i))),
         //the unwrap should be safe here
         Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
@@ -44,7 +44,7 @@ macro_rules! one_of (
 );
 
 /// matches anything but the provided characters
-/// 
+///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -74,7 +74,7 @@ macro_rules! none_of (
         (c, !c.find_token($inp))
       }) {
         None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::NoneOf, $i))),
+        Some((_, false)) => Err(Err::Error(error_position!($crate::ErrorKind::NoneOf::<u32>, $i))),
         //the unwrap should be safe here
         Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
@@ -83,7 +83,7 @@ macro_rules! none_of (
 );
 
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
-/// 
+///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -111,7 +111,10 @@ macro_rules! char (
         (c, c.as_char() == $c)
       }) {
         None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!(ErrorKind::Char, $i))),
+        Some((_, false)) => {
+          let e: $crate::ErrorKind<u32> = $crate::ErrorKind::Char;
+          Err(Err::Error($crate::Context::Code($i, e)))
+        },
         //the unwrap should be safe here
         Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
@@ -147,6 +150,7 @@ pub fn anychar<T>(input: T) -> IResult<T, char> where
 #[cfg(test)]
 mod tests {
   use internal::Err;
+  use util::ErrorKind;
 
   #[test]
   fn one_of() {
