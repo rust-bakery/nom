@@ -1,25 +1,26 @@
 //! test type inference issues in parsee compilation
 //#![feature(trace_macros)]
 #![allow(dead_code)]
+#![allow(unused_comparisons)]
+#![allow(unused_doc_comment)]
 
 #[macro_use]
 extern crate nom;
 
 use std::str;
-use nom::{Err,IResult,Needed,is_digit,alpha};
+use nom::{is_digit,alpha};
 
 // issue #617
 named!(multi<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
 
 // issue #561
-named!(value<std::vec::Vec<&str>>,
+named!(value<Vec<Vec<&str>>>,
 	do_parse!(
 		first_line: map_res!(is_not_s!("\n"), std::str::from_utf8) >>
 		rest: many_m_n!(0, 1, separated_list!(tag!("\n\t"), map_res!(take_while!(call!(|c| c != '\n' as u8)), std::str::from_utf8))) >>
-		({
-			let mut v : Vec<&str> = rest.iter().fold(Vec::new(), |mut a:Vec<&str>,ref mut x| {
-				a.append(&mut x.clone()); a});
-			v.insert(0, first_line); v})
+		(
+      rest
+    )
 	)
 );
 
