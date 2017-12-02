@@ -45,9 +45,8 @@ impl<'a> InputLength for (&'a [u8], usize) {
   #[inline]
   fn input_len(&self) -> usize {
     //println!("bit input length for ({:?}, {}):", self.0, self.1);
-    let res = self.0.len() * 8 - self.1;
-    //println!("-> {}", res);
-    res
+    //println!("-> {}", self.0.len() * 8 - self.1);
+    self.0.len() * 8 - self.1
   }
 }
 
@@ -158,7 +157,7 @@ impl AsChar for char {
 
 impl<'a> AsChar for &'a char {
     #[inline]
-    fn as_char(self)      -> char { self.clone() }
+    fn as_char(self)      -> char { *self }
     #[inline]
     fn is_alpha(self)     -> bool { self.is_alphabetic() }
     #[inline]
@@ -196,9 +195,14 @@ pub trait InputIter {
 /// abstracts slicing operations
 pub trait InputTake: Sized {
     /// returns a slice of `count` bytes
-    fn take(&self, count: usize)  -> Option<Self>;
+    fn take(&self, count: usize) -> Option<Self> {
+        match self.take_split(count) {
+            Some((_, heads)) => Some(heads),
+            None => None
+        }
+    }
     /// split the stream at the `count` byte offset
-    fn take_split(&self, count: usize) -> Option<(Self,Self)>;
+    fn take_split(&self, count: usize) -> Option<(/*tails*/ Self, /*heads*/ Self)>;
 }
 
 impl<'a> InputIter for &'a [u8] {
@@ -217,7 +221,7 @@ impl<'a> InputIter for &'a [u8] {
     }
     #[inline]
     fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
-      self.iter().position(|b| predicate(*b))
+      self.iter().cloned().position(predicate)
     }
     #[inline]
     fn slice_index(&self, count:usize) -> Option<usize> {
@@ -230,14 +234,6 @@ impl<'a> InputIter for &'a [u8] {
 }
 
 impl<'a> InputTake for &'a [u8] {
-    #[inline]
-    fn take(&self, count: usize) -> Option<Self> {
-      if self.len() >= count {
-        Some(&self[0..count])
-      } else {
-        None
-      }
-    }
     #[inline]
     fn take_split(&self, count: usize) -> Option<(Self,Self)> {
       if self.len() >= count {
@@ -287,28 +283,12 @@ impl<'a> InputIter for &'a str {
 
 impl<'a> InputTake for &'a str {
     #[inline]
-    fn take(&self, count: usize) -> Option<Self> {
-      let mut cnt    = 0;
-      for (index, _) in self.char_indices() {
-        if cnt == count {
-          return Some(&self[..index])
-        }
-        cnt += 1;
-      }
-      None
-    }
-
-    // return byte index
-    #[inline]
     fn take_split(&self, count: usize) -> Option<(Self,Self)> {
-      let mut cnt    = 0;
-      for (index, _) in self.char_indices() {
-        if cnt == count {
-          return Some((&self[index..],&self[..index]))
-        }
-        cnt += 1;
+      let split_char = self.char_indices().enumerate().find(|&(cnt,(_index, _value))| cnt == count);
+      match split_char {
+        Some((_cnt, (index, _value))) => Some((&self[index..],&self[..index])),
+        None => None
       }
-      None
     }
 }
 
@@ -365,7 +345,7 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
       match (*a,*b) {
         (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
         (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122 ) |(97...122, 65...90) => {
-          *a | 0b00100000 == *b | 0b00100000
+          *a | 0b00_10_00_00 == *b | 0b00_10_00_00
         }
         _ => false
       }

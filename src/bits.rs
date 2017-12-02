@@ -374,7 +374,7 @@ mod tests {
 
   #[test]
   fn take_bits() {
-    let input = [0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl    = &input[..];
 
     assert_eq!(take_bits!( (sl, 0), u8,   0 ), Ok(((sl, 0), 0)));
@@ -389,14 +389,14 @@ mod tests {
     assert_eq!(take_bits!( (sl, 0), u16,  8 ), Ok(((&sl[1..], 0), 170)));
     assert_eq!(take_bits!( (sl, 6), u16, 10 ), Ok(((&sl[2..], 0), 752)));
     assert_eq!(take_bits!( (sl, 6), u16, 11 ), Ok(((&sl[2..], 1), 1504)));
-    assert_eq!(take_bits!( (sl, 0), u32, 20 ), Ok(((&sl[2..], 4), 700163)));
-    assert_eq!(take_bits!( (sl, 4), u32, 20 ), Ok(((&sl[3..], 0), 716851)));
+    assert_eq!(take_bits!( (sl, 0), u32, 20 ), Ok(((&sl[2..], 4), 700_163)));
+    assert_eq!(take_bits!( (sl, 4), u32, 20 ), Ok(((&sl[3..], 0), 716_851)));
     assert_eq!(take_bits!( (sl, 4), u32, 22 ), Err(Err::Incomplete(Needed::Size(22))));
   }
 
   #[test]
   fn tag_bits() {
-    let input = [0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl    = &input[..];
 
     assert_eq!(tag_bits!( (sl, 0), u8,   3, 0b101), Ok(((&sl[0..], 3), 5)));
@@ -414,7 +414,7 @@ mod tests {
 
   #[test]
   fn chain_bits() {
-    let input = [0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl    = &input[..];
     assert_eq!(ch((&input[..],0)), Ok(((&sl[1..], 4), (5,15))));
     assert_eq!(ch((&input[..],4)), Ok(((&sl[2..], 0), (7,16))));
@@ -424,7 +424,7 @@ mod tests {
   named!(ch_bytes<(u8,u8)>, bits!(ch));
   #[test]
   fn bits_to_bytes() {
-    let input = [0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     assert_eq!(ch_bytes(&input[..]), Ok( (&input[2..], (5,15))) );
     assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(ch_bytes(&input[1..]), Err(Err::Error(error_position!(ErrorKind::TagBits, &input[1..]))));
@@ -436,7 +436,7 @@ mod tests {
   impl AddAssign for FakeUint {
 
       fn add_assign(&mut self, other: FakeUint) {
-          *self = FakeUint(&self.0 + other.0);
+          *self = FakeUint(self.0 + other.0);
       }
 
   }
@@ -445,7 +445,7 @@ mod tests {
       type Output = FakeUint;
 
       fn shr(self, shift: usize) -> FakeUint {
-          FakeUint(&self.0 >> shift)
+          FakeUint(self.0 >> shift)
       }
 
   }
@@ -454,7 +454,7 @@ mod tests {
       type Output = FakeUint;
 
       fn shl(self, shift: usize) -> FakeUint {
-          FakeUint(&self.0 << shift)
+          FakeUint(self.0 << shift)
       }
 
   }
@@ -468,11 +468,11 @@ mod tests {
 
   #[test]
   fn non_privitive_type() {
-    let input = [0b10101010, 0b11110000, 0b00110011];
+    let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl    = &input[..];
 
-    assert_eq!(take_bits!( (sl, 0), FakeUint, 20 ), Ok( ((&sl[2..], 4), FakeUint(700163))) );
-    assert_eq!(take_bits!( (sl, 4), FakeUint, 20 ), Ok( ((&sl[3..], 0), FakeUint(716851))) );
+    assert_eq!(take_bits!( (sl, 0), FakeUint, 20 ), Ok( ((&sl[2..], 4), FakeUint(700_163))) );
+    assert_eq!(take_bits!( (sl, 4), FakeUint, 20 ), Ok( ((&sl[3..], 0), FakeUint(716_851))) );
     assert_eq!(take_bits!( (sl, 4), FakeUint, 22 ), Err(Err::Incomplete(Needed::Size(22))) );
   }
 }

@@ -43,7 +43,7 @@ named!(float<f32>, map!(
     unsigned_float
   ),
   |(sign, value): (Option<&[u8]>, f32)| {
-    sign.and_then(|s| if s[0] == ('-' as u8) { Some(-1f32) } else { None }).unwrap_or(1f32) * value
+    sign.and_then(|s| if s[0] == (b'-') { Some(-1f32) } else { None }).unwrap_or(1f32) * value
   }
 ));
 
@@ -110,7 +110,7 @@ named!(value<JsonValue>,
 fn json_bench(b: &mut Bencher) {
   let data = &b"  { \"a\"\t: 42,
   \"b\": [ \"x\", \"y\", 12 ] ,
-  \"c\": { \"hello\" : \"world\" 
+  \"c\": { \"hello\" : \"world\"
   }
   }  ";
 
@@ -119,4 +119,3 @@ fn json_bench(b: &mut Bencher) {
     value(&data[..])
   });
 }
-

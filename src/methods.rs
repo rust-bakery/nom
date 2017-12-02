@@ -36,7 +36,7 @@
 //!   );
 //! );
 //! ```
-//! 
+//!
 //! The `method!` macro is similar to the `named!` macro in the macros module.
 //! While `named!` will create a parser function, `method!` will create a parser
 //! method on the struct it is defined in.
@@ -61,7 +61,7 @@
 //! will cause self to be moved for the rest of the method.To get around this
 //! restriction all self is moved into the called method and then the called
 //! method will return self to the caller.
-//! 
+//!
 //! To call a method on self you need to use the `call_m!` macro. For example:
 //! ```ignore
 //! struct<'a> Parser<'a> {
@@ -312,15 +312,12 @@ mod tests {
         let res: IResult<_,_> = if $i.chars().count() < cnt {
           need_more($i, Needed::Size(cnt))
         } else {
-          let mut offset = $i.len();
-          let mut count = 0;
-          for (o, _) in $i.char_indices() {
-            if count == cnt {
-              offset = o;
-              break;
-            }
-            count += 1;
-          }
+          let split_char = $i.char_indices().enumerate()
+            .find(|&(count,(_offset, _value))| count == cnt);
+          let offset = match split_char {
+            Some((_count, (offset, _value))) => offset,
+            None => $i.len()
+          };
           Ok((&$i[offset..], &$i[..offset]))
         };
         res
@@ -465,7 +462,7 @@ mod tests {
       other => panic!("`Parser.use_apply` didn't succeed when it should have. \
                              Got `{:?}`.", other),
     }
-  } 
+  }
 
   #[test]
   fn test_method_call_peek() {

@@ -4,9 +4,6 @@ extern crate nom;
 use nom::digit;
 use nom::types::CompleteStr;
 
-use std::str;
-use std::str::FromStr;
-
 #[macro_export]
 macro_rules! complete_named (
   ($name:ident, $submac:ident!( $($args:tt)* )) => (

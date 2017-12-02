@@ -65,32 +65,32 @@ impl HexDisplay for [u8] {
       for &ch in s.as_bytes().iter() {
         v.push(ch);
       }
-      v.push('\t' as u8);
+      v.push(b'\t');
 
-      i = i + chunk_size;
+      i += chunk_size;
 
       for &byte in chunk {
         v.push(CHARS[(byte >> 4) as usize]);
         v.push(CHARS[(byte & 0xf) as usize]);
-        v.push(' ' as u8);
+        v.push(b' ');
       }
       if chunk_size > chunk.len() {
         for j in 0..(chunk_size - chunk.len()) {
-          v.push(' ' as u8);
-          v.push(' ' as u8);
-          v.push(' ' as u8);
+          v.push(b' ');
+          v.push(b' ');
+          v.push(b' ');
         }
       }
-      v.push('\t' as u8);
+      v.push(b'\t');
 
       for &byte in chunk {
         if (byte >=32 && byte <= 126) || byte >= 128 {
           v.push(byte);
         } else {
-          v.push('.' as u8);
+          v.push(b'.');
         }
       }
-      v.push('\n' as u8);
+      v.push(b'\n');
     }
 
     String::from_utf8_lossy(&v[..]).into_owned()
@@ -299,27 +299,27 @@ pub fn code_from_offset<E>(v: &[(ErrorKind<E>, usize, usize)], offset: usize) ->
 
 pub fn reset_color(v: &mut Vec<u8>) {
   v.push(0x1B);
-  v.push('[' as u8);
+  v.push(b'[');
   v.push(0);
-  v.push('m' as u8);
+  v.push(b'm');
 }
 
 pub fn write_color(v: &mut Vec<u8>, color: u8) {
   v.push(0x1B);
-  v.push('[' as u8);
+  v.push(b'[');
   v.push(1);
-  v.push(';' as u8);
+  v.push(b';');
   let s = color.to_string();
   let bytes = s.as_bytes();
   v.extend(bytes.iter().cloned());
-  v.push('m' as u8);
+  v.push(b'm');
 }
 
 #[cfg(feature = "std")]
 pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> String {
   let mut v = Vec::new();
   for (code, &color) in &colors {
-    if let Some(&s) = names.get(&code) {
+    if let Some(&s) = names.get(code) {
       let bytes = s.as_bytes();
       write_color(&mut v, color);
       v.extend(bytes.iter().cloned());
@@ -330,7 +330,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
       v.extend(bytes.iter().cloned());
     }
     reset_color(&mut v);
-    v.push(' ' as u8);
+    v.push(b' ');
   }
   reset_color(&mut v);
 
@@ -353,7 +353,7 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
     for &ch in s.as_bytes().iter() {
       v.push(ch);
     }
-    v.push('\t' as u8);
+    v.push(b'\t');
 
     let mut k = i;
     let mut l = i;
@@ -376,7 +376,7 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
       }
       v.push(CHARS[(byte >> 4) as usize]);
       v.push(CHARS[(byte & 0xf) as usize]);
-      v.push(' ' as u8);
+      v.push(b' ');
       k = k + 1;
     }
 
@@ -384,12 +384,12 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
 
     if chunk_size > chunk.len() {
       for _ in 0..(chunk_size - chunk.len()) {
-        v.push(' ' as u8);
-        v.push(' ' as u8);
-        v.push(' ' as u8);
+        v.push(b' ');
+        v.push(b' ');
+        v.push(b' ');
       }
     }
-    v.push('\t' as u8);
+    v.push(b'\t');
 
     for &byte in chunk {
       if let Some(code) = code_from_offset(&offsets, l) {
@@ -411,13 +411,13 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
       if (byte >=32 && byte <= 126) || byte >= 128 {
         v.push(byte);
       } else {
-        v.push('.' as u8);
+        v.push(b'.');
       }
       l = l + 1;
     }
     reset_color(&mut v);
 
-    v.push('\n' as u8);
+    v.push(b'\n');
     i = i + chunk_size;
   }
 
