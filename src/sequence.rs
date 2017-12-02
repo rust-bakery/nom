@@ -47,34 +47,22 @@ macro_rules! tuple_parser (
   );
   ($i:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
-
       let i_ = $i.clone();
-      let res = $submac!(i_, $($args)*);
 
-      let ret = match res {
-        Err(e)    => Err(e),
-        Ok((i,o)) => {
-          let i_ = i.clone();
-          let res2 = tuple_parser!(i_, (o), $($rest)*);
-          res2
-        }
-      };
-      ret
+      ( $submac!(i_, $($args)*) ).and_then(|(i,o)| {
+        let i_ = i.clone();
+        tuple_parser!(i_, (o), $($rest)*)
+      })
     }
   );
   ($i:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
-
       let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(e)    => Err(e),
-        Ok((i,o)) => {
-          let i_ = i.clone();
-          tuple_parser!(i_, ($($parsed)* , o), $($rest)*)
-        }
-      }
+
+      ( $submac!(i_, $($args)*) ).and_then(|(i,o)| {
+        let i_ = i.clone();
+        tuple_parser!(i_, ($($parsed)* , o), $($rest)*)
+      })
     }
   );
   ($i:expr, ($($parsed:tt),*), $e:path) => (
@@ -82,27 +70,14 @@ macro_rules! tuple_parser (
   );
   ($i:expr, (), $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-
       let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(e)    => Err(e),
-        Ok((i,o)) => {
-          Ok((i, (o)))
-        }
-      }
+      ( $submac!(i_, $($args)*) ).map(|(i,o)| (i, (o)))
     }
   );
   ($i:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-
-      match $submac!($i, $($args)*) {
-        Err(e)    => Err(e),
-        Ok((i,o)) => {
-          Ok((i, ($($parsed),* , o)))
-        }
-      }
+      let i_ = $i.clone();
+      ( $submac!(i_, $($args)*) ).map(|(i,o)| (i, ($($parsed),* , o)))
     }
   );
   ($i:expr, ($($parsed:expr),*)) => (
