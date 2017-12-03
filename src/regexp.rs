@@ -606,7 +606,7 @@ mod tests {
   fn re_matches_static() {
     named!(rm< &str,Vec<&str> >, re_matches_static!(r"\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"),Ok(("", vec!["2015-09-07"])));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>))));
+    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatches::<u32>))));
     assert_eq!(rm("aaa2015-09-07blah2015-09-09pouet"),Ok(("pouet", vec!["2015-09-07", "2015-09-09"])));
   }
 
@@ -697,7 +697,7 @@ mod tests {
   fn re_bytes_matches_static() {
     named!(rm<Vec<&[u8]> >, re_bytes_matches_static!(r"\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm(&b"2015-09-07"[..]),Ok((&b""[..], vec![&b"2015-09-07"[..]])));
-    assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpMatch::<u32>))));
+    assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpMatches::<u32>))));
     assert_eq!(rm(&b"aaa2015-09-07blah2015-09-09pouet"[..]),Ok((&b"pouet"[..], vec![&b"2015-09-07"[..], &b"2015-09-09"[..]])));
   }
 
