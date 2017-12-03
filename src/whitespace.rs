@@ -383,7 +383,7 @@ macro_rules! permutation_sep (
         //if we reach that part, it means none of the parsers were able to read anything
         if !all_done {
           //FIXME: should wrap the error returned by the child parser
-          error = ::std::option::Option::Some(error_position!($crate::ErrorKind::Permutation, input));
+          error = ::std::option::Option::Some(error_position!(input, $crate::ErrorKind::Permutation));
         }
         break;
       }
@@ -509,7 +509,7 @@ macro_rules! alt_sep (
         Ok((i,o))     => Ok((i,$gen(o))),
         Err(Err::Error(e))      => {
           fn unify_types<T>(_: &T, _: &T) {}
-          let e2 = error_position!($crate::ErrorKind::Alt,$i);
+          let e2 = error_position!($i, $crate::ErrorKind::Alt);
           unify_types(&e, &e2);
           Err(Err::Error(e2))
         },
@@ -531,7 +531,7 @@ macro_rules! alt_sep (
         Ok((i,o))     => Ok((i,o)),
         Err(Err::Error(e))      => {
           fn unify_types<T>(_: &T, _: &T) {}
-          let e2 = error_position!($crate::ErrorKind::Alt,$i);
+          let e2 = error_position!($i, $crate::ErrorKind::Alt);
           unify_types(&e, &e2);
           Err(Err::Error(e2))
         },
@@ -544,14 +544,14 @@ macro_rules! alt_sep (
     use ::std::result::Result::*;
     use $crate::{Err,Needed,IResult};
 
-    Err(Err::Error(error_position!($crate::ErrorKind::Alt,$i)))
+    Err(Err::Error(error_position!($i, $crate::ErrorKind::Alt)))
   });
 
   (__impl $i:expr, $separator:path) => ({
     use ::std::result::Result::*;
     use $crate::{Err,Needed,IResult};
 
-    Err(Err::Error(error_position!($crate::ErrorKind::Alt,$i)))
+    Err(Err::Error(error_position!($i, $crate::ErrorKind::Alt)))
   });
 
   ($i:expr, $separator:path, $($rest:tt)*) => (
@@ -625,22 +625,22 @@ macro_rules! switch_sep (
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(Err::Error(e))      => Err(Err::Error(error_node_position!(
-            $crate::ErrorKind::Switch, $i, e
+            $i, $crate::ErrorKind::Switch, e
         ))),
         Err(Err::Failure(e))    => Err(Err::Failure(
-            error_node_position!($crate::ErrorKind::Switch, $i, e))),
+            error_node_position!($i, $crate::ErrorKind::Switch, e))),
         Err(e) => Err(e),
         Ok((i, o))    => {
           match o {
             $($p => match sep!(i, $separator, $subrule!($($args2)*)) {
               Err(Err::Error(e)) => Err(Err::Error(error_node_position!(
-                  $crate::ErrorKind::Switch, $i, e
+                  $i, $crate::ErrorKind::Switch, e
               ))),
               Err(Err::Failure(e))    => Err(Err::Failure(
-                  error_node_position!($crate::ErrorKind::Switch, $i, e))),
+                  error_node_position!($i, $crate::ErrorKind::Switch, e))),
               a => a,
             }),*,
-            _    => Err(Err::Error(error_position!($crate::ErrorKind::Switch,$i)))
+            _    => Err(Err::Error(error_position!($i, $crate::ErrorKind::Switch)))
           }
         }
       }
@@ -978,7 +978,7 @@ mod tests {
     assert_eq!(perm(c),Ok((&b"jk"[..], expected)));
 
     let d = &b"efg  xyzabcdefghi"[..];
-    assert_eq!(perm(d), Err(Err::Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..]))));
+    assert_eq!(perm(d), Err(Err::Error(error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation))));
 
     let e = &b" efg \tabc"[..];
     assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
@@ -1026,7 +1026,7 @@ mod tests {
     }
 
     let a = &b"\tabcd"[..];
-    assert_eq!(alt1(a), Err(Err::Error(error_position!(ErrorKind::Alt::<ErrorStr>, a))));
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt::<ErrorStr>))));
     assert_eq!(alt2(a),Ok((&b""[..], a)));
     assert_eq!(alt3(a),Ok((a, &b""[..])));
 
@@ -1048,11 +1048,11 @@ mod tests {
     );
 
     let a = &b""[..];
-    assert_eq!(ac(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
+    assert_eq!(ac(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     let a = &b" \tef "[..];
     assert_eq!(ac(a),Ok((&b""[..], &b"ef"[..])));
     let a = &b" cde"[..];
-    assert_eq!(ac(a), Err(Err::Error(error_position!(ErrorKind::Alt, &a[1..]))));
+    assert_eq!(ac(a), Err(Err::Error(error_position!(&a[1..], ErrorKind::Alt))));
   }
 
   #[allow(unused_variables)]
@@ -1071,7 +1071,7 @@ mod tests {
     let b = &b"\tefgh ijkl "[..];
     assert_eq!(sw(b),Ok((&b""[..], &b"ijkl"[..])));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Err(Err::Error(error_position!(ErrorKind::Switch, &b"afghijkl"[..]))));
+    assert_eq!(sw(c), Err(Err::Error(error_position!(&b"afghijkl"[..], ErrorKind::Switch))));
   }
 
   named!(str_parse(&str) -> &str, ws!(tag!("test")));

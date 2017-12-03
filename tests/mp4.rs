@@ -258,7 +258,7 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Err(Err::Error(error_position!(ErrorKind::Custom(32u32),input)))
+    Err(Err::Error(error_position!(input, ErrorKind::Custom(32u32))))
   };
   println!("res: {:?}", res);
   res

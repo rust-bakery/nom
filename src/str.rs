@@ -366,7 +366,7 @@ mod test {
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
     assert_eq!(f(&b[..]),Ok((&a[..], &b[..])));
     assert_eq!(f(&c[..]),Ok((&"123"[..], &b[..])));
-    assert_eq!(f(&d[..]), Err(Err::Error(error_position!(ErrorKind::TakeWhile1, &d[..]))));
+    assert_eq!(f(&d[..]), Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1))));
   }
 
   #[test]

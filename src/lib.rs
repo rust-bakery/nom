@@ -77,7 +77,7 @@
 //!      // the first part of the returned value is the remaining slice
 //!      Ok((&input[1..], 'a'))
 //!    } else {
-//!      Err(Err::Error(error_position!(ErrorKind::Custom(42), input)))
+//!      Err(Err::Error(error_position!(input, ErrorKind::Custom(42))))
 //!    }
 //!  }
 //! }

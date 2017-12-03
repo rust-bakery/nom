@@ -328,7 +328,7 @@ macro_rules! error_node(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_position(
-  ($code:expr, $input:expr) => ({
+  ($input: expr, $code:expr) => ({
     $crate::Context::Code($input, $code)
   });
 );
@@ -341,7 +341,7 @@ macro_rules! error_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_position(
-  ($code:expr, $input:expr) => ({
+  ($input:expr, $code:expr) => ({
     $crate::Context::Code($input, $code)
   });
 );
@@ -354,7 +354,7 @@ macro_rules! error_position(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input:expr, $next:expr) => {
+  ($input:expr, $code:expr, $next:expr) => {
     {
     let mut error_vec = match $next {
       $crate::Context::Code(i, e) => {
@@ -382,7 +382,7 @@ macro_rules! error_node_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input: expr, $next:expr) => ({
+  ($input:expr, $code:expr, $next:expr) => ({
     $crate::Context::Code($input, $code)
   });
 );

@@ -243,7 +243,7 @@ macro_rules! alt (
     {
       use $crate::{Err,ErrorKind};
       let e2 = ErrorKind::Alt;
-      let err = Err::Error(error_position!(e2,$i));
+      let err = Err::Error(error_position!($i, e2));
 
       Err(err)
     }
@@ -380,10 +380,10 @@ macro_rules! alt_complete (
 ///  let d = b"blah";
 ///
 ///  assert_eq!(sw(&a[..]), Ok((&b"123"[..], &b"XYZ"[..])));
-///  assert_eq!(sw(&b[..]), Err(Err::Error(error_node_position!(ErrorKind::Switch, &b"abcdef"[..],
-///    error_position!(ErrorKind::Tag, &b"ef"[..])))));
+///  assert_eq!(sw(&b[..]), Err(Err::Error(error_node_position!(&b"abcdef"[..], ErrorKind::Switch,
+///    error_position!(&b"ef"[..], ErrorKind::Tag)))));
 ///  assert_eq!(sw(&c[..]), Ok((&b""[..], &b"123"[..])));
-///  assert_eq!(sw(&d[..]), Err(Err::Error(error_position!(ErrorKind::Switch, &b"blah"[..]))));
+///  assert_eq!(sw(&d[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::Switch))));
 ///  # }
 /// ```
 ///
@@ -445,10 +445,10 @@ macro_rules! switch (
         Err(Err::Error(err))      => {
           fn unify_types<T>(_: &T, _: &T) {}
           let e1 = ErrorKind::Switch;
-          let e2 = error_position!(e1.clone(),$i);
+          let e2 = error_position!($i, e1.clone());
           unify_types(&err, &e2);
 
-          Err(Err::Error(error_node_position!(e1, $i, err)))
+          Err(Err::Error(error_node_position!($i, e1, err)))
         },
         Err(e) => Err(e),
         Ok((i, o))    => {
@@ -458,15 +458,15 @@ macro_rules! switch (
               Err(Err::Error(err)) => {
                 fn unify_types<T>(_: &T, _: &T) {}
                 let e1 = ErrorKind::Switch;
-                let e2 = error_position!(e1.clone(),$i);
+                let e2 = error_position!($i, e1.clone());
                 unify_types(&err, &e2);
 
-                Err(Err::Error(error_node_position!(e1, $i, err)))
+                Err(Err::Error(error_node_position!($i, e1, err)))
               },
               Ok(o) => Ok(o),
               Err(e) => Err(e),
             }),*,
-            _    => Err(Err::convert(Err::Error(error_position!(ErrorKind::Switch::<u32>,$i))))
+            _    => Err(Err::convert(Err::Error(error_position!($i, ErrorKind::Switch::<u32>))))
           }
         }
       }
@@ -512,7 +512,7 @@ macro_rules! switch (
 /// assert_eq!(perm(c), Ok((&b"jklm"[..], expected)));
 ///
 /// let d = &b"efgxyzabcdefghi"[..];
-/// assert_eq!(perm(d), Err(Err::Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..]))));
+/// assert_eq!(perm(d), Err(Err::Error(error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation))));
 ///
 /// let e = &b"efgabc"[..];
 /// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
@@ -537,7 +537,7 @@ macro_rules! permutation (
         //if we reach that part, it means none of the parsers were able to read anything
         if !all_done {
           //FIXME: should wrap the error returned by the child parser
-          error = ::std::option::Option::Some(error_position!(ErrorKind::Permutation, input));
+          error = ::std::option::Option::Some(error_position!(input, ErrorKind::Permutation));
         }
         break;
       }
@@ -739,7 +739,7 @@ mod tests {
 
         let res: IResult<_,_,u32> = if reduced != b {
           let e: ErrorKind<u32> = ErrorKind::Tag::<u32>;
-          Err(Err::Error(error_position!(e, $i)))
+          Err(Err::Error(error_position!($i, e)))
         } else if m < blen {
           //let e:Err<&[u8], u32> = need_more($i, Needed::Size(blen));
           //Err(e)
@@ -813,7 +813,7 @@ mod tests {
     //named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
-    assert_eq!(alt1(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(a,  ErrorKind::Alt))));
     assert_eq!(alt2(a), Ok((&b""[..], a)));
     assert_eq!(alt3(a), Ok((a, &b""[..])));
 
@@ -845,7 +845,7 @@ mod tests {
     let a = &b"bcd"[..];
     assert_eq!(alt1(a), Ok((&b"d"[..], &b"bc"[..])));
     let a = &b"cde"[..];
-    assert_eq!(alt1(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     let a = &b"de"[..];
     assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(3))));
     let a = &b"defg"[..];
@@ -859,11 +859,11 @@ mod tests {
     );
 
     let a = &b""[..];
-    assert_eq!(ac(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
+    assert_eq!(ac(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     let a = &b"ef"[..];
     assert_eq!(ac(a), Ok((&b""[..], &b"ef"[..])));
     let a = &b"cde"[..];
-    assert_eq!(ac(a), Err(Err::Error(error_position!(ErrorKind::Alt, a))));
+    assert_eq!(ac(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
   }
 
   #[allow(unused_variables)]
@@ -882,7 +882,7 @@ mod tests {
     let b = &b"efghijkl"[..];
     assert_eq!(sw(b), Ok((&b""[..], &b"ijkl"[..])));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Err(Err::Error(error_position!(ErrorKind::Switch, &b"afghijkl"[..]))));
+    assert_eq!(sw(c), Err(Err::Error(error_position!(&b"afghijkl"[..], ErrorKind::Switch))));
   }
 
   #[test]
@@ -903,7 +903,7 @@ mod tests {
     assert_eq!(perm(c), Ok((&b"jk"[..], expected)));
 
     let d = &b"efgxyzabcdefghi"[..];
-    assert_eq!(perm(d), Err(Err::Error(error_position!(ErrorKind::Permutation, &b"xyzabcdefghi"[..]))));
+    assert_eq!(perm(d), Err(Err::Error(error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation))));
 
     let e = &b"efgabc"[..];
     assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
