@@ -4,6 +4,7 @@ use internal::{Err,IResult,Needed};
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
 use std::iter::Enumerate;
 use std::slice::Iter;
+use std::iter::Map;
 
 use std::str::Chars;
 use std::str::CharIndices;
@@ -202,21 +203,21 @@ pub trait InputTake: Sized {
 }
 
 impl<'a> InputIter for &'a [u8] {
-    type Item     = &'a u8;
+    type Item     = u8;
     type RawItem  = u8;
-    type Iter     = Enumerate<Iter<'a, Self::RawItem>>;
-    type IterElem = Iter<'a, Self::RawItem>;
+    type Iter     = Enumerate<Self::IterElem>;
+    type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
 
     #[inline]
     fn iter_indices(&self) -> Self::Iter {
-        self.iter().enumerate()
+        self.iter_elements().enumerate()
     }
     #[inline]
     fn iter_elements(&self) -> Self::IterElem {
-      self.iter()
+      self.iter().map(|r_u8| *r_u8)
     }
     #[inline]
-    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
+    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::Item) -> bool {
       self.iter().position(|b| predicate(*b))
     }
     #[inline]
@@ -423,37 +424,43 @@ impl<'a,'b> Compare<&'b str> for &'a str {
 
 /// look for self in the given input stream
 pub trait FindToken<T> {
-  fn find_token(&self, input: T) -> bool;
+  fn find_token(&self, token: T) -> bool;
 }
 
-impl<'a> FindToken<&'a[u8]> for u8 {
-  fn find_token(&self, input: &[u8]) -> bool {
-    memchr::memchr(*self, input).is_some()
+impl<'a> FindToken<u8> for &'a[u8] {
+  fn find_token(&self, token: u8) -> bool {
+    memchr::memchr(token, self).is_some()
   }
 }
 
-impl<'a> FindToken<&'a str> for u8 {
-  fn find_token(&self, input: &str) -> bool {
-    self.find_token(str::as_bytes(input))
+impl<'a> FindToken<u8> for &'a str {
+  fn find_token(&self, token: u8) -> bool {
+    self.as_bytes().find_token(token)
   }
 }
 
-impl<'a,'b> FindToken<&'a[u8]> for &'b u8 {
-  fn find_token(&self, input: &[u8]) -> bool {
-    memchr::memchr(**self, input).is_some()
+impl<'a,'b> FindToken<&'a u8> for &'b [u8] {
+  fn find_token(&self, token: &u8) -> bool {
+    memchr::memchr(*token, self).is_some()
   }
 }
 
-impl<'a,'b> FindToken<&'a str> for &'b u8 {
-  fn find_token(&self, input: &str) -> bool {
-    self.find_token(str::as_bytes(input))
+impl<'a,'b> FindToken<&'a u8> for &'b str {
+  fn find_token(&self, token: &u8) -> bool {
+    self.as_bytes().find_token(token)
   }
 }
 
-impl<'a> FindToken<&'a str> for char {
-  fn find_token(&self, input: &str) -> bool {
-    for i in input.chars() {
-      if *self == i { return true }
+impl<'a> FindToken<char> for &'a[u8] {
+  fn find_token(&self, token: char) -> bool {
+    memchr::memchr(token as u8, self).is_some()
+  }
+}
+
+impl<'a> FindToken<char> for &'a str {
+  fn find_token(&self, token: char) -> bool {
+    for i in self.chars() {
+      if token == i { return true }
     }
     false
   }

@@ -88,5 +88,5 @@ fn parens_test() {
   assert_eq!(expr(input2), Ok((CompleteStr(""), 4)));
 
   let input3 = CompleteStr("  2*2 / ( 5 - 1) +   ");
-  assert_eq!(root_expr(input3), Err(nom::Err::Error(error_position!(ErrorKind::Eof, CompleteStr("+   ")))));
+  assert_eq!(root_expr(input3), Err(nom::Err::Error(error_position!(CompleteStr("+   "), ErrorKind::Eof))));
 }

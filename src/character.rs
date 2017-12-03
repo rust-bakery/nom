@@ -32,10 +32,10 @@ macro_rules! one_of (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        (c, c.find_token($inp))
+        (c, $inp.find_token(c))
       }) {
         None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!($crate::ErrorKind::OneOf::<u32>, $i))),
+        Some((_, false)) => Err(Err::Error(error_position!($i, $crate::ErrorKind::OneOf::<u32>))),
         //the unwrap should be safe here
         Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
@@ -54,7 +54,7 @@ macro_rules! one_of (
 /// assert_eq!(no_letter_a(b"123"), Ok((&b"23"[..], '1')));
 ///
 /// named!(err_on_single_quote<char>, none_of!(&b"'"[..]));
-/// assert_eq!(err_on_single_quote(b"'jiosfe"), Err(Err::Error(error_position!(ErrorKind::NoneOf, &b"'jiosfe"[..]))));
+/// assert_eq!(err_on_single_quote(b"'jiosfe"), Err(Err::Error(error_position!(&b"'jiosfe"[..], ErrorKind::NoneOf))));
 /// # }
 /// ```
 #[macro_export]
@@ -71,10 +71,10 @@ macro_rules! none_of (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        (c, !c.find_token($inp))
+        (c, !$inp.find_token(c))
       }) {
         None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!($crate::ErrorKind::NoneOf::<u32>, $i))),
+        Some((_, false)) => Err(Err::Error(error_position!($i, $crate::ErrorKind::NoneOf::<u32>))),
         //the unwrap should be safe here
         Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
@@ -92,7 +92,7 @@ macro_rules! none_of (
 /// named!(match_letter_a<char>, char!('a'));
 /// assert_eq!(match_letter_a(b"abc"), Ok((&b"bc"[..],'a')));
 ///
-/// assert_eq!(match_letter_a(b"123cdef"), Err(Err::Error(error_position!(ErrorKind::Char, &b"123cdef"[..]))));
+/// assert_eq!(match_letter_a(b"123cdef"), Err(Err::Error(error_position!(&b"123cdef"[..], ErrorKind::Char))));
 /// # }
 /// ```
 #[macro_export]
@@ -160,7 +160,7 @@ mod tests {
     assert_eq!(f(a),Ok((&b"bcd"[..], 'a')));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b), Err(Err::Error(error_position!(ErrorKind::OneOf, b))));
+    assert_eq!(f(b), Err(Err::Error(error_position!(b, ErrorKind::OneOf))));
 
     named!(utf8(&str) -> char,
       one_of!("+\u{FF0B}"));
@@ -174,7 +174,7 @@ mod tests {
     named!(f<char>, none_of!("ab"));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a), Err(Err::Error(error_position!(ErrorKind::NoneOf, a))));
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::NoneOf))));
 
     let b = &b"cde"[..];
     assert_eq!(f(b),Ok((&b"de"[..], 'c')));
@@ -185,7 +185,7 @@ mod tests {
     named!(f<char>, char!('c'));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a), Err(Err::Error(error_position!(ErrorKind::Char, a))));
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
 
     let b = &b"cde"[..];
     assert_eq!(f(b),Ok((&b"de"[..], 'c')));

@@ -372,9 +372,9 @@ macro_rules! apply (
 ///     let res_a = err_test(a);
 ///     let res_b = err_test(b);
 ///     let res_c = err_test(c);
-///     assert_eq!(res_a, Err(Err::Failure(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah)))));
-///     assert_eq!(res_b, Err(Err::Failure(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..],
-///       error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah))))
+///     assert_eq!(res_a, Err(Err::Failure(error_node_position!(blah, ErrorKind::Custom(42), error_position!(blah, ErrorKind::Tag)))));
+///     assert_eq!(res_b, Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42),
+///       error_node_position!(blah, ErrorKind::Custom(128), error_position!(blah, ErrorKind::Tag))))
 ///     ));
 /// # }
 /// ```
@@ -398,7 +398,7 @@ macro_rules! return_error (
         Ok((i, o))              => Ok((i, o)),
         Err(Err::Error(e)) | Err(Err::Failure(e)) => {
           unify_types(&e, &Context::Code($i, $code));
-          return Err(Err::Failure(error_node_position!($code, $i, e)))
+          return Err(Err::Failure(error_node_position!($i, $code, e)))
         }
       }
     }
@@ -424,7 +424,7 @@ macro_rules! return_error (
 ///
 ///     let a = &b"efghblah"[..];
 ///     let res_a = err_test(a);
-///     assert_eq!(res_a, Err(Err::Error(error_node_position!(ErrorKind::Custom(42), a, error_position!(ErrorKind::Tag, a)))));
+///     assert_eq!(res_a, Err(Err::Error(error_node_position!(a, ErrorKind::Custom(42), error_position!(a, ErrorKind::Tag)))));
 /// # }
 /// ```
 ///
@@ -440,11 +440,11 @@ macro_rules! add_return_error (
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
           unify_types(&e, &Context::Code($i, $code));
-          Err(Err::Error(error_node_position!($code, $i, e)))
+          Err(Err::Error(error_node_position!($i, $code, e)))
         },
         Err(Err::Failure(e))      => {
           unify_types(&e, &Context::Code($i, $code));
-          Err(Err::Failure(error_node_position!($code, $i, e)))
+          Err(Err::Failure(error_node_position!($i, $code, e)))
         },
         Err(e) => Err(e),
       }
@@ -468,7 +468,7 @@ macro_rules! add_return_error (
 ///
 ///     let a = &b"abcd"[..];
 ///     let res_a = take_5(a);
-///     assert_eq!(res_a, Err(Err::Error(error_position!(ErrorKind::Complete, a))));
+///     assert_eq!(res_a, Err(Err::Error(error_position!(a, ErrorKind::Complete))));
 /// # }
 /// ```
 ///
@@ -482,7 +482,7 @@ macro_rules! complete (
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         Err(Err::Incomplete(_)) =>  {
-          Err(Err::Error(error_position!(ErrorKind::Complete::<u32>, $i)))
+          Err(Err::Error(error_position!($i, ErrorKind::Complete::<u32>)))
         },
         rest => rest
       }
@@ -517,7 +517,7 @@ macro_rules! complete (
 /// let arr2 = [0xFE, 2, 3, 4, 5];
 /// // size is overflowing
 /// let r1 = take_add(&arr2[..], 42);
-/// assert_eq!(r1, Err(Err::Error(error_position!(ErrorKind::ExprOpt,&[2,3,4,5][..]))));
+/// assert_eq!(r1, Err(Err::Error(error_position!(&[2,3,4,5][..], ErrorKind::ExprOpt))));
 /// # }
 /// ```
 #[macro_export]
@@ -576,7 +576,7 @@ macro_rules! map_res (
           Ok(output) => Ok((i, output)),
           Err(_) => {
             let e = $crate::ErrorKind::MapRes;
-            Err(Err::Error(error_position!(e, $i)))
+            Err(Err::Error(error_position!($i, e)))
           },
         }
       })
@@ -613,7 +613,7 @@ macro_rules! map_opt (
           Some(output) => Ok((i, output)),
           None         => {
             let e = ErrorKind::MapOpt;
-            Err(Err::Error(error_position!(e, $i)))
+            Err(Err::Error(error_position!($i, e)))
         }
         },
         Err(e) => Err(e)
@@ -684,7 +684,7 @@ macro_rules! verify (
         Ok((i, o)) => if $submac2!(o, $($args2)*) {
           Ok((i, o))
         } else {
-          Err(Err::Error(error_position!(ErrorKind::Verify, $i)))
+          Err(Err::Error(error_position!($i, ErrorKind::Verify)))
         }
       }
     }
@@ -760,7 +760,7 @@ macro_rules! expr_res (
 
       match $e {
         Ok(output) => Ok(($i, output)),
-        Err(_)     => Err(Err::Error(error_position!(ErrorKind::ExprRes::<u32>, $i)))
+        Err(_)     => Err(Err::Error(error_position!($i, ErrorKind::ExprRes::<u32>)))
       }
     }
   );
@@ -793,7 +793,7 @@ macro_rules! expr_res (
 /// let arr2 = [0xFE, 2, 3, 4, 5];
 /// // size is overflowing
 /// let r1 = take_add(&arr2[..], 42);
-/// assert_eq!(r1, Err(Err::Error(error_position!(ErrorKind::ExprOpt,&[2,3,4,5][..]))));
+/// assert_eq!(r1, Err(Err::Error(error_position!(&[2,3,4,5][..], ErrorKind::ExprOpt))));
 /// # }
 /// ```
 #[macro_export]
@@ -805,7 +805,7 @@ macro_rules! expr_opt (
 
       match $e {
         ::std::option::Option::Some(output) => Ok(($i, output)),
-        ::std::option::Option::None         => Err(Err::Error(error_position!(ErrorKind::ExprOpt::<u32>, $i)))
+        ::std::option::Option::None         => Err(Err::Error(error_position!($i, ErrorKind::ExprOpt::<u32>)))
       }
     }
   );
@@ -874,7 +874,7 @@ macro_rules! opt(
 ///  let a = b"abcdef";
 ///  let b = b"bcdefg";
 ///  assert_eq!(o(&a[..]), Ok((&b"ef"[..], Ok(&b"abcd"[..])));
-///  assert_eq!(o(&b[..]), Ok((&b"bcdefg"[..], Err(error_position!(ErrorKind::Tag, &b[..]))));
+///  assert_eq!(o(&b[..]), Ok((&b"bcdefg"[..], Err(error_position!(&b[..], ErrorKind::Tag))));
 ///  # }
 /// ```
 #[macro_export]
@@ -1039,7 +1039,7 @@ macro_rules! cond(
 ///  let f2 = closure!(&'static[u8],
 ///    cond_reduce!( b2, tag!("abcd") )
 ///  );
-///  assert_eq!(f2(&a[..]), Err(Err::Error(error_position!(ErrorKind::CondReduce, &a[..]))));
+///  assert_eq!(f2(&a[..]), Err(Err::Error(error_position!(&a[..], ErrorKind::CondReduce))));
 ///  # }
 /// ```
 ///
@@ -1049,7 +1049,7 @@ macro_rules! cond_reduce(
     {
       use ::std::result::Result::*;
       use $crate::{Convert,Err,ErrorKind,IResult};
-      let default_err = Err(Err::convert(Err::Error(error_position!(ErrorKind::CondReduce::<u32>, $i))));
+      let default_err = Err(Err::convert(Err::Error(error_position!($i, ErrorKind::CondReduce::<u32>))));
 
       if $cond {
         let sub_res = $submac!($i, $($args)*);
@@ -1122,7 +1122,7 @@ macro_rules! peek(
 /// assert_eq!(r, Ok((&b"d"[..], &b"abc"[..])));
 ///
 /// let r2 = not_e(&b"abce"[..]);
-/// assert_eq!(r2, Err(Err::Error(error_position!(ErrorKind::Not, &b"e"[..]))));
+/// assert_eq!(r2, Err(Err::Error(error_position!(&b"e"[..], ErrorKind::Not))));
 /// # }
 /// ```
 #[macro_export]
@@ -1207,7 +1207,7 @@ macro_rules! eof (
         Ok(($i, $i))
       } else {
         //FIXME what do we do with need_more?
-        Err(Err::Error(error_position!(ErrorKind::Eof::<u32>, $i)))
+        Err(Err::Error(error_position!($i, ErrorKind::Eof::<u32>)))
       }
     }
   );
@@ -1281,7 +1281,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: $crate::IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag::<u32>, $i)))
+          Err($crate::Err::Error(error_position!($i, $crate::ErrorKind::Tag::<u32>)))
         } else if m < blen {
           $crate::need_more($i, $crate::Needed::Size(blen))
         } else {
@@ -1344,6 +1344,7 @@ mod tests {
         assert_eq!(opt_abcd(b), Ok((&b"bcdefg"[..], None)));
         assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
     }
+
     #[cfg(feature = "verbose-errors")]
     #[test]
     fn opt_res() {
@@ -1353,7 +1354,7 @@ mod tests {
         let b = &b"bcdefg"[..];
         let c = &b"ab"[..];
         assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
-        assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(ErrorKind::Tag, b))))));
+        assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag))))));
         assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
     }
 
@@ -1366,7 +1367,7 @@ mod tests {
         let b = &b"bcdefg"[..];
         let c = &b"ab"[..];
         assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
-        assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(ErrorKind::Tag, b))))));
+        assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag))))));
         assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
     }
 
@@ -1431,13 +1432,13 @@ mod tests {
 
         assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
         assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-        assert_eq!(peek_tag(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+        assert_eq!(peek_tag(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
     }
 
     #[test]
     fn not() {
         named!(not_aaa<()>, not!(tag!("aaa")));
-        assert_eq!(not_aaa(&b"aaa"[..]), Err(Err::Error(error_position!(ErrorKind::Not, &b"aaa"[..]))));
+        assert_eq!(not_aaa(&b"aaa"[..]), Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not))));
         assert_eq!(not_aaa(&b"aa"[..]), Ok((&b"aa"[..], ())));
         assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
     }
@@ -1446,7 +1447,7 @@ mod tests {
     fn verify() {
         named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == 'a' as u8));
         assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
-        assert_eq!(test(&b"bcdefg"[..]), Err(Err::Error(error_position!(ErrorKind::Verify, &b"bcdefg"[..]))));
+        assert_eq!(test(&b"bcdefg"[..]), Err(Err::Error(error_position!(&b"bcdefg"[..], ErrorKind::Verify))));
         assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
     }
 }

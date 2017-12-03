@@ -22,7 +22,7 @@ macro_rules! separated_list(
         Err(e)             => Err(e),
         Ok((i,o))     => {
           if i.input_len() == input.input_len() {
-            Err(Err::Error(error_position!($crate::ErrorKind::SeparatedList,input)))
+            Err(Err::Error(error_position!(input, $crate::ErrorKind::SeparatedList)))
           } else {
             res.push(o);
             input = i;
@@ -108,7 +108,7 @@ macro_rules! separated_nonempty_list(
         Ok((i,o)) => {
           if i.input_len() == input.input_len() {
             let e = ErrorKind::SeparatedNonEmptyList;
-            Err(Err::Error(error_position!(e,input)))
+            Err(Err::Error(error_position!(input, e)))
           } else {
             res.push(o);
             input = i;
@@ -263,7 +263,7 @@ macro_rules! many0(
           Ok((i, o))              => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = Err(Err::Error(error_position!($crate::ErrorKind::Many0,input)));
+              ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0)));
               break;
             }
 
@@ -298,7 +298,7 @@ macro_rules! many0(
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
-///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(ErrorKind::Many1,&b[..]))));
+///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
 /// # }
 /// ```
 #[macro_export]
@@ -312,10 +312,10 @@ macro_rules! many1(
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
-          error_position!($crate::ErrorKind::Many1,i_)
+          error_position!(i_, $crate::ErrorKind::Many1)
         )),
         Err(Err::Failure(_))      => Err(Err::Failure(
-          error_position!($crate::ErrorKind::Many1,i_)
+          error_position!(i_, $crate::ErrorKind::Many1)
         )),
         Err(i) => Err(i),
         Ok((i1,o1))   => {
@@ -387,7 +387,8 @@ macro_rules! many1(
 ///    let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
 ///    assert_eq!(multi(&a[..]),Ok((&b"abcd"[..], res_a)));
 ///    assert_eq!(multi(&b[..]),Ok((&b"abcd"[..], res_b)));
-///    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..],error_position!(ErrorKind::Tag,&c[..])))));
+///    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(&c[..], ErrorKind::ManyTill,
+///      error_position!(&c[..], ErrorKind::Tag)))));
 /// # }
 /// ```
 #[macro_export]
@@ -411,7 +412,7 @@ macro_rules! many_till(
             match $submac1!(input, $($args1)*) {
               Err(Err::Error(err))                => {
                 fn unify_types<T>(_: &T, _: &T) {}
-                let e = Err::Error(error_node_position!(ErrorKind::ManyTill,input, err));
+                let e = Err::Error(error_node_position!(input, ErrorKind::ManyTill, err));
                 unify_types(&e1, &e);
 
                 ret = Err(e);
@@ -424,7 +425,7 @@ macro_rules! many_till(
               Ok((i, o))                          => {
                 // loop trip must always consume (otherwise infinite loops)
                 if i == input {
-                  ret = Err(Err::Error(error_position!($crate::ErrorKind::ManyTill,input)));
+                  ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::ManyTill)));
                   break;
                 }
 
@@ -470,7 +471,7 @@ macro_rules! many_till(
 ///  let b = b"abcdabcdefgh";
 ///  let c = b"abcdabcdabcdabcdabcdefgh";
 ///
-///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(ErrorKind::ManyMN,&a[..]))));
+///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(&a[..], ErrorKind::ManyMN))));
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&b[..]),Ok((&b"efgh"[..], res)));
 ///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
@@ -524,7 +525,7 @@ macro_rules! many_m_n(
 
       if count < $m {
         if err {
-          Err(Err::Error(error_position!($crate::ErrorKind::ManyMN,$i)))
+          Err(Err::Error(error_position!($i, $crate::ErrorKind::ManyMN)))
         } else {
           match failure {
             ::std::option::Option::Some(i) => Err(Err::Failure(i)),
@@ -565,7 +566,7 @@ macro_rules! many_m_n(
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///
 ///  assert_eq!(counter(&a[..]),Ok((&b"abcdef"[..], res)));
-///  assert_eq!(counter(&b[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b[..]))));
+///  assert_eq!(counter(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Count))));
 /// # }
 /// ```
 ///
@@ -594,7 +595,7 @@ macro_rules! count(
           },
           Err(Err::Error(e))  => {
             fn unify_types<T>(_: &T, _: &T) {}
-            let e2 = error_position!($crate::ErrorKind::Count,$i);
+            let e2 = error_position!($i, $crate::ErrorKind::Count);
             unify_types(&e, &e2);
 
             ret = Err(Err::Error(e2));
@@ -633,7 +634,7 @@ macro_rules! count(
 ///  let res = [&b"abcd"[..], &b"abcd"[..]];
 ///
 ///  assert_eq!(counter(&a[..]),Ok((&b"abcdef"[..], res)));
-///  assert_eq!(counter(&b[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b[..]))));
+///  assert_eq!(counter(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Count))));
 /// # }
 /// ```
 ///
@@ -663,7 +664,7 @@ macro_rules! count_fixed (
           },
           Err(Err::Error(e))  => {
             fn unify_types<T>(_: &T, _: &T) {}
-            let e2 = error_position!($crate::ErrorKind::Count,$i);
+            let e2 = error_position!($i, $crate::ErrorKind::Count);
             unify_types(&e, &e2);
             ret = Err(Err::Error(e2));
             break;
@@ -838,7 +839,7 @@ macro_rules! fold_many0(
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
               ret = Err(Err::Error(
-                error_position!($crate::ErrorKind::Many0,input)
+                error_position!(input, $crate::ErrorKind::Many0)
               ));
               break;
             }
@@ -878,7 +879,7 @@ macro_rules! fold_many0(
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
-///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(ErrorKind::Many1,&b[..]))));
+///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
 /// # }
 /// ```
 #[macro_export]
@@ -890,10 +891,10 @@ macro_rules! fold_many1(
 
       match $submac!($i, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
-          error_position!($crate::ErrorKind::Many1,$i)
+          error_position!($i, $crate::ErrorKind::Many1)
         )),
         Err(Err::Failure(_))      => Err(Err::Failure(
-          error_position!($crate::ErrorKind::Many1,$i)
+          error_position!($i, $crate::ErrorKind::Many1)
         )),
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i1,o1))   => {
@@ -972,7 +973,7 @@ macro_rules! fold_many1(
 ///  let b = b"abcdabcdefgh";
 ///  let c = b"abcdabcdabcdabcdabcdefgh";
 ///
-///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(ErrorKind::ManyMN,&a[..]))));
+///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(&a[..], ErrorKind::ManyMN))));
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&b[..]),Ok((&b"efgh"[..], res)));
 ///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
@@ -1022,7 +1023,7 @@ macro_rules! fold_many_m_n(
 
       if count < $m {
         if err {
-          Err(Err::Error(error_position!($crate::ErrorKind::ManyMN,$i)))
+          Err(Err::Error(error_position!($i, $crate::ErrorKind::ManyMN)))
         } else {
           match incomplete {
             ::std::option::Option::Some(i) => Err(Err::Incomplete(i)),
@@ -1123,7 +1124,7 @@ mod tests {
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b),Ok((&b"ef"[..], res2)));
     assert_eq!(multi(c),Ok((&b"azerty"[..], Vec::new())));
-    assert_eq!(multi_empty(d), Err(Err::Error(error_position!(ErrorKind::SeparatedList, d))));
+    assert_eq!(multi_empty(d), Err(Err::Error(error_position!(d, ErrorKind::SeparatedList))));
     //let res3 = vec![&b""[..], &b""[..], &b""[..]];
     //assert_eq!(multi_empty(d),Ok((&b"abc"[..], res3)));
     let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
@@ -1173,7 +1174,7 @@ mod tests {
     assert_eq!(multi(a),Ok((&b"ef"[..], res1)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b),Ok((&b"ef"[..], res2)));
-    assert_eq!(multi(c), Err(Err::Error(error_position!(ErrorKind::Tag,c))));
+    assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Tag))));
     let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(d),Ok((&b",ef"[..], res3)));
 
@@ -1198,7 +1199,7 @@ mod tests {
     assert_eq!(multi(c),Ok((&b""[..], vec!(&b"abcd"[..], &b"abcd"[..], &b"ef"[..]))));
     assert_eq!(multi(d),Ok((&b"."[..], vec!(&b"abc"[..]))));
     assert_eq!(multi(e),Ok((&b"."[..], vec!(&b"abcd"[..], &b"ef"[..]))));
-    assert_eq!(multi(f), Err(Err::Error(error_position!(ErrorKind::Alpha, &b"123"[..]))));
+    assert_eq!(multi(f), Err(Err::Error(error_position!(&b"123"[..], ErrorKind::Alpha))));
   }
 
 
@@ -1216,7 +1217,7 @@ mod tests {
     assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(multi(&b"abcd"[..]),Ok((&b""[..], vec![&b"abcd"[..]])));
     assert_eq!(multi(&b""[..]),Ok((&b""[..], Vec::new())));
-    assert_eq!(multi_empty(&b"abcdef"[..]), Err(Err::Error(error_position!(ErrorKind::Many0, &b"abcdef"[..]))));
+    assert_eq!(multi_empty(&b"abcdef"[..]), Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0))));
   }
 
   #[cfg(feature = "nightly")]
@@ -1245,7 +1246,7 @@ mod tests {
     assert_eq!(multi(a),Ok((&b"ef"[..], res1)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b),Ok((&b"efgh"[..], res2)));
-    assert_eq!(multi(c), Err(Err::Error(error_position!(ErrorKind::Many1,c))));
+    assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Many1))));
     assert_eq!(multi(d), Err(Err::Incomplete(Needed::Size(4))));
   }
 
@@ -1262,7 +1263,8 @@ mod tests {
     let res_b: (Vec<&[u8]>, &[u8]) = (Vec::new(), &b"efgh"[..]);
     assert_eq!(multi(&a[..]),Ok((&b"abcd"[..], res_a)));
     assert_eq!(multi(&b[..]),Ok((&b"abcd"[..], res_b)));
-    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(ErrorKind::ManyTill,&c[..], error_position!(ErrorKind::Tag,&c[..])))));
+    assert_eq!(multi(&c[..]), Err(Err::Error(error_node_position!(&c[..], ErrorKind::ManyTill,
+      error_position!(&c[..], ErrorKind::Tag)))));
   }
 
   #[test]
@@ -1270,7 +1272,7 @@ mod tests {
   fn infinite_many() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       println!("input: {:?}", input);
-      Err(Err::Error(error_position!(ErrorKind::Custom(0u32),input)))
+      Err(Err::Error(error_position!(input, ErrorKind::Custom(0u32))))
     }
 
     // should not go into an infinite loop
@@ -1280,7 +1282,7 @@ mod tests {
 
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
-    assert_eq!(multi1(a), Err(Err::Error(error_position!(ErrorKind::Many1,a))));
+    assert_eq!(multi1(a), Err(Err::Error(error_position!(a, ErrorKind::Many1))));
   }
 
   #[test]
@@ -1294,7 +1296,7 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    assert_eq!(multi(a), Err(Err::Error(error_position!(ErrorKind::ManyMN,a))));
+    assert_eq!(multi(a), Err(Err::Error(error_position!(a, ErrorKind::ManyMN))));
     let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(b),Ok((&b"efgh"[..], res1)));
     let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
@@ -1314,9 +1316,9 @@ mod tests {
     assert_eq!(cnt_2(&b"abcabcabcdef"[..]),Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]])));
     assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b"xxx"[..]))));
-    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b"xxxabcabcdef"[..]))));
-    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b"abcxxxabcdef"[..]))));
+    assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Count))));
+    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Err(Err::Error(error_position!(&b"xxxabcabcdef"[..], ErrorKind::Count))));
+    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Err(Err::Error(error_position!(&b"abcxxxabcdef"[..], ErrorKind::Count))));
   }
 
   #[test]
@@ -1360,9 +1362,9 @@ mod tests {
     assert_eq!(cnt_2(&b"abcabcabcdef"[..]),Ok((&b"abcdef"[..], [&b"abc"[..], &b"abc"[..]])));
     assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b"xxx"[..]))));
-    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b"xxxabcabcdef"[..]))));
-    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b"abcxxxabcdef"[..]))));
+    assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Count))));
+    assert_eq!(cnt_2(&b"xxxabcabcdef"[..]), Err(Err::Error(error_position!(&b"xxxabcabcdef"[..], ErrorKind::Count))));
+    assert_eq!(cnt_2(&b"abcxxxabcdef"[..]), Err(Err::Error(error_position!(&b"abcxxxabcdef"[..], ErrorKind::Count))));
   }
 
   #[allow(dead_code)]
@@ -1405,9 +1407,9 @@ mod tests {
     assert_eq!(counter_2(done),Ok((rest, parsed_main)));
     assert_eq!(counter_2(incomplete_1), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(counter_2(incomplete_2), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(counter_2(error), Err(Err::Error(error_position!(ErrorKind::Count, error))));
-    assert_eq!(counter_2(error_1), Err(Err::Error(error_position!(ErrorKind::Count, error_1_remain))));
-    assert_eq!(counter_2(error_2), Err(Err::Error(error_position!(ErrorKind::Count, error_2_remain))));
+    assert_eq!(counter_2(error), Err(Err::Error(error_position!(error, ErrorKind::Count))));
+    assert_eq!(counter_2(error_1), Err(Err::Error(error_position!(error_1_remain, ErrorKind::Count))));
+    assert_eq!(counter_2(error_2), Err(Err::Error(error_position!(error_2_remain, ErrorKind::Count))));
   }
 
   named!(pub number<u32>, map_res!(
@@ -1427,8 +1429,8 @@ mod tests {
     assert_eq!(cnt(&b"2abcabcabcdef"[..]),Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]])));
     assert_eq!(cnt(&b"2ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(cnt(&b"3abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Digit, &b"xxx"[..]))));
-    assert_eq!(cnt(&b"2abcxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Count, &b"abcxxx"[..]))));
+    assert_eq!(cnt(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit))));
+    assert_eq!(cnt(&b"2abcxxx"[..]), Err(Err::Error(error_position!(&b"abcxxx"[..], ErrorKind::Count))));
   }
 
   #[test]
@@ -1437,7 +1439,7 @@ mod tests {
 
     assert_eq!(take(&b"6abcabcabcdef"[..]),Ok((&b"abcdef"[..], &b"abcabc"[..])));
     assert_eq!(take(&b"3ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(take(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Digit, &b"xxx"[..]))));
+    assert_eq!(take(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit))));
     assert_eq!(take(&b"2abcxxx"[..]),Ok((&b"cxxx"[..], &b"ab"[..])));
   }
 
@@ -1447,12 +1449,12 @@ mod tests {
     named!(length_value_2<&[u8], (u8, u8) >, length_value!(be_u8, tuple!(be_u8, be_u8)));
 
     let i1 = [0, 5, 6];
-    assert_eq!(length_value_1(&i1), Err(Err::Error(error_position!(ErrorKind::Complete, &b""[..]))));
-    assert_eq!(length_value_2(&i1), Err(Err::Error(error_position!(ErrorKind::Complete, &b""[..]))));
+    assert_eq!(length_value_1(&i1), Err(Err::Error(error_position!(&b""[..], ErrorKind::Complete))));
+    assert_eq!(length_value_2(&i1), Err(Err::Error(error_position!(&b""[..], ErrorKind::Complete))));
 
     let i2 = [1, 5, 6, 3];
-    assert_eq!(length_value_1(&i2), Err(Err::Error(error_position!(ErrorKind::Complete, &i2[1..2]))));
-    assert_eq!(length_value_2(&i2), Err(Err::Error(error_position!(ErrorKind::Complete, &i2[1..2]))));
+    assert_eq!(length_value_1(&i2), Err(Err::Error(error_position!(&i2[1..2], ErrorKind::Complete))));
+    assert_eq!(length_value_2(&i2), Err(Err::Error(error_position!(&i2[1..2], ErrorKind::Complete))));
 
     let i3 = [2, 5, 6, 3, 4, 5, 7];
     assert_eq!(length_value_1(&i3), Ok((&i3[3..], 1286)));
@@ -1481,7 +1483,7 @@ mod tests {
     assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(multi(&b"abcd"[..]),Ok((&b""[..], vec![&b"abcd"[..]])));
     assert_eq!(multi(&b""[..]),Ok((&b""[..], Vec::new())));
-    assert_eq!(multi_empty(&b"abcdef"[..]), Err(Err::Error(error_position!(ErrorKind::Many0, &b"abcdef"[..]))));
+    assert_eq!(multi_empty(&b"abcdef"[..]), Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0))));
   }
 
   #[test]
@@ -1502,7 +1504,7 @@ mod tests {
     assert_eq!(multi(a),Ok((&b"ef"[..], res1)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b),Ok((&b"efgh"[..], res2)));
-    assert_eq!(multi(c), Err(Err::Error(error_position!(ErrorKind::Many1,c))));
+    assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Many1))));
     assert_eq!(multi(d), Err(Err::Incomplete(Needed::Size(4))));
   }
 
@@ -1521,7 +1523,7 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    assert_eq!(multi(a), Err(Err::Error(error_position!(ErrorKind::ManyMN,a))));
+    assert_eq!(multi(a), Err(Err::Error(error_position!(a, ErrorKind::ManyMN))));
     let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(b),Ok((&b"efgh"[..], res1)));
     let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];

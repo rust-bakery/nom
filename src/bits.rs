@@ -98,11 +98,11 @@ macro_rules! bits_impl (
       match $submac!(input, $($args)*) {
         Err(Err::Error(e)) => {
           let Context::Code(_,err) = e;
-          Err(Err::Error(error_position!(err, $i)))
+          Err(Err::Error(error_position!($i, err)))
         },
         Err(Err::Failure(e)) => {
           let Context::Code(_,err) = e;
-          Err(Err::Failure(error_position!(err, $i)))
+          Err(Err::Failure(error_position!($i, err)))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
@@ -354,12 +354,12 @@ macro_rules! tag_bits (
             res
           } else {
             let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
-            Err(Err::Error(error_position!(e, $i)))
+            Err(Err::Error(error_position!($i, e)))
           }
         },
         _                              => {
           let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
-          Err(Err::Error(error_position!(e, $i)))
+          Err(Err::Error(error_position!($i, e)))
         }
       }
     }
@@ -427,7 +427,7 @@ mod tests {
     let input = [0b10101010, 0b11110000, 0b00110011];
     assert_eq!(ch_bytes(&input[..]), Ok( (&input[2..], (5,15))) );
     assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(ch_bytes(&input[1..]), Err(Err::Error(error_position!(ErrorKind::TagBits, &input[1..]))));
+    assert_eq!(ch_bytes(&input[1..]), Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits))));
   }
 
   #[derive(PartialEq,Debug)]

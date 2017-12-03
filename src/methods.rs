@@ -295,7 +295,7 @@ mod tests {
         } else if ($i).starts_with($tag) {
           Ok((&$i[$tag.len()..], &$i[0..$tag.len()]))
         } else {
-          Err(Err::Error(error_position!(ErrorKind::TagStr, $i)))
+          Err(Err::Error(error_position!($i, ErrorKind::TagStr)))
         };
         res
       }

@@ -262,65 +262,6 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   }
 }*/
 
-/*
-#[cfg(feature = "verbose-errors")]
-/// creates a parse error from a `nom::ErrorKind`
-#[macro_export]
-macro_rules! error_code(
-  ($code:expr) => ($crate::Err::Code($code));
-);
-
-#[cfg(not(feature = "verbose-errors"))]
-/// creates a parse error from a `nom::ErrorKind`
-#[macro_export]
-macro_rules! error_code(
-  ($code:expr) => ($code);
-);
-
-#[cfg(feature = "verbose-errors")]
-/// creates a parse error from a `nom::ErrorKind`
-/// and the next error in the parsing tree.
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
-#[macro_export]
-macro_rules! error_node(
-  ($code:expr, $next:expr) => {
-    let next_errors = match $next {
-      $crate::Err::Code(e) => {
-        let mut v = ::std::vec::Vec::new();
-        v.push($crate::Err::Code(e));
-        v
-      },
-      $crate::Err::Position(e, p) => {
-        let mut v = ::std::vec::Vec::new();
-        v.push($crate::Err::Position(e,p));
-        v
-      },
-      $crate::Err::Node(e, mut next) => {
-        next.push($crate::Err::Code(e));
-        next
-      },
-      $crate::Err::NodePosition(e, p, mut next) => {
-        next.push($crate::Err::Position(e,p));
-        next
-      },
-    };
-    $crate::Err::Node($code, next_errors)
-  };
-);
-
-#[cfg(not(feature = "verbose-errors"))]
-/// creates a parse error from a `nom::ErrorKind`
-/// and the next error in the parsing tree.
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
-#[allow(unused_variables)]
-#[macro_export]
-macro_rules! error_node(
-  ($code:expr, $next:expr) => ($code);
-);
-*/
-
 #[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`
 /// and the position in the input
@@ -328,7 +269,7 @@ macro_rules! error_node(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_position(
-  ($code:expr, $input:expr) => ({
+  ($input: expr, $code:expr) => ({
     $crate::Context::Code($input, $code)
   });
 );
@@ -341,7 +282,7 @@ macro_rules! error_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_position(
-  ($code:expr, $input:expr) => ({
+  ($input:expr, $code:expr) => ({
     $crate::Context::Code($input, $code)
   });
 );
@@ -354,7 +295,7 @@ macro_rules! error_position(
 /// it default to only the error code
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input:expr, $next:expr) => {
+  ($input:expr, $code:expr, $next:expr) => {
     {
     let mut error_vec = match $next {
       $crate::Context::Code(i, e) => {
@@ -382,7 +323,7 @@ macro_rules! error_node_position(
 #[allow(unused_variables)]
 #[macro_export]
 macro_rules! error_node_position(
-  ($code:expr, $input: expr, $next:expr) => ({
+  ($input:expr, $code:expr, $next:expr) => ({
     $crate::Context::Code($input, $code)
   });
 );

@@ -1,9 +1,9 @@
-use traits::{AtEof,Compare,CompareResult,InputLength,InputIter,InputTake,Slice,FindSubstring,ParseTo};
+use traits::{AtEof,Compare,CompareResult,InputLength,InputIter,InputTake,Slice,FindSubstring,FindToken,ParseTo};
 use util::Offset;
 
 use std::str::{self,FromStr,Chars,CharIndices};
 use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
-use std::iter::Enumerate;
+use std::iter::{Enumerate,Map};
 use std::slice::Iter;
 
 #[derive(Clone,Copy,Debug,PartialEq)]
@@ -89,6 +89,24 @@ impl<'a,'b> FindSubstring<&'b str> for CompleteStr<'a> {
   }
 }
 
+impl<'a> FindToken<char> for CompleteStr<'a> {
+  fn find_token(&self, token: char) -> bool {
+    self.0.find_token(token)
+  }
+}
+
+impl<'a> FindToken<u8> for CompleteStr<'a> {
+  fn find_token(&self, token: u8) -> bool {
+    self.0.find_token(token)
+  }
+}
+
+impl<'a, 'b> FindToken<&'a u8> for CompleteStr<'b> {
+  fn find_token(&self, token: &u8) -> bool {
+    self.0.find_token(token)
+  }
+}
+
 impl<'a, R:FromStr> ParseTo<R> for CompleteStr<'a> {
   fn parse_to(&self) -> Option<R> {
     self.0.parse().ok()
@@ -133,10 +151,10 @@ impl<'a> Slice<RangeFull> for CompleteByteSlice<'a> {
 }
 
 impl<'a> InputIter for CompleteByteSlice<'a> {
-  type Item     = &'a u8;
+  type Item     = u8;
   type RawItem  = u8;
-  type Iter     = Enumerate<Iter<'a, Self::RawItem>>;
-  type IterElem = Iter<'a, Self::RawItem>;
+  type Iter     = Enumerate<Self::IterElem>;
+  type IterElem =  Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;//Iter<'a, Self::RawItem>;
 
   fn iter_indices(&self)  -> Self::Iter {
     self.0.iter_indices()
@@ -195,6 +213,24 @@ impl<'a,'b> FindSubstring<&'b [u8]> for CompleteByteSlice<'a> {
 impl<'a,'b> FindSubstring<&'b str> for CompleteByteSlice<'a> {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.0.find_substring(substr)
+  }
+}
+
+impl<'a> FindToken<char> for CompleteByteSlice<'a> {
+  fn find_token(&self, token: char) -> bool {
+    self.0.find_token(token)
+  }
+}
+
+impl<'a> FindToken<u8> for CompleteByteSlice<'a> {
+  fn find_token(&self, token: u8) -> bool {
+    self.0.find_token(token)
+  }
+}
+
+impl<'a, 'b> FindToken<&'a u8> for CompleteByteSlice<'b> {
+  fn find_token(&self, token: &u8) -> bool {
+    self.0.find_token(token)
   }
 }
 

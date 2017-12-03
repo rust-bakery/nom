@@ -47,34 +47,22 @@ macro_rules! tuple_parser (
   );
   ($i:expr, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
-
       let i_ = $i.clone();
-      let res = $submac!(i_, $($args)*);
 
-      let ret = match res {
-        Err(e)    => Err(e),
-        Ok((i,o)) => {
-          let i_ = i.clone();
-          let res2 = tuple_parser!(i_, (o), $($rest)*);
-          res2
-        }
-      };
-      ret
+      ( $submac!(i_, $($args)*) ).and_then(|(i,o)| {
+        let i_ = i.clone();
+        tuple_parser!(i_, (o), $($rest)*)
+      })
     }
   );
   ($i:expr, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
-
       let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(e)    => Err(e),
-        Ok((i,o)) => {
-          let i_ = i.clone();
-          tuple_parser!(i_, ($($parsed)* , o), $($rest)*)
-        }
-      }
+
+      ( $submac!(i_, $($args)*) ).and_then(|(i,o)| {
+        let i_ = i.clone();
+        tuple_parser!(i_, ($($parsed)* , o), $($rest)*)
+      })
     }
   );
   ($i:expr, ($($parsed:tt),*), $e:path) => (
@@ -82,27 +70,14 @@ macro_rules! tuple_parser (
   );
   ($i:expr, (), $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-
       let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(e)    => Err(e),
-        Ok((i,o)) => {
-          Ok((i, (o)))
-        }
-      }
+      ( $submac!(i_, $($args)*) ).map(|(i,o)| (i, (o)))
     }
   );
   ($i:expr, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-
-      match $submac!($i, $($args)*) {
-        Err(e)    => Err(e),
-        Ok((i,o)) => {
-          Ok((i, ($($parsed),* , o)))
-        }
-      }
+      let i_ = $i.clone();
+      ( $submac!(i_, $($args)*) ).map(|(i,o)| (i, ($($parsed),* , o)))
     }
   );
   ($i:expr, ($($parsed:expr),*)) => (
@@ -487,7 +462,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error(error_position!($crate::ErrorKind::Tag::<u32>, $i)))
+          Err($crate::Err::Error(error_position!($i, $crate::ErrorKind::Tag::<u32>)))
         } else if m < blen {
           need_more($i, Needed::Size(blen))
         } else {
@@ -593,8 +568,9 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Err(Err::Failure(error_node_position!(ErrorKind::Custom(42), blah, error_position!(ErrorKind::Tag, blah)))));
-    assert_eq!(res_b, Err(Err::Failure(error_node_position!(ErrorKind::Custom(42), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128), blah, error_position!(ErrorKind::Tag, blah))))));
+    assert_eq!(res_a, Err(Err::Failure(error_node_position!(blah, ErrorKind::Custom(42), error_position!(blah, ErrorKind::Tag)))));
+    assert_eq!(res_b, Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42),
+      error_node_position!(blah, ErrorKind::Custom(128), error_position!(blah, ErrorKind::Tag))))));
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
 
     // Merr-like error matching
@@ -654,8 +630,9 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Err(Err::Error(error_node_position!(ErrorKind::Custom(42u32), blah, error_position!(ErrorKind::Tag, blah)))));
-    assert_eq!(res_b, Err(Err::Error(error_node_position!(ErrorKind::Custom(42u32), &b"ijklblah"[..], error_node_position!(ErrorKind::Custom(128u32), blah, error_position!(ErrorKind::Tag, blah))))));
+    assert_eq!(res_a, Err(Err::Error(error_node_position!(blah, ErrorKind::Custom(42u32), error_position!(blah, ErrorKind::Tag)))));
+    assert_eq!(res_b, Err(Err::Error(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42u32),
+      error_node_position!(blah, ErrorKind::Custom(128u32), error_position!(blah, ErrorKind::Tag))))));
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
   }
 
@@ -671,7 +648,7 @@ mod tests {
     let a = &b"ijklmn"[..];
 
     let res_a = err_test(a);
-    assert_eq!(res_a, Err(Err::Error(error_position!(ErrorKind::Complete, &b"mn"[..]))));
+    assert_eq!(res_a, Err(Err::Error(error_position!(&b"mn"[..], ErrorKind::Complete))));
   }
 
   #[test]
@@ -683,9 +660,9 @@ mod tests {
     assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
     assert_eq!(pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(pair_abc_def(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(pair_abc_def(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
-    assert_eq!(pair_abc_def(&b"xxxdef"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxdef"[..]))));
-    assert_eq!(pair_abc_def(&b"abcxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(pair_abc_def(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(pair_abc_def(&b"xxxdef"[..]), Err(Err::Error(error_position!(&b"xxxdef"[..], ErrorKind::Tag))));
+    assert_eq!(pair_abc_def(&b"abcxxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
 
@@ -699,9 +676,9 @@ mod tests {
     assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]), Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
     assert_eq!(sep_pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
-    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx,def"[..]))));
-    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Err(Err::Error(error_position!(&b"xxx,def"[..], ErrorKind::Tag))));
+    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
@@ -713,9 +690,9 @@ mod tests {
     assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"efgh"[..])));
     assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
-    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxxdef"[..]))));
-    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Err(Err::Error(error_position!(&b"xxxxdef"[..], ErrorKind::Tag))));
+    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
@@ -727,9 +704,9 @@ mod tests {
     assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"abcd"[..])));
     assert_eq!(terminated_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(terminated_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
-    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxxdef"[..]))));
-    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxx"[..]))));
+    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]), Err(Err::Error(error_position!(&b"xxxxdef"[..], ErrorKind::Tag))));
+    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]), Err(Err::Error(error_position!(&b"xxxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
@@ -743,10 +720,10 @@ mod tests {
     assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
-    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxdefghi"[..]))));
-    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxxghi"[..]))));
-    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"xxx"[..]))));
+    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Err(Err::Error(error_position!(&b"xxxdefghi"[..], ErrorKind::Tag))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Err(Err::Error(error_position!(&b"xxxghi"[..], ErrorKind::Tag))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
@@ -757,7 +734,7 @@ mod tests {
     assert_eq!(tuple_3(&b"abcdefgh"[..]), Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..]))));
     assert_eq!(tuple_3(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(tuple_3(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(tuple_3(&b"abcdejk"[..]), Err(Err::Error(error_position!(ErrorKind::Tag, &b"jk"[..]))));
+    assert_eq!(tuple_3(&b"abcdejk"[..]), Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag))));
   }
 
   #[test]

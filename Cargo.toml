@@ -24,10 +24,9 @@ include = [
 [features]
 std = ["memchr/use_std"]
 nightly = []
-default = ["std", "stream"]
+default = ["std"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
-stream = []
 verbose-errors = []
 
 [dependencies.regex]
@@ -35,7 +34,7 @@ version = "^0.2"
 optional = true
 
 [dependencies.lazy_static]
-version = "^0.2.2"
+version = "^1.0"
 optional = true
 
 [dependencies.memchr]
