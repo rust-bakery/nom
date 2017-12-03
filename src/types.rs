@@ -1,4 +1,4 @@
-use traits::{AtEof,Compare,CompareResult,InputLength,InputIter,InputTake,Slice,FindSubstring,ParseTo};
+use traits::{AtEof,Compare,CompareResult,InputLength,InputIter,InputTake,Slice,FindSubstring,FindToken,ParseTo};
 use util::Offset;
 
 use std::str::{self,FromStr,Chars,CharIndices};
@@ -86,6 +86,24 @@ impl<'a,'b> Compare<&'b str> for CompleteStr<'a> {
 impl<'a,'b> FindSubstring<&'b str> for CompleteStr<'a> {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.0.find_substring(substr)
+  }
+}
+
+impl<'a> FindToken<char> for CompleteStr<'a> {
+  fn find_token(&self, token: char) -> bool {
+    self.0.find_token(token)
+  }
+}
+
+impl<'a> FindToken<u8> for CompleteStr<'a> {
+  fn find_token(&self, token: u8) -> bool {
+    self.0.find_token(token)
+  }
+}
+
+impl<'a, 'b> FindToken<&'a u8> for CompleteStr<'b> {
+  fn find_token(&self, token: &u8) -> bool {
+    self.0.find_token(token)
   }
 }
 
@@ -195,6 +213,24 @@ impl<'a,'b> FindSubstring<&'b [u8]> for CompleteByteSlice<'a> {
 impl<'a,'b> FindSubstring<&'b str> for CompleteByteSlice<'a> {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.0.find_substring(substr)
+  }
+}
+
+impl<'a> FindToken<char> for CompleteByteSlice<'a> {
+  fn find_token(&self, token: char) -> bool {
+    self.0.find_token(token)
+  }
+}
+
+impl<'a> FindToken<u8> for CompleteByteSlice<'a> {
+  fn find_token(&self, token: u8) -> bool {
+    self.0.find_token(token)
+  }
+}
+
+impl<'a, 'b> FindToken<&'a u8> for CompleteByteSlice<'b> {
+  fn find_token(&self, token: &u8) -> bool {
+    self.0.find_token(token)
   }
 }
 
