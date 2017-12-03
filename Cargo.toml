@@ -24,10 +24,9 @@ include = [
 [features]
 std = ["memchr/use_std"]
 nightly = []
-default = ["std", "stream"]
+default = ["std"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
-stream = []
 verbose-errors = []
 
 [dependencies.regex]

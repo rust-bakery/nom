@@ -12,8 +12,7 @@ env:
   matrix:
     - FEATURES=''
     - FEATURES='--features "regexp regexp_macros"'
-    - FEATURES='--features "stream regexp regexp_macros"'
-    - FEATURES='--features "stream regexp regexp_macros" --no-default-features'
+    - FEATURES='--features "regexp regexp_macros" --no-default-features'
 
 before_script:
   - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
@@ -25,7 +24,7 @@ script:
   - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo build --verbose --features "nightly regexp"'
   - '[ $TRAVIS_RUST_VERSION == 1.2.0   ] || eval cargo test --verbose $FEATURES'
   - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
-  - '[ $TRAVIS_RUST_VERSION != stable  ] || cargo doc --verbose --features "std stream regexp regexp_macros" --no-default-features'
+  - '[ $TRAVIS_RUST_VERSION != stable  ] || cargo doc --verbose --features "std regexp regexp_macros" --no-default-features'
 
 after_success:
   - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
