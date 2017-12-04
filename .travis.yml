@@ -18,10 +18,10 @@ matrix:
   include:
     - rust: nightly
       env: FEATURES='--features "nightly regexp"'
-
     - rust: nightly
       env: FEATURES='--features "regexp regexp_macros" --no-default-features'
-
+    - rust: nightly
+      env: FEATURES='--no-default-features'
     - rust: stable
       env: DOC_FEATURES='--features "std regexp regexp_macros" --no-default-features'
       script: eval cargo doc --verbose $DOC_FEATURES
