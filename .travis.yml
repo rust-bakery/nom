@@ -11,8 +11,8 @@ rust:
 env:
   matrix:
     - FEATURES=''
-    - FEATURES='--features "regexp regexp_macros"'
-    - FEATURES='--features "regexp regexp_macros" --no-default-features'
+    - FEATURES='--features "regexp regexp_macros" '
+    - FEATURES='--features "regexp regexp_macros verbose-errors" '
 
 before_script:
   - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
@@ -21,7 +21,7 @@ before_script:
 
 script:
   - '[ $TRAVIS_RUST_VERSION != 1.2.0   ] || cargo test --verbose --features "regexp"'
-  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo build --verbose --features "nightly regexp"'
+  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo build --verbose --no-default-features'
   - '[ $TRAVIS_RUST_VERSION == 1.2.0   ] || eval cargo test --verbose $FEATURES'
   - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
   - '[ $TRAVIS_RUST_VERSION != stable  ] || cargo doc --verbose --features "std regexp regexp_macros" --no-default-features'
@@ -29,7 +29,6 @@ script:
 after_success:
   - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
   - '[ $TRAVIS_RUST_VERSION == 1.2.0   ] || cargo coveralls --verbose'
-  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
   - if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
         cargo install cargo-benchcmp --force;
         cargo bench > benches-variable;
