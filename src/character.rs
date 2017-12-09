@@ -191,4 +191,14 @@ mod tests {
     assert_eq!(f(b),Ok((&b"de"[..], 'c')));
   }
 
+  #[test]
+  fn char_str() {
+    named!(f<&str, char>, char!('c'));
+
+    let a = &"abcd"[..];
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
+
+    let b = &"cde"[..];
+    assert_eq!(f(b),Ok((&"de"[..], 'c')));
+  }
 }
