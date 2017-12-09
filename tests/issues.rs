@@ -59,8 +59,8 @@ named!(literal<&[u8], Vec<char> >,
 
 #[test]
 fn issue_58() {
-  range(&b"abcd"[..]);
-  literal(&b"abcd"[..]);
+  let _ = range(&b"abcd"[..]);
+  let _ = literal(&b"abcd"[..]);
 }
 
 //trace_macros!(false);

@@ -324,7 +324,10 @@ macro_rules! error_node_position(
 #[macro_export]
 macro_rules! error_node_position(
   ($input:expr, $code:expr, $next:expr) => ({
-    $crate::Context::Code($input, $code)
+    fn unify_types<T>(_: &T, _: &T) {}
+    let res = $crate::Context::Code($input, $code);
+    unify_types(&res, &$next);
+    res
   });
 );
 

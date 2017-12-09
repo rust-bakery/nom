@@ -1095,7 +1095,10 @@ mod tests {
                              )),
                              char!('}')) >>
 
-      ( () )
+      ({
+        let _ = attributes;
+        ()
+      })
     )
   )
   );

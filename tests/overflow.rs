@@ -10,7 +10,11 @@ named!(parser01<&[u8],()>,
     do_parse!(
         hdr: take!(1) >>
         data: take!(18446744073709551615) >>
-        ( () )
+        ({
+          let _ = hdr;
+          let _ = data;
+          ()
+        })
     )
 );
 

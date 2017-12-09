@@ -5,8 +5,6 @@ use nom::types::CompleteStr;
 use nom::{alphanumeric,eol};
 use nom::IResult;
 
-use std::str;
-
 pub fn end_of_line<'a>(input: CompleteStr<'a>) -> IResult<CompleteStr<'a>, CompleteStr<'a>> {
   alt!(input, eof!() | eol)
 }

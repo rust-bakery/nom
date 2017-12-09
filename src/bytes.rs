@@ -218,7 +218,7 @@ macro_rules! escaped (
                 index = $i.offset(i);
               }
             },
-            Err(Err::Error(e)) => {
+            Err(Err::Error(_)) => {
               if $i[index] == $control_char as u8 {
                 if index + 1 >= $i.input_len() {
                   return need_more($i, Needed::Unknown)
