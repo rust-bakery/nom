@@ -369,12 +369,13 @@ macro_rules! permutation_sep (
   ($i:expr, $separator:path, $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use ::std::option::Option::*;
+      use $crate::{Err,ErrorKind,Convert};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
-      let mut error  = ::std::option::Option::None;
-      let mut needed = ::std::option::Option::None;
+      let mut error  = None;
+      let mut needed = None;
 
       loop {
         let mut all_done = true;
@@ -383,18 +384,23 @@ macro_rules! permutation_sep (
         //if we reach that part, it means none of the parsers were able to read anything
         if !all_done {
           //FIXME: should wrap the error returned by the child parser
-          error = ::std::option::Option::Some(error_position!(input, $crate::ErrorKind::Permutation));
+          error = Option::Some(error_position!(input, ErrorKind::Permutation));
         }
         break;
       }
 
-      if let ::std::option::Option::Some(need) = needed {
-        Err(need)
-      } else if let ::std::option::Option::Some(e) = error {
-        Err(Err::Error(e))
+      if let Some(need) = needed {
+        Err(Err::convert(need))
       } else {
-        let unwrapped_res = permutation_unwrap!(0, (), res, $($rest)*);
-        Ok((input, unwrapped_res))
+        if let Some(unwrapped_res) = { permutation_unwrap!(0, (), res, $($rest)*) } {
+          Ok((input, unwrapped_res))
+        } else {
+          if let Some(e) = error {
+            Err(Err::Error(error_node_position!($i, ErrorKind::Permutation, e)))
+          } else {
+            Err(Err::Error(error_position!($i, ErrorKind::Permutation)))
+          }
+        }
       }
     }
   );
@@ -403,9 +409,16 @@ macro_rules! permutation_sep (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_iterator_sep (
-  ($it:tt,$i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $e:path, $($rest:tt)*) => (
+  ($it:tt,$i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $e:ident?, $($rest:tt)*) => (
     permutation_iterator_sep!($it, $i, $separator, $all_done, $needed, $res, call!($e), $($rest)*);
   );
+  ($it:tt,$i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $e:ident, $($rest:tt)*) => (
+    permutation_iterator_sep!($it, $i, $separator, $all_done, $needed, $res, call!($e), $($rest)*);
+  );
+
+  ($it:tt, $i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => ({
+    permutation_iterator_sep!($it, $i, $separator, $all_done, $needed, $res, $submac!($($args)*), $($rest)*);
+  });
   ($it:tt, $i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => ({
     use ::std::result::Result::*;
     use $crate::Err;
@@ -429,9 +442,17 @@ macro_rules! permutation_iterator_sep (
     }
     succ!($it, permutation_iterator_sep!($i, $separator, $all_done, $needed, $res, $($rest)*));
   });
-  ($it:tt,$i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $e:path) => (
+
+  ($it:tt,$i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $e:ident?) => (
     permutation_iterator_sep!($it, $i, $separator, $all_done, $res, call!($e));
   );
+  ($it:tt,$i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $e:ident) => (
+    permutation_iterator_sep!($it, $i, $separator, $all_done, $res, call!($e));
+  );
+
+  ($it:tt, $i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )?) => ({
+    permutation_iterator_sep!($it, $i, $separator, $all_done, $needed, $res, $submac!($($args)*));
+  });
   ($it:tt, $i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => ({
     use ::std::result::Result::*;
     use $crate::Err;
@@ -979,7 +1000,8 @@ mod tests {
     assert_eq!(perm(c),Ok((&b"jk"[..], expected)));
 
     let d = &b"efg  xyzabcdefghi"[..];
-    assert_eq!(perm(d), Err(Err::Error(error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation))));
+    assert_eq!(perm(d), Err(Err::Error(error_node_position!(&b"efg  xyzabcdefghi"[..], ErrorKind::Permutation,
+      error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)))));
 
     let e = &b" efg \tabc"[..];
     assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));

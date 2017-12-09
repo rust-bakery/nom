@@ -1119,8 +1119,7 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Ok((&b""[..], String::from("\"abcd"))));
     assert_eq!(esc(&b"\\n"[..]), Ok((&b""[..], String::from("\n"))));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], String::from("ab\""))));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_node_position!(&b"AB\\"[..], ErrorKind::EscapedTransform,
-      error_position!(&b"\\"[..], ErrorKind::EscapedTransform)))));
+    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(esc(&b"AB\\A"[..]), Err(Err::Error(error_node_position!(&b"AB\\A"[..], ErrorKind::EscapedTransform,
       error_position!(&b"A"[..], ErrorKind::Alt)))));
 
