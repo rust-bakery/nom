@@ -1188,6 +1188,8 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn separated_nonempty_list_complete() {
+    use nom::alpha;
+
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list_complete!(tag!(","), alpha));
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
