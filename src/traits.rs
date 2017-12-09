@@ -46,9 +46,8 @@ impl<'a> InputLength for (&'a [u8], usize) {
   #[inline]
   fn input_len(&self) -> usize {
     //println!("bit input length for ({:?}, {}):", self.0, self.1);
-    let res = self.0.len() * 8 - self.1;
-    //println!("-> {}", res);
-    res
+    //println!("-> {}", self.0.len() * 8 - self.1);
+    self.0.len() * 8 - self.1
   }
 }
 
@@ -159,7 +158,7 @@ impl AsChar for char {
 
 impl<'a> AsChar for &'a char {
     #[inline]
-    fn as_char(self)      -> char { self.clone() }
+    fn as_char(self)      -> char { *self }
     #[inline]
     fn is_alpha(self)     -> bool { self.is_alphabetic() }
     #[inline]
@@ -367,7 +366,7 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
       match (*a,*b) {
         (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
         (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122 ) |(97...122, 65...90) => {
-          *a | 0b00100000 == *b | 0b00100000
+          *a | 0b00_10_00_00 == *b | 0b00_10_00_00
         }
         _ => false
       }
