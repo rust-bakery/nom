@@ -1168,9 +1168,14 @@ macro_rules! tap (
 
 /// `eof!()` returns its input if it is at the end of input data
 ///
-/// please note that for now, eof only means there's no more
-/// data available, it does not work yet with smarter input
-/// types
+/// This combinator works with the `AtEof` trait that input types must implement.
+/// If an input type's `at_eof` method returns true, it means there will be no
+/// more refills (like what happens when buffering big files).
+///
+/// When we're at the end of the data and `at_eof` returns true, this combinator
+/// will succeed
+///
+/// TODO: example
 #[macro_export]
 macro_rules! eof (
   ($i:expr,) => (
@@ -1186,6 +1191,23 @@ macro_rules! eof (
         Err(Err::Error(error_position!($i, ErrorKind::Eof::<u32>)))
       }
     }
+  );
+);
+
+/// `exact!()` will fail if the child parser does not consume the whole data
+///
+/// This combinator works with the `AtEof` trait that input types must implement.
+/// If an input type's `at_eof` method returns true, it means there will be no
+/// more refills (like what happens when buffering big files).
+///
+/// TODO: example
+#[macro_export]
+macro_rules! exact (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => ({
+      terminated!($i, $submac!( $($args)*), eof!())
+  });
+  ($i:expr, $f:expr) => (
+    exact!($i, call!($f));
   );
 );
 
