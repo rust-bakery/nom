@@ -434,7 +434,6 @@ macro_rules! permutation_iterator_sep (
           $all_done = false;
         },
         Err(e) => {
-          $all_done = false;
           $needed = ::std::option::Option::Some(e);
           break;
         }
@@ -468,7 +467,6 @@ macro_rules! permutation_iterator_sep (
           $all_done = false;
         },
         Err(e) => {
-          $all_done = false;
           $needed = ::std::option::Option::Some(e);
           break;
         }
