@@ -262,11 +262,11 @@ macro_rules! escaped (
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
           let e2 = ErrorKind::Escaped::<u32>;
-          return Err(Err::Error(error_node_position!($i, e2, e)))
+          Err(Err::Error(error_node_position!($i, e2, e)))
         },
         Err(Err::Failure(e))      => {
           let e2 = ErrorKind::Escaped::<u32>;
-          return Err(Err::Failure(error_node_position!($i, e2, e)))
+          Err(Err::Failure(error_node_position!($i, e2, e)))
         }
       }
     }
@@ -406,11 +406,11 @@ macro_rules! escaped_transform (
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
           let e2 = ErrorKind::EscapedTransform::<u32>;
-          return Err(Err::Error(error_node_position!($i, e2, e)))
+          Err(Err::Error(error_node_position!($i, e2, e)))
         },
         Err(Err::Failure(e))      => {
           let e2 = ErrorKind::EscapedTransform::<u32>;
-          return Err(Err::Failure(error_node_position!($i, e2, e)))
+          Err(Err::Failure(error_node_position!($i, e2, e)))
         }
       }
     }
