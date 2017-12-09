@@ -556,6 +556,7 @@ macro_rules! re_bytes_captures_static (
 );
 #[cfg(test)]
 mod tests {
+  use ::std::vec::Vec;
   use util::ErrorKind;
   use internal::Err;
 

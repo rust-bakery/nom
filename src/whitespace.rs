@@ -869,6 +869,7 @@ macro_rules! ws (
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
+  use ::std::string::{String, ToString};
   use internal::{Err,IResult,Needed};
   use super::sp;
   use util::ErrorKind;

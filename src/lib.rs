@@ -400,7 +400,7 @@
 //#![warn(missing_docs)]
 
 #[cfg(not(feature = "std"))]
-extern crate alloc;
+#[macro_use] extern crate alloc;
 #[cfg(feature = "regexp")]
 extern crate regex;
 #[cfg(feature = "regexp_macros")]
