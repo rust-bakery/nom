@@ -381,6 +381,7 @@ macro_rules! escaped_transform (
       }
     }
   );
+
   // Internal parser, do not use directly
   (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
     {
@@ -389,8 +390,9 @@ macro_rules! escaped_transform (
   );
   // Internal parser, do not use directly
   (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
-     escaped_transform_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+     escaped_transform!(__impl $i, $submac1!($($args)*), $control_char, call!($g))
   );
+
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
       let input: &[u8] = $i;
