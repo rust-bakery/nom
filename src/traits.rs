@@ -481,26 +481,19 @@ impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
     } else if substr_len == 1 {
       memchr::memchr(substr[0], self)
     } else {
-      let max = self.len() - substr_len;
-      let mut offset = 0;
-      let mut haystack = &self[..];
+      let max = self.len() - substr_len + 1;
+      let haystack = &self[..max];
+      let first_needle_char = substr[0];
+      let rest_needle_chars = &substr[1..];
 
-      while let Some(position) = memchr::memchr(substr[0], haystack) {
-        offset += position;
-
-        if offset > max {
-          return None
-        }
-
-        if &haystack[position..position + substr_len] == substr {
-          return Some(offset)
-        }
-
-        haystack  = &haystack[position + 1..];
-        offset   += 1;
-      }
-
-      None
+      // First look for the first needle character in the haystack
+      memchr::Memchr::new(first_needle_char, haystack)
+        // Then compare with the rest of the needle characters
+        .find(|offset| {
+            (&self[(*offset)..]).starts_with(rest_needle_chars)
+        })
+        // And finally remove one to the offset so we don't consume the first needle char
+        .map(|offset| offset - 1)
     }
   }
 }
