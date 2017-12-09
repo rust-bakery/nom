@@ -3,9 +3,6 @@
 //use self::IResult::*;
 use self::Needed::*;
 
-#[cfg(not(feature = "std"))]
-use std::prelude::v1::*;
-
 #[cfg(feature = "verbose-errors")]
 use verbose_errors::Context;
 

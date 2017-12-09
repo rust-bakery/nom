@@ -1147,6 +1147,7 @@ mod tests {
     assert_eq!(r2, Ok((&b""[..], &b"1"[..])));
   }
 
+  #[cfg(feature = "std")]
   #[test]
   fn escape_transform_str() {
     named!(esc<&str, String>, escaped_transform!(alpha, '\\',

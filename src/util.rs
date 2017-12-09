@@ -6,9 +6,6 @@ use verbose_errors::Context;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
-#[cfg(not(feature = "std"))]
-use std::prelude::v1::*;
-
 use std::vec::Vec;
 use std::string::ToString;
 
@@ -29,6 +26,7 @@ pub trait HexDisplay {
   fn to_hex_from(&self, chunk_size: usize, from: usize) -> String;
 }
 
+#[cfg(feature = "std")]
 static CHARS: &'static[u8] = b"0123456789abcdef";
 
 impl Offset for [u8] {

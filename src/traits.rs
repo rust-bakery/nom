@@ -676,7 +676,7 @@ pub trait ExtendInto {
 }
 
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl ExtendInto for [u8] {
     type Item = u8;
     type Extender = Vec<u8>;
@@ -691,7 +691,7 @@ impl ExtendInto for [u8] {
     }
 }
 
-#[cfg(not(feature = "core"))]
+#[cfg(feature = "std")]
 impl ExtendInto for str {
     type Item = char;
     type Extender = String;

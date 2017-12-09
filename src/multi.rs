@@ -1046,7 +1046,7 @@ macro_rules! fold_many_m_n(
 #[cfg(test)]
 mod tests {
   use internal::{Err,Needed,IResult};
-  use nom::{alpha,be_u8,be_u16,le_u16,digit};
+  use nom::{be_u8,be_u16,le_u16,digit};
   use std::str::{self,FromStr};
   use util::ErrorKind;
 
@@ -1138,6 +1138,8 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn separated_list_complete() {
+    use nom::alpha;
+
     named!(multi<&[u8],Vec<&[u8]> >, separated_list_complete!(tag!(","), alpha));
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];

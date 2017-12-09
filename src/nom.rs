@@ -6,10 +6,9 @@
 //! but the macros system makes no promises.
 //!
 
-#[cfg(not(feature = "std"))]
-use std::prelude::v1::*;
 use std::boxed::Box;
 
+#[cfg(feature = "std")]
 use std::fmt::Debug;
 use internal::*;
 use traits::{AsChar,InputLength,InputIter};
