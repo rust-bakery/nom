@@ -179,7 +179,8 @@ macro_rules! is_a (
   );
 );
 
-/// `escaped!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], &[T]>`
+/// `escaped!(T -> IResult<T, T>, U, T -> IResult<T, T>) => T -> IResult<T, T> where T: InputIter,
+/// U: AsChar`
 /// matches a byte string with escaped characters.
 ///
 /// The first argument matches the normal characters (it must not accept the control character), the second argument is the control character (like `\` in most languages),
@@ -202,15 +203,19 @@ macro_rules! escaped (
     {
       use ::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind,need_more};
-
+      use $crate::AsChar;
+      use $crate::InputIter;
       use $crate::InputLength;
       use $crate::Slice;
+
       let cl = || -> IResult<_,_,u32> {
         use $crate::Offset;
         let mut index  = 0;
+        let control_char = $control_char.as_char();
 
         while index < $i.input_len() {
-          match $normal!($i.slice(index..), $($args)*) {
+          let remainder = $i.slice(index..);
+          match $normal!(remainder, $($args)*) {
             Ok((i, _)) => {
               if i.is_empty() {
                 return Ok(($i.slice($i.input_len()..), $i))
@@ -218,12 +223,21 @@ macro_rules! escaped (
                 index = $i.offset(i);
               }
             },
+            Err(Err::Failure(e)) => {
+              return Err(Err::Failure(e));
+            },
+            Err(Err::Incomplete(i)) => {
+              return Err(Err::Incomplete(i));
+            },
             Err(Err::Error(_)) => {
-              if $i[index] == $control_char as u8 {
-                if index + 1 >= $i.input_len() {
-                  return need_more($i, Needed::Unknown)
+              // unwrap() should be safe here since index < $i.input_len()
+              if remainder.iter_elements().next().unwrap().as_char() == control_char {
+                let next = index + control_char.len_utf8();
+                let input_len = $i.input_len();
+                if next >= input_len {
+                  return need_more($i, Needed::Size(next - input_len + 1));
                 } else {
-                  match $escapable!($i.slice(index+1..), $($args2)*) {
+                  match $escapable!($i.slice(next..), $($args2)*) {
                     Ok((i,_)) => {
                       if i.is_empty() {
                         return Ok(($i.slice($i.input_len()..), $i))
@@ -235,16 +249,14 @@ macro_rules! escaped (
                   }
                 }
               } else {
-                return Ok(($i.slice(index..), $i.slice(..index)));
+                return Ok((remainder, $i.slice(..index)));
               }
             },
-            Err(e) => {
-              return Err(e)
-            }
           }
         }
-        Ok((&$i[index..], &$i[..index]))
+        Ok(($i.slice(index..), $i.slice(..index)))
       };
+
       match cl() {
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))    => Ok((i, o)),
@@ -271,9 +283,7 @@ macro_rules! escaped (
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
-      let input: &[u8] = $i;
-
-      escaped!(__impl_1 input, $submac!($($args)*), $control_char, $($rest)*)
+      escaped!(__impl_1 $i, $submac!($($args)*), $control_char, $($rest)*)
     }
   );
 
@@ -324,44 +334,68 @@ macro_rules! escaped_transform (
     {
       use ::std::result::Result::*;
       use $crate::{Err,ErrorKind};
+      use $crate::AsChar;
+      use $crate::ExtendInto;
+      use $crate::InputIter;
+      use $crate::InputLength;
+      use $crate::Slice;
+      use $crate::need_more;
 
-      use $crate::{InputLength,Slice};
-      let cl = || {
+      let cl = || -> $crate::IResult<_,_,_> {
         use $crate::Offset;
         let mut index  = 0;
-        let mut res = Vec::new();
+        let mut res = $i.new_builder();
+        let control_char = $control_char.as_char();
 
         while index < $i.input_len() {
-          if let Ok((i,o)) = $normal!($i.slice(index..), $($args)*) {
-            res.extend(o.iter().cloned());
-            if i.is_empty() {
-              return Ok(($i.slice($i.input_len()..), res));
-            } else {
-              index = $i.offset(i);
-            }
-          } else if $i[index] == $control_char as u8 {
-            if index + 1 >= $i.input_len() {
-              let e = ErrorKind::EscapedTransform::<u32>;
-              return Err(Err::Error(error_position!($i.slice(index..), e)));
-            } else {
-              match $transform!($i.slice(index+1..), $($args2)*) {
-                Ok((i,o)) => {
-                  res.extend(o.iter().cloned());
-                  if i.is_empty() {
-                    return Ok(($i.slice($i.input_len()..), res))
-                  } else {
-                    index = $i.offset(i);
-                  }
-                },
-                Err(e) => return Err(e)
+          let remainder = $i.slice(index..);
+          match $normal!(remainder, $($args)*) {
+            Ok((i,o)) => {
+              o.extend_into(&mut res);
+              if i.is_empty() {
+                return Ok(($i.slice($i.input_len()..), res));
+              } else {
+                index = $i.offset(i);
               }
-            }
-          } else {
-            if index == 0 {
-              let e = ErrorKind::EscapedTransform::<u32>;
-              return Err(Err::Error(error_position!($i.slice(index..), e)))
-            } else {
-              return Ok(($i.slice(index..), res))
+            },
+            Err(Err::Incomplete(i)) => {
+              return Err(Err::Incomplete(i))
+            },
+            Err(Err::Failure(e)) => {
+              return Err(Err::Failure(e))
+            },
+            Err(Err::Error(_)) => {
+              // unwrap() should be safe here since index < $i.input_len()
+              if remainder.iter_elements().next().unwrap().as_char() == control_char {
+                let next = index + control_char.len_utf8();
+                let input_len = $i.input_len();
+
+                if next >= input_len {
+                  return need_more($i, Needed::Size(next - input_len + 1));
+                } else {
+                  match $transform!($i.slice(next..), $($args2)*) {
+                    Ok((i,o)) => {
+                      o.extend_into(&mut res);
+                      if i.is_empty() {
+                        return Ok(($i.slice($i.input_len()..), res))
+                      } else {
+                        index = $i.offset(i);
+                      }
+                    },
+                    Err(Err::Error(e)) => {
+                      return Err(Err::Error(e))
+                    },
+                    Err(Err::Incomplete(i)) => {
+                      return Err(Err::Incomplete(i))
+                    },
+                    Err(Err::Failure(e)) => {
+                      return Err(Err::Failure(e))
+                    },
+                  }
+                }
+              } else {
+                return Ok((remainder, res))
+              }
             }
           }
         }
@@ -395,9 +429,7 @@ macro_rules! escaped_transform (
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
-      let input: &[u8] = $i;
-
-      escaped_transform!(__impl_1 input, $submac!($($args)*), $control_char, $($rest)*)
+      escaped_transform!(__impl_1 $i, $submac!($($args)*), $control_char, $($rest)*)
     }
   );
 
@@ -971,46 +1003,22 @@ mod tests {
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
       {
-        if $i.is_empty() {
-          Err::<_,_>(Err::Incomplete(Needed::Unknown))
-        } else {
-          #[inline(always)]
-          fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-            b.as_bytes()
-          }
+        use $crate::Slice;
+        use $crate::AsChar;
+        use $crate::FindToken;
+        use $crate::InputIter;
 
-          let expected = $inp;
-          let bytes = as_bytes(&expected);
-          one_of_bytes!($i, bytes)
+        match ($i).iter_elements().next().map(|c| {
+          $inp.find_token(c)
+        }) {
+          None        => Err::<_,_>(Err::Incomplete(Needed::Size(1))),
+          Some(false) => Err(Err::Error(error_position!($i, ErrorKind::OneOf::<u32>))),
+          //the unwrap should be safe here
+          Some(true)  => Ok(($i.slice(1..), $i.iter_elements().next().unwrap().as_char()))
         }
       }
+      );
     );
-  );
-
-  macro_rules! one_of_bytes (
-    ($i:expr, $bytes: expr) => (
-      {
-        if $i.is_empty() {
-          Err::<_,_>(Err::Incomplete(Needed::Unknown))
-        } else {
-          let mut found = false;
-
-          for &i in $bytes {
-            if i == $i[0] {
-              found = true;
-              break;
-            }
-          }
-
-          if found {
-            Ok((&$i[1..], $i[0] as char))
-          } else {
-            Err(Err::Error(error_position!($i, ErrorKind::OneOf::<u32>)))
-          }
-        }
-      }
-    );
-  );
 
   #[test]
   fn is_a() {
@@ -1061,12 +1069,31 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Ok((&b""[..], &b"\\\"abcd"[..])));
     assert_eq!(esc(&b"\\n"[..]), Ok((&b""[..], &b"\\n"[..])));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(esc(&b"AB\\A"[..]), Err(Err::Error(error_node_position!(&b"AB\\A"[..], ErrorKind::Escaped,
       error_position!(&b"A"[..], ErrorKind::OneOf)))));
 
     named!(esc2, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2(&b"12\\nnn34"[..]), Ok((&b"nn34"[..], &b"12\\n"[..])));
+  }
+
+  #[test]
+  fn escaping_str() {
+    named!(esc<&str, &str>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
+    assert_eq!(esc("abcd"), Ok(("", "abcd")));
+    assert_eq!(esc("ab\\\"cd"), Ok(("", "ab\\\"cd")));
+    assert_eq!(esc("\\\"abcd"), Ok(("", "\\\"abcd")));
+    assert_eq!(esc("\\n"), Ok(("", "\\n")));
+    assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
+    assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(esc("AB\\A"), Err(Err::Error(error_node_position!("AB\\A", ErrorKind::Escaped,
+      error_position!("A", ErrorKind::OneOf)))));
+
+    named!(esc2<&str, &str>, escaped!(call!(digit), '\\', one_of!("\"n\\")));
+    assert_eq!(esc2("12\\nnn34"), Ok(("nn34", "12\\n")));
+
+    named!(esc3<&str, &str>, escaped!(call!(alpha), '\u{241b}', one_of!("\"n")));
+    assert_eq!(esc3("ab␛ncd"), Ok(("", "ab␛ncd")));
   }
 
   #[cfg(feature = "verbose-errors")]
@@ -1110,6 +1137,7 @@ mod tests {
     assert_eq!(esc2(&b"ab&egrave;D&agrave;EF"[..]), Ok((&b""[..], String::from("abèDàEF"))));
   }
 
+  #[cfg(feature = "verbose-errors")]
   #[test]
   fn issue_84() {
     let r0 = is_a!(&b"aaaaefgh"[..], "abcd");
@@ -1118,6 +1146,41 @@ mod tests {
     assert_eq!(r1, Ok((&b""[..], &b"aaaa"[..])));
     let r2 = is_a!(&b"1"[..], "123456789");
     assert_eq!(r2, Ok((&b""[..], &b"1"[..])));
+  }
+
+  #[test]
+  fn escape_transform_str() {
+    named!(esc<&str, String>, escaped_transform!(alpha, '\\',
+      alt!(
+          tag!("\\")       => { |_| "\\" }
+        | tag!("\"")       => { |_| "\"" }
+        | tag!("n")        => { |_| "\n" }
+      ))
+    );
+
+    assert_eq!(esc("abcd"), Ok(("", String::from("abcd"))));
+    assert_eq!(esc("ab\\\"cd"), Ok(("", String::from("ab\"cd"))));
+    assert_eq!(esc("\\\"abcd"), Ok(("", String::from("\"abcd"))));
+    assert_eq!(esc("\\n"), Ok(("", String::from("\n"))));
+    assert_eq!(esc("ab\\\"12"), Ok(("12", String::from("ab\""))));
+    assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(esc("AB\\A"), Err(Err::Error(error_node_position!( "AB\\A", ErrorKind::EscapedTransform,
+      error_position!("A", ErrorKind::Alt)))));
+
+    named!(esc2<&str, String>, escaped_transform!(alpha, '&',
+      alt!(
+          tag!("egrave;") => { |_| "è" }
+        | tag!("agrave;") => { |_| "à" }
+      ))
+    );
+    assert_eq!(esc2("ab&egrave;DEF"), Ok(("", String::from("abèDEF"))));
+    assert_eq!(esc2("ab&egrave;D&agrave;EF"), Ok(("", String::from("abèDàEF"))));
+
+    named!(esc3<&str, String>, escaped_transform!(alpha, '␛',
+      alt!(
+        tag!("0") => { |_| "\0" } |
+        tag!("n") => { |_| "\n" })));
+    assert_eq!(esc3("a␛0bc␛n"), Ok(("", String::from("a\0bc\n"))));
   }
 
   #[test]
@@ -1135,12 +1198,12 @@ mod tests {
     let r = x(&b"abcdabcdefghijkl"[..]);
     assert_eq!(r, Ok((&b"ijkl"[..], &b"abcdabcd"[..])));
 
-    println!("Done 1\n");
+    println!("Ok( 1\n");
 
     let r2 = x(&b"abcdabcdefgh"[..]);
     assert_eq!(r2, Ok((&b""[..], &b"abcdabcd"[..])));
 
-    println!("Done 2\n");
+    println!("Ok( 2\n");
     let r3 = x(&b"abcefg"[..]);
     assert_eq!(r3,  Err(Err::Error(error_position!(&b"abcefg"[..], ErrorKind::TakeUntilAndConsume))));
 
