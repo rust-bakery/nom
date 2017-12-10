@@ -562,8 +562,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
     fn while_s(c: char) -> bool {
-      c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' || c == 'è' ||
-        c == 'Â' || c == 'ß' || c == 'Ç'
+      c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' || c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
     }
     fn test(input: &str) -> IResult<&str, &str> {
       take_while_s!(input, while_s)
@@ -616,8 +615,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
     fn while1_s(c: char) -> bool {
-      c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' || c == 'è' ||
-        c == 'Â' || c == 'ß' || c == 'Ç'
+      c == 'β' || c == 'è' || c == 'ƒ' || c == 'ô' || c == 'ř' || c == 'è' || c == 'Â' || c == 'ß' || c == 'Ç'
     }
     fn test(input: &str) -> IResult<&str, &str> {
       take_while1_s!(input, while1_s)

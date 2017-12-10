@@ -158,8 +158,11 @@ macro_rules! named_args {
         }
     };
     (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        pub fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
-            $submac!(input, $($args)*)
+        pub fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(
+          input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) ->
+          $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type>
+        {
+          $submac!(input, $($args)*)
         }
     };
     ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
@@ -168,7 +171,10 @@ macro_rules! named_args {
         }
     };
     ($func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
+        fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(
+          input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*)
+          -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type>
+        {
             $submac!(input, $($args)*)
         }
     };

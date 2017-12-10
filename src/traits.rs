@@ -101,8 +101,7 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    (self >= 0x30 && self <= 0x39) || (self >= 0x41 && self <= 0x46) ||
-      (self >= 0x61 && self <= 0x66)
+    (self >= 0x30 && self <= 0x39) || (self >= 0x41 && self <= 0x46) || (self >= 0x61 && self <= 0x66)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
@@ -132,8 +131,7 @@ impl<'a> AsChar for &'a u8 {
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    (*self >= 0x30 && *self <= 0x39) || (*self >= 0x41 && *self <= 0x46) ||
-      (*self >= 0x61 && *self <= 0x66)
+    (*self >= 0x30 && *self <= 0x39) || (*self >= 0x41 && *self <= 0x46) || (*self >= 0x61 && *self <= 0x66)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {

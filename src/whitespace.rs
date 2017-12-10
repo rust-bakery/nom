@@ -842,10 +842,12 @@ macro_rules! sep (
 use std::ops::{Range, RangeFrom, RangeTo};
 use internal::IResult;
 #[allow(unused_imports)]
-pub fn sp<T>(input:T) -> IResult<T, T> where
-  T: ::traits::Slice<Range<usize>>+::traits::Slice<RangeFrom<usize>>+::traits::Slice<RangeTo<usize>>,
-    T: ::traits::InputIter+::traits::InputLength,
-<T as ::traits::InputIter>::Item: ::traits::AsChar{
+pub fn sp<T>(input: T) -> IResult<T, T>
+where
+  T: ::traits::Slice<Range<usize>> + ::traits::Slice<RangeFrom<usize>> + ::traits::Slice<RangeTo<usize>>,
+  T: ::traits::InputIter + ::traits::InputLength,
+  <T as ::traits::InputIter>::Item: ::traits::AsChar,
+{
   eat_separator!(input, &b" \t\r\n"[..])
 }
 

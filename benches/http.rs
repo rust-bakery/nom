@@ -189,8 +189,7 @@ fn main() {
   {
     use std::io::Read;
 
-    let mut file = File::open(env::args().nth(1).expect("File to read"))
-      .expect("Failed to open file");
+    let mut file = File::open(env::args().nth(1).expect("File to read")).expect("Failed to open file");
 
     let _ = file.read_to_end(&mut contents).unwrap();
   }

@@ -454,7 +454,9 @@ macro_rules! re_captures (
 
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
-      let v:Vec<Vec<&str>> = re.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&str>> = re.captures_iter($i)
+        .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap())
+             .map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -483,7 +485,8 @@ macro_rules! re_captures_static (
 
       use $crate::Slice;
       regex!(RE, $re);
-      let v:Vec<Vec<&str>> = RE.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&str>> = RE.captures_iter($i)
+        .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -511,7 +514,8 @@ macro_rules! re_bytes_captures (
 
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
-      let v:Vec<Vec<&[u8]>> = re.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&[u8]>> = re.captures_iter($i)
+        .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -540,7 +544,8 @@ macro_rules! re_bytes_captures_static (
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
-      let v:Vec<Vec<&[u8]>> = RE.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&[u8]>> = RE.captures_iter($i)
+        .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -725,24 +730,29 @@ mod tests {
   #[test]
   fn re_bytes_capture() {
     named!(rm<Vec<&[u8]> >, re_bytes_capture!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
-    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),Ok((&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
+    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),
+      Ok((&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
     assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture::<u32>))));
-    assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),Ok((&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
+    assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),
+      Ok((&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
   }
 
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_bytes_capture_static() {
     named!(rm< Vec<&[u8]> >, re_bytes_capture_static!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
-    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),Ok((&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
+    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),
+      Ok((&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
     assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture::<u32>))));
-    assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),Ok((&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
+    assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),
+      Ok((&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
   }
 
   #[test]
   fn re_bytes_captures() {
     named!(rm< Vec<Vec<&[u8]>> >, re_bytes_captures!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
-    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),Ok((&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]])));
+    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),
+      Ok((&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]])));
     assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture::<u32>))));
     assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41 aaa"[..]), Ok((&b" aaa"[..], vec![
      vec![&b"nom 0.3.11"[..],   &b"nom"[..],   &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]],
@@ -754,7 +764,8 @@ mod tests {
   #[test]
   fn re_bytes_captures_static() {
     named!(rm< Vec<Vec<&[u8]>> >, re_bytes_captures_static!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
-    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),Ok((&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]])));
+    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),
+      Ok((&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]])));
     assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture::<u32>))));
     assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41 aaa"[..]), Ok((&b" aaa"[..], vec![
      vec![&b"nom 0.3.11"[..],   &b"nom"[..],   &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]],

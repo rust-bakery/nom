@@ -1,5 +1,4 @@
-use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice,
-             FindSubstring, FindToken, ParseTo};
+use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, ParseTo};
 use util::Offset;
 
 use std::str::{self, FromStr, Chars, CharIndices};

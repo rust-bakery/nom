@@ -195,8 +195,7 @@ key = value2
 [category]
 parameter3=value3
 key4 = value4
-"
-    [..];
+"[..];
 
   let ini_after_parser = &b""[..];
 

@@ -182,7 +182,8 @@ macro_rules! is_a (
 /// U: AsChar`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument matches the normal characters (it must not accept the control character), the second argument is the control character (like `\` in most languages),
+/// The first argument matches the normal characters (it must not accept the control character),
+/// the second argument is the control character (like `\` in most languages),
 /// the third argument matches the escaped characters
 ///
 /// # Example
@@ -294,7 +295,8 @@ macro_rules! escaped (
 /// `escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>>`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument matches the normal characters (it must not match the control character), the second argument is the control character (like `\` in most languages),
+/// The first argument matches the normal characters (it must not match the control character),
+/// the second argument is the control character (like `\` in most languages),
 /// the third argument matches the escaped characters and transforms them.
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
