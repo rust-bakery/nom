@@ -19,11 +19,20 @@ matrix:
       env: FEATURES='--features "nightly"'
     - rust: nightly
       env: FEATURES='--no-default-features'
+      before_script:
+        - export PATH=$HOME/.cargo/bin:$PATH
+        - which cargo-coveralls || cargo install cargo-travis
+        - which cargo-benchcmp  || cargo install cargo-benchcmp
     - rust: stable
       env: FEATURES=''
     - rust: stable
       env: DOC_FEATURES='--features "std regexp regexp_macros" --no-default-features'
-      script: eval cargo doc --verbose $DOC_FEATURES
+      before_script:
+        - export PATH=$HOME/.cargo/bin:$PATH
+        - which rustfmt || cargo install rustfmt
+      script:
+        - eval cargo fmt -- --write-mode=diff
+        - eval cargo doc --verbose $DOC_FEATURES
 
 notifications:
   webhooks:
@@ -45,9 +54,6 @@ addons:
     sources:
       - kalakris-cmake
 
-before_script: |
-  cargo install cargo-travis --force && export PATH=$HOME/.cargo/bin:$PATH
-
 script:
   - eval cargo build --verbose $FEATURES
   - eval cargo test --verbose $FEATURES
@@ -59,7 +65,6 @@ after_success: |
       cargo coveralls --verbose
       cargo bench --verbose
       if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ]; then
-        cargo install cargo-benchcmp --force
         cargo bench > benches-variable
         git fetch
         git checkout master
