@@ -252,7 +252,7 @@ pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Opti
 pub fn print_error<O,E:Clone>(input: &[u8], res: IResult<&[u8],O,E>) {
   if let Some(v) = prepare_errors(input, res) {
     let colors = generate_colors(&v);
-    println!("parser codes: {}",   print_codes(colors, HashMap::new()));
+    println!("parser codes: {}",   print_codes(&colors, &HashMap::new()));
     println!("{}",   print_offsets(input, 0, &v));
 
   } else {
