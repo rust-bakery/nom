@@ -11,17 +11,17 @@ use std::str::FromStr;
 use self::Operator::*;
 
 enum Operator {
-    Slash,
-    Star,
+  Slash,
+  Star,
 }
 
 impl Operator {
-    fn to_str(&self) -> &'static str {
-        match *self {
-            Slash => "/",
-            Star => "*",
-        }
+  fn to_str(&self) -> &'static str {
+    match *self {
+      Slash => "/",
+      Star => "*",
     }
+  }
 }
 
 // Parse the specified `Operator`.

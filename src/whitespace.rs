@@ -839,14 +839,14 @@ macro_rules! sep (
   };
 );
 
-use std::ops::{Range,RangeFrom,RangeTo};
+use std::ops::{Range, RangeFrom, RangeTo};
 use internal::IResult;
 #[allow(unused_imports)]
 pub fn sp<T>(input:T) -> IResult<T, T> where
   T: ::traits::Slice<Range<usize>>+::traits::Slice<RangeFrom<usize>>+::traits::Slice<RangeTo<usize>>,
     T: ::traits::InputIter+::traits::InputLength,
     <T as ::traits::InputIter>::Item: ::traits::AsChar {
-    eat_separator!(input, &b" \t\r\n"[..])
+  eat_separator!(input, &b" \t\r\n"[..])
 }
 
 /// `ws!(I -> IResult<I,O>) => I -> IResult<I, O>`
@@ -888,8 +888,8 @@ macro_rules! ws (
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
-  use ::std::string::{String, ToString};
-  use internal::{Err,IResult,Needed};
+  use std::string::{String, ToString};
+  use internal::{Err, IResult, Needed};
   use super::sp;
   use util::ErrorKind;
 
@@ -956,8 +956,12 @@ mod tests {
 
   #[test]
   fn do_parse() {
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> {Ok((i,1)) };
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> {Ok((i,2)) };
+    fn ret_int1(i: &[u8]) -> IResult<&[u8], u8> {
+      Ok((i, 1))
+    };
+    fn ret_int2(i: &[u8]) -> IResult<&[u8], u8> {
+      Ok((i, 2))
+    };
 
     //trace_macros!(true);
     named!(do_parser<&[u8], (u8, u8)>,
@@ -1022,27 +1026,27 @@ mod tests {
 
   #[test]
   fn alt() {
-    fn work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
-     Ok((&b""[..], input))
+    fn work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
+      Ok((&b""[..], input))
     }
 
     #[allow(unused_variables)]
-    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8],ErrorStr> {
-      use ::Context;
+    fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
+      use Context;
       Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
     }
 
-    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
-     Ok((input, &b""[..]))
+    fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
+      Ok((input, &b""[..]))
     }
 
-    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt1(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | dont_work)
     }
-    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt2(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | work)
     }
-    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt3(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | dont_work | work2 | dont_work)
     }
 

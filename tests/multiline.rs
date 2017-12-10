@@ -2,7 +2,7 @@
 extern crate nom;
 
 use nom::types::CompleteStr;
-use nom::{alphanumeric,eol};
+use nom::{alphanumeric, eol};
 use nom::IResult;
 
 pub fn end_of_line(input: CompleteStr) -> IResult<CompleteStr, CompleteStr> {
@@ -19,11 +19,9 @@ pub fn read_lines(input: CompleteStr) -> IResult<CompleteStr, Vec<CompleteStr>> 
 
 #[test]
 fn read_lines_test() {
-  let res = Ok((
-    CompleteStr(""),
-    vec![CompleteStr("Duck"), CompleteStr("Dog"), CompleteStr("Cow")]
-  ));
+  let res = Ok((CompleteStr(""),
+                vec![CompleteStr("Duck"), CompleteStr("Dog"), CompleteStr("Cow")]));
 
   assert_eq!(read_lines(CompleteStr("Duck\nDog\nCow\n")), res);
-  assert_eq!(read_lines(CompleteStr("Duck\nDog\nCow")),  res);
+  assert_eq!(read_lines(CompleteStr("Duck\nDog\nCow")), res);
 }

@@ -9,7 +9,7 @@ use nom::{digit, alphanumeric};
 
 use test::Bencher;
 
-use std::str::{self,FromStr};
+use std::str::{self, FromStr};
 use std::collections::HashMap;
 
 #[derive(Debug,PartialEq)]
@@ -17,7 +17,7 @@ pub enum JsonValue {
   Str(String),
   Num(f32),
   Array(Vec<JsonValue>),
-  Object(HashMap<String,JsonValue>)
+  Object(HashMap<String, JsonValue>),
 }
 
 // FIXME: since we already parsed a serie of digits and dots,
@@ -115,7 +115,5 @@ fn json_bench(b: &mut Bencher) {
   }  ";
 
   //println!("data:\n{:?}", value(&data[..]));
-  b.iter(||{
-    value(&data[..])
-  });
+  b.iter(|| value(&data[..]));
 }

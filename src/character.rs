@@ -1,9 +1,9 @@
 /// Character level parsers
 
-use internal::{IResult,Needed};
-use traits::{AsChar,InputIter,InputLength,Slice};
+use internal::{IResult, Needed};
+use traits::{AsChar, InputIter, InputLength, Slice};
 use std::ops::RangeFrom;
-use traits::{need_more,AtEof};
+use traits::{need_more, AtEof};
 
 /// matches one of the provided characters
 ///
@@ -137,13 +137,15 @@ named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 /// assert_eq!(anychar("abc"), Ok(("bc",'a')));
 /// # }
 /// ```
-pub fn anychar<T>(input: T) -> IResult<T, char> where
-  T: InputIter+InputLength+Slice<RangeFrom<usize>>+AtEof,
-  <T as InputIter>::Item: AsChar {
+pub fn anychar<T>(input: T) -> IResult<T, char>
+  where T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
+        <T as InputIter>::Item: AsChar
+{
   if input.input_len() == 0 {
     need_more(input, Needed::Size(1))
   } else {
-    Ok((input.slice(1..), input.iter_elements().next().expect("slice should contain at least one element").as_char()))
+    Ok((input.slice(1..),
+        input.iter_elements().next().expect("slice should contain at least one element").as_char()))
   }
 }
 

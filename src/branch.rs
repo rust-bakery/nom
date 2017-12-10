@@ -851,8 +851,8 @@ macro_rules! permutation_iterator (
 
 #[cfg(test)]
 mod tests {
-  use ::std::string::{String, ToString};
-  use internal::{Err,Needed,IResult};
+  use std::string::{String, ToString};
+  use internal::{Err, Needed, IResult};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -932,27 +932,27 @@ mod tests {
 
   #[test]
   fn alt() {
-    fn work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
+    fn work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       Ok((&b""[..], input))
     }
 
     #[allow(unused_variables)]
-    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
-      use ::Context;
+    fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
+      use Context;
       Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
     }
 
-    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
+    fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       Ok((input, &b""[..]))
     }
 
-    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt1(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | dont_work)
     }
-    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt2(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | work)
     }
-    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt3(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | dont_work | work2 | dont_work)
     }
     //named!(alt1, alt!(dont_work | dont_work));
@@ -960,7 +960,7 @@ mod tests {
     //named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
-    assert_eq!(alt1(a), Err(Err::Error(error_position!(a,  ErrorKind::Alt))));
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     assert_eq!(alt2(a), Ok((&b""[..], a)));
     assert_eq!(alt3(a), Ok((a, &b""[..])));
 

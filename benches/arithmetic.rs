@@ -66,8 +66,5 @@ fn arithmetic(b: &mut Bencher) {
   let data = &b"  2*2 / ( 5 - 1) + 3 / 4 * (2 - 7 + 567 *12 /2) + 3*(1+2*( 45 /2))";
 
   println!("parsed:\n{:?}", expr(&data[..]));
-  b.iter(||{
-    expr(&data[..])
-  });
+  b.iter(|| expr(&data[..]));
 }
-

@@ -67,7 +67,7 @@ complete_named!(root_expr<i64>,
 fn to_i64(input: CompleteStr) -> Result<i64, ()> {
   match FromStr::from_str(input.0) {
     Err(_) => Err(()),
-    Ok(i)  => Ok(i)
+    Ok(i) => Ok(i),
   }
 }
 

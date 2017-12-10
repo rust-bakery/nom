@@ -428,7 +428,7 @@ macro_rules! do_parse (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err,Needed,IResult};
+  use internal::{Err, Needed, IResult};
   use util::ErrorKind;
   use nom::be_u16;
 
@@ -491,13 +491,13 @@ mod tests {
   #[derive(PartialEq,Eq,Debug)]
   struct B {
     a: u8,
-    b: u8
+    b: u8,
   }
 
   #[derive(PartialEq,Eq,Debug)]
   struct C {
     a: u8,
-    b: Option<u8>
+    b: Option<u8>,
   }
 
   #[cfg(feature = "verbose-errors")]
@@ -506,8 +506,9 @@ mod tests {
   use verbose_errors::Context;
 
   #[cfg(feature = "verbose-errors")]
-  fn error_to_string<P:Clone+PartialEq>(e: &Context<P,u32>) -> &'static str {
-    let v:Vec<(P,ErrorKind<u32>)> = error_to_list(e);
+  #[cfg_attr(rustfmt, rustfmt_skip)]
+  fn error_to_string<P: Clone + PartialEq>(e: &Context<P, u32>) -> &'static str {
+    let v: Vec<(P, ErrorKind<u32>)> = error_to_list(e);
     // do it this way if you can use slice patterns
     /*
     match &v[..] {
@@ -518,7 +519,7 @@ mod tests {
     */
 
     let collected: Vec<ErrorKind<u32>> = v.iter().map(|&(_, ref e)| e.clone()).collect();
-    if &collected[..] == [ErrorKind::Custom(42),ErrorKind::Tag] {
+    if &collected[..] == [ErrorKind::Custom(42), ErrorKind::Tag] {
       "missing `ijkl` tag"
     } else if &collected[..] == [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag] {
       "missing `mnop` tag after `ijkl`"
@@ -545,12 +546,16 @@ mod tests {
   #[cfg(feature = "verbose-errors")]
   use std::collections;
 
+  #[cfg_attr(rustfmt, rustfmt_skip)]
   #[cfg(feature = "verbose-errors")]
   #[test]
   fn err() {
     named!(err_test, alt!(
       tag!("abcd") |
-      preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42),
+      preceded!(
+        tag!("efgh"),
+        return_error!(
+          ErrorKind::Custom(42),
           do_parse!(
                  tag!("ijkl")                                        >>
             res: return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
@@ -568,40 +573,53 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Err(Err::Failure(error_node_position!(blah, ErrorKind::Custom(42), error_position!(blah, ErrorKind::Tag)))));
-    assert_eq!(res_b, Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42),
+    assert_eq!(res_a,
+               Err(Err::Failure(error_node_position!(blah,
+                                                     ErrorKind::Custom(42),
+                                                     error_position!(blah, ErrorKind::Tag)))));
+    assert_eq!(res_b,
+               Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42),
       error_node_position!(blah, ErrorKind::Custom(128), error_position!(blah, ErrorKind::Tag))))));
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
 
     // Merr-like error matching
     let mut err_map = collections::HashMap::new();
-    assert!(add_error_pattern(&mut err_map, err_test(&b"efghpouet"[..]), "missing `ijkl` tag"));
-    assert!(add_error_pattern(&mut err_map, err_test(&b"efghijklpouet"[..]), "missing `mnop` tag after `ijkl`"));
+    assert!(add_error_pattern(&mut err_map,
+                              err_test(&b"efghpouet"[..]),
+                              "missing `ijkl` tag"));
+    assert!(add_error_pattern(&mut err_map,
+                              err_test(&b"efghijklpouet"[..]),
+                              "missing `mnop` tag after `ijkl`"));
 
     let res_a2 = res_a.clone();
     match res_a {
-      Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-        let collected: Vec<ErrorKind<u32>> = error_to_list(&e).iter().map(|&(_,ref e)| e.clone()).collect();
+      Err(Err::Error(e)) |
+      Err(Err::Failure(e)) => {
+        let collected: Vec<ErrorKind<u32>> =
+          error_to_list(&e).iter().map(|&(_, ref e)| e.clone()).collect();
         assert_eq!(collected, [ErrorKind::Custom(42), ErrorKind::Tag]);
         assert_eq!(error_to_string(&e), "missing `ijkl` tag");
         //FIXME: why?
         //assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `ijkl` tag"));
         assert_eq!(err_map.get(&error_to_list(&e)), None);
-      },
-      _ => panic!()
+      }
+      _ => panic!(),
     };
 
     let res_b2 = res_b.clone();
     match res_b {
-      Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-        let collected: Vec<ErrorKind<u32>> = error_to_list(&e).iter().map(|&(_,ref e)| e.clone()).collect();
-        assert_eq!(collected, [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag]);
+      Err(Err::Error(e)) |
+      Err(Err::Failure(e)) => {
+        let collected: Vec<ErrorKind<u32>> =
+          error_to_list(&e).iter().map(|&(_, ref e)| e.clone()).collect();
+        assert_eq!(collected,
+                   [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag]);
         assert_eq!(error_to_string(&e), "missing `mnop` tag after `ijkl`");
         //FIXME: why?
         //assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `mnop` tag after `ijkl`"));
         assert_eq!(err_map.get(&error_to_list(&e)), None);
-      },
-      _ => panic!()
+      }
+      _ => panic!(),
     };
 
     print_error(a, res_a2);
@@ -609,18 +627,23 @@ mod tests {
   }
 
 
+  #[cfg_attr(rustfmt, rustfmt_skip)]
   #[allow(unused_variables)]
   #[test]
   fn add_err() {
     named!(err_test,
-      preceded!(tag!("efgh"), add_return_error!(ErrorKind::Custom(42u32),
+      preceded!(
+        tag!("efgh"),
+        add_return_error!(
+          ErrorKind::Custom(42u32),
           do_parse!(
                  tag!("ijkl")                                     >>
             res: add_return_error!(ErrorKind::Custom(128u32), tag!("mnop")) >>
             (res)
           )
         )
-    ));
+      )
+    );
     let a = &b"efghblah"[..];
     let b = &b"efghijklblah"[..];
     let c = &b"efghijklmnop"[..];
@@ -630,12 +653,16 @@ mod tests {
     let res_a = err_test(a);
     let res_b = err_test(b);
     let res_c = err_test(c);
-    assert_eq!(res_a, Err(Err::Error(error_node_position!(blah, ErrorKind::Custom(42u32), error_position!(blah, ErrorKind::Tag)))));
+    assert_eq!(res_a,
+               Err(Err::Error(error_node_position!(blah,
+                                                   ErrorKind::Custom(42u32),
+                                                   error_position!(blah, ErrorKind::Tag)))));
     assert_eq!(res_b, Err(Err::Error(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42u32),
       error_node_position!(blah, ErrorKind::Custom(128u32), error_position!(blah, ErrorKind::Tag))))));
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
   }
 
+  #[cfg_attr(rustfmt, rustfmt_skip)]
   #[test]
   fn complete() {
     named!(err_test,
@@ -648,82 +675,115 @@ mod tests {
     let a = &b"ijklmn"[..];
 
     let res_a = err_test(a);
-    assert_eq!(res_a, Err(Err::Error(error_position!(&b"mn"[..], ErrorKind::Complete))));
+    assert_eq!(res_a,
+               Err(Err::Error(error_position!(&b"mn"[..], ErrorKind::Complete))));
   }
 
   #[test]
   fn pair() {
-    named!( tag_abc, tag!("abc") );
-    named!( tag_def, tag!("def") );
+    named!(tag_abc, tag!("abc"));
+    named!(tag_def, tag!("def"));
     named!( pair_abc_def<&[u8],(&[u8], &[u8])>, pair!(tag_abc, tag_def) );
 
-    assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
-    assert_eq!(pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(pair_abc_def(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(pair_abc_def(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
-    assert_eq!(pair_abc_def(&b"xxxdef"[..]), Err(Err::Error(error_position!(&b"xxxdef"[..], ErrorKind::Tag))));
-    assert_eq!(pair_abc_def(&b"abcxxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]),
+               Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
+    assert_eq!(pair_abc_def(&b"ab"[..]),
+               Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(pair_abc_def(&b"abcd"[..]),
+               Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(pair_abc_def(&b"xxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(pair_abc_def(&b"xxxdef"[..]),
+               Err(Err::Error(error_position!(&b"xxxdef"[..], ErrorKind::Tag))));
+    assert_eq!(pair_abc_def(&b"abcxxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
 
   #[test]
   fn separated_pair() {
-    named!( tag_abc, tag!("abc") );
-    named!( tag_def, tag!("def") );
-    named!( tag_separator, tag!(",") );
+    named!(tag_abc, tag!("abc"));
+    named!(tag_def, tag!("def"));
+    named!(tag_separator, tag!(","));
     named!( sep_pair_abc_def<&[u8],(&[u8], &[u8])>, separated_pair!(tag_abc, tag_separator, tag_def) );
 
-    assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]), Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
-    assert_eq!(sep_pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(sep_pair_abc_def(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
-    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]), Err(Err::Error(error_position!(&b"xxx,def"[..], ErrorKind::Tag))));
-    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(sep_pair_abc_def(&b"abc,defghijkl"[..]),
+               Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
+    assert_eq!(sep_pair_abc_def(&b"ab"[..]),
+               Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]),
+               Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(sep_pair_abc_def(&b"xxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(sep_pair_abc_def(&b"xxx,def"[..]),
+               Err(Err::Error(error_position!(&b"xxx,def"[..], ErrorKind::Tag))));
+    assert_eq!(sep_pair_abc_def(&b"abc,xxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
   fn preceded() {
-    named!( tag_abcd, tag!("abcd") );
-    named!( tag_efgh, tag!("efgh") );
+    named!(tag_abcd, tag!("abcd"));
+    named!(tag_efgh, tag!("efgh"));
     named!( preceded_abcd_efgh<&[u8], &[u8]>, preceded!(tag_abcd, tag_efgh) );
 
-    assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"efgh"[..])));
-    assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
-    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]), Err(Err::Error(error_position!(&b"xxxxdef"[..], ErrorKind::Tag))));
-    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]),
+               Ok((&b"ijkl"[..], &b"efgh"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"ab"[..]),
+               Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]),
+               Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(preceded_abcd_efgh(&b"xxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(preceded_abcd_efgh(&b"xxxxdef"[..]),
+               Err(Err::Error(error_position!(&b"xxxxdef"[..], ErrorKind::Tag))));
+    assert_eq!(preceded_abcd_efgh(&b"abcdxxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
   fn terminated() {
-    named!( tag_abcd, tag!("abcd") );
-    named!( tag_efgh, tag!("efgh") );
+    named!(tag_abcd, tag!("abcd"));
+    named!(tag_efgh, tag!("efgh"));
     named!( terminated_abcd_efgh<&[u8], &[u8]>, terminated!(tag_abcd, tag_efgh) );
 
-    assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"abcd"[..])));
-    assert_eq!(terminated_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(terminated_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
-    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]), Err(Err::Error(error_position!(&b"xxxxdef"[..], ErrorKind::Tag))));
-    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]), Err(Err::Error(error_position!(&b"xxxx"[..], ErrorKind::Tag))));
+    assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]),
+               Ok((&b"ijkl"[..], &b"abcd"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"ab"[..]),
+               Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(terminated_abcd_efgh(&b"abcde"[..]),
+               Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(terminated_abcd_efgh(&b"xxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(terminated_abcd_efgh(&b"xxxxdef"[..]),
+               Err(Err::Error(error_position!(&b"xxxxdef"[..], ErrorKind::Tag))));
+    assert_eq!(terminated_abcd_efgh(&b"abcdxxxx"[..]),
+               Err(Err::Error(error_position!(&b"xxxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
   fn delimited() {
-    named!( tag_abc, tag!("abc") );
-    named!( tag_def, tag!("def") );
-    named!( tag_ghi, tag!("ghi") );
+    named!(tag_abc, tag!("abc"));
+    named!(tag_def, tag!("def"));
+    named!(tag_ghi, tag!("ghi"));
     named!( delimited_abc_def_ghi<&[u8], &[u8]>, delimited!(tag_abc, tag_def, tag_ghi) );
 
-    assert_eq!(delimited_abc_def_ghi(&b"abcdefghijkl"[..]), Ok((&b"jkl"[..], &b"def"[..])));
-    assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
-    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]), Err(Err::Error(error_position!(&b"xxxdefghi"[..], ErrorKind::Tag))));
-    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]), Err(Err::Error(error_position!(&b"xxxghi"[..], ErrorKind::Tag))));
-    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefghijkl"[..]),
+               Ok((&b"jkl"[..], &b"def"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"ab"[..]),
+               Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]),
+               Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]),
+               Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(delimited_abc_def_ghi(&b"xxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(delimited_abc_def_ghi(&b"xxxdefghi"[..]),
+               Err(Err::Error(error_position!(&b"xxxdefghi"[..], ErrorKind::Tag))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcxxxghi"[..]),
+               Err(Err::Error(error_position!(&b"xxxghi"[..], ErrorKind::Tag))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefxxx"[..]),
+               Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
@@ -731,16 +791,23 @@ mod tests {
     named!(tuple_3<&[u8], (u16, &[u8], &[u8]) >,
     tuple!( be_u16 , take!(3), tag!("fg") ) );
 
-    assert_eq!(tuple_3(&b"abcdefgh"[..]), Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..]))));
+    assert_eq!(tuple_3(&b"abcdefgh"[..]),
+               Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..]))));
     assert_eq!(tuple_3(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(tuple_3(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(tuple_3(&b"abcdejk"[..]), Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag))));
+    assert_eq!(tuple_3(&b"abcde"[..]),
+               Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(tuple_3(&b"abcdejk"[..]),
+               Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag))));
   }
 
   #[test]
   fn do_parse() {
-    fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,1)) };
-    fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,2)) };
+    fn ret_int1(i: &[u8]) -> IResult<&[u8], u8> {
+      Ok((i, 1))
+    };
+    fn ret_int2(i: &[u8]) -> IResult<&[u8], u8> {
+      Ok((i, 2))
+    };
 
     //trace_macros!(true);
     named!(do_parser<&[u8], (u8, u8)>,
@@ -762,12 +829,16 @@ mod tests {
 
     //trace_macros!(false);
 
-    assert_eq!(do_parser(&b"abcdabcdefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
+    assert_eq!(do_parser(&b"abcdabcdefghefghX"[..]),
+               Ok((&b"X"[..], (1, 2))));
     assert_eq!(do_parser(&b"abcdefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
-    assert_eq!(do_parser(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(do_parser(&b"abcdefghef"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(do_parser(&b"abcdab"[..]),
+               Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(do_parser(&b"abcdefghef"[..]),
+               Err(Err::Incomplete(Needed::Size(4))));
   }
 
+  #[cfg_attr(rustfmt, rustfmt_skip)]
   #[test]
   fn do_parse_dependency() {
     use nom::be_u8;

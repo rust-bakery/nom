@@ -5,7 +5,7 @@ extern crate nom;
 
 use nom::{digit, alphanumeric};
 
-use std::str::{self,FromStr};
+use std::str::{self, FromStr};
 use std::collections::HashMap;
 
 #[derive(Debug,PartialEq)]
@@ -13,7 +13,7 @@ pub enum JsonValue {
   Str(String),
   Num(f32),
   Array(Vec<JsonValue>),
-  Object(HashMap<String,JsonValue>)
+  Object(HashMap<String, JsonValue>),
 }
 
 // FIXME: since we already parsed a serie of digits and dots,
@@ -110,7 +110,7 @@ fn hash_test() {
   \"b\": \"x\"
   }";
 
-//FIXME: top level value must be an object?
+  //FIXME: top level value must be an object?
   println!("{:?}", value(&test[..]));
   //assert!(false);
 }
@@ -123,7 +123,7 @@ fn parse_example_test() {
   }
   }";
 
-//FIXME: top level value must be an object?
+  //FIXME: top level value must be an object?
   println!("{:?}", value(&test[..]));
   //assert!(false);
 }

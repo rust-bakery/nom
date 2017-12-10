@@ -1,7 +1,7 @@
 //! Traits input types have to implement to work with nom combinators
 //!
-use internal::{Err,IResult,Needed};
-use std::ops::{Range,RangeTo,RangeFrom,RangeFull};
+use internal::{Err, IResult, Needed};
+use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
 use std::iter::Enumerate;
 use std::slice::Iter;
 use std::iter::Map;
@@ -28,7 +28,7 @@ pub trait InputLength {
   fn input_len(&self) -> usize;
 }
 
-impl<'a, T> InputLength for &'a[T] {
+impl<'a, T> InputLength for &'a [T] {
   #[inline]
   fn input_len(&self) -> usize {
     self.len()
@@ -53,124 +53,158 @@ impl<'a> InputLength for (&'a [u8], usize) {
 
 /// transforms common types to a char for basic token parsing
 pub trait AsChar {
-    /// makes a char from self
-    #[inline]
-    fn as_char(self)      -> char;
+  /// makes a char from self
+  #[inline]
+  fn as_char(self) -> char;
 
-    /// tests that self is an alphabetic character
-    ///
-    /// warning: for `&str` it recognizes alphabetic
-    /// characters outside of the 52 ASCII letters
-    #[inline]
-    fn is_alpha(self)     -> bool;
+  /// tests that self is an alphabetic character
+  ///
+  /// warning: for `&str` it recognizes alphabetic
+  /// characters outside of the 52 ASCII letters
+  #[inline]
+  fn is_alpha(self) -> bool;
 
-    /// tests that self is an alphabetic character
-    /// or a decimal digit
-    #[inline]
-    fn is_alphanum(self)  -> bool;
-    /// tests that self is a decimal digit
-    #[inline]
-    fn is_dec_digit(self) -> bool;
-    /// tests that self is an hex digit
-    #[inline]
-    fn is_hex_digit(self) -> bool;
-    /// tests that self is an octal digit
-    #[inline]
-    fn is_oct_digit(self) -> bool;
-    /// gets the len in bytes for self
-    #[inline]
-    fn len(self) -> usize;
+  /// tests that self is an alphabetic character
+  /// or a decimal digit
+  #[inline]
+  fn is_alphanum(self) -> bool;
+  /// tests that self is a decimal digit
+  #[inline]
+  fn is_dec_digit(self) -> bool;
+  /// tests that self is an hex digit
+  #[inline]
+  fn is_hex_digit(self) -> bool;
+  /// tests that self is an octal digit
+  #[inline]
+  fn is_oct_digit(self) -> bool;
+  /// gets the len in bytes for self
+  #[inline]
+  fn len(self) -> usize;
 }
 
 impl AsChar for u8 {
-    #[inline]
-    fn as_char(self)      -> char { self as char }
-    #[inline]
-    fn is_alpha(self)     -> bool {
-      (self >= 0x41 && self <= 0x5A) || (self >= 0x61 && self <= 0x7A)
-    }
-    #[inline]
-    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
-    #[inline]
-    fn is_dec_digit(self) -> bool {
-      self >= 0x30 && self <= 0x39
-    }
-    #[inline]
-    fn is_hex_digit(self) -> bool {
-      (self >= 0x30 && self <= 0x39) ||
-      (self >= 0x41 && self <= 0x46) ||
-      (self >= 0x61 && self <= 0x66)
-    }
-    #[inline]
-    fn is_oct_digit(self) -> bool {
-      self >= 0x30 && self <= 0x37
-    }
-    #[inline]
-    fn len(self) -> usize {
-      1
-    }
+  #[inline]
+  fn as_char(self) -> char {
+    self as char
+  }
+  #[inline]
+  fn is_alpha(self) -> bool {
+    (self >= 0x41 && self <= 0x5A) || (self >= 0x61 && self <= 0x7A)
+  }
+  #[inline]
+  fn is_alphanum(self) -> bool {
+    self.is_alpha() || self.is_dec_digit()
+  }
+  #[inline]
+  fn is_dec_digit(self) -> bool {
+    self >= 0x30 && self <= 0x39
+  }
+  #[inline]
+  fn is_hex_digit(self) -> bool {
+    (self >= 0x30 && self <= 0x39) || (self >= 0x41 && self <= 0x46) ||
+    (self >= 0x61 && self <= 0x66)
+  }
+  #[inline]
+  fn is_oct_digit(self) -> bool {
+    self >= 0x30 && self <= 0x37
+  }
+  #[inline]
+  fn len(self) -> usize {
+    1
+  }
 }
 impl<'a> AsChar for &'a u8 {
-    #[inline]
-    fn as_char(self)      -> char { *self as char }
-    #[inline]
-    fn is_alpha(self)     -> bool {
-      (*self >= 0x41 && *self <= 0x5A) || (*self >= 0x61 && *self <= 0x7A)
-    }
-    #[inline]
-    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
-    #[inline]
-    fn is_dec_digit(self) -> bool {
-      *self >= 0x30 && *self <= 0x39
-    }
-    #[inline]
-    fn is_hex_digit(self) -> bool {
-      (*self >= 0x30 && *self <= 0x39) ||
-      (*self >= 0x41 && *self <= 0x46) ||
-      (*self >= 0x61 && *self <= 0x66)
-    }
-    #[inline]
-    fn is_oct_digit(self)   -> bool {
-      *self >= 0x30 && *self <= 0x37
-    }
-    #[inline]
-    fn len(self) -> usize {
-      1
-    }
+  #[inline]
+  fn as_char(self) -> char {
+    *self as char
+  }
+  #[inline]
+  fn is_alpha(self) -> bool {
+    (*self >= 0x41 && *self <= 0x5A) || (*self >= 0x61 && *self <= 0x7A)
+  }
+  #[inline]
+  fn is_alphanum(self) -> bool {
+    self.is_alpha() || self.is_dec_digit()
+  }
+  #[inline]
+  fn is_dec_digit(self) -> bool {
+    *self >= 0x30 && *self <= 0x39
+  }
+  #[inline]
+  fn is_hex_digit(self) -> bool {
+    (*self >= 0x30 && *self <= 0x39) || (*self >= 0x41 && *self <= 0x46) ||
+    (*self >= 0x61 && *self <= 0x66)
+  }
+  #[inline]
+  fn is_oct_digit(self) -> bool {
+    *self >= 0x30 && *self <= 0x37
+  }
+  #[inline]
+  fn len(self) -> usize {
+    1
+  }
 }
 
 impl AsChar for char {
-    #[inline]
-    fn as_char(self)      -> char { self }
-    #[inline]
-    fn is_alpha(self)     -> bool { self.is_alphabetic() }
-    #[inline]
-    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
-    #[inline]
-    fn is_dec_digit(self) -> bool { self.is_digit(10) }
-    #[inline]
-    fn is_hex_digit(self) -> bool { self.is_digit(16) }
-    #[inline]
-    fn is_oct_digit(self) -> bool { self.is_digit(8) }
-    #[inline]
-    fn len(self) -> usize { self.len_utf8() }
+  #[inline]
+  fn as_char(self) -> char {
+    self
+  }
+  #[inline]
+  fn is_alpha(self) -> bool {
+    self.is_alphabetic()
+  }
+  #[inline]
+  fn is_alphanum(self) -> bool {
+    self.is_alpha() || self.is_dec_digit()
+  }
+  #[inline]
+  fn is_dec_digit(self) -> bool {
+    self.is_digit(10)
+  }
+  #[inline]
+  fn is_hex_digit(self) -> bool {
+    self.is_digit(16)
+  }
+  #[inline]
+  fn is_oct_digit(self) -> bool {
+    self.is_digit(8)
+  }
+  #[inline]
+  fn len(self) -> usize {
+    self.len_utf8()
+  }
 }
 
 impl<'a> AsChar for &'a char {
-    #[inline]
-    fn as_char(self)      -> char { *self }
-    #[inline]
-    fn is_alpha(self)     -> bool { self.is_alphabetic() }
-    #[inline]
-    fn is_alphanum(self)  -> bool { self.is_alpha() || self.is_dec_digit() }
-    #[inline]
-    fn is_dec_digit(self) -> bool { self.is_digit(10) }
-    #[inline]
-    fn is_hex_digit(self) -> bool { self.is_digit(16) }
-    #[inline]
-    fn is_oct_digit(self) -> bool { self.is_digit(8) }
-    #[inline]
-    fn len(self) -> usize { self.len_utf8() }
+  #[inline]
+  fn as_char(self) -> char {
+    *self
+  }
+  #[inline]
+  fn is_alpha(self) -> bool {
+    self.is_alphabetic()
+  }
+  #[inline]
+  fn is_alphanum(self) -> bool {
+    self.is_alpha() || self.is_dec_digit()
+  }
+  #[inline]
+  fn is_dec_digit(self) -> bool {
+    self.is_digit(10)
+  }
+  #[inline]
+  fn is_hex_digit(self) -> bool {
+    self.is_digit(16)
+  }
+  #[inline]
+  fn is_oct_digit(self) -> bool {
+    self.is_digit(8)
+  }
+  #[inline]
+  fn len(self) -> usize {
+    self.len_utf8()
+  }
 }
 
 /// abstracts common iteration operations on the input type
@@ -178,139 +212,143 @@ impl<'a> AsChar for &'a char {
 /// it needs a distinction between `Item` and `RawItem` because
 /// `&[T]` iterates on references
 pub trait InputIter {
-    type Item;
-    type RawItem;
-    type Iter     : Iterator<Item=(usize, Self::Item)>;
-    type IterElem : Iterator<Item=Self::Item>;
+  type Item;
+  type RawItem;
+  type Iter: Iterator<Item = (usize, Self::Item)>;
+  type IterElem: Iterator<Item = Self::Item>;
 
-    /// returns an iterator over the elements and their byte offsets
-    fn iter_indices(&self)  -> Self::Iter;
-    /// returns an iterator over the elements
-    fn iter_elements(&self) -> Self::IterElem;
-    /// finds the byte position of the element
-    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool;
-    /// get the byte offset from the element's position in the stream
-    fn slice_index(&self, count:usize) -> Option<usize>;
+  /// returns an iterator over the elements and their byte offsets
+  fn iter_indices(&self) -> Self::Iter;
+  /// returns an iterator over the elements
+  fn iter_elements(&self) -> Self::IterElem;
+  /// finds the byte position of the element
+  fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool;
+  /// get the byte offset from the element's position in the stream
+  fn slice_index(&self, count: usize) -> Option<usize>;
 }
 
 /// abstracts slicing operations
 pub trait InputTake: Sized {
-    /// returns a slice of `count` bytes
-    fn take(&self, count: usize)  -> Option<Self>;
-    /// split the stream at the `count` byte offset
-    fn take_split(&self, count: usize) -> Option<(Self,Self)>;
+  /// returns a slice of `count` bytes
+  fn take(&self, count: usize) -> Option<Self>;
+  /// split the stream at the `count` byte offset
+  fn take_split(&self, count: usize) -> Option<(Self, Self)>;
 }
 
 
 impl<'a> InputIter for &'a [u8] {
-    type Item     = u8;
-    type RawItem  = u8;
-    type Iter     = Enumerate<Self::IterElem>;
-    type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
+  type Item = u8;
+  type RawItem = u8;
+  type Iter = Enumerate<Self::IterElem>;
+  type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
 
-    #[inline]
-    fn iter_indices(&self) -> Self::Iter {
-        self.iter_elements().enumerate()
+  #[inline]
+  fn iter_indices(&self) -> Self::Iter {
+    self.iter_elements().enumerate()
+  }
+  #[inline]
+  fn iter_elements(&self) -> Self::IterElem {
+    self.iter().map(|r_u8| *r_u8)
+  }
+  #[inline]
+  fn position<P>(&self, predicate: P) -> Option<usize>
+    where P: Fn(Self::Item) -> bool
+  {
+    self.iter().position(|b| predicate(*b))
+  }
+  #[inline]
+  fn slice_index(&self, count: usize) -> Option<usize> {
+    if self.len() >= count {
+      Some(count)
+    } else {
+      None
     }
-    #[inline]
-    fn iter_elements(&self) -> Self::IterElem {
-      self.iter().map(|r_u8| *r_u8)
-    }
-    #[inline]
-    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::Item) -> bool {
-      self.iter().position(|b| predicate(*b))
-    }
-    #[inline]
-    fn slice_index(&self, count:usize) -> Option<usize> {
-      if self.len() >= count {
-        Some(count)
-      } else {
-        None
-      }
-    }
+  }
 }
 
 impl<'a> InputTake for &'a [u8] {
-    #[inline]
-    fn take(&self, count: usize) -> Option<Self> {
-      if self.len() >= count {
-        Some(&self[0..count])
-      } else {
-        None
-      }
+  #[inline]
+  fn take(&self, count: usize) -> Option<Self> {
+    if self.len() >= count {
+      Some(&self[0..count])
+    } else {
+      None
     }
-    #[inline]
-    fn take_split(&self, count: usize) -> Option<(Self,Self)> {
-      if self.len() >= count {
-        Some((&self[count..],&self[..count]))
-      } else {
-        None
-      }
+  }
+  #[inline]
+  fn take_split(&self, count: usize) -> Option<(Self, Self)> {
+    if self.len() >= count {
+      Some((&self[count..], &self[..count]))
+    } else {
+      None
     }
+  }
 }
 
 impl<'a> InputIter for &'a str {
-    type Item     = char;
-    type RawItem  = char;
-    type Iter     = CharIndices<'a>;
-    type IterElem = Chars<'a>;
-    #[inline]
-    fn iter_indices(&self) -> Self::Iter {
-        self.char_indices()
-    }
-    #[inline]
-    fn iter_elements(&self) -> Self::IterElem {
-      self.chars()
-    }
-    fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
-      for (o,c) in self.char_indices() {
-        if predicate(c) {
-          return Some(o)
-        }
+  type Item = char;
+  type RawItem = char;
+  type Iter = CharIndices<'a>;
+  type IterElem = Chars<'a>;
+  #[inline]
+  fn iter_indices(&self) -> Self::Iter {
+    self.char_indices()
+  }
+  #[inline]
+  fn iter_elements(&self) -> Self::IterElem {
+    self.chars()
+  }
+  fn position<P>(&self, predicate: P) -> Option<usize>
+    where P: Fn(Self::RawItem) -> bool
+  {
+    for (o, c) in self.char_indices() {
+      if predicate(c) {
+        return Some(o);
       }
-      None
     }
-    #[inline]
-    fn slice_index(&self, count:usize) -> Option<usize> {
-      let mut cnt    = 0;
-      for (index, _) in self.char_indices() {
-        if cnt == count {
-          return Some(index)
-        }
-        cnt += 1;
-      }
+    None
+  }
+  #[inline]
+  fn slice_index(&self, count: usize) -> Option<usize> {
+    let mut cnt = 0;
+    for (index, _) in self.char_indices() {
       if cnt == count {
-        return Some(self.len())
+        return Some(index);
       }
-      None
+      cnt += 1;
     }
+    if cnt == count {
+      return Some(self.len());
+    }
+    None
+  }
 }
 
 impl<'a> InputTake for &'a str {
-    #[inline]
-    fn take(&self, count: usize) -> Option<Self> {
-      let mut cnt    = 0;
-      for (index, _) in self.char_indices() {
-        if cnt == count {
-          return Some(&self[..index])
-        }
-        cnt += 1;
+  #[inline]
+  fn take(&self, count: usize) -> Option<Self> {
+    let mut cnt = 0;
+    for (index, _) in self.char_indices() {
+      if cnt == count {
+        return Some(&self[..index]);
       }
-      None
+      cnt += 1;
     }
+    None
+  }
 
-    // return byte index
-    #[inline]
-    fn take_split(&self, count: usize) -> Option<(Self,Self)> {
-      let mut cnt    = 0;
-      for (index, _) in self.char_indices() {
-        if cnt == count {
-          return Some((&self[index..],&self[..index]))
-        }
-        cnt += 1;
+  // return byte index
+  #[inline]
+  fn take_split(&self, count: usize) -> Option<(Self, Self)> {
+    let mut cnt = 0;
+    for (index, _) in self.char_indices() {
+      if cnt == count {
+        return Some((&self[index..], &self[..index]));
       }
-      None
+      cnt += 1;
     }
+    None
+  }
 }
 
 /// indicates wether a comparison was successful, an error, or
@@ -319,13 +357,13 @@ impl<'a> InputTake for &'a str {
 pub enum CompareResult {
   Ok,
   Incomplete,
-  Error
+  Error,
 }
 
 /// abstracts comparison operations
 pub trait Compare<T> {
   /// compares self to another value for equality
-  fn compare(&self, t:T)         -> CompareResult;
+  fn compare(&self, t: T) -> CompareResult;
   /// compares self to another value for equality
   /// independently of the case.
   ///
@@ -333,17 +371,17 @@ pub trait Compare<T> {
   /// by lowercasing both strings and comparing
   /// the result. This is a temporary solution until
   /// a better one appears
-  fn compare_no_case(&self, t:T) -> CompareResult;
+  fn compare_no_case(&self, t: T) -> CompareResult;
 }
 
-impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
+impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
   #[inline(always)]
-  fn compare(&self, t: &'b[u8]) -> CompareResult {
-    let len     = self.len();
-    let blen    = t.len();
-    let m       = if len < blen { len } else { blen };
+  fn compare(&self, t: &'b [u8]) -> CompareResult {
+    let len = self.len();
+    let blen = t.len();
+    let m = if len < blen { len } else { blen };
     let reduced = &self[..m];
-    let b       = &t[..m];
+    let b = &t[..m];
 
     if reduced != b {
       CompareResult::Error
@@ -355,21 +393,22 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
   }
 
   #[inline(always)]
-  fn compare_no_case(&self, t: &'b[u8]) -> CompareResult {
-    let len     = self.len();
-    let blen    = t.len();
-    let m       = if len < blen { len } else { blen };
+  fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
+    let len = self.len();
+    let blen = t.len();
+    let m = if len < blen { len } else { blen };
     let reduced = &self[..m];
-    let other   = &t[..m];
+    let other = &t[..m];
 
-    if !reduced.iter().zip(other).all(|(a, b)| {
-      match (*a,*b) {
-        (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
-        (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122 ) |(97...122, 65...90) => {
-          *a | 0b00_10_00_00 == *b | 0b00_10_00_00
-        }
-        _ => false
-      }
+    if !reduced.iter().zip(other).all(|(a, b)| match (*a, *b) {
+      (0...64, 0...64) |
+      (91...96, 91...96) |
+      (123...255, 123...255) => a == b,
+      (65...90, 65...90) |
+      (97...122, 97...122) |
+      (65...90, 97...122) |
+      (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
+      _ => false,
     }) {
       CompareResult::Error
     } else if m < blen {
@@ -380,7 +419,7 @@ impl<'a,'b> Compare<&'b[u8]> for &'a [u8] {
   }
 }
 
-impl<'a,'b> Compare<&'b str> for &'a [u8] {
+impl<'a, 'b> Compare<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
     self.compare(str::as_bytes(t))
@@ -391,17 +430,19 @@ impl<'a,'b> Compare<&'b str> for &'a [u8] {
   }
 }
 
-impl<'a,'b> Compare<&'b str> for &'a str {
+impl<'a, 'b> Compare<&'b str> for &'a str {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
-    let pos = self.chars().zip(t.chars()).position(|(a,b)| a != b);
+    let pos = self.chars().zip(t.chars()).position(|(a, b)| a != b);
 
     match pos {
       Some(_) => CompareResult::Error,
-      None    => if self.len() >= t.len() {
-        CompareResult::Ok
-      } else {
-        CompareResult::Incomplete
+      None => {
+        if self.len() >= t.len() {
+          CompareResult::Ok
+        } else {
+          CompareResult::Incomplete
+        }
       }
     }
   }
@@ -409,14 +450,16 @@ impl<'a,'b> Compare<&'b str> for &'a str {
   //FIXME: this version is too simple and does not use the current locale
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    let pos = self.to_lowercase().chars().zip(t.to_lowercase().chars()).position(|(a,b)| a != b);
+    let pos = self.to_lowercase().chars().zip(t.to_lowercase().chars()).position(|(a, b)| a != b);
 
     match pos {
       Some(_) => CompareResult::Error,
-      None    => if self.len() >= t.len() {
-        CompareResult::Ok
-      } else {
-        CompareResult::Incomplete
+      None => {
+        if self.len() >= t.len() {
+          CompareResult::Ok
+        } else {
+          CompareResult::Incomplete
+        }
       }
     }
   }
@@ -427,7 +470,7 @@ pub trait FindToken<T> {
   fn find_token(&self, token: T) -> bool;
 }
 
-impl<'a> FindToken<u8> for &'a[u8] {
+impl<'a> FindToken<u8> for &'a [u8] {
   fn find_token(&self, token: u8) -> bool {
     memchr::memchr(token, self).is_some()
   }
@@ -439,19 +482,19 @@ impl<'a> FindToken<u8> for &'a str {
   }
 }
 
-impl<'a,'b> FindToken<&'a u8> for &'b [u8] {
+impl<'a, 'b> FindToken<&'a u8> for &'b [u8] {
   fn find_token(&self, token: &u8) -> bool {
     memchr::memchr(*token, self).is_some()
   }
 }
 
-impl<'a,'b> FindToken<&'a u8> for &'b str {
+impl<'a, 'b> FindToken<&'a u8> for &'b str {
   fn find_token(&self, token: &u8) -> bool {
     self.as_bytes().find_token(token)
   }
 }
 
-impl<'a> FindToken<char> for &'a[u8] {
+impl<'a> FindToken<char> for &'a [u8] {
   fn find_token(&self, token: char) -> bool {
     memchr::memchr(token as u8, self).is_some()
   }
@@ -460,7 +503,9 @@ impl<'a> FindToken<char> for &'a[u8] {
 impl<'a> FindToken<char> for &'a str {
   fn find_token(&self, token: char) -> bool {
     for i in self.chars() {
-      if token == i { return true }
+      if token == i {
+        return true;
+      }
     }
     false
   }
@@ -471,8 +516,8 @@ pub trait FindSubstring<T> {
   fn find_substring(&self, substr: T) -> Option<usize>;
 }
 
-impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
-  fn find_substring(&self, substr: &'b[u8]) -> Option<usize> {
+impl<'a, 'b> FindSubstring<&'b [u8]> for &'a [u8] {
+  fn find_substring(&self, substr: &'b [u8]) -> Option<usize> {
     let substr_len = substr.len();
 
     if substr_len == 0 {
@@ -488,15 +533,15 @@ impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
         offset += position;
 
         if offset > max {
-          return None
+          return None;
         }
 
         if &haystack[position..position + substr_len] == substr {
-          return Some(offset)
+          return Some(offset);
         }
 
-        haystack  = &haystack[position + 1..];
-        offset   += 1;
+        haystack = &haystack[position + 1..];
+        offset += 1;
       }
 
       None
@@ -504,13 +549,13 @@ impl<'a,'b> FindSubstring<&'b [u8]> for &'a[u8] {
   }
 }
 
-impl<'a,'b> FindSubstring<&'b str> for &'a[u8] {
+impl<'a, 'b> FindSubstring<&'b str> for &'a [u8] {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.find_substring(str::as_bytes(substr))
   }
 }
 
-impl<'a,'b> FindSubstring<&'b str> for &'a str {
+impl<'a, 'b> FindSubstring<&'b str> for &'a str {
   //returns byte index
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.find(substr)
@@ -522,13 +567,13 @@ pub trait ParseTo<R> {
   fn parse_to(&self) -> Option<R>;
 }
 
-impl<'a,R: FromStr> ParseTo<R> for &'a[u8] {
+impl<'a, R: FromStr> ParseTo<R> for &'a [u8] {
   fn parse_to(&self) -> Option<R> {
     from_utf8(self).ok().and_then(|s| s.parse().ok())
   }
 }
 
-impl<'a,R:FromStr> ParseTo<R> for &'a str {
+impl<'a, R: FromStr> ParseTo<R> for &'a str {
   fn parse_to(&self) -> Option<R> {
     self.parse().ok()
   }
@@ -598,15 +643,21 @@ pub fn need_more<I: AtEof, O, E>(input: I, needed: Needed) -> IResult<I, O, E> {
 
 // Tuple for bit parsing
 impl<I: AtEof, T> AtEof for (I, T) {
-  fn at_eof(&self) -> bool { self.0.at_eof() }
+  fn at_eof(&self) -> bool {
+    self.0.at_eof()
+  }
 }
 
 impl<'a> AtEof for &'a [u8] {
-  fn at_eof(&self) -> bool { false }
+  fn at_eof(&self) -> bool {
+    false
+  }
 }
 
 impl<'a> AtEof for &'a str {
-  fn at_eof(&self) -> bool { false }
+  fn at_eof(&self) -> bool {
+    false
+  }
 }
 
 macro_rules! array_impls {
@@ -663,45 +714,44 @@ array_impls! {
 
 /// abtracts something which can extend an `Extend`
 pub trait ExtendInto {
-    type Item;
-    type Extender: Extend<Self::Item>;
+  type Item;
+  type Extender: Extend<Self::Item>;
 
-    /// create a new `Extend` of the correct type
-    #[inline]
-    fn new_builder(&self) -> Self::Extender;
-    /// accumulate the input into an accumulator
-    #[inline]
-    fn extend_into(&self, acc: &mut Self::Extender);
+  /// create a new `Extend` of the correct type
+  #[inline]
+  fn new_builder(&self) -> Self::Extender;
+  /// accumulate the input into an accumulator
+  #[inline]
+  fn extend_into(&self, acc: &mut Self::Extender);
 }
 
 
 #[cfg(feature = "std")]
 impl ExtendInto for [u8] {
-    type Item = u8;
-    type Extender = Vec<u8>;
+  type Item = u8;
+  type Extender = Vec<u8>;
 
-    #[inline]
-    fn new_builder(&self) -> Vec<u8> {
-        Vec::new()
-    }
-    #[inline]
-    fn extend_into(&self, acc: &mut Vec<u8>) {
-        acc.extend(self.iter().cloned());
-    }
+  #[inline]
+  fn new_builder(&self) -> Vec<u8> {
+    Vec::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut Vec<u8>) {
+    acc.extend(self.iter().cloned());
+  }
 }
 
 #[cfg(feature = "std")]
 impl ExtendInto for str {
-    type Item = char;
-    type Extender = String;
+  type Item = char;
+  type Extender = String;
 
-    #[inline]
-    fn new_builder(&self) -> String {
-        String::new()
-    }
-    #[inline]
-    fn extend_into(&self, acc: &mut String) {
-        acc.push_str(self);
-    }
+  #[inline]
+  fn new_builder(&self) -> String {
+    String::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut String) {
+    acc.push_str(self);
+  }
 }
-

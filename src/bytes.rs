@@ -993,7 +993,7 @@ macro_rules! length_bytes(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err,Needed};
+  use internal::{Err, Needed};
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
   use util::ErrorKind;
 
@@ -1028,7 +1028,8 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"cde"[..], &b"b"[..])));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(c, ErrorKind::IsA::<u32>))));
+    assert_eq!(a_or_b(c),
+               Err(Err::Error(error_position!(c, ErrorKind::IsA::<u32>))));
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Ok((&b"cdef"[..], &b"ba"[..])));
@@ -1045,7 +1046,8 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"bde"[..], &b"c"[..])));
 
     let c = &b"abab"[..];
-    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(c, ErrorKind::IsNot))));
+    assert_eq!(a_or_b(c),
+               Err(Err::Error(error_position!(c, ErrorKind::IsNot))));
 
     let d = &b"cdefba"[..];
     assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
@@ -1067,8 +1069,10 @@ mod tests {
     assert_eq!(esc(&b"\\n"[..]), Ok((&b""[..], &b"\\n"[..])));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
     assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(esc(&b"AB\\A"[..]), Err(Err::Error(error_node_position!(&b"AB\\A"[..], ErrorKind::Escaped,
-      error_position!(&b"A"[..], ErrorKind::OneOf)))));
+    assert_eq!(esc(&b"AB\\A"[..]),
+               Err(Err::Error(error_node_position!(&b"AB\\A"[..],
+                                                   ErrorKind::Escaped,
+                                                   error_position!(&b"A"[..], ErrorKind::OneOf)))));
 
     named!(esc2, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2(&b"12\\nnn34"[..]), Ok((&b"nn34"[..], &b"12\\n"[..])));
@@ -1083,8 +1087,10 @@ mod tests {
     assert_eq!(esc("\\n"), Ok(("", "\\n")));
     assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
     assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(esc("AB\\A"), Err(Err::Error(error_node_position!("AB\\A", ErrorKind::Escaped,
-      error_position!("A", ErrorKind::OneOf)))));
+    assert_eq!(esc("AB\\A"),
+               Err(Err::Error(error_node_position!("AB\\A",
+                                                   ErrorKind::Escaped,
+                                                   error_position!("A", ErrorKind::OneOf)))));
 
     named!(esc2<&str, &str>, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2("12\\nnn34"), Ok(("nn34", "12\\n")));
@@ -1094,7 +1100,7 @@ mod tests {
   }
 
   #[cfg(feature = "verbose-errors")]
-  fn to_s(i:Vec<u8>) -> String {
+  fn to_s(i: Vec<u8>) -> String {
     String::from_utf8_lossy(&i).into_owned()
   }
 
@@ -1356,9 +1362,7 @@ mod tests {
   fn take_while_bench(b: &mut Bencher) {
     use nom::is_alphabetic;
     named!(f, take_while!(is_alphabetic));
-    b.iter(|| {
-      f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..])
-    });
+    b.iter(|| f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..]));
   }
 
   #[test]

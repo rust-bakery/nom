@@ -16,7 +16,7 @@ use simple_errors::Context;
 /// The `Ok` side is an enum containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
 ///
-pub type IResult<I,O,E=u32> = Result<(I,O), Err<I,E>>;
+pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug,PartialEq,Eq,Clone,Copy)]
@@ -24,7 +24,7 @@ pub enum Needed {
   /// needs more data, but we do not know how much
   Unknown,
   /// contains the required data size
-  Size(usize)
+  Size(usize),
 }
 
 impl Needed {
@@ -67,25 +67,25 @@ impl Needed {
 /// The main drawback is that it is a lot slower than default error
 /// management.
 #[derive(Debug,Clone,PartialEq)]
-pub enum Err<I,E=u32> {
+pub enum Err<I, E = u32> {
   /// There was not enough data
   Incomplete(Needed),
   /// The parser had an error (recoverable)
-  Error(Context<I,E>),
+  Error(Context<I, E>),
   /// The parser had an unrecoverable error: we got to the right
   /// branch and we know other branches won't work, so backtrack
   /// as fast as possible
-  Failure(Context<I,E>),
+  Failure(Context<I, E>),
 }
 
 use util::Convert;
 
-impl<I,F,E: From<F>> Convert<Err<I,F>> for Err<I,E> {
-  fn convert(e: Err<I,F>) -> Self {
+impl<I, F, E: From<F>> Convert<Err<I, F>> for Err<I, E> {
+  fn convert(e: Err<I, F>) -> Self {
     match e {
       Err::Incomplete(n) => Err::Incomplete(n),
-      Err::Failure(c)    => Err::Failure(Context::convert(c)),
-      Err::Error(c)      => Err::Error(Context::convert(c)),
+      Err::Failure(c) => Err::Failure(Context::convert(c)),
+      Err::Error(c) => Err::Error(Context::convert(c)),
     }
   }
 }
@@ -338,7 +338,7 @@ mod tests {
   const INCOMPLETE: IResult<&'static [u8], u32> = Err(Err::Incomplete(Needed::Unknown));
   */
 
-/*
+  /*
   #[test]
   fn iresult_or() {
     assert_eq!(DONE.or(ERROR), DONE);

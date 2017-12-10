@@ -402,18 +402,20 @@
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 
 #[cfg(not(feature = "std"))]
-#[macro_use] extern crate alloc;
+#[macro_use]
+extern crate alloc;
 #[cfg(feature = "regexp")]
 extern crate regex;
 #[cfg(feature = "regexp_macros")]
-#[macro_use] extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static;
 extern crate memchr;
 #[cfg(feature = "nightly")]
 extern crate test;
 
 #[cfg(not(feature = "std"))]
 mod std {
-#[macro_use]
+  #[macro_use]
   pub use alloc::{boxed, vec, string};
   pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
   pub mod prelude {
@@ -449,31 +451,47 @@ pub use self::whitespace::*;
 pub use self::regexp::*;
 pub use self::str::*;
 
-#[macro_use] mod util;
+#[macro_use]
+mod util;
 mod traits;
 
-#[cfg(feature = "verbose-errors")] #[macro_use] pub mod verbose_errors;
+#[cfg(feature = "verbose-errors")]
+#[macro_use]
+pub mod verbose_errors;
 
-#[cfg(not(feature = "verbose-errors"))] #[macro_use] pub mod simple_errors;
+#[cfg(not(feature = "verbose-errors"))]
+#[macro_use]
+pub mod simple_errors;
 
-#[macro_use] mod internal;
-#[macro_use] mod macros;
-#[macro_use] mod branch;
-#[macro_use] mod sequence;
-#[macro_use] mod multi;
-#[macro_use] pub mod methods;
+#[macro_use]
+mod internal;
+#[macro_use]
+mod macros;
+#[macro_use]
+mod branch;
+#[macro_use]
+mod sequence;
+#[macro_use]
+mod multi;
+#[macro_use]
+pub mod methods;
 
-#[macro_use] mod bytes;
-#[macro_use] pub mod bits;
+#[macro_use]
+mod bytes;
+#[macro_use]
+pub mod bits;
 
-#[macro_use] mod nom;
-#[macro_use] mod character;
+#[macro_use]
+mod nom;
+#[macro_use]
+mod character;
 
 #[macro_use]
 pub mod whitespace;
 
 #[cfg(feature = "regexp")]
-#[macro_use] mod regexp;
+#[macro_use]
+mod regexp;
 
 mod str;
 

@@ -1045,9 +1045,9 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err,Needed,IResult};
-  use nom::{be_u8,be_u16,le_u16,digit};
-  use std::str::{self,FromStr};
+  use internal::{Err, Needed, IResult};
+  use nom::{be_u8, be_u16, le_u16, digit};
+  use std::str::{self, FromStr};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -1231,9 +1231,7 @@ mod tests {
   #[bench]
   fn many0_bench(b: &mut Bencher) {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
-    b.iter(|| {
-      multi(&b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..])
-    });
+    b.iter(|| multi(&b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..]));
   }
 
   #[test]

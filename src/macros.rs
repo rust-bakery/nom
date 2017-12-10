@@ -1238,7 +1238,7 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err,Needed,IResult};
+  use internal::{Err, Needed, IResult};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -1308,8 +1308,12 @@ mod tests {
 
   #[test]
   fn apply_test() {
-    fn sum2(a:u8, b:u8)       -> u8 { a + b }
-    fn sum3(a:u8, b:u8, c:u8) -> u8 { a + b + c }
+    fn sum2(a: u8, b: u8) -> u8 {
+      a + b
+    }
+    fn sum3(a: u8, b: u8, c: u8) -> u8 {
+      a + b + c
+    }
     let a = apply!(1, sum2, 2);
     let b = apply!(1, sum3, 2, 3);
 
@@ -1367,9 +1371,9 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn cond() {
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, CustomError>>  =
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
       Box::new(closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag!("abcd") ) )));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, CustomError>> =
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
       Box::new(closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag!("abcd") ) )));
     //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
 
@@ -1387,9 +1391,9 @@ mod tests {
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
     named!( tag_abcd, tag!("abcd") );
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, CustomError>>  =
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
       Box::new(closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag_abcd ) )));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>, CustomError>> =
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
       Box::new(closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag_abcd ) )));
     //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 

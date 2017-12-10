@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult,not_line_ending};
+use nom::{IResult, not_line_ending};
 
 use std::fmt::Debug;
 
@@ -24,7 +24,7 @@ fn tag() {
 }
 */
 
-pub fn print<T: Debug>(input: T) -> IResult<T,()> {
+pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
   println!("{:?}", input);
   Ok((input, ()))
 }
