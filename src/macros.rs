@@ -1360,7 +1360,7 @@ mod tests {
   }
 
   use std::convert::From;
-  #[derive(Debug,PartialEq)]
+  #[derive(Debug, PartialEq)]
   pub struct CustomError(&'static str);
   impl From<u32> for CustomError {
     fn from(_: u32) -> Self {
@@ -1371,10 +1371,12 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn cond() {
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
-      Box::new(closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag!("abcd") ) )));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
-      Box::new(closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag!("abcd") ) )));
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
+      closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag!("abcd") ) )),
+    );
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
+      closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag!("abcd") ) )),
+    );
     //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
@@ -1391,10 +1393,12 @@ mod tests {
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
     named!( tag_abcd, tag!("abcd") );
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
-      Box::new(closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag_abcd ) )));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
-      Box::new(closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag_abcd ) )));
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
+      closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag_abcd ) )),
+    );
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
+      closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag_abcd ) )),
+    );
     //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));

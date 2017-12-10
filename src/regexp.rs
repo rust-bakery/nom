@@ -564,8 +564,12 @@ mod tests {
   fn re_match() {
     named!(rm<&str,&str>, re_match!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"),
-               Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>))));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>),
+      ))
+    );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
 
@@ -574,8 +578,12 @@ mod tests {
   fn re_match_static() {
     named!(rm<&str,&str>, re_match_static!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"),
-               Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>))));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>),
+      ))
+    );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
 
@@ -583,8 +591,12 @@ mod tests {
   fn re_find() {
     named!(rm<&str,&str>, re_find!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"),
-               Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>))));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>),
+      ))
+    );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
 
@@ -593,8 +605,12 @@ mod tests {
   fn re_find_static() {
     named!(rm<&str,&str>, re_find_static!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"),
-               Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>))));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>),
+      ))
+    );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
 

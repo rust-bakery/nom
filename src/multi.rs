@@ -1231,7 +1231,11 @@ mod tests {
   #[bench]
   fn many0_bench(b: &mut Bencher) {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
-    b.iter(|| multi(&b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..]));
+    b.iter(|| {
+      multi(
+        &b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..],
+      )
+    });
   }
 
   #[test]
@@ -1379,7 +1383,7 @@ mod tests {
     )
   }
 
-  #[derive(Debug,Clone,PartialEq)]
+  #[derive(Debug, Clone, PartialEq)]
   pub struct NilError;
 
   impl From<u32> for NilError {

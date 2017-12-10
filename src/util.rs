@@ -190,9 +190,10 @@ pub fn error_to_list<P: Clone, E: Clone>(e: &Context<P, E>) -> Vec<(P, ErrorKind
 }
 
 #[cfg(feature = "verbose-errors")]
-pub fn compare_error_paths<P: Clone + PartialEq, E: Clone + PartialEq>(e1: &Context<P, E>,
-                                                                       e2: &Context<P, E>)
-                                                                       -> bool {
+pub fn compare_error_paths<P: Clone + PartialEq, E: Clone + PartialEq>(
+  e1: &Context<P, E>,
+  e2: &Context<P, E>,
+) -> bool {
   error_to_list(e1) == error_to_list(e2)
 }
 
@@ -203,7 +204,11 @@ use std::hash::Hash;
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-pub fn add_error_pattern<'a,I: Clone+Hash+Eq,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<(I,ErrorKind<E>)>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
+pub fn add_error_pattern<'a, I: Clone + Hash + Eq, O, E: Clone + Hash + Eq>(
+  h: &mut HashMap<Vec<(I, ErrorKind<E>)>, &'a str>,
+  res: IResult<I, O, E>,
+  message: &'a str,
+) -> bool {
   match res {
     Err(Err::Error(e)) |
     Err(Err::Failure(e)) => {
@@ -224,9 +229,10 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-pub fn prepare_errors<O, E: Clone>(input: &[u8],
-                                   res: IResult<&[u8], O, E>)
-                                   -> Option<Vec<(ErrorKind<E>, usize, usize)>> {
+pub fn prepare_errors<O, E: Clone>(
+  input: &[u8],
+  res: IResult<&[u8], O, E>,
+) -> Option<Vec<(ErrorKind<E>, usize, usize)>> {
   if let Err(Err::Error(e)) = res {
     let mut v: Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
 
@@ -343,10 +349,11 @@ pub fn print_codes(colors: &HashMap<u32, u8>, names: &HashMap<u32, &str>) -> Str
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-pub fn print_offsets<E>(input: &[u8],
-                        from: usize,
-                        offsets: &[(ErrorKind<E>, usize, usize)])
-                        -> String {
+pub fn print_offsets<E>(
+  input: &[u8],
+  from: usize,
+  offsets: &[(ErrorKind<E>, usize, usize)],
+) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
   let chunk_size = 8;

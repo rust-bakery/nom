@@ -355,10 +355,11 @@ mod tests {
          (last)
       )
     );
-    fn tag_stuff(mut self: Parser<'a>,
-                 input: &'a str,
-                 something: &'a str)
-                 -> (Parser<'a>, ::IResult<&'a str, &'a str>) {
+    fn tag_stuff(
+      mut self: Parser<'a>,
+      input: &'a str,
+      something: &'a str,
+    ) -> (Parser<'a>, ::IResult<&'a str, &'a str>) {
       self.bcd = something;
       let (tmp, res) = self.tag_abc(input);
       self = tmp;

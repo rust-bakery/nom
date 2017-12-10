@@ -24,7 +24,7 @@ use std::convert::From;
 ///
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
 /// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, u32)
-#[derive(Debug,PartialEq,Eq,Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Context<I, E = u32> {
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
   Code(I, ErrorKind<E>),
@@ -36,7 +36,11 @@ impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
     match c {
       Context::Code(i, e) => Context::Code(i, ErrorKind::convert(e)),
       Context::List(mut v) => {
-        Context::List(v.drain(..).map(|(i, e)| (i, ErrorKind::convert(e))).collect())
+        Context::List(
+          v.drain(..)
+            .map(|(i, e)| (i, ErrorKind::convert(e)))
+            .collect(),
+        )
       }
     }
   }

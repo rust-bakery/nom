@@ -19,8 +19,14 @@ pub fn read_lines(input: CompleteStr) -> IResult<CompleteStr, Vec<CompleteStr>> 
 
 #[test]
 fn read_lines_test() {
-  let res = Ok((CompleteStr(""),
-                vec![CompleteStr("Duck"), CompleteStr("Dog"), CompleteStr("Cow")]));
+  let res = Ok((
+    CompleteStr(""),
+    vec![
+      CompleteStr("Duck"),
+      CompleteStr("Dog"),
+      CompleteStr("Cow"),
+    ],
+  ));
 
   assert_eq!(read_lines(CompleteStr("Duck\nDog\nCow\n")), res);
   assert_eq!(read_lines(CompleteStr("Duck\nDog\nCow")), res);

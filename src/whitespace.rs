@@ -845,7 +845,7 @@ use internal::IResult;
 pub fn sp<T>(input:T) -> IResult<T, T> where
   T: ::traits::Slice<Range<usize>>+::traits::Slice<RangeFrom<usize>>+::traits::Slice<RangeTo<usize>>,
     T: ::traits::InputIter+::traits::InputLength,
-    <T as ::traits::InputIter>::Item: ::traits::AsChar {
+<T as ::traits::InputIter>::Item: ::traits::AsChar{
   eat_separator!(input, &b" \t\r\n"[..])
 }
 
@@ -911,7 +911,10 @@ mod tests {
       ws!(pair!( take!(3), tag!("de") ))
     );
 
-    assert_eq!(pair_2(&b" \t abc de fg"[..]), Ok((&b"fg"[..], (&b"abc"[..], &b"de"[..]))));
+    assert_eq!(
+      pair_2(&b" \t abc de fg"[..]),
+      Ok((&b"fg"[..], (&b"abc"[..], &b"de"[..])))
+    );
   }
 
   #[test]
@@ -940,7 +943,10 @@ mod tests {
     );
     //trace_macros!(false);
 
-    assert_eq!(tuple_2(&b" \t abc de fg"[..]), Ok((&b"fg"[..], (&b"abc"[..], &b"de"[..]))));
+    assert_eq!(
+      tuple_2(&b" \t abc de fg"[..]),
+      Ok((&b"fg"[..], (&b"abc"[..], &b"de"[..])))
+    );
   }
 
   #[test]
@@ -951,7 +957,10 @@ mod tests {
     );
     //trace_macros!(false);
 
-    assert_eq!(level_2(&b" \t abc de fg \t hi "[..]), Ok((&b"hi "[..], (&b"abc"[..], (&b"de"[..], &b"fg "[..])))));
+    assert_eq!(
+      level_2(&b" \t abc de fg \t hi "[..]),
+      Ok((&b"hi "[..], (&b"abc"[..], (&b"de"[..], &b"fg "[..]))))
+    );
   }
 
   #[test]
@@ -978,10 +987,22 @@ mod tests {
 
     //trace_macros!(false);
 
-    assert_eq!(do_parser(&b"abcd abcd\tefghefghX"[..]),Ok((&b"X"[..], (1, 2))));
-    assert_eq!(do_parser(&b"abcd\tefgh      efgh X"[..]),Ok((&b"X"[..], (1, 2))));
-    assert_eq!(do_parser(&b"abcd  ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(do_parser(&b" abcd\tefgh\tef"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(
+      do_parser(&b"abcd abcd\tefghefghX"[..]),
+      Ok((&b"X"[..], (1, 2)))
+    );
+    assert_eq!(
+      do_parser(&b"abcd\tefgh      efgh X"[..]),
+      Ok((&b"X"[..], (1, 2)))
+    );
+    assert_eq!(
+      do_parser(&b"abcd  ab"[..]),
+      Err(Err::Incomplete(Needed::Size(4)))
+    );
+    assert_eq!(
+      do_parser(&b" abcd\tefgh\tef"[..]),
+      Err(Err::Incomplete(Needed::Size(4)))
+    );
   }
 
   #[test]
@@ -1009,7 +1030,7 @@ mod tests {
     assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
   }
 
-  #[derive(Debug,Clone,PartialEq)]
+  #[derive(Debug, Clone, PartialEq)]
   pub struct ErrorStr(String);
 
   impl From<u32> for ErrorStr {
@@ -1033,7 +1054,10 @@ mod tests {
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       use Context;
-      Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
+      Err(Err::Error(Context::Code(
+        &b""[..],
+        ErrorKind::Custom(ErrorStr("abcd".to_string())),
+      )))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {

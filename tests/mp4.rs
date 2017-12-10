@@ -197,13 +197,13 @@ named!(mvhd64 <&[u8], MvhdBox>,
   ))
 );
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum MvhdBox {
   M32(Mvhd32),
   M64(Mvhd64),
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum MoovBox {
   Mdra,
   Dref,

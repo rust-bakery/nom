@@ -138,14 +138,21 @@ named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 /// # }
 /// ```
 pub fn anychar<T>(input: T) -> IResult<T, char>
-  where T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
-        <T as InputIter>::Item: AsChar
+where
+  T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
+  <T as InputIter>::Item: AsChar,
 {
   if input.input_len() == 0 {
     need_more(input, Needed::Size(1))
   } else {
-    Ok((input.slice(1..),
-        input.iter_elements().next().expect("slice should contain at least one element").as_char()))
+    Ok((
+      input.slice(1..),
+      input
+        .iter_elements()
+        .next()
+        .expect("slice should contain at least one element")
+        .as_char(),
+    ))
   }
 }
 

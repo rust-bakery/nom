@@ -1,5 +1,5 @@
-use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring,
-             FindToken, ParseTo};
+use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice,
+             FindSubstring, FindToken, ParseTo};
 use util::Offset;
 
 use std::str::{self, FromStr, Chars, CharIndices};
@@ -7,7 +7,7 @@ use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
 use std::iter::{Enumerate, Map};
 use std::slice::Iter;
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CompleteStr<'a>(pub &'a str);
 
 impl<'a> AtEof for CompleteStr<'a> {
@@ -53,7 +53,8 @@ impl<'a> InputIter for CompleteStr<'a> {
     self.0.iter_elements()
   }
   fn position<P>(&self, predicate: P) -> Option<usize>
-    where P: Fn(Self::RawItem) -> bool
+  where
+    P: Fn(Self::RawItem) -> bool,
   {
     self.0.position(predicate)
   }
@@ -68,7 +69,9 @@ impl<'a> InputTake for CompleteStr<'a> {
   }
 
   fn take_split(&self, count: usize) -> Option<(Self, Self)> {
-    self.0.take_split(count).map(|(s1, s2)| (CompleteStr(s1), CompleteStr(s2)))
+    self.0.take_split(count).map(|(s1, s2)| {
+      (CompleteStr(s1), CompleteStr(s2))
+    })
   }
 }
 
@@ -124,7 +127,7 @@ impl<'a> Offset for CompleteStr<'a> {
   }
 }
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
 
 impl<'a> AtEof for CompleteByteSlice<'a> {
@@ -170,7 +173,8 @@ impl<'a> InputIter for CompleteByteSlice<'a> {
     self.0.iter_elements()
   }
   fn position<P>(&self, predicate: P) -> Option<usize>
-    where P: Fn(Self::RawItem) -> bool
+  where
+    P: Fn(Self::RawItem) -> bool,
   {
     self.0.position(predicate)
   }
@@ -185,7 +189,9 @@ impl<'a> InputTake for CompleteByteSlice<'a> {
   }
 
   fn take_split(&self, count: usize) -> Option<(Self, Self)> {
-    self.0.take_split(count).map(|(s1, s2)| (CompleteByteSlice(s1), CompleteByteSlice(s2)))
+    self.0.take_split(count).map(|(s1, s2)| {
+      (CompleteByteSlice(s1), CompleteByteSlice(s2))
+    })
   }
 }
 

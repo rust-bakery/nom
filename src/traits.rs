@@ -102,7 +102,7 @@ impl AsChar for u8 {
   #[inline]
   fn is_hex_digit(self) -> bool {
     (self >= 0x30 && self <= 0x39) || (self >= 0x41 && self <= 0x46) ||
-    (self >= 0x61 && self <= 0x66)
+      (self >= 0x61 && self <= 0x66)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
@@ -133,7 +133,7 @@ impl<'a> AsChar for &'a u8 {
   #[inline]
   fn is_hex_digit(self) -> bool {
     (*self >= 0x30 && *self <= 0x39) || (*self >= 0x41 && *self <= 0x46) ||
-    (*self >= 0x61 && *self <= 0x66)
+      (*self >= 0x61 && *self <= 0x66)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
@@ -222,7 +222,9 @@ pub trait InputIter {
   /// returns an iterator over the elements
   fn iter_elements(&self) -> Self::IterElem;
   /// finds the byte position of the element
-  fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool;
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::RawItem) -> bool;
   /// get the byte offset from the element's position in the stream
   fn slice_index(&self, count: usize) -> Option<usize>;
 }
@@ -252,7 +254,8 @@ impl<'a> InputIter for &'a [u8] {
   }
   #[inline]
   fn position<P>(&self, predicate: P) -> Option<usize>
-    where P: Fn(Self::Item) -> bool
+  where
+    P: Fn(Self::Item) -> bool,
   {
     self.iter().position(|b| predicate(*b))
   }
@@ -299,7 +302,8 @@ impl<'a> InputIter for &'a str {
     self.chars()
   }
   fn position<P>(&self, predicate: P) -> Option<usize>
-    where P: Fn(Self::RawItem) -> bool
+  where
+    P: Fn(Self::RawItem) -> bool,
   {
     for (o, c) in self.char_indices() {
       if predicate(c) {
@@ -353,7 +357,7 @@ impl<'a> InputTake for &'a str {
 
 /// indicates wether a comparison was successful, an error, or
 /// if more data was needed
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum CompareResult {
   Ok,
   Incomplete,
@@ -409,7 +413,8 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
       (65...90, 97...122) |
       (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
       _ => false,
-    }) {
+    })
+    {
       CompareResult::Error
     } else if m < blen {
       CompareResult::Incomplete
@@ -450,7 +455,11 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   //FIXME: this version is too simple and does not use the current locale
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    let pos = self.to_lowercase().chars().zip(t.to_lowercase().chars()).position(|(a, b)| a != b);
+    let pos = self
+      .to_lowercase()
+      .chars()
+      .zip(t.to_lowercase().chars())
+      .position(|(a, b)| a != b);
 
     match pos {
       Some(_) => CompareResult::Error,

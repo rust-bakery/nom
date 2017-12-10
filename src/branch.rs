@@ -915,7 +915,7 @@ mod tests {
     );
   );
 
-  #[derive(Debug,Clone,PartialEq)]
+  #[derive(Debug, Clone, PartialEq)]
   pub struct ErrorStr(String);
 
   impl From<u32> for ErrorStr {
@@ -939,7 +939,10 @@ mod tests {
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       use Context;
-      Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
+      Err(Err::Error(Context::Code(
+        &b""[..],
+        ErrorKind::Custom(ErrorStr("abcd".to_string())),
+      )))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {

@@ -391,8 +391,10 @@ mod tests {
     assert_eq!(take_bits!((sl, 6), u16, 11), Ok(((&sl[2..], 1), 1504)));
     assert_eq!(take_bits!((sl, 0), u32, 20), Ok(((&sl[2..], 4), 700_163)));
     assert_eq!(take_bits!((sl, 4), u32, 20), Ok(((&sl[3..], 0), 716_851)));
-    assert_eq!(take_bits!((sl, 4), u32, 22),
-               Err(Err::Incomplete(Needed::Size(22))));
+    assert_eq!(
+      take_bits!((sl, 4), u32, 22),
+      Err(Err::Incomplete(Needed::Size(22)))
+    );
   }
 
   #[test]
@@ -431,7 +433,7 @@ mod tests {
     assert_eq!(ch_bytes(&input[1..]), Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits))));
   }
 
-  #[derive(PartialEq,Debug)]
+  #[derive(PartialEq, Debug)]
   struct FakeUint(u32);
 
   impl AddAssign for FakeUint {

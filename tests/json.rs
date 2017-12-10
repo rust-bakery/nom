@@ -8,7 +8,7 @@ use nom::{digit, alphanumeric};
 use std::str::{self, FromStr};
 use std::collections::HashMap;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum JsonValue {
   Str(String),
   Num(f32),
