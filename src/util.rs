@@ -314,9 +314,10 @@ pub fn write_color(v: &mut Vec<u8>, color: u8) {
 }
 
 #[cfg(feature = "std")]
-pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> String {
+#[cfg_attr(feature = "cargo-clippy", allow(implicit_hasher))]
+pub fn print_codes(colors: &HashMap<u32, u8>, names: &HashMap<u32, &str>) -> String {
   let mut v = Vec::new();
-  for (code, &color) in &colors {
+  for (code, &color) in colors {
     if let Some(&s) = names.get(code) {
       let bytes = s.as_bytes();
       write_color(&mut v, color);

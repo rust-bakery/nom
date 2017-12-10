@@ -1,3 +1,4 @@
+#![cfg(feature = "verbose_errors")]
 /// this file tests a different backtracking behaviour. With the current
 /// `error!` macro, an early return is done in the current function, but
 /// backtracking continues normally outside of that function.
@@ -5,10 +6,8 @@
 /// The solution here wraps `IResult` in a `Result`: a `Ok` indicates usual
 /// backtracking, `Err` indicates that we must "cut".
 
-#[allow(unused_imports)]
 #[macro_use] extern crate nom;
 
-#[cfg(feature = "verbose_errors")]
 macro_rules! n (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         fn $name( i: $i ) -> std::result::Result<nom::IResult<$i,$o,u32>, nom::Err<$i, u32>> {

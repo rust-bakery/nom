@@ -399,6 +399,8 @@
 #![cfg_attr(feature = "nightly", feature(plugin))]
 //#![warn(missing_docs)]
 
+#![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
+
 #[cfg(not(feature = "std"))]
 #[macro_use] extern crate alloc;
 #[cfg(feature = "regexp")]

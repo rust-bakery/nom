@@ -18,7 +18,7 @@ named!(multi<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}))
 named!(value<Vec<Vec<&str>>>,
 	do_parse!(
 		first_line: map_res!(is_not_s!("\n"), std::str::from_utf8) >>
-		rest: many_m_n!(0, 1, separated_list!(tag!("\n\t"), map_res!(take_while!(call!(|c| c != '\n' as u8)), std::str::from_utf8))) >>
+		rest: many_m_n!(0, 1, separated_list!(tag!("\n\t"), map_res!(take_while!(call!(|c| c != b'\n')), std::str::from_utf8))) >>
 		(
       rest
     )
@@ -26,7 +26,7 @@ named!(value<Vec<Vec<&str>>>,
 );
 
 // issue #534
-fn wrap_suffix(input: Option<Vec<&[u8]>>) -> Option<String> {
+fn wrap_suffix(input: &Option<Vec<&[u8]>>) -> Option<String> {
   if input.is_some() {
     ///
     /// I've tried both of the lines below individually and get the same error.
@@ -42,5 +42,5 @@ named!(parse_suffix<&[u8],Option<String>>,do_parse!(
   u: opt!(many1!(alt_complete!(
     tag!("%") | tag!("#")  | tag!("@") | alpha
   ))) >>
-  (wrap_suffix(u))
+  (wrap_suffix(&u))
 ));

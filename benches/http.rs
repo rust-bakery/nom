@@ -21,6 +21,7 @@ struct Header<'a> {
     value: Vec<&'a [u8]>,
 }
 
+#[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
 fn is_token(c: u8) -> bool {
     match c {
         128...255 => false,
@@ -64,7 +65,7 @@ fn is_version(c: u8) -> bool {
 
 named!(line_ending, alt!(tag!("\r\n") | tag!("\n")));
 
-fn request_line<'a>(input: &'a [u8]) -> IResult<&'a[u8], Request<'a>> {
+fn request_line(input: &[u8]) -> IResult<&[u8], Request> {
   do_parse!(input,
     method: take_while1!(is_token)     >>
             take_while1!(is_space)     >>
@@ -93,7 +94,7 @@ named!(message_header_value, do_parse!(
 
     (data)));
 
-fn message_header<'a>(input: &'a [u8]) -> IResult<&'a[u8], Header<'a>> {
+fn message_header(input: &[u8]) -> IResult<&[u8], Header> {
   do_parse!(input,
     name:   take_while1!(is_token)       >>
             char!(':')                   >>
@@ -105,7 +106,7 @@ fn message_header<'a>(input: &'a [u8]) -> IResult<&'a[u8], Header<'a>> {
     }))
 }
 
-fn request<'a>(input: &'a [u8]) -> IResult<&'a[u8], (Request<'a>, Vec<Header<'a>>)> {
+fn request(input: &[u8]) -> IResult<&[u8], (Request, Vec<Header>)> {
   do_parse!(input,
     req: request_line           >>
     h:   many1!(message_header) >>
@@ -177,7 +178,7 @@ fn main() {
     {
         use std::io::Read;
 
-        let mut file = File::open(env::args().nth(1).expect("File to read")).ok().expect("Failed to open file");
+        let mut file = File::open(env::args().nth(1).expect("File to read")).expect("Failed to open file");
 
         let _ = file.read_to_end(&mut contents).unwrap();
     }

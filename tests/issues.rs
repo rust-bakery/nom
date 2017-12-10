@@ -1,5 +1,6 @@
 //#![feature(trace_macros)]
 #![allow(dead_code)]
+#![cfg_attr(feature = "cargo-clippy", allow(redundant_closure))]
 
 #[macro_use]
 extern crate nom;
@@ -13,7 +14,7 @@ struct Range {
 }
 
 pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
-  if input.len() > 0 {
+  if !input.is_empty() {
     Ok((&input[1..], input[0] as char))
   } else {
     Err(Err::Incomplete(Needed::Size(1)))
@@ -85,7 +86,7 @@ mod parse_int {
         println!("int is empty?: {}", x.is_empty());
         match result.parse(){
           Ok(i) => i,
-          Err(_) =>  panic!("UH OH! NOT A DIGIT!")
+          Err(e) =>  panic!("UH OH! NOT A DIGIT! {:?}", e)
         }
       }) >>
       (res)

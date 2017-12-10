@@ -1,3 +1,4 @@
+#![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
 #[macro_use]
 extern crate nom;
 

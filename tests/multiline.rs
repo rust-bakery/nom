@@ -5,15 +5,15 @@ use nom::types::CompleteStr;
 use nom::{alphanumeric,eol};
 use nom::IResult;
 
-pub fn end_of_line<'a>(input: CompleteStr<'a>) -> IResult<CompleteStr<'a>, CompleteStr<'a>> {
+pub fn end_of_line(input: CompleteStr) -> IResult<CompleteStr, CompleteStr> {
   alt!(input, eof!() | eol)
 }
 
-pub fn read_line<'a>(input: CompleteStr<'a>) -> IResult<CompleteStr<'a>, CompleteStr<'a>> {
+pub fn read_line(input: CompleteStr) -> IResult<CompleteStr, CompleteStr> {
   terminated!(input, alphanumeric, end_of_line)
 }
 
-pub fn read_lines<'a>(input: CompleteStr<'a>) -> IResult<CompleteStr<'a>, Vec<CompleteStr<'a>>> {
+pub fn read_lines(input: CompleteStr) -> IResult<CompleteStr, Vec<CompleteStr>> {
   many0!(input, read_line)
 }
 

@@ -5,7 +5,7 @@ extern crate test;
 extern crate nom;
 
 use test::Bencher;
-use nom::{IResult,digit};
+use nom::digit;
 
 // Parser definition
 
