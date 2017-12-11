@@ -29,6 +29,8 @@ matrix:
       script:
         - eval cargo fmt -- --write-mode=diff
         - eval cargo doc --verbose $DOC_FEATURES
+      after_success:
+        - echo 'No need to send Coveralls'
 
 notifications:
   webhooks:
