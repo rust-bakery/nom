@@ -19,20 +19,18 @@ matrix:
       env: FEATURES='--features "nightly"'
     - rust: nightly
       env: FEATURES='--no-default-features'
-      before_script:
-        - export PATH=$HOME/.cargo/bin:$PATH
-        - which cargo-coveralls || cargo install cargo-travis
-        - which cargo-benchcmp  || cargo install cargo-benchcmp
     - rust: stable
       env: FEATURES=''
-    - rust: stable
+    - rust: nightly
       env: DOC_FEATURES='--features "std regexp regexp_macros" --no-default-features'
       before_script:
         - export PATH=$HOME/.cargo/bin:$PATH
-        - which rustfmt || cargo install rustfmt
+        - which rustfmt || cargo install rustfmt-nightly
       script:
-        - eval cargo fmt -- --write-mode=diff
+        - cargo fmt -- --write-mode=diff
         - eval cargo doc --verbose $DOC_FEATURES
+      after_success:
+        - echo 'No need to send Coveralls'
 
 notifications:
   webhooks:
@@ -53,6 +51,11 @@ addons:
       - cmake
     sources:
       - kalakris-cmake
+
+before_script:
+  - export PATH=$HOME/.cargo/bin:$PATH
+  - which cargo-coveralls || cargo install cargo-travis
+  - which cargo-benchcmp  || cargo install cargo-benchcmp
 
 script:
   - eval cargo build --verbose $FEATURES
