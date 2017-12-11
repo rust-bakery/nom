@@ -19,10 +19,6 @@ matrix:
       env: FEATURES='--features "nightly"'
     - rust: nightly
       env: FEATURES='--no-default-features'
-      before_script:
-        - export PATH=$HOME/.cargo/bin:$PATH
-        - which cargo-coveralls || cargo install cargo-travis
-        - which cargo-benchcmp  || cargo install cargo-benchcmp
     - rust: stable
       env: FEATURES=''
     - rust: stable
@@ -53,6 +49,11 @@ addons:
       - cmake
     sources:
       - kalakris-cmake
+
+before_script:
+  - export PATH=$HOME/.cargo/bin:$PATH
+  - which cargo-coveralls || cargo install cargo-travis
+  - which cargo-benchcmp  || cargo install cargo-benchcmp
 
 script:
   - eval cargo build --verbose $FEATURES
