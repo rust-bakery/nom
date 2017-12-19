@@ -887,7 +887,7 @@ macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,InputLength,Context};
+      use $crate::{Err,Needed,InputLength,Context};
 
       match $submac!($i, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
@@ -985,7 +985,7 @@ macro_rules! fold_many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Err,Needed};
 
       use $crate::InputLength;
       let mut acc          = $init;
