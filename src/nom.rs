@@ -404,6 +404,18 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   }
 }
 
+/// Recognizes big endian unsigned 6 bytes integer
+#[inline]
+pub fn be_u48(i: &[u8]) -> IResult<&[u8], u64, u32> {
+  if i.len() < 6 {
+    need_more(i, Needed::Size(6))
+  } else {
+    let res = ((i[0] as u64) << 40) + ((i[1] as u64) << 32) + ((i[2] as u64) << 24) + ((i[3] as u64) << 16) +
+      ((i[4] as u64) << 8) + i[5] as u64;
+    Ok((&i[6..], res))
+  }
+}
+
 /// Recognizes big endian unsigned 8 bytes integer
 #[inline]
 pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
@@ -494,6 +506,18 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
   }
 }
 
+/// Recognizes little endian unsigned 6 bytes integer
+#[inline]
+pub fn le_u48(i: &[u8]) -> IResult<&[u8], u64> {
+  if i.len() < 6 {
+    need_more(i, Needed::Size(6))
+  } else {
+    let res = ((i[5] as u64) << 40) + ((i[4] as u64) << 32) + ((i[3] as u64) << 24) + ((i[2] as u64) << 16) +
+      ((i[1] as u64) << 8) + i[0] as u64;
+    Ok((&i[6..], res))
+  }
+}
+
 /// Recognizes little endian unsigned 8 bytes integer
 #[inline]
 pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
@@ -555,7 +579,15 @@ macro_rules! u16 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_u16($i
 /// if the parameter is nom::Endianness::Big, parse a big endian u32 integer,
 /// otherwise a little endian u32 integer
 #[macro_export]
+macro_rules! u24 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_u24($i) } else { le_u24($i) } } ););
+/// if the parameter is nom::Endianness::Big, parse a big endian u32 integer,
+/// otherwise a little endian u32 integer
+#[macro_export]
 macro_rules! u32 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_u32($i) } else { le_u32($i) } } ););
+/// if the parameter is nom::Endianness::Big, parse a big endian u64 integer,
+/// otherwise a little endian u64 integer
+#[macro_export]
+macro_rules! u48 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_u48($i) } else { le_u48($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian u64 integer,
 /// otherwise a little endian u64 integer
 #[macro_export]
