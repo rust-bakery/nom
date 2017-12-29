@@ -349,6 +349,7 @@ Here is a list of known projects using nom:
   * [torrc configuration file](https://github.com/dhuseby/torrc-rs)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
 - Programming languages:
+  * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
   * [SQL](https://github.com/ms705/nom-sql)
@@ -375,7 +376,7 @@ Here is a list of known projects using nom:
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
 - Language specifications:
-  * [BNF](https://github.com/snewt/bnf)  
+  * [BNF](https://github.com/snewt/bnf)
 - [using nom as lexer and parser](https://github.com/Rydgel/monkey-rust)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
