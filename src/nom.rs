@@ -679,15 +679,15 @@ pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
         alt!(
-          value!((), tuple!(digit, opt!(complete!(tag!("."))), opt!(complete!(digit))))
+          value!((), tuple!(digit, opt!(tag!(".")), opt!(digit)))
           | value!((), tuple!(tag!("."), digit))
         ),
-        opt!(complete!(tuple!(
+        opt!(tuple!(
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
           )
-        ))
+        )
       )
     ),
     parse_to!(f32)
@@ -703,15 +703,15 @@ pub fn float_s(input: &str) -> IResult<&str, f32> {
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
         alt!(
-          value!((), tuple!(digit, opt!(complete!(tag!("."))), opt!(complete!(digit))))
+          value!((), tuple!(digit, opt!(tag!(".")), opt!(digit)))
           | value!((), tuple!(tag!("."), digit))
         ),
-        opt!(complete!(tuple!(
+        opt!(tuple!(
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
           )
-        ))
+        )
       )
     ),
     parse_to!(f32)
@@ -727,15 +727,15 @@ pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
         alt!(
-          value!((), tuple!(digit, opt!(complete!(tag!("."))), opt!(complete!(digit))))
+          value!((), tuple!(digit, opt!(tag!(".")), opt!(digit)))
           | value!((), tuple!(tag!("."), digit))
         ),
-        opt!(complete!(tuple!(
+        opt!(tuple!(
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
           )
-        ))
+        )
       )
     ),
     parse_to!(f64)
@@ -751,15 +751,15 @@ pub fn double_s(input: &str) -> IResult<&str, f64> {
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
         alt!(
-          value!((), tuple!(digit, opt!(complete!(tag!("."))), opt!(complete!(digit))))
+          value!((), tuple!(digit, opt!(tag!(".")), opt!(digit)))
           | value!((), tuple!(tag!("."), digit))
         ),
-        opt!(complete!(tuple!(
+        opt!(tuple!(
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
           )
-        ))
+        )
       )
     ),
     parse_to!(f64)
@@ -1401,30 +1401,30 @@ mod tests {
   #[cfg(feature = "std")]
   fn float_test() {
     let cases = vec![
-      "3.1415",
-      "+3.1415",
-      "-3.1415",
-      "4141.5e-3",
-      "0.51415e1",
-      "0.51415e+1",
-      "6.1415e0",
-      "7.",
-      "+7.",
-      "-7.",
-      "8e5",
-      "8e+5",
-      "8e-5",
-      "9",
-      "+9",
-      "-9",
+      "3.1415 ",
+      "+3.1415 ",
+      "-3.1415 ",
+      "4141.5e-3 ",
+      "0.51415e1 ",
+      "0.51415e+1 ",
+      "6.1415e0 ",
+      "7. ",
+      "+7. ",
+      "-7. ",
+      "8e5 ",
+      "8e+5 ",
+      "8e-5 ",
+      "9 ",
+      "+9 ",
+      "-9 ",
     ];
     for s in cases.into_iter() {
-      let d = str::parse::<f64>(s).unwrap();
-      assert_eq!(double(s.as_bytes()), Ok((&[][..], d)), "checking double({:?}) -> {}", s, d);
-      assert_eq!(double_s(s), Ok((&""[..], d)), "checking double_s({:?}) -> {}", s, d);
-      let f = str::parse::<f32>(s).unwrap();
-      assert_eq!(float(s.as_bytes()), Ok((&[][..], f)), "checking float({:?}) -> {}", s, f);
-      assert_eq!(float_s(s), Ok((&""[..], f)), "checking float_s({:?}) -> {}", s, f);
+      let d = str::parse::<f64>(&s[..s.len() - 1]).unwrap();
+      assert_eq!(double(s.as_bytes()), Ok((&b" "[..], d)), "checking double({:?}) -> {}", s, d);
+      assert_eq!(double_s(s), Ok((&" "[..], d)), "checking double_s({:?}) -> {}", s, d);
+      let f = str::parse::<f32>(&s[..s.len() - 1]).unwrap();
+      assert_eq!(float(s.as_bytes()), Ok((&b" "[..], f)), "checking float({:?}) -> {}", s, f);
+      assert_eq!(float_s(s), Ok((&" "[..], f)), "checking float_s({:?}) -> {}", s, f);
     }
   }
 
