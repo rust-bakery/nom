@@ -686,8 +686,7 @@ pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
-          )
-        )
+        ))
       )
     ),
     parse_to!(f32)
@@ -710,8 +709,7 @@ pub fn float_s(input: &str) -> IResult<&str, f32> {
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
-          )
-        )
+        ))
       )
     ),
     parse_to!(f32)
@@ -734,8 +732,7 @@ pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
-          )
-        )
+        ))
       )
     ),
     parse_to!(f64)
@@ -758,8 +755,7 @@ pub fn double_s(input: &str) -> IResult<&str, f64> {
           alt!(tag!("e") | tag!("E")),
           opt!(alt!(tag!("+") | tag!("-"))),
           digit
-          )
-        )
+        ))
       )
     ),
     parse_to!(f64)
