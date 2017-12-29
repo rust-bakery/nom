@@ -679,7 +679,7 @@ pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
         alt!(
-          delimited!(digit, tag!("."), opt!(digit))
+          delimited!(digit, tag!("."), opt!(complete!(digit)))
           | delimited!(opt!(digit), tag!("."), digit)
         ),
         opt!(complete!(tuple!(
@@ -703,7 +703,7 @@ pub fn float_s(input: &str) -> IResult<&str, f32> {
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
         alt!(
-          delimited!(digit, tag!("."), opt!(digit))
+          delimited!(digit, tag!("."), opt!(complete!(digit)))
           | delimited!(opt!(digit), tag!("."), digit)
         ),
         opt!(complete!(tuple!(
@@ -727,7 +727,7 @@ pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
         alt!(
-          delimited!(digit, tag!("."), opt!(digit))
+          delimited!(digit, tag!("."), opt!(complete!(digit)))
           | delimited!(opt!(digit), tag!("."), digit)
         ),
         opt!(complete!(tuple!(
@@ -751,7 +751,7 @@ pub fn double_s(input: &str) -> IResult<&str, f64> {
       tuple!(
         opt!(alt!(tag!("+") | tag!("-"))),
         alt!(
-          delimited!(digit, tag!("."), opt!(digit))
+          delimited!(digit, tag!("."), opt!(complete!(digit)))
           | delimited!(opt!(digit), tag!("."), digit)
         ),
         opt!(complete!(tuple!(
