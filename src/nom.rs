@@ -1400,15 +1400,32 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn float_test() {
-    assert_eq!(float(&b"+3.14"[..]),   Ok((&b""[..], 3.14)));
-    assert_eq!(float_s(&"3.14"[..]),   Ok((&""[..], 3.14)));
-    assert_eq!(double(&b"3.14"[..]),   Ok((&b""[..], 3.14)));
-    assert_eq!(double_s(&"3.14"[..]),   Ok((&""[..], 3.14)));
-
-    assert_eq!(float(&b"-1.234E-12"[..]),   Ok((&b""[..], -1.234E-12)));
-    assert_eq!(float_s(&"-1.234E-12"[..]),   Ok((&""[..], -1.234E-12)));
-    assert_eq!(double(&b"-1.234E-12"[..]),   Ok((&b""[..], -1.234E-12)));
-    assert_eq!(double_s(&"-1.234E-12"[..]),   Ok((&""[..], -1.234E-12)));
+    let cases = vec![
+      "3.1415",
+      "+3.1415",
+      "-3.1415",
+      "4141.5e-3",
+      "0.51415e1",
+      "0.51415e+1",
+      "6.1415e0",
+      "7.",
+      "+7.",
+      "-7.",
+      "8e5",
+      "8e+5",
+      "8e-5",
+      "9",
+      "+9",
+      "-9",
+    ];
+    for s in cases.into_iter() {
+      let d = str::parse::<f64>(s).unwrap();
+      assert_eq!(double(s.as_bytes()), Ok((&[][..], d)), "checking double({:?}) -> {}", s, d);
+      assert_eq!(double_s(s), Ok((&""[..], d)), "checking double_s({:?}) -> {}", s, d);
+      let f = str::parse::<f32>(s).unwrap();
+      assert_eq!(float(s.as_bytes()), Ok((&[][..], f)), "checking float({:?}) -> {}", s, f);
+      assert_eq!(float_s(s), Ok((&""[..], f)), "checking float_s({:?}) -> {}", s, f);
+    }
   }
 
   use types::CompleteStr;
