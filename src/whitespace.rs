@@ -67,6 +67,7 @@
 //! own code. You can still manually wrap them with the separator
 //! you want, or you can copy the macros defined in src/whitespace.rs
 //! and modify them to support a new combinator:
+//!
 //! * copy the combinator's code here, add the _sep suffix
 //! * add the `$separator:expr` as second argument
 //! * wrap any sub parsers with sep!($separator, $submac!($($args)*))

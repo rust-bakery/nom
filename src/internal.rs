@@ -43,6 +43,7 @@ impl Needed {
 }
 
 /// The `Err` enum indicates the parser was not successful, and has three cases:
+///
 /// * `Incomplete` indicates that more data is needed to decide. The `Needed` enum
 /// can contain how many additional bytes are necessary. If you are sure your parser
 /// is working on full data, you can wrap your parser with the `complete` combinator
