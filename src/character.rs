@@ -142,17 +142,15 @@ where
   T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
   <T as InputIter>::Item: AsChar,
 {
-  if input.input_len() == 0 {
-    need_more(input, Needed::Size(1))
-  } else {
-    Ok((
-      input.slice(1..),
-      input
-        .iter_elements()
-        .next()
-        .expect("slice should contain at least one element")
-        .as_char(),
-    ))
+  let mut it = input.iter_indices();
+  match it.next() {
+    None    => need_more(input, Needed::Size(1)),
+    Some((_, c)) => match it.next() {
+      None => Ok((input.slice(input.input_len()..), c.as_char())),
+      Some((idx, _)) => {
+        Ok((input.slice(idx..), c.as_char()))
+      }
+    }
   }
 }
 
@@ -209,5 +207,11 @@ mod tests {
 
     let b = &"cde"[..];
     assert_eq!(f(b),Ok((&"de"[..], 'c')));
+  }
+
+  #[test]
+  fn anychar_str() {
+    use super::anychar;
+    assert_eq!(anychar("Ә"), Ok(("", 'Ә')));
   }
 }
