@@ -528,7 +528,9 @@ impl<'a, 'b> FindSubstring<&'b [u8]> for &'a [u8] {
     let substr_len = substr.len();
 
     if substr_len == 0 {
-      None
+      // an empty substring is found at position 0
+      // This matches the behavior of str.find("").
+      Some(0)
     } else if substr_len == 1 {
       memchr::memchr(substr[0], self)
     } else {

@@ -761,16 +761,23 @@ macro_rules! take_until_and_consume1 (
       use $crate::{Err,Needed,IResult,ErrorKind,need_more};
 
       use $crate::InputLength;
+      use $crate::FindSubstring;
+      use $crate::Slice;
 
       let res: IResult<_,_> = if 1 + $substr.input_len() > $i.input_len() {
-        need_more(Needed::Size($substr.input_len()))
+        need_more($i, Needed::Size(1+$substr.input_len()))
       } else {
-        match ($i).find_substring($substr) {
+        // To guarantee returning a non-empty subsequence, look for the substring
+        // starting from index 1. We know that there is at least one byte available
+        // because of the previous check.
+        match ($i.slice(1..)).find_substring($substr) {
           None => {
-            let e = ErrorKind::TakeUntilAndConsume::<u32>;
+            let e = ErrorKind::TakeUntilAndConsume1::<u32>;
             Err(Err::Error(error_position!($i, e)))
           },
           Some(index) => {
+            // convert the index within $i.slice(1..) to the index within $i
+            let index = index + 1;
             Ok(($i.slice(index+$substr.input_len()..), $i.slice(0..index)))
           },
         }
@@ -1209,11 +1216,11 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
-  fn take_until_test() {
+  fn take_until_and_consume() {
     named!(x, take_until_and_consume!("efgh"));
     let r = x(&b"abcdabcdefghijkl"[..]);
     assert_eq!(r, Ok((&b"ijkl"[..], &b"abcdabcd"[..])));
+<<<<<<< HEAD
 
     println!("Ok( 1\n");
 
@@ -1223,11 +1230,54 @@ mod tests {
     println!("Ok( 2\n");
     let r3 = x(&b"abcefg"[..]);
     assert_eq!(r3,  Err(Err::Error(error_position!(&b"abcefg"[..], ErrorKind::TakeUntilAndConsume))));
+=======
+    println!("Done 1\n");
+
+    let r2 = x(&b"abcdabcdefgh"[..]);
+    assert_eq!(r2, Ok((&b""[..], &b"abcdabcd"[..])));
+    println!("Done 2\n");
+
+    let r3 = x(&b"abcefg"[..]);
+    assert_eq!(r3,  Err(Err::Error(error_position!(ErrorKind::TakeUntilAndConsume, &b"abcefg"[..]))));
+    println!("Done 3\n");
+>>>>>>> fa0750728f608e94a75138725ac98af61f9bc8da
 
     assert_eq!(
       x(&b"ab"[..]),
       Err(Err::Incomplete(Needed::Size(4)))
     );
+  }
+
+  #[test]
+  fn take_until_and_consume1() {
+    named!(x, take_until_and_consume1!("efgh"));
+    let r = x(&b"abcdabcdefghijkl"[..]);
+    assert_eq!(r, Ok((&b"ijkl"[..], &b"abcdabcd"[..])));
+    println!("Done 1\n");
+
+    let r2 = x(&b"abcdabcdefgh"[..]);
+    assert_eq!(r2, Ok((&b""[..], &b"abcdabcd"[..])));
+    println!("Done 2\n");
+
+    let r3 = x(&b"abcefg"[..]);
+    assert_eq!(r3, Err(Err::Error(error_position!(ErrorKind::TakeUntilAndConsume1, &b"abcefg"[..]))));
+    println!("Done 3\n");
+
+    let r4 = x(&b"efgh"[..]);
+    assert_eq!(r4, Err(Err::Incomplete(Needed::Size(5))));
+    println!("Done 4\n");
+
+    named!(x2, take_until_and_consume1!(""));
+    let r5 = x2(&b""[..]);
+    assert_eq!(r5, Err(Err::Incomplete(Needed::Size(1))));
+    println!("Done 5\n");
+
+    let r6 = x2(&b"a"[..]);
+    assert_eq!(r6, Ok((&b""[..], &b"a"[..])));
+    println!("Done 6\n");
+
+    let r7 = x(&b"efghi"[..]);
+    assert_eq!(r7, Err(Err::Error(error_position!(ErrorKind::TakeUntilAndConsume1, &b"efghi"[..]))));
   }
 
   #[test]
