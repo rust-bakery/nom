@@ -29,7 +29,7 @@
 //!
 //! The `ws!` combinator will modify the parser to
 //! intersperse space parsers everywhere. By default,
-//! it will consume the following characters: " \t\r\n".
+//! it will consume the following characters: `" \t\r\n"`.
 //!
 //! If you want to modify that behaviour, you can make
 //! your own whitespace wrapper. As an example, if
@@ -67,6 +67,7 @@
 //! own code. You can still manually wrap them with the separator
 //! you want, or you can copy the macros defined in src/whitespace.rs
 //! and modify them to support a new combinator:
+//!
 //! * copy the combinator's code here, add the _sep suffix
 //! * add the `$separator:expr` as second argument
 //! * wrap any sub parsers with sep!($separator, $submac!($($args)*))
@@ -855,7 +856,7 @@ where
 ///
 /// transforms a parser to automatically consume
 /// whitespace between each token. By default,
-/// it takes the following characters: " \t\r\n".
+/// it takes the following characters: `" \t\r\n"`.
 ///
 /// If you need a whitespace parser consuming a
 /// different set of characters, you can make
