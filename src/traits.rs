@@ -533,6 +533,8 @@ impl<'a, 'b> FindSubstring<&'b [u8]> for &'a [u8] {
       Some(0)
     } else if substr_len == 1 {
       memchr::memchr(substr[0], self)
+    } else if substr_len > self.len() {
+      None
     } else {
       let max = self.len() - substr_len;
       let mut offset = 0;
@@ -645,6 +647,14 @@ pub trait AtEof {
 pub fn need_more<I: AtEof, O, E>(input: I, needed: Needed) -> IResult<I, O, E> {
   if input.at_eof() {
     Err(Err::Error(Context::Code(input, ErrorKind::Eof)))
+  } else {
+    Err(Err::Incomplete(needed))
+  }
+}
+
+pub fn need_more_err<I: AtEof, O, E>(input: I, needed: Needed, err: ErrorKind<E>) -> IResult<I, O, E> {
+  if input.at_eof() {
+    Err(Err::Error(Context::Code(input, err)))
   } else {
     Err(Err::Incomplete(needed))
   }
