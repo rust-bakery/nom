@@ -134,7 +134,7 @@ fn take_till_issue() {
         take_till!(call!(|_| true))
     );
 
-  assert_eq!(nothing(b""), Ok((&b""[..], &b""[..])));
+  assert_eq!(nothing(b""), Err(Err::Incomplete(Needed::Size(1))));
   assert_eq!(nothing(b"abc"), Ok((&b"abc"[..], &b""[..])));
 }
 
