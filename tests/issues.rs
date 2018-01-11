@@ -95,8 +95,8 @@ mod parse_int {
 
   #[test]
   fn issue_142() {
-    let subject = parse_ints(&b"12 34 5689"[..]);
-    let expected = Ok((&b""[..], vec![12, 34, 5689]));
+    let subject = parse_ints(&b"12 34 5689a"[..]);
+    let expected = Ok((&b"a"[..], vec![12, 34, 5689]));
     assert_eq!(subject, expected);
 
     let subject = parse_ints(&b"12 34 5689 "[..]);

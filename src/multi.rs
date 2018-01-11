@@ -238,18 +238,13 @@ macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,InputLength};
+      use $crate::{Err,InputLength,Needed,AtEof};
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
       let mut input = $i.clone();
 
       loop {
-        if input.input_len() == 0 {
-          ret = Ok((input, res));
-          break;
-        }
-
         let input_ = input.clone();
         match $submac!(input_, $($args)*) {
           Err(Err::Error(_))      => {
@@ -270,6 +265,15 @@ macro_rules! many0(
             res.push(o);
             input = i;
           }
+        }
+
+        if input.input_len() == 0 {
+          if input.at_eof() {
+            ret = Ok((input, res));
+          } else {
+            ret = Err(Err::Incomplete(Needed::Unknown));
+          }
+          break;
         }
       }
 
@@ -1219,8 +1223,8 @@ mod tests {
     assert_eq!(multi(&b"abcdabcdefgh"[..]),Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]])));
     assert_eq!(multi(&b"azerty"[..]),Ok((&b"azerty"[..], Vec::new())));
     assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b"abcd"[..]),Ok((&b""[..], vec![&b"abcd"[..]])));
-    assert_eq!(multi(&b""[..]),Ok((&b""[..], Vec::new())));
+    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(multi_empty(&b"abcdef"[..]), Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0))));
   }
 
