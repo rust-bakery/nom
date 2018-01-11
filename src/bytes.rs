@@ -546,6 +546,82 @@ macro_rules! take_while1 (
   );
 );
 
+/// `take_while_m_n!(m: usize, n: usize, T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns a list of bytes or characters for which the provided function returns true.
+/// the returned list's size will be at least m, and at most n
+///
+/// The argument is either a function `T -> bool` or a macro returning a `bool`.
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
+///  named!( alpha, take_while!( is_alphanumeric ) );
+///
+///  let r = alpha(&b"abcd\nefgh"[..]);
+///  assert_eq!(r, Ok((&b"\nefgh"[..], &b"abcd"[..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_while_m_n (
+  ($input:expr, $m:expr, $n:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::IResult;
+
+      use $crate::{InputLength,InputIter,Slice,Err,Needed,AtEof};
+      let input = $input;
+      let m     = $m;
+      let n     = $n;
+
+      match input.position(|c| !$submac!(c, $($args)*)) {
+        Some(idx) => {
+          if idx >= m {
+            if idx <= n {
+              let res:IResult<_,_> = Ok((input.slice(idx..), input.slice(..idx)));
+              res
+            } else {
+              let res:IResult<_,_> = Ok((input.slice(n..), input.slice(..n)));
+              res
+            }
+          } else {
+            let e = ErrorKind::TakeWhileMN::<u32>;
+            Err(Err::Error(error_position!(input, e)))
+          }
+        },
+        None    => {
+          let len = input.input_len();
+          if len >= n {
+            let res:IResult<_,_> = Ok((input.slice(n..), input.slice(..n)));
+            res
+          } else {
+            if input.at_eof() {
+              if len >= $m && len <= $n {
+                let res:IResult<_,_> = Ok((input.slice(len..), input));
+                res
+              } else {
+                let e = ErrorKind::TakeWhileMN::<u32>;
+                Err(Err::Error(error_position!(input, e)))
+              }
+            } else {
+              let needed = if m > len {
+                m - len
+              } else {
+                1
+              };
+              Err(Err::Incomplete(Needed::Size(needed)))
+            }
+          }
+        }
+      }
+    }
+  );
+  ($input:expr, $m:expr, $n: expr, $f:expr) => (
+    take_while_m_n!($input, $m, $n, call!($f));
+  );
+);
 /// `take_till!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function succeeds
 ///
@@ -1543,6 +1619,44 @@ mod tests {
     assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&b"123"[..], &b[..])));
     assert_eq!(f(&d[..]), Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1))));
+  }
+
+  #[test]
+  fn take_while_m_n() {
+    use nom::is_alphabetic;
+    named!(x, take_while_m_n!(2, 4, is_alphabetic));
+    let a = b"";
+    let b = b"a";
+    let c = b"abc";
+    let d = b"abc123";
+    let e = b"abcde";
+    let f = b"123";
+
+    assert_eq!(x(&a[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(x(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(x(&d[..]), Ok((&b"123"[..], &c[..])));
+    assert_eq!(x(&e[..]), Ok((&b"e"[..], &b"abcd"[..])));
+    assert_eq!(x(&f[..]), Err(Err::Error(error_position!(&f[..], ErrorKind::TakeWhileMN))));
+  }
+
+  #[test]
+  fn take_while_m_n_complete() {
+    use nom::is_alphabetic;
+    named!(x<CompleteByteSlice,CompleteByteSlice>, take_while_m_n!(2, 4, is_alphabetic));
+    let a = CompleteByteSlice(b"");
+    let b = CompleteByteSlice(b"a");
+    let c = CompleteByteSlice(b"abc");
+    let d = CompleteByteSlice(b"abc123");
+    let e = CompleteByteSlice(b"abcde");
+    let f = CompleteByteSlice(b"123");
+
+    assert_eq!(x(a), Err(Err::Error(error_position!(a, ErrorKind::TakeWhileMN))));
+    assert_eq!(x(b), Err(Err::Error(error_position!(b, ErrorKind::TakeWhileMN))));
+    assert_eq!(x(c), Ok((CompleteByteSlice(b""), c)));
+    assert_eq!(x(d), Ok((CompleteByteSlice(b"123"), CompleteByteSlice(b"abc"))));
+    assert_eq!(x(e), Ok((CompleteByteSlice(b"e"), CompleteByteSlice(b"abcd"))));
+    assert_eq!(x(f), Err(Err::Error(error_position!(f, ErrorKind::TakeWhileMN))));
   }
 
   #[test]

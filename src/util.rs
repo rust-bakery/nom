@@ -552,6 +552,7 @@ pub enum ErrorKind<E = u32> {
   Verify,
   TakeTill1,
   TakeUntilAndConsume1,
+  TakeWhileMN,
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -617,6 +618,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::Verify                    => 66,
     ErrorKind::TakeTill1                 => 67,
     ErrorKind::TakeUntilAndConsume1      => 68,
+    ErrorKind::TakeWhileMN               => 69,
   }
 }
 
@@ -684,6 +686,7 @@ impl<E> ErrorKind<E> {
       ErrorKind::Verify                    => "predicate verification",
       ErrorKind::TakeTill1                 => "TakeTill1",
       ErrorKind::TakeUntilAndConsume1      => "Take at least 1 until and consume",
+      ErrorKind::TakeWhileMN               => "TakeWhileMN",
     }
   }
 
@@ -764,6 +767,7 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
       ErrorKind::Verify                    => ErrorKind::Verify,
       ErrorKind::TakeTill1                 => ErrorKind::TakeTill1,
       ErrorKind::TakeUntilAndConsume1      => ErrorKind::TakeUntilAndConsume1,
+      ErrorKind::TakeWhileMN               => ErrorKind::TakeWhileMN,
     }
   }
 }
