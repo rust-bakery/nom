@@ -1096,7 +1096,7 @@ mod tests {
   use internal::{Err, Needed};
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
   use util::ErrorKind;
-  use types::{CompleteByteSlice,CompleteStr};
+  use types::{CompleteByteSlice, CompleteStr};
 
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (

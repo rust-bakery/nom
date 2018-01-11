@@ -144,11 +144,11 @@ where
 {
   let mut it = input.iter_indices();
   match it.next() {
-    None    => need_more(input, Needed::Size(1)),
-    Some((_, c)) => match it.next() {
-      None => Ok((input.slice(input.input_len()..), c.as_char())),
-      Some((idx, _)) => {
-        Ok((input.slice(idx..), c.as_char()))
+    None => need_more(input, Needed::Size(1)),
+    Some((_, c)) => {
+      match it.next() {
+        None => Ok((input.slice(input.input_len()..), c.as_char())),
+        Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
       }
     }
   }
