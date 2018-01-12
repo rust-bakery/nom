@@ -12,7 +12,7 @@ use std::boxed::Box;
 use std::fmt::Debug;
 use internal::*;
 use traits::{AsChar, InputLength, InputIter};
-use traits::{need_more, AtEof};
+use traits::{need_more, need_more_err, AtEof};
 use std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Slice};
 use util::ErrorKind;
@@ -51,7 +51,7 @@ where
   match input.compare("\r\n") {
     //FIXME: is this the right index?
     CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-    CompareResult::Incomplete => need_more(input, Needed::Size(2)),
+    CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf),
     CompareResult::Error => {
       let e: ErrorKind<u32> = ErrorKind::CrLf;
       Err(Err::Error(error_position!(input, e)))
@@ -81,7 +81,7 @@ where
         let comp = sliced.compare("\r\n");
         match comp {
           //FIXME: calculate the right index
-          CompareResult::Incomplete => need_more(input, Needed::Unknown),
+          CompareResult::Incomplete => need_more_err(input, Needed::Unknown, ErrorKind::Tag),
           CompareResult::Error => {
             let e: ErrorKind<u32> = ErrorKind::Tag;
             Err(Err::Error(error_position!(input, e)))
@@ -105,12 +105,12 @@ where
 
   match input.compare("\n") {
     CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
-    CompareResult::Incomplete => need_more(input, Needed::Size(1)),
+    CompareResult::Incomplete => need_more_err(input, Needed::Size(1), ErrorKind::CrLf::<u32>),
     CompareResult::Error => {
       match input.compare("\r\n") {
         //FIXME: is this the right index?
         CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-        CompareResult::Incomplete => need_more(input, Needed::Size(2)),
+        CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf::<u32>),
         CompareResult::Error => Err(Err::Error(error_position!(input, ErrorKind::CrLf::<u32>))),
       }
     }
@@ -178,7 +178,7 @@ where
 {
   let input_length = input.input_len();
   if input_length == 0 {
-    return need_more(input, Needed::Unknown);
+    return need_more_err(input, Needed::Unknown, ErrorKind::Alpha::<u32>);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -202,7 +202,7 @@ where
 {
   let input_length = input.input_len();
   if input_length == 0 {
-    return need_more(input, Needed::Unknown);
+    return need_more_err(input, Needed::Unknown, ErrorKind::Digit::<u32>);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -226,7 +226,7 @@ where
 {
   let input_length = input.input_len();
   if input_length == 0 {
-    return need_more(input, Needed::Unknown);
+    return need_more_err(input, Needed::Unknown, ErrorKind::HexDigit::<u32>);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -247,12 +247,12 @@ where
 pub fn oct_digit<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength,
+  T: InputIter + InputLength + AtEof,
   <T as InputIter>::Item: AsChar,
 {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Err(Err::Incomplete(Needed::Unknown));
+    return need_more_err(input, Needed::Unknown, ErrorKind::OctDigit::<u32>);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -273,12 +273,12 @@ where
 pub fn alphanumeric<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength,
+  T: InputIter + InputLength + AtEof,
   <T as InputIter>::Item: AsChar,
 {
   let input_length = input.input_len();
   if input_length == 0 {
-    return Err(Err::Incomplete(Needed::Unknown));
+    return need_more_err(input, Needed::Unknown, ErrorKind::AlphaNumeric::<u32>);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -304,7 +304,7 @@ where
 {
   let input_length = input.input_len();
   if input_length == 0 {
-    return need_more(input, Needed::Unknown);
+    return need_more_err(input, Needed::Unknown, ErrorKind::Space::<u32>);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -329,7 +329,7 @@ where
 {
   let input_length = input.input_len();
   if input_length == 0 {
-    return need_more(input, Needed::Unknown);
+    return need_more_err(input, Needed::Unknown, ErrorKind::MultiSpace::<u32>);
   }
 
   for (idx, item) in input.iter_indices() {
@@ -643,12 +643,10 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
 pub fn non_empty<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputLength,
+  T: InputLength + AtEof,
 {
   if input.input_len() == 0 {
-    Err(Err::Error(
-      error_position!(input, ErrorKind::NonEmpty::<u32>),
-    ))
+    return need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty::<u32>);
   } else {
     Ok((input.slice(input.input_len()..), input))
   }
