@@ -790,7 +790,7 @@ mod test {
     let a = "aabbab";
     let b = "ababcd";
 
-    named!(f <&str,&str>, recognize!(many1!(alt!( tag_s!("a") | tag_s!("b") ))));
+    named!(f <&str,&str>, recognize!(many1!(complete!(alt!( tag_s!("a") | tag_s!("b") )))));
 
     assert_eq!(f(&a[..]), Ok((&a[6..], &a[..])));
     assert_eq!(f(&b[..]), Ok((&b[4..], &b[..4])));
