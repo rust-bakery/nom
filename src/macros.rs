@@ -394,6 +394,30 @@ macro_rules! return_error (
   ($i:expr, $code:expr, $f:expr) => (
     return_error!($i, $code, call!($f));
   );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use ::std::result::Result::*;
+      use $crate::{Context,Err,ErrorKind};
+
+      let i_ = $i.clone();
+      let cl = || {
+        $submac!(i_, $($args)*)
+      };
+
+      fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
+
+      match cl() {
+        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
+        Ok((i, o))              => Ok((i, o)),
+        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+          return Err(Err::Failure(e))
+        }
+      }
+    }
+  );
+  ($i:expr, $f:expr) => (
+    return_error!($i, call!($f));
+  );
 );
 
 /// Add an error if the child parser fails
