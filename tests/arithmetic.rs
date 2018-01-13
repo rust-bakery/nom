@@ -6,7 +6,6 @@ use nom::types::CompleteStr;
 
 // Parser definition
 
-use std::str;
 use std::str::FromStr;
 
 // We parse any expr surrounded by parens, ignoring all whitespaces around those
