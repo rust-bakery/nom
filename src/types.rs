@@ -6,7 +6,7 @@ use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
 use std::iter::{Enumerate, Map};
 use std::slice::Iter;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Hash)]
 pub struct CompleteStr<'a>(pub &'a str);
 
 impl<'a> AtEof for CompleteStr<'a> {
@@ -126,7 +126,8 @@ impl<'a> Offset for CompleteStr<'a> {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+
+#[derive(Clone, Copy, Debug, PartialEq, Hash)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
 
 impl<'a> AtEof for CompleteByteSlice<'a> {
