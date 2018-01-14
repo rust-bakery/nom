@@ -117,3 +117,27 @@ fn json_bench(b: &mut Bencher) {
   //println!("data:\n{:?}", value(&data[..]));
   b.iter(|| value(&data[..]));
 }
+
+#[bench]
+fn recognize_float_bytes(b: &mut Bencher) {
+  use nom::recognize_float;
+  b.iter(|| recognize_float(&b"-1.234E-12"[..]));
+}
+
+#[bench]
+fn recognize_float_str(b: &mut Bencher) {
+  use nom::recognize_float;
+  b.iter(|| recognize_float("-1.234E-12"));
+}
+
+#[bench]
+fn float_bytes(b: &mut Bencher) {
+  use nom::float;
+  b.iter(|| float(&b"-1.234E-12"[..]));
+}
+
+#[bench]
+fn float_str(b: &mut Bencher) {
+  use nom::float_s;
+  b.iter(|| float_s("-1.234E-12"));
+}
