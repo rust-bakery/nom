@@ -167,6 +167,18 @@ macro_rules! fix_error (
 #[macro_export]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    flat_map!(__impl $i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    flat_map!(__impl $i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    flat_map!(__impl $i, call!($f), call!($g));
+  );
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
       use $crate::{Convert,Err};
@@ -178,14 +190,5 @@ macro_rules! flat_map(
         }
       }
     }
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    flat_map!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    flat_map!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    flat_map!($i, call!($f), $submac!($($args)*));
   );
 );

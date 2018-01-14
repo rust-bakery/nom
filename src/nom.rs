@@ -698,7 +698,7 @@ where
 #[cfg(feature = "std")]
 pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
   flat_map!(input,
-    call!(recognize_float),
+    recognize_float,
     parse_to!(f32)
   )
 }
