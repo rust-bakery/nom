@@ -30,7 +30,16 @@ pub trait HexDisplay {
 static CHARS: &'static [u8] = b"0123456789abcdef";
 
 impl Offset for [u8] {
-  fn offset(&self, second: &[u8]) -> usize {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
+
+    snd as usize - fst as usize
+  }
+}
+
+impl<'a> Offset for &'a [u8] {
+  fn offset(&self, second: &Self) -> usize {
     let fst = self.as_ptr();
     let snd = second.as_ptr();
 
@@ -39,6 +48,15 @@ impl Offset for [u8] {
 }
 
 impl Offset for str {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
+
+    snd as usize - fst as usize
+  }
+}
+
+impl<'a> Offset for &'a str {
   fn offset(&self, second: &Self) -> usize {
     let fst = self.as_ptr();
     let snd = second.as_ptr();
