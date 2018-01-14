@@ -15,7 +15,7 @@ use traits::{AsChar, InputLength, InputIter};
 use traits::{need_more, need_more_err, AtEof};
 use std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Slice};
-use util::ErrorKind;
+use util::{ErrorKind, Offset};
 use std::mem::transmute;
 
 #[inline]
@@ -668,98 +668,64 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
   Ok((&input[input.len()..], input))
 }
 
+#[allow(unused_imports)]
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub fn recognize_float<T>(input: T) -> IResult<T, T, u32>
+where
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: InputIter + InputLength + AtEof,
+  T: Clone + Offset,
+  <T as InputIter>::Item: AsChar + Clone,
+{
+  recognize!(input,
+    tuple!(
+      opt!(alt!(char!('+') | char!('-'))),
+      alt!(
+        delimited!(digit, char!('.'), opt!(digit))
+        | delimited!(opt!(digit), char!('.'), digit)
+      ),
+      opt!(complete!(tuple!(
+        alt!(char!('e') | char!('E')),
+        opt!(alt!(char!('+') | char!('-'))),
+        digit
+        )
+      ))
+    )
+  )
+}
+
 /// Recognizes floating point number in a byte string and returns a f32
 #[cfg(feature = "std")]
-#[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
   flat_map!(input,
-    recognize!(
-      tuple!(
-        opt!(alt!(tag!("+") | tag!("-"))),
-        alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
-        ),
-        opt!(complete!(tuple!(
-          alt!(tag!("e") | tag!("E")),
-          opt!(alt!(tag!("+") | tag!("-"))),
-          digit
-          )
-        ))
-      )
-    ),
+    call!(recognize_float),
     parse_to!(f32)
   )
 }
 
 /// Recognizes floating point number in a string and returns a f32
 #[cfg(feature = "std")]
-#[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn float_s(input: &str) -> IResult<&str, f32> {
   flat_map!(input,
-    recognize!(
-      tuple!(
-        opt!(alt!(tag!("+") | tag!("-"))),
-        alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
-        ),
-        opt!(complete!(tuple!(
-          alt!(tag!("e") | tag!("E")),
-          opt!(alt!(tag!("+") | tag!("-"))),
-          digit
-          )
-        ))
-      )
-    ),
+    call!(recognize_float),
     parse_to!(f32)
   )
 }
 
 /// Recognizes floating point number in a byte string and returns a f64
 #[cfg(feature = "std")]
-#[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
   flat_map!(input,
-    recognize!(
-      tuple!(
-        opt!(alt!(tag!("+") | tag!("-"))),
-        alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
-        ),
-        opt!(complete!(tuple!(
-          alt!(tag!("e") | tag!("E")),
-          opt!(alt!(tag!("+") | tag!("-"))),
-          digit
-          )
-        ))
-      )
-    ),
+    call!(recognize_float),
     parse_to!(f64)
   )
 }
 
 /// Recognizes floating point number in a string and returns a f64
 #[cfg(feature = "std")]
-#[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn double_s(input: &str) -> IResult<&str, f64> {
   flat_map!(input,
-    recognize!(
-      tuple!(
-        opt!(alt!(tag!("+") | tag!("-"))),
-        alt!(
-          delimited!(digit, tag!("."), opt!(digit))
-          | delimited!(opt!(digit), tag!("."), digit)
-        ),
-        opt!(complete!(tuple!(
-          alt!(tag!("e") | tag!("E")),
-          opt!(alt!(tag!("+") | tag!("-"))),
-          digit
-          )
-        ))
-      )
-    ),
+    call!(recognize_float),
     parse_to!(f64)
   )
 }

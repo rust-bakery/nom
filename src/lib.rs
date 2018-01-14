@@ -516,9 +516,9 @@ mod bytes;
 pub mod bits;
 
 #[macro_use]
-mod nom;
-#[macro_use]
 mod character;
+#[macro_use]
+mod nom;
 
 #[macro_use]
 pub mod whitespace;
