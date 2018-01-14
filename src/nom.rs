@@ -681,15 +681,15 @@ where
     tuple!(
       opt!(alt!(char!('+') | char!('-'))),
       alt!(
-        delimited!(digit, char!('.'), opt!(digit))
-        | delimited!(opt!(digit), char!('.'), digit)
+        value!((), tuple!(digit, opt!(pair!(char!('.'), opt!(digit)))))
+      | value!((), tuple!(char!('.'), digit))
       ),
-      opt!(complete!(tuple!(
+      opt!(tuple!(
         alt!(char!('e') | char!('E')),
         opt!(alt!(char!('+') | char!('-'))),
         digit
         )
-      ))
+      )
     )
   )
 }
@@ -1361,21 +1361,49 @@ mod tests {
     assert_eq!(eol("\ra"),   Err(Err::Error(error_position!("\ra", ErrorKind::CrLf))));
   }
 
+  use types::CompleteStr;
   #[test]
   #[cfg(feature = "std")]
   fn float_test() {
-    assert_eq!(float(&b"+3.14"[..]),   Ok((&b""[..], 3.14)));
-    assert_eq!(float_s(&"3.14"[..]),   Ok((&""[..], 3.14)));
-    assert_eq!(double(&b"3.14"[..]),   Ok((&b""[..], 3.14)));
-    assert_eq!(double_s(&"3.14"[..]),   Ok((&""[..], 3.14)));
+    let mut test_cases = vec![
+      "+3.14",
+      "3.14",
+      "-3.14",
+      "0",
+      "0.0",
+      "1.",
+      ".789",
+      "-.5",
+      "1e7",
+      "-1E-7",
+      ".3e-2",
+      "1.e4",
+      "1.2e4",
+      "-1.234E-12",
+      "-1.234e-12",
+    ];
 
-    assert_eq!(float(&b"-1.234E-12"[..]),   Ok((&b""[..], -1.234E-12)));
-    assert_eq!(float_s(&"-1.234E-12"[..]),   Ok((&""[..], -1.234E-12)));
-    assert_eq!(double(&b"-1.234E-12"[..]),   Ok((&b""[..], -1.234E-12)));
-    assert_eq!(double_s(&"-1.234E-12"[..]),   Ok((&""[..], -1.234E-12)));
+    for test in test_cases.drain(..) {
+      let expected32 = str::parse::<f32>(test).unwrap();
+      let expected64 = str::parse::<f64>(test).unwrap();
+
+      println!("now parsing: {} -> {}", test, expected32);
+
+      assert_eq!(recognize_float(CompleteStr(test)), Ok((CompleteStr(""), CompleteStr(test))));
+      let larger = format!("{};", test);
+      assert_eq!(recognize_float(&larger[..]), Ok((";", test)));
+
+      assert_eq!(float(larger.as_bytes()), Ok((&b";"[..], expected32)));
+      assert_eq!(float_s(&larger[..]), Ok((";", expected32)));
+
+      assert_eq!(double(larger.as_bytes()), Ok((&b";"[..], expected64)));
+      assert_eq!(double_s(&larger[..]), Ok((";", expected64)));
+    }
+
+    let remaining_exponent = "-1.234E-";
+    assert_eq!(recognize_float(remaining_exponent), Err(Err::Incomplete(Needed::Unknown)));
   }
 
-  use types::CompleteStr;
   #[allow(dead_code)]
   pub fn end_of_line_completestr(input: CompleteStr) -> IResult<CompleteStr, CompleteStr> {
     alt!(input, eof!() | eol)
