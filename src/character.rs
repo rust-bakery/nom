@@ -108,7 +108,8 @@ macro_rules! char (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        (c, c.as_char() == $c)
+        let b = c.clone().as_char() == $c;
+        (c, b)
       }) {
         None             => $crate::need_more($i, Needed::Size(1)),
         Some((_, false)) => {
