@@ -984,18 +984,35 @@ macro_rules! take_until_either_and_consume (
       use ::std::option::Option::*;
       use $crate::{Needed,IResult,need_more_err,ErrorKind};
 
+      use $crate::InputLength;
       use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
+      let input = $input;
 
-      let res: IResult<_,_> = match $input.position(|c| {
+      let res: IResult<_,_> = match input.position(|c| {
         $arr.find_token(c)
       }) {
         Some(n) => {
-          Ok(($input.slice(n+1..), $input.slice(..n)))
+          let mut it = input.slice(n..).iter_indices();
+
+          // this unwrap() should be safe, since we already know there's a char there
+          let r1 = it.next().unwrap();
+          let r2 = it.next();
+
+          match r2 {
+            None    => {
+              // r1 was the last character of the input, and we consumed it
+              Ok(( input.slice(input.input_len()..), input.slice(..n) ))
+            },
+            Some(l) => {
+              // index like this because the character we consume might be more than one byte
+              Ok((input.slice(n+r1.0+l.0..), input.slice(..n)))
+            }
+          }
         },
         None    => {
-          need_more_err($input, Needed::Size(1), ErrorKind::TakeUntilEitherAndConsume::<u32>)
+          need_more_err(input, Needed::Size(1), ErrorKind::TakeUntilEitherAndConsume::<u32>)
         }
       };
       res
@@ -1030,15 +1047,29 @@ macro_rules! take_until_either_and_consume1 (
       use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
-      use $crate::AtEof;
-      let input = $i;
+      let input = $input;
 
       let res: IResult<_,_> = match $input.position(|c| {
         $arr.find_token(c)
       }) {
         Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEitherAndConsume::<u32>))),
         Some(n) => {
-          Ok(($input.slice(n+1..), $input.slice(..n)))
+          let mut it = input.slice(n..).iter_indices();
+
+          // this unwrap() should be safe, since we already know there's a char there
+          let r1 = it.next().unwrap();
+          let r2 = it.next();
+
+          match r2 {
+            None    => {
+              // r1 was the last character of the input, and we consumed it
+              Ok(( input.slice(input.input_len()..), input.slice(..n) ))
+            },
+            Some(l) => {
+              // index like this because the character we consume might be more than one byte
+              Ok((input.slice(n+r1.0+l.0..), input.slice(..n)))
+            }
+          }
         },
         None    => {
           need_more_err($input, Needed::Size(1),  ErrorKind::TakeUntilEitherAndConsume::<u32>)
@@ -1718,6 +1749,58 @@ mod tests {
     assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
     assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::Size(1))));
   }
+
+  #[test]
+  fn take_while_utf8() {
+    named!(f<&str,&str>, take_while!(|c:char| { c != '點' }));
+
+    assert_eq!(f(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f("abcd點"), Ok(("點", "abcd")));
+    assert_eq!(f("abcd點a"), Ok(("點a", "abcd")));
+
+    named!(g<&str,&str>, take_while!(|c:char| { c == '點' }));
+
+    assert_eq!(g(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(g("點abcd"), Ok(("abcd", "點")));
+    assert_eq!(g("點點點a"), Ok(("a", "點點點")));
+  }
+
+  #[test]
+  fn take_till_utf8() {
+    named!(f<&str,&str>, take_till!(|c:char| { c == '點' }));
+
+    assert_eq!(f(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f("abcd點"), Ok(("點", "abcd")));
+    assert_eq!(f("abcd點a"), Ok(("點a", "abcd")));
+
+    named!(g<&str,&str>, take_till!(|c:char| { c != '點' }));
+
+    assert_eq!(g(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(g("點abcd"), Ok(("abcd", "點")));
+    assert_eq!(g("點點點a"), Ok(("a", "點點點")));
+  }
+
+  #[test]
+  fn take_until_either_and_consume_utf8() {
+    named!(f<&str,&str>, take_until_either_and_consume!("é點"));
+
+    assert_eq!(f(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f("abcd點"), Ok(("", "abcd")));
+    assert_eq!(f("abcdéa"), Ok(("a", "abcd")));
+    assert_eq!(f("點a"), Ok(("a", "")));
+
+    named!(g<&str,&str>, take_until_either_and_consume1!("é點"));
+
+    assert_eq!(g(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(g("xabcd"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(g("xabcd點"), Ok(("", "xabcd")));
+    assert_eq!(g("xabcdéa"), Ok(("a", "xabcd")));
+    assert_eq!(g("點xa"), Err(Err::Error(error_position!("點xa", ErrorKind::TakeUntilEitherAndConsume))));
+  }
+
 
   #[cfg(feature = "nightly")]
   use test::Bencher;
