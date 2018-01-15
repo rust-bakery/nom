@@ -10,7 +10,7 @@ named!(unsigned_float <f32>, map_res!(
   map_res!(
     recognize!(
       alt!(
-        delimited!(digit, tag!("."), opt!(complete!(digit))) |
+        delimited!(digit, tag!("."), opt!(digit)) |
         delimited!(opt!(digit), tag!("."), digit)
       )
     ),
@@ -31,16 +31,16 @@ named!(float <f32>, map!(
 
 #[test]
 fn unsigned_float_test() {
-  assert_eq!(unsigned_float(&b"123.456"[..]), Ok((&b""[..], 123.456)));
-  assert_eq!(unsigned_float(&b"0.123"[..]),   Ok((&b""[..], 0.123)));
-  assert_eq!(unsigned_float(&b"123.0"[..]),   Ok((&b""[..], 123.0)));
-  assert_eq!(unsigned_float(&b"123."[..]),    Ok((&b""[..], 123.0)));
-  assert_eq!(unsigned_float(&b".123"[..]),    Ok((&b""[..], 0.123)));
+  assert_eq!(unsigned_float(&b"123.456;"[..]), Ok((&b";"[..], 123.456)));
+  assert_eq!(unsigned_float(&b"0.123;"[..]),   Ok((&b";"[..], 0.123)));
+  assert_eq!(unsigned_float(&b"123.0;"[..]),   Ok((&b";"[..], 123.0)));
+  assert_eq!(unsigned_float(&b"123.;"[..]),    Ok((&b";"[..], 123.0)));
+  assert_eq!(unsigned_float(&b".123;"[..]),    Ok((&b";"[..], 0.123)));
 }
 
 #[test]
 fn float_test() {
-  assert_eq!(float(&b"123.456"[..]),  Ok((&b""[..], 123.456)));
-  assert_eq!(float(&b"+123.456"[..]), Ok((&b""[..], 123.456)));
-  assert_eq!(float(&b"-123.456"[..]), Ok((&b""[..], -123.456)));
+  assert_eq!(float(&b"123.456;"[..]),  Ok((&b";"[..], 123.456)));
+  assert_eq!(float(&b"+123.456;"[..]), Ok((&b";"[..], 123.456)));
+  assert_eq!(float(&b"-123.456;"[..]), Ok((&b";"[..], -123.456)));
 }

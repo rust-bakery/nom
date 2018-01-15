@@ -192,8 +192,8 @@ macro_rules! is_a (
 /// # use nom::alpha;
 /// # fn main() {
 ///  named!(esc, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
-///  assert_eq!(esc(&b"abcd"[..]), Ok((&b""[..], &b"abcd"[..])));
-///  assert_eq!(esc(&b"ab\\\"cd"[..]), Ok((&b""[..], &b"ab\\\"cd"[..])));
+///  assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], &b"abcd"[..])));
+///  assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], &b"ab\\\"cd"[..])));
 /// # }
 /// ```
 #[macro_export]
@@ -1244,10 +1244,10 @@ mod tests {
   #[test]
   fn escaping() {
     named!(esc, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
-    assert_eq!(esc(&b"abcd"[..]), Ok((&b""[..], &b"abcd"[..])));
-    assert_eq!(esc(&b"ab\\\"cd"[..]), Ok((&b""[..], &b"ab\\\"cd"[..])));
-    assert_eq!(esc(&b"\\\"abcd"[..]), Ok((&b""[..], &b"\\\"abcd"[..])));
-    assert_eq!(esc(&b"\\n"[..]), Ok((&b""[..], &b"\\n"[..])));
+    assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], &b"abcd"[..])));
+    assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], &b"ab\\\"cd"[..])));
+    assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], &b"\\\"abcd"[..])));
+    assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], &b"\\n"[..])));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
     assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
@@ -1266,10 +1266,10 @@ mod tests {
   #[test]
   fn escaping_str() {
     named!(esc<&str, &str>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
-    assert_eq!(esc("abcd"), Ok(("", "abcd")));
-    assert_eq!(esc("ab\\\"cd"), Ok(("", "ab\\\"cd")));
-    assert_eq!(esc("\\\"abcd"), Ok(("", "\\\"abcd")));
-    assert_eq!(esc("\\n"), Ok(("", "\\n")));
+    assert_eq!(esc("abcd;"), Ok((";", "abcd")));
+    assert_eq!(esc("ab\\\"cd;"), Ok((";", "ab\\\"cd")));
+    assert_eq!(esc("\\\"abcd;"), Ok((";", "\\\"abcd")));
+    assert_eq!(esc("\\n;"), Ok((";", "\\n")));
     assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
     assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
@@ -1285,7 +1285,7 @@ mod tests {
     assert_eq!(esc2("12\\nnn34"), Ok(("nn34", "12\\n")));
 
     named!(esc3<&str, &str>, escaped!(call!(alpha), '\u{241b}', one_of!("\"n")));
-    assert_eq!(esc3("ab␛ncd"), Ok(("", "ab␛ncd")));
+    assert_eq!(esc3("ab␛ncd;"), Ok((";", "ab␛ncd")));
   }
 
   #[cfg(feature = "verbose-errors")]
@@ -1306,10 +1306,10 @@ mod tests {
       )), to_s)
     );
 
-    assert_eq!(esc(&b"abcd"[..]), Ok((&b""[..], String::from("abcd"))));
-    assert_eq!(esc(&b"ab\\\"cd"[..]), Ok((&b""[..], String::from("ab\"cd"))));
-    assert_eq!(esc(&b"\\\"abcd"[..]), Ok((&b""[..], String::from("\"abcd"))));
-    assert_eq!(esc(&b"\\n"[..]), Ok((&b""[..], String::from("\n"))));
+    assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], String::from("abcd"))));
+    assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], String::from("ab\"cd"))));
+    assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], String::from("\"abcd"))));
+    assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], String::from("\n"))));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], String::from("ab\""))));
     assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(esc(&b"AB\\A"[..]), Err(Err::Error(error_node_position!(&b"AB\\A"[..], ErrorKind::EscapedTransform,
@@ -1324,8 +1324,8 @@ mod tests {
         | tag!("agrave;") => { |_| str::as_bytes("à") }
       )), to_s)
     );
-    assert_eq!(esc2(&b"ab&egrave;DEF"[..]), Ok((&b""[..], String::from("abèDEF"))));
-    assert_eq!(esc2(&b"ab&egrave;D&agrave;EF"[..]), Ok((&b""[..], String::from("abèDàEF"))));
+    assert_eq!(esc2(&b"ab&egrave;DEF;"[..]), Ok((&b";"[..], String::from("abèDEF"))));
+    assert_eq!(esc2(&b"ab&egrave;D&agrave;EF;"[..]), Ok((&b";"[..], String::from("abèDàEF"))));
   }
 
   #[cfg(feature = "verbose-errors")]
@@ -1350,10 +1350,10 @@ mod tests {
       ))
     );
 
-    assert_eq!(esc("abcd"), Ok(("", String::from("abcd"))));
-    assert_eq!(esc("ab\\\"cd"), Ok(("", String::from("ab\"cd"))));
-    assert_eq!(esc("\\\"abcd"), Ok(("", String::from("\"abcd"))));
-    assert_eq!(esc("\\n"), Ok(("", String::from("\n"))));
+    assert_eq!(esc("abcd;"), Ok((";", String::from("abcd"))));
+    assert_eq!(esc("ab\\\"cd;"), Ok((";", String::from("ab\"cd"))));
+    assert_eq!(esc("\\\"abcd;"), Ok((";", String::from("\"abcd"))));
+    assert_eq!(esc("\\n;"), Ok((";", String::from("\n"))));
     assert_eq!(esc("ab\\\"12"), Ok(("12", String::from("ab\""))));
     assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(esc("AB\\A"), Err(Err::Error(error_node_position!( "AB\\A", ErrorKind::EscapedTransform,
@@ -1365,8 +1365,8 @@ mod tests {
         | tag!("agrave;") => { |_| "à" }
       ))
     );
-    assert_eq!(esc2("ab&egrave;DEF"), Ok(("", String::from("abèDEF"))));
-    assert_eq!(esc2("ab&egrave;D&agrave;EF"), Ok(("", String::from("abèDàEF"))));
+    assert_eq!(esc2("ab&egrave;DEF;"), Ok((";", String::from("abèDEF"))));
+    assert_eq!(esc2("ab&egrave;D&agrave;EF;"), Ok((";", String::from("abèDàEF"))));
 
     named!(esc3<&str, String>, escaped_transform!(alpha, '␛',
       alt!(
@@ -1560,35 +1560,35 @@ mod tests {
     let r = x(&b"<!-- abc --> aaa"[..]);
     assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..])));
 
-    let empty = &b""[..];
+    let semicolon = &b";"[..];
 
     named!(ya, recognize!(alpha));
-    let ra = ya(&b"abc"[..]);
-    assert_eq!(ra, Ok((empty, &b"abc"[..])));
+    let ra = ya(&b"abc;"[..]);
+    assert_eq!(ra, Ok((semicolon, &b"abc"[..])));
 
     named!(yd, recognize!(digit));
-    let rd = yd(&b"123"[..]);
-    assert_eq!(rd, Ok((empty, &b"123"[..])));
+    let rd = yd(&b"123;"[..]);
+    assert_eq!(rd, Ok((semicolon, &b"123"[..])));
 
     named!(yhd, recognize!(hex_digit));
-    let rhd = yhd(&b"123abcDEF"[..]);
-    assert_eq!(rhd, Ok((empty, &b"123abcDEF"[..])));
+    let rhd = yhd(&b"123abcDEF;"[..]);
+    assert_eq!(rhd, Ok((semicolon, &b"123abcDEF"[..])));
 
     named!(yod, recognize!(oct_digit));
-    let rod = yod(&b"1234567"[..]);
-    assert_eq!(rod, Ok((empty, &b"1234567"[..])));
+    let rod = yod(&b"1234567;"[..]);
+    assert_eq!(rod, Ok((semicolon, &b"1234567"[..])));
 
     named!(yan, recognize!(alphanumeric));
-    let ran = yan(&b"123abc"[..]);
-    assert_eq!(ran, Ok((empty, &b"123abc"[..])));
+    let ran = yan(&b"123abc;"[..]);
+    assert_eq!(ran, Ok((semicolon, &b"123abc"[..])));
 
     named!(ys, recognize!(space));
-    let rs = ys(&b" \t"[..]);
-    assert_eq!(rs, Ok((empty, &b" \t"[..])));
+    let rs = ys(&b" \t;"[..]);
+    assert_eq!(rs, Ok((semicolon, &b" \t"[..])));
 
     named!(yms, recognize!(multispace));
-    let rms = yms(&b" \t\r\n"[..]);
-    assert_eq!(rms, Ok((empty, &b" \t\r\n"[..])));
+    let rms = yms(&b" \t\r\n;"[..]);
+    assert_eq!(rms, Ok((semicolon, &b" \t\r\n"[..])));
   }
 
   #[test]

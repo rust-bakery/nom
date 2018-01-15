@@ -1106,16 +1106,16 @@ mod tests {
     use nom::alpha;
 
     named!(multi<&[u8],Vec<&[u8]> >, separated_list_complete!(tag!(","), alpha));
-    let a = &b"abcdef"[..];
-    let b = &b"abcd,abcdef"[..];
-    let c = &b"abcd,abcd,ef"[..];
+    let a = &b"abcdef;"[..];
+    let b = &b"abcd,abcdef;"[..];
+    let c = &b"abcd,abcd,ef;"[..];
     let d = &b"abc."[..];
     let e = &b"abcd,ef."[..];
     let f = &b"123"[..];
 
-    assert_eq!(multi(a),Ok((&b""[..], vec!(a))));
-    assert_eq!(multi(b),Ok((&b""[..], vec!(&b"abcd"[..], &b"abcdef"[..]))));
-    assert_eq!(multi(c),Ok((&b""[..], vec!(&b"abcd"[..], &b"abcd"[..], &b"ef"[..]))));
+    assert_eq!(multi(a),Ok((&b";"[..], vec!(&a[..a.len()-1]))));
+    assert_eq!(multi(b),Ok((&b";"[..], vec!(&b"abcd"[..], &b"abcdef"[..]))));
+    assert_eq!(multi(c),Ok((&b";"[..], vec!(&b"abcd"[..], &b"abcd"[..], &b"ef"[..]))));
     assert_eq!(multi(d),Ok((&b"."[..], vec!(&b"abc"[..]))));
     assert_eq!(multi(e),Ok((&b"."[..], vec!(&b"abcd"[..], &b"ef"[..]))));
     assert_eq!(multi(f),Ok((&b"123"[..], Vec::new())));
@@ -1156,16 +1156,16 @@ mod tests {
     use nom::alpha;
 
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list_complete!(tag!(","), alpha));
-    let a = &b"abcdef"[..];
-    let b = &b"abcd,abcdef"[..];
-    let c = &b"abcd,abcd,ef"[..];
+    let a = &b"abcdef;"[..];
+    let b = &b"abcd,abcdef;"[..];
+    let c = &b"abcd,abcd,ef;"[..];
     let d = &b"abc."[..];
     let e = &b"abcd,ef."[..];
     let f = &b"123"[..];
 
-    assert_eq!(multi(a),Ok((&b""[..], vec!(a))));
-    assert_eq!(multi(b),Ok((&b""[..], vec!(&b"abcd"[..], &b"abcdef"[..]))));
-    assert_eq!(multi(c),Ok((&b""[..], vec!(&b"abcd"[..], &b"abcd"[..], &b"ef"[..]))));
+    assert_eq!(multi(a),Ok((&b";"[..], vec!(&a[..a.len()-1]))));
+    assert_eq!(multi(b),Ok((&b";"[..], vec!(&b"abcd"[..], &b"abcdef"[..]))));
+    assert_eq!(multi(c),Ok((&b";"[..], vec!(&b"abcd"[..], &b"abcd"[..], &b"ef"[..]))));
     assert_eq!(multi(d),Ok((&b"."[..], vec!(&b"abc"[..]))));
     assert_eq!(multi(e),Ok((&b"."[..], vec!(&b"abcd"[..], &b"ef"[..]))));
     assert_eq!(multi(f), Err(Err::Error(error_position!(&b"123"[..], ErrorKind::Alpha))));
