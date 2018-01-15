@@ -67,15 +67,16 @@ where
   T: InputIter + InputLength + AtEof,
   T: Compare<&'static str>,
   <T as InputIter>::Item: AsChar,
+  <T as InputIter>::RawItem: AsChar,
 {
-  match input.iter_elements().position(|item| {
+  match input.position(|item| {
     let c = item.as_char();
     c == '\r' || c == '\n'
   }) {
     None => Ok((input.slice(input.input_len()..), input)),
     Some(index) => {
-      let mut it = input.iter_elements();
-      let nth = it.nth(index).unwrap().as_char();
+      let mut it = input.slice(index..).iter_elements();
+      let nth = it.next().unwrap().as_char();
       if nth == '\r' {
         let sliced = input.slice(index..);
         let comp = sliced.compare("\r\n");

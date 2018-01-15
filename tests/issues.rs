@@ -156,3 +156,22 @@ fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>>> {
         ( entries )
     )
 }
+
+#[test]
+fn issue_655() {
+  use nom::{line_ending, not_line_ending};
+  named!(twolines(&str) -> (&str, &str),
+    do_parse!(
+      l1 : not_line_ending >>
+           line_ending >>
+      l2 : not_line_ending >>
+           line_ending >>
+      ((l1, l2))
+    )
+  );
+
+  assert_eq!(twolines("foo\nbar\n"), Ok(("", ("foo", "bar"))));
+  assert_eq!(twolines("féo\nbar\n"), Ok(("", ("féo", "bar"))));
+  assert_eq!(twolines("foé\nbar\n"), Ok(("", ("foé", "bar"))));
+  assert_eq!(twolines("foé\r\nbar\n"), Ok(("", ("foé", "bar"))));
+}
