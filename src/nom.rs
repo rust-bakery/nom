@@ -73,7 +73,11 @@ where
     let c = item.as_char();
     c == '\r' || c == '\n'
   }) {
-    None => Ok((input.slice(input.input_len()..), input)),
+    None => if input.at_eof() {
+      Ok((input.slice(input.input_len()..), input))
+    } else {
+      Err(Err::Incomplete(Needed::Unknown))
+    },
     Some(index) => {
       let mut it = input.slice(index..).iter_elements();
       let nth = it.next().unwrap().as_char();
@@ -735,6 +739,7 @@ pub fn double_s(input: &str) -> IResult<&str, f64> {
 mod tests {
   use super::*;
   use internal::{Err, Needed, IResult};
+  use types::{CompleteByteSlice,CompleteStr};
 
   #[test]
   fn tag_closure() {
@@ -934,8 +939,11 @@ mod tests {
       Ok((&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..]))
     );
 
+    let d = CompleteByteSlice(b"ab12cd");
+    assert_eq!(not_line_ending(d), Ok((CompleteByteSlice(b""), d)));
+
     let d: &[u8] = b"ab12cd";
-    assert_eq!(not_line_ending(d), Ok((&b""[..], d)));
+    assert_eq!(not_line_ending(d), Err(Err::Incomplete(Needed::Unknown)));
   }
 
   #[test]
@@ -963,8 +971,11 @@ mod tests {
       Err(Err::Error(error_position!(f, ErrorKind::Tag)))
     );
 
-    let g: &str = "ab12cd";
-    assert_eq!(not_line_ending(g), Ok(("", g)));
+    let g = CompleteStr("ab12cd");
+    assert_eq!(not_line_ending(g), Ok((CompleteStr(""), g)));
+
+    let g2: &str = "ab12cd";
+    assert_eq!(not_line_ending(g2), Err(Err::Incomplete(Needed::Unknown)));
   }
 
   #[test]
@@ -1362,7 +1373,6 @@ mod tests {
     assert_eq!(eol("\ra"),   Err(Err::Error(error_position!("\ra", ErrorKind::CrLf))));
   }
 
-  use types::CompleteStr;
   #[test]
   #[cfg(feature = "std")]
   fn float_test() {
