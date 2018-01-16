@@ -357,7 +357,7 @@
 //!
 //! # Example
 //!
-//! ```
+//! ```ignore
 //! #[macro_use]
 //! extern crate nom;
 //!

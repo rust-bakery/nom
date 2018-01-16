@@ -221,6 +221,7 @@ key4 = value4
   assert_eq!(res, Ok((ini_after_parser, expected_h)));
 }
 
+/*
 #[bench]
 fn bench_ini(b: &mut test::Bencher) {
   let str = "[owner]
@@ -257,3 +258,4 @@ fn bench_ini_key_value(b: &mut test::Bencher) {
   b.iter(|| key_value(str.as_bytes()).unwrap());
   b.bytes = str.len() as u64;
 }
+*/
