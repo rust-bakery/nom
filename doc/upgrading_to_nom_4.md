@@ -49,7 +49,7 @@ pub enum Err<P,E=u32>{
 
 The new design uses the `Result` type from the standard library:
 
-````rust,ignore
+```rust,ignore
 pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
 
 pub enum Err<I, E = u32> {
