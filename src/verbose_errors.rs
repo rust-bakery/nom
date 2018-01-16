@@ -239,7 +239,7 @@ macro_rules! flat_map(
     flat_map!(__impl $i, call!($f), $submac!($($args)*));
   );
   ($i:expr, $f:expr, $g:expr) => (
-    flat_map!(_impl $i, call!($f), call!($g));
+    flat_map!(__impl $i, call!($f), call!($g));
   );
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
