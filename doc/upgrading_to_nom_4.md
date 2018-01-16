@@ -214,6 +214,11 @@ assert_eq!(parser(CompleteStr("abcd123")), Ok((CompleteStr("123"), CompleteStr("
 These types allow you to correctly handle cases like text formats for which there might be a last
 empty line or not, as seen in [one of the examples](https://github.com/Geal/nom/blob/87d837006467aebcdb0c37621da874a56c8562b5/tests/multiline.rs).
 
+## Custom error types
+
+Custom error types caused a lot of type inference issues in previous nom versions. Now error types
+are automatically converted as needed. If you want to set up a custom error type, you now need to
+implement `std::convert::From<u32>` for this type.
 ## Producers and consumers
 
 Producers and consumers were removed in nom 4. That feature was too hard to integrate in code that
