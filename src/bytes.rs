@@ -1801,6 +1801,23 @@ mod tests {
     assert_eq!(g("點xa"), Err(Err::Error(error_position!("點xa", ErrorKind::TakeUntilEitherAndConsume))));
   }
 
+  #[test]
+  fn take_utf8() {
+    named!(f<&str,&str>, take!(3));
+
+    assert_eq!(f(""), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(f("ab"), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(f("點"), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(f("ab點cd"), Ok(("cd", "ab點")));
+    assert_eq!(f("a點bcd"), Ok(("cd", "a點b")));
+    assert_eq!(f("a點b"), Ok(("", "a點b")));
+
+    named!(g<&str,&str>, take_while!(|c:char| { c == '點' }));
+
+    assert_eq!(g(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(g("點abcd"), Ok(("abcd", "點")));
+    assert_eq!(g("點點點a"), Ok(("a", "點點點")));
+  }
 
   #[cfg(feature = "nightly")]
   use test::Bencher;
