@@ -8,7 +8,7 @@ The nom 4.0 is a nearly complete rewrite of nom's internal structures, along wit
 
 Previous versions of nom all generated parsers with the following signature:
 
-``rust,ignore
+```rust,ignore
 fn parser(input: I) -> IResult<I,O> { ... }
 ```
 
