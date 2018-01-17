@@ -32,7 +32,7 @@ pub enum Needed {
 }
 
 // if the "verbose-errors" feature is active
- pub type Err<E=u32> = ErrorKind<E>;
+pub type Err<E=u32> = ErrorKind<E>;
 
 // if the "verbose-errors" feature is active
 pub enum Err<P,E=u32>{
@@ -82,12 +82,25 @@ pub enum Context<I, E = u32> {
 
 With this new design, the `Incomplete` case is now part of the error case, and we get a `Failure`
 case representing an unrecoverable error (combinators like `alt!` will not try another branch).
-The "verbose" error management is now a truly additive feature above the "simple" one (adding a
-case to an enum). Error management types also get smaller and more efficient. We can now return
+The verbose error management is now a truly additive feature above the simple one (it adds a
+case to the `Context` enum).
+
+Error management types also get smaller and more efficient. We can now return
 the related input as part of the error in all cases.
 
 All of this will likely not affect your existing parsers, but require changes to the surrounding
 code that manipulates parser results.
+
+## Faster parsers, new memory layout but with the same footprint
+
+All these changes don't impact the memory footprint of the parser internal structures:
+
+| size of `IResult<&[u8], &[u8]>` | simple errors | verbose errors |
+|---|---|---|
+| nom 3 | 40 | 48 |
+| nom 4 | 40 | 48 |
+
+However, [parsers are faster in nom 4 than in nom 3](https://github.com/Geal/nom/issues/356#issuecomment-333816834). This change is justified.
 
 ## Replacing parser result matchers
 
@@ -104,8 +117,8 @@ IResult::Done(i, o)
 Ok((i, o))
 ```
 
-For the error case (note that argument position for `error_position` and other such macros was changed
-to match the rest of the code):
+For the error case (note that argument position for `error_position` and other sibling macros was changed
+for the sake of consistency with the rest of the code):
 
 ```rust,ignore
 IResult::Error(error_position!(ErrorKind::OneOf, input)),
@@ -219,6 +232,7 @@ empty line or not, as seen in [one of the examples](https://github.com/Geal/nom/
 Custom error types caused a lot of type inference issues in previous nom versions. Now error types
 are automatically converted as needed. If you want to set up a custom error type, you now need to
 implement `std::convert::From<u32>` for this type.
+
 ## Producers and consumers
 
 Producers and consumers were removed in nom 4. That feature was too hard to integrate in code that
