@@ -109,30 +109,40 @@ named!(expr< CompleteStr, Expr >, do_parse!(
 
 #[test]
 fn factor_test() {
-  assert_eq!(factor(CompleteStr("  3  ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok((CompleteStr(""), String::from("3"))));
+  assert_eq!(
+    factor(CompleteStr("  3  ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("3")))
+  );
 }
 
 #[test]
 fn term_test() {
-  assert_eq!(term(CompleteStr(" 3 *  5   ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (CompleteStr(""), String::from("(3 * 5)")) ));
+  assert_eq!(
+    term(CompleteStr(" 3 *  5   ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("(3 * 5)")))
+  );
 }
 
 #[test]
 fn expr_test() {
-  assert_eq!(expr(CompleteStr(" 1 + 2 *  3 ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (CompleteStr(""), String::from("(1 + (2 * 3))")) ));
-  assert_eq!(expr(CompleteStr(" 1 + 2 *  3 / 4 - 5 ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (CompleteStr(""), String::from("((1 + ((2 * 3) / 4)) - 5)")) ));
-  assert_eq!(expr(CompleteStr(" 72 / 2 / 3 ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (CompleteStr(""), String::from("((72 / 2) / 3)")) ));
+  assert_eq!(
+    expr(CompleteStr(" 1 + 2 *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("(1 + (2 * 3))")))
+  );
+  assert_eq!(
+    expr(CompleteStr(" 1 + 2 *  3 / 4 - 5 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("((1 + ((2 * 3) / 4)) - 5)")))
+  );
+  assert_eq!(
+    expr(CompleteStr(" 72 / 2 / 3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("((72 / 2) / 3)")))
+  );
 }
 
 #[test]
 fn parens_test() {
   assert_eq!(
-      expr(CompleteStr(" ( 1 + 2 ) *  3 ")).map(|(i,x)| (i,format!("{:?}", x))),
-      Ok( (CompleteStr(""), String::from("([(1 + 2)] * 3)")) )
-    );
+    expr(CompleteStr(" ( 1 + 2 ) *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("([(1 + 2)] * 3)")))
+  );
 }

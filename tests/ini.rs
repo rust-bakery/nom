@@ -71,13 +71,17 @@ named!(categories<CompleteByteSlice, HashMap<&str, HashMap<&str,&str> > >,
 
 #[test]
 fn parse_category_test() {
-  let ini_file = CompleteByteSlice(b"[category]
+  let ini_file = CompleteByteSlice(
+    b"[category]
 
 parameter=value
-key = value2");
+key = value2",
+  );
 
-  let ini_without_category = CompleteByteSlice(b"\n\nparameter=value
-key = value2");
+  let ini_without_category = CompleteByteSlice(
+    b"\n\nparameter=value
+key = value2",
+  );
 
   let res = category(ini_file);
   println!("{:?}", res);
@@ -91,8 +95,10 @@ key = value2");
 
 #[test]
 fn parse_key_value_test() {
-  let ini_file = CompleteByteSlice(b"parameter=value
-key = value2");
+  let ini_file = CompleteByteSlice(
+    b"parameter=value
+key = value2",
+  );
 
   let ini_without_key_value = CompleteByteSlice(b"\nkey = value2");
 
@@ -109,8 +115,10 @@ key = value2");
 
 #[test]
 fn parse_key_value_with_space_test() {
-  let ini_file = CompleteByteSlice(b"parameter = value
-key = value2");
+  let ini_file = CompleteByteSlice(
+    b"parameter = value
+key = value2",
+  );
 
   let ini_without_key_value = CompleteByteSlice(b"\nkey = value2");
 
@@ -126,8 +134,10 @@ key = value2");
 
 #[test]
 fn parse_key_value_with_comment_test() {
-  let ini_file = CompleteByteSlice(b"parameter=value;abc
-key = value2");
+  let ini_file = CompleteByteSlice(
+    b"parameter=value;abc
+key = value2",
+  );
 
   let ini_without_key_value = CompleteByteSlice(b"\nkey = value2");
 
@@ -143,11 +153,13 @@ key = value2");
 
 #[test]
 fn parse_multiple_keys_and_values_test() {
-  let ini_file = CompleteByteSlice(b"parameter=value;abc
+  let ini_file = CompleteByteSlice(
+    b"parameter=value;abc
 
 key = value2
 
-[category]");
+[category]",
+  );
 
   let ini_without_key_value = CompleteByteSlice(b"[category]");
 
@@ -167,12 +179,14 @@ key = value2
 #[test]
 fn parse_category_then_multiple_keys_and_values_test() {
   //FIXME: there can be an empty line or a comment line after a category
-  let ini_file = CompleteByteSlice(b"[abcd]
+  let ini_file = CompleteByteSlice(
+    b"[abcd]
 parameter=value;abc
 
 key = value2
 
-[category]");
+[category]",
+  );
 
   let ini_after_parser = CompleteByteSlice(b"[category]");
 
@@ -191,7 +205,8 @@ key = value2
 
 #[test]
 fn parse_multiple_categories_test() {
-  let ini_file = CompleteByteSlice(b"[abcd]
+  let ini_file = CompleteByteSlice(
+    b"[abcd]
 
 parameter=value;abc
 
@@ -200,7 +215,8 @@ key = value2
 [category]
 parameter3=value3
 key4 = value4
-");
+",
+  );
 
   let ini_after_parser = CompleteByteSlice(b"");
 

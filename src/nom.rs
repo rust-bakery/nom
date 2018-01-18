@@ -73,11 +73,13 @@ where
     let c = item.as_char();
     c == '\r' || c == '\n'
   }) {
-    None => if input.at_eof() {
-      Ok((input.slice(input.input_len()..), input))
-    } else {
-      Err(Err::Incomplete(Needed::Unknown))
-    },
+    None => {
+      if input.at_eof() {
+        Ok((input.slice(input.input_len()..), input))
+      } else {
+        Err(Err::Incomplete(Needed::Unknown))
+      }
+    }
     Some(index) => {
       let mut it = input.slice(index..).iter_elements();
       let nth = it.next().unwrap().as_char();
@@ -194,7 +196,7 @@ where
 {
   match input.position(|item| !item.is_alpha()) {
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
       } else {
@@ -214,7 +216,7 @@ where
   match input.position(|item| !item.is_alpha()) {
     Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Alpha::<u32>))),
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         if input.input_len() > 0 {
           Ok((input.slice(input.input_len()..), input))
@@ -247,7 +249,7 @@ where
 {
   match input.position(|item| !item.is_dec_digit()) {
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
       } else {
@@ -266,7 +268,7 @@ where
   match input.position(|item| !item.is_dec_digit()) {
     Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Digit::<u32>))),
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         if input.input_len() > 0 {
           Ok((input.slice(input.input_len()..), input))
@@ -299,7 +301,7 @@ where
 {
   match input.position(|item| !item.is_hex_digit()) {
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
       } else {
@@ -316,14 +318,18 @@ where
   <T as InputIter>::RawItem: AsChar,
 {
   match input.position(|item| !item.is_hex_digit()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::HexDigit::<u32>))),
+    Some(0) => Err(Err::Error(
+      error_position!(input, ErrorKind::HexDigit::<u32>),
+    )),
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         if input.input_len() > 0 {
           Ok((input.slice(input.input_len()..), input))
         } else {
-          Err(Err::Error(error_position!(input, ErrorKind::HexDigit::<u32>)))
+          Err(Err::Error(
+            error_position!(input, ErrorKind::HexDigit::<u32>),
+          ))
         }
       } else {
         Err(Err::Incomplete(Needed::Size(1)))
@@ -351,7 +357,7 @@ where
 {
   match input.position(|item| !item.is_oct_digit()) {
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
       } else {
@@ -369,14 +375,18 @@ where
   <T as InputIter>::RawItem: AsChar,
 {
   match input.position(|item| !item.is_oct_digit()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::OctDigit::<u32>))),
+    Some(0) => Err(Err::Error(
+      error_position!(input, ErrorKind::OctDigit::<u32>),
+    )),
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         if input.input_len() > 0 {
           Ok((input.slice(input.input_len()..), input))
         } else {
-          Err(Err::Error(error_position!(input, ErrorKind::OctDigit::<u32>)))
+          Err(Err::Error(
+            error_position!(input, ErrorKind::OctDigit::<u32>),
+          ))
         }
       } else {
         Err(Err::Incomplete(Needed::Size(1)))
@@ -404,7 +414,7 @@ where
 {
   match input.position(|item| !item.is_alphanum()) {
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
       } else {
@@ -421,14 +431,18 @@ where
   <T as InputIter>::RawItem: AsChar,
 {
   match input.position(|item| !item.is_alphanum()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::AlphaNumeric::<u32>))),
+    Some(0) => Err(Err::Error(
+      error_position!(input, ErrorKind::AlphaNumeric::<u32>),
+    )),
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         if input.input_len() > 0 {
           Ok((input.slice(input.input_len()..), input))
         } else {
-          Err(Err::Error(error_position!(input, ErrorKind::AlphaNumeric::<u32>)))
+          Err(Err::Error(
+            error_position!(input, ErrorKind::AlphaNumeric::<u32>),
+          ))
         }
       } else {
         Err(Err::Incomplete(Needed::Size(1)))
@@ -459,7 +473,7 @@ where
     !(c == ' ' || c == '\t')
   }) {
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
       } else {
@@ -481,7 +495,7 @@ where
   }) {
     Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Space::<u32>))),
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         if input.input_len() > 0 {
           Ok((input.slice(input.input_len()..), input))
@@ -517,7 +531,7 @@ where
     !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
   }) {
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
       } else {
@@ -537,14 +551,18 @@ where
     let c = item.clone().as_char();
     !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
   }) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::MultiSpace::<u32>))),
+    Some(0) => Err(Err::Error(
+      error_position!(input, ErrorKind::MultiSpace::<u32>),
+    )),
     Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
+    None => {
       if input.at_eof() {
         if input.input_len() > 0 {
           Ok((input.slice(input.input_len()..), input))
         } else {
-          Err(Err::Error(error_position!(input, ErrorKind::MultiSpace::<u32>)))
+          Err(Err::Error(
+            error_position!(input, ErrorKind::MultiSpace::<u32>),
+          ))
         }
       } else {
         Err(Err::Incomplete(Needed::Size(1)))
@@ -904,44 +922,32 @@ where
 /// Recognizes floating point number in a byte string and returns a f32
 #[cfg(feature = "std")]
 pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
-  flat_map!(input,
-    recognize_float,
-    parse_to!(f32)
-  )
+  flat_map!(input, recognize_float, parse_to!(f32))
 }
 
 /// Recognizes floating point number in a string and returns a f32
 #[cfg(feature = "std")]
 pub fn float_s(input: &str) -> IResult<&str, f32> {
-  flat_map!(input,
-    call!(recognize_float),
-    parse_to!(f32)
-  )
+  flat_map!(input, call!(recognize_float), parse_to!(f32))
 }
 
 /// Recognizes floating point number in a byte string and returns a f64
 #[cfg(feature = "std")]
 pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
-  flat_map!(input,
-    call!(recognize_float),
-    parse_to!(f64)
-  )
+  flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
 /// Recognizes floating point number in a string and returns a f64
 #[cfg(feature = "std")]
 pub fn double_s(input: &str) -> IResult<&str, f64> {
-  flat_map!(input,
-    call!(recognize_float),
-    parse_to!(f64)
-  )
+  flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
   use internal::{Err, Needed, IResult};
-  use types::{CompleteByteSlice,CompleteStr};
+  use types::{CompleteByteSlice, CompleteStr};
 
   #[test]
   fn tag_closure() {
@@ -968,7 +974,10 @@ mod tests {
     let e: &[u8] = b" ";
     let f: &[u8] = b" ;";
     assert_eq!(alpha(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alpha(CompleteByteSlice(a)), Ok((CompleteByteSlice(empty), CompleteByteSlice(a))));
+    assert_eq!(
+      alpha(CompleteByteSlice(a)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
+    );
     assert_eq!(
       alpha(b),
       Err(Err::Error(error_position!(b, ErrorKind::Alpha)))
@@ -980,7 +989,10 @@ mod tests {
       Err(Err::Error(error_position!(a, ErrorKind::Digit)))
     );
     assert_eq!(digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(digit(CompleteByteSlice(b)), Ok((CompleteByteSlice(empty), CompleteByteSlice(b))));
+    assert_eq!(
+      digit(CompleteByteSlice(b)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
+    );
     assert_eq!(
       digit(c),
       Err(Err::Error(error_position!(c, ErrorKind::Digit)))
@@ -990,11 +1002,20 @@ mod tests {
       Err(Err::Error(error_position!(d, ErrorKind::Digit)))
     );
     assert_eq!(hex_digit(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteByteSlice(a)), Ok((CompleteByteSlice(empty), CompleteByteSlice(a))));
+    assert_eq!(
+      hex_digit(CompleteByteSlice(a)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
+    );
     assert_eq!(hex_digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteByteSlice(b)), Ok((CompleteByteSlice(empty), CompleteByteSlice(b))));
+    assert_eq!(
+      hex_digit(CompleteByteSlice(b)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
+    );
     assert_eq!(hex_digit(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteByteSlice(c)), Ok((CompleteByteSlice(empty), CompleteByteSlice(c))));
+    assert_eq!(
+      hex_digit(CompleteByteSlice(c)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(c)))
+    );
     assert_eq!(hex_digit(d), Ok(("zé12".as_bytes(), &b"a"[..])));
     assert_eq!(
       hex_digit(e),
@@ -1005,7 +1026,10 @@ mod tests {
       Err(Err::Error(error_position!(a, ErrorKind::OctDigit)))
     );
     assert_eq!(oct_digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(oct_digit(CompleteByteSlice(b)), Ok((CompleteByteSlice(empty), CompleteByteSlice(b))));
+    assert_eq!(
+      oct_digit(CompleteByteSlice(b)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
+    );
     assert_eq!(
       oct_digit(c),
       Err(Err::Error(error_position!(c, ErrorKind::OctDigit)))
@@ -1015,15 +1039,27 @@ mod tests {
       Err(Err::Error(error_position!(d, ErrorKind::OctDigit)))
     );
     assert_eq!(alphanumeric(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteByteSlice(a)), Ok((CompleteByteSlice(empty), CompleteByteSlice(a))));
+    assert_eq!(
+      alphanumeric(CompleteByteSlice(a)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
+    );
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteByteSlice(c)), Ok((CompleteByteSlice(empty), CompleteByteSlice(c))));
+    assert_eq!(
+      alphanumeric(CompleteByteSlice(c)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(c)))
+    );
     assert_eq!(alphanumeric(d), Ok(("é12".as_bytes(), &b"az"[..])));
     assert_eq!(space(e), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(space(CompleteByteSlice(e)), Ok((CompleteByteSlice(empty), CompleteByteSlice(b" "))));
+    assert_eq!(
+      space(CompleteByteSlice(e)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(b" ")))
+    );
     assert_eq!(space(f), Ok((&b";"[..], &b" "[..])));
-    assert_eq!(space(CompleteByteSlice(f)), Ok((CompleteByteSlice(b";"), CompleteByteSlice(b" "))));
+    assert_eq!(
+      space(CompleteByteSlice(f)),
+      Ok((CompleteByteSlice(b";"), CompleteByteSlice(b" ")))
+    );
   }
 
   #[test]
@@ -1035,7 +1071,10 @@ mod tests {
     let d = "azé12";
     let e = " ";
     assert_eq!(alpha(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alpha(CompleteStr(a)), Ok((CompleteStr(empty), CompleteStr(a))));
+    assert_eq!(
+      alpha(CompleteStr(a)),
+      Ok((CompleteStr(empty), CompleteStr(a)))
+    );
     assert_eq!(
       alpha(b),
       Err(Err::Error(error_position!(b, ErrorKind::Alpha)))
@@ -1047,7 +1086,10 @@ mod tests {
       Err(Err::Error(error_position!(a, ErrorKind::Digit)))
     );
     assert_eq!(digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(digit(CompleteStr(b)), Ok((CompleteStr(empty), CompleteStr(b))));
+    assert_eq!(
+      digit(CompleteStr(b)),
+      Ok((CompleteStr(empty), CompleteStr(b)))
+    );
     assert_eq!(
       digit(c),
       Err(Err::Error(error_position!(c, ErrorKind::Digit)))
@@ -1057,11 +1099,20 @@ mod tests {
       Err(Err::Error(error_position!(d, ErrorKind::Digit)))
     );
     assert_eq!(hex_digit(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteStr(a)), Ok((CompleteStr(empty), CompleteStr(a))));
+    assert_eq!(
+      hex_digit(CompleteStr(a)),
+      Ok((CompleteStr(empty), CompleteStr(a)))
+    );
     assert_eq!(hex_digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteStr(b)), Ok((CompleteStr(empty), CompleteStr(b))));
+    assert_eq!(
+      hex_digit(CompleteStr(b)),
+      Ok((CompleteStr(empty), CompleteStr(b)))
+    );
     assert_eq!(hex_digit(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteStr(c)), Ok((CompleteStr(empty), CompleteStr(c))));
+    assert_eq!(
+      hex_digit(CompleteStr(c)),
+      Ok((CompleteStr(empty), CompleteStr(c)))
+    );
     assert_eq!(hex_digit(d), Ok(("zé12", &"a"[..])));
     assert_eq!(
       hex_digit(e),
@@ -1072,7 +1123,10 @@ mod tests {
       Err(Err::Error(error_position!(a, ErrorKind::OctDigit)))
     );
     assert_eq!(oct_digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(oct_digit(CompleteStr(b)), Ok((CompleteStr(empty), CompleteStr(b))));
+    assert_eq!(
+      oct_digit(CompleteStr(b)),
+      Ok((CompleteStr(empty), CompleteStr(b)))
+    );
     assert_eq!(
       oct_digit(c),
       Err(Err::Error(error_position!(c, ErrorKind::OctDigit)))
@@ -1082,12 +1136,21 @@ mod tests {
       Err(Err::Error(error_position!(d, ErrorKind::OctDigit)))
     );
     assert_eq!(alphanumeric(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteStr(a)), Ok((CompleteStr(empty), CompleteStr(a))));
+    assert_eq!(
+      alphanumeric(CompleteStr(a)),
+      Ok((CompleteStr(empty), CompleteStr(a)))
+    );
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteStr(c)), Ok((CompleteStr(empty), CompleteStr(c))));
+    assert_eq!(
+      alphanumeric(CompleteStr(c)),
+      Ok((CompleteStr(empty), CompleteStr(c)))
+    );
     assert_eq!(alphanumeric(d), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteStr(d)), Ok((CompleteStr(""), CompleteStr("azé12"))));
+    assert_eq!(
+      alphanumeric(CompleteStr(d)),
+      Ok((CompleteStr(""), CompleteStr("azé12")))
+    );
     assert_eq!(space(e), Err(Err::Incomplete(Needed::Size(1))));
   }
 

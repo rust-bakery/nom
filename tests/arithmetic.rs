@@ -65,20 +65,32 @@ fn factor_test() {
 #[test]
 fn term_test() {
   assert_eq!(term(CompleteStr(" 12 *2 /  3")), Ok((CompleteStr(""), 8)));
-  assert_eq!(term(CompleteStr(" 2* 3  *2 *2 /  3")), Ok((CompleteStr(""), 8)));
+  assert_eq!(
+    term(CompleteStr(" 2* 3  *2 *2 /  3")),
+    Ok((CompleteStr(""), 8))
+  );
   assert_eq!(term(CompleteStr(" 48 /  3/2")), Ok((CompleteStr(""), 8)));
 }
 
 #[test]
 fn expr_test() {
   assert_eq!(expr(CompleteStr(" 1 +  2 ")), Ok((CompleteStr(""), 3)));
-  assert_eq!(expr(CompleteStr(" 12 + 6 - 4+  3")), Ok((CompleteStr(""), 17)));
+  assert_eq!(
+    expr(CompleteStr(" 12 + 6 - 4+  3")),
+    Ok((CompleteStr(""), 17))
+  );
   assert_eq!(expr(CompleteStr(" 1 + 2*3 + 4")), Ok((CompleteStr(""), 11)));
 }
 
 #[test]
 fn parens_test() {
   assert_eq!(expr(CompleteStr(" (  2 )")), Ok((CompleteStr(""), 2)));
-  assert_eq!(expr(CompleteStr(" 2* (  3 + 4 ) ")), Ok((CompleteStr(""), 14)));
-  assert_eq!(expr(CompleteStr("  2*2 / ( 5 - 1) + 3")), Ok((CompleteStr(""), 4)));
+  assert_eq!(
+    expr(CompleteStr(" 2* (  3 + 4 ) ")),
+    Ok((CompleteStr(""), 14))
+  );
+  assert_eq!(
+    expr(CompleteStr("  2*2 / ( 5 - 1) + 3")),
+    Ok((CompleteStr(""), 4))
+  );
 }
