@@ -1,43 +1,38 @@
 language: rust
-
+sudo: false
+dist: trusty
 cache: cargo
 
 rust:
   - nightly
   - beta
   - stable
-  - 1.2.0
 
 env:
   matrix:
-    - FEATURES=''
     - FEATURES='--features "regexp regexp_macros"'
-    - FEATURES='--features "regexp regexp_macros" --no-default-features'
+    - FEATURES='--features "regexp regexp_macros verbose-errors"'
 
-before_script:
-  - if [ "$TRAVIS_RUST_VERSION" != "1.2.0" ]; then
-      cargo install cargo-travis --force && export PATH=$HOME/.cargo/bin:$PATH;
-    fi
-
-script:
-  - '[ $TRAVIS_RUST_VERSION != 1.2.0   ] || cargo test --verbose --features "regexp"'
-  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo build --verbose --features "nightly regexp"'
-  - '[ $TRAVIS_RUST_VERSION == 1.2.0   ] || eval cargo test --verbose $FEATURES'
-  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
-  - '[ $TRAVIS_RUST_VERSION != stable  ] || cargo doc --verbose --features "std regexp regexp_macros" --no-default-features'
-
-after_success:
-  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
-  - '[ $TRAVIS_RUST_VERSION == 1.2.0   ] || cargo coveralls --verbose'
-  - '[ $TRAVIS_RUST_VERSION != nightly ] || cargo bench --verbose'
-  - if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
-        cargo install cargo-benchcmp --force;
-        cargo bench > benches-variable;
-        git fetch;
-        git checkout master;
-        cargo bench > benches-control;
-        cargo benchcmp benches-control benches-variable;
-    fi
+matrix:
+  include:
+    - rust: nightly
+      env: FEATURES='--features "nightly"'
+    - rust: nightly
+      env: FEATURES='--no-default-features'
+      before_script:
+        - export PATH=$HOME/.cargo/bin:$PATH
+        - which cargo-coveralls || cargo install cargo-travis
+        - which cargo-benchcmp  || cargo install cargo-benchcmp
+    - rust: stable
+      env: FEATURES=''
+    - rust: stable
+      env: DOC_FEATURES='--features "std regexp regexp_macros" --no-default-features'
+      before_script:
+        - export PATH=$HOME/.cargo/bin:$PATH
+        - which rustfmt || cargo install rustfmt
+      script:
+        - eval cargo fmt -- --write-mode=diff
+        - eval cargo doc --verbose $DOC_FEATURES
 
 notifications:
   webhooks:
@@ -47,8 +42,6 @@ notifications:
     on_failure: always
     on_start: false
 
-dist: trusty
-sudo: false
 
 addons:
   apt:
@@ -60,3 +53,26 @@ addons:
       - cmake
     sources:
       - kalakris-cmake
+
+script:
+  - eval cargo build --verbose $FEATURES
+  - eval cargo test --verbose $FEATURES
+
+after_success: |
+  case "$TRAVIS_RUST_VERSION" in
+    nightly)
+      cargo bench --verbose
+      cargo coveralls --verbose
+      cargo bench --verbose
+      if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ]; then
+        cargo bench > benches-variable
+        git fetch
+        git checkout master
+        cargo bench > benches-control
+        cargo benchcmp benches-control benches-variable
+      fi
+      ;;
+    *)
+      cargo coveralls --verbose
+      ;;
+  esac

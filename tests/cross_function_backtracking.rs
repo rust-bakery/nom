@@ -1,14 +1,13 @@
+#![cfg(feature = "verbose_errors")]
 /// this file tests a different backtracking behaviour. With the current
 /// `error!` macro, an early return is done in the current function, but
 /// backtracking continues normally outside of that function.
 ///
 /// The solution here wraps `IResult` in a `Result`: a `Ok` indicates usual
 /// backtracking, `Err` indicates that we must "cut".
+#[macro_use]
+extern crate nom;
 
-#[allow(unused_imports)]
-#[macro_use] extern crate nom;
-
-#[cfg(feature = "verbose_errors")]
 macro_rules! n (
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         fn $name( i: $i ) -> std::result::Result<nom::IResult<$i,$o,u32>, nom::Err<$i, u32>> {
@@ -121,27 +120,26 @@ n!(pub foos< Vec<bool> >,
 #[cfg(feature = "verbose_errors")]
 #[test]
 fn test_ok() {
-    let r = foos(b"(abab)");
-    println!("result: {:?}", r);
-    match r {
-        Ok(nom::IResult::Done(_,result)) => assert_eq!(result,vec![true,true]),
-        res => panic!("Oops {:?}.",res)
-    }
+  let r = foos(b"(abab)");
+  println!("result: {:?}", r);
+  match r {
+    Ok(nom::IResult::Done(_, result)) => assert_eq!(result, vec![true, true]),
+    res => panic!("Oops {:?}.", res),
+  }
 }
 
 #[cfg(feature = "verbose_errors")]
 #[test]
 fn test_err() {
-    let input = b"(ac)";
-    let r = foos(&input[..]);
-    println!("result: {:?}", r);
-    match r {
-        //Ok(nom::IResult::Error(nom::Err::Position(kind,_))) => assert_eq!(kind,nom::ErrorKind::Custom(42)),
-        Err(nom::Err::NodePosition(kind, position, _)) => {
-          assert_eq!(kind, nom::ErrorKind::Custom(42));
-          assert_eq!(position, &input[2..]);
-        }
-        res => panic!("Oops, {:?}",res)
+  let input = b"(ac)";
+  let r = foos(&input[..]);
+  println!("result: {:?}", r);
+  match r {
+    //Ok(nom::IResult::Error(nom::Err::Position(kind,_))) => assert_eq!(kind,nom::ErrorKind::Custom(42)),
+    Err(nom::Err::NodePosition(kind, position, _)) => {
+      assert_eq!(kind, nom::ErrorKind::Custom(42));
+      assert_eq!(position, &input[2..]);
     }
+    res => panic!("Oops, {:?}", res),
+  }
 }
-

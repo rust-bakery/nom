@@ -3,9 +3,6 @@
 //use self::IResult::*;
 use self::Needed::*;
 
-#[cfg(not(feature = "std"))]
-use std::prelude::v1::*;
-
 #[cfg(feature = "verbose-errors")]
 use verbose_errors::Context;
 
@@ -19,15 +16,15 @@ use simple_errors::Context;
 /// The `Ok` side is an enum containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
 ///
-pub type IResult<I,O,E=u32> = Result<(I,O), Err<I,E>>;
+pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
 
 /// Contains information on needed data if a parser returned `Incomplete`
-#[derive(Debug,PartialEq,Eq,Clone,Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Needed {
   /// needs more data, but we do not know how much
   Unknown,
   /// contains the required data size
-  Size(usize)
+  Size(usize),
 }
 
 impl Needed {
@@ -46,6 +43,7 @@ impl Needed {
 }
 
 /// The `Err` enum indicates the parser was not successful, and has three cases:
+///
 /// * `Incomplete` indicates that more data is needed to decide. The `Needed` enum
 /// can contain how many additional bytes are necessary. If you are sure your parser
 /// is working on full data, you can wrap your parser with the `complete` combinator
@@ -69,26 +67,26 @@ impl Needed {
 /// you can know precisely which parser got to which part of the input.
 /// The main drawback is that it is a lot slower than default error
 /// management.
-#[derive(Debug,Clone,PartialEq)]
-pub enum Err<I,E=u32> {
+#[derive(Debug, Clone, PartialEq)]
+pub enum Err<I, E = u32> {
   /// There was not enough data
   Incomplete(Needed),
   /// The parser had an error (recoverable)
-  Error(Context<I,E>),
+  Error(Context<I, E>),
   /// The parser had an unrecoverable error: we got to the right
   /// branch and we know other branches won't work, so backtrack
   /// as fast as possible
-  Failure(Context<I,E>),
+  Failure(Context<I, E>),
 }
 
 use util::Convert;
 
-impl<I,F,E: From<F>> Convert<Err<I,F>> for Err<I,E> {
-  fn convert(e: Err<I,F>) -> Self {
+impl<I, F, E: From<F>> Convert<Err<I, F>> for Err<I, E> {
+  fn convert(e: Err<I, F>) -> Self {
     match e {
       Err::Incomplete(n) => Err::Incomplete(n),
-      Err::Failure(c)    => Err::Failure(Context::convert(c)),
-      Err::Error(c)      => Err::Error(Context::convert(c)),
+      Err::Failure(c) => Err::Failure(Context::convert(c)),
+      Err::Error(c) => Err::Error(Context::convert(c)),
     }
   }
 }
@@ -324,7 +322,10 @@ macro_rules! error_node_position(
 #[macro_export]
 macro_rules! error_node_position(
   ($input:expr, $code:expr, $next:expr) => ({
-    $crate::Context::Code($input, $code)
+    fn unify_types<T>(_: &T, _: &T) {}
+    let res = $crate::Context::Code($input, $code);
+    unify_types(&res, &$next);
+    res
   });
 );
 
@@ -338,7 +339,7 @@ mod tests {
   const INCOMPLETE: IResult<&'static [u8], u32> = Err(Err::Incomplete(Needed::Unknown));
   */
 
-/*
+  /*
   #[test]
   fn iresult_or() {
     assert_eq!(DONE.or(ERROR), DONE);

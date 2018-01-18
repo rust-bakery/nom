@@ -512,9 +512,47 @@ macro_rules! switch (
 /// assert_eq!(perm(c), Ok((&b"jklm"[..], expected)));
 ///
 /// let d = &b"efgxyzabcdefghi"[..];
-/// assert_eq!(perm(d), Err(Err::Error(error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation))));
+/// assert_eq!(perm(d), Err(Err::Error(error_node_position!(&b"efgxyzabcdefghi"[..], ErrorKind::Permutation,
+///   error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)))));
 ///
 /// let e = &b"efgabc"[..];
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+/// # }
+/// ```
+///
+/// If one of the child parsers is followed by a `?`, that parser is now
+/// optional:
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,ErrorKind,Needed};
+/// # fn main() {
+/// named!(perm<&str, (Option<&str>, &str, &str)>,
+///   permutation!(tag!("abcd")?, tag!("efg"), tag!("hi"))
+/// );
+///
+/// // whatever the order, if the parser succeeds, each
+/// // tag should have matched correctly
+/// let expected = (Some("abcd"), "efg", "hi");
+///
+/// let a = "abcdefghijk";
+/// assert_eq!(perm(a), Ok(("jk", expected)));
+/// let b = "efgabcdhijkl";
+/// assert_eq!(perm(b), Ok(("jkl", expected)));
+/// let c = "hiefgabcdjklm";
+/// assert_eq!(perm(c), Ok(("jklm", expected)));
+///
+/// // if `abcd` is missing:
+/// let expected = (None, "efg", "hi");
+///
+/// let a = "efghijk";
+/// assert_eq!(perm(a), Ok(("jk", expected)));
+/// let b = "efghijkl";
+/// assert_eq!(perm(b), Ok(("jkl", expected)));
+/// let c = "hiefgjklm";
+/// assert_eq!(perm(c), Ok(("jklm", expected)));
+///
+/// let e = "efgabc";
 /// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
 /// # }
 /// ```
@@ -523,12 +561,13 @@ macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Convert};
+      use ::std::option::Option::*;
+      use $crate::{Err,Convert,ErrorKind};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
-      let mut error  = ::std::option::Option::None;
-      let mut needed = ::std::option::Option::None;
+      let mut error  = None;
+      let mut needed = None;
 
       loop {
         let mut all_done = true;
@@ -537,18 +576,23 @@ macro_rules! permutation (
         //if we reach that part, it means none of the parsers were able to read anything
         if !all_done {
           //FIXME: should wrap the error returned by the child parser
-          error = ::std::option::Option::Some(error_position!(input, ErrorKind::Permutation));
+          error = Some(error_position!(input, ErrorKind::Permutation));
         }
         break;
       }
 
-      if let ::std::option::Option::Some(need) = needed {
+      if let Some(need) = needed {
         Err(Err::convert(need))
-      } else if let ::std::option::Option::Some(e) = error {
-        Err(Err::Error(e))
       } else {
-        let unwrapped_res = permutation_unwrap!(0, (), res, $($rest)*);
-        Ok((input, unwrapped_res))
+        if let Some(unwrapped_res) = { permutation_unwrap!(0, (), res, $($rest)*) } {
+          Ok((input, unwrapped_res))
+        } else {
+          if let Some(e) = error {
+            Err(Err::Error(error_node_position!($i, ErrorKind::Permutation, e)))
+          } else {
+            Err(Err::Error(error_position!($i, ErrorKind::Permutation)))
+          }
+        }
       }
     }
   );
@@ -558,19 +602,42 @@ macro_rules! permutation (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_init (
+  ((), $e:ident?, $($rest:tt)*) => (
+    permutation_init!((::std::option::Option::None), $($rest)*)
+  );
   ((), $e:ident, $($rest:tt)*) => (
+    permutation_init!((::std::option::Option::None), $($rest)*)
+  );
+
+  ((), $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
     permutation_init!((::std::option::Option::None), $($rest)*)
   );
   ((), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     permutation_init!((::std::option::Option::None), $($rest)*)
   );
-  (($($parsed:expr),*), $e:path, $($rest:tt)*) => (
+
+  (($($parsed:expr),*), $e:ident?, $($rest:tt)*) => (
+    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
+  );
+  (($($parsed:expr),*), $e:ident, $($rest:tt)*) => (
+    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
+  );
+
+  (($($parsed:expr),*), $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
     permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
   );
-  (($($parsed:expr),*), $e:path) => (
+
+  (($($parsed:expr),*), $e:ident) => (
+    ($($parsed),* , ::std::option::Option::None)
+  );
+  (($($parsed:expr),*), $e:ident?) => (
+    ($($parsed),* , ::std::option::Option::None)
+  );
+
+  (($($parsed:expr),*), $submac:ident!( $($args:tt)* )?) => (
     ($($parsed),* , ::std::option::Option::None)
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
@@ -638,31 +705,98 @@ macro_rules! acc (
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_unwrap (
-  ($it:tt,  (), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!((acc!($it, $res).unwrap()), $res, $($rest)*));
+  ($it:tt,  (), $res:ident, $e:ident?, $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!((acc!($it, $res)), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:expr),*), $res:ident, $e:path, $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res).unwrap()), $res, $($rest)*));
+  ($it:tt,  (), $res:ident, $e:ident, $($rest:tt)*) => ({
+    let res = acc!($it, $res);
+    if res.is_some() {
+      succ!($it, permutation_unwrap!((res.unwrap()), $res, $($rest)*))
+    } else {
+      ::std::option::Option::None
+    }
+  });
+
+  ($it:tt,  (), $res:ident, $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!((acc!($it, $res)), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res).unwrap()), $res, $($rest)*));
+  ($it:tt,  (), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => ({
+    let res = acc!($it, $res);
+    if res.is_some() {
+      succ!($it, permutation_unwrap!((res.unwrap()), $res, $($rest)*))
+    } else {
+      ::std::option::Option::None
+    }
+  });
+
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident?, $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res)), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:expr),*), $res:ident, $e:path) => (
-    ($($parsed),* , { acc!($it, $res).unwrap() })
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident, $($rest:tt)*) => ({
+    let res = acc!($it, $res);
+    if res.is_some() {
+      succ!($it, permutation_unwrap!(($($parsed),* , res.unwrap()), $res, $($rest)*))
+    } else {
+      ::std::option::Option::None
+    }
+  });
+
+  ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
+    succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res)), $res, $($rest)*));
   );
-  ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )) => (
-    ($($parsed),* , acc!($it, $res).unwrap() )
+  ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => ({
+    let res = acc!($it, $res);
+    if res.is_some() {
+      succ!($it, permutation_unwrap!(($($parsed),* , res.unwrap()), $res, $($rest)*))
+    } else {
+      ::std::option::Option::None
+    }
+  });
+
+  ($it:tt, ($($parsed:expr),*), $res:ident?, $e:ident) => (
+    ::std::option::Option::Some(($($parsed),* , { acc!($it, $res) }))
   );
+  ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident) => ({
+    let res = acc!($it, $res);
+    if res.is_some() {
+      ::std::option::Option::Some(($($parsed),* , res.unwrap() ))
+    } else {
+      ::std::option::Option::None
+    }
+  });
+
+  ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )?) => (
+    ::std::option::Option::Some(($($parsed),* , { acc!($it, $res) }))
+  );
+  ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )) => ({
+    let res = acc!($it, $res);
+    if res.is_some() {
+      ::std::option::Option::Some(($($parsed),* , res.unwrap() ))
+    } else {
+      ::std::option::Option::None
+    }
+  });
 );
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_iterator (
-  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:path, $($rest:tt)*) => (
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident?, $($rest:tt)*) => (
     permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e), $($rest)*);
   );
-  ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => {
-    if acc!($it, $res) == ::std::option::Option::None {
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident, $($rest:tt)*) => (
+    permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e), $($rest)*);
+  );
+
+  ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => {
+    permutation_iterator!($it, $i, $all_done, $needed, $res, $submac!($($args)*) , $($rest)*);
+  };
+  ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => ({
+    use ::std::result::Result::*;
+    use ::std::option::Option::*;
+    use $crate::Err;
+
+    if acc!($it, $res) == None {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;
@@ -679,33 +813,46 @@ macro_rules! permutation_iterator (
       };
     }
     succ!($it, permutation_iterator!($i, $all_done, $needed, $res, $($rest)*));
-  };
-  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:path) => (
+  });
+
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident?) => (
     permutation_iterator!($it, $i, $all_done, $res, call!($e));
   );
-  ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => {
-    if acc!($it, $res) == ::std::option::Option::None {
+  ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident) => (
+    permutation_iterator!($it, $i, $all_done, $res, call!($e));
+  );
+
+  ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )?) => {
+    permutation_iterator!($it, $i, $all_done, $needed, $res, $submac!($($args)*));
+  };
+  ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => ({
+    use ::std::result::Result::*;
+    use ::std::option::Option::*;
+    use $crate::Err;
+
+    if acc!($it, $res) == None {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = ::std::option::Option::Some(o);
+          acc!($it, $res) = Some(o);
           continue;
         },
         Err(Err::Error(_)) => {
           $all_done = false;
         },
         Err(e) => {
-          $needed = ::std::option::Option::Some(e);
+          $needed = Some(e);
           break;
         }
       };
     }
-  };
+  });
 );
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err,Needed,IResult};
+  use std::string::{String, ToString};
+  use internal::{Err, Needed, IResult};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -768,7 +915,7 @@ mod tests {
     );
   );
 
-  #[derive(Debug,Clone,PartialEq)]
+  #[derive(Debug, Clone, PartialEq)]
   pub struct ErrorStr(String);
 
   impl From<u32> for ErrorStr {
@@ -785,27 +932,30 @@ mod tests {
 
   #[test]
   fn alt() {
-    fn work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
+    fn work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       Ok((&b""[..], input))
     }
 
     #[allow(unused_variables)]
-    fn dont_work(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
-      use ::Context;
-      Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
+    fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
+      use Context;
+      Err(Err::Error(Context::Code(
+        &b""[..],
+        ErrorKind::Custom(ErrorStr("abcd".to_string())),
+      )))
     }
 
-    fn work2(input: &[u8]) -> IResult<&[u8],&[u8], ErrorStr> {
+    fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       Ok((input, &b""[..]))
     }
 
-    fn alt1(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt1(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | dont_work)
     }
-    fn alt2(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt2(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | work)
     }
-    fn alt3(i:&[u8]) ->  IResult<&[u8],&[u8], ErrorStr> {
+    fn alt3(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       alt!(i, dont_work | dont_work | work2 | dont_work)
     }
     //named!(alt1, alt!(dont_work | dont_work));
@@ -813,7 +963,7 @@ mod tests {
     //named!(alt3, alt!(dont_work | dont_work | work2 | dont_work));
 
     let a = &b"abcd"[..];
-    assert_eq!(alt1(a), Err(Err::Error(error_position!(a,  ErrorKind::Alt))));
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     assert_eq!(alt2(a), Ok((&b""[..], a)));
     assert_eq!(alt3(a), Ok((a, &b""[..])));
 
@@ -887,11 +1037,9 @@ mod tests {
 
   #[test]
   fn permutation() {
-    //trace_macros!(true);
     named!(perm<(&[u8], &[u8], &[u8])>,
       permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
     );
-    //trace_macros!(false);
 
     let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
 
@@ -903,7 +1051,8 @@ mod tests {
     assert_eq!(perm(c), Ok((&b"jk"[..], expected)));
 
     let d = &b"efgxyzabcdefghi"[..];
-    assert_eq!(perm(d), Err(Err::Error(error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation))));
+    assert_eq!(perm(d), Err(Err::Error(error_node_position!(&b"efgxyzabcdefghi"[..], ErrorKind::Permutation,
+      error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)))));
 
     let e = &b"efgabc"[..];
     assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));

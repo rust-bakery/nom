@@ -4,27 +4,28 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Needed,IResult,be_u16,be_u32,be_u64,be_f32};
+use nom::{Needed, IResult, be_u16, be_u32, be_u64, be_f32};
 //use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer,FileProducerState};
 //use nom::IResult;
-use nom::{Err,ErrorKind};
+use nom::{Err, ErrorKind};
 
 use std::str;
 
-fn mp4_box(input:&[u8]) -> IResult<&[u8], &[u8]> {
+fn mp4_box(input: &[u8]) -> IResult<&[u8], &[u8]> {
   match be_u32(input) {
     Ok((i, offset)) => {
       let sz: usize = offset as usize;
       if i.len() >= sz - 4 {
-        Ok((&i[(sz-4)..], &i[0..(sz-4)]))
+        Ok((&i[(sz - 4)..], &i[0..(sz - 4)]))
       } else {
         Err(Err::Incomplete(Needed::Size(offset as usize + 4)))
       }
     }
-    Err(e) => Err(e)
+    Err(e) => Err(e),
   }
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(PartialEq,Eq,Debug)]
 struct FileType<'a> {
   major_brand:         &'a str,
@@ -32,6 +33,7 @@ struct FileType<'a> {
   compatible_brands:   Vec<&'a str>
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_snake_case)]
 #[derive(Debug,Clone)]
 pub struct Mvhd32 {
@@ -61,6 +63,7 @@ pub struct Mvhd32 {
   track_id:      u32
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_snake_case)]
 #[derive(Debug,Clone)]
 pub struct Mvhd64 {
@@ -194,13 +197,13 @@ named!(mvhd64 <&[u8], MvhdBox>,
   ))
 );
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum MvhdBox {
   M32(Mvhd32),
-  M64(Mvhd64)
+  M64(Mvhd64),
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum MoovBox {
   Mdra,
   Dref,
@@ -210,7 +213,7 @@ pub enum MoovBox {
   Mvhd(MvhdBox),
   Clip,
   Trak,
-  Udta
+  Udta,
 }
 
 #[derive(Debug)]
@@ -230,13 +233,13 @@ enum MP4BoxType {
   Clip,
   Trak,
   Udta,
-  Unknown
+  Unknown,
 }
 
 #[derive(Debug)]
 struct MP4BoxHeader {
   length: u32,
-  tag:    MP4BoxType
+  tag: MP4BoxType,
 }
 
 named!(brand_name<&[u8],&str>, map_res!(take!(4), str::from_utf8));
@@ -250,7 +253,7 @@ named!(filetype_parser<&[u8], FileType>,
   )
 );
 
-fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
+fn mvhd_box(input: &[u8]) -> IResult<&[u8], MvhdBox> {
   let res = if input.len() < 100 {
     Err(Err::Incomplete(Needed::Size(100)))
   } else if input.len() == 100 {
@@ -264,7 +267,7 @@ fn mvhd_box(input:&[u8]) -> IResult<&[u8],MvhdBox> {
   res
 }
 
-fn unknown_box_type(input:&[u8]) -> IResult<&[u8], MP4BoxType> {
+fn unknown_box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
   Ok((input, MP4BoxType::Unknown))
 }
 
@@ -524,5 +527,3 @@ fn big_bunny_test() {
   explore_mp4_file("assets/bigbuckbunny.mp4");
 }
 */
-
-

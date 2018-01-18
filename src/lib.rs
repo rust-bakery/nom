@@ -51,7 +51,8 @@
 //!
 //! What it means:
 //!
-//! * `Ok((i,o))` means the parser was successful. `i` is the remaining part of the input (called *remainder*), `o` is the correctly parsed value
+//! * `Ok((i,o))` means the parser was successful. `i` is the remaining part of the input
+//!   (called *remainder*), `o` is the correctly parsed value
 //! The remaining part can then be used as input for other parsers called in a sequence
 //! * `Err(Err::Error(e))` indicates the parser encountered an error. The `Context<I,E>` type is an enum of possible parser errors,
 //! that can also contain a custom error that you'd specify, by redefining the `E` error type
@@ -144,32 +145,49 @@
 //!
 //! * **char!**: matches one character: `char!('a')` will make a parser that recognizes the letter 'a' (works with non ASCII chars too)
 //! * **eof!**: `eof!()` returns its input if it is at the end of input data
-//! * **is_a!, is_a_s!**: matches a sequence of any of the characters passed as arguments. `is_a!("ab1")` could recognize `ababa` or `1bb`. `is_a_s!` is a legacy combinator, it does exactly the same thing as `is_a`
+//! * **is_a!, is_a_s!**: matches a sequence of any of the characters passed as arguments.
+//!   `is_a!("ab1")` could recognize `ababa` or `1bb`. `is_a_s!` is a legacy combinator, it does exactly the same thing as `is_a`
 //! * **is_not!, is_not_s!**: matches a sequence of none of the characters passed as arguments
-//! * **one_of!**: matches one of the provided characters. `one_of!("abc")` could recognize 'a', 'b', or 'c'. It also works with non ASCII characters
+//! * **one_of!**: matches one of the provided characters. `one_of!("abc")` could
+//!   recognize 'a', 'b', or 'c'. It also works with non ASCII characters
 //! * **none_of!**: matches anything but the provided characters
 //! * **tag!, tag_s!**: recognizes a specific suite of characters or bytes. `tag!("hello")` matches "hello"
-//! * **tag_no_case!**: recognizes a suite of ASCII characters, case insensitive. `tag_no_case!("hello")` could match "hello", "Hello" or even "HeLlO"
-//! * **tag_no_case_s!** works like `tag_no_case` but on UTF-8 characters too (uses `&str` as input). Note that case insensitive comparison is not well defined for unicode, and that you might have bad surprises. Also, this combinator allocates a new string for the comparison. Ponder for a bit before using this combinator
+//! * **tag_no_case!**: recognizes a suite of ASCII characters, case insensitive.
+//!   `tag_no_case!("hello")` could match "hello", "Hello" or even "HeLlO"
+//! * **tag_no_case_s!** works like `tag_no_case` but on UTF-8 characters too (uses `&str` as input).
+//!   Note that case insensitive comparison is not well defined for unicode, and that you might have bad
+//!   surprises. Also, this combinator allocates a new string for the comparison. Ponder for a bit before using this combinator
 //! * **take!, take_s!**: takes a specific number of bytes or characters. `take!(5)` would return "hello" from the string "hello world"
 //! * **take_str!**: same as `take!` but returning a `&str`
-//! * **take_till!, take_till_s!**: returns the longest list of bytes until the provided function succeeds. `take_till!(is_alphabetic)` with input "123abc" would return "123"
-//! * **take_till1!, take_till1_s!**: same as `take_till!`, but the result must not be empty: `take_till1!(is_alphabetic)` would fail on "abc"
-//! * **take_until!, take_until_s!**: returns the longest list of bytes until the provided tag is found. `take_until!("world")` with input "Hello world!" would return "Hello " and leave "world!" as remaining input
+//! * **take_till!, take_till_s!**: returns the longest list of bytes until the provided function succeeds.
+//!   `take_till!(is_alphabetic)` with input "123abc" would return "123"
+//! * **take_till1!, take_till1_s!**: same as `take_till!`, but the result must not be empty:
+//!   `take_till1!(is_alphabetic)` would fail on "abc"
+//! * **take_until!, take_until_s!**: returns the longest list of bytes until the provided tag is found.
+//!   `take_until!("world")` with input "Hello world!" would return "Hello " and leave "world!" as remaining input
 //! * **take_until1!**: same as `take_until!`, but cannot return an empty result
-//! * **take_until_and_consume!, take_until_and_consume_s!**: same as `take_until!` but consumes the tag. `take_until_and_consume!("world")` with input "Hello world!" would return "Hello " and leave "!" as remaining input
+//! * **take_until_and_consume!, take_until_and_consume_s!**: same as `take_until!`
+//!   but consumes the tag. `take_until_and_consume!("world")` with input "Hello world!"
+//!   would return "Hello " and leave "!" as remaining input
 //! * **take_until_and_consume1!**: same as `take_until_and_consume!`, but cannot return an empty result
 //! * **take_until_either!**: returns the longest list of bytes until any of the provided characters are found
 //! * **take_until_either_and_consume!**: same as `take_until_either!`, but consumes the terminating character
-//! * **take_while!, take_while_s!**: returns the longest list of bytes for which the function is true. `take_while!(is_alphabetic)` with input "abc123" would return "abc"
+//! * **take_while!, take_while_s!**: returns the longest list of bytes for which the
+//!   function is true. `take_while!(is_alphabetic)` with input "abc123" would return "abc"
 //! * **take_while1!, take_while1_s!**: same as `take_while!`, but cannot return an empty result
-//! * **value!**: you can use `value!` to always return the same result value without consuming input, like this: `value!(42)`. Or you can replace the result of a child parser with a predefined value, like this: `value!(42, tag!("abcd"))` which would replace, if successful, the return value from "abcd", to 42
+//! * **value!**: you can use `value!` to always return the same result value without
+//! consuming input, like this: `value!(42)`. Or you can replace the result of a child
+//! parser with a predefined value, like this: `value!(42, tag!("abcd"))` which would replace,
+//!   if successful, the return value from "abcd", to 42
 //!
 //! Parsing integers from binary formats can be done in two ways: with parser functions, or combinators with configurable endianness:
 //!
 //! * configurable endianness: **i16!, i32!, i64!, u16!, u32!, u64!** are combinators that take as argument a `nom::Endianness`,
-//! like this: `i16!(endianness)`. If the parameter is nom::Endianness::Big, parse a big endian i16 integer, otherwise a little endian i16 integer
-//! * fixed endianness: the functions are prefixed by "be_" for big endian numbers, and by "le_" for little endian numbers, and the suffix is the type they parse to. As an example, "be_u32" parses a big endian unsigned integer stored in 32 bits.
+//! like this: `i16!(endianness)`. If the parameter is nom::Endianness::Big,
+//! parse a big endian i16 integer, otherwise a little endian i16 integer
+//! * fixed endianness: the functions are prefixed by "be_" for big endian numbers, and by "le_"
+//!   for little endian numbers, and the suffix is the type they parse to.
+//!     As an example, "be_u32" parses a big endian unsigned integer stored in 32 bits.
 //!   * **be_f32, be_f64, le_f32, le_f64**: recognize floating point numbers
 //!   * **be_i8, be_i16, be_i32, be_i24, be_i32, be_i64**: big endian signed integers
 //!   * **be_u8, be_u16, be_u32, be_u24, be_u32, be_u64**: big endian unsigned integers
@@ -204,23 +222,29 @@
 //! * **dbg!**: Prints a message if the parser fails
 //! * **dbg_dmp!**: Prints a message and the input if the parser fails
 //! * **error_code!**: creates a parse error from a nom::ErrorKind
-//! * **error_node!**: creates a parse error from a nom::ErrorKind and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
-//! * **error_node_position!**: creates a parse error from a nom::ErrorKind, the position in the input and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
-//! * **error_position!**: creates a parse error from a nom::ErrorKind and the position in the input if "verbose-errors" is not activated, it default to only the error code
+//! * **error_node!**: creates a parse error from a nom::ErrorKind and the next error
+//!   in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
+//! * **error_node_position!**: creates a parse error from a nom::ErrorKind, the position
+//!   in the input and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
+//! * **error_position!**: creates a parse error from a nom::ErrorKind and the position
+//!   in the input if "verbose-errors" is not activated, it default to only the error code
 //! * **fix_error!**: translate parser result from IResult to IResult with a custom type
 //!
 //! ## Choice combinators
 //!
 //! * **alt!**: try a list of parsers and return the result of the first successful one
-//! * **alt_complete!**: is equivalent to the alt! combinator, except that it will not return Incomplete when one of the constituting parsers returns Incomplete. Instead, it will try the next alternative in the chain.
-//! * **switch!**: choose the next parser depending on the result of the first one, if successful, and returns the result of the second parser
+//! * **alt_complete!**: is equivalent to the alt! combinator, except that it will not returns
+//!   Incomplete when one of the constituting parsers returns Incomplete. Instead, it will try the next alternative in the chain.
+//! * **switch!**: choose the next parser depending on the result of the first one,
+//!   if successful, and returns the result of the second parser
 //!
 //! # Sequence combinators
 //!
 //! * **delimited!**: delimited(opening, X, closing) returns X
 //! * **do_parse!**: do_parse applies sub parsers in a sequence. it can store intermediary results and make them available for later parsers
 //! * **pair!**: pair(X,Y), returns (x,y)
-//! * **permutation!**: applies its sub parsers in a sequence, but independent from their order this parser will only succeed if all of its sub parsers succeed
+//! * **permutation!**: applies its sub parsers in a sequence, but independent from their order
+//!   This parser will only succeed if all of its sub parsers succeed
 //! * **preceded!**: preceded(opening, X) returns X
 //! * **separated_pair!**: separated_pair(X,sep,Y) returns (x,y)
 //! * **terminated!**: terminated(X, closing) returns X
@@ -229,7 +253,8 @@
 //! ## Applying a parser multiple times
 //!
 //! * **count!**: Applies the child parser a specified number of times
-//! * **count_fixed!**: Applies the child parser a fixed number of times and returns a fixed size array The type must be specified and it must be Copy
+//! * **count_fixed!**: Applies the child parser a fixed number of times and returns a fixed size array.
+//!   The type must be specified and it must be Copy
 //! * **fold_many0!**: Applies the parser 0 or more times and folds the list of return values
 //! * **fold_many1!**: Applies the parser 1 or more times and folds the list of return values
 //! * **fold_many_m_n!**: Applies the parser between m and n times (n included) and folds the list of return value
@@ -237,11 +262,15 @@
 //! * **many0!**: Applies the parser 0 or more times and returns the list of results in a Vec
 //! * **many1!**: Applies the parser 1 or more times and returns the list of results in a Vec
 //! * **many_m_n!**: Applies the parser between m and n times (n included) and returns the list of results in a Vec
-//! * **many_till!**: Applies the first parser until the second applies. Returns a tuple containing the list of results from the first in a Vec and the result of the second.
+//! * **many_till!**: Applies the first parser until the second applies. Returns a tuple
+//!   containing the list of results from the first in a Vec and the result of the second.
 //! * **separated_list!**: separated_list(sep, X) returns Vec will return Incomplete if there may be more elements
-//! * **separated_list_complete!**: This is equivalent to the separated_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
+//! * **separated_list_complete!**: This is equivalent to the separated_list!
+//!   combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
 //! * **separated_nonempty_list!**: separated_nonempty_list(sep, X) returns Vec will return Incomplete if there may be more elements
-//! * **separated_nonempty_list_complete!**: This is equivalent to the separated_nonempty_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
+//! * **separated_nonempty_list_complete!**: This is equivalent to the
+//!   separated_nonempty_list! combinator, except that it will return Error when either
+//!   the separator or element subparser returns Incomplete.
 //!
 //! ## Text parsing
 //!
@@ -252,11 +281,13 @@
 //!
 //! * **length_data!**: gets a number from the first parser, than takes a subslice of the input of that size, and returns that subslice
 //! * **length_bytes!**: alias for `length_data`
-//! * **length_value!**: gets a number from the first parser, takes a subslice of the input of that size, then applies the second parser on that subslice. If the second parser returns Incomplete, length_value will return an error
+//! * **length_value!**: gets a number from the first parser, takes a subslice of the input of that size,
+//!   then applies the second parser on that subslice. If the second parser returns Incomplete, length_value will return an error
 //!
 //! ## Bit stream parsing
 //!
-//! * **bits!**: transforms the current input type (byte slice `&[u8]`) to a bit stream on which bit specific parsers and more general combinators can be applied
+//! * **bits!**: transforms the current input type (byte slice `&[u8]`) to a bit stream on which
+//!   bit specific parsers and more general combinators can be applied
 //! * **bytes!**: transforms its bits stream input back into a byte slice for the underlying parsers.
 //! * **tag_bits!**: matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
 //! * **take_bits!**: generates a parser consuming the specified number of bits
@@ -271,7 +302,8 @@
 //! ## Remaining combinators
 //!
 //! * **apply!**: emulate function currying: apply!(my_function, arg1, arg2, ...) becomes my_function(input, arg1, arg2, ...)
-//! * **apply_m!**: emulate function currying for method calls on structs apply_m!(self.my_function, arg1, arg2, ...) becomes self.my_function(input, arg1, arg2, ...)
+//! * **apply_m!**: emulate function currying for method calls on structs
+//!   apply_m!(self.my_function, arg1, arg2, ...) becomes self.my_function(input, arg1, arg2, ...)
 //! * **call!**: Used to wrap common expressions and function as macros
 //! * **call_m!**: Used to called methods then move self back into self
 //! * **closure!**: Wraps a parser in a closure
@@ -279,7 +311,9 @@
 //! * **named!**: Makes a function from a parser combination
 //! * **named_args!**: Makes a function from a parser combination with arguments.
 //! * **named_attr!**: Makes a function from a parser combination, with attributes
-//! * **try_parse!**: A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Ok, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
+//! * **try_parse!**: A bit like std::try!, this macro will return the remaining input
+//!   and parsed value if the child parser returned Ok, and will do an early return for
+//!   Error and Incomplete this can provide more flexibility than do_parse! if needed
 //!
 //! ## Character test functions
 //!
@@ -296,13 +330,13 @@
 //!
 //! * **alpha**: Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 //! * **alphanumeric**: Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
-//! * **anychar**: 
-//! * **begin**: 
-//! * **crlf**: 
+//! * **anychar**:
+//! * **begin**:
+//! * **crlf**:
 //! * **digit**: Recognizes one or more numerical characters: 0-9
 //! * **double**: Recognizes floating point number in a byte string and returns a f64
 //! * **double_s**: Recognizes floating point number in a string and returns a f64
-//! * **eol**: 
+//! * **eol**:
 //! * **float**: Recognizes floating point number in a byte string and returns a f32
 //! * **float_s**: Recognizes floating point number in a string and returns a f32
 //! * **hex_digit**: Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
@@ -311,15 +345,15 @@
 //! * **multispace**: Recognizes one or more spaces, tabs, carriage returns and line feeds
 //! * **newline**: Matches a newline character '\n'
 //! * **non_empty**: Recognizes non empty buffers
-//! * **not_line_ending**: 
+//! * **not_line_ending**:
 //! * **oct_digit**: Recognizes one or more octal characters: 0-7
 //! * **rest**: Return the remaining input.
 //! * **rest_s**: Return the remaining input, for strings.
-//! * **shift**: 
-//! * **sized_buffer**: 
+//! * **shift**:
+//! * **sized_buffer**:
 //! * **space**: Recognizes one or more spaces and tabs
 //! * **tab**: Matches a tab character '\t'
-//! * **tag_cl**: 
+//! * **tag_cl**:
 //!
 //! # Example
 //!
@@ -399,19 +433,23 @@
 #![cfg_attr(feature = "nightly", feature(plugin))]
 //#![warn(missing_docs)]
 
+#![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
+
 #[cfg(not(feature = "std"))]
+#[macro_use]
 extern crate alloc;
 #[cfg(feature = "regexp")]
 extern crate regex;
 #[cfg(feature = "regexp_macros")]
-#[macro_use] extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static;
 extern crate memchr;
 #[cfg(feature = "nightly")]
 extern crate test;
 
 #[cfg(not(feature = "std"))]
 mod std {
-#[macro_use]
+  #[macro_use]
   pub use alloc::{boxed, vec, string};
   pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
   pub mod prelude {
@@ -447,31 +485,47 @@ pub use self::whitespace::*;
 pub use self::regexp::*;
 pub use self::str::*;
 
-#[macro_use] mod util;
+#[macro_use]
+mod util;
 mod traits;
 
-#[cfg(feature = "verbose-errors")] #[macro_use] pub mod verbose_errors;
+#[cfg(feature = "verbose-errors")]
+#[macro_use]
+pub mod verbose_errors;
 
-#[cfg(not(feature = "verbose-errors"))] #[macro_use] pub mod simple_errors;
+#[cfg(not(feature = "verbose-errors"))]
+#[macro_use]
+pub mod simple_errors;
 
-#[macro_use] mod internal;
-#[macro_use] mod macros;
-#[macro_use] mod branch;
-#[macro_use] mod sequence;
-#[macro_use] mod multi;
-#[macro_use] pub mod methods;
+#[macro_use]
+mod internal;
+#[macro_use]
+mod macros;
+#[macro_use]
+mod branch;
+#[macro_use]
+mod sequence;
+#[macro_use]
+mod multi;
+#[macro_use]
+pub mod methods;
 
-#[macro_use] mod bytes;
-#[macro_use] pub mod bits;
+#[macro_use]
+mod bytes;
+#[macro_use]
+pub mod bits;
 
-#[macro_use] mod nom;
-#[macro_use] mod character;
+#[macro_use]
+mod character;
+#[macro_use]
+mod nom;
 
 #[macro_use]
 pub mod whitespace;
 
 #[cfg(feature = "regexp")]
-#[macro_use] mod regexp;
+#[macro_use]
+mod regexp;
 
 mod str;
 

@@ -13,4 +13,7 @@ named_args!(atom<'a>(tomb: &'a mut ())<String>,
 
 
 named_args!(list<'a>(tomb: &'a mut ())<String>,
-            delimited!(char!('('), fold_many0!(call!(atom, tomb), "".to_string(), |acc: String, next: String| acc + next.as_str()), char!(')')));
+  delimited!(
+    char!('('),
+    fold_many0!(call!(atom, tomb), "".to_string(), |acc: String, next: String| acc + next.as_str()),
+    char!(')')));

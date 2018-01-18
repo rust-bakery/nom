@@ -13,7 +13,7 @@
 //! you can know precisely which parser got to which part of the input.
 //! The main drawback is that it is a lot slower than default error
 //! management.
-use util::{ErrorKind,Convert};
+use util::{ErrorKind, Convert};
 use std::convert::From;
 
 /// Contains the error that a parser can return
@@ -24,33 +24,39 @@ use std::convert::From;
 ///
 /// It can represent a linked list of errors, indicating the path taken in the parsing tree, with corresponding position in the input data.
 /// It depends on P, the input position (for a &[u8] parser, it would be a &[u8]), and E, the custom error type (by default, u32)
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Context<I,E=u32>{
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum Context<I, E = u32> {
   /// An error code, represented by an ErrorKind, which can contain a custom error code represented by E
   Code(I, ErrorKind<E>),
   List(Vec<(I, ErrorKind<E>)>),
 }
 
-impl<I,F,E: From<F>> Convert<Context<I,F>> for Context<I,E> {
-  fn convert(c: Context<I,F>) -> Self {
+impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
+  fn convert(c: Context<I, F>) -> Self {
     match c {
-      Context::Code(i, e)  => Context::Code(i, ErrorKind::convert(e)),
-      Context::List(mut v) => Context::List(v.drain(..).map(|(i, e)| (i, ErrorKind::convert(e))).collect())
+      Context::Code(i, e) => Context::Code(i, ErrorKind::convert(e)),
+      Context::List(mut v) => {
+        Context::List(
+          v.drain(..)
+            .map(|(i, e)| (i, ErrorKind::convert(e)))
+            .collect(),
+        )
+      }
     }
   }
 }
 
-impl<I,E> Context<I,E> {
+impl<I, E> Context<I, E> {
   /// Convert Err into ErrorKind.
   ///
   /// This allows application code to use ErrorKind and stay independent from the verbose-errors features activation.
   pub fn into_error_kind(self) -> ErrorKind<E> {
     match self {
       Context::Code(_, kind) => kind,
-      Context::List(mut v)   => {
+      Context::List(mut v) => {
         let (_, kind) = v.remove(0);
         kind
-      },
+      }
     }
   }
 }
@@ -224,6 +230,18 @@ macro_rules! fix_error (
 #[macro_export]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    flat_map!(__impl $i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    flat_map!(__impl $i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    flat_map!(_impl $i, call!($f), call!($g));
+  );
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
       use $crate::{Err,Convert};
@@ -236,14 +254,5 @@ macro_rules! flat_map(
         },
       }
     }
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    flat_map!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    flat_map!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    flat_map!($i, call!($f), $submac!($($args)*));
   );
 );

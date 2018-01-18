@@ -118,8 +118,7 @@ macro_rules! is_not(
           Err(Err::Error(error_position!($input, e)))
         },
         Some(n) => {
-          let res = Ok(($input.slice(n..), $input.slice(..n)));
-          res
+          Ok(($input.slice(n..), $input.slice(..n)))
         },
         None    => {
           Ok(($input.slice($input.input_len()..), $input))
@@ -179,10 +178,12 @@ macro_rules! is_a (
   );
 );
 
-/// `escaped!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], &[T]>`
+/// `escaped!(T -> IResult<T, T>, U, T -> IResult<T, T>) => T -> IResult<T, T> where T: InputIter,
+/// U: AsChar`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument matches the normal characters (it must not accept the control character), the second argument is the control character (like `\` in most languages),
+/// The first argument matches the normal characters (it must not accept the control character),
+/// the second argument is the control character (like `\` in most languages),
 /// the third argument matches the escaped characters
 ///
 /// # Example
@@ -202,15 +203,19 @@ macro_rules! escaped (
     {
       use ::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind,need_more};
-
+      use $crate::AsChar;
+      use $crate::InputIter;
       use $crate::InputLength;
       use $crate::Slice;
+
       let cl = || -> IResult<_,_,u32> {
         use $crate::Offset;
         let mut index  = 0;
+        let control_char = $control_char.as_char();
 
         while index < $i.input_len() {
-          match $normal!($i.slice(index..), $($args)*) {
+          let remainder = $i.slice(index..);
+          match $normal!(remainder, $($args)*) {
             Ok((i, _)) => {
               if i.is_empty() {
                 return Ok(($i.slice($i.input_len()..), $i))
@@ -218,12 +223,21 @@ macro_rules! escaped (
                 index = $i.offset(i);
               }
             },
-            Err(Err::Error(e)) => {
-              if $i[index] == $control_char as u8 {
-                if index + 1 >= $i.input_len() {
-                  return need_more($i, Needed::Unknown)
+            Err(Err::Failure(e)) => {
+              return Err(Err::Failure(e));
+            },
+            Err(Err::Incomplete(i)) => {
+              return Err(Err::Incomplete(i));
+            },
+            Err(Err::Error(_)) => {
+              // unwrap() should be safe here since index < $i.input_len()
+              if remainder.iter_elements().next().unwrap().as_char() == control_char {
+                let next = index + control_char.len_utf8();
+                let input_len = $i.input_len();
+                if next >= input_len {
+                  return need_more($i, Needed::Size(next - input_len + 1));
                 } else {
-                  match $escapable!($i.slice(index+1..), $($args2)*) {
+                  match $escapable!($i.slice(next..), $($args2)*) {
                     Ok((i,_)) => {
                       if i.is_empty() {
                         return Ok(($i.slice($i.input_len()..), $i))
@@ -235,26 +249,24 @@ macro_rules! escaped (
                   }
                 }
               } else {
-                return Ok(($i.slice(index..), $i.slice(..index)));
+                return Ok((remainder, $i.slice(..index)));
               }
             },
-            Err(e) => {
-              return Err(e)
-            }
           }
         }
-        Ok((&$i[index..], &$i[..index]))
+        Ok(($i.slice(index..), $i.slice(..index)))
       };
+
       match cl() {
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
           let e2 = ErrorKind::Escaped::<u32>;
-          return Err(Err::Error(error_node_position!($i, e2, e)))
+          Err(Err::Error(error_node_position!($i, e2, e)))
         },
         Err(Err::Failure(e))      => {
           let e2 = ErrorKind::Escaped::<u32>;
-          return Err(Err::Failure(error_node_position!($i, e2, e)))
+          Err(Err::Failure(error_node_position!($i, e2, e)))
         }
       }
     }
@@ -271,9 +283,7 @@ macro_rules! escaped (
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
-      let input: &[u8] = $i;
-
-      escaped!(__impl_1 input, $submac!($($args)*), $control_char, $($rest)*)
+      escaped!(__impl_1 $i, $submac!($($args)*), $control_char, $($rest)*)
     }
   );
 
@@ -285,7 +295,8 @@ macro_rules! escaped (
 /// `escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>>`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument matches the normal characters (it must not match the control character), the second argument is the control character (like `\` in most languages),
+/// The first argument matches the normal characters (it must not match the control character),
+/// the second argument is the control character (like `\` in most languages),
 /// the third argument matches the escaped characters and transforms them.
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
@@ -324,44 +335,68 @@ macro_rules! escaped_transform (
     {
       use ::std::result::Result::*;
       use $crate::{Err,ErrorKind};
+      use $crate::AsChar;
+      use $crate::ExtendInto;
+      use $crate::InputIter;
+      use $crate::InputLength;
+      use $crate::Slice;
+      use $crate::need_more;
 
-      use $crate::{InputLength,Slice};
-      let cl = || {
+      let cl = || -> $crate::IResult<_,_,_> {
         use $crate::Offset;
         let mut index  = 0;
-        let mut res = Vec::new();
+        let mut res = $i.new_builder();
+        let control_char = $control_char.as_char();
 
         while index < $i.input_len() {
-          if let Ok((i,o)) = $normal!($i.slice(index..), $($args)*) {
-            res.extend(o.iter().cloned());
-            if i.is_empty() {
-              return Ok(($i.slice($i.input_len()..), res));
-            } else {
-              index = $i.offset(i);
-            }
-          } else if $i[index] == $control_char as u8 {
-            if index + 1 >= $i.input_len() {
-              let e = ErrorKind::EscapedTransform::<u32>;
-              return Err(Err::Error(error_position!($i.slice(index..), e)));
-            } else {
-              match $transform!($i.slice(index+1..), $($args2)*) {
-                Ok((i,o)) => {
-                  res.extend(o.iter().cloned());
-                  if i.is_empty() {
-                    return Ok(($i.slice($i.input_len()..), res))
-                  } else {
-                    index = $i.offset(i);
-                  }
-                },
-                Err(e) => return Err(e)
+          let remainder = $i.slice(index..);
+          match $normal!(remainder, $($args)*) {
+            Ok((i,o)) => {
+              o.extend_into(&mut res);
+              if i.is_empty() {
+                return Ok(($i.slice($i.input_len()..), res));
+              } else {
+                index = $i.offset(i);
               }
-            }
-          } else {
-            if index == 0 {
-              let e = ErrorKind::EscapedTransform::<u32>;
-              return Err(Err::Error(error_position!($i.slice(index..), e)))
-            } else {
-              return Ok(($i.slice(index..), res))
+            },
+            Err(Err::Incomplete(i)) => {
+              return Err(Err::Incomplete(i))
+            },
+            Err(Err::Failure(e)) => {
+              return Err(Err::Failure(e))
+            },
+            Err(Err::Error(_)) => {
+              // unwrap() should be safe here since index < $i.input_len()
+              if remainder.iter_elements().next().unwrap().as_char() == control_char {
+                let next = index + control_char.len_utf8();
+                let input_len = $i.input_len();
+
+                if next >= input_len {
+                  return need_more($i, Needed::Size(next - input_len + 1));
+                } else {
+                  match $transform!($i.slice(next..), $($args2)*) {
+                    Ok((i,o)) => {
+                      o.extend_into(&mut res);
+                      if i.is_empty() {
+                        return Ok(($i.slice($i.input_len()..), res))
+                      } else {
+                        index = $i.offset(i);
+                      }
+                    },
+                    Err(Err::Error(e)) => {
+                      return Err(Err::Error(e))
+                    },
+                    Err(Err::Incomplete(i)) => {
+                      return Err(Err::Incomplete(i))
+                    },
+                    Err(Err::Failure(e)) => {
+                      return Err(Err::Failure(e))
+                    },
+                  }
+                }
+              } else {
+                return Ok((remainder, res))
+              }
             }
           }
         }
@@ -372,15 +407,16 @@ macro_rules! escaped_transform (
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
           let e2 = ErrorKind::EscapedTransform::<u32>;
-          return Err(Err::Error(error_node_position!($i, e2, e)))
+          Err(Err::Error(error_node_position!($i, e2, e)))
         },
         Err(Err::Failure(e))      => {
           let e2 = ErrorKind::EscapedTransform::<u32>;
-          return Err(Err::Failure(error_node_position!($i, e2, e)))
+          Err(Err::Failure(error_node_position!($i, e2, e)))
         }
       }
     }
   );
+
   // Internal parser, do not use directly
   (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
     {
@@ -389,13 +425,12 @@ macro_rules! escaped_transform (
   );
   // Internal parser, do not use directly
   (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
-     escaped_transform_impl!($i, $submac1!($($args)*), $control_char, call!($g))
+     escaped_transform!(__impl $i, $submac1!($($args)*), $control_char, call!($g))
   );
+
   ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
     {
-      let input: &[u8] = $i;
-
-      escaped_transform!(__impl_1 input, $submac!($($args)*), $control_char, $($rest)*)
+      escaped_transform!(__impl_1 $i, $submac!($($args)*), $control_char, $($rest)*)
     }
   );
 
@@ -428,7 +463,7 @@ macro_rules! take_while (
       use ::std::option::Option::*;
       use $crate::IResult;
 
-      use $crate::{InputLength,InputIter,Slice};
+      use $crate::{InputLength,InputIter,Slice,Err,Needed,AtEof};
       let input = $input;
 
       match input.position(|c| !$submac!(c, $($args)*)) {
@@ -437,7 +472,11 @@ macro_rules! take_while (
           res
         },
         None    => {
-          Ok((input.slice(input.input_len()..), input))
+          if input.at_eof() {
+            Ok((input.slice(input.input_len()..), input))
+          } else {
+            Err(Err::Incomplete(Needed::Size(1)))
+          }
         }
       }
     }
@@ -472,15 +511,16 @@ macro_rules! take_while1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,ErrorKind,Needed,need_more};
+      use $crate::{Err,ErrorKind,Needed,need_more_err};
 
       let input = $input;
 
       use $crate::InputLength;
       use $crate::InputIter;
       use $crate::Slice;
+      use $crate::AtEof;
       if input.input_len() == 0 {
-        need_more(input, Needed::Unknown)
+        need_more_err(input, Needed::Unknown, ErrorKind::TakeWhile1::<u32>)
       } else {
         match input.position(|c| !$submac!(c, $($args)*)) {
           Some(0) => {
@@ -491,7 +531,11 @@ macro_rules! take_while1 (
             Ok((input.slice(n..), input.slice(..n)))
           },
           None    => {
-            Ok((input.slice(input.input_len()..), input))
+            if input.at_eof() {
+              Ok((input.slice(input.input_len()..), input))
+            } else {
+              Err(Err::Incomplete(Needed::Size(1)))
+            }
           }
         }
       }
@@ -502,6 +546,82 @@ macro_rules! take_while1 (
   );
 );
 
+/// `take_while_m_n!(m: usize, n: usize, T -> bool) => &[T] -> IResult<&[T], &[T]>`
+/// returns a list of bytes or characters for which the provided function returns true.
+/// the returned list's size will be at least m, and at most n
+///
+/// The argument is either a function `T -> bool` or a macro returning a `bool`.
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::is_alphanumeric;
+/// # fn main() {
+///  named!( alpha, take_while!( is_alphanumeric ) );
+///
+///  let r = alpha(&b"abcd\nefgh"[..]);
+///  assert_eq!(r, Ok((&b"\nefgh"[..], &b"abcd"[..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_while_m_n (
+  ($input:expr, $m:expr, $n:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::IResult;
+
+      use $crate::{InputLength,InputIter,Slice,Err,Needed,AtEof};
+      let input = $input;
+      let m     = $m;
+      let n     = $n;
+
+      match input.position(|c| !$submac!(c, $($args)*)) {
+        Some(idx) => {
+          if idx >= m {
+            if idx <= n {
+              let res:IResult<_,_> = Ok((input.slice(idx..), input.slice(..idx)));
+              res
+            } else {
+              let res:IResult<_,_> = Ok((input.slice(n..), input.slice(..n)));
+              res
+            }
+          } else {
+            let e = ErrorKind::TakeWhileMN::<u32>;
+            Err(Err::Error(error_position!(input, e)))
+          }
+        },
+        None    => {
+          let len = input.input_len();
+          if len >= n {
+            let res:IResult<_,_> = Ok((input.slice(n..), input.slice(..n)));
+            res
+          } else {
+            if input.at_eof() {
+              if len >= $m && len <= $n {
+                let res:IResult<_,_> = Ok((input.slice(len..), input));
+                res
+              } else {
+                let e = ErrorKind::TakeWhileMN::<u32>;
+                Err(Err::Error(error_position!(input, e)))
+              }
+            } else {
+              let needed = if m > len {
+                m - len
+              } else {
+                1
+              };
+              Err(Err::Incomplete(Needed::Size(needed)))
+            }
+          }
+        }
+      }
+    }
+  );
+  ($input:expr, $m:expr, $n: expr, $f:expr) => (
+    take_while_m_n!($input, $m, $n, call!($f));
+  );
+);
 /// `take_till!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function succeeds
 ///
@@ -525,15 +645,19 @@ macro_rules! take_till (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
+      use $crate::{Err, InputIter, InputLength, Slice, Needed, AtEof};
 
       let input = $input;
 
-      use $crate::InputLength;
-      use $crate::InputIter;
-      use $crate::Slice;
       match input.position(|c| $submac!(c, $($args)*)) {
         Some(n) => Ok((input.slice(n..), input.slice(..n))),
-        None    => Ok((input.slice(input.input_len()..), input))
+        None    => {
+          if input.at_eof() {
+            Ok((input.slice(input.input_len()..), input))
+          } else {
+            Err(Err::Incomplete(Needed::Size(1)))
+          }
+        }
       }
     }
   );
@@ -567,7 +691,7 @@ macro_rules! take_till1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,ErrorKind,need_more};
+      use $crate::{Err,Needed,ErrorKind,AtEof,need_more_err};
 
       let input = $input;
 
@@ -575,7 +699,7 @@ macro_rules! take_till1 (
       use $crate::InputIter;
       use $crate::Slice;
       if input.input_len() == 0 {
-        need_more(input, Needed::Unknown)
+        need_more_err(input, Needed::Unknown, ErrorKind::TakeTill1::<u32>)
       } else {
         match input.position(|c| $submac!(c, $($args)*)) {
           Some(0) => {
@@ -583,7 +707,13 @@ macro_rules! take_till1 (
             Err(Err::Error(error_position!(input, e)))
           },
           Some(n) => Ok((input.slice(n..), input.slice(..n))),
-          None    => Ok((input.slice(input.input_len()..), input))
+          None    => {
+            if input.at_eof() {
+              Ok((input.slice(input.input_len()..), input))
+            } else {
+              Err(Err::Incomplete(Needed::Size(1)))
+            }
+          }
         }
       }
     }
@@ -678,24 +808,20 @@ macro_rules! take_until_and_consume (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind,need_more};
-
+      use $crate::{Needed,IResult,ErrorKind,need_more_err};
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
 
-      let res: IResult<_,_> = if $substr.input_len() > $i.input_len() {
-        need_more($i, Needed::Size($substr.input_len()))
-      } else {
-        match ($i).find_substring($substr) {
-          None => {
-            let e = ErrorKind::TakeUntilAndConsume::<u32>;
-            Err(Err::Error(error_position!($i, e)))
-          },
-          Some(index) => {
-            Ok(($i.slice(index+$substr.input_len()..), $i.slice(0..index)))
-          },
-        }
+      let input = $i;
+
+      let res: IResult<_,_> = match input.find_substring($substr) {
+        None => {
+          need_more_err(input, Needed::Size($substr.input_len()), ErrorKind::TakeUntilAndConsume::<u32>)
+        },
+        Some(index) => {
+          Ok(($i.slice(index+$substr.input_len()..), $i.slice(0..index)))
+        },
       };
       res
     }
@@ -723,22 +849,24 @@ macro_rules! take_until_and_consume1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind,need_more};
+      use $crate::{Err,Needed,IResult,ErrorKind,need_more_err};
 
       use $crate::InputLength;
+      use $crate::FindSubstring;
+      use $crate::Slice;
+      let input = $i;
 
-      let res: IResult<_,_> = if 1 + $substr.input_len() > $i.input_len() {
-        need_more(Needed::Size($substr.input_len()))
-      } else {
-        match ($i).find_substring($substr) {
-          None => {
-            let e = ErrorKind::TakeUntilAndConsume::<u32>;
-            Err(Err::Error(error_position!($i, e)))
-          },
-          Some(index) => {
-            Ok(($i.slice(index+$substr.input_len()..), $i.slice(0..index)))
-          },
+      let res: IResult<_,_> = match input.find_substring($substr) {
+        None => {
+          need_more_err(input, Needed::Size(1+$substr.input_len()), ErrorKind::TakeUntilAndConsume1::<u32>)
+        },
+        Some(0) => {
+          let e = ErrorKind::TakeUntilAndConsume1::<u32>;
+          Err(Err::Error(error_position!($i, e)))
         }
+        Some(index) => {
+          Ok(($i.slice(index+$substr.input_len()..), $i.slice(0..index)))
+        },
       };
       res
     }
@@ -766,24 +894,20 @@ macro_rules! take_until (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind,need_more};
+      use $crate::{Needed,IResult,need_more_err, ErrorKind};
 
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
+      let input = $i;
 
-      let res: IResult<_,_> = if $substr.input_len() > $i.input_len() {
-        need_more($i, Needed::Size($substr.input_len()))
-      } else {
-        match ($i).find_substring($substr) {
-          None => {
-            let e = ErrorKind::TakeUntil::<u32>;
-            Err(Err::Error(error_position!($i, e)))
-          },
-          Some(index) => {
-            Ok(($i.slice(index..), $i.slice(0..index)))
-          },
-        }
+      let res: IResult<_,_> = match input.find_substring($substr) {
+        None => {
+          need_more_err($i, Needed::Size($substr.input_len()), ErrorKind::TakeUntil::<u32>)
+        },
+        Some(index) => {
+          Ok(($i.slice(index..), $i.slice(0..index)))
+        },
       };
       res
     }
@@ -813,29 +937,31 @@ macro_rules! take_until1 (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more,ErrorKind};
+      use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
+      use $crate::AtEof;
+      let input = $i;
 
-      let res: IResult<_,_> = if 1+$substr.input_len() > $i.input_len() {
-        need_more($i, Needed::Size($substr.input_len()))
-      } else {
-        match ($i).find_substring($substr) {
-          None => {
-            Err(Err::Error(error_position!($i, ErrorKind::TakeUntil::<u32>)))
-          },
-          Some(index) => {
-            Ok(($i.slice(index..), $i.slice(0..index)))
-          },
-        }
+      let res: IResult<_,_> = match input.find_substring($substr) {
+        None => {
+          need_more_err($i, Needed::Size(1 + $substr.input_len()), ErrorKind::TakeUntil::<u32>)
+        },
+        Some(0) => {
+          let e = ErrorKind::TakeUntil::<u32>;
+          Err(Err::Error(error_position!($i, e)))
+        },
+        Some(index) => {
+          Ok(($i.slice(index..), $i.slice(0..index)))
+        },
       };
       res
     }
   );
 );
 
-/// `take_until_either_and_consume!(tag) => &[T] -> IResult<&[T], &[T]>`
+/// `take_until_either_and_consume!(chars) => &[T] -> IResult<&[T], &[T]>`
 /// consumes data until it finds any of the specified characters, and consume it
 ///
 /// The parsed input and the tag are removed from the remainder.
@@ -856,30 +982,69 @@ macro_rules! take_until_either_and_consume (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more,ErrorKind};
+      use $crate::{Needed,IResult,need_more_err,ErrorKind};
+
+      use $crate::InputIter;
+      use $crate::FindToken;
+      use $crate::Slice;
+
+      let res: IResult<_,_> = match $input.position(|c| {
+        $arr.find_token(c)
+      }) {
+        Some(n) => {
+          Ok(($input.slice(n+1..), $input.slice(..n)))
+        },
+        None    => {
+          need_more_err($input, Needed::Size(1), ErrorKind::TakeUntilEitherAndConsume::<u32>)
+        }
+      };
+      res
+    }
+  );
+);
+
+/// `take_until_either_and_consume1!(chars) => &[T] -> IResult<&[T], &[T]>`
+/// consumes data (at least one byte) until it finds any of the specified characters, and consume it
+///
+/// The parsed input and the tag are removed from the remainder.
+/// (As opposed to `take_until_either!` that does not remove the tag from the remainder.)
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # fn main() {
+///  named!(x, take_until_either_and_consume!("012"));
+///  let r = x(&b"abcd2efgh"[..]);
+///  assert_eq!(r, Ok((&b"efgh"[..], &b"abcd"[..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_until_either_and_consume1 (
+  ($input:expr, $arr:expr) => (
+    {
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
 
       use $crate::InputLength;
       use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
+      use $crate::AtEof;
+      let input = $i;
 
-      if $input.input_len() == 0 {
-        need_more($input, Needed::Unknown)
-      } else {
-        let res: IResult<_,_> = match $input.position(|c| {
-          $arr.find_token(c)
-        }) {
-          Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEitherAndConsume::<u32>))),
-          Some(n) => {
-            let res = Ok(($input.slice(n+1..), $input.slice(..n)));
-            res
-          },
-          None    => {
-            Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEitherAndConsume::<u32>)))
-          }
-        };
-        res
-      }
+      let res: IResult<_,_> = match $input.position(|c| {
+        $arr.find_token(c)
+      }) {
+        Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEitherAndConsume::<u32>))),
+        Some(n) => {
+          Ok(($input.slice(n+1..), $input.slice(..n)))
+        },
+        None    => {
+          need_more_err($input, Needed::Size(1),  ErrorKind::TakeUntilEitherAndConsume::<u32>)
+        }
+      };
+      res
     }
   );
 );
@@ -906,33 +1071,75 @@ macro_rules! take_until_either (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more,ErrorKind};
+      use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
+
+      use $crate::InputIter;
+      use $crate::FindToken;
+      use $crate::Slice;
+
+      let res: IResult<_,_> = match $input.position(|c| {
+        $arr.find_token(c)
+      }) {
+        Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEither::<u32>))),
+        Some(n) => {
+          Ok(($input.slice(n..), $input.slice(..n)))
+        },
+        None    => {
+          need_more_err($input, Needed::Size(1), ErrorKind::TakeUntilEither::<u32>)
+        }
+      };
+      res
+    }
+  );
+);
+
+/// `take_until_either1!(tag) => &[T] -> IResult<&[T], &[T]>`
+/// consumes data (at least one byte) until it finds any of the specified characters
+///
+/// The remainder still contains the tag.
+/// (As opposed to `take_until_either_and_consume!` which removes it from the remainder.)
+///
+///
+/// # Example
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # fn main() {
+///  named!(x, take_until_either!("012"));
+///  let r = x(&b"abcd2efgh"[..]);
+///  assert_eq!(r, Ok((&b"2efgh"[..], &b"abcd"[..])));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! take_until_either1 (
+  ($input:expr, $arr:expr) => (
+    {
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
 
       use $crate::InputLength;
       use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
+      use $crate::AtEof;
+      let input = $i;
 
-      if $input.input_len() == 0 {
-        need_more($input, Needed::Unknown)
-      } else {
-        let res: IResult<_,_> = match $input.position(|c| {
-          $arr.find_token(c)
-        }) {
-          Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEither::<u32>))),
-          Some(n) => {
-            let res = Ok(($input.slice(n..), $input.slice(..n)));
-            res
-          },
-          None    => {
-            Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEither::<u32>)))
-          }
-        };
-        res
-      }
+      let res: IResult<_,_> = match $input.position(|c| {
+        $arr.find_token(c)
+      }) {
+        Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEither::<u32>))),
+        Some(n) => {
+          Ok(($input.slice(n..), $input.slice(..n)))
+        },
+        None    => {
+          need_more_err($input, Needed::Size(1), ErrorKind::TakeUntilEither::<u32>)
+        }
+      };
+      res
     }
   );
 );
+
 
 /// `length_bytes!(&[T] -> IResult<&[T], nb>) => &[T] -> IResult<&[T], &[T]>`
 /// Gets a number from the first parser, then extracts that many bytes from the
@@ -962,53 +1169,30 @@ macro_rules! length_bytes(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err,Needed};
+  use internal::{Err, Needed};
   use nom::{alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace};
   use util::ErrorKind;
+  use types::{CompleteByteSlice, CompleteStr};
 
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
       {
-        if $i.is_empty() {
-          Err::<_,_>(Err::Incomplete(Needed::Unknown))
-        } else {
-          #[inline(always)]
-          fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-            b.as_bytes()
-          }
+        use $crate::Slice;
+        use $crate::AsChar;
+        use $crate::FindToken;
+        use $crate::InputIter;
 
-          let expected = $inp;
-          let bytes = as_bytes(&expected);
-          one_of_bytes!($i, bytes)
+        match ($i).iter_elements().next().map(|c| {
+          $inp.find_token(c)
+        }) {
+          None        => Err::<_,_>(Err::Incomplete(Needed::Size(1))),
+          Some(false) => Err(Err::Error(error_position!($i, ErrorKind::OneOf::<u32>))),
+          //the unwrap should be safe here
+          Some(true)  => Ok(($i.slice(1..), $i.iter_elements().next().unwrap().as_char()))
         }
       }
+      );
     );
-  );
-
-  macro_rules! one_of_bytes (
-    ($i:expr, $bytes: expr) => (
-      {
-        if $i.is_empty() {
-          Err::<_,_>(Err::Incomplete(Needed::Unknown))
-        } else {
-          let mut found = false;
-
-          for &i in $bytes {
-            if i == $i[0] {
-              found = true;
-              break;
-            }
-          }
-
-          if found {
-            Ok((&$i[1..], $i[0] as char))
-          } else {
-            Err(Err::Error(error_position!($i, ErrorKind::OneOf::<u32>)))
-          }
-        }
-      }
-    );
-  );
 
   #[test]
   fn is_a() {
@@ -1021,7 +1205,10 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"cde"[..], &b"b"[..])));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(c, ErrorKind::IsA::<u32>))));
+    assert_eq!(
+      a_or_b(c),
+      Err(Err::Error(error_position!(c, ErrorKind::IsA::<u32>)))
+    );
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Ok((&b"cdef"[..], &b"ba"[..])));
@@ -1038,7 +1225,10 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"bde"[..], &b"c"[..])));
 
     let c = &b"abab"[..];
-    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(c, ErrorKind::IsNot))));
+    assert_eq!(
+      a_or_b(c),
+      Err(Err::Error(error_position!(c, ErrorKind::IsNot)))
+    );
 
     let d = &b"cdefba"[..];
     assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
@@ -1059,16 +1249,47 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Ok((&b""[..], &b"\\\"abcd"[..])));
     assert_eq!(esc(&b"\\n"[..]), Ok((&b""[..], &b"\\n"[..])));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Unknown)));
-    assert_eq!(esc(&b"AB\\A"[..]), Err(Err::Error(error_node_position!(&b"AB\\A"[..], ErrorKind::Escaped,
-      error_position!(&b"A"[..], ErrorKind::OneOf)))));
+    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(
+      esc(&b"AB\\A"[..]),
+      Err(Err::Error(error_node_position!(
+        &b"AB\\A"[..],
+        ErrorKind::Escaped,
+        error_position!(&b"A"[..], ErrorKind::OneOf)
+      )))
+    );
 
     named!(esc2, escaped!(call!(digit), '\\', one_of!("\"n\\")));
     assert_eq!(esc2(&b"12\\nnn34"[..]), Ok((&b"nn34"[..], &b"12\\n"[..])));
   }
 
+  #[test]
+  fn escaping_str() {
+    named!(esc<&str, &str>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
+    assert_eq!(esc("abcd"), Ok(("", "abcd")));
+    assert_eq!(esc("ab\\\"cd"), Ok(("", "ab\\\"cd")));
+    assert_eq!(esc("\\\"abcd"), Ok(("", "\\\"abcd")));
+    assert_eq!(esc("\\n"), Ok(("", "\\n")));
+    assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
+    assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(
+      esc("AB\\A"),
+      Err(Err::Error(error_node_position!(
+        "AB\\A",
+        ErrorKind::Escaped,
+        error_position!("A", ErrorKind::OneOf)
+      )))
+    );
+
+    named!(esc2<&str, &str>, escaped!(call!(digit), '\\', one_of!("\"n\\")));
+    assert_eq!(esc2("12\\nnn34"), Ok(("nn34", "12\\n")));
+
+    named!(esc3<&str, &str>, escaped!(call!(alpha), '\u{241b}', one_of!("\"n")));
+    assert_eq!(esc3("ab␛ncd"), Ok(("", "ab␛ncd")));
+  }
+
   #[cfg(feature = "verbose-errors")]
-  fn to_s(i:Vec<u8>) -> String {
+  fn to_s(i: Vec<u8>) -> String {
     String::from_utf8_lossy(&i).into_owned()
   }
 
@@ -1090,8 +1311,7 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd"[..]), Ok((&b""[..], String::from("\"abcd"))));
     assert_eq!(esc(&b"\\n"[..]), Ok((&b""[..], String::from("\n"))));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], String::from("ab\""))));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_node_position!(&b"AB\\"[..], ErrorKind::EscapedTransform,
-      error_position!(&b"\\"[..], ErrorKind::EscapedTransform)))));
+    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(esc(&b"AB\\A"[..]), Err(Err::Error(error_node_position!(&b"AB\\A"[..], ErrorKind::EscapedTransform,
       error_position!(&b"A"[..], ErrorKind::Alt)))));
 
@@ -1108,6 +1328,7 @@ mod tests {
     assert_eq!(esc2(&b"ab&egrave;D&agrave;EF"[..]), Ok((&b""[..], String::from("abèDàEF"))));
   }
 
+  #[cfg(feature = "verbose-errors")]
   #[test]
   fn issue_84() {
     let r0 = is_a!(&b"aaaaefgh"[..], "abcd");
@@ -1116,6 +1337,42 @@ mod tests {
     assert_eq!(r1, Ok((&b""[..], &b"aaaa"[..])));
     let r2 = is_a!(&b"1"[..], "123456789");
     assert_eq!(r2, Ok((&b""[..], &b"1"[..])));
+  }
+
+  #[cfg(feature = "std")]
+  #[test]
+  fn escape_transform_str() {
+    named!(esc<&str, String>, escaped_transform!(alpha, '\\',
+      alt!(
+          tag!("\\")       => { |_| "\\" }
+        | tag!("\"")       => { |_| "\"" }
+        | tag!("n")        => { |_| "\n" }
+      ))
+    );
+
+    assert_eq!(esc("abcd"), Ok(("", String::from("abcd"))));
+    assert_eq!(esc("ab\\\"cd"), Ok(("", String::from("ab\"cd"))));
+    assert_eq!(esc("\\\"abcd"), Ok(("", String::from("\"abcd"))));
+    assert_eq!(esc("\\n"), Ok(("", String::from("\n"))));
+    assert_eq!(esc("ab\\\"12"), Ok(("12", String::from("ab\""))));
+    assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(esc("AB\\A"), Err(Err::Error(error_node_position!( "AB\\A", ErrorKind::EscapedTransform,
+      error_position!("A", ErrorKind::Alt)))));
+
+    named!(esc2<&str, String>, escaped_transform!(alpha, '&',
+      alt!(
+          tag!("egrave;") => { |_| "è" }
+        | tag!("agrave;") => { |_| "à" }
+      ))
+    );
+    assert_eq!(esc2("ab&egrave;DEF"), Ok(("", String::from("abèDEF"))));
+    assert_eq!(esc2("ab&egrave;D&agrave;EF"), Ok(("", String::from("abèDàEF"))));
+
+    named!(esc3<&str, String>, escaped_transform!(alpha, '␛',
+      alt!(
+        tag!("0") => { |_| "\0" } |
+        tag!("n") => { |_| "\n" })));
+    assert_eq!(esc3("a␛0bc␛n"), Ok(("", String::from("a\0bc\n"))));
   }
 
   #[test]
@@ -1127,25 +1384,91 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
-  fn take_until_test() {
+  fn take_until_and_consume() {
     named!(x, take_until_and_consume!("efgh"));
     let r = x(&b"abcdabcdefghijkl"[..]);
     assert_eq!(r, Ok((&b"ijkl"[..], &b"abcdabcd"[..])));
 
-    println!("Done 1\n");
-
     let r2 = x(&b"abcdabcdefgh"[..]);
     assert_eq!(r2, Ok((&b""[..], &b"abcdabcd"[..])));
 
-    println!("Done 2\n");
     let r3 = x(&b"abcefg"[..]);
-    assert_eq!(r3,  Err(Err::Error(error_position!(&b"abcefg"[..], ErrorKind::TakeUntilAndConsume))));
+    assert_eq!(r3,Err(Err::Incomplete(Needed::Size(4))));
 
     assert_eq!(
       x(&b"ab"[..]),
       Err(Err::Incomplete(Needed::Size(4)))
     );
+  }
+
+  #[test]
+  fn take_until_and_consume_complete() {
+    named!(x<CompleteStr,CompleteStr>, take_until_and_consume!("efgh"));
+    let r = x(CompleteStr(&"abcdabcdefghijkl"[..]));
+    assert_eq!(r, Ok((CompleteStr(&"ijkl"[..]), CompleteStr(&"abcdabcd"[..]))));
+
+    let r2 = x(CompleteStr(&"abcdabcdefgh"[..]));
+    assert_eq!(r2, Ok((CompleteStr(&""[..]), CompleteStr(&"abcdabcd"[..]))));
+
+    let r3 = x(CompleteStr(&"abcefg"[..]));
+    assert_eq!(r3,  Err(Err::Error(error_position!(CompleteStr(&"abcefg"[..]), ErrorKind::TakeUntilAndConsume))));
+
+    assert_eq!(
+      x(CompleteStr(&"ab"[..])),
+      Err(Err::Error(error_position!(CompleteStr(&"ab"[..]), ErrorKind::TakeUntilAndConsume)))
+    );
+  }
+
+  #[test]
+  fn take_until_and_consume1() {
+    named!(x, take_until_and_consume1!("efgh"));
+    let r = x(&b"abcdabcdefghijkl"[..]);
+    assert_eq!(r, Ok((&b"ijkl"[..], &b"abcdabcd"[..])));
+
+    let r2 = x(&b"abcdabcdefgh"[..]);
+    assert_eq!(r2, Ok((&b""[..], &b"abcdabcd"[..])));
+
+    let r3 = x(&b"abcefg"[..]);
+    assert_eq!(r3, Err(Err::Incomplete(Needed::Size(5))));
+
+    let r4 = x(&b"efgh"[..]);
+    assert_eq!(r4,Err(Err::Error(error_position!(&b"efgh"[..], ErrorKind::TakeUntilAndConsume1))));
+
+    named!(x2, take_until_and_consume1!(""));
+    let r5 = x2(&b""[..]);
+    assert_eq!(r5, Err(Err::Error(error_position!(&b""[..], ErrorKind::TakeUntilAndConsume1))));
+
+    let r6 = x2(&b"a"[..]);
+    assert_eq!(r6, Err(Err::Error(error_position!(&b"a"[..], ErrorKind::TakeUntilAndConsume1))));
+
+    let r7 = x(&b"efghi"[..]);
+    assert_eq!(r7, Err(Err::Error(error_position!(&b"efghi"[..], ErrorKind::TakeUntilAndConsume1))));
+  }
+
+  #[test]
+  fn take_until_and_consume1_complete() {
+    named!(x<CompleteStr, CompleteStr>, take_until_and_consume1!("efgh"));
+    let r = x(CompleteStr(&"abcdabcdefghijkl"[..]));
+    assert_eq!(r, Ok((CompleteStr(&"ijkl"[..]), CompleteStr(&"abcdabcd"[..]))));
+
+    let r2 = x(CompleteStr(&"abcdabcdefgh"[..]));
+    assert_eq!(r2, Ok((CompleteStr(&""[..]), CompleteStr(&"abcdabcd"[..]))));
+
+    let r3 = x(CompleteStr(&"abcefg"[..]));
+    assert_eq!(r3, Err(Err::Error(error_position!(CompleteStr("abcefg"), ErrorKind::TakeUntilAndConsume1))));
+
+    let r4 = x(CompleteStr(&"efgh"[..]));
+    assert_eq!(r4, Err(Err::Error(error_position!(CompleteStr("efgh"), ErrorKind::TakeUntilAndConsume1))));
+
+    named!(x2<CompleteStr, CompleteStr>, take_until_and_consume1!(""));
+    let r5 = x2(CompleteStr(""));
+    assert_eq!(r5, Err(Err::Error(error_position!(CompleteStr(""), ErrorKind::TakeUntilAndConsume1))));
+
+    let r6 = x2(CompleteStr("a"));
+    assert_eq!(r6, Err(Err::Error(error_position!(CompleteStr("a"), ErrorKind::TakeUntilAndConsume1))));
+
+    let r7 = x(CompleteStr("efghi"));
+    assert_eq!(r7, Err(Err::Error(error_position!(CompleteStr("efghi"), ErrorKind::TakeUntilAndConsume1))));
   }
 
   #[test]
@@ -1155,14 +1478,22 @@ mod tests {
       x(&b"123!abc"[..]),
       Ok((&b"!abc"[..], &b"123"[..]))
     );
+    assert_eq!(
+      x(&b"123"[..]),
+      Err(Err::Incomplete(Needed::Size(1)))
+    );
   }
 
   #[test]
-  fn take_until_either_incomplete() {
-    named!(x, take_until_either!("!."));
+  fn take_until_either_complete() {
+    named!(x<CompleteStr, CompleteStr>, take_until_either!("!."));
     assert_eq!(
-      x(&b"123"[..]),
-      Err(Err::Error(error_position!(&b"123"[..], ErrorKind::TakeUntilEither)))
+      x(CompleteStr("123!abc")),
+      Ok((CompleteStr("!abc"), CompleteStr("123")))
+    );
+    assert_eq!(
+      x(CompleteStr("123")),
+      Err(Err::Error(error_position!(CompleteStr("123"), ErrorKind::TakeUntilEither)))
     );
   }
 
@@ -1185,7 +1516,41 @@ mod tests {
     );
     assert_eq!(
       y(&b"123"[..]),
-      Err(Err::Error(error_position!(&b"123"[..], ErrorKind::TakeUntil)))
+      Err(Err::Incomplete(Needed::Size(3)))
+    );
+    assert_eq!(
+      y(&b"123en"[..]),
+      Err(Err::Incomplete(Needed::Size(3)))
+    );
+  }
+
+  #[test]
+  fn take_until_complete() {
+    named!(y<CompleteStr,CompleteStr>, take_until!("end"));
+    assert_eq!(
+      y(CompleteStr("nd")),
+      Err(Err::Error(error_position!(CompleteStr("nd"), ErrorKind::TakeUntil)))
+    );
+    assert_eq!(
+      y(CompleteStr("123")),
+      Err(Err::Error(error_position!(CompleteStr("123"), ErrorKind::TakeUntil)))
+    );
+    assert_eq!(
+      y(CompleteStr("123en")),
+      Err(Err::Error(error_position!(CompleteStr("123en"), ErrorKind::TakeUntil)))
+    );
+    assert_eq!(
+      y(CompleteStr("123end")),
+      Ok((CompleteStr("end"), CompleteStr("123")))
+    );
+  }
+
+  #[test]
+  fn take_until_incomplete_s() {
+    named!(ys<&str, &str>, take_until!("end"));
+    assert_eq!(
+      ys("123en"),
+      Err(Err::Incomplete(Needed::Size(3)))
     );
   }
 
@@ -1235,8 +1600,8 @@ mod tests {
     let c = b"abcd123";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Ok((&a[..], &a[..])));
-    assert_eq!(f(&b[..]), Ok((&a[..], &b[..])));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&d[..], &b[..])));
     assert_eq!(f(&d[..]), Ok((&d[..], &a[..])));
   }
@@ -1251,9 +1616,62 @@ mod tests {
     let d = b"123";
 
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
-    assert_eq!(f(&b[..]), Ok((&a[..], &b[..])));
+    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&b"123"[..], &b[..])));
     assert_eq!(f(&d[..]), Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1))));
+  }
+
+  #[test]
+  fn take_while_m_n() {
+    use nom::is_alphabetic;
+    named!(x, take_while_m_n!(2, 4, is_alphabetic));
+    let a = b"";
+    let b = b"a";
+    let c = b"abc";
+    let d = b"abc123";
+    let e = b"abcde";
+    let f = b"123";
+
+    assert_eq!(x(&a[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(x(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(x(&d[..]), Ok((&b"123"[..], &c[..])));
+    assert_eq!(x(&e[..]), Ok((&b"e"[..], &b"abcd"[..])));
+    assert_eq!(x(&f[..]), Err(Err::Error(error_position!(&f[..], ErrorKind::TakeWhileMN))));
+  }
+
+  #[test]
+  fn take_while_m_n_complete() {
+    use nom::is_alphabetic;
+    named!(x<CompleteByteSlice,CompleteByteSlice>, take_while_m_n!(2, 4, is_alphabetic));
+    let a = CompleteByteSlice(b"");
+    let b = CompleteByteSlice(b"a");
+    let c = CompleteByteSlice(b"abc");
+    let d = CompleteByteSlice(b"abc123");
+    let e = CompleteByteSlice(b"abcde");
+    let f = CompleteByteSlice(b"123");
+
+    assert_eq!(x(a), Err(Err::Error(error_position!(a, ErrorKind::TakeWhileMN))));
+    assert_eq!(x(b), Err(Err::Error(error_position!(b, ErrorKind::TakeWhileMN))));
+    assert_eq!(x(c), Ok((CompleteByteSlice(b""), c)));
+    assert_eq!(x(d), Ok((CompleteByteSlice(b"123"), CompleteByteSlice(b"abc"))));
+    assert_eq!(x(e), Ok((CompleteByteSlice(b"e"), CompleteByteSlice(b"abcd"))));
+    assert_eq!(x(f), Err(Err::Error(error_position!(f, ErrorKind::TakeWhileMN))));
+  }
+
+  #[test]
+  fn take_while1_complete() {
+    use nom::is_alphabetic;
+    named!(f<CompleteByteSlice, CompleteByteSlice>, take_while1!(is_alphabetic));
+    let a = CompleteByteSlice(b"");
+    let b = CompleteByteSlice(b"abcd");
+    let c = CompleteByteSlice(b"abcd123");
+    let d = CompleteByteSlice(b"123");
+
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::TakeWhile1))));
+    assert_eq!(f(b), Ok((CompleteByteSlice(b""), b)));
+    assert_eq!(f(c), Ok((CompleteByteSlice(b"123"), b)));
+    assert_eq!(f(d), Err(Err::Error(error_position!(d, ErrorKind::TakeWhile1))));
   }
 
   #[test]
@@ -1265,10 +1683,25 @@ mod tests {
     let c = b"123abcd";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Ok((&b""[..], &b""[..])));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&b[..]), Ok((&b"abcd"[..], &b""[..])));
     assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
-    assert_eq!(f(&d[..]), Ok((&b""[..], &b"123"[..])));
+    assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::Size(1))));
+  }
+
+  #[test]
+  fn take_till_complete() {
+    use nom::is_alphabetic;
+    named!(f<CompleteByteSlice, CompleteByteSlice>, take_till!(is_alphabetic));
+    let a = CompleteByteSlice(b"");
+    let b = CompleteByteSlice(b"abcd");
+    let c = CompleteByteSlice(b"123abcd");
+    let d = CompleteByteSlice(b"123");
+
+    assert_eq!(f(a), Ok((a, a)));
+    assert_eq!(f(b), Ok((CompleteByteSlice(b"abcd"), CompleteByteSlice(b""))));
+    assert_eq!(f(c), Ok((CompleteByteSlice(b"abcd"), CompleteByteSlice(b"123"))));
+    assert_eq!(f(d), Ok((a, d)));
   }
 
   #[test]
@@ -1283,7 +1716,7 @@ mod tests {
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
     assert_eq!(f(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::TakeTill1))));
     assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
-    assert_eq!(f(&d[..]), Ok((&b""[..], &b"123"[..])));
+    assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::Size(1))));
   }
 
   #[cfg(feature = "nightly")]
@@ -1294,9 +1727,7 @@ mod tests {
   fn take_while_bench(b: &mut Bencher) {
     use nom::is_alphabetic;
     named!(f, take_while!(is_alphabetic));
-    b.iter(|| {
-      f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..])
-    });
+    b.iter(|| f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..]));
   }
 
   #[test]
@@ -1305,9 +1736,9 @@ mod tests {
     use nom::is_alphanumeric;
     named!(x, take_while!(is_alphanumeric));
     named!(y, recognize!(x));
-    assert_eq!(x(&b"ab"[..]), Ok((&[][..], &b"ab"[..])));
+    assert_eq!(x(&b"ab."[..]), Ok((&b"."[..], &b"ab"[..])));
     println!("X: {:?}", x(&b"ab"[..]));
-    assert_eq!(y(&b"ab"[..]), Ok((&[][..], &b"ab"[..])));
+    assert_eq!(y(&b"ab."[..]), Ok((&b"."[..], &b"ab"[..])));
   }
 
   #[test]

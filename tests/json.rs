@@ -5,15 +5,15 @@ extern crate nom;
 
 use nom::{digit, alphanumeric};
 
-use std::str::{self,FromStr};
+use std::str::{self, FromStr};
 use std::collections::HashMap;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum JsonValue {
   Str(String),
   Num(f32),
   Array(Vec<JsonValue>),
-  Object(HashMap<String,JsonValue>)
+  Object(HashMap<String, JsonValue>),
 }
 
 // FIXME: since we already parsed a serie of digits and dots,
@@ -39,7 +39,7 @@ named!(float<f32>, map!(
     unsigned_float
   ),
   |(sign, value): (Option<&[u8]>, f32)| {
-    sign.and_then(|s| if s[0] == ('-' as u8) { Some(-1f32) } else { None }).unwrap_or(1f32) * value
+    sign.and_then(|s| if s[0] == (b'-') { Some(-1f32) } else { None }).unwrap_or(1f32) * value
   }
 ));
 
@@ -110,7 +110,7 @@ fn hash_test() {
   \"b\": \"x\"
   }";
 
-//FIXME: top level value must be an object?
+  //FIXME: top level value must be an object?
   println!("{:?}", value(&test[..]));
   //assert!(false);
 }
@@ -119,12 +119,11 @@ fn hash_test() {
 fn parse_example_test() {
   let test = &b"  { \"a\"\t: 42,
   \"b\": [ \"x\", \"y\", 12 ] ,
-  \"c\": { \"hello\" : \"world\" 
+  \"c\": { \"hello\" : \"world\"
   }
   }";
 
-//FIXME: top level value must be an object?
+  //FIXME: top level value must be an object?
   println!("{:?}", value(&test[..]));
   //assert!(false);
 }
-

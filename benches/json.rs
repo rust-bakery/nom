@@ -9,15 +9,15 @@ use nom::{digit, alphanumeric};
 
 use test::Bencher;
 
-use std::str::{self,FromStr};
+use std::str::{self, FromStr};
 use std::collections::HashMap;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum JsonValue {
   Str(String),
   Num(f32),
   Array(Vec<JsonValue>),
-  Object(HashMap<String,JsonValue>)
+  Object(HashMap<String, JsonValue>),
 }
 
 // FIXME: since we already parsed a serie of digits and dots,
@@ -43,7 +43,7 @@ named!(float<f32>, map!(
     unsigned_float
   ),
   |(sign, value): (Option<&[u8]>, f32)| {
-    sign.and_then(|s| if s[0] == ('-' as u8) { Some(-1f32) } else { None }).unwrap_or(1f32) * value
+    sign.and_then(|s| if s[0] == (b'-') { Some(-1f32) } else { None }).unwrap_or(1f32) * value
   }
 ));
 
@@ -110,13 +110,34 @@ named!(value<JsonValue>,
 fn json_bench(b: &mut Bencher) {
   let data = &b"  { \"a\"\t: 42,
   \"b\": [ \"x\", \"y\", 12 ] ,
-  \"c\": { \"hello\" : \"world\" 
+  \"c\": { \"hello\" : \"world\"
   }
   }  ";
 
   //println!("data:\n{:?}", value(&data[..]));
-  b.iter(||{
-    value(&data[..])
-  });
+  b.iter(|| value(&data[..]));
 }
 
+#[bench]
+fn recognize_float_bytes(b: &mut Bencher) {
+  use nom::recognize_float;
+  b.iter(|| recognize_float(&b"-1.234E-12"[..]));
+}
+
+#[bench]
+fn recognize_float_str(b: &mut Bencher) {
+  use nom::recognize_float;
+  b.iter(|| recognize_float("-1.234E-12"));
+}
+
+#[bench]
+fn float_bytes(b: &mut Bencher) {
+  use nom::float;
+  b.iter(|| float(&b"-1.234E-12"[..]));
+}
+
+#[bench]
+fn float_str(b: &mut Bencher) {
+  use nom::float_s;
+  b.iter(|| float_s("-1.234E-12"));
+}

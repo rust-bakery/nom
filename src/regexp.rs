@@ -454,7 +454,9 @@ macro_rules! re_captures (
 
       use $crate::Slice;
       let re = ::regex::Regex::new($re).unwrap();
-      let v:Vec<Vec<&str>> = re.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&str>> = re.captures_iter($i)
+        .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap())
+             .map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -483,7 +485,8 @@ macro_rules! re_captures_static (
 
       use $crate::Slice;
       regex!(RE, $re);
-      let v:Vec<Vec<&str>> = RE.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&str>> = RE.captures_iter($i)
+        .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -511,7 +514,8 @@ macro_rules! re_bytes_captures (
 
       use $crate::Slice;
       let re = ::regex::bytes::Regex::new($re).unwrap();
-      let v:Vec<Vec<&[u8]>> = re.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&[u8]>> = re.captures_iter($i)
+        .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -540,7 +544,8 @@ macro_rules! re_bytes_captures_static (
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
-      let v:Vec<Vec<&[u8]>> = RE.captures_iter($i).map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
+      let v:Vec<Vec<&[u8]>> = RE.captures_iter($i)
+        .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
         let offset = {
           let end = v.last().unwrap().last().unwrap();
@@ -556,41 +561,62 @@ macro_rules! re_bytes_captures_static (
 );
 #[cfg(test)]
 mod tests {
+  use std::vec::Vec;
   use util::ErrorKind;
   use internal::Err;
 
   #[test]
   fn re_match() {
     named!(rm<&str,&str>, re_match!(r"^\d{4}-\d{2}-\d{2}"));
-    assert_eq!(rm("2015-09-07"),Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>))));
-    assert_eq!(rm("2015-09-07blah"),Ok(("", "2015-09-07blah")));
+    assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>),
+      ))
+    );
+    assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
 
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_match_static() {
     named!(rm<&str,&str>, re_match_static!(r"^\d{4}-\d{2}-\d{2}"));
-    assert_eq!(rm("2015-09-07"),Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>))));
-    assert_eq!(rm("2015-09-07blah"),Ok(("", "2015-09-07blah")));
+    assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>),
+      ))
+    );
+    assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
 
   #[test]
   fn re_find() {
     named!(rm<&str,&str>, re_find!(r"^\d{4}-\d{2}-\d{2}"));
-    assert_eq!(rm("2015-09-07"),Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>))));
-    assert_eq!(rm("2015-09-07blah"),Ok(("blah", "2015-09-07")));
+    assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>),
+      ))
+    );
+    assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
 
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_find_static() {
     named!(rm<&str,&str>, re_find_static!(r"^\d{4}-\d{2}-\d{2}"));
-    assert_eq!(rm("2015-09-07"),Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>))));
-    assert_eq!(rm("2015-09-07blah"),Ok(("blah", "2015-09-07")));
+    assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>),
+      ))
+    );
+    assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
 
   #[test]
@@ -606,7 +632,7 @@ mod tests {
   fn re_matches_static() {
     named!(rm< &str,Vec<&str> >, re_matches_static!(r"\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"),Ok(("", vec!["2015-09-07"])));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>))));
+    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatches::<u32>))));
     assert_eq!(rm("aaa2015-09-07blah2015-09-09pouet"),Ok(("pouet", vec!["2015-09-07", "2015-09-09"])));
   }
 
@@ -697,31 +723,36 @@ mod tests {
   fn re_bytes_matches_static() {
     named!(rm<Vec<&[u8]> >, re_bytes_matches_static!(r"\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm(&b"2015-09-07"[..]),Ok((&b""[..], vec![&b"2015-09-07"[..]])));
-    assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpMatch::<u32>))));
+    assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpMatches::<u32>))));
     assert_eq!(rm(&b"aaa2015-09-07blah2015-09-09pouet"[..]),Ok((&b"pouet"[..], vec![&b"2015-09-07"[..], &b"2015-09-09"[..]])));
   }
 
   #[test]
   fn re_bytes_capture() {
     named!(rm<Vec<&[u8]> >, re_bytes_capture!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
-    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),Ok((&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
+    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),
+      Ok((&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
     assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture::<u32>))));
-    assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),Ok((&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
+    assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),
+      Ok((&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
   }
 
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_bytes_capture_static() {
     named!(rm< Vec<&[u8]> >, re_bytes_capture_static!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
-    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),Ok((&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
+    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),
+      Ok((&b"pouet"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
     assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture::<u32>))));
-    assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),Ok((&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
+    assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),
+      Ok((&b" world regex 0.1.41"[..], vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]])));
   }
 
   #[test]
   fn re_bytes_captures() {
     named!(rm< Vec<Vec<&[u8]>> >, re_bytes_captures!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
-    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),Ok((&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]])));
+    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),
+      Ok((&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]])));
     assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture::<u32>))));
     assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41 aaa"[..]), Ok((&b" aaa"[..], vec![
      vec![&b"nom 0.3.11"[..],   &b"nom"[..],   &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]],
@@ -733,7 +764,8 @@ mod tests {
   #[test]
   fn re_bytes_captures_static() {
     named!(rm< Vec<Vec<&[u8]>> >, re_bytes_captures_static!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
-    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),Ok((&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]])));
+    assert_eq!(rm(&b"blah nom 0.3.11pouet"[..]),
+      Ok((&b"pouet"[..], vec![vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]])));
     assert_eq!(rm(&b"blah"[..]), Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture::<u32>))));
     assert_eq!(rm(&b"hello nom 0.3.11 world regex 0.1.41 aaa"[..]), Ok((&b" aaa"[..], vec![
      vec![&b"nom 0.3.11"[..],   &b"nom"[..],   &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]],

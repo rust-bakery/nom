@@ -238,18 +238,13 @@ macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,InputLength};
+      use $crate::Err;
 
       let ret;
       let mut res   = ::std::vec::Vec::new();
       let mut input = $i.clone();
 
       loop {
-        if input.input_len() == 0 {
-          ret = Ok((input, res));
-          break;
-        }
-
         let input_ = input.clone();
         match $submac!(input_, $($args)*) {
           Err(Err::Error(_))      => {
@@ -306,7 +301,7 @@ macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err};
+      use $crate::Err;
 
       use $crate::InputLength;
       let i_ = $i.clone();
@@ -319,43 +314,33 @@ macro_rules! many1(
         )),
         Err(i) => Err(i),
         Ok((i1,o1))   => {
-          if i1.input_len() == 0 {
-            let mut res = ::std::vec::Vec::new();
-            res.push(o1);
-            Ok((i1,res))
-          } else {
-
-            let mut res    = ::std::vec::Vec::with_capacity(4);
-            res.push(o1);
-            let mut input  = i1;
-            let mut error = ::std::option::Option::None;
-            loop {
-              if input.input_len() == 0 {
+          let mut res    = ::std::vec::Vec::with_capacity(4);
+          res.push(o1);
+          let mut input  = i1;
+          let mut error = ::std::option::Option::None;
+          loop {
+            let input_ = input.clone();
+            match $submac!(input_, $($args)*) {
+              Err(Err::Error(_))                    => {
                 break;
-              }
-              let input_ = input.clone();
-              match $submac!(input_, $($args)*) {
-                Err(Err::Error(_))                    => {
+              },
+              Err(e) => {
+                error = ::std::option::Option::Some(e);
+                break;
+              },
+              Ok((i, o)) => {
+                if i.input_len() == input.input_len() {
                   break;
-                },
-                Err(e) => {
-                  error = ::std::option::Option::Some(e);
-                  break;
-                },
-                Ok((i, o)) => {
-                  if i.input_len() == input.input_len() {
-                    break;
-                  }
-                  res.push(o);
-                  input = i;
                 }
+                res.push(o);
+                input = i;
               }
             }
+          }
 
-            match error {
-              ::std::option::Option::Some(e) => Err(e),
-              ::std::option::Option::None    => Ok((input, res))
-            }
+          match error {
+            ::std::option::Option::Some(e) => Err(e),
+            ::std::option::Option::None    => Ok((input, res))
           }
         }
       }
@@ -517,9 +502,6 @@ macro_rules! many_m_n(
             failure = ::std::option::Option::Some(e);
             break;
           },
-        }
-        if input.input_len() == 0 {
-          break;
         }
       }
 
@@ -813,7 +795,7 @@ macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,InputLength};
+      use $crate::Err;
 
       let ret;
       let f         = $f;
@@ -821,11 +803,6 @@ macro_rules! fold_many0(
       let mut input = $i.clone();
 
       loop {
-        if input.input_len() == 0 {
-          ret = Ok((input, res));
-          break;
-        }
-
         match $submac!(input, $($args)*) {
           Err(Err::Error(_)) => {
             ret = Ok((input, res));
@@ -887,7 +864,7 @@ macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,InputLength,Context};
+      use $crate::{Err,Needed,InputLength,Context};
 
       match $submac!($i, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
@@ -898,50 +875,41 @@ macro_rules! fold_many1(
         )),
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i1,o1))   => {
-          let acc = $init;
           let f = $f;
-          if i1.input_len() == 0 {
-            let acc = f(acc, o1);
-            Ok((i1,acc))
-          } else {
-            let mut acc = f(acc, o1);
-            let mut input  = i1;
-            let mut incomplete: ::std::option::Option<Needed> =
-              ::std::option::Option::None;
-            let mut failure: ::std::option::Option<Context<_,_>> =
-              ::std::option::Option::None;
-            loop {
-              if input.input_len() == 0 {
+          let mut acc = f($init, o1);
+          let mut input  = i1;
+          let mut incomplete: ::std::option::Option<Needed> =
+            ::std::option::Option::None;
+          let mut failure: ::std::option::Option<Context<_,_>> =
+            ::std::option::Option::None;
+          loop {
+            match $submac!(input, $($args)*) {
+              Err(Err::Error(_))                    => {
                 break;
-              }
-              match $submac!(input, $($args)*) {
-                Err(Err::Error(_))                    => {
+              },
+              Err(Err::Incomplete(i)) => {
+                incomplete = ::std::option::Option::Some(i);
+                break;
+              },
+              Err(Err::Failure(e)) => {
+                failure = ::std::option::Option::Some(e);
+                break;
+              },
+              Ok((i, o)) => {
+                if i.input_len() == input.input_len() {
                   break;
-                },
-                Err(Err::Incomplete(i)) => {
-                  incomplete = ::std::option::Option::Some(i);
-                  break;
-                },
-                Err(Err::Failure(e)) => {
-                  failure = ::std::option::Option::Some(e);
-                  break;
-                },
-                Ok((i, o)) => {
-                  if i.input_len() == input.input_len() {
-                    break;
-                  }
-                  acc = f(acc, o);
-                  input = i;
                 }
+                acc = f(acc, o);
+                input = i;
               }
             }
+          }
 
-            match failure {
-              ::std::option::Option::Some(e) => Err(Err::Failure(e)),
-              ::std::option::Option::None    => match incomplete {
-                ::std::option::Option::Some(i) => $crate::need_more($i, i),
-                ::std::option::Option::None    => Ok((input, acc))
-              }
+          match failure {
+            ::std::option::Option::Some(e) => Err(Err::Failure(e)),
+            ::std::option::Option::None    => match incomplete {
+              ::std::option::Option::Some(i) => $crate::need_more($i, i),
+              ::std::option::Option::None    => Ok((input, acc))
             }
           }
         }
@@ -985,7 +953,7 @@ macro_rules! fold_many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
+      use $crate::{Err,Needed};
 
       use $crate::InputLength;
       let mut acc          = $init;
@@ -1016,9 +984,6 @@ macro_rules! fold_many_m_n(
             break;
           },
         }
-        if input.input_len() == 0 {
-          break;
-        }
       }
 
       if count < $m {
@@ -1045,9 +1010,9 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err,Needed,IResult};
-  use nom::{alpha,be_u8,be_u16,le_u16,digit};
-  use std::str::{self,FromStr};
+  use internal::{Err, Needed, IResult};
+  use nom::{be_u8, be_u16, le_u16, digit};
+  use std::str::{self, FromStr};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -1138,6 +1103,8 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn separated_list_complete() {
+    use nom::alpha;
+
     named!(multi<&[u8],Vec<&[u8]> >, separated_list_complete!(tag!(","), alpha));
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
@@ -1186,6 +1153,8 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn separated_nonempty_list_complete() {
+    use nom::alpha;
+
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list_complete!(tag!(","), alpha));
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
@@ -1215,8 +1184,8 @@ mod tests {
     assert_eq!(multi(&b"abcdabcdefgh"[..]),Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]])));
     assert_eq!(multi(&b"azerty"[..]),Ok((&b"azerty"[..], Vec::new())));
     assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b"abcd"[..]),Ok((&b""[..], vec![&b"abcd"[..]])));
-    assert_eq!(multi(&b""[..]),Ok((&b""[..], Vec::new())));
+    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(multi_empty(&b"abcdef"[..]), Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0))));
   }
 
@@ -1228,7 +1197,9 @@ mod tests {
   fn many0_bench(b: &mut Bencher) {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
     b.iter(|| {
-      multi(&b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..])
+      multi(
+        &b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..],
+      )
     });
   }
 
@@ -1377,7 +1348,7 @@ mod tests {
     )
   }
 
-  #[derive(Debug,Clone,PartialEq)]
+  #[derive(Debug, Clone, PartialEq)]
   pub struct NilError;
 
   impl From<u32> for NilError {
@@ -1481,8 +1452,8 @@ mod tests {
     assert_eq!(multi(&b"abcdabcdefgh"[..]),Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]])));
     assert_eq!(multi(&b"azerty"[..]),Ok((&b"azerty"[..], Vec::new())));
     assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b"abcd"[..]),Ok((&b""[..], vec![&b"abcd"[..]])));
-    assert_eq!(multi(&b""[..]),Ok((&b""[..], Vec::new())));
+    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(multi_empty(&b"abcdef"[..]), Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0))));
   }
 

@@ -4,7 +4,7 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult, space, alphanumeric, multispace};
+use nom::{space, alphanumeric, multispace};
 
 use std::str;
 use std::collections::HashMap;
@@ -12,7 +12,7 @@ use std::collections::HashMap;
 named!(category<&str>, map_res!(
     delimited!(
       char!('['),
-      take_while!(call!(|c| c != ']' as u8)),
+      take_while!(call!(|c| c != b']')),
       char!(']')
     ),
     str::from_utf8
@@ -25,10 +25,10 @@ named!(key_value    <&[u8],(&str,&str)>,
   >>      char!('=')
   >>      opt!(space)
   >> val: map_res!(
-           take_while!(call!(|c| c != '\n' as u8 && c != ';' as u8)),
+           take_while!(call!(|c| c != b'\n' && c != b';')),
            str::from_utf8
          )
-  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != '\n' as u8))))
+  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != b'\n'))))
   >>      (key, val)
   )
 );
@@ -81,7 +81,7 @@ key = value2"[..];
   println!("{:?}", res);
   match res {
     Ok((i, o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error")
+    _ => println!("error"),
   }
 
   assert_eq!(res, Ok((ini_without_category, "category")));
@@ -98,7 +98,7 @@ key = value2"[..];
   println!("{:?}", res);
   match res {
     Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
-    _ => println!("error")
+    _ => println!("error"),
   }
 
   assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
@@ -116,7 +116,7 @@ key = value2"[..];
   println!("{:?}", res);
   match res {
     Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
-    _ => println!("error")
+    _ => println!("error"),
   }
 
   assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
@@ -133,7 +133,7 @@ key = value2"[..];
   println!("{:?}", res);
   match res {
     Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
-    _ => println!("error")
+    _ => println!("error"),
   }
 
   assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
@@ -153,7 +153,7 @@ key = value2
   println!("{:?}", res);
   match res {
     Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error")
+    _ => println!("error"),
   }
 
   let mut expected: HashMap<&str, &str> = HashMap::new();
@@ -178,7 +178,7 @@ key = value2
   println!("{:?}", res);
   match res {
     Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error")
+    _ => println!("error"),
   }
 
   let mut expected_h: HashMap<&str, &str> = HashMap::new();
@@ -206,7 +206,7 @@ key4 = value4
   //println!("{:?}", res);
   match res {
     Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error")
+    _ => println!("error"),
   }
 
   let mut expected_1: HashMap<&str, &str> = HashMap::new();
@@ -216,7 +216,7 @@ key4 = value4
   expected_2.insert("parameter3", "value3");
   expected_2.insert("key4", "value4");
   let mut expected_h: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
-  expected_h.insert("abcd",     expected_1);
+  expected_h.insert("abcd", expected_1);
   expected_h.insert("category", expected_2);
   assert_eq!(res, Ok((ini_after_parser, expected_h)));
 }

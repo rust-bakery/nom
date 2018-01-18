@@ -98,62 +98,52 @@ macro_rules! named (
         named_attr!(#$($args)*);
     );
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
         fn $name( i: $i ) -> $crate::IResult<$i,$o,u32> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
         fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
         fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
-        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, u32> {
+        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
         fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
         pub fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
         pub fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
         pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
-        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
+        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
@@ -174,8 +164,11 @@ macro_rules! named_args {
         }
     };
     (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        pub fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
-            $submac!(input, $($args)*)
+        pub fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(
+          input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) ->
+          $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type>
+        {
+          $submac!(input, $($args)*)
         }
     };
     (pub $func_name:ident < 'a >  ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
@@ -196,7 +189,10 @@ macro_rules! named_args {
         }
     };
     ($func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
+        fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(
+          input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*)
+          -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type>
+        {
             $submac!(input, $($args)*)
         }
     };
@@ -213,6 +209,22 @@ macro_rules! named_args {
     };
     ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         fn $func_name(input: $input_type, $( $arg : $typ ),*) -> $crate::IResult<$input_type, $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
+    (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        fn $func_name<'a>(
+          input: $input_type, $( $arg : $typ ),*)
+          -> $crate::IResult<$input_type, $return_type>
+        {
+            $submac!(input, $($args)*)
+        }
+    };
+    ($func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        fn $func_name<'a>(
+          input: $input_type, $( $arg : $typ ),*)
+          -> $crate::IResult<$input_type, $return_type>
+        {
             $submac!(input, $($args)*)
         }
     };
@@ -405,6 +417,30 @@ macro_rules! return_error (
   );
   ($i:expr, $code:expr, $f:expr) => (
     return_error!($i, $code, call!($f));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use ::std::result::Result::*;
+      use $crate::{Context,Err,ErrorKind};
+
+      let i_ = $i.clone();
+      let cl = || {
+        $submac!(i_, $($args)*)
+      };
+
+      fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
+
+      match cl() {
+        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
+        Ok((i, o))              => Ok((i, o)),
+        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+          return Err(Err::Failure(e))
+        }
+      }
+    }
+  );
+  ($i:expr, $f:expr) => (
+    return_error!($i, call!($f));
   );
 );
 
@@ -1192,9 +1228,14 @@ macro_rules! tap (
 
 /// `eof!()` returns its input if it is at the end of input data
 ///
-/// please note that for now, eof only means there's no more
-/// data available, it does not work yet with smarter input
-/// types
+/// This combinator works with the `AtEof` trait that input types must implement.
+/// If an input type's `at_eof` method returns true, it means there will be no
+/// more refills (like what happens when buffering big files).
+///
+/// When we're at the end of the data and `at_eof` returns true, this combinator
+/// will succeed
+///
+/// TODO: example
 #[macro_export]
 macro_rules! eof (
   ($i:expr,) => (
@@ -1210,6 +1251,23 @@ macro_rules! eof (
         Err(Err::Error(error_position!($i, ErrorKind::Eof::<u32>)))
       }
     }
+  );
+);
+
+/// `exact!()` will fail if the child parser does not consume the whole data
+///
+/// This combinator works with the `AtEof` trait that input types must implement.
+/// If an input type's `at_eof` method returns true, it means there will be no
+/// more refills (like what happens when buffering big files).
+///
+/// TODO: example
+#[macro_export]
+macro_rules! exact (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => ({
+      terminated!($i, $submac!( $($args)*), eof!())
+  });
+  ($i:expr, $f:expr) => (
+    exact!($i, call!($f));
   );
 );
 
@@ -1250,8 +1308,8 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-    use internal::{Err, Needed, IResult};
-    use util::ErrorKind;
+  use internal::{Err, Needed, IResult};
+  use util::ErrorKind;
 
     // reproduce the tag and take macros, because of module import order
     macro_rules! tag (
@@ -1307,147 +1365,143 @@ mod tests {
   );
 
 
-    mod pub_named_mod {
-        named!(pub tst, tag!("abcd"));
+  mod pub_named_mod {
+    named!(pub tst, tag!("abcd"));
+  }
+
+  #[test]
+  fn pub_named_test() {
+    let a = &b"abcd"[..];
+    let res = pub_named_mod::tst(a);
+    assert_eq!(res, Ok((&b""[..], a)));
+  }
+
+  #[test]
+  fn apply_test() {
+    fn sum2(a: u8, b: u8) -> u8 {
+      a + b
     }
-
-    #[test]
-    fn pub_named_test() {
-        let a = &b"abcd"[..];
-        let res = pub_named_mod::tst(a);
-        assert_eq!(res, Ok((&b""[..], a)));
+    fn sum3(a: u8, b: u8, c: u8) -> u8 {
+      a + b + c
     }
+    let a = apply!(1, sum2, 2);
+    let b = apply!(1, sum3, 2, 3);
 
-    #[test]
-    fn apply_test() {
-        fn sum2(a: u8, b: u8) -> u8 {
-            a + b
-        }
-        fn sum3(a: u8, b: u8, c: u8) -> u8 {
-            a + b + c
-        }
-        let a = apply!(1, sum2, 2);
-        let b = apply!(1, sum3, 2, 3);
+    assert_eq!(a, 3);
+    assert_eq!(b, 6);
+  }
 
-        assert_eq!(a, 3);
-        assert_eq!(b, 6);
+  #[test]
+  fn opt() {
+    named!(opt_abcd<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
+
+    let a = &b"abcdef"[..];
+    let b = &b"bcdefg"[..];
+    let c = &b"ab"[..];
+    assert_eq!(opt_abcd(a), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
+    assert_eq!(opt_abcd(b), Ok((&b"bcdefg"[..], None)));
+    assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+  }
+
+  #[cfg(feature = "verbose-errors")]
+  #[test]
+  fn opt_res() {
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]> > >, opt_res!(tag!("abcd")));
+
+    let a = &b"abcdef"[..];
+    let b = &b"bcdefg"[..];
+    let c = &b"ab"[..];
+    assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
+    assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag))))));
+    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+  }
+
+  #[cfg(not(feature = "verbose-errors"))]
+  #[test]
+  fn opt_res() {
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8], u32>> >, opt_res!(tag!("abcd")));
+
+    let a = &b"abcdef"[..];
+    let b = &b"bcdefg"[..];
+    let c = &b"ab"[..];
+    assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
+    assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag))))));
+    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+  }
+
+  use std::convert::From;
+  #[derive(Debug, PartialEq)]
+  pub struct CustomError(&'static str);
+  impl From<u32> for CustomError {
+    fn from(_: u32) -> Self {
+      CustomError("test")
     }
+  }
 
-    #[test]
-    fn opt() {
-        named!(opt_abcd<&[u8],Option<&[u8]> >, opt!(tag!("abcd")));
+  #[test]
+  #[cfg(feature = "std")]
+  fn cond() {
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
+      closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag!("abcd") ) )),
+    );
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
+      closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag!("abcd") ) )),
+    );
+    //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
 
-        let a = &b"abcdef"[..];
-        let b = &b"bcdefg"[..];
-        let c = &b"ab"[..];
-        assert_eq!(opt_abcd(a), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-        assert_eq!(opt_abcd(b), Ok((&b"bcdefg"[..], None)));
-        assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
-    }
+    assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
+    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(f_true(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
 
-    #[cfg(feature = "verbose-errors")]
-    #[test]
-    fn opt_res() {
-        named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]> > >, opt_res!(tag!("abcd")));
+    assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
+    assert_eq!(f_false(&b"ab"[..]), Ok((&b"ab"[..], None)));
+    assert_eq!(f_false(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
+  }
 
-        let a = &b"abcdef"[..];
-        let b = &b"bcdefg"[..];
-        let c = &b"ab"[..];
-        assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
-        assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag))))));
-        assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
-    }
+  #[test]
+  #[cfg(feature = "std")]
+  fn cond_wrapping() {
+    // Test that cond!() will wrap a given identifier in the call!() macro.
+    named!( tag_abcd, tag!("abcd") );
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
+      closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag_abcd ) )),
+    );
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
+      closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag_abcd ) )),
+    );
+    //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
-    #[cfg(not(feature = "verbose-errors"))]
-    #[test]
-    fn opt_res() {
-        named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8], u32>> >, opt_res!(tag!("abcd")));
+    assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
+    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(f_true(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
 
-        let a = &b"abcdef"[..];
-        let b = &b"bcdefg"[..];
-        let c = &b"ab"[..];
-        assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
-        assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag))))));
-        assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
-    }
+    assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
+    assert_eq!(f_false(&b"ab"[..]), Ok((&b"ab"[..], None)));
+    assert_eq!(f_false(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
+  }
 
-    use std::convert::From;
-    #[derive(Debug, PartialEq)]
-    pub struct CustomError(&'static str);
-    impl From<u32> for CustomError {
-        fn from(_: u32) -> Self {
-            CustomError("test")
-        }
-    }
+  #[test]
+  fn peek() {
+    named!(peek_tag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
-    #[test]
-    #[cfg(feature = "std")]
-    fn cond() {
-        let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
-            Box::new(
-                closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag!("abcd") ) )),
-            );
-        let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
-            Box::new(
-                closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag!("abcd") ) )),
-            );
-        //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
+    assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
+    assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(peek_tag(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+  }
 
-        assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-        assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-        assert_eq!(f_true(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
+  #[test]
+  fn not() {
+    named!(not_aaa<()>, not!(tag!("aaa")));
+    assert_eq!(not_aaa(&b"aaa"[..]), Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not))));
+    assert_eq!(not_aaa(&b"aa"[..]), Ok((&b"aa"[..], ())));
+    assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
+  }
 
-        assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
-        assert_eq!(f_false(&b"ab"[..]), Ok((&b"ab"[..], None)));
-        assert_eq!(f_false(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
-    }
-
-    #[test]
-    #[cfg(feature = "std")]
-    fn cond_wrapping() {
-        // Test that cond!() will wrap a given identifier in the call!() macro.
-        named!( tag_abcd, tag!("abcd") );
-        let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
-            Box::new(
-                closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag_abcd ) )),
-            );
-        let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> =
-            Box::new(
-                closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag_abcd ) )),
-            );
-        //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
-
-        assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-        assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-        assert_eq!(f_true(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
-
-        assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
-        assert_eq!(f_false(&b"ab"[..]), Ok((&b"ab"[..], None)));
-        assert_eq!(f_false(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
-    }
-
-    #[test]
-    fn peek() {
-        named!(peek_tag<&[u8],&[u8]>, peek!(tag!("abcd")));
-
-        assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
-        assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-        assert_eq!(peek_tag(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
-    }
-
-    #[test]
-    fn not() {
-        named!(not_aaa<()>, not!(tag!("aaa")));
-        assert_eq!(not_aaa(&b"aaa"[..]), Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not))));
-        assert_eq!(not_aaa(&b"aa"[..]), Ok((&b"aa"[..], ())));
-        assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
-    }
-
-    #[test]
-    fn verify() {
-        named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == 'a' as u8));
-        assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
-        assert_eq!(test(&b"bcdefg"[..]), Err(Err::Error(error_position!(&b"bcdefg"[..], ErrorKind::Verify))));
-        assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
-    }
+  #[test]
+  fn verify() {
+    named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == b'a'));
+    assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
+    assert_eq!(test(&b"bcdefg"[..]), Err(Err::Error(error_position!(&b"bcdefg"[..], ErrorKind::Verify))));
+    assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
+  }
 }

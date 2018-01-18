@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![cfg_attr(feature = "cargo-clippy", allow(block_in_if_condition_stmt))]
+
 #[macro_use]
 extern crate nom;
 
@@ -24,7 +27,7 @@ fn test2(input: &str) -> IResult<&str, &str, CustomError> {
 }
 
 fn test3(input: &str) -> IResult<&str, &str, CustomError> {
-  verify!(input, test1, |s:&str| { s.starts_with("abcd") })
+  verify!(input, test1, |s: &str| s.starts_with("abcd"))
 }
 
 fn test4(input: &str) -> IResult<&str, Vec<&str>, CustomError> {

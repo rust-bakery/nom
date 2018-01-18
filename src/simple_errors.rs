@@ -13,23 +13,21 @@
 //! you can know precisely which parser got to which part of the input.
 //! The main drawback is that it is a lot slower than default error
 //! management.
-use util::{ErrorKind,Convert};
+use util::{ErrorKind, Convert};
 use std::convert::From;
 
-#[derive(Debug,Clone,PartialEq)]
-pub enum Context<I,E=u32> {
+#[derive(Debug, Clone, PartialEq)]
+pub enum Context<I, E = u32> {
   Code(I, ErrorKind<E>),
 }
 
 
-impl<I,F,E: From<F>> Convert<Context<I,F>> for Context<I,E> {
-
-  fn convert(c: Context<I,F>) -> Self {
+impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
+  fn convert(c: Context<I, F>) -> Self {
     let Context::Code(i, e) = c;
 
     Context::Code(i, ErrorKind::convert(e))
   }
-
 }
 
 
@@ -169,6 +167,18 @@ macro_rules! fix_error (
 #[macro_export]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    flat_map!(__impl $i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    flat_map!(__impl $i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    flat_map!(__impl $i, call!($f), call!($g));
+  );
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use ::std::result::Result::*;
       use $crate::{Convert,Err};
@@ -180,14 +190,5 @@ macro_rules! flat_map(
         }
       }
     }
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    flat_map!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    flat_map!($i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    flat_map!($i, call!($f), $submac!($($args)*));
   );
 );

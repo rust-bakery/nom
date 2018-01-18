@@ -1,13 +1,10 @@
 #[cfg(feature = "verbose-errors")]
-use internal::{Err,IResult};
+use internal::{Err, IResult};
 #[cfg(feature = "verbose-errors")]
 use verbose_errors::Context;
 
 #[cfg(feature = "std")]
 use std::collections::HashMap;
-
-#[cfg(not(feature = "std"))]
-use std::prelude::v1::*;
 
 use std::vec::Vec;
 use std::string::ToString;
@@ -15,7 +12,7 @@ use std::string::ToString;
 /// useful functions to calculate the offset between slices and show a hexdump of a slice
 pub trait Offset {
   /// offset between the first byte of self and the first byte of the argument
-  fn offset(&self, second:&Self) -> usize;
+  fn offset(&self, second: &Self) -> usize;
 }
 
 #[cfg(feature = "std")]
@@ -29,10 +26,20 @@ pub trait HexDisplay {
   fn to_hex_from(&self, chunk_size: usize, from: usize) -> String;
 }
 
-static CHARS: &'static[u8] = b"0123456789abcdef";
+#[cfg(feature = "std")]
+static CHARS: &'static [u8] = b"0123456789abcdef";
 
 impl Offset for [u8] {
-  fn offset(&self, second:&[u8]) -> usize {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
+
+    snd as usize - fst as usize
+  }
+}
+
+impl<'a> Offset for &'a [u8] {
+  fn offset(&self, second: &Self) -> usize {
     let fst = self.as_ptr();
     let snd = second.as_ptr();
 
@@ -41,12 +48,21 @@ impl Offset for [u8] {
 }
 
 impl Offset for str {
-    fn offset(&self, second: &Self) -> usize {
-      let fst = self.as_ptr();
-      let snd = second.as_ptr();
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
 
-      snd as usize - fst as usize
-    }
+    snd as usize - fst as usize
+  }
+}
+
+impl<'a> Offset for &'a str {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
+
+    snd as usize - fst as usize
+  }
 }
 
 #[cfg(feature = "std")]
@@ -65,32 +81,32 @@ impl HexDisplay for [u8] {
       for &ch in s.as_bytes().iter() {
         v.push(ch);
       }
-      v.push('\t' as u8);
+      v.push(b'\t');
 
-      i = i + chunk_size;
+      i += chunk_size;
 
       for &byte in chunk {
         v.push(CHARS[(byte >> 4) as usize]);
         v.push(CHARS[(byte & 0xf) as usize]);
-        v.push(' ' as u8);
+        v.push(b' ');
       }
       if chunk_size > chunk.len() {
         for j in 0..(chunk_size - chunk.len()) {
-          v.push(' ' as u8);
-          v.push(' ' as u8);
-          v.push(' ' as u8);
+          v.push(b' ');
+          v.push(b' ');
+          v.push(b' ');
         }
       }
-      v.push('\t' as u8);
+      v.push(b'\t');
 
       for &byte in chunk {
-        if (byte >=32 && byte <= 126) || byte >= 128 {
+        if (byte >= 32 && byte <= 126) || byte >= 128 {
           v.push(byte);
         } else {
-          v.push('.' as u8);
+          v.push(b'.');
         }
       }
-      v.push('\n' as u8);
+      v.push(b'\n');
     }
 
     String::from_utf8_lossy(&v[..]).into_owned()
@@ -176,23 +192,23 @@ macro_rules! dbg_dmp (
 );
 
 #[cfg(feature = "verbose-errors")]
-pub fn error_to_list<P:Clone,E:Clone>(e:&Context<P,E>) -> Vec<(P,ErrorKind<E>)> {
+pub fn error_to_list<P: Clone, E: Clone>(e: &Context<P, E>) -> Vec<(P, ErrorKind<E>)> {
   match e {
-     &Context::Code(ref i, ref err) => {
-        let mut v = Vec::new();
-        v.push((i.clone(), err.clone()));
-        return v;
-     },
-     &Context::List(ref v) => {
-       let mut v2 = v.clone();
-       v2.reverse();
-       v2
-     }
+    &Context::Code(ref i, ref err) => {
+      let mut v = Vec::new();
+      v.push((i.clone(), err.clone()));
+      return v;
+    }
+    &Context::List(ref v) => {
+      let mut v2 = v.clone();
+      v2.reverse();
+      v2
+    }
   }
 }
 
 #[cfg(feature = "verbose-errors")]
-pub fn compare_error_paths<P:Clone+PartialEq, E:Clone+PartialEq>(e1:&Context<P,E>, e2:&Context<P,E>) -> bool {
+pub fn compare_error_paths<P: Clone + PartialEq, E: Clone + PartialEq>(e1: &Context<P, E>, e2: &Context<P, E>) -> bool {
   error_to_list(e1) == error_to_list(e2)
 }
 
@@ -203,43 +219,48 @@ use std::hash::Hash;
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-pub fn add_error_pattern<'a,I: Clone+Hash+Eq,O,E: Clone+Hash+Eq>(h: &mut HashMap<Vec<(I,ErrorKind<E>)>, &'a str>, res: IResult<I,O,E>, message: &'a str) -> bool {
+pub fn add_error_pattern<'a, I: Clone + Hash + Eq, O, E: Clone + Hash + Eq>(
+  h: &mut HashMap<Vec<(I, ErrorKind<E>)>, &'a str>,
+  res: IResult<I, O, E>,
+  message: &'a str,
+) -> bool {
   match res {
-    Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+    Err(Err::Error(e)) |
+    Err(Err::Failure(e)) => {
       h.insert(error_to_list(&e), message);
       true
-    },
-    _ => false
+    }
+    _ => false,
 
   }
 }
 
 pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
   let start = input.as_ptr();
-  let off1  = s.as_ptr() as usize - start as usize;
-  let off2  = off1 + s.len();
+  let off1 = s.as_ptr() as usize - start as usize;
+  let off2 = off1 + s.len();
   (off1, off2)
 }
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Option<Vec<(ErrorKind<E>, usize, usize)> > {
+pub fn prepare_errors<O, E: Clone>(input: &[u8], res: IResult<&[u8], O, E>) -> Option<Vec<(ErrorKind<E>, usize, usize)>> {
   if let Err(Err::Error(e)) = res {
-    let mut v:Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
+    let mut v: Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
 
     match e {
-       Context::Code(p, kind) => {
-         let (o1, o2) = slice_to_offsets(input, p);
+      Context::Code(p, kind) => {
+        let (o1, o2) = slice_to_offsets(input, p);
+        v.push((kind, o1, o2));
+      }
+      Context::List(mut l) => {
+        for (p, kind) in l.drain(..) {
+          let (o1, o2) = slice_to_offsets(input, p);
           v.push((kind, o1, o2));
-       },
-       Context::List(mut l) => {
-         for (p, kind) in l.drain(..) {
-           let (o1, o2) = slice_to_offsets(input, p);
-           v.push((kind, o1, o2));
-         }
+        }
 
-         v.reverse()
-       },
+        v.reverse()
+      }
     }
 
     v.sort_by(|a, b| a.1.cmp(&b.1));
@@ -251,11 +272,11 @@ pub fn prepare_errors<O,E: Clone>(input: &[u8], res: IResult<&[u8],O,E>) -> Opti
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-pub fn print_error<O,E:Clone>(input: &[u8], res: IResult<&[u8],O,E>) {
+pub fn print_error<O, E: Clone>(input: &[u8], res: IResult<&[u8], O, E>) {
   if let Some(v) = prepare_errors(input, res) {
     let colors = generate_colors(&v);
-    println!("parser codes: {}",   print_codes(colors, HashMap::new()));
-    println!("{}",   print_offsets(input, 0, &v));
+    println!("parser codes: {}", print_codes(&colors, &HashMap::new()));
+    println!("{}", print_offsets(input, 0, &v));
 
   } else {
     println!("not an error");
@@ -268,7 +289,7 @@ pub fn generate_colors<E>(v: &[(ErrorKind<E>, usize, usize)]) -> HashMap<u32, u8
   let mut h: HashMap<u32, u8> = HashMap::new();
   let mut color = 0;
 
-  for &(ref c,_,_) in v.iter() {
+  for &(ref c, _, _) in v.iter() {
     h.insert(error_to_u32(c), color + 31);
     color = color + 1 % 7;
   }
@@ -280,7 +301,7 @@ pub fn code_from_offset<E>(v: &[(ErrorKind<E>, usize, usize)], offset: usize) ->
   let mut acc: Option<(u32, usize, usize)> = None;
   for &(ref ek, s, e) in v.iter() {
     let c = error_to_u32(ek);
-    if s <= offset && offset <=e {
+    if s <= offset && offset <= e {
       if let Some((_, start, end)) = acc {
         if start <= s && e <= end {
           acc = Some((c, s, e));
@@ -299,27 +320,28 @@ pub fn code_from_offset<E>(v: &[(ErrorKind<E>, usize, usize)], offset: usize) ->
 
 pub fn reset_color(v: &mut Vec<u8>) {
   v.push(0x1B);
-  v.push('[' as u8);
+  v.push(b'[');
   v.push(0);
-  v.push('m' as u8);
+  v.push(b'm');
 }
 
 pub fn write_color(v: &mut Vec<u8>, color: u8) {
   v.push(0x1B);
-  v.push('[' as u8);
+  v.push(b'[');
   v.push(1);
-  v.push(';' as u8);
+  v.push(b';');
   let s = color.to_string();
   let bytes = s.as_bytes();
   v.extend(bytes.iter().cloned());
-  v.push('m' as u8);
+  v.push(b'm');
 }
 
 #[cfg(feature = "std")]
-pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> String {
+#[cfg_attr(feature = "cargo-clippy", allow(implicit_hasher))]
+pub fn print_codes(colors: &HashMap<u32, u8>, names: &HashMap<u32, &str>) -> String {
   let mut v = Vec::new();
-  for (code, &color) in &colors {
-    if let Some(&s) = names.get(&code) {
+  for (code, &color) in colors {
+    if let Some(&s) = names.get(code) {
       let bytes = s.as_bytes();
       write_color(&mut v, color);
       v.extend(bytes.iter().cloned());
@@ -330,7 +352,7 @@ pub fn print_codes(colors: HashMap<u32, u8>, names: HashMap<u32, &str>) -> Strin
       v.extend(bytes.iter().cloned());
     }
     reset_color(&mut v);
-    v.push(' ' as u8);
+    v.push(b' ');
   }
   reset_color(&mut v);
 
@@ -343,7 +365,7 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
   let chunk_size = 8;
-  let mut current_code:  Option<u32> = None;
+  let mut current_code: Option<u32> = None;
   let mut current_code2: Option<u32> = None;
 
   let colors = generate_colors(&offsets);
@@ -353,7 +375,7 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
     for &ch in s.as_bytes().iter() {
       v.push(ch);
     }
-    v.push('\t' as u8);
+    v.push(b'\t');
 
     let mut k = i;
     let mut l = i;
@@ -376,7 +398,7 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
       }
       v.push(CHARS[(byte >> 4) as usize]);
       v.push(CHARS[(byte & 0xf) as usize]);
-      v.push(' ' as u8);
+      v.push(b' ');
       k = k + 1;
     }
 
@@ -384,12 +406,12 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
 
     if chunk_size > chunk.len() {
       for _ in 0..(chunk_size - chunk.len()) {
-        v.push(' ' as u8);
-        v.push(' ' as u8);
-        v.push(' ' as u8);
+        v.push(b' ');
+        v.push(b' ');
+        v.push(b' ');
       }
     }
-    v.push('\t' as u8);
+    v.push(b'\t');
 
     for &byte in chunk {
       if let Some(code) = code_from_offset(&offsets, l) {
@@ -408,16 +430,16 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
           }
         }
       }
-      if (byte >=32 && byte <= 126) || byte >= 128 {
+      if (byte >= 32 && byte <= 126) || byte >= 128 {
         v.push(byte);
       } else {
-        v.push('.' as u8);
+        v.push(b'.');
       }
       l = l + 1;
     }
     reset_color(&mut v);
 
-    v.push('\n' as u8);
+    v.push(b'\n');
     i = i + chunk_size;
   }
 
@@ -485,8 +507,9 @@ array_impls! {
 }
 
 /// indicates which parser returned an error
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug,PartialEq,Eq,Hash,Clone)]
-pub enum ErrorKind<E=u32> {
+pub enum ErrorKind<E = u32> {
   Custom(E),
   Tag,
   MapRes,
@@ -546,8 +569,11 @@ pub enum ErrorKind<E=u32> {
   Permutation,
   Verify,
   TakeTill1,
+  TakeUntilAndConsume1,
+  TakeWhileMN,
 }
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
   match *e {
     ErrorKind::Custom(_)                 => 0,
@@ -609,81 +635,86 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::ManyTill                  => 65,
     ErrorKind::Verify                    => 66,
     ErrorKind::TakeTill1                 => 67,
+    ErrorKind::TakeUntilAndConsume1      => 68,
+    ErrorKind::TakeWhileMN               => 69,
   }
 }
 
-  impl<E> ErrorKind<E> {
-    pub fn description(&self) -> &str {
-      match *self {
-        ErrorKind::Custom(_)                 => "Custom error",
-        ErrorKind::Tag                       => "Tag",
-        ErrorKind::MapRes                    => "Map on Result",
-        ErrorKind::MapOpt                    => "Map on Option",
-        ErrorKind::Alt                       => "Alternative",
-        ErrorKind::IsNot                     => "IsNot",
-        ErrorKind::IsA                       => "IsA",
-        ErrorKind::SeparatedList             => "Separated list",
-        ErrorKind::SeparatedNonEmptyList     => "Separated non empty list",
-        ErrorKind::Many0                     => "Many0",
-        ErrorKind::Many1                     => "Many1",
-        ErrorKind::Count                     => "Count",
-        ErrorKind::TakeUntilAndConsume       => "Take until and consume",
-        ErrorKind::TakeUntil                 => "Take until",
-        ErrorKind::TakeUntilEitherAndConsume => "Take until either and consume",
-        ErrorKind::TakeUntilEither           => "Take until either",
-        ErrorKind::LengthValue               => "Length followed by value",
-        ErrorKind::TagClosure                => "Tag closure",
-        ErrorKind::Alpha                     => "Alphabetic",
-        ErrorKind::Digit                     => "Digit",
-        ErrorKind::AlphaNumeric              => "AlphaNumeric",
-        ErrorKind::Space                     => "Space",
-        ErrorKind::MultiSpace                => "Multiple spaces",
-        ErrorKind::LengthValueFn             => "LengthValueFn",
-        ErrorKind::Eof                       => "End of file",
-        ErrorKind::ExprOpt                   => "Evaluate Option",
-        ErrorKind::ExprRes                   => "Evaluate Result",
-        ErrorKind::CondReduce                => "Condition reduce",
-        ErrorKind::Switch                    => "Switch",
-        ErrorKind::TagBits                   => "Tag on bitstream",
-        ErrorKind::OneOf                     => "OneOf",
-        ErrorKind::NoneOf                    => "NoneOf",
-        ErrorKind::Char                      => "Char",
-        ErrorKind::CrLf                      => "CrLf",
-        ErrorKind::RegexpMatch               => "RegexpMatch",
-        ErrorKind::RegexpMatches             => "RegexpMatches",
-        ErrorKind::RegexpFind                => "RegexpFind",
-        ErrorKind::RegexpCapture             => "RegexpCapture",
-        ErrorKind::RegexpCaptures            => "RegexpCaptures",
-        ErrorKind::TakeWhile1                => "TakeWhile1",
-        ErrorKind::Complete                  => "Complete",
-        ErrorKind::Fix                       => "Fix",
-        ErrorKind::Escaped                   => "Escaped",
-        ErrorKind::EscapedTransform          => "EscapedTransform",
-        ErrorKind::TagStr                    => "Tag on strings",
-        ErrorKind::IsNotStr                  => "IsNot on strings",
-        ErrorKind::IsAStr                    => "IsA on strings",
-        ErrorKind::TakeWhile1Str             => "TakeWhile1 on strings",
-        ErrorKind::NonEmpty                  => "NonEmpty",
-        ErrorKind::ManyMN                    => "Many(m, n)",
-        ErrorKind::TakeUntilAndConsumeStr    => "Take until and consume on strings",
-        ErrorKind::HexDigit                  => "Hexadecimal Digit",
-        ErrorKind::TakeUntilStr              => "Take until on strings",
-        ErrorKind::OctDigit                  => "Octal digit",
-        ErrorKind::Not                       => "Negation",
-        ErrorKind::Permutation               => "Permutation",
-        ErrorKind::ManyTill                  => "ManyTill",
-        ErrorKind::Verify                    => "predicate verification",
-        ErrorKind::TakeTill1                 => "TakeTill1",
-      }
-
-    }
-    /// Convert Err into an ErrorKind.
-    ///
-    /// This allows application code to use ErrorKind and stay independent from the `verbose-errors` features activation.
-    pub fn into_error_kind(self) -> ErrorKind<E> {
-      self
+impl<E> ErrorKind<E> {
+  #[cfg_attr(rustfmt, rustfmt_skip)]
+  pub fn description(&self) -> &str {
+    match *self {
+      ErrorKind::Custom(_)                 => "Custom error",
+      ErrorKind::Tag                       => "Tag",
+      ErrorKind::MapRes                    => "Map on Result",
+      ErrorKind::MapOpt                    => "Map on Option",
+      ErrorKind::Alt                       => "Alternative",
+      ErrorKind::IsNot                     => "IsNot",
+      ErrorKind::IsA                       => "IsA",
+      ErrorKind::SeparatedList             => "Separated list",
+      ErrorKind::SeparatedNonEmptyList     => "Separated non empty list",
+      ErrorKind::Many0                     => "Many0",
+      ErrorKind::Many1                     => "Many1",
+      ErrorKind::Count                     => "Count",
+      ErrorKind::TakeUntilAndConsume       => "Take until and consume",
+      ErrorKind::TakeUntil                 => "Take until",
+      ErrorKind::TakeUntilEitherAndConsume => "Take until either and consume",
+      ErrorKind::TakeUntilEither           => "Take until either",
+      ErrorKind::LengthValue               => "Length followed by value",
+      ErrorKind::TagClosure                => "Tag closure",
+      ErrorKind::Alpha                     => "Alphabetic",
+      ErrorKind::Digit                     => "Digit",
+      ErrorKind::AlphaNumeric              => "AlphaNumeric",
+      ErrorKind::Space                     => "Space",
+      ErrorKind::MultiSpace                => "Multiple spaces",
+      ErrorKind::LengthValueFn             => "LengthValueFn",
+      ErrorKind::Eof                       => "End of file",
+      ErrorKind::ExprOpt                   => "Evaluate Option",
+      ErrorKind::ExprRes                   => "Evaluate Result",
+      ErrorKind::CondReduce                => "Condition reduce",
+      ErrorKind::Switch                    => "Switch",
+      ErrorKind::TagBits                   => "Tag on bitstream",
+      ErrorKind::OneOf                     => "OneOf",
+      ErrorKind::NoneOf                    => "NoneOf",
+      ErrorKind::Char                      => "Char",
+      ErrorKind::CrLf                      => "CrLf",
+      ErrorKind::RegexpMatch               => "RegexpMatch",
+      ErrorKind::RegexpMatches             => "RegexpMatches",
+      ErrorKind::RegexpFind                => "RegexpFind",
+      ErrorKind::RegexpCapture             => "RegexpCapture",
+      ErrorKind::RegexpCaptures            => "RegexpCaptures",
+      ErrorKind::TakeWhile1                => "TakeWhile1",
+      ErrorKind::Complete                  => "Complete",
+      ErrorKind::Fix                       => "Fix",
+      ErrorKind::Escaped                   => "Escaped",
+      ErrorKind::EscapedTransform          => "EscapedTransform",
+      ErrorKind::TagStr                    => "Tag on strings",
+      ErrorKind::IsNotStr                  => "IsNot on strings",
+      ErrorKind::IsAStr                    => "IsA on strings",
+      ErrorKind::TakeWhile1Str             => "TakeWhile1 on strings",
+      ErrorKind::NonEmpty                  => "NonEmpty",
+      ErrorKind::ManyMN                    => "Many(m, n)",
+      ErrorKind::TakeUntilAndConsumeStr    => "Take until and consume on strings",
+      ErrorKind::HexDigit                  => "Hexadecimal Digit",
+      ErrorKind::TakeUntilStr              => "Take until on strings",
+      ErrorKind::OctDigit                  => "Octal digit",
+      ErrorKind::Not                       => "Negation",
+      ErrorKind::Permutation               => "Permutation",
+      ErrorKind::ManyTill                  => "ManyTill",
+      ErrorKind::Verify                    => "predicate verification",
+      ErrorKind::TakeTill1                 => "TakeTill1",
+      ErrorKind::TakeUntilAndConsume1      => "Take at least 1 until and consume",
+      ErrorKind::TakeWhileMN               => "TakeWhileMN",
     }
   }
+
+  /// Convert Err into an ErrorKind.
+  ///
+  /// This allows application code to use ErrorKind and stay independent from the `verbose-errors` features activation.
+  pub fn into_error_kind(self) -> ErrorKind<E> {
+    self
+  }
+}
 
 
 pub trait Convert<T> {
@@ -691,7 +722,7 @@ pub trait Convert<T> {
 }
 
 impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
-
+  #[cfg_attr(rustfmt, rustfmt_skip)]
   fn convert(e: ErrorKind<F>) -> Self {
     match e {
       ErrorKind::Custom(c)                 => ErrorKind::Custom(E::from(c)),
@@ -753,35 +784,37 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
       ErrorKind::ManyTill                  => ErrorKind::ManyTill,
       ErrorKind::Verify                    => ErrorKind::Verify,
       ErrorKind::TakeTill1                 => ErrorKind::TakeTill1,
+      ErrorKind::TakeUntilAndConsume1      => ErrorKind::TakeUntilAndConsume1,
+      ErrorKind::TakeWhileMN               => ErrorKind::TakeWhileMN,
     }
   }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+  use super::*;
 
-    #[test]
-    fn test_offset_u8() {
-      let s = b"abcd123";
-      let a = &s[..];
-      let b = &a[2..];
-      let c = &a[..4];
-      let d = &a[3..5];
-      assert_eq!(a.offset(b), 2);
-      assert_eq!(a.offset(c), 0);
-      assert_eq!(a.offset(d), 3);
-    }
+  #[test]
+  fn test_offset_u8() {
+    let s = b"abcd123";
+    let a = &s[..];
+    let b = &a[2..];
+    let c = &a[..4];
+    let d = &a[3..5];
+    assert_eq!(a.offset(b), 2);
+    assert_eq!(a.offset(c), 0);
+    assert_eq!(a.offset(d), 3);
+  }
 
-    #[test]
-    fn test_offset_str() {
-      let s = "abcřèÂßÇd123";
-      let a = &s[..];
-      let b = &a[7..];
-      let c = &a[..5];
-      let d = &a[5..9];
-      assert_eq!(a.offset(b), 7);
-      assert_eq!(a.offset(c), 0);
-      assert_eq!(a.offset(d), 5);
-    }
+  #[test]
+  fn test_offset_str() {
+    let s = "abcřèÂßÇd123";
+    let a = &s[..];
+    let b = &a[7..];
+    let c = &a[..5];
+    let d = &a[5..9];
+    assert_eq!(a.offset(b), 7);
+    assert_eq!(a.offset(c), 0);
+    assert_eq!(a.offset(d), 5);
+  }
 }

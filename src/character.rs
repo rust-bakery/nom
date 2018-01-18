@@ -1,9 +1,9 @@
 /// Character level parsers
 
-use internal::{IResult,Needed};
-use traits::{AsChar,InputIter,InputLength,Slice};
+use internal::{IResult, Needed};
+use traits::{AsChar, InputIter, InputLength, Slice};
 use std::ops::RangeFrom;
-use traits::{need_more,AtEof};
+use traits::{need_more, AtEof};
 
 /// matches one of the provided characters
 ///
@@ -108,7 +108,8 @@ macro_rules! char (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        (c, c.as_char() == $c)
+        let b = c.clone().as_char() == $c;
+        (c, b)
       }) {
         None             => $crate::need_more($i, Needed::Size(1)),
         Some((_, false)) => {
@@ -137,13 +138,20 @@ named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 /// assert_eq!(anychar("abc"), Ok(("bc",'a')));
 /// # }
 /// ```
-pub fn anychar<T>(input: T) -> IResult<T, char> where
-  T: InputIter+InputLength+Slice<RangeFrom<usize>>+AtEof,
-  <T as InputIter>::Item: AsChar {
-  if input.input_len() == 0 {
-    need_more(input, Needed::Size(1))
-  } else {
-    Ok((input.slice(1..), input.iter_elements().next().expect("slice should contain at least one element").as_char()))
+pub fn anychar<T>(input: T) -> IResult<T, char>
+where
+  T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
+  <T as InputIter>::Item: AsChar,
+{
+  let mut it = input.iter_indices();
+  match it.next() {
+    None => need_more(input, Needed::Size(1)),
+    Some((_, c)) => {
+      match it.next() {
+        None => Ok((input.slice(input.input_len()..), c.as_char())),
+        Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
+      }
+    }
   }
 }
 
@@ -191,4 +199,20 @@ mod tests {
     assert_eq!(f(b),Ok((&b"de"[..], 'c')));
   }
 
+  #[test]
+  fn char_str() {
+    named!(f<&str, char>, char!('c'));
+
+    let a = &"abcd"[..];
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
+
+    let b = &"cde"[..];
+    assert_eq!(f(b),Ok((&"de"[..], 'c')));
+  }
+
+  #[test]
+  fn anychar_str() {
+    use super::anychar;
+    assert_eq!(anychar("Ә"), Ok(("", 'Ә')));
+  }
 }
