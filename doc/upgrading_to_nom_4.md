@@ -93,11 +93,11 @@ code that manipulates parser results.
 
 ## Faster parsers, new memory layout but with the same footprint
 
-All these changes don't impact the memory footprint of the parser internal structures:
+These changes keep the same memory footprint in simple errors mode, and reduce it in verbose errors:
 
 | size of `IResult<&[u8], &[u8]>` | simple errors | verbose errors |
 |---|---|---|
-| nom 3 | 40 | 48 |
+| nom 3 | 40 | 64 |
 | nom 4 | 40 | 48 |
 
 However, [parsers are faster in nom 4 than in nom 3](https://github.com/Geal/nom/issues/356#issuecomment-333816834). This change is justified.
