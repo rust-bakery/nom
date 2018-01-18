@@ -152,6 +152,12 @@ macro_rules! named (
 /// Makes a function from a parser combination with arguments.
 #[macro_export]
 macro_rules! named_args {
+    (pub $func_name:ident ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
+        #[allow(unused_variables)]
+        pub fn $func_name( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(input, $($args)*)
+        }
+    );
     (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         pub fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
@@ -165,6 +171,18 @@ macro_rules! named_args {
           $submac!(input, $($args)*)
         }
     };
+    (pub $func_name:ident < 'a >  ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
+        #[allow(unused_variables)]
+        pub fn $func_name<'this_is_probably_unique_i_hope_please, 'a>( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(input, $($args)*)
+        }
+    );
+    ($func_name:ident ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
+        #[allow(unused_variables)]
+        fn $func_name( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(input, $($args)*)
+        }
+    );
     ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
@@ -178,6 +196,12 @@ macro_rules! named_args {
             $submac!(input, $($args)*)
         }
     };
+    ($func_name:ident < 'a >  ( $( $arg:ident : $typ:ty),* ) <$i:ty,$o:ty> , $submac:ident!( $($args:tt)* )) => (
+        #[allow(unused_variables)]
+        fn $func_name<'this_is_probably_unique_i_hope_please, 'a>( input: $i, $( $arg : $typ ),* ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(input, $($args)*)
+        }
+    );
     (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         pub fn $func_name(input: $input_type, $( $arg : $typ ),*) -> $crate::IResult<$input_type, $return_type> {
             $submac!(input, $($args)*)
@@ -1287,8 +1311,8 @@ mod tests {
   use internal::{Err, Needed, IResult};
   use util::ErrorKind;
 
-  // reproduce the tag and take macros, because of module import order
-  macro_rules! tag (
+    // reproduce the tag and take macros, because of module import order
+    macro_rules! tag (
     ($i:expr, $inp: expr) => (
       {
         #[inline(always)]
@@ -1304,7 +1328,7 @@ mod tests {
     );
   );
 
-  macro_rules! tag_bytes (
+    macro_rules! tag_bytes (
     ($i:expr, $bytes: expr) => (
       {
         use std::cmp::min;
@@ -1326,7 +1350,7 @@ mod tests {
     );
   );
 
-  macro_rules! take(
+    macro_rules! take(
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
