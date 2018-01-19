@@ -97,10 +97,10 @@ These changes keep the same memory footprint in simple errors mode, and reduce i
 
 | size of `IResult<&[u8], &[u8]>` | simple errors | verbose errors |
 |---|---|---|
-| nom 3 | 40 | 64 |
-| nom 4 | 40 | 48 |
+| nom 3 | 40 bytes | 64 bytes |
+| nom 4 | 40 bytes | 48 bytes |
 
-However, [parsers are faster in nom 4 than in nom 3](https://github.com/Geal/nom/issues/356#issuecomment-333816834). This change is justified.
+In addition, [parsers are faster in nom 4 than in nom 3](https://github.com/Geal/nom/issues/356#issuecomment-333816834). This change is justified.
 
 ## Replacing parser result matchers
 
