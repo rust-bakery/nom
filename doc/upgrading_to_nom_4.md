@@ -91,7 +91,7 @@ the related input as part of the error in all cases.
 All of this will likely not affect your existing parsers, but require changes to the surrounding
 code that manipulates parser results.
 
-## Faster parsers, new memory layout but with the same footprint
+## Faster parsers, new memory layout but with lower footprint
 
 These changes keep the same memory footprint in simple errors mode, and reduce it in verbose errors:
 
