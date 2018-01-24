@@ -1456,13 +1456,19 @@ mod tests {
 
   #[test]
   fn hex_u32_tests() {
-    assert_eq!(hex_u32(&b";"[..]), Err(Err::Error(error_position!(&b";"[..], ErrorKind::IsA))));
+    assert_eq!(
+      hex_u32(&b";"[..]),
+      Err(Err::Error(error_position!(&b";"[..], ErrorKind::IsA)))
+    );
     assert_eq!(hex_u32(&b"ff;"[..]), Ok((&b";"[..], 255)));
     assert_eq!(hex_u32(&b"1be2;"[..]), Ok((&b";"[..], 7138)));
     assert_eq!(hex_u32(&b"c5a31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
     assert_eq!(hex_u32(&b"C5A31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
     assert_eq!(hex_u32(&b"00c5a31be2;"[..]), Ok((&b"e2;"[..], 12_952_347)));
-    assert_eq!(hex_u32(&b"c5a31be201;"[..]), Ok((&b"01;"[..], 3_315_801_058)));
+    assert_eq!(
+      hex_u32(&b"c5a31be201;"[..]),
+      Ok((&b"01;"[..], 3_315_801_058))
+    );
     assert_eq!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
     assert_eq!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
   }
