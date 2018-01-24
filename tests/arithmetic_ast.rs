@@ -18,6 +18,7 @@ pub enum Expr {
   Paren(Box<Expr>),
 }
 
+#[derive(Debug)]
 pub enum Oper {
   Add,
   Sub,
