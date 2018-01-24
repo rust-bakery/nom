@@ -1,5 +1,5 @@
 use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, ParseTo};
-use util::{HexDisplay, Offset};
+use util::Offset;
 
 use std::str::{self, FromStr, Chars, CharIndices};
 use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
@@ -261,7 +261,8 @@ impl<'a> Offset for CompleteByteSlice<'a> {
   }
 }
 
-impl<'a> HexDisplay for CompleteByteSlice<'a> {
+#[cfg(feature = "std")]
+impl<'a> super::util::HexDisplay for CompleteByteSlice<'a> {
   fn to_hex(&self, chunk_size: usize) -> String {
     self.0.to_hex(chunk_size)
   }

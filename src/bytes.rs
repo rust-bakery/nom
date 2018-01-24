@@ -1371,10 +1371,10 @@ mod tests {
   fn issue_84() {
     let r0 = is_a!(&b"aaaaefgh"[..], "abcd");
     assert_eq!(r0, Ok((&b"efgh"[..], &b"aaaa"[..])));
-    let r1 = is_a!(&b"aaaa"[..], "abcd");
-    assert_eq!(r1, Ok((&b""[..], &b"aaaa"[..])));
-    let r2 = is_a!(&b"1"[..], "123456789");
-    assert_eq!(r2, Ok((&b""[..], &b"1"[..])));
+    let r1 = is_a!(&b"aaaa;"[..], "abcd");
+    assert_eq!(r1, Ok((&b";"[..], &b"aaaa"[..])));
+    let r2 = is_a!(&b"1;"[..], "123456789");
+    assert_eq!(r2, Ok((&b";"[..], &b"1"[..])));
   }
 
   #[cfg(feature = "std")]

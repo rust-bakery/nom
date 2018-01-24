@@ -177,6 +177,7 @@ fn issue_655() {
   assert_eq!(twolines("foé\r\nbar\n"), Ok(("", ("foé", "bar"))));
 }
 
+#[cfg(feature = "std")]
 named!(issue_666 <CompleteByteSlice, CompleteByteSlice>, dbg_dmp!(tag!("abc")));
 
 #[test]
