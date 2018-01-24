@@ -177,4 +177,26 @@ fn issue_655() {
   assert_eq!(twolines("foé\r\nbar\n"), Ok(("", ("foé", "bar"))));
 }
 
- named!(issue_666 <CompleteByteSlice, CompleteByteSlice>, dbg_dmp!(tag!("abc")));
+named!(issue_666 <CompleteByteSlice, CompleteByteSlice>, dbg_dmp!(tag!("abc")));
+
+#[test]
+fn issue_667() {
+  use nom::alpha;
+
+  named!(foo <CompleteByteSlice, Vec<CompleteByteSlice>>,
+    many0!(
+      alt!(alpha | is_a!("_"))
+    )
+  );
+  assert_eq!(foo(CompleteByteSlice(b"")), Ok((CompleteByteSlice(b""), vec![])));
+  assert_eq!(foo(CompleteByteSlice(b"loremipsum")),
+    Ok((CompleteByteSlice(b""), vec![CompleteByteSlice(b"loremipsum")])));
+  assert_eq!(foo(CompleteByteSlice(b"lorem_ipsum")),
+    Ok((CompleteByteSlice(b""),
+        vec![CompleteByteSlice(b"lorem"), CompleteByteSlice(b"_"), CompleteByteSlice(b"ipsum")])));
+  assert_eq!(foo(CompleteByteSlice(b"_lorem_ipsum")),
+    Ok((CompleteByteSlice(b""),
+        vec![CompleteByteSlice(b"_"), CompleteByteSlice(b"lorem"),
+             CompleteByteSlice(b"_"), CompleteByteSlice(b"ipsum")])));
+  assert_eq!(foo(CompleteByteSlice(b"!@#$")), Ok((CompleteByteSlice(b"!@#$"), vec![])));
+}
