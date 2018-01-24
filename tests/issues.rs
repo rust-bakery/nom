@@ -6,6 +6,7 @@
 extern crate nom;
 
 use nom::{Err, IResult, Needed, space, be_u16, le_u64};
+use nom::types::CompleteByteSlice;
 
 #[allow(dead_code)]
 struct Range {
@@ -175,3 +176,5 @@ fn issue_655() {
   assert_eq!(twolines("foé\nbar\n"), Ok(("", ("foé", "bar"))));
   assert_eq!(twolines("foé\r\nbar\n"), Ok(("", ("foé", "bar"))));
 }
+
+ named!(issue_666 <CompleteByteSlice, CompleteByteSlice>, dbg_dmp!(tag!("abc")));
