@@ -98,17 +98,18 @@ macro_rules! tag_no_case (
 ///  # }
 /// ```
 #[macro_export]
-macro_rules! is_not(
+macro_rules! is_not (
   ($input:expr, $arr:expr) => (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,IResult,ErrorKind};
+      use $crate::{Err,IResult,ErrorKind,Needed};
 
       use $crate::InputLength;
       use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
+      use $crate::AtEof;
 
       let res: IResult<_,_> = match $input.position(|c| {
         $arr.find_token(c)
@@ -121,7 +122,11 @@ macro_rules! is_not(
           Ok(($input.slice(n..), $input.slice(..n)))
         },
         None    => {
-          Ok(($input.slice($input.input_len()..), $input))
+          if ($input).at_eof() {
+            Ok(($input.slice($input.input_len()..), $input))
+          } else {
+            Err(Err::Incomplete(Needed::Unknown))
+          }
         }
       };
       res
@@ -151,12 +156,13 @@ macro_rules! is_a (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,IResult,ErrorKind};
+      use $crate::{Err,IResult,ErrorKind,Needed};
 
       use $crate::InputLength;
       use $crate::InputIter;
       use $crate::FindToken;
       use $crate::Slice;
+      use $crate::AtEof;
 
       let res: IResult<_,_> = match $input.position(|c| {
         !$arr.find_token(c)
@@ -170,7 +176,11 @@ macro_rules! is_a (
           res
         },
         None    => {
-          Ok(($input.slice(($input).input_len()..), $input))
+          if ($input).at_eof() {
+            Ok(($input.slice(($input).input_len()..), $input))
+          } else {
+            Err(Err::Incomplete(Needed::Unknown))
+          }
         }
       };
       res
@@ -1265,10 +1275,7 @@ mod tests {
     assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
 
     let e = &b"e"[..];
-    assert_eq!(a_or_b(e), Ok((&b""[..], &b"e"[..])));
-
-    let f = &b"fghi"[..];
-    assert_eq!(a_or_b(f), Ok((&b""[..], &b"fghi"[..])));
+    assert_eq!(a_or_b(e), Err(Err::Incomplete(Needed::Unknown)));
   }
 
   #[allow(unused_variables)]
