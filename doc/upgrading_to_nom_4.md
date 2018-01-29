@@ -31,7 +31,7 @@ pub enum Needed {
   Size(usize)
 }
 
-// if the "verbose-errors" feature is active
+// if the "verbose-errors" feature is not active
 pub type Err<E=u32> = ErrorKind<E>;
 
 // if the "verbose-errors" feature is active
