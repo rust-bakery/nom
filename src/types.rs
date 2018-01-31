@@ -1,5 +1,5 @@
-use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, ParseTo, AsBytes};
-use util::Offset;
+use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, ParseTo};
+use util::{AsBytes, Offset};
 
 use std::str::{self, FromStr, Chars, CharIndices};
 use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
