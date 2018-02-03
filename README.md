@@ -6,7 +6,7 @@
 [![Coverage Status](https://coveralls.io/repos/Geal/nom/badge.svg?branch=master)](https://coveralls.io/r/Geal/nom?branch=master)
 [![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
 
-nom is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing*, *zero copy* parsing, *push streaming*, *pull streaming*, and provides macros and traits to abstract most of the error prone plumbing.
+nom is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing* and *memory safety* to produce fast and correct parsers, and provides macros and traits to abstract most of the error prone plumbing.
 
 nom can handle any format, binary or textual, with grammar from regular to context sensitive. There are already a lot of [example parsers](https://github.com/Geal/nom/issues/14) available on Github.
 
@@ -22,14 +22,9 @@ Here are the current and planned features, with their status:
 - [x] **byte-oriented**: the basic type is `&[u8]` and parsers will work as much as possible on byte array slices (but are not limited to them)
 - [x] **bit-oriented**: nom can address a byte slice as a bit stream
 - [x] **string-oriented**: the same kind of combinators can apply on UTF-8 strings as well
-- [x] **zero-copy**:
-  - [x] **in the parsers**: a parsing chain will almost always return a slice of its input data
-  - [x] **in the producers and consumers**: some copying still happens
-- [x] **streaming**:
-  - [x] **push**: a data producer can continuously feed consumers and parsers, as long as there is data available
-  - [x] **pull**: a consumer will handle the produced data and drive seeking in the producer
+- [x] **zero-copy**: if a parser returns a subset of its input data, it will return a slice of that input, without copying
+- [x] **streaming**: nom can work on partial data and detect when it needs more data to produce a correct result
 - [x] **macro based syntax**: easier parser building through macro usage
-- [x] **state machine handling**: consumers provide a basic way of managing state machines
 - [x] **descriptive errors**: the parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages.
 - [x] **custom error types**: you can provide a specific type to improve errors returned by parsers
 - [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real world data. So far, the only flaws found by fuzzing were in code written outside of nom
