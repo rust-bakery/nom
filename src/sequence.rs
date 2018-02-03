@@ -385,7 +385,7 @@ macro_rules! do_parse (
     match $submac!($i, $($args)*) {
       Err(e) => Err(e),
       Ok((i,_))     => {
-        Ok((i, ( $($rest)* )))
+        do_parse!(__finalize i, $($rest)*)
       },
     }
   });
@@ -401,9 +401,19 @@ macro_rules! do_parse (
       Err(e) => Err(e),
       Ok((i,o))     => {
         let $field = o;
-        Ok((i, ( $($rest)* )))
+        do_parse!(__finalize i, $($rest)*)
       },
     }
+  });
+
+  (__finalize $i:expr, ( $o: expr )) => ({
+    use ::std::result::Result::Ok;
+    Ok(($i, $o))
+  });
+
+  (__finalize $i:expr, ( $($rest:tt)* )) => ({
+    use ::std::result::Result::Ok;
+    Ok(($i, ( $($rest)* )))
   });
 
   ($i:expr, $($rest:tt)*) => (
