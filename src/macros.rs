@@ -1149,16 +1149,19 @@ macro_rules! not(
       //we need this to avoid type inference errors
       fn unify_types<I,O,P,E>(_: &IResult<I,O,E>, _: &IResult<I,P,E>) {}
 
-      let sub_res = $submac!(i_, $($args)*);
-      let res = match sub_res {
+      match $submac!(i_, $($args)*) {
+        Err(Err::Failure(e)) => Err(Err::Failure(e)),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(_) => Ok(($i, ())),
         Ok(_)  => {
           let c = Context::Code($i, ErrorKind::Not);
-          Err(Err::Error(c))
+          let err =  Err(Err::Error(c));
+          let default = Ok(($i, ()));
+
+          unify_types(&err, &default);
+          err
         },
-        Err(_) => Ok(($i, ())),
-      };
-      unify_types(&sub_res, &res);
-      res
+      }
     }
   );
   ($i:expr, $f:expr) => (
@@ -1453,10 +1456,17 @@ mod tests {
 
   #[test]
   fn not() {
+    use types::CompleteStr;
+
     named!(not_aaa<()>, not!(tag!("aaa")));
     assert_eq!(not_aaa(&b"aaa"[..]), Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not))));
-    assert_eq!(not_aaa(&b"aa"[..]), Ok((&b"aa"[..], ())));
+    assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
+
+    named!(not_aaa_complete<CompleteStr, ()>, not!(tag!("aaa")));
+    assert_eq!(not_aaa_complete(CompleteStr("aaa")), Err(Err::Error(error_position!(CompleteStr("aaa"), ErrorKind::Not))));
+    assert_eq!(not_aaa_complete(CompleteStr("aa")), Ok((CompleteStr("aa"), ())));
+    assert_eq!(not_aaa_complete(CompleteStr("abcd")), Ok((CompleteStr("abcd"), ())));
   }
 
   #[test]
