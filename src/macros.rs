@@ -189,7 +189,7 @@ macro_rules! named_args {
         }
     };
     (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        fn $func_name<'a>(
+        pub fn $func_name<'a>(
           input: $input_type, $( $arg : $typ ),*)
           -> $crate::IResult<$input_type, $return_type>
         {
