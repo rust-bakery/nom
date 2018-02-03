@@ -51,6 +51,108 @@ impl<'a> InputLength for (&'a [u8], usize) {
   }
 }
 
+/// useful functions to calculate the offset between slices and show a hexdump of a slice
+pub trait Offset {
+  /// offset between the first byte of self and the first byte of the argument
+  fn offset(&self, second: &Self) -> usize;
+}
+
+impl Offset for [u8] {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
+
+    snd as usize - fst as usize
+  }
+}
+
+impl<'a> Offset for &'a [u8] {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
+
+    snd as usize - fst as usize
+  }
+}
+
+impl Offset for str {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
+
+    snd as usize - fst as usize
+  }
+}
+
+impl<'a> Offset for &'a str {
+  fn offset(&self, second: &Self) -> usize {
+    let fst = self.as_ptr();
+    let snd = second.as_ptr();
+
+    snd as usize - fst as usize
+  }
+}
+
+/// casts the input type to a byte slice
+pub trait AsBytes {
+  fn as_bytes(&self) -> &[u8];
+}
+
+impl<'a> AsBytes for &'a str {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    str::as_bytes(self)
+  }
+}
+
+impl AsBytes for str {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    str::as_bytes(self)
+  }
+}
+
+impl<'a> AsBytes for &'a [u8] {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    *self
+  }
+}
+
+impl AsBytes for [u8] {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    self
+  }
+}
+
+macro_rules! as_bytes_array_impls {
+  ($($N:expr)+) => {
+    $(
+      impl<'a> AsBytes for &'a [u8; $N] {
+        #[inline(always)]
+        fn as_bytes(&self) -> &[u8] {
+          *self
+        }
+      }
+
+      impl AsBytes for [u8; $N] {
+        #[inline(always)]
+        fn as_bytes(&self) -> &[u8] {
+          self
+        }
+      }
+    )+
+  };
+}
+
+as_bytes_array_impls! {
+     0  1  2  3  4  5  6  7  8  9
+    10 11 12 13 14 15 16 17 18 19
+    20 21 22 23 24 25 26 27 28 29
+    30 31 32
+}
+
 /// transforms common types to a char for basic token parsing
 pub trait AsChar {
   /// makes a char from self
@@ -690,7 +792,7 @@ impl<'a> AtEof for &'a str {
   }
 }
 
-macro_rules! array_impls {
+macro_rules! input_length_array_impls {
   ($($N:expr)+) => {
     $(
       impl InputLength for [u8; $N] {
@@ -735,7 +837,7 @@ macro_rules! array_impls {
 }
 
 
-array_impls! {
+input_length_array_impls! {
      0  1  2  3  4  5  6  7  8  9
     10 11 12 13 14 15 16 17 18 19
     20 21 22 23 24 25 26 27 28 29
@@ -783,5 +885,34 @@ impl ExtendInto for str {
   #[inline]
   fn extend_into(&self, acc: &mut String) {
     acc.push_str(self);
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_offset_u8() {
+    let s = b"abcd123";
+    let a = &s[..];
+    let b = &a[2..];
+    let c = &a[..4];
+    let d = &a[3..5];
+    assert_eq!(a.offset(b), 2);
+    assert_eq!(a.offset(c), 0);
+    assert_eq!(a.offset(d), 3);
+  }
+
+  #[test]
+  fn test_offset_str() {
+    let s = "abcřèÂßÇd123";
+    let a = &s[..];
+    let b = &a[7..];
+    let c = &a[..5];
+    let d = &a[5..9];
+    assert_eq!(a.offset(b), 7);
+    assert_eq!(a.offset(c), 0);
+    assert_eq!(a.offset(d), 5);
   }
 }

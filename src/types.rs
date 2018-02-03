@@ -1,8 +1,7 @@
 //! Custom input types
 //!
 
-use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, ParseTo};
-use util::{AsBytes, Offset};
+use traits::{AtEof, AsBytes, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, Offset, ParseTo};
 
 use std::str::{self, FromStr, Chars, CharIndices};
 use std::ops::{Range, RangeTo, RangeFrom, RangeFull};

@@ -14,8 +14,8 @@ use internal::*;
 use traits::{AsChar, InputLength, InputIter};
 use traits::{need_more, need_more_err, AtEof};
 use std::ops::{Range, RangeFrom, RangeTo};
-use traits::{Compare, CompareResult, Slice};
-use util::{ErrorKind, Offset};
+use traits::{Compare, CompareResult, Offset, Slice};
+use util::ErrorKind;
 use std::mem::transmute;
 
 #[inline]
@@ -1154,7 +1154,7 @@ mod tests {
     assert_eq!(space(e), Err(Err::Incomplete(Needed::Size(1))));
   }
 
-  use util::Offset;
+  use traits::Offset;
   #[test]
   fn offset() {
     let a = &b"abcd;"[..];
