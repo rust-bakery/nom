@@ -1289,42 +1289,28 @@ mod tests {
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
-    ($i:expr, $inp: expr) => (
-      {
-        #[inline(always)]
-        fn as_bytes<T: $crate::AsBytes>(b: &T) -> &[u8] {
-          b.as_bytes()
+    ($i:expr, $tag: expr) => ({
+      use ::std::result::Result::*;
+      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Compare,CompareResult,InputLength,Slice,need_more};
+
+      let res: IResult<_,_> = match ($i).compare($tag) {
+        CompareResult::Ok => {
+          let blen = $tag.input_len();
+          Ok(($i.slice(blen..), $i.slice(..blen)))
+        },
+        CompareResult::Incomplete => {
+          need_more($i, Needed::Size($tag.input_len()))
+        },
+        CompareResult::Error => {
+          let e:ErrorKind<u32> = ErrorKind::Tag;
+          Err(Err::Error($crate::Context::Code($i, e)))
         }
-
-        let expected = $inp;
-        let bytes    = as_bytes(&expected);
-
-        tag_bytes!($i,bytes)
-      }
-    );
+      };
+      res
+      });
   );
 
-  macro_rules! tag_bytes (
-    ($i:expr, $bytes: expr) => (
-      {
-        use std::cmp::min;
-        let len = $i.len();
-        let blen = $bytes.len();
-        let m   = min(len, blen);
-        let reduced = &$i[..m];
-        let b       = &$bytes[..m];
-
-        let res: $crate::IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error(error_position!($i, $crate::ErrorKind::Tag::<u32>)))
-        } else if m < blen {
-          $crate::need_more($i, $crate::Needed::Size(blen))
-        } else {
-          Ok((&$i[blen..], reduced))
-        };
-        res
-      }
-    );
-  );
 
   macro_rules! take(
     ($i:expr, $count:expr) => (
