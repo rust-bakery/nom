@@ -639,6 +639,17 @@ macro_rules! slice_ranges_impl {
 slice_ranges_impl! {str}
 slice_ranges_impl! {[T]}
 
+/// indicates whether more data can come later in input
+///
+/// When working with complete data, like a file that was entirely loaded
+/// in memory, you should use input types like `CompleteByteSlice` and
+/// `CompleteStr` to wrap the data.  The `at_eof` method of those types
+/// always returns true, thus indicating to nom that it should not handle
+/// partial data cases.
+///
+/// When working will partial data, like data coming from the network in
+/// buffers, the `at_eof` method can indicate if we expect more data to come,
+/// and let nom know that some parsers could still handle more data
 pub trait AtEof {
   #[inline]
   fn at_eof(&self) -> bool;

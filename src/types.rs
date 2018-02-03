@@ -1,3 +1,6 @@
+//! Custom input types
+//!
+
 use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, ParseTo};
 use util::{AsBytes, Offset};
 
@@ -6,6 +9,10 @@ use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
 use std::iter::{Enumerate, Map};
 use std::slice::Iter;
 
+/// Holds a complete String, for which the `at_eof` method always returns true
+///
+/// This means that this input type will completely avoid nom's streaming features
+/// and `Incomplete` results.
 #[derive(Clone, Copy, Debug, PartialEq, Hash)]
 pub struct CompleteStr<'a>(pub &'a str);
 
@@ -133,6 +140,10 @@ impl<'a> AsBytes for CompleteStr<'a> {
 }
 
 
+/// Holds a complete String, for which the `at_eof` method always returns true
+///
+/// This means that this input type will completely avoid nom's streaming features
+/// and `Incomplete` results.
 #[derive(Clone, Copy, Debug, PartialEq, Hash)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
 
