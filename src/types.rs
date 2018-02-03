@@ -1,5 +1,5 @@
 use traits::{AtEof, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, ParseTo};
-use util::Offset;
+use util::{AsBytes, Offset};
 
 use std::str::{self, FromStr, Chars, CharIndices};
 use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
@@ -123,6 +123,12 @@ impl<'a, R: FromStr> ParseTo<R> for CompleteStr<'a> {
 impl<'a> Offset for CompleteStr<'a> {
   fn offset(&self, second: &CompleteStr<'a>) -> usize {
     self.0.offset(second.0)
+  }
+}
+
+impl<'a> AsBytes for CompleteStr<'a> {
+  fn as_bytes(&self) -> &[u8] {
+    self.0.as_bytes()
   }
 }
 
@@ -258,6 +264,12 @@ impl<'a, R: FromStr> ParseTo<R> for CompleteByteSlice<'a> {
 impl<'a> Offset for CompleteByteSlice<'a> {
   fn offset(&self, second: &CompleteByteSlice<'a>) -> usize {
     self.0.offset(second.0)
+  }
+}
+
+impl<'a> AsBytes for CompleteByteSlice<'a> {
+  fn as_bytes(&self) -> &[u8] {
+    self.0.as_bytes()
   }
 }
 
