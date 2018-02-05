@@ -952,6 +952,7 @@ mod tests {
   use types::{CompleteByteSlice, CompleteStr};
 
   #[test]
+  #[cfg(feature = "alloc")]
   fn tag_closure() {
     let x = tag_cl(&b"abcd"[..]);
     let r = x(&b"abcdabcdefgh"[..]);

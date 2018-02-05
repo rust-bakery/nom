@@ -916,21 +916,25 @@ mod tests {
     );
   );
 
+  #[cfg(feature = "alloc")]
   #[derive(Debug, Clone, PartialEq)]
   pub struct ErrorStr(String);
 
+  #[cfg(feature = "alloc")]
   impl From<u32> for ErrorStr {
     fn from(i: u32) -> Self {
       ErrorStr(format!("custom error code: {}", i))
     }
   }
 
+  #[cfg(feature = "alloc")]
   impl<'a> From<&'a str> for ErrorStr {
     fn from(i: &'a str) -> Self {
       ErrorStr(format!("custom error message: {}", i))
     }
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn alt() {
     fn work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {

@@ -2,6 +2,7 @@
 
 /// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// separated_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
+#[cfg(feature = "alloc")]
 #[macro_export]
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
@@ -381,6 +382,7 @@ macro_rules! many1(
 ///      error_position!(&c[..], ErrorKind::Tag)))));
 /// # }
 /// ```
+#[cfg(feature = "alloc")]
 #[macro_export]
 macro_rules! many_till(
   (__impl $i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -468,6 +470,7 @@ macro_rules! many_till(
 ///  assert_eq!(multi(&c[..]),Ok((&b"abcdefgh"[..], res2)));
 /// # }
 /// ```
+#[cfg(feature = "alloc")]
 #[macro_export]
 macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
@@ -557,6 +560,7 @@ macro_rules! many_m_n(
 /// # }
 /// ```
 ///
+#[cfg(feature = "alloc")]
 #[macro_export]
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (

@@ -5,7 +5,9 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Err, IResult, Needed, space, be_u16, le_u64};
+#[cfg(feature = "alloc")]
+use nom::le_u64;
+use nom::{Err, IResult, Needed, space, be_u16};
 use nom::types::CompleteByteSlice;
 
 #[allow(dead_code)]
@@ -150,7 +152,7 @@ named!(issue_308(&str) -> bool,
         ) >>
         (b) ));
 
-
+#[cfg(feature = "alloc")]
 fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>>> {
   do_parse!(input,
         entries: cond!(true, count!(le_u64, 3)) >>
