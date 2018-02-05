@@ -6,7 +6,9 @@ use verbose_errors::Context;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
+#[cfg(feature = "alloc")]
 use std::vec::Vec;
+#[cfg(feature = "alloc")]
 use std::string::ToString;
 
 #[cfg(feature = "std")]
@@ -289,6 +291,7 @@ pub fn code_from_offset<E>(v: &[(ErrorKind<E>, usize, usize)], offset: usize) ->
   }
 }
 
+#[cfg(feature = "alloc")]
 pub fn reset_color(v: &mut Vec<u8>) {
   v.push(0x1B);
   v.push(b'[');
@@ -296,6 +299,7 @@ pub fn reset_color(v: &mut Vec<u8>) {
   v.push(b'm');
 }
 
+#[cfg(feature = "alloc")]
 pub fn write_color(v: &mut Vec<u8>, color: u8) {
   v.push(0x1B);
   v.push(b'[');

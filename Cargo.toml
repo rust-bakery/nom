@@ -22,7 +22,8 @@ include = [
 ]
 
 [features]
-std = ["memchr/use_std"]
+alloc = []
+std = ["alloc", "memchr/use_std"]
 nightly = []
 default = ["std"]
 regexp = ["regex"]

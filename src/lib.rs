@@ -426,7 +426,7 @@
 //!   assert_eq!(expr(b"2*2/(5-1)+3"), Ok((&b""[..], 4)));
 //! }
 //! ```
-#![cfg_attr(not(feature = "std"), feature(alloc))]
+#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(feature = "nightly", feature(const_fn))]
@@ -435,7 +435,7 @@
 
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
 extern crate alloc;
 #[cfg(feature = "regexp")]
@@ -449,8 +449,10 @@ extern crate test;
 
 #[cfg(not(feature = "std"))]
 mod std {
+  #[cfg(feature = "alloc")]
   #[macro_use]
   pub use alloc::{boxed, vec, string};
+
   pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
   pub mod prelude {
     pub use core::prelude as v1;
