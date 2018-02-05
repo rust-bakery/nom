@@ -895,6 +895,7 @@ macro_rules! ws (
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
+  #[cfg(feature = "alloc")]
   use std::string::{String, ToString};
   use internal::{Err, IResult, Needed};
   use super::sp;

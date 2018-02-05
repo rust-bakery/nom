@@ -851,6 +851,7 @@ macro_rules! permutation_iterator (
 
 #[cfg(test)]
 mod tests {
+  #[cfg(feature = "alloc")]
   use std::string::{String, ToString};
   use internal::{Err, Needed, IResult};
   use util::ErrorKind;
