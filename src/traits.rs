@@ -99,30 +99,16 @@ pub trait AsBytes {
 }
 
 impl<'a> AsBytes for &'a str {
-  #[cfg(feature = "alloc")]
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    str::as_bytes(self)
-  }
-
-  #[cfg(not(feature = "alloc"))]
-  #[inline(always)]
-  fn as_bytes(&self) -> &[u8] {
-    unimplemented!("core_str_ext is unstable yet")
+    <str as AsBytes>::as_bytes(self)
   }
 }
 
 impl AsBytes for str {
-  #[cfg(feature = "alloc")]
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    str::as_bytes(self)
-  }
-
-  #[cfg(not(feature = "alloc"))]
-  #[inline(always)]
-  fn as_bytes(&self) -> &[u8] {
-    unimplemented!("core_str_ext is unstable yet")
+    self.as_ref()
   }
 }
 
@@ -303,17 +289,9 @@ impl<'a> AsChar for &'a char {
   fn as_char(self) -> char {
     *self
   }
-  #[cfg(feature = "alloc")]
   #[inline]
   fn is_alpha(self) -> bool {
-    self.is_alphabetic()
-  }
-  #[cfg(not(feature = "alloc"))]
-  #[inline]
-  fn is_alpha(self) -> bool {
-    unimplemented!(
-      "error[E0658]: use of unstable library feature 'core_char_ext': the stable interface is `impl char` in later crate (see issue #32110)"
-    )
+    <char as AsChar>::is_alpha(*self)
   }
   #[inline]
   fn is_alphanum(self) -> bool {
