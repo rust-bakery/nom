@@ -555,11 +555,9 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   //FIXME: this version is too simple and does not use the current locale
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    let pos = self
-      .to_lowercase()
-      .chars()
-      .zip(t.to_lowercase().chars())
-      .position(|(a, b)| a != b);
+    let pos = self.chars().zip(t.chars()).position(|(a, b)| {
+      a.to_lowercase().zip(b.to_lowercase()).any(|(a, b)| a != b)
+    });
 
     match pos {
       Some(_) => CompareResult::Error,
