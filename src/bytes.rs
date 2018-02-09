@@ -635,7 +635,7 @@ macro_rules! take_while_m_n (
 /// `take_till!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest list of bytes until the provided function succeeds
 ///
-/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`.
 ///
 /// # Example
 /// ```
@@ -679,7 +679,7 @@ macro_rules! take_till (
 /// `take_till1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest non empty list of bytes until the provided function succeeds
 ///
-/// The argument is either a function `&[T] -> bool` or a macro returning a `bool
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`.
 ///
 /// # Example
 /// ```
