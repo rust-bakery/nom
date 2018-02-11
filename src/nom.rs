@@ -888,6 +888,17 @@ where
   Ok((input.slice(input.input_len()..), input))
 }
 
+/// Return the length of the remaining input.
+#[inline]
+pub fn rest_len<T>(input: T) -> IResult<T, usize>
+where
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: InputLength,
+{
+  let len = input.input_len();
+  Ok((input, len))
+}
+
 /// Return the remaining input, for strings.
 #[inline]
 pub fn rest_s(input: &str) -> IResult<&str, &str> {
@@ -1505,6 +1516,12 @@ mod tests {
     let input: &str = "Hello, world!";
     let empty: &str = "";
     assert_eq!(rest(input), Ok((empty, input)));
+  }
+
+  #[test]
+  fn rest_len_on_slices() {
+    let input: &[u8] = &b"Hello, world!"[..];
+    assert_eq!(rest_len(input), Ok((input, input.len())));
   }
 
   #[test]
