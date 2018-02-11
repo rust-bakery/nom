@@ -27,8 +27,8 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 
 | usage | input | output | comment |
 |---|---|---|---|
-| `alt!(tag!("ab") | tag!("cd"))` |  `"cdef"` | `Ok( ("ef", "cd") )`|try a list of parsers and return the result of the first successful one|
-| `switch!(take!(2), "ab" => tag!("XYZ") | "cd" => tag!("123"))` |  `"cd1234"` | `Ok(("4", "123"))`|choose the next parser depending on the result of the first one, if successful, and returns the result of the second parser|
+| `alt!(tag!("ab") \| tag!("cd"))` |  `"cdef"` | `Ok( ("ef", "cd") )`|try a list of parsers and return the result of the first successful one|
+| `switch!(take!(2), "ab" => tag!("XYZ") \| "cd" => tag!("123"))` |  `"cd1234"` | `Ok(("4", "123"))`|choose the next parser depending on the result of the first one, if successful, and returns the result of the second parser|
 | `permutation!(tag!("ab"), tag!("cd"), tag!("12"))` |  `"cd12abc"` | `Ok( ("c", ("ab", "cd", "12") )`|succeeds when all its child parser have succeeded, whatever the order|
 
 ## Sequence combinators
@@ -53,8 +53,8 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | `many0!(1, 3, tag!("ab"))` |  `"ababc"` | `Ok( ("c", vec!("ab", "ab")) )`|applies the parser between m and n times (n included) and returns the list of results in a Vec|
 | `many_till!( tag!( "ab" ), tag!( "ef" ) )` |  `"ababefg"` | `Ok( ("g", (vec!("ab", "ab"), "ef")) )`|Applies the first parser until the second applies. Returns a tuple containing the list of results from the first in a Vec and the result of the second.|
 | `separated_list!(tag!(","), tag!("ab"))` |  `"ab,ab,ab."` | `Ok( (".", vec!("ab", "ab", "ab")) )`|`separated_nonempty_list` works like `separated_list` but must returns at least one element|
-| `fold_many0!(be_u8, 0, |acc, item| acc + item)` |  `[1, 2, 3]` | `Ok( ([], 6) )`|applies the parser 0 or more times and folds the list of return values. The `fold_many1` version must apply the child parser at least one time|
-| `fold_many_m_n!(1, 2, be_u8, 0, |acc, item| acc + item)` |  `[1, 2, 3]` | `Ok( ([3], 3))`|applies the parser between m and n times (n included) and folds the list of return value|
+| `fold_many0!(be_u8, 0, \|acc, item\| acc + item)` |  `[1, 2, 3]` | `Ok( ([], 6) )`|applies the parser 0 or more times and folds the list of return values. The `fold_many1` version must apply the child parser at least one time|
+| `fold_many_m_n!(1, 2, be_u8, 0, \|acc, item\| acc + item)` |  `[1, 2, 3]` | `Ok( ([3], 3))`|applies the parser between m and n times (n included) and folds the list of return value|
 | `length_count!(number, tag!("ab"))` |  `"2ababab"` | `Ok( ("ab", vec!("ab", "ab")) )`|gets a number from the first parser, then applies the second parser that many times|
 
 ## Integers
