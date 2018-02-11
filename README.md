@@ -8,17 +8,129 @@
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing* and *memory safety* to produce fast and correct parsers, and provides macros and traits to abstract most of the error prone plumbing.
 
-nom can handle any format, binary or textual, with grammar from regular to context sensitive. There are already a lot of [example parsers](https://github.com/Geal/nom/issues/14) available on Github.
+## Example
+
+[Hexadecimal color](https://developer.mozilla.org/en-US/docs/Web/CSS/color) parser:
+
+```rust
+#[macro_use]
+extern crate nom;
+
+use nom::is_hex_digit;
+
+#[derive(Debug,PartialEq)]
+pub struct Color {
+  pub red:   u8,
+  pub green: u8,
+  pub blue:  u8,
+}
+
+named!(hex_primary<u8>,
+  flat_map!(take_while_m_n!(2, 2, is_hex_digit), parse_to!(u8))
+);
+
+named!(hex_color<Color>,
+  do_parse!(
+           tag!("#")   >>
+    red:   hex_primary >>
+    green: hex_primary >>
+    blue:  hex_primary >>
+    (Color { red, green, blue })
+  )
+);
+
+#[test]
+fn parse_color() {
+  assert_eq!(hex_color(&b"#2F14DF"[..]), Ok((&b""[..], Color {
+    red: 47,
+    green: 20,
+    blue: 223,
+  })));
+}
+```
+
+## Documentation
+
+- [Reference documentation][docs.rs/nom].
+- [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc).
 
 If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
-Reference documentation is available [here][doc].
+## Why use nom
 
-Various design documents and tutorials can be found in the [doc directory](https://github.com/Geal/nom/tree/master/doc).
+If you want to write:
 
-## Features
+### binary format parsers
 
-Here are the current and planned features, with their status:
+nom was designed to properly parse binary formats from the beginning. Compared
+to the usual handwritten C parsers, nom parsers are just as fast, free from
+buffer overflow vulnerabilities, and handle common patterns for you:
+
+- [TLV](https://en.wikipedia.org/wiki/Type-length-value)
+- bit level parsing
+- hexadecimal viewer in the debugging macros for easy data analysis
+- streaming parsers for network formats and huge files
+
+Example projects:
+
+- [FLV parser](https://github.com/rust-av/flavors)
+- [Matroska parser](https://github.com/rust-av/matroska)
+- [tar parser](https://github.com/Keruspe/tar-parser.rs)
+
+### Text format parsers
+
+While nom was made for binary format at first, but it soon grew to work just as
+well with text formats. From line based formats like CSV, to more complex, nested
+formats such as JSON, nom can manage it, and provides you with useful tools:
+
+- fast case insensitive comparison
+- recognizers for escaped strings
+- regular expressions can be embedded in nom parsers to represent complex character patterns succintly
+- special care has been given to managing non ASCII characters properly
+
+Example projects:
+
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/parser/http11.rs)
+- [TOML parser](https://github.com/joelself/tomllib)
+
+### Programming language parsers
+
+While programming language parsers are usually written manually for more
+flexibility and performance, nom can be (and has been successfully) used
+as a prototyping parser for a language.
+
+nom will get you started quickly with powerful custom error types, that you
+can leverage with [nom_locate](https://github.com/fflorent/nom_locate) to
+pinpoint the exact line and column of the error. No need for separate
+tokenizing, lexing and parsing phases: nom can automatically handle whitespace
+parsing, and construct an AST in place.
+
+Example projects:
+
+- [PHP VM](https://github.com/tagua-vm/parser)
+- [Rust parser](https://github.com/dtolnay/syn)
+- eve language prototype
+
+### Streaming formats
+
+While a lot of formats (and the code handling them) assume that they can fit
+the complete data in memory, there are formats for which we only get a part
+of the data at once, like network formats, or huge files.
+nom has been designed for a correct behaviour with partial data: if there is
+not enough data to decide, nom will tell you it needs more instead of silently
+returning a wrong result. Whether your data comes entirely or in chunks, the
+result should be the same.
+
+It allows you to build powerful, deterministic state machines for your protocols.
+
+Example projects:
+
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/parser/http11.rs)
+- [using nom with generators](https://github.com/geal/generator_nom)
+
+## Technical features
+
+nom parsers are for:
 - [x] **byte-oriented**: the basic type is `&[u8]` and parsers will work as much as possible on byte array slices (but are not limited to them)
 - [x] **bit-oriented**: nom can address a byte slice as a bit stream
 - [x] **string-oriented**: the same kind of combinators can apply on UTF-8 strings as well
@@ -48,7 +160,9 @@ Then include it in your code like this:
 extern crate nom;
 ```
 
-**NOTE: if you have existing code using nom below the 2.0 version, please take a look at the [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md) to handle the breaking changes.**
+**NOTE: if you have existing code using nom below the 4.0 version, please take a look
+at the [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_4.md)
+to handle the breaking changes.**
 
 There are a few compilation features:
 
@@ -84,6 +198,9 @@ This has a few advantages:
 Here is an example of one such parser, to recognize text between parentheses:
 
 ```rust
+#[macro_use]
+extern crate nom;
+
 named!(parens, delimited!(char!('('), is_not!(")"), char!(')')));
 ```
 
@@ -92,11 +209,16 @@ It defines a function named `parens`, which will recognize a sequence of the cha
 Here is another parser, written without using nom's macros this time:
 
 ```rust
+#[macro_use]
+extern crate nom;
+
+use nom::{IResult,Err,Needed};
+
 fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
   if i.len() < 4 {
-    IResult::Incomplete(Needed::Size(4))
+    Err(Err::Incomplete(Needed::Size(4)))
   } else {
-    IResult::Done(&i[4..],&i[0..4])
+    Ok((&i[4..],&i[0..4]))
   }
 }
 ```
@@ -104,6 +226,9 @@ fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
 This function takes a byte array as input, and tries to consume 4 bytes. With macros, you would write it like this:
 
 ```rust
+#[macro_use]
+extern crate nom;
+
 named!(take4, take!(4));
 ```
 
@@ -120,37 +245,26 @@ Or like this, if you don't want to specify a custom error type (it will be `u32`
 fn parser(input: I) -> IResult<I, O>;
 ```
 
-`IResult` is an enumeration that can represent:
-
-- a correct result `Done(I,O)` with the first element being the rest of the input (not parsed yet), and the second being the output value;
-- an error `Error(Err)` with `Err` an enum that can represent an error with, optionally, position information and a chain of accumulated errors;
-- an `Incomplete(Needed)` indicating that more input is necessary. `Needed` can indicate how much data is needed.
+`IResult` is an alias for the `Result` type:
 
 ```rust
-pub enum IResult<I,O,E=u32> {
-  Done(I,O),
-  Error(Err<I,E>),
-  Incomplete(Needed)
-}
+use nom::{Needed, Context};
 
-pub enum Err<P,E=u32>{
-  /// an error code
-  Code(ErrorKind<E>),
-  /// an error code, and the next error in the parsing chain
-  Node(ErrorKind<E>, Box<Err<P,E>>),
-  /// an error code and the related input position
-  Position(ErrorKind<E>, P),
-  /// an error code, the related input position, and the next error in the parsing chain
-  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
-}
+type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
 
-pub enum Needed {
-  /// needs more data, but we do not know how much
-  Unknown,
-  /// contains the required data size
-  Size(usize)
+enum Err<I, E = u32> {
+  Incomplete(Needed),
+  Error(Context<I, E>),
+  Failure(Context<I, E>),
 }
 ```
+
+It can have the following values:
+
+- a correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
+- an error `Err(Err::Error(c))` with `c` an enum that contians an error code with its position in the input, and optionally a chain of accumulated errors;
+- an error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
+- an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and test another parser
 
 There is already a large list of basic parsers available, like:
 
@@ -177,7 +291,7 @@ Macros are the main way to make new parsers by combining other ones. Those macro
 named!(abcd_parser, tag!("abcd")); // will consume bytes if the input begins with "abcd"
 
 
-named!(take_10, take!(10));                // will consume 10 bytes of input
+named!(take_10, take!(10));        // will consume and return 10 bytes of input
 ```
 
 The **`named!`** macro can take three different syntaxes:
@@ -370,11 +484,9 @@ Here is a list of known projects using nom:
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
 - Language specifications:
-  * [BNF](https://github.com/snewt/bnf)  
+  * [BNF](https://github.com/snewt/bnf)
 - [using nom as lexer and parser](https://github.com/Rydgel/monkey-rust)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
 Want to add your parser here? Create a pull request for it!
-
-[doc]: http://rust.unhandledexpression.com/nom/
