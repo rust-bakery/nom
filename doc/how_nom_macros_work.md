@@ -27,15 +27,13 @@ And here is how it is defined:
 # }
 #[macro_export]
 macro_rules! opt(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      match $submac!($i, $($args)*) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, Some(o)),
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, None),
-        $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, None)
-      }
+  ($i:expr, $submac:ident!( $($args:tt)* )) => ({
+    match $submac!($i, $($args)*) {
+      Ok((i,o))          => Ok((i, Some(o))),
+      Err(Err::Error(_)) => Ok(($i, None)),
+      Err(e)             => Err(e),
     }
-  );
+  });
   ($i:expr, $f:expr) => (
     opt!($i, call!($f));
   );
@@ -149,18 +147,20 @@ The `call!` macro transforms `call!(input, f)` into `f(i)`. If you need to pass 
 The macro argument is decomposed into `$submac:ident!`, the macro's name and a bang, and `( $($args:tt)* )`, the tokens contained between the parenthesis of the macro call.
 
 ```ignore
-($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      match $submac!($i, $($args)*) {
-        $crate::IResult::Done(i,o)     => $crate::IResult::Done(i, Some(o)),
-        $crate::IResult::Error(_)      => $crate::IResult::Done($i, None),
-        $crate::IResult::Incomplete(_) => $crate::IResult::Done($i, None)
-      }
+($i:expr, $submac:ident!( $($args:tt)* )) => ({
+    match $submac!($i, $($args)*) {
+      Ok((i,o))          => Ok((i, Some(o))),
+      Err(Err::Error(_)) => Ok(($i, None)),
+      Err(e)             => Err(e),
     }
-  );
+  });
 ```
 
-The macro is called with the input we got, as first argument, then we pattern match on the result. Every combinator or parser must return a `IResult`, so you know what patterns you need to verify. If you need to call two parsers in a sequence, use the first parameter of `IResult::Done(i,o)`: it is the input remaining after the first parser was applied.
+The macro is called with the input we got, as first argument, then we pattern
+match on the result. Every combinator or parser must return a `IResult`, which
+is a `Result<(I, O), nom::Err<I, E>>`, so you know which patterns you need to
+verify. If you need to call two parsers in a sequence, use the first parameter
+of `Ok((i,o))`: it is the input remaining after the first parser was applied.
 
 As an example, see how the `preceded!` macro works:
 
@@ -168,16 +168,9 @@ As an example, see how the `preceded!` macro works:
 ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       match $submac!($i, $($args)*) {
-        $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-        $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-        $crate::IResult::Done(i1,_)    => {
-          match $submac2!(i1, $($args2)*) {
-            $crate::IResult::Error(a)      => $crate::IResult::Error(a),
-            $crate::IResult::Incomplete(i) => $crate::IResult::Incomplete(i),
-            $crate::IResult::Done(i2,o2)   => {
-              $crate::IResult::Done(i2, o2)
-            }
-          }
+        Err(e) => Err(e),
+        Ok((i1, _)) => {
+          $submac2!(i1, $($args2)*)
         },
       }
     }

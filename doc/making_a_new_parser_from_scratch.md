@@ -51,18 +51,47 @@ use nom::{be_u16, be_u32};
 
 Let's parse a simple expression like `(12345)`. nom parsers are functions that use the `nom::IResult` type everywhere. As an example, a parser taking a byte slice `&[u8]` and returning a 32 bits unsigned integer `u32` would have this signature: `fn parse_u32(input: &[u8]) -> IResult<&[u8], u32>`.
 
-The `IResult` type depends on the input and output types, and an optional custom error type. This enum can either contain `Done(i,o)` containing the remaining input and the output value, an error, or an indication that more data is needed.
+The `IResult` type depends on the input and output types, and an optional custom
+error type. This enum can either be `Ok((i,o))` containing the remaining input
+and the output value, or, on the `Err` side, an error or an indication that more
+data is needed.
 
 ```ignore
-# #[macro_use] extern crate nom;
-# use nom::{Err,Needed};
+pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
+#[derive(Debug,PartialEq,Eq,CLone,Copy)]
+pub enum Needed {
+  Unknown,
+  Size(u32)
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Err<I, E = u32> {
+  Incomplete(Needed),
+  Error(Context<I, E>),
+  Failure(Context<I, E>),
+}
+
 #[derive(Debug,PartialEq,Eq,Clone)]
+pub enum Err<P,E=u32>{
+  Code(ErrorKind<E>),
+  Node(ErrorKind<E>, Box<Err<P,E>>),
+  Position(ErrorKind<E>, P),
+  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
+}
+
+#[derive(Debug,PartialEq,Eq)]
 pub enum IResult<I,O,E=u32> {
   Done(I,O),
   Error(Err<I,E>),
   Incomplete(Needed)
 }
-# fn main() {}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum Context<I, E = u32> {
+  Code(I, ErrorKind<E>),
+  /// only available if the compilation feature `verbose-errors` is active
+  List(Vec<(I, ErrorKind<E>)>),
+}
 ```
 
 nom uses this type everywhere. Every combination of parsers will pattern match on this to know if it must return a value, an error, consume more data, etc. But this is done behind the scenes most of the time.
@@ -106,47 +135,41 @@ Once the macros have expanded, this would correspond to:
 fn prefixed(i: &[u8]) -> ::nom::IResult<&[u8], &[u8]> {
     {
         match {
-                  #[inline(always)]
-                  fn as_bytes<T: ::nom::AsBytes>(b: &T) -> &[u8] {
-                      b.as_bytes()
-                  }
-                  let expected = "hello";
-                  let bytes = as_bytes(&expected);
-                  {
-                      let res: ::nom::IResult<&[u8], &[u8]> =
-                          if bytes.len() > i.len() {
-                              ::nom::IResult::Incomplete(::nom::Needed::Size(bytes.len()))
-                          } else if &i[0..bytes.len()] == bytes {
-                              ::nom::IResult::Done(&i[bytes.len()..],
-                                                   &i[0..bytes.len()])
-                          } else {
-                              ::nom::IResult::Error(::nom::Err::Position(::nom::ErrorKind::Tag,
-                                                                         i))
-                          };
-                      res
-                  }
-              } {
-            ::nom::IResult::Error(a) => ::nom::IResult::Error(a),
-            ::nom::IResult::Incomplete(i) => ::nom::IResult::Incomplete(i),
-            ::nom::IResult::Done(i1, _) => {
-                match {
-                          let cnt = 5 as usize;
-                          let res: ::nom::IResult<&[u8], &[u8]> =
-                              if i1.len() < cnt {
-                                  ::nom::IResult::Incomplete(::nom::Needed::Size(cnt))
-                              } else {
-                                  ::nom::IResult::Done(&i1[cnt..],
-                                                       &i1[0..cnt])
-                              };
-                          res
-                      } {
-                    ::nom::IResult::Error(a) => ::nom::IResult::Error(a),
-                    ::nom::IResult::Incomplete(i) =>
-                    ::nom::IResult::Incomplete(i),
-                    ::nom::IResult::Done(i2, o2) => {
-                        ::nom::IResult::Done(i2, o2)
-                    }
+            use ::std::result::Result::*;
+            use $crate::{Err,Needed,IResult,ErrorKind};
+            use $crate::{Compare,CompareResult,InputLength,Slice,need_more};
+
+            let res: IResult<_,_> = match ($i).compare($tag) {
+                CompareResult::Ok => {
+                    let blen = $tag.input_len();
+                    Ok(($i.slice(blen..), $i.slice(..blen)))
+                },
+                CompareResult::Incomplete => {
+                    need_more($i, Needed::Size($tag.input_len()))
+                },
+                CompareResult::Error => {
+                    let e:ErrorKind<u32> = ErrorKind::Tag;
+                    Err(Err::Error($crate::Context::Code($i, e)))
                 }
+            };
+            res
+        } {
+            Err(e) => Err(e),
+            Ok((i1, _))= > {
+                use ::std::result::Result::*;
+                use ::std::option::Option::*;
+                use $crate::{Needed,IResult};
+
+                use $crate::InputIter;
+                use $crate::Slice;
+                let input = i1;
+                let cnt = $count as usize;
+
+                let res: IResult<_,_,u32> = match input.slice_index(cnt) {
+                    None        => $crate::need_more(input, Needed::Size(cnt)),
+                    Some(index) => Ok((input.slice(index..), input.slice(..index)))
+                };
+                res
             }
         }
     }
@@ -197,10 +220,10 @@ If your parser handles textual data, you can just use a lot of strings directly 
 ```ignore
 #[test]
 fn factor_test() {
-  assert_eq!(factor(&b"3"[..]),       IResult::Done(&b""[..], 3));
-  assert_eq!(factor(&b" 12"[..]),     IResult::Done(&b""[..], 12));
-  assert_eq!(factor(&b"537  "[..]),   IResult::Done(&b""[..], 537));
-  assert_eq!(factor(&b"  24   "[..]), IResult::Done(&b""[..], 24));
+  assert_eq!(factor(&b"3"[..]),       Ok((&b""[..], 3)));
+  assert_eq!(factor(&b" 12"[..]),     Ok((&b""[..], 12)));
+  assert_eq!(factor(&b"537  "[..]),   Ok((&b""[..], 537)));
+  assert_eq!(factor(&b"  24   "[..]), Ok((&b""[..], 24)));
 }
 ```
 
@@ -216,7 +239,7 @@ While Rust macros are really useful to get a simpler syntax, they can sometimes 
     found `collections::vec::Vec<&[u8]>`
 (expected &-ptr,
     found struct `collections::vec::Vec`) [E0308]
-<nom macros>:6 } $ crate:: IResult:: Done ( input , res ) } ) ; ( $ i : expr , $ f : expr )
+<nom macros>:6 } Ok ( ( input , res ) ) } ) ; ( $ i : expr , $ f : expr )
                                                     ^~~
 <nom macros>:20:1: 20:34 note: in this expansion of many0! (defined in <nom macros>)
 tests/arithmetic.rs:13:1: 13:35 note: in this expansion of named! (defined in <nom macros>)
@@ -258,15 +281,14 @@ It will print the `manytag` function like this:
 fn manytag(i: &[u8]) -> ::nom::IResult<&[u8], Vec<&[u8]>> {
     let mut res = Vec::new();
     let mut input = i;
-    while let ::nom::IResult::Done(i, o) =
+    while let Ok((i, o)) =
               {
                   let cnt = 5 as usize;
                   let res: ::nom::IResult<&[u8], &[u8]> =
                       if input.len() < cnt {
-                          ::nom::IResult::Incomplete(::nom::Needed::Size(cnt))
+                          Err(::nom::Err::Incomplete(::nom::Needed::Size(cnt)))
                       } else {
-                          ::nom::IResult::Done(&input[cnt..],
-                                               &input[0..cnt])
+                          Ok( (&input[cnt..], &input[0..cnt]))
                       };
                   res
               } {
@@ -274,6 +296,6 @@ fn manytag(i: &[u8]) -> ::nom::IResult<&[u8], Vec<&[u8]>> {
         res.push(o);
         input = i;
     }
-    ::nom::IResult::Done(input, res)
+    Ok((input, res))
 }
 ```
