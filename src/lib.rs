@@ -3,17 +3,58 @@
 //! nom is a parser combinator library with a focus on safe parsing,
 //! streaming patterns, and as much as possible zero copy.
 //!
+//! # Example
+//!
+//! ```rust
+//! #[macro_use]
+//! extern crate nom;
+//!
+//! use nom::is_hex_digit;
+//!
+//! #[derive(Debug,PartialEq)]
+//! pub struct Color {
+//!   pub red:   u8,
+//!   pub green: u8,
+//!   pub blue:  u8,
+//! }
+//!
+//! named!(hex_primary<u8>,
+//!   flat_map!(take_while_m_n!(2, 2, is_hex_digit), parse_to!(u8))
+//! );
+//!
+//! named!(hex_color<Color>,
+//!   do_parse!(
+//!            tag!("#")   >>
+//!     red:   hex_primary >>
+//!     green: hex_primary >>
+//!     blue:  hex_primary >>
+//!     (Color { red, green, blue })
+//!   )
+//! );
+//!
+//! fn main() {
+//!   assert_eq!(hex_color(&b"#2F14DF"[..]), Ok((&b""[..], Color {
+//!     red: 47,
+//!     green: 20,
+//!     blue: 223,
+//!   })));
+//! }
+//! ```
+//!
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!
-//! There are a few [guides](http://rust.unhandledexpression.com/nom/home.html) with more details
-//! about [the design of nom](http://rust.unhandledexpression.com/nom/how_nom_macros_work.html),
-//! [how to write parsers](http://rust.unhandledexpression.com/nom/making_a_new_parser_from_scratch.html),
-//! or the [error management system](http://rust.unhandledexpression.com/nom/error_management.html).
+//! There are a few [guides](https://github.com/Geal/nom/tree/master/doc) with more details
+//! about [the design of nom](https://github.com/Geal/nom/blob/master/doc/how_nom_macros_work.md),
+//! [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
+//! or the [error management system](https://github.com/Geal/nom/blob/master/doc/error_management.md).
 //!
 //! If you are upgrading to nom 2.0, please read the
-//! [migration document](http://rust.unhandledexpression.com/nom/upgrading_to_nom_2.html).
+//! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md).
 //!
-//! See also the [FAQ](http://rust.unhandledexpression.com/nom/FAQ.html).
+//! If you are upgrading to nom 4.0, please read the
+//! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_4.md).
+//!
+//! See also the [FAQ](https://github.com/Geal/nom/blob/master/doc/FAQ.md).
 //!
 //! # What are parser combinators?
 //!
@@ -355,77 +396,6 @@
 //! * **tab**: Matches a tab character '\t'
 //! * **tag_cl**:
 //!
-//! # Example
-//!
-//! ```ignore
-//! #[macro_use]
-//! extern crate nom;
-//!
-//! use nom::{IResult,digit};
-//!
-//! // Parser definition
-//!
-//! use std::str;
-//! use std::str::FromStr;
-//!
-//! // We parse any expr surrounded by parens, ignoring all whitespaces around those
-//! named!(parens<i64>, ws!(delimited!( tag!("("), expr, tag!(")") )) );
-//!
-//! // We transform an integer string into a i64, ignoring surrounding whitespaces
-//! // We look for a digit suite, and try to convert it.
-//! // If either str::from_utf8 or FromStr::from_str fail,
-//! // we fallback to the parens parser defined above
-//! named!(factor<i64>, alt!(
-//!     map_res!(
-//!       map_res!(
-//!         ws!(digit),
-//!         str::from_utf8
-//!       ),
-//!       FromStr::from_str
-//!     )
-//!   | parens
-//!   )
-//! );
-//!
-//! // We read an initial factor and for each time we find
-//! // a * or / operator followed by another factor, we do
-//! // the math by folding everything
-//! named!(term <i64>, do_parse!(
-//!     init: factor >>
-//!     res:  fold_many0!(
-//!         pair!(alt!(tag!("*") | tag!("/")), factor),
-//!         init,
-//!         |acc, (op, val): (&[u8], i64)| {
-//!             if (op[0] as char) == '*' { acc * val } else { acc / val }
-//!         }
-//!     ) >>
-//!     (res)
-//!   )
-//! );
-//!
-//! named!(expr <i64>, do_parse!(
-//!     init: term >>
-//!     res:  fold_many0!(
-//!         pair!(alt!(tag!("+") | tag!("-")), term),
-//!         init,
-//!         |acc, (op, val): (&[u8], i64)| {
-//!             if (op[0] as char) == '+' { acc + val } else { acc - val }
-//!         }
-//!     ) >>
-//!     (res)
-//!   )
-//! );
-//!
-//! fn main() {
-//!   assert_eq!(expr(b"1+2"),         Ok((&b""[..], 3)));
-//!   assert_eq!(expr(b"12+6-4+3"),    Ok((&b""[..], 17)));
-//!   assert_eq!(expr(b"1+2*3+4"),     Ok((&b""[..], 11)));
-//!
-//!   assert_eq!(expr(b"(2)"),         Ok((&b""[..], 2)));
-//!   assert_eq!(expr(b"2*(3+4)"),     Ok((&b""[..], 14)));
-//!   assert_eq!(expr(b"2*2/(5-1)+3"), Ok((&b""[..], 4)));
-//! }
-//! ```
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(test))]

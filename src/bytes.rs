@@ -580,6 +580,7 @@ macro_rules! take_while_m_n (
       use ::std::result::Result::*;
       use ::std::option::Option::*;
       use $crate::IResult;
+      use $crate::ErrorKind;
 
       use $crate::{InputLength,InputIter,Slice,Err,Needed,AtEof};
       let input = $input;

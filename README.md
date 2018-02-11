@@ -51,7 +51,7 @@ fn parse_color() {
 
 ## Documentation
 
-- [Reference documentation][docs.rs/nom].
+- [Reference documentation](https://docs.rs/nom).
 - [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc).
 
 If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
