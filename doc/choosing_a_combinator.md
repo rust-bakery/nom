@@ -85,98 +85,104 @@ separated_nonempty_list_complete!: This is equivalent to the separated_nonempty_
 | `` |  `` | ``||
 | `` |  `` | ``||
 
-cond!: conditional combinator
-cond_reduce!: Conditional combinator with error
-cond_with_error!: Conditional combinator
-expr_opt!: evaluates an expression that returns a Option and returns a Ok((I,T)) if Some
-expr_res!: evaluates an expression that returns a Result and returns a Ok((I,T)) if Ok
-flat_map!:
-map!: maps a function on the result of a parser
-map_opt!: maps a function returning an Option on the output of a parser
-map_res!: maps a function returning a Result on the output of a parser
-not!: returns a result only if the embedded parser returns Error or Incomplete does not consume the input
-opt!: make the underlying parser optional
-opt_res!: make the underlying parser optional
-parse_to!: uses the parse method from std::str::FromStr to convert the current input to the specified type
-peek!: returns a result without consuming the input
-recognize!: if the child parser was successful, return the consumed input as produced value
-return_error!: prevents backtracking if the child parser fails
-tap!: allows access to the parser's result without affecting it
-verify!: returns the result of the child parser if it satisfies a verification function
-Error management and debugging
-add_return_error!: Add an error if the child parser fails
-dbg!: Prints a message if the parser fails
-dbg_dmp!: Prints a message and the input if the parser fails
-error_code!: creates a parse error from a nom::ErrorKind
-error_node!: creates a parse error from a nom::ErrorKind and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
-error_node_position!: creates a parse error from a nom::ErrorKind, the position in the input and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
-error_position!: creates a parse error from a nom::ErrorKind and the position in the input if "verbose-errors" is not activated, it default to only the error code
-fix_error!: translate parser result from IResult to IResult with a custom type
+- cond!: conditional combinator
+- cond_reduce!: Conditional combinator with error
+- cond_with_error!: Conditional combinator
+- expr_opt!: evaluates an expression that returns a Option and returns a Ok((I,T)) if Some
+- expr_res!: evaluates an expression that returns a Result and returns a Ok((I,T)) if Ok
+- flat_map!:
+- map!: maps a function on the result of a parser
+- map_opt!: maps a function returning an Option on the output of a parser
+- map_res!: maps a function returning a Result on the output of a parser
+- not!: returns a result only if the embedded parser returns Error or Incomplete does not consume the input
+- opt!: make the underlying parser optional
+- opt_res!: make the underlying parser optional
+- parse_to!: uses the parse method from std::str::FromStr to convert the current input to the specified type
+- peek!: returns a result without consuming the input
+- recognize!: if the child parser was successful, return the consumed input as produced value
+- return_error!: prevents backtracking if the child parser fails
+- tap!: allows access to the parser's result without affecting it
+- verify!: returns the result of the child parser if it satisfies a verification function
+
+## Error management and debugging
+
+- add_return_error!: Add an error if the child parser fails
+- dbg!: Prints a message if the parser fails
+- dbg_dmp!: Prints a message and the input if the parser fails
+- error_node_position!: creates a parse error from a nom::ErrorKind, the position in the input and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
+- error_position!: creates a parse error from a nom::ErrorKind and the position in the input if "verbose-errors" is not activated, it default to only the error code
+- fix_error!: translate parser result from IResult to IResult with a custom type
 
 
 ## Text parsing
-escaped!: matches a byte string with escaped characters.
-escaped_transform!: matches a byte string with escaped characters, and returns a new string with the escaped characters replaced
+
+- escaped!: matches a byte string with escaped characters.
+- escaped_transform!: matches a byte string with escaped characters, and returns a new string with the escaped characters replaced
 
 ## Binary format parsing
-length_data!: gets a number from the first parser, than takes a subslice of the input of that size, and returns that subslice
-length_bytes!: alias for length_data
-length_value!: gets a number from the first parser, takes a subslice of the input of that size, then applies the second parser on that subslice. If the second parser returns Incomplete, length_value will return an error
-Bit stream parsing
-bits!: transforms the current input type (byte slice &[u8]) to a bit stream on which bit specific parsers and more general combinators can be applied
-bytes!: transforms its bits stream input back into a byte slice for the underlying parsers.
-tag_bits!: matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
-take_bits!: generates a parser consuming the specified number of bits
+- length_data!: gets a number from the first parser, than takes a subslice of the input of that size, and returns that subslice
+- length_bytes!: alias for length_data
+- length_value!: gets a number from the first parser, takes a subslice of the input of that size, then applies the second parser on that subslice. If the second parser returns Incomplete, length_value will return an error
+
+## Bit stream parsing
+
+- bits!: transforms the current input type (byte slice &[u8]) to a bit stream on which bit specific parsers and more general combinators can be applied
+- bytes!: transforms its bits stream input back into a byte slice for the underlying parsers.
+- tag_bits!: matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
+- take_bits!: generates a parser consuming the specified number of bits
 Whitespace delimited formats parsing
-eat_separator!: helper macros to build a separator parser
-sep!: sep is the parser rewriting macro for whitespace separated formats
-wrap_sep!:
-ws!:
+- eat_separator!: helper macros to build a separator parser
+- sep!: sep is the parser rewriting macro for whitespace separated formats
+- wrap_sep!:
+- ws!:
+
 ## Remaining combinators
-apply!: emulate function currying: apply!(my_function, arg1, arg2, ...) becomes my_function(input, arg1, arg2, ...)
-apply_m!: emulate function currying for method calls on structs apply_m!(self.my_function, arg1, arg2, ...) becomes self.my_function(input, arg1, arg2, ...)
-call!: Used to wrap common expressions and function as macros
-call_m!: Used to called methods then move self back into self
-closure!: Wraps a parser in a closure
-method!: Makes a method from a parser combination
-named!: Makes a function from a parser combination
-named_args!: Makes a function from a parser combination with arguments.
-named_attr!: Makes a function from a parser combination, with attributes
-try_parse!: A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Ok, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
+
+- apply!: emulate function currying: apply!(my_function, arg1, arg2, ...) becomes my_function(input, arg1, arg2, ...)
+- apply_m!: emulate function currying for method calls on structs apply_m!(self.my_function, arg1, arg2, ...) becomes self.my_function(input, arg1, arg2, ...)
+- call!: Used to wrap common expressions and function as macros
+- call_m!: Used to called methods then move self back into self
+- closure!: Wraps a parser in a closure
+- method!: Makes a method from a parser combination
+- named!: Makes a function from a parser combination
+- named_args!: Makes a function from a parser combination with arguments.
+- named_attr!: Makes a function from a parser combination, with attributes
+- try_parse!: A bit like std::try!, this macro will return the remaining input and parsed value if the child parser returned Ok, and will do an early return for Error and Incomplete this can provide more flexibility than do_parse! if needed
 
 ## Character test functions
+
 use those functions with a combinator like take_while!:
 
-is_alphabetic: Tests if byte is ASCII alphabetic: A-Z, a-z
-is_alphanumeric: Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9
-is_digit: Tests if byte is ASCII digit: 0-9
-is_hex_digit: Tests if byte is ASCII hex digit: 0-9, A-F, a-f
-is_oct_digit: Tests if byte is ASCII octal digit: 0-7
-is_space: Tests if byte is ASCII space or tab
-Remaining functions (sort those out in the other categories)
-alpha: Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
-alphanumeric: Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
-anychar:
-begin:
-crlf:
-digit: Recognizes one or more numerical characters: 0-9
-double: Recognizes floating point number in a byte string and returns a f64
-double_s: Recognizes floating point number in a string and returns a f64
-eol:
-float: Recognizes floating point number in a byte string and returns a f32
-float_s: Recognizes floating point number in a string and returns a f32
-hex_digit: Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
-hex_u32: Recognizes a hex-encoded integer
-line_ending: Recognizes an end of line (both '\n' and "\r\n")
-multispace: Recognizes one or more spaces, tabs, carriage returns and line feeds
-newline: Matches a newline character '\n'
-non_empty: Recognizes non empty buffers
-not_line_ending:
-oct_digit: Recognizes one or more octal characters: 0-7
-rest: Return the remaining input.
-rest_s: Return the remaining input, for strings.
-shift:
-sized_buffer:
-space: Recognizes one or more spaces and tabs
-tab: Matches a tab character '\t'
-tag_cl:
+- is_alphabetic: Tests if byte is ASCII alphabetic: A-Z, a-z
+- is_alphanumeric: Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9
+- is_digit: Tests if byte is ASCII digit: 0-9
+- is_hex_digit: Tests if byte is ASCII hex digit: 0-9, A-F, a-f
+- is_oct_digit: Tests if byte is ASCII octal digit: 0-7
+- is_space: Tests if byte is ASCII space or tab
+- Remaining functions (sort those out in the other categories)
+- alpha: Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
+- alphanumeric: Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
+- anychar:
+- begin:
+- crlf:
+- digit: Recognizes one or more numerical characters: 0-9
+- double: Recognizes floating point number in a byte string and returns a f64
+- double_s: Recognizes floating point number in a string and returns a f64
+- eol:
+- float: Recognizes floating point number in a byte string and returns a f32
+- float_s: Recognizes floating point number in a string and returns a f32
+- hex_digit: Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
+- hex_u32: Recognizes a hex-encoded integer
+- line_ending: Recognizes an end of line (both '\n' and "\r\n")
+- multispace: Recognizes one or more spaces, tabs, carriage returns and line feeds
+- newline: Matches a newline character '\n'
+- non_empty: Recognizes non empty buffers
+- not_line_ending:
+- oct_digit: Recognizes one or more octal characters: 0-7
+- rest: Return the remaining input.
+- rest_s: Return the remaining input, for strings.
+- shift:
+- sized_buffer:
+- space: Recognizes one or more spaces and tabs
+- tab: Matches a tab character '\t'
+- tag_cl:
