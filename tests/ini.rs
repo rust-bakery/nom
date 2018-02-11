@@ -22,15 +22,15 @@ fn complete_byte_slice_to_str<'a>(s: CompleteByteSlice<'a>) -> Result<&'a str, s
 
 named!(key_value    <CompleteByteSlice,(&str,&str)>,
   do_parse!(
-     key: map_res!(dbg!(alphanumeric), complete_byte_slice_to_str)
+     key: map_res!(alphanumeric, complete_byte_slice_to_str)
   >>      opt!(space)
   >>      char!('=')
-  >>      dbg!(opt!(space))
+  >>      opt!(space)
   >> val: map_res!(
-           dbg!(take_while!(call!(|c| c != b'\n' && c != b';'))),
+           take_while!(call!(|c| c != b'\n' && c != b';')),
            complete_byte_slice_to_str
          )
-  >>      opt!(pair!(char!(';'), dbg!(take_while!(call!(|c| c != b'\n')))))
+  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != b'\n'))))
   >>      (key, val)
   )
 );
@@ -56,14 +56,14 @@ named!(category_and_keys<CompleteByteSlice,(&str,HashMap<&str,&str>)>,
 named!(categories<CompleteByteSlice, HashMap<&str, HashMap<&str,&str> > >,
   map!(
     many0!(
-      dbg!(separated_pair!(
+      separated_pair!(
         category,
         opt!(multispace),
         map!(
-          dbg!(many0!(terminated!(dbg!(key_value), dbg!(opt!(multispace))))),
+          many0!(terminated!(key_value, opt!(multispace))),
           |vec: Vec<_>| vec.into_iter().collect()
         )
-      ))
+      )
     ),
     |vec: Vec<_>| vec.into_iter().collect()
   )
