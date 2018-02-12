@@ -18,7 +18,7 @@ macro_rules! separated_list(
       // get the first element
       let input_ = input.clone();
       match $submac!(input_, $($args2)*) {
-        Err(Err::Error(_)) => Ok((input, ::std::vec::Vec::new())),
+        Err(Err::Error(_)) => Ok((input, res)),
         Err(e)             => Err(e),
         Ok((i,o))     => {
           if i.input_len() == input.input_len() {
