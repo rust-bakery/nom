@@ -437,13 +437,7 @@ where
     Some(n) => Ok(input.take_split(n)),
     None => {
       if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(
-            error_position!(input, ErrorKind::AlphaNumeric::<u32>),
-          ))
-        }
+        Ok((input.slice(input.input_len()..), input))
       } else {
         Err(Err::Incomplete(Needed::Size(1)))
       }

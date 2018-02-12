@@ -536,7 +536,7 @@ macro_rules! complete (
 macro_rules! try_parse (
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use ::std::result::Result::*;
-    use $crate::{Convert,Context,Err};
+    use $crate::Err;
 
     match $submac!($i, $($args)*) {
       Ok((i,o)) => (i,o),
