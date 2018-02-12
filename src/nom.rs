@@ -11,7 +11,7 @@ use std::boxed::Box;
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 use internal::*;
-use traits::{AsChar, InputLength, InputIter};
+use traits::{AsChar, InputLength, InputIter, InputTake};
 use traits::{need_more, need_more_err, AtEof};
 use std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
@@ -399,7 +399,7 @@ where
 pub fn alphanumeric<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength + AtEof + InputTake,
   <T as InputIter>::RawItem: AsChar,
 {
   alphanumeric1(input)
@@ -427,14 +427,14 @@ where
 pub fn alphanumeric1<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength + AtEof + InputTake,
   <T as InputIter>::RawItem: AsChar,
 {
   match input.position(|item| !item.is_alphanum()) {
     Some(0) => Err(Err::Error(
       error_position!(input, ErrorKind::AlphaNumeric::<u32>),
     )),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
+    Some(n) => Ok(input.take_split(n)),
     None => {
       if input.at_eof() {
         if input.input_len() > 0 {

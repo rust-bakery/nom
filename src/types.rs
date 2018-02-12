@@ -69,14 +69,13 @@ impl<'a> InputIter for CompleteStr<'a> {
 }
 
 impl<'a> InputTake for CompleteStr<'a> {
-  fn take(&self, count: usize) -> Option<Self> {
-    self.0.take(count).map(|s| CompleteStr(s))
+  fn take(&self, count: usize) -> Self {
+    CompleteStr(self.0.take(count))
   }
 
-  fn take_split(&self, count: usize) -> Option<(Self, Self)> {
-    self.0.take_split(count).map(|(s1, s2)| {
-      (CompleteStr(s1), CompleteStr(s2))
-    })
+  fn take_split(&self, count: usize) -> (Self, Self) {
+    let (left, right) = self.0.take_split(count);
+    (CompleteStr(left), CompleteStr(right))
   }
 }
 
@@ -200,14 +199,13 @@ impl<'a> InputIter for CompleteByteSlice<'a> {
 }
 
 impl<'a> InputTake for CompleteByteSlice<'a> {
-  fn take(&self, count: usize) -> Option<Self> {
-    self.0.take(count).map(|s| CompleteByteSlice(s))
+  fn take(&self, count: usize) -> Self {
+    CompleteByteSlice(self.0.take(count))
   }
 
-  fn take_split(&self, count: usize) -> Option<(Self, Self)> {
-    self.0.take_split(count).map(|(s1, s2)| {
-      (CompleteByteSlice(s1), CompleteByteSlice(s2))
-    })
+  fn take_split(&self, count: usize) -> (Self, Self) {
+    let (left, right) = self.0.take_split(count);
+    (CompleteByteSlice(left), CompleteByteSlice(right))
   }
 }
 
