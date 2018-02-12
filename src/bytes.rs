@@ -218,21 +218,21 @@ macro_rules! escaped (
       use $crate::AsChar;
       use $crate::InputIter;
       use $crate::InputLength;
+      use $crate::InputTake;
       use $crate::Slice;
 
       let cl = || -> IResult<_,_,u32> {
         use $crate::Offset;
-        let mut index  = 0;
+        let mut input = $i.clone();
         let control_char = $control_char.as_char();
 
-        while index < $i.input_len() {
-          let remainder = $i.slice(index..);
-          match $normal!(remainder, $($args)*) {
+        while !input.is_empty() {
+          match $normal!(input, $($args)*) {
             Ok((i, _)) => {
               if i.is_empty() {
                 return Ok(($i.slice($i.input_len()..), $i))
               } else {
-                index = $i.offset(i);
+                input = i;
               }
             },
             Err(Err::Failure(e)) => {
@@ -243,30 +243,31 @@ macro_rules! escaped (
             },
             Err(Err::Error(_)) => {
               // unwrap() should be safe here since index < $i.input_len()
-              if remainder.iter_elements().next().unwrap().as_char() == control_char {
-                let next = index + control_char.len_utf8();
-                let input_len = $i.input_len();
-                if next >= input_len {
-                  return need_more($i, Needed::Size(next - input_len + 1));
+              if input.iter_elements().next().unwrap().as_char() == control_char {
+                let next = control_char.len_utf8();
+                if next >= input.input_len() {
+                  return need_more($i, Needed::Size(next - input.input_len() + 1));
                 } else {
-                  match $escapable!($i.slice(next..), $($args2)*) {
+                  match $escapable!(input.slice(next..), $($args2)*) {
                     Ok((i,_)) => {
                       if i.is_empty() {
                         return Ok(($i.slice($i.input_len()..), $i))
                       } else {
-                        index = $i.offset(i);
+                        input = i;
                       }
                     },
                     Err(e) => return Err(e)
                   }
                 }
               } else {
-                return Ok((remainder, $i.slice(..index)));
+                let index = $i.offset(input);
+                return Ok($i.take_split(index));
               }
             },
           }
         }
-        Ok(($i.slice(index..), $i.slice(..index)))
+        let index = $i.offset(input);
+        Ok($i.take_split(index))
       };
 
       match cl() {
@@ -1238,8 +1239,36 @@ mod tests {
           Some(true)  => Ok(($i.slice(1..), $i.iter_elements().next().unwrap().as_char()))
         }
       }
-      );
     );
+  );
+
+  #[macro_export]
+  macro_rules! char (
+    ($i:expr, $c: expr) => (
+      {
+        use ::std::result::Result::*;
+        use ::std::option::Option::*;
+        use $crate::{Err,Needed};
+
+        use $crate::Slice;
+        use $crate::AsChar;
+        use $crate::InputIter;
+
+        match ($i).iter_elements().next().map(|c| {
+          let b = c.clone().as_char() == $c;
+          (c, b)
+        }) {
+          None             => $crate::need_more($i, Needed::Size(1)),
+          Some((_, false)) => {
+            let e: $crate::ErrorKind<u32> = $crate::ErrorKind::Char;
+            Err(Err::Error($crate::Context::Code($i, e)))
+          },
+          //the unwrap should be safe here
+          Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
+        }
+      }
+    );
+  );
 
   #[test]
   fn is_a() {
