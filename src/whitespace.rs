@@ -713,26 +713,22 @@ macro_rules! eat_separator (
       use ::std::result::Result::*;
       use $crate::{Err,Needed, AtEof};
 
-      use $crate::{AsChar,InputLength,InputIter,Slice};
-      if ($i).input_len() == 0 {
-        if ($i).at_eof() {
-          Ok((($i).slice(0..), ($i).slice(0..0)))
-        } else {
-          Err(Err::Incomplete(Needed::Unknown))
+      use $crate::{AsChar,InputLength,InputIter,Slice,InputTake};
+      match ($i).iter_elements().position(|item| {
+        let i = item.as_char();
+        for c in ($arr).iter_elements() {
+          if c.as_char() == i { return false; }
         }
-      } else {
-        match ($i).iter_indices().position(|(_, item)| {
-          let i = item.as_char();
-          for (_,c) in ($arr).iter_indices() {
-            if c.as_char() == i { return false; }
-          }
-          true
-        }) {
-          ::std::option::Option::Some(index) => {
-            Ok((($i).slice(index..), ($i).slice(..index)))
-          },
-          ::std::option::Option::None        => {
-            Ok((($i).slice(($i).input_len()..), ($i)))
+        true
+      }) {
+        ::std::option::Option::Some(index) => {
+          Ok($i.take_split(index))
+        },
+        ::std::option::Option::None        => {
+          if ($i).at_eof() {
+            Ok($i.take_split(($i).input_len()))
+          } else {
+            Err(Err::Incomplete(Needed::Unknown))
           }
         }
       }
@@ -850,7 +846,7 @@ use internal::IResult;
 pub fn sp<T>(input: T) -> IResult<T, T>
 where
   T: ::traits::Slice<Range<usize>> + ::traits::Slice<RangeFrom<usize>> + ::traits::Slice<RangeTo<usize>>,
-  T: ::traits::InputIter + ::traits::InputLength + ::traits::AtEof,
+  T: ::traits::InputIter + ::traits::InputLength + ::traits::InputTake + ::traits::AtEof + Clone,
   <T as ::traits::InputIter>::Item: ::traits::AsChar,
 {
   eat_separator!(input, &b" \t\r\n"[..])
