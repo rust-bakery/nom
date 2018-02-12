@@ -5,11 +5,11 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use nom::{digit, alphanumeric};
+use nom::{digit, is_alphanumeric, alphanumeric, recognize_float};
 
 use test::Bencher;
 
-use std::str::{self, FromStr};
+use std::str::{self, FromStr, from_utf8};
 use std::collections::HashMap;
 
 #[derive(Debug, PartialEq)]
@@ -20,48 +20,26 @@ pub enum JsonValue {
   Object(HashMap<String, JsonValue>),
 }
 
-// FIXME: since we already parsed a serie of digits and dots,
-// we know it is correct UTF-8. no need to use from_utf8 to
-// verify it is correct
-// FIXME: use alt_complete (implement ws for alt_complete)
-named!(unsigned_float <f32>, map_res!(
-  map_res!(
-    recognize!(
-      alt_complete!(
-        delimited!(digit, tag!("."), opt!(complete!(digit))) |
-        delimited!(opt!(digit), tag!("."), digit)            |
-        digit
-      )
-    ),
-    str::from_utf8
-  ),
-  FromStr::from_str
-));
-named!(float<f32>, map!(
-  pair!(
-    opt!(alt!(tag!("+") | tag!("-"))),
-    unsigned_float
-  ),
-  |(sign, value): (Option<&[u8]>, f32)| {
-    sign.and_then(|s| if s[0] == (b'-') { Some(-1f32) } else { None }).unwrap_or(1f32) * value
-  }
-));
+named!(float<f32>,
+  flat_map!(recognize_float, parse_to!(f32))
+);
 
 //FIXME: verify how json strings are formatted
 named!(string<&str>,
   delimited!(
-    tag!("\""),
-    map_res!(escaped!(call!(alphanumeric), '\\', is_a!("\"n\\")), str::from_utf8),
-    tag!("\"")
+    char!('\"'),
+    map_res!(escaped!(call!(alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
+    //map_res!(escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
+    char!('\"')
   )
 );
 
 named!(array < Vec<JsonValue> >,
   ws!(
     delimited!(
-      tag!("["),
-      separated_list!(tag!(","), value),
-      tag!("]")
+      char!('['),
+      separated_list!(char!(','), value),
+      char!(']')
     )
   )
 );
@@ -70,7 +48,7 @@ named!(key_value<(&str,JsonValue)>,
   ws!(
     separated_pair!(
       string,
-      tag!(":"),
+      char!(':'),
       value
     )
   )
@@ -80,16 +58,17 @@ named!(hash< HashMap<String,JsonValue> >,
   ws!(
     map!(
       delimited!(
-        tag!("{"),
-        separated_list!(tag!(","), key_value),
-        tag!("}")
+        char!('{'),
+        separated_list!(char!(','), key_value),
+        char!('}')
         ),
       |tuple_vec| {
-        let mut h: HashMap<String, JsonValue> = HashMap::new();
+        tuple_vec.into_iter().map(|(k,v)| (String::from(k), v)).collect()
+        /*let mut h: HashMap<String, JsonValue> = HashMap::new();
         for (k, v) in tuple_vec {
           h.insert(String::from(k), v);
         }
-        h
+        h*/
       }
     )
   )
@@ -112,7 +91,7 @@ fn json_bench(b: &mut Bencher) {
   \"b\": [ \"x\", \"y\", 12 ] ,
   \"c\": { \"hello\" : \"world\"
   }
-  }  ";
+  }  \0";
 
   //println!("data:\n{:?}", value(&data[..]));
   b.iter(|| value(&data[..]));
