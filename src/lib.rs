@@ -177,7 +177,7 @@
 //! in nom to pass input from one combinator to the next by rewriting the call.
 //!
 //! Next part of the parser: `preceded!(tag!("Hello "), alpha))`. Here, `tag!` is a combinator that recognizes
-//! a specific serie of bytes or characters. `alpha` is a function that recognizes alphabetical characters.
+//! a specific series of bytes or characters. `alpha` is a function that recognizes alphabetical characters.
 //! The `preceded!` combinator assembles them in a more complex parser: if both parsers are successful,
 //! it returns the result of the second one (`alpha` is preceded by `tag!`).
 //!
