@@ -5,11 +5,11 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use nom::{digit, is_alphanumeric, alphanumeric, recognize_float};
+use nom::{alphanumeric, recognize_float};
 
 use test::Bencher;
 
-use std::str::{self, FromStr, from_utf8};
+use std::str;
 use std::collections::HashMap;
 
 #[derive(Debug, PartialEq)]
