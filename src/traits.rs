@@ -376,7 +376,8 @@ impl<'a> InputTake for &'a [u8] {
   }
   #[inline]
   fn take_split(&self, count: usize) -> (Self, Self) {
-    (&self[count..], &self[..count])
+    let (prefix, suffix) = self.split_at(count);
+    (suffix, prefix)
   }
 }
 
