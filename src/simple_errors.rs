@@ -182,13 +182,13 @@ macro_rules! flat_map(
     {
       use ::std::result::Result::*;
       use $crate::{Convert,Err};
-      match $submac!($i, $($args)*) {
-        Err(e)     => Err(Err::convert(e)),
-        Ok((i, o)) => match $submac2!(o, $($args2)*) {
+
+      ($submac!($i, $($args)*)).and_then(|(i,o)| {
+        match $submac2!(o, $($args2)*) {
           Err(e)      => Err(Err::convert(e)),
           Ok((_, o2)) => Ok((i, o2))
         }
-      }
+      })
     }
   );
 );
