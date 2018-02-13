@@ -94,7 +94,7 @@ fn json_bench(b: &mut Bencher) {
   }  \0";
 
   //println!("data:\n{:?}", value(&data[..]));
-  b.iter(|| value(&data[..]));
+  b.iter(|| value(&data[..]).unwrap());
 }
 
 #[bench]
