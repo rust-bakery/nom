@@ -1,9 +1,9 @@
-//! nom, eating data byte by byte
+//! # nom, eating data byte by byte
 //!
 //! nom is a parser combinator library with a focus on safe parsing,
 //! streaming patterns, and as much as possible zero copy.
 //!
-//! # Example
+//! ## Example
 //!
 //! ```rust
 //! #[macro_use]
@@ -55,6 +55,9 @@
 //! [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
 //! or the [error management system](https://github.com/Geal/nom/blob/master/doc/error_management.md).
 //!
+//! **Looking for a specific combinator? Read the
+//! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**
+//!
 //! If you are upgrading to nom 2.0, please read the
 //! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md).
 //!
@@ -63,6 +66,18 @@
 //!
 //! See also the [FAQ](https://github.com/Geal/nom/blob/master/doc/FAQ.md).
 //!
+//! ## Parser combinators
+//!
+//! Parser combinators are an approach to parsers that is very different from software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar in a separate file and generating the corresponding code, you use very small functions with very specific purpose, like "take 5 bytes", or "recognize the word 'HTTP'", and assemble then in meaningful patterns like "recognize 'HTTP', then a space, then a version".
+//! The resulting code is small, and looks like the grammar you would have written with other parser approaches.
+//!
+//! This has a few advantages:
+//!
+//! - the parsers are small and easy to write
+//! - the parsers components are easy to reuse (if they're general enough, please add them to nom!)
+//! - the parsers components are easy to test separately (unit tests and property-based tests)
+//! - the parser combination code looks close to the grammar you would have written
+//! - you can build partial parsers, specific to the data you need at the moment, and ignore the rest
 //! # What are parser combinators?
 //!
 //! Parser combinators are a way to build parsers out of small functions. instead of
@@ -74,7 +89,253 @@
 //! You end up with a list of small functions that you can reuse everywhere you need. Each
 //! of them can be unit tested anf fuzzed separately.
 //!
-//! # nom parser design
+//! Here is an example of one such parser, to recognize text between parentheses:
+//! 
+//! ```rust
+//! #[macro_use]
+//! extern crate nom;
+//! 
+//! named!(parens, delimited!(char!('('), is_not!(")"), char!(')')));
+//! ```
+//! 
+//! It defines a function named `parens`, which will recognize a sequence of the character `(`, the longest byte array not containing `)`, then the character `)`, and will return the byte array in the middle.
+//! 
+//! Here is another parser, written without using nom's macros this time:
+//! 
+//! ```rust
+//! #[macro_use]
+//! extern crate nom;
+//! 
+//! use nom::{IResult,Err,Needed};
+//! 
+//! fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
+//!   if i.len() < 4 {
+//!     Err(Err::Incomplete(Needed::Size(4)))
+//!   } else {
+//!     Ok((&i[4..],&i[0..4]))
+//!   }
+//! }
+//! ```
+//! 
+//! This function takes a byte array as input, and tries to consume 4 bytes. With macros, you would write it like this:
+//! 
+//! ```rust
+//! #[macro_use]
+//! extern crate nom;
+//! 
+//! named!(take4, take!(4));
+//! ```
+//! //! A parser in nom is a function which, for an input type `I`, an output type `O` and an optional error type `E`, will have the following signature:
+//! 
+//! ```rust
+//! fn parser(input: I) -> IResult<I, O, E>;
+//! ```
+//! 
+//! Or like this, if you don't want to specify a custom error type (it will be `u32` by default):
+//! 
+//! ```rust
+//! fn parser(input: I) -> IResult<I, O>;
+//! ```
+//! 
+//! `IResult` is an alias for the `Result` type:
+//! 
+//! ```rust
+//! use nom::{Needed, Context};
+//! 
+//! type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
+//! 
+//! enum Err<I, E = u32> {
+//!   Incomplete(Needed),
+//!   Error(Context<I, E>),
+//!   Failure(Context<I, E>),
+//! }
+//! ```
+//! 
+//! It can have the following values:
+//! 
+//! - a correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
+//! - an error `Err(Err::Error(c))` with `c` an enum that contians an error code with its position in the input, and optionally a chain of accumulated errors;
+//! - an error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
+//! - an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and test another parser
+//! 
+//! There is already a large list of basic parsers available, like:
+//! 
+//! - **`length_value`**: a byte indicating the size of the following buffer
+//! - **`not_line_ending`**: returning as much data as possible until a line ending (\r or \n) is found
+//! - **`line_ending`**: matches a line ending
+//! - **`alpha`**: will return the longest alphabetical array from the beginning of the input
+//! - **`digit`**: will return the longest numerical array from the beginning of the input
+//! - **`alphanumeric`**: will return the longest alphanumeric array from the beginning of the input
+//! - **`space`**: will return the longest array containing only spaces
+//! - **`multispace`**: will return the longest array containing space, \r or \n
+//! - **`be_u8`**, **`be_u16`**, **`be_u32`**, **`be_u64`** to parse big endian unsigned integers of multiple sizes
+//! - **`be_i8`**, **`be_i16`**, **`be_i32`**, **`be_i64`** to parse big endian signed integers of multiple sizes
+//! - **`be_f32`**, **`be_f64`** to parse big endian floating point numbers
+//! - **`eof`**: a parser that is successful only if the input is over. In any other case, it returns an error.
+//! 
+//! Please refer to the [documentation][doc] for an exhaustive list of parsers.
+//! 
+//! #### Making new parsers with macros
+//! 
+//! Macros are the main way to make new parsers by combining other ones. Those macros accept other macros or function names as arguments. You then need to make a function out of that combinator with **`named!`**, or a closure with **`closure!`**. Here is how you would do, with the **`tag!`** and **`take!`** combinators:
+//! 
+//! ```rust
+//! named!(abcd_parser, tag!("abcd")); // will consume bytes if the input begins with "abcd"
+//! 
+//! 
+//! named!(take_10, take!(10));        // will consume and return 10 bytes of input
+//! ```
+//! 
+//! The **`named!`** macro can take three different syntaxes:
+//! 
+//! ```rust
+//! named!(my_function( &[u8] ) -> &[u8], tag!("abcd"));
+//! 
+//! named!(my_function<&[u8], &[u8]>, tag!("abcd"));
+//! 
+//! named!(my_function, tag!("abcd")); // when you know the parser takes &[u8] as input, and returns &[u8] as output
+//! ```
+//! 
+//! **IMPORTANT NOTE**: Rust's macros can be very sensitive to the syntax, so you may encounter an error compiling parsers like this one:
+//! 
+//! ```rust
+//! named!(my_function<&[u8], Vec<&[u8]>>, many0!(tag!("abcd")));
+//! ```
+//! 
+//! You will get the following error: "error: expected an item keyword". This happens because `>>` is seen as an operator, so the macro parser does not recognize what we want. There is a way to avoid it, by inserting a space:
+//! 
+//! ```rust
+//! named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
+//! ```
+//! 
+//! This will compile correctly. I am very sorry for this inconvenience.
+//! 
+//! #### Common combinators
+//! 
+//! Here are the basic macros available:
+//! 
+//! - **`tag!`**: will match the byte array provided as argument
+//! - **`is_not!`**: will match the longest array not containing any of the bytes of the array provided to the macro
+//! - **`is_a!`**: will match the longest array containing only bytes of the array provided to the macro
+//! - **`take_while!`**: will walk the whole array and apply the closure to each suffix until the function fails
+//! - **`take!`**: will take as many bytes as the number provided
+//! - **`take_until!`**: will take as many bytes as possible until it encounters the provided byte array, and will leave it in the remaining input
+//! - **`take_until_and_consume!`**: will take as many bytes as possible until it encounters the provided byte array, and will skip it
+//! - **`take_until_either_and_consume!`**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will skip it
+//! - **`take_until_either!`**: will take as many bytes as possible until it encounters one of the bytes of the provided array, and will leave it in the remaining input
+//! - **`map!`**: applies a function to the output of a `IResult` and puts the result in the output of a `IResult` with the same remaining input
+//! - **`flat_map!`**: applies a parser to the output of a `IResult` and returns a new `IResult` with the same remaining input.
+//! - **`map_opt!`**: applies a function returning an Option to the output of `IResult`, returns `Done(input, o)` if the result is `Some(o)`, or `Error(0)`
+//! - **`map_res!`**: applies a function returning a Result to the output of `IResult`, returns `Done(input, o)` if the result is `Ok(o)`, or `Error(0)`
+//! 
+//! Please refer to the [documentation][doc] for an exhaustive list of combinators.
+//! 
+//! #### Combining parsers
+//! 
+//! There are more high level patterns, like the **`alt!`** combinator, which provides a choice between multiple parsers. If one branch fails, it tries the next, and returns the result of the first parser that succeeds:
+//! 
+//! ```rust
+//! named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
+//! 
+//! assert_eq!(alt_tags(b"abcdxxx"), Done(&b"xxx"[..], &b"abcd"[..]));
+//! assert_eq!(alt_tags(b"efghxxx"), Done(&b"xxx"[..], &b"efgh"[..]));
+//! assert_eq!(alt_tags(b"ijklxxx"), Error(Position(Alt, &b"ijklxxx"[..])));
+//! ```
+//! 
+//! The pipe `|` character is used as separator.
+//! 
+//! The **`opt!`** combinator makes a parser optional. If the child parser returns an error, **`opt!`** will succeed and return None:
+//! 
+//! ```rust
+//! named!( abcd_opt< &[u8], Option<&[u8]> >, opt!( tag!("abcd") ) );
+//! 
+//! assert_eq!(abcd_opt(b"abcdxxx"), Done(&b"xxx"[..], Some(&b"abcd"[..])));
+//! assert_eq!(abcd_opt(b"efghxxx"), Done(&b"efghxxx"[..], None));
+//! ```
+//! 
+//! **`many0!`** applies a parser 0 or more times, and returns a vector of the aggregated results:
+//! 
+//! ```rust
+//! use std::str;
+//! named!(multi< Vec<&str> >, many0!( map_res!(tag!( "abcd" ), str::from_utf8) ) );
+//! let a = b"abcdef";
+//! let b = b"abcdabcdef";
+//! let c = b"azerty";
+//! assert_eq!(multi(a), Done(&b"ef"[..],     vec!["abcd"]));
+//! assert_eq!(multi(b), Done(&b"ef"[..],     vec!["abcd", "abcd"]));
+//! assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+//! ```
+//! 
+//! Here are some basic combining macros available:
+//! 
+//! - **`opt!`**: will make the parser optional (if it returns the `O` type, the new parser returns `Option<O>`)
+//! - **`many0!`**: will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
+//! - **`many1!`**: will apply the parser 1 or more times
+//! 
+//! Please refer to the [documentation][doc] for an exhaustive list of combinators.
+//! 
+//! There are more complex (and more useful) parsers like `do_parse!` and `tuple!`, which are used to apply a series of parsers then assemble their results.
+//! 
+//! Example with `tuple!`:
+//! 
+//! ```rust
+//! named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
+//!   tuple!(
+//!     be_u16 ,
+//!     take!(3),
+//!     tag!("fg")
+//!   )
+//! );
+//! 
+//! assert_eq!(
+//!   tpl(&b"abcdefgh"[..]),
+//!   Done(
+//!     &b"h"[..],
+//!     (0x6162u16, &b"cde"[..], &b"fg"[..])
+//!   )
+//! );
+//! assert_eq!(tpl(&b"abcde"[..]), Incomplete(Needed::Size(7)));
+//! let input = &b"abcdejk"[..];
+//! assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
+//! ```
+//! 
+//! Example with `do_parse!`:
+//! 
+//! ```rust
+//! #[derive(Debug, PartialEq)]
+//! struct A {
+//!   a: u8,
+//!   b: u8
+//! }
+//! 
+//! fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) }
+//! fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) }
+//! 
+//! named!(f<&[u8],A>,
+//!   do_parse!(    // the parser takes a byte array as input, and returns an A struct
+//!     tag!("abcd")       >>      // begins with "abcd"
+//!     opt!(tag!("abcd")) >>      // this is an optional parser
+//!     aa: ret_int1       >>      // the return value of ret_int1, if it does not fail, will be stored in aa
+//!     tag!("efgh")       >>
+//!     bb: ret_int2       >>
+//!     tag!("efgh")       >>
+//! 
+//!     (A{a: aa, b: bb})          // the final tuple will be able to use the variable defined previously
+//!   )
+//! );
+//! 
+//! let r = f(b"abcdabcdefghefghX");
+//! assert_eq!(r, Done(&b"X"[..], A{a: 1, b: 2}));
+//! 
+//! let r2 = f(b"abcdefghefghX");
+//! assert_eq!(r2, Done(&b"X"[..], A{a: 1, b: 2}));
+//! ```
+//! 
+//! The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers. Unless the specified return type is already a tuple, the final line should be that type wrapped in a tuple.
+//! 
+//! More examples of [`do_parse!`](http://rust.unhandledexpression.com/nom/macro.do_parse.html) and [`tuple!`](http://rust.unhandledexpression.com/nom/macro.tuple.html) usage can be found in the [INI file parser example](tests/ini.rs).
+//! 
+//! ## nom parser design
 //!
 //! All nom parsers follow the same convention. They are all functions with the following signature:
 //!
@@ -184,224 +445,6 @@
 //! *Note* : combinators can assemble other combinators (macros), or parser functions, as long as they follow
 //! the same interface. Here, `alpha` is a parser function already implemented in nom.
 //!
-//! # List of parsers and combinators
-//!
-//! ## Basic elements
-//!
-//! Those are used to recognize the lowest level elements of your grammar, like, "here is a dot", or
-//! "here is an big endian integer".
-//!
-//! * **char!**: matches one character: `char!('a')` will make a parser that recognizes the letter 'a' (works with non ASCII chars too)
-//! * **eof!**: `eof!()` returns its input if it is at the end of input data
-//! * **is_a!, is_a_s!**: matches a sequence of any of the characters passed as arguments.
-//!   `is_a!("ab1")` could recognize `ababa` or `1bb`. `is_a_s!` is a legacy combinator, it does exactly the same thing as `is_a`
-//! * **is_not!, is_not_s!**: matches a sequence of none of the characters passed as arguments
-//! * **one_of!**: matches one of the provided characters. `one_of!("abc")` could
-//!   recognize 'a', 'b', or 'c'. It also works with non ASCII characters
-//! * **none_of!**: matches anything but the provided characters
-//! * **tag!, tag_s!**: recognizes a specific suite of characters or bytes. `tag!("hello")` matches "hello"
-//! * **tag_no_case!**: recognizes a suite of ASCII characters, case insensitive.
-//!   `tag_no_case!("hello")` could match "hello", "Hello" or even "HeLlO"
-//! * **tag_no_case_s!** works like `tag_no_case` but on UTF-8 characters too (uses `&str` as input).
-//!   Note that case insensitive comparison is not well defined for unicode, and that you might have bad
-//!   surprises. Also, this combinator allocates a new string for the comparison. Ponder for a bit before using this combinator
-//! * **take!, take_s!**: takes a specific number of bytes or characters. `take!(5)` would return "hello" from the string "hello world"
-//! * **take_str!**: same as `take!` but returning a `&str`
-//! * **take_till!, take_till_s!**: returns the longest list of bytes until the provided function succeeds.
-//!   `take_till!(is_alphabetic)` with input "123abc" would return "123"
-//! * **take_till1!, take_till1_s!**: same as `take_till!`, but the result must not be empty:
-//!   `take_till1!(is_alphabetic)` would fail on "abc"
-//! * **take_until!, take_until_s!**: returns the longest list of bytes until the provided tag is found.
-//!   `take_until!("world")` with input "Hello world!" would return "Hello " and leave "world!" as remaining input
-//! * **take_until1!**: same as `take_until!`, but cannot return an empty result
-//! * **take_until_and_consume!, take_until_and_consume_s!**: same as `take_until!`
-//!   but consumes the tag. `take_until_and_consume!("world")` with input "Hello world!"
-//!   would return "Hello " and leave "!" as remaining input
-//! * **take_until_and_consume1!**: same as `take_until_and_consume!`, but cannot return an empty result
-//! * **take_until_either!**: returns the longest list of bytes until any of the provided characters are found
-//! * **take_until_either_and_consume!**: same as `take_until_either!`, but consumes the terminating character
-//! * **take_while!, take_while_s!**: returns the longest list of bytes for which the
-//!   function is true. `take_while!(is_alphabetic)` with input "abc123" would return "abc"
-//! * **take_while1!, take_while1_s!**: same as `take_while!`, but cannot return an empty result
-//! * **value!**: you can use `value!` to always return the same result value without
-//! consuming input, like this: `value!(42)`. Or you can replace the result of a child
-//! parser with a predefined value, like this: `value!(42, tag!("abcd"))` which would replace,
-//!   if successful, the return value from "abcd", to 42
-//!
-//! Parsing integers from binary formats can be done in two ways: with parser functions, or combinators with configurable endianness:
-//!
-//! * configurable endianness: **i16!, i32!, i64!, u16!, u32!, u64!** are combinators that take as argument a `nom::Endianness`,
-//! like this: `i16!(endianness)`. If the parameter is nom::Endianness::Big,
-//! parse a big endian i16 integer, otherwise a little endian i16 integer
-//! * fixed endianness: the functions are prefixed by "be_" for big endian numbers, and by "le_"
-//!   for little endian numbers, and the suffix is the type they parse to.
-//!     As an example, "be_u32" parses a big endian unsigned integer stored in 32 bits.
-//!   * **be_f32, be_f64, le_f32, le_f64**: recognize floating point numbers
-//!   * **be_i8, be_i16, be_i32, be_i24, be_i32, be_i64**: big endian signed integers
-//!   * **be_u8, be_u16, be_u32, be_u24, be_u32, be_u64**: big endian unsigned integers
-//!   * **le_i8, le_i16, le_i32, le_i24, le_i32, le_i64**: little endian signed integers
-//!   * **le_u8, le_u16, le_u32, le_u24, le_u32, le_u64**: little endian unsigned integers
-//!
-//! ## Modifiers
-//!
-//! * **complete!**: replaces a Incomplete returned by the child parser with an Error
-//! * **cond!**: conditional combinator
-//! * **cond_reduce!**: Conditional combinator with error
-//! * **cond_with_error!**: Conditional combinator
-//! * **expr_opt!**: evaluates an expression that returns a Option and returns a Ok((I,T)) if Some
-//! * **expr_res!**: evaluates an expression that returns a Result and returns a Ok((I,T)) if Ok
-//! * **flat_map!**:
-//! * **map!**: maps a function on the result of a parser
-//! * **map_opt!**: maps a function returning an Option on the output of a parser
-//! * **map_res!**: maps a function returning a Result on the output of a parser
-//! * **not!**: returns a result only if the embedded parser returns Error or Incomplete does not consume the input
-//! * **opt!**: make the underlying parser optional
-//! * **opt_res!**: make the underlying parser optional
-//! * **parse_to!**: uses the parse method from std::str::FromStr to convert the current input to the specified type
-//! * **peek!**: returns a result without consuming the input
-//! * **recognize!**: if the child parser was successful, return the consumed input as produced value
-//! * **return_error!**: prevents backtracking if the child parser fails
-//! * **tap!**: allows access to the parser's result without affecting it
-//! * **verify!**: returns the result of the child parser if it satisfies a verification function
-//!
-//! ## Error management and debugging
-//!
-//! * **add_return_error!**: Add an error if the child parser fails
-//! * **dbg!**: Prints a message if the parser fails
-//! * **dbg_dmp!**: Prints a message and the input if the parser fails
-//! * **error_code!**: creates a parse error from a nom::ErrorKind
-//! * **error_node!**: creates a parse error from a nom::ErrorKind and the next error
-//!   in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
-//! * **error_node_position!**: creates a parse error from a nom::ErrorKind, the position
-//!   in the input and the next error in the parsing tree. if "verbose-errors" is not activated, it default to only the error code
-//! * **error_position!**: creates a parse error from a nom::ErrorKind and the position
-//!   in the input if "verbose-errors" is not activated, it default to only the error code
-//! * **fix_error!**: translate parser result from IResult to IResult with a custom type
-//!
-//! ## Choice combinators
-//!
-//! * **alt!**: try a list of parsers and return the result of the first successful one
-//! * **alt_complete!**: is equivalent to the alt! combinator, except that it will not returns
-//!   Incomplete when one of the constituting parsers returns Incomplete. Instead, it will try the next alternative in the chain.
-//! * **switch!**: choose the next parser depending on the result of the first one,
-//!   if successful, and returns the result of the second parser
-//!
-//! # Sequence combinators
-//!
-//! * **delimited!**: delimited(opening, X, closing) returns X
-//! * **do_parse!**: do_parse applies sub parsers in a sequence. it can store intermediary results and make them available for later parsers
-//! * **pair!**: pair(X,Y), returns (x,y)
-//! * **permutation!**: applies its sub parsers in a sequence, but independent from their order
-//!   This parser will only succeed if all of its sub parsers succeed
-//! * **preceded!**: preceded(opening, X) returns X
-//! * **separated_pair!**: separated_pair(X,sep,Y) returns (x,y)
-//! * **terminated!**: terminated(X, closing) returns X
-//! * **tuple!**: chains parsers and assemble the sub results in a tuple.
-//!
-//! ## Applying a parser multiple times
-//!
-//! * **count!**: Applies the child parser a specified number of times
-//! * **count_fixed!**: Applies the child parser a fixed number of times and returns a fixed size array.
-//!   The type must be specified and it must be Copy
-//! * **fold_many0!**: Applies the parser 0 or more times and folds the list of return values
-//! * **fold_many1!**: Applies the parser 1 or more times and folds the list of return values
-//! * **fold_many_m_n!**: Applies the parser between m and n times (n included) and folds the list of return value
-//! * **length_count!**: gets a number from the first parser, then applies the second parser that many times
-//! * **many0!**: Applies the parser 0 or more times and returns the list of results in a Vec
-//! * **many1!**: Applies the parser 1 or more times and returns the list of results in a Vec
-//! * **many_m_n!**: Applies the parser between m and n times (n included) and returns the list of results in a Vec
-//! * **many_till!**: Applies the first parser until the second applies. Returns a tuple
-//!   containing the list of results from the first in a Vec and the result of the second.
-//! * **separated_list!**: separated_list(sep, X) returns Vec will return Incomplete if there may be more elements
-//! * **separated_list_complete!**: This is equivalent to the separated_list!
-//!   combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
-//! * **separated_nonempty_list!**: separated_nonempty_list(sep, X) returns Vec will return Incomplete if there may be more elements
-//! * **separated_nonempty_list_complete!**: This is equivalent to the
-//!   separated_nonempty_list! combinator, except that it will return Error when either
-//!   the separator or element subparser returns Incomplete.
-//!
-//! ## Text parsing
-//!
-//! * **escaped!**: matches a byte string with escaped characters.
-//! * **escaped_transform!**: matches a byte string with escaped characters, and returns a new string with the escaped characters replaced
-//!
-//! ## Binary format parsing
-//!
-//! * **length_data!**: gets a number from the first parser, than takes a subslice of the input of that size, and returns that subslice
-//! * **length_bytes!**: alias for `length_data`
-//! * **length_value!**: gets a number from the first parser, takes a subslice of the input of that size,
-//!   then applies the second parser on that subslice. If the second parser returns Incomplete, length_value will return an error
-//!
-//! ## Bit stream parsing
-//!
-//! * **bits!**: transforms the current input type (byte slice `&[u8]`) to a bit stream on which
-//!   bit specific parsers and more general combinators can be applied
-//! * **bytes!**: transforms its bits stream input back into a byte slice for the underlying parsers.
-//! * **tag_bits!**: matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
-//! * **take_bits!**: generates a parser consuming the specified number of bits
-//!
-//! ## Whitespace delimited formats parsing
-//!
-//! * **eat_separator!**: helper macros to build a separator parser
-//! * **sep!**: sep is the parser rewriting macro for whitespace separated formats
-//! * **wrap_sep!**:
-//! * **ws!**:
-//!
-//! ## Remaining combinators
-//!
-//! * **apply!**: emulate function currying: apply!(my_function, arg1, arg2, ...) becomes my_function(input, arg1, arg2, ...)
-//! * **apply_m!**: emulate function currying for method calls on structs
-//!   apply_m!(self.my_function, arg1, arg2, ...) becomes self.my_function(input, arg1, arg2, ...)
-//! * **call!**: Used to wrap common expressions and function as macros
-//! * **call_m!**: Used to called methods then move self back into self
-//! * **closure!**: Wraps a parser in a closure
-//! * **method!**: Makes a method from a parser combination
-//! * **named!**: Makes a function from a parser combination
-//! * **named_args!**: Makes a function from a parser combination with arguments.
-//! * **named_attr!**: Makes a function from a parser combination, with attributes
-//! * **try_parse!**: A bit like std::try!, this macro will return the remaining input
-//!   and parsed value if the child parser returned Ok, and will do an early return for
-//!   Error and Incomplete this can provide more flexibility than do_parse! if needed
-//!
-//! ## Character test functions
-//!
-//! use those functions with a combinator like `take_while!`:
-//!
-//! * **is_alphabetic**: Tests if byte is ASCII alphabetic: A-Z, a-z
-//! * **is_alphanumeric**: Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9
-//! * **is_digit**: Tests if byte is ASCII digit: 0-9
-//! * **is_hex_digit**: Tests if byte is ASCII hex digit: 0-9, A-F, a-f
-//! * **is_oct_digit**: Tests if byte is ASCII octal digit: 0-7
-//! * **is_space**: Tests if byte is ASCII space or tab
-//!
-//! ## Remaining functions (sort those out in the other categories)
-//!
-//! * **alpha**: Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
-//! * **alphanumeric**: Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
-//! * **anychar**:
-//! * **begin**:
-//! * **crlf**:
-//! * **digit**: Recognizes one or more numerical characters: 0-9
-//! * **double**: Recognizes floating point number in a byte string and returns a f64
-//! * **double_s**: Recognizes floating point number in a string and returns a f64
-//! * **eol**:
-//! * **float**: Recognizes floating point number in a byte string and returns a f32
-//! * **float_s**: Recognizes floating point number in a string and returns a f32
-//! * **hex_digit**: Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
-//! * **hex_u32**: Recognizes a hex-encoded integer
-//! * **line_ending**: Recognizes an end of line (both '\n' and "\r\n")
-//! * **multispace**: Recognizes one or more spaces, tabs, carriage returns and line feeds
-//! * **newline**: Matches a newline character '\n'
-//! * **non_empty**: Recognizes non empty buffers
-//! * **not_line_ending**:
-//! * **oct_digit**: Recognizes one or more octal characters: 0-7
-//! * **rest**: Return the remaining input.
-//! * **rest_s**: Return the remaining input, for strings.
-//! * **shift**:
-//! * **sized_buffer**:
-//! * **space**: Recognizes one or more spaces and tabs
-//! * **tab**: Matches a tab character '\t'
-//! * **tag_cl**:
 //!
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
