@@ -2,7 +2,7 @@
 
 nom uses Rust macros heavily to provide a nice syntax and generate parsing code. This has multiple advantages:
 
-* it gives the apparence of combining functions without the runtime cost of closures
+* it gives the appearance of combining functions without the runtime cost of closures
 * it helps Rust's code inference and borrow checking (less lifetime issues than iterator based solutions)
 * the generated code is very linear, just a large chain of pattern matching
 
