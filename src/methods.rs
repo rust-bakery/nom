@@ -270,7 +270,6 @@ macro_rules! call_m (
   );
 );
 
-
 /// emulate function currying for method calls on structs
 /// `apply_m!(self.my_function, arg1, arg2, ...)` becomes `self.my_function(input, arg1, arg2, ...)`
 ///
@@ -337,7 +336,11 @@ mod tests {
       Parser { bcd: "" }
     }
 
-    method!(tag_abc<Parser<'a>, &'a str, &'a str>, self, tag_s!("áβç"));
+    method!(
+      tag_abc<Parser<'a>, &'a str, &'a str>,
+      self,
+      tag_s!("áβç")
+    );
     method!(tag_bcd<Parser<'a> >(&'a str) -> &'a str, self, tag_s!("βçδ"));
     method!(pub tag_hij<Parser<'a> >(&'a str) -> &'a str, self, tag_s!("λïJ"));
     method!(pub tag_ijk<Parser<'a>, &'a str, &'a str>, self, tag_s!("ïJƙ"));
@@ -373,14 +376,24 @@ mod tests {
     let (_, res) = p.tag_abc(input);
     match res {
       Ok((extra, output)) => {
-        assert!(extra == leftover, "`Parser.tag_abc` consumed leftover input. leftover: {}", extra);
-        assert!(output == consumed, "`Parser.tag_abc` doesnt return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", consumed, output);
+        assert!(
+          extra == leftover,
+          "`Parser.tag_abc` consumed leftover input. leftover: {}",
+          extra
+        );
+        assert!(
+          output == consumed,
+          "`Parser.tag_abc` doesnt return the string it consumed \
+           on success. Expected `{}`, got `{}`.",
+          consumed,
+          output
+        );
       }
-      other => {
-        panic!("`Parser.tag_abc` didn't succeed when it should have. \
-                             Got `{:?}`.", other)
-      }
+      other => panic!(
+        "`Parser.tag_abc` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 
@@ -393,14 +406,24 @@ mod tests {
     let (_, res) = p.tag_bcd(input);
     match res {
       Ok((extra, output)) => {
-        assert!(extra == leftover, "`Parser.tag_bcd` consumed leftover input. leftover: {}", extra);
-        assert!(output == consumed, "`Parser.tag_bcd` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", consumed, output);
+        assert!(
+          extra == leftover,
+          "`Parser.tag_bcd` consumed leftover input. leftover: {}",
+          extra
+        );
+        assert!(
+          output == consumed,
+          "`Parser.tag_bcd` doesn't return the string it consumed \
+           on success. Expected `{}`, got `{}`.",
+          consumed,
+          output
+        );
       }
-      other => {
-        panic!("`Parser.tag_bcd` didn't succeed when it should have. \
-                             Got `{:?}`.", other)
-      }
+      other => panic!(
+        "`Parser.tag_bcd` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 
@@ -413,14 +436,24 @@ mod tests {
     let (_, res) = p.tag_hij(input);
     match res {
       Ok((extra, output)) => {
-        assert!(extra == leftover, "`Parser.tag_hij` consumed leftover input. leftover: {}", extra);
-        assert!(output == consumed, "`Parser.tag_hij` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", consumed, output);
+        assert!(
+          extra == leftover,
+          "`Parser.tag_hij` consumed leftover input. leftover: {}",
+          extra
+        );
+        assert!(
+          output == consumed,
+          "`Parser.tag_hij` doesn't return the string it consumed \
+           on success. Expected `{}`, got `{}`.",
+          consumed,
+          output
+        );
       }
-      other => {
-        panic!("`Parser.tag_hij` didn't succeed when it should have. \
-                             Got `{:?}`.", other)
-      }
+      other => panic!(
+        "`Parser.tag_hij` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 
@@ -433,14 +466,24 @@ mod tests {
     let (_, res) = p.tag_ijk(input);
     match res {
       Ok((extra, output)) => {
-        assert!(extra == leftover, "`Parser.tag_ijk` consumed leftover input. leftover: {}", extra);
-        assert!(output == consumed, "`Parser.tag_ijk` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", consumed, output);
+        assert!(
+          extra == leftover,
+          "`Parser.tag_ijk` consumed leftover input. leftover: {}",
+          extra
+        );
+        assert!(
+          output == consumed,
+          "`Parser.tag_ijk` doesn't return the string it consumed \
+           on success. Expected `{}`, got `{}`.",
+          consumed,
+          output
+        );
       }
-      other => {
-        panic!("`Parser.tag_ijk` didn't succeed when it should have. \
-                             Got `{:?}`.", other)
-      }
+      other => panic!(
+        "`Parser.tag_ijk` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
   #[test]
@@ -452,14 +495,24 @@ mod tests {
     let (_, res) = p.simple_call(input);
     match res {
       Ok((extra, output)) => {
-        assert!(extra == leftover, "`Parser.simple_call` consumed leftover input. leftover: {}", extra);
-        assert!(output == consumed, "`Parser.simple_call` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", consumed, output);
+        assert!(
+          extra == leftover,
+          "`Parser.simple_call` consumed leftover input. leftover: {}",
+          extra
+        );
+        assert!(
+          output == consumed,
+          "`Parser.simple_call` doesn't return the string it consumed \
+           on success. Expected `{}`, got `{}`.",
+          consumed,
+          output
+        );
       }
-      other => {
-        panic!("`Parser.simple_call` didn't succeed when it should have. \
-                             Got `{:?}`.", other)
-      }
+      other => panic!(
+        "`Parser.simple_call` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 
@@ -473,15 +526,29 @@ mod tests {
     p = tmp;
     match res {
       Ok((extra, output)) => {
-        assert!(extra == leftover, "`Parser.use_apply` consumed leftover input. leftover: {}", extra);
-        assert!(output == consumed, "`Parser.use_apply` doesn't return the string it was supposed to \
-                                on success. Expected `{}`, got `{}`.", leftover, output);
-        assert!(p.bcd == "βçδ", "Parser.use_apply didn't modify the parser field correctly: {}", p.bcd);
+        assert!(
+          extra == leftover,
+          "`Parser.use_apply` consumed leftover input. leftover: {}",
+          extra
+        );
+        assert!(
+          output == consumed,
+          "`Parser.use_apply` doesn't return the string it was supposed to \
+           on success. Expected `{}`, got `{}`.",
+          leftover,
+          output
+        );
+        assert!(
+          p.bcd == "βçδ",
+          "Parser.use_apply didn't modify the parser field correctly: {}",
+          p.bcd
+        );
       }
-      other => {
-        panic!("`Parser.use_apply` didn't succeed when it should have. \
-                             Got `{:?}`.", other)
-      }
+      other => panic!(
+        "`Parser.use_apply` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 
@@ -493,14 +560,24 @@ mod tests {
     let (_, res) = p.simple_peek(input);
     match res {
       Ok((extra, output)) => {
-        assert!(extra == input, "`Parser.simple_peek` consumed leftover input. leftover: {}", extra);
-        assert!(output == consumed, "`Parser.simple_peek` doesn't return the string it consumed \
-                                on success. Expected `{}`, got `{}`.", consumed, output);
+        assert!(
+          extra == input,
+          "`Parser.simple_peek` consumed leftover input. leftover: {}",
+          extra
+        );
+        assert!(
+          output == consumed,
+          "`Parser.simple_peek` doesn't return the string it consumed \
+           on success. Expected `{}`, got `{}`.",
+          consumed,
+          output
+        );
       }
-      other => {
-        panic!("`Parser.simple_peek` didn't succeed when it should have. \
-                             Got `{:?}`.", other)
-      }
+      other => panic!(
+        "`Parser.simple_peek` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 
@@ -514,15 +591,29 @@ mod tests {
     p = tmp;
     match res {
       Ok((extra, out)) => {
-        assert!(extra == leftover, "`Parser.simple_chain` consumed leftover input. leftover: {}", extra);
-        assert!(out == output, "`Parser.simple_chain` doesn't return the string it was supposed to \
-                                on success. Expected `{}`, got `{}`.", output, out);
-        assert!(p.bcd == "βçδ", "Parser.simple_chain didn't modify the parser field correctly: {}", p.bcd);
+        assert!(
+          extra == leftover,
+          "`Parser.simple_chain` consumed leftover input. leftover: {}",
+          extra
+        );
+        assert!(
+          out == output,
+          "`Parser.simple_chain` doesn't return the string it was supposed to \
+           on success. Expected `{}`, got `{}`.",
+          output,
+          out
+        );
+        assert!(
+          p.bcd == "βçδ",
+          "Parser.simple_chain didn't modify the parser field correctly: {}",
+          p.bcd
+        );
       }
-      other => {
-        panic!("`Parser.simple_chain` didn't succeed when it should have. \
-                             Got `{:?}`.", other)
-      }
+      other => panic!(
+        "`Parser.simple_chain` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 }

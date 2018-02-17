@@ -2,7 +2,7 @@
 extern crate nom;
 
 use std::fmt;
-use std::fmt::{Display, Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use std::str::FromStr;
 
@@ -106,7 +106,6 @@ named!(expr< CompleteStr, Expr >, do_parse!(
          ) >>
     (fold_exprs(initial, remainder))
 ));
-
 
 #[test]
 fn factor_test() {

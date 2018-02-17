@@ -20,69 +20,66 @@ pub enum JsonValue {
   Object(HashMap<String, JsonValue>),
 }
 
-named!(float<f32>,
-  flat_map!(recognize_float, parse_to!(f32))
-);
+named!(float<f32>, flat_map!(recognize_float, parse_to!(f32)));
 
 //FIXME: verify how json strings are formatted
-named!(string<&str>,
+named!(
+  string<&str>,
   delimited!(
     char!('\"'),
-    map_res!(escaped!(call!(alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
+    map_res!(
+      escaped!(call!(alphanumeric), '\\', one_of!("\"n\\")),
+      str::from_utf8
+    ),
     //map_res!(escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
     char!('\"')
   )
 );
 
-named!(array < Vec<JsonValue> >,
-  ws!(
+named!(
+  array<Vec<JsonValue>>,
+  ws!(delimited!(
+    char!('['),
+    separated_list!(char!(','), value),
+    char!(']')
+  ))
+);
+
+named!(
+  key_value<(&str, JsonValue)>,
+  ws!(separated_pair!(string, char!(':'), value))
+);
+
+named!(
+  hash<HashMap<String, JsonValue>>,
+  ws!(map!(
     delimited!(
-      char!('['),
-      separated_list!(char!(','), value),
-      char!(']')
-    )
-  )
-);
-
-named!(key_value<(&str,JsonValue)>,
-  ws!(
-    separated_pair!(
-      string,
-      char!(':'),
-      value
-    )
-  )
-);
-
-named!(hash< HashMap<String,JsonValue> >,
-  ws!(
-    map!(
-      delimited!(
-        char!('{'),
-        separated_list!(char!(','), key_value),
-        char!('}')
-        ),
-      |tuple_vec| {
-        tuple_vec.into_iter().map(|(k,v)| (String::from(k), v)).collect()
-        /*let mut h: HashMap<String, JsonValue> = HashMap::new();
+      char!('{'),
+      separated_list!(char!(','), key_value),
+      char!('}')
+    ),
+    |tuple_vec| {
+      tuple_vec
+        .into_iter()
+        .map(|(k, v)| (String::from(k), v))
+        .collect()
+      /*let mut h: HashMap<String, JsonValue> = HashMap::new();
         for (k, v) in tuple_vec {
           h.insert(String::from(k), v);
         }
         h*/
-      }
-    )
-  )
+    }
+  ))
 );
 
-named!(value<JsonValue>,
-  ws!(
-    alt!(
+named!(
+  value<JsonValue>,
+  ws!(alt!(
       hash   => { |h|   JsonValue::Object(h)            } |
       array  => { |v|   JsonValue::Array(v)             } |
       string => { |s|   JsonValue::Str(String::from(s)) } |
       float  => { |num| JsonValue::Num(num)             }
-    )
-  )
+    ))
 );
 
 #[bench]

@@ -346,26 +346,25 @@
 #![cfg_attr(feature = "nightly", feature(const_fn))]
 #![cfg_attr(feature = "nightly", feature(plugin))]
 //#![warn(missing_docs)]
-
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 
 #[cfg(not(feature = "std"))]
 #[macro_use]
 extern crate alloc;
-#[cfg(feature = "regexp")]
-extern crate regex;
 #[cfg(feature = "regexp_macros")]
 #[macro_use]
 extern crate lazy_static;
 extern crate memchr;
+#[cfg(feature = "regexp")]
+extern crate regex;
 #[cfg(feature = "nightly")]
 extern crate test;
 
 #[cfg(not(feature = "std"))]
 mod std {
   #[macro_use]
-  pub use alloc::{boxed, vec, string};
-  pub use core::{fmt, cmp, iter, option, result, ops, slice, str, mem, convert};
+  pub use alloc::{boxed, string, vec};
+  pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
   pub mod prelude {
     pub use core::prelude as v1;
   }

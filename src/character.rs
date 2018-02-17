@@ -146,12 +146,10 @@ where
   let mut it = input.iter_indices();
   match it.next() {
     None => need_more(input, Needed::Size(1)),
-    Some((_, c)) => {
-      match it.next() {
-        None => Ok((input.slice(input.input_len()..), c.as_char())),
-        Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
-      }
-    }
+    Some((_, c)) => match it.next() {
+      None => Ok((input.slice(input.input_len()..), c.as_char())),
+      Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
+    },
   }
 }
 
@@ -165,7 +163,7 @@ mod tests {
     named!(f<char>, one_of!("ab"));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a),Ok((&b"bcd"[..], 'a')));
+    assert_eq!(f(a), Ok((&b"bcd"[..], 'a')));
 
     let b = &b"cde"[..];
     assert_eq!(f(b), Err(Err::Error(error_position!(b, ErrorKind::OneOf))));
@@ -185,7 +183,7 @@ mod tests {
     assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::NoneOf))));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b),Ok((&b"de"[..], 'c')));
+    assert_eq!(f(b), Ok((&b"de"[..], 'c')));
   }
 
   #[test]
@@ -196,7 +194,7 @@ mod tests {
     assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b),Ok((&b"de"[..], 'c')));
+    assert_eq!(f(b), Ok((&b"de"[..], 'c')));
   }
 
   #[test]
@@ -207,7 +205,7 @@ mod tests {
     assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
 
     let b = &"cde"[..];
-    assert_eq!(f(b),Ok((&"de"[..], 'c')));
+    assert_eq!(f(b), Ok((&"de"[..], 'c')));
   }
 
   #[test]

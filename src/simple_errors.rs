@@ -13,14 +13,13 @@
 //! you can know precisely which parser got to which part of the input.
 //! The main drawback is that it is a lot slower than default error
 //! management.
-use util::{ErrorKind, Convert};
+use util::{Convert, ErrorKind};
 use std::convert::From;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Context<I, E = u32> {
   Code(I, ErrorKind<E>),
 }
-
 
 impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
   fn convert(c: Context<I, F>) -> Self {
@@ -29,7 +28,6 @@ impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
     Context::Code(i, ErrorKind::convert(e))
   }
 }
-
 
 /*
 impl<I,O,E> IResult<I,O,E> {

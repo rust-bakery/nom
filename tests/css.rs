@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Color {
   pub red:   u8,
   pub green: u8,
@@ -33,9 +33,15 @@ named!(hex_color<&str, Color>,
 
 #[test]
 fn parse_color() {
-  assert_eq!(hex_color("#2F14DF"), Ok(("", Color {
-    red: 47,
-    green: 20,
-    blue: 223,
-  })));
+  assert_eq!(
+    hex_color("#2F14DF"),
+    Ok((
+      "",
+      Color {
+        red:   47,
+        green: 20,
+        blue:  223,
+      }
+    ))
+  );
 }

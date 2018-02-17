@@ -438,7 +438,7 @@ macro_rules! do_parse (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err, Needed, IResult};
+  use internal::{Err, IResult, Needed};
   use util::ErrorKind;
   use nom::be_u16;
 
@@ -511,7 +511,7 @@ mod tests {
   }
 
   #[cfg(feature = "verbose-errors")]
-  use util::{error_to_list, add_error_pattern, print_error};
+  use util::{add_error_pattern, error_to_list, print_error};
   #[cfg(feature = "verbose-errors")]
   use verbose_errors::Context;
 
@@ -551,7 +551,6 @@ mod tests {
       _ => "unrecognized error".to_string()
     }
   }*/
-
 
   #[cfg(feature = "verbose-errors")]
   use std::collections;
@@ -636,7 +635,6 @@ mod tests {
     print_error(b, res_b2);
   }
 
-
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[allow(unused_variables)]
   #[test]
@@ -720,7 +718,6 @@ mod tests {
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
     );
   }
-
 
   #[test]
   fn separated_pair() {
@@ -848,9 +845,10 @@ mod tests {
     );
     assert_eq!(
       delimited_abc_def_ghi(&b"xxxdefghi"[..]),
-      Err(Err::Error(
-        error_position!(&b"xxxdefghi"[..], ErrorKind::Tag),
-      ))
+      Err(Err::Error(error_position!(
+        &b"xxxdefghi"[..],
+        ErrorKind::Tag
+      ),))
     );
     assert_eq!(
       delimited_abc_def_ghi(&b"abcxxxghi"[..]),

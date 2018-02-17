@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Needed, IResult, be_u16, be_u32, be_u64, be_f32};
+use nom::{IResult, Needed, be_f32, be_u16, be_u32, be_u64};
 //use nom::{Consumer,ConsumerState,Move,Input,Producer,FileProducer,FileProducerState};
 //use nom::IResult;
 use nom::{Err, ErrorKind};
@@ -239,7 +239,7 @@ enum MP4BoxType {
 #[derive(Debug)]
 struct MP4BoxHeader {
   length: u32,
-  tag: MP4BoxType,
+  tag:    MP4BoxType,
 }
 
 named!(brand_name<&[u8],&str>, map_res!(take!(4), str::from_utf8));

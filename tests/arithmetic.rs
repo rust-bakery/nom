@@ -61,7 +61,6 @@ fn factor_test() {
   assert_eq!(factor(CompleteStr("  24   ")), Ok((CompleteStr(""), 24)));
 }
 
-
 #[test]
 fn term_test() {
   assert_eq!(term(CompleteStr(" 12 *2 /  3")), Ok((CompleteStr(""), 8)));

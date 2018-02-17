@@ -1012,7 +1012,8 @@ mod tests {
   #[test]
   fn permutation() {
     //trace_macros!(true);
-    named!(perm<(&[u8], &[u8], &[u8])>,
+    named!(
+      perm<(&[u8], &[u8], &[u8])>,
       ws!(permutation!(tag!("abcd"), tag!("efg"), tag!("hi")))
     );
     //trace_macros!(false);
@@ -1020,15 +1021,21 @@ mod tests {
     let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
 
     let a = &b"abcd\tefg \thijk"[..];
-    assert_eq!(perm(a),Ok((&b"jk"[..], expected)));
+    assert_eq!(perm(a), Ok((&b"jk"[..], expected)));
     let b = &b"  efg  \tabcdhi jk"[..];
-    assert_eq!(perm(b),Ok((&b"jk"[..], expected)));
+    assert_eq!(perm(b), Ok((&b"jk"[..], expected)));
     let c = &b" hi   efg\tabcdjk"[..];
-    assert_eq!(perm(c),Ok((&b"jk"[..], expected)));
+    assert_eq!(perm(c), Ok((&b"jk"[..], expected)));
 
     let d = &b"efg  xyzabcdefghi"[..];
-    assert_eq!(perm(d), Err(Err::Error(error_node_position!(&b"efg  xyzabcdefghi"[..], ErrorKind::Permutation,
-      error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)))));
+    assert_eq!(
+      perm(d),
+      Err(Err::Error(error_node_position!(
+        &b"efg  xyzabcdefghi"[..],
+        ErrorKind::Permutation,
+        error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)
+      )))
+    );
 
     let e = &b" efg \tabc"[..];
     assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
@@ -1079,18 +1086,27 @@ mod tests {
     }
 
     let a = &b"\tabcd"[..];
-    assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt::<ErrorStr>))));
-    assert_eq!(alt2(a),Ok((&b""[..], a)));
-    assert_eq!(alt3(a),Ok((a, &b""[..])));
+    assert_eq!(
+      alt1(a),
+      Err(Err::Error(error_position!(a, ErrorKind::Alt::<ErrorStr>)))
+    );
+    assert_eq!(alt2(a), Ok((&b""[..], a)));
+    assert_eq!(alt3(a), Ok((a, &b""[..])));
 
     named!(alt4<CompleteStr, CompleteStr>, ws!(alt!(tag!("abcd") | tag!("efgh"))));
-    assert_eq!(alt4(CompleteStr("\tabcd")),Ok((CompleteStr(""), CompleteStr(r"abcd"))));
-    assert_eq!(alt4(CompleteStr("  efgh ")),Ok((CompleteStr(""), CompleteStr("efgh"))));
+    assert_eq!(
+      alt4(CompleteStr("\tabcd")),
+      Ok((CompleteStr(""), CompleteStr(r"abcd")))
+    );
+    assert_eq!(
+      alt4(CompleteStr("  efgh ")),
+      Ok((CompleteStr(""), CompleteStr("efgh")))
+    );
 
     // test the alternative syntax
     named!(alt5<CompleteStr, bool>, ws!(alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true })));
-    assert_eq!(alt5(CompleteStr("\tabcd")),Ok((CompleteStr(""), false)));
-    assert_eq!(alt5(CompleteStr("  efgh ")),Ok((CompleteStr(""), true)));
+    assert_eq!(alt5(CompleteStr("\tabcd")), Ok((CompleteStr(""), false)));
+    assert_eq!(alt5(CompleteStr("  efgh ")), Ok((CompleteStr(""), true)));
   }
 
   /*FIXME: alt_complete works, but ws will return Incomplete on end of input
@@ -1120,19 +1136,25 @@ mod tests {
     );
 
     let a = CompleteStr(" abcd ef gh");
-    assert_eq!(sw(a),Ok((CompleteStr("gh"), CompleteStr("ef"))));
+    assert_eq!(sw(a), Ok((CompleteStr("gh"), CompleteStr("ef"))));
 
     let b = CompleteStr("\tefgh ijkl ");
-    assert_eq!(sw(b),Ok((CompleteStr(""), CompleteStr("ijkl"))));
+    assert_eq!(sw(b), Ok((CompleteStr(""), CompleteStr("ijkl"))));
     let c = CompleteStr("afghijkl");
-    assert_eq!(sw(c), Err(Err::Error(error_position!(CompleteStr("afghijkl"), ErrorKind::Switch))));
+    assert_eq!(
+      sw(c),
+      Err(Err::Error(error_position!(
+        CompleteStr("afghijkl"),
+        ErrorKind::Switch
+      )))
+    );
   }
 
   named!(str_parse(&str) -> &str, ws!(tag!("test")));
   #[allow(unused_variables)]
   #[test]
   fn str_test() {
-    assert_eq!(str_parse(" \n   test\t a\nb"),Ok(("a\nb", "test")));
+    assert_eq!(str_parse(" \n   test\t a\nb"), Ok(("a\nb", "test")));
   }
 
   // test whitespace parser generation for alt
@@ -1156,5 +1178,8 @@ mod tests {
   )
   );
 
-  named!(fail<&[u8]>, map!(many_till!(take!(1), ws!(tag!("."))), |(r, _)| r[0]));
+  named!(
+    fail<&[u8]>,
+    map!(many_till!(take!(1), ws!(tag!("."))), |(r, _)| r[0])
+  );
 }

@@ -12,7 +12,6 @@
 //! to see a byte slice as a bit stream, and parse code points of arbitrary bit length.
 //!
 
-
 /// Transforms its byte slice input into a bit stream for the underlying parser. This allows the
 /// given bit stream parser to work on a byte slice input.
 ///
@@ -368,7 +367,7 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use std::ops::{Shr, Shl, AddAssign};
+  use std::ops::{AddAssign, Shl, Shr};
   use internal::{Err, Needed};
   use util::ErrorKind;
 
@@ -424,13 +423,16 @@ mod tests {
     assert_eq!(ch((&input[..1], 0)), Err(Err::Incomplete(Needed::Size(5))));
   }
 
-  named!(ch_bytes<(u8,u8)>, bits!(ch));
+  named!(ch_bytes<(u8, u8)>, bits!(ch));
   #[test]
   fn bits_to_bytes() {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
-    assert_eq!(ch_bytes(&input[..]), Ok( (&input[2..], (5,15))) );
+    assert_eq!(ch_bytes(&input[..]), Ok((&input[2..], (5, 15))));
     assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(ch_bytes(&input[1..]), Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits))));
+    assert_eq!(
+      ch_bytes(&input[1..]),
+      Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits)))
+    );
   }
 
   #[derive(PartialEq, Debug)]
@@ -469,8 +471,17 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(take_bits!( (sl, 0), FakeUint, 20 ), Ok( ((&sl[2..], 4), FakeUint(700_163))) );
-    assert_eq!(take_bits!( (sl, 4), FakeUint, 20 ), Ok( ((&sl[3..], 0), FakeUint(716_851))) );
-    assert_eq!(take_bits!( (sl, 4), FakeUint, 22 ), Err(Err::Incomplete(Needed::Size(22))) );
+    assert_eq!(
+      take_bits!((sl, 0), FakeUint, 20),
+      Ok(((&sl[2..], 4), FakeUint(700_163)))
+    );
+    assert_eq!(
+      take_bits!((sl, 4), FakeUint, 20),
+      Ok(((&sl[3..], 0), FakeUint(716_851)))
+    );
+    assert_eq!(
+      take_bits!((sl, 4), FakeUint, 22),
+      Err(Err::Incomplete(Needed::Size(22)))
+    );
   }
 }

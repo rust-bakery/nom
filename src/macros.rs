@@ -1168,7 +1168,6 @@ macro_rules! not(
   );
 );
 
-
 /// `tap!(name: I -> IResult<I,O> => { block }) => I -> IResult<I, O>`
 /// allows access to the parser's result without affecting it
 ///
@@ -1283,10 +1282,9 @@ macro_rules! recognize (
   );
 );
 
-
 #[cfg(test)]
 mod tests {
-  use internal::{Err, Needed, IResult};
+  use internal::{Err, IResult, Needed};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -1313,7 +1311,6 @@ mod tests {
       });
   );
 
-
   macro_rules! take(
     ($i:expr, $count:expr) => (
       {
@@ -1327,7 +1324,6 @@ mod tests {
       }
     );
   );
-
 
   mod pub_named_mod {
     named!(pub tst, tag!("abcd"));
@@ -1376,7 +1372,13 @@ mod tests {
     let b = &b"bcdefg"[..];
     let c = &b"ab"[..];
     assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
-    assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag))))));
+    assert_eq!(
+      opt_res_abcd(b),
+      Ok((
+        &b"bcdefg"[..],
+        Err(Err::Error(error_position!(b, ErrorKind::Tag)))
+      ))
+    );
     assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
   }
 
@@ -1389,7 +1391,13 @@ mod tests {
     let b = &b"bcdefg"[..];
     let c = &b"ab"[..];
     assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
-    assert_eq!(opt_res_abcd(b), Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag))))));
+    assert_eq!(
+      opt_res_abcd(b),
+      Ok((
+        &b"bcdefg"[..],
+        Err(Err::Error(error_position!(b, ErrorKind::Tag)))
+      ))
+    );
     assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
   }
 
@@ -1405,12 +1413,14 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn cond() {
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
-      closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag!("abcd") ) )),
-    );
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
-      closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag!("abcd") ) )),
-    );
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
+      &'static [u8],
+      fix_error!(CustomError, cond!(true, tag!("abcd")))
+    ));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
+      &'static [u8],
+      fix_error!(CustomError, cond!(false, tag!("abcd")))
+    ));
     //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
@@ -1426,13 +1436,15 @@ mod tests {
   #[cfg(feature = "std")]
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
-    named!( tag_abcd, tag!("abcd") );
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
-      closure!(&'static [u8], fix_error!(CustomError, cond!( true, tag_abcd ) )),
-    );
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(
-      closure!(&'static [u8], fix_error!(CustomError, cond!( false, tag_abcd ) )),
-    );
+    named!(tag_abcd, tag!("abcd"));
+    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
+      &'static [u8],
+      fix_error!(CustomError, cond!(true, tag_abcd))
+    ));
+    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
+      &'static [u8],
+      fix_error!(CustomError, cond!(false, tag_abcd))
+    ));
     //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
@@ -1450,7 +1462,10 @@ mod tests {
 
     assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
     assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(peek_tag(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(
+      peek_tag(&b"xxx"[..]),
+      Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    );
   }
 
   #[test]
@@ -1458,21 +1473,42 @@ mod tests {
     use types::CompleteStr;
 
     named!(not_aaa<()>, not!(tag!("aaa")));
-    assert_eq!(not_aaa(&b"aaa"[..]), Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not))));
+    assert_eq!(
+      not_aaa(&b"aaa"[..]),
+      Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not)))
+    );
     assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
 
     named!(not_aaa_complete<CompleteStr, ()>, not!(tag!("aaa")));
-    assert_eq!(not_aaa_complete(CompleteStr("aaa")), Err(Err::Error(error_position!(CompleteStr("aaa"), ErrorKind::Not))));
-    assert_eq!(not_aaa_complete(CompleteStr("aa")), Ok((CompleteStr("aa"), ())));
-    assert_eq!(not_aaa_complete(CompleteStr("abcd")), Ok((CompleteStr("abcd"), ())));
+    assert_eq!(
+      not_aaa_complete(CompleteStr("aaa")),
+      Err(Err::Error(error_position!(
+        CompleteStr("aaa"),
+        ErrorKind::Not
+      )))
+    );
+    assert_eq!(
+      not_aaa_complete(CompleteStr("aa")),
+      Ok((CompleteStr("aa"), ()))
+    );
+    assert_eq!(
+      not_aaa_complete(CompleteStr("abcd")),
+      Ok((CompleteStr("abcd"), ()))
+    );
   }
 
   #[test]
   fn verify() {
     named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == b'a'));
     assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
-    assert_eq!(test(&b"bcdefg"[..]), Err(Err::Error(error_position!(&b"bcdefg"[..], ErrorKind::Verify))));
+    assert_eq!(
+      test(&b"bcdefg"[..]),
+      Err(Err::Error(error_position!(
+        &b"bcdefg"[..],
+        ErrorKind::Verify
+      )))
+    );
     assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
   }
 }

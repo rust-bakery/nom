@@ -183,7 +183,6 @@ pub fn compare_error_paths<P: Clone + PartialEq, E: Clone + PartialEq>(e1: &Cont
   error_to_list(e1) == error_to_list(e2)
 }
 
-
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
 use std::hash::Hash;
@@ -196,13 +195,11 @@ pub fn add_error_pattern<'a, I: Clone + Hash + Eq, O, E: Clone + Hash + Eq>(
   message: &'a str,
 ) -> bool {
   match res {
-    Err(Err::Error(e)) |
-    Err(Err::Failure(e)) => {
+    Err(Err::Error(e)) | Err(Err::Failure(e)) => {
       h.insert(error_to_list(&e), message);
       true
     }
     _ => false,
-
   }
 }
 
@@ -248,7 +245,6 @@ pub fn print_error<O, E: Clone>(input: &[u8], res: IResult<&[u8], O, E>) {
     let colors = generate_colors(&v);
     println!("parser codes: {}", print_codes(&colors, &HashMap::new()));
     println!("{}", print_offsets(input, 0, &v));
-
   } else {
     println!("not an error");
   }
@@ -416,7 +412,6 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
 
   String::from_utf8_lossy(&v[..]).into_owned()
 }
-
 
 /// indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -627,7 +622,6 @@ impl<E> ErrorKind<E> {
     self
   }
 }
-
 
 pub trait Convert<T> {
   fn convert(T) -> Self;

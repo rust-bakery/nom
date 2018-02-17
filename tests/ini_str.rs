@@ -68,7 +68,6 @@ fn keys_and_values(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, &st
   }
 }
 
-
 named!(category_and_keys<CompleteStr,(&str,HashMap<&str,&str>)>,
   pair!(category, keys_and_values)
 );
@@ -81,7 +80,6 @@ fn categories(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, HashMap<
     Err(e) => Err(e),
   }
 }
-
 
 #[test]
 fn parse_category_test() {

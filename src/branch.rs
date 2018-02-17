@@ -598,7 +598,6 @@ macro_rules! permutation (
   );
 );
 
-
 #[doc(hidden)]
 #[macro_export]
 macro_rules! permutation_init (
@@ -852,7 +851,7 @@ macro_rules! permutation_iterator (
 #[cfg(test)]
 mod tests {
   use std::string::{String, ToString};
-  use internal::{Err, Needed, IResult};
+  use internal::{Err, IResult, Needed};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -973,7 +972,10 @@ mod tests {
     assert_eq!(alt4(b), Ok((&b""[..], b)));
 
     // test the alternative syntax
-    named!(alt5<bool>, alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true }));
+    named!(
+      alt5<bool>,
+      alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true })
+    );
     assert_eq!(alt5(a), Ok((&b""[..], false)));
     assert_eq!(alt5(b), Ok((&b""[..], true)));
 
@@ -981,7 +983,6 @@ mod tests {
     named!(alt_eof1, alt!(eof!() | eof!()));
     named!(alt_eof2, alt!(eof!() => {|x| x} | eof!() => {|x| x}));
     let _ = (alt_eof1, alt_eof2);
-
   }
 
   #[test]
@@ -1019,7 +1020,8 @@ mod tests {
   #[allow(unused_variables)]
   #[test]
   fn switch() {
-    named!(sw,
+    named!(
+      sw,
       switch!(take!(4),
         b"abcd" => take!(2) |
         b"efgh" => take!(4)
@@ -1032,12 +1034,19 @@ mod tests {
     let b = &b"efghijkl"[..];
     assert_eq!(sw(b), Ok((&b""[..], &b"ijkl"[..])));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Err(Err::Error(error_position!(&b"afghijkl"[..], ErrorKind::Switch))));
+    assert_eq!(
+      sw(c),
+      Err(Err::Error(error_position!(
+        &b"afghijkl"[..],
+        ErrorKind::Switch
+      )))
+    );
   }
 
   #[test]
   fn permutation() {
-    named!(perm<(&[u8], &[u8], &[u8])>,
+    named!(
+      perm<(&[u8], &[u8], &[u8])>,
       permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
     );
 
@@ -1051,8 +1060,14 @@ mod tests {
     assert_eq!(perm(c), Ok((&b"jk"[..], expected)));
 
     let d = &b"efgxyzabcdefghi"[..];
-    assert_eq!(perm(d), Err(Err::Error(error_node_position!(&b"efgxyzabcdefghi"[..], ErrorKind::Permutation,
-      error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)))));
+    assert_eq!(
+      perm(d),
+      Err(Err::Error(error_node_position!(
+        &b"efgxyzabcdefghi"[..],
+        ErrorKind::Permutation,
+        error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)
+      )))
+    );
 
     let e = &b"efgabc"[..];
     assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));

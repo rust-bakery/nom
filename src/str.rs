@@ -81,7 +81,6 @@ macro_rules! take_s (
   );
 );
 
-
 /// `is_not_s!(&str) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters that do not appear in the provided array
 ///
@@ -126,7 +125,6 @@ macro_rules! is_a_s (
     }
   );
 );
-
 
 /// `take_while_s!(char -> bool) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters until the provided function fails.
@@ -180,7 +178,6 @@ macro_rules! take_while1_s (
     take_while1_s!($input, call!($f));
   );
 );
-
 
 /// `take_till_s!(char -> bool) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters until the provided function succeeds
@@ -238,7 +235,7 @@ macro_rules! take_until_s (
 
 #[cfg(test)]
 mod test {
-  use {Err, IResult, ErrorKind};
+  use {Err, ErrorKind, IResult};
 
   #[test]
   fn tag_str_succeed() {
@@ -257,18 +254,16 @@ mod test {
         assert!(
           output == TAG,
           "Parser `tag_s` doesn't return the tag it matched on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           TAG,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `tag_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `tag_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -282,7 +277,7 @@ mod test {
       other => {
         panic!(
           "Parser `tag_s` didn't require more input when it should have. \
-                        Got `{:?}`.",
+           Got `{:?}`.",
           other
         );
       }
@@ -325,13 +320,11 @@ mod test {
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -347,24 +340,22 @@ mod test {
         assert!(
           extra == LEFTOVER,
           "Parser `take_until_s`\
-                  consumed leftover input. Leftover `{}`.",
+           consumed leftover input. Leftover `{}`.",
           extra
         );
         assert!(
           output == CONSUMED,
           "Parser `take_until_s`\
-                  doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+           doens't return the string it consumed on success. Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_until_s` didn't succeed when it should have. \
-             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -374,13 +365,11 @@ mod test {
 
     match take_s!(INPUT, 13) {
       Err(Err::Incomplete(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_s` didn't require more input when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_s` didn't require more input when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 
@@ -440,18 +429,16 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_till_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_till_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_till_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -475,18 +462,16 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_while_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_while_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_while_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -513,13 +498,11 @@ mod test {
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `is_not_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `is_not_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -535,24 +518,22 @@ mod test {
         assert!(
           extra == LEFTOVER,
           "Parser `take_until_and_consume_s`\
-                    consumed leftover input. Leftover `{}`.",
+           consumed leftover input. Leftover `{}`.",
           extra
         );
         assert!(
           output == OUTPUT,
           "Parser `take_until_and_consume_s`\
-                    doens't return the string it selected on success. Expected `{}`, got `{}`.",
+           doens't return the string it selected on success. Expected `{}`, got `{}`.",
           OUTPUT,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_until_and_consume_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_and_consume_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -576,18 +557,16 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_while_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_while_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_while_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -600,12 +579,10 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => {
-        panic!(
-          "Parser `is_not_s` didn't fail when it should have. Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `is_not_s` didn't fail when it should have. Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -629,18 +606,16 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_while1_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_while1_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_while1_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -651,13 +626,11 @@ mod test {
 
     match take_until_and_consume_s!(INPUT, FIND) {
       Err(Err::Incomplete(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_until_and_consume_s` didn't require more input when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_and_consume_s` didn't require more input when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -668,13 +641,11 @@ mod test {
 
     match take_until_s!(INPUT, FIND) {
       Err(Err::Incomplete(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_until_s` didn't require more input when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_s` didn't require more input when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -701,13 +672,11 @@ mod test {
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `is_a_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `is_a_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -722,13 +691,11 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_while1_s` didn't fail when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_while1_s` didn't fail when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -741,12 +708,10 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => {
-        panic!(
-          "Parser `is_a_s` didn't fail when it should have. Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `is_a_s` didn't fail when it should have. Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -757,13 +722,11 @@ mod test {
 
     match take_until_and_consume_s!(INPUT, FIND) {
       Err(Err::Incomplete(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_until_and_consume_s` didn't fail when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_and_consume_s` didn't fail when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -774,13 +737,11 @@ mod test {
 
     match take_until_s!(INPUT, FIND) {
       Err(Err::Incomplete(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_until_and_consume_s` didn't fail when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_and_consume_s` didn't fail when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -794,7 +755,6 @@ mod test {
 
     assert_eq!(f(&a[..]), Ok((&a[6..], &a[..])));
     assert_eq!(f(&b[..]), Ok((&b[4..], &b[..4])));
-
   }
 
   #[test]

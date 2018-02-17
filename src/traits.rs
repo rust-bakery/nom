@@ -1,7 +1,7 @@
 //! Traits input types have to implement to work with nom combinators
 //!
 use internal::{Err, IResult, Needed};
-use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
+use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use std::iter::Enumerate;
 use std::slice::Iter;
 use std::iter::Map;
@@ -337,7 +337,6 @@ pub trait InputTake: Sized {
   fn take_split(&self, count: usize) -> (Self, Self);
 }
 
-
 impl<'a> InputIter for &'a [u8] {
   type Item = u8;
   type RawItem = u8;
@@ -484,16 +483,10 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     let other = &t[..m];
 
     if !reduced.iter().zip(other).all(|(a, b)| match (*a, *b) {
-      (0...64, 0...64) |
-      (91...96, 91...96) |
-      (123...255, 123...255) => a == b,
-      (65...90, 65...90) |
-      (97...122, 97...122) |
-      (65...90, 97...122) |
-      (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
+      (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
+      (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122) | (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
       _ => false,
-    })
-    {
+    }) {
       CompareResult::Error
     } else if m < blen {
       CompareResult::Incomplete
@@ -534,9 +527,10 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   //FIXME: this version is too simple and does not use the current locale
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    let pos = self.chars().zip(t.chars()).position(|(a, b)| {
-      a.to_lowercase().zip(b.to_lowercase()).any(|(a, b)| a != b)
-    });
+    let pos = self
+      .chars()
+      .zip(t.chars())
+      .position(|(a, b)| a.to_lowercase().zip(b.to_lowercase()).any(|(a, b)| a != b));
 
     match pos {
       Some(_) => CompareResult::Error,
@@ -813,7 +807,6 @@ macro_rules! input_length_array_impls {
   };
 }
 
-
 input_length_array_impls! {
      0  1  2  3  4  5  6  7  8  9
     10 11 12 13 14 15 16 17 18 19
@@ -833,7 +826,6 @@ pub trait ExtendInto {
   #[inline]
   fn extend_into(&self, acc: &mut Self::Extender);
 }
-
 
 #[cfg(feature = "std")]
 impl ExtendInto for [u8] {

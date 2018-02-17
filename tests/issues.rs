@@ -5,13 +5,13 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{Err, IResult, Needed, space, be_u16, le_u64};
+use nom::{space, Err, IResult, Needed, be_u16, le_u64};
 use nom::types::CompleteByteSlice;
 
 #[allow(dead_code)]
 struct Range {
   start: char,
-  end: char,
+  end:   char,
 }
 
 pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
@@ -48,7 +48,6 @@ named!(range<&[u8], Range>,
     )
 );
 
-
 #[allow(dead_code)]
 named!(literal<&[u8], Vec<char> >,
     map!(
@@ -70,27 +69,25 @@ fn issue_58() {
 #[cfg(feature = "std")]
 mod parse_int {
   use nom::HexDisplay;
-  use nom::{IResult, space, digit};
+  use nom::{digit, space, IResult};
   use std::str;
 
-  named!(parse_ints< Vec<i32> >, many0!(spaces_or_int));
+  named!(parse_ints<Vec<i32>>, many0!(spaces_or_int));
 
   fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32> {
     println!("{}", input.to_hex(8));
-    do_parse!(input,
-      opt!(complete!(space)) >>
-      res: map!(complete!(digit),
-      |x| {
+    do_parse!(
+      input,
+      opt!(complete!(space)) >> res: map!(complete!(digit), |x| {
         println!("x: {:?}", x);
         let result = str::from_utf8(x).unwrap();
         println!("Result: {}", result);
         println!("int is empty?: {}", x.is_empty());
-        match result.parse(){
+        match result.parse() {
           Ok(i) => i,
-          Err(e) =>  panic!("UH OH! NOT A DIGIT! {:?}", e)
+          Err(e) => panic!("UH OH! NOT A DIGIT! {:?}", e),
         }
-      }) >>
-      (res)
+      }) >> (res)
     )
   }
 
@@ -131,15 +128,16 @@ fn issue_152() {
 
 #[test]
 fn take_till_issue() {
-  named!(nothing,
-        take_till!(call!(|_| true))
-    );
+  named!(nothing, take_till!(call!(|_| true)));
 
   assert_eq!(nothing(b""), Err(Err::Incomplete(Needed::Size(1))));
   assert_eq!(nothing(b"abc"), Ok((&b"abc"[..], &b""[..])));
 }
 
-named!(issue_498< Vec<&[u8]> >, separated_nonempty_list!( opt!(space), tag!("abcd") ));
+named!(
+  issue_498<Vec<&[u8]>>,
+  separated_nonempty_list!(opt!(space), tag!("abcd"))
+);
 
 named!(issue_308(&str) -> bool,
     do_parse! (
@@ -150,12 +148,8 @@ named!(issue_308(&str) -> bool,
         ) >>
         (b) ));
 
-
 fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>>> {
-  do_parse!(input,
-        entries: cond!(true, count!(le_u64, 3)) >>
-        ( entries )
-    )
+  do_parse!(input, entries: cond!(true, count!(le_u64, 3)) >> (entries))
 }
 
 #[test]
@@ -189,15 +183,42 @@ fn issue_667() {
       alt!(alpha | is_a!("_"))
     )
   );
-  assert_eq!(foo(CompleteByteSlice(b"")), Ok((CompleteByteSlice(b""), vec![])));
-  assert_eq!(foo(CompleteByteSlice(b"loremipsum")),
-    Ok((CompleteByteSlice(b""), vec![CompleteByteSlice(b"loremipsum")])));
-  assert_eq!(foo(CompleteByteSlice(b"lorem_ipsum")),
-    Ok((CompleteByteSlice(b""),
-        vec![CompleteByteSlice(b"lorem"), CompleteByteSlice(b"_"), CompleteByteSlice(b"ipsum")])));
-  assert_eq!(foo(CompleteByteSlice(b"_lorem_ipsum")),
-    Ok((CompleteByteSlice(b""),
-        vec![CompleteByteSlice(b"_"), CompleteByteSlice(b"lorem"),
-             CompleteByteSlice(b"_"), CompleteByteSlice(b"ipsum")])));
-  assert_eq!(foo(CompleteByteSlice(b"!@#$")), Ok((CompleteByteSlice(b"!@#$"), vec![])));
+  assert_eq!(
+    foo(CompleteByteSlice(b"")),
+    Ok((CompleteByteSlice(b""), vec![]))
+  );
+  assert_eq!(
+    foo(CompleteByteSlice(b"loremipsum")),
+    Ok((
+      CompleteByteSlice(b""),
+      vec![CompleteByteSlice(b"loremipsum")]
+    ))
+  );
+  assert_eq!(
+    foo(CompleteByteSlice(b"lorem_ipsum")),
+    Ok((
+      CompleteByteSlice(b""),
+      vec![
+        CompleteByteSlice(b"lorem"),
+        CompleteByteSlice(b"_"),
+        CompleteByteSlice(b"ipsum"),
+      ]
+    ))
+  );
+  assert_eq!(
+    foo(CompleteByteSlice(b"_lorem_ipsum")),
+    Ok((
+      CompleteByteSlice(b""),
+      vec![
+        CompleteByteSlice(b"_"),
+        CompleteByteSlice(b"lorem"),
+        CompleteByteSlice(b"_"),
+        CompleteByteSlice(b"ipsum"),
+      ]
+    ))
+  );
+  assert_eq!(
+    foo(CompleteByteSlice(b"!@#$")),
+    Ok((CompleteByteSlice(b"!@#$"), vec![]))
+  );
 }

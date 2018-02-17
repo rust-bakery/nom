@@ -1,10 +1,10 @@
 //! Custom input types
 //!
 
-use traits::{AtEof, AsBytes, Compare, CompareResult, InputLength, InputIter, InputTake, Slice, FindSubstring, FindToken, Offset, ParseTo};
+use traits::{AsBytes, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset, ParseTo, Slice};
 
-use std::str::{self, FromStr, Chars, CharIndices};
-use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
+use std::str::{self, CharIndices, Chars, FromStr};
+use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use std::iter::{Enumerate, Map};
 use std::slice::Iter;
 
@@ -94,7 +94,6 @@ impl<'a, 'b> Compare<&'b str> for CompleteStr<'a> {
   }
 }
 
-
 impl<'a, 'b> FindSubstring<&'b str> for CompleteStr<'a> {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
     self.0.find_substring(substr)
@@ -136,7 +135,6 @@ impl<'a> AsBytes for CompleteStr<'a> {
     self.0.as_bytes()
   }
 }
-
 
 /// Holds a complete String, for which the `at_eof` method always returns true
 ///

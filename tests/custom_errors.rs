@@ -16,8 +16,6 @@ impl From<u32> for CustomError {
   }
 }
 
-
-
 fn test1(input: &str) -> IResult<&str, &str, CustomError> {
   fix_error!(input, CustomError, tag!("abcd"))
 }
@@ -27,7 +25,9 @@ fn test2(input: &str) -> IResult<&str, &str, CustomError> {
 }
 
 fn test3(input: &str) -> IResult<&str, &str, CustomError> {
-  verify!(input, test1, |s: &str| s.starts_with("abcd"))
+  verify!(input, test1, |s: &str| {
+    s.starts_with("abcd")
+  })
 }
 
 fn test4(input: &str) -> IResult<&str, Vec<&str>, CustomError> {

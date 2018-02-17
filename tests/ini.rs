@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{space, alphanumeric, multispace};
+use nom::{alphanumeric, multispace, space};
 use nom::types::CompleteByteSlice;
 
 use std::str;
@@ -35,14 +35,12 @@ named!(key_value    <CompleteByteSlice,(&str,&str)>,
   )
 );
 
-
 named!(keys_and_values<CompleteByteSlice, HashMap<&str, &str> >,
   map!(
     many0!(terminated!(key_value, opt!(multispace))),
     |vec: Vec<_>| vec.into_iter().collect()
   )
 );
-
 
 named!(category_and_keys<CompleteByteSlice,(&str,HashMap<&str,&str>)>,
   do_parse!(
@@ -111,7 +109,6 @@ key = value2",
 
   assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
 }
-
 
 #[test]
 fn parse_key_value_with_space_test() {

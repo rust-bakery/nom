@@ -4,19 +4,18 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use nom::{space, alphanumeric, multispace};
+use nom::{alphanumeric, multispace, space};
 
 use std::str;
 use std::collections::HashMap;
 
-named!(category<&str>, map_res!(
-    delimited!(
-      char!('['),
-      take_while!(call!(|c| c != b']')),
-      char!(']')
-    ),
+named!(
+  category<&str>,
+  map_res!(
+    delimited!(char!('['), take_while!(call!(|c| c != b']')), char!(']')),
     str::from_utf8
-));
+  )
+);
 
 named!(key_value    <&[u8],(&str,&str)>,
   do_parse!(
@@ -33,14 +32,12 @@ named!(key_value    <&[u8],(&str,&str)>,
   )
 );
 
-
 named!(keys_and_values<&[u8], HashMap<&str, &str> >,
   map!(
     many0!(terminated!(key_value, opt!(multispace))),
     |vec: Vec<_>| vec.into_iter().collect()
   )
 );
-
 
 named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
   do_parse!(
@@ -103,7 +100,6 @@ key = value2"[..];
 
   assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
 }
-
 
 #[test]
 fn parse_key_value_with_space_test() {

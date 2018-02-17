@@ -103,7 +103,6 @@ fn factor_test() {
   );
 }
 
-
 #[test]
 fn term_test() {
   assert_eq!(
