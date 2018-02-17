@@ -68,8 +68,15 @@
 //!
 //! ## Parser combinators
 //!
-//! Parser combinators are an approach to parsers that is very different from software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar in a separate file and generating the corresponding code, you use very small functions with very specific purpose, like "take 5 bytes", or "recognize the word 'HTTP'", and assemble then in meaningful patterns like "recognize 'HTTP', then a space, then a version".
-//! The resulting code is small, and looks like the grammar you would have written with other parser approaches.
+//! Parser combinators are an approach to parsers that is very different from
+//! software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and
+//! [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar
+//! in a separate file and generating the corresponding code, you use very small
+//! functions with very specific purpose, like "take 5 bytes", or "recognize the
+//! word 'HTTP'", and assemble then in meaningful patterns like "recognize
+//! 'HTTP', then a space, then a version".
+//! The resulting code is small, and looks like the grammar you would have
+//! written with other parser approaches.
 //!
 //! This has a few advantages:
 //!
@@ -80,7 +87,7 @@
 //! - you can build partial parsers, specific to the data you need at the moment, and ignore the rest
 //!
 //! Here is an example of one such parser, to recognize text between parentheses:
-//! 
+//!
 //! ```rust
 //! #[macro_use]
 //! extern crate nom;
@@ -89,15 +96,15 @@
 //! named!(parens, delimited!(char!('('), is_not!(")"), char!(')')));
 //! # }
 //! ```
-//! 
+//!
 //! It defines a function named `parens`, which will recognize a sequence of the character `(`, the longest byte array not containing `)`, then the character `)`, and will return the byte array in the middle.
-//! 
+//!
 //! Here is another parser, written without using nom's macros this time:
-//! 
+//!
 //! ```rust
 //! #[macro_use]
 //! extern crate nom;
-//! 
+//!
 //! use nom::{IResult,Err,Needed};
 //!
 //! # fn main() {
@@ -117,7 +124,7 @@
 //! developing parsers.
 //!
 //! With macros, you would write it like this:
-//! 
+//!
 //! ```rust
 //! #[macro_use]
 //! extern crate nom;
@@ -135,13 +142,13 @@
 //! ```
 //!
 //! Or like this, if you don't want to specify a custom error type (it will be `u32` by default):
-//! 
+//!
 //! ```rust,ignore
 //! fn parser(input: I) -> IResult<I, O>;
 //! ```
-//! 
+//!
 //! `IResult` is an alias for the `Result` type:
-//! 
+//!
 //! ```rust
 //! use nom::{Needed, Context};
 //!
@@ -153,21 +160,21 @@
 //!   Failure(Context<I, E>),
 //! }
 //! ```
-//! 
+//!
 //! It can have the following values:
-//! 
+//!
 //! - a correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
 //! - an error `Err(Err::Error(c))` with `c` an enum that contians an error code with its position in the input, and optionally a chain of accumulated errors;
 //! - an error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
 //! - an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and test another parser
-//! 
+//!
 //! Please refer to the [documentation][doc] for an exhaustive list of parsers. See also the
 //! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**.
-//! 
+//!
 //! ## Making new parsers with macros
-//! 
+//!
 //! Macros are the main way to make new parsers by combining other ones. Those macros accept other macros or function names as arguments. You then need to make a function out of that combinator with **`named!`**, or a closure with **`closure!`**. Here is how you would do, with the **`tag!`** and **`take!`** combinators:
-//! 
+//!
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
@@ -176,19 +183,19 @@
 //! named!(take_10, take!(10));        // will consume and return 10 bytes of input
 //! # }
 //! ```
-//! 
+//!
 //! The **`named!`** macro can take three different syntaxes:
-//! 
+//!
 //! ```rust,ignore
 //! named!(my_function( &[u8] ) -> &[u8], tag!("abcd"));
 //!
 //! named!(my_function<&[u8], &[u8]>, tag!("abcd"));
-//! 
+//!
 //! named!(my_function, tag!("abcd")); // when you know the parser takes &[u8] as input, and returns &[u8] as output
 //! ```
-//! 
+//!
 //! **IMPORTANT NOTE**: Rust's macros can be very sensitive to the syntax, so you may encounter an error compiling parsers like this one:
-//! 
+//!
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
@@ -218,23 +225,23 @@
 //! # fn main() {
 //! named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
 //!
-//! assert_eq!(alt_tags(b"abcdxxx"), Done(&b"xxx"[..], &b"abcd"[..]));
-//! assert_eq!(alt_tags(b"efghxxx"), Done(&b"xxx"[..], &b"efgh"[..]));
-//! assert_eq!(alt_tags(b"ijklxxx"), Error(Position(Alt, &b"ijklxxx"[..])));
+//! assert_eq!(alt_tags(b"abcdxxx"), Ok((&b"xxx"[..], &b"abcd"[..])));
+//! assert_eq!(alt_tags(b"efghxxx"), Ok((&b"xxx"[..], &b"efgh"[..])));
+//! assert_eq!(alt_tags(b"ijklxxx"), Err(nom::Err::Error(error_position!(&b"ijklxxx"[..], nom::ErrorKind::Alt))));
 //! # }
 //! ```
 //!
 //! The pipe `|` character is used as separator.
 //!
 //! The **`opt!`** combinator makes a parser optional. If the child parser returns an error, **`opt!`** will succeed and return None:
-//! 
+//!
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
 //! named!( abcd_opt< &[u8], Option<&[u8]> >, opt!( tag!("abcd") ) );
-//! 
-//! assert_eq!(abcd_opt(b"abcdxxx"), Done(&b"xxx"[..], Some(&b"abcd"[..])));
-//! assert_eq!(abcd_opt(b"efghxxx"), Done(&b"efghxxx"[..], None));
+//!
+//! assert_eq!(abcd_opt(b"abcdxxx"), Ok((&b"xxx"[..], Some(&b"abcd"[..]))));
+//! assert_eq!(abcd_opt(b"efghxxx"), Ok((&b"efghxxx"[..], None)));
 //! # }
 //! ```
 //!
@@ -249,9 +256,9 @@
 //! let a = b"abcdef";
 //! let b = b"abcdabcdef";
 //! let c = b"azerty";
-//! assert_eq!(multi(a), Done(&b"ef"[..],     vec!["abcd"]));
-//! assert_eq!(multi(b), Done(&b"ef"[..],     vec!["abcd", "abcd"]));
-//! assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+//! assert_eq!(multi(a), Ok((&b"ef"[..],     vec!["abcd"])));
+//! assert_eq!(multi(b), Ok((&b"ef"[..],     vec!["abcd", "abcd"])));
+//! assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
 //! # }
 //! ```
 //!
@@ -268,8 +275,7 @@
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
-//! use nom::{ErroKind, Needed};
-//! use nom::err::Incomplete;
+//! use nom::{ErrorKind, Needed,be_u16};
 //!
 //! named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
 //!   tuple!(
@@ -281,28 +287,32 @@
 //!
 //! assert_eq!(
 //!   tpl(&b"abcdefgh"[..]),
-//!   Done(
+//!   Ok((
 //!     &b"h"[..],
 //!     (0x6162u16, &b"cde"[..], &b"fg"[..])
-//!   )
+//!   ))
 //! );
-//! assert_eq!(tpl(&b"abcde"[..]), Incomplete(Needed::Size(7)));
+//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::Size(2))));
 //! let input = &b"abcdejk"[..];
-//! assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
+//! assert_eq!(tpl(input), Err(nom::Err::Error(error_position!(&input[5..], ErrorKind::Tag))));
 //! # }
 //! ```
 //!
 //! Example with `do_parse!`:
 //!
 //! ```rust
+//! # #[macro_use] extern crate nom;
+//! # fn main() {
+//! use nom::IResult;
+//!
 //! #[derive(Debug, PartialEq)]
 //! struct A {
 //!   a: u8,
 //!   b: u8
 //! }
 //!
-//! fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Done(i,1) }
-//! fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Done(i,2) }
+//! fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,1)) }
+//! fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,2)) }
 //!
 //! named!(f<&[u8],A>,
 //!   do_parse!(    // the parser takes a byte array as input, and returns an A struct
@@ -318,14 +328,15 @@
 //! );
 //!
 //! let r = f(b"abcdabcdefghefghX");
-//! assert_eq!(r, Done(&b"X"[..], A{a: 1, b: 2}));
+//! assert_eq!(r, Ok((&b"X"[..], A{a: 1, b: 2})));
 //!
 //! let r2 = f(b"abcdefghefghX");
-//! assert_eq!(r2, Done(&b"X"[..], A{a: 1, b: 2}));
+//! assert_eq!(r2, Ok((&b"X"[..], A{a: 1, b: 2})));
+//! # }
 //! ```
 //!
 //! The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers. Unless the specified return type is already a tuple, the final line should be that type wrapped in a tuple.
-//! 
+//!
 //! More examples of [`do_parse!`](macro.do_parse.html) and [`tuple!`](macro.tuple.html) usage can be found in the [INI file parser example](tests/ini.rs).
 //!
 //! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
