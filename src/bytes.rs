@@ -1118,7 +1118,7 @@ macro_rules! take_until_either (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
+      use $crate::{Needed,IResult,need_more_err,ErrorKind};
 
       use $crate::InputIter;
       use $crate::FindToken;

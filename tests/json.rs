@@ -3,9 +3,9 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{digit, is_alphanumeric, alphanumeric, space, recognize_float};
+use nom::{is_alphanumeric, recognize_float};
 
-use std::str::{self, FromStr};
+use std::str;
 use std::collections::HashMap;
 
 #[derive(Debug, PartialEq)]
@@ -72,10 +72,10 @@ named!(hash< HashMap<String,JsonValue> >,
 named!(value<JsonValue>,
   ws!(
     alt!(
-      dbg_dmp!(hash)   => { |h|   JsonValue::Object(h)            } |
-      dbg_dmp!(array)  => { |v|   JsonValue::Array(v)             } |
-      dbg_dmp!(string) => { |s|   JsonValue::Str(String::from(s)) } |
-      dbg_dmp!(float)  => { |num| JsonValue::Num(num)             }
+      hash   => { |h|   JsonValue::Object(h)            } |
+      array  => { |v|   JsonValue::Array(v)             } |
+      string => { |s|   JsonValue::Str(String::from(s)) } |
+      float  => { |num| JsonValue::Num(num)             }
     )
   )
 );

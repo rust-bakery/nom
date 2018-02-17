@@ -26,7 +26,7 @@
 //! }
 //!
 //! named!(hex_primary<&str, u8>,
-//!   map_res!(dbg_dmp!(take_while_m_n!(2, 2, is_hex_digit)), from_hex)
+//!   map_res!(take_while_m_n!(2, 2, is_hex_digit), from_hex)
 //! );
 //!
 //! named!(hex_color<&str, Color>,
