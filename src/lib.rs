@@ -84,8 +84,10 @@
 //! ```rust
 //! #[macro_use]
 //! extern crate nom;
-//! 
+//!
+//! # fn main() {
 //! named!(parens, delimited!(char!('('), is_not!(")"), char!(')')));
+//! # }
 //! ```
 //! 
 //! It defines a function named `parens`, which will recognize a sequence of the character `(`, the longest byte array not containing `)`, then the character `)`, and will return the byte array in the middle.
@@ -97,7 +99,8 @@
 //! extern crate nom;
 //! 
 //! use nom::{IResult,Err,Needed};
-//! 
+//!
+//! # fn main() {
 //! fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
 //!   if i.len() < 4 {
 //!     Err(Err::Incomplete(Needed::Size(4)))
@@ -105,6 +108,7 @@
 //!     Ok((&i[4..],&i[0..4]))
 //!   }
 //! }
+//! # }
 //! ```
 //!
 //! This function takes a byte array as input, and tries to consume 4 bytes.
@@ -117,19 +121,22 @@
 //! ```rust
 //! #[macro_use]
 //! extern crate nom;
-//! 
+//!
+//! # fn main() {
 //! named!(take4, take!(4));
+//! # }
 //! ```
+//!
 //! A parser in nom is a function which, for an input type `I`, an output type `O`
 //! and an optional error type `E`, will have the following signature:
 //!
-//! ```rust
+//! ```rust,ignore
 //! fn parser(input: I) -> IResult<I, O, E>;
 //! ```
-//! 
+//!
 //! Or like this, if you don't want to specify a custom error type (it will be `u32` by default):
 //! 
-//! ```rust
+//! ```rust,ignore
 //! fn parser(input: I) -> IResult<I, O>;
 //! ```
 //! 
@@ -137,9 +144,9 @@
 //! 
 //! ```rust
 //! use nom::{Needed, Context};
-//! 
+//!
 //! type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
-//! 
+//!
 //! enum Err<I, E = u32> {
 //!   Incomplete(Needed),
 //!   Error(Context<I, E>),
@@ -162,17 +169,19 @@
 //! Macros are the main way to make new parsers by combining other ones. Those macros accept other macros or function names as arguments. You then need to make a function out of that combinator with **`named!`**, or a closure with **`closure!`**. Here is how you would do, with the **`tag!`** and **`take!`** combinators:
 //! 
 //! ```rust
+//! # #[macro_use] extern crate nom;
+//! # fn main() {
 //! named!(abcd_parser, tag!("abcd")); // will consume bytes if the input begins with "abcd"
-//! 
-//! 
+//!
 //! named!(take_10, take!(10));        // will consume and return 10 bytes of input
+//! # }
 //! ```
 //! 
 //! The **`named!`** macro can take three different syntaxes:
 //! 
-//! ```rust
+//! ```rust,ignore
 //! named!(my_function( &[u8] ) -> &[u8], tag!("abcd"));
-//! 
+//!
 //! named!(my_function<&[u8], &[u8]>, tag!("abcd"));
 //! 
 //! named!(my_function, tag!("abcd")); // when you know the parser takes &[u8] as input, and returns &[u8] as output
@@ -181,7 +190,10 @@
 //! **IMPORTANT NOTE**: Rust's macros can be very sensitive to the syntax, so you may encounter an error compiling parsers like this one:
 //! 
 //! ```rust
+//! # #[macro_use] extern crate nom;
+//! # fn main() {
 //! named!(my_function<&[u8], Vec<&[u8]>>, many0!(tag!("abcd")));
+//! # }
 //! ```
 //!
 //! You will get the following error: `error: expected an item keyword`. This
@@ -189,7 +201,10 @@
 //! recognize what we want. There is a way to avoid it, by inserting a space:
 //!
 //! ```rust
+//! # #[macro_use] extern crate nom;
+//! # fn main() {
 //! named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
+//! # }
 //! ```
 //!
 //! This will compile correctly. I am very sorry for this inconvenience.
@@ -199,11 +214,14 @@
 //! There are more high level patterns, like the **`alt!`** combinator, which provides a choice between multiple parsers. If one branch fails, it tries the next, and returns the result of the first parser that succeeds:
 //!
 //! ```rust
+//! # #[macro_use] extern crate nom;
+//! # fn main() {
 //! named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
 //!
 //! assert_eq!(alt_tags(b"abcdxxx"), Done(&b"xxx"[..], &b"abcd"[..]));
 //! assert_eq!(alt_tags(b"efghxxx"), Done(&b"xxx"[..], &b"efgh"[..]));
 //! assert_eq!(alt_tags(b"ijklxxx"), Error(Position(Alt, &b"ijklxxx"[..])));
+//! # }
 //! ```
 //!
 //! The pipe `|` character is used as separator.
@@ -211,16 +229,22 @@
 //! The **`opt!`** combinator makes a parser optional. If the child parser returns an error, **`opt!`** will succeed and return None:
 //! 
 //! ```rust
+//! # #[macro_use] extern crate nom;
+//! # fn main() {
 //! named!( abcd_opt< &[u8], Option<&[u8]> >, opt!( tag!("abcd") ) );
 //! 
 //! assert_eq!(abcd_opt(b"abcdxxx"), Done(&b"xxx"[..], Some(&b"abcd"[..])));
 //! assert_eq!(abcd_opt(b"efghxxx"), Done(&b"efghxxx"[..], None));
+//! # }
 //! ```
 //!
 //! **`many0!`** applies a parser 0 or more times, and returns a vector of the aggregated results:
 //!
 //! ```rust
+//! # #[macro_use] extern crate nom;
+//! # fn main() {
 //! use std::str;
+//!
 //! named!(multi< Vec<&str> >, many0!( map_res!(tag!( "abcd" ), str::from_utf8) ) );
 //! let a = b"abcdef";
 //! let b = b"abcdabcdef";
@@ -228,6 +252,7 @@
 //! assert_eq!(multi(a), Done(&b"ef"[..],     vec!["abcd"]));
 //! assert_eq!(multi(b), Done(&b"ef"[..],     vec!["abcd", "abcd"]));
 //! assert_eq!(multi(c), Done(&b"azerty"[..], Vec::new()));
+//! # }
 //! ```
 //!
 //! Here are some basic combining macros available:
@@ -241,6 +266,11 @@
 //! Example with `tuple!`:
 //!
 //! ```rust
+//! # #[macro_use] extern crate nom;
+//! # fn main() {
+//! use nom::{ErroKind, Needed};
+//! use nom::err::Incomplete;
+//!
 //! named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
 //!   tuple!(
 //!     be_u16 ,
@@ -259,6 +289,7 @@
 //! assert_eq!(tpl(&b"abcde"[..]), Incomplete(Needed::Size(7)));
 //! let input = &b"abcdejk"[..];
 //! assert_eq!(tpl(input), Error(Position(ErrorKind::Tag, &input[5..])));
+//! # }
 //! ```
 //!
 //! Example with `do_parse!`:
