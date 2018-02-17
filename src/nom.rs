@@ -1066,6 +1066,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn character_s() {
     let empty = "";

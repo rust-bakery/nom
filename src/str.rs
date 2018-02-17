@@ -35,6 +35,7 @@ macro_rules! tag_s (
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// # use nom::InputLength;
+/// #[cfg(feature = "alloc")]
 /// # fn main() {
 ///  fn test(input: &str) -> IResult<&str, &str> {
 ///    tag_no_case_s!(input, "ABcd")
@@ -42,6 +43,8 @@ macro_rules! tag_s (
 ///  let r = test("aBCdefgh");
 ///  assert_eq!(r,Ok(("efgh", "aBCd")));
 /// # }
+/// # #[cfg(not(feature = "alloc"))]
+/// # fn main() {}
 /// ```
 #[macro_export]
 macro_rules! tag_no_case_s (
@@ -766,6 +769,7 @@ mod test {
     let _ = dot("點");
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn case_insensitive() {
     named!(test<&str,&str>, tag_no_case!("ABcd"));
