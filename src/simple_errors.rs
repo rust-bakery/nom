@@ -29,6 +29,16 @@ impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
   }
 }
 
+impl<I, E> Context<I, E> {
+  /// Convert Err into ErrorKind.
+  ///
+  /// This allows application code to use ErrorKind and stay independent from the verbose-errors features activation.
+  pub fn into_error_kind(self) -> ErrorKind<E> {
+    let Context::Code(_, e) = self;
+    ErrorKind::convert(e)
+  }
+}
+
 /*
 impl<I,O,E> IResult<I,O,E> {
   /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function

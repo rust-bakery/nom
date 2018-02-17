@@ -93,6 +93,23 @@ impl<I, F, E: From<F>> Convert<Err<I, F>> for Err<I, E> {
   }
 }
 
+impl<I, E> Err<I, E> {
+  pub fn into_error_kind(self) -> ::util::ErrorKind<E> {
+    match self {
+      Err::Incomplete(_) => ::util::ErrorKind::Complete,
+      Err::Failure(c) => c.into_error_kind(),
+      Err::Error(c) => c.into_error_kind(),
+    }
+  }
+
+  pub fn is_incomplete(&self) -> bool {
+    match *self {
+      Err::Incomplete(_) => true,
+      _             => false
+    }
+  }
+}
+
 /*
 #[cfg(feature = "verbose-errors")]
 /// This is the same as IResult, but without Done
