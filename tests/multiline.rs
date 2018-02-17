@@ -17,6 +17,7 @@ pub fn read_lines(input: CompleteStr) -> IResult<CompleteStr, Vec<CompleteStr>> 
   many0!(input, read_line)
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn read_lines_test() {
   let res = Ok((

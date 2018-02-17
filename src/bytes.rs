@@ -1332,6 +1332,7 @@ mod tests {
     assert_eq!(esc2(&b"12\\nnn34"[..]), Ok((&b"nn34"[..], &b"12\\n"[..])));
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn escaping_str() {
     named!(esc<&str, &str>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
@@ -2045,6 +2046,7 @@ mod tests {
     assert_eq!(y(b"magic\x02"), Err(Err::Incomplete(Needed::Size(2))));
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn case_insensitive() {
     named!(test, tag_no_case!("ABcd"));

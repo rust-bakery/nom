@@ -1,3 +1,4 @@
+#![cfg(feature = "alloc")]
 //#![feature(trace_macros)]
 
 #[macro_use]

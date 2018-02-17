@@ -101,14 +101,14 @@ pub trait AsBytes {
 impl<'a> AsBytes for &'a str {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    str::as_bytes(self)
+    <str as AsBytes>::as_bytes(self)
   }
 }
 
 impl AsBytes for str {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    str::as_bytes(self)
+    self.as_ref()
   }
 }
 
@@ -250,9 +250,17 @@ impl AsChar for char {
   fn as_char(self) -> char {
     self
   }
+  #[cfg(feature = "alloc")]
   #[inline]
   fn is_alpha(self) -> bool {
     self.is_alphabetic()
+  }
+  #[cfg(not(feature = "alloc"))]
+  #[inline]
+  fn is_alpha(self) -> bool {
+    unimplemented!(
+      "error[E0658]: use of unstable library feature 'core_char_ext': the stable interface is `impl char` in later crate (see issue #32110)"
+    )
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -283,7 +291,7 @@ impl<'a> AsChar for &'a char {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    self.is_alphabetic()
+    <char as AsChar>::is_alpha(*self)
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -499,11 +507,11 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
 impl<'a, 'b> Compare<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
-    self.compare(str::as_bytes(t))
+    self.compare(AsBytes::as_bytes(t))
   }
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    self.compare_no_case(str::as_bytes(t))
+    self.compare_no_case(AsBytes::as_bytes(t))
   }
 }
 
@@ -525,6 +533,7 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   }
 
   //FIXME: this version is too simple and does not use the current locale
+  #[cfg(feature = "alloc")]
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
     let pos = self
@@ -542,6 +551,12 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
         }
       }
     }
+  }
+
+  #[cfg(not(feature = "alloc"))]
+  #[inline(always)]
+  fn compare_no_case(&self, _: &'b str) -> CompareResult {
+    unimplemented!()
   }
 }
 
@@ -635,7 +650,7 @@ impl<'a, 'b> FindSubstring<&'b [u8]> for &'a [u8] {
 
 impl<'a, 'b> FindSubstring<&'b str> for &'a [u8] {
   fn find_substring(&self, substr: &'b str) -> Option<usize> {
-    self.find_substring(str::as_bytes(substr))
+    self.find_substring(AsBytes::as_bytes(substr))
   }
 }
 

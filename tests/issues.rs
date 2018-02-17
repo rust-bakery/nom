@@ -5,7 +5,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{space, Err, IResult, Needed, be_u16, le_u64};
+use nom::{space, Err, IResult, Needed, le_u64};
 use nom::types::CompleteByteSlice;
 
 #[allow(dead_code)]
@@ -105,6 +105,7 @@ mod parse_int {
 
 #[test]
 fn usize_length_bytes_issue() {
+  use nom::be_u16;
   let _: IResult<&[u8], &[u8], u32> = length_bytes!(b"012346", be_u16);
 }
 
@@ -148,6 +149,7 @@ named!(issue_308(&str) -> bool,
         ) >>
         (b) ));
 
+#[cfg(feature = "alloc")]
 fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>>> {
   do_parse!(input, entries: cond!(true, count!(le_u64, 3)) >> (entries))
 }

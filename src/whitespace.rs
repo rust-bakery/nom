@@ -679,6 +679,7 @@ macro_rules! switch_sep (
 );
 
 #[doc(hidden)]
+#[cfg(feature = "alloc")]
 #[macro_export]
 macro_rules! separated_list_sep (
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -891,6 +892,7 @@ macro_rules! ws (
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
+  #[cfg(feature = "alloc")]
   use std::string::{String, ToString};
   use internal::{Err, IResult, Needed};
   use super::sp;
@@ -1041,21 +1043,25 @@ mod tests {
     assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
   }
 
+  #[cfg(feature = "alloc")]
   #[derive(Debug, Clone, PartialEq)]
   pub struct ErrorStr(String);
 
+  #[cfg(feature = "alloc")]
   impl From<u32> for ErrorStr {
     fn from(i: u32) -> Self {
       ErrorStr(format!("custom error code: {}", i))
     }
   }
 
+  #[cfg(feature = "alloc")]
   impl<'a> From<&'a str> for ErrorStr {
     fn from(i: &'a str) -> Self {
       ErrorStr(format!("custom error message: {}", i))
     }
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn alt() {
     fn work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
@@ -1159,6 +1165,7 @@ mod tests {
 
   // test whitespace parser generation for alt
   named!(space, tag!(" "));
+  #[cfg(feature = "alloc")]
   named!(pipeline_statement<&[u8], ()>,
     ws!(
       do_parse!(
@@ -1178,6 +1185,7 @@ mod tests {
   )
   );
 
+  #[cfg(feature = "alloc")]
   named!(
     fail<&[u8]>,
     map!(many_till!(take!(1), ws!(tag!("."))), |(r, _)| r[0])
