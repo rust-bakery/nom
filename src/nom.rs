@@ -6,6 +6,7 @@
 //! but the macros system makes no promises.
 //!
 
+#[cfg(feature = "alloc")]
 use std::boxed::Box;
 
 #[cfg(feature = "std")]
@@ -18,6 +19,7 @@ use traits::{Compare, CompareResult, Offset, Slice};
 use util::ErrorKind;
 use std::mem::transmute;
 
+#[cfg(feature = "alloc")]
 #[inline]
 pub fn tag_cl<'a, 'b>(rec: &'a [u8]) -> Box<Fn(&'b [u8]) -> IResult<&'b [u8], &'b [u8]> + 'a> {
   Box::new(move |i: &'b [u8]| -> IResult<&'b [u8], &'b [u8]> {
@@ -950,6 +952,7 @@ mod tests {
   use types::{CompleteByteSlice, CompleteStr};
 
   #[test]
+  #[cfg(feature = "alloc")]
   fn tag_closure() {
     let x = tag_cl(&b"abcd"[..]);
     let r = x(&b"abcdabcdefgh"[..]);

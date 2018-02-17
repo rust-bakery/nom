@@ -341,6 +341,7 @@
 //!
 //! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
 #![cfg_attr(not(feature = "std"), feature(alloc))]
+#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(feature = "nightly", feature(const_fn))]
@@ -348,7 +349,7 @@
 //#![warn(missing_docs)]
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
 extern crate alloc;
 #[cfg(feature = "regexp_macros")]
@@ -362,8 +363,10 @@ extern crate test;
 
 #[cfg(not(feature = "std"))]
 mod std {
+  #[cfg(feature = "alloc")]
   #[macro_use]
   pub use alloc::{boxed, string, vec};
+
   pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
   pub mod prelude {
     pub use core::prelude as v1;

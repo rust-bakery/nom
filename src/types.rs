@@ -132,7 +132,7 @@ impl<'a> Offset for CompleteStr<'a> {
 
 impl<'a> AsBytes for CompleteStr<'a> {
   fn as_bytes(&self) -> &[u8] {
-    self.0.as_bytes()
+    AsBytes::as_bytes(self.0)
   }
 }
 

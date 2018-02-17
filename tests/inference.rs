@@ -4,6 +4,7 @@
 #![allow(unused_comparisons)]
 #![allow(unused_doc_comment)]
 #![allow(unused_variables)]
+#![allow(unused_imports)]
 
 #[macro_use]
 extern crate nom;
@@ -15,6 +16,7 @@ use nom::{alpha, is_digit};
 named!(multi<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
 
 // issue #561
+#[cfg(feature = "alloc")]
 named!(
   value<Vec<Vec<&str>>>,
   do_parse!(
@@ -32,6 +34,7 @@ named!(
 );
 
 // issue #534
+#[cfg(feature = "alloc")]
 fn wrap_suffix(input: &Option<Vec<&[u8]>>) -> Option<String> {
   if input.is_some() {
     ///
@@ -44,6 +47,7 @@ fn wrap_suffix(input: &Option<Vec<&[u8]>>) -> Option<String> {
   }
 }
 
+#[cfg(feature = "alloc")]
 named!(parse_suffix<&[u8],Option<String>>,do_parse!(
   u: opt!(many1!(alt_complete!(
     tag!("%") | tag!("#")  | tag!("@") | alpha
