@@ -738,7 +738,6 @@ macro_rules! value (
   ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Convert,Err,Needed,IResult};
 
       match $submac!($i, $($args)*) {
         Ok((i,_)) => {
