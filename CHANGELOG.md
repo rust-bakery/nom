@@ -21,6 +21,7 @@
 - @Henning-K for typo fixes
 - @vthriller for documentation fixes
 - @federicomenaquintero and @veprbl for their help fixing the float parsers
+- @vmchale for new named_args versions
 
 ### Breaking changes
 
@@ -46,6 +47,7 @@
 - `ErrorKind::TakeUntilAndConsume1`
 - the `recognize_float` parser will match a float number's characters, but will not transform to a `f32` or `f64`
 - `alpha` and other basic parsers are now much stricter about partial inputs. We also introduce the  `*0` and `*1` versions of those parsers
+- `named_args` can now specify the input type as well
 
 ### Removed
 
