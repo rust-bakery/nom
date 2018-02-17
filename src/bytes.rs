@@ -1127,7 +1127,6 @@ macro_rules! take_until_either (
       let res: IResult<_,_> = match $input.position(|c| {
         $arr.find_token(c)
       }) {
-        Some(0) => Err(Err::Error(error_position!($input, ErrorKind::TakeUntilEither::<u32>))),
         Some(n) => {
           Ok($input.take_split(n))
         },
@@ -1169,7 +1168,6 @@ macro_rules! take_until_either1 (
       use $crate::InputTake;
       use $crate::FindToken;
       use $crate::AtEof;
-      let input = $i;
 
       let res: IResult<_,_> = match $input.position(|c| {
         $arr.find_token(c)
