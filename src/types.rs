@@ -289,3 +289,151 @@ impl<'a> super::util::HexDisplay for CompleteByteSlice<'a> {
     self.0.to_hex_from(chunk_size, from)
   }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+pub struct Input<T> {
+  pub inner:  T,
+  pub at_eof: bool,
+}
+
+impl<T> AtEof for Input<T> {
+  fn at_eof(&self) -> bool {
+    self.at_eof
+  }
+}
+
+impl<T: Slice<Range<usize>>> Slice<Range<usize>> for Input<T> {
+  fn slice(&self, range: Range<usize>) -> Self {
+    Input {
+      inner:  self.inner.slice(range),
+      at_eof: self.at_eof,
+    }
+  }
+}
+
+impl<T: Slice<RangeTo<usize>>> Slice<RangeTo<usize>> for Input<T> {
+  fn slice(&self, range: RangeTo<usize>) -> Self {
+    Input {
+      inner:  self.inner.slice(range),
+      at_eof: self.at_eof,
+    }
+  }
+}
+
+impl<T: Slice<RangeFrom<usize>>> Slice<RangeFrom<usize>> for Input<T> {
+  fn slice(&self, range: RangeFrom<usize>) -> Self {
+    Input {
+      inner:  self.inner.slice(range),
+      at_eof: self.at_eof,
+    }
+  }
+}
+
+impl<T: Slice<RangeFull>> Slice<RangeFull> for Input<T> {
+  fn slice(&self, range: RangeFull) -> Self {
+    Input {
+      inner:  self.inner.slice(range),
+      at_eof: self.at_eof,
+    }
+  }
+}
+
+impl<T: InputIter> InputIter for Input<T> {
+  type Item = <T as InputIter>::Item;
+  type RawItem = <T as InputIter>::RawItem;
+  type Iter = <T as InputIter>::Iter;
+  type IterElem = <T as InputIter>::IterElem;
+
+  fn iter_indices(&self) -> Self::Iter {
+    self.inner.iter_indices()
+  }
+  fn iter_elements(&self) -> Self::IterElem {
+    self.inner.iter_elements()
+  }
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::RawItem) -> bool,
+  {
+    self.inner.position(predicate)
+  }
+  fn slice_index(&self, count: usize) -> Option<usize> {
+    self.inner.slice_index(count)
+  }
+}
+
+impl<T: InputTake> InputTake for Input<T> {
+  fn take(&self, count: usize) -> Self {
+    Input {
+      inner:  self.inner.take(count),
+      at_eof: self.at_eof,
+    }
+  }
+
+  fn take_split(&self, count: usize) -> (Self, Self) {
+    let (left, right) = self.inner.take_split(count);
+    (Input {
+      inner:  left,
+      at_eof: self.at_eof
+    }, Input {
+      inner:  right,
+      at_eof: self.at_eof
+    })
+  }
+}
+
+impl<T: InputLength> InputLength for Input<T> {
+  fn input_len(&self) -> usize {
+    self.inner.input_len()
+  }
+}
+
+impl<'b, T: Compare<&'b str>> Compare<&'b str> for Input<T> {
+  fn compare(&self, t: &'b str) -> CompareResult {
+    self.inner.compare(t)
+  }
+  fn compare_no_case(&self, t: &'b str) -> CompareResult {
+    self.inner.compare_no_case(t)
+  }
+}
+
+impl<'b, T: FindSubstring<&'b str>> FindSubstring<&'b str> for Input<T> {
+  fn find_substring(&self, substr: &'b str) -> Option<usize> {
+    self.inner.find_substring(substr)
+  }
+}
+
+impl<T: FindToken<char>> FindToken<char> for Input<T> {
+  fn find_token(&self, token: char) -> bool {
+    self.inner.find_token(token)
+  }
+}
+
+impl<T: FindToken<u8>> FindToken<u8> for Input<T> {
+  fn find_token(&self, token: u8) -> bool {
+    self.inner.find_token(token)
+  }
+}
+
+impl<'a, T: FindToken<&'a u8> > FindToken<&'a u8> for Input<T> {
+  fn find_token(&self, token: &'a u8) -> bool {
+    self.inner.find_token(token)
+  }
+}
+
+impl<'a, R: FromStr, T: ParseTo<R>> ParseTo<R> for Input<T> {
+  fn parse_to(&self) -> Option<R> {
+    self.inner.parse_to()
+  }
+}
+
+impl<T: Offset> Offset for Input<T> {
+  fn offset(&self, second: &Input<T>) -> usize {
+    self.inner.offset(&second.inner)
+  }
+}
+
+impl<T: AsBytes> AsBytes for Input<T>  {
+  fn as_bytes(&self) -> &[u8] {
+    AsBytes::as_bytes(&self.inner)
+  }
+}
