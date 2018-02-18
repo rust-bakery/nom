@@ -735,8 +735,9 @@ macro_rules! length_data(
   );
 );
 
-/// `length_value!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// gets a number from the first parser, takes a subslice of the input of that size,
+/// `length_value!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, O>`
+///
+/// Gets a number from the first parser, takes a subslice of the input of that size,
 /// then applies the second parser on that subslice. If the second parser returns
 /// `Incomplete`, `length_value` will return an error
 #[macro_export]
