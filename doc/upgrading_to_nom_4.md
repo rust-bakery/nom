@@ -195,7 +195,7 @@ named!(parser<&str,ReturnType>, ... );
 
 // becomes
 
-named!(parser<CompleteStr,ReturnType, ... );
+named!(parser<CompleteStr,ReturnType>, ... );
 ```
 
 ```rust,ignore
@@ -203,7 +203,7 @@ named!(parser<&str,&str>, ... );
 
 // becomes
 
-named!(parser<CompleteStr,CompleteStr, ... );
+named!(parser<CompleteStr,CompleteStr>, ... );
 ```
 
 ```rust,ignore
@@ -211,7 +211,7 @@ named!(parser, ... );
 
 // becomes
 
-named!(parser<CompleteByteSlice,CompleteByteSlice, ... );
+named!(parser<CompleteByteSlice,CompleteByteSlice>, ... );
 ```
 
 And as an example, for a unit test:
@@ -226,6 +226,16 @@ assert_eq!(parser(CompleteStr("abcd123")), Ok((CompleteStr("123"), CompleteStr("
 
 These types allow you to correctly handle cases like text formats for which there might be a last
 empty line or not, as seen in [one of the examples](https://github.com/Geal/nom/blob/87d837006467aebcdb0c37621da874a56c8562b5/tests/multiline.rs).
+
+If those types feel a bit long to write everywhere in the parsers, it's possible
+to alias them like this:
+
+```rust,ignore
+type Input<'a> = CompleteByteSlice<'a>;
+pub fn Input<'a>(input:&'a[u8]) -> Input<'a> {
+  CompleteByteSlice(input)
+}
+```
 
 ## Custom error types
 
