@@ -216,9 +216,12 @@ macro_rules! separated_nonempty_list_complete {
 }
 
 /// `many0!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// Applies the parser 0 or more times and returns the list of results in a Vec
+/// Applies the parser 0 or more times and returns the list of results in a Vec.
 ///
-/// the embedded parser may return Incomplete
+/// The embedded parser may return Incomplete.
+///
+/// `many0` will only return `Error` if the embedded parser does not consume any input
+/// (to avoid infinite loops).
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -233,7 +236,7 @@ macro_rules! separated_nonempty_list_complete {
 ///  assert_eq!(multi(&b[..]),Ok((&b"azerty"[..], Vec::new())));
 /// # }
 /// ```
-/// 0 or more
+/// 
 #[macro_export]
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
