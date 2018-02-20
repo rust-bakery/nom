@@ -1162,11 +1162,9 @@ macro_rules! take_until_either1 (
       use ::std::option::Option::*;
       use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
 
-      use $crate::InputLength;
       use $crate::InputIter;
       use $crate::InputTake;
       use $crate::FindToken;
-      use $crate::AtEof;
 
       let res: IResult<_,_> = match $input.position(|c| {
         $arr.find_token(c)
