@@ -221,7 +221,7 @@ Here is a list of known projects using nom:
   * [INI](https://github.com/Geal/nom/blob/master/tests/ini.rs)
   * [ISO 8601 dates](https://github.com/badboy/iso8601)
   * [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config)
-  * [torrc configuration file](https://github.com/dhuseby/torrc-rs)
+  * [torrc configuration file](https://github.com/frewsxcv/torrc-rs)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
 - Programming languages:
   * [GLSL](https://github.com/phaazon/glsl)
