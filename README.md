@@ -462,7 +462,6 @@ Here is a list of known projects using nom:
   * [INI](https://github.com/Geal/nom/blob/master/tests/ini.rs)
   * [ISO 8601 dates](https://github.com/badboy/iso8601)
   * [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config)
-  * [torrc configuration file](https://github.com/dhuseby/torrc-rs)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
 - Programming languages:
   * [GLSL](https://github.com/phaazon/glsl)
@@ -476,7 +475,6 @@ Here is a list of known projects using nom:
   * [midi](https://github.com/derekdreery/nom-midi-rs)
 - Document formats:
   * [TAR](https://github.com/Keruspe/tar-parser.rs)
-  * [torrent files](https://github.com/jag426/bittorrent)
   * [GZ](https://github.com/nharward/nom-gzip)
 - Database formats:
   * [Redis database files](https://github.com/badboy/rdb-rs)
