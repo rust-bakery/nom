@@ -291,6 +291,7 @@ macro_rules! many0(
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
 /// # use nom::ErrorKind;
+/// # use nom::types::CompleteByteSlice;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
 ///
@@ -298,8 +299,13 @@ macro_rules! many0(
 ///  let b = b"azerty";
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
+///  assert_eq!(multi(&a[..]), Ok((&b"efgh"[..], res)));
 ///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
+///
+///  let c = CompleteByteSlice(b"abcdabcd");
+///
+///  let res = vec![CompleteByteSlice(b"abcd"), CompleteByteSlice(b"abcd")];
+///  assert_eq!(multi(c), Ok((CompleteByteSlice(b""), res)));
 /// # }
 /// ```
 #[macro_export]
