@@ -224,6 +224,7 @@ Here is a list of known projects using nom:
   * [torrc configuration file](https://github.com/dhuseby/torrc-rs)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
 - Programming languages:
+  * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
   * [SQL](https://github.com/ms705/nom-sql)
