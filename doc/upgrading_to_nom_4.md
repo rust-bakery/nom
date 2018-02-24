@@ -142,7 +142,7 @@ case:
 ```rust,ignore
 match result {
   Ok((remaining, value)) => { ... },
-  Err(Err::Incomplete(needed) => { ... },
+  Err(Err::Incomplete(needed)) => { ... },
   Err(Err::Error(e)) | Err(Err::Failure(e)) => { ... }
 }
 ```
