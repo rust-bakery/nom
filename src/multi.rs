@@ -876,7 +876,7 @@ macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,InputLength,Context};
+      use $crate::{Err,Needed,InputLength,Context,AtEof};
 
       match $submac!($i, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
@@ -909,6 +909,9 @@ macro_rules! fold_many1(
               },
               Ok((i, o)) => {
                 if i.input_len() == input.input_len() {
+                  if !i.at_eof() {
+                    failure = ::std::option::Option::Some(error_position!(i, $crate::ErrorKind::Many1));
+                  }
                   break;
                 }
                 acc = f(acc, o);
@@ -918,7 +921,7 @@ macro_rules! fold_many1(
           }
 
           match failure {
-            ::std::option::Option::Some(e) => Err(Err::Failure(e)),
+            ::std::option::Option::Some(e) => Err(Err::Error(e)),
             ::std::option::Option::None    => match incomplete {
               ::std::option::Option::Some(i) => $crate::need_more($i, i),
               ::std::option::Option::None    => Ok((input, acc))
