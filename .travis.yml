@@ -22,8 +22,10 @@ matrix:
       env: FEATURES='--no-default-features'
       before_script:
         - export PATH=$HOME/.cargo/bin:$PATH
-        - which cargo-coveralls || cargo install cargo-travis
-        - which cargo-benchcmp  || cargo install cargo-benchcmp
+        - cargo install cargo-update   || echo "cargo-update already installed"
+        - cargo install cargo-travis   || echo "cargo-travis already installed"
+        - cargo install cargo-benchcmp || echo "cargo-benchcmp already installed"
+        - cargo install-update -a
     - rust: stable
       env: FEATURES=''
     - rust: stable
