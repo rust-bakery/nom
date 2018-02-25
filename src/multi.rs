@@ -236,7 +236,7 @@ macro_rules! separated_nonempty_list_complete {
 ///  assert_eq!(multi(&b[..]),Ok((&b"azerty"[..], Vec::new())));
 /// # }
 /// ```
-/// 
+///
 #[macro_export]
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (

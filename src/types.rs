@@ -371,13 +371,16 @@ impl<T: InputTake> InputTake for Input<T> {
 
   fn take_split(&self, count: usize) -> (Self, Self) {
     let (left, right) = self.inner.take_split(count);
-    (Input {
-      inner:  left,
-      at_eof: self.at_eof
-    }, Input {
-      inner:  right,
-      at_eof: self.at_eof
-    })
+    (
+      Input {
+        inner:  left,
+        at_eof: self.at_eof,
+      },
+      Input {
+        inner:  right,
+        at_eof: self.at_eof,
+      },
+    )
   }
 }
 
@@ -414,7 +417,7 @@ impl<T: FindToken<u8>> FindToken<u8> for Input<T> {
   }
 }
 
-impl<'a, T: FindToken<&'a u8> > FindToken<&'a u8> for Input<T> {
+impl<'a, T: FindToken<&'a u8>> FindToken<&'a u8> for Input<T> {
   fn find_token(&self, token: &'a u8) -> bool {
     self.inner.find_token(token)
   }
@@ -432,7 +435,7 @@ impl<T: Offset> Offset for Input<T> {
   }
 }
 
-impl<T: AsBytes> AsBytes for Input<T>  {
+impl<T: AsBytes> AsBytes for Input<T> {
   fn as_bytes(&self) -> &[u8] {
     AsBytes::as_bytes(&self.inner)
   }

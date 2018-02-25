@@ -766,7 +766,7 @@ impl<I: AtEof, T> AtEof for (I, T) {
   }
 }
 
-impl<'a,T> AtEof for &'a [T] {
+impl<'a, T> AtEof for &'a [T] {
   fn at_eof(&self) -> bool {
     false
   }
