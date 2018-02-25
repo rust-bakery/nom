@@ -505,8 +505,10 @@ macro_rules! complete (
   );
 );
 
-/// A bit like `std::try!`, this macro will return the remaining input and parsed value if the child parser returned `Done`,
-/// and will do an early return for `Error` and `Incomplete`
+/// A bit like `std::try!`, this macro will return the remaining input and
+/// parsed value if the child parser returned `Ok`, and will do an early
+/// return for the `Err` side.
+///
 /// this can provide more flexibility than `do_parse!` if needed
 ///
 /// ```
@@ -758,7 +760,7 @@ macro_rules! value (
 );
 
 /// `expr_res!(Result<E,O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Ok
+/// evaluate an expression that returns a Result<T,E> and returns a Ok((I,T)) if Ok
 ///
 /// See expr_opt for an example
 #[macro_export]
@@ -777,7 +779,7 @@ macro_rules! expr_res (
 );
 
 /// `expr_opt!(Option<O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Option<T> and returns a IResult::Done(I,T) if Some
+/// evaluate an expression that returns a Option<T> and returns a Ok((I,T)) if Some
 ///
 /// Useful when doing computations in a chain
 ///
@@ -874,7 +876,6 @@ macro_rules! opt(
 ///
 /// ```ignore
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;

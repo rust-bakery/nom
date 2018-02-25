@@ -328,14 +328,13 @@ macro_rules! take_bits (
 /// result on success.
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( take_a<u8>, bits!( tag_bits!(u8, 4, 0xA) ) );
 ///
 ///  let input = vec![0xAB, 0xCD, 0xEF];
 ///  let sl    = &input[..];
 ///
-///  assert_eq!(take_a( sl ),       Done(&sl[1..], 0xA) );
+///  assert_eq!(take_a( sl ),       Ok((&sl[1..], 0xA)) );
 /// # }
 /// ```
 #[macro_export]

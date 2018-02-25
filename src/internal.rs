@@ -1,6 +1,5 @@
 //! Basic types to build the parsers
 
-//use self::IResult::*;
 use self::Needed::*;
 
 #[cfg(feature = "verbose-errors")]

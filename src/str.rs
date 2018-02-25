@@ -162,14 +162,13 @@ macro_rules! take_while_s (
 /// The argument is either a function `char -> bool` or a macro returning a `bool`
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::is_alphanumeric;
 /// # fn main() {
 ///  fn alphabetic(chr: char) -> bool { (chr >= 0x41 as char && chr <= 0x5A as char) || (chr >= 0x61 as char && chr <= 0x7A as char) }
 ///  named!( alpha<&str,&str>, take_while1_s!( alphabetic ) );
 ///
 ///  let r = alpha("abcd\nefgh");
-///  assert_eq!(r,Ok(("\nefgh", "abcd")));
+///  assert_eq!(r, Ok(("\nefgh", "abcd")));
 /// # }
 /// ```
 #[macro_export]
