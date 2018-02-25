@@ -1235,10 +1235,10 @@ mod tests {
     );
   }
 
-  #[cfg(feature = "nightly")]
+  #[cfg(nightly)]
   use test::Bencher;
 
-  #[cfg(feature = "nightly")]
+  #[cfg(nightly)]
   #[bench]
   fn many0_bench(b: &mut Bencher) {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));

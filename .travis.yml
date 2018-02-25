@@ -16,8 +16,6 @@ env:
 matrix:
   include:
     - rust: nightly
-      env: FEATURES='--features "nightly"'
-    - rust: nightly
       env: FEATURES='--no-default-features'
       before_script:
         - export PATH=$HOME/.cargo/bin:$PATH

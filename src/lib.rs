@@ -343,11 +343,9 @@
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 #![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "nightly", feature(test))]
-#![cfg_attr(feature = "nightly", feature(const_fn))]
-#![cfg_attr(feature = "nightly", feature(plugin))]
 //#![warn(missing_docs)]
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
+#![cfg_attr(nightly, feature(test))]
 
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
@@ -358,7 +356,7 @@ extern crate lazy_static;
 extern crate memchr;
 #[cfg(feature = "regexp")]
 extern crate regex;
-#[cfg(feature = "nightly")]
+#[cfg(nightly)]
 extern crate test;
 
 #[cfg(not(feature = "std"))]

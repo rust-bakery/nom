@@ -2,6 +2,10 @@
 
 ### Using nightly to get better error messages
 
+**warning**: this only applies to nom 3. nom 4 uses the
+[compile_error](https://doc.rust-lang.org/std/macro.compile_error.html) macro
+available since Rust 1.20
+
 If you got the following error when compiling your nom parser:
 
 ```
