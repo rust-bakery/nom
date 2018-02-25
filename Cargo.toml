@@ -24,7 +24,6 @@ include = [
 [features]
 alloc = []
 std = ["alloc", "memchr/use_std"]
-nightly = []
 default = ["std"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]

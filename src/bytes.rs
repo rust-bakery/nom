@@ -2003,10 +2003,10 @@ mod tests {
     assert_eq!(g("點點點a"), Ok(("a", "點點點")));
   }
 
-  #[cfg(feature = "nightly")]
+  #[cfg(nightly)]
   use test::Bencher;
 
-  #[cfg(feature = "nightly")]
+  #[cfg(nightly)]
   #[bench]
   fn take_while_bench(b: &mut Bencher) {
     use nom::is_alphabetic;

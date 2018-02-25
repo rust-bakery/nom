@@ -13,23 +13,26 @@ env:
     - FEATURES='--features "regexp regexp_macros"'
     - FEATURES='--features "regexp regexp_macros verbose-errors"'
 
+before_script:
+  - eval git pull --rebase http://github.com/Geal/nom master
+
 matrix:
   include:
-    - rust: nightly
-      env: FEATURES='--features "nightly"'
     - rust: nightly
       env: FEATURES='--no-default-features'
       before_script:
         - export PATH=$HOME/.cargo/bin:$PATH
-        - which cargo-coveralls || cargo install cargo-travis
-        - which cargo-benchcmp  || cargo install cargo-benchcmp
+        - cargo install cargo-update   || echo "cargo-update already installed"
+        - cargo install cargo-travis   || echo "cargo-travis already installed"
+        - cargo install cargo-benchcmp || echo "cargo-benchcmp already installed"
+        - cargo install-update -a
     - rust: stable
       env: FEATURES=''
     - rust: stable
       env: DOC_FEATURES='--features "std regexp regexp_macros" --no-default-features'
       before_script:
         - export PATH=$HOME/.cargo/bin:$PATH
-        - which rustfmt || rustup component add rustfmt-preview
+        - rustup component add rustfmt-preview
       script:
         - eval cargo fmt -- --write-mode=diff
         - eval cargo doc --verbose $DOC_FEATURES
