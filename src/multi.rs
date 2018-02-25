@@ -805,7 +805,7 @@ macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,AtEof};
 
       let ret;
       let f         = $f;
@@ -825,9 +825,11 @@ macro_rules! fold_many0(
           Ok((i, o)) => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              ret = Err(Err::Error(
-                error_position!(input, $crate::ErrorKind::Many0)
-              ));
+              if i.at_eof() {
+                ret = Ok((input, res));
+              } else {
+                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0)));
+              }
               break;
             }
 
