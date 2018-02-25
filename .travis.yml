@@ -13,6 +13,9 @@ env:
     - FEATURES='--features "regexp regexp_macros"'
     - FEATURES='--features "regexp regexp_macros verbose-errors"'
 
+before_script:
+  - eval git pull --rebase http://github.com/Geal/nom master
+
 matrix:
   include:
     - rust: nightly
