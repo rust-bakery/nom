@@ -29,7 +29,7 @@ matrix:
       env: DOC_FEATURES='--features "std regexp regexp_macros" --no-default-features'
       before_script:
         - export PATH=$HOME/.cargo/bin:$PATH
-        - which rustfmt || cargo install rustfmt
+        - which rustfmt || rustup component add rustfmt-preview
       script:
         - eval cargo fmt -- --write-mode=diff
         - eval cargo doc --verbose $DOC_FEATURES
