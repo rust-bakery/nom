@@ -292,7 +292,7 @@ impl<'a> super::util::HexDisplay for CompleteByteSlice<'a> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Hash)]
 pub struct Input<T> {
-  pub inner:  T,
+  pub inner: T,
   pub at_eof: bool,
 }
 
@@ -305,7 +305,7 @@ impl<T> AtEof for Input<T> {
 impl<T: Slice<Range<usize>>> Slice<Range<usize>> for Input<T> {
   fn slice(&self, range: Range<usize>) -> Self {
     Input {
-      inner:  self.inner.slice(range),
+      inner: self.inner.slice(range),
       at_eof: self.at_eof,
     }
   }
@@ -314,7 +314,7 @@ impl<T: Slice<Range<usize>>> Slice<Range<usize>> for Input<T> {
 impl<T: Slice<RangeTo<usize>>> Slice<RangeTo<usize>> for Input<T> {
   fn slice(&self, range: RangeTo<usize>) -> Self {
     Input {
-      inner:  self.inner.slice(range),
+      inner: self.inner.slice(range),
       at_eof: self.at_eof,
     }
   }
@@ -323,7 +323,7 @@ impl<T: Slice<RangeTo<usize>>> Slice<RangeTo<usize>> for Input<T> {
 impl<T: Slice<RangeFrom<usize>>> Slice<RangeFrom<usize>> for Input<T> {
   fn slice(&self, range: RangeFrom<usize>) -> Self {
     Input {
-      inner:  self.inner.slice(range),
+      inner: self.inner.slice(range),
       at_eof: self.at_eof,
     }
   }
@@ -332,7 +332,7 @@ impl<T: Slice<RangeFrom<usize>>> Slice<RangeFrom<usize>> for Input<T> {
 impl<T: Slice<RangeFull>> Slice<RangeFull> for Input<T> {
   fn slice(&self, range: RangeFull) -> Self {
     Input {
-      inner:  self.inner.slice(range),
+      inner: self.inner.slice(range),
       at_eof: self.at_eof,
     }
   }
@@ -364,7 +364,7 @@ impl<T: InputIter> InputIter for Input<T> {
 impl<T: InputTake> InputTake for Input<T> {
   fn take(&self, count: usize) -> Self {
     Input {
-      inner:  self.inner.take(count),
+      inner: self.inner.take(count),
       at_eof: self.at_eof,
     }
   }
@@ -373,11 +373,11 @@ impl<T: InputTake> InputTake for Input<T> {
     let (left, right) = self.inner.take_split(count);
     (
       Input {
-        inner:  left,
+        inner: left,
         at_eof: self.at_eof,
       },
       Input {
-        inner:  right,
+        inner: right,
         at_eof: self.at_eof,
       },
     )

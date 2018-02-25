@@ -239,7 +239,7 @@ enum MP4BoxType {
 #[derive(Debug)]
 struct MP4BoxHeader {
   length: u32,
-  tag:    MP4BoxType,
+  tag: MP4BoxType,
 }
 
 named!(brand_name<&[u8],&str>, map_res!(take!(4), str::from_utf8));

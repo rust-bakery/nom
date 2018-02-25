@@ -11,7 +11,7 @@ use nom::types::CompleteByteSlice;
 #[allow(dead_code)]
 struct Range {
   start: char,
-  end:   char,
+  end: char,
 }
 
 pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
