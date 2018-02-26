@@ -100,11 +100,12 @@ macro_rules! tag_no_case (
 macro_rules! is_not (
   ($input:expr, $arr:expr) => (
     {
+      /*
       use $crate::FindToken;
       use $crate::InputTakeAtPosition;
       let input = $input;
       input.split_at_position(|c| $arr.find_token(c))
-/*
+      */
       use ::std::result::Result::*;
       use ::std::option::Option::*;
       use $crate::{Err,IResult,ErrorKind,Needed};
@@ -135,7 +136,6 @@ macro_rules! is_not (
         }
       };
       res
-        */
     }
   );
 );
@@ -160,12 +160,23 @@ macro_rules! is_not (
 macro_rules! is_a (
   ($input:expr, $arr:expr) => (
     {
+      /*
       use $crate::FindToken;
       use $crate::InputTakeAtPosition;
       let input = $input;
       input.split_at_position(|c| !$arr.find_token(c))
+        */
+      use ::std::result::Result::*;
+      use ::std::option::Option::*;
+      use $crate::{Err,IResult,ErrorKind,Needed};
 
-      /*
+      use $crate::InputLength;
+      use $crate::InputIter;
+      use $crate::FindToken;
+      use $crate::Slice;
+      use $crate::InputTake;
+      use $crate::AtEof;
+
       let res: IResult<_,_> = match $input.position(|c| {
         !$arr.find_token(c)
       }) {
@@ -185,7 +196,7 @@ macro_rules! is_a (
           }
         }
       };
-      res*/
+      res
     }
   );
 );

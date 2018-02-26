@@ -526,30 +526,50 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
     where P: Fn(Self::Item) -> bool {
 
-/*
-    if self.len() == 0 {
-      return need_more_err(self, Needed::Unknown, e);
+    for (i, c) in self.iter().enumerate() {
+      if predicate(*c) {
+        if i == 0 {
+          return Err(Err::Error(Context::Code(self, e)));
+        } else {
+          //let (prefix, suffix) = self.split_at(i);
+          //return Ok((suffix, prefix));
+          return Ok((&self[i..], &self[..i]));
+        }
+      }
     }
-*/
 
+    if self.at_eof() {
+      if self.len() == 0 {
+        Err(Err::Error(Context::Code(self, e)))
+      } else {
+        //Ok(self.take_split(self.len()))
+        Ok((&self[self.len()..], self))
+      }
+    } else {
+      Err(Err::Incomplete(Needed::Size(1)))
+    }
+    /*
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(0) => Err(Err::Error(Context::Code(self, e))),
       Some(i) => {
-        let (prefix, suffix) = self.split_at(i);
-        Ok((suffix, prefix))
+        //let (prefix, suffix) = self.split_at(i);
+        //Ok((suffix, prefix))
+        Ok((&self[i..], &self[..i]))
       },
       None    => {
         if self.at_eof() {
           if self.len() == 0 {
             Err(Err::Error(Context::Code(self, e)))
           } else {
-            Ok(self.take_split(self.len()))
+            //Ok(self.take_split(self.len()))
+            Ok((&self[self.len()..], self))
           }
         } else {
           Err(Err::Incomplete(Needed::Size(1)))
         }
       },
     }
+    */
   }
 }
 
