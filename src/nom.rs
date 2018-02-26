@@ -455,7 +455,7 @@ where
 pub fn space<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength + InputTake + AtEof,
   <T as InputIter>::RawItem: AsChar + Clone,
 {
   space1(input)
@@ -465,14 +465,14 @@ where
 pub fn space0<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength + InputTake + AtEof,
   <T as InputIter>::RawItem: AsChar + Clone,
 {
   match input.position(|item| {
     let c = item.clone().as_char();
     !(c == ' ' || c == '\t')
   }) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
+    Some(n) => Ok(input.take_split(n)),
     None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
@@ -486,7 +486,7 @@ where
 pub fn space1<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength + InputTake + AtEof,
   <T as InputIter>::RawItem: AsChar + Clone,
 {
   match input.position(|item| {
@@ -494,7 +494,7 @@ where
     !(c == ' ' || c == '\t')
   }) {
     Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Space::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
+    Some(n) => Ok(input.take_split(n)),
     None => {
       if input.at_eof() {
         if input.input_len() > 0 {
@@ -513,7 +513,7 @@ where
 pub fn multispace<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength + InputTake + AtEof,
   <T as InputIter>::RawItem: AsChar + Clone,
 {
   multispace1(input)
@@ -523,14 +523,14 @@ where
 pub fn multispace0<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength + InputTake + AtEof,
   <T as InputIter>::RawItem: AsChar + Clone,
 {
   match input.position(|item| {
     let c = item.clone().as_char();
     !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
   }) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
+    Some(n) => Ok(input.take_split(n)),
     None => {
       if input.at_eof() {
         Ok((input.slice(input.input_len()..), input))
@@ -544,7 +544,7 @@ where
 pub fn multispace1<T>(input: T) -> IResult<T, T>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength + InputTake + AtEof,
   <T as InputIter>::RawItem: AsChar + Clone,
 {
   match input.position(|item| {
@@ -555,7 +555,7 @@ where
       input,
       ErrorKind::MultiSpace::<u32>
     ))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
+    Some(n) => Ok(input.take_split(n)),
     None => {
       if input.at_eof() {
         if input.input_len() > 0 {

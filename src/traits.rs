@@ -467,6 +467,20 @@ pub trait Compare<T> {
 impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b [u8]) -> CompareResult {
+    let pos = self.iter().zip(t.iter()).position(|(a, b)| a != b);
+
+    match pos {
+      Some(_) => CompareResult::Error,
+      None => {
+        if self.len() >= t.len() {
+          CompareResult::Ok
+        } else {
+          CompareResult::Incomplete
+        }
+      }
+    }
+
+    /*
     let len = self.len();
     let blen = t.len();
     let m = if len < blen { len } else { blen };
@@ -480,6 +494,7 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     } else {
       CompareResult::Ok
     }
+    */
   }
 
   #[inline(always)]

@@ -251,14 +251,6 @@ macro_rules! many0(
       loop {
         let input_ = input.clone();
         match $submac!(input_, $($args)*) {
-          Err(Err::Error(_))      => {
-            ret = Ok((input, res));
-            break;
-          },
-          Err(e) => {
-            ret = Err(e);
-            break;
-          },
           Ok((i, o))              => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
@@ -273,7 +265,15 @@ macro_rules! many0(
             res.push(o);
 
             input = i;
-          }
+          },
+          Err(Err::Error(_))      => {
+            ret = Ok((input, res));
+            break;
+          },
+          Err(e) => {
+            ret = Err(e);
+            break;
+          },
         }
       }
 
