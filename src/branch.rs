@@ -192,6 +192,7 @@ macro_rules! alt (
       let i_ = $i.clone();
       let res = $subrule!(i_, $($args)*);
       match res {
+        Ok(o) => Ok(o),
         Err(Err::Error(e))      => {
           let out = alt!(__impl $i, $($rest)*);
 
@@ -205,7 +206,6 @@ macro_rules! alt (
           out
         },
         Err(e) => Err(e),
-        Ok(o) => Ok(o),
       }
     }
   );
