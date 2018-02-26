@@ -44,7 +44,18 @@
 //! macro_rules! sp (
 //!   ($i:expr, $($args:tt)*) => (
 //!     {
-//!       sep!($i, space, $($args)*)
+//!       use nom::Convert;
+//!       use nom::Err;
+//!
+//!       match sep!($i, space, $($args)*) {
+//!         Err(e) => Err(e),
+//!         Ok((i1,o))    => {
+//!           match space(i1) {
+//!             Err(e) => Err(Err::convert(e)),
+//!             Ok((i2,_))    => Ok((i2, o))
+//!           }
+//!         }
+//!       }
 //!     }
 //!   )
 //! );
@@ -95,15 +106,7 @@ macro_rules! wrap_sep (
     match sep_res {
       Err(e) => Err(Err::convert(e)),
       Ok((i1,_))    => {
-        let res = match $submac!(i1, $($args)*) {
-          Err(e) => Err(e),
-          Ok((i2,o))    => {
-            match ($separator)(i2) {
-              Err(e) => Err(Err::convert(e)),
-              Ok((i3,_))    => Ok((i3, o))
-            }
-          }
-        };
+        let res = $submac!(i1, $($args)*);
         unify_types(&sep_res, &res);
         res
       }
@@ -884,7 +887,19 @@ macro_rules! ws (
   ($i:expr, $($args:tt)*) => (
     {
       use $crate::sp;
-      sep!($i, sp, $($args)*)
+      use $crate::Convert;
+      use $crate::Err;
+      use ::std::result::Result::*;
+
+      match sep!($i, sp, $($args)*) {
+        Err(e) => Err(e),
+        Ok((i1,o))    => {
+          match (sp)(i1) {
+            Err(e) => Err(Err::convert(e)),
+            Ok((i2,_))    => Ok((i2, o))
+          }
+        }
+      }
     }
   )
 );
