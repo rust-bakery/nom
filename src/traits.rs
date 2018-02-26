@@ -441,6 +441,119 @@ impl<'a> InputTake for &'a str {
   }
 }
 
+pub trait UnspecializedInput {}
+impl <'a> UnspecializedInput for &'a str {}
+use types::CompleteStr;
+use types::CompleteByteSlice;
+impl <'a> UnspecializedInput for CompleteStr<'a> {}
+impl <'a> UnspecializedInput for CompleteByteSlice<'a> {}
+
+pub trait InputTakeAtPosition: Sized {
+  type Item;
+
+  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+    where P: Fn(Self::Item) -> bool;
+  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+    where P: Fn(Self::Item) -> bool;
+}
+
+impl<T: InputLength+InputIter+InputTake+AtEof+Clone+UnspecializedInput> InputTakeAtPosition for T {
+  type Item = <T as InputIter>::RawItem;
+
+  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+    where P: Fn(Self::Item) -> bool {
+
+    match self.position(predicate) {
+      Some(n) => Ok(self.take_split(n)),
+      None    => {
+        if self.at_eof() {
+          Ok(self.take_split(self.input_len()))
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      },
+    }
+  }
+
+  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+    where P: Fn(Self::Item) -> bool {
+
+    /*if self.input_len() == 0 {
+      return need_more_err(self.clone(), Needed::Unknown, e);
+    }*/
+
+    match self.position(predicate) {
+      Some(0) => Err(Err::Error(Context::Code(self.clone(), e))),//error_position!(self, e))),
+      Some(n) => Ok(self.take_split(n)),
+      None    => {
+        if self.at_eof() {
+          if self.input_len() == 0 {
+             Err(Err::Error(Context::Code(self.clone(), e)))
+          } else {
+            Ok(self.take_split(self.input_len()))
+          }
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      },
+    }
+  }
+}
+
+//impl <'a> UnspecializedInput for &'a [u8] {}
+
+impl<'a> InputTakeAtPosition for &'a [u8] {
+  type Item = u8;
+
+  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+    where P: Fn(Self::Item) -> bool {
+
+    match (0..self.len()).find(|b| predicate(self[*b])) {
+      Some(i) => {
+        let (prefix, suffix) = self.split_at(i);
+        Ok((suffix, prefix))
+      },
+      None    => {
+        if self.at_eof() {
+          Ok(self.take_split(self.len()))
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      },
+    }
+  }
+
+  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+    where P: Fn(Self::Item) -> bool {
+
+/*
+    if self.len() == 0 {
+      return need_more_err(self, Needed::Unknown, e);
+    }
+*/
+
+    match (0..self.len()).find(|b| predicate(self[*b])) {
+      Some(0) => Err(Err::Error(Context::Code(self, e))),
+      Some(i) => {
+        let (prefix, suffix) = self.split_at(i);
+        Ok((suffix, prefix))
+      },
+      None    => {
+        if self.at_eof() {
+          if self.len() == 0 {
+            Err(Err::Error(Context::Code(self, e)))
+          } else {
+            Ok(self.take_split(self.len()))
+          }
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      },
+    }
+  }
+}
+
+
 /// indicates wether a comparison was successful, an error, or
 /// if more data was needed
 #[derive(Debug, PartialEq)]
