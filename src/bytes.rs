@@ -532,23 +532,23 @@ macro_rules! take_while1 (
       use $crate::Slice;
       use $crate::InputTake;
       use $crate::AtEof;
-      if input.input_len() == 0 {
-        need_more_err(input, Needed::Unknown, ErrorKind::TakeWhile1::<u32>)
-      } else {
-        match input.position(|c| !$submac!(c, $($args)*)) {
-          Some(0) => {
-            let e = ErrorKind::TakeWhile1::<u32>;
-            Err(Err::Error(error_position!(input, e)))
-          },
-          Some(n) => {
-            Ok(input.take_split(n))
-          },
-          None    => {
-            if input.at_eof() {
-              Ok((input.slice(input.input_len()..), input))
+      match input.position(|c| !$submac!(c, $($args)*)) {
+        Some(0) => {
+          let e = ErrorKind::TakeWhile1::<u32>;
+          Err(Err::Error(error_position!(input, e)))
+        },
+        Some(n) => {
+          Ok(input.take_split(n))
+        },
+        None    => {
+          if input.at_eof() {
+            if input.input_len() == 0 {
+              need_more_err(input, Needed::Unknown, ErrorKind::TakeWhile1::<u32>)
             } else {
-              Err(Err::Incomplete(Needed::Size(1)))
+              Ok((input.slice(input.input_len()..), input))
             }
+          } else {
+            Err(Err::Incomplete(Needed::Size(1)))
           }
         }
       }
@@ -713,21 +713,21 @@ macro_rules! take_till1 (
       use $crate::InputIter;
       use $crate::InputTake;
       use $crate::Slice;
-      if input.input_len() == 0 {
-        need_more_err(input, Needed::Unknown, ErrorKind::TakeTill1::<u32>)
-      } else {
-        match input.position(|c| $submac!(c, $($args)*)) {
-          Some(0) => {
-            let e = ErrorKind::TakeTill1::<u32>;
-            Err(Err::Error(error_position!(input, e)))
-          },
-          Some(n) => Ok(input.take_split(n)),
-          None    => {
-            if input.at_eof() {
-              Ok((input.slice(input.input_len()..), input))
+      match input.position(|c| $submac!(c, $($args)*)) {
+        Some(0) => {
+          let e = ErrorKind::TakeTill1::<u32>;
+          Err(Err::Error(error_position!(input, e)))
+        },
+        Some(n) => Ok(input.take_split(n)),
+        None    => {
+          if input.at_eof() {
+            if input.input_len() == 0 {
+              need_more_err(input, Needed::Unknown, ErrorKind::TakeTill1::<u32>)
             } else {
-              Err(Err::Incomplete(Needed::Size(1)))
+              Ok((input.slice(input.input_len()..), input))
             }
+          } else {
+            Err(Err::Incomplete(Needed::Size(1)))
           }
         }
       }
@@ -1788,7 +1788,7 @@ mod tests {
     let c = b"abcd123";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&b"123"[..], &b[..])));
     assert_eq!(
@@ -1919,7 +1919,7 @@ mod tests {
     let c = b"123abcd";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
       f(&b[..]),
       Err(Err::Error(error_position!(&b[..], ErrorKind::TakeTill1)))
