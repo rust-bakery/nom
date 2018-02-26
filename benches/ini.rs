@@ -5,41 +5,47 @@ extern crate test;
 extern crate nom;
 
 use nom::{alphanumeric, multispace, space};
+use nom::types::CompleteByteSlice;
 
 use std::str;
 use std::collections::HashMap;
 
-named!(
-  category<&str>,
-  map_res!(
-    delimited!(char!('['), take_while!(call!(|c| c != b']')), char!(']')),
-    str::from_utf8
-  )
-);
+named!(category<CompleteByteSlice, &str>, map_res!(
+    delimited!(
+      char!('['),
+      take_while!(call!(|c| c != b']')),
+      char!(']')
+    ),
+    complete_byte_slice_to_str
+));
 
-named!(key_value    <&[u8],(&str,&str)>,
+fn complete_byte_slice_to_str<'a>(s: CompleteByteSlice<'a>) -> Result<&'a str, str::Utf8Error> {
+  str::from_utf8(s.0)
+}
+
+named!(key_value    <CompleteByteSlice,(&str,&str)>,
   do_parse!(
-     key: map_res!(alphanumeric, str::from_utf8)
+     key: map_res!(alphanumeric, complete_byte_slice_to_str)
   >>      opt!(space)
   >>      char!('=')
   >>      opt!(space)
   >> val: map_res!(
            take_while!(call!(|c| c != b'\n' && c != b';')),
-           str::from_utf8
+           complete_byte_slice_to_str
          )
   >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != b'\n'))))
   >>      (key, val)
   )
 );
 
-named!(keys_and_values<&[u8], HashMap<&str, &str> >,
+named!(keys_and_values<CompleteByteSlice, HashMap<&str, &str> >,
   map!(
     many0!(terminated!(key_value, opt!(multispace))),
     |vec: Vec<_>| vec.into_iter().collect()
   )
 );
 
-named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
+named!(category_and_keys<CompleteByteSlice,(&str,HashMap<&str,&str>)>,
   do_parse!(
     category: category         >>
               opt!(multispace) >>
@@ -48,7 +54,7 @@ named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
   )
 );
 
-named!(categories<&[u8], HashMap<&str, HashMap<&str,&str> > >,
+named!(categories<CompleteByteSlice, HashMap<&str, HashMap<&str,&str> > >,
   map!(
     many0!(
       separated_pair!(
@@ -66,18 +72,22 @@ named!(categories<&[u8], HashMap<&str, HashMap<&str,&str> > >,
 
 #[test]
 fn parse_category_test() {
-  let ini_file = &b"[category]
+  let ini_file = CompleteByteSlice(
+    b"[category]
 
 parameter=value
-key = value2"[..];
+key = value2",
+  );
 
-  let ini_without_category = &b"parameter=value
-key = value2"[..];
+  let ini_without_category = CompleteByteSlice(
+    b"\n\nparameter=value
+key = value2",
+  );
 
   let res = category(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    Ok((i, o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i.0), o),
     _ => println!("error"),
   }
 
@@ -86,15 +96,17 @@ key = value2"[..];
 
 #[test]
 fn parse_key_value_test() {
-  let ini_file = &b"parameter=value
-key = value2"[..];
+  let ini_file = CompleteByteSlice(
+    b"parameter=value
+key = value2",
+  );
 
-  let ini_without_key_value = &b"key = value2"[..];
+  let ini_without_key_value = CompleteByteSlice(b"\nkey = value2");
 
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
+    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i.0), o1, o2),
     _ => println!("error"),
   }
 
@@ -103,15 +115,17 @@ key = value2"[..];
 
 #[test]
 fn parse_key_value_with_space_test() {
-  let ini_file = &b"parameter = value
-key = value2"[..];
+  let ini_file = CompleteByteSlice(
+    b"parameter = value
+key = value2",
+  );
 
-  let ini_without_key_value = &b"key = value2"[..];
+  let ini_without_key_value = CompleteByteSlice(b"\nkey = value2");
 
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
+    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i.0), o1, o2),
     _ => println!("error"),
   }
 
@@ -120,15 +134,17 @@ key = value2"[..];
 
 #[test]
 fn parse_key_value_with_comment_test() {
-  let ini_file = &b"parameter=value;abc
-key = value2"[..];
+  let ini_file = CompleteByteSlice(
+    b"parameter=value;abc
+key = value2",
+  );
 
-  let ini_without_key_value = &b"key = value2"[..];
+  let ini_without_key_value = CompleteByteSlice(b"\nkey = value2");
 
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
+    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i.0), o1, o2),
     _ => println!("error"),
   }
 
@@ -137,18 +153,20 @@ key = value2"[..];
 
 #[test]
 fn parse_multiple_keys_and_values_test() {
-  let ini_file = &b"parameter=value;abc
+  let ini_file = CompleteByteSlice(
+    b"parameter=value;abc
 
 key = value2
 
-[category]"[..];
+[category]",
+  );
 
-  let ini_without_key_value = &b"[category]"[..];
+  let ini_without_key_value = CompleteByteSlice(b"[category]");
 
   let res = keys_and_values(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i.0), o),
     _ => println!("error"),
   }
 
@@ -161,19 +179,21 @@ key = value2
 #[test]
 fn parse_category_then_multiple_keys_and_values_test() {
   //FIXME: there can be an empty line or a comment line after a category
-  let ini_file = &b"[abcd]
+  let ini_file = CompleteByteSlice(
+    b"[abcd]
 parameter=value;abc
 
 key = value2
 
-[category]"[..];
+[category]",
+  );
 
-  let ini_after_parser = &b"[category]"[..];
+  let ini_after_parser = CompleteByteSlice(b"[category]");
 
   let res = category_and_keys(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i.0), o),
     _ => println!("error"),
   }
 
@@ -185,7 +205,8 @@ key = value2
 
 #[test]
 fn parse_multiple_categories_test() {
-  let ini_file = &b"[abcd]
+  let ini_file = CompleteByteSlice(
+    b"[abcd]
 
 parameter=value;abc
 
@@ -194,14 +215,15 @@ key = value2
 [category]
 parameter3=value3
 key4 = value4
-"[..];
+",
+  );
 
-  let ini_after_parser = &b""[..];
+  let ini_after_parser = CompleteByteSlice(b"");
 
   let res = categories(ini_file);
   //println!("{:?}", res);
   match res {
-    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i.0), o),
     _ => println!("error"),
   }
 
@@ -217,7 +239,7 @@ key4 = value4
   assert_eq!(res, Ok((ini_after_parser, expected_h)));
 }
 
-/*
+
 #[bench]
 fn bench_ini(b: &mut test::Bencher) {
   let str = "[owner]
@@ -230,7 +252,7 @@ port=143
 file=payroll.dat
 ";
 
-  b.iter(|| categories(str.as_bytes()).unwrap());
+  b.iter(|| categories(CompleteByteSlice(str.as_bytes())).unwrap());
   b.bytes = str.len() as u64;
 }
 
@@ -241,9 +263,9 @@ port=143
 file=payroll.dat
 ";
 
-  named!(acc< Vec<(&str,&str)> >, many0!(key_value));
+  named!(acc<CompleteByteSlice, Vec<(&str,&str)> >, many0!(key_value));
 
-  b.iter(|| acc(str.as_bytes()).unwrap());
+  b.iter(|| acc(CompleteByteSlice(str.as_bytes())).unwrap());
   b.bytes = str.len() as u64;
 }
 
@@ -251,7 +273,7 @@ file=payroll.dat
 fn bench_ini_key_value(b: &mut test::Bencher) {
   let str = "server=192.0.2.62\n";
 
-  b.iter(|| key_value(str.as_bytes()).unwrap());
+  b.iter(|| key_value(CompleteByteSlice(str.as_bytes())).unwrap());
   b.bytes = str.len() as u64;
 }
-*/
+
