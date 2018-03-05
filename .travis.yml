@@ -26,6 +26,8 @@ matrix:
         - cargo install cargo-travis   || echo "cargo-travis already installed"
         - cargo install cargo-benchcmp || echo "cargo-benchcmp already installed"
         - cargo install-update -a
+    - rust: nightly
+      env: FEATURES='--no-default-features --features "alloc"'
     - rust: stable
       env: FEATURES=''
     - rust: stable
