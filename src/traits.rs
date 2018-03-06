@@ -477,13 +477,8 @@ impl<T: InputLength+InputIter+InputTake+AtEof+Clone+UnspecializedInput> InputTak
 
   fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
     where P: Fn(Self::Item) -> bool {
-
-    /*if self.input_len() == 0 {
-      return need_more_err(self.clone(), Needed::Unknown, e);
-    }*/
-
     match self.position(predicate) {
-      Some(0) => Err(Err::Error(Context::Code(self.clone(), e))),//error_position!(self, e))),
+      Some(0) => Err(Err::Error(Context::Code(self.clone(), e))),
       Some(n) => Ok(self.take_split(n)),
       None    => {
         if self.at_eof() {
@@ -500,8 +495,6 @@ impl<T: InputLength+InputIter+InputTake+AtEof+Clone+UnspecializedInput> InputTak
   }
 }
 
-//impl <'a> UnspecializedInput for &'a [u8] {}
-
 impl<'a> InputTakeAtPosition for &'a [u8] {
   type Item = u8;
 
@@ -510,8 +503,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
 
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(i) => {
-        let (prefix, suffix) = self.split_at(i);
-        Ok((suffix, prefix))
+        Ok((&self[i..], &self[..i]))
       },
       None    => {
         if self.at_eof() {
@@ -525,25 +517,17 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
 
   fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
     where P: Fn(Self::Item) -> bool {
-
-/*
-    if self.len() == 0 {
-      return need_more_err(self, Needed::Unknown, e);
-    }
-*/
-
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(0) => Err(Err::Error(Context::Code(self, e))),
       Some(i) => {
-        let (prefix, suffix) = self.split_at(i);
-        Ok((suffix, prefix))
+        Ok((&self[i..], &self[..i]))
       },
       None    => {
         if self.at_eof() {
           if self.len() == 0 {
             Err(Err::Error(Context::Code(self, e)))
           } else {
-            Ok(self.take_split(self.len()))
+            Ok((&self[self.len()..], self))
           }
         } else {
           Err(Err::Incomplete(Needed::Size(1)))
