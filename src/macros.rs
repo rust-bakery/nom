@@ -584,15 +584,18 @@ macro_rules! map_res (
       use $crate::Err;
 
       let i_ = $i.clone();
-      ($submac!(i_, $($args)*)).and_then(|(i,o)| {
-        match $submac2!(o, $($args2)*) {
-          Ok(output) => Ok((i, output)),
-          Err(_) => {
-            let e = $crate::ErrorKind::MapRes;
-            Err(Err::Error(error_position!($i, e)))
-          },
-        }
-      })
+      match $submac!(i_, $($args)*) {
+        Ok((i,o)) => {
+          match $submac2!(o, $($args2)*) {
+            Ok(output) => Ok((i, output)),
+            Err(_) => {
+              let e = $crate::ErrorKind::MapRes;
+              Err(Err::Error(error_position!($i, e)))
+            },
+          }
+        },
+        Err(e) => Err(e),
+      }
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (

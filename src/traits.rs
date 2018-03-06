@@ -754,7 +754,6 @@ slice_ranges_impl! {[T]}
 /// buffers, the `at_eof` method can indicate if we expect more data to come,
 /// and let nom know that some parsers could still handle more data
 pub trait AtEof {
-  #[inline]
   fn at_eof(&self) -> bool;
 }
 
