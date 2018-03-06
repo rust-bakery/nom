@@ -441,13 +441,26 @@ impl<'a> InputTake for &'a str {
   }
 }
 
+/// Dummy trait used for default implementations (currently only used for `InputTakeAtPosition`).
+///
+/// When implementing a custom input type, it is possible to use directly the
+/// default implementation: if the input type implements `InputLength`, `InputIter`,
+/// `InputTake`, `AtEof` and `Clone`, you can implement `UnspecializedInput` and get
+/// a default version of `InputTakeAtPosition`.
+///
+/// For performance reasons, you might want to write a custom implementation of
+/// `InputTakeAtPosition` (like the one for `&[u8]`).
 pub trait UnspecializedInput {}
+
 impl <'a> UnspecializedInput for &'a str {}
 use types::CompleteStr;
 use types::CompleteByteSlice;
 impl <'a> UnspecializedInput for CompleteStr<'a> {}
 impl <'a> UnspecializedInput for CompleteByteSlice<'a> {}
 
+/// methods to take as much input as possible until the provided function returns true for the current element
+///
+/// a large part of nom's basic parsers are built using this trait
 pub trait InputTakeAtPosition: Sized {
   type Item;
 
