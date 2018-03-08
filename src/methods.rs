@@ -280,6 +280,7 @@ macro_rules! apply_m (
 );
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
   // reproduce the tag_s and take_s macros, because of module import order
   macro_rules! tag_s (

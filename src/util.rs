@@ -492,6 +492,7 @@ pub enum ErrorKind<E = u32> {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+#[allow(deprecated)]
 pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
   match *e {
     ErrorKind::Custom(_)                 => 0,
@@ -560,6 +561,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
 
 impl<E> ErrorKind<E> {
   #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[allow(deprecated)]
   pub fn description(&self) -> &str {
     match *self {
       ErrorKind::Custom(_)                 => "Custom error",
@@ -640,6 +642,7 @@ pub trait Convert<T> {
 
 impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
   #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[allow(deprecated)]
   fn convert(e: ErrorKind<F>) -> Self {
     match e {
       ErrorKind::Custom(c)                 => ErrorKind::Custom(E::from(c)),
