@@ -420,6 +420,7 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
 /// indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug,PartialEq,Eq,Hash,Clone)]
+#[allow(deprecated)]
 pub enum ErrorKind<E = u32> {
   Custom(E),
   Tag,
@@ -468,13 +469,19 @@ pub enum ErrorKind<E = u32> {
   Fix,
   Escaped,
   EscapedTransform,
+  #[deprecated(since = "4.0.0", note = "Please use `Tag` instead")]
   TagStr,
+  #[deprecated(since = "4.0.0", note = "Please use `IsNot` instead")]
   IsNotStr,
+  #[deprecated(since = "4.0.0", note = "Please use `IsA` instead")]
   IsAStr,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeWhile1` instead")]
   TakeWhile1Str,
   NonEmpty,
   ManyMN,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeUntilAndConsume` instead")]
   TakeUntilAndConsumeStr,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeUntil` instead")]
   TakeUntilStr,
   Not,
   Permutation,
