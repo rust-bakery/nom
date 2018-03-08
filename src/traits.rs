@@ -153,6 +153,7 @@ as_bytes_array_impls! {
 }
 
 /// transforms common types to a char for basic token parsing
+#[cfg_attr(feature = "cargo-clippy", allow(len_without_is_empty))]
 pub trait AsChar {
   /// makes a char from self
   fn as_char(self) -> char;
