@@ -613,37 +613,25 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_i64($i
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
 pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
-  match be_u32(input) {
-    Err(e) => Err(e),
-    Ok((i, o)) => Ok((i, f32::from_bits(o))),
-  }
+  be_u32(input).map(|(i, o)| (i, f32::from_bits(o)))
 }
 
 /// Recognizes big endian 8 bytes floating point number
 #[inline]
 pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
-  match be_u64(input) {
-    Err(e) => Err(e),
-    Ok((i, o)) => Ok((i, f64::from_bits(o))),
-  }
+  be_u64(input).map(|(i, o)| (i, f64::from_bits(o)))
 }
 
 /// Recognizes little endian 4 bytes floating point number
 #[inline]
 pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
-  match le_u32(input) {
-    Err(e) => Err(e),
-    Ok((i, o)) => Ok((i, f32::from_bits(o))),
-  }
+  le_u32(input).map(|(i, o)| (i, f32::from_bits(o)))
 }
 
 /// Recognizes little endian 8 bytes floating point number
 #[inline]
 pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
-  match le_u64(input) {
-    Err(e) => Err(e),
-    Ok((i, o)) => Ok((i, f64::from_bits(o))),
-  }
+  le_u64(input).map(|(i, o)| (i, f64::from_bits(o)))
 }
 
 /// Recognizes a hex-encoded integer
