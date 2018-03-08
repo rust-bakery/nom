@@ -345,7 +345,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(core_float))]
 //#![warn(missing_docs)]
-#![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
+#![cfg_attr(feature = "cargo-clippy", allow(doc_markdown, inline_always, type_complexity))]
 #![cfg_attr(nightly, feature(test))]
 
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
