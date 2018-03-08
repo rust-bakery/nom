@@ -694,6 +694,7 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
 
 #[allow(unused_imports)]
 #[cfg_attr(rustfmt, rustfmt_skip)]
+#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 pub fn recognize_float<T>(input: T) -> IResult<T, T, u32>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
