@@ -434,7 +434,7 @@ macro_rules! alt_complete (
 ///
 #[macro_export]
 macro_rules! switch (
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $( $($p:pat)|+ => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       use ::std::result::Result::*;
       use ::std::option::Option::*;
@@ -454,7 +454,7 @@ macro_rules! switch (
         Ok((i, o))    => {
 
           match o {
-            $(Some($p) => match $subrule!(i, $($args2)*) {
+            $($(Some($p) )|+ => match $subrule!(i, $($args2)*) {
               Err(Err::Error(err)) => {
                 fn unify_types<T>(_: &T, _: &T) {}
                 let e1 = ErrorKind::Switch;
@@ -1028,7 +1028,7 @@ mod tests {
     named!(
       sw,
       switch!(take!(4),
-        b"abcd" => take!(2) |
+        b"abcd" | b"xxxx" => take!(2) |
         b"efgh" => take!(4)
       )
     );
@@ -1046,6 +1046,9 @@ mod tests {
         ErrorKind::Switch
       )))
     );
+
+    let a = &b"xxxxefgh"[..];
+    assert_eq!(sw(a), Ok((&b"gh"[..], &b"ef"[..])));
   }
 
   #[test]
