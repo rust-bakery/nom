@@ -670,7 +670,7 @@ where
   T: InputLength + AtEof,
 {
   if input.input_len() == 0 {
-    return need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty::<u32>);
+    need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty::<u32>)
   } else {
     Ok((input.slice(input.input_len()..), input))
   }
