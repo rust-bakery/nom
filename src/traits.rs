@@ -456,7 +456,6 @@ impl <'a> UnspecializedInput for &'a str {}
 use types::CompleteStr;
 use types::CompleteByteSlice;
 impl <'a> UnspecializedInput for CompleteStr<'a> {}
-impl <'a> UnspecializedInput for CompleteByteSlice<'a> {}
 
 /// methods to take as much input as possible until the provided function returns true for the current element
 ///
@@ -550,6 +549,48 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   }
 }
 
+impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
+  type Item = u8;
+
+  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+    where P: Fn(Self::Item) -> bool {
+
+    match (0..self.0.len()).find(|b| predicate(self.0[*b])) {
+      Some(i) => {
+        Ok((CompleteByteSlice(&self.0[i..]), CompleteByteSlice(&self.0[..i])))
+      },
+      None    => {
+        if self.at_eof() {
+          let (i, o) = self.0.take_split(self.0.len());
+          Ok((CompleteByteSlice(i), CompleteByteSlice(o)))
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      },
+    }
+  }
+
+  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+    where P: Fn(Self::Item) -> bool {
+    match (0..self.0.len()).find(|b| predicate(self.0[*b])) {
+      Some(0) => Err(Err::Error(Context::Code(CompleteByteSlice(self.0), e))),
+      Some(i) => {
+        Ok((CompleteByteSlice(&self.0[i..]), CompleteByteSlice(&self.0[..i])))
+      },
+      None    => {
+        if self.at_eof() {
+          if self.0.len() == 0 {
+            Err(Err::Error(Context::Code(CompleteByteSlice(self.0), e)))
+          } else {
+            Ok((CompleteByteSlice(&self.0[self.0.len()..]), CompleteByteSlice(self.0)))
+          }
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      },
+    }
+  }
+}
 
 /// indicates wether a comparison was successful, an error, or
 /// if more data was needed
