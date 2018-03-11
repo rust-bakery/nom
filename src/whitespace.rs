@@ -714,28 +714,9 @@ macro_rules! separated_list_sep (
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
-      use ::std::result::Result::*;
-      use $crate::{Err,Needed, AtEof};
-
-      use $crate::{AsChar,InputLength,InputIter,Slice,InputTake};
-      match ($i).iter_elements().position(|item| {
-        let i = item.as_char();
-        for c in ($arr).iter_elements() {
-          if c.as_char() == i { return false; }
-        }
-        true
-      }) {
-        ::std::option::Option::Some(index) => {
-          Ok($i.take_split(index))
-        },
-        ::std::option::Option::None        => {
-          if ($i).at_eof() {
-            Ok($i.take_split(($i).input_len()))
-          } else {
-            Err(Err::Incomplete(Needed::Unknown))
-          }
-        }
-      }
+      use $crate::{ErrorKind, FindToken, InputTakeAtPosition};
+      let input = $i;
+      input.split_at_position(|c| !$arr.find_token(c))
     }
   );
 );
@@ -844,16 +825,21 @@ macro_rules! sep (
   };
 );
 
-use std::ops::{Range, RangeFrom, RangeTo};
 use internal::IResult;
+use traits::{InputTakeAtPosition, FindToken, AsChar};
 #[allow(unused_imports)]
-pub fn sp<T>(input: T) -> IResult<T, T>
+pub fn sp<'a,T>(input: T) -> IResult<T, T>
 where
-  T: ::traits::Slice<Range<usize>> + ::traits::Slice<RangeFrom<usize>> + ::traits::Slice<RangeTo<usize>>,
-  T: ::traits::InputIter + ::traits::InputLength + ::traits::InputTake + ::traits::AtEof + Clone,
-  <T as ::traits::InputIter>::Item: ::traits::AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
+  &'a str: FindToken<<T as InputTakeAtPosition>::Item>,
 {
-  eat_separator!(input, &b" \t\r\n"[..])
+  input.split_at_position(|item| {
+    let c = item.clone().as_char();
+    !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
+  })
+  //this could be written as followed, but not using FindToken is faster
+  //eat_separator!(input, " \t\r\n")
 }
 
 /// `ws!(I -> IResult<I,O>) => I -> IResult<I, O>`
