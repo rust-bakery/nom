@@ -68,7 +68,7 @@ pub enum Needed {
   Size(usize)
 }
 
-// if the "verbose-errors" feature is active
+// if the "verbose-errors" feature is inactive
 pub enum Context<I, E = u32> {
   Code(I, ErrorKind<E>),
 }
