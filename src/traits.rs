@@ -452,10 +452,8 @@ impl<'a> InputTake for &'a str {
 /// `InputTakeAtPosition` (like the one for `&[u8]`).
 pub trait UnspecializedInput {}
 
-impl<'a> UnspecializedInput for &'a str {}
 use types::CompleteStr;
 use types::CompleteByteSlice;
-impl<'a> UnspecializedInput for CompleteStr<'a> {}
 
 /// methods to take as much input as possible until the provided function returns true for the current element
 ///
@@ -596,6 +594,82 @@ impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
               CompleteByteSlice(self.0),
             ))
           }
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      }
+    }
+  }
+}
+
+impl<'a> InputTakeAtPosition for &'a str {
+  type Item = char;
+
+  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.char_indices().find(|&(_, c)| predicate(c)) {
+      Some((i,_)) => Ok((&self[i..], &self[..i])),
+      None => {
+        if self.at_eof() {
+          Ok(self.take_split(self.len()))
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      }
+    }
+  }
+
+  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.char_indices().find(|&(_, c)| predicate(c)) {
+      Some((0,_)) => Err(Err::Error(Context::Code(self, e))),
+      Some((i,_)) => Ok((&self[i..], &self[..i])),
+      None => {
+        if self.at_eof() {
+          Ok(self.take_split(self.len()))
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      }
+    }
+  }
+}
+
+impl<'a> InputTakeAtPosition for CompleteStr<'a> {
+  type Item = char;
+
+  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.0.char_indices().find(|&(_, c)| predicate(c)) {
+      Some((i,_)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
+      None => {
+        if self.at_eof() {
+          let (i, o) = self.0.take_split(self.0.len());
+          Ok((CompleteStr(i), CompleteStr(o)))
+        } else {
+          Err(Err::Incomplete(Needed::Size(1)))
+        }
+      }
+    }
+  }
+
+  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.0.char_indices().find(|&(_, c)| predicate(c)) {
+      Some((0,_)) => Err(Err::Error(Context::Code(CompleteStr(self.0), e))),
+      Some((i,_)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
+      None => {
+        if self.at_eof() {
+          let (i, o) = self.0.take_split(self.0.len());
+          Ok((CompleteStr(i), CompleteStr(o)))
         } else {
           Err(Err::Incomplete(Needed::Size(1)))
         }
