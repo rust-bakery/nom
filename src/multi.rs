@@ -817,14 +817,6 @@ macro_rules! fold_many0(
 
       loop {
         match $submac!(input, $($args)*) {
-          Err(Err::Error(_)) => {
-            ret = Ok((input, res));
-            break;
-          },
-          Err(e) => {
-            ret = Err(e);
-            break;
-          },
           Ok((i, o)) => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
@@ -838,7 +830,15 @@ macro_rules! fold_many0(
 
             res = f(res, o);
             input = i;
-          }
+          },
+          Err(Err::Error(_)) => {
+            ret = Ok((input, res));
+            break;
+          },
+          Err(e) => {
+            ret = Err(e);
+            break;
+          },
         }
       }
 

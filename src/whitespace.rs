@@ -104,12 +104,12 @@ macro_rules! wrap_sep (
 
     let sep_res = ($separator)($i);
     match sep_res {
-      Err(e) => Err(Err::convert(e)),
       Ok((i1,_))    => {
         let res = $submac!(i1, $($args)*);
         unify_types(&sep_res, &res);
         res
-      }
+      },
+      Err(e) => Err(Err::convert(e)),
     }
   });
   ($i:expr, $separator:expr, $f:expr) => (
