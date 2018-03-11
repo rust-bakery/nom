@@ -1050,7 +1050,7 @@ mod tests {
       Err(Err::Error(error_node_position!(
         &b"efg  xyzabcdefghi"[..],
         ErrorKind::Permutation,
-        error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)
+        error_position!(&b"  xyzabcdefghi"[..], ErrorKind::Permutation)
       )))
     );
 
