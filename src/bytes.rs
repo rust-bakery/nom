@@ -100,36 +100,11 @@ macro_rules! tag_no_case (
 macro_rules! is_not (
   ($input:expr, $arr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
-      use $crate::{Err,IResult,ErrorKind,Needed};
-
-      use $crate::InputLength;
-      use $crate::InputIter;
+      use $crate::ErrorKind;
       use $crate::FindToken;
-      use $crate::Slice;
-      use $crate::InputTake;
-      use $crate::AtEof;
-
-      let res: IResult<_,_> = match $input.position(|c| {
-        $arr.find_token(c)
-      }) {
-        Some(0) => {
-          let e = ErrorKind::IsNot::<u32>;
-          Err(Err::Error(error_position!($input, e)))
-        },
-        Some(n) => {
-          Ok($input.take_split(n))
-        },
-        None    => {
-          if ($input).at_eof() {
-            Ok(($input.slice($input.input_len()..), $input))
-          } else {
-            Err(Err::Incomplete(Needed::Unknown))
-          }
-        }
-      };
-      res
+      use $crate::InputTakeAtPosition;
+      let input = $input;
+      input.split_at_position1(|c| $arr.find_token(c), ErrorKind::IsNot)
     }
   );
 );
@@ -154,37 +129,11 @@ macro_rules! is_not (
 macro_rules! is_a (
   ($input:expr, $arr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
-      use $crate::{Err,IResult,ErrorKind,Needed};
-
-      use $crate::InputLength;
-      use $crate::InputIter;
+      use $crate::ErrorKind;
       use $crate::FindToken;
-      use $crate::Slice;
-      use $crate::InputTake;
-      use $crate::AtEof;
-
-      let res: IResult<_,_> = match $input.position(|c| {
-        !$arr.find_token(c)
-      }) {
-        Some(0) => {
-          let e: ErrorKind<u32> = ErrorKind::IsA;
-          Err(Err::Error(error_position!($input, e)))
-        },
-        Some(n) => {
-          let res: IResult<_,_, u32> = Ok($input.take_split(n));
-          res
-        },
-        None    => {
-          if ($input).at_eof() {
-            Ok(($input.slice(($input).input_len()..), $input))
-          } else {
-            Err(Err::Incomplete(Needed::Unknown))
-          }
-        }
-      };
-      res
+      use $crate::InputTakeAtPosition;
+      let input = $input;
+      input.split_at_position1(|c| !$arr.find_token(c), ErrorKind::IsA)
     }
   );
 );
@@ -471,26 +420,9 @@ macro_rules! escaped_transform (
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
-      use $crate::IResult;
-
-      use $crate::{InputLength,InputIter,Slice,Err,Needed,AtEof,InputTake};
+      use $crate::InputTakeAtPosition;
       let input = $input;
-
-      match input.position(|c| !$submac!(c, $($args)*)) {
-        Some(n) => {
-          let res:IResult<_,_> = Ok(input.take_split(n));
-          res
-        },
-        None    => {
-          if input.at_eof() {
-            Ok((input.slice(input.input_len()..), input))
-          } else {
-            Err(Err::Incomplete(Needed::Size(1)))
-          }
-        }
-      }
+      input.split_at_position(|c| !$submac!(c, $($args)*))
     }
   );
   ($input:expr, $f:expr) => (
@@ -521,37 +453,11 @@ macro_rules! take_while (
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
-      use $crate::{Err,ErrorKind,Needed,need_more_err};
+      use $crate::ErrorKind;
+      use $crate::InputTakeAtPosition;
 
       let input = $input;
-
-      use $crate::InputLength;
-      use $crate::InputIter;
-      use $crate::Slice;
-      use $crate::InputTake;
-      use $crate::AtEof;
-      match input.position(|c| !$submac!(c, $($args)*)) {
-        Some(0) => {
-          let e = ErrorKind::TakeWhile1::<u32>;
-          Err(Err::Error(error_position!(input, e)))
-        },
-        Some(n) => {
-          Ok(input.take_split(n))
-        },
-        None    => {
-          if input.at_eof() {
-            if input.input_len() == 0 {
-              need_more_err(input, Needed::Unknown, ErrorKind::TakeWhile1::<u32>)
-            } else {
-              Ok((input.slice(input.input_len()..), input))
-            }
-          } else {
-            Err(Err::Incomplete(Needed::Size(1)))
-          }
-        }
-      }
+      input.split_at_position1(|c| !$submac!(c, $($args)*), ErrorKind::TakeWhile1)
     }
   );
   ($input:expr, $f:expr) => (
@@ -657,22 +563,9 @@ macro_rules! take_while_m_n (
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
-      use $crate::{Err, InputIter, InputLength, Slice, Needed, AtEof, InputTake};
-
+      use $crate::InputTakeAtPosition;
       let input = $input;
-
-      match input.position(|c| $submac!(c, $($args)*)) {
-        Some(n) => Ok(input.take_split(n)),
-        None    => {
-          if input.at_eof() {
-            Ok((input.slice(input.input_len()..), input))
-          } else {
-            Err(Err::Incomplete(Needed::Size(1)))
-          }
-        }
-      }
+      input.split_at_position(|c| $submac!(c, $($args)*))
     }
   );
   ($input:expr, $f:expr) => (
@@ -703,34 +596,9 @@ macro_rules! take_till (
 macro_rules! take_till1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
-      use $crate::{Err,Needed,ErrorKind,AtEof,need_more_err};
-
+      use $crate::InputTakeAtPosition;
       let input = $input;
-
-      use $crate::InputLength;
-      use $crate::InputIter;
-      use $crate::InputTake;
-      use $crate::Slice;
-      match input.position(|c| $submac!(c, $($args)*)) {
-        Some(0) => {
-          let e = ErrorKind::TakeTill1::<u32>;
-          Err(Err::Error(error_position!(input, e)))
-        },
-        Some(n) => Ok(input.take_split(n)),
-        None    => {
-          if input.at_eof() {
-            if input.input_len() == 0 {
-              need_more_err(input, Needed::Unknown, ErrorKind::TakeTill1::<u32>)
-            } else {
-              Ok((input.slice(input.input_len()..), input))
-            }
-          } else {
-            Err(Err::Incomplete(Needed::Size(1)))
-          }
-        }
-      }
+      input.split_at_position1(|c| $submac!(c, $($args)*), ErrorKind::TakeTill1)
     }
   );
   ($input:expr, $f:expr) => (
@@ -769,7 +637,6 @@ macro_rules! take (
 
       let res: IResult<_,_,u32> = match input.slice_index(cnt) {
         None        => $crate::need_more($i, Needed::Size(cnt)),
-        //FIXME: use the InputTake trait
         Some(index) => Ok(input.take_split(index))
       };
       res
@@ -1304,7 +1171,7 @@ mod tests {
     assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
 
     let e = &b"e"[..];
-    assert_eq!(a_or_b(e), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(a_or_b(e), Err(Err::Incomplete(Needed::Size(1))));
   }
 
   #[allow(unused_variables)]

@@ -401,7 +401,6 @@ pub use self::str::*;
 
 #[macro_use]
 mod util;
-mod traits;
 
 #[cfg(feature = "verbose-errors")]
 #[macro_use]
@@ -413,6 +412,7 @@ pub mod simple_errors;
 
 #[macro_use]
 mod internal;
+mod traits;
 #[macro_use]
 mod macros;
 #[macro_use]
