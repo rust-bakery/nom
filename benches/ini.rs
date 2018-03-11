@@ -4,19 +4,22 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult, space, alphanumeric, multispace};
+use nom::{alphanumeric, multispace, space, IResult};
 
 use std::str;
 use std::collections::HashMap;
 
-named!(category<&str>, map_res!(
+named!(
+  category<&str>,
+  map_res!(
     delimited!(
       char!('['),
       take_while!(call!(|c| c != ']' as u8)),
       char!(']')
     ),
     str::from_utf8
-));
+  )
+);
 
 named!(key_value    <&[u8],(&str,&str)>,
   do_parse!(
@@ -33,14 +36,12 @@ named!(key_value    <&[u8],(&str,&str)>,
   )
 );
 
-
 named!(keys_and_values<&[u8], HashMap<&str, &str> >,
   map!(
     many0!(terminated!(key_value, opt!(multispace))),
     |vec: Vec<_>| vec.into_iter().collect()
   )
 );
-
 
 named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
   do_parse!(
@@ -246,7 +247,7 @@ port=143
 file=payroll.dat
 \0";
 
-  named!(acc< Vec<(&str,&str)> >, many0!(key_value));
+  named!(acc<Vec<(&str, &str)>>, many0!(key_value));
 
   b.iter(|| acc(str.as_bytes()).unwrap());
   b.bytes = str.len() as u64;

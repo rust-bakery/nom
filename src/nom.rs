@@ -181,7 +181,7 @@ pub fn is_space(chr: u8) -> bool {
 pub fn alpha<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   alpha1(input)
 }
@@ -190,7 +190,7 @@ where
 pub fn alpha0<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position(|item| !item.is_alpha())
 }
@@ -199,7 +199,7 @@ where
 pub fn alpha1<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position1(|item| !item.is_alpha(), ErrorKind::Alpha)
 }
@@ -208,7 +208,7 @@ where
 pub fn digit<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   digit1(input)
 }
@@ -217,7 +217,7 @@ where
 pub fn digit0<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position(|item| !item.is_dec_digit())
 }
@@ -226,7 +226,7 @@ where
 pub fn digit1<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position1(|item| !item.is_dec_digit(), ErrorKind::Digit)
 }
@@ -235,7 +235,7 @@ where
 pub fn hex_digit<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   hex_digit1(input)
 }
@@ -244,7 +244,7 @@ where
 pub fn hex_digit0<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position(|item| !item.is_hex_digit())
 }
@@ -252,7 +252,7 @@ where
 pub fn hex_digit1<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position1(|item| !item.is_hex_digit(), ErrorKind::HexDigit)
 }
@@ -261,7 +261,7 @@ where
 pub fn oct_digit<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   oct_digit1(input)
 }
@@ -270,7 +270,7 @@ where
 pub fn oct_digit0<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position(|item| !item.is_oct_digit())
 }
@@ -279,7 +279,7 @@ where
 pub fn oct_digit1<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
@@ -288,7 +288,7 @@ where
 pub fn alphanumeric<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   alphanumeric1(input)
 }
@@ -297,7 +297,7 @@ where
 pub fn alphanumeric0<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position(|item| !item.is_alphanum())
 }
@@ -305,7 +305,7 @@ where
 pub fn alphanumeric1<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position1(|item| !item.is_alphanum(), ErrorKind::AlphaNumeric)
 }
@@ -314,7 +314,7 @@ where
 pub fn space<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar+Clone
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   space1(input)
 }
@@ -323,7 +323,7 @@ where
 pub fn space0<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar+Clone
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   input.split_at_position(|item| {
     let c = item.clone().as_char();
@@ -334,19 +334,22 @@ where
 pub fn space1<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar+Clone
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  input.split_at_position1(|item| {
-    let c = item.clone().as_char();
-    !(c == ' ' || c == '\t')
-  }, ErrorKind::Space)
+  input.split_at_position1(
+    |item| {
+      let c = item.clone().as_char();
+      !(c == ' ' || c == '\t')
+    },
+    ErrorKind::Space,
+  )
 }
 
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
 pub fn multispace<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar+Clone
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   multispace1(input)
 }
@@ -355,7 +358,7 @@ where
 pub fn multispace0<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar+Clone
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   input.split_at_position(|item| {
     let c = item.clone().as_char();
@@ -366,12 +369,15 @@ where
 pub fn multispace1<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar+Clone
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  input.split_at_position1(|item| {
-    let c = item.clone().as_char();
-    !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
-  }, ErrorKind::MultiSpace)
+  input.split_at_position1(
+    |item| {
+      let c = item.clone().as_char();
+      !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
+    },
+    ErrorKind::MultiSpace,
+  )
 }
 
 pub fn sized_buffer(input: &[u8]) -> IResult<&[u8], &[u8]> {
