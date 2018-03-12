@@ -771,7 +771,7 @@ macro_rules! expr_res (
   ($i:expr, $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,ErrorKind};
 
       match $e {
         Ok(output) => Ok(($i, output)),
@@ -816,7 +816,7 @@ macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,ErrorKind};
 
       match $e {
         ::std::option::Option::Some(output) => Ok(($i, output)),
