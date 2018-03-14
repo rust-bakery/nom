@@ -5,7 +5,7 @@ use traits::{AsBytes, AtEof, Compare, CompareResult, ExtendInto, FindSubstring, 
              ParseTo, Slice};
 
 use std::str::{self, CharIndices, Chars, FromStr};
-use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use std::ops::{Deref, Range, RangeFrom, RangeFull, RangeTo};
 use std::iter::{Enumerate, Map};
 use std::slice::Iter;
 
@@ -15,6 +15,14 @@ use std::slice::Iter;
 /// and `Incomplete` results.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteStr<'a>(pub &'a str);
+
+impl<'a> Deref for CompleteStr<'a> {
+  type Target = str;
+
+  fn deref(&self) -> &str {
+    self.0
+  }
+}
 
 impl<'a> AtEof for CompleteStr<'a> {
   fn at_eof(&self) -> bool {
@@ -158,6 +166,14 @@ impl<'a> ExtendInto for CompleteStr<'a> {
 /// and `Incomplete` results.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
+
+impl<'a> Deref for CompleteByteSlice<'a> {
+  type Target = [u8];
+
+  fn deref(&self) -> &[u8] {
+    self.0
+  }
+}
 
 impl<'a> AtEof for CompleteByteSlice<'a> {
   fn at_eof(&self) -> bool {
