@@ -1739,6 +1739,13 @@ mod tests {
       f(d),
       Err(Err::Error(error_position!(d, ErrorKind::TakeWhile1)))
     );
+
+    named!(f2<CompleteStr, CompleteStr>, take_while1!(|c: char| c.is_alphabetic()));
+    let a2 = CompleteStr("");
+    assert_eq!(
+      f2(a2),
+      Err(Err::Error(error_position!(a2, ErrorKind::TakeWhile1)))
+    );
   }
 
   #[test]

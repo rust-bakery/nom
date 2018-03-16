@@ -630,7 +630,11 @@ impl<'a> InputTakeAtPosition for &'a str {
       Some((i,_)) => Ok((&self[i..], &self[..i])),
       None => {
         if self.at_eof() {
-          Ok(self.take_split(self.len()))
+          if self.input_len() == 0 {
+            Err(Err::Error(Context::Code(self, e)))
+          } else {
+            Ok(self.take_split(self.len()))
+          }
         } else {
           Err(Err::Incomplete(Needed::Size(1)))
         }
@@ -668,8 +672,12 @@ impl<'a> InputTakeAtPosition for CompleteStr<'a> {
       Some((i,_)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
       None => {
         if self.at_eof() {
-          let (i, o) = self.0.take_split(self.0.len());
-          Ok((CompleteStr(i), CompleteStr(o)))
+          if self.0.len() == 0 {
+            Err(Err::Error(Context::Code(CompleteStr(self.0), e)))
+          } else {
+            let (i, o) = self.0.take_split(self.0.len());
+            Ok((CompleteStr(i), CompleteStr(o)))
+          }
         } else {
           Err(Err::Incomplete(Needed::Size(1)))
         }
