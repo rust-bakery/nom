@@ -371,7 +371,7 @@ macro_rules! apply (
 macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Context,Err,ErrorKind};
 
       let i_ = $i.clone();
@@ -396,7 +396,7 @@ macro_rules! return_error (
   );
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Context,Err,ErrorKind};
 
       let i_ = $i.clone();
@@ -444,7 +444,7 @@ macro_rules! return_error (
 macro_rules! add_return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Context,ErrorKind};
 
       fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
@@ -488,7 +488,7 @@ macro_rules! add_return_error (
 macro_rules! complete (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind};
 
       let i_ = $i.clone();
@@ -537,7 +537,7 @@ macro_rules! complete (
 #[macro_export]
 macro_rules! try_parse (
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match $submac!($i, $($args)*) {
       Ok((i,o)) => (i,o),
@@ -580,7 +580,7 @@ macro_rules! map_res (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::Err;
 
       let i_ = $i.clone();
@@ -619,8 +619,8 @@ macro_rules! map_opt (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,ErrorKind};
 
       let i_ = $i.clone();
@@ -659,9 +659,9 @@ macro_rules! map_opt (
 macro_rules! parse_to (
   ($i:expr, $t:ty ) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,ErrorKind,Context};
 
       use $crate::ParseTo;
@@ -691,7 +691,7 @@ macro_rules! verify (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind};
 
       let i_ = $i.clone();
@@ -742,7 +742,7 @@ macro_rules! verify (
 macro_rules! value (
   ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match $submac!($i, $($args)*) {
         Ok((i,_)) => {
@@ -770,7 +770,7 @@ macro_rules! value (
 macro_rules! expr_res (
   ($i:expr, $e:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind};
 
       match $e {
@@ -815,12 +815,12 @@ macro_rules! expr_res (
 macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind};
 
       match $e {
-        ::std::option::Option::Some(output) => Ok(($i, output)),
-        ::std::option::Option::None         => Err(Err::Error(error_position!($i, ErrorKind::ExprOpt::<u32>)))
+        $crate::lib::std::option::Option::Some(output) => Ok(($i, output)),
+        $crate::lib::std::option::Option::None         => Err(Err::Error(error_position!($i, ErrorKind::ExprOpt::<u32>)))
       }
     }
   );
@@ -855,8 +855,8 @@ macro_rules! expr_opt (
 macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::Err;
 
       let i_ = $i.clone();
@@ -895,7 +895,7 @@ macro_rules! opt(
 macro_rules! opt_res (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::Err;
 
       let i_ = $i.clone();
@@ -948,16 +948,16 @@ macro_rules! opt_res (
 macro_rules! cond_with_error(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Convert,Err,Needed,IResult};
 
       if $cond {
         match $submac!($i, $($args)*) {
-          Ok((i,o)) => Ok((i, ::std::option::Option::Some(o))),
+          Ok((i,o)) => Ok((i, $crate::lib::std::option::Option::Some(o))),
           Err(e)    => Err(e),
         }
       } else {
-        let res: ::std::result::Result<_,_> = Ok(($i, ::std::option::Option::None));
+        let res: $crate::lib::std::result::Result<_,_> = Ok(($i, $crate::lib::std::option::Option::None));
         res
       }
     }
@@ -1003,8 +1003,8 @@ macro_rules! cond_with_error(
 macro_rules! cond(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::Err;
 
       if $cond {
@@ -1061,7 +1061,7 @@ macro_rules! cond(
 macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Convert,Err,ErrorKind,IResult};
       let default_err = Err(Err::convert(Err::Error(error_position!($i, ErrorKind::CondReduce::<u32>))));
 
@@ -1102,7 +1102,7 @@ macro_rules! cond_reduce(
 macro_rules! peek(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Convert,Err};
 
       let i_ = $i.clone();
@@ -1143,7 +1143,7 @@ macro_rules! peek(
 macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Context,ErrorKind,Err,IResult};
 
       let i_ = $i.clone();
@@ -1188,7 +1188,7 @@ macro_rules! not(
 macro_rules! tap (
   ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Convert,Err,Needed,IResult};
 
       match $submac!($i, $($args)*) {
@@ -1220,7 +1220,7 @@ macro_rules! tap (
 macro_rules! eof (
   ($i:expr,) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{AtEof,Err,ErrorKind};
 
       use $crate::InputLength;
@@ -1266,7 +1266,7 @@ macro_rules! exact (
 macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       use $crate::Offset;
       use $crate::Slice;
@@ -1293,7 +1293,7 @@ mod tests {
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
     ($i:expr, $tag: expr) => ({
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind};
       use $crate::{Compare,CompareResult,InputLength,Slice,need_more};
 
@@ -1404,7 +1404,7 @@ mod tests {
     assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
   }
 
-  use std::convert::From;
+  use lib::std::convert::From;
   #[derive(Debug, PartialEq)]
   pub struct CustomError(&'static str);
   impl From<u32> for CustomError {

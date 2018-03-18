@@ -315,7 +315,7 @@ macro_rules! error_node_position(
     {
     let mut error_vec = match $next {
       $crate::Context::Code(i, e) => {
-        let mut v = ::std::vec::Vec::new();
+        let mut v = $crate::lib::std::vec::Vec::new();
         v.push((i, e));
         v
       },

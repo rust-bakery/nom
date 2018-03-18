@@ -4,12 +4,12 @@ use internal::{Err, IResult};
 use verbose_errors::Context;
 
 #[cfg(feature = "std")]
-use std::collections::HashMap;
+use lib::std::collections::HashMap;
 
 #[cfg(feature = "alloc")]
-use std::vec::Vec;
+use lib::std::vec::Vec;
 #[cfg(feature = "alloc")]
-use std::string::ToString;
+use lib::std::string::ToString;
 
 #[cfg(feature = "std")]
 pub trait HexDisplay {
@@ -107,7 +107,7 @@ impl HexDisplay for str {
 macro_rules! dbg (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       let l = line!();
       match $submac!($i, $($args)*) {
         Err(e) => {
@@ -187,7 +187,7 @@ pub fn compare_error_paths<P: Clone + PartialEq, E: Clone + PartialEq>(e1: &Cont
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-use std::hash::Hash;
+use lib::std::hash::Hash;
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]

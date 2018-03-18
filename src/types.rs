@@ -3,10 +3,10 @@
 
 use traits::{AsBytes, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset, ParseTo, Slice};
 
-use std::str::{self, CharIndices, Chars, FromStr};
-use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use std::iter::{Enumerate, Map};
-use std::slice::Iter;
+use lib::std::str::{self, CharIndices, Chars, FromStr};
+use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use lib::std::iter::{Enumerate, Map};
+use lib::std::slice::Iter;
 
 /// Holds a complete String, for which the `at_eof` method always returns true
 ///

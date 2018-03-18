@@ -97,7 +97,7 @@
 #[macro_export]
 macro_rules! wrap_sep (
   ($i:expr, $separator:expr, $submac:ident!( $($args:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
     use $crate::{Err,Convert,IResult};
 
     fn unify_types<I,O,P,E>(_: &IResult<I,O,E>, _: &IResult<I,P,E>) {}
@@ -142,7 +142,7 @@ macro_rules! pair_sep (
 #[macro_export]
 macro_rules! delimited_sep (
   ($i:expr, $separator:path, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)*) {
       Err(e) => Err(e),
@@ -160,7 +160,7 @@ macro_rules! delimited_sep (
 #[macro_export]
 macro_rules! separated_pair_sep (
   ($i:expr, $separator:path, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)*) {
       Err(e) => Err(e),
@@ -178,7 +178,7 @@ macro_rules! separated_pair_sep (
 #[macro_export]
 macro_rules! preceded_sep (
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match pair_sep!($i, $separator, $submac!($($args)*), $submac2!($($args2)*)) {
       Err(e) => Err(e),
@@ -202,7 +202,7 @@ macro_rules! preceded_sep (
 #[macro_export]
 macro_rules! terminated_sep (
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match pair_sep!($i, $separator, $submac!($($args)*), $submac2!($($args2)*)) {
       Err(e) => Err(e),
@@ -231,7 +231,7 @@ macro_rules! tuple_sep (
   );
   ($i:expr, $separator:path, (), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(e) => Err(e),
@@ -243,7 +243,7 @@ macro_rules! tuple_sep (
   );
   ($i:expr, $separator:path, ($($parsed:tt)*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(e) => Err(e),
@@ -258,7 +258,7 @@ macro_rules! tuple_sep (
   );
   ($i:expr, $separator:path, (), $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(e) => Err(e),
@@ -270,7 +270,7 @@ macro_rules! tuple_sep (
   );
   ($i:expr, $separator:path, ($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(e) => Err(e),
@@ -291,7 +291,7 @@ macro_rules! tuple_sep (
 #[macro_export]
 macro_rules! do_parse_sep (
   (__impl $i:expr, $separator:path, ( $($rest:expr),* )) => (
-    ::std::result::Result::Ok(($i, ( $($rest),* )))
+    $crate::lib::std::result::Result::Ok(($i, ( $($rest),* )))
   );
 
   (__impl $i:expr, $separator:path, $e:ident >> $($rest:tt)*) => (
@@ -299,7 +299,7 @@ macro_rules! do_parse_sep (
   );
   (__impl $i:expr, $separator:path, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(e) => Err(e),
@@ -316,7 +316,7 @@ macro_rules! do_parse_sep (
 
   (__impl $i:expr, $separator:path, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(e) => Err(e),
@@ -334,7 +334,7 @@ macro_rules! do_parse_sep (
   );
 
   (__impl $i:expr, $separator:path, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match sep!($i, $separator, $submac!($($args)*)) {
       Err(e) => Err(e),
@@ -349,7 +349,7 @@ macro_rules! do_parse_sep (
   );
 
   (__impl $i:expr, $separator:path, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match sep!($i, $separator, $submac!($($args)*)) {
       Err(e) => Err(e),
@@ -372,8 +372,8 @@ macro_rules! do_parse_sep (
 macro_rules! permutation_sep (
   ($i:expr, $separator:path, $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,ErrorKind,Convert};
 
       let mut res    = permutation_init!((), $($rest)*);
@@ -424,21 +424,21 @@ macro_rules! permutation_iterator_sep (
     permutation_iterator_sep!($it, $i, $separator, $all_done, $needed, $res, $submac!($($args)*), $($rest)*);
   });
   ($it:tt, $i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
     use $crate::Err;
 
-    if acc!($it, $res) == ::std::option::Option::None {
+    if acc!($it, $res) == $crate::lib::std::option::Option::None {
       match {sep!($i, $separator, $submac!($($args)*))} {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = ::std::option::Option::Some(o);
+          acc!($it, $res) = $crate::lib::std::option::Option::Some(o);
           continue;
         },
         Err(Err::Error(_)) => {
           $all_done = false;
         },
         Err(e) => {
-          $needed = ::std::option::Option::Some(e);
+          $needed = $crate::lib::std::option::Option::Some(e);
           break;
         }
       };
@@ -457,21 +457,21 @@ macro_rules! permutation_iterator_sep (
     permutation_iterator_sep!($it, $i, $separator, $all_done, $needed, $res, $submac!($($args)*));
   });
   ($it:tt, $i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
     use $crate::Err;
 
-    if acc!($it, $res) == ::std::option::Option::None {
+    if acc!($it, $res) == $crate::lib::std::option::Option::None {
       match sep!($i, $separator, $submac!($($args)*)) {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = ::std::option::Option::Some(o);
+          acc!($it, $res) = $crate::lib::std::option::Option::Some(o);
           continue;
         },
         Err(Err::Error(_)) => {
           $all_done = false;
         },
         Err(e) => {
-          $needed = ::std::option::Option::Some(e);
+          $needed = $crate::lib::std::option::Option::Some(e);
           break;
         }
       };
@@ -488,7 +488,7 @@ macro_rules! alt_sep (
 
   (__impl $i:expr, $separator:path, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err};
 
       let res = sep!($i, $separator, $subrule!($($args)*));
@@ -502,7 +502,7 @@ macro_rules! alt_sep (
 
   (__impl $i:expr, $separator:path, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err};
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
@@ -525,7 +525,7 @@ macro_rules! alt_sep (
 
   (__impl $i:expr, $separator:path, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err};
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
@@ -547,7 +547,7 @@ macro_rules! alt_sep (
 
   (__impl $i:expr, $separator:path, $subrule:ident!( $($args:tt)*)) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err};
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
@@ -564,14 +564,14 @@ macro_rules! alt_sep (
   );
 
   (__impl $i:expr) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
     use $crate::{Err,Needed,IResult};
 
     Err(Err::Error(error_position!($i, $crate::ErrorKind::Alt)))
   });
 
   (__impl $i:expr, $separator:path) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
     use $crate::{Err,Needed,IResult};
 
     Err(Err::Error(error_position!($i, $crate::ErrorKind::Alt)))
@@ -593,7 +593,7 @@ macro_rules! alt_complete_sep (
 
   ($i:expr, $separator:path, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       let res = complete!($i, sep!($separator, $subrule!($($args)*)));
       match res {
@@ -605,7 +605,7 @@ macro_rules! alt_complete_sep (
 
   ($i:expr, $separator:path, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,IResult};
 
       match complete!($i, sep!($separator, $subrule!($($args)*))) {
@@ -643,7 +643,7 @@ macro_rules! alt_complete_sep (
 macro_rules! switch_sep (
   (__impl $i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err};
 
       match sep!($i, $separator, $submac!($($args)*)) {
@@ -875,7 +875,7 @@ macro_rules! ws (
       use $crate::sp;
       use $crate::Convert;
       use $crate::Err;
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match sep!($i, sp, $($args)*) {
         Err(e) => Err(e),
@@ -894,7 +894,7 @@ macro_rules! ws (
 #[allow(dead_code)]
 mod tests {
   #[cfg(feature = "alloc")]
-  use std::string::{String, ToString};
+  use lib::std::string::{String, ToString};
   use internal::{Err, IResult, Needed};
   use super::sp;
   use util::ErrorKind;

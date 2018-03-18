@@ -1,15 +1,15 @@
 //! Traits input types have to implement to work with nom combinators
 //!
 use internal::{Err, IResult, Needed};
-use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use std::iter::Enumerate;
-use std::slice::Iter;
-use std::iter::Map;
+use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use lib::std::iter::Enumerate;
+use lib::std::slice::Iter;
+use lib::std::iter::Map;
 
-use std::str::Chars;
-use std::str::CharIndices;
-use std::str::FromStr;
-use std::str::from_utf8;
+use lib::std::str::Chars;
+use lib::std::str::CharIndices;
+use lib::std::str::FromStr;
+use lib::std::str::from_utf8;
 
 use memchr;
 

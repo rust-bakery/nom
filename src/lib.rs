@@ -359,15 +359,30 @@ extern crate regex;
 #[cfg(nightly)]
 extern crate test;
 
-#[cfg(not(feature = "std"))]
-mod std {
-  #[cfg(feature = "alloc")]
-  #[macro_use]
-  pub use alloc::{boxed, string, vec};
+/// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
+/// it, albeit there it is not public.
+pub mod lib {
+  /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
+  /// as well as `core` or `std`
+  #[cfg(not(feature = "std"))]
+  pub mod std {
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(feature = "alloc", macro_use)]
+    pub use alloc::{boxed, string, vec};
 
-  pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
-  pub mod prelude {
-    pub use core::prelude as v1;
+    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub mod prelude {
+      pub use core::prelude as v1;
+    }
+  }
+
+  #[cfg(feature = "std")]
+  pub mod std {
+    pub use std::{boxed, string, vec, cmp, convert, fmt, iter, mem,
+                  ops, option, result, slice, str, collections, hash};
+    pub mod prelude {
+      pub use std::prelude as v1;
+    }
   }
 }
 
