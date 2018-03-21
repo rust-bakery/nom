@@ -224,3 +224,9 @@ fn issue_667() {
     Ok((CompleteByteSlice(b"!@#$"), vec![]))
   );
 }
+
+#[test]
+fn issue_721() {
+  assert_eq!(parse_to!("1234", u16), Ok(("", 1234)));
+  assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
+}
