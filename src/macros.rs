@@ -670,7 +670,7 @@ macro_rules! parse_to (
 
       let res: Option<$t> = ($i).parse_to();
       match res {
-        Some(output) => Ok(($i.slice(..$i.input_len()), output)),
+        Some(output) => Ok(($i.slice($i.input_len()..), output)),
         None         => Err(Err::Error(Context::Code($i, ErrorKind::MapOpt::<u32>)))
       }
     }
