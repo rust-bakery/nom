@@ -13,7 +13,7 @@ use std::slice::Iter;
 ///
 /// This means that this input type will completely avoid nom's streaming features
 /// and `Incomplete` results.
-#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteStr<'a>(pub &'a str);
 
 impl<'a> AtEof for CompleteStr<'a> {
@@ -156,7 +156,7 @@ impl<'a> ExtendInto for CompleteStr<'a> {
 ///
 /// This means that this input type will completely avoid nom's streaming features
 /// and `Incomplete` results.
-#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
 
 impl<'a> AtEof for CompleteByteSlice<'a> {
