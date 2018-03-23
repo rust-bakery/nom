@@ -174,10 +174,10 @@ macro_rules! escaped (
         let mut input = $i.clone();
         let control_char = $control_char.as_char();
 
-        while !input.is_empty() {
+        while input.input_len() > 0 {
           match $normal!(input, $($args)*) {
             Ok((i, _)) => {
-              if i.is_empty() {
+              if i.input_len() == 0 {
                 return Ok(($i.slice($i.input_len()..), $i))
               } else {
                 input = i;
@@ -198,7 +198,7 @@ macro_rules! escaped (
                 } else {
                   match $escapable!(input.slice(next..), $($args2)*) {
                     Ok((i,_)) => {
-                      if i.is_empty() {
+                      if i.input_len() == 0 {
                         return Ok(($i.slice($i.input_len()..), $i))
                       } else {
                         input = i;
@@ -208,13 +208,13 @@ macro_rules! escaped (
                   }
                 }
               } else {
-                let index = $i.offset(input);
+                let index = $i.offset(&input);
                 return Ok($i.take_split(index));
               }
             },
           }
         }
-        let index = $i.offset(input);
+        let index = $i.offset(&input);
         Ok($i.take_split(index))
       };
 
@@ -314,10 +314,10 @@ macro_rules! escaped_transform (
           match $normal!(remainder, $($args)*) {
             Ok((i,o)) => {
               o.extend_into(&mut res);
-              if i.is_empty() {
+              if i.input_len() == 0 {
                 return Ok(($i.slice($i.input_len()..), res));
               } else {
-                index = $i.offset(i);
+                index = $i.offset(&i);
               }
             },
             Err(Err::Incomplete(i)) => {
@@ -338,10 +338,10 @@ macro_rules! escaped_transform (
                   match $transform!($i.slice(next..), $($args2)*) {
                     Ok((i,o)) => {
                       o.extend_into(&mut res);
-                      if i.is_empty() {
+                      if i.input_len() == 0 {
                         return Ok(($i.slice($i.input_len()..), res))
                       } else {
-                        index = $i.offset(i);
+                        index = $i.offset(&i);
                       }
                     },
                     Err(Err::Error(e)) => {
@@ -1221,6 +1221,35 @@ mod tests {
 
     named!(esc3<&str, &str>, escaped!(call!(alpha), '\u{241b}', one_of!("\"n")));
     assert_eq!(esc3("ab␛ncd;"), Ok((";", "ab␛ncd")));
+  }
+
+  #[cfg(feature = "alloc")]
+  #[test]
+  fn escaping_complete_str() {
+    use nom::alpha0;
+    named!(esc<CompleteStr, CompleteStr>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
+    assert_eq!(esc(CompleteStr("abcd;")), Ok((CompleteStr(";"), CompleteStr("abcd"))));
+    assert_eq!(esc(CompleteStr("ab\\\"cd;")), Ok((CompleteStr(";"), CompleteStr("ab\\\"cd"))));
+    //assert_eq!(esc("\\\"abcd;"), Ok((";", "\\\"abcd")));
+    //assert_eq!(esc("\\n;"), Ok((";", "\\n")));
+    //assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
+    assert_eq!(esc(CompleteStr("AB\\")), Err(Err::Error(error_position!(CompleteStr("AB\\"), ErrorKind::Escaped))));
+    assert_eq!(esc(CompleteStr("")), Ok((CompleteStr(""), CompleteStr(""))));
+    /*assert_eq!(
+      esc("AB\\A"),
+      Err(Err::Error(error_node_position!(
+        "AB\\A",
+        ErrorKind::Escaped,
+        error_position!("A", ErrorKind::OneOf)
+      )))
+    );
+
+    named!(esc2<&str, &str>, escaped!(call!(digit), '\\', one_of!("\"n\\")));
+    assert_eq!(esc2("12\\nnn34"), Ok(("nn34", "12\\n")));
+
+    named!(esc3<&str, &str>, escaped!(call!(alpha), '\u{241b}', one_of!("\"n")));
+    assert_eq!(esc3("ab␛ncd;"), Ok((";", "ab␛ncd")));
+    */
   }
 
   #[cfg(feature = "verbose-errors")]

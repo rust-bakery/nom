@@ -1,7 +1,8 @@
 //! Custom input types
 //!
 
-use traits::{AsBytes, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset, ParseTo, Slice};
+use traits::{AsBytes, AtEof, Compare, CompareResult, ExtendInto, FindSubstring,
+  FindToken, InputIter, InputLength, InputTake, Offset, ParseTo, Slice};
 
 use std::str::{self, CharIndices, Chars, FromStr};
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
@@ -133,6 +134,21 @@ impl<'a> Offset for CompleteStr<'a> {
 impl<'a> AsBytes for CompleteStr<'a> {
   fn as_bytes(&self) -> &[u8] {
     AsBytes::as_bytes(self.0)
+  }
+}
+
+#[cfg(feature = "std")]
+impl<'a> ExtendInto for CompleteStr<'a> {
+  type Item = char;
+  type Extender = String;
+
+  #[inline]
+  fn new_builder(&self) -> String {
+    String::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut String) {
+    acc.extend(self.0.chars());
   }
 }
 
