@@ -208,6 +208,18 @@ mod tests {
     assert_eq!(f(b), Ok((&"de"[..], 'c')));
   }
 
+  use types::CompleteStr;
+  #[test]
+  fn complete_char() {
+    named!(f<CompleteStr, char>, char!('c'));
+
+    let a = CompleteStr("abcd");
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
+
+    let b = CompleteStr("cde");
+    assert_eq!(f(b), Ok((CompleteStr("de"), 'c')));
+  }
+
   #[test]
   fn anychar_str() {
     use super::anychar;
