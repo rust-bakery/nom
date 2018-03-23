@@ -345,6 +345,10 @@ pub trait InputTake: Sized {
   fn take_split(&self, count: usize) -> (Self, Self);
 }
 
+fn star(r_u8: &u8) -> u8 {
+  *r_u8
+}
+
 impl<'a> InputIter for &'a [u8] {
   type Item = u8;
   type RawItem = u8;
@@ -357,7 +361,7 @@ impl<'a> InputIter for &'a [u8] {
   }
   #[inline]
   fn iter_elements(&self) -> Self::IterElem {
-    self.iter().map(|r_u8| *r_u8)
+    self.iter().map(star)
   }
   #[inline]
   fn position<P>(&self, predicate: P) -> Option<usize>
