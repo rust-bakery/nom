@@ -1233,7 +1233,14 @@ mod tests {
     //assert_eq!(esc("\\\"abcd;"), Ok((";", "\\\"abcd")));
     //assert_eq!(esc("\\n;"), Ok((";", "\\n")));
     //assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
-    assert_eq!(esc(CompleteStr("AB\\")), Err(Err::Error(error_position!(CompleteStr("AB\\"), ErrorKind::Escaped))));
+    assert_eq!(
+      esc(CompleteStr("AB\\")),
+      Err(Err::Error(error_node_position!(
+        CompleteStr("AB\\"),
+        ErrorKind::Escaped,
+        error_position!(CompleteStr("AB\\"), ErrorKind::Eof)
+      )))
+    );
     assert_eq!(esc(CompleteStr("")), Ok((CompleteStr(""), CompleteStr(""))));
     /*assert_eq!(
       esc("AB\\A"),
