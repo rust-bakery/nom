@@ -1228,8 +1228,14 @@ mod tests {
   fn escaping_complete_str() {
     use nom::alpha0;
     named!(esc<CompleteStr, CompleteStr>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
-    assert_eq!(esc(CompleteStr("abcd;")), Ok((CompleteStr(";"), CompleteStr("abcd"))));
-    assert_eq!(esc(CompleteStr("ab\\\"cd;")), Ok((CompleteStr(";"), CompleteStr("ab\\\"cd"))));
+    assert_eq!(
+      esc(CompleteStr("abcd;")),
+      Ok((CompleteStr(";"), CompleteStr("abcd")))
+    );
+    assert_eq!(
+      esc(CompleteStr("ab\\\"cd;")),
+      Ok((CompleteStr(";"), CompleteStr("ab\\\"cd")))
+    );
     //assert_eq!(esc("\\\"abcd;"), Ok((";", "\\\"abcd")));
     //assert_eq!(esc("\\n;"), Ok((";", "\\n")));
     //assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
