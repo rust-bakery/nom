@@ -1226,7 +1226,6 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn escaping_complete_str() {
-    use nom::alpha0;
     named!(esc<CompleteStr, CompleteStr>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
     assert_eq!(
       esc(CompleteStr("abcd;")),
