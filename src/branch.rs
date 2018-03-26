@@ -411,10 +411,12 @@ macro_rules! alt_complete (
 /// side of pattern, like this:
 ///
 /// ```ignore
+///  named!(xyz, tag!("XYZ"));
+///  named!(num, tag!("123"));
 ///  named!(sw,
 ///    switch!(take!(4),
-///      b"abcd" => tag!("XYZ") |
-///      b"efgh" => tag!("123")
+///      b"abcd" => xyz |
+///      b"efgh" => 123
 ///    )
 ///  );
 /// ```
