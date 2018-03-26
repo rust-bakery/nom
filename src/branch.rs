@@ -797,7 +797,7 @@ macro_rules! permutation_iterator (
     use ::std::option::Option::*;
     use $crate::Err;
 
-    if acc!($it, $res) == None {
+    if acc!($it, $res).is_none() {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;
@@ -831,7 +831,7 @@ macro_rules! permutation_iterator (
     use ::std::option::Option::*;
     use $crate::Err;
 
-    if acc!($it, $res) == None {
+    if acc!($it, $res).is_none() {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;

@@ -234,3 +234,18 @@ fn issue_721() {
 named!(issue_717<&[u8], Vec<&[u8]> >,
   separated_list!(tag!([0x0]), is_not!([0x0u8]))
 );
+
+struct NoPartialEq {
+  value: i32
+}
+
+named!(issue_724<&str, i32>,
+  do_parse!(
+    metadata: permutation!(
+      map!(tag!("hello"), |_| NoPartialEq { value: 1 }),
+      map!(tag!("world"), |_| NoPartialEq { value: 2 })
+    ) >>
+    (metadata.0.value + metadata.1.value)
+  )
+);
+
