@@ -1,7 +1,7 @@
 [package]
 
 name = "nom"
-version = "4.0.0-beta1"
+version = "4.0.0-beta2"
 authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
@@ -24,7 +24,6 @@ include = [
 [features]
 alloc = []
 std = ["alloc", "memchr/use_std"]
-nightly = []
 default = ["std"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]

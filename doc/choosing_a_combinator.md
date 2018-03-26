@@ -6,7 +6,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 
 | combinator|usage | input | output | comment |
 |---|---|---|---|---|
-| [char](https://docs.rs/nom/4.0.0-alpha2/nom/macro.char.html) | `[char](!('a')` |  `"abc"` | `Ok(("bc", 'a'))`| matches one character (works with non ASCII chars too) | 
+| [char](https://docs.rs/nom/4.0.0-alpha2/nom/macro.char.html) | `char!('a')` |  `"abc"` | `Ok(("bc", 'a'))`| matches one character (works with non ASCII chars too) | 
 |[is_a](https://docs.rs/nom/4.0.0-alpha2/nom/macro.is_a.html) | ` is_a!("ab")` |  `"ababc"` | `Ok(("c", "abab"))`|matches a sequence of any of the characters passed as arguments|
 | [is_not](https://docs.rs/nom/4.0.0-alpha2/nom/macro.is_not.html) |`is_not!("cd")` |  `"ababc"` | `Ok(("c", "abab"))`|matches a sequence of none of the characters passed as arguments|
 | [one_of](https://docs.rs/nom/4.0.0-alpha2/nom/macro.one_of.html) |`one_of!("abc")` |  `"abc"` | `Ok(("bc", 'a'))`|matches one of the provided characters (works with non ASCII characters too)|
@@ -20,7 +20,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 |[take_until_and_consume](https://docs.rs/nom/4.0.0-alpha2/nom/macro.take_until_and_consume.html) | `take_until_and_consume!("world")` |  `"Hello world!"` | `Ok( ("!", "Hello ") )`| same as `take_until` but consumes the tag. `take_until_and_consume1` does the same, but must return at least one character|
 | [take_until_either](https://docs.rs/nom/4.0.0-alpha2/nom/macro.take_until_either.html) |`take_until_either!` |  `` | ``|DEPRECATED? returns the longest list of bytes until any of the provided characters are found|
 | [take_until_either_and_consume](https://docs.rs/nom/4.0.0-alpha2/nom/macro.take_until_either_and_consume.html) |`take_until_either_and_consume` |  `` | ``|DEPRECATED? same as take_until_either!, but consumes the terminating character|
-|[value](https://docs.rs/nom/4.0.0-alpha2/nom/macro.value.html) | `value!(42, tag!("abcd"))` |`"abcdef"` | `Ok( ("ef", 42) )`|replaces the result of the clid parser with the provided value. Can also be used without a child parser. `value!(42)` would return the `42` value without consuming the input|
+|[value](https://docs.rs/nom/4.0.0-alpha2/nom/macro.value.html) | `value!(42, tag!("abcd"))` |`"abcdef"` | `Ok( ("ef", 42) )`|replaces the result of the child parser with the provided value. Can also be used without a child parser. `value!(42)` would return the `42` value without consuming the input|
 
 
 ## Choice combinators

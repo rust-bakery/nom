@@ -1,7 +1,8 @@
 //! Custom input types
 //!
 
-use traits::{AsBytes, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset, ParseTo, Slice};
+use traits::{AsBytes, AtEof, Compare, CompareResult, ExtendInto, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset,
+             ParseTo, Slice};
 
 use std::str::{self, CharIndices, Chars, FromStr};
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
@@ -12,7 +13,7 @@ use std::slice::Iter;
 ///
 /// This means that this input type will completely avoid nom's streaming features
 /// and `Incomplete` results.
-#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteStr<'a>(pub &'a str);
 
 impl<'a> AtEof for CompleteStr<'a> {
@@ -136,11 +137,26 @@ impl<'a> AsBytes for CompleteStr<'a> {
   }
 }
 
+#[cfg(feature = "std")]
+impl<'a> ExtendInto for CompleteStr<'a> {
+  type Item = char;
+  type Extender = String;
+
+  #[inline]
+  fn new_builder(&self) -> String {
+    String::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut String) {
+    acc.extend(self.0.chars());
+  }
+}
+
 /// Holds a complete String, for which the `at_eof` method always returns true
 ///
 /// This means that this input type will completely avoid nom's streaming features
 /// and `Incomplete` results.
-#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
 
 impl<'a> AtEof for CompleteByteSlice<'a> {
@@ -292,7 +308,7 @@ impl<'a> super::util::HexDisplay for CompleteByteSlice<'a> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Hash)]
 pub struct Input<T> {
-  pub inner:  T,
+  pub inner: T,
   pub at_eof: bool,
 }
 
@@ -305,7 +321,7 @@ impl<T> AtEof for Input<T> {
 impl<T: Slice<Range<usize>>> Slice<Range<usize>> for Input<T> {
   fn slice(&self, range: Range<usize>) -> Self {
     Input {
-      inner:  self.inner.slice(range),
+      inner: self.inner.slice(range),
       at_eof: self.at_eof,
     }
   }
@@ -314,7 +330,7 @@ impl<T: Slice<Range<usize>>> Slice<Range<usize>> for Input<T> {
 impl<T: Slice<RangeTo<usize>>> Slice<RangeTo<usize>> for Input<T> {
   fn slice(&self, range: RangeTo<usize>) -> Self {
     Input {
-      inner:  self.inner.slice(range),
+      inner: self.inner.slice(range),
       at_eof: self.at_eof,
     }
   }
@@ -323,7 +339,7 @@ impl<T: Slice<RangeTo<usize>>> Slice<RangeTo<usize>> for Input<T> {
 impl<T: Slice<RangeFrom<usize>>> Slice<RangeFrom<usize>> for Input<T> {
   fn slice(&self, range: RangeFrom<usize>) -> Self {
     Input {
-      inner:  self.inner.slice(range),
+      inner: self.inner.slice(range),
       at_eof: self.at_eof,
     }
   }
@@ -332,7 +348,7 @@ impl<T: Slice<RangeFrom<usize>>> Slice<RangeFrom<usize>> for Input<T> {
 impl<T: Slice<RangeFull>> Slice<RangeFull> for Input<T> {
   fn slice(&self, range: RangeFull) -> Self {
     Input {
-      inner:  self.inner.slice(range),
+      inner: self.inner.slice(range),
       at_eof: self.at_eof,
     }
   }
@@ -364,20 +380,23 @@ impl<T: InputIter> InputIter for Input<T> {
 impl<T: InputTake> InputTake for Input<T> {
   fn take(&self, count: usize) -> Self {
     Input {
-      inner:  self.inner.take(count),
+      inner: self.inner.take(count),
       at_eof: self.at_eof,
     }
   }
 
   fn take_split(&self, count: usize) -> (Self, Self) {
     let (left, right) = self.inner.take_split(count);
-    (Input {
-      inner:  left,
-      at_eof: self.at_eof
-    }, Input {
-      inner:  right,
-      at_eof: self.at_eof
-    })
+    (
+      Input {
+        inner: left,
+        at_eof: self.at_eof,
+      },
+      Input {
+        inner: right,
+        at_eof: self.at_eof,
+      },
+    )
   }
 }
 
@@ -414,7 +433,7 @@ impl<T: FindToken<u8>> FindToken<u8> for Input<T> {
   }
 }
 
-impl<'a, T: FindToken<&'a u8> > FindToken<&'a u8> for Input<T> {
+impl<'a, T: FindToken<&'a u8>> FindToken<&'a u8> for Input<T> {
   fn find_token(&self, token: &'a u8) -> bool {
     self.inner.find_token(token)
   }
@@ -432,7 +451,7 @@ impl<T: Offset> Offset for Input<T> {
   }
 }
 
-impl<T: AsBytes> AsBytes for Input<T>  {
+impl<T: AsBytes> AsBytes for Input<T> {
   fn as_bytes(&self) -> &[u8] {
     AsBytes::as_bytes(&self.inner)
   }

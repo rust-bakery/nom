@@ -1,6 +1,5 @@
 //! Basic types to build the parsers
 
-//use self::IResult::*;
 use self::Needed::*;
 
 #[cfg(feature = "verbose-errors")]
@@ -105,7 +104,7 @@ impl<I, E> Err<I, E> {
   pub fn is_incomplete(&self) -> bool {
     match *self {
       Err::Incomplete(_) => true,
-      _             => false
+      _ => false,
     }
   }
 }

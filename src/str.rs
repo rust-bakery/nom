@@ -18,6 +18,7 @@
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `tag` instead")]
 macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
     {
@@ -47,6 +48,7 @@ macro_rules! tag_s (
 /// # fn main() {}
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `tag_no_case` instead")]
 macro_rules! tag_no_case_s (
   ($i:expr, $tag: expr) => (
     {
@@ -74,6 +76,7 @@ macro_rules! tag_no_case_s (
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take` instead")]
 macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
@@ -97,6 +100,7 @@ macro_rules! take_s (
 ///  # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `is_not` instead")]
 macro_rules! is_not_s (
   ($input:expr, $arr:expr) => (
     {
@@ -121,6 +125,7 @@ macro_rules! is_not_s (
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `is_a` instead")]
 macro_rules! is_a_s (
   ($input:expr, $arr:expr) => (
     {
@@ -145,6 +150,7 @@ macro_rules! is_a_s (
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_while` instead")]
 macro_rules! take_while_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -162,17 +168,17 @@ macro_rules! take_while_s (
 /// The argument is either a function `char -> bool` or a macro returning a `bool`
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::is_alphanumeric;
 /// # fn main() {
 ///  fn alphabetic(chr: char) -> bool { (chr >= 0x41 as char && chr <= 0x5A as char) || (chr >= 0x61 as char && chr <= 0x7A as char) }
 ///  named!( alpha<&str,&str>, take_while1_s!( alphabetic ) );
 ///
 ///  let r = alpha("abcd\nefgh");
-///  assert_eq!(r,Ok(("\nefgh", "abcd")));
+///  assert_eq!(r, Ok(("\nefgh", "abcd")));
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_while1` instead")]
 macro_rules! take_while1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     take_while1!($input, $submac!($($args)*))
@@ -187,6 +193,7 @@ macro_rules! take_while1_s (
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_till` instead")]
 macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -203,6 +210,7 @@ macro_rules! take_till_s (
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_till1` instead")]
 macro_rules! take_till1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -217,6 +225,7 @@ macro_rules! take_till1_s (
 /// `take_until_and_consume_s!(&str) => &str -> IResult<&str, &str>`
 /// generates a parser consuming all chars until the specified string is found and consumes it
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_until_and_consume` instead")]
 macro_rules! take_until_and_consume_s (
   ($input:expr, $substr:expr) => (
     {
@@ -228,6 +237,7 @@ macro_rules! take_until_and_consume_s (
 /// `take_until_s!(&str) => &str -> IResult<&str, &str>`
 /// generates a parser consuming all chars until the specified string is found and leaves it in the remaining input
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_until` instead")]
 macro_rules! take_until_s (
   ($input:expr, $substr:expr) => (
     {
@@ -403,7 +413,7 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&"123"[..], &b[..])));
     assert_eq!(

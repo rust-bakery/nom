@@ -68,7 +68,7 @@ pub enum Needed {
   Size(usize)
 }
 
-// if the "verbose-errors" feature is active
+// if the "verbose-errors" feature is inactive
 pub enum Context<I, E = u32> {
   Code(I, ErrorKind<E>),
 }
@@ -142,7 +142,7 @@ case:
 ```rust,ignore
 match result {
   Ok((remaining, value)) => { ... },
-  Err(Err::Incomplete(needed) => { ... },
+  Err(Err::Incomplete(needed)) => { ... },
   Err(Err::Error(e)) | Err(Err::Failure(e)) => { ... }
 }
 ```

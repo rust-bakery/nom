@@ -108,16 +108,16 @@ macro_rules! char (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        let b = c.clone().as_char() == $c;
-        (c, b)
+        let b = c.as_char() == $c;
+        b
       }) {
-        None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => {
+        None        => $crate::need_more($i, Needed::Size(1)),
+        Some(false) => {
           let e: $crate::ErrorKind<u32> = $crate::ErrorKind::Char;
           Err(Err::Error($crate::Context::Code($i, e)))
         },
         //the unwrap should be safe here
-        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
+        Some(true)  => Ok(( $i.slice($c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
     }
   );
@@ -206,6 +206,18 @@ mod tests {
 
     let b = &"cde"[..];
     assert_eq!(f(b), Ok((&"de"[..], 'c')));
+  }
+
+  use types::CompleteStr;
+  #[test]
+  fn complete_char() {
+    named!(f<CompleteStr, char>, char!('c'));
+
+    let a = CompleteStr("abcd");
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
+
+    let b = CompleteStr("cde");
+    assert_eq!(f(b), Ok((CompleteStr("de"), 'c')));
   }
 
   #[test]

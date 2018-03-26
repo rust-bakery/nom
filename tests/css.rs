@@ -3,9 +3,9 @@ extern crate nom;
 
 #[derive(Debug, PartialEq)]
 pub struct Color {
-  pub red:   u8,
+  pub red: u8,
   pub green: u8,
-  pub blue:  u8,
+  pub blue: u8,
 }
 
 fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
@@ -38,9 +38,9 @@ fn parse_color() {
     Ok((
       "",
       Color {
-        red:   47,
+        red: 47,
         green: 20,
-        blue:  223,
+        blue: 223,
       }
     ))
   );

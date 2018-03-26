@@ -12,7 +12,7 @@ use std::boxed::Box;
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 use internal::*;
-use traits::{AsChar, InputIter, InputLength, InputTake};
+use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use traits::{need_more, need_more_err, AtEof};
 use std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
@@ -180,10 +180,8 @@ pub fn is_space(chr: u8) -> bool {
 /// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<T>(input: T) -> IResult<T, T, u32>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::Item: AsChar,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   alpha1(input)
 }
@@ -191,52 +189,26 @@ where
 /// Recognizes zero or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha0<T>(input: T) -> IResult<T, T, u32>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_alpha()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_alpha())
 }
 
 /// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha1<T>(input: T) -> IResult<T, T, u32>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_alpha()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Alpha::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::Alpha::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_alpha(), ErrorKind::Alpha)
 }
 
 /// Recognizes one or more numerical characters: 0-9
 pub fn digit<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   digit1(input)
 }
@@ -244,51 +216,26 @@ where
 /// Recognizes zero or more numerical characters: 0-9
 pub fn digit0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_dec_digit()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_dec_digit())
 }
+
 /// Recognizes one or more numerical characters: 0-9
 pub fn digit1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_dec_digit()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Digit::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::Digit::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_dec_digit(), ErrorKind::Digit)
 }
 
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   hex_digit1(input)
 }
@@ -296,57 +243,25 @@ where
 /// Recognizes zero or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_hex_digit()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_hex_digit())
 }
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_hex_digit()) {
-    Some(0) => Err(Err::Error(error_position!(
-      input,
-      ErrorKind::HexDigit::<u32>
-    ))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(
-            input,
-            ErrorKind::HexDigit::<u32>
-          )))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_hex_digit(), ErrorKind::HexDigit)
 }
 
 /// Recognizes one or more octal characters: 0-7
 pub fn oct_digit<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   oct_digit1(input)
 }
@@ -354,58 +269,26 @@ where
 /// Recognizes zero or more octal characters: 0-7
 pub fn oct_digit0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_oct_digit()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_oct_digit())
 }
 
 /// Recognizes one or more octal characters: 0-7
 pub fn oct_digit1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_oct_digit()) {
-    Some(0) => Err(Err::Error(error_position!(
-      input,
-      ErrorKind::OctDigit::<u32>
-    ))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(
-            input,
-            ErrorKind::OctDigit::<u32>
-          )))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
 /// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof + InputTake,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   alphanumeric1(input)
 }
@@ -413,50 +296,25 @@ where
 /// Recognizes zero or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_alphanum()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_alphanum())
 }
 /// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof + InputTake,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_alphanum()) {
-    Some(0) => Err(Err::Error(error_position!(
-      input,
-      ErrorKind::AlphaNumeric::<u32>
-    ))),
-    Some(n) => Ok(input.take_split(n)),
-    None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_alphanum(), ErrorKind::AlphaNumeric)
 }
 
 /// Recognizes one or more spaces and tabs
 pub fn space<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   space1(input)
 }
@@ -464,57 +322,34 @@ where
 /// Recognizes zero or more spaces and tabs
 pub fn space0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  match input.position(|item| {
+  input.split_at_position(|item| {
     let c = item.clone().as_char();
     !(c == ' ' || c == '\t')
-  }) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  })
 }
 /// Recognizes one or more spaces and tabs
 pub fn space1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  match input.position(|item| {
-    let c = item.clone().as_char();
-    !(c == ' ' || c == '\t')
-  }) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Space::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::Space::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(
+    |item| {
+      let c = item.clone().as_char();
+      !(c == ' ' || c == '\t')
+    },
+    ErrorKind::Space,
+  )
 }
 
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
 pub fn multispace<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   multispace1(input)
 }
@@ -522,55 +357,27 @@ where
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds
 pub fn multispace0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  match input.position(|item| {
+  input.split_at_position(|item| {
     let c = item.clone().as_char();
     !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
-  }) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  })
 }
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
 pub fn multispace1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  match input.position(|item| {
-    let c = item.clone().as_char();
-    !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
-  }) {
-    Some(0) => Err(Err::Error(error_position!(
-      input,
-      ErrorKind::MultiSpace::<u32>
-    ))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(
-            input,
-            ErrorKind::MultiSpace::<u32>
-          )))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(
+    |item| {
+      let c = item.clone().as_char();
+      !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
+    },
+    ErrorKind::MultiSpace,
+  )
 }
 
 pub fn sized_buffer(input: &[u8]) -> IResult<&[u8], &[u8]> {
@@ -899,10 +706,11 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
 pub fn recognize_float<T>(input: T) -> IResult<T, T, u32>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
   T: Clone + Offset,
-  <T as InputIter>::Item: AsChar + Clone,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputIter + AtEof,
+  <T as InputIter>::Item: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar
 {
   recognize!(input,
     tuple!(

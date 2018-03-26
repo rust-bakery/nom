@@ -196,7 +196,6 @@ to handle the breaking changes.**
 There are a few compilation features:
 
 * `std`: (activated by default) if disabled, nom can work in `no_std` builds
-* `nightly`: enables helpful error messages if you use a nightly compiler
 * `regexp`: enables regular expression parsers with the `regex` crate
 * `regexp_macros`: enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
 * `verbose-errors`: accumulate error codes and input positions as you backtrack through the parser tree. This gives you precise information about which part of the parser was affected by which part of the input
@@ -215,6 +214,7 @@ Here is a list of known projects using nom:
 
 - Text file formats:
   * [Ceph Crush](https://github.com/cholcombe973/crushtool)
+  * [Cronenberg](https://github.com/ayrat555/cronenberg)
   * [XFS Runtime Stats](https://github.com/ChrisMacNaughton/xfs-rs)
   * [CSV](https://github.com/GuillaumeGomez/csv-parser)
   * [FASTQ](https://github.com/elij/fastq.rs)
@@ -224,6 +224,7 @@ Here is a list of known projects using nom:
   * [torrc configuration file](https://github.com/frewsxcv/torrc-rs)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
 - Programming languages:
+  * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
   * [SQL](https://github.com/ms705/nom-sql)
@@ -235,7 +236,6 @@ Here is a list of known projects using nom:
   * [midi](https://github.com/derekdreery/nom-midi-rs)
 - Document formats:
   * [TAR](https://github.com/Keruspe/tar-parser.rs)
-  * [torrent files](https://github.com/jag426/bittorrent)
   * [GZ](https://github.com/nharward/nom-gzip)
 - Database formats:
   * [Redis database files](https://github.com/badboy/rdb-rs)

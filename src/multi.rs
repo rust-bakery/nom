@@ -216,9 +216,12 @@ macro_rules! separated_nonempty_list_complete {
 }
 
 /// `many0!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// Applies the parser 0 or more times and returns the list of results in a Vec
+/// Applies the parser 0 or more times and returns the list of results in a Vec.
 ///
-/// the embedded parser may return Incomplete
+/// The embedded parser may return Incomplete.
+///
+/// `many0` will only return `Error` if the embedded parser does not consume any input
+/// (to avoid infinite loops).
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -233,7 +236,7 @@ macro_rules! separated_nonempty_list_complete {
 ///  assert_eq!(multi(&b[..]),Ok((&b"azerty"[..], Vec::new())));
 /// # }
 /// ```
-/// 0 or more
+///
 #[macro_export]
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -248,14 +251,6 @@ macro_rules! many0(
       loop {
         let input_ = input.clone();
         match $submac!(input_, $($args)*) {
-          Err(Err::Error(_))      => {
-            ret = Ok((input, res));
-            break;
-          },
-          Err(e) => {
-            ret = Err(e);
-            break;
-          },
           Ok((i, o))              => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
@@ -270,7 +265,15 @@ macro_rules! many0(
             res.push(o);
 
             input = i;
-          }
+          },
+          Err(Err::Error(_))      => {
+            ret = Ok((input, res));
+            break;
+          },
+          Err(e) => {
+            ret = Err(e);
+            break;
+          },
         }
       }
 
@@ -805,7 +808,7 @@ macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::Err;
+      use $crate::{Err,AtEof};
 
       let ret;
       let f         = $f;
@@ -814,6 +817,20 @@ macro_rules! fold_many0(
 
       loop {
         match $submac!(input, $($args)*) {
+          Ok((i, o)) => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i == input {
+              if i.at_eof() {
+                ret = Ok((input, res));
+              } else {
+                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0)));
+              }
+              break;
+            }
+
+            res = f(res, o);
+            input = i;
+          },
           Err(Err::Error(_)) => {
             ret = Ok((input, res));
             break;
@@ -822,18 +839,6 @@ macro_rules! fold_many0(
             ret = Err(e);
             break;
           },
-          Ok((i, o)) => {
-            // loop trip must always consume (otherwise infinite loops)
-            if i == input {
-              ret = Err(Err::Error(
-                error_position!(input, $crate::ErrorKind::Many0)
-              ));
-              break;
-            }
-
-            res = f(res, o);
-            input = i;
-          }
         }
       }
 
@@ -874,7 +879,7 @@ macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,InputLength,Context};
+      use $crate::{Err,Needed,InputLength,Context,AtEof};
 
       match $submac!($i, $($args)*) {
         Err(Err::Error(_))      => Err(Err::Error(
@@ -907,6 +912,9 @@ macro_rules! fold_many1(
               },
               Ok((i, o)) => {
                 if i.input_len() == input.input_len() {
+                  if !i.at_eof() {
+                    failure = ::std::option::Option::Some(error_position!(i, $crate::ErrorKind::Many1));
+                  }
                   break;
                 }
                 acc = f(acc, o);
@@ -916,7 +924,7 @@ macro_rules! fold_many1(
           }
 
           match failure {
-            ::std::option::Option::Some(e) => Err(Err::Failure(e)),
+            ::std::option::Option::Some(e) => Err(Err::Error(e)),
             ::std::option::Option::None    => match incomplete {
               ::std::option::Option::Some(i) => $crate::need_more($i, i),
               ::std::option::Option::None    => Ok((input, acc))
@@ -1227,10 +1235,10 @@ mod tests {
     );
   }
 
-  #[cfg(feature = "nightly")]
+  #[cfg(nightly)]
   use test::Bencher;
 
-  #[cfg(feature = "nightly")]
+  #[cfg(nightly)]
   #[bench]
   fn many0_bench(b: &mut Bencher) {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));

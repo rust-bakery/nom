@@ -505,8 +505,10 @@ macro_rules! complete (
   );
 );
 
-/// A bit like `std::try!`, this macro will return the remaining input and parsed value if the child parser returned `Done`,
-/// and will do an early return for `Error` and `Incomplete`
+/// A bit like `std::try!`, this macro will return the remaining input and
+/// parsed value if the child parser returned `Ok`, and will do an early
+/// return for the `Err` side.
+///
 /// this can provide more flexibility than `do_parse!` if needed
 ///
 /// ```
@@ -582,15 +584,18 @@ macro_rules! map_res (
       use $crate::Err;
 
       let i_ = $i.clone();
-      ($submac!(i_, $($args)*)).and_then(|(i,o)| {
-        match $submac2!(o, $($args2)*) {
-          Ok(output) => Ok((i, output)),
-          Err(_) => {
-            let e = $crate::ErrorKind::MapRes;
-            Err(Err::Error(error_position!($i, e)))
-          },
-        }
-      })
+      match $submac!(i_, $($args)*) {
+        Ok((i,o)) => {
+          match $submac2!(o, $($args2)*) {
+            Ok(output) => Ok((i, output)),
+            Err(_) => {
+              let e = $crate::ErrorKind::MapRes;
+              Err(Err::Error(error_position!($i, e)))
+            },
+          }
+        },
+        Err(e) => Err(e),
+      }
     }
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
@@ -758,7 +763,7 @@ macro_rules! value (
 );
 
 /// `expr_res!(Result<E,O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Result<T,E> and returns a IResult::Done(I,T) if Ok
+/// evaluate an expression that returns a Result<T,E> and returns a Ok((I,T)) if Ok
 ///
 /// See expr_opt for an example
 #[macro_export]
@@ -766,7 +771,7 @@ macro_rules! expr_res (
   ($i:expr, $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,ErrorKind};
 
       match $e {
         Ok(output) => Ok(($i, output)),
@@ -777,7 +782,7 @@ macro_rules! expr_res (
 );
 
 /// `expr_opt!(Option<O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Option<T> and returns a IResult::Done(I,T) if Some
+/// evaluate an expression that returns a Option<T> and returns a Ok((I,T)) if Some
 ///
 /// Useful when doing computations in a chain
 ///
@@ -811,7 +816,7 @@ macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
       use ::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,ErrorKind};
 
       match $e {
         ::std::option::Option::Some(output) => Ok(($i, output)),
@@ -874,7 +879,6 @@ macro_rules! opt(
 ///
 /// ```ignore
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # #[cfg(feature = "verbose-errors")]
 /// # use nom::Err::Position;
 /// # use nom::ErrorKind;

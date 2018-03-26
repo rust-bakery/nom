@@ -65,7 +65,7 @@ If possible provide:
 
 ### Coding style
 
-The normal rust coding style is suggested as enforced by [rustfmt][cs1] is suggested.
+The normal rust coding style is checked by [rustfmt][cs1].
 Readable code is the first step on having good and safe libraries.
 
 [cs1]: https://github.com/rust-lang-nursery/rustfmt

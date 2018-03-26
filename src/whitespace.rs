@@ -44,7 +44,18 @@
 //! macro_rules! sp (
 //!   ($i:expr, $($args:tt)*) => (
 //!     {
-//!       sep!($i, space, $($args)*)
+//!       use nom::Convert;
+//!       use nom::Err;
+//!
+//!       match sep!($i, space, $($args)*) {
+//!         Err(e) => Err(e),
+//!         Ok((i1,o))    => {
+//!           match space(i1) {
+//!             Err(e) => Err(Err::convert(e)),
+//!             Ok((i2,_))    => Ok((i2, o))
+//!           }
+//!         }
+//!       }
 //!     }
 //!   )
 //! );
@@ -93,20 +104,12 @@ macro_rules! wrap_sep (
 
     let sep_res = ($separator)($i);
     match sep_res {
-      Err(e) => Err(Err::convert(e)),
       Ok((i1,_))    => {
-        let res = match $submac!(i1, $($args)*) {
-          Err(e) => Err(e),
-          Ok((i2,o))    => {
-            match ($separator)(i2) {
-              Err(e) => Err(Err::convert(e)),
-              Ok((i3,_))    => Ok((i3, o))
-            }
-          }
-        };
+        let res = $submac!(i1, $($args)*);
         unify_types(&sep_res, &res);
         res
-      }
+      },
+      Err(e) => Err(Err::convert(e)),
     }
   });
   ($i:expr, $separator:expr, $f:expr) => (
@@ -711,28 +714,9 @@ macro_rules! separated_list_sep (
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
-      use ::std::result::Result::*;
-      use $crate::{Err,Needed, AtEof};
-
-      use $crate::{AsChar,InputLength,InputIter,Slice,InputTake};
-      match ($i).iter_elements().position(|item| {
-        let i = item.as_char();
-        for c in ($arr).iter_elements() {
-          if c.as_char() == i { return false; }
-        }
-        true
-      }) {
-        ::std::option::Option::Some(index) => {
-          Ok($i.take_split(index))
-        },
-        ::std::option::Option::None        => {
-          if ($i).at_eof() {
-            Ok($i.take_split(($i).input_len()))
-          } else {
-            Err(Err::Incomplete(Needed::Unknown))
-          }
-        }
-      }
+      use $crate::{ErrorKind, FindToken, InputTakeAtPosition};
+      let input = $i;
+      input.split_at_position(|c| !$arr.find_token(c))
     }
   );
 );
@@ -830,6 +814,9 @@ macro_rules! sep (
   ($i:expr,  $separator:path, many1 ! ($($rest:tt)*) ) => {
     many1!($i, wrap_sep!($separator, $($rest)*))
   };
+  ($i:expr, $separator:path, return_error!( $($args:tt)* )) => {
+    return_error!($i, wrap_sep!($separator, $($args)*))
+  };
 //FIXME: missing separated_nonempty_list,
 // many_till, many_m_n, count, count_fixed, fold_many0, fold_many1,
 // fold_many_m_n
@@ -841,16 +828,21 @@ macro_rules! sep (
   };
 );
 
-use std::ops::{Range, RangeFrom, RangeTo};
 use internal::IResult;
+use traits::{AsChar, FindToken, InputTakeAtPosition};
 #[allow(unused_imports)]
-pub fn sp<T>(input: T) -> IResult<T, T>
+pub fn sp<'a, T>(input: T) -> IResult<T, T>
 where
-  T: ::traits::Slice<Range<usize>> + ::traits::Slice<RangeFrom<usize>> + ::traits::Slice<RangeTo<usize>>,
-  T: ::traits::InputIter + ::traits::InputLength + ::traits::InputTake + ::traits::AtEof + Clone,
-  <T as ::traits::InputIter>::Item: ::traits::AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
+  &'a str: FindToken<<T as InputTakeAtPosition>::Item>,
 {
-  eat_separator!(input, &b" \t\r\n"[..])
+  input.split_at_position(|item| {
+    let c = item.clone().as_char();
+    !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
+  })
+  //this could be written as followed, but not using FindToken is faster
+  //eat_separator!(input, " \t\r\n")
 }
 
 /// `ws!(I -> IResult<I,O>) => I -> IResult<I, O>`
@@ -884,7 +876,19 @@ macro_rules! ws (
   ($i:expr, $($args:tt)*) => (
     {
       use $crate::sp;
-      sep!($i, sp, $($args)*)
+      use $crate::Convert;
+      use $crate::Err;
+      use ::std::result::Result::*;
+
+      match sep!($i, sp, $($args)*) {
+        Err(e) => Err(e),
+        Ok((i1,o))    => {
+          match (sp)(i1) {
+            Err(e) => Err(Err::convert(e)),
+            Ok((i2,_))    => Ok((i2, o))
+          }
+        }
+      }
     }
   )
 );
@@ -1035,7 +1039,7 @@ mod tests {
       Err(Err::Error(error_node_position!(
         &b"efg  xyzabcdefghi"[..],
         ErrorKind::Permutation,
-        error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)
+        error_position!(&b"  xyzabcdefghi"[..], ErrorKind::Permutation)
       )))
     );
 

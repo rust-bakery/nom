@@ -420,6 +420,7 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
 /// indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug,PartialEq,Eq,Hash,Clone)]
+#[allow(deprecated)]
 pub enum ErrorKind<E = u32> {
   Custom(E),
   Tag,
@@ -468,13 +469,19 @@ pub enum ErrorKind<E = u32> {
   Fix,
   Escaped,
   EscapedTransform,
+  #[deprecated(since = "4.0.0", note = "Please use `Tag` instead")]
   TagStr,
+  #[deprecated(since = "4.0.0", note = "Please use `IsNot` instead")]
   IsNotStr,
+  #[deprecated(since = "4.0.0", note = "Please use `IsA` instead")]
   IsAStr,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeWhile1` instead")]
   TakeWhile1Str,
   NonEmpty,
   ManyMN,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeUntilAndConsume` instead")]
   TakeUntilAndConsumeStr,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeUntil` instead")]
   TakeUntilStr,
   Not,
   Permutation,
@@ -485,6 +492,7 @@ pub enum ErrorKind<E = u32> {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+#[allow(deprecated)]
 pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
   match *e {
     ErrorKind::Custom(_)                 => 0,
@@ -553,6 +561,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
 
 impl<E> ErrorKind<E> {
   #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[allow(deprecated)]
   pub fn description(&self) -> &str {
     match *self {
       ErrorKind::Custom(_)                 => "Custom error",
@@ -633,6 +642,7 @@ pub trait Convert<T> {
 
 impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
   #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[allow(deprecated)]
   fn convert(e: ErrorKind<F>) -> Self {
     match e {
       ErrorKind::Custom(c)                 => ErrorKind::Custom(E::from(c)),
