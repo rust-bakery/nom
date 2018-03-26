@@ -230,3 +230,7 @@ fn issue_721() {
   assert_eq!(parse_to!("1234", u16), Ok(("", 1234)));
   assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
 }
+
+named!(issue_717<&[u8], Vec<&[u8]> >,
+  separated_list!(tag!([0x0]), is_not!([0x0u8]))
+);

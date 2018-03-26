@@ -993,7 +993,7 @@ impl<'a> AtEof for &'a str {
   }
 }
 
-macro_rules! input_length_array_impls {
+macro_rules! array_impls {
   ($($N:expr)+) => {
     $(
       impl InputLength for [u8; $N] {
@@ -1033,11 +1033,23 @@ macro_rules! input_length_array_impls {
           self.compare_no_case(&t[..])
         }
       }
+
+      impl FindToken<u8> for [u8; $N] {
+        fn find_token(&self, token: u8) -> bool {
+          memchr::memchr(token, &self[..]).is_some()
+        }
+      }
+
+      impl<'a> FindToken<&'a u8> for [u8; $N] {
+        fn find_token(&self, token: &u8) -> bool {
+          memchr::memchr(*token, &self[..]).is_some()
+        }
+      }
     )+
   };
 }
 
-input_length_array_impls! {
+array_impls! {
      0  1  2  3  4  5  6  7  8  9
     10 11 12 13 14 15 16 17 18 19
     20 21 22 23 24 25 26 27 28 29
