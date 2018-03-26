@@ -817,10 +817,10 @@ macro_rules! permutation_iterator (
   });
 
   ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident?) => (
-    permutation_iterator!($it, $i, $all_done, $res, call!($e));
+    permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e));
   );
   ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident) => (
-    permutation_iterator!($it, $i, $all_done, $res, call!($e));
+    permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e));
   );
 
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )?) => {
