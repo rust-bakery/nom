@@ -54,6 +54,7 @@ impl Debug for Expr {
   }
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(parens< CompleteStr, Expr >, delimited!(
     delimited!(opt!(multispace), tag!("("), opt!(multispace)),
     map!(map!(expr, Box::new), Expr::Paren),
@@ -61,6 +62,7 @@ named!(parens< CompleteStr, Expr >, delimited!(
   )
 );
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(factor< CompleteStr, Expr >, alt_complete!(
     map!(
       map_res!(
@@ -85,6 +87,7 @@ fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
   })
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(term< CompleteStr, Expr >, do_parse!(
     initial: factor >>
     remainder: many0!(
@@ -96,6 +99,7 @@ named!(term< CompleteStr, Expr >, do_parse!(
     (fold_exprs(initial, remainder))
 ));
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(expr< CompleteStr, Expr >, do_parse!(
     initial: term >>
     remainder: many0!(
@@ -107,6 +111,7 @@ named!(expr< CompleteStr, Expr >, do_parse!(
     (fold_exprs(initial, remainder))
 ));
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn factor_test() {
   assert_eq!(
@@ -116,6 +121,7 @@ fn factor_test() {
 }
 
 #[test]
+#[cfg(any(feature = "alloc", feature = "std"))]
 fn term_test() {
   assert_eq!(
     term(CompleteStr(" 3 *  5   ")).map(|(i, x)| (i, format!("{:?}", x))),
@@ -124,6 +130,7 @@ fn term_test() {
 }
 
 #[test]
+#[cfg(any(feature = "alloc", feature = "std"))]
 fn expr_test() {
   assert_eq!(
     expr(CompleteStr(" 1 + 2 *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
@@ -139,6 +146,7 @@ fn expr_test() {
   );
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn parens_test() {
   assert_eq!(

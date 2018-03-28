@@ -222,21 +222,21 @@ macro_rules! separated_nonempty_list_complete {
 ///
 /// `many0` will only return `Error` if the embedded parser does not consume any input
 /// (to avoid infinite loops).
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # fn main() {
-///  named!(multi<&[u8], Vec<&[u8]> >, many0!( tag!( "abcd" ) ) );
-///
-///  let a = b"abcdabcdefgh";
-///  let b = b"azerty";
-///
-///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
-///  assert_eq!(multi(&b[..]),Ok((&b"azerty"[..], Vec::new())));
-/// # }
-/// ```
-///
+
+#[cfg_attr(doc = r##"
+ ```
+ # #[macro_use] extern crate nom;
+ # fn main() {
+  named!(multi<&[u8], Vec<&[u8]> >, many0!( tag!( "abcd" ) ) );
+
+  let a = b"abcdabcdefgh";
+  let b = b"azerty";
+
+  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
+  assert_eq!(multi(&b[..]),Ok((&b"azerty"[..], Vec::new())));
+ # }
+ ```"##, any(feature = "alloc", feature = "std"))]
 #[macro_export]
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -290,21 +290,22 @@ macro_rules! many0(
 ///
 /// the embedded parser may return Incomplete
 ///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::Err;
-/// # use nom::ErrorKind;
-/// # fn main() {
-///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
-///
-///  let a = b"abcdabcdefgh";
-///  let b = b"azerty";
-///
-///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
-///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
-/// # }
-/// ```
+#[cfg_attr(doc = r##"```
+
+ # #[macro_use] extern crate nom;
+ # use nom::Err;
+ # use nom::ErrorKind;
+ # fn main() {
+  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
+
+  let a = b"abcdabcdefgh";
+  let b = b"azerty";
+
+  let res = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
+  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
+
+```"##, any(feature = "alloc", feature = "std"))]
 #[macro_export]
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -1242,7 +1243,11 @@ mod tests {
   #[bench]
   fn many0_bench(b: &mut Bencher) {
     named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
-    b.iter(|| multi(&b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..]));
+    b.iter(|| {
+      multi(
+        &b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..],
+      )
+    });
   }
 
   #[test]

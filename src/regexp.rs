@@ -570,10 +570,9 @@ mod tests {
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
     assert_eq!(
       rm("blah"),
-      Err(Err::Error(error_position!(
-        &"blah"[..],
-        ErrorKind::RegexpMatch::<u32>
-      ),))
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>),
+      ))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
@@ -585,10 +584,9 @@ mod tests {
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
     assert_eq!(
       rm("blah"),
-      Err(Err::Error(error_position!(
-        &"blah"[..],
-        ErrorKind::RegexpMatch::<u32>
-      ),))
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>),
+      ))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
@@ -599,10 +597,9 @@ mod tests {
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
     assert_eq!(
       rm("blah"),
-      Err(Err::Error(error_position!(
-        &"blah"[..],
-        ErrorKind::RegexpFind::<u32>
-      ),))
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>),
+      ))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
@@ -614,10 +611,9 @@ mod tests {
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
     assert_eq!(
       rm("blah"),
-      Err(Err::Error(error_position!(
-        &"blah"[..],
-        ErrorKind::RegexpFind::<u32>
-      ),))
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>),
+      ))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }

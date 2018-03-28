@@ -519,7 +519,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(i) => Ok((&self[i..], &self[..i])),
-      None    => Err(Err::Incomplete(Needed::Size(1)))
+      None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 
@@ -530,7 +530,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(0) => Err(Err::Error(Context::Code(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
-      None    => Err(Err::Incomplete(Needed::Size(1)))
+      None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 }
@@ -586,8 +586,8 @@ impl<'a> InputTakeAtPosition for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i,_)) => Ok((&self[i..], &self[..i])),
-      None        => Err(Err::Incomplete(Needed::Size(1)))
+      Some((i, _)) => Ok((&self[i..], &self[..i])),
+      None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 
@@ -596,9 +596,9 @@ impl<'a> InputTakeAtPosition for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0,_)) => Err(Err::Error(Context::Code(self, e))),
-      Some((i,_)) => Ok((&self[i..], &self[..i])),
-      None        => Err(Err::Incomplete(Needed::Size(1)))
+      Some((0, _)) => Err(Err::Error(Context::Code(self, e))),
+      Some((i, _)) => Ok((&self[i..], &self[..i])),
+      None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 }
@@ -611,7 +611,7 @@ impl<'a> InputTakeAtPosition for CompleteStr<'a> {
     P: Fn(Self::Item) -> bool,
   {
     match self.0.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i,_)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
+      Some((i, _)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
       None => {
         let (i, o) = self.0.take_split(self.0.len());
         Ok((CompleteStr(i), CompleteStr(o)))
@@ -624,8 +624,8 @@ impl<'a> InputTakeAtPosition for CompleteStr<'a> {
     P: Fn(Self::Item) -> bool,
   {
     match self.0.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0,_)) => Err(Err::Error(Context::Code(CompleteStr(self.0), e))),
-      Some((i,_)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
+      Some((0, _)) => Err(Err::Error(Context::Code(CompleteStr(self.0), e))),
+      Some((i, _)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
       None => {
         if self.0.len() == 0 {
           Err(Err::Error(Context::Code(CompleteStr(self.0), e)))
@@ -703,10 +703,16 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     let other = &t[..m];
 
     if !reduced.iter().zip(other).all(|(a, b)| match (*a, *b) {
-      (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
-      (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122) | (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
+      (0...64, 0...64) |
+      (91...96, 91...96) |
+      (123...255, 123...255) => a == b,
+      (65...90, 65...90) |
+      (97...122, 97...122) |
+      (65...90, 97...122) |
+      (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
       _ => false,
-    }) {
+    })
+    {
       CompareResult::Error
     } else if m < blen {
       CompareResult::Incomplete
@@ -748,10 +754,9 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   #[cfg(feature = "alloc")]
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    let pos = self
-      .chars()
-      .zip(t.chars())
-      .position(|(a, b)| a.to_lowercase().zip(b.to_lowercase()).any(|(a, b)| a != b));
+    let pos = self.chars().zip(t.chars()).position(|(a, b)| {
+      a.to_lowercase().zip(b.to_lowercase()).any(|(a, b)| a != b)
+    });
 
     match pos {
       Some(_) => CompareResult::Error,

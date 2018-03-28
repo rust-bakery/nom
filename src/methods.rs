@@ -390,11 +390,13 @@ mod tests {
           output
         );
       }
-      other => panic!(
+      other => {
+        panic!(
         "`Parser.tag_abc` didn't succeed when it should have. \
          Got `{:?}`.",
         other
-      ),
+      )
+      }
     }
   }
 
@@ -420,11 +422,13 @@ mod tests {
           output
         );
       }
-      other => panic!(
+      other => {
+        panic!(
         "`Parser.tag_bcd` didn't succeed when it should have. \
          Got `{:?}`.",
         other
-      ),
+      )
+      }
     }
   }
 
@@ -450,11 +454,13 @@ mod tests {
           output
         );
       }
-      other => panic!(
+      other => {
+        panic!(
         "`Parser.tag_hij` didn't succeed when it should have. \
          Got `{:?}`.",
         other
-      ),
+      )
+      }
     }
   }
 
@@ -480,11 +486,13 @@ mod tests {
           output
         );
       }
-      other => panic!(
+      other => {
+        panic!(
         "`Parser.tag_ijk` didn't succeed when it should have. \
          Got `{:?}`.",
         other
-      ),
+      )
+      }
     }
   }
   #[test]
@@ -509,11 +517,13 @@ mod tests {
           output
         );
       }
-      other => panic!(
+      other => {
+        panic!(
         "`Parser.simple_call` didn't succeed when it should have. \
          Got `{:?}`.",
         other
-      ),
+      )
+      }
     }
   }
 
@@ -545,11 +555,13 @@ mod tests {
           p.bcd
         );
       }
-      other => panic!(
+      other => {
+        panic!(
         "`Parser.use_apply` didn't succeed when it should have. \
          Got `{:?}`.",
         other
-      ),
+      )
+      }
     }
   }
 
@@ -574,11 +586,13 @@ mod tests {
           output
         );
       }
-      other => panic!(
+      other => {
+        panic!(
         "`Parser.simple_peek` didn't succeed when it should have. \
          Got `{:?}`.",
         other
-      ),
+      )
+      }
     }
   }
 
@@ -610,11 +624,13 @@ mod tests {
           p.bcd
         );
       }
-      other => panic!(
+      other => {
+        panic!(
         "`Parser.simple_chain` didn't succeed when it should have. \
          Got `{:?}`.",
         other
-      ),
+      )
+      }
     }
   }
 }

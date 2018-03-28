@@ -845,10 +845,9 @@ mod tests {
     );
     assert_eq!(
       delimited_abc_def_ghi(&b"xxxdefghi"[..]),
-      Err(Err::Error(error_position!(
-        &b"xxxdefghi"[..],
-        ErrorKind::Tag
-      ),))
+      Err(Err::Error(
+        error_position!(&b"xxxdefghi"[..], ErrorKind::Tag),
+      ))
     );
     assert_eq!(
       delimited_abc_def_ghi(&b"abcxxxghi"[..]),

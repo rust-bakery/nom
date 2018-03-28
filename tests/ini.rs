@@ -35,6 +35,7 @@ named!(key_value    <CompleteByteSlice,(&str,&str)>,
   )
 );
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(keys_and_values<CompleteByteSlice, HashMap<&str, &str> >,
   map!(
     many0!(terminated!(key_value, opt!(multispace))),
@@ -42,6 +43,7 @@ named!(keys_and_values<CompleteByteSlice, HashMap<&str, &str> >,
   )
 );
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(category_and_keys<CompleteByteSlice,(&str,HashMap<&str,&str>)>,
   do_parse!(
     category: category         >>
@@ -51,6 +53,7 @@ named!(category_and_keys<CompleteByteSlice,(&str,HashMap<&str,&str>)>,
   )
 );
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(categories<CompleteByteSlice, HashMap<&str, HashMap<&str,&str> > >,
   map!(
     many0!(
@@ -148,6 +151,7 @@ key = value2",
   assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn parse_multiple_keys_and_values_test() {
   let ini_file = CompleteByteSlice(
@@ -173,7 +177,8 @@ key = value2
   assert_eq!(res, Ok((ini_without_key_value, expected)));
 }
 
-#[test]
+
+#[cfg(any(feature = "alloc", feature = "std"))]#[test]
 fn parse_category_then_multiple_keys_and_values_test() {
   //FIXME: there can be an empty line or a comment line after a category
   let ini_file = CompleteByteSlice(
@@ -200,6 +205,7 @@ key = value2
   assert_eq!(res, Ok((ini_after_parser, ("abcd", expected_h))));
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn parse_multiple_categories_test() {
   let ini_file = CompleteByteSlice(

@@ -197,7 +197,8 @@ pub fn add_error_pattern<'a, I: Clone + Hash + Eq, O, E: Clone + Hash + Eq>(
   message: &'a str,
 ) -> bool {
   match res {
-    Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+    Err(Err::Error(e)) |
+    Err(Err::Failure(e)) => {
       h.insert(error_to_list(&e), message);
       true
     }

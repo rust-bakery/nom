@@ -13,16 +13,22 @@ pub fn read_line(input: CompleteStr) -> IResult<CompleteStr, CompleteStr> {
   terminated!(input, alphanumeric, end_of_line)
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub fn read_lines(input: CompleteStr) -> IResult<CompleteStr, Vec<CompleteStr>> {
   many0!(input, read_line)
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[cfg(feature = "alloc")]
 #[test]
 fn read_lines_test() {
   let res = Ok((
     CompleteStr(""),
-    vec![CompleteStr("Duck"), CompleteStr("Dog"), CompleteStr("Cow")],
+    vec![
+      CompleteStr("Duck"),
+      CompleteStr("Dog"),
+      CompleteStr("Cow"),
+    ],
   ));
 
   assert_eq!(read_lines(CompleteStr("Duck\nDog\nCow\n")), res);

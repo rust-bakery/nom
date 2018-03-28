@@ -443,8 +443,8 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) + ((i[4] as u64) << 24)
-      + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
+    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
+      ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
     Ok((&i[8..], res))
   }
 }
@@ -533,8 +533,8 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) + ((i[3] as u64) << 24)
-      + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
+    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) +
+      ((i[3] as u64) << 24) + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
     Ok((&i[8..], res))
   }
 }
@@ -769,10 +769,9 @@ mod tests {
     let r2 = x(&b"abcefgh"[..]);
     assert_eq!(
       r2,
-      Err(Err::Error(error_position!(
-        &b"abcefgh"[..],
-        ErrorKind::TagClosure
-      ),))
+      Err(Err::Error(
+        error_position!(&b"abcefgh"[..], ErrorKind::TagClosure),
+      ))
     );
   }
 

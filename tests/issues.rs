@@ -48,6 +48,7 @@ named!(range<&[u8], Range>,
     )
 );
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[allow(dead_code)]
 named!(literal<&[u8], Vec<char> >,
     map!(
@@ -58,6 +59,7 @@ named!(literal<&[u8], Vec<char> >,
     )
 );
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn issue_58() {
   let _ = range(&b"abcd"[..]);
@@ -135,6 +137,7 @@ fn take_till_issue() {
   assert_eq!(nothing(b"abc"), Ok((&b"abc"[..], &b""[..])));
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(
   issue_498<Vec<&[u8]>>,
   separated_nonempty_list!(opt!(space), tag!("abcd"))
@@ -176,6 +179,7 @@ fn issue_655() {
 #[cfg(feature = "std")]
 named!(issue_666 <CompleteByteSlice, CompleteByteSlice>, dbg_dmp!(tag!("abc")));
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn issue_667() {
   use nom::alpha;
