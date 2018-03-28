@@ -411,10 +411,12 @@ macro_rules! alt_complete (
 /// side of pattern, like this:
 ///
 /// ```ignore
+///  named!(xyz, tag!("XYZ"));
+///  named!(num, tag!("123"));
 ///  named!(sw,
 ///    switch!(take!(4),
-///      b"abcd" => tag!("XYZ") |
-///      b"efgh" => tag!("123")
+///      b"abcd" => xyz |
+///      b"efgh" => 123
 ///    )
 ///  );
 /// ```
@@ -795,7 +797,7 @@ macro_rules! permutation_iterator (
     use $crate::lib::std::option::Option::*;
     use $crate::Err;
 
-    if acc!($it, $res) == None {
+    if acc!($it, $res).is_none() {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;
@@ -815,10 +817,10 @@ macro_rules! permutation_iterator (
   });
 
   ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident?) => (
-    permutation_iterator!($it, $i, $all_done, $res, call!($e));
+    permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e));
   );
   ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident) => (
-    permutation_iterator!($it, $i, $all_done, $res, call!($e));
+    permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e));
   );
 
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )?) => {
@@ -829,7 +831,7 @@ macro_rules! permutation_iterator (
     use $crate::lib::std::option::Option::*;
     use $crate::Err;
 
-    if acc!($it, $res) == None {
+    if acc!($it, $res).is_none() {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;

@@ -345,6 +345,10 @@ pub trait InputTake: Sized {
   fn take_split(&self, count: usize) -> (Self, Self);
 }
 
+fn star(r_u8: &u8) -> u8 {
+  *r_u8
+}
+
 impl<'a> InputIter for &'a [u8] {
   type Item = u8;
   type RawItem = u8;
@@ -357,7 +361,7 @@ impl<'a> InputIter for &'a [u8] {
   }
   #[inline]
   fn iter_elements(&self) -> Self::IterElem {
-    self.iter().map(|r_u8| *r_u8)
+    self.iter().map(star)
   }
   #[inline]
   fn position<P>(&self, predicate: P) -> Option<usize>
@@ -994,7 +998,7 @@ impl<'a> AtEof for &'a str {
   }
 }
 
-macro_rules! input_length_array_impls {
+macro_rules! array_impls {
   ($($N:expr)+) => {
     $(
       impl InputLength for [u8; $N] {
@@ -1034,11 +1038,23 @@ macro_rules! input_length_array_impls {
           self.compare_no_case(&t[..])
         }
       }
+
+      impl FindToken<u8> for [u8; $N] {
+        fn find_token(&self, token: u8) -> bool {
+          memchr::memchr(token, &self[..]).is_some()
+        }
+      }
+
+      impl<'a> FindToken<&'a u8> for [u8; $N] {
+        fn find_token(&self, token: &u8) -> bool {
+          memchr::memchr(*token, &self[..]).is_some()
+        }
+      }
     )+
   };
 }
 
-input_length_array_impls! {
+array_impls! {
      0  1  2  3  4  5  6  7  8  9
     10 11 12 13 14 15 16 17 18 19
     20 21 22 23 24 25 26 27 28 29
@@ -1085,6 +1101,21 @@ impl ExtendInto for str {
   #[inline]
   fn extend_into(&self, acc: &mut String) {
     acc.push_str(self);
+  }
+}
+
+#[cfg(feature = "std")]
+impl ExtendInto for char {
+  type Item = char;
+  type Extender = String;
+
+  #[inline]
+  fn new_builder(&self) -> String {
+    String::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut String) {
+    acc.push(*self);
   }
 }
 

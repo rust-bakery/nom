@@ -1,10 +1,11 @@
 //! Custom input types
 //!
 
-use traits::{AsBytes, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset, ParseTo, Slice};
+use traits::{AsBytes, AtEof, Compare, CompareResult, ExtendInto, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset,
+             ParseTo, Slice};
 
 use lib::std::str::{self, CharIndices, Chars, FromStr};
-use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use lib::std::ops::{Deref, Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::iter::{Enumerate, Map};
 use lib::std::slice::Iter;
 
@@ -12,8 +13,16 @@ use lib::std::slice::Iter;
 ///
 /// This means that this input type will completely avoid nom's streaming features
 /// and `Incomplete` results.
-#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteStr<'a>(pub &'a str);
+
+impl<'a> Deref for CompleteStr<'a> {
+  type Target = str;
+
+  fn deref(&self) -> &str {
+    self.0
+  }
+}
 
 impl<'a> AtEof for CompleteStr<'a> {
   fn at_eof(&self) -> bool {
@@ -136,12 +145,35 @@ impl<'a> AsBytes for CompleteStr<'a> {
   }
 }
 
+#[cfg(feature = "std")]
+impl<'a> ExtendInto for CompleteStr<'a> {
+  type Item = char;
+  type Extender = String;
+
+  #[inline]
+  fn new_builder(&self) -> String {
+    String::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut String) {
+    acc.extend(self.0.chars());
+  }
+}
+
 /// Holds a complete String, for which the `at_eof` method always returns true
 ///
 /// This means that this input type will completely avoid nom's streaming features
 /// and `Incomplete` results.
-#[derive(Clone, Copy, Debug, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
+
+impl<'a> Deref for CompleteByteSlice<'a> {
+  type Target = [u8];
+
+  fn deref(&self) -> &[u8] {
+    self.0
+  }
+}
 
 impl<'a> AtEof for CompleteByteSlice<'a> {
   fn at_eof(&self) -> bool {

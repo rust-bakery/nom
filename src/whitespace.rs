@@ -814,6 +814,9 @@ macro_rules! sep (
   ($i:expr,  $separator:path, many1 ! ($($rest:tt)*) ) => {
     many1!($i, wrap_sep!($separator, $($rest)*))
   };
+  ($i:expr, $separator:path, return_error!( $($args:tt)* )) => {
+    return_error!($i, wrap_sep!($separator, $($args)*))
+  };
 //FIXME: missing separated_nonempty_list,
 // many_till, many_m_n, count, count_fixed, fold_many0, fold_many1,
 // fold_many_m_n
@@ -826,7 +829,7 @@ macro_rules! sep (
 );
 
 use internal::IResult;
-use traits::{InputTakeAtPosition, FindToken, AsChar};
+use traits::{AsChar, FindToken, InputTakeAtPosition};
 #[allow(unused_imports)]
 pub fn sp<'a, T>(input: T) -> IResult<T, T>
 where
