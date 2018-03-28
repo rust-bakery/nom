@@ -5,6 +5,7 @@ use traits::{AsBytes, AtEof, Compare, CompareResult, ExtendInto, FindSubstring, 
              ParseTo, Slice};
 
 use std::str::{self, CharIndices, Chars, FromStr};
+use std::convert::From;
 use std::ops::{Deref, Range, RangeFrom, RangeFull, RangeTo};
 use std::iter::{Enumerate, Map};
 use std::slice::Iter;
@@ -15,6 +16,12 @@ use std::slice::Iter;
 /// and `Incomplete` results.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteStr<'a>(pub &'a str);
+
+impl<'a> From<&'a str> for CompleteStr<'a> {
+  fn from(src: &'a str) -> Self {
+    CompleteStr(src)
+  }
+}
 
 impl<'a> Deref for CompleteStr<'a> {
   type Target = str;
