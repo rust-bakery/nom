@@ -231,12 +231,13 @@ fn issue_721() {
   assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
 }
 
+#[cfg(feature = "std")]
 named!(issue_717<&[u8], Vec<&[u8]> >,
   separated_list!(tag!([0x0]), is_not!([0x0u8]))
 );
 
 struct NoPartialEq {
-  value: i32
+  value: i32,
 }
 
 named!(issue_724<&str, i32>,
@@ -248,4 +249,3 @@ named!(issue_724<&str, i32>,
     (metadata.0.value + metadata.1.value)
   )
 );
-
