@@ -231,7 +231,7 @@ fn issue_721() {
   assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 named!(issue_717<&[u8], Vec<&[u8]> >,
   separated_list!(tag!([0x0]), is_not!([0x0u8]))
 );

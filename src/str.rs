@@ -759,7 +759,7 @@ mod test {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn recognize_is_a_s() {
     let a = "aabbab";
     let b = "ababcd";

@@ -730,25 +730,25 @@ where
 }
 
 /// Recognizes floating point number in a byte string and returns a f32
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
   flat_map!(input, recognize_float, parse_to!(f32))
 }
 
 /// Recognizes floating point number in a string and returns a f32
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub fn float_s(input: &str) -> IResult<&str, f32> {
   flat_map!(input, call!(recognize_float), parse_to!(f32))
 }
 
 /// Recognizes floating point number in a byte string and returns a f64
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
   flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
 /// Recognizes floating point number in a string and returns a f64
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub fn double_s(input: &str) -> IResult<&str, f64> {
   flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
@@ -1078,8 +1078,9 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn buffer_with_size() {
+    use std::vec::Vec;
     let i: Vec<u8> = vec![7, 8];
     let o: Vec<u8> = vec![4, 5, 6];
     //let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];

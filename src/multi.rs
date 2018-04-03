@@ -1031,6 +1031,8 @@ mod tests {
   use internal::{Err, IResult, Needed};
   use nom::{digit, be_u16, be_u8, le_u16};
   use std::str::{self, FromStr};
+  #[cfg(feature = "alloc")]
+  use std::vec::Vec;
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -1087,7 +1089,7 @@ mod tests {
   );
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn separated_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
     named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
@@ -1122,7 +1124,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn separated_list_complete() {
     use nom::alpha;
 
@@ -1149,7 +1151,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn separated_nonempty_list() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(","), tag!("abcd")));
     named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(".."), tag!("abcd")));
@@ -1180,7 +1182,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn separated_nonempty_list_complete() {
     use nom::alpha;
 
@@ -1210,7 +1212,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn many0() {
     named!(tag_abcd, tag!("abcd"));
     named!(tag_empty, tag!(""));
@@ -1246,7 +1248,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn many1() {
     named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
 
@@ -1267,7 +1269,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn many_till() {
     named!(multi<&[u8], (Vec<&[u8]>, &[u8]) >, many_till!( tag!( "abcd" ), tag!( "efgh" ) ) );
 
@@ -1311,7 +1313,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn many_m_n() {
     named!(multi<&[u8],Vec<&[u8]> >, many_m_n!(2, 4, tag!("Abcd")));
 
@@ -1335,7 +1337,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn count() {
     const TIMES: usize = 2;
     named!(tag_abc, tag!("abc"));
@@ -1368,7 +1370,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn count_zero() {
     const TIMES: usize = 0;
     named!(tag_abc, tag!("abc"));
@@ -1510,7 +1512,7 @@ mod tests {
   ));
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn length_count() {
     named!(tag_abc, tag!(&b"abc"[..]));
     named!( cnt<&[u8], Vec<&[u8]> >, length_count!(number, tag_abc) );
@@ -1585,7 +1587,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn fold_many0() {
     fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
       acc.push(item);
@@ -1615,7 +1617,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn fold_many1() {
     fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
       acc.push(item);
@@ -1640,7 +1642,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn fold_many_m_n() {
     fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
       acc.push(item);

@@ -65,7 +65,7 @@ fn overflow_incomplete_many0() {
 }
 
 #[test]
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 fn overflow_incomplete_many1() {
   named!(multi<&[u8], Vec<&[u8]> >, many1!( length_bytes!(be_u64) ) );
 
