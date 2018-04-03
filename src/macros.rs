@@ -1289,6 +1289,8 @@ macro_rules! recognize (
 mod tests {
   use internal::{Err, IResult, Needed};
   use util::ErrorKind;
+  #[cfg(feature = "alloc")]
+  use std::boxed::Box;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -1414,7 +1416,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn cond() {
     let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
       &'static [u8],
@@ -1436,7 +1438,7 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
     named!(tag_abcd, tag!("abcd"));
