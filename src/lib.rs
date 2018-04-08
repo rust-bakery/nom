@@ -388,16 +388,15 @@ pub mod lib {
 
   #[cfg(feature = "std")]
   pub mod std {
-    pub use std::{boxed, string, vec, cmp, convert, fmt, iter, mem,
-                  ops, option, result, slice, str, collections, hash};
+    pub use std::{boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
     pub mod prelude {
       pub use std::prelude as v1;
     }
   }
 }
 
-pub use self::util::*;
 pub use self::traits::*;
+pub use self::util::*;
 
 #[cfg(feature = "verbose-errors")]
 pub use self::verbose_errors::*;
@@ -405,18 +404,18 @@ pub use self::verbose_errors::*;
 #[cfg(not(feature = "verbose-errors"))]
 pub use self::simple_errors::*;
 
+pub use self::branch::*;
 pub use self::internal::*;
 pub use self::macros::*;
-pub use self::branch::*;
-pub use self::sequence::*;
-pub use self::multi::*;
 pub use self::methods::*;
+pub use self::multi::*;
+pub use self::sequence::*;
 
-pub use self::bytes::*;
 pub use self::bits::*;
+pub use self::bytes::*;
 
-pub use self::nom::*;
 pub use self::character::*;
+pub use self::nom::*;
 
 pub use self::whitespace::*;
 

@@ -1,13 +1,17 @@
 //! Custom input types
 //!
 
-use traits::{AsBytes, AtEof, Compare, CompareResult, ExtendInto, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset,
-             ParseTo, Slice};
+use traits::{AsBytes, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, Offset, ParseTo, Slice};
 
-use lib::std::str::{self, CharIndices, Chars, FromStr};
-use lib::std::ops::{Deref, Range, RangeFrom, RangeFull, RangeTo};
+#[cfg(feature = "alloc")]
+use traits::ExtendInto;
+
 use lib::std::iter::{Enumerate, Map};
+use lib::std::ops::{Deref, Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::slice::Iter;
+use lib::std::str::{self, CharIndices, Chars, FromStr};
+#[cfg(feature = "alloc")]
+use lib::std::string::String;
 
 /// Holds a complete String, for which the `at_eof` method always returns true
 ///
@@ -145,7 +149,7 @@ impl<'a> AsBytes for CompleteStr<'a> {
   }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl<'a> ExtendInto for CompleteStr<'a> {
   type Item = char;
   type Extender = String;

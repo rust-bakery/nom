@@ -1,4 +1,5 @@
 #[cfg(feature = "verbose-errors")]
+#[cfg(feature = "std")]
 use internal::{Err, IResult};
 #[cfg(feature = "verbose-errors")]
 use verbose_errors::Context;
@@ -7,9 +8,9 @@ use verbose_errors::Context;
 use std::collections::HashMap;
 
 #[cfg(feature = "alloc")]
-use lib::std::vec::Vec;
-#[cfg(feature = "alloc")]
 use lib::std::string::ToString;
+#[cfg(feature = "alloc")]
+use lib::std::vec::Vec;
 
 #[cfg(feature = "std")]
 pub trait HexDisplay {

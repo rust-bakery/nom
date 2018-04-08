@@ -801,14 +801,14 @@ macro_rules! permutation_iterator (
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = $crate::lib::std::option::Option::Some(o);
+          acc!($it, $res) = Some(o);
           continue;
         },
         Err(Err::Error(_)) => {
           $all_done = false;
         },
         Err(e) => {
-          $needed = $crate::lib::std::option::Option::Some(e);
+          $needed = Some(e);
           break;
         }
       };

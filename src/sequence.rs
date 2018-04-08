@@ -442,6 +442,7 @@ mod tests {
   use util::ErrorKind;
   use nom::be_u16;
   #[cfg(feature = "alloc")]
+  #[cfg(feature = "verbose-errors")]
   use lib::std::vec::Vec;
 
   // reproduce the tag and take macros, because of module import order

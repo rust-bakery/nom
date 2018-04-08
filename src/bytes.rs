@@ -1079,11 +1079,13 @@ macro_rules! length_bytes(
 mod tests {
   use internal::{Err, Needed};
   use nom::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
-  use util::ErrorKind;
   use types::{CompleteByteSlice, CompleteStr};
+  use util::ErrorKind;
   #[cfg(feature = "alloc")]
+  #[cfg(feature = "verbose-errors")]
   use lib::std::string::String;
   #[cfg(feature = "alloc")]
+  #[cfg(feature = "verbose-errors")]
   use lib::std::vec::Vec;
 
   macro_rules! one_of (
@@ -1231,7 +1233,6 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn escaping_complete_str() {
-    use nom::alpha0;
     named!(esc<CompleteStr, CompleteStr>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
     assert_eq!(
       esc(CompleteStr("abcd;")),
@@ -1322,8 +1323,6 @@ mod tests {
       )))
     );
 
-    let e = "è";
-    let a = "à";
     named!(
       esc2<String>,
       map!(
