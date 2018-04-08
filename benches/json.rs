@@ -58,27 +58,21 @@ named!(
       separated_list!(char!(','), key_value),
       char!('}')
     ),
-    |tuple_vec| {
-      tuple_vec
-        .into_iter()
-        .map(|(k, v)| (String::from(k), v))
-        .collect()
-      /*let mut h: HashMap<String, JsonValue> = HashMap::new();
-        for (k, v) in tuple_vec {
-          h.insert(String::from(k), v);
-        }
-        h*/
-    }
+    |tuple_vec| tuple_vec
+      .into_iter()
+      .map(|(k, v)| (String::from(k), v))
+      .collect()
   ))
 );
 
 named!(
   value<JsonValue>,
   ws!(alt!(
-      hash   => { |h|   JsonValue::Object(h)            } |
-      array  => { |v|   JsonValue::Array(v)             } |
-      string => { |s|   JsonValue::Str(String::from(s)) } |
-      float  => { |num| JsonValue::Num(num)             }
+      hash    => { |h| JsonValue::Object(h)            } |
+      array   => { |v| JsonValue::Array(v)             } |
+      string  => { |s| JsonValue::Str(String::from(s)) } |
+      float   => { |f| JsonValue::Num(f)               } |
+      boolean => { |b| JsonValue::Boolean(b)           }
     ))
 );
 
