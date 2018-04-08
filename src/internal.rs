@@ -96,8 +96,7 @@ impl<I, E> Err<I, E> {
   pub fn into_error_kind(self) -> ::util::ErrorKind<E> {
     match self {
       Err::Incomplete(_) => ::util::ErrorKind::Complete,
-      Err::Failure(c) => c.into_error_kind(),
-      Err::Error(c) => c.into_error_kind(),
+      Err::Failure(c) | Err::Error(c) => c.into_error_kind(),
     }
   }
 

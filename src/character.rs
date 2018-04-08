@@ -107,10 +107,7 @@ macro_rules! char (
       use $crate::AsChar;
       use $crate::InputIter;
 
-      match ($i).iter_elements().next().map(|c| {
-        let b = c.as_char() == $c;
-        b
-      }) {
+      match ($i).iter_elements().next().map(|c| c.as_char() == $c) {
         None        => $crate::need_more($i, Needed::Size(1)),
         Some(false) => {
           let e: $crate::ErrorKind<u32> = $crate::ErrorKind::Char;

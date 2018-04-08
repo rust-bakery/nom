@@ -16,7 +16,7 @@ named!(category<CompleteByteSlice, &str>, map_res!(
     complete_byte_slice_to_str
 ));
 
-fn complete_byte_slice_to_str<'a>(s: CompleteByteSlice<'a>) -> Result<&'a str, str::Utf8Error> {
+fn complete_byte_slice_to_str(s: CompleteByteSlice) -> Result<&str, str::Utf8Error> {
   str::from_utf8(s.0)
 }
 

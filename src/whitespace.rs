@@ -831,6 +831,7 @@ macro_rules! sep (
 use internal::IResult;
 use traits::{AsChar, FindToken, InputTakeAtPosition};
 #[allow(unused_imports)]
+#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 pub fn sp<'a, T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,

@@ -17,7 +17,10 @@ use traits::{need_more, need_more_err, AtEof};
 use std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use util::ErrorKind;
-use std::mem::transmute;
+
+#[cfg(not(feature = "std"))]
+#[allow(unused_imports)] // warning is false positive
+use core::num::Float;
 
 #[cfg(feature = "alloc")]
 #[inline]
@@ -410,7 +413,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     need_more(i, Needed::Size(2))
   } else {
-    let res = ((i[0] as u16) << 8) + i[1] as u16;
+    let res = (u16::from(i[0]) << 8) + u16::from(i[1]);
     Ok((&i[2..], res))
   }
 }
@@ -421,7 +424,7 @@ pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
     need_more(i, Needed::Size(3))
   } else {
-    let res = ((i[0] as u32) << 16) + ((i[1] as u32) << 8) + (i[2] as u32);
+    let res = (u32::from(i[0]) << 16) + (u32::from(i[1]) << 8) + u32::from(i[2]);
     Ok((&i[3..], res))
   }
 }
@@ -432,7 +435,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     need_more(i, Needed::Size(4))
   } else {
-    let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
+    let res = (u32::from(i[0]) << 24) + (u32::from(i[1]) << 16) + (u32::from(i[2]) << 8) + u32::from(i[3]);
     Ok((&i[4..], res))
   }
 }
@@ -443,8 +446,8 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) + ((i[4] as u64) << 24)
-      + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
+    let res = (u64::from(i[0]) << 56) + (u64::from(i[1]) << 48) + (u64::from(i[2]) << 40) + (u64::from(i[3]) << 32)
+      + (u64::from(i[4]) << 24) + (u64::from(i[5]) << 16) + (u64::from(i[6]) << 8) + u64::from(i[7]);
     Ok((&i[8..], res))
   }
 }
@@ -500,7 +503,7 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
   if i.len() < 2 {
     need_more(i, Needed::Size(2))
   } else {
-    let res = ((i[1] as u16) << 8) + i[0] as u16;
+    let res = (u16::from(i[1]) << 8) + u16::from(i[0]);
     Ok((&i[2..], res))
   }
 }
@@ -511,7 +514,7 @@ pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 3 {
     need_more(i, Needed::Size(3))
   } else {
-    let res = (i[0] as u32) + ((i[1] as u32) << 8) + ((i[2] as u32) << 16);
+    let res = u32::from(i[0]) + (u32::from(i[1]) << 8) + (u32::from(i[2]) << 16);
     Ok((&i[3..], res))
   }
 }
@@ -522,7 +525,7 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
   if i.len() < 4 {
     need_more(i, Needed::Size(4))
   } else {
-    let res = ((i[3] as u32) << 24) + ((i[2] as u32) << 16) + ((i[1] as u32) << 8) + i[0] as u32;
+    let res = (u32::from(i[3]) << 24) + (u32::from(i[2]) << 16) + (u32::from(i[1]) << 8) + u32::from(i[0]);
     Ok((&i[4..], res))
   }
 }
@@ -533,8 +536,8 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) + ((i[3] as u64) << 24)
-      + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
+    let res = (u64::from(i[7]) << 56) + (u64::from(i[6]) << 48) + (u64::from(i[5]) << 40) + (u64::from(i[4]) << 32)
+      + (u64::from(i[3]) << 24) + (u64::from(i[2]) << 16) + (u64::from(i[1]) << 8) + u64::from(i[0]);
     Ok((&i[8..], res))
   }
 }
@@ -610,37 +613,25 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_i64($i
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
 pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
-  match be_u32(input) {
-    Err(e) => Err(e),
-    Ok((i, o)) => unsafe { Ok((i, transmute::<u32, f32>(o))) },
-  }
+  be_u32(input).map(|(i, o)| (i, f32::from_bits(o)))
 }
 
 /// Recognizes big endian 8 bytes floating point number
 #[inline]
 pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
-  match be_u64(input) {
-    Err(e) => Err(e),
-    Ok((i, o)) => unsafe { Ok((i, transmute::<u64, f64>(o))) },
-  }
+  be_u64(input).map(|(i, o)| (i, f64::from_bits(o)))
 }
 
 /// Recognizes little endian 4 bytes floating point number
 #[inline]
 pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
-  match le_u32(input) {
-    Err(e) => Err(e),
-    Ok((i, o)) => unsafe { Ok((i, transmute::<u32, f32>(o))) },
-  }
+  le_u32(input).map(|(i, o)| (i, f32::from_bits(o)))
 }
 
 /// Recognizes little endian 8 bytes floating point number
 #[inline]
 pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
-  match le_u64(input) {
-    Err(e) => Err(e),
-    Ok((i, o)) => unsafe { Ok((i, transmute::<u64, f64>(o))) },
-  }
+  le_u64(input).map(|(i, o)| (i, f64::from_bits(o)))
 }
 
 /// Recognizes a hex-encoded integer
@@ -679,7 +670,7 @@ where
   T: InputLength + AtEof,
 {
   if input.input_len() == 0 {
-    return need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty::<u32>);
+    need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty::<u32>)
   } else {
     Ok((input.slice(input.input_len()..), input))
   }
@@ -703,6 +694,7 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
 
 #[allow(unused_imports)]
 #[cfg_attr(rustfmt, rustfmt_skip)]
+#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
 pub fn recognize_float<T>(input: T) -> IResult<T, T, u32>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
