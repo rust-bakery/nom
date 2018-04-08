@@ -7,17 +7,17 @@
 //!
 
 #[cfg(feature = "alloc")]
-use std::boxed::Box;
+use lib::std::boxed::Box;
 
 #[cfg(feature = "std")]
-use std::fmt::Debug;
+use lib::std::fmt::Debug;
 use internal::*;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use traits::{need_more, need_more_err, AtEof};
-use std::ops::{Range, RangeFrom, RangeTo};
+use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use util::ErrorKind;
-use std::mem::transmute;
+use lib::std::mem::transmute;
 
 #[cfg(feature = "alloc")]
 #[inline]
@@ -443,8 +443,8 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) + ((i[4] as u64) << 24)
-      + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
+    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
+      ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
     Ok((&i[8..], res))
   }
 }
@@ -533,8 +533,8 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) + ((i[3] as u64) << 24)
-      + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
+    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) +
+      ((i[3] as u64) << 24) + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
     Ok((&i[8..], res))
   }
 }
@@ -769,10 +769,9 @@ mod tests {
     let r2 = x(&b"abcefgh"[..]);
     assert_eq!(
       r2,
-      Err(Err::Error(error_position!(
-        &b"abcefgh"[..],
-        ErrorKind::TagClosure
-      ),))
+      Err(Err::Error(
+        error_position!(&b"abcefgh"[..], ErrorKind::TagClosure),
+      ))
     );
   }
 
@@ -1385,7 +1384,7 @@ mod tests {
     assert_eq!(int_parse(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
   }
 
-  use std::convert::From;
+  use lib::std::convert::From;
   impl From<u32> for CustomError {
     fn from(_: u32) -> Self {
       CustomError

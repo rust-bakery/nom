@@ -2,7 +2,7 @@
 
 use internal::{IResult, Needed};
 use traits::{AsChar, InputIter, InputLength, Slice};
-use std::ops::RangeFrom;
+use lib::std::ops::RangeFrom;
 use traits::{need_more, AtEof};
 
 /// matches one of the provided characters
@@ -22,8 +22,8 @@ use traits::{need_more, AtEof};
 macro_rules! one_of (
   ($i:expr, $inp: expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed};
 
       use $crate::Slice;
@@ -61,8 +61,8 @@ macro_rules! one_of (
 macro_rules! none_of (
   ($i:expr, $inp: expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed};
 
       use $crate::Slice;
@@ -99,8 +99,8 @@ macro_rules! none_of (
 macro_rules! char (
   ($i:expr, $c: expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed};
 
       use $crate::Slice;
@@ -146,10 +146,12 @@ where
   let mut it = input.iter_indices();
   match it.next() {
     None => need_more(input, Needed::Size(1)),
-    Some((_, c)) => match it.next() {
-      None => Ok((input.slice(input.input_len()..), c.as_char())),
-      Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
-    },
+    Some((_, c)) => {
+      match it.next() {
+        None => Ok((input.slice(input.input_len()..), c.as_char())),
+        Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
+      }
+    }
   }
 }
 

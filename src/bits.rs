@@ -45,7 +45,7 @@ macro_rules! bits (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Context,Err,Needed};
 
       let input = ($i, 0usize);
@@ -90,7 +90,7 @@ macro_rules! bits_impl (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,Context};
 
       let input = ($i, 0usize);
@@ -157,7 +157,7 @@ macro_rules! bytes (
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed};
 
       let inp;
@@ -217,7 +217,7 @@ macro_rules! bytes_impl (
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed};
 
       let inp;
@@ -271,11 +271,11 @@ macro_rules! bytes_impl (
 macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Needed,IResult};
 
-      use std::ops::Div;
-      use std::convert::Into;
+      use $crate::lib::std::ops::Div;
+      use $crate::lib::std::convert::Into;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
       let res : IResult<(&[u8],usize), $t> = if $count == 0 {
@@ -341,7 +341,7 @@ macro_rules! take_bits (
 macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,IResult};
 
       match take_bits!($i, $t, $count) {
@@ -366,7 +366,7 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use std::ops::{AddAssign, Shl, Shr};
+  use lib::std::ops::{AddAssign, Shl, Shr};
   use internal::{Err, Needed};
   use util::ErrorKind;
 

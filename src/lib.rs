@@ -97,7 +97,8 @@
 //! # }
 //! ```
 //!
-//! It defines a function named `parens`, which will recognize a sequence of the character `(`, the longest byte array not containing `)`, then the character `)`, and will return the byte array in the middle.
+//! It defines a function named `parens`, which will recognize a sequence of the character `(`, the longest byte array not containing `)`,
+//! then the character `)`, and will return the byte array in the middle.
 //!
 //! Here is another parser, written without using nom's macros this time:
 //!
@@ -163,17 +164,22 @@
 //!
 //! It can have the following values:
 //!
-//! - a correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
-//! - an error `Err(Err::Error(c))` with `c` an enum that contians an error code with its position in the input, and optionally a chain of accumulated errors;
+//! - a correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output
+//! value;
+//! - an error `Err(Err::Error(c))` with `c` an enum that contians an error code with its position in the input, and optionally a chain of
+//! accumulated errors;
 //! - an error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
-//! - an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and test another parser
+//! - an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and
+//! test another parser
 //!
 //! Please refer to the [documentation][doc] for an exhaustive list of parsers. See also the
 //! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**.
 //!
 //! ## Making new parsers with macros
 //!
-//! Macros are the main way to make new parsers by combining other ones. Those macros accept other macros or function names as arguments. You then need to make a function out of that combinator with **`named!`**, or a closure with **`closure!`**. Here is how you would do, with the **`tag!`** and **`take!`** combinators:
+//! Macros are the main way to make new parsers by combining other ones. Those macros accept other macros or function names as arguments.
+//! You then need to make a function out of that combinator with **`named!`**, or a closure with **`closure!`**. Here is how you would do,
+//! with the **`tag!`** and **`take!`** combinators:
 //!
 //! ```rust
 //! # #[macro_use] extern crate nom;
@@ -196,29 +202,31 @@
 //!
 //! **IMPORTANT NOTE**: Rust's macros can be very sensitive to the syntax, so you may encounter an error compiling parsers like this one:
 //!
-//! ```rust
-//! # #[macro_use] extern crate nom;
-//! # fn main() {
-//! named!(my_function<&[u8], Vec<&[u8]>>, many0!(tag!("abcd")));
-//! # }
-//! ```
+#![cfg_attr(doc = r##" ```rust
+ # #[macro_use] extern crate nom;
+ # fn main() {
+ named!(my_function<&[u8], Vec<&[u8]>>, many0!(tag!("abcd")));
+ # }
+ ```"##, any(feature = "alloc", feature = "std"))]
 //!
 //! You will get the following error: `error: expected an item keyword`. This
 //! happens because `>>` is seen as an operator, so the macro parser does not
 //! recognize what we want. There is a way to avoid it, by inserting a space:
 //!
-//! ```rust
-//! # #[macro_use] extern crate nom;
-//! # fn main() {
-//! named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
-//! # }
-//! ```
+//!
+#![cfg_attr(doc = r##" ```rust
+ # #[macro_use] extern crate nom;
+ # fn main() {
+ named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
+ # }
+ ```"##, any(feature = "alloc", feature = "std"))]
 //!
 //! This will compile correctly. I am very sorry for this inconvenience.
 //!
 //! ## Combining parsers
 //!
-//! There are more high level patterns, like the **`alt!`** combinator, which provides a choice between multiple parsers. If one branch fails, it tries the next, and returns the result of the first parser that succeeds:
+//! There are more high level patterns, like the **`alt!`** combinator, which provides a choice between multiple parsers. If one branch
+//! fails, it tries the next, and returns the result of the first parser that succeeds:
 //!
 //! ```rust
 //! # #[macro_use] extern crate nom;
@@ -247,20 +255,20 @@
 //!
 //! **`many0!`** applies a parser 0 or more times, and returns a vector of the aggregated results:
 //!
-//! ```rust
-//! # #[macro_use] extern crate nom;
-//! # fn main() {
-//! use std::str;
-//!
-//! named!(multi< Vec<&str> >, many0!( map_res!(tag!( "abcd" ), str::from_utf8) ) );
-//! let a = b"abcdef";
-//! let b = b"abcdabcdef";
-//! let c = b"azerty";
-//! assert_eq!(multi(a), Ok((&b"ef"[..],     vec!["abcd"])));
-//! assert_eq!(multi(b), Ok((&b"ef"[..],     vec!["abcd", "abcd"])));
-//! assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
-//! # }
-//! ```
+#![cfg_attr(doc = r##" ```rust
+ # #[macro_use] extern crate nom;
+ # fn main() {
+ use std::str;
+
+ named!(multi< Vec<&str> >, many0!( map_res!(tag!( "abcd" ), str::from_utf8) ) );
+ let a = b"abcdef";
+ let b = b"abcdabcdef";
+ let c = b"azerty";
+ assert_eq!(multi(a), Ok((&b"ef"[..],     vec!["abcd"])));
+ assert_eq!(multi(b), Ok((&b"ef"[..],     vec!["abcd", "abcd"])));
+ assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
+ # }
+ ```"##, any(feature = "alloc", feature = "std"))]
 //!
 //! Here are some basic combining macros available:
 //!
@@ -268,7 +276,8 @@
 //! - **`many0!`**: will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
 //! - **`many1!`**: will apply the parser 1 or more times
 //!
-//! There are more complex (and more useful) parsers like `do_parse!` and `tuple!`, which are used to apply a series of parsers then assemble their results.
+//! There are more complex (and more useful) parsers like `do_parse!` and `tuple!`, which are used to apply a series of parsers then
+//! assemble their results.
 //!
 //! Example with `tuple!`:
 //!
@@ -335,9 +344,12 @@
 //! # }
 //! ```
 //!
-//! The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers. Unless the specified return type is already a tuple, the final line should be that type wrapped in a tuple.
+//! The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables
+//! storing the result of parsers. Unless the specified return type is already a tuple, the final line should be that type wrapped in a
+//! tuple.
 //!
-//! More examples of [`do_parse!`](macro.do_parse.html) and [`tuple!`](macro.tuple.html) usage can be found in the [INI file parser example](tests/ini.rs).
+//! More examples of [`do_parse!`](macro.do_parse.html) and [`tuple!`](macro.tuple.html) usage can be found in the
+//! [INI file parser example](tests/ini.rs).
 //!
 //! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
 #![cfg_attr(not(feature = "std"), feature(alloc))]
@@ -359,15 +371,29 @@ extern crate regex;
 #[cfg(nightly)]
 extern crate test;
 
-#[cfg(not(feature = "std"))]
-mod std {
-  #[cfg(feature = "alloc")]
-  #[macro_use]
-  pub use alloc::{boxed, string, vec};
+/// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
+/// it, albeit there it is not public.
+pub mod lib {
+  /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
+  /// as well as `core` or `std`
+  #[cfg(not(feature = "std"))]
+  pub mod std {
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(feature = "alloc", macro_use)]
+    pub use alloc::{boxed, string, vec};
 
-  pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
-  pub mod prelude {
-    pub use core::prelude as v1;
+    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub mod prelude {
+      pub use core::prelude as v1;
+    }
+  }
+
+  #[cfg(feature = "std")]
+  pub mod std {
+    pub use std::{boxed, string, vec, cmp, convert, fmt, iter, mem, ops, option, result, slice, str, collections, hash};
+    pub mod prelude {
+      pub use std::prelude as v1;
+    }
   }
 }
 

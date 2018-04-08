@@ -59,8 +59,10 @@ named!(key_value    <CompleteStr,(&str,&str)>,
   )
 );
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(keys_and_values_aggregator<CompleteStr, Vec<(&str, &str)> >, many0!(key_value));
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 fn keys_and_values(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, &str>> {
   match keys_and_values_aggregator(input) {
     Ok((i, tuple_vec)) => Ok((i, tuple_vec.into_iter().collect())),
@@ -68,12 +70,15 @@ fn keys_and_values(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, &st
   }
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(category_and_keys<CompleteStr,(&str,HashMap<&str,&str>)>,
   pair!(category, keys_and_values)
 );
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 named!(categories_aggregator<CompleteStr, Vec<(&str, HashMap<&str,&str>)> >, many0!(category_and_keys));
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 fn categories(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, HashMap<&str, &str>>> {
   match categories_aggregator(input) {
     Ok((i, tuple_vec)) => Ok((i, tuple_vec.into_iter().collect())),
@@ -162,6 +167,7 @@ key = value2",
   assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn parse_multiple_keys_and_values_test() {
   let ini_file = CompleteStr(
@@ -187,6 +193,7 @@ key = value2
   assert_eq!(res, Ok((ini_without_key_value, expected)));
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn parse_category_then_multiple_keys_and_values_test() {
   //FIXME: there can be an empty line or a comment line after a category
@@ -214,6 +221,7 @@ key = value2
   assert_eq!(res, Ok((ini_after_parser, ("abcd", expected_h))));
 }
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 #[test]
 fn parse_multiple_categories_test() {
   let ini_file = CompleteStr(

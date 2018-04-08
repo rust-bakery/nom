@@ -20,7 +20,7 @@
 macro_rules! tag (
   ($i:expr, $tag: expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind};
       use $crate::{Compare,CompareResult,InputLength,need_more,InputTake};
 
@@ -61,7 +61,7 @@ macro_rules! tag (
 macro_rules! tag_no_case (
   ($i:expr, $tag: expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind};
       use $crate::{Compare,CompareResult,InputLength,InputTake};
 
@@ -161,7 +161,7 @@ macro_rules! escaped (
   // Internal parser, do not use directly
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,IResult,ErrorKind,need_more};
       use $crate::AsChar;
       use $crate::InputIter;
@@ -269,7 +269,7 @@ macro_rules! escaped (
 /// ```ignore
 /// # #[macro_use] extern crate nom;
 /// # use nom::alpha;
-/// # use std::str::from_utf8;
+/// # use $crate::lib::std::str::from_utf8;
 /// # fn main() {
 /// fn to_s(i:Vec<u8>) -> String {
 ///   String::from_utf8_lossy(&i).into_owned()
@@ -294,7 +294,7 @@ macro_rules! escaped_transform (
   // Internal parser, do not use directly
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind};
       use $crate::AsChar;
       use $crate::ExtendInto;
@@ -486,8 +486,8 @@ macro_rules! take_while1 (
 macro_rules! take_while_m_n (
   ($input:expr, $m:expr, $n:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::IResult;
       use $crate::ErrorKind;
 
@@ -625,8 +625,8 @@ macro_rules! take_till1 (
 macro_rules! take (
   ($i:expr, $count:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Needed,IResult};
 
       use $crate::InputIter;
@@ -664,7 +664,7 @@ macro_rules! take_str (
     {
       let input: &[u8] = $i;
 
-      map_res!(input, take!($size), ::std::str::from_utf8)
+      map_res!(input, take!($size), $crate::lib::std::str::from_utf8)
     }
   );
 );
@@ -688,8 +688,8 @@ macro_rules! take_str (
 macro_rules! take_until_and_consume (
   ($i:expr, $substr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Needed,IResult,ErrorKind,need_more_err};
       use $crate::InputLength;
       use $crate::FindSubstring;
@@ -729,8 +729,8 @@ macro_rules! take_until_and_consume (
 macro_rules! take_until_and_consume1 (
   ($i:expr, $substr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed,IResult,ErrorKind,need_more_err};
 
       use $crate::InputLength;
@@ -774,8 +774,8 @@ macro_rules! take_until_and_consume1 (
 macro_rules! take_until (
   ($i:expr, $substr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Needed,IResult,need_more_err, ErrorKind};
 
       use $crate::InputLength;
@@ -817,8 +817,8 @@ macro_rules! take_until (
 macro_rules! take_until1 (
   ($i:expr, $substr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
       use $crate::InputLength;
       use $crate::FindSubstring;
@@ -862,8 +862,8 @@ macro_rules! take_until1 (
 macro_rules! take_until_either_and_consume (
   ($input:expr, $arr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Needed,IResult,need_more_err,ErrorKind};
 
       use $crate::InputLength;
@@ -921,8 +921,8 @@ macro_rules! take_until_either_and_consume (
 macro_rules! take_until_either_and_consume1 (
   ($input:expr, $arr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
 
       use $crate::InputLength;
@@ -982,8 +982,8 @@ macro_rules! take_until_either_and_consume1 (
 macro_rules! take_until_either (
   ($input:expr, $arr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Needed,IResult,need_more_err,ErrorKind};
 
       use $crate::InputIter;
@@ -1025,8 +1025,8 @@ macro_rules! take_until_either (
 macro_rules! take_until_either1 (
   ($input:expr, $arr:expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
 
       use $crate::InputIter;
@@ -1107,8 +1107,8 @@ mod tests {
   macro_rules! char (
     ($i:expr, $c: expr) => (
       {
-        use ::std::result::Result::*;
-        use ::std::option::Option::*;
+        use $crate::lib::std::result::Result::*;
+        use $crate::lib::std::option::Option::*;
         use $crate::{Err,Needed};
 
         use $crate::Slice;
@@ -1273,7 +1273,7 @@ mod tests {
   #[cfg(feature = "verbose-errors")]
   #[test]
   fn escape_transform() {
-    use std::str;
+    use lib::std::str;
 
     named!(
       esc<String>,

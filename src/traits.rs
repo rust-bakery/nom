@@ -1,15 +1,15 @@
 //! Traits input types have to implement to work with nom combinators
 //!
 use internal::{Err, IResult, Needed};
-use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use std::iter::Enumerate;
-use std::slice::Iter;
-use std::iter::Map;
+use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use lib::std::iter::Enumerate;
+use lib::std::slice::Iter;
+use lib::std::iter::Map;
 
-use std::str::Chars;
-use std::str::CharIndices;
-use std::str::FromStr;
-use std::str::from_utf8;
+use lib::std::str::Chars;
+use lib::std::str::CharIndices;
+use lib::std::str::FromStr;
+use lib::std::str::from_utf8;
 
 use memchr;
 
@@ -707,10 +707,16 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     let other = &t[..m];
 
     if !reduced.iter().zip(other).all(|(a, b)| match (*a, *b) {
-      (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
-      (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122) | (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
+      (0...64, 0...64) |
+      (91...96, 91...96) |
+      (123...255, 123...255) => a == b,
+      (65...90, 65...90) |
+      (97...122, 97...122) |
+      (65...90, 97...122) |
+      (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
       _ => false,
-    }) {
+    })
+    {
       CompareResult::Error
     } else if m < blen {
       CompareResult::Incomplete
@@ -752,10 +758,9 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   #[cfg(feature = "alloc")]
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
-    let pos = self
-      .chars()
-      .zip(t.chars())
-      .position(|(a, b)| a.to_lowercase().zip(b.to_lowercase()).any(|(a, b)| a != b));
+    let pos = self.chars().zip(t.chars()).position(|(a, b)| {
+      a.to_lowercase().zip(b.to_lowercase()).any(|(a, b)| a != b)
+    });
 
     match pos {
       Some(_) => CompareResult::Error,

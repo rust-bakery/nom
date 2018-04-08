@@ -26,7 +26,7 @@ macro_rules! regex_bytes (
 macro_rules! re_match (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
@@ -51,7 +51,7 @@ macro_rules! re_match (
 macro_rules! re_match_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
@@ -75,7 +75,7 @@ macro_rules! re_match_static (
 macro_rules! re_bytes_match (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
@@ -100,7 +100,7 @@ macro_rules! re_bytes_match (
 macro_rules! re_bytes_match_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
@@ -124,7 +124,7 @@ macro_rules! re_bytes_match_static (
 macro_rules! re_find (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -148,7 +148,7 @@ macro_rules! re_find (
 macro_rules! re_find_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -172,7 +172,7 @@ macro_rules! re_find_static (
 macro_rules! re_bytes_find (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -196,7 +196,7 @@ macro_rules! re_bytes_find (
 macro_rules! re_bytes_find_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -220,7 +220,7 @@ macro_rules! re_bytes_find_static (
 macro_rules! re_matches (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -249,7 +249,7 @@ macro_rules! re_matches (
 macro_rules! re_matches_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -277,7 +277,7 @@ macro_rules! re_matches_static (
 macro_rules! re_bytes_matches (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -306,7 +306,7 @@ macro_rules! re_bytes_matches (
 macro_rules! re_bytes_matches_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -334,7 +334,7 @@ macro_rules! re_bytes_matches_static (
 macro_rules! re_capture (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -363,7 +363,7 @@ macro_rules! re_capture (
 macro_rules! re_capture_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -391,7 +391,7 @@ macro_rules! re_capture_static (
 macro_rules! re_bytes_capture (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -420,7 +420,7 @@ macro_rules! re_bytes_capture (
 macro_rules! re_bytes_capture_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -448,7 +448,7 @@ macro_rules! re_bytes_capture_static (
 macro_rules! re_captures (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -479,7 +479,7 @@ macro_rules! re_captures (
 macro_rules! re_captures_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -508,7 +508,7 @@ macro_rules! re_captures_static (
 macro_rules! re_bytes_captures (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -538,7 +538,7 @@ macro_rules! re_bytes_captures (
 macro_rules! re_bytes_captures_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -560,7 +560,7 @@ macro_rules! re_bytes_captures_static (
 );
 #[cfg(test)]
 mod tests {
-  use std::vec::Vec;
+  use lib::std::vec::Vec;
   use util::ErrorKind;
   use internal::Err;
 
@@ -570,10 +570,9 @@ mod tests {
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
     assert_eq!(
       rm("blah"),
-      Err(Err::Error(error_position!(
-        &"blah"[..],
-        ErrorKind::RegexpMatch::<u32>
-      ),))
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>),
+      ))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
@@ -585,10 +584,9 @@ mod tests {
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
     assert_eq!(
       rm("blah"),
-      Err(Err::Error(error_position!(
-        &"blah"[..],
-        ErrorKind::RegexpMatch::<u32>
-      ),))
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpMatch::<u32>),
+      ))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
@@ -599,10 +597,9 @@ mod tests {
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
     assert_eq!(
       rm("blah"),
-      Err(Err::Error(error_position!(
-        &"blah"[..],
-        ErrorKind::RegexpFind::<u32>
-      ),))
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>),
+      ))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
@@ -614,10 +611,9 @@ mod tests {
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
     assert_eq!(
       rm("blah"),
-      Err(Err::Error(error_position!(
-        &"blah"[..],
-        ErrorKind::RegexpFind::<u32>
-      ),))
+      Err(Err::Error(
+        error_position!(&"blah"[..], ErrorKind::RegexpFind::<u32>),
+      ))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
