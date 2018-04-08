@@ -68,5 +68,7 @@ If possible provide:
 The normal rust coding style is checked by [rustfmt][cs1].
 Readable code is the first step on having good and safe libraries.
 
+To avoid slight differences appearing in nightly versions, please
+use the following command to run rustfmt: `cargo +stable fmt`
 [cs1]: https://github.com/rust-lang-nursery/rustfmt
 
