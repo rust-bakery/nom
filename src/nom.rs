@@ -7,17 +7,17 @@
 //!
 
 #[cfg(feature = "alloc")]
-use std::boxed::Box;
+use lib::std::boxed::Box;
 
 #[cfg(feature = "std")]
-use std::fmt::Debug;
+use lib::std::fmt::Debug;
 use internal::*;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use traits::{need_more, need_more_err, AtEof};
-use std::ops::{Range, RangeFrom, RangeTo};
+use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use util::ErrorKind;
-use std::mem::transmute;
+use lib::std::mem::transmute;
 
 #[cfg(feature = "alloc")]
 #[inline]
@@ -1080,7 +1080,7 @@ mod tests {
   #[test]
   #[cfg(feature = "alloc")]
   fn buffer_with_size() {
-    use std::vec::Vec;
+    use lib::std::vec::Vec;
     let i: Vec<u8> = vec![7, 8];
     let o: Vec<u8> = vec![4, 5, 6];
     //let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
@@ -1386,7 +1386,7 @@ mod tests {
     assert_eq!(int_parse(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
   }
 
-  use std::convert::From;
+  use lib::std::convert::From;
   impl From<u32> for CustomError {
     fn from(_: u32) -> Self {
       CustomError

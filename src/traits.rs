@@ -1,15 +1,19 @@
 //! Traits input types have to implement to work with nom combinators
 //!
 use internal::{Err, IResult, Needed};
-use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use std::iter::Enumerate;
-use std::slice::Iter;
-use std::iter::Map;
+use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use lib::std::iter::Enumerate;
+use lib::std::slice::Iter;
+use lib::std::iter::Map;
 
-use std::str::Chars;
-use std::str::CharIndices;
-use std::str::FromStr;
-use std::str::from_utf8;
+use lib::std::str::Chars;
+use lib::std::str::CharIndices;
+use lib::std::str::FromStr;
+use lib::std::str::from_utf8;
+#[cfg(feature = "alloc")]
+use lib::std::string::String;
+#[cfg(feature = "alloc")]
+use lib::std::vec::Vec;
 
 use memchr;
 
@@ -523,7 +527,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(i) => Ok((&self[i..], &self[..i])),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      None    => Err(Err::Incomplete(Needed::Size(1)))
     }
   }
 
@@ -534,7 +538,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(0) => Err(Err::Error(Context::Code(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      None    => Err(Err::Incomplete(Needed::Size(1)))
     }
   }
 }
@@ -590,8 +594,8 @@ impl<'a> InputTakeAtPosition for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i, _)) => Ok((&self[i..], &self[..i])),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      Some((i,_)) => Ok((&self[i..], &self[..i])),
+      None        => Err(Err::Incomplete(Needed::Size(1)))
     }
   }
 
@@ -600,9 +604,9 @@ impl<'a> InputTakeAtPosition for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0, _)) => Err(Err::Error(Context::Code(self, e))),
-      Some((i, _)) => Ok((&self[i..], &self[..i])),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      Some((0,_)) => Err(Err::Error(Context::Code(self, e))),
+      Some((i,_)) => Ok((&self[i..], &self[..i])),
+      None        => Err(Err::Incomplete(Needed::Size(1)))
     }
   }
 }
@@ -615,7 +619,7 @@ impl<'a> InputTakeAtPosition for CompleteStr<'a> {
     P: Fn(Self::Item) -> bool,
   {
     match self.0.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i, _)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
+      Some((i,_)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
       None => {
         let (i, o) = self.0.take_split(self.0.len());
         Ok((CompleteStr(i), CompleteStr(o)))
@@ -628,8 +632,8 @@ impl<'a> InputTakeAtPosition for CompleteStr<'a> {
     P: Fn(Self::Item) -> bool,
   {
     match self.0.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0, _)) => Err(Err::Error(Context::Code(CompleteStr(self.0), e))),
-      Some((i, _)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
+      Some((0,_)) => Err(Err::Error(Context::Code(CompleteStr(self.0), e))),
+      Some((i,_)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
       None => {
         if self.0.len() == 0 {
           Err(Err::Error(Context::Code(CompleteStr(self.0), e)))
@@ -1069,7 +1073,7 @@ pub trait ExtendInto {
   fn extend_into(&self, acc: &mut Self::Extender);
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl ExtendInto for [u8] {
   type Item = u8;
   type Extender = Vec<u8>;
@@ -1084,7 +1088,7 @@ impl ExtendInto for [u8] {
   }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl ExtendInto for str {
   type Item = char;
   type Extender = String;
@@ -1099,7 +1103,7 @@ impl ExtendInto for str {
   }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl ExtendInto for char {
   type Item = char;
   type Extender = String;

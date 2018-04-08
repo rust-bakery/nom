@@ -27,7 +27,7 @@ std = ["alloc", "memchr/use_std"]
 default = ["std"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
-verbose-errors = []
+verbose-errors = ["alloc"]
 
 [dependencies.regex]
 version = "^0.2"
@@ -44,6 +44,71 @@ default-features = false
 #[dev-dependencies.bytes]
 #git = "https://github.com/carllerche/bytes"
 #rev = "a7d38e29"
+
+[[test]]
+name = "arithmetic"
+
+[[test]]
+name = "arithmetic_ast"
+required-features = ["alloc"]
+
+[[test]]
+name = "blockbuf-arithmetic"
+
+[[test]]
+name = "complete_arithmetic"
+
+[[test]]
+name = "complete_float"
+
+[[test]]
+name = "css"
+
+[[test]]
+name = "custom_errors"
+
+[[test]]
+name = "float"
+
+[[test]]
+name = "inference"
+
+[[test]]
+name = "ini"
+required-features = ["alloc"]
+
+[[test]]
+name = "ini_str"
+required-features = ["alloc"]
+
+[[test]]
+name = "issues"
+required-features = ["alloc"]
+
+[[test]]
+name = "json"
+
+[[test]]
+name = "mp4"
+
+[[test]]
+name = "multiline"
+required-features = ["alloc"]
+
+[[test]]
+name = "named_args"
+
+[[test]]
+name = "omnom"
+
+[[test]]
+name = "overflow"
+
+[[test]]
+name = "reborrow_fold"
+
+[[test]]
+name = "test1"
 
 [badges]
 travis-ci = { repository = "Geal/nom" }

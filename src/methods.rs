@@ -286,7 +286,7 @@ mod tests {
   macro_rules! tag_s (
     ($i:expr, $tag: expr) => (
       {
-        use ::std::result::Result::*;
+        use $crate::lib::std::result::Result::*;
         use $crate::{Err,ErrorKind,Needed,IResult, need_more};
 
         let res: IResult<_,_> = if $tag.len() > $i.len() {
@@ -305,7 +305,7 @@ mod tests {
   macro_rules! take_s (
     ($i:expr, $count:expr) => (
       {
-        use ::std::result::Result::*;
+        use $crate::lib::std::result::Result::*;
         use $crate::{Needed,IResult,need_more};
 
         let cnt = $count as usize;

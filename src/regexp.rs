@@ -26,7 +26,7 @@ macro_rules! regex_bytes (
 macro_rules! re_match (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
@@ -51,7 +51,7 @@ macro_rules! re_match (
 macro_rules! re_match_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
@@ -75,7 +75,7 @@ macro_rules! re_match_static (
 macro_rules! re_bytes_match (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
@@ -100,7 +100,7 @@ macro_rules! re_bytes_match (
 macro_rules! re_bytes_match_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::InputLength;
@@ -124,7 +124,7 @@ macro_rules! re_bytes_match_static (
 macro_rules! re_find (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -148,7 +148,7 @@ macro_rules! re_find (
 macro_rules! re_find_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -172,7 +172,7 @@ macro_rules! re_find_static (
 macro_rules! re_bytes_find (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -196,7 +196,7 @@ macro_rules! re_bytes_find (
 macro_rules! re_bytes_find_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -220,7 +220,7 @@ macro_rules! re_bytes_find_static (
 macro_rules! re_matches (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -249,7 +249,7 @@ macro_rules! re_matches (
 macro_rules! re_matches_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -277,7 +277,7 @@ macro_rules! re_matches_static (
 macro_rules! re_bytes_matches (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -306,7 +306,7 @@ macro_rules! re_bytes_matches (
 macro_rules! re_bytes_matches_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -334,7 +334,7 @@ macro_rules! re_bytes_matches_static (
 macro_rules! re_capture (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -363,7 +363,7 @@ macro_rules! re_capture (
 macro_rules! re_capture_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -391,7 +391,7 @@ macro_rules! re_capture_static (
 macro_rules! re_bytes_capture (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -420,7 +420,7 @@ macro_rules! re_bytes_capture (
 macro_rules! re_bytes_capture_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -448,7 +448,7 @@ macro_rules! re_bytes_capture_static (
 macro_rules! re_captures (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -479,7 +479,7 @@ macro_rules! re_captures (
 macro_rules! re_captures_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -508,7 +508,7 @@ macro_rules! re_captures_static (
 macro_rules! re_bytes_captures (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -538,7 +538,7 @@ macro_rules! re_bytes_captures (
 macro_rules! re_bytes_captures_static (
   ($i:expr, $re:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
@@ -560,7 +560,8 @@ macro_rules! re_bytes_captures_static (
 );
 #[cfg(test)]
 mod tests {
-  use std::vec::Vec;
+  #[cfg(feature = "alloc")]
+  use lib::std::vec::Vec;
   use util::ErrorKind;
   use internal::Err;
 
@@ -622,6 +623,7 @@ mod tests {
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn re_matches() {
     named!(rm< &str,Vec<&str> >, re_matches!(r"\d{4}-\d{2}-\d{2}"));
@@ -640,6 +642,7 @@ mod tests {
   }
 
   #[cfg(feature = "regexp_macros")]
+  #[cfg(feature = "alloc")]
   #[test]
   fn re_matches_static() {
     named!(rm< &str,Vec<&str> >, re_matches_static!(r"\d{4}-\d{2}-\d{2}"));
@@ -657,6 +660,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn re_capture() {
     named!(rm< &str,Vec<&str> >, re_capture!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
@@ -680,6 +684,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_capture_static() {
@@ -704,6 +709,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn re_captures() {
     named!(rm< &str,Vec<Vec<&str>> >, re_captures!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
@@ -733,6 +739,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_captures_static() {
@@ -833,6 +840,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn re_bytes_matches() {
     named!(rm<Vec<&[u8]>>, re_bytes_matches!(r"\d{4}-\d{2}-\d{2}"));
@@ -853,6 +861,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_bytes_matches_static() {
@@ -877,6 +886,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn re_bytes_capture() {
     named!(
@@ -920,6 +930,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_bytes_capture_static() {
@@ -964,6 +975,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn re_bytes_captures() {
     named!(
@@ -1019,6 +1031,7 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "alloc")]
   #[cfg(feature = "regexp_macros")]
   #[test]
   fn re_bytes_captures_static() {
