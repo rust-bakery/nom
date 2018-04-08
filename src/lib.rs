@@ -198,9 +198,13 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate nom;
+//! # #[cfg(feature = "alloc")]
 //! # fn main() {
 //! named!(my_function<&[u8], Vec<&[u8]>>, many0!(tag!("abcd")));
 //! # }
+//!
+//! # #[cfg(not(feature = "alloc"))]
+//! # fn main() {}
 //! ```
 //!
 //! You will get the following error: `error: expected an item keyword`. This
@@ -209,9 +213,12 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate nom;
+//! # #[cfg(feature = "alloc")]
 //! # fn main() {
 //! named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
 //! # }
+//! # #[cfg(not(feature = "alloc"))]
+//! # fn main() {}
 //! ```
 //!
 //! This will compile correctly. I am very sorry for this inconvenience.
@@ -249,6 +256,7 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate nom;
+//! # #[cfg(feature = "alloc")]
 //! # fn main() {
 //! use std::str;
 //!
@@ -260,6 +268,8 @@
 //! assert_eq!(multi(b), Ok((&b"ef"[..],     vec!["abcd", "abcd"])));
 //! assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
 //! # }
+//! # #[cfg(not(feature = "alloc"))]
+//! # fn main() {}
 //! ```
 //!
 //! Here are some basic combining macros available:
@@ -359,15 +369,30 @@ extern crate regex;
 #[cfg(nightly)]
 extern crate test;
 
-#[cfg(not(feature = "std"))]
-mod std {
-  #[cfg(feature = "alloc")]
-  #[macro_use]
-  pub use alloc::{boxed, string, vec};
+/// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
+/// it, albeit there it is not public.
+pub mod lib {
+  /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
+  /// as well as `core` or `std`
+  #[cfg(not(feature = "std"))]
+  pub mod std {
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(feature = "alloc", macro_use)]
+    pub use alloc::{boxed, string, vec};
 
-  pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
-  pub mod prelude {
-    pub use core::prelude as v1;
+    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub mod prelude {
+      pub use core::prelude as v1;
+    }
+  }
+
+  #[cfg(feature = "std")]
+  pub mod std {
+    pub use std::{boxed, string, vec, cmp, convert, fmt, iter, mem,
+                  ops, option, result, slice, str, collections, hash};
+    pub mod prelude {
+      pub use std::prelude as v1;
+    }
   }
 }
 

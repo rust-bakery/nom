@@ -82,7 +82,7 @@ macro_rules! tuple_parser (
   );
   ($i:expr, ($($parsed:expr),*)) => (
     {
-      ::std::result::Result::Ok(($i, ($($parsed),*)))
+      $crate::lib::std::result::Result::Ok(($i, ($($parsed),*)))
     }
   );
 );
@@ -117,7 +117,7 @@ macro_rules! pair(
 macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
         Err(e)    => Err(e),
@@ -139,7 +139,7 @@ macro_rules! separated_pair(
 macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
         Err(e) => Err(e),
@@ -169,7 +169,7 @@ macro_rules! preceded(
 macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
         Err(e) => Err(e),
@@ -215,7 +215,7 @@ macro_rules! terminated(
 macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
         Err(e) => Err(e),
@@ -304,7 +304,7 @@ macro_rules! delimited(
 #[macro_export]
 macro_rules! do_parse (
   (__impl $i:expr, ( $($rest:expr),* )) => (
-    ::std::result::Result::Ok(($i, ( $($rest),* )))
+    $crate::lib::std::result::Result::Ok(($i, ( $($rest),* )))
   );
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ) => (
@@ -341,7 +341,7 @@ macro_rules! do_parse (
   );
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -360,7 +360,7 @@ macro_rules! do_parse (
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
 
       let i_ = $i.clone();
       match  $submac!(i_, $($args)*) {
@@ -380,7 +380,7 @@ macro_rules! do_parse (
   );
 
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match $submac!($i, $($args)*) {
       Err(e) => Err(e),
@@ -395,7 +395,7 @@ macro_rules! do_parse (
   );
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
-    use ::std::result::Result::*;
+    use $crate::lib::std::result::Result::*;
 
     match $submac!($i, $($args)*) {
       Err(e) => Err(e),
@@ -407,12 +407,12 @@ macro_rules! do_parse (
   });
 
   (__finalize $i:expr, ( $o: expr )) => ({
-    use ::std::result::Result::Ok;
+    use $crate::lib::std::result::Result::Ok;
     Ok(($i, $o))
   });
 
   (__finalize $i:expr, ( $($rest:tt)* )) => ({
-    use ::std::result::Result::Ok;
+    use $crate::lib::std::result::Result::Ok;
     Ok(($i, ( $($rest)* )))
   });
 
@@ -441,6 +441,8 @@ mod tests {
   use internal::{Err, IResult, Needed};
   use util::ErrorKind;
   use nom::be_u16;
+  #[cfg(feature = "alloc")]
+  use lib::std::vec::Vec;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -463,7 +465,7 @@ mod tests {
     ($i:expr, $bytes: expr) => (
       {
         use $crate::need_more;
-        use std::cmp::min;
+        use $crate::lib::std::cmp::min;
 
         let len = $i.len();
         let blen = $bytes.len();
@@ -510,11 +512,12 @@ mod tests {
     b: Option<u8>,
   }
 
-  #[cfg(feature = "verbose-errors")]
+  #[cfg(all(feature = "std", feature = "verbose-errors"))]
   use util::{add_error_pattern, error_to_list, print_error};
   #[cfg(feature = "verbose-errors")]
   use verbose_errors::Context;
 
+  #[cfg(feature = "std")]
   #[cfg(feature = "verbose-errors")]
   #[cfg_attr(rustfmt, rustfmt_skip)]
   fn error_to_string<P: Clone + PartialEq>(e: &Context<P, u32>) -> &'static str {
@@ -539,7 +542,7 @@ mod tests {
   }
 
   // do it this way if you can use box patterns
-  /*use std::str;
+  /*use $crate::lib::std::str;
   fn error_to_string(e:Err) -> String
     match e {
       NodePosition(ErrorKind::Custom(42), i1, box Position(ErrorKind::Tag, i2)) => {
@@ -553,9 +556,11 @@ mod tests {
   }*/
 
   #[cfg(feature = "verbose-errors")]
+  #[cfg(feature = "std")]
   use std::collections;
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[cfg(feature = "std")]
   #[cfg(feature = "verbose-errors")]
   #[test]
   fn err() {

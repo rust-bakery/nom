@@ -14,7 +14,7 @@
 //! The main drawback is that it is a lot slower than default error
 //! management.
 use util::{Convert, ErrorKind};
-use std::convert::From;
+use lib::std::convert::From;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Context<I, E = u32> {
@@ -84,9 +84,9 @@ impl<I,O,E> IResult<I,O,E> {
 }
 
 #[cfg(feature = "std")]
-use std::any::Any;
+use $crate::lib::std::any::Any;
 #[cfg(feature = "std")]
-use std::{error,fmt};
+use $crate::lib::std::{error,fmt};
 #[cfg(feature = "std")]
 impl<E: fmt::Debug+Any> error::Error for Err<E> {
   fn description(&self) -> &str {
@@ -137,7 +137,7 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::Err;
       use $crate::{Convert,Context,ErrorKind};
 
@@ -188,7 +188,7 @@ macro_rules! flat_map(
   );
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Convert,Err};
 
       ($submac!($i, $($args)*)).and_then(|(i,o)| {

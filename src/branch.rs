@@ -186,7 +186,7 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::Err;
 
       let i_ = $i.clone();
@@ -212,7 +212,7 @@ macro_rules! alt (
 
   (__impl $i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::Err;
 
       let i_ = $i.clone();
@@ -286,7 +286,7 @@ macro_rules! alt_complete (
 
   ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::Err;
 
       let i_ = $i.clone();
@@ -312,7 +312,7 @@ macro_rules! alt_complete (
 
   ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::Err;
 
       let i_ = $i.clone();
@@ -438,8 +438,8 @@ macro_rules! alt_complete (
 macro_rules! switch (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $( $($p:pat)|+ => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Convert,ErrorKind};
 
       let i_ = $i.clone();
@@ -562,8 +562,8 @@ macro_rules! switch (
 macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Convert,ErrorKind};
 
       let mut res    = permutation_init!((), $($rest)*);
@@ -604,45 +604,45 @@ macro_rules! permutation (
 #[macro_export]
 macro_rules! permutation_init (
   ((), $e:ident?, $($rest:tt)*) => (
-    permutation_init!((::std::option::Option::None), $($rest)*)
+    permutation_init!(($crate::lib::std::option::Option::None), $($rest)*)
   );
   ((), $e:ident, $($rest:tt)*) => (
-    permutation_init!((::std::option::Option::None), $($rest)*)
+    permutation_init!(($crate::lib::std::option::Option::None), $($rest)*)
   );
 
   ((), $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
-    permutation_init!((::std::option::Option::None), $($rest)*)
+    permutation_init!(($crate::lib::std::option::Option::None), $($rest)*)
   );
   ((), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!((::std::option::Option::None), $($rest)*)
+    permutation_init!(($crate::lib::std::option::Option::None), $($rest)*)
   );
 
   (($($parsed:expr),*), $e:ident?, $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
+    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $e:ident, $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
+    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*);
   );
 
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
+    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*);
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , ::std::option::Option::None), $($rest)*);
+    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*);
   );
 
   (($($parsed:expr),*), $e:ident) => (
-    ($($parsed),* , ::std::option::Option::None)
+    ($($parsed),* , $crate::lib::std::option::Option::None)
   );
   (($($parsed:expr),*), $e:ident?) => (
-    ($($parsed),* , ::std::option::Option::None)
+    ($($parsed),* , $crate::lib::std::option::Option::None)
   );
 
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )?) => (
-    ($($parsed),* , ::std::option::Option::None)
+    ($($parsed),* , $crate::lib::std::option::Option::None)
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )) => (
-    ($($parsed),* , ::std::option::Option::None)
+    ($($parsed),* , $crate::lib::std::option::Option::None)
   );
   (($($parsed:expr),*),) => (
     ($($parsed),*)
@@ -714,7 +714,7 @@ macro_rules! permutation_unwrap (
     if res.is_some() {
       succ!($it, permutation_unwrap!((res.unwrap()), $res, $($rest)*))
     } else {
-      ::std::option::Option::None
+      $crate::lib::std::option::Option::None
     }
   });
 
@@ -726,7 +726,7 @@ macro_rules! permutation_unwrap (
     if res.is_some() {
       succ!($it, permutation_unwrap!((res.unwrap()), $res, $($rest)*))
     } else {
-      ::std::option::Option::None
+      $crate::lib::std::option::Option::None
     }
   });
 
@@ -738,7 +738,7 @@ macro_rules! permutation_unwrap (
     if res.is_some() {
       succ!($it, permutation_unwrap!(($($parsed),* , res.unwrap()), $res, $($rest)*))
     } else {
-      ::std::option::Option::None
+      $crate::lib::std::option::Option::None
     }
   });
 
@@ -750,31 +750,31 @@ macro_rules! permutation_unwrap (
     if res.is_some() {
       succ!($it, permutation_unwrap!(($($parsed),* , res.unwrap()), $res, $($rest)*))
     } else {
-      ::std::option::Option::None
+      $crate::lib::std::option::Option::None
     }
   });
 
   ($it:tt, ($($parsed:expr),*), $res:ident?, $e:ident) => (
-    ::std::option::Option::Some(($($parsed),* , { acc!($it, $res) }))
+    $crate::lib::std::option::Option::Some(($($parsed),* , { acc!($it, $res) }))
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident) => ({
     let res = acc!($it, $res);
     if res.is_some() {
-      ::std::option::Option::Some(($($parsed),* , res.unwrap() ))
+      $crate::lib::std::option::Option::Some(($($parsed),* , res.unwrap() ))
     } else {
-      ::std::option::Option::None
+      $crate::lib::std::option::Option::None
     }
   });
 
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )?) => (
-    ::std::option::Option::Some(($($parsed),* , { acc!($it, $res) }))
+    $crate::lib::std::option::Option::Some(($($parsed),* , { acc!($it, $res) }))
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )) => ({
     let res = acc!($it, $res);
     if res.is_some() {
-      ::std::option::Option::Some(($($parsed),* , res.unwrap() ))
+      $crate::lib::std::option::Option::Some(($($parsed),* , res.unwrap() ))
     } else {
-      ::std::option::Option::None
+      $crate::lib::std::option::Option::None
     }
   });
 );
@@ -793,22 +793,22 @@ macro_rules! permutation_iterator (
     permutation_iterator!($it, $i, $all_done, $needed, $res, $submac!($($args)*) , $($rest)*);
   };
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => ({
-    use ::std::result::Result::*;
-    use ::std::option::Option::*;
+    use $crate::lib::std::result::Result::*;
+    use $crate::lib::std::option::Option::*;
     use $crate::Err;
 
     if acc!($it, $res).is_none() {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = ::std::option::Option::Some(o);
+          acc!($it, $res) = $crate::lib::std::option::Option::Some(o);
           continue;
         },
         Err(Err::Error(_)) => {
           $all_done = false;
         },
         Err(e) => {
-          $needed = ::std::option::Option::Some(e);
+          $needed = $crate::lib::std::option::Option::Some(e);
           break;
         }
       };
@@ -827,8 +827,8 @@ macro_rules! permutation_iterator (
     permutation_iterator!($it, $i, $all_done, $needed, $res, $submac!($($args)*));
   };
   ($it:tt, $i:expr, $all_done:expr, $needed:expr, $res:expr, $submac:ident!( $($args:tt)* )) => ({
-    use ::std::result::Result::*;
-    use ::std::option::Option::*;
+    use $crate::lib::std::result::Result::*;
+    use $crate::lib::std::option::Option::*;
     use $crate::Err;
 
     if acc!($it, $res).is_none() {
@@ -853,7 +853,7 @@ macro_rules! permutation_iterator (
 #[cfg(test)]
 mod tests {
   #[cfg(feature = "alloc")]
-  use std::string::{String, ToString};
+  use lib::std::string::{String, ToString};
   use internal::{Err, IResult, Needed};
   use util::ErrorKind;
 
@@ -878,7 +878,7 @@ mod tests {
     ($i:expr, $bytes: expr) => (
       {
         use $crate::need_more;
-        use std::cmp::min;
+        use $crate::lib::std::cmp::min;
 
         let len = $i.len();
         let blen = $bytes.len();
