@@ -831,7 +831,7 @@ macro_rules! sep (
 use internal::IResult;
 use traits::{AsChar, FindToken, InputTakeAtPosition};
 #[allow(unused_imports)]
-pub fn sp<'a,T>(input: T) -> IResult<T, T>
+pub fn sp<'a, T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
