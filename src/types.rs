@@ -10,6 +10,7 @@ use lib::std::iter::{Enumerate, Map};
 use lib::std::ops::{Deref, Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::slice::Iter;
 use lib::std::str::{self, CharIndices, Chars, FromStr};
+use lib::std::convert::From;
 #[cfg(feature = "alloc")]
 use lib::std::string::String;
 
@@ -20,11 +21,23 @@ use lib::std::string::String;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteStr<'a>(pub &'a str);
 
-impl<'a> Deref for CompleteStr<'a> {
-  type Target = str;
+impl<'a> From<&'a str> for CompleteStr<'a> {
+  fn from(src: &'a str) -> Self {
+    CompleteStr(src)
+  }
+}
 
-  fn deref(&self) -> &str {
-    self.0
+impl<'a, 'b> From<&'b &'a str> for CompleteStr<'a> {
+  fn from(src: &'b &'a str) -> Self {
+    CompleteStr(*src)
+  }
+}
+
+impl<'a> Deref for CompleteStr<'a> {
+  type Target = &'a str;
+
+  fn deref(&self) -> &Self::Target {
+    &self.0
   }
 }
 
@@ -164,18 +177,30 @@ impl<'a> ExtendInto for CompleteStr<'a> {
   }
 }
 
-/// Holds a complete String, for which the `at_eof` method always returns true
+/// Holds a complete byte array, for which the `at_eof` method always returns true
 ///
 /// This means that this input type will completely avoid nom's streaming features
 /// and `Incomplete` results.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CompleteByteSlice<'a>(pub &'a [u8]);
 
-impl<'a> Deref for CompleteByteSlice<'a> {
-  type Target = [u8];
+impl<'a> From<&'a [u8]> for CompleteByteSlice<'a> {
+  fn from(src: &'a [u8]) -> Self {
+    CompleteByteSlice(src)
+  }
+}
 
-  fn deref(&self) -> &[u8] {
-    self.0
+impl<'a, 'b> From<&'b &'a [u8]> for CompleteByteSlice<'a> {
+  fn from(src: &'b &'a [u8]) -> Self {
+    CompleteByteSlice(*src)
+  }
+}
+
+impl<'a> Deref for CompleteByteSlice<'a> {
+  type Target = &'a [u8];
+
+  fn deref(&self) -> &Self::Target {
+    &self.0
   }
 }
 
