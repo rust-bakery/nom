@@ -4,7 +4,7 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use nom::{alphanumeric, multispace, space, IResult};
+use nom::{alphanumeric, multispace, space};
 
 use std::str;
 use std::collections::HashMap;

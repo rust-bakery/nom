@@ -15,6 +15,7 @@ use std::collections::HashMap;
 #[derive(Debug, PartialEq)]
 pub enum JsonValue {
   Str(String),
+  Boolean(bool),
   Num(f32),
   Array(Vec<JsonValue>),
   Object(HashMap<String, JsonValue>),
@@ -33,6 +34,13 @@ named!(
     ),
     //map_res!(escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
     char!('\"')
+  )
+);
+
+named!(boolean<bool>,
+  alt!(
+    value!(false, tag!("false")) |
+    value!(true, tag!("true"))
   )
 );
 
