@@ -11,7 +11,7 @@ use lib::std::ops::{Deref, Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::slice::Iter;
 use lib::std::str::{self, CharIndices, Chars, FromStr};
 use lib::std::convert::From;
-use lib::std::fmt::Display;
+use lib::std::fmt::{Display, Formatter, Result};
 #[cfg(feature = "alloc")]
 use lib::std::string::String;
 
@@ -35,7 +35,7 @@ impl<'a, 'b> From<&'b &'a str> for CompleteStr<'a> {
 }
 
 impl<'a> Display for CompleteStr<'a> {
-  fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter) -> Result {
     self.0.fmt(f)
   }
 }
