@@ -222,6 +222,7 @@ Here is a list of known projects using nom:
   * [ISO 8601 dates](https://github.com/badboy/iso8601)
   * [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
+  * [proto files](https://github.com/tafia/protobuf-parser)
 - Programming languages:
   * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
   * [GLSL](https://github.com/phaazon/glsl)
