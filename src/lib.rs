@@ -350,7 +350,6 @@
 //! More examples of [`do_parse!`](macro.do_parse.html) and [`tuple!`](macro.tuple.html) usage can be found in the [INI file parser example](tests/ini.rs).
 //!
 //! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
-#![cfg_attr(not(feature = "std"), feature(alloc))]
 #![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
 //#![warn(missing_docs)]
