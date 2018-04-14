@@ -22,6 +22,22 @@
 - @vthriller for documentation fixes
 - @federicomenaquintero and @veprbl for their help fixing the float parsers
 - @vmchale for new named_args versions
+- @hywan for documentation fixes
+- @fbenkstein for typo fixes
+- @CAD97 for catching missing trait implementations
+- @goldenlentils for &str optimizations
+- @passy for typo fixes
+- @ayrat555 for typo fixes
+- @GuillaumeGomez for documentation fixes
+- @jrakow for documentation fixes and fiwes for `switch!`
+- @phlosioneer for dicumentation fixes
+- @creativcoder for typo fixes
+- @derekdreery for typo fixes
+- @lucasem for implementing `Deref` on `CompleteStr` and `CompleteByteSlice`
+- @lowenheim for `parse_to!` fixes
+- @myrrlyn for trait fixes around `CompleteStr` and `CompleteByteSlice`
+- @NotBad4U for fixing code coverage analysis
+
 
 ### Breaking changes
 
@@ -35,6 +51,7 @@
 - FindToken's calling convention was swapped
 - the `take_*` combinators are now more coherent and stricter, see commit 484f6724ea3ccb for more information
 - `many0` and other related parsers will now return `Incomplete` if the reach the end of input without an error of the child parser. They will also return `Incomplete` on an empty input
+- the `sep!` combinator for whitespace only consumes whitespace in the prefix, while the `ws!` combinator takes care of consuming the remaining whitespace
 
 ### Added
 
@@ -48,6 +65,9 @@
 - the `recognize_float` parser will match a float number's characters, but will not transform to a `f32` or `f64`
 - `alpha` and other basic parsers are now much stricter about partial inputs. We also introduce the  `*0` and `*1` versions of those parsers
 - `named_args` can now specify the input type as well
+- `HexDisplay` is now implemented for `&str`
+- `alloc` feature
+- the `InputTakeAtposition` trait allows specialized implementations of parsers like `take_while!`
 
 ### Removed
 
@@ -59,6 +79,8 @@
 - `anychar!` now works correctly with multibyte characters
 - `take_until_and_consume1!` no longer results in "no method named \`find_substring\`" and "no method named \`slice\`" compilation errors
 - `take_until_and_consume1!` returns the correct Incomplete(Needed) amount
+- `no_std` compiles properly, and nom can work with `alloc` too
+- `parse_to!` now consumes its input
 
 ### Changed
 
