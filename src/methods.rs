@@ -45,6 +45,7 @@
 //! invoked. A `method!` invocation always has to have the type of `self`
 //! declared and it can't be a reference due to Rust's borrow lifetime
 //! restrictions:
+//!
 //! ```ignore
 //! //                  -`self`'s type-
 //! method!(method_name<  Parser<'a> >, ...);
@@ -52,6 +53,7 @@
 //! `self`'s type always comes first.
 //! The next difference is you have to input the self struct. Due to Rust's
 //! macro hygiene the macro can't declare it on it's own.
+//!
 //! ```ignore
 //! //                                                 -self-
 //! method!(method_name<Parser<'a>, &'a str, &'a str>, self, ...);
@@ -63,6 +65,7 @@
 //! method will return self to the caller.
 //!
 //! To call a method on self you need to use the `call_m!` macro. For example:
+//!
 //! ```ignore
 //! struct<'a> Parser<'a> {
 //!   parsed: &'a str,
@@ -75,6 +78,7 @@
 //! ```
 //! More complicated combinations still mostly look the same as their `named!`
 //! counterparts:
+//!
 //! ```ignore
 //!    method!(pub simple_chain<&mut Parser<'a>, &'a str, &'a str>, self,
 //!      do_parse!(
