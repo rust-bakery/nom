@@ -126,6 +126,7 @@ macro_rules! bits_impl (
 ///
 /// A partial byte remaining in the input will be ignored and the given parser will start parsing
 /// at the next full byte.
+///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::rest;
@@ -255,6 +256,7 @@ macro_rules! bytes_impl (
 ///
 /// Signature:
 /// `take_bits!(type, count) => ( (&[T], usize), U, usize) -> IResult<(&[T], usize), U>`
+///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
@@ -326,6 +328,7 @@ macro_rules! take_bits (
 ///
 /// The caller must specify the number of bits to consume. The matched value is included in the
 /// result on success.
+///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {

@@ -166,6 +166,7 @@ macro_rules! take_while_s (
 /// returns the longest (non empty) list of characters until the provided function fails.
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool`
+///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::is_alphanumeric;
