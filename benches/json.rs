@@ -37,11 +37,9 @@ named!(
   )
 );
 
-named!(boolean<bool>,
-  alt!(
-    value!(false, tag!("false")) |
-    value!(true, tag!("true"))
-  )
+named!(
+  boolean<bool>,
+  alt!(value!(false, tag!("false")) | value!(true, tag!("true")))
 );
 
 named!(
