@@ -4,9 +4,10 @@
 
 #[macro_use]
 extern crate nom;
+extern crate regex;
 
 use nom::{space, Err, IResult, Needed, le_u64};
-use nom::types::CompleteByteSlice;
+use nom::types::{CompleteStr, CompleteByteSlice};
 
 #[allow(dead_code)]
 struct Range {
@@ -249,3 +250,6 @@ named!(issue_724<&str, i32>,
     (metadata.0.value + metadata.1.value)
   )
 );
+
+named!(issue_741_str<CompleteStr, CompleteStr>, re_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
+named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
