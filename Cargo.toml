@@ -83,7 +83,7 @@ required-features = ["alloc"]
 
 [[test]]
 name = "issues"
-required-features = ["alloc"]
+required-features = ["alloc", "regexp_macros"]
 
 [[test]]
 name = "json"
