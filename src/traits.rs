@@ -469,10 +469,10 @@ use types::CompleteByteSlice;
 pub trait InputTakeAtPosition: Sized {
   type Item;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E>(&self, predicate: P, e: ErrorKind<E>) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
 }
@@ -480,7 +480,7 @@ pub trait InputTakeAtPosition: Sized {
 impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput> InputTakeAtPosition for T {
   type Item = <T as InputIter>::RawItem;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -496,7 +496,7 @@ impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E>(&self, predicate: P, e: ErrorKind<E>) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -521,7 +521,7 @@ impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput
 impl<'a> InputTakeAtPosition for &'a [u8] {
   type Item = u8;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -531,7 +531,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E>(&self, predicate: P, e: ErrorKind<E>) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -546,7 +546,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
 impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
   type Item = u8;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -562,7 +562,7 @@ impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E>(&self, predicate: P, e: ErrorKind<E>) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -589,7 +589,7 @@ impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
 impl<'a> InputTakeAtPosition for &'a str {
   type Item = char;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -599,7 +599,7 @@ impl<'a> InputTakeAtPosition for &'a str {
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E>(&self, predicate: P, e: ErrorKind<E>) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -614,7 +614,7 @@ impl<'a> InputTakeAtPosition for &'a str {
 impl<'a> InputTakeAtPosition for CompleteStr<'a> {
   type Item = char;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -627,7 +627,7 @@ impl<'a> InputTakeAtPosition for CompleteStr<'a> {
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E>(&self, predicate: P, e: ErrorKind<E>) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
