@@ -80,6 +80,35 @@ pub enum Err<I, E = u32> {
   Failure(Context<I, E>),
 }
 
+use std::fmt;
+impl<I, E> fmt::Display for Err<I, E>
+where
+  I: fmt::Debug,
+  E: fmt::Debug,
+{
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}", self)
+  }
+}
+
+use std::error::Error;
+impl<I, E> Error for Err<I, E>
+where
+  I: fmt::Debug,
+  E: fmt::Debug,
+{
+  fn description(&self) -> &str {
+    match self {
+      Err::Incomplete(..) => "there was not enough data",
+      Err::Error(Context::Code(_, error_kind)) | Err::Failure(Context::Code(_, error_kind)) => error_kind.description(),
+    }
+  }
+
+  fn cause(&self) -> Option<&Error> {
+    None
+  }
+}
+
 use util::Convert;
 
 impl<I, F, E: From<F>> Convert<Err<I, F>> for Err<I, E> {
