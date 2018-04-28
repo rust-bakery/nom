@@ -80,7 +80,10 @@ pub enum Err<I, E = u32> {
   Failure(Context<I, E>),
 }
 
+#[cfg(feature = "std")]
 use std::fmt;
+
+#[cfg(feature = "std")]
 impl<I, E> fmt::Display for Err<I, E>
 where
   I: fmt::Debug,
@@ -91,7 +94,10 @@ where
   }
 }
 
+#[cfg(feature = "std")]
 use std::error::Error;
+
+#[cfg(feature = "std")]
 impl<I, E> Error for Err<I, E>
 where
   I: fmt::Debug,
