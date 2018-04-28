@@ -99,8 +99,10 @@ where
 {
   fn description(&self) -> &str {
     match self {
-      Err::Incomplete(..) => "there was not enough data",
-      Err::Error(Context::Code(_, error_kind)) | Err::Failure(Context::Code(_, error_kind)) => error_kind.description(),
+      &Err::Incomplete(..) => "there was not enough data",
+      &Err::Error(Context::Code(_, ref error_kind)) | &Err::Failure(Context::Code(_, ref error_kind)) => error_kind.description(),
+      #[cfg(feature = "verbose-errors")]
+      &Err::Error(Context::List(..)) | &Err::Failure(Context::List(..)) => "list of errors",
     }
   }
 
