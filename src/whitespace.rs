@@ -714,7 +714,7 @@ macro_rules! separated_list_sep (
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
-      use $crate::{ErrorKind, FindToken, InputTakeAtPosition};
+      use $crate::{FindToken, InputTakeAtPosition};
       let input = $i;
       input.split_at_position(|c| !$arr.find_token(c))
     }
