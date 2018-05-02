@@ -30,7 +30,7 @@ regexp_macros = ["regexp", "lazy_static"]
 verbose-errors = ["alloc"]
 
 [dependencies.regex]
-version = "^0.2"
+version = "^1.0"
 optional = true
 
 [dependencies.lazy_static]
