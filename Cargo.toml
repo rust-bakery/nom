@@ -112,3 +112,5 @@ name = "test1"
 
 [badges]
 travis-ci = { repository = "Geal/nom" }
+coveralls = { repository = "Geal/nom", branch = "master", service = "github" }
+maintenance = { status = "actively-developed" }
