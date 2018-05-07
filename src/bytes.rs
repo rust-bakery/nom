@@ -823,7 +823,6 @@ macro_rules! take_until1 (
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::InputTake;
-      use $crate::AtEof;
       let input = $i;
 
       let res: IResult<_,_> = match input.find_substring($substr) {
