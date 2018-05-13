@@ -40,6 +40,12 @@ impl<'a> Display for CompleteStr<'a> {
   }
 }
 
+impl<'a> AsRef<str> for CompleteStr<'a> {
+  fn as_ref(&self) -> &str {
+    self.0
+  }
+}
+
 impl<'a> Deref for CompleteStr<'a> {
   type Target = &'a str;
 
