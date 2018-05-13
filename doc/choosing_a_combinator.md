@@ -70,11 +70,11 @@ Parsing integers from binary formats can be done in two ways: with parser functi
 
 ## Streaming related
 
-eof!: eof!() returns its input if it is at the end of input data
-complete!: replaces a Incomplete returned by the child parser with an Error
-alt_complete!: is equivalent to the alt! combinator, except that it will not returns Incomplete when one of the constituting parsers returns Incomplete. Instead, it will try the next alternative in the chain.
-separated_list_complete!: This is equivalent to the separated_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
-separated_nonempty_list_complete!: This is equivalent to the separated_nonempty_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
+- eof!: eof!() returns its input if it is at the end of input data
+- complete!: replaces a Incomplete returned by the child parser with an Error
+- alt_complete!: is equivalent to the alt! combinator, except that it will not returns Incomplete when one of the constituting parsers returns Incomplete. Instead, it will try the next alternative in the chain.
+- separated_list_complete!: This is equivalent to the separated_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
+- separated_nonempty_list_complete!: This is equivalent to the separated_nonempty_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
 
 ## Modifiers
 | usage | input | output | comment |
