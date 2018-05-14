@@ -99,9 +99,6 @@ required-features = ["alloc"]
 name = "named_args"
 
 [[test]]
-name = "omnom"
-
-[[test]]
 name = "overflow"
 
 [[test]]
