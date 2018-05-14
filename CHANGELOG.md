@@ -4,6 +4,15 @@
 
 ### Thanks
 
+### Added
+
+### Fixed
+
+
+## 4.0.0 - 2018-05-14
+
+### Thanks
+
 - @jsgf for the new `AtEof` trait
 - @tmccombs for fixes on `escaped*` combinators
 - @s3bk for fixes around non Copy input types and documentation help
@@ -37,7 +46,13 @@
 - @lowenheim for `parse_to!` fixes
 - @myrrlyn for trait fixes around `CompleteStr` and `CompleteByteSlice`
 - @NotBad4U for fixing code coverage analysis
-
+- @murarth for code formatting
+- @glandium for fixing build in no_std
+- @csharad for regex compatibility with `CompleteStr`
+- @FauxFaux for implementing `AsRef<str>` on `CompleteStr`
+- @jaje for implementing `std::Error` on `nom:Err`
+- @fengalin for warning fixes
+- @@khernyo for doc formatting
 
 ### Breaking changes
 
@@ -871,7 +886,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/3.2.1...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/4.0.0...HEAD
+* [4.0.0]: https://github.com/Geal/nom/compare/3.2.1...4.0.0
 * [3.2.1]: https://github.com/Geal/nom/compare/3.2.0...3.2.1
 * [3.2.0]: https://github.com/Geal/nom/compare/3.1.0...3.2.0
 * [3.1.0]: https://github.com/Geal/nom/compare/3.0.0...3.1.0
