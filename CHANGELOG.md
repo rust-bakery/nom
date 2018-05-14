@@ -54,6 +54,8 @@
 - @fengalin for warning fixes
 - @@khernyo for doc formatting
 
+Special thanks to @corkami for the logo :)
+
 ### Breaking changes
 
 - the `IResult` type now becomes a `Result` from the standard library
