@@ -62,8 +62,8 @@ fn parse_color() {
 
 ## Documentation
 
-- [Reference documentation](https://docs.rs/nom).
-- [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc).
+- [Reference documentation](https://docs.rs/nom)
+- [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc)
 - [list of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
 
 If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
@@ -212,6 +212,11 @@ version = "^3.2"
 features = ["regexp"]
 ```
 
+# Related projects
+
+- [get line and column info in nom's input type](https://github.com/fflorent/nom_locate)
+- [using nom as lexer and parser](https://github.com/Rydgel/monkey-rust)
+
 # Parsers written with nom
 
 Here is a list of known projects using nom:
@@ -228,6 +233,7 @@ Here is a list of known projects using nom:
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
   * [proto files](https://github.com/tafia/protobuf-parser)
 - Programming languages:
+  * [PHP](https://github.com/tagua-vm/parser)
   * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
@@ -256,7 +262,6 @@ Here is a list of known projects using nom:
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
 - Language specifications:
   * [BNF](https://github.com/snewt/bnf)
-- [using nom as lexer and parser](https://github.com/Rydgel/monkey-rust)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
