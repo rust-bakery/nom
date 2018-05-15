@@ -56,6 +56,7 @@ impl<'a> Deref for CompleteStr<'a> {
 }
 
 impl<'a> AtEof for CompleteStr<'a> {
+  #[inline]
   fn at_eof(&self) -> bool {
     true
   }
@@ -220,6 +221,7 @@ impl<'a> Deref for CompleteByteSlice<'a> {
 }
 
 impl<'a> AtEof for CompleteByteSlice<'a> {
+  #[inline]
   fn at_eof(&self) -> bool {
     true
   }
