@@ -139,7 +139,7 @@ It allows you to build powerful, deterministic state machines for your protocols
 Example projects:
 
 - [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/parser/http11.rs)
-- [using nom with generators](https://github.com/geal/generator_nom)
+- [using nom with generators](https://github.com/Geal/generator_nom)
 
 ## Parser combinators
 
