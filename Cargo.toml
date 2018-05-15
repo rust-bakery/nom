@@ -82,6 +82,9 @@ name = "ini_str"
 required-features = ["alloc"]
 
 [[test]]
+name = "issue_759"
+
+[[test]]
 name = "issues"
 required-features = ["alloc", "regexp_macros"]
 

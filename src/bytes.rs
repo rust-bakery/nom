@@ -596,7 +596,7 @@ macro_rules! take_till (
 macro_rules! take_till1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::InputTakeAtPosition;
+      use $crate::{ErrorKind, InputTakeAtPosition};
       let input = $input;
       input.split_at_position1(|c| $submac!(c, $($args)*), ErrorKind::TakeTill1)
     }
