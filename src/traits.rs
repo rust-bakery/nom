@@ -1,13 +1,13 @@
 //! Traits input types have to implement to work with nom combinators
 //!
 use internal::{Err, IResult, Needed};
-use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::iter::Enumerate;
-use lib::std::slice::Iter;
 use lib::std::iter::Map;
+use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use lib::std::slice::Iter;
 
-use lib::std::str::Chars;
 use lib::std::str::CharIndices;
+use lib::std::str::Chars;
 use lib::std::str::FromStr;
 use lib::std::str::from_utf8;
 #[cfg(feature = "alloc")]
@@ -17,10 +17,10 @@ use lib::std::vec::Vec;
 
 use memchr;
 
-#[cfg(feature = "verbose-errors")]
-use verbose_errors::Context;
 #[cfg(not(feature = "verbose-errors"))]
 use simple_errors::Context;
+#[cfg(feature = "verbose-errors")]
+use verbose_errors::Context;
 
 use util::ErrorKind;
 
@@ -460,8 +460,8 @@ impl<'a> InputTake for &'a str {
 /// `InputTakeAtPosition` (like the one for `&[u8]`).
 pub trait UnspecializedInput {}
 
-use types::CompleteStr;
 use types::CompleteByteSlice;
+use types::CompleteStr;
 
 /// methods to take as much input as possible until the provided function returns true for the current element
 ///
@@ -551,10 +551,7 @@ impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
     P: Fn(Self::Item) -> bool,
   {
     match (0..self.0.len()).find(|b| predicate(self.0[*b])) {
-      Some(i) => Ok((
-        CompleteByteSlice(&self.0[i..]),
-        CompleteByteSlice(&self.0[..i]),
-      )),
+      Some(i) => Ok((CompleteByteSlice(&self.0[i..]), CompleteByteSlice(&self.0[..i]))),
       None => {
         let (i, o) = self.0.take_split(self.0.len());
         Ok((CompleteByteSlice(i), CompleteByteSlice(o)))
@@ -568,18 +565,12 @@ impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
   {
     match (0..self.0.len()).find(|b| predicate(self.0[*b])) {
       Some(0) => Err(Err::Error(Context::Code(CompleteByteSlice(self.0), e))),
-      Some(i) => Ok((
-        CompleteByteSlice(&self.0[i..]),
-        CompleteByteSlice(&self.0[..i]),
-      )),
+      Some(i) => Ok((CompleteByteSlice(&self.0[i..]), CompleteByteSlice(&self.0[..i]))),
       None => {
         if self.0.len() == 0 {
           Err(Err::Error(Context::Code(CompleteByteSlice(self.0), e)))
         } else {
-          Ok((
-            CompleteByteSlice(&self.0[self.0.len()..]),
-            CompleteByteSlice(self.0),
-          ))
+          Ok((CompleteByteSlice(&self.0[self.0.len()..]), CompleteByteSlice(self.0)))
         }
       }
     }
@@ -917,31 +908,31 @@ macro_rules! impl_fn_slice {
 }
 
 macro_rules! slice_range_impl {
-    ( [ $for_type:ident ], $ty:ty ) => {
-        impl<'a, $for_type> Slice<$ty> for &'a [$for_type] {
-            impl_fn_slice!( $ty );
-        }
-    };
-    ( $for_type:ty, $ty:ty ) => {
-        impl<'a> Slice<$ty> for &'a $for_type {
-            impl_fn_slice!( $ty );
-        }
+  ([$for_type:ident], $ty:ty) => {
+    impl<'a, $for_type> Slice<$ty> for &'a [$for_type] {
+      impl_fn_slice!($ty);
     }
+  };
+  ($for_type:ty, $ty:ty) => {
+    impl<'a> Slice<$ty> for &'a $for_type {
+      impl_fn_slice!($ty);
+    }
+  };
 }
 
 macro_rules! slice_ranges_impl {
-    ( [ $for_type:ident ] ) => {
-        slice_range_impl! {[$for_type], Range<usize>}
-        slice_range_impl! {[$for_type], RangeTo<usize>}
-        slice_range_impl! {[$for_type], RangeFrom<usize>}
-        slice_range_impl! {[$for_type], RangeFull}
-    };
-    ( $for_type:ty ) => {
-        slice_range_impl! {$for_type, Range<usize>}
-        slice_range_impl! {$for_type, RangeTo<usize>}
-        slice_range_impl! {$for_type, RangeFrom<usize>}
-        slice_range_impl! {$for_type, RangeFull}
-    }
+  ([$for_type:ident]) => {
+    slice_range_impl! {[$for_type], Range<usize>}
+    slice_range_impl! {[$for_type], RangeTo<usize>}
+    slice_range_impl! {[$for_type], RangeFrom<usize>}
+    slice_range_impl! {[$for_type], RangeFull}
+  };
+  ($for_type:ty) => {
+    slice_range_impl! {$for_type, Range<usize>}
+    slice_range_impl! {$for_type, RangeTo<usize>}
+    slice_range_impl! {$for_type, RangeFrom<usize>}
+    slice_range_impl! {$for_type, RangeFull}
+  };
 }
 
 slice_ranges_impl! {str}

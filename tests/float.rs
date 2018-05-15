@@ -23,9 +23,7 @@ named!(
   float<f32>,
   map!(
     pair!(opt!(alt!(tag!("+") | tag!("-"))), unsigned_float),
-    |(sign, value): (Option<&[u8]>, f32)| sign
-      .and_then(|s| if s[0] == b'-' { Some(-1f32) } else { None })
-      .unwrap_or(1f32) * value
+    |(sign, value): (Option<&[u8]>, f32)| sign.and_then(|s| if s[0] == b'-' { Some(-1f32) } else { None }).unwrap_or(1f32) * value
   )
 );
 

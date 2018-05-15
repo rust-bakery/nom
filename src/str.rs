@@ -261,10 +261,7 @@ mod test {
 
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == " World!",
-          "Parser `tag_s` consumed leftover input."
-        );
+        assert!(extra == " World!", "Parser `tag_s` consumed leftover input.");
         assert!(
           output == TAG,
           "Parser `tag_s` doesn't return the tag it matched on success. \
@@ -306,10 +303,7 @@ mod test {
     match tag_s!(INPUT, TAG) {
       Err(Err::Error(_)) => (),
       other => {
-        panic!(
-          "Parser `tag_s` didn't fail when it should have. Got `{:?}`.`",
-          other
-        );
+        panic!("Parser `tag_s` didn't fail when it should have. Got `{:?}`.`", other);
       }
     };
   }
@@ -322,11 +316,7 @@ mod test {
 
     match take_s!(INPUT, 9) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_s` consumed leftover input. Leftover `{}`.",
-          extra
-        );
+        assert!(extra == LEFTOVER, "Parser `take_s` consumed leftover input. Leftover `{}`.", extra);
         assert!(
           output == CONSUMED,
           "Parser `take_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
@@ -417,10 +407,7 @@ mod test {
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&"123"[..], &b[..])));
-    assert_eq!(
-      f(&d[..]),
-      Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1)))
-    );
+    assert_eq!(f(&d[..]), Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1))));
   }
 
   #[test]
@@ -436,10 +423,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_till_s` consumed leftover input."
-        );
+        assert!(extra == LEFTOVER, "Parser `take_till_s` consumed leftover input.");
         assert!(
           output == CONSUMED,
           "Parser `take_till_s` doesn't return the string it consumed on success. \
@@ -469,10 +453,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_while_s` consumed leftover input."
-        );
+        assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
         assert!(
           output == CONSUMED,
           "Parser `take_while_s` doesn't return the string it consumed on success. \
@@ -564,10 +545,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_while_s` consumed leftover input."
-        );
+        assert!(extra == LEFTOVER, "Parser `take_while_s` consumed leftover input.");
         assert!(
           output == CONSUMED,
           "Parser `take_while_s` doesn't return the string it consumed on success. \
@@ -593,10 +571,7 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => panic!(
-        "Parser `is_not_s` didn't fail when it should have. Got `{:?}`.",
-        other
-      ),
+      other => panic!("Parser `is_not_s` didn't fail when it should have. Got `{:?}`.", other),
     };
   }
 
@@ -613,10 +588,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_while1_s` consumed leftover input."
-        );
+        assert!(extra == LEFTOVER, "Parser `take_while1_s` consumed leftover input.");
         assert!(
           output == CONSUMED,
           "Parser `take_while1_s` doesn't return the string it consumed on success. \
@@ -674,11 +646,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `is_a_s` consumed leftover input. Leftover `{}`.",
-          extra
-        );
+        assert!(extra == LEFTOVER, "Parser `is_a_s` consumed leftover input. Leftover `{}`.", extra);
         assert!(
           output == CONSUMED,
           "Parser `is_a_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
@@ -722,10 +690,7 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => panic!(
-        "Parser `is_a_s` didn't fail when it should have. Got `{:?}`.",
-        other
-      ),
+      other => panic!("Parser `is_a_s` didn't fail when it should have. Got `{:?}`.", other),
     };
   }
 

@@ -6,12 +6,12 @@ use traits::{AsBytes, AtEof, Compare, CompareResult, FindSubstring, FindToken, I
 #[cfg(feature = "alloc")]
 use traits::ExtendInto;
 
+use lib::std::convert::From;
+use lib::std::fmt::{Display, Formatter, Result};
 use lib::std::iter::{Enumerate, Map};
 use lib::std::ops::{Deref, Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::slice::Iter;
 use lib::std::str::{self, CharIndices, Chars, FromStr};
-use lib::std::convert::From;
-use lib::std::fmt::{Display, Formatter, Result};
 #[cfg(feature = "alloc")]
 use lib::std::string::String;
 

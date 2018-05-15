@@ -9,8 +9,8 @@ use nom::{alphanumeric, recognize_float};
 
 use test::Bencher;
 
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 #[derive(Debug, PartialEq)]
 pub enum JsonValue {
@@ -28,46 +28,26 @@ named!(
   string<&str>,
   delimited!(
     char!('\"'),
-    map_res!(
-      escaped!(call!(alphanumeric), '\\', one_of!("\"n\\")),
-      str::from_utf8
-    ),
+    map_res!(escaped!(call!(alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
     //map_res!(escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
     char!('\"')
   )
 );
 
-named!(
-  boolean<bool>,
-  alt!(value!(false, tag!("false")) | value!(true, tag!("true")))
-);
+named!(boolean<bool>, alt!(value!(false, tag!("false")) | value!(true, tag!("true"))));
 
 named!(
   array<Vec<JsonValue>>,
-  ws!(delimited!(
-    char!('['),
-    separated_list!(char!(','), value),
-    char!(']')
-  ))
+  ws!(delimited!(char!('['), separated_list!(char!(','), value), char!(']')))
 );
 
-named!(
-  key_value<(&str, JsonValue)>,
-  ws!(separated_pair!(string, char!(':'), value))
-);
+named!(key_value<(&str, JsonValue)>, ws!(separated_pair!(string, char!(':'), value)));
 
 named!(
   hash<HashMap<String, JsonValue>>,
   ws!(map!(
-    delimited!(
-      char!('{'),
-      separated_list!(char!(','), key_value),
-      char!('}')
-    ),
-    |tuple_vec| tuple_vec
-      .into_iter()
-      .map(|(k, v)| (String::from(k), v))
-      .collect()
+    delimited!(char!('{'), separated_list!(char!(','), key_value), char!('}')),
+    |tuple_vec| tuple_vec.into_iter().map(|(k, v)| (String::from(k), v)).collect()
   ))
 );
 

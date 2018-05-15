@@ -6,8 +6,8 @@ use std::fmt::{Debug, Display, Formatter};
 
 use std::str::FromStr;
 
-use nom::{digit, multispace};
 use nom::types::CompleteStr;
+use nom::{digit, multispace};
 
 pub enum Expr {
   Value(i64),

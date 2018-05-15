@@ -439,11 +439,11 @@ macro_rules! do_parse (
 #[cfg(test)]
 mod tests {
   use internal::{Err, IResult, Needed};
-  use util::ErrorKind;
-  use nom::be_u16;
   #[cfg(feature = "alloc")]
   #[cfg(feature = "verbose-errors")]
   use lib::std::vec::Vec;
+  use nom::be_u16;
+  use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -699,18 +699,9 @@ mod tests {
     named!(tag_def, tag!("def"));
     named!( pair_abc_def<&[u8],(&[u8], &[u8])>, pair!(tag_abc, tag_def) );
 
-    assert_eq!(
-      pair_abc_def(&b"abcdefghijkl"[..]),
-      Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])))
-    );
-    assert_eq!(
-      pair_abc_def(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
-    assert_eq!(
-      pair_abc_def(&b"abcd"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
+    assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
+    assert_eq!(pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(pair_abc_def(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(
       pair_abc_def(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -736,14 +727,8 @@ mod tests {
       sep_pair_abc_def(&b"abc,defghijkl"[..]),
       Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])))
     );
-    assert_eq!(
-      sep_pair_abc_def(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
-    assert_eq!(
-      sep_pair_abc_def(&b"abc,d"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
+    assert_eq!(sep_pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(
       sep_pair_abc_def(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -764,18 +749,9 @@ mod tests {
     named!(tag_efgh, tag!("efgh"));
     named!( preceded_abcd_efgh<&[u8], &[u8]>, preceded!(tag_abcd, tag_efgh) );
 
-    assert_eq!(
-      preceded_abcd_efgh(&b"abcdefghijkl"[..]),
-      Ok((&b"ijkl"[..], &b"efgh"[..]))
-    );
-    assert_eq!(
-      preceded_abcd_efgh(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
-    assert_eq!(
-      preceded_abcd_efgh(&b"abcde"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
+    assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"efgh"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(
       preceded_abcd_efgh(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -796,18 +772,9 @@ mod tests {
     named!(tag_efgh, tag!("efgh"));
     named!( terminated_abcd_efgh<&[u8], &[u8]>, terminated!(tag_abcd, tag_efgh) );
 
-    assert_eq!(
-      terminated_abcd_efgh(&b"abcdefghijkl"[..]),
-      Ok((&b"ijkl"[..], &b"abcd"[..]))
-    );
-    assert_eq!(
-      terminated_abcd_efgh(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
-    assert_eq!(
-      terminated_abcd_efgh(&b"abcde"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
+    assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"abcd"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(terminated_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(
       terminated_abcd_efgh(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -829,32 +796,17 @@ mod tests {
     named!(tag_ghi, tag!("ghi"));
     named!( delimited_abc_def_ghi<&[u8], &[u8]>, delimited!(tag_abc, tag_def, tag_ghi) );
 
-    assert_eq!(
-      delimited_abc_def_ghi(&b"abcdefghijkl"[..]),
-      Ok((&b"jkl"[..], &b"def"[..]))
-    );
-    assert_eq!(
-      delimited_abc_def_ghi(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
-    assert_eq!(
-      delimited_abc_def_ghi(&b"abcde"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
-    assert_eq!(
-      delimited_abc_def_ghi(&b"abcdefgh"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefghijkl"[..]), Ok((&b"jkl"[..], &b"def"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(
       delimited_abc_def_ghi(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
     );
     assert_eq!(
       delimited_abc_def_ghi(&b"xxxdefghi"[..]),
-      Err(Err::Error(error_position!(
-        &b"xxxdefghi"[..],
-        ErrorKind::Tag
-      ),))
+      Err(Err::Error(error_position!(&b"xxxdefghi"[..], ErrorKind::Tag),))
     );
     assert_eq!(
       delimited_abc_def_ghi(&b"abcxxxghi"[..]),
@@ -871,15 +823,9 @@ mod tests {
     named!(tuple_3<&[u8], (u16, &[u8], &[u8]) >,
     tuple!( be_u16 , take!(3), tag!("fg") ) );
 
-    assert_eq!(
-      tuple_3(&b"abcdefgh"[..]),
-      Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])))
-    );
+    assert_eq!(tuple_3(&b"abcdefgh"[..]), Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..]))));
     assert_eq!(tuple_3(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(
-      tuple_3(&b"abcde"[..]),
-      Err(Err::Incomplete(Needed::Size(2)))
-    );
+    assert_eq!(tuple_3(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(2))));
     assert_eq!(
       tuple_3(&b"abcdejk"[..]),
       Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag)))
@@ -915,19 +861,10 @@ mod tests {
 
     //trace_macros!(false);
 
-    assert_eq!(
-      do_parser(&b"abcdabcdefghefghX"[..]),
-      Ok((&b"X"[..], (1, 2)))
-    );
+    assert_eq!(do_parser(&b"abcdabcdefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
     assert_eq!(do_parser(&b"abcdefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
-    assert_eq!(
-      do_parser(&b"abcdab"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
-    assert_eq!(
-      do_parser(&b"abcdefghef"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
+    assert_eq!(do_parser(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(do_parser(&b"abcdefghef"[..]), Err(Err::Incomplete(Needed::Size(4))));
   }
 
   #[cfg_attr(rustfmt, rustfmt_skip)]

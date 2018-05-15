@@ -32,49 +32,27 @@ complete_named!(
   float<f32>,
   map!(
     pair!(opt!(alt!(tag!("+") | tag!("-"))), unsigned_float),
-    |(sign, value): (Option<CompleteStr>, f32)| sign
-      .and_then(|s| s.0.chars().next())
-      .and_then(|c| if c == '-' { Some(-1f32) } else { None })
-      .unwrap_or(1f32) * value
+    |(sign, value): (Option<CompleteStr>, f32)| {
+      sign
+        .and_then(|s| s.0.chars().next())
+        .and_then(|c| if c == '-' { Some(-1f32) } else { None })
+        .unwrap_or(1f32) * value
+    }
   )
 );
 
 #[test]
 fn unsigned_float_test() {
-  assert_eq!(
-    unsigned_float(CompleteStr("123.456")),
-    Ok((CompleteStr(""), 123.456))
-  );
-  assert_eq!(
-    unsigned_float(CompleteStr("0.123")),
-    Ok((CompleteStr(""), 0.123))
-  );
-  assert_eq!(
-    unsigned_float(CompleteStr("123.0")),
-    Ok((CompleteStr(""), 123.0))
-  );
-  assert_eq!(
-    unsigned_float(CompleteStr("123.")),
-    Ok((CompleteStr(""), 123.0))
-  );
-  assert_eq!(
-    unsigned_float(CompleteStr(".123")),
-    Ok((CompleteStr(""), 0.123))
-  );
+  assert_eq!(unsigned_float(CompleteStr("123.456")), Ok((CompleteStr(""), 123.456)));
+  assert_eq!(unsigned_float(CompleteStr("0.123")), Ok((CompleteStr(""), 0.123)));
+  assert_eq!(unsigned_float(CompleteStr("123.0")), Ok((CompleteStr(""), 123.0)));
+  assert_eq!(unsigned_float(CompleteStr("123.")), Ok((CompleteStr(""), 123.0)));
+  assert_eq!(unsigned_float(CompleteStr(".123")), Ok((CompleteStr(""), 0.123)));
 }
 
 #[test]
 fn float_test() {
-  assert_eq!(
-    float(CompleteStr("123.456")),
-    Ok((CompleteStr(""), 123.456))
-  );
-  assert_eq!(
-    float(CompleteStr("+123.456")),
-    Ok((CompleteStr(""), 123.456))
-  );
-  assert_eq!(
-    float(CompleteStr("-123.456")),
-    Ok((CompleteStr(""), -123.456))
-  );
+  assert_eq!(float(CompleteStr("123.456")), Ok((CompleteStr(""), 123.456)));
+  assert_eq!(float(CompleteStr("+123.456")), Ok((CompleteStr(""), 123.456)));
+  assert_eq!(float(CompleteStr("-123.456")), Ok((CompleteStr(""), -123.456)));
 }

@@ -1,8 +1,7 @@
 /// Character level parsers
-
 use internal::{IResult, Needed};
-use traits::{AsChar, InputIter, InputLength, Slice};
 use lib::std::ops::RangeFrom;
+use traits::{AsChar, InputIter, InputLength, Slice};
 use traits::{need_more, AtEof};
 
 /// matches one of the provided characters
