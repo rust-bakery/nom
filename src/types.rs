@@ -49,6 +49,7 @@ impl<'a> AsRef<str> for CompleteStr<'a> {
 impl<'a> Deref for CompleteStr<'a> {
   type Target = &'a str;
 
+  #[inline]
   fn deref(&self) -> &Self::Target {
     &self.0
   }
@@ -212,6 +213,7 @@ impl<'a, 'b> From<&'b &'a [u8]> for CompleteByteSlice<'a> {
 impl<'a> Deref for CompleteByteSlice<'a> {
   type Target = &'a [u8];
 
+  #[inline]
   fn deref(&self) -> &Self::Target {
     &self.0
   }
