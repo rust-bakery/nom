@@ -63,24 +63,28 @@ impl<'a> AtEof for CompleteStr<'a> {
 }
 
 impl<'a> Slice<Range<usize>> for CompleteStr<'a> {
+  #[inline]
   fn slice(&self, range: Range<usize>) -> Self {
     CompleteStr(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeTo<usize>> for CompleteStr<'a> {
+  #[inline]
   fn slice(&self, range: RangeTo<usize>) -> Self {
     CompleteStr(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeFrom<usize>> for CompleteStr<'a> {
+  #[inline]
   fn slice(&self, range: RangeFrom<usize>) -> Self {
     CompleteStr(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeFull> for CompleteStr<'a> {
+  #[inline]
   fn slice(&self, range: RangeFull) -> Self {
     CompleteStr(self.0.slice(range))
   }
@@ -228,24 +232,28 @@ impl<'a> AtEof for CompleteByteSlice<'a> {
 }
 
 impl<'a> Slice<Range<usize>> for CompleteByteSlice<'a> {
+  #[inline]
   fn slice(&self, range: Range<usize>) -> Self {
     CompleteByteSlice(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeTo<usize>> for CompleteByteSlice<'a> {
+  #[inline]
   fn slice(&self, range: RangeTo<usize>) -> Self {
     CompleteByteSlice(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeFrom<usize>> for CompleteByteSlice<'a> {
+  #[inline]
   fn slice(&self, range: RangeFrom<usize>) -> Self {
     CompleteByteSlice(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeFull> for CompleteByteSlice<'a> {
+  #[inline]
   fn slice(&self, range: RangeFull) -> Self {
     CompleteByteSlice(self.0.slice(range))
   }
