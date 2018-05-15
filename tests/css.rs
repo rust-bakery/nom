@@ -13,8 +13,10 @@ fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
 }
 
 fn is_hex_digit(c: char) -> bool {
-  let c = c as u8;
-  (c >= 0x30 && c <= 0x39) || (c >= 0x41 && c <= 0x46) || (c >= 0x61 && c <= 0x66)
+  match c {
+    '0'..='9' | 'a'..='f' | 'A'..='F' => true,
+    _ => false,
+  }
 }
 
 named!(hex_primary<&str, u8>,
