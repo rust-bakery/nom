@@ -489,7 +489,7 @@ macro_rules! alt_sep (
   (__impl $i:expr, $separator:path, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err};
+      use $crate::Err;
 
       let res = sep!($i, $separator, $subrule!($($args)*));
       match res {
@@ -503,7 +503,7 @@ macro_rules! alt_sep (
   (__impl $i:expr, $separator:path, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err};
+      use $crate::Err;
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
         Ok((i,o))               => Ok((i,$gen(o))),
@@ -526,7 +526,7 @@ macro_rules! alt_sep (
   (__impl $i:expr, $separator:path, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err};
+      use $crate::Err;
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
         Ok((i,o))     => Ok((i,$gen(o))),
@@ -548,7 +548,7 @@ macro_rules! alt_sep (
   (__impl $i:expr, $separator:path, $subrule:ident!( $($args:tt)*)) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err};
+      use $crate::Err;
 
       match sep!($i, $separator, $subrule!( $($args)* )) {
         Ok((i,o))     => Ok((i,o)),
@@ -644,7 +644,7 @@ macro_rules! switch_sep (
   (__impl $i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err};
+      use $crate::Err;
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(Err::Error(e))      => Err(Err::Error(error_node_position!(
