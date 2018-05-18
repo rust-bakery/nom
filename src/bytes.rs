@@ -1108,34 +1108,6 @@ mod tests {
     );
   );
 
-  #[macro_export]
-  macro_rules! char (
-    ($i:expr, $c: expr) => (
-      {
-        use $crate::lib::std::result::Result::*;
-        use $crate::lib::std::option::Option::*;
-        use $crate::{Err,Needed};
-
-        use $crate::Slice;
-        use $crate::AsChar;
-        use $crate::InputIter;
-
-        match ($i).iter_elements().next().map(|c| {
-          let b = c.clone().as_char() == $c;
-          (c, b)
-        }) {
-          None             => $crate::need_more($i, Needed::Size(1)),
-          Some((_, false)) => {
-            let e: $crate::ErrorKind<u32> = $crate::ErrorKind::Char;
-            Err(Err::Error($crate::Context::Code($i, e)))
-          },
-          //the unwrap should be safe here
-          Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
-        }
-      }
-    );
-  );
-
   #[test]
   fn is_a() {
     named!(a_or_b, is_a!(&b"ab"[..]));
