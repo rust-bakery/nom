@@ -253,3 +253,22 @@ named!(issue_724<&str, i32>,
 
 named!(issue_741_str<CompleteStr, CompleteStr>, re_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
 named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
+
+
+fn atom_specials(c: u8) -> bool {
+    c == b'q'
+}
+
+named!(
+    capability<&str>,
+    do_parse!(tag_s!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
+);
+
+#[test]
+fn issue_759() {
+    assert_eq!(capability(b" abcqd"), Ok((&b"qd"[..], "a")));
+}
+
+named_args!(issue_771(count: usize)<Vec<u32>>,
+  length_count!(value!(count), call!(nom::be_u32))
+);

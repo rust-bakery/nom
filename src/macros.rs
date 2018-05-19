@@ -757,7 +757,8 @@ macro_rules! value (
   );
   ($i:expr, $res:expr) => (
     {
-      Ok(($i, $res))
+      let res: IResult<_,_> = Ok(($i, $res));
+      res
     }
   );
 );

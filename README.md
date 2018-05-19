@@ -139,7 +139,7 @@ It allows you to build powerful, deterministic state machines for your protocols
 Example projects:
 
 - [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/parser/http11.rs)
-- [using nom with generators](https://github.com/geal/generator_nom)
+- [using nom with generators](https://github.com/Geal/generator_nom)
 
 ## Parser combinators
 
@@ -183,7 +183,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "^3.2"
+nom = "^4.0"
 ```
 
 Then include it in your code like this:
@@ -208,7 +208,7 @@ You can activate those features like this:
 
 ```toml
 [dependencies.nom]
-version = "^3.2"
+version = "^4.0"
 features = ["regexp"]
 ```
 

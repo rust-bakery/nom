@@ -571,7 +571,7 @@ macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err};
+      use $crate::Err;
 
       let ret;
       let mut input = $i.clone();
@@ -639,7 +639,7 @@ macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err};
+      use $crate::Err;
 
       let ret;
       let mut input = $i.clone();
