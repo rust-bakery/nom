@@ -198,6 +198,7 @@ macro_rules! alt (
 
           // Compile-time hack to ensure that res's E type is not under-specified.
           // This all has no effect at runtime.
+          #[allow(dead_code)]
           fn unify_types<T>(_: &T, _: &T) {}
           if let Err(Err::Error(ref e2)) = out {
             unify_types(&e, e2);
