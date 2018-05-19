@@ -2,7 +2,6 @@ language: rust
 # sudo is required to enable kcov to use the personality syscall
 sudo: required
 dist: trusty
-cache: cargo
 
 rust:
   - nightly
