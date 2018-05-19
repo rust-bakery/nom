@@ -268,3 +268,7 @@ named!(
 fn issue_759() {
     assert_eq!(capability(b" abcqd"), Ok((&b"qd"[..], "a")));
 }
+
+named_args!(issue_771(count: usize)<Vec<u32>>,
+  length_count!(value!(count), call!(nom::be_u32))
+);
