@@ -257,6 +257,7 @@ Here is a list of known projects using nom:
   * [IMAP](https://github.com/djc/imap-proto)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
+  * [Pcap](https://github.com/ithinuel/pcap-rs)
   * [NTP](https://github.com/rusticata/ntp-parser)
   * [SNMP](https://github.com/rusticata/snmp-parser)
   * [DER](https://github.com/rusticata/der-parser)
