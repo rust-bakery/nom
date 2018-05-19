@@ -757,7 +757,7 @@ macro_rules! value (
   );
   ($i:expr, $res:expr) => (
     {
-      let res: IResult<_,_> = Ok(($i, $res));
+      let res: $crate::IResult<_,_> = Ok(($i, $res));
       res
     }
   );
