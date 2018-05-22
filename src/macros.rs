@@ -950,7 +950,6 @@ macro_rules! cond_with_error(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Convert,Err,Needed,IResult};
 
       if $cond {
         match $submac!($i, $($args)*) {
