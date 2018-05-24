@@ -6,6 +6,8 @@
 
 ### Added
 
+- Add support for trailing `|` in `switch!` macro
+
 ### Fixed
 
 

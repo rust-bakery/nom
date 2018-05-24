@@ -371,7 +371,7 @@ macro_rules! alt_complete (
 ///  named!(sw,
 ///    switch!(take!(4),
 ///      b"abcd" => tag!("XYZ") |
-///      b"efgh" => tag!("123")
+///      b"efgh" => tag!("123") |
 ///    )
 ///  );
 ///
@@ -396,7 +396,7 @@ macro_rules! alt_complete (
 ///  named!(sw,
 ///    switch!(take!(4),
 ///      b"abcd" => tag!("XYZ") |
-///      _       => value!(&b"default"[..])
+///      _       => value!(&b"default"[..]) |
 ///    )
 ///  );
 ///
@@ -417,7 +417,7 @@ macro_rules! alt_complete (
 ///  named!(sw,
 ///    switch!(take!(4),
 ///      b"abcd" => xyz |
-///      b"efgh" => 123
+///      b"efgh" => 123 |
 ///    )
 ///  );
 /// ```
@@ -430,14 +430,14 @@ macro_rules! alt_complete (
 ///  named!(sw,
 ///    switch!(take!(4),
 ///      b"abcd" => call!(xyz) |
-///      b"efgh" => call!(num)
+///      b"efgh" => call!(num) |
 ///    )
 ///  );
 /// ```
 ///
 #[macro_export]
 macro_rules! switch (
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $( $($p:pat)|+ => $subrule:ident!( $($args2:tt)* ))|* ) => (
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $( $($p:pat)|+ => $subrule:ident!( $($args2:tt)* ))|*$(|)* ) => (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
