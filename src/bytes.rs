@@ -300,6 +300,7 @@ macro_rules! escaped_transform (
       use $crate::ExtendInto;
       use $crate::InputIter;
       use $crate::InputLength;
+      use $crate::Needed;
       use $crate::Slice;
       use $crate::need_more;
 

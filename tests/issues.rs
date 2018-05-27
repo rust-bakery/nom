@@ -272,3 +272,12 @@ fn issue_759() {
 named_args!(issue_771(count: usize)<Vec<u32>>,
   length_count!(value!(count), call!(nom::be_u32))
 );
+
+/// This test is in a separate module to check that all required symbols are imported in
+/// `escaped_transform!()`. Without the module, the `use`-es of the current module would
+/// mask the error ('"Use of undeclared type or module `Needed`" in escaped_transform!').
+mod issue_780 {
+  named!(issue_780<&str, String>,
+    escaped_transform!(call!(::nom::alpha), '\\', tag!("n"))
+  );
+}
