@@ -251,7 +251,7 @@ This particular one is caused by `named!` generating a function returning a `IRe
 
 There are a few tools you can use to debug how code is generated.
 
-## trace_macros
+## trace\_macros
 
 The `trace_macros` feature show how macros are applied. To use it, add `#![feature(trace_macros)]` at the top of your file (you need Rust nightly for this), then apply it like this:
 
