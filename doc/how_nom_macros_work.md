@@ -140,7 +140,7 @@ transformed with the second pattern:
 opt!(call!(digit))
 ```
 
-The `call!` macro transforms `call!(input, f)` into `f(i)`. If you need to pass more parameters to the function, you can Use `call!(input, f, arg, arg2)` to get `f(i, arg, arg2)`.
+The `call!` macro transforms `call!(input, f)` into `f(input)`. If you need to pass more parameters to the function, you can Use `call!(input, f, arg, arg2)` to get `f(input, arg, arg2)`.
 
 ## Using the macro's parameters
 
