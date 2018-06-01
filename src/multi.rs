@@ -245,7 +245,6 @@ macro_rules! many0(
       use $crate::lib::std::result::Result::*;
       use $crate::{Err,AtEof};
 
-      let ret;
       let mut res   = $crate::lib::std::vec::Vec::new();
       let mut input = $i.clone();
 
@@ -256,29 +255,25 @@ macro_rules! many0(
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
 
-              if i.at_eof() {
-                ret = Ok((input, res));
+              break if i.at_eof() {
+                Ok((input, res))
               } else {
-                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0)));
-              }
-              break;
+                Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0)))
+              };
             }
             res.push(o);
 
             input = i;
           },
           Err(Err::Error(_))      => {
-            ret = Ok((input, res));
-            break;
+            break Ok((input, res));
           },
           Err(e) => {
-            ret = Err(e);
-            break;
+            break Err(e);
           },
         }
       }
 
-      ret
     }
   );
   ($i:expr, $f:expr) => (
@@ -812,7 +807,6 @@ macro_rules! fold_many0(
       use $crate::lib::std::result::Result::*;
       use $crate::{Err,AtEof};
 
-      let ret;
       let f         = $f;
       let mut res   = $init;
       let mut input = $i.clone();
@@ -822,29 +816,25 @@ macro_rules! fold_many0(
           Ok((i, o)) => {
             // loop trip must always consume (otherwise infinite loops)
             if i == input {
-              if i.at_eof() {
-                ret = Ok((input, res));
+              break if i.at_eof() {
+                Ok((input, res))
               } else {
-                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0)));
-              }
-              break;
+                Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0)))
+              };
             }
 
             res = f(res, o);
             input = i;
           },
           Err(Err::Error(_)) => {
-            ret = Ok((input, res));
-            break;
+            break Ok((input, res));
           },
           Err(e) => {
-            ret = Err(e);
-            break;
+            break Err(e);
           },
         }
       }
 
-      ret
     }
   );
   ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
