@@ -760,7 +760,7 @@ macro_rules! take_until_and_consume1 (
 /// consumes data until it finds the specified tag.
 ///
 /// The remainder still contains the tag.
-/// (As opposed to `take_until!` which removes it from the remainder.)
+/// (As opposed to `take_until_and_consume!` which removes it from the remainder.)
 ///
 /// # Example
 /// ```
