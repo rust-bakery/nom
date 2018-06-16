@@ -231,10 +231,7 @@ If those types feel a bit long to write everywhere in the parsers, it's possible
 to alias them like this:
 
 ```rust,ignore
-type Input<'a> = CompleteByteSlice<'a>;
-pub fn Input<'a>(input:&'a[u8]) -> Input<'a> {
-  CompleteByteSlice(input)
-}
+use nom::types::CompleteByteSlice as Input;
 ```
 
 ## Custom error types
