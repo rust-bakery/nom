@@ -926,7 +926,7 @@ macro_rules! fold_many1(
           }
 
           match failure {
-            $crate::lib::std::option::Option::Some(e) => Err(Err::Error(e)),
+            $crate::lib::std::option::Option::Some(e) => Err(Err::Failure(e)),
             $crate::lib::std::option::Option::None    => match incomplete {
               $crate::lib::std::option::Option::Some(i) => $crate::need_more($i, i),
               $crate::lib::std::option::Option::None    => Ok((input, acc))
