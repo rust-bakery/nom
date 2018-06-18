@@ -397,14 +397,12 @@ macro_rules! return_error (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Context,Err,ErrorKind};
+      use $crate::{Context,Err};
 
       let i_ = $i.clone();
       let cl = || {
         $submac!(i_, $($args)*)
       };
-
-      fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
 
       match cl() {
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
