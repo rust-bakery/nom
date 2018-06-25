@@ -150,6 +150,33 @@ macro_rules! named (
 );
 
 /// Makes a function from a parser combination with arguments.
+///
+/// ```ignore
+/// //takes `&[u8]` as input
+/// named_args!(tagged(open_tag: &[u8], close_tag: &[u8])<&str>,
+///   delimited!(tag!(open_tag), map_res!(take!(4), str::from_utf8), tag!(close_tag))
+/// );
+
+/// //takes `&str` as input
+/// named_args!(tagged(open_tag: &str, close_tag: &str)<&str, &str>,
+///   delimited!(tag!(open_tag), take!(4), tag!(close_tag))
+/// );
+/// ```
+///
+/// Note: if using arguments that way gets hard to read, it is always
+/// possible to write the equivalent parser definition manually, like
+/// this:
+///
+/// ```ignore
+/// fn tagged(input: &[u8], open_tag: &[u8], close_tag: &[u8]) -> IResult<&[u8], &str> {
+///   // the first combinator in the tree gets the input as argument. It is then
+///   // passed from one combinator to the next through macro rewriting
+///   delimited!(input,
+///     tag!(open_tag), take!(4), tag!(close_tag)
+///   )
+/// );
+/// ```
+///
 #[macro_export]
 macro_rules! named_args {
     (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
