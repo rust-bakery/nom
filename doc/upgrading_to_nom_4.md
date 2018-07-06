@@ -1,5 +1,3 @@
-% Upgrading to nom 4.0
-
 # Upgrading to nom 4.0
 
 The nom 4.0 is a nearly complete rewrite of nom's internal structures, along with a cleanup of a lot of parser and combinators whose semantics were unclear. Upgrading from previous nom versions can require a lot of changes, especially if you have a lot of unit tests. But most of those changes are pretty straightforward.
