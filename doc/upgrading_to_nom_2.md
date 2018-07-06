@@ -1,5 +1,3 @@
-% Upgrading to nom 2.0
-
 # Upgrading to nom 2.0
 
 The 2.0 release of nom adds a lot of new features, but it was also time for a big cleanup of badly named functions and macros, awkwardly written features and redundant functionality. So this release has some breaking changes, but most of them are harmless.

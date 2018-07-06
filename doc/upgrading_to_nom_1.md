@@ -1,4 +1,4 @@
-% Upgrading to nom 1.0
+# Upgrading to nom 1.0
 
 The 1.0 release of nom is one of the biggest since the beginning of the project. Its goal was to rework some core parts to be more flexible, and clean code that was awkward or unclear. This resulted in breaking changes, that I hope will not happen again in the future (but hey, we are Rust developers, breaking changes are FUN for us!).
 
