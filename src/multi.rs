@@ -215,6 +215,148 @@ macro_rules! separated_nonempty_list_complete {
     );
 }
 
+/// `many0_count!(I -> IResult<I,O>) => I -> IResult<I, usize>`
+/// Applies the parser 0 or more times and returns the number of times the parser was applied.
+///
+/// `many0_count` will only return `Error` if the embedded parser does not consume any input
+/// (to avoid infinite loops).
+///
+/// ```
+/// #[macro_use] extern crate nom;
+/// use nom::digit;
+///
+/// named!(number<&[u8], usize>, many0_count!(pair!(digit, tag!(","))));
+///
+/// fn main() {
+///     assert_eq!(number(&b"123,45,"[..]), Ok((&b""[..], 2)));
+/// }
+/// ```
+///
+#[macro_export]
+macro_rules! many0_count {
+    ($i:expr, $submac:ident!( $($args:tt)* )) => (
+        {
+            use $crate::lib::std::result::Result::*;
+            use $crate::{Err, AtEof};
+
+            let ret;
+            let mut count: usize = 0;
+            let mut input = $i.clone();
+
+            loop {
+                let input_ = input.clone();
+                match $submac!(input_, $($args)*) {
+                    Ok((i, _)) => {
+                        //  loop trip must always consume (otherwise infinite loops)
+                        if i == input {
+                            if i.at_eof() {
+                                ret = Ok((input, count));
+                            }
+                            else {
+                                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0Count)));
+                            }
+                            break;
+                        }
+                        count += 1;
+                        input = i;
+                    },
+
+                    Err(Err::Error(_)) => {
+                        ret = Ok((input, count));
+                        break;
+                    },
+
+                    Err(e) => {
+                        ret = Err(e);
+                        break;
+                    },
+                }
+            }
+
+            ret
+        }
+    );
+
+    ($i:expr, $f:expr) => (
+        many0_count!($i, call!($f));
+    );
+}
+
+/// `many1_count!(I -> IResult<I,O>) => I -> IResult<I, usize>`
+/// Applies the parser 1 or more times and returns the number of times the parser was applied.
+///
+/// ```
+/// #[macro_use] extern crate nom;
+/// use nom::digit;
+///
+/// named!(number<&[u8], usize>, many1_count!(pair!(digit, tag!(","))));
+///
+/// fn main() {
+///     assert_eq!(number(&b"123,45,"[..]), Ok((&b""[..], 2)));
+/// }
+/// ```
+///
+#[macro_export]
+macro_rules! many1_count {
+    ($i:expr, $submac:ident!( $($args:tt)* )) => (
+        {
+            use $crate::lib::std::result::Result::*;
+            use $crate::Err;
+
+            use $crate::InputLength;
+            let i_ = $i.clone();
+            match $submac!(i_, $($args)*) {
+                Err(Err::Error(_)) => Err(Err::Error(
+                    error_position!(i_, $crate::ErrorKind::Many1Count)
+                )),
+
+                Err(Err::Failure(_)) => Err(Err::Failure(
+                    error_position!(i_, $crate::ErrorKind::Many1Count)
+                )),
+
+                Err(i) => Err(i),
+
+                Ok((i1, _)) => {
+                    let mut count: usize = 1;
+                    let mut input = i1;
+                    let mut error = $crate::lib::std::option::Option::None;
+
+                    loop {
+                        let input_ = input.clone();
+                        match $submac!(input_, $($args)*) {
+                            Err(Err::Error(_)) => {
+                                break;
+                            },
+
+                            Err(e) => {
+                                error = $crate::lib::std::option::Option::Some(e);
+                                break;
+                            },
+
+                            Ok((i, _)) => {
+                                if i.input_len() == input.input_len() {
+                                    break;
+                                }
+                                count += 1;
+                                input = i;
+                            },
+                        }
+                    }
+
+                    match error {
+                        $crate::lib::std::option::Option::Some(e) => Err(e),
+                        $crate::lib::std::option::Option::None => Ok((input, count)),
+                    }
+                },
+            }
+        }
+    );
+
+    ($i:expr, $f:expr) => (
+        many1_count!($i, call!($f));
+    );
+}
+
 /// `many0!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// Applies the parser 0 or more times and returns the list of results in a Vec.
 ///

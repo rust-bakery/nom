@@ -432,6 +432,8 @@ pub enum ErrorKind<E = u32> {
   IsA,
   SeparatedList,
   SeparatedNonEmptyList,
+  Many0Count,
+  Many1Count,
   Many0,
   Many1,
   ManyTill,
@@ -557,6 +559,8 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::TakeTill1                 => 67,
     ErrorKind::TakeUntilAndConsume1      => 68,
     ErrorKind::TakeWhileMN               => 69,
+    ErrorKind::Many0Count                => 70,
+    ErrorKind::Many1Count                => 71,
   }
 }
 
@@ -574,6 +578,8 @@ impl<E> ErrorKind<E> {
       ErrorKind::IsA                       => "IsA",
       ErrorKind::SeparatedList             => "Separated list",
       ErrorKind::SeparatedNonEmptyList     => "Separated non empty list",
+      ErrorKind::Many0Count                => "Many0Count",
+      ErrorKind::Many1Count                => "Many1Count",
       ErrorKind::Many0                     => "Many0",
       ErrorKind::Many1                     => "Many1",
       ErrorKind::Count                     => "Count",
@@ -707,6 +713,8 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
       ErrorKind::TakeTill1                 => ErrorKind::TakeTill1,
       ErrorKind::TakeUntilAndConsume1      => ErrorKind::TakeUntilAndConsume1,
       ErrorKind::TakeWhileMN               => ErrorKind::TakeWhileMN,
+      ErrorKind::Many0Count                => ErrorKind::Many0Count,
+      ErrorKind::Many1Count                => ErrorKind::Many1Count,
     }
   }
 }
