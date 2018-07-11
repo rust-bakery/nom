@@ -107,6 +107,9 @@ name = "reborrow_fold"
 [[test]]
 name = "test1"
 
+[[test]]
+name = "many_count"
+
 [badges]
 travis-ci = { repository = "Geal/nom" }
 coveralls = { repository = "Geal/nom", branch = "master", service = "github" }
