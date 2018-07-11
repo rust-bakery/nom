@@ -228,7 +228,7 @@ macro_rules! separated_nonempty_list_complete {
 /// named!(number<&[u8], usize>, many0_count!(pair!(digit, tag!(","))));
 ///
 /// fn main() {
-///     assert_eq!(number(&b"123,45,"[..]), Ok((&b""[..], 2)));
+///     assert_eq!(number(&b"123,45,abc"[..]), Ok((&b"abc"[..], 2)));
 /// }
 /// ```
 ///
@@ -292,7 +292,7 @@ macro_rules! many0_count {
 /// named!(number<&[u8], usize>, many1_count!(pair!(digit, tag!(","))));
 ///
 /// fn main() {
-///     assert_eq!(number(&b"123,45,"[..]), Ok((&b""[..], 2)));
+///     assert_eq!(number(&b"123,45,abc"[..]), Ok((&b"abc"[..], 2)));
 /// }
 /// ```
 ///
