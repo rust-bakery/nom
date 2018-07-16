@@ -1028,6 +1028,86 @@ macro_rules! fold_many_m_n(
   );
 );
 
+/// `recognize_many0!(I -> IResult<I,O>) => I -> IResult<I,I>`
+///
+/// Applies the parser 0 or more times, then returns the input slice matched for the whole list.
+/// Useful when tokenising, before performing another parsing pass on the output slice.
+///
+/// the embedded parser may return Incomplete
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult::{Done, Incomplete, Error};
+/// # use nom::Needed::Size;
+/// # #[cfg(feature = "verbose-errors")]
+/// # use nom::Err::Position;
+/// # use nom::ErrorKind;
+/// # fn main() {
+///  named!(many_abcd, recognize_many0!(tag!( "abcd" )));
+///
+///  let a = b"abc";
+///  let a2 = b"abc ";
+///  let b = b"abcdabcdefgh";
+///
+///  assert_eq!(many_abcd(&a[..]), Incomplete(Size(4)));
+///  assert_eq!(many_abcd(&a2[..]), Done(&b"abc "[..], &b""[..]));
+///  assert_eq!(many_abcd(&b[..]), Done(&b"efgh"[..], &b"abcdabcd"[..]));
+/// # }
+/// ```
+#[macro_export]
+macro_rules! recognize_many0 {
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::InputLength;
+
+      let ret;
+      let input = $i;
+      let initial_len = $i.input_len();
+      let mut input_pos = 0;
+
+      loop {
+        if input.input_len() == 0 {
+          ret = $crate::IResult::Done(&input[input_pos..], &input[..input_pos]);
+          break;
+        }
+
+        match $submac!(&input[input_pos..], $($args)*) {
+          $crate::IResult::Error(_)                            => {
+            ret = $crate::IResult::Done(&input[input_pos..], &input[..input_pos]);
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Unknown) => {
+            ret = $crate::IResult::Incomplete($crate::Needed::Unknown);
+            break;
+          },
+          $crate::IResult::Incomplete($crate::Needed::Size(i)) => {
+            let (size,overflowed) = i.overflowing_add(input_pos);
+            ret = match overflowed {
+                true  => $crate::IResult::Incomplete($crate::Needed::Unknown),
+                false => $crate::IResult::Incomplete($crate::Needed::Size(size)),
+            };
+            break;
+          },
+          $crate::IResult::Done(i, o)                          => {
+            // loop trip must always consume (otherwise infinite loops)
+            if i.len() >= initial_len - input_pos {
+              ret = $crate::IResult::Error(error_position!($crate::ErrorKind::Many0,input));
+              break;
+            }
+
+            input_pos = initial_len - i.len();
+          }
+        }
+      }
+
+      ret
+    }
+  );
+  ($i:expr, $f:expr) => (
+    recognize_many0!($i, call!($f));
+  );
+}
+
 #[cfg(test)]
 mod tests {
   use internal::{Err, IResult, Needed};
