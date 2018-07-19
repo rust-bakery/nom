@@ -698,7 +698,7 @@ macro_rules! parse_to (
       let res: Option<$t> = ($i).parse_to();
       match res {
         Some(output) => Ok(($i.slice($i.input_len()..), output)),
-        None         => Err(Err::Error(Context::Code($i, ErrorKind::MapOpt::<u32>)))
+        None         => Err(Err::Error(Context::Code($i, ErrorKind::ParseTo::<u32>)))
       }
     }
   );
@@ -1542,5 +1542,20 @@ mod tests {
       )))
     );
     assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
+  }
+
+  #[test]
+  fn parse_to() {
+    use util::Convert;
+
+    assert_eq!(
+      parse_to!("ab", usize),
+      Err(Err::Error(error_position!(
+        "ab",
+        ErrorKind::ParseTo
+      )))
+    );
+    assert_eq!(parse_to!("42", usize), Ok(("", 42)));
+    assert_eq!(ErrorKind::<u64>::convert(ErrorKind::ParseTo::<u32>), ErrorKind::ParseTo::<u64>);
   }
 }

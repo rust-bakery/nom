@@ -490,6 +490,7 @@ pub enum ErrorKind<E = u32> {
   TakeTill1,
   TakeUntilAndConsume1,
   TakeWhileMN,
+  ParseTo,
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -557,6 +558,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::TakeTill1                 => 67,
     ErrorKind::TakeUntilAndConsume1      => 68,
     ErrorKind::TakeWhileMN               => 69,
+    ErrorKind::ParseTo                   => 70,
   }
 }
 
@@ -626,6 +628,7 @@ impl<E> ErrorKind<E> {
       ErrorKind::TakeTill1                 => "TakeTill1",
       ErrorKind::TakeUntilAndConsume1      => "Take at least 1 until and consume",
       ErrorKind::TakeWhileMN               => "TakeWhileMN",
+      ErrorKind::ParseTo                   => "Parse string to the specified type",
     }
   }
 
@@ -707,6 +710,7 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
       ErrorKind::TakeTill1                 => ErrorKind::TakeTill1,
       ErrorKind::TakeUntilAndConsume1      => ErrorKind::TakeUntilAndConsume1,
       ErrorKind::TakeWhileMN               => ErrorKind::TakeWhileMN,
+      ErrorKind::ParseTo                   => ErrorKind::ParseTo,
     }
   }
 }
