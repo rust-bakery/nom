@@ -255,6 +255,14 @@ named!(issue_741_str<CompleteStr, CompleteStr>, re_match!(r"^_?[A-Za-z][0-9A-Z_a
 named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
 
 
+#[test]
+fn issue_752() {
+    assert_eq!(
+        Err::Error(nom::Context::Code("ab", nom::ErrorKind::ParseTo)),
+        parse_to!("ab", usize).unwrap_err(),
+    )
+}
+
 fn atom_specials(c: u8) -> bool {
     c == b'q'
 }
