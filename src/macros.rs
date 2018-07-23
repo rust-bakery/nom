@@ -709,6 +709,45 @@ macro_rules! map_res (
   );
 );
 
+/// `map_res_err!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P>`
+/// maps a function returning a Result on the output of a parser, preserving the returned error
+#[macro_export]
+macro_rules! map_res_err (
+  // Internal parser, do not use directly
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      use $crate::lib::std::result::Result::*;
+      use $crate::{Context, Convert, Err};
+
+      let i_ = $i.clone();
+      match $submac!(i_, $($args)*) {
+        Ok((i,o)) => {
+          match $submac2!(o, $($args2)*) {
+            Ok(output) => Ok((i, output)),
+            Err(e) => {
+              let e = Context::convert(Context::Code($i, $crate::ErrorKind::Custom(e)));
+              Err(Err::Error(error_node_position!($i, $crate::ErrorKind::MapRes, e)))
+            },
+          }
+        },
+        Err(e) => Err(e),
+      }
+    }
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map_res_err!(__impl $i, $submac!($($args)*), call!($g));
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    map_res_err!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map_res_err!(__impl $i, call!($f), call!($g));
+  );
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
+    map_res_err!(__impl $i, call!($f), $submac!($($args)*));
+  );
+);
+
 /// `map_opt!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
 #[macro_export]
@@ -1638,5 +1677,65 @@ mod tests {
     );
     assert_eq!(parse_to!("42", usize), Ok(("", 42)));
     assert_eq!(ErrorKind::<u64>::convert(ErrorKind::ParseTo::<u32>), ErrorKind::ParseTo::<u64>);
+  }
+
+  #[test]
+  fn map_res_err() {
+    use Context;
+    use be_u8;
+
+    #[derive(Debug, Eq, PartialEq)]
+    enum ParseError {
+      InvalidValue(u8),
+    }
+
+    impl From<u32> for ParseError {
+      fn from(_: u32) -> Self {
+        unreachable!()
+      }
+    }
+
+    #[derive(Debug, Eq, PartialEq)]
+    enum ValidValue {
+      One,
+      Two,
+    }
+
+    fn validate(value: u8) -> Result<ValidValue, ParseError> {
+      match value {
+        b'1' => Ok(ValidValue::One),
+        b'2' => Ok(ValidValue::Two),
+        _ => Err(ParseError::InvalidValue(value))
+      }
+    }
+
+    named!(test<&[u8], ValidValue, ParseError>,
+      map_res_err!(fix_error!(ParseError, be_u8), validate)
+    );
+
+    assert_eq!(test(&b"1"[..]), Ok((&b""[..], ValidValue::One)));
+    assert_eq!(test(&b"2"[..]), Ok((&b""[..], ValidValue::Two)));
+
+    #[cfg(feature = "verbose-errors")]
+    {
+      assert_eq!(
+        test(&b"3"[..]),
+        Err(
+          Err::Error(
+            Context::List(
+              vec![
+              (&b"3"[..], ErrorKind::Custom(ParseError::InvalidValue(b'3'))),
+              (&b"3"[..], ErrorKind::MapRes)
+              ]
+            )
+          )
+        )
+      );
+    }
+
+    #[cfg(not(feature = "verbose-errors"))]
+    {
+      assert_eq!(test(&b"3"[..]), Err(Err::Error(Context::Code(&b"3"[..], ErrorKind::MapRes))));
+    }
   }
 }
