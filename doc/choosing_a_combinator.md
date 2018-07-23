@@ -87,6 +87,7 @@ Parsing integers from binary formats can be done in two ways: with parser functi
 - map!: maps a function on the result of a parser
 - map_opt!: maps a function returning an Option on the output of a parser
 - map_res!: maps a function returning a Result on the output of a parser
+- map_res_err!: maps a function returning a Result on the output of a parser, preserving the returned error
 - not!: returns a result only if the embedded parser returns Error or Incomplete does not consume the input
 - opt!: make the underlying parser optional
 - opt_res!: make the underlying parser optional
