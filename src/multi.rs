@@ -317,42 +317,44 @@ macro_rules! many1(
       use $crate::InputLength;
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
-        Err(Err::Error(_))      => Err(Err::Error(
-          error_position!(i_, $crate::ErrorKind::Many1)
-        )),
-        Err(Err::Failure(_))      => Err(Err::Failure(
-          error_position!(i_, $crate::ErrorKind::Many1)
-        )),
-        Err(i) => Err(i),
+        Err(e) => {
+          Err(
+            match e {
+              Err::Error(_) => Err::Error(
+                error_position!(i_, $crate::ErrorKind::Many1)
+              ),
+              Err::Failure(_) => Err::Failure(
+                error_position!(i_, $crate::ErrorKind::Many1)
+              ),
+              Err::Incomplete(_) => e
+            }
+          )
+        },
         Ok((i1,o1))   => {
           let mut res    = $crate::lib::std::vec::Vec::with_capacity(4);
           res.push(o1);
           let mut input  = i1;
-          let mut error = $crate::lib::std::option::Option::None;
+
           loop {
             let input_ = input.clone();
             match $submac!(input_, $($args)*) {
-              Err(Err::Error(_))                    => {
-                break;
-              },
               Err(e) => {
-                error = $crate::lib::std::option::Option::Some(e);
-                break;
+                break match e {
+                    Err::Error(_) => Ok((input, res)),
+                    _ => Err(e)
+                }
               },
               Ok((i, o)) => {
                 if i.input_len() == input.input_len() {
-                  break;
+                  break Ok((input, res));
                 }
+
                 res.push(o);
                 input = i;
               }
             }
           }
 
-          match error {
-            $crate::lib::std::option::Option::Some(e) => Err(e),
-            $crate::lib::std::option::Option::None    => Ok((input, res))
-          }
         }
       }
     }
@@ -881,57 +883,50 @@ macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,InputLength,Context,AtEof};
+      use $crate::{Err,Needed,InputLength,AtEof};
 
       match $submac!($i, $($args)*) {
-        Err(Err::Error(_))      => Err(Err::Error(
-          error_position!($i, $crate::ErrorKind::Many1)
-        )),
-        Err(Err::Failure(_))      => Err(Err::Failure(
-          error_position!($i, $crate::ErrorKind::Many1)
-        )),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(e) => {
+          Err(
+            match e {
+              Err::Error(_) => Err::Error(
+                error_position!($i, $crate::ErrorKind::Many1)
+              ),
+              Err::Failure(_) => Err::Failure(
+                error_position!($i, $crate::ErrorKind::Many1)
+              ),
+              Err::Incomplete(_) => e
+            }
+          )
+        },
         Ok((i1,o1))   => {
           let f = $f;
           let mut acc = f($init, o1);
           let mut input  = i1;
-          let mut incomplete: $crate::lib::std::option::Option<Needed> =
-            $crate::lib::std::option::Option::None;
-          let mut failure: $crate::lib::std::option::Option<Context<_,_>> =
-            $crate::lib::std::option::Option::None;
+
           loop {
             match $submac!(input, $($args)*) {
-              Err(Err::Error(_))                    => {
-                break;
-              },
-              Err(Err::Incomplete(i)) => {
-                incomplete = $crate::lib::std::option::Option::Some(i);
-                break;
-              },
-              Err(Err::Failure(e)) => {
-                failure = $crate::lib::std::option::Option::Some(e);
-                break;
+              Err(i) => {
+                break match i {
+                  Err::Error(_)      => Ok((input, acc)),
+                  Err::Incomplete(i) => $crate::need_more($i, i),
+                  Err::Failure(e)    => Err(Err::Error(e))
+                }
               },
               Ok((i, o)) => {
                 if i.input_len() == input.input_len() {
-                  if !i.at_eof() {
-                    failure = $crate::lib::std::option::Option::Some(error_position!(i, $crate::ErrorKind::Many1));
+                  break match i.at_eof() {
+                    true  => Ok((input, acc)),
+                    false => Err(Err::Error(error_position!(i, $crate::ErrorKind::Many1)))
                   }
-                  break;
                 }
+
                 acc = f(acc, o);
                 input = i;
               }
             }
           }
 
-          match failure {
-            $crate::lib::std::option::Option::Some(e) => Err(Err::Error(e)),
-            $crate::lib::std::option::Option::None    => match incomplete {
-              $crate::lib::std::option::Option::Some(i) => $crate::need_more($i, i),
-              $crate::lib::std::option::Option::None    => Ok((input, acc))
-            }
-          }
         }
       }
     }
