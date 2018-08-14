@@ -45,6 +45,10 @@ default-features = false
 #git = "https://github.com/carllerche/bytes"
 #rev = "a7d38e29"
 
+[package.metadata.docs.rs]
+features = [ "alloc", "std", "regexp", "regexp_macros", "verbose-errors" ]
+all-features = true
+
 [[test]]
 name = "arithmetic"
 
