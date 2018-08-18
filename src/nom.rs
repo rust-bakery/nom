@@ -6,18 +6,20 @@
 //! but the macros system makes no promises.
 //!
 
-use std::boxed::Box;
+#[cfg(feature = "alloc")]
+use lib::std::boxed::Box;
 
 #[cfg(feature = "std")]
-use std::fmt::Debug;
+use lib::std::fmt::Debug;
 use internal::*;
-use traits::{AsChar, InputLength, InputIter};
+use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use traits::{need_more, need_more_err, AtEof};
-use std::ops::{Range, RangeFrom, RangeTo};
-use traits::{Compare, CompareResult, Slice};
-use util::{ErrorKind, Offset};
-use std::mem::transmute;
+use lib::std::ops::{Range, RangeFrom, RangeTo};
+use traits::{Compare, CompareResult, Offset, Slice};
+use util::ErrorKind;
+use lib::std::mem::transmute;
 
+#[cfg(feature = "alloc")]
 #[inline]
 pub fn tag_cl<'a, 'b>(rec: &'a [u8]) -> Box<Fn(&'b [u8]) -> IResult<&'b [u8], &'b [u8]> + 'a> {
   Box::new(move |i: &'b [u8]| -> IResult<&'b [u8], &'b [u8]> {
@@ -73,11 +75,13 @@ where
     let c = item.as_char();
     c == '\r' || c == '\n'
   }) {
-    None => if input.at_eof() {
-      Ok((input.slice(input.input_len()..), input))
-    } else {
-      Err(Err::Incomplete(Needed::Unknown))
-    },
+    None => {
+      if input.at_eof() {
+        Ok((input.slice(input.input_len()..), input))
+      } else {
+        Err(Err::Incomplete(Needed::Unknown))
+      }
+    }
     Some(index) => {
       let mut it = input.slice(index..).iter_elements();
       let nth = it.next().unwrap().as_char();
@@ -107,7 +111,6 @@ where
   T: InputIter + InputLength + AtEof,
   T: Compare<&'static str>,
 {
-
   match input.compare("\n") {
     CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
     CompareResult::Incomplete => need_more_err(input, Needed::Size(1), ErrorKind::CrLf::<u32>),
@@ -177,10 +180,8 @@ pub fn is_space(chr: u8) -> bool {
 /// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<T>(input: T) -> IResult<T, T, u32>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::Item: AsChar,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   alpha1(input)
 }
@@ -188,52 +189,26 @@ where
 /// Recognizes zero or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha0<T>(input: T) -> IResult<T, T, u32>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_alpha()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_alpha())
 }
 
 /// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha1<T>(input: T) -> IResult<T, T, u32>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_alpha()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Alpha::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::Alpha::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_alpha(), ErrorKind::Alpha)
 }
 
 /// Recognizes one or more numerical characters: 0-9
 pub fn digit<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   digit1(input)
 }
@@ -241,51 +216,26 @@ where
 /// Recognizes zero or more numerical characters: 0-9
 pub fn digit0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_dec_digit()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_dec_digit())
 }
+
 /// Recognizes one or more numerical characters: 0-9
 pub fn digit1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_dec_digit()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Digit::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::Digit::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_dec_digit(), ErrorKind::Digit)
 }
 
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   hex_digit1(input)
 }
@@ -293,51 +243,25 @@ where
 /// Recognizes zero or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_hex_digit()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_hex_digit())
 }
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 pub fn hex_digit1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_hex_digit()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::HexDigit::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::HexDigit::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_hex_digit(), ErrorKind::HexDigit)
 }
 
 /// Recognizes one or more octal characters: 0-7
 pub fn oct_digit<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   oct_digit1(input)
 }
@@ -345,52 +269,26 @@ where
 /// Recognizes zero or more octal characters: 0-7
 pub fn oct_digit0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_oct_digit()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_oct_digit())
 }
 
 /// Recognizes one or more octal characters: 0-7
 pub fn oct_digit1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_oct_digit()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::OctDigit::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::OctDigit::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
 /// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   alphanumeric1(input)
 }
@@ -398,51 +296,25 @@ where
 /// Recognizes zero or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_alphanum()) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position(|item| !item.is_alphanum())
 }
 /// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  match input.position(|item| !item.is_alphanum()) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::AlphaNumeric::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::AlphaNumeric::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(|item| !item.is_alphanum(), ErrorKind::AlphaNumeric)
 }
 
 /// Recognizes one or more spaces and tabs
 pub fn space<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   space1(input)
 }
@@ -450,57 +322,34 @@ where
 /// Recognizes zero or more spaces and tabs
 pub fn space0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  match input.position(|item| {
+  input.split_at_position(|item| {
     let c = item.clone().as_char();
     !(c == ' ' || c == '\t')
-  }) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  })
 }
 /// Recognizes one or more spaces and tabs
 pub fn space1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  match input.position(|item| {
-    let c = item.clone().as_char();
-    !(c == ' ' || c == '\t')
-  }) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::Space::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::Space::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(
+    |item| {
+      let c = item.clone().as_char();
+      !(c == ' ' || c == '\t')
+    },
+    ErrorKind::Space,
+  )
 }
 
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
 pub fn multispace<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   multispace1(input)
 }
@@ -508,49 +357,27 @@ where
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds
 pub fn multispace0<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  match input.position(|item| {
+  input.split_at_position(|item| {
     let c = item.clone().as_char();
     !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
-  }) {
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  })
 }
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
 pub fn multispace1<T>(input: T) -> IResult<T, T>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
-  match input.position(|item| {
-    let c = item.clone().as_char();
-    !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
-  }) {
-    Some(0) => Err(Err::Error(error_position!(input, ErrorKind::MultiSpace::<u32>))),
-    Some(n) => Ok((input.slice(n..), input.slice(..n))),
-    None    => {
-      if input.at_eof() {
-        if input.input_len() > 0 {
-          Ok((input.slice(input.input_len()..), input))
-        } else {
-          Err(Err::Error(error_position!(input, ErrorKind::MultiSpace::<u32>)))
-        }
-      } else {
-        Err(Err::Incomplete(Needed::Size(1)))
-      }
-    }
-  }
+  input.split_at_position1(
+    |item| {
+      let c = item.clone().as_char();
+      !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
+    },
+    ErrorKind::MultiSpace,
+  )
 }
 
 pub fn sized_buffer(input: &[u8]) -> IResult<&[u8], &[u8]> {
@@ -616,8 +443,8 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) +
-      ((i[4] as u64) << 24) + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
+    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) + ((i[4] as u64) << 24)
+      + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
     Ok((&i[8..], res))
   }
 }
@@ -706,8 +533,8 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
-    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) +
-      ((i[3] as u64) << 24) + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
+    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) + ((i[3] as u64) << 24)
+      + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
     Ok((&i[8..], res))
   }
 }
@@ -757,28 +584,28 @@ pub enum Endianness {
 /// if the parameter is nom::Endianness::Big, parse a big endian u16 integer,
 /// otherwise a little endian u16 integer
 #[macro_export]
-macro_rules! u16 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_u16($i) } else { le_u16($i) } } ););
+macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u16($i) } else { $crate::le_u16($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian u32 integer,
 /// otherwise a little endian u32 integer
 #[macro_export]
-macro_rules! u32 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_u32($i) } else { le_u32($i) } } ););
+macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u32($i) } else { $crate::le_u32($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian u64 integer,
 /// otherwise a little endian u64 integer
 #[macro_export]
-macro_rules! u64 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_u64($i) } else { le_u64($i) } } ););
+macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u64($i) } else { $crate::le_u64($i) } } ););
 
 /// if the parameter is nom::Endianness::Big, parse a big endian i16 integer,
 /// otherwise a little endian i16 integer
 #[macro_export]
-macro_rules! i16 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_i16($i) } else { le_i16($i) } } ););
+macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i16($i) } else { $crate::le_i16($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian i32 integer,
 /// otherwise a little endian i32 integer
 #[macro_export]
-macro_rules! i32 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_i32($i) } else { le_i32($i) } } ););
+macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i32($i) } else { $crate::le_i32($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
 /// otherwise a little endian i64 integer
 #[macro_export]
-macro_rules! i64 ( ($i:expr, $e:expr) => ( {if Endianness::Big == $e { be_i64($i) } else { le_i64($i) } } ););
+macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i64($i) } else { $crate::le_i64($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
@@ -879,10 +706,11 @@ pub fn rest_s(input: &str) -> IResult<&str, &str> {
 pub fn recognize_float<T>(input: T) -> IResult<T, T, u32>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
   T: Clone + Offset,
-  <T as InputIter>::Item: AsChar + Clone,
-  <T as InputIter>::RawItem: AsChar + Clone,
+  T: InputIter + AtEof,
+  <T as InputIter>::Item: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar
 {
   recognize!(input,
     tuple!(
@@ -902,48 +730,37 @@ where
 }
 
 /// Recognizes floating point number in a byte string and returns a f32
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
-  flat_map!(input,
-    recognize_float,
-    parse_to!(f32)
-  )
+  flat_map!(input, recognize_float, parse_to!(f32))
 }
 
 /// Recognizes floating point number in a string and returns a f32
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub fn float_s(input: &str) -> IResult<&str, f32> {
-  flat_map!(input,
-    call!(recognize_float),
-    parse_to!(f32)
-  )
+  flat_map!(input, call!(recognize_float), parse_to!(f32))
 }
 
 /// Recognizes floating point number in a byte string and returns a f64
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
-  flat_map!(input,
-    call!(recognize_float),
-    parse_to!(f64)
-  )
+  flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
 /// Recognizes floating point number in a string and returns a f64
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub fn double_s(input: &str) -> IResult<&str, f64> {
-  flat_map!(input,
-    call!(recognize_float),
-    parse_to!(f64)
-  )
+  flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, Needed, IResult};
-  use types::{CompleteByteSlice,CompleteStr};
+  use internal::{Err, IResult, Needed};
+  use types::{CompleteByteSlice, CompleteStr};
 
   #[test]
+  #[cfg(feature = "alloc")]
   fn tag_closure() {
     let x = tag_cl(&b"abcd"[..]);
     let r = x(&b"abcdabcdefgh"[..]);
@@ -952,9 +769,10 @@ mod tests {
     let r2 = x(&b"abcefgh"[..]);
     assert_eq!(
       r2,
-      Err(Err::Error(
-        error_position!(&b"abcefgh"[..], ErrorKind::TagClosure),
-      ))
+      Err(Err::Error(error_position!(
+        &b"abcefgh"[..],
+        ErrorKind::TagClosure
+      ),))
     );
   }
 
@@ -968,7 +786,10 @@ mod tests {
     let e: &[u8] = b" ";
     let f: &[u8] = b" ;";
     assert_eq!(alpha(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alpha(CompleteByteSlice(a)), Ok((CompleteByteSlice(empty), CompleteByteSlice(a))));
+    assert_eq!(
+      alpha(CompleteByteSlice(a)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
+    );
     assert_eq!(
       alpha(b),
       Err(Err::Error(error_position!(b, ErrorKind::Alpha)))
@@ -980,7 +801,10 @@ mod tests {
       Err(Err::Error(error_position!(a, ErrorKind::Digit)))
     );
     assert_eq!(digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(digit(CompleteByteSlice(b)), Ok((CompleteByteSlice(empty), CompleteByteSlice(b))));
+    assert_eq!(
+      digit(CompleteByteSlice(b)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
+    );
     assert_eq!(
       digit(c),
       Err(Err::Error(error_position!(c, ErrorKind::Digit)))
@@ -990,11 +814,20 @@ mod tests {
       Err(Err::Error(error_position!(d, ErrorKind::Digit)))
     );
     assert_eq!(hex_digit(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteByteSlice(a)), Ok((CompleteByteSlice(empty), CompleteByteSlice(a))));
+    assert_eq!(
+      hex_digit(CompleteByteSlice(a)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
+    );
     assert_eq!(hex_digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteByteSlice(b)), Ok((CompleteByteSlice(empty), CompleteByteSlice(b))));
+    assert_eq!(
+      hex_digit(CompleteByteSlice(b)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
+    );
     assert_eq!(hex_digit(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteByteSlice(c)), Ok((CompleteByteSlice(empty), CompleteByteSlice(c))));
+    assert_eq!(
+      hex_digit(CompleteByteSlice(c)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(c)))
+    );
     assert_eq!(hex_digit(d), Ok(("zé12".as_bytes(), &b"a"[..])));
     assert_eq!(
       hex_digit(e),
@@ -1005,7 +838,10 @@ mod tests {
       Err(Err::Error(error_position!(a, ErrorKind::OctDigit)))
     );
     assert_eq!(oct_digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(oct_digit(CompleteByteSlice(b)), Ok((CompleteByteSlice(empty), CompleteByteSlice(b))));
+    assert_eq!(
+      oct_digit(CompleteByteSlice(b)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
+    );
     assert_eq!(
       oct_digit(c),
       Err(Err::Error(error_position!(c, ErrorKind::OctDigit)))
@@ -1015,17 +851,30 @@ mod tests {
       Err(Err::Error(error_position!(d, ErrorKind::OctDigit)))
     );
     assert_eq!(alphanumeric(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteByteSlice(a)), Ok((CompleteByteSlice(empty), CompleteByteSlice(a))));
+    assert_eq!(
+      alphanumeric(CompleteByteSlice(a)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
+    );
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteByteSlice(c)), Ok((CompleteByteSlice(empty), CompleteByteSlice(c))));
+    assert_eq!(
+      alphanumeric(CompleteByteSlice(c)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(c)))
+    );
     assert_eq!(alphanumeric(d), Ok(("é12".as_bytes(), &b"az"[..])));
     assert_eq!(space(e), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(space(CompleteByteSlice(e)), Ok((CompleteByteSlice(empty), CompleteByteSlice(b" "))));
+    assert_eq!(
+      space(CompleteByteSlice(e)),
+      Ok((CompleteByteSlice(empty), CompleteByteSlice(b" ")))
+    );
     assert_eq!(space(f), Ok((&b";"[..], &b" "[..])));
-    assert_eq!(space(CompleteByteSlice(f)), Ok((CompleteByteSlice(b";"), CompleteByteSlice(b" "))));
+    assert_eq!(
+      space(CompleteByteSlice(f)),
+      Ok((CompleteByteSlice(b";"), CompleteByteSlice(b" ")))
+    );
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn character_s() {
     let empty = "";
@@ -1035,7 +884,10 @@ mod tests {
     let d = "azé12";
     let e = " ";
     assert_eq!(alpha(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alpha(CompleteStr(a)), Ok((CompleteStr(empty), CompleteStr(a))));
+    assert_eq!(
+      alpha(CompleteStr(a)),
+      Ok((CompleteStr(empty), CompleteStr(a)))
+    );
     assert_eq!(
       alpha(b),
       Err(Err::Error(error_position!(b, ErrorKind::Alpha)))
@@ -1047,7 +899,10 @@ mod tests {
       Err(Err::Error(error_position!(a, ErrorKind::Digit)))
     );
     assert_eq!(digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(digit(CompleteStr(b)), Ok((CompleteStr(empty), CompleteStr(b))));
+    assert_eq!(
+      digit(CompleteStr(b)),
+      Ok((CompleteStr(empty), CompleteStr(b)))
+    );
     assert_eq!(
       digit(c),
       Err(Err::Error(error_position!(c, ErrorKind::Digit)))
@@ -1057,11 +912,20 @@ mod tests {
       Err(Err::Error(error_position!(d, ErrorKind::Digit)))
     );
     assert_eq!(hex_digit(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteStr(a)), Ok((CompleteStr(empty), CompleteStr(a))));
+    assert_eq!(
+      hex_digit(CompleteStr(a)),
+      Ok((CompleteStr(empty), CompleteStr(a)))
+    );
     assert_eq!(hex_digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteStr(b)), Ok((CompleteStr(empty), CompleteStr(b))));
+    assert_eq!(
+      hex_digit(CompleteStr(b)),
+      Ok((CompleteStr(empty), CompleteStr(b)))
+    );
     assert_eq!(hex_digit(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit(CompleteStr(c)), Ok((CompleteStr(empty), CompleteStr(c))));
+    assert_eq!(
+      hex_digit(CompleteStr(c)),
+      Ok((CompleteStr(empty), CompleteStr(c)))
+    );
     assert_eq!(hex_digit(d), Ok(("zé12", &"a"[..])));
     assert_eq!(
       hex_digit(e),
@@ -1072,7 +936,10 @@ mod tests {
       Err(Err::Error(error_position!(a, ErrorKind::OctDigit)))
     );
     assert_eq!(oct_digit(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(oct_digit(CompleteStr(b)), Ok((CompleteStr(empty), CompleteStr(b))));
+    assert_eq!(
+      oct_digit(CompleteStr(b)),
+      Ok((CompleteStr(empty), CompleteStr(b)))
+    );
     assert_eq!(
       oct_digit(c),
       Err(Err::Error(error_position!(c, ErrorKind::OctDigit)))
@@ -1082,16 +949,25 @@ mod tests {
       Err(Err::Error(error_position!(d, ErrorKind::OctDigit)))
     );
     assert_eq!(alphanumeric(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteStr(a)), Ok((CompleteStr(empty), CompleteStr(a))));
+    assert_eq!(
+      alphanumeric(CompleteStr(a)),
+      Ok((CompleteStr(empty), CompleteStr(a)))
+    );
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteStr(c)), Ok((CompleteStr(empty), CompleteStr(c))));
+    assert_eq!(
+      alphanumeric(CompleteStr(c)),
+      Ok((CompleteStr(empty), CompleteStr(c)))
+    );
     assert_eq!(alphanumeric(d), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric(CompleteStr(d)), Ok((CompleteStr(""), CompleteStr("azé12"))));
+    assert_eq!(
+      alphanumeric(CompleteStr(d)),
+      Ok((CompleteStr(""), CompleteStr("azé12")))
+    );
     assert_eq!(space(e), Err(Err::Incomplete(Needed::Size(1))));
   }
 
-  use util::Offset;
+  use traits::Offset;
   #[test]
   fn offset() {
     let a = &b"abcd;"[..];
@@ -1202,8 +1078,9 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn buffer_with_size() {
+    use lib::std::vec::Vec;
     let i: Vec<u8> = vec![7, 8];
     let o: Vec<u8> = vec![4, 5, 6];
     //let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
@@ -1393,15 +1270,21 @@ mod tests {
 
   #[test]
   fn hex_u32_tests() {
-    assert_eq!(hex_u32(&b""[..]), Ok((&b""[..], 0)));
-    assert_eq!(hex_u32(&b"ff"[..]), Ok((&b""[..], 255)));
-    assert_eq!(hex_u32(&b"1be2"[..]), Ok((&b""[..], 7138)));
-    assert_eq!(hex_u32(&b"c5a31be2"[..]), Ok((&b""[..], 3_315_801_058)));
-    assert_eq!(hex_u32(&b"C5A31be2"[..]), Ok((&b""[..], 3_315_801_058)));
-    assert_eq!(hex_u32(&b"00c5a31be2"[..]), Ok((&b"e2"[..], 12_952_347)));
-    assert_eq!(hex_u32(&b"c5a31be201"[..]), Ok((&b"01"[..], 3_315_801_058)));
-    assert_eq!(hex_u32(&b"ffffffff"[..]), Ok((&b""[..], 4_294_967_295)));
-    assert_eq!(hex_u32(&b"0x1be2"[..]), Ok((&b"x1be2"[..], 0)));
+    assert_eq!(
+      hex_u32(&b";"[..]),
+      Err(Err::Error(error_position!(&b";"[..], ErrorKind::IsA)))
+    );
+    assert_eq!(hex_u32(&b"ff;"[..]), Ok((&b";"[..], 255)));
+    assert_eq!(hex_u32(&b"1be2;"[..]), Ok((&b";"[..], 7138)));
+    assert_eq!(hex_u32(&b"c5a31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
+    assert_eq!(hex_u32(&b"C5A31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
+    assert_eq!(hex_u32(&b"00c5a31be2;"[..]), Ok((&b"e2;"[..], 12_952_347)));
+    assert_eq!(
+      hex_u32(&b"c5a31be201;"[..]),
+      Ok((&b"01;"[..], 3_315_801_058))
+    );
+    assert_eq!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
+    assert_eq!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
   }
 
   /*
@@ -1442,13 +1325,25 @@ mod tests {
 
     named!(be_tst32<u32>, u32!(Endianness::Big));
     named!(le_tst32<u32>, u32!(Endianness::Little));
-    assert_eq!(be_tst32(&[0x12, 0x00, 0x60, 0x00]), Ok((&b""[..], 302_014_464_u32)));
-    assert_eq!(le_tst32(&[0x12, 0x00, 0x60, 0x00]), Ok((&b""[..], 6_291_474_u32)));
+    assert_eq!(
+      be_tst32(&[0x12, 0x00, 0x60, 0x00]),
+      Ok((&b""[..], 302_014_464_u32))
+    );
+    assert_eq!(
+      le_tst32(&[0x12, 0x00, 0x60, 0x00]),
+      Ok((&b""[..], 6_291_474_u32))
+    );
 
     named!(be_tst64<u64>, u64!(Endianness::Big));
     named!(le_tst64<u64>, u64!(Endianness::Little));
-    assert_eq!(be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Ok((&b""[..], 1_297_142_246_100_992_000_u64)));
-    assert_eq!(le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Ok((&b""[..], 36_028_874_334_666_770_u64)));
+    assert_eq!(
+      be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 1_297_142_246_100_992_000_u64))
+    );
+    assert_eq!(
+      le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 36_028_874_334_666_770_u64))
+    );
 
     named!(be_tsti16<i16>, i16!(Endianness::Big));
     named!(le_tsti16<i16>, i16!(Endianness::Little));
@@ -1457,14 +1352,25 @@ mod tests {
 
     named!(be_tsti32<i32>, i32!(Endianness::Big));
     named!(le_tsti32<i32>, i32!(Endianness::Little));
-    assert_eq!(be_tsti32(&[0x00, 0x12, 0x60, 0x00]), Ok((&b""[..], 1_204_224_i32)));
-    assert_eq!(le_tsti32(&[0x00, 0x12, 0x60, 0x00]), Ok((&b""[..], 6_296_064_i32)));
+    assert_eq!(
+      be_tsti32(&[0x00, 0x12, 0x60, 0x00]),
+      Ok((&b""[..], 1_204_224_i32))
+    );
+    assert_eq!(
+      le_tsti32(&[0x00, 0x12, 0x60, 0x00]),
+      Ok((&b""[..], 6_296_064_i32))
+    );
 
     named!(be_tsti64<i64>, i64!(Endianness::Big));
     named!(le_tsti64<i64>, i64!(Endianness::Little));
-    assert_eq!(be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Ok((&b""[..], 71_881_672_479_506_432_i64)));
-    assert_eq!(le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]), Ok((&b""[..], 36_028_874_334_732_032_i64)));
-
+    assert_eq!(
+      be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 71_881_672_479_506_432_i64))
+    );
+    assert_eq!(
+      le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 36_028_874_334_732_032_i64))
+    );
   }
 
   #[test]
@@ -1480,7 +1386,7 @@ mod tests {
     assert_eq!(int_parse(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
   }
 
-  use std::convert::From;
+  use lib::std::convert::From;
   impl From<u32> for CustomError {
     fn from(_: u32) -> Self {
       CustomError
@@ -1495,15 +1401,20 @@ mod tests {
 
   #[test]
   fn hex_digit_test() {
-
     let i = &b"0123456789abcdefABCDEF;"[..];
-    assert_eq!(hex_digit(i), Ok((&b";"[..], &i[..i.len()-1])));
+    assert_eq!(hex_digit(i), Ok((&b";"[..], &i[..i.len() - 1])));
 
     let i = &b"g"[..];
-    assert_eq!(hex_digit(i), Err(Err::Error(error_position!(i, ErrorKind::HexDigit))));
+    assert_eq!(
+      hex_digit(i),
+      Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
+    );
 
     let i = &b"G"[..];
-    assert_eq!(hex_digit(i), Err(Err::Error(error_position!(i, ErrorKind::HexDigit))));
+    assert_eq!(
+      hex_digit(i),
+      Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
+    );
 
     assert!(is_hex_digit(b'0'));
     assert!(is_hex_digit(b'9'));
@@ -1521,12 +1432,14 @@ mod tests {
 
   #[test]
   fn oct_digit_test() {
-
     let i = &b"01234567;"[..];
-    assert_eq!(oct_digit(i), Ok((&b";"[..], &i[..i.len()-1])));
+    assert_eq!(oct_digit(i), Ok((&b";"[..], &i[..i.len() - 1])));
 
     let i = &b"8"[..];
-    assert_eq!(oct_digit(i), Err(Err::Error(error_position!(i, ErrorKind::OctDigit))));
+    assert_eq!(
+      oct_digit(i),
+      Err(Err::Error(error_position!(i, ErrorKind::OctDigit)))
+    );
 
     assert!(is_oct_digit(b'0'));
     assert!(is_oct_digit(b'7'));
@@ -1542,7 +1455,10 @@ mod tests {
 
   #[test]
   fn full_line_windows() {
-    named!(take_full_line<(&[u8], &[u8])>, tuple!(not_line_ending, line_ending));
+    named!(
+      take_full_line<(&[u8], &[u8])>,
+      tuple!(not_line_ending, line_ending)
+    );
     let input = b"abc\r\n";
     let output = take_full_line(input);
     assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\r\n"[..]))));
@@ -1550,7 +1466,10 @@ mod tests {
 
   #[test]
   fn full_line_unix() {
-    named!(take_full_line<(&[u8], &[u8])>, tuple!(not_line_ending, line_ending));
+    named!(
+      take_full_line<(&[u8], &[u8])>,
+      tuple!(not_line_ending, line_ending)
+    );
     let input = b"abc\n";
     let output = take_full_line(input);
     assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\n"[..]))));
@@ -1573,25 +1492,37 @@ mod tests {
   #[test]
   fn cr_lf() {
     assert_eq!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_eq!(crlf(&b"\r"[..]),    Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(crlf(&b"\ra"[..]),   Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf))));
+    assert_eq!(crlf(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(
+      crlf(&b"\ra"[..]),
+      Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
+    );
 
     assert_eq!(crlf("\r\na"), Ok(("a", "\r\n")));
-    assert_eq!(crlf("\r"),    Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(crlf("\ra"),   Err(Err::Error(error_position!("\ra", ErrorKind::CrLf))));
+    assert_eq!(crlf("\r"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(
+      crlf("\ra"),
+      Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
+    );
   }
 
   #[test]
   fn end_of_line() {
-    assert_eq!(eol(&b"\na"[..]),   Ok((&b"a"[..], &b"\n"[..])));
+    assert_eq!(eol(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
     assert_eq!(eol(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_eq!(eol(&b"\r"[..]),    Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(eol(&b"\ra"[..]),   Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf))));
+    assert_eq!(eol(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(
+      eol(&b"\ra"[..]),
+      Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
+    );
 
-    assert_eq!(eol("\na"),   Ok(("a", "\n")));
+    assert_eq!(eol("\na"), Ok(("a", "\n")));
     assert_eq!(eol("\r\na"), Ok(("a", "\r\n")));
-    assert_eq!(eol("\r"),    Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(eol("\ra"),   Err(Err::Error(error_position!("\ra", ErrorKind::CrLf))));
+    assert_eq!(eol("\r"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(
+      eol("\ra"),
+      Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
+    );
   }
 
   #[test]
@@ -1621,7 +1552,10 @@ mod tests {
 
       println!("now parsing: {} -> {}", test, expected32);
 
-      assert_eq!(recognize_float(CompleteStr(test)), Ok((CompleteStr(""), CompleteStr(test))));
+      assert_eq!(
+        recognize_float(CompleteStr(test)),
+        Ok((CompleteStr(""), CompleteStr(test)))
+      );
       let larger = format!("{};", test);
       assert_eq!(recognize_float(&larger[..]), Ok((";", test)));
 
@@ -1633,7 +1567,10 @@ mod tests {
     }
 
     let remaining_exponent = "-1.234E-";
-    assert_eq!(recognize_float(remaining_exponent), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(
+      recognize_float(remaining_exponent),
+      Err(Err::Incomplete(Needed::Size(1)))
+    );
   }
 
   #[allow(dead_code)]

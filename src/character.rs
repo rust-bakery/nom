@@ -2,7 +2,7 @@
 
 use internal::{IResult, Needed};
 use traits::{AsChar, InputIter, InputLength, Slice};
-use std::ops::RangeFrom;
+use lib::std::ops::RangeFrom;
 use traits::{need_more, AtEof};
 
 /// matches one of the provided characters
@@ -22,8 +22,8 @@ use traits::{need_more, AtEof};
 macro_rules! one_of (
   ($i:expr, $inp: expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed};
 
       use $crate::Slice;
@@ -61,8 +61,8 @@ macro_rules! one_of (
 macro_rules! none_of (
   ($i:expr, $inp: expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed};
 
       use $crate::Slice;
@@ -99,8 +99,8 @@ macro_rules! none_of (
 macro_rules! char (
   ($i:expr, $c: expr) => (
     {
-      use ::std::result::Result::*;
-      use ::std::option::Option::*;
+      use $crate::lib::std::result::Result::*;
+      use $crate::lib::std::option::Option::*;
       use $crate::{Err,Needed};
 
       use $crate::Slice;
@@ -108,16 +108,16 @@ macro_rules! char (
       use $crate::InputIter;
 
       match ($i).iter_elements().next().map(|c| {
-        let b = c.clone().as_char() == $c;
-        (c, b)
+        let b = c.as_char() == $c;
+        b
       }) {
-        None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => {
+        None        => $crate::need_more($i, Needed::Size(1)),
+        Some(false) => {
           let e: $crate::ErrorKind<u32> = $crate::ErrorKind::Char;
           Err(Err::Error($crate::Context::Code($i, e)))
         },
         //the unwrap should be safe here
-        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
+        Some(true)  => Ok(( $i.slice($c.len()..), $i.iter_elements().next().unwrap().as_char() ))
       }
     }
   );
@@ -146,12 +146,10 @@ where
   let mut it = input.iter_indices();
   match it.next() {
     None => need_more(input, Needed::Size(1)),
-    Some((_, c)) => {
-      match it.next() {
-        None => Ok((input.slice(input.input_len()..), c.as_char())),
-        Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
-      }
-    }
+    Some((_, c)) => match it.next() {
+      None => Ok((input.slice(input.input_len()..), c.as_char())),
+      Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
+    },
   }
 }
 
@@ -165,7 +163,7 @@ mod tests {
     named!(f<char>, one_of!("ab"));
 
     let a = &b"abcd"[..];
-    assert_eq!(f(a),Ok((&b"bcd"[..], 'a')));
+    assert_eq!(f(a), Ok((&b"bcd"[..], 'a')));
 
     let b = &b"cde"[..];
     assert_eq!(f(b), Err(Err::Error(error_position!(b, ErrorKind::OneOf))));
@@ -185,7 +183,7 @@ mod tests {
     assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::NoneOf))));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b),Ok((&b"de"[..], 'c')));
+    assert_eq!(f(b), Ok((&b"de"[..], 'c')));
   }
 
   #[test]
@@ -196,7 +194,7 @@ mod tests {
     assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
 
     let b = &b"cde"[..];
-    assert_eq!(f(b),Ok((&b"de"[..], 'c')));
+    assert_eq!(f(b), Ok((&b"de"[..], 'c')));
   }
 
   #[test]
@@ -207,7 +205,19 @@ mod tests {
     assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
 
     let b = &"cde"[..];
-    assert_eq!(f(b),Ok((&"de"[..], 'c')));
+    assert_eq!(f(b), Ok((&"de"[..], 'c')));
+  }
+
+  use types::CompleteStr;
+  #[test]
+  fn complete_char() {
+    named!(f<CompleteStr, char>, char!('c'));
+
+    let a = CompleteStr("abcd");
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
+
+    let b = CompleteStr("cde");
+    assert_eq!(f(b), Ok((CompleteStr("de"), 'c')));
   }
 
   #[test]

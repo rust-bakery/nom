@@ -68,7 +68,6 @@ fn keys_and_values(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, &st
   }
 }
 
-
 named!(category_and_keys<CompleteStr,(&str,HashMap<&str,&str>)>,
   pair!(category, keys_and_values)
 );
@@ -82,16 +81,19 @@ fn categories(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, HashMap<
   }
 }
 
-
 #[test]
 fn parse_category_test() {
-  let ini_file = CompleteStr("[category]
+  let ini_file = CompleteStr(
+    "[category]
 
 parameter=value
-key = value2");
+key = value2",
+  );
 
-  let ini_without_category = CompleteStr("parameter=value
-key = value2");
+  let ini_without_category = CompleteStr(
+    "parameter=value
+key = value2",
+  );
 
   let res = category(ini_file);
   println!("{:?}", res);
@@ -105,8 +107,10 @@ key = value2");
 
 #[test]
 fn parse_key_value_test() {
-  let ini_file = CompleteStr("parameter=value
-key = value2");
+  let ini_file = CompleteStr(
+    "parameter=value
+key = value2",
+  );
 
   let ini_without_key_value = CompleteStr("key = value2");
 
@@ -122,8 +126,10 @@ key = value2");
 
 #[test]
 fn parse_key_value_with_space_test() {
-  let ini_file = CompleteStr("parameter = value
-key = value2");
+  let ini_file = CompleteStr(
+    "parameter = value
+key = value2",
+  );
 
   let ini_without_key_value = CompleteStr("key = value2");
 
@@ -139,8 +145,10 @@ key = value2");
 
 #[test]
 fn parse_key_value_with_comment_test() {
-  let ini_file = CompleteStr("parameter=value;abc
-key = value2");
+  let ini_file = CompleteStr(
+    "parameter=value;abc
+key = value2",
+  );
 
   let ini_without_key_value = CompleteStr("key = value2");
 
@@ -156,11 +164,13 @@ key = value2");
 
 #[test]
 fn parse_multiple_keys_and_values_test() {
-  let ini_file = CompleteStr("parameter=value;abc
+  let ini_file = CompleteStr(
+    "parameter=value;abc
 
 key = value2
 
-[category]");
+[category]",
+  );
 
   let ini_without_key_value = CompleteStr("[category]");
 
@@ -180,12 +190,14 @@ key = value2
 #[test]
 fn parse_category_then_multiple_keys_and_values_test() {
   //FIXME: there can be an empty line or a comment line after a category
-  let ini_file = CompleteStr("[abcd]
+  let ini_file = CompleteStr(
+    "[abcd]
 parameter=value;abc
 
 key = value2
 
-[category]");
+[category]",
+  );
 
   let ini_after_parser = CompleteStr("[category]");
 
@@ -204,7 +216,8 @@ key = value2
 
 #[test]
 fn parse_multiple_categories_test() {
-  let ini_file = CompleteStr("[abcd]
+  let ini_file = CompleteStr(
+    "[abcd]
 
 parameter=value;abc
 
@@ -213,7 +226,8 @@ key = value2
 [category]
 parameter3=value3
 key4 = value4
-");
+",
+  );
 
   let res = categories(ini_file);
   //println!("{:?}", res);

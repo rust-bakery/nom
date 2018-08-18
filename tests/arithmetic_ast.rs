@@ -2,7 +2,7 @@
 extern crate nom;
 
 use std::fmt;
-use std::fmt::{Display, Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use std::str::FromStr;
 
@@ -18,6 +18,7 @@ pub enum Expr {
   Paren(Box<Expr>),
 }
 
+#[derive(Debug)]
 pub enum Oper {
   Add,
   Sub,
@@ -106,33 +107,42 @@ named!(expr< CompleteStr, Expr >, do_parse!(
     (fold_exprs(initial, remainder))
 ));
 
-
 #[test]
 fn factor_test() {
-  assert_eq!(factor(CompleteStr("  3  ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok((CompleteStr(""), String::from("3"))));
+  assert_eq!(
+    factor(CompleteStr("  3  ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("3")))
+  );
 }
 
 #[test]
 fn term_test() {
-  assert_eq!(term(CompleteStr(" 3 *  5   ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (CompleteStr(""), String::from("(3 * 5)")) ));
+  assert_eq!(
+    term(CompleteStr(" 3 *  5   ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("(3 * 5)")))
+  );
 }
 
 #[test]
 fn expr_test() {
-  assert_eq!(expr(CompleteStr(" 1 + 2 *  3 ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (CompleteStr(""), String::from("(1 + (2 * 3))")) ));
-  assert_eq!(expr(CompleteStr(" 1 + 2 *  3 / 4 - 5 ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (CompleteStr(""), String::from("((1 + ((2 * 3) / 4)) - 5)")) ));
-  assert_eq!(expr(CompleteStr(" 72 / 2 / 3 ")).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (CompleteStr(""), String::from("((72 / 2) / 3)")) ));
+  assert_eq!(
+    expr(CompleteStr(" 1 + 2 *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("(1 + (2 * 3))")))
+  );
+  assert_eq!(
+    expr(CompleteStr(" 1 + 2 *  3 / 4 - 5 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("((1 + ((2 * 3) / 4)) - 5)")))
+  );
+  assert_eq!(
+    expr(CompleteStr(" 72 / 2 / 3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("((72 / 2) / 3)")))
+  );
 }
 
 #[test]
 fn parens_test() {
   assert_eq!(
-      expr(CompleteStr(" ( 1 + 2 ) *  3 ")).map(|(i,x)| (i,format!("{:?}", x))),
-      Ok( (CompleteStr(""), String::from("([(1 + 2)] * 3)")) )
-    );
+    expr(CompleteStr(" ( 1 + 2 ) *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("([(1 + 2)] * 3)")))
+  );
 }

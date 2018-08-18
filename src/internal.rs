@@ -1,6 +1,5 @@
 //! Basic types to build the parsers
 
-//use self::IResult::*;
 use self::Needed::*;
 
 #[cfg(feature = "verbose-errors")]
@@ -42,7 +41,9 @@ impl Needed {
   }
 }
 
-/// The `Err` enum indicates the parser was not successful, and has three cases:
+/// The `Err` enum indicates the parser was not successful
+///
+/// It has three cases:
 ///
 /// * `Incomplete` indicates that more data is needed to decide. The `Needed` enum
 /// can contain how many additional bytes are necessary. If you are sure your parser
@@ -79,6 +80,43 @@ pub enum Err<I, E = u32> {
   Failure(Context<I, E>),
 }
 
+#[cfg(feature = "std")]
+use std::fmt;
+
+#[cfg(feature = "std")]
+impl<I, E> fmt::Display for Err<I, E>
+where
+  I: fmt::Debug,
+  E: fmt::Debug,
+{
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}", self)
+  }
+}
+
+#[cfg(feature = "std")]
+use std::error::Error;
+
+#[cfg(feature = "std")]
+impl<I, E> Error for Err<I, E>
+where
+  I: fmt::Debug,
+  E: fmt::Debug,
+{
+  fn description(&self) -> &str {
+    match self {
+      &Err::Incomplete(..) => "there was not enough data",
+      &Err::Error(Context::Code(_, ref error_kind)) | &Err::Failure(Context::Code(_, ref error_kind)) => error_kind.description(),
+      #[cfg(feature = "verbose-errors")]
+      &Err::Error(Context::List(..)) | &Err::Failure(Context::List(..)) => "list of errors",
+    }
+  }
+
+  fn cause(&self) -> Option<&Error> {
+    None
+  }
+}
+
 use util::Convert;
 
 impl<I, F, E: From<F>> Convert<Err<I, F>> for Err<I, E> {
@@ -87,6 +125,23 @@ impl<I, F, E: From<F>> Convert<Err<I, F>> for Err<I, E> {
       Err::Incomplete(n) => Err::Incomplete(n),
       Err::Failure(c) => Err::Failure(Context::convert(c)),
       Err::Error(c) => Err::Error(Context::convert(c)),
+    }
+  }
+}
+
+impl<I, E> Err<I, E> {
+  pub fn into_error_kind(self) -> ::util::ErrorKind<E> {
+    match self {
+      Err::Incomplete(_) => ::util::ErrorKind::Complete,
+      Err::Failure(c) => c.into_error_kind(),
+      Err::Error(c) => c.into_error_kind(),
+    }
+  }
+
+  pub fn is_incomplete(&self) -> bool {
+    match *self {
+      Err::Incomplete(_) => true,
+      _ => false,
     }
   }
 }
@@ -297,7 +352,7 @@ macro_rules! error_node_position(
     {
     let mut error_vec = match $next {
       $crate::Context::Code(i, e) => {
-        let mut v = ::std::vec::Vec::new();
+        let mut v = $crate::lib::std::vec::Vec::new();
         v.push((i, e));
         v
       },

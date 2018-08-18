@@ -85,30 +85,68 @@ named!(expr <CompleteByteSlice, i64>, do_parse!(
 
 #[test]
 fn factor_test() {
-  assert_eq!(factor(CompleteByteSlice(b"3")), Ok((CompleteByteSlice(b""), 3)));
-  assert_eq!(factor(CompleteByteSlice(b" 12")), Ok((CompleteByteSlice(b""), 12)));
-  assert_eq!(factor(CompleteByteSlice(b"537  ")), Ok((CompleteByteSlice(b""), 537)));
-  assert_eq!(factor(CompleteByteSlice(b"  24   ")), Ok((CompleteByteSlice(b""), 24)));
+  assert_eq!(
+    factor(CompleteByteSlice(b"3")),
+    Ok((CompleteByteSlice(b""), 3))
+  );
+  assert_eq!(
+    factor(CompleteByteSlice(b" 12")),
+    Ok((CompleteByteSlice(b""), 12))
+  );
+  assert_eq!(
+    factor(CompleteByteSlice(b"537  ")),
+    Ok((CompleteByteSlice(b""), 537))
+  );
+  assert_eq!(
+    factor(CompleteByteSlice(b"  24   ")),
+    Ok((CompleteByteSlice(b""), 24))
+  );
 }
-
 
 #[test]
 fn term_test() {
-  assert_eq!(term(CompleteByteSlice(b" 12 *2 /  3")), Ok((CompleteByteSlice(b""), 8)));
-  assert_eq!(term(CompleteByteSlice(b" 2* 3  *2 *2 /  3")), Ok((CompleteByteSlice(b""), 8)));
-  assert_eq!(term(CompleteByteSlice(b" 48 /  3/2")), Ok((CompleteByteSlice(b""), 8)));
+  assert_eq!(
+    term(CompleteByteSlice(b" 12 *2 /  3")),
+    Ok((CompleteByteSlice(b""), 8))
+  );
+  assert_eq!(
+    term(CompleteByteSlice(b" 2* 3  *2 *2 /  3")),
+    Ok((CompleteByteSlice(b""), 8))
+  );
+  assert_eq!(
+    term(CompleteByteSlice(b" 48 /  3/2")),
+    Ok((CompleteByteSlice(b""), 8))
+  );
 }
 
 #[test]
 fn expr_test() {
-  assert_eq!(expr(CompleteByteSlice(b" 1 +  2 ")), Ok((CompleteByteSlice(b""), 3)));
-  assert_eq!(expr(CompleteByteSlice(b" 12 + 6 - 4+  3")), Ok((CompleteByteSlice(b""), 17)));
-  assert_eq!(expr(CompleteByteSlice(b" 1 + 2*3 + 4")), Ok((CompleteByteSlice(b""), 11)));
+  assert_eq!(
+    expr(CompleteByteSlice(b" 1 +  2 ")),
+    Ok((CompleteByteSlice(b""), 3))
+  );
+  assert_eq!(
+    expr(CompleteByteSlice(b" 12 + 6 - 4+  3")),
+    Ok((CompleteByteSlice(b""), 17))
+  );
+  assert_eq!(
+    expr(CompleteByteSlice(b" 1 + 2*3 + 4")),
+    Ok((CompleteByteSlice(b""), 11))
+  );
 }
 
 #[test]
 fn parens_test() {
-  assert_eq!(expr(CompleteByteSlice(b" (  2 )")), Ok((CompleteByteSlice(b""), 2)));
-  assert_eq!(expr(CompleteByteSlice(b" 2* (  3 + 4 ) ")), Ok((CompleteByteSlice(b""), 14)));
-  assert_eq!(expr(CompleteByteSlice(b"  2*2 / ( 5 - 1) + 3")), Ok((CompleteByteSlice(b""), 4)));
+  assert_eq!(
+    expr(CompleteByteSlice(b" (  2 )")),
+    Ok((CompleteByteSlice(b""), 2))
+  );
+  assert_eq!(
+    expr(CompleteByteSlice(b" 2* (  3 + 4 ) ")),
+    Ok((CompleteByteSlice(b""), 14))
+  );
+  assert_eq!(
+    expr(CompleteByteSlice(b"  2*2 / ( 5 - 1) + 3")),
+    Ok((CompleteByteSlice(b""), 4))
+  );
 }
