@@ -306,10 +306,11 @@ macro_rules! many0(
 ///  assert_eq!(multi(&a[..]), Ok((&b"efgh"[..], res)));
 ///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
 ///
+///  named!(multi_complete<CompleteByteSlice, Vec<CompleteByteSlice> >, many1!( tag!( "abcd" ) ) );
 ///  let c = CompleteByteSlice(b"abcdabcd");
 ///
 ///  let res = vec![CompleteByteSlice(b"abcd"), CompleteByteSlice(b"abcd")];
-///  assert_eq!(multi(c), Ok((CompleteByteSlice(b""), res)));
+///  assert_eq!(multi_complete(c), Ok((CompleteByteSlice(b""), res)));
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
