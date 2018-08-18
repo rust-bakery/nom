@@ -75,6 +75,16 @@ macro_rules! closure (
     );
 );
 
+#[macro_export]
+macro_rules! move_closure (
+    ($ty:ty, $submac:ident!( $($args:tt)* )) => (
+        move |i: $ty| { $submac!(i, $($args)*) }
+    );
+    ($submac:ident!( $($args:tt)* )) => (
+        move |i| { $submac!(i, $($args)*) }
+    );
+);
+
 /// Makes a function from a parser combination
 ///
 /// The type can be set up if the compiler needs
