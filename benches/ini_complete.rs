@@ -1,3 +1,6 @@
+#![feature(test)]
+extern crate test;
+
 #[macro_use]
 extern crate nom;
 
@@ -234,4 +237,41 @@ key4 = value4
   expected_h.insert("abcd", expected_1);
   expected_h.insert("category", expected_2);
   assert_eq!(res, Ok((ini_after_parser, expected_h)));
+}
+
+#[bench]
+fn bench_ini_complete(b: &mut test::Bencher) {
+  let str = "[owner]
+name=John Doe
+organization=Acme Widgets Inc.
+
+[database]
+server=192.0.2.62
+port=143
+file=payroll.dat
+";
+
+  b.iter(|| categories(CompleteByteSlice(str.as_bytes())).unwrap());
+  b.bytes = str.len() as u64;
+}
+
+#[bench]
+fn bench_ini_complete_keys_and_values(b: &mut test::Bencher) {
+  let str = "server=192.0.2.62
+port=143
+file=payroll.dat
+";
+
+  named!(acc<CompleteByteSlice, Vec<(&str,&str)> >, many0!(key_value));
+
+  b.iter(|| acc(CompleteByteSlice(str.as_bytes())).unwrap());
+  b.bytes = str.len() as u64;
+}
+
+#[bench]
+fn bench_ini_complete_key_value(b: &mut test::Bencher) {
+  let str = "server=192.0.2.62\n";
+
+  b.iter(|| key_value(CompleteByteSlice(str.as_bytes())).unwrap());
+  b.bytes = str.len() as u64;
 }

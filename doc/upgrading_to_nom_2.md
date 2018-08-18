@@ -106,7 +106,7 @@ you can fix it with:
 +    c == 0x0
 ```
 
-## length_value, length_bytes refactoring
+## `length_value!`, `length_bytes!` refactoring
 
 The "length-value" pattern usually indicates that we get a length from the input, then take a slice of that size from the input, and convert that to a value of the type we need. The `length_value!` macro was using the length parameter to apply the value parser a specific number of times.
 
@@ -133,7 +133,7 @@ error[E0308]: mismatched types
          sig_hash_algs_len: be_u16 ~
 ```
 
-## error! does not exist anymore
+## `error!` does not exist anymore
 
 The `error!` macro, that was used to return a parsing error without backtracking through the parser tree, is now called `return_error!`. This change was done because the "log" crate also uses an `error!` macro, and they complained about the name conflict to nom instead of complaining to log, much to my dismay.
 

@@ -1,13 +1,13 @@
 [package]
 
 name = "nom"
-version = "4.0.0-alpha1"
+version = "4.0.0"
 authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
 repository = "https://github.com/Geal/nom"
 readme = "README.md"
-documentation = "http://rust.unhandledexpression.com/nom/"
+documentation = "https://docs.rs/nom"
 keywords = ["parser", "parser-combinators", "parsing", "streaming", "bit"]
 categories = ["parsing"]
 
@@ -22,15 +22,15 @@ include = [
 ]
 
 [features]
-std = ["memchr/use_std"]
-nightly = []
+alloc = []
+std = ["alloc", "memchr/use_std"]
 default = ["std"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
-verbose-errors = []
+verbose-errors = ["alloc"]
 
 [dependencies.regex]
-version = "^0.2"
+version = "^1.0"
 optional = true
 
 [dependencies.lazy_static]
@@ -45,5 +45,73 @@ default-features = false
 #git = "https://github.com/carllerche/bytes"
 #rev = "a7d38e29"
 
+[package.metadata.docs.rs]
+features = [ "alloc", "std", "regexp", "regexp_macros", "verbose-errors" ]
+all-features = true
+
+[[test]]
+name = "arithmetic"
+
+[[test]]
+name = "arithmetic_ast"
+required-features = ["alloc"]
+
+[[test]]
+name = "blockbuf-arithmetic"
+
+[[test]]
+name = "complete_arithmetic"
+
+[[test]]
+name = "complete_float"
+
+[[test]]
+name = "css"
+
+[[test]]
+name = "custom_errors"
+
+[[test]]
+name = "float"
+
+[[test]]
+name = "inference"
+
+[[test]]
+name = "ini"
+required-features = ["alloc"]
+
+[[test]]
+name = "ini_str"
+required-features = ["alloc"]
+
+[[test]]
+name = "issues"
+required-features = ["alloc", "regexp_macros"]
+
+[[test]]
+name = "json"
+
+[[test]]
+name = "mp4"
+
+[[test]]
+name = "multiline"
+required-features = ["alloc"]
+
+[[test]]
+name = "named_args"
+
+[[test]]
+name = "overflow"
+
+[[test]]
+name = "reborrow_fold"
+
+[[test]]
+name = "test1"
+
 [badges]
 travis-ci = { repository = "Geal/nom" }
+coveralls = { repository = "Geal/nom", branch = "master", service = "github" }
+maintenance = { status = "actively-developed" }

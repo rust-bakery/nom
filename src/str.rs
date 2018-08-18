@@ -18,6 +18,7 @@
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `tag` instead")]
 macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
     {
@@ -35,6 +36,7 @@ macro_rules! tag_s (
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// # use nom::InputLength;
+/// #[cfg(feature = "alloc")]
 /// # fn main() {
 ///  fn test(input: &str) -> IResult<&str, &str> {
 ///    tag_no_case_s!(input, "ABcd")
@@ -42,8 +44,11 @@ macro_rules! tag_s (
 ///  let r = test("aBCdefgh");
 ///  assert_eq!(r,Ok(("efgh", "aBCd")));
 /// # }
+/// # #[cfg(not(feature = "alloc"))]
+/// # fn main() {}
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `tag_no_case` instead")]
 macro_rules! tag_no_case_s (
   ($i:expr, $tag: expr) => (
     {
@@ -71,6 +76,7 @@ macro_rules! tag_no_case_s (
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take` instead")]
 macro_rules! take_s (
   ($i:expr, $count:expr) => (
     {
@@ -80,7 +86,6 @@ macro_rules! take_s (
     }
   );
 );
-
 
 /// `is_not_s!(&str) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters that do not appear in the provided array
@@ -95,6 +100,7 @@ macro_rules! take_s (
 ///  # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `is_not` instead")]
 macro_rules! is_not_s (
   ($input:expr, $arr:expr) => (
     {
@@ -119,6 +125,7 @@ macro_rules! is_not_s (
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `is_a` instead")]
 macro_rules! is_a_s (
   ($input:expr, $arr:expr) => (
     {
@@ -126,7 +133,6 @@ macro_rules! is_a_s (
     }
   );
 );
-
 
 /// `take_while_s!(char -> bool) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters until the provided function fails.
@@ -144,6 +150,7 @@ macro_rules! is_a_s (
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_while` instead")]
 macro_rules! take_while_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -159,19 +166,20 @@ macro_rules! take_while_s (
 /// returns the longest (non empty) list of characters until the provided function fails.
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool`
+///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # use nom::is_alphanumeric;
 /// # fn main() {
 ///  fn alphabetic(chr: char) -> bool { (chr >= 0x41 as char && chr <= 0x5A as char) || (chr >= 0x61 as char && chr <= 0x7A as char) }
 ///  named!( alpha<&str,&str>, take_while1_s!( alphabetic ) );
 ///
 ///  let r = alpha("abcd\nefgh");
-///  assert_eq!(r,Ok(("\nefgh", "abcd")));
+///  assert_eq!(r, Ok(("\nefgh", "abcd")));
 /// # }
 /// ```
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_while1` instead")]
 macro_rules! take_while1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     take_while1!($input, $submac!($($args)*))
@@ -181,12 +189,12 @@ macro_rules! take_while1_s (
   );
 );
 
-
 /// `take_till_s!(char -> bool) => &str -> IResult<&str, &str>`
 /// returns the longest list of characters until the provided function succeeds
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_till` instead")]
 macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -203,6 +211,7 @@ macro_rules! take_till_s (
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_till1` instead")]
 macro_rules! take_till1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -217,6 +226,7 @@ macro_rules! take_till1_s (
 /// `take_until_and_consume_s!(&str) => &str -> IResult<&str, &str>`
 /// generates a parser consuming all chars until the specified string is found and consumes it
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_until_and_consume` instead")]
 macro_rules! take_until_and_consume_s (
   ($input:expr, $substr:expr) => (
     {
@@ -228,6 +238,7 @@ macro_rules! take_until_and_consume_s (
 /// `take_until_s!(&str) => &str -> IResult<&str, &str>`
 /// generates a parser consuming all chars until the specified string is found and leaves it in the remaining input
 #[macro_export]
+#[deprecated(since = "4.0.0", note = "Please use `take_until` instead")]
 macro_rules! take_until_s (
   ($input:expr, $substr:expr) => (
     {
@@ -238,7 +249,7 @@ macro_rules! take_until_s (
 
 #[cfg(test)]
 mod test {
-  use {Err, IResult, ErrorKind};
+  use {Err, ErrorKind, IResult};
 
   #[test]
   fn tag_str_succeed() {
@@ -257,18 +268,16 @@ mod test {
         assert!(
           output == TAG,
           "Parser `tag_s` doesn't return the tag it matched on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           TAG,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `tag_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `tag_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -282,7 +291,7 @@ mod test {
       other => {
         panic!(
           "Parser `tag_s` didn't require more input when it should have. \
-                        Got `{:?}`.",
+           Got `{:?}`.",
           other
         );
       }
@@ -325,13 +334,11 @@ mod test {
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -347,24 +354,22 @@ mod test {
         assert!(
           extra == LEFTOVER,
           "Parser `take_until_s`\
-                  consumed leftover input. Leftover `{}`.",
+           consumed leftover input. Leftover `{}`.",
           extra
         );
         assert!(
           output == CONSUMED,
           "Parser `take_until_s`\
-                  doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+           doens't return the string it consumed on success. Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_until_s` didn't succeed when it should have. \
-             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -374,13 +379,11 @@ mod test {
 
     match take_s!(INPUT, 13) {
       Err(Err::Incomplete(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_s` didn't require more input when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_s` didn't require more input when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     }
   }
 
@@ -397,8 +400,8 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Ok((&a[..], &a[..])));
-    assert_eq!(f(&b[..]), Ok((&a[..], &b[..])));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&d[..], &b[..])));
     assert_eq!(f(&d[..]), Ok((&d[..], &a[..])));
   }
@@ -411,8 +414,8 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Unknown)));
-    assert_eq!(f(&b[..]), Ok((&a[..], &b[..])));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&"123"[..], &b[..])));
     assert_eq!(
       f(&d[..]),
@@ -440,18 +443,16 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_till_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_till_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_till_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -475,18 +476,16 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_while_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_while_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_while_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -513,13 +512,11 @@ mod test {
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `is_not_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `is_not_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -535,24 +532,22 @@ mod test {
         assert!(
           extra == LEFTOVER,
           "Parser `take_until_and_consume_s`\
-                    consumed leftover input. Leftover `{}`.",
+           consumed leftover input. Leftover `{}`.",
           extra
         );
         assert!(
           output == OUTPUT,
           "Parser `take_until_and_consume_s`\
-                    doens't return the string it selected on success. Expected `{}`, got `{}`.",
+           doens't return the string it selected on success. Expected `{}`, got `{}`.",
           OUTPUT,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_until_and_consume_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_and_consume_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -576,18 +571,16 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_while_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_while_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_while_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -600,12 +593,10 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => {
-        panic!(
-          "Parser `is_not_s` didn't fail when it should have. Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `is_not_s` didn't fail when it should have. Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -629,18 +620,16 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_while1_s` doesn't return the string it consumed on success. \
-                     Expected `{}`, got `{}`.",
+           Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `take_while1_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_while1_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -651,13 +640,11 @@ mod test {
 
     match take_until_and_consume_s!(INPUT, FIND) {
       Err(Err::Incomplete(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_until_and_consume_s` didn't require more input when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_and_consume_s` didn't require more input when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -668,13 +655,11 @@ mod test {
 
     match take_until_s!(INPUT, FIND) {
       Err(Err::Incomplete(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_until_s` didn't require more input when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_until_s` didn't require more input when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -701,13 +686,11 @@ mod test {
           output
         );
       }
-      other => {
-        panic!(
-          "Parser `is_a_s` didn't succeed when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `is_a_s` didn't succeed when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -722,13 +705,11 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_while1_s` didn't fail when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `take_while1_s` didn't fail when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -741,12 +722,10 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => {
-        panic!(
-          "Parser `is_a_s` didn't fail when it should have. Got `{:?}`.",
-          other
-        )
-      }
+      other => panic!(
+        "Parser `is_a_s` didn't fail when it should have. Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -756,14 +735,12 @@ mod test {
     const FIND: &str = "Ráñδô₥";
 
     match take_until_and_consume_s!(INPUT, FIND) {
-      Err(Err::Error(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_until_and_consume_s` didn't fail when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      Err(Err::Incomplete(_)) => (),
+      other => panic!(
+        "Parser `take_until_and_consume_s` didn't fail when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
@@ -773,28 +750,25 @@ mod test {
     const FIND: &str = "Ráñδô₥";
 
     match take_until_s!(INPUT, FIND) {
-      Err(Err::Error(_)) => (),
-      other => {
-        panic!(
-          "Parser `take_until_and_consume_s` didn't fail when it should have. \
-                             Got `{:?}`.",
-          other
-        )
-      }
+      Err(Err::Incomplete(_)) => (),
+      other => panic!(
+        "Parser `take_until_and_consume_s` didn't fail when it should have. \
+         Got `{:?}`.",
+        other
+      ),
     };
   }
 
   #[test]
-  #[cfg(feature = "std")]
+  #[cfg(feature = "alloc")]
   fn recognize_is_a_s() {
     let a = "aabbab";
     let b = "ababcd";
 
-    named!(f <&str,&str>, recognize!(many1!(alt!( tag_s!("a") | tag_s!("b") ))));
+    named!(f <&str,&str>, recognize!(many1!(complete!(alt!( tag_s!("a") | tag_s!("b") )))));
 
     assert_eq!(f(&a[..]), Ok((&a[6..], &a[..])));
     assert_eq!(f(&b[..]), Ok((&b[4..], &b[..4])));
-
   }
 
   #[test]
@@ -806,6 +780,7 @@ mod test {
     let _ = dot("點");
   }
 
+  #[cfg(feature = "alloc")]
   #[test]
   fn case_insensitive() {
     named!(test<&str,&str>, tag_no_case!("ABcd"));

@@ -1,4 +1,5 @@
 #[cfg(feature = "verbose-errors")]
+#[cfg(feature = "std")]
 use internal::{Err, IResult};
 #[cfg(feature = "verbose-errors")]
 use verbose_errors::Context;
@@ -6,14 +7,10 @@ use verbose_errors::Context;
 #[cfg(feature = "std")]
 use std::collections::HashMap;
 
-use std::vec::Vec;
-use std::string::ToString;
-
-/// useful functions to calculate the offset between slices and show a hexdump of a slice
-pub trait Offset {
-  /// offset between the first byte of self and the first byte of the argument
-  fn offset(&self, second: &Self) -> usize;
-}
+#[cfg(feature = "alloc")]
+use lib::std::string::ToString;
+#[cfg(feature = "alloc")]
+use lib::std::vec::Vec;
 
 #[cfg(feature = "std")]
 pub trait HexDisplay {
@@ -28,24 +25,6 @@ pub trait HexDisplay {
 
 #[cfg(feature = "std")]
 static CHARS: &'static [u8] = b"0123456789abcdef";
-
-impl Offset for [u8] {
-  fn offset(&self, second: &[u8]) -> usize {
-    let fst = self.as_ptr();
-    let snd = second.as_ptr();
-
-    snd as usize - fst as usize
-  }
-}
-
-impl Offset for str {
-  fn offset(&self, second: &Self) -> usize {
-    let fst = self.as_ptr();
-    let snd = second.as_ptr();
-
-    snd as usize - fst as usize
-  }
-}
 
 #[cfg(feature = "std")]
 impl HexDisplay for [u8] {
@@ -95,6 +74,19 @@ impl HexDisplay for [u8] {
   }
 }
 
+#[cfg(feature = "std")]
+impl HexDisplay for str {
+  #[allow(unused_variables)]
+  fn to_hex(&self, chunk_size: usize) -> String {
+    self.to_hex_from(chunk_size, 0)
+  }
+
+  #[allow(unused_variables)]
+  fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
+    self.as_bytes().to_hex_from(chunk_size, from)
+  }
+}
+
 /// Prints a message if the parser fails
 ///
 /// The message prints the `Error` or `Incomplete`
@@ -116,7 +108,7 @@ impl HexDisplay for [u8] {
 macro_rules! dbg (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       let l = line!();
       match $submac!($i, $($args)*) {
         Err(e) => {
@@ -194,10 +186,9 @@ pub fn compare_error_paths<P: Clone + PartialEq, E: Clone + PartialEq>(e1: &Cont
   error_to_list(e1) == error_to_list(e2)
 }
 
-
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
-use std::hash::Hash;
+use lib::std::hash::Hash;
 
 #[cfg(feature = "std")]
 #[cfg(feature = "verbose-errors")]
@@ -207,13 +198,11 @@ pub fn add_error_pattern<'a, I: Clone + Hash + Eq, O, E: Clone + Hash + Eq>(
   message: &'a str,
 ) -> bool {
   match res {
-    Err(Err::Error(e)) |
-    Err(Err::Failure(e)) => {
+    Err(Err::Error(e)) | Err(Err::Failure(e)) => {
       h.insert(error_to_list(&e), message);
       true
     }
     _ => false,
-
   }
 }
 
@@ -259,7 +248,6 @@ pub fn print_error<O, E: Clone>(input: &[u8], res: IResult<&[u8], O, E>) {
     let colors = generate_colors(&v);
     println!("parser codes: {}", print_codes(&colors, &HashMap::new()));
     println!("{}", print_offsets(input, 0, &v));
-
   } else {
     println!("not an error");
   }
@@ -300,6 +288,7 @@ pub fn code_from_offset<E>(v: &[(ErrorKind<E>, usize, usize)], offset: usize) ->
   }
 }
 
+#[cfg(feature = "alloc")]
 pub fn reset_color(v: &mut Vec<u8>) {
   v.push(0x1B);
   v.push(b'[');
@@ -307,6 +296,7 @@ pub fn reset_color(v: &mut Vec<u8>) {
   v.push(b'm');
 }
 
+#[cfg(feature = "alloc")]
 pub fn write_color(v: &mut Vec<u8>, color: u8) {
   v.push(0x1B);
   v.push(b'[');
@@ -428,69 +418,10 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
   String::from_utf8_lossy(&v[..]).into_owned()
 }
 
-pub trait AsBytes {
-  fn as_bytes(&self) -> &[u8];
-}
-
-impl<'a> AsBytes for &'a str {
-  #[inline(always)]
-  fn as_bytes(&self) -> &[u8] {
-    str::as_bytes(self)
-  }
-}
-
-impl AsBytes for str {
-  #[inline(always)]
-  fn as_bytes(&self) -> &[u8] {
-    str::as_bytes(self)
-  }
-}
-
-impl<'a> AsBytes for &'a [u8] {
-  #[inline(always)]
-  fn as_bytes(&self) -> &[u8] {
-    *self
-  }
-}
-
-impl AsBytes for [u8] {
-  #[inline(always)]
-  fn as_bytes(&self) -> &[u8] {
-    self
-  }
-}
-
-macro_rules! array_impls {
-  ($($N:expr)+) => {
-    $(
-      impl<'a> AsBytes for &'a [u8; $N] {
-        #[inline(always)]
-        fn as_bytes(&self) -> &[u8] {
-          *self
-        }
-      }
-
-      impl AsBytes for [u8; $N] {
-        #[inline(always)]
-        fn as_bytes(&self) -> &[u8] {
-          self
-        }
-      }
-    )+
-  };
-}
-
-
-array_impls! {
-     0  1  2  3  4  5  6  7  8  9
-    10 11 12 13 14 15 16 17 18 19
-    20 21 22 23 24 25 26 27 28 29
-    30 31 32
-}
-
 /// indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug,PartialEq,Eq,Hash,Clone)]
+#[allow(deprecated)]
 pub enum ErrorKind<E = u32> {
   Custom(E),
   Tag,
@@ -539,21 +470,30 @@ pub enum ErrorKind<E = u32> {
   Fix,
   Escaped,
   EscapedTransform,
+  #[deprecated(since = "4.0.0", note = "Please use `Tag` instead")]
   TagStr,
+  #[deprecated(since = "4.0.0", note = "Please use `IsNot` instead")]
   IsNotStr,
+  #[deprecated(since = "4.0.0", note = "Please use `IsA` instead")]
   IsAStr,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeWhile1` instead")]
   TakeWhile1Str,
   NonEmpty,
   ManyMN,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeUntilAndConsume` instead")]
   TakeUntilAndConsumeStr,
+  #[deprecated(since = "4.0.0", note = "Please use `TakeUntil` instead")]
   TakeUntilStr,
   Not,
   Permutation,
   Verify,
   TakeTill1,
+  TakeUntilAndConsume1,
+  TakeWhileMN,
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
+#[allow(deprecated)]
 pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
   match *e {
     ErrorKind::Custom(_)                 => 0,
@@ -615,11 +555,14 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::ManyTill                  => 65,
     ErrorKind::Verify                    => 66,
     ErrorKind::TakeTill1                 => 67,
+    ErrorKind::TakeUntilAndConsume1      => 68,
+    ErrorKind::TakeWhileMN               => 69,
   }
 }
 
 impl<E> ErrorKind<E> {
   #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[allow(deprecated)]
   pub fn description(&self) -> &str {
     match *self {
       ErrorKind::Custom(_)                 => "Custom error",
@@ -681,9 +624,11 @@ impl<E> ErrorKind<E> {
       ErrorKind::ManyTill                  => "ManyTill",
       ErrorKind::Verify                    => "predicate verification",
       ErrorKind::TakeTill1                 => "TakeTill1",
+      ErrorKind::TakeUntilAndConsume1      => "Take at least 1 until and consume",
+      ErrorKind::TakeWhileMN               => "TakeWhileMN",
     }
-
   }
+
   /// Convert Err into an ErrorKind.
   ///
   /// This allows application code to use ErrorKind and stay independent from the `verbose-errors` features activation.
@@ -692,13 +637,13 @@ impl<E> ErrorKind<E> {
   }
 }
 
-
 pub trait Convert<T> {
   fn convert(T) -> Self;
 }
 
 impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
   #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[allow(deprecated)]
   fn convert(e: ErrorKind<F>) -> Self {
     match e {
       ErrorKind::Custom(c)                 => ErrorKind::Custom(E::from(c)),
@@ -760,35 +705,8 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
       ErrorKind::ManyTill                  => ErrorKind::ManyTill,
       ErrorKind::Verify                    => ErrorKind::Verify,
       ErrorKind::TakeTill1                 => ErrorKind::TakeTill1,
+      ErrorKind::TakeUntilAndConsume1      => ErrorKind::TakeUntilAndConsume1,
+      ErrorKind::TakeWhileMN               => ErrorKind::TakeWhileMN,
     }
-  }
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn test_offset_u8() {
-    let s = b"abcd123";
-    let a = &s[..];
-    let b = &a[2..];
-    let c = &a[..4];
-    let d = &a[3..5];
-    assert_eq!(a.offset(b), 2);
-    assert_eq!(a.offset(c), 0);
-    assert_eq!(a.offset(d), 3);
-  }
-
-  #[test]
-  fn test_offset_str() {
-    let s = "abcřèÂßÇd123";
-    let a = &s[..];
-    let b = &a[7..];
-    let c = &a[..5];
-    let d = &a[5..9];
-    assert_eq!(a.offset(b), 7);
-    assert_eq!(a.offset(c), 0);
-    assert_eq!(a.offset(d), 5);
   }
 }

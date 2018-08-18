@@ -13,8 +13,10 @@
 //! you can know precisely which parser got to which part of the input.
 //! The main drawback is that it is a lot slower than default error
 //! management.
-use util::{ErrorKind, Convert};
-use std::convert::From;
+use util::{Convert, ErrorKind};
+use lib::std::convert::From;
+#[cfg(feature = "alloc")]
+use lib::std::vec::Vec;
 
 /// Contains the error that a parser can return
 ///
@@ -35,13 +37,11 @@ impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
   fn convert(c: Context<I, F>) -> Self {
     match c {
       Context::Code(i, e) => Context::Code(i, ErrorKind::convert(e)),
-      Context::List(mut v) => {
-        Context::List(
-          v.drain(..)
-            .map(|(i, e)| (i, ErrorKind::convert(e)))
-            .collect(),
-        )
-      }
+      Context::List(mut v) => Context::List(
+        v.drain(..)
+          .map(|(i, e)| (i, ErrorKind::convert(e)))
+          .collect(),
+      ),
     }
   }
 }
@@ -106,11 +106,11 @@ impl<I,O,E> IResult<I,O,E> {
 }
 
 #[cfg(feature = "std")]
-use std::any::Any;
+use $crate::lib::std::any::Any;
 #[cfg(feature = "std")]
-use std::{error,fmt};
+use $crate::lib::std::{error,fmt};
 #[cfg(feature = "std")]
-use std::fmt::Debug;
+use $crate::lib::std::fmt::Debug;
 #[cfg(feature = "std")]
 impl<P:Debug+Any,E:Debug+Any> error::Error for Err<P,E> {
   fn description(&self) -> &str {
@@ -173,7 +173,7 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Convert,ErrorKind,Context};
 
       match $submac!($i, $($args)*) {
@@ -230,26 +230,28 @@ macro_rules! fix_error (
 #[macro_export]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use ::std::result::Result::*;
-      use $crate::{Err,Convert};
-
-      match $submac!($i, $($args)*) {
-        Err(e)     => Err(Err::convert(e)),
-        Ok((i, o)) => match $submac2!(o, $($args2)*) {
-          Err(e)     => Err(Err::convert(e)),
-          Ok((_,o2)) => Ok((i,o2)),
-        },
-      }
-    }
+    flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    flat_map!($i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    flat_map!($i, call!($f), call!($g));
+    flat_map!(__impl $i, $submac!($($args)*), call!($g));
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    flat_map!($i, call!($f), $submac!($($args)*));
+    flat_map!(__impl $i, call!($f), $submac!($($args)*));
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    flat_map!(__impl $i, call!($f), call!($g));
+  );
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
+    {
+      use $crate::lib::std::result::Result::*;
+      use $crate::{Err,Convert};
+
+      ($submac!($i, $($args)*)).and_then(|(i,o)| {
+        match $submac2!(o, $($args2)*) {
+          Err(e)      => Err(Err::convert(e)),
+          Ok((_, o2)) => Ok((i, o2))
+        }
+      })
+    }
   );
 );

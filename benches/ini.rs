@@ -4,19 +4,22 @@ extern crate test;
 #[macro_use]
 extern crate nom;
 
-use nom::{space, alphanumeric, multispace};
+use nom::{alphanumeric, multispace, space};
 
 use std::str;
 use std::collections::HashMap;
 
-named!(category<&str>, map_res!(
+named!(
+  category<&str>,
+  map_res!(
     delimited!(
       char!('['),
-      take_while!(call!(|c| c != b']')),
+      take_while!(call!(|c| c != ']' as u8)),
       char!(']')
     ),
     str::from_utf8
-));
+  )
+);
 
 named!(key_value    <&[u8],(&str,&str)>,
   do_parse!(
@@ -25,14 +28,13 @@ named!(key_value    <&[u8],(&str,&str)>,
   >>      char!('=')
   >>      opt!(space)
   >> val: map_res!(
-           take_while!(call!(|c| c != b'\n' && c != b';')),
+           take_while!(call!(|c| c != '\n' as u8 && c != ';' as u8)),
            str::from_utf8
          )
-  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != b'\n'))))
+  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != '\n' as u8))))
   >>      (key, val)
   )
 );
-
 
 named!(keys_and_values<&[u8], HashMap<&str, &str> >,
   map!(
@@ -40,7 +42,6 @@ named!(keys_and_values<&[u8], HashMap<&str, &str> >,
     |vec: Vec<_>| vec.into_iter().collect()
   )
 );
-
 
 named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
   do_parse!(
@@ -67,6 +68,7 @@ named!(categories<&[u8], HashMap<&str, HashMap<&str,&str> > >,
   )
 );
 
+/*
 #[test]
 fn parse_category_test() {
   let ini_file = &b"[category]
@@ -80,11 +82,11 @@ key = value2"[..];
   let res = category(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error"),
+    IResult::Done(i, o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    _ => println!("error")
   }
 
-  assert_eq!(res, Ok((ini_without_category, "category")));
+  assert_eq!(res, IResult::Done(ini_without_category, "category"));
 }
 
 #[test]
@@ -97,11 +99,11 @@ key = value2"[..];
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
-    _ => println!("error"),
+    IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
+    _ => println!("error")
   }
 
-  assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
+  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
 }
 
 
@@ -115,11 +117,11 @@ key = value2"[..];
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
-    _ => println!("error"),
+    IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
+    _ => println!("error")
   }
 
-  assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
+  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
 }
 
 #[test]
@@ -132,11 +134,11 @@ key = value2"[..];
   let res = key_value(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, (o1, o2))) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
-    _ => println!("error"),
+    IResult::Done(i, (o1, o2)) => println!("i: {:?} | o: ({:?},{:?})", str::from_utf8(i), o1, o2),
+    _ => println!("error")
   }
 
-  assert_eq!(res, Ok((ini_without_key_value, ("parameter", "value"))));
+  assert_eq!(res, IResult::Done(ini_without_key_value, ("parameter", "value")));
 }
 
 #[test]
@@ -152,14 +154,14 @@ key = value2
   let res = keys_and_values(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error"),
+    IResult::Done(i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    _ => println!("error")
   }
 
   let mut expected: HashMap<&str, &str> = HashMap::new();
   expected.insert("parameter", "value");
   expected.insert("key", "value2");
-  assert_eq!(res, Ok((ini_without_key_value, expected)));
+  assert_eq!(res, IResult::Done(ini_without_key_value, expected));
 }
 
 #[test]
@@ -177,14 +179,14 @@ key = value2
   let res = category_and_keys(ini_file);
   println!("{:?}", res);
   match res {
-    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error"),
+    IResult::Done(i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    _ => println!("error")
   }
 
   let mut expected_h: HashMap<&str, &str> = HashMap::new();
   expected_h.insert("parameter", "value");
   expected_h.insert("key", "value2");
-  assert_eq!(res, Ok((ini_after_parser, ("abcd", expected_h))));
+  assert_eq!(res, IResult::Done(ini_after_parser, ("abcd", expected_h)));
 }
 
 #[test]
@@ -198,15 +200,15 @@ key = value2
 [category]
 parameter3=value3
 key4 = value4
-"[..];
+\0"[..];
 
-  let ini_after_parser = &b""[..];
+  let ini_after_parser = &b"\0"[..];
 
   let res = categories(ini_file);
   //println!("{:?}", res);
   match res {
-    Ok((i, ref o)) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
-    _ => println!("error"),
+    IResult::Done(i, ref o) => println!("i: {:?} | o: {:?}", str::from_utf8(i), o),
+    _ => println!("error")
   }
 
   let mut expected_1: HashMap<&str, &str> = HashMap::new();
@@ -216,10 +218,11 @@ key4 = value4
   expected_2.insert("parameter3", "value3");
   expected_2.insert("key4", "value4");
   let mut expected_h: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
-  expected_h.insert("abcd", expected_1);
+  expected_h.insert("abcd",     expected_1);
   expected_h.insert("category", expected_2);
-  assert_eq!(res, Ok((ini_after_parser, expected_h)));
+  assert_eq!(res, IResult::Done(ini_after_parser, expected_h));
 }
+*/
 
 #[bench]
 fn bench_ini(b: &mut test::Bencher) {
@@ -231,7 +234,7 @@ organization=Acme Widgets Inc.
 server=192.0.2.62
 port=143
 file=payroll.dat
-";
+\0";
 
   b.iter(|| categories(str.as_bytes()).unwrap());
   b.bytes = str.len() as u64;
@@ -242,9 +245,9 @@ fn bench_ini_keys_and_values(b: &mut test::Bencher) {
   let str = "server=192.0.2.62
 port=143
 file=payroll.dat
-";
+\0";
 
-  named!(acc< Vec<(&str,&str)> >, many0!(key_value));
+  named!(acc<Vec<(&str, &str)>>, many0!(key_value));
 
   b.iter(|| acc(str.as_bytes()).unwrap());
   b.bytes = str.len() as u64;

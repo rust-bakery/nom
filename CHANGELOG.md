@@ -2,7 +2,113 @@
 
 ## [Unreleased][unreleased]
 
+### Thanks
+
+### Added
+
+### Fixed
+
+
+## 4.0.0 - 2018-05-14
+
+### Thanks
+
+- @jsgf for the new `AtEof` trait
+- @tmccombs for fixes on `escaped*` combinators
+- @s3bk for fixes around non Copy input types and documentation help
+- @kamarkiewicz for fixes to no_std and CI
+- @bheisler for documentation and examples
+- @target-san for simplifying the `InputIter` trait for `&[u8]`
+- @willmurphyscode for documentation and examples
+- @Chaitanya1416 for typo fixes
+- @fflorent for `input_len()` usage fixes
+- @dbrgn for typo fixes
+- @iBelieve for no_std fixes
+- @kpp for warning fixes and clippy fixes
+- @keruspe for fixes on FindToken
+- @dtrebbien for fixes on take_until_and_consume1
+- @Henning-K for typo fixes
+- @vthriller for documentation fixes
+- @federicomenaquintero and @veprbl for their help fixing the float parsers
+- @vmchale for new named_args versions
+- @hywan for documentation fixes
+- @fbenkstein for typo fixes
+- @CAD97 for catching missing trait implementations
+- @goldenlentils for &str optimizations
+- @passy for typo fixes
+- @ayrat555 for typo fixes
+- @GuillaumeGomez for documentation fixes
+- @jrakow for documentation fixes and fiwes for `switch!`
+- @phlosioneer for dicumentation fixes
+- @creativcoder for typo fixes
+- @derekdreery for typo fixes
+- @lucasem for implementing `Deref` on `CompleteStr` and `CompleteByteSlice`
+- @lowenheim for `parse_to!` fixes
+- @myrrlyn for trait fixes around `CompleteStr` and `CompleteByteSlice`
+- @NotBad4U for fixing code coverage analysis
+- @murarth for code formatting
+- @glandium for fixing build in no_std
+- @csharad for regex compatibility with `CompleteStr`
+- @FauxFaux for implementing `AsRef<str>` on `CompleteStr`
+- @jaje for implementing `std::Error` on `nom:Err`
+- @fengalin for warning fixes
+- @@khernyo for doc formatting
+
+Special thanks to @corkami for the logo :)
+
+### Breaking changes
+
+- the `IResult` type now becomes a `Result` from the standard library
+- `Incomplete` now returns the additional data size needed, not the total data size needed
+- verbose-errors is now a superset of basic errors
+- all the errors now include  the related input slice
+- the arguments from `error_position` and other such macros were swapped to be more consistent with the rest of nom
+- automatic error conversion: to fix error type inference issues, a custom error type must now implement `std::convert::From<u32>`
+- the `not!` combinator returns unit `()`
+- FindToken's calling convention was swapped
+- the `take_*` combinators are now more coherent and stricter, see commit 484f6724ea3ccb for more information
+- `many0` and other related parsers will now return `Incomplete` if the reach the end of input without an error of the child parser. They will also return `Incomplete` on an empty input
+- the `sep!` combinator for whitespace only consumes whitespace in the prefix, while the `ws!` combinator takes care of consuming the remaining whitespace
+
+### Added
+
+- the `AtEof` trait for input type: indicate if we can get more input data later (related to streaming parsers and `Incomplete` handling)
+- the `escaped*` parsers now support the `&str`input type
+- the `Failure` error variant represents an unrecoverable error, for which `alt` and other combinators will not try other branches. This error means we got in the right part of the code (like, a prefix was checked correctly), but there was an error in the following parts
+- the `CompleteByteSlice` and `CompleteStr` input types consider there will be no more refill of the input. They fixed the `Incomplete` related issues when we have all of the data
+- the `exact!()` combinator will fail if we did not consume the whole input
+- the `take_while_m_n!` combinator will match a specified number of characters
+- `ErrorKind::TakeUntilAndConsume1`
+- the `recognize_float` parser will match a float number's characters, but will not transform to a `f32` or `f64`
+- `alpha` and other basic parsers are now much stricter about partial inputs. We also introduce the  `*0` and `*1` versions of those parsers
+- `named_args` can now specify the input type as well
+- `HexDisplay` is now implemented for `&str`
+- `alloc` feature
+- the `InputTakeAtposition` trait allows specialized implementations of parsers like `take_while!`
+
+### Removed
+
+- the producers and consumers were removed
+- the `error_code` and `error_node` macros are not used anymore
+
+### Fixed
+
+- `anychar!` now works correctly with multibyte characters
+- `take_until_and_consume1!` no longer results in "no method named \`find_substring\`" and "no method named \`slice\`" compilation errors
+- `take_until_and_consume1!` returns the correct Incomplete(Needed) amount
+- `no_std` compiles properly, and nom can work with `alloc` too
+- `parse_to!` now consumes its input
+
 ### Changed
+
+- `alt` and other combinators will now clone the input if necessary. If the input is already `Copy` there is no performance impact
+- the `rest` parser now works on various input types
+- `InputIter::Item` for `&[u8]` is now a `u8` directly, not a reference
+- we now use the `compile_error` macro to return a compile time error if there was a syntax issue
+- the permutation combinator now supports optional child parsers
+- the float numbers parsers have been refactored to use one common implementation that is nearly 2 times faster than the previous one
+- the float number parsers now accept more variants
+
 
 ## 3.2.1 - 2017-10-27
 
@@ -782,7 +888,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/3.2.1...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/4.0.0...HEAD
+* [4.0.0]: https://github.com/Geal/nom/compare/3.2.1...4.0.0
 * [3.2.1]: https://github.com/Geal/nom/compare/3.2.0...3.2.1
 * [3.2.0]: https://github.com/Geal/nom/compare/3.1.0...3.2.0
 * [3.1.0]: https://github.com/Geal/nom/compare/3.0.0...3.1.0

@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult, not_line_ending};
+use nom::{not_line_ending, IResult};
 
 use std::fmt::Debug;
 
@@ -28,7 +28,6 @@ pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
   println!("{:?}", input);
   Ok((input, ()))
 }
-
 
 #[test]
 fn is_not() {

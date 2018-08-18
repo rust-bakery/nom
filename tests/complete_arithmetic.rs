@@ -21,48 +21,45 @@ macro_rules! complete_named (
 
 complete_named!(digit, is_a!("0123456789"));
 
-complete_named!(parens<i64>, ws!(delimited!( tag!("("), expr, tag!(")") )) );
+complete_named!(parens<i64>, ws!(delimited!(tag!("("), expr, tag!(")"))));
 
+complete_named!(factor<i64>, alt!(map_res!(ws!(digit), to_i64) | parens));
 
-complete_named!(factor<i64>, alt!(
-      map_res!(
-        ws!(digit),
-        to_i64
-    )
-  | parens
+complete_named!(
+  term<i64>,
+  do_parse!(
+    init: factor
+      >> res:
+        fold_many0!(
+          pair!(alt!(tag!("*") | tag!("/")), factor),
+          init,
+          |acc, (op, val): (CompleteStr, i64)| if (op.0.chars().next().unwrap() as char) == '*' {
+            acc * val
+          } else {
+            acc / val
+          }
+        ) >> (res)
   )
 );
 
-complete_named!(term <i64>, do_parse!(
-    init: factor >>
-    res:  fold_many0!(
-        pair!(alt!(tag!("*") | tag!("/")), factor),
-        init,
-        |acc, (op, val): (CompleteStr, i64)| {
-            if (op.0.chars().next().unwrap() as char) == '*' { acc * val } else { acc / val }
-        }
-    ) >>
-    (res)
+complete_named!(
+  expr<i64>,
+  do_parse!(
+    init: term
+      >> res:
+        fold_many0!(
+          pair!(alt!(tag!("+") | tag!("-")), term),
+          init,
+          |acc, (op, val): (CompleteStr, i64)| if (op.0.chars().next().unwrap() as char) == '+' {
+            acc + val
+          } else {
+            acc - val
+          }
+        ) >> (res)
   )
 );
 
-complete_named!(expr <i64>, do_parse!(
-    init: term >>
-    res:  fold_many0!(
-        pair!(alt!(tag!("+") | tag!("-")), term),
-        init,
-        |acc, (op, val): (CompleteStr, i64)| {
-            if (op.0.chars().next().unwrap() as char) == '+' { acc + val } else { acc - val }
-        }
-    ) >>
-    (res)
-  )
-);
-
-complete_named!(root_expr<i64>,
-  terminated!(expr, eof!())
-);
-
+complete_named!(root_expr<i64>, terminated!(expr, eof!()));
 
 fn to_i64(input: CompleteStr) -> Result<i64, ()> {
   match FromStr::from_str(input.0) {
@@ -88,5 +85,11 @@ fn parens_test() {
   assert_eq!(expr(input2), Ok((CompleteStr(""), 4)));
 
   let input3 = CompleteStr("  2*2 / ( 5 - 1) +   ");
-  assert_eq!(root_expr(input3), Err(nom::Err::Error(error_position!(CompleteStr("+   "), ErrorKind::Eof))));
+  assert_eq!(
+    root_expr(input3),
+    Err(nom::Err::Error(error_position!(
+      CompleteStr("+   "),
+      ErrorKind::Eof
+    )))
+  );
 }

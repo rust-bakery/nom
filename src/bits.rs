@@ -12,7 +12,6 @@
 //! to see a byte slice as a bit stream, and parse code points of arbitrary bit length.
 //!
 
-
 /// Transforms its byte slice input into a bit stream for the underlying parser. This allows the
 /// given bit stream parser to work on a byte slice input.
 ///
@@ -46,7 +45,7 @@ macro_rules! bits (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Context,Err,Needed};
 
       let input = ($i, 0usize);
@@ -91,7 +90,7 @@ macro_rules! bits_impl (
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,Context};
 
       let input = ($i, 0usize);
@@ -127,6 +126,7 @@ macro_rules! bits_impl (
 ///
 /// A partial byte remaining in the input will be ignored and the given parser will start parsing
 /// at the next full byte.
+///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::rest;
@@ -158,8 +158,8 @@ macro_rules! bytes (
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::lib::std::result::Result::*;
+      use $crate::{Err,Needed,Context};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -218,8 +218,8 @@ macro_rules! bytes_impl (
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use ::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::lib::std::result::Result::*;
+      use $crate::{Err,Needed,Context};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -256,6 +256,7 @@ macro_rules! bytes_impl (
 ///
 /// Signature:
 /// `take_bits!(type, count) => ( (&[T], usize), U, usize) -> IResult<(&[T], usize), U>`
+///
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
@@ -272,11 +273,11 @@ macro_rules! bytes_impl (
 macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Needed,IResult};
 
-      use std::ops::Div;
-      use std::convert::Into;
+      use $crate::lib::std::ops::Div;
+      use $crate::lib::std::convert::Into;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
       let res : IResult<(&[u8],usize), $t> = if $count == 0 {
@@ -327,23 +328,23 @@ macro_rules! take_bits (
 ///
 /// The caller must specify the number of bits to consume. The matched value is included in the
 /// result on success.
+///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::IResult::Done;
 /// # fn main() {
 ///  named!( take_a<u8>, bits!( tag_bits!(u8, 4, 0xA) ) );
 ///
 ///  let input = vec![0xAB, 0xCD, 0xEF];
 ///  let sl    = &input[..];
 ///
-///  assert_eq!(take_a( sl ),       Done(&sl[1..], 0xA) );
+///  assert_eq!(take_a( sl ),       Ok((&sl[1..], 0xA)) );
 /// # }
 /// ```
 #[macro_export]
 macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
     {
-      use ::std::result::Result::*;
+      use $crate::lib::std::result::Result::*;
       use $crate::{Err,IResult};
 
       match take_bits!($i, $t, $count) {
@@ -368,7 +369,7 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use std::ops::{Shr, Shl, AddAssign};
+  use lib::std::ops::{AddAssign, Shl, Shr};
   use internal::{Err, Needed};
   use util::ErrorKind;
 
@@ -424,13 +425,16 @@ mod tests {
     assert_eq!(ch((&input[..1], 0)), Err(Err::Incomplete(Needed::Size(5))));
   }
 
-  named!(ch_bytes<(u8,u8)>, bits!(ch));
+  named!(ch_bytes<(u8, u8)>, bits!(ch));
   #[test]
   fn bits_to_bytes() {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
-    assert_eq!(ch_bytes(&input[..]), Ok( (&input[2..], (5,15))) );
+    assert_eq!(ch_bytes(&input[..]), Ok((&input[2..], (5, 15))));
     assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(ch_bytes(&input[1..]), Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits))));
+    assert_eq!(
+      ch_bytes(&input[1..]),
+      Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits)))
+    );
   }
 
   #[derive(PartialEq, Debug)]
@@ -469,8 +473,17 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(take_bits!( (sl, 0), FakeUint, 20 ), Ok( ((&sl[2..], 4), FakeUint(700_163))) );
-    assert_eq!(take_bits!( (sl, 4), FakeUint, 20 ), Ok( ((&sl[3..], 0), FakeUint(716_851))) );
-    assert_eq!(take_bits!( (sl, 4), FakeUint, 22 ), Err(Err::Incomplete(Needed::Size(22))) );
+    assert_eq!(
+      take_bits!((sl, 0), FakeUint, 20),
+      Ok(((&sl[2..], 4), FakeUint(700_163)))
+    );
+    assert_eq!(
+      take_bits!((sl, 4), FakeUint, 20),
+      Ok(((&sl[3..], 0), FakeUint(716_851)))
+    );
+    assert_eq!(
+      take_bits!((sl, 4), FakeUint, 22),
+      Err(Err::Incomplete(Needed::Size(22)))
+    );
   }
 }

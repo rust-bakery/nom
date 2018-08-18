@@ -2,12 +2,12 @@
 extern crate nom;
 
 use std::fmt;
-use std::fmt::{Display, Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
-use std::str;
 use std::str::FromStr;
 
 use nom::{digit, multispace};
+use nom::types::CompleteStr;
 
 pub enum Expr {
   Value(i64),
@@ -18,6 +18,7 @@ pub enum Expr {
   Paren(Box<Expr>),
 }
 
+#[derive(Debug)]
 pub enum Oper {
   Add,
   Sub,
@@ -53,23 +54,21 @@ impl Debug for Expr {
   }
 }
 
-named!(parens< Expr >, delimited!(
+named!(parens< CompleteStr, Expr >, delimited!(
     delimited!(opt!(multispace), tag!("("), opt!(multispace)),
     map!(map!(expr, Box::new), Expr::Paren),
     delimited!(opt!(multispace), tag!(")"), opt!(multispace))
   )
 );
 
-named!(factor< Expr >, alt_complete!(
+named!(factor< CompleteStr, Expr >, alt_complete!(
     map!(
       map_res!(
-        map_res!(
-          delimited!(opt!(multispace), digit, opt!(multispace)),
-          str::from_utf8
-        ),
-      FromStr::from_str
-    ),
-    Expr::Value)
+        delimited!(opt!(multispace), digit, opt!(multispace)),
+        |s: CompleteStr| { FromStr::from_str(s.0) }
+      ),
+      Expr::Value
+    )
   | parens
   )
 );
@@ -86,7 +85,7 @@ fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
   })
 }
 
-named!(term< Expr >, do_parse!(
+named!(term< CompleteStr, Expr >, do_parse!(
     initial: factor >>
     remainder: many0!(
            alt!(
@@ -97,7 +96,7 @@ named!(term< Expr >, do_parse!(
     (fold_exprs(initial, remainder))
 ));
 
-named!(expr< Expr >, do_parse!(
+named!(expr< CompleteStr, Expr >, do_parse!(
     initial: term >>
     remainder: many0!(
            alt!(
@@ -108,33 +107,42 @@ named!(expr< Expr >, do_parse!(
     (fold_exprs(initial, remainder))
 ));
 
-
 #[test]
 fn factor_test() {
-  assert_eq!(factor(&b"  3  "[..]).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok((&b""[..], String::from("3"))));
+  assert_eq!(
+    factor(CompleteStr("  3  ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("3")))
+  );
 }
 
 #[test]
 fn term_test() {
-  assert_eq!(term(&b" 3 *  5   "[..]).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (&b""[..], String::from("(3 * 5)")) ));
+  assert_eq!(
+    term(CompleteStr(" 3 *  5   ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("(3 * 5)")))
+  );
 }
 
 #[test]
 fn expr_test() {
-  assert_eq!(expr(&b" 1 + 2 *  3 "[..]).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (&b""[..], String::from("(1 + (2 * 3))")) ));
-  assert_eq!(expr(&b" 1 + 2 *  3 / 4 - 5 "[..]).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (&b""[..], String::from("((1 + ((2 * 3) / 4)) - 5)")) ));
-  assert_eq!(expr(&b" 72 / 2 / 3 "[..]).map(|(i,x)| (i,format!("{:?}", x))),
-               Ok( (&b""[..], String::from("((72 / 2) / 3)")) ));
+  assert_eq!(
+    expr(CompleteStr(" 1 + 2 *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("(1 + (2 * 3))")))
+  );
+  assert_eq!(
+    expr(CompleteStr(" 1 + 2 *  3 / 4 - 5 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("((1 + ((2 * 3) / 4)) - 5)")))
+  );
+  assert_eq!(
+    expr(CompleteStr(" 72 / 2 / 3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("((72 / 2) / 3)")))
+  );
 }
 
 #[test]
 fn parens_test() {
   assert_eq!(
-      expr(&b" ( 1 + 2 ) *  3 "[..]).map(|(i,x)| (i,format!("{:?}", x))),
-      Ok( (&b""[..], String::from("([(1 + 2)] * 3)")) )
-    );
+    expr(CompleteStr(" ( 1 + 2 ) *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
+    Ok((CompleteStr(""), String::from("([(1 + 2)] * 3)")))
+  );
 }
