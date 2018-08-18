@@ -6,7 +6,7 @@
 extern crate nom;
 extern crate regex;
 
-use nom::{space, Err, IResult, Needed, le_u64};
+use nom::{space, Err, IResult, Needed, le_u64, is_digit};
 use nom::types::{CompleteStr, CompleteByteSlice};
 
 #[allow(dead_code)]
@@ -289,3 +289,41 @@ mod issue_780 {
     escaped_transform!(call!(::nom::alpha), '\\', tag!("n"))
   );
 }
+
+// issue 617
+named!(digits, take_while1!( is_digit ));
+named!(multi_617<&[u8], () >, fold_many0!( digits, (), |_, _| {}));
+
+// Sad :(
+named!(multi_617_fails<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
+
+mod issue_647 {
+  use nom::{Err,be_f64};
+  pub type Input<'a> = &'a [u8];
+
+  #[derive(PartialEq, Debug, Clone)]
+  struct Data {
+      c: f64,
+      v: Vec<f64>
+  }
+
+  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<&'a [u8]>> {
+      separated_list_complete!(input, tag!(","),be_f64)
+  }
+
+  named!(data<Input,Data>, map!(
+      do_parse!(
+          c: be_f64 >>
+          tag!("\n") >>
+          v: call!(list,&c) >>
+          (c,v)
+      ), |(c,v)| {
+          Data {
+              c: c,
+              v: v
+          }
+      }
+  ));
+}
+
+named!(issue_775, take_till1!(|_| true));
