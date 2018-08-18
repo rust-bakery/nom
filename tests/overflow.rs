@@ -26,18 +26,12 @@ named!(parser02<&[u8],(&[u8],&[u8])>,
 
 #[test]
 fn overflow_incomplete_do_parse() {
-  assert_eq!(
-    parser01(&b"3"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551615)))
-  );
+  assert_eq!(parser01(&b"3"[..]), Err(Err::Incomplete(Needed::Size(18446744073709551615))));
 }
 
 #[test]
 fn overflow_incomplete_tuple() {
-  assert_eq!(
-    parser02(&b"3"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551615)))
-  );
+  assert_eq!(parser02(&b"3"[..]), Err(Err::Incomplete(Needed::Size(18446744073709551615))));
 }
 
 #[test]
@@ -113,10 +107,7 @@ fn overflow_incomplete_count() {
 
 #[test]
 fn overflow_incomplete_count_fixed() {
-  named!(
-    counter<[&[u8]; 2]>,
-    count_fixed!(&[u8], length_bytes!(be_u64), 2)
-  );
+  named!(counter<[&[u8]; 2]>, count_fixed!(&[u8], length_bytes!(be_u64), 2));
 
   assert_eq!(
     counter(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]),

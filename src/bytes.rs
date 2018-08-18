@@ -1078,15 +1078,15 @@ macro_rules! length_bytes(
 #[cfg(test)]
 mod tests {
   use internal::{Err, Needed};
-  use nom::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
-  use types::{CompleteByteSlice, CompleteStr};
-  use util::ErrorKind;
   #[cfg(feature = "alloc")]
   #[cfg(feature = "verbose-errors")]
   use lib::std::string::String;
   #[cfg(feature = "alloc")]
   #[cfg(feature = "verbose-errors")]
   use lib::std::vec::Vec;
+  use nom::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
+  use types::{CompleteByteSlice, CompleteStr};
+  use util::ErrorKind;
 
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
@@ -1120,10 +1120,7 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"cde"[..], &b"b"[..])));
 
     let c = &b"cdef"[..];
-    assert_eq!(
-      a_or_b(c),
-      Err(Err::Error(error_position!(c, ErrorKind::IsA::<u32>)))
-    );
+    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(c, ErrorKind::IsA::<u32>))));
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Ok((&b"cdef"[..], &b"ba"[..])));
@@ -1140,10 +1137,7 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"bde"[..], &b"c"[..])));
 
     let c = &b"abab"[..];
-    assert_eq!(
-      a_or_b(c),
-      Err(Err::Error(error_position!(c, ErrorKind::IsNot)))
-    );
+    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(c, ErrorKind::IsNot))));
 
     let d = &b"cdefba"[..];
     assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
@@ -1206,14 +1200,8 @@ mod tests {
   #[test]
   fn escaping_complete_str() {
     named!(esc<CompleteStr, CompleteStr>, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
-    assert_eq!(
-      esc(CompleteStr("abcd;")),
-      Ok((CompleteStr(";"), CompleteStr("abcd")))
-    );
-    assert_eq!(
-      esc(CompleteStr("ab\\\"cd;")),
-      Ok((CompleteStr(";"), CompleteStr("ab\\\"cd")))
-    );
+    assert_eq!(esc(CompleteStr("abcd;")), Ok((CompleteStr(";"), CompleteStr("abcd"))));
+    assert_eq!(esc(CompleteStr("ab\\\"cd;")), Ok((CompleteStr(";"), CompleteStr("ab\\\"cd"))));
     //assert_eq!(esc("\\\"abcd;"), Ok((";", "\\\"abcd")));
     //assert_eq!(esc("\\n;"), Ok((";", "\\n")));
     //assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
@@ -1272,19 +1260,10 @@ mod tests {
     );
 
     assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], String::from("abcd"))));
-    assert_eq!(
-      esc(&b"ab\\\"cd;"[..]),
-      Ok((&b";"[..], String::from("ab\"cd")))
-    );
-    assert_eq!(
-      esc(&b"\\\"abcd;"[..]),
-      Ok((&b";"[..], String::from("\"abcd")))
-    );
+    assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], String::from("ab\"cd"))));
+    assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], String::from("\"abcd"))));
     assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], String::from("\n"))));
-    assert_eq!(
-      esc(&b"ab\\\"12"[..]),
-      Ok((&b"12"[..], String::from("ab\"")))
-    );
+    assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], String::from("ab\""))));
     assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
       esc(&b"AB\\A"[..]),
@@ -1309,14 +1288,8 @@ mod tests {
         to_s
       )
     );
-    assert_eq!(
-      esc2(&b"ab&egrave;DEF;"[..]),
-      Ok((&b";"[..], String::from("abèDEF")))
-    );
-    assert_eq!(
-      esc2(&b"ab&egrave;D&agrave;EF;"[..]),
-      Ok((&b";"[..], String::from("abèDàEF")))
-    );
+    assert_eq!(esc2(&b"ab&egrave;DEF;"[..]), Ok((&b";"[..], String::from("abèDEF"))));
+    assert_eq!(esc2(&b"ab&egrave;D&agrave;EF;"[..]), Ok((&b";"[..], String::from("abèDàEF"))));
   }
 
   #[cfg(feature = "verbose-errors")]
@@ -1363,10 +1336,7 @@ mod tests {
       ))
     );
     assert_eq!(esc2("ab&egrave;DEF;"), Ok((";", String::from("abèDEF"))));
-    assert_eq!(
-      esc2("ab&egrave;D&agrave;EF;"),
-      Ok((";", String::from("abèDàEF")))
-    );
+    assert_eq!(esc2("ab&egrave;D&agrave;EF;"), Ok((";", String::from("abèDàEF"))));
 
     named!(esc3<&str, String>, escaped_transform!(alpha, '␛',
       alt!(
@@ -1402,10 +1372,7 @@ mod tests {
   fn take_until_and_consume_complete() {
     named!(x<CompleteStr,CompleteStr>, take_until_and_consume!("efgh"));
     let r = x(CompleteStr(&"abcdabcdefghijkl"[..]));
-    assert_eq!(
-      r,
-      Ok((CompleteStr(&"ijkl"[..]), CompleteStr(&"abcdabcd"[..])))
-    );
+    assert_eq!(r, Ok((CompleteStr(&"ijkl"[..]), CompleteStr(&"abcdabcd"[..]))));
 
     let r2 = x(CompleteStr(&"abcdabcdefgh"[..]));
     assert_eq!(r2, Ok((CompleteStr(&""[..]), CompleteStr(&"abcdabcd"[..]))));
@@ -1421,10 +1388,7 @@ mod tests {
 
     assert_eq!(
       x(CompleteStr(&"ab"[..])),
-      Err(Err::Error(error_position!(
-        CompleteStr(&"ab"[..]),
-        ErrorKind::TakeUntilAndConsume
-      )))
+      Err(Err::Error(error_position!(CompleteStr(&"ab"[..]), ErrorKind::TakeUntilAndConsume)))
     );
   }
 
@@ -1441,51 +1405,24 @@ mod tests {
     assert_eq!(r3, Err(Err::Incomplete(Needed::Size(5))));
 
     let r4 = x(&b"efgh"[..]);
-    assert_eq!(
-      r4,
-      Err(Err::Error(error_position!(
-        &b"efgh"[..],
-        ErrorKind::TakeUntilAndConsume1
-      )))
-    );
+    assert_eq!(r4, Err(Err::Error(error_position!(&b"efgh"[..], ErrorKind::TakeUntilAndConsume1))));
 
     named!(x2, take_until_and_consume1!(""));
     let r5 = x2(&b""[..]);
-    assert_eq!(
-      r5,
-      Err(Err::Error(error_position!(
-        &b""[..],
-        ErrorKind::TakeUntilAndConsume1
-      )))
-    );
+    assert_eq!(r5, Err(Err::Error(error_position!(&b""[..], ErrorKind::TakeUntilAndConsume1))));
 
     let r6 = x2(&b"a"[..]);
-    assert_eq!(
-      r6,
-      Err(Err::Error(error_position!(
-        &b"a"[..],
-        ErrorKind::TakeUntilAndConsume1
-      )))
-    );
+    assert_eq!(r6, Err(Err::Error(error_position!(&b"a"[..], ErrorKind::TakeUntilAndConsume1))));
 
     let r7 = x(&b"efghi"[..]);
-    assert_eq!(
-      r7,
-      Err(Err::Error(error_position!(
-        &b"efghi"[..],
-        ErrorKind::TakeUntilAndConsume1
-      )))
-    );
+    assert_eq!(r7, Err(Err::Error(error_position!(&b"efghi"[..], ErrorKind::TakeUntilAndConsume1))));
   }
 
   #[test]
   fn take_until_and_consume1_complete() {
     named!(x<CompleteStr, CompleteStr>, take_until_and_consume1!("efgh"));
     let r = x(CompleteStr(&"abcdabcdefghijkl"[..]));
-    assert_eq!(
-      r,
-      Ok((CompleteStr(&"ijkl"[..]), CompleteStr(&"abcdabcd"[..])))
-    );
+    assert_eq!(r, Ok((CompleteStr(&"ijkl"[..]), CompleteStr(&"abcdabcd"[..]))));
 
     let r2 = x(CompleteStr(&"abcdabcdefgh"[..]));
     assert_eq!(r2, Ok((CompleteStr(&""[..]), CompleteStr(&"abcdabcd"[..]))));
@@ -1493,47 +1430,32 @@ mod tests {
     let r3 = x(CompleteStr(&"abcefg"[..]));
     assert_eq!(
       r3,
-      Err(Err::Error(error_position!(
-        CompleteStr("abcefg"),
-        ErrorKind::TakeUntilAndConsume1
-      )))
+      Err(Err::Error(error_position!(CompleteStr("abcefg"), ErrorKind::TakeUntilAndConsume1)))
     );
 
     let r4 = x(CompleteStr(&"efgh"[..]));
     assert_eq!(
       r4,
-      Err(Err::Error(error_position!(
-        CompleteStr("efgh"),
-        ErrorKind::TakeUntilAndConsume1
-      )))
+      Err(Err::Error(error_position!(CompleteStr("efgh"), ErrorKind::TakeUntilAndConsume1)))
     );
 
     named!(x2<CompleteStr, CompleteStr>, take_until_and_consume1!(""));
     let r5 = x2(CompleteStr(""));
     assert_eq!(
       r5,
-      Err(Err::Error(error_position!(
-        CompleteStr(""),
-        ErrorKind::TakeUntilAndConsume1
-      )))
+      Err(Err::Error(error_position!(CompleteStr(""), ErrorKind::TakeUntilAndConsume1)))
     );
 
     let r6 = x2(CompleteStr("a"));
     assert_eq!(
       r6,
-      Err(Err::Error(error_position!(
-        CompleteStr("a"),
-        ErrorKind::TakeUntilAndConsume1
-      )))
+      Err(Err::Error(error_position!(CompleteStr("a"), ErrorKind::TakeUntilAndConsume1)))
     );
 
     let r7 = x(CompleteStr("efghi"));
     assert_eq!(
       r7,
-      Err(Err::Error(error_position!(
-        CompleteStr("efghi"),
-        ErrorKind::TakeUntilAndConsume1
-      )))
+      Err(Err::Error(error_position!(CompleteStr("efghi"), ErrorKind::TakeUntilAndConsume1)))
     );
   }
 
@@ -1547,16 +1469,10 @@ mod tests {
   #[test]
   fn take_until_either_complete() {
     named!(x<CompleteStr, CompleteStr>, take_until_either!("!."));
-    assert_eq!(
-      x(CompleteStr("123!abc")),
-      Ok((CompleteStr("!abc"), CompleteStr("123")))
-    );
+    assert_eq!(x(CompleteStr("123!abc")), Ok((CompleteStr("!abc"), CompleteStr("123"))));
     assert_eq!(
       x(CompleteStr("123")),
-      Err(Err::Error(error_position!(
-        CompleteStr("123"),
-        ErrorKind::TakeUntilEither
-      )))
+      Err(Err::Error(error_position!(CompleteStr("123"), ErrorKind::TakeUntilEither)))
     );
   }
 
@@ -1579,29 +1495,17 @@ mod tests {
     named!(y<CompleteStr,CompleteStr>, take_until!("end"));
     assert_eq!(
       y(CompleteStr("nd")),
-      Err(Err::Error(error_position!(
-        CompleteStr("nd"),
-        ErrorKind::TakeUntil
-      )))
+      Err(Err::Error(error_position!(CompleteStr("nd"), ErrorKind::TakeUntil)))
     );
     assert_eq!(
       y(CompleteStr("123")),
-      Err(Err::Error(error_position!(
-        CompleteStr("123"),
-        ErrorKind::TakeUntil
-      )))
+      Err(Err::Error(error_position!(CompleteStr("123"), ErrorKind::TakeUntil)))
     );
     assert_eq!(
       y(CompleteStr("123en")),
-      Err(Err::Error(error_position!(
-        CompleteStr("123en"),
-        ErrorKind::TakeUntil
-      )))
+      Err(Err::Error(error_position!(CompleteStr("123en"), ErrorKind::TakeUntil)))
     );
-    assert_eq!(
-      y(CompleteStr("123end")),
-      Ok((CompleteStr("end"), CompleteStr("123")))
-    );
+    assert_eq!(y(CompleteStr("123end")), Ok((CompleteStr("end"), CompleteStr("123"))));
   }
 
   #[test]
@@ -1612,10 +1516,7 @@ mod tests {
 
   #[test]
   fn recognize() {
-    named!(
-      x,
-      recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->")))
-    );
+    named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
     let r = x(&b"<!-- abc --> aaa"[..]);
     assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..])));
 
@@ -1677,10 +1578,7 @@ mod tests {
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&b"123"[..], &b[..])));
-    assert_eq!(
-      f(&d[..]),
-      Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1)))
-    );
+    assert_eq!(f(&d[..]), Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1))));
   }
 
   #[test]
@@ -1699,10 +1597,7 @@ mod tests {
     assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(x(&d[..]), Ok((&b"123"[..], &c[..])));
     assert_eq!(x(&e[..]), Ok((&b"e"[..], &b"abcd"[..])));
-    assert_eq!(
-      x(&f[..]),
-      Err(Err::Error(error_position!(&f[..], ErrorKind::TakeWhileMN)))
-    );
+    assert_eq!(x(&f[..]), Err(Err::Error(error_position!(&f[..], ErrorKind::TakeWhileMN))));
   }
 
   #[test]
@@ -1716,27 +1611,12 @@ mod tests {
     let e = CompleteByteSlice(b"abcde");
     let f = CompleteByteSlice(b"123");
 
-    assert_eq!(
-      x(a),
-      Err(Err::Error(error_position!(a, ErrorKind::TakeWhileMN)))
-    );
-    assert_eq!(
-      x(b),
-      Err(Err::Error(error_position!(b, ErrorKind::TakeWhileMN)))
-    );
+    assert_eq!(x(a), Err(Err::Error(error_position!(a, ErrorKind::TakeWhileMN))));
+    assert_eq!(x(b), Err(Err::Error(error_position!(b, ErrorKind::TakeWhileMN))));
     assert_eq!(x(c), Ok((CompleteByteSlice(b""), c)));
-    assert_eq!(
-      x(d),
-      Ok((CompleteByteSlice(b"123"), CompleteByteSlice(b"abc")))
-    );
-    assert_eq!(
-      x(e),
-      Ok((CompleteByteSlice(b"e"), CompleteByteSlice(b"abcd")))
-    );
-    assert_eq!(
-      x(f),
-      Err(Err::Error(error_position!(f, ErrorKind::TakeWhileMN)))
-    );
+    assert_eq!(x(d), Ok((CompleteByteSlice(b"123"), CompleteByteSlice(b"abc"))));
+    assert_eq!(x(e), Ok((CompleteByteSlice(b"e"), CompleteByteSlice(b"abcd"))));
+    assert_eq!(x(f), Err(Err::Error(error_position!(f, ErrorKind::TakeWhileMN))));
   }
 
   #[test]
@@ -1748,23 +1628,14 @@ mod tests {
     let c = CompleteByteSlice(b"abcd123");
     let d = CompleteByteSlice(b"123");
 
-    assert_eq!(
-      f(a),
-      Err(Err::Error(error_position!(a, ErrorKind::TakeWhile1)))
-    );
+    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::TakeWhile1))));
     assert_eq!(f(b), Ok((CompleteByteSlice(b""), b)));
     assert_eq!(f(c), Ok((CompleteByteSlice(b"123"), b)));
-    assert_eq!(
-      f(d),
-      Err(Err::Error(error_position!(d, ErrorKind::TakeWhile1)))
-    );
+    assert_eq!(f(d), Err(Err::Error(error_position!(d, ErrorKind::TakeWhile1))));
 
     named!(f2<CompleteStr, CompleteStr>, take_while1!(|c: char| c.is_alphabetic()));
     let a2 = CompleteStr("");
-    assert_eq!(
-      f2(a2),
-      Err(Err::Error(error_position!(a2, ErrorKind::TakeWhile1)))
-    );
+    assert_eq!(f2(a2), Err(Err::Error(error_position!(a2, ErrorKind::TakeWhile1))));
   }
 
   #[test]
@@ -1792,14 +1663,8 @@ mod tests {
     let d = CompleteByteSlice(b"123");
 
     assert_eq!(f(a), Ok((a, a)));
-    assert_eq!(
-      f(b),
-      Ok((CompleteByteSlice(b"abcd"), CompleteByteSlice(b"")))
-    );
-    assert_eq!(
-      f(c),
-      Ok((CompleteByteSlice(b"abcd"), CompleteByteSlice(b"123")))
-    );
+    assert_eq!(f(b), Ok((CompleteByteSlice(b"abcd"), CompleteByteSlice(b""))));
+    assert_eq!(f(c), Ok((CompleteByteSlice(b"abcd"), CompleteByteSlice(b"123"))));
     assert_eq!(f(d), Ok((a, d)));
   }
 
@@ -1813,10 +1678,7 @@ mod tests {
     let d = b"123";
 
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(
-      f(&b[..]),
-      Err(Err::Error(error_position!(&b[..], ErrorKind::TakeTill1)))
-    );
+    assert_eq!(f(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::TakeTill1))));
     assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
     assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::Size(1))));
   }
@@ -1871,10 +1733,7 @@ mod tests {
     assert_eq!(g("xabcdéa"), Ok(("a", "xabcd")));
     assert_eq!(
       g("點xa"),
-      Err(Err::Error(error_position!(
-        "點xa",
-        ErrorKind::TakeUntilEitherAndConsume
-      )))
+      Err(Err::Error(error_position!("點xa", ErrorKind::TakeUntilEitherAndConsume)))
     );
   }
 
@@ -1927,10 +1786,7 @@ mod tests {
     assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::Size(2))));
     assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::Size(2))));
 
-    named!(
-      y,
-      do_parse!(tag!("magic") >> b: length_bytes!(le_u8) >> (b))
-    );
+    named!(y, do_parse!(tag!("magic") >> b: length_bytes!(le_u8) >> (b)));
     assert_eq!(y(b"magic\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(y(b"magic\x02.."), Ok((&[][..], &b".."[..])));
     assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::Size(2))));
@@ -1945,28 +1801,16 @@ mod tests {
     assert_eq!(test(&b"abcdefgh"[..]), Ok((&b"efgh"[..], &b"abcd"[..])));
     assert_eq!(test(&b"ABCDefgh"[..]), Ok((&b"efgh"[..], &b"ABCD"[..])));
     assert_eq!(test(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(
-      test(&b"Hello"[..]),
-      Err(Err::Error(error_position!(&b"Hello"[..], ErrorKind::Tag)))
-    );
-    assert_eq!(
-      test(&b"Hel"[..]),
-      Err(Err::Error(error_position!(&b"Hel"[..], ErrorKind::Tag)))
-    );
+    assert_eq!(test(&b"Hello"[..]), Err(Err::Error(error_position!(&b"Hello"[..], ErrorKind::Tag))));
+    assert_eq!(test(&b"Hel"[..]), Err(Err::Error(error_position!(&b"Hel"[..], ErrorKind::Tag))));
 
     named!(test2<&str, &str>, tag_no_case!("ABcd"));
     assert_eq!(test2("aBCdefgh"), Ok(("efgh", "aBCd")));
     assert_eq!(test2("abcdefgh"), Ok(("efgh", "abcd")));
     assert_eq!(test2("ABCDefgh"), Ok(("efgh", "ABCD")));
     assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(
-      test2("Hello"),
-      Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag)))
-    );
-    assert_eq!(
-      test2("Hel"),
-      Err(Err::Error(error_position!(&"Hel"[..], ErrorKind::Tag)))
-    );
+    assert_eq!(test2("Hello"), Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag))));
+    assert_eq!(test2("Hel"), Err(Err::Error(error_position!(&"Hel"[..], ErrorKind::Tag))));
   }
 
   #[test]

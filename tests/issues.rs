@@ -6,8 +6,8 @@
 extern crate nom;
 extern crate regex;
 
+use nom::types::{CompleteByteSlice, CompleteStr};
 use nom::{space, Err, IResult, Needed, le_u64};
-use nom::types::{CompleteStr, CompleteByteSlice};
 
 #[allow(dead_code)]
 struct Range {
@@ -136,10 +136,7 @@ fn take_till_issue() {
   assert_eq!(nothing(b"abc"), Ok((&b"abc"[..], &b""[..])));
 }
 
-named!(
-  issue_498<Vec<&[u8]>>,
-  separated_nonempty_list!(opt!(space), tag!("abcd"))
-);
+named!(issue_498<Vec<&[u8]>>, separated_nonempty_list!(opt!(space), tag!("abcd")));
 
 named!(issue_308(&str) -> bool,
     do_parse! (
@@ -186,26 +183,16 @@ fn issue_667() {
       alt!(alpha | is_a!("_"))
     )
   );
-  assert_eq!(
-    foo(CompleteByteSlice(b"")),
-    Ok((CompleteByteSlice(b""), vec![]))
-  );
+  assert_eq!(foo(CompleteByteSlice(b"")), Ok((CompleteByteSlice(b""), vec![])));
   assert_eq!(
     foo(CompleteByteSlice(b"loremipsum")),
-    Ok((
-      CompleteByteSlice(b""),
-      vec![CompleteByteSlice(b"loremipsum")]
-    ))
+    Ok((CompleteByteSlice(b""), vec![CompleteByteSlice(b"loremipsum")]))
   );
   assert_eq!(
     foo(CompleteByteSlice(b"lorem_ipsum")),
     Ok((
       CompleteByteSlice(b""),
-      vec![
-        CompleteByteSlice(b"lorem"),
-        CompleteByteSlice(b"_"),
-        CompleteByteSlice(b"ipsum"),
-      ]
+      vec![CompleteByteSlice(b"lorem"), CompleteByteSlice(b"_"), CompleteByteSlice(b"ipsum")]
     ))
   );
   assert_eq!(
@@ -220,10 +207,7 @@ fn issue_667() {
       ]
     ))
   );
-  assert_eq!(
-    foo(CompleteByteSlice(b"!@#$")),
-    Ok((CompleteByteSlice(b"!@#$"), vec![]))
-  );
+  assert_eq!(foo(CompleteByteSlice(b"!@#$")), Ok((CompleteByteSlice(b"!@#$"), vec![])));
 }
 
 #[test]

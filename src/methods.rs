@@ -341,11 +341,7 @@ mod tests {
       Parser { bcd: "" }
     }
 
-    method!(
-      tag_abc<Parser<'a>, &'a str, &'a str>,
-      self,
-      tag_s!("áβç")
-    );
+    method!(tag_abc<Parser<'a>, &'a str, &'a str>, self, tag_s!("áβç"));
     method!(tag_bcd<Parser<'a> >(&'a str) -> &'a str, self, tag_s!("βçδ"));
     method!(pub tag_hij<Parser<'a> >(&'a str) -> &'a str, self, tag_s!("λïJ"));
     method!(pub tag_ijk<Parser<'a>, &'a str, &'a str>, self, tag_s!("ïJƙ"));
@@ -381,11 +377,7 @@ mod tests {
     let (_, res) = p.tag_abc(input);
     match res {
       Ok((extra, output)) => {
-        assert!(
-          extra == leftover,
-          "`Parser.tag_abc` consumed leftover input. leftover: {}",
-          extra
-        );
+        assert!(extra == leftover, "`Parser.tag_abc` consumed leftover input. leftover: {}", extra);
         assert!(
           output == consumed,
           "`Parser.tag_abc` doesnt return the string it consumed \
@@ -411,11 +403,7 @@ mod tests {
     let (_, res) = p.tag_bcd(input);
     match res {
       Ok((extra, output)) => {
-        assert!(
-          extra == leftover,
-          "`Parser.tag_bcd` consumed leftover input. leftover: {}",
-          extra
-        );
+        assert!(extra == leftover, "`Parser.tag_bcd` consumed leftover input. leftover: {}", extra);
         assert!(
           output == consumed,
           "`Parser.tag_bcd` doesn't return the string it consumed \
@@ -441,11 +429,7 @@ mod tests {
     let (_, res) = p.tag_hij(input);
     match res {
       Ok((extra, output)) => {
-        assert!(
-          extra == leftover,
-          "`Parser.tag_hij` consumed leftover input. leftover: {}",
-          extra
-        );
+        assert!(extra == leftover, "`Parser.tag_hij` consumed leftover input. leftover: {}", extra);
         assert!(
           output == consumed,
           "`Parser.tag_hij` doesn't return the string it consumed \
@@ -471,11 +455,7 @@ mod tests {
     let (_, res) = p.tag_ijk(input);
     match res {
       Ok((extra, output)) => {
-        assert!(
-          extra == leftover,
-          "`Parser.tag_ijk` consumed leftover input. leftover: {}",
-          extra
-        );
+        assert!(extra == leftover, "`Parser.tag_ijk` consumed leftover input. leftover: {}", extra);
         assert!(
           output == consumed,
           "`Parser.tag_ijk` doesn't return the string it consumed \
@@ -531,11 +511,7 @@ mod tests {
     p = tmp;
     match res {
       Ok((extra, output)) => {
-        assert!(
-          extra == leftover,
-          "`Parser.use_apply` consumed leftover input. leftover: {}",
-          extra
-        );
+        assert!(extra == leftover, "`Parser.use_apply` consumed leftover input. leftover: {}", extra);
         assert!(
           output == consumed,
           "`Parser.use_apply` doesn't return the string it was supposed to \
@@ -565,11 +541,7 @@ mod tests {
     let (_, res) = p.simple_peek(input);
     match res {
       Ok((extra, output)) => {
-        assert!(
-          extra == input,
-          "`Parser.simple_peek` consumed leftover input. leftover: {}",
-          extra
-        );
+        assert!(extra == input, "`Parser.simple_peek` consumed leftover input. leftover: {}", extra);
         assert!(
           output == consumed,
           "`Parser.simple_peek` doesn't return the string it consumed \

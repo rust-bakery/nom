@@ -9,8 +9,8 @@
 #[macro_use]
 extern crate nom;
 
-use std::str;
 use nom::{alpha, is_digit};
+use std::str;
 
 // issue #617
 named!(multi<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
@@ -25,10 +25,7 @@ named!(
         many_m_n!(
           0,
           1,
-          separated_list!(
-            tag!("\n\t"),
-            map_res!(take_while!(call!(|c| c != b'\n')), std::str::from_utf8)
-          )
+          separated_list!(tag!("\n\t"), map_res!(take_while!(call!(|c| c != b'\n')), std::str::from_utf8))
         ) >> (rest)
   )
 );

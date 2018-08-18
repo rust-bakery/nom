@@ -25,9 +25,7 @@ fn test2(input: &str) -> IResult<&str, &str, CustomError> {
 }
 
 fn test3(input: &str) -> IResult<&str, &str, CustomError> {
-  verify!(input, test1, |s: &str| {
-    s.starts_with("abcd")
-  })
+  verify!(input, test1, |s: &str| s.starts_with("abcd"))
 }
 
 #[cfg(feature = "alloc")]

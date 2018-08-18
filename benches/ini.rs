@@ -6,17 +6,13 @@ extern crate nom;
 
 use nom::{alphanumeric, multispace, space};
 
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 named!(
   category<&str>,
   map_res!(
-    delimited!(
-      char!('['),
-      take_while!(call!(|c| c != ']' as u8)),
-      char!(']')
-    ),
+    delimited!(char!('['), take_while!(call!(|c| c != ']' as u8)), char!(']')),
     str::from_utf8
   )
 );

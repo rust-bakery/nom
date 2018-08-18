@@ -1,11 +1,11 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{alphanumeric, multispace, space};
 use nom::types::CompleteByteSlice;
+use nom::{alphanumeric, multispace, space};
 
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 named!(category<CompleteByteSlice, &str>, map_res!(
     delimited!(

@@ -13,10 +13,10 @@
 //! you can know precisely which parser got to which part of the input.
 //! The main drawback is that it is a lot slower than default error
 //! management.
-use util::{Convert, ErrorKind};
 use lib::std::convert::From;
 #[cfg(feature = "alloc")]
 use lib::std::vec::Vec;
+use util::{Convert, ErrorKind};
 
 /// Contains the error that a parser can return
 ///
@@ -37,11 +37,7 @@ impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
   fn convert(c: Context<I, F>) -> Self {
     match c {
       Context::Code(i, e) => Context::Code(i, ErrorKind::convert(e)),
-      Context::List(mut v) => Context::List(
-        v.drain(..)
-          .map(|(i, e)| (i, ErrorKind::convert(e)))
-          .collect(),
-      ),
+      Context::List(mut v) => Context::List(v.drain(..).map(|(i, e)| (i, ErrorKind::convert(e))).collect()),
     }
   }
 }

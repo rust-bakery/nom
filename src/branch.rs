@@ -853,9 +853,9 @@ macro_rules! permutation_iterator (
 
 #[cfg(test)]
 mod tests {
+  use internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use lib::std::string::{String, ToString};
-  use internal::{Err, IResult, Needed};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -946,10 +946,7 @@ mod tests {
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       use Context;
-      Err(Err::Error(Context::Code(
-        &b""[..],
-        ErrorKind::Custom(ErrorStr("abcd".to_string())),
-      )))
+      Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
@@ -980,10 +977,7 @@ mod tests {
     assert_eq!(alt4(b), Ok((&b""[..], b)));
 
     // test the alternative syntax
-    named!(
-      alt5<bool>,
-      alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true })
-    );
+    named!(alt5<bool>, alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true }));
     assert_eq!(alt5(a), Ok((&b""[..], false)));
     assert_eq!(alt5(b), Ok((&b""[..], true)));
 
@@ -1042,13 +1036,7 @@ mod tests {
     let b = &b"efghijkl"[..];
     assert_eq!(sw(b), Ok((&b""[..], &b"ijkl"[..])));
     let c = &b"afghijkl"[..];
-    assert_eq!(
-      sw(c),
-      Err(Err::Error(error_position!(
-        &b"afghijkl"[..],
-        ErrorKind::Switch
-      )))
-    );
+    assert_eq!(sw(c), Err(Err::Error(error_position!(&b"afghijkl"[..], ErrorKind::Switch))));
 
     let a = &b"xxxxefgh"[..];
     assert_eq!(sw(a), Ok((&b"gh"[..], &b"ef"[..])));
@@ -1056,10 +1044,7 @@ mod tests {
 
   #[test]
   fn permutation() {
-    named!(
-      perm<(&[u8], &[u8], &[u8])>,
-      permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
-    );
+    named!(perm<(&[u8], &[u8], &[u8])>, permutation!(tag!("abcd"), tag!("efg"), tag!("hi")));
 
     let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
 

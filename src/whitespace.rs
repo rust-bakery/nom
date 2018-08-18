@@ -896,12 +896,12 @@ macro_rules! ws (
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
+  use super::sp;
+  use internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use lib::std::string::{String, ToString};
-  use internal::{Err, IResult, Needed};
-  use super::sp;
-  use util::ErrorKind;
   use types::CompleteStr;
+  use util::ErrorKind;
 
   #[test]
   fn spaaaaace() {
@@ -921,10 +921,7 @@ mod tests {
       ws!(pair!( take!(3), tag!("de") ))
     );
 
-    assert_eq!(
-      pair_2(&b" \t abc de fg"[..]),
-      Ok((&b"fg"[..], (&b"abc"[..], &b"de"[..])))
-    );
+    assert_eq!(pair_2(&b" \t abc de fg"[..]), Ok((&b"fg"[..], (&b"abc"[..], &b"de"[..]))));
   }
 
   #[test]
@@ -953,10 +950,7 @@ mod tests {
     );
     //trace_macros!(false);
 
-    assert_eq!(
-      tuple_2(&b" \t abc de fg"[..]),
-      Ok((&b"fg"[..], (&b"abc"[..], &b"de"[..])))
-    );
+    assert_eq!(tuple_2(&b" \t abc de fg"[..]), Ok((&b"fg"[..], (&b"abc"[..], &b"de"[..]))));
   }
 
   #[test]
@@ -997,22 +991,10 @@ mod tests {
 
     //trace_macros!(false);
 
-    assert_eq!(
-      do_parser(&b"abcd abcd\tefghefghX"[..]),
-      Ok((&b"X"[..], (1, 2)))
-    );
-    assert_eq!(
-      do_parser(&b"abcd\tefgh      efgh X"[..]),
-      Ok((&b"X"[..], (1, 2)))
-    );
-    assert_eq!(
-      do_parser(&b"abcd  ab"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
-    assert_eq!(
-      do_parser(&b" abcd\tefgh\tef"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
+    assert_eq!(do_parser(&b"abcd abcd\tefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
+    assert_eq!(do_parser(&b"abcd\tefgh      efgh X"[..]), Ok((&b"X"[..], (1, 2))));
+    assert_eq!(do_parser(&b"abcd  ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(do_parser(&b" abcd\tefgh\tef"[..]), Err(Err::Incomplete(Needed::Size(4))));
   }
 
   #[test]
@@ -1075,10 +1057,7 @@ mod tests {
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
       use Context;
-      Err(Err::Error(Context::Code(
-        &b""[..],
-        ErrorKind::Custom(ErrorStr("abcd".to_string())),
-      )))
+      Err(Err::Error(Context::Code(&b""[..], ErrorKind::Custom(ErrorStr("abcd".to_string())))))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
@@ -1096,22 +1075,13 @@ mod tests {
     }
 
     let a = &b"\tabcd"[..];
-    assert_eq!(
-      alt1(a),
-      Err(Err::Error(error_position!(a, ErrorKind::Alt::<ErrorStr>)))
-    );
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt::<ErrorStr>))));
     assert_eq!(alt2(a), Ok((&b""[..], a)));
     assert_eq!(alt3(a), Ok((a, &b""[..])));
 
     named!(alt4<CompleteStr, CompleteStr>, ws!(alt!(tag!("abcd") | tag!("efgh"))));
-    assert_eq!(
-      alt4(CompleteStr("\tabcd")),
-      Ok((CompleteStr(""), CompleteStr(r"abcd")))
-    );
-    assert_eq!(
-      alt4(CompleteStr("  efgh ")),
-      Ok((CompleteStr(""), CompleteStr("efgh")))
-    );
+    assert_eq!(alt4(CompleteStr("\tabcd")), Ok((CompleteStr(""), CompleteStr(r"abcd"))));
+    assert_eq!(alt4(CompleteStr("  efgh ")), Ok((CompleteStr(""), CompleteStr("efgh"))));
 
     // test the alternative syntax
     named!(alt5<CompleteStr, bool>, ws!(alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true })));
@@ -1151,13 +1121,7 @@ mod tests {
     let b = CompleteStr("\tefgh ijkl ");
     assert_eq!(sw(b), Ok((CompleteStr(""), CompleteStr("ijkl"))));
     let c = CompleteStr("afghijkl");
-    assert_eq!(
-      sw(c),
-      Err(Err::Error(error_position!(
-        CompleteStr("afghijkl"),
-        ErrorKind::Switch
-      )))
-    );
+    assert_eq!(sw(c), Err(Err::Error(error_position!(CompleteStr("afghijkl"), ErrorKind::Switch))));
   }
 
   named!(str_parse(&str) -> &str, ws!(tag!("test")));
@@ -1190,8 +1154,5 @@ mod tests {
   );
 
   #[cfg(feature = "alloc")]
-  named!(
-    fail<&[u8]>,
-    map!(many_till!(take!(1), ws!(tag!("."))), |(r, _)| r[0])
-  );
+  named!(fail<&[u8]>, map!(many_till!(take!(1), ws!(tag!("."))), |(r, _)| r[0]));
 }

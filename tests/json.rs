@@ -6,8 +6,8 @@ extern crate nom;
 
 use nom::{is_alphanumeric, recognize_float};
 
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 #[derive(Debug, PartialEq)]
 pub enum JsonValue {
@@ -25,27 +25,17 @@ named!(
   delimited!(
     tag!("\""),
     //map_res!(escaped!(call!(alphanumeric), '\\', is_a!("\"n\\")), str::from_utf8),
-    map_res!(
-      escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")),
-      str::from_utf8
-    ),
+    map_res!(escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
     tag!("\"")
   )
 );
 
 named!(
   array<Vec<JsonValue>>,
-  ws!(delimited!(
-    tag!("["),
-    separated_list!(tag!(","), value),
-    tag!("]")
-  ))
+  ws!(delimited!(tag!("["), separated_list!(tag!(","), value), tag!("]")))
 );
 
-named!(
-  key_value<(&str, JsonValue)>,
-  ws!(separated_pair!(string, tag!(":"), value))
-);
+named!(key_value<(&str, JsonValue)>, ws!(separated_pair!(string, tag!(":"), value)));
 
 named!(
   hash<HashMap<String, JsonValue>>,

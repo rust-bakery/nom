@@ -33,10 +33,12 @@ complete_named!(
         fold_many0!(
           pair!(alt!(tag!("*") | tag!("/")), factor),
           init,
-          |acc, (op, val): (CompleteStr, i64)| if (op.0.chars().next().unwrap() as char) == '*' {
-            acc * val
-          } else {
-            acc / val
+          |acc, (op, val): (CompleteStr, i64)| {
+            if (op.0.chars().next().unwrap() as char) == '*' {
+              acc * val
+            } else {
+              acc / val
+            }
           }
         ) >> (res)
   )
@@ -50,10 +52,12 @@ complete_named!(
         fold_many0!(
           pair!(alt!(tag!("+") | tag!("-")), term),
           init,
-          |acc, (op, val): (CompleteStr, i64)| if (op.0.chars().next().unwrap() as char) == '+' {
-            acc + val
-          } else {
-            acc - val
+          |acc, (op, val): (CompleteStr, i64)| {
+            if (op.0.chars().next().unwrap() as char) == '+' {
+              acc + val
+            } else {
+              acc - val
+            }
           }
         ) >> (res)
   )
@@ -87,9 +91,6 @@ fn parens_test() {
   let input3 = CompleteStr("  2*2 / ( 5 - 1) +   ");
   assert_eq!(
     root_expr(input3),
-    Err(nom::Err::Error(error_position!(
-      CompleteStr("+   "),
-      ErrorKind::Eof
-    )))
+    Err(nom::Err::Error(error_position!(CompleteStr("+   "), ErrorKind::Eof)))
   );
 }
