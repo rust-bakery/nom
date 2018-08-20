@@ -449,6 +449,32 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
   }
 }
 
+/// Recognizes big endian unsigned 16 bytes integer
+#[inline]
+pub fn be_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
+  if i.len() < 16 {
+    need_more(i, Needed::Size(16))
+  } else {
+    let res = ((i[0] as u128) << 120)
+      + ((i[1] as u128) << 112)
+      + ((i[2] as u128) << 104)
+      + ((i[3] as u128) << 96)
+      + ((i[4] as u128) << 88)
+      + ((i[5] as u128) << 80)
+      + ((i[6] as u128) << 72)
+      + ((i[7] as u128) << 64)
+      + ((i[8] as u128) << 56)
+      + ((i[9] as u128) << 48)
+      + ((i[10] as u128) << 40)
+      + ((i[11] as u128) << 32)
+      + ((i[12] as u128) << 24)
+      + ((i[13] as u128) << 16)
+      + ((i[14] as u128) << 8)
+      + i[15] as u128;
+    Ok((&i[16..], res))
+  }
+}
+
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
 #[inline]
 pub fn be_i8(i: &[u8]) -> IResult<&[u8], i8> {
@@ -482,6 +508,12 @@ pub fn be_i32(i: &[u8]) -> IResult<&[u8], i32> {
 #[inline]
 pub fn be_i64(i: &[u8]) -> IResult<&[u8], i64> {
   map!(i, be_u64, |x| x as i64)
+}
+
+/// Recognizes big endian signed 16 bytes integer
+#[inline]
+pub fn be_i128(i: &[u8]) -> IResult<&[u8], i128> {
+  map!(i, be_u128, |x| x as i128)
 }
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
@@ -539,6 +571,32 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   }
 }
 
+/// Recognizes little endian unsigned 16 bytes integer
+#[inline]
+pub fn le_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
+  if i.len() < 16 {
+    need_more(i, Needed::Size(16))
+  } else {
+    let res = ((i[15] as u128) << 120)
+      + ((i[14] as u128) << 112)
+      + ((i[13] as u128) << 104)
+      + ((i[12] as u128) << 96)
+      + ((i[11] as u128) << 88)
+      + ((i[10] as u128) << 80)
+      + ((i[9] as u128) << 72)
+      + ((i[8] as u128) << 64)
+      + ((i[7] as u128) << 56)
+      + ((i[6] as u128) << 48)
+      + ((i[5] as u128) << 40)
+      + ((i[4] as u128) << 32)
+      + ((i[3] as u128) << 24)
+      + ((i[2] as u128) << 16)
+      + ((i[1] as u128) << 8)
+      + i[0] as u128;
+    Ok((&i[16..], res))
+  }
+}
+
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
 #[inline]
 pub fn le_i8(i: &[u8]) -> IResult<&[u8], i8> {
@@ -574,6 +632,12 @@ pub fn le_i64(i: &[u8]) -> IResult<&[u8], i64> {
   map!(i, le_u64, |x| x as i64)
 }
 
+/// Recognizes little endian signed 16 bytes integer
+#[inline]
+pub fn le_i128(i: &[u8]) -> IResult<&[u8], i128> {
+  map!(i, le_u128, |x| x as i128)
+}
+
 /// Configurable endianness
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Endianness {
@@ -593,6 +657,10 @@ macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $
 /// otherwise a little endian u64 integer
 #[macro_export]
 macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u64($i) } else { $crate::le_u64($i) } } ););
+/// if the parameter is nom::Endianness::Big, parse a big endian u128 integer,
+/// otherwise a little endian u128 integer
+#[macro_export]
+macro_rules! u128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u128($i) } else { $crate::le_u128($i) } } ););
 
 /// if the parameter is nom::Endianness::Big, parse a big endian i16 integer,
 /// otherwise a little endian i16 integer
@@ -606,6 +674,10 @@ macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $
 /// otherwise a little endian i64 integer
 #[macro_export]
 macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i64($i) } else { $crate::le_i64($i) } } ););
+/// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
+/// otherwise a little endian i64 integer
+#[macro_export]
+macro_rules! i128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i128($i) } else { $crate::le_i128($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
