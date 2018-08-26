@@ -27,7 +27,7 @@ fn main() {
 
 Result:
 
-```ignore
+```rust
 Error(Position(0, [101, 102, 103, 104])) at l.5 by " tag ! ( "abcd" ) "
 ```
 
@@ -55,7 +55,7 @@ Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by " tag ! (
 
 As a reminder, here are the basic types of nom:
 
-```ignore
+```rust
 pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
 #[derive(Debug,PartialEq,Eq,CLone,Copy)]
 pub enum Needed {
@@ -106,11 +106,7 @@ If you need more information on the errors, or want to act on them in the callin
 
 Sometimes, you want to provide an error code at a specific point in the parser tree. The `add_return_error!` macro can be used for this:
 
-```ignore
-# #[macro_use] extern crate nom;
-# use nom::ErrorKind;
-# use nom::Err::*;
-# use nom::IResult::Error;
+```rust
 named!(err_test,
   preceded!(tag!("efgh"), add_return_error!(ErrorKind::Custom(42),
       do_parse!(
@@ -121,13 +117,11 @@ named!(err_test,
     )
 ));
 
-# fn main() {
 let a = &b"efghblah"[..];
 let blah = &b"blah"[..];
 
 let res_a = err_test(a);
 assert_eq!(res_a, Error(NodePosition(ErrorKind::Custom(42), blah, Box::new(Position(ErrorKind::Tag, blah)))));
-# }
 ```
 
 If the child parser returns an error, `add_return_error!` will add its own at the head of the error chain.
@@ -140,11 +134,7 @@ If another `return_error!` call is present in the parent parsing chain, it will 
 
 Here is how it works in practice:
 
-```ignore
-# #[macro_use] extern crate nom;
-# use nom::ErrorKind;
-# use nom::IResult::Error;
-# use nom::Err::*;
+```rust
 named!(err_test, alt!(
   tag!("abcd") |
   preceded!(
@@ -160,7 +150,6 @@ named!(err_test, alt!(
   )
 ));
 
-# fn main() {
 let a = &b"efghblah"[..];
 let b = &b"efghijklblah"[..];
 
@@ -178,7 +167,6 @@ assert_eq!(res_b, Error(
     ))
   )
 ));
-# }
 ```
 
 With this mechanism, you get a chain of error codes and the corresponding positions in the input slice. If the `return_error!`calls are strategically placed, they can give a lot of information about what happened during parsing.
@@ -191,8 +179,7 @@ Once you get a chain of errors with easily identifying codes, you probably want 
 
 The `error_to_list` function can gather all of the error codes in a vector. This vector is essentially a signature of the parsing path and will let you distinguish between the different parsing errors.
 
-```ignore
-# #[macro_use] extern crate nom;
+```rust
 use nom::{Err,ErrorKind,error_to_list};
 
 fn error_to_string<P>(e: &Err<P>) -> &'static str {
@@ -205,17 +192,14 @@ fn error_to_string<P>(e: &Err<P>) -> &'static str {
     "unrecognized error"
   }
 }
-
-# fn main() {}
 ```
 
 ### With slice patterns
 
 If you can use the *slice patterns* feature, you can easily match on errors this way:
 
-```ignore
+```rust
 #![feature(slice_patterns)]
-# #[macro_use] extern crate nom;
 use nom::{Err,ErrorKind,error_to_list};
 
 fn error_to_string<P>(e: &Err<P>) -> &'static str {
@@ -226,19 +210,14 @@ fn error_to_string<P>(e: &Err<P>) -> &'static str {
     _            => "unrecognized error"
   }
 }
-# fn main() {}
 ```
 
 ### With box patterns
 
 If you can use box patterns, you can match directly on the error instead of filtering with `error_to_list`.
 
-```ignore
+```rust
 #![feature(box_patterns)]
-# #[macro_use] extern crate nom;
-# use nom::{add_error_pattern, error_to_list};
-# use nom::Err::*;
-# use nom::ErrorKind;
 
 use std::str;
 fn error_to_string<P>(e:Err<P>) -> String
@@ -260,7 +239,7 @@ This error reporting approach comes from the [Merr](https://github.com/pippijn/m
 
 To do this in nom, you use the `add_error_pattern` function:
 
-```ignore
+```rust
 fn add_error_pattern<'a,I,O>(h: &mut HashMap<Vec<ErrorKind>, &'a str>, res: IResult<I,O>, message: &'a str) -> bool
 ```
 
@@ -268,12 +247,10 @@ It takes as argument a mutable hashmap that will contain the correspondance betw
 
 To use it, you fill up the hashmap, before parsing, with know bad inputs (if you work with binary data, the `include_bytes!` macro might help you there). Then you can just get the error by passing the result of `error_to_list!` as key of the hashmap. 
 
-```ignore
-# #[macro_use] extern crate nom;
+```rust
 use nom::{add_error_pattern, error_to_list};
 use nom::IResult;
 
-# fn main() {
 let mut err_map = collections::HashMap::new();
 add_error_pattern(
   &mut err_map,
@@ -294,7 +271,6 @@ if let IResult::Error(e) = err_test(&b"efghblah"[..]) {
 if let IResult::Error(e) = err_test(&b"efghijklblah"[..]) {
   assert_eq!(err_map.get(&error_to_list(e)), Some(&"missing `mnop` tag after `ijkl`"));
 };
-# }
 ```
 
 ## Colored hexdump
@@ -303,8 +279,7 @@ To help in format discovery, visual tools can sometimes help. The error chain sy
 
 Let's take a parser with a few more `return_error!` calls:
 
-```ignore
-# #[macro_use] extern crate nom;
+```rust
 named!(err_test, alt!(
   tag!("abcd") |
   return_error!(ErrorKind::Custom(12),
@@ -318,12 +293,11 @@ named!(err_test, alt!(
     )
   )
 ));
-# fn main() {}
 ```
 
 We can then define the function `display_error` as follows:
 
-```ignore
+```rust
 use nom::util::{generate_colors,prepare_errors,print_codes,print_offsets};
 
 pub fn display_error<I,O>(input: &[u8], res: IResult<I,O>) {
@@ -347,7 +321,7 @@ The `nom::util::print_offsets` will print the input data in hexadecimal format, 
 
 As an example, for this call:
 
-```ignore
+```rust
   let input = &b"efghijklblahblah"[..];
 
   display_error(input, err_test(input));
