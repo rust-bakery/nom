@@ -77,13 +77,6 @@ Parsing integers from binary formats can be done in two ways: with parser functi
 - separated_nonempty_list_complete!: This is equivalent to the separated_nonempty_list! combinator, except that it will return Error when either the separator or element subparser returns Incomplete.
 
 ## Modifiers
-| usage | input | output | comment |
-|---|---|---|---|
-| `` |  `` | ``||
-| `` |  `` | ``||
-| `` |  `` | ``||
-| `` |  `` | ``||
-| `` |  `` | ``||
 
 - cond!: conditional combinator
 - cond_reduce!: Conditional combinator with error
