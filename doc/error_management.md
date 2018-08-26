@@ -1,5 +1,3 @@
-% Error management
-
 # Error management
 
 Parser combinators are useful tools to build parsers, but they are notoriously bad at error reporting. This happens because a tree of parser acts as a single parser, and the only error you get will come from the root parser.
@@ -46,7 +44,7 @@ fn main() {
 
 It will print, along with the result and the parser, a hexdump of the input buffer passed to the parser.
 
-```ignore
+```
 Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by " tag ! ( "abcd" ) "
 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
 ```
