@@ -1,5 +1,3 @@
-% Upgrading to nom 4.0
-
 # Upgrading to nom 4.0
 
 The nom 4.0 is a nearly complete rewrite of nom's internal structures, along with a cleanup of a lot of parser and combinators whose semantics were unclear. Upgrading from previous nom versions can require a lot of changes, especially if you have a lot of unit tests. But most of those changes are pretty straightforward.
@@ -8,13 +6,13 @@ The nom 4.0 is a nearly complete rewrite of nom's internal structures, along wit
 
 Previous versions of nom all generated parsers with the following signature:
 
-```rust,ignore
+```rust
 fn parser(input: I) -> IResult<I,O> { ... }
 ```
 
 With the following definition for `IResult`:
 
-```rust,ignore
+```rust
 pub enum IResult<I,O,E=u32> {
   /// remaining input, result value
   Done(I,O),
@@ -49,7 +47,7 @@ pub enum Err<P,E=u32>{
 
 The new design uses the `Result` type from the standard library:
 
-```rust,ignore
+```rust
 pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
 
 pub enum Err<I, E = u32> {
@@ -109,7 +107,7 @@ result (like in a unit test), you will have to perform the following changes:
 
 For the correct result case:
 
-```rust,ignore
+```rust
 IResult::Done(i, o)
 
 // becomes
@@ -120,7 +118,7 @@ Ok((i, o))
 For the error case (note that argument position for `error_position` and other sibling macros was changed
 for the sake of consistency with the rest of the code):
 
-```rust,ignore
+```rust
 IResult::Error(error_position!(ErrorKind::OneOf, input)),
 
 // becomes
@@ -128,7 +126,7 @@ IResult::Error(error_position!(ErrorKind::OneOf, input)),
 Err(Err::Error(error_position!(input, ErrorKind::OneOf)))
 ```
 
-```rust,ignore
+```rust
 IResult::Incomplete(Needed::Size(1))
 
 // becomes
@@ -139,7 +137,7 @@ Err(Err::Incomplete(Needed::Size(1)))
 For pattern matching, you now need to handle the `Failure` case as well, which works like the error
 case:
 
-```rust,ignore
+```rust
 match result {
   Ok((remaining, value)) => { ... },
   Err(Err::Incomplete(needed)) => { ... },
@@ -190,7 +188,7 @@ Thanks to the new `AtEof` trait for input types, nom now provides the `CompleteB
 With these types, no need to put a `complete!()` combinator everywhere, you can juste apply those types
 like this:
 
-```rust,ignore
+```rust
 named!(parser<&str,ReturnType>, ... );
 
 // becomes
@@ -198,7 +196,7 @@ named!(parser<&str,ReturnType>, ... );
 named!(parser<CompleteStr,ReturnType>, ... );
 ```
 
-```rust,ignore
+```rust
 named!(parser<&str,&str>, ... );
 
 // becomes
@@ -206,7 +204,7 @@ named!(parser<&str,&str>, ... );
 named!(parser<CompleteStr,CompleteStr>, ... );
 ```
 
-```rust,ignore
+```rust
 named!(parser, ... );
 
 // becomes
@@ -216,7 +214,7 @@ named!(parser<CompleteByteSlice,CompleteByteSlice>, ... );
 
 And as an example, for a unit test:
 
-```rust,ignore
+```rust
 assert_eq!(parser("abcd123"), Ok(("123", "abcd"));
 
 // becomes
@@ -230,7 +228,7 @@ empty line or not, as seen in [one of the examples](https://github.com/Geal/nom/
 If those types feel a bit long to write everywhere in the parsers, it's possible
 to alias them like this:
 
-```rust,ignore
+```rust
 use nom::types::CompleteByteSlice as Input;
 ```
 
