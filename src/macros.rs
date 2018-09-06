@@ -147,6 +147,31 @@ macro_rules! named (
             $submac!(i, $($args)*)
         }
     );
+    (pub(crate) $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub(crate) $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub(crate) $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub(crate) $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    (pub(crate) $name:ident, $submac:ident!( $($args:tt)* )) => (
+        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
+            $submac!(i, $($args)*)
+        }
+    );
 );
 
 /// Makes a function from a parser combination with arguments.
@@ -192,6 +217,19 @@ macro_rules! named_args {
           $submac!(input, $($args)*)
         }
     };
+    (pub(crate) $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        pub(crate) fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
+    (pub(crate) $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        pub(crate) fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(
+          input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) ->
+          $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type>
+        {
+          $submac!(input, $($args)*)
+        }
+    };
     ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
             $submac!(input, $($args)*)
@@ -210,6 +248,11 @@ macro_rules! named_args {
             $submac!(input, $($args)*)
         }
     };
+    (pub(crate) $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        pub(crate) fn $func_name(input: $input_type, $( $arg : $typ ),*) -> $crate::IResult<$input_type, $return_type> {
+            $submac!(input, $($args)*)
+        }
+    };
     ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         fn $func_name(input: $input_type, $( $arg : $typ ),*) -> $crate::IResult<$input_type, $return_type> {
             $submac!(input, $($args)*)
@@ -217,6 +260,14 @@ macro_rules! named_args {
     };
     (pub $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         pub fn $func_name<'a>(
+          input: $input_type, $( $arg : $typ ),*)
+          -> $crate::IResult<$input_type, $return_type>
+        {
+            $submac!(input, $($args)*)
+        }
+    };
+    (pub(crate) $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
+        pub(crate) fn $func_name<'a>(
           input: $input_type, $( $arg : $typ ),*)
           -> $crate::IResult<$input_type, $return_type>
         {
@@ -306,6 +357,36 @@ macro_rules! named_attr (
     ($(#[$attr:meta])*, pub $name:ident, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
         pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub(crate) $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub(crate) $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub(crate) $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub(crate) $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
+            $submac!(i, $($args)*)
+        }
+    );
+    ($(#[$attr:meta])*, pub(crate) $name:ident, $submac:ident!( $($args:tt)* )) => (
+        $(#[$attr])*
+        pub(crate) fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
             $submac!(i, $($args)*)
         }
     );
@@ -1365,6 +1446,17 @@ mod tests {
   fn pub_named_test() {
     let a = &b"abcd"[..];
     let res = pub_named_mod::tst(a);
+    assert_eq!(res, Ok((&b""[..], a)));
+  }
+
+  mod pub_crate_named_mod {
+    named!(pub(crate) tst, tag!("abcd"));
+  }
+
+  #[test]
+  fn pub_crate_named_test() {
+    let a = &b"abcd"[..];
+    let res = pub_crate_named_mod::tst(a);
     assert_eq!(res, Ok((&b""[..], a)));
   }
 
