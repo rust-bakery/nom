@@ -21,10 +21,7 @@
 //! }
 //!
 //! fn is_hex_digit(c: char) -> bool {
-//!   match c {
-//!     '0'..='9' | 'a'..='f' | 'A'..='F' => true,
-//!     _ => false,
-//!   }
+//!   c.is_digit(16)
 //! }
 //!
 //! named!(hex_primary<&str, u8>,
