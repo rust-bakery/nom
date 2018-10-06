@@ -399,7 +399,7 @@ macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Context,Err,ErrorKind};
+      use $crate::{Context,Err};
 
       let i_ = $i.clone();
       let cl = || {
