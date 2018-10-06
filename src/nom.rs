@@ -5,6 +5,7 @@
 //! Hopefully, the syntax will converge to onely one way in the future,
 //! but the macros system makes no promises.
 //!
+#![allow(unused_imports)]
 
 #[cfg(feature = "alloc")]
 use lib::std::boxed::Box;
@@ -13,7 +14,7 @@ use lib::std::boxed::Box;
 use lib::std::fmt::Debug;
 use internal::*;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use traits::{need_more, need_more_err, AtEof};
+use traits::{need_more, need_more_err, AtEof, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use util::ErrorKind;
@@ -814,25 +815,60 @@ where
 
 /// Recognizes floating point number in a byte string and returns a f32
 #[cfg(feature = "alloc")]
-pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
+//pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
+pub fn float<T>(input: T) -> IResult<T, f32, u32>
+where
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + ParseTo<f32> + AtEof,
+  <T as InputIter>::Item: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar
+{
   flat_map!(input, recognize_float, parse_to!(f32))
 }
 
 /// Recognizes floating point number in a string and returns a f32
 #[cfg(feature = "alloc")]
-pub fn float_s(input: &str) -> IResult<&str, f32> {
+#[deprecated(since = "4.1.0", note = "Please use `float` instead")]
+pub fn float_s<T>(input: T) -> IResult<T, f32, u32>
+where
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + ParseTo<f32> + AtEof,
+  <T as InputIter>::Item: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar
+{
   flat_map!(input, call!(recognize_float), parse_to!(f32))
 }
 
 /// Recognizes floating point number in a byte string and returns a f64
 #[cfg(feature = "alloc")]
-pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
+pub fn double<T>(input: T) -> IResult<T, f64, u32>
+where
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + ParseTo<f64> + AtEof,
+  <T as InputIter>::Item: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar
+{
   flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
 /// Recognizes floating point number in a string and returns a f64
 #[cfg(feature = "alloc")]
-pub fn double_s(input: &str) -> IResult<&str, f64> {
+#[deprecated(since = "4.1.0", note = "Please use `double` instead")]
+pub fn double_s<T>(input: T) -> IResult<T, f64, u32>
+where
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + ParseTo<f64> + AtEof,
+  <T as InputIter>::Item: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar
+{
   flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
@@ -1689,9 +1725,17 @@ mod tests {
       assert_eq!(recognize_float(&larger[..]), Ok((";", test)));
 
       assert_eq!(float(larger.as_bytes()), Ok((&b";"[..], expected32)));
-      assert_eq!(float_s(&larger[..]), Ok((";", expected32)));
+      assert_eq!(float(&larger[..]), Ok((";", expected32)));
+      assert_eq!(float(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected32)));
+      assert_eq!(float(CompleteStr(test)), Ok((CompleteStr(""), expected32)));
 
       assert_eq!(double(larger.as_bytes()), Ok((&b";"[..], expected64)));
+      assert_eq!(double(&larger[..]), Ok((";", expected64)));
+      assert_eq!(double(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected64)));
+      assert_eq!(double(CompleteStr(test)), Ok((CompleteStr(""), expected64)));
+
+      //deprecated functions
+      assert_eq!(float_s(&larger[..]), Ok((";", expected32)));
       assert_eq!(double_s(&larger[..]), Ok((";", expected64)));
     }
 
