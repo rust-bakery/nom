@@ -155,7 +155,7 @@ macro_rules! method (
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty,$e:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
       #[allow(unused_variables)]
-      fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
+      pub fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
         let result = $submac!(i, $($args)*);
         ($self_, result)
       }
@@ -227,7 +227,7 @@ macro_rules! method (
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty,$e:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
       #[allow(unused_variables)]
-      fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
+      pub fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
         let result = $submac!(i, $($args)*);
         ($self_, result)
       }
