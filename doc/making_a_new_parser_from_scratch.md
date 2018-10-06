@@ -169,11 +169,11 @@ Since it is easy to combine small parsers, I encourage you to write small functi
 
 # Finding the right combinator
 
-nom has a lot of different combinators, depending on the use case. They are all described in the [reference](http://rust.unhandledexpression.com/nom/).
+nom has a lot of different combinators, depending on the use case. They are all described in the [reference](https://docs.rs/nom).
 
-[Basic functions](http://rust.unhandledexpression.com/nom/#functions) are available. They deal mostly in recognizing character types, like `alphanumeric` or `digit`. They also parse big endian and little endian integers and floats of multiple sizes.
+[Basic functions](https://docs.rs/nom/#functions) are available. They deal mostly in recognizing character types, like `alphanumeric` or `digit`. They also parse big endian and little endian integers and floats of multiple sizes.
 
-Most of the macros are there to combine parsers, and they do not depend on the input type. this is the case for all of those defined in [src/macros.rs](https://github.com/Geal/nom/blob/master/src/macros.rs). The reference indicates a [possible type signature](http://rust.unhandledexpression.com/nom/#macros) for what the macros expect and return. In case of doubt, the documentation often indicates a [code example](http://rust.unhandledexpression.com/nom/macro.many0!.html) after the macro definition.
+Most of the macros are there to combine parsers, and they do not depend on the input type. this is the case for all of those defined in [src/macros.rs](https://github.com/Geal/nom/blob/master/src/macros.rs). The reference indicates a [possible type signature](https://docs.rs/nom/#macros) for what the macros expect and return. In case of doubt, the documentation often indicates a [code example](https://docs.rs/nom/macro.many0!.html) after the macro definition.
 
 ## Type specific combinators
 
