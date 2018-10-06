@@ -2,7 +2,6 @@
 //#![feature(trace_macros)]
 #![allow(dead_code)]
 #![allow(unused_comparisons)]
-#![allow(unused_doc_comment)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
