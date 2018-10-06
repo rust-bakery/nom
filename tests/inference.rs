@@ -37,9 +37,7 @@ named!(
 #[cfg(feature = "alloc")]
 fn wrap_suffix(input: &Option<Vec<&[u8]>>) -> Option<String> {
   if input.is_some() {
-    ///
-    /// I've tried both of the lines below individually and get the same error.
-    ///
+    // I've tried both of the lines below individually and get the same error.
     Some("hello".to_string())
   //Some(str::from_utf8(u).expect("Found invalid UTF-8").to_string())
   } else {
