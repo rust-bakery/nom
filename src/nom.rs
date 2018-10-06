@@ -178,7 +178,9 @@ pub fn is_space(chr: u8) -> bool {
 //pub filter!(oct_digit is_oct_digit)
 //pub filter!(alphanumeric is_alphanumeric)
 
-/// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
+/// Recognizes one or more lowercase and uppercase alphabetic characters.
+/// For ASCII strings: a-zA-Z
+/// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
 pub fn alpha<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
@@ -187,7 +189,9 @@ where
   alpha1(input)
 }
 
-/// Recognizes zero or more lowercase and uppercase alphabetic characters: a-zA-Z
+/// Recognizes zero or more lowercase and uppercase alphabetic characters.
+/// For ASCII strings: a-zA-Z
+/// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
 pub fn alpha0<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
@@ -196,7 +200,9 @@ where
   input.split_at_position(|item| !item.is_alpha())
 }
 
-/// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
+/// Recognizes one or more lowercase and uppercase alphabetic characters
+/// For ASCII strings: a-zA-Z
+/// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
 pub fn alpha1<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
@@ -285,7 +291,9 @@ where
   input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
-/// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
+/// Recognizes one or more numerical and alphabetic characters
+/// For ASCII strings: 0-9a-zA-Z
+/// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
 pub fn alphanumeric<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
@@ -294,7 +302,9 @@ where
   alphanumeric1(input)
 }
 
-/// Recognizes zero or more numerical and alphabetic characters: 0-9a-zA-Z
+/// Recognizes zero or more numerical and alphabetic characters.
+/// For ASCII strings: 0-9a-zA-Z
+/// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
 pub fn alphanumeric0<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
@@ -302,7 +312,9 @@ where
 {
   input.split_at_position(|item| !item.is_alphanum())
 }
-/// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
+/// Recognizes one or more numerical and alphabetic characters.
+/// For ASCII strings: 0-9a-zA-Z
+/// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
 pub fn alphanumeric1<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
