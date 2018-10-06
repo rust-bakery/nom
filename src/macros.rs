@@ -1446,7 +1446,7 @@ mod tests {
   fn pub_crate_named_test() {
     let a = &b"abcd"[..];
     let res = pub_crate_named_mod::tst(a);
-    assert_eq!(res, Done(&b""[..], a));
+    assert_eq!(res, Ok((&b""[..], a)));
   }
 
   #[test]
