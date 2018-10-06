@@ -544,16 +544,19 @@ macro_rules! add_return_error (
       use $crate::lib::std::result::Result::*;
       use $crate::{Err,Context,ErrorKind};
 
+      let error_context = Context::Code($i, $code);
       fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
       match $submac!($i, $($args)*) {
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
-          unify_types(&e, &Context::Code($i, $code));
-          Err(Err::Error(error_node_position!($i, $code, e)))
+          unify_types(&e, &error_context);
+          let Context::Code(i, code) = error_context;
+          Err(Err::Error(error_node_position!(i, code, e)))
         },
         Err(Err::Failure(e))      => {
-          unify_types(&e, &Context::Code($i, $code));
-          Err(Err::Failure(error_node_position!($i, $code, e)))
+          unify_types(&e, &error_context);
+          let Context::Code(i, code) = error_context;
+          Err(Err::Failure(error_node_position!(i, code, e)))
         },
         Err(e) => Err(e),
       }
