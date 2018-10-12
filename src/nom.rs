@@ -464,6 +464,7 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
 
 /// Recognizes big endian unsigned 16 bytes integer
 #[inline]
+#[cfg(stable_i128)]
 pub fn be_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
   if i.len() < 16 {
     need_more(i, Needed::Size(16))
@@ -525,6 +526,7 @@ pub fn be_i64(i: &[u8]) -> IResult<&[u8], i64> {
 
 /// Recognizes big endian signed 16 bytes integer
 #[inline]
+#[cfg(stable_i128)]
 pub fn be_i128(i: &[u8]) -> IResult<&[u8], i128> {
   map!(i, be_u128, |x| x as i128)
 }
@@ -586,6 +588,7 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
 
 /// Recognizes little endian unsigned 16 bytes integer
 #[inline]
+#[cfg(stable_i128)]
 pub fn le_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
   if i.len() < 16 {
     need_more(i, Needed::Size(16))
@@ -647,6 +650,7 @@ pub fn le_i64(i: &[u8]) -> IResult<&[u8], i64> {
 
 /// Recognizes little endian signed 16 bytes integer
 #[inline]
+#[cfg(stable_i128)]
 pub fn le_i128(i: &[u8]) -> IResult<&[u8], i128> {
   map!(i, le_u128, |x| x as i128)
 }
@@ -673,6 +677,7 @@ macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $
 /// if the parameter is nom::Endianness::Big, parse a big endian u128 integer,
 /// otherwise a little endian u128 integer
 #[macro_export(local_inner_macros)]
+#[cfg(stable_i128)]
 macro_rules! u128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u128($i) } else { $crate::le_u128($i) } } ););
 
 /// if the parameter is nom::Endianness::Big, parse a big endian i16 integer,
@@ -690,6 +695,7 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $
 /// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
 /// otherwise a little endian i64 integer
 #[macro_export(local_inner_macros)]
+#[cfg(stable_i128)]
 macro_rules! i128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i128($i) } else { $crate::le_i128($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number
@@ -1294,6 +1300,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(stable_i128)]
   fn i128_tests() {
     assert_eq!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
@@ -1378,6 +1385,7 @@ mod tests {
   }
 
   #[test]
+  #[cfg(stable_i128)]
   fn le_i128_tests() {
     assert_eq!(
       le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
@@ -1747,8 +1755,11 @@ mod tests {
       assert_eq!(double(CompleteStr(test)), Ok((CompleteStr(""), expected64)));
 
       //deprecated functions
-      assert_eq!(float_s(&larger[..]), Ok((";", expected32)));
-      assert_eq!(double_s(&larger[..]), Ok((";", expected64)));
+      #[allow(deprecated)]
+      {
+        assert_eq!(float_s(&larger[..]), Ok((";", expected32)));
+        assert_eq!(double_s(&larger[..]), Ok((";", expected64)));
+      }
     }
 
     let remaining_exponent = "-1.234E-";
