@@ -550,13 +550,19 @@ macro_rules! add_return_error (
         Ok((i, o))    => Ok((i, o)),
         Err(Err::Error(e))      => {
           unify_types(&e, &error_context);
-          let Context::Code(i, code) = error_context;
-          Err(Err::Error(error_node_position!(i, code, e)))
+          match error_context {
+            Context::Code(i, code) => Err(Err::Error(error_node_position!(i, code, e))),
+            #[cfg(feature = "verbose-errors")]
+            _ => unreachable!("`error_context` must be `Context::Code` in this macro"),
+          }
         },
         Err(Err::Failure(e))      => {
           unify_types(&e, &error_context);
-          let Context::Code(i, code) = error_context;
-          Err(Err::Failure(error_node_position!(i, code, e)))
+          match error_context {
+            Context::Code(i, code) => Err(Err::Failure(error_node_position!(i, code, e))),
+            #[cfg(feature = "verbose-errors")]
+            _ => unreachable!("`error_context` must be `Context::Code` in this macro"),
+          }
         },
         Err(e) => Err(e),
       }

@@ -259,7 +259,7 @@ named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"
 fn issue_752() {
     assert_eq!(
         Err::Error(nom::Context::Code("ab", nom::ErrorKind::ParseTo)),
-        parse_to!("ab", usize).unwrap_err(),
+        parse_to!("ab", usize).unwrap_err()
     )
 }
 
