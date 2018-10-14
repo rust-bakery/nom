@@ -8,6 +8,11 @@
 
 ### Fixed
 
+## 4.1.1 - 2018-10-14
+
+### Fixed
+
+- compilation issue in verbose-errors mode for `add_return_error`
 
 ## 4.1.0 - 2018-10-06
 
@@ -941,8 +946,9 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/4.1.0...HEAD
-* [4.0.0]: https://github.com/Geal/nom/compare/4.0.0...4.1.0
+* [unreleased]: https://github.com/Geal/nom/compare/4.1.1...HEAD
+* [4.1.1]: https://github.com/Geal/nom/compare/4.1.0...4.1.1
+* [4.1.0]: https://github.com/Geal/nom/compare/4.0.0...4.1.0
 * [4.0.0]: https://github.com/Geal/nom/compare/3.2.1...4.0.0
 * [3.2.1]: https://github.com/Geal/nom/compare/3.2.0...3.2.1
 * [3.2.0]: https://github.com/Geal/nom/compare/3.1.0...3.2.0
