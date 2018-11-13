@@ -8,7 +8,7 @@ nom uses Rust macros heavily to provide a nice syntax and generate parsing code.
 
 # Defining a new macro
 
-Let's take the `opt!` macro as example: `opt!` returns `IResult<I,Option<O>>`, producing a `Some(o)` if the child parser succeeded, and None otherwise. Here is how you could use it:
+Let's take the `opt!` macro as example: `opt!` returns `IResult<I,Option<O>>`, producing a `Some(O)` if the child parser succeeded, and None otherwise. Here is how you could use it:
 
 ```rust
 named!(opt_tag<Option<&[u8]>>, opt!(digit));
