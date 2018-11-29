@@ -32,10 +32,7 @@ fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
 }
 
 fn is_hex_digit(c: char) -> bool {
-  match c {
-    '0'..='9' | 'a'..='f' | 'A'..='F' => true,
-    _ => false,
-  }
+  c.is_digit(16)
 }
 
 named!(hex_primary<&str, u8>,
@@ -185,7 +182,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "^4.0"
+nom = "^4.1"
 ```
 
 Then include it in your code like this:
@@ -210,7 +207,7 @@ You can activate those features like this:
 
 ```toml
 [dependencies.nom]
-version = "^4.0"
+version = "^4.1"
 features = ["regexp"]
 ```
 
@@ -257,6 +254,7 @@ Here is a list of known projects using nom:
   * [IMAP](https://github.com/djc/imap-proto)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
+  * [Pcap](https://github.com/ithinuel/pcap-rs)
   * [NTP](https://github.com/rusticata/ntp-parser)
   * [SNMP](https://github.com/rusticata/snmp-parser)
   * [DER](https://github.com/rusticata/der-parser)

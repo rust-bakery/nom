@@ -159,7 +159,7 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::{Err,Needed,Context};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -219,7 +219,7 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed};
+      use $crate::{Err,Needed,Context};
 
       let inp;
       if $macro_i.1 % 8 != 0 {

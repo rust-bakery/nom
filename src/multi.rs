@@ -295,6 +295,7 @@ macro_rules! many0(
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
 /// # use nom::ErrorKind;
+/// # use nom::types::CompleteByteSlice;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
 ///
@@ -302,8 +303,14 @@ macro_rules! many0(
 ///  let b = b"azerty";
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
+///  assert_eq!(multi(&a[..]), Ok((&b"efgh"[..], res)));
 ///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
+///
+///  named!(multi_complete<CompleteByteSlice, Vec<CompleteByteSlice> >, many1!( tag!( "abcd" ) ) );
+///  let c = CompleteByteSlice(b"abcdabcd");
+///
+///  let res = vec![CompleteByteSlice(b"abcd"), CompleteByteSlice(b"abcd")];
+///  assert_eq!(multi_complete(c), Ok((CompleteByteSlice(b""), res)));
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
@@ -1068,7 +1075,7 @@ macro_rules! fold_many1(
           }
 
           match failure {
-            $crate::lib::std::option::Option::Some(e) => Err(Err::Error(e)),
+            $crate::lib::std::option::Option::Some(e) => Err(Err::Failure(e)),
             $crate::lib::std::option::Option::None    => match incomplete {
               $crate::lib::std::option::Option::Some(i) => $crate::need_more($i, i),
               $crate::lib::std::option::Option::None    => Ok((input, acc))
