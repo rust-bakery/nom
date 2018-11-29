@@ -1,4 +1,4 @@
-# Upgrading to nom 1.0
+% Upgrading to nom 1.0
 
 The 1.0 release of nom is one of the biggest since the beginning of the project. Its goal was to rework some core parts to be more flexible, and clean code that was awkward or unclear. This resulted in breaking changes, that I hope will not happen again in the future (but hey, we are Rust developers, breaking changes are FUN for us!).
 
@@ -8,7 +8,7 @@ Here are a few tips to update your code to run with nom 1.0:
 
 `nom::Err` now depends on two generic types, the position `P` and the error type `E`:
 
-```rust
+```ignore
 pub enum Err<P,E=u32>{
   Code(ErrorKind<E>),
   Node(ErrorKind<E>, Box<Err<P,E>>),
@@ -19,20 +19,20 @@ pub enum Err<P,E=u32>{
 
 The default error type is `u32` to keep some compatibility with older code. To update your code, the first step is to **replace all usages of `nom::ErrorCode` by `nom::ErrorKind`**. `ErrorKind` is now an enum that contains the same instances as the previous `ErrorCode`, with an additional generic parameter:
 
-```rust
+```ignore
 pub enum ErrorKind<E=u32> {
   Custom(E),
   Tag,
   MapRes,
   MapOpt,
   Alt,
-  [...]
+[...]
 }
 ```
 
 `ErrorKind::Custom` is where you will store your custom error type. Note that default nom parsers like `alphabetic` use `u32` as custom type, so you may need to translate the error types coming from those parsers like this:
 
-```rust
+```ignore
 fix_error!(CustomErrorType, alphabetic)
 ```
 
@@ -42,7 +42,7 @@ Since the error type is now an enum instead of a `u32`, you can now **replace an
 
 The error type is now completely generic over the input type, so the lifetime that appeared in `IResult` is not necessary anymore. It changes function declarations like this:
 
-```rust
+```ignore
 fn parse_status<'a>(i: &'a [u8]) -> IResult<'a, &'a [u8], Status>
 
 // To this:

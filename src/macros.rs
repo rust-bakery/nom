@@ -89,10 +89,8 @@ macro_rules! closure (
 /// // will use &[u8] as input type (use this if the compiler
 /// // complains about lifetime issues
 /// named!(my_function<&[u8]>,            tag!("abcd"));
-/// // prefix them with 'pub' to make the functions public
+/// //prefix them with 'pub' to make the functions public
 /// named!(pub my_function,               tag!("abcd"));
-/// // prefix them with 'pub(crate)' to make the functions public within the crate
-/// named!(pub(crate) my_function,               tag!("abcd"));
 /// ```
 #[macro_export]
 macro_rules! named (
@@ -149,36 +147,6 @@ macro_rules! named (
             $submac!(i, $($args)*)
         }
     );
-    (pub(crate) $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
-            $submac!(i, $($args)*)
-        }
-    );
-    (pub(crate) $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
-            $submac!(i, $($args)*)
-        }
-    );
-    (pub(crate) $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
-            $submac!(i, $($args)*)
-        }
-    );
-    (pub(crate) $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
-        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
-            $submac!(i, $($args)*)
-        }
-    );
-    (pub(crate) $name:ident, $submac:ident!( $($args:tt)* )) => (
-        #[allow(unused_variables)]
-        pub(crate) fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
-            $submac!(i, $($args)*)
-        }
-    );
 );
 
 /// Makes a function from a parser combination with arguments.
@@ -222,16 +190,6 @@ macro_rules! named_args {
           $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type>
         {
           $submac!(input, $($args)*)
-        }
-    };
-    (pub(crate) $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        pub(crate) fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
-            $submac!(input, $($args)*)
-        }
-    };
-    (pub(crate) $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        pub(crate) fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) -> $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type> {
-            $submac!(input, $($args)*)
         }
     };
     ($func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
@@ -351,36 +309,6 @@ macro_rules! named_attr (
             $submac!(i, $($args)*)
         }
     );
-    ($(#[$attr:meta])*, pub(crate) $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        $(#[$attr])*
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i,$o, u32> {
-            $submac!(i, $($args)*)
-        }
-    );
-    ($(#[$attr:meta])*, pub(crate) $name:ident<$i:ty,$o:ty,$e:ty>, $submac:ident!( $($args:tt)* )) => (
-        $(#[$attr])*
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, $e> {
-            $submac!(i, $($args)*)
-        }
-    );
-    ($(#[$attr:meta])*, pub(crate) $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        $(#[$attr])*
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, u32> {
-            $submac!(i, $($args)*)
-        }
-    );
-    ($(#[$attr:meta])*, pub(crate) $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        $(#[$attr])*
-        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, u32> {
-            $submac!(i, $($args)*)
-        }
-    );
-    ($(#[$attr:meta])*, pub(crate) $name:ident, $submac:ident!( $($args:tt)* )) => (
-        $(#[$attr])*
-        pub(crate) fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], u32> {
-            $submac!(i, $($args)*)
-        }
-    );
 );
 
 /// Used to wrap common expressions and function as macros
@@ -471,7 +399,7 @@ macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Context,Err};
+      use $crate::{Context,Err,ErrorKind};
 
       let i_ = $i.clone();
       let cl = || {
@@ -496,12 +424,14 @@ macro_rules! return_error (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Context,Err};
+      use $crate::{Context,Err,ErrorKind};
 
       let i_ = $i.clone();
       let cl = || {
         $submac!(i_, $($args)*)
       };
+
+      fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
 
       match cl() {
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
@@ -542,14 +472,17 @@ macro_rules! add_return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,Context,ErrorKind};
 
+      fn unify_types<I,E>(_: &Context<I,E>, _: &Context<I,E>) {}
       match $submac!($i, $($args)*) {
-        Ok((i, o)) => Ok((i, o)),
-        Err(Err::Error(e)) => {
+        Ok((i, o))    => Ok((i, o)),
+        Err(Err::Error(e))      => {
+          unify_types(&e, &Context::Code($i, $code));
           Err(Err::Error(error_node_position!($i, $code, e)))
         },
-        Err(Err::Failure(e)) => {
+        Err(Err::Failure(e))      => {
+          unify_types(&e, &Context::Code($i, $code));
           Err(Err::Failure(error_node_position!($i, $code, e)))
         },
         Err(e) => Err(e),
@@ -706,45 +639,6 @@ macro_rules! map_res (
   );
 );
 
-/// `map_res_err!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P>`
-/// maps a function returning a Result on the output of a parser, preserving the returned error
-#[macro_export]
-macro_rules! map_res_err (
-  // Internal parser, do not use directly
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Context, Convert, Err};
-
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Ok((i,o)) => {
-          match $submac2!(o, $($args2)*) {
-            Ok(output) => Ok((i, output)),
-            Err(e) => {
-              let e = Context::convert(Context::Code($i, $crate::ErrorKind::Custom(e)));
-              Err(Err::Error(error_node_position!($i, $crate::ErrorKind::MapRes, e)))
-            },
-          }
-        },
-        Err(e) => Err(e),
-      }
-    }
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map_res_err!(__impl $i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_res_err!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map_res_err!(__impl $i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map_res_err!(__impl $i, call!($f), $submac!($($args)*));
-  );
-);
-
 /// `map_opt!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
 #[macro_export]
@@ -804,7 +698,7 @@ macro_rules! parse_to (
       let res: Option<$t> = ($i).parse_to();
       match res {
         Some(output) => Ok(($i.slice($i.input_len()..), output)),
-        None         => Err(Err::Error(Context::Code($i, ErrorKind::ParseTo::<u32>)))
+        None         => Err(Err::Error(Context::Code($i, ErrorKind::MapOpt::<u32>)))
       }
     }
   );
@@ -1083,6 +977,7 @@ macro_rules! cond_with_error(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
+      use $crate::{Convert,Err,Needed,IResult};
 
       if $cond {
         match $submac!($i, $($args)*) {
@@ -1474,17 +1369,6 @@ mod tests {
     assert_eq!(res, Ok((&b""[..], a)));
   }
 
-  mod pub_crate_named_mod {
-    named!(pub(crate) tst, tag!("abcd"));
-  }
-
-  #[test]
-  fn pub_crate_named_test() {
-    let a = &b"abcd"[..];
-    let res = pub_crate_named_mod::tst(a);
-    assert_eq!(res, Ok((&b""[..], a)));
-  }
-
   #[test]
   fn apply_test() {
     fn sum2(a: u8, b: u8) -> u8 {
@@ -1659,80 +1543,5 @@ mod tests {
       )))
     );
     assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
-  }
-
-  #[test]
-  fn parse_to() {
-    use util::Convert;
-
-    assert_eq!(
-      parse_to!("ab", usize),
-      Err(Err::Error(error_position!(
-        "ab",
-        ErrorKind::ParseTo
-      )))
-    );
-    assert_eq!(parse_to!("42", usize), Ok(("", 42)));
-    assert_eq!(ErrorKind::<u64>::convert(ErrorKind::ParseTo::<u32>), ErrorKind::ParseTo::<u64>);
-  }
-
-  #[test]
-  fn map_res_err() {
-    use Context;
-    use be_u8;
-
-    #[derive(Debug, Eq, PartialEq)]
-    enum ParseError {
-      InvalidValue(u8),
-    }
-
-    impl From<u32> for ParseError {
-      fn from(_: u32) -> Self {
-        unreachable!()
-      }
-    }
-
-    #[derive(Debug, Eq, PartialEq)]
-    enum ValidValue {
-      One,
-      Two,
-    }
-
-    fn validate(value: u8) -> Result<ValidValue, ParseError> {
-      match value {
-        b'1' => Ok(ValidValue::One),
-        b'2' => Ok(ValidValue::Two),
-        _ => Err(ParseError::InvalidValue(value))
-      }
-    }
-
-    named!(test<&[u8], ValidValue, ParseError>,
-      map_res_err!(fix_error!(ParseError, be_u8), validate)
-    );
-
-    assert_eq!(test(&b"1"[..]), Ok((&b""[..], ValidValue::One)));
-    assert_eq!(test(&b"2"[..]), Ok((&b""[..], ValidValue::Two)));
-
-    #[cfg(feature = "verbose-errors")]
-    {
-      assert_eq!(
-        test(&b"3"[..]),
-        Err(
-          Err::Error(
-            Context::List(
-              vec![
-              (&b"3"[..], ErrorKind::Custom(ParseError::InvalidValue(b'3'))),
-              (&b"3"[..], ErrorKind::MapRes)
-              ]
-            )
-          )
-        )
-      );
-    }
-
-    #[cfg(not(feature = "verbose-errors"))]
-    {
-      assert_eq!(test(&b"3"[..]), Err(Err::Error(Context::Code(&b"3"[..], ErrorKind::MapRes))));
-    }
   }
 }

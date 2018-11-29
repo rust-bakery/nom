@@ -5,7 +5,6 @@
 //! Hopefully, the syntax will converge to onely one way in the future,
 //! but the macros system makes no promises.
 //!
-#![allow(unused_imports)]
 
 #[cfg(feature = "alloc")]
 use lib::std::boxed::Box;
@@ -14,7 +13,7 @@ use lib::std::boxed::Box;
 use lib::std::fmt::Debug;
 use internal::*;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use traits::{need_more, need_more_err, AtEof, ParseTo};
+use traits::{need_more, need_more_err, AtEof};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use util::ErrorKind;
@@ -178,9 +177,7 @@ pub fn is_space(chr: u8) -> bool {
 //pub filter!(oct_digit is_oct_digit)
 //pub filter!(alphanumeric is_alphanumeric)
 
-/// Recognizes one or more lowercase and uppercase alphabetic characters.
-/// For ASCII strings: a-zA-Z
-/// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
@@ -189,9 +186,7 @@ where
   alpha1(input)
 }
 
-/// Recognizes zero or more lowercase and uppercase alphabetic characters.
-/// For ASCII strings: a-zA-Z
-/// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes zero or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha0<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
@@ -200,9 +195,7 @@ where
   input.split_at_position(|item| !item.is_alpha())
 }
 
-/// Recognizes one or more lowercase and uppercase alphabetic characters
-/// For ASCII strings: a-zA-Z
-/// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more lowercase and uppercase alphabetic characters: a-zA-Z
 pub fn alpha1<T>(input: T) -> IResult<T, T, u32>
 where
   T: InputTakeAtPosition,
@@ -291,9 +284,7 @@ where
   input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
-/// Recognizes one or more numerical and alphabetic characters
-/// For ASCII strings: 0-9a-zA-Z
-/// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
@@ -302,9 +293,7 @@ where
   alphanumeric1(input)
 }
 
-/// Recognizes zero or more numerical and alphabetic characters.
-/// For ASCII strings: 0-9a-zA-Z
-/// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes zero or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric0<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
@@ -312,9 +301,7 @@ where
 {
   input.split_at_position(|item| !item.is_alphanum())
 }
-/// Recognizes one or more numerical and alphabetic characters.
-/// For ASCII strings: 0-9a-zA-Z
-/// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more numerical and alphabetic characters: 0-9a-zA-Z
 pub fn alphanumeric1<T>(input: T) -> IResult<T, T>
 where
   T: InputTakeAtPosition,
@@ -462,32 +449,6 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
   }
 }
 
-/// Recognizes big endian unsigned 16 bytes integer
-#[inline]
-pub fn be_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
-  if i.len() < 16 {
-    need_more(i, Needed::Size(16))
-  } else {
-    let res = ((i[0] as u128) << 120)
-      + ((i[1] as u128) << 112)
-      + ((i[2] as u128) << 104)
-      + ((i[3] as u128) << 96)
-      + ((i[4] as u128) << 88)
-      + ((i[5] as u128) << 80)
-      + ((i[6] as u128) << 72)
-      + ((i[7] as u128) << 64)
-      + ((i[8] as u128) << 56)
-      + ((i[9] as u128) << 48)
-      + ((i[10] as u128) << 40)
-      + ((i[11] as u128) << 32)
-      + ((i[12] as u128) << 24)
-      + ((i[13] as u128) << 16)
-      + ((i[14] as u128) << 8)
-      + i[15] as u128;
-    Ok((&i[16..], res))
-  }
-}
-
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
 #[inline]
 pub fn be_i8(i: &[u8]) -> IResult<&[u8], i8> {
@@ -521,12 +482,6 @@ pub fn be_i32(i: &[u8]) -> IResult<&[u8], i32> {
 #[inline]
 pub fn be_i64(i: &[u8]) -> IResult<&[u8], i64> {
   map!(i, be_u64, |x| x as i64)
-}
-
-/// Recognizes big endian signed 16 bytes integer
-#[inline]
-pub fn be_i128(i: &[u8]) -> IResult<&[u8], i128> {
-  map!(i, be_u128, |x| x as i128)
 }
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
@@ -584,32 +539,6 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
   }
 }
 
-/// Recognizes little endian unsigned 16 bytes integer
-#[inline]
-pub fn le_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
-  if i.len() < 16 {
-    need_more(i, Needed::Size(16))
-  } else {
-    let res = ((i[15] as u128) << 120)
-      + ((i[14] as u128) << 112)
-      + ((i[13] as u128) << 104)
-      + ((i[12] as u128) << 96)
-      + ((i[11] as u128) << 88)
-      + ((i[10] as u128) << 80)
-      + ((i[9] as u128) << 72)
-      + ((i[8] as u128) << 64)
-      + ((i[7] as u128) << 56)
-      + ((i[6] as u128) << 48)
-      + ((i[5] as u128) << 40)
-      + ((i[4] as u128) << 32)
-      + ((i[3] as u128) << 24)
-      + ((i[2] as u128) << 16)
-      + ((i[1] as u128) << 8)
-      + i[0] as u128;
-    Ok((&i[16..], res))
-  }
-}
-
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
 #[inline]
 pub fn le_i8(i: &[u8]) -> IResult<&[u8], i8> {
@@ -645,12 +574,6 @@ pub fn le_i64(i: &[u8]) -> IResult<&[u8], i64> {
   map!(i, le_u64, |x| x as i64)
 }
 
-/// Recognizes little endian signed 16 bytes integer
-#[inline]
-pub fn le_i128(i: &[u8]) -> IResult<&[u8], i128> {
-  map!(i, le_u128, |x| x as i128)
-}
-
 /// Configurable endianness
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Endianness {
@@ -661,36 +584,28 @@ pub enum Endianness {
 /// if the parameter is nom::Endianness::Big, parse a big endian u16 integer,
 /// otherwise a little endian u16 integer
 #[macro_export]
-macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u16($i) } else { $crate::le_u16($i) } } ););
+macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { be_u16($i) } else { le_u16($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian u32 integer,
 /// otherwise a little endian u32 integer
 #[macro_export]
-macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u32($i) } else { $crate::le_u32($i) } } ););
+macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { be_u32($i) } else { le_u32($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian u64 integer,
 /// otherwise a little endian u64 integer
 #[macro_export]
-macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u64($i) } else { $crate::le_u64($i) } } ););
-/// if the parameter is nom::Endianness::Big, parse a big endian u128 integer,
-/// otherwise a little endian u128 integer
-#[macro_export]
-macro_rules! u128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u128($i) } else { $crate::le_u128($i) } } ););
+macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { be_u64($i) } else { le_u64($i) } } ););
 
 /// if the parameter is nom::Endianness::Big, parse a big endian i16 integer,
 /// otherwise a little endian i16 integer
 #[macro_export]
-macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i16($i) } else { $crate::le_i16($i) } } ););
+macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { be_i16($i) } else { le_i16($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian i32 integer,
 /// otherwise a little endian i32 integer
 #[macro_export]
-macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i32($i) } else { $crate::le_i32($i) } } ););
+macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { be_i32($i) } else { le_i32($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
 /// otherwise a little endian i64 integer
 #[macro_export]
-macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i64($i) } else { $crate::le_i64($i) } } ););
-/// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
-/// otherwise a little endian i64 integer
-#[macro_export]
-macro_rules! i128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i128($i) } else { $crate::le_i128($i) } } ););
+macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { be_i64($i) } else { le_i64($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
@@ -780,17 +695,6 @@ where
   Ok((input.slice(input.input_len()..), input))
 }
 
-/// Return the length of the remaining input.
-#[inline]
-pub fn rest_len<T>(input: T) -> IResult<T, usize>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputLength,
-{
-  let len = input.input_len();
-  Ok((input, len))
-}
-
 /// Return the remaining input, for strings.
 #[inline]
 pub fn rest_s(input: &str) -> IResult<&str, &str> {
@@ -827,60 +731,25 @@ where
 
 /// Recognizes floating point number in a byte string and returns a f32
 #[cfg(feature = "alloc")]
-//pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
-pub fn float<T>(input: T) -> IResult<T, f32, u32>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: Clone + Offset,
-  T: InputIter + InputLength + ParseTo<f32> + AtEof,
-  <T as InputIter>::Item: AsChar,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
-{
+pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
   flat_map!(input, recognize_float, parse_to!(f32))
 }
 
 /// Recognizes floating point number in a string and returns a f32
 #[cfg(feature = "alloc")]
-#[deprecated(since = "4.1.0", note = "Please use `float` instead")]
-pub fn float_s<T>(input: T) -> IResult<T, f32, u32>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: Clone + Offset,
-  T: InputIter + InputLength + ParseTo<f32> + AtEof,
-  <T as InputIter>::Item: AsChar,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
-{
+pub fn float_s(input: &str) -> IResult<&str, f32> {
   flat_map!(input, call!(recognize_float), parse_to!(f32))
 }
 
 /// Recognizes floating point number in a byte string and returns a f64
 #[cfg(feature = "alloc")]
-pub fn double<T>(input: T) -> IResult<T, f64, u32>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: Clone + Offset,
-  T: InputIter + InputLength + ParseTo<f64> + AtEof,
-  <T as InputIter>::Item: AsChar,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
-{
+pub fn double(input: &[u8]) -> IResult<&[u8], f64> {
   flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
 /// Recognizes floating point number in a string and returns a f64
 #[cfg(feature = "alloc")]
-#[deprecated(since = "4.1.0", note = "Please use `double` instead")]
-pub fn double_s<T>(input: T) -> IResult<T, f64, u32>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: Clone + Offset,
-  T: InputIter + InputLength + ParseTo<f64> + AtEof,
-  <T as InputIter>::Item: AsChar,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
-{
+pub fn double_s(input: &str) -> IResult<&str, f64> {
   flat_map!(input, call!(recognize_float), parse_to!(f64))
 }
 
@@ -1294,26 +1163,6 @@ mod tests {
   }
 
   #[test]
-  fn i128_tests() {
-    assert_eq!(
-      be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 0))
-    );
-    assert_eq!(
-      be_i128(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
-    );
-    assert_eq!(
-      be_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], -1))
-    );
-    assert_eq!(
-      be_i128(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
-    );
-  }
-
-  #[test]
   fn le_i8_tests() {
     assert_eq!(le_i8(&[0x00]), Ok((&b""[..], 0)));
     assert_eq!(le_i8(&[0x7f]), Ok((&b""[..], 127)));
@@ -1374,26 +1223,6 @@ mod tests {
     assert_eq!(
       le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
       Ok((&b""[..], -9_223_372_036_854_775_808_i64))
-    );
-  }
-
-  #[test]
-  fn le_i128_tests() {
-    assert_eq!(
-      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 0))
-    );
-    assert_eq!(
-      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
-      Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
-    );
-    assert_eq!(
-      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], -1))
-    );
-    assert_eq!(
-      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
-      Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
     );
   }
 
@@ -1485,12 +1314,6 @@ mod tests {
     let input: &str = "Hello, world!";
     let empty: &str = "";
     assert_eq!(rest(input), Ok((empty, input)));
-  }
-
-  #[test]
-  fn rest_len_on_slices() {
-    let input: &[u8] = &b"Hello, world!"[..];
-    assert_eq!(rest_len(input), Ok((input, input.len())));
   }
 
   #[test]
@@ -1737,17 +1560,9 @@ mod tests {
       assert_eq!(recognize_float(&larger[..]), Ok((";", test)));
 
       assert_eq!(float(larger.as_bytes()), Ok((&b";"[..], expected32)));
-      assert_eq!(float(&larger[..]), Ok((";", expected32)));
-      assert_eq!(float(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected32)));
-      assert_eq!(float(CompleteStr(test)), Ok((CompleteStr(""), expected32)));
+      assert_eq!(float_s(&larger[..]), Ok((";", expected32)));
 
       assert_eq!(double(larger.as_bytes()), Ok((&b";"[..], expected64)));
-      assert_eq!(double(&larger[..]), Ok((";", expected64)));
-      assert_eq!(double(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected64)));
-      assert_eq!(double(CompleteStr(test)), Ok((CompleteStr(""), expected64)));
-
-      //deprecated functions
-      assert_eq!(float_s(&larger[..]), Ok((";", expected32)));
       assert_eq!(double_s(&larger[..]), Ok((";", expected64)));
     }
 

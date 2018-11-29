@@ -21,7 +21,10 @@
 //! }
 //!
 //! fn is_hex_digit(c: char) -> bool {
-//!   c.is_digit(16)
+//!   match c {
+//!     '0'..='9' | 'a'..='f' | 'A'..='F' => true,
+//!     _ => false,
+//!   }
 //! }
 //!
 //! named!(hex_primary<&str, u8>,
@@ -163,7 +166,7 @@
 //! It can have the following values:
 //!
 //! - a correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
-//! - an error `Err(Err::Error(c))` with `c` an enum that contains an error code with its position in the input, and optionally a chain of accumulated errors;
+//! - an error `Err(Err::Error(c))` with `c` an enum that contians an error code with its position in the input, and optionally a chain of accumulated errors;
 //! - an error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
 //! - an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and test another parser
 //!

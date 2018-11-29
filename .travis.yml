@@ -67,13 +67,6 @@ addons:
     sources:
       - kalakris-cmake
 
-cache:
-  directories:
-    - /home/travis/.cargo
-
-before_cache:
-  - rm -rf /home/travis/.cargo/registry
-
 script:
   - eval cargo build --verbose $FEATURES
   - eval cargo test --verbose $FEATURES

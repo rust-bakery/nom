@@ -49,42 +49,36 @@ impl<'a> AsRef<str> for CompleteStr<'a> {
 impl<'a> Deref for CompleteStr<'a> {
   type Target = &'a str;
 
-  #[inline]
   fn deref(&self) -> &Self::Target {
     &self.0
   }
 }
 
 impl<'a> AtEof for CompleteStr<'a> {
-  #[inline]
   fn at_eof(&self) -> bool {
     true
   }
 }
 
 impl<'a> Slice<Range<usize>> for CompleteStr<'a> {
-  #[inline]
   fn slice(&self, range: Range<usize>) -> Self {
     CompleteStr(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeTo<usize>> for CompleteStr<'a> {
-  #[inline]
   fn slice(&self, range: RangeTo<usize>) -> Self {
     CompleteStr(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeFrom<usize>> for CompleteStr<'a> {
-  #[inline]
   fn slice(&self, range: RangeFrom<usize>) -> Self {
     CompleteStr(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeFull> for CompleteStr<'a> {
-  #[inline]
   fn slice(&self, range: RangeFull) -> Self {
     CompleteStr(self.0.slice(range))
   }
@@ -218,42 +212,36 @@ impl<'a, 'b> From<&'b &'a [u8]> for CompleteByteSlice<'a> {
 impl<'a> Deref for CompleteByteSlice<'a> {
   type Target = &'a [u8];
 
-  #[inline]
   fn deref(&self) -> &Self::Target {
     &self.0
   }
 }
 
 impl<'a> AtEof for CompleteByteSlice<'a> {
-  #[inline]
   fn at_eof(&self) -> bool {
     true
   }
 }
 
 impl<'a> Slice<Range<usize>> for CompleteByteSlice<'a> {
-  #[inline]
   fn slice(&self, range: Range<usize>) -> Self {
     CompleteByteSlice(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeTo<usize>> for CompleteByteSlice<'a> {
-  #[inline]
   fn slice(&self, range: RangeTo<usize>) -> Self {
     CompleteByteSlice(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeFrom<usize>> for CompleteByteSlice<'a> {
-  #[inline]
   fn slice(&self, range: RangeFrom<usize>) -> Self {
     CompleteByteSlice(self.0.slice(range))
   }
 }
 
 impl<'a> Slice<RangeFull> for CompleteByteSlice<'a> {
-  #[inline]
   fn slice(&self, range: RangeFull) -> Self {
     CompleteByteSlice(self.0.slice(range))
   }
