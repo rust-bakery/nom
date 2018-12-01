@@ -72,7 +72,7 @@ named!(
 );
 
 #[test]
-fn hash_test() {
+fn json_object() {
   let input =
     r#"{
       "a": 42,
@@ -83,6 +83,23 @@ fn hash_test() {
   expected_map.insert(String::from("a"), JsonValue::Num(42f32));
   expected_map.insert(String::from("b"), JsonValue::Str(String::from("x")));
   let expected = JsonValue::Object(expected_map);
+
+  assert_eq!(expected, value(input.as_bytes()).unwrap().1);
+}
+
+#[test]
+fn json_array() {
+  let input =
+    r#"[
+      42,
+      "x"
+    ]\0"#;
+
+  let expected_vec = vec![
+    JsonValue::Num(42f32),
+    JsonValue::Str(String::from("x"))
+  ];
+  let expected = JsonValue::Array(expected_vec);
 
   assert_eq!(expected, value(input.as_bytes()).unwrap().1);
 }
