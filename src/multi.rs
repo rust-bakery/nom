@@ -583,6 +583,7 @@ macro_rules! count(
       let ret;
       let mut input = $i.clone();
       let mut res   = $crate::lib::std::vec::Vec::new();
+      res.reserve($count as usize);
 
       loop {
         if res.len() == $count {
