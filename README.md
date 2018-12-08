@@ -101,7 +101,7 @@ formats such as JSON, nom can manage it, and provides you with useful tools:
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/parser/http11.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
 - [TOML parser](https://github.com/joelself/tomllib)
 
 ### Programming language parsers
