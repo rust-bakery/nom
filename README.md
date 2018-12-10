@@ -260,6 +260,7 @@ Here is a list of known projects using nom:
   * [DER](https://github.com/rusticata/der-parser)
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
+  * [GTP](https://github.com/fuerstenau/gorrosion-gtp)
 - Language specifications:
   * [BNF](https://github.com/snewt/bnf)
 
