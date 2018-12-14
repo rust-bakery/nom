@@ -572,51 +572,51 @@ macro_rules! many_m_n(
 ///
 #[macro_export]
 macro_rules! many0_count {
-    ($i:expr, $submac:ident!( $($args:tt)* )) => (
-        {
-            use $crate::lib::std::result::Result::*;
-            use $crate::{Err, AtEof};
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::lib::std::result::Result::*;
+      use $crate::{Err, AtEof};
 
-            let ret;
-            let mut count: usize = 0;
-            let mut input = $i.clone();
+      let ret;
+      let mut count: usize = 0;
+      let mut input = $i.clone();
 
-            loop {
-                let input_ = input.clone();
-                match $submac!(input_, $($args)*) {
-                    Ok((i, _)) => {
-                        //  loop trip must always consume (otherwise infinite loops)
-                        if i == input {
-                            if i.at_eof() {
-                                ret = Ok((input, count));
-                            }
-                            else {
-                                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0Count)));
-                            }
-                            break;
-                        }
-                        count += 1;
-                        input = i;
-                    },
-
-                    Err(Err::Error(_)) => {
-                        ret = Ok((input, count));
-                        break;
-                    },
-
-                    Err(e) => {
-                        ret = Err(e);
-                        break;
-                    },
-                }
+      loop {
+        let input_ = input.clone();
+        match $submac!(input_, $($args)*) {
+          Ok((i, _)) => {
+            //  loop trip must always consume (otherwise infinite loops)
+            if i == input {
+              if i.at_eof() {
+                ret = Ok((input, count));
+              }
+              else {
+                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0Count)));
+              }
+              break;
             }
+            count += 1;
+            input = i;
+          },
 
-            ret
+          Err(Err::Error(_)) => {
+            ret = Ok((input, count));
+            break;
+          },
+
+          Err(e) => {
+            ret = Err(e);
+            break;
+          },
         }
-    );
+      }
 
-    ($i:expr, $f:expr) => (
-        many0_count!($i, call!($f));
+      ret
+    }
+  );
+
+  ($i:expr, $f:expr) => (
+    many0_count!($i, call!($f));
     );
 }
 
@@ -636,62 +636,62 @@ macro_rules! many0_count {
 ///
 #[macro_export]
 macro_rules! many1_count {
-    ($i:expr, $submac:ident!( $($args:tt)* )) => (
-        {
-            use $crate::lib::std::result::Result::*;
-            use $crate::Err;
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::lib::std::result::Result::*;
+      use $crate::Err;
 
-            use $crate::InputLength;
-            let i_ = $i.clone();
-            match $submac!(i_, $($args)*) {
-                Err(Err::Error(_)) => Err(Err::Error(
-                    error_position!(i_, $crate::ErrorKind::Many1Count)
-                )),
+      use $crate::InputLength;
+      let i_ = $i.clone();
+      match $submac!(i_, $($args)*) {
+        Err(Err::Error(_)) => Err(Err::Error(
+            error_position!(i_, $crate::ErrorKind::Many1Count)
+            )),
 
-                Err(Err::Failure(_)) => Err(Err::Failure(
-                    error_position!(i_, $crate::ErrorKind::Many1Count)
-                )),
+        Err(Err::Failure(_)) => Err(Err::Failure(
+            error_position!(i_, $crate::ErrorKind::Many1Count)
+            )),
 
-                Err(i) => Err(i),
+        Err(i) => Err(i),
 
-                Ok((i1, _)) => {
-                    let mut count: usize = 1;
-                    let mut input = i1;
-                    let mut error = $crate::lib::std::option::Option::None;
+        Ok((i1, _)) => {
+          let mut count: usize = 1;
+          let mut input = i1;
+          let mut error = $crate::lib::std::option::Option::None;
 
-                    loop {
-                        let input_ = input.clone();
-                        match $submac!(input_, $($args)*) {
-                            Err(Err::Error(_)) => {
-                                break;
-                            },
+          loop {
+            let input_ = input.clone();
+            match $submac!(input_, $($args)*) {
+              Err(Err::Error(_)) => {
+                break;
+              },
 
-                            Err(e) => {
-                                error = $crate::lib::std::option::Option::Some(e);
-                                break;
-                            },
+              Err(e) => {
+                error = $crate::lib::std::option::Option::Some(e);
+                break;
+              },
 
-                            Ok((i, _)) => {
-                                if i.input_len() == input.input_len() {
-                                    break;
-                                }
-                                count += 1;
-                                input = i;
-                            },
-                        }
-                    }
-
-                    match error {
-                        $crate::lib::std::option::Option::Some(e) => Err(e),
-                        $crate::lib::std::option::Option::None => Ok((input, count)),
-                    }
-                },
+              Ok((i, _)) => {
+                if i.input_len() == input.input_len() {
+                  break;
+                }
+                count += 1;
+                input = i;
+              },
             }
-        }
-    );
+          }
 
-    ($i:expr, $f:expr) => (
-        many1_count!($i, call!($f));
+          match error {
+            $crate::lib::std::option::Option::Some(e) => Err(e),
+            $crate::lib::std::option::Option::None => Ok((input, count)),
+          }
+        },
+      }
+    }
+  );
+
+  ($i:expr, $f:expr) => (
+    many1_count!($i, call!($f));
     );
 }
 
