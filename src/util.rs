@@ -508,6 +508,8 @@ pub enum ErrorKind<E = u32> {
   TakeWhileMN,
   ParseTo,
   TooLarge,
+  Many0Count,
+  Many1Count,
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -577,6 +579,8 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::TakeWhileMN               => 69,
     ErrorKind::ParseTo                   => 70,
     ErrorKind::TooLarge                  => 71,
+    ErrorKind::Many0Count                => 72,
+    ErrorKind::Many1Count                => 73,
   }
 }
 
@@ -648,6 +652,8 @@ impl<E> ErrorKind<E> {
       ErrorKind::TakeWhileMN               => "TakeWhileMN",
       ErrorKind::ParseTo                   => "Parse string to the specified type",
       ErrorKind::TooLarge                  => "Needed data size is too large",
+      ErrorKind::Many0Count                => "Count occurrence of >=0 patterns",
+      ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
     }
   }
 
@@ -731,6 +737,8 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
       ErrorKind::TakeWhileMN               => ErrorKind::TakeWhileMN,
       ErrorKind::ParseTo                   => ErrorKind::ParseTo,
       ErrorKind::TooLarge                  => ErrorKind::TooLarge,
+      ErrorKind::Many0Count                => ErrorKind::Many0Count,
+      ErrorKind::Many1Count                => ErrorKind::Many1Count,
     }
   }
 }
