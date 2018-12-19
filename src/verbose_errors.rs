@@ -33,13 +33,13 @@ pub enum Context<I, E = u32> {
   List(Vec<(I, ErrorKind<E>)>),
 }
 
-impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
+impl<I, H: From<I>, F, E: From<F>> Convert<Context<I, F>> for Context<H, E> {
   fn convert(c: Context<I, F>) -> Self {
     match c {
-      Context::Code(i, e) => Context::Code(i, ErrorKind::convert(e)),
+      Context::Code(i, e) => Context::Code(i.into(), ErrorKind::convert(e)),
       Context::List(mut v) => Context::List(
         v.drain(..)
-          .map(|(i, e)| (i, ErrorKind::convert(e)))
+          .map(|(i, e)| (i.into(), ErrorKind::convert(e)))
           .collect(),
       ),
     }

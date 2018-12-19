@@ -119,7 +119,7 @@ where
 
 use util::Convert;
 
-impl<I, F, E: From<F>> Convert<Err<I, F>> for Err<I, E> {
+impl<I, H: From<I>, F, E: From<F>> Convert<Err<I, F>> for Err<H, E> {
   fn convert(e: Err<I, F>) -> Self {
     match e {
       Err::Incomplete(n) => Err::Incomplete(n),
