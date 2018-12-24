@@ -1,5 +1,5 @@
 #[doc(hidden)]
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! regex (
   ($re: ident, $s:expr) => (
     lazy_static! {
@@ -9,7 +9,7 @@ macro_rules! regex (
 );
 
 #[doc(hidden)]
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! regex_bytes (
   ($re: ident, $s:expr) => (
     lazy_static! {
