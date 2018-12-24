@@ -29,7 +29,7 @@
 /// );
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! tuple (
   ($i:expr, $($rest:tt)*) => (
     {
@@ -40,7 +40,7 @@ macro_rules! tuple (
 
 /// Internal parser, do not use directly
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! tuple_parser (
   ($i:expr, ($($parsed:tt),*), $e:path, $($rest:tt)*) => (
     tuple_parser!($i, ($($parsed),*), call!($e), $($rest)*);
@@ -90,7 +90,7 @@ macro_rules! tuple_parser (
 /// `pair!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
 /// pair(X,Y), returns (x,y)
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -113,7 +113,7 @@ macro_rules! pair(
 
 /// `separated_pair!(I -> IResult<I,O>, I -> IResult<I, T>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
 /// separated_pair(X,sep,Y) returns (x,y)
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
@@ -135,7 +135,7 @@ macro_rules! separated_pair(
 
 /// `preceded!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, O>`
 /// preceded(opening, X) returns X
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -165,7 +165,7 @@ macro_rules! preceded(
 
 /// `terminated!(I -> IResult<I,O>, I -> IResult<I,T>) => I -> IResult<I, O>`
 /// terminated(X, closing) returns X
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -211,7 +211,7 @@ macro_rules! terminated(
 /// assert_eq!(bracketed(input), Ok((&b""[..], &b"test"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! delimited(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
     {
@@ -301,7 +301,7 @@ macro_rules! delimited(
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! do_parse (
   (__impl $i:expr, ( $($rest:expr),* )) => (
     $crate::lib::std::result::Result::Ok(($i, ( $($rest),* )))

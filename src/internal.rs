@@ -320,7 +320,7 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
 /// and the position in the input
 /// if "verbose-errors" is not activated,
 /// it default to only the error code
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! error_position(
   ($input: expr, $code:expr) => ({
     $crate::Context::Code($input, $code)
@@ -333,7 +333,7 @@ macro_rules! error_position(
 /// if "verbose-errors" is not activated,
 /// it default to only the error code
 #[allow(unused_variables)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! error_position(
   ($input:expr, $code:expr) => ({
     $crate::Context::Code($input, $code)
@@ -346,7 +346,7 @@ macro_rules! error_position(
 /// the parsing tree.
 /// if "verbose-errors" is not activated,
 /// it default to only the error code
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! error_node_position(
   ($input:expr, $code:expr, $next:expr) => {
     {
@@ -374,7 +374,7 @@ macro_rules! error_node_position(
 /// if "verbose-errors" is not activated,
 /// it default to only the error code
 #[allow(unused_variables)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! error_node_position(
   ($input:expr, $code:expr, $next:expr) => ({
     fn unify_types<T>(_: &T, _: &T) {}

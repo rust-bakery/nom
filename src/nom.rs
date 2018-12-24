@@ -660,36 +660,36 @@ pub enum Endianness {
 
 /// if the parameter is nom::Endianness::Big, parse a big endian u16 integer,
 /// otherwise a little endian u16 integer
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u16($i) } else { $crate::le_u16($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian u32 integer,
 /// otherwise a little endian u32 integer
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u32($i) } else { $crate::le_u32($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian u64 integer,
 /// otherwise a little endian u64 integer
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u64($i) } else { $crate::le_u64($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian u128 integer,
 /// otherwise a little endian u128 integer
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! u128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_u128($i) } else { $crate::le_u128($i) } } ););
 
 /// if the parameter is nom::Endianness::Big, parse a big endian i16 integer,
 /// otherwise a little endian i16 integer
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i16($i) } else { $crate::le_i16($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian i32 integer,
 /// otherwise a little endian i32 integer
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i32($i) } else { $crate::le_i32($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
 /// otherwise a little endian i64 integer
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i64($i) } else { $crate::le_i64($i) } } ););
 /// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
 /// otherwise a little endian i64 integer
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! i128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { $crate::be_i128($i) } else { $crate::le_i128($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number

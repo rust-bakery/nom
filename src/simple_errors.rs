@@ -133,7 +133,7 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 ///     assert_eq!(parser(a), Err(Err::Error(Context::Code(a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
@@ -172,7 +172,7 @@ macro_rules! fix_error (
 /// combines a parser R -> IResult<R,S> and
 /// a parser S -> IResult<S,T> to return another
 /// parser R -> IResult<R,T>
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));

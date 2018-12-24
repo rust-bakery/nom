@@ -16,7 +16,7 @@
 ///  assert_eq!(r, Ok((&b"efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! tag (
   ($i:expr, $tag: expr) => (
     {
@@ -57,7 +57,7 @@ macro_rules! tag (
 ///  assert_eq!(r, Ok((&b"efgh"[..], &b"aBCd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! tag_no_case (
   ($i:expr, $tag: expr) => (
     {
@@ -96,7 +96,7 @@ macro_rules! tag_no_case (
 ///  assert_eq!(r, Ok((&b"\nijkl"[..], &b"abcdefgh"[..])));
 ///  # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! is_not (
   ($input:expr, $arr:expr) => (
     {
@@ -125,7 +125,7 @@ macro_rules! is_not (
 ///  assert_eq!(r2, Ok((&b"efgh"[..], &b"dcba"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! is_a (
   ($input:expr, $arr:expr) => (
     {
@@ -156,7 +156,7 @@ macro_rules! is_a (
 ///  assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], &b"ab\\\"cd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! escaped (
   // Internal parser, do not use directly
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
@@ -289,7 +289,7 @@ macro_rules! escaped (
 ///  assert_eq!(transform(&b"ab\\\"cd"[..]), Ok((&b""[..], String::from("ab\"cd"))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! escaped_transform (
   // Internal parser, do not use directly
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
@@ -417,7 +417,7 @@ macro_rules! escaped_transform (
 ///  assert_eq!(r, Ok((&b"\nefgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -450,7 +450,7 @@ macro_rules! take_while (
 ///  assert_eq!(r, Err(Err::Error(error_position!(&b"\nefgh"[..], ErrorKind::TakeWhile1))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -483,7 +483,7 @@ macro_rules! take_while1 (
 ///  assert_eq!(r, Ok((&b"\nefgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_while_m_n (
   ($input:expr, $m:expr, $n:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -560,7 +560,7 @@ macro_rules! take_while_m_n (
 ///  assert_eq!(r2, Ok((&b":abcdefgh"[..], &b""[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -593,7 +593,7 @@ macro_rules! take_till (
 ///  assert_eq!(r2, Err(Err::Error(error_position!(&b":abcdefgh"[..], ErrorKind::TakeTill1))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_till1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -622,7 +622,7 @@ macro_rules! take_till1 (
 ///  assert_eq!(take5(&a[..]), Ok((&b"fgh"[..], &b"abcde"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take (
   ($i:expr, $count:expr) => (
     {
@@ -659,7 +659,7 @@ macro_rules! take (
 ///  assert_eq!(take5(&a[..]), Ok((&b"fgh"[..], "abcde")));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_str (
  ( $i:expr, $size:expr ) => (
     {
@@ -685,7 +685,7 @@ macro_rules! take_str (
 ///  assert_eq!(r, Ok((&b" efgh"[..], &b"abcd "[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_until_and_consume (
   ($i:expr, $substr:expr) => (
     {
@@ -726,7 +726,7 @@ macro_rules! take_until_and_consume (
 ///  assert_eq!(r, Ok((&b" efgh"[..], &b"abcd "[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_until_and_consume1 (
   ($i:expr, $substr:expr) => (
     {
@@ -771,7 +771,7 @@ macro_rules! take_until_and_consume1 (
 ///  assert_eq!(r, Ok((&b"foo efgh"[..], &b"abcd "[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_until (
   ($i:expr, $substr:expr) => (
     {
@@ -814,7 +814,7 @@ macro_rules! take_until (
 ///  assert_eq!(r, Ok((&b"foo efgh"[..], &b"abcd "[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_until1 (
   ($i:expr, $substr:expr) => (
     {
@@ -858,7 +858,7 @@ macro_rules! take_until1 (
 ///  assert_eq!(r, Ok((&b"efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_until_either_and_consume (
   ($input:expr, $arr:expr) => (
     {
@@ -917,7 +917,7 @@ macro_rules! take_until_either_and_consume (
 ///  assert_eq!(r, Ok((&b"efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_until_either_and_consume1 (
   ($input:expr, $arr:expr) => (
     {
@@ -978,7 +978,7 @@ macro_rules! take_until_either_and_consume1 (
 ///  assert_eq!(r, Ok((&b"2efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_until_either (
   ($input:expr, $arr:expr) => (
     {
@@ -1021,7 +1021,7 @@ macro_rules! take_until_either (
 ///  assert_eq!(r, Ok((&b"2efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_until_either1 (
   ($input:expr, $arr:expr) => (
     {
@@ -1063,7 +1063,7 @@ macro_rules! take_until_either1 (
 ///  assert_eq!(r, Ok((&b"fgh"[..], &b"abcde"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! length_bytes(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {

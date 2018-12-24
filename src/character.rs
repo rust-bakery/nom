@@ -18,7 +18,7 @@ use traits::{need_more, AtEof};
 /// assert_eq!(a_or_b("汉jiosfe"), Ok(("jiosfe", '汉')));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! one_of (
   ($i:expr, $inp: expr) => (
     {
@@ -57,7 +57,7 @@ macro_rules! one_of (
 /// assert_eq!(err_on_single_quote(b"'jiosfe"), Err(Err::Error(error_position!(&b"'jiosfe"[..], ErrorKind::NoneOf))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! none_of (
   ($i:expr, $inp: expr) => (
     {
@@ -95,7 +95,7 @@ macro_rules! none_of (
 /// assert_eq!(match_letter_a(b"123cdef"), Err(Err::Error(error_position!(&b"123cdef"[..], ErrorKind::Char))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! char (
   ($i:expr, $c: expr) => (
     {

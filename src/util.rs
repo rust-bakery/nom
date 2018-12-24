@@ -87,6 +87,22 @@ impl HexDisplay for str {
   }
 }
 
+#[macro_export]
+macro_rules! nom_line (
+  () => (line!());
+);
+
+#[macro_export]
+macro_rules! nom_println (
+  ($($args:tt)*) => (println!($($args)*));
+);
+
+#[macro_export]
+macro_rules! nom_stringify (
+  ($($args:tt)*) => (stringify!($($args)*));
+);
+
+
 /// Prints a message if the parser fails
 ///
 /// The message prints the `Error` or `Incomplete`
@@ -104,15 +120,15 @@ impl HexDisplay for str {
 ///    f(a);
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! dbg (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      let l = line!();
+      let l = nom_line!();
       match $submac!($i, $($args)*) {
         Err(e) => {
-          println!("Err({:?}) at l.{} by ' {} '", e, l, stringify!($submac!($($args)*)));
+          nom_println!("Err({:?}) at l.{} by ' {} '", e, l, nom_stringify!($submac!($($args)*)));
           Err(e)
         },
         a => a,
@@ -144,15 +160,15 @@ macro_rules! dbg (
 ///    // 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
 ///    f(a);
 /// # }
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! dbg_dmp (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::HexDisplay;
-      let l = line!();
+      let l = nom_line!();
       match $submac!($i, $($args)*) {
         Err(e) => {
-          println!("Error({:?}) at l.{} by ' {} '\n{}", e, l, stringify!($submac!($($args)*)), $i.to_hex(8));
+          nom_println!("Error({:?}) at l.{} by ' {} '\n{}", e, l, nom_stringify!($submac!($($args)*)), $i.to_hex(8));
           Err(e)
         },
         a => a,
