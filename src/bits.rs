@@ -159,7 +159,7 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context};
+      use $crate::{Err,Needed,Context,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -171,9 +171,10 @@ macro_rules! bytes_impl (
 
       let sub = $submac!(inp, $($args)*);
       let res = match sub {
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          Err(Err::Incomplete(Needed::Size(i * 8)))
-        },
+        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
+          Some(v) => Err::Incomplete(Needed::Size(v)),
+          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
+        }),
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Ok((i, o)) => {
           Ok(((i, 0), o))
@@ -199,9 +200,10 @@ macro_rules! bytes_impl (
           Err(Err::Error(err))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          Err(Err::Incomplete(Needed::Size(i * 8)))
-        },
+        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
+          Some(v) => Err::Incomplete(Needed::Size(v)),
+          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
+        }),
         Ok((i, o)) => {
           Ok(((i, 0), o))
         }
@@ -219,7 +221,7 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context};
+      use $crate::{Err,Needed,Context,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -231,9 +233,10 @@ macro_rules! bytes_impl (
 
       let sub = $submac!(inp, $($args)*);
       let res = match sub {
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          Err(Err::Incomplete(Needed::Size(i * 8)))
-        },
+        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
+          Some(v) => Err::Incomplete(Needed::Size(v)),
+          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
+        }),
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Ok((i, o)) => {
           Ok(((i, 0), o))
