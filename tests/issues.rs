@@ -4,7 +4,6 @@
 
 #[macro_use]
 extern crate nom;
-extern crate regex;
 
 use nom::{space, Err, IResult, Needed, ErrorKind, le_u64, is_digit};
 use nom::types::{CompleteStr, CompleteByteSlice};
