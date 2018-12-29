@@ -392,6 +392,7 @@ pub mod lib {
     }
   }
 
+  #[cfg(feature = "regexp")]
   pub use regex;
 }
 
