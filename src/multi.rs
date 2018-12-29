@@ -3,7 +3,7 @@
 /// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// separated_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
@@ -91,7 +91,7 @@ macro_rules! separated_list(
 
 /// `separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// separated_nonempty_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
@@ -178,7 +178,7 @@ macro_rules! separated_nonempty_list(
 /// `separated_list_complete!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// This is equivalent to the `separated_list!` combinator, except that it will return `Error`
 /// when either the separator or element subparser returns `Incomplete`.
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_list_complete {
     ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => ({
         separated_list!($i, complete!($sep!($($args)*)), complete!($submac!($($args2)*)))
@@ -198,7 +198,7 @@ macro_rules! separated_list_complete {
 /// `separated_nonempty_list_complete!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// This is equivalent to the `separated_nonempty_list!` combinator, except that it will return
 /// `Error` when either the separator or element subparser returns `Incomplete`.
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_nonempty_list_complete {
     ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => ({
         separated_nonempty_list!($i, complete!($sep!($($args)*)), complete!($submac!($($args2)*)))
@@ -238,7 +238,7 @@ macro_rules! separated_nonempty_list_complete {
 /// ```
 ///
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -314,7 +314,7 @@ macro_rules! many0(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -395,7 +395,7 @@ macro_rules! many1(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! many_till(
   (__impl $i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -483,7 +483,7 @@ macro_rules! many_till(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -715,7 +715,7 @@ macro_rules! many1_count {
 /// ```
 ///
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
@@ -783,7 +783,7 @@ macro_rules! count(
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
@@ -831,7 +831,7 @@ macro_rules! count_fixed (
 
 /// `length_count!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// gets a number from the first parser, then applies the second parser that many times
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! length_count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -867,7 +867,7 @@ macro_rules! length_count(
 ///
 /// `length_data` gets a number from the first parser, than takes a subslice of the input
 /// of that size, and returns that subslice
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! length_data(
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use $crate::lib::std::result::Result::*;
@@ -894,7 +894,7 @@ macro_rules! length_data(
 /// Gets a number from the first parser, takes a subslice of the input of that size,
 /// then applies the second parser on that subslice. If the second parser returns
 /// `Incomplete`, `length_value` will return an error
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! length_value(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -954,7 +954,7 @@ macro_rules! length_value(
 /// # }
 /// ```
 /// 0 or more
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
@@ -1025,7 +1025,7 @@ macro_rules! fold_many0(
 ///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
@@ -1117,7 +1117,7 @@ macro_rules! fold_many1(
 ///  assert_eq!(multi(&c[..]),Ok((&b"abcdefgh"[..], res2)));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fold_many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {

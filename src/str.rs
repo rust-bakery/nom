@@ -17,7 +17,7 @@
 ///  assert_eq!(r,Ok(("efgh", "abcd")));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `tag` instead")]
 macro_rules! tag_s (
   ($i:expr, $tag: expr) => (
@@ -47,7 +47,7 @@ macro_rules! tag_s (
 /// # #[cfg(not(feature = "alloc"))]
 /// # fn main() {}
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `tag_no_case` instead")]
 macro_rules! tag_no_case_s (
   ($i:expr, $tag: expr) => (
@@ -75,7 +75,7 @@ macro_rules! tag_no_case_s (
 ///  assert_eq!(take5(b),Ok(("", "12345")));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `take` instead")]
 macro_rules! take_s (
   ($i:expr, $count:expr) => (
@@ -99,7 +99,7 @@ macro_rules! take_s (
 ///  assert_eq!(r,Ok(("\nijkl", "abcdefgh")));
 ///  # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `is_not` instead")]
 macro_rules! is_not_s (
   ($input:expr, $arr:expr) => (
@@ -124,7 +124,7 @@ macro_rules! is_not_s (
 ///  assert_eq!(r2,Ok(("efgh", "dcba")));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `is_a` instead")]
 macro_rules! is_a_s (
   ($input:expr, $arr:expr) => (
@@ -149,7 +149,7 @@ macro_rules! is_a_s (
 ///  assert_eq!(r,Ok(("\nefgh", "abcd")));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `take_while` instead")]
 macro_rules! take_while_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -178,7 +178,7 @@ macro_rules! take_while_s (
 ///  assert_eq!(r, Ok(("\nefgh", "abcd")));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `take_while1` instead")]
 macro_rules! take_while1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -193,7 +193,7 @@ macro_rules! take_while1_s (
 /// returns the longest list of characters until the provided function succeeds
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `take_till` instead")]
 macro_rules! take_till_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -210,7 +210,7 @@ macro_rules! take_till_s (
 /// returns the longest non empty list of characters until the provided function succeeds
 ///
 /// The argument is either a function `char -> bool` or a macro returning a `bool
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `take_till1` instead")]
 macro_rules! take_till1_s (
   ($input:expr, $submac:ident!( $($args:tt)* )) => (
@@ -225,7 +225,7 @@ macro_rules! take_till1_s (
 
 /// `take_until_and_consume_s!(&str) => &str -> IResult<&str, &str>`
 /// generates a parser consuming all chars until the specified string is found and consumes it
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `take_until_and_consume` instead")]
 macro_rules! take_until_and_consume_s (
   ($input:expr, $substr:expr) => (
@@ -237,7 +237,7 @@ macro_rules! take_until_and_consume_s (
 
 /// `take_until_s!(&str) => &str -> IResult<&str, &str>`
 /// generates a parser consuming all chars until the specified string is found and leaves it in the remaining input
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[deprecated(since = "4.0.0", note = "Please use `take_until` instead")]
 macro_rules! take_until_s (
   ($input:expr, $substr:expr) => (

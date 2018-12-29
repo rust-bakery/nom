@@ -87,6 +87,22 @@ impl HexDisplay for str {
   }
 }
 
+#[macro_export]
+macro_rules! nom_line (
+  () => (line!());
+);
+
+#[macro_export]
+macro_rules! nom_println (
+  ($($args:tt)*) => (println!($($args)*));
+);
+
+#[macro_export]
+macro_rules! nom_stringify (
+  ($($args:tt)*) => (stringify!($($args)*));
+);
+
+
 /// Prints a message if the parser fails
 ///
 /// The message prints the `Error` or `Incomplete`
@@ -104,15 +120,15 @@ impl HexDisplay for str {
 ///    f(a);
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! dbg (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      let l = line!();
+      let l = nom_line!();
       match $submac!($i, $($args)*) {
         Err(e) => {
-          println!("Err({:?}) at l.{} by ' {} '", e, l, stringify!($submac!($($args)*)));
+          nom_println!("Err({:?}) at l.{} by ' {} '", e, l, nom_stringify!($submac!($($args)*)));
           Err(e)
         },
         a => a,
@@ -144,15 +160,15 @@ macro_rules! dbg (
 ///    // 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
 ///    f(a);
 /// # }
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! dbg_dmp (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::HexDisplay;
-      let l = line!();
+      let l = nom_line!();
       match $submac!($i, $($args)*) {
         Err(e) => {
-          println!("Error({:?}) at l.{} by ' {} '\n{}", e, l, stringify!($submac!($($args)*)), $i.to_hex(8));
+          nom_println!("Error({:?}) at l.{} by ' {} '\n{}", e, l, nom_stringify!($submac!($($args)*)), $i.to_hex(8));
           Err(e)
         },
         a => a,
@@ -493,6 +509,7 @@ pub enum ErrorKind<E = u32> {
   ParseTo,
   Many0Count,
   Many1Count,
+  TooLarge,
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -563,6 +580,7 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
     ErrorKind::ParseTo                   => 70,
     ErrorKind::Many0Count                => 71,
     ErrorKind::Many1Count                => 72,
+    ErrorKind::TooLarge                  => 73,
   }
 }
 
@@ -635,6 +653,7 @@ impl<E> ErrorKind<E> {
       ErrorKind::ParseTo                   => "Parse string to the specified type",
       ErrorKind::Many0Count                => "Count occurrence of >=0 patterns",
       ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
+      ErrorKind::TooLarge                  => "Needed data size is too large",
     }
   }
 
@@ -719,6 +738,7 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
       ErrorKind::ParseTo                   => ErrorKind::ParseTo,
       ErrorKind::Many0Count                => ErrorKind::Many0Count,
       ErrorKind::Many1Count                => ErrorKind::Many1Count,
+      ErrorKind::TooLarge                  => ErrorKind::TooLarge,
     }
   }
 }

@@ -4,9 +4,8 @@
 
 #[macro_use]
 extern crate nom;
-extern crate regex;
 
-use nom::{space, Err, IResult, Needed, le_u64, is_digit};
+use nom::{space, Err, IResult, Needed, ErrorKind, le_u64, is_digit};
 use nom::types::{CompleteStr, CompleteByteSlice};
 
 #[allow(dead_code)]
@@ -327,3 +326,9 @@ mod issue_647 {
 }
 
 named!(issue_775, take_till1!(|_| true));
+
+#[test]
+fn issue_848_overflow_incomplete_bits_to_bytes() {
+  named!(parser<&[u8], &[u8]>, bits!(bytes!(take!(0x2000000000000000))));
+  assert_eq!(parser(&b""[..]), Err(Err::Failure(error_position!(&b""[..], ErrorKind::TooLarge))));
+}

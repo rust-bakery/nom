@@ -65,7 +65,7 @@
 #[allow(unused_variables)]
 
 /// Wraps a parser in a closure
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! closure (
     ($ty:ty, $submac:ident!( $($args:tt)* )) => (
         |i: $ty| { $submac!(i, $($args)*) }
@@ -94,7 +94,7 @@ macro_rules! closure (
 /// // prefix them with 'pub(crate)' to make the functions public within the crate
 /// named!(pub(crate) my_function,               tag!("abcd"));
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! named (
     (#$($args:tt)*) => (
         named_attr!(#$($args)*);
@@ -209,7 +209,7 @@ macro_rules! named (
 /// );
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! named_args {
     (pub $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
         pub fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
@@ -289,7 +289,7 @@ macro_rules! named_args {
 /// // Multiple attributes can be passed if required
 /// named!(#[doc = "My Func"] #[inline(always)], pub my_function, tag!("abcd"));
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! named_attr (
     ($(#[$attr:meta])*, $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
@@ -395,7 +395,7 @@ macro_rules! named_attr (
 ///   named!(parser, call!(take_wrapper, 2));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! call (
   ($i:expr, $fun:expr) => ( $fun( $i ) );
   ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
@@ -413,7 +413,7 @@ macro_rules! call (
 ///   named!(parser, apply!(take_wrapper, 2));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! apply (
   ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
 );
@@ -466,7 +466,7 @@ macro_rules! apply (
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -537,7 +537,7 @@ macro_rules! return_error (
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! add_return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -578,7 +578,7 @@ macro_rules! add_return_error (
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! complete (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -628,7 +628,7 @@ macro_rules! complete (
 /// assert_eq!(r1, Err(Err::Error(error_position!(&[2,3,4,5][..], ErrorKind::ExprOpt))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! try_parse (
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use $crate::lib::std::result::Result::*;
@@ -645,7 +645,7 @@ macro_rules! try_parse (
 
 /// `map!(I -> IResult<I,O>, O -> P) => I -> IResult<I, P>`
 /// maps a function on the result of a parser
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! map(
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
@@ -669,7 +669,7 @@ macro_rules! map(
 
 /// `map_res!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P>`
 /// maps a function returning a Result on the output of a parser
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! map_res (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -708,7 +708,7 @@ macro_rules! map_res (
 
 /// `map_res_err!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P>`
 /// maps a function returning a Result on the output of a parser, preserving the returned error
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! map_res_err (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -747,7 +747,7 @@ macro_rules! map_res_err (
 
 /// `map_opt!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! map_opt (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -788,7 +788,7 @@ macro_rules! map_opt (
 /// input to the specified type
 ///
 /// this will completely consume the input
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! parse_to (
   ($i:expr, $t:ty ) => (
     {
@@ -819,7 +819,7 @@ macro_rules! parse_to (
 ///  named!(check<u32>, verify!(nom::be_u32, |val:u32| val >= 0 && val < 3));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! verify (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -871,7 +871,7 @@ macro_rules! verify (
 ///  assert_eq!(r2, Ok((&b" aaa"[..], 42)));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! value (
   ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -900,7 +900,7 @@ macro_rules! value (
 /// evaluate an expression that returns a Result<T,E> and returns a Ok((I,T)) if Ok
 ///
 /// See expr_opt for an example
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! expr_res (
   ($i:expr, $e:expr) => (
     {
@@ -945,7 +945,7 @@ macro_rules! expr_res (
 /// assert_eq!(r1, Err(Err::Error(error_position!(&[2,3,4,5][..], ErrorKind::ExprOpt))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
@@ -985,7 +985,7 @@ macro_rules! expr_opt (
 ///  assert_eq!(o(&b[..]), Ok((&b"bcdefg"[..], None)));
 ///  # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -1025,7 +1025,7 @@ macro_rules! opt(
 ///  assert_eq!(o(&b[..]), Ok((&b"bcdefg"[..], Err(error_position!(&b[..], ErrorKind::Tag))));
 ///  # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! opt_res (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -1078,7 +1078,7 @@ macro_rules! opt_res (
 ///  # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! cond_with_error(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -1132,7 +1132,7 @@ macro_rules! cond_with_error(
 ///  # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! cond(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -1190,7 +1190,7 @@ macro_rules! cond(
 ///  # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -1231,7 +1231,7 @@ macro_rules! cond_reduce(
 ///  assert_eq!(r, Ok((&b"abcdefgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! peek(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -1272,7 +1272,7 @@ macro_rules! peek(
 /// assert_eq!(r2, Err(Err::Error(error_position!(&b"e"[..], ErrorKind::Not))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -1317,7 +1317,7 @@ macro_rules! not(
 ///  assert_eq!(r, Ok((&b"efgh"[..], &b"abcd"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! tap (
   ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr) => (
     {
@@ -1349,7 +1349,7 @@ macro_rules! tap (
 /// will succeed
 ///
 /// TODO: example
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! eof (
   ($i:expr,) => (
     {
@@ -1374,7 +1374,7 @@ macro_rules! eof (
 /// more refills (like what happens when buffering big files).
 ///
 /// TODO: example
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! exact (
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
       terminated!($i, $submac!( $($args)*), eof!())
@@ -1395,7 +1395,7 @@ macro_rules! exact (
 ///  assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..])));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {

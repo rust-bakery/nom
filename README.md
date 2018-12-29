@@ -96,7 +96,7 @@ formats such as JSON, nom can manage it, and provides you with useful tools:
 
 - fast case insensitive comparison
 - recognizers for escaped strings
-- regular expressions can be embedded in nom parsers to represent complex character patterns succintly
+- regular expressions can be embedded in nom parsers to represent complex character patterns succinctly
 - special care has been given to managing non ASCII characters properly
 
 Example projects:

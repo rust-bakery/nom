@@ -391,6 +391,8 @@ pub mod lib {
       pub use std::prelude as v1;
     }
   }
+
+  pub use regex;
 }
 
 pub use self::traits::*;

@@ -33,13 +33,13 @@ pub enum Context<I, E = u32> {
   List(Vec<(I, ErrorKind<E>)>),
 }
 
-impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
+impl<I, H: From<I>, F, E: From<F>> Convert<Context<I, F>> for Context<H, E> {
   fn convert(c: Context<I, F>) -> Self {
     match c {
-      Context::Code(i, e) => Context::Code(i, ErrorKind::convert(e)),
+      Context::Code(i, e) => Context::Code(i.into(), ErrorKind::convert(e)),
       Context::List(mut v) => Context::List(
         v.drain(..)
-          .map(|(i, e)| (i, ErrorKind::convert(e)))
+          .map(|(i, e)| (i.into(), ErrorKind::convert(e)))
           .collect(),
       ),
     }
@@ -169,7 +169,7 @@ impl<P:fmt::Debug,E:fmt::Debug> fmt::Display for Err<P,E> {
 ///     );
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
@@ -227,7 +227,7 @@ macro_rules! fix_error (
 /// combines a parser R -> IResult<R,S> and
 /// a parser S -> IResult<S,T> to return another
 /// parser R -> IResult<R,T>
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
