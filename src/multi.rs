@@ -1820,4 +1820,58 @@ mod tests {
     assert_eq!(multi(e), Err(Err::Incomplete(Needed::Size(4))));
   }
 
+  #[test]
+  fn many0_count() {
+    named!(
+      count0_nums(&[u8]) -> usize,
+      many0_count!(pair!(digit, tag!(",")))
+    );
+
+    assert_eq!(
+      count0_nums(&b"123,junk"[..]),
+      Ok((&b"junk"[..], 1))
+    );
+
+    assert_eq!(
+      count0_nums(&b"123,45,junk"[..]),
+      Ok((&b"junk"[..], 2))
+    );
+
+    assert_eq!(
+      count0_nums(&b"1,2,3,4,5,6,7,8,9,0,junk"[..]),
+      Ok((&b"junk"[..], 10))
+    );
+
+    assert_eq!(
+      count0_nums(&b"hello"[..]),
+      Ok((&b"hello"[..], 0))
+    );
+  }
+
+  #[test]
+  fn many1_count() {
+    named!(
+      count1_nums(&[u8]) -> usize,
+      many1_count!(pair!(digit, tag!(",")))
+    );
+
+    assert_eq!(
+      count1_nums(&b"123,45,junk"[..]),
+      Ok((&b"junk"[..], 2))
+    );
+
+    assert_eq!(
+      count1_nums(&b"1,2,3,4,5,6,7,8,9,0,junk"[..]),
+      Ok((&b"junk"[..], 10))
+    );
+
+    assert_eq!(
+      count1_nums(&b"hello"[..]),
+      Err(Err::Error(error_position!(
+        &b"hello"[..],
+        ErrorKind::Many1Count
+      )))
+    );
+  }
+
 }
