@@ -107,6 +107,7 @@
 /// //prefix them with 'pub' to make the methods public
 /// method!(pub my_function<Parser<'a>,&[u8], &[u8]>, tag!("abcd"));
 /// ```
+#[deprecated(since = "4.2.0", note = "Please use the nom-methods crate instead")]
 #[macro_export(local_inner_macros)]
 macro_rules! method (
   // Non-public immutable self
@@ -256,6 +257,7 @@ macro_rules! method (
 );
 
 /// Used to called methods then move self back into self
+#[deprecated(since = "4.2.0", note = "Please use the nom-methods crate instead")]
 #[macro_export(local_inner_macros)]
 macro_rules! call_m (
   ($i:expr, $self_:ident.$method:ident) => (
@@ -278,6 +280,7 @@ macro_rules! call_m (
 /// `apply_m!(self.my_function, arg1, arg2, ...)` becomes `self.my_function(input, arg1, arg2, ...)`
 ///
 /// Supports up to 6 arguments
+#[deprecated(since = "4.2.0", note = "Please use the nom-methods crate instead")]
 #[macro_export(local_inner_macros)]
 macro_rules! apply_m (
   ($i:expr, $self_:ident.$method:ident, $($args:expr),* ) => ( { let (tmp, res) = $self_.$method( $i, $($args),* ); $self_ = tmp; res } );
