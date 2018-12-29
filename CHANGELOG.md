@@ -8,6 +8,22 @@
 
 ### Fixed
 
+## 4.2.0 - 2018-12-29
+
+### Changed
+
+- macro import in edition 2018 code should work without importing internal macros now
+- the regex parsers do not require the calling code to have imported the regex crate anymore
+
+### Added
+
+- `many0_count` abd `many1_count` to count applications of a parser instead of
+accumulating its results in a `Vec`
+
+### Fixed
+
+- overflow in the byte wrapper for bit level parsers
+
 ## 4.1.1 - 2018-10-14
 
 ### Fixed
