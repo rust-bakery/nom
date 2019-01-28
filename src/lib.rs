@@ -363,7 +363,7 @@ extern crate alloc;
 extern crate lazy_static;
 extern crate memchr;
 #[cfg(feature = "regexp")]
-extern crate regex;
+pub extern crate regex;
 #[cfg(nightly)]
 extern crate test;
 
