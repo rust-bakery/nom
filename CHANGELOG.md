@@ -8,12 +8,25 @@
 
 ### Fixed
 
-## 4.2.0 - 2018-12-29
+## 4.2.0 - 2019-01-29
+
+### Thanks
+
+- @JoshMcguigan for unit test fixes
+- @oza for documentation fixes
+- @wackywendell for better error conversion
+- @Zebradil for documentation fixes
+- @tsraom for new combinators
+- @hcpl for minimum Rust version tests
+- @KellerFuchs for removing some unsafe uses in float parsing
 
 ### Changed
 
 - macro import in edition 2018 code should work without importing internal macros now
 - the regex parsers do not require the calling code to have imported the regex crate anymore
+- error conversions are more ergonomic
+- method combinators are now deprecated. They might be moved to a separate crate
+- nom now specifies Rust 1.24.1 as minimum version. This was already the case before, now it is made explicit
 
 ### Added
 
@@ -23,6 +36,7 @@ accumulating its results in a `Vec`
 ### Fixed
 
 - overflow in the byte wrapper for bit level parsers
+- `f64` parsing does not use `transmute` anymore
 
 ## 4.1.1 - 2018-10-14
 
@@ -962,7 +976,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/4.1.1...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/4.2.0...HEAD
+* [4.2.0]: https://github.com/Geal/nom/compare/4.1.1...4.2.0
 * [4.1.1]: https://github.com/Geal/nom/compare/4.1.0...4.1.1
 * [4.1.0]: https://github.com/Geal/nom/compare/4.0.0...4.1.0
 * [4.0.0]: https://github.com/Geal/nom/compare/3.2.1...4.0.0

@@ -190,7 +190,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "^4.1"
+nom = "^4.2"
 ```
 
 Then include it in your code like this:
@@ -215,7 +215,7 @@ You can activate those features like this:
 
 ```toml
 [dependencies.nom]
-version = "^4.1"
+version = "^4.2"
 features = ["regexp"]
 ```
 
