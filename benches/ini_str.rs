@@ -1,8 +1,9 @@
-#![feature(test)]
-extern crate test;
-
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate criterion;
+
+use criterion::*;
 
 use nom::IResult;
 use nom::types::CompleteStr;
@@ -251,8 +252,7 @@ key4 = value4
   assert_eq!(res, Ok((CompleteStr(""), expected_h)));
 }
 
-#[bench]
-fn bench_ini_str(b: &mut test::Bencher) {
+fn bench_ini_str(c: &mut Criterion) {
   let s = "[owner]
 name=John Doe
 organization=Acme Widgets Inc.
@@ -263,6 +263,16 @@ port=143
 file=payroll.dat
 ";
 
-  b.iter(|| categories(CompleteStr(s)).unwrap());
-  b.bytes = s.len() as u64;
+  c.bench(
+    "bench ini str",
+    Benchmark::new(
+      "parse",
+      move |b| {
+        b.iter(|| categories(CompleteStr(s)).unwrap());
+      },
+    ).throughput(Throughput::Bytes(s.len() as u32)),
+  );
 }
+
+criterion_group!(benches, bench_ini_str);
+criterion_main!(benches);

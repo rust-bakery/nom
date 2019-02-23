@@ -1,13 +1,11 @@
-//#![feature(trace_macros)]
-#![feature(test)]
-extern crate test;
-
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate criterion;
 
+use criterion::Criterion;
 use nom::{alphanumeric, recognize_float};
 
-use test::Bencher;
 
 use std::str;
 use std::collections::HashMap;
@@ -82,8 +80,7 @@ named!(
     ))
 );
 
-#[bench]
-fn json_bench(b: &mut Bencher) {
+fn json_bench(c: &mut Criterion) {
   let data = &b"  { \"a\"\t: 42,
   \"b\": [ \"x\", \"y\", 12 ] ,
   \"c\": { \"hello\" : \"world\"
@@ -91,29 +88,38 @@ fn json_bench(b: &mut Bencher) {
   }  \0";
 
   //println!("data:\n{:?}", value(&data[..]));
-  b.iter(|| value(&data[..]).unwrap());
+  c.bench_function("json", move |b| {
+    b.iter(|| value(&data[..]).unwrap());
+  });
 }
 
-#[bench]
-fn recognize_float_bytes(b: &mut Bencher) {
+fn recognize_float_bytes(c: &mut Criterion) {
   use nom::recognize_float;
-  b.iter(|| recognize_float(&b"-1.234E-12"[..]));
+  c.bench_function("recognize float bytes", |b| {
+    b.iter(|| recognize_float(&b"-1.234E-12"[..]));
+  });
 }
 
-#[bench]
-fn recognize_float_str(b: &mut Bencher) {
+fn recognize_float_str(c: &mut Criterion) {
   use nom::recognize_float;
-  b.iter(|| recognize_float("-1.234E-12"));
+  c.bench_function("recognize float str", |b| {
+    b.iter(|| recognize_float("-1.234E-12"));
+  });
 }
 
-#[bench]
-fn float_bytes(b: &mut Bencher) {
+fn float_bytes(c: &mut Criterion) {
   use nom::float;
-  b.iter(|| float(&b"-1.234E-12"[..]));
+  c.bench_function("float bytes", |b| {
+    b.iter(|| float(&b"-1.234E-12"[..]));
+  });
 }
 
-#[bench]
-fn float_str(b: &mut Bencher) {
+fn float_str(c: &mut Criterion) {
   use nom::float_s;
-  b.iter(|| float_s("-1.234E-12"));
+  c.bench_function("float str", |b| {
+    b.iter(|| float_s("-1.234E-12"));
+  });
 }
+
+criterion_group!(benches, json_bench, recognize_float_bytes, recognize_float_str, float_bytes, float_str);
+criterion_main!(benches);

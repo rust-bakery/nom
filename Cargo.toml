@@ -45,6 +45,9 @@ default-features = false
 #git = "https://github.com/carllerche/bytes"
 #rev = "a7d38e29"
 
+[dev-dependencies]
+criterion = "0.2"
+
 [build-dependencies]
 version_check = "^0.1"
 
@@ -113,6 +116,30 @@ name = "reborrow_fold"
 
 [[test]]
 name = "test1"
+
+[[bench]]
+name = "arithmetic"
+harness = false
+
+[[bench]]
+name = "http"
+harness = false
+
+[[bench]]
+name = "ini"
+harness = false
+
+[[bench]]
+name = "ini_complete"
+harness = false
+
+[[bench]]
+name = "ini_str"
+harness = false
+
+[[bench]]
+name = "json"
+harness = false
 
 [badges]
 travis-ci = { repository = "Geal/nom" }
