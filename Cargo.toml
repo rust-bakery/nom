@@ -47,6 +47,7 @@ default-features = false
 
 [dev-dependencies]
 criterion = "0.2"
+jemallocator = "^0.1"
 
 [build-dependencies]
 version_check = "^0.1"
@@ -54,6 +55,11 @@ version_check = "^0.1"
 [package.metadata.docs.rs]
 features = [ "alloc", "std", "regexp", "regexp_macros", "verbose-errors" ]
 all-features = true
+
+[profile.bench]
+debug = true
+lto = true
+codegen-units = 1
 
 [[test]]
 name = "arithmetic"

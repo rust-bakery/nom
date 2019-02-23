@@ -2,8 +2,12 @@
 extern crate nom;
 #[macro_use]
 extern crate criterion;
+extern crate jemallocator;
 
 use criterion::*;
+
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use nom::IResult;
 use nom::types::CompleteStr;
