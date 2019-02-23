@@ -308,7 +308,7 @@ macro_rules! do_parse (
   );
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ) => (
-    $crate::do_parse!(__impl $i, $submac!( $($args)* ))
+    do_parse!(__impl $i, $submac!( $($args)* ))
   );
 
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) ) => (
@@ -330,14 +330,14 @@ macro_rules! do_parse (
     compile_error!("do_parse uses >> as separator, not ~");
   );
   (__impl $i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
-    $crate::do_parse!(__impl $i, $field: call!($e) ~ $($rest)*);
+    do_parse!(__impl $i, $field: call!($e) ~ $($rest)*);
   );
   (__impl $i:expr, $e:ident ~ $($rest:tt)*) => (
-    $crate::do_parse!(__impl $i, call!($e) ~ $($rest)*);
+    do_parse!(__impl $i, call!($e) ~ $($rest)*);
   );
 
   (__impl $i:expr, $e:ident >> $($rest:tt)*) => (
-    $crate::do_parse!(__impl $i, call!($e) >> $($rest)*);
+    do_parse!(__impl $i, call!($e) >> $($rest)*);
   );
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
@@ -348,14 +348,14 @@ macro_rules! do_parse (
         Err(e) => Err(e),
         Ok((i,_))     => {
           let i_ = i.clone();
-          $crate::do_parse!(__impl i_, $($rest)*)
+          do_parse!(__impl i_, $($rest)*)
         },
       }
     }
   );
 
   (__impl $i:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
-    $crate::do_parse!(__impl $i, $field: call!($e) >> $($rest)*);
+    do_parse!(__impl $i, $field: call!($e) >> $($rest)*);
   );
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
@@ -368,7 +368,7 @@ macro_rules! do_parse (
         Ok((i,o))     => {
           let $field = o;
           let i_ = i.clone();
-          $crate::do_parse!(__impl i_, $($rest)*)
+          do_parse!(__impl i_, $($rest)*)
         },
       }
     }
@@ -376,7 +376,7 @@ macro_rules! do_parse (
 
   // ending the chain
   (__impl $i:expr, $e:ident >> ( $($rest:tt)* )) => (
-    $crate::do_parse!(__impl $i, call!($e) >> ( $($rest)* ));
+    do_parse!(__impl $i, call!($e) >> ( $($rest)* ));
   );
 
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
@@ -385,13 +385,13 @@ macro_rules! do_parse (
     match $submac!($i, $($args)*) {
       Err(e) => Err(e),
       Ok((i,_))     => {
-        $crate::do_parse!(__finalize i, $($rest)*)
+        do_parse!(__finalize i, $($rest)*)
       },
     }
   });
 
   (__impl $i:expr, $field:ident : $e:ident >> ( $($rest:tt)* )) => (
-    $crate::do_parse!(__impl $i, $field: call!($e) >> ( $($rest)* ) );
+    do_parse!(__impl $i, $field: call!($e) >> ( $($rest)* ) );
   );
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> ( $($rest:tt)* )) => ({
@@ -401,7 +401,7 @@ macro_rules! do_parse (
       Err(e) => Err(e),
       Ok((i,o))     => {
         let $field = o;
-        $crate::do_parse!(__finalize i, $($rest)*)
+        do_parse!(__finalize i, $($rest)*)
       },
     }
   });
@@ -418,7 +418,7 @@ macro_rules! do_parse (
 
   ($i:expr, $($rest:tt)*) => (
     {
-      $crate::do_parse!(__impl $i, $($rest)*)
+      do_parse!(__impl $i, $($rest)*)
     }
   );
   ($submac:ident!( $($args:tt)* ) >> $($rest:tt)* ) => (
@@ -432,7 +432,7 @@ macro_rules! do_parse (
         );");
   );
   ($e:ident! >> $($rest:tt)* ) => (
-    $crate::do_parse!( call!($e) >> $($rest)*);
+    do_parse!( call!($e) >> $($rest)*);
   );
 );
 
