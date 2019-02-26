@@ -311,6 +311,14 @@ macro_rules! do_parse (
     do_parse!(__impl $i, $submac!( $($args)* ))
   );
 
+  (__impl $i:expr, $ty:path { $($fields:tt)* } : $submac:ident!( $($args:tt)* ) ) => (
+    do_parse!(__impl $i, $submac!( $($args)* ))
+  );
+
+  (__impl $i:expr, ($($pats:pat),*) : $submac:ident!( $($args:tt)* ) ) => (
+    do_parse!(__impl $i, $submac!( $($args)* ))
+  );
+
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) ) => (
     compile_error!("do_parse is missing the return value. A do_parse call must end
       with a return value between parenthesis, as follows:
@@ -326,11 +334,23 @@ macro_rules! do_parse (
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
     compile_error!("do_parse uses >> as separator, not ~");
   );
+  (__impl $i:expr, $ty:path { $($fields:tt)* } : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+    compile_error!("do_parse uses >> as separator, not ~");
+  );
+  (__impl $i:expr, ($($pats:pat),*) : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+    compile_error!("do_parse uses >> as separator, not ~");
+  );
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
     compile_error!("do_parse uses >> as separator, not ~");
   );
   (__impl $i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     do_parse!(__impl $i, $field: call!($e) ~ $($rest)*);
+  );
+  (__impl $i:expr, $ty:path { $($fields:tt)* } : $e:ident ~ $($rest:tt)*) => (
+    do_parse!(__impl $i, $ty { $($fields)* }: call!($e) ~ $($rest)*);
+  );
+  (__impl $i:expr, ($($pats:pat),*) : $e:ident ~ $($rest:tt)*) => (
+    do_parse!(__impl $i, ($($pats),*): call!($e) ~ $($rest)*);
   );
   (__impl $i:expr, $e:ident ~ $($rest:tt)*) => (
     do_parse!(__impl $i, call!($e) ~ $($rest)*);
@@ -357,8 +377,20 @@ macro_rules! do_parse (
   (__impl $i:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
     do_parse!(__impl $i, $field: call!($e) >> $($rest)*);
   );
-
+  (__impl $i:expr, $ty:path { $($fields:tt)* } : $e:ident >> $($rest:tt)*) => (
+    do_parse!(__impl $i, $ty { $($fields)* }: call!($e) >> $($rest)*);
+  );
+  (__impl $i:expr, ($($pats:pat),*) : $e:ident >> $($rest:tt)*) => (
+    do_parse!(__impl $i, ($($pats),*): call!($e) >> $($rest)*);
+  );
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+    do_parse!(__impl $i, ($field): $submac!($($args)*) >> $($rest)*);
+  );
+  (__impl $i:expr, $ty:path { $($fields:tt)* } : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+    do_parse!(__impl $i, ($ty { $($fields)* }): $submac!($($args)*) >> $($rest)*);
+  );
+
+  (__impl $i:expr, ($($pats:pat),*) : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     {
       use $crate::lib::std::result::Result::*;
 
@@ -366,7 +398,7 @@ macro_rules! do_parse (
       match  $submac!(i_, $($args)*) {
         Err(e) => Err(e),
         Ok((i,o))     => {
-          let $field = o;
+          let ($($pats),*) = o;
           let i_ = i.clone();
           do_parse!(__impl i_, $($rest)*)
         },
