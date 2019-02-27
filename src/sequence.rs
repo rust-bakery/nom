@@ -311,6 +311,10 @@ macro_rules! do_parse (
     do_parse!(__impl $i, $submac!( $($args)* ))
   );
 
+  (__impl $i:expr, $ty:path( $($fields:tt)* ) : $submac:ident!( $($args:tt)* ) ) => (
+    do_parse!(__impl $i, $submac!( $($args)* ))
+  );
+
   (__impl $i:expr, $ty:path { $($fields:tt)* } : $submac:ident!( $($args:tt)* ) ) => (
     do_parse!(__impl $i, $submac!( $($args)* ))
   );
@@ -334,6 +338,9 @@ macro_rules! do_parse (
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
     compile_error!("do_parse uses >> as separator, not ~");
   );
+  (__impl $i:expr, $ty:path( $($fields:tt)* ) : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
+    compile_error!("do_parse uses >> as separator, not ~");
+  );
   (__impl $i:expr, $ty:path { $($fields:tt)* } : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
     compile_error!("do_parse uses >> as separator, not ~");
   );
@@ -345,6 +352,9 @@ macro_rules! do_parse (
   );
   (__impl $i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     do_parse!(__impl $i, $field: call!($e) ~ $($rest)*);
+  );
+  (__impl $i:expr, $ty:path( $($fields:tt)* ) : $e:ident ~ $($rest:tt)*) => (
+    do_parse!(__impl $i, $ty($($fields)*): call!($e) ~ $($rest)*);
   );
   (__impl $i:expr, $ty:path { $($fields:tt)* } : $e:ident ~ $($rest:tt)*) => (
     do_parse!(__impl $i, $ty { $($fields)* }: call!($e) ~ $($rest)*);
@@ -377,6 +387,9 @@ macro_rules! do_parse (
   (__impl $i:expr, $field:ident : $e:ident >> $($rest:tt)*) => (
     do_parse!(__impl $i, $field: call!($e) >> $($rest)*);
   );
+  (__impl $i:expr, $ty:path( $($fields:tt)* ) : $e:ident >> $($rest:tt)*) => (
+    do_parse!(__impl $i, $ty($($fields)*): call!($e) >> $($rest)*);
+  );
   (__impl $i:expr, $ty:path { $($fields:tt)* } : $e:ident >> $($rest:tt)*) => (
     do_parse!(__impl $i, $ty { $($fields)* }: call!($e) >> $($rest)*);
   );
@@ -385,6 +398,9 @@ macro_rules! do_parse (
   );
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     do_parse!(__impl $i, ($field): $submac!($($args)*) >> $($rest)*);
+  );
+  (__impl $i:expr, $ty:path( $($fields:tt)* ) : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
+    do_parse!(__impl $i, ($ty($($fields)*)): $submac!($($args)*) >> $($rest)*);
   );
   (__impl $i:expr, $ty:path { $($fields:tt)* } : $submac:ident!( $($args:tt)* ) >> $($rest:tt)*) => (
     do_parse!(__impl $i, ($ty { $($fields)* }): $submac!($($args)*) >> $($rest)*);
@@ -980,6 +996,38 @@ mod tests {
     assert_eq!(length_value(&a[..]), Ok((&a[3..], &res_a[..])));
     let b = [5u8, 3, 4, 5];
     assert_eq!(length_value(&b[..]), Err(Err::Incomplete(Needed::Size(5))));
+  }
+
+  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[test]
+  fn do_parse_destructor() {
+    struct A(u8, u8);
+    struct B {
+      f1: u8,
+      f2: u8,
+    }
+    fn ret_tuple(i: &[u8]) -> IResult<&[u8], (u8, u8)> {
+      Ok((i, (1, 2)))
+    };
+    fn ret_a(i: &[u8]) -> IResult<&[u8], A> {
+      Ok((i, A(3, 4)))
+    };
+    fn ret_b(i: &[u8]) -> IResult<&[u8], B> {
+      Ok((i, B { f1: 5, f2: 6 }))
+    };
+
+    named!(destruct_test,
+      do_parse!(
+        (t1, t2):  ret_tuple >>
+        A(p1, p2): ret_a     >>
+        B{f1, f2}: ret_b     >>
+        ((t1, t2, p1, p2, f1, t4))
+      )
+    );
+
+    let a = [];
+    let res_a = (1, 2, 3, 4, 5, 6);
+    assert_eq!(destruct_test(&a[..]), Ok((&[], res_a)));
   }
 
   /*
