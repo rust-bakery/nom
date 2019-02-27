@@ -8,6 +8,12 @@
 
 ### Fixed
 
+## 4.2.1 - 2019-02-27
+
+### Fixed
+
+- macro expansion error in `do_parse` due to `compile_error` macro usage
+
 ## 4.2.0 - 2019-01-29
 
 ### Thanks
