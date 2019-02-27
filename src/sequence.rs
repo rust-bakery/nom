@@ -1016,17 +1016,17 @@ mod tests {
       Ok((i, B { f1: 5, f2: 6 }))
     };
 
-    named!(destruct_test,
+    named!(destruct_test<&[u8], [u8;6]>,
       do_parse!(
         (t1, t2):  ret_tuple >>
         A(p1, p2): ret_a     >>
         B{f1, f2}: ret_b     >>
-        ((t1, t2, p1, p2, f1, f2))
+        ([t1, t2, p1, p2, f1, f2])
       )
     );
 
     let a = [];
-    let res_a = (1, 2, 3, 4, 5, 6);
+    let res_a = [1, 2, 3, 4, 5, 6];
     assert_eq!(destruct_test(&a[..]), Ok((&[][..], res_a)));
   }
 
