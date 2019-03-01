@@ -104,14 +104,14 @@
 //! #[macro_use]
 //! extern crate nom;
 //!
-//! use nom::{IResult,Err,Needed};
+//! use nom::{IResult, Err, Needed};
 //!
 //! # fn main() {
-//! fn take4(i:&[u8]) -> IResult<&[u8], &[u8]>{
+//! fn take4(i: &[u8]) -> IResult<&[u8], &[u8]>{
 //!   if i.len() < 4 {
 //!     Err(Err::Incomplete(Needed::Size(4)))
 //!   } else {
-//!     Ok((&i[4..],&i[0..4]))
+//!     Ok((&i[4..], &i[0..4]))
 //!   }
 //! }
 //! # }
@@ -167,8 +167,9 @@
 //! - an error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
 //! - an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and test another parser
 //!
-//! Please refer to the [documentation][doc] for an exhaustive list of parsers. See also the
-//! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**.
+//! Please refer to the ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
+//! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/master/doc).
+//! .
 //!
 //! ## Making new parsers with macros
 //!
