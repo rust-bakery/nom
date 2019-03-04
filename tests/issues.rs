@@ -4,9 +4,8 @@
 
 #[macro_use]
 extern crate nom;
-extern crate regex;
 
-use nom::{space, Err, IResult, Needed, le_u64};
+use nom::{space, Err, IResult, Needed, ErrorKind, le_u64, is_digit};
 use nom::types::{CompleteStr, CompleteByteSlice};
 
 #[allow(dead_code)]
@@ -255,6 +254,14 @@ named!(issue_741_str<CompleteStr, CompleteStr>, re_match!(r"^_?[A-Za-z][0-9A-Z_a
 named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
 
 
+#[test]
+fn issue_752() {
+    assert_eq!(
+        Err::Error(nom::Context::Code("ab", nom::ErrorKind::ParseTo)),
+        parse_to!("ab", usize).unwrap_err()
+    )
+}
+
 fn atom_specials(c: u8) -> bool {
     c == b'q'
 }
@@ -297,4 +304,57 @@ fn issue_768() {
     bit_vec11(CompleteByteSlice(m.as_slice())),
     Ok((CompleteByteSlice(&[]), vec![563, 90, 1266, 1380, 308, 1417, 717, 613]))
   );
+}
+
+/// This test is in a separate module to check that all required symbols are imported in
+/// `escaped_transform!()`. Without the module, the `use`-es of the current module would
+/// mask the error ('"Use of undeclared type or module `Needed`" in escaped_transform!').
+mod issue_780 {
+  named!(issue_780<&str, String>,
+    escaped_transform!(call!(::nom::alpha), '\\', tag!("n"))
+  );
+}
+
+// issue 617
+named!(digits, take_while1!( is_digit ));
+named!(multi_617<&[u8], () >, fold_many0!( digits, (), |_, _| {}));
+
+// Sad :(
+named!(multi_617_fails<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
+
+mod issue_647 {
+  use nom::{Err,be_f64};
+  pub type Input<'a> = &'a [u8];
+
+  #[derive(PartialEq, Debug, Clone)]
+  struct Data {
+      c: f64,
+      v: Vec<f64>
+  }
+
+  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<&'a [u8]>> {
+      separated_list_complete!(input, tag!(","),be_f64)
+  }
+
+  named!(data<Input,Data>, map!(
+      do_parse!(
+          c: be_f64 >>
+          tag!("\n") >>
+          v: call!(list,&c) >>
+          (c,v)
+      ), |(c,v)| {
+          Data {
+              c: c,
+              v: v
+          }
+      }
+  ));
+}
+
+named!(issue_775, take_till1!(|_| true));
+
+#[test]
+fn issue_848_overflow_incomplete_bits_to_bytes() {
+  named!(parser<&[u8], &[u8]>, bits!(bytes!(take!(0x2000000000000000))));
+  assert_eq!(parser(&b""[..]), Err(Err::Failure(error_position!(&b""[..], ErrorKind::TooLarge))));
 }

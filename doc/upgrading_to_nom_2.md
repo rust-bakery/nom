@@ -1,5 +1,3 @@
-% Upgrading to nom 2.0
-
 # Upgrading to nom 2.0
 
 The 2.0 release of nom adds a lot of new features, but it was also time for a big cleanup of badly named functions and macros, awkwardly written features and redundant functionality. So this release has some breaking changes, but most of them are harmless.
@@ -12,7 +10,7 @@ Not everybody uses that feature, so it was moved behind a compilation feature ca
 
 For the parsers using it, you will probably get something like the following compilation error:
 
-```ignore
+```
 error: no associated item named `Code` found for type `nom::ErrorKind<_>` in the current scope
    --> src/metadata/parser.rs:309:31
     |
@@ -57,12 +55,12 @@ nom             = { version = "^2.0.0", features = ["verbose-errors"] }
 
 If you only use `Err::Code` to make your custom error codes, you could switch to the simple errors, since it replaces the `Err<Input,E=u32>` enum, which contained an `ErrorKind<E=u32>`, with the `ErrorKind<E=u32>` type directly.
 
-## the eof function was removed
+## The eof function was removed
 
 The eof implementation was linked too much to the input type. This is now a macro combinator, called `eof!()`.
 
 If you see the following error, remove the `eof` import and replace all `eof` calls by `eof!()`.
-```ìgnore
+```
 error[E0432]: unresolved import `nom::eof`
  --> src/parser.rs:1:20
   |
@@ -70,7 +68,7 @@ error[E0432]: unresolved import `nom::eof`
   |                    ^^^ no `eof` in `nom`. Did you mean to use `eol`?
 ```
 
-## parsers returning `Incomplete` instead of an error on empty input
+## Parsers returning `Incomplete` instead of an error on empty input
 
 `alpha`, `digit`, `alphanumeric`, `hex_digit`, `oct_digit`, `space`, `multispace`, `sized_buffer` will now return `Incomplete` if they get an empty input. If you get the following error message, you can wrap those calls with `complete!`, a combinator that transforms `Incomplete` to `Error`.
 
@@ -85,7 +83,7 @@ This change was implemented to make these basic parsers more consistent. Please 
 
 The input types must now conform to a trait which requires changes to `take_till!`. If you get the following error:
 
-```ignore
+```
 error[E0308]: mismatched types
   --> src/linux/parser.rs:32:1
    |
@@ -106,7 +104,7 @@ you can fix it with:
 +    c == 0x0
 ```
 
-## length_value, length_bytes refactoring
+## `length_value!`, `length_bytes!` refactoring
 
 The "length-value" pattern usually indicates that we get a length from the input, then take a slice of that size from the input, and convert that to a value of the type we need. The `length_value!` macro was using the length parameter to apply the value parser a specific number of times.
 
@@ -114,7 +112,7 @@ The "length-value" pattern usually indicates that we get a length from the input
 - the new `length_value!` macros takes a slice of the size obtained by the first child parser, then applies the second child parser on this slice. If the second parser returns incomplete, the parser fails
 - `length_data!` gets a length from its child parser, then returns a subslice of that length
 
-```ignore
+```
 error[E0308]: mismatched types
    --> src/tls.rs:378:37
     |
@@ -133,7 +131,7 @@ error[E0308]: mismatched types
          sig_hash_algs_len: be_u16 ~
 ```
 
-## error! does not exist anymore
+## `error!` does not exist anymore
 
 The `error!` macro, that was used to return a parsing error without backtracking through the parser tree, is now called `return_error!`. This change was done because the "log" crate also uses an `error!` macro, and they complained about the name conflict to nom instead of complaining to log, much to my dismay.
 
@@ -158,7 +156,7 @@ It is fixed by:
         map_res!(flat_map!(take_s!(1), digit), FromStr::from_str))));
 ```
 
-## the `offset()` method was moved to the `Offset` trait
+## The `offset()` method was moved to the `Offset` trait
 
 There is now an implementation of `Offset` for `&str`. The `HexDisplay` trait is now reserved for `&[u8]`.
 
@@ -166,7 +164,7 @@ There is now an implementation of `Offset` for `&str`. The `HexDisplay` trait is
 
 This makes the method naming more consistent.
 
-## the number parsing macros with configurable endianness now take an enum as argument instead of a boolean
+## The number parsing macros with configurable endianness now take an enum as argument instead of a boolean
 
 Using a boolean to specify endianness was confusing, there is now the `nom::Endianness` enum:
 
@@ -177,6 +175,6 @@ Using a boolean to specify endianness was confusing, there is now the `nom::Endi
 +    named!(le_tst32<u32>, u32!(Endianness::Little));
 ```
 
-## end of line parsing
+## End of line parsing
 
 There were different, incompatible ways to parse line endings. Now, the `eol`, `line_ending` and `not_line_ending` all have the same behaviour. First, test for '\n', then if it is not the right character, test for "\r\n". This fixes the length issues.

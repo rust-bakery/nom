@@ -23,34 +23,34 @@ named!(float<f32>, flat_map!(recognize_float, parse_to!(f32)));
 named!(
   string<&str>,
   delimited!(
-    tag!("\""),
+    char!('"'),
     //map_res!(escaped!(call!(alphanumeric), '\\', is_a!("\"n\\")), str::from_utf8),
     map_res!(
       escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")),
       str::from_utf8
     ),
-    tag!("\"")
+    char!('"')
   )
 );
 
 named!(
   array<Vec<JsonValue>>,
   ws!(delimited!(
-    tag!("["),
-    separated_list!(tag!(","), value),
-    tag!("]")
+    char!('['),
+    separated_list!(char!(','), value),
+    char!(']')
   ))
 );
 
 named!(
   key_value<(&str, JsonValue)>,
-  ws!(separated_pair!(string, tag!(":"), value))
+  ws!(separated_pair!(string, char!(':'), value))
 );
 
 named!(
   hash<HashMap<String, JsonValue>>,
   ws!(map!(
-    delimited!(tag!("{"), separated_list!(tag!(","), key_value), tag!("}")),
+    delimited!(char!('{'), separated_list!(char!(','), key_value), char!('}')),
     |tuple_vec| {
       let mut h: HashMap<String, JsonValue> = HashMap::new();
       for (k, v) in tuple_vec {
@@ -72,25 +72,34 @@ named!(
 );
 
 #[test]
-fn hash_test() {
-  let test = &b"  { \"a\"\t: 42,
-  \"b\": \"x\"
-  }\0";
+fn json_object() {
+  let input =
+    r#"{
+      "a": 42,
+      "b": "x"
+    }\0"#;
 
-  //FIXME: top level value must be an object?
-  println!("{:?}", value(&test[..]).unwrap());
-  //assert!(false);
+  let mut expected_map = HashMap::new();
+  expected_map.insert(String::from("a"), JsonValue::Num(42f32));
+  expected_map.insert(String::from("b"), JsonValue::Str(String::from("x")));
+  let expected = JsonValue::Object(expected_map);
+
+  assert_eq!(expected, value(input.as_bytes()).unwrap().1);
 }
 
 #[test]
-fn parse_example_test() {
-  let test = &b"  { \"a\"\t: 42,
-  \"b\": [ \"x\", \"y\", 12 ] ,
-  \"c\": { \"hello\" : \"world\"
-  }
-  }\0";
+fn json_array() {
+  let input =
+    r#"[
+      42,
+      "x"
+    ]\0"#;
 
-  //FIXME: top level value must be an object?
-  println!("{:?}", value(&test[..]).unwrap());
-  //assert!(false);
+  let expected_vec = vec![
+    JsonValue::Num(42f32),
+    JsonValue::Str(String::from("x"))
+  ];
+  let expected = JsonValue::Array(expected_vec);
+
+  assert_eq!(expected, value(input.as_bytes()).unwrap().1);
 }

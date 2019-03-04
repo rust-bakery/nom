@@ -8,6 +8,106 @@
 
 ### Fixed
 
+## 4.2.2 - 2019-03-04
+
+### Fixed
+
+- regression in do_parse macro import for edition 2018
+
+## 4.2.1 - 2019-02-27
+
+### Fixed
+
+- macro expansion error in `do_parse` due to `compile_error` macro usage
+
+## 4.2.0 - 2019-01-29
+
+### Thanks
+
+- @JoshMcguigan for unit test fixes
+- @oza for documentation fixes
+- @wackywendell for better error conversion
+- @Zebradil for documentation fixes
+- @tsraom for new combinators
+- @hcpl for minimum Rust version tests
+- @KellerFuchs for removing some unsafe uses in float parsing
+
+### Changed
+
+- macro import in edition 2018 code should work without importing internal macros now
+- the regex parsers do not require the calling code to have imported the regex crate anymore
+- error conversions are more ergonomic
+- method combinators are now deprecated. They might be moved to a separate crate
+- nom now specifies Rust 1.24.1 as minimum version. This was already the case before, now it is made explicit
+
+### Added
+
+- `many0_count` abd `many1_count` to count applications of a parser instead of
+accumulating its results in a `Vec`
+
+### Fixed
+
+- overflow in the byte wrapper for bit level parsers
+- `f64` parsing does not use `transmute` anymore
+
+## 4.1.1 - 2018-10-14
+
+### Fixed
+
+- compilation issue in verbose-errors mode for `add_return_error`
+
+## 4.1.0 - 2018-10-06
+
+### Thanks
+
+- @xfix for fixing warnings, simplifying examples and performance fixes
+- @dvberkel for documentation fixes
+- @chifflier for fixinf warnings
+- @myrrlyn for dead code elimination
+- @petrochenkov for removing redundant test macros
+- @tbelaire for documentation fixes
+- @khernyo for fixing warnings
+- @linkmauve for documentation fixes
+- @ProgVal for documentation fixes, warning fixes and error management
+- @Nemo157 for compilation fixes
+- @RReverser for documentation fixes
+- @xpayn for fixing warnings
+- Blas Rodriguez Irizar for documentation fixes
+- @badboy for documentation fixes
+- @kyrias for compilation fixes
+- @kurnevsky for the `rest_len` parser
+- @hjr3 for new documentation examples
+- @fengalin for error management
+- @ithinuel for the pcap example project
+- @phaazon for documentation fixes
+- @juchiast for documentation fixes
+- @jrakow for the `u128` and `i128` parsers
+- @smarnach for documentation fixes
+- @derekdreery for `pub(crate)` support
+- @YaLTeR for `map_res_err!`
+
+### Added
+
+- `rest_len` parser, returns the length of the remaining input
+- `parse_to` has its own error code now
+- `u128` and `i128` parsers in big and little endian modes
+- support for `pub(crate)` syntax
+- `map_res_err!` combinator that appends the error of its argument function in verbose errors mode
+
+### Fixed
+
+- lots of unused imports warnings were removed
+- the `bytes` combinator was not compiling in some cases
+- the big and little endian combinators now work without external imports
+- CI is now faster and uses less cache
+- in `add_return_error`, the provided error code is now evaluated only once
+
+### Changed
+
+- `fold_many1` will now transmit a `Failure` instead of transforming it to an `Error`
+- `float` and `double` now work on all of nom's input types (`&[u8]`, `&str`, `CompleteByteSlice`, `CompleteStr` and any type that implements the required traits). `float_s` and `double_s` got the same modification, but are now deprecated
+- `CompleteByteSlice` and `CompleteStr` get a small optimization by inlining some functions
+
 
 ## 4.0.0 - 2018-05-14
 
@@ -888,7 +988,10 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased]: https://github.com/Geal/nom/compare/4.0.0...HEAD
+* [unreleased]: https://github.com/Geal/nom/compare/4.2.0...HEAD
+* [4.2.0]: https://github.com/Geal/nom/compare/4.1.1...4.2.0
+* [4.1.1]: https://github.com/Geal/nom/compare/4.1.0...4.1.1
+* [4.1.0]: https://github.com/Geal/nom/compare/4.0.0...4.1.0
 * [4.0.0]: https://github.com/Geal/nom/compare/3.2.1...4.0.0
 * [3.2.1]: https://github.com/Geal/nom/compare/3.2.0...3.2.1
 * [3.2.0]: https://github.com/Geal/nom/compare/3.1.0...3.2.0

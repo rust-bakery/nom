@@ -8,6 +8,7 @@ rust:
   - nightly
   - beta
   - stable
+  - 1.24.1
 
 env:
   matrix:
@@ -66,6 +67,13 @@ addons:
       - cmake
     sources:
       - kalakris-cmake
+
+cache:
+  directories:
+    - /home/travis/.cargo
+
+before_cache:
+  - rm -rf /home/travis/.cargo/registry
 
 script:
   - eval cargo build --verbose $FEATURES

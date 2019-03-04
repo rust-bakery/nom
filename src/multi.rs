@@ -3,7 +3,7 @@
 /// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// separated_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
@@ -91,7 +91,7 @@ macro_rules! separated_list(
 
 /// `separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// separated_nonempty_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_nonempty_list(
   ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => (
     {
@@ -178,7 +178,7 @@ macro_rules! separated_nonempty_list(
 /// `separated_list_complete!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// This is equivalent to the `separated_list!` combinator, except that it will return `Error`
 /// when either the separator or element subparser returns `Incomplete`.
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_list_complete {
     ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => ({
         separated_list!($i, complete!($sep!($($args)*)), complete!($submac!($($args2)*)))
@@ -198,7 +198,7 @@ macro_rules! separated_list_complete {
 /// `separated_nonempty_list_complete!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// This is equivalent to the `separated_nonempty_list!` combinator, except that it will return
 /// `Error` when either the separator or element subparser returns `Incomplete`.
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_nonempty_list_complete {
     ($i:expr, $sep:ident!( $($args:tt)* ), $submac:ident!( $($args2:tt)* )) => ({
         separated_nonempty_list!($i, complete!($sep!($($args)*)), complete!($submac!($($args2)*)))
@@ -238,7 +238,7 @@ macro_rules! separated_nonempty_list_complete {
 /// ```
 ///
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -295,6 +295,7 @@ macro_rules! many0(
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
 /// # use nom::ErrorKind;
+/// # use nom::types::CompleteByteSlice;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
 ///
@@ -302,12 +303,18 @@ macro_rules! many0(
 ///  let b = b"azerty";
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
-///  assert_eq!(multi(&a[..]),Ok((&b"efgh"[..], res)));
+///  assert_eq!(multi(&a[..]), Ok((&b"efgh"[..], res)));
 ///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
+///
+///  named!(multi_complete<CompleteByteSlice, Vec<CompleteByteSlice> >, many1!( tag!( "abcd" ) ) );
+///  let c = CompleteByteSlice(b"abcdabcd");
+///
+///  let res = vec![CompleteByteSlice(b"abcd"), CompleteByteSlice(b"abcd")];
+///  assert_eq!(multi_complete(c), Ok((CompleteByteSlice(b""), res)));
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -388,7 +395,7 @@ macro_rules! many1(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! many_till(
   (__impl $i:expr, $submac1:ident!( $($args1:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -476,7 +483,7 @@ macro_rules! many_till(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -546,6 +553,148 @@ macro_rules! many_m_n(
   );
 );
 
+/// `many0_count!(I -> IResult<I,O>) => I -> IResult<I, usize>`
+/// Applies the parser 0 or more times and returns the number of times the parser was applied.
+///
+/// `many0_count` will only return `Error` if the embedded parser does not consume any input
+/// (to avoid infinite loops).
+///
+/// ```
+/// #[macro_use] extern crate nom;
+/// use nom::digit;
+///
+/// named!(number<&[u8], usize>, many0_count!(pair!(digit, tag!(","))));
+///
+/// fn main() {
+///     assert_eq!(number(&b"123,45,abc"[..]), Ok((&b"abc"[..], 2)));
+/// }
+/// ```
+///
+#[macro_export]
+macro_rules! many0_count {
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::lib::std::result::Result::*;
+      use $crate::{Err, AtEof};
+
+      let ret;
+      let mut count: usize = 0;
+      let mut input = $i.clone();
+
+      loop {
+        let input_ = input.clone();
+        match $submac!(input_, $($args)*) {
+          Ok((i, _)) => {
+            //  loop trip must always consume (otherwise infinite loops)
+            if i == input {
+              if i.at_eof() {
+                ret = Ok((input, count));
+              }
+              else {
+                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0Count)));
+              }
+              break;
+            }
+            count += 1;
+            input = i;
+          },
+
+          Err(Err::Error(_)) => {
+            ret = Ok((input, count));
+            break;
+          },
+
+          Err(e) => {
+            ret = Err(e);
+            break;
+          },
+        }
+      }
+
+      ret
+    }
+  );
+
+  ($i:expr, $f:expr) => (
+    many0_count!($i, call!($f));
+    );
+}
+
+/// `many1_count!(I -> IResult<I,O>) => I -> IResult<I, usize>`
+/// Applies the parser 1 or more times and returns the number of times the parser was applied.
+///
+/// ```
+/// #[macro_use] extern crate nom;
+/// use nom::digit;
+///
+/// named!(number<&[u8], usize>, many1_count!(pair!(digit, tag!(","))));
+///
+/// fn main() {
+///     assert_eq!(number(&b"123,45,abc"[..]), Ok((&b"abc"[..], 2)));
+/// }
+/// ```
+///
+#[macro_export]
+macro_rules! many1_count {
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    {
+      use $crate::lib::std::result::Result::*;
+      use $crate::Err;
+
+      use $crate::InputLength;
+      let i_ = $i.clone();
+      match $submac!(i_, $($args)*) {
+        Err(Err::Error(_)) => Err(Err::Error(
+            error_position!(i_, $crate::ErrorKind::Many1Count)
+            )),
+
+        Err(Err::Failure(_)) => Err(Err::Failure(
+            error_position!(i_, $crate::ErrorKind::Many1Count)
+            )),
+
+        Err(i) => Err(i),
+
+        Ok((i1, _)) => {
+          let mut count: usize = 1;
+          let mut input = i1;
+          let mut error = $crate::lib::std::option::Option::None;
+
+          loop {
+            let input_ = input.clone();
+            match $submac!(input_, $($args)*) {
+              Err(Err::Error(_)) => {
+                break;
+              },
+
+              Err(e) => {
+                error = $crate::lib::std::option::Option::Some(e);
+                break;
+              },
+
+              Ok((i, _)) => {
+                if i.input_len() == input.input_len() {
+                  break;
+                }
+                count += 1;
+                input = i;
+              },
+            }
+          }
+
+          match error {
+            $crate::lib::std::option::Option::Some(e) => Err(e),
+            $crate::lib::std::option::Option::None => Ok((input, count)),
+          }
+        },
+      }
+    }
+  );
+
+  ($i:expr, $f:expr) => (
+    many1_count!($i, call!($f));
+    );
+}
+
 /// `count!(I -> IResult<I,O>, nb) => I -> IResult<I, Vec<O>>`
 /// Applies the child parser a specified number of times
 ///
@@ -566,7 +715,7 @@ macro_rules! many_m_n(
 /// ```
 ///
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
@@ -634,7 +783,7 @@ macro_rules! count(
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! count_fixed (
   ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
     {
@@ -682,7 +831,7 @@ macro_rules! count_fixed (
 
 /// `length_count!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// gets a number from the first parser, then applies the second parser that many times
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! length_count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -718,7 +867,7 @@ macro_rules! length_count(
 ///
 /// `length_data` gets a number from the first parser, than takes a subslice of the input
 /// of that size, and returns that subslice
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! length_data(
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use $crate::lib::std::result::Result::*;
@@ -745,7 +894,7 @@ macro_rules! length_data(
 /// Gets a number from the first parser, takes a subslice of the input of that size,
 /// then applies the second parser on that subslice. If the second parser returns
 /// `Incomplete`, `length_value` will return an error
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! length_value(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -805,7 +954,7 @@ macro_rules! length_value(
 /// # }
 /// ```
 /// 0 or more
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fold_many0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
@@ -876,7 +1025,7 @@ macro_rules! fold_many0(
 ///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fold_many1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
@@ -926,7 +1075,7 @@ macro_rules! fold_many1(
           }
 
           match failure {
-            $crate::lib::std::option::Option::Some(e) => Err(Err::Error(e)),
+            $crate::lib::std::option::Option::Some(e) => Err(Err::Failure(e)),
             $crate::lib::std::option::Option::None    => match incomplete {
               $crate::lib::std::option::Option::Some(i) => $crate::need_more($i, i),
               $crate::lib::std::option::Option::None    => Ok((input, acc))
@@ -968,7 +1117,7 @@ macro_rules! fold_many1(
 ///  assert_eq!(multi(&c[..]),Ok((&b"abcdefgh"[..], res2)));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fold_many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* ), $init:expr, $f:expr) => (
     {
@@ -1669,6 +1818,60 @@ mod tests {
     let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(d), Ok((&b"Abcdefgh"[..], res3)));
     assert_eq!(multi(e), Err(Err::Incomplete(Needed::Size(4))));
+  }
+
+  #[test]
+  fn many0_count() {
+    named!(
+      count0_nums(&[u8]) -> usize,
+      many0_count!(pair!(digit, tag!(",")))
+    );
+
+    assert_eq!(
+      count0_nums(&b"123,junk"[..]),
+      Ok((&b"junk"[..], 1))
+    );
+
+    assert_eq!(
+      count0_nums(&b"123,45,junk"[..]),
+      Ok((&b"junk"[..], 2))
+    );
+
+    assert_eq!(
+      count0_nums(&b"1,2,3,4,5,6,7,8,9,0,junk"[..]),
+      Ok((&b"junk"[..], 10))
+    );
+
+    assert_eq!(
+      count0_nums(&b"hello"[..]),
+      Ok((&b"hello"[..], 0))
+    );
+  }
+
+  #[test]
+  fn many1_count() {
+    named!(
+      count1_nums(&[u8]) -> usize,
+      many1_count!(pair!(digit, tag!(",")))
+    );
+
+    assert_eq!(
+      count1_nums(&b"123,45,junk"[..]),
+      Ok((&b"junk"[..], 2))
+    );
+
+    assert_eq!(
+      count1_nums(&b"1,2,3,4,5,6,7,8,9,0,junk"[..]),
+      Ok((&b"junk"[..], 10))
+    );
+
+    assert_eq!(
+      count1_nums(&b"hello"[..]),
+      Err(Err::Error(error_position!(
+        &b"hello"[..],
+        ErrorKind::Many1Count
+      )))
+    );
   }
 
 }

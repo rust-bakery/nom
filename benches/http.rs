@@ -1,11 +1,15 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
-#![feature(test)]
-extern crate test;
-
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate criterion;
+extern crate jemallocator;
 
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
+use criterion::*;
 use nom::IResult;
 use std::env;
 use std::fs::File;
@@ -143,14 +147,15 @@ fn parse(data: &[u8]) -> Option<Vec<(Request, Vec<Header>)>> {
           break;
         }
       }
-      Err(_) => return None,
+      Err(e) => {
+        println!("error: {:?}", e);
+        return None;
+      },
     }
   }
 
   Some(v)
 }
-
-use test::Bencher;
 
 /*
 #[bench]
@@ -170,19 +175,29 @@ fn bigger_test(b: &mut Bencher) {
 }
 */
 
-#[bench]
-fn one_test(b: &mut Bencher) {
+fn one_test(c: &mut Criterion) {
   let data = &b"GET / HTTP/1.1
 Host: www.reddit.com
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:15.0) Gecko/20100101 Firefox/15.0.1
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 Accept-Language: en-us,en;q=0.5
 Accept-Encoding: gzip, deflate
-Connection: keep-alive"
-    [..];
-  b.iter(|| parse(data));
+Connection: keep-alive
+
+"[..];
+
+  c.bench(
+    "http",
+    Benchmark::new(
+      "parse",
+      move |b| {
+        b.iter(|| parse(data).unwrap());
+      },
+    ).throughput(Throughput::Bytes(data.len() as u32)),
+  );
 }
 
+/*
 fn main() {
   let mut contents: Vec<u8> = Vec::new();
 
@@ -199,3 +214,7 @@ fn main() {
     parse(buf);
   }
 }
+*/
+
+criterion_group!(http, one_test);
+criterion_main!(http);

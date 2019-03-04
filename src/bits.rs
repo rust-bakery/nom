@@ -28,7 +28,7 @@
 ///
 ///  assert_eq!(take_4_bits( sl ), Ok( (&sl[1..], 0xA) ));
 /// # }
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! bits (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     bits_impl!($i, $submac!($($args)*));
@@ -41,7 +41,7 @@ macro_rules! bits (
 #[cfg(feature = "verbose-errors")]
 /// Internal parser, do not use directly
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -87,7 +87,7 @@ macro_rules! bits_impl (
 #[cfg(not(feature = "verbose-errors"))]
 /// Internal parser, do not use directly
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -143,7 +143,7 @@ macro_rules! bits_impl (
 ///
 ///  assert_eq!(parse( input ), Ok(( &[][..], (0xd, 0xea, &[0xbe, 0xaf][..]) )));
 /// # }
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! bytes (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     bytes_impl!($i, $submac!($($args)*));
@@ -156,13 +156,12 @@ macro_rules! bytes (
 #[cfg(feature = "verbose-errors")]
 /// Internal parser, do not use directly
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed};
-      use $crate::Slice;
+      use $crate::{Err,Needed,Context,Slice,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -174,9 +173,10 @@ macro_rules! bytes_impl (
 
       let sub = $submac!(inp, $($args)*);
       let res = match sub {
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          Err(Err::Incomplete(Needed::Size(i * 8)))
-        },
+        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
+          Some(v) => Err::Incomplete(Needed::Size(v)),
+          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
+        }),
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Ok((i, o)) => {
           Ok(((i, 0), o))
@@ -202,9 +202,10 @@ macro_rules! bytes_impl (
           Err(Err::Error(err))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          Err(Err::Incomplete(Needed::Size(i * 8)))
-        },
+        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
+          Some(v) => Err::Incomplete(Needed::Size(v)),
+          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
+        }),
         Ok((i, o)) => {
           Ok(((i, 0), o))
         }
@@ -217,13 +218,12 @@ macro_rules! bytes_impl (
 #[cfg(not(feature = "verbose-errors"))]
 /// Internal parser, do not use directly
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed};
-      use $crate::Slice;
+      use $crate::{Err,Needed,Context,Slice,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -235,9 +235,10 @@ macro_rules! bytes_impl (
 
       let sub = $submac!(inp, $($args)*);
       let res = match sub {
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          Err(Err::Incomplete(Needed::Size(i * 8)))
-        },
+        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
+          Some(v) => Err::Incomplete(Needed::Size(v)),
+          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
+        }),
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Ok((i, o)) => {
           Ok(((i, 0), o))
@@ -273,7 +274,7 @@ macro_rules! bytes_impl (
 ///  assert_eq!(take_pair( &sl[1..] ), Ok((&sl[2..], (0xC, 0xD))) );
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
@@ -345,7 +346,7 @@ macro_rules! take_bits (
 ///  assert_eq!(take_a( sl ),       Ok((&sl[1..], 0xA)) );
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! tag_bits (
   ($i:expr, $t:ty, $count:expr, $p: pat) => (
     {

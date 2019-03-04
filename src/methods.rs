@@ -107,7 +107,8 @@
 /// //prefix them with 'pub' to make the methods public
 /// method!(pub my_function<Parser<'a>,&[u8], &[u8]>, tag!("abcd"));
 /// ```
-#[macro_export]
+#[deprecated(since = "4.2.0", note = "Please use the nom-methods crate instead")]
+#[macro_export(local_inner_macros)]
 macro_rules! method (
   // Non-public immutable self
   ($name:ident<$a:ty>( $i:ty ) -> $o:ty, $self_:ident, $submac:ident!( $($args:tt)* )) => (
@@ -155,7 +156,7 @@ macro_rules! method (
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty,$e:ty>, $self_:ident, $submac:ident!( $($args:tt)* )) => (
       #[allow(unused_variables)]
-      fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
+      pub fn $name( $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
         let result = $submac!(i, $($args)*);
         ($self_, result)
       }
@@ -227,7 +228,7 @@ macro_rules! method (
   );
   (pub $name:ident<$a:ty,$i:ty,$o:ty,$e:ty>, mut $self_:ident, $submac:ident!( $($args:tt)* )) => (
       #[allow(unused_variables)]
-      fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
+      pub fn $name( mut $self_: $a, i: $i ) -> ($a, $crate::IResult<$i, $o, $e>) {
         let result = $submac!(i, $($args)*);
         ($self_, result)
       }
@@ -256,7 +257,8 @@ macro_rules! method (
 );
 
 /// Used to called methods then move self back into self
-#[macro_export]
+#[deprecated(since = "4.2.0", note = "Please use the nom-methods crate instead")]
+#[macro_export(local_inner_macros)]
 macro_rules! call_m (
   ($i:expr, $self_:ident.$method:ident) => (
     {
@@ -278,7 +280,8 @@ macro_rules! call_m (
 /// `apply_m!(self.my_function, arg1, arg2, ...)` becomes `self.my_function(input, arg1, arg2, ...)`
 ///
 /// Supports up to 6 arguments
-#[macro_export]
+#[deprecated(since = "4.2.0", note = "Please use the nom-methods crate instead")]
+#[macro_export(local_inner_macros)]
 macro_rules! apply_m (
   ($i:expr, $self_:ident.$method:ident, $($args:expr),* ) => ( { let (tmp, res) = $self_.$method( $i, $($args),* ); $self_ = tmp; res } );
 );

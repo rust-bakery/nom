@@ -5,6 +5,7 @@
 [![Build Status](https://travis-ci.org/Geal/nom.svg?branch=master)](https://travis-ci.org/Geal/nom)
 [![Coverage Status](https://coveralls.io/repos/Geal/nom/badge.svg?branch=master)](https://coveralls.io/r/Geal/nom?branch=master)
 [![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.24.1+-lightgray.svg)](#rust-version-requirements)
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing* and *memory safety* to produce fast and correct parsers, and provides macros and traits to abstract most of the error prone plumbing.
 
@@ -32,10 +33,7 @@ fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
 }
 
 fn is_hex_digit(c: char) -> bool {
-  match c {
-    '0'..='9' | 'a'..='f' | 'A'..='F' => true,
-    _ => false,
-  }
+  c.is_digit(16)
 }
 
 named!(hex_primary<&str, u8>,
@@ -99,12 +97,12 @@ formats such as JSON, nom can manage it, and provides you with useful tools:
 
 - fast case insensitive comparison
 - recognizers for escaped strings
-- regular expressions can be embedded in nom parsers to represent complex character patterns succintly
+- regular expressions can be embedded in nom parsers to represent complex character patterns succinctly
 - special care has been given to managing non ASCII characters properly
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/parser/http11.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
 - [TOML parser](https://github.com/joelself/tomllib)
 
 ### Programming language parsers
@@ -179,13 +177,20 @@ nom parsers are for:
 
 Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
 
+## Rust version requirements
+
+The 4.0 series of nom requires **Rustc version 1.24.1 or greater**.
+
+Travis CI always has a build with a pinned version of Rustc matching the oldest supported Rust release.
+The current policy is that this will only be updated in the next major nom release.
+
 ## Installation
 
 nom is available on [crates.io](https://crates.io/crates/nom) and can be included in your Cargo enabled project like this:
 
 ```toml
 [dependencies]
-nom = "^4.0"
+nom = "^4.2"
 ```
 
 Then include it in your code like this:
@@ -210,7 +215,7 @@ You can activate those features like this:
 
 ```toml
 [dependencies.nom]
-version = "^4.0"
+version = "^4.2"
 features = ["regexp"]
 ```
 
@@ -240,6 +245,7 @@ Here is a list of known projects using nom:
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
   * [SQL](https://github.com/ms705/nom-sql)
+  * [Elm](https://github.com/cout970/Elm-interpreter)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
@@ -257,11 +263,13 @@ Here is a list of known projects using nom:
   * [IMAP](https://github.com/djc/imap-proto)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
+  * [Pcap](https://github.com/ithinuel/pcap-rs)
   * [NTP](https://github.com/rusticata/ntp-parser)
   * [SNMP](https://github.com/rusticata/snmp-parser)
   * [DER](https://github.com/rusticata/der-parser)
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
+  * [GTP](https://github.com/fuerstenau/gorrosion-gtp)
 - Language specifications:
   * [BNF](https://github.com/snewt/bnf)
 

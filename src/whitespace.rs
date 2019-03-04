@@ -94,7 +94,7 @@
 //! ```
 //!
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! wrap_sep (
   ($i:expr, $separator:expr, $submac:ident!( $($args:tt)* )) => ({
     use $crate::lib::std::result::Result::*;
@@ -118,7 +118,7 @@ macro_rules! wrap_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! pair_sep (
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     tuple!(
@@ -139,7 +139,7 @@ macro_rules! pair_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! delimited_sep (
   ($i:expr, $separator:path, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => ({
     use $crate::lib::std::result::Result::*;
@@ -157,7 +157,7 @@ macro_rules! delimited_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_pair_sep (
   ($i:expr, $separator:path, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => ({
     use $crate::lib::std::result::Result::*;
@@ -175,7 +175,7 @@ macro_rules! separated_pair_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! preceded_sep (
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => ({
     use $crate::lib::std::result::Result::*;
@@ -199,7 +199,7 @@ macro_rules! preceded_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! terminated_sep (
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => ({
     use $crate::lib::std::result::Result::*;
@@ -224,7 +224,7 @@ macro_rules! terminated_sep (
 
 /// Internal parser, do not use directly
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! tuple_sep (
   ($i:expr, $separator:path, ($($parsed:tt),*), $e:path, $($rest:tt)*) => (
     tuple_sep!($i, $separator, ($($parsed),*), call!($e), $($rest)*);
@@ -288,7 +288,7 @@ macro_rules! tuple_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! do_parse_sep (
   (__impl $i:expr, $separator:path, ( $($rest:expr),* )) => (
     $crate::lib::std::result::Result::Ok(($i, ( $($rest),* )))
@@ -368,7 +368,7 @@ macro_rules! do_parse_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! permutation_sep (
   ($i:expr, $separator:path, $($rest:tt)*) => (
     {
@@ -411,7 +411,7 @@ macro_rules! permutation_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! permutation_iterator_sep (
   ($it:tt,$i:expr, $separator:path, $all_done:expr, $needed:expr, $res:expr, $e:ident?, $($rest:tt)*) => (
     permutation_iterator_sep!($it, $i, $separator, $all_done, $needed, $res, call!($e), $($rest)*);
@@ -480,7 +480,7 @@ macro_rules! permutation_iterator_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! alt_sep (
   (__impl $i:expr, $separator:path, $e:path | $($rest:tt)*) => (
     alt_sep!(__impl $i, $separator, call!($e) | $($rest)*);
@@ -585,7 +585,7 @@ macro_rules! alt_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! alt_complete_sep (
   ($i:expr, $separator:path, $e:path | $($rest:tt)*) => (
     alt_complete_sep!($i, $separator, complete!(call!($e)) | $($rest)*);
@@ -639,7 +639,7 @@ macro_rules! alt_complete_sep (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! switch_sep (
   (__impl $i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
@@ -683,7 +683,7 @@ macro_rules! switch_sep (
 
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! separated_list_sep (
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     separated_list!(
@@ -710,7 +710,7 @@ macro_rules! separated_list_sep (
 /// named!(pub space, eat_separator!(&b" \t"[..]));
 /// # fn main() {}
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! eat_separator (
   ($i:expr, $arr:expr) => (
     {
@@ -727,7 +727,7 @@ macro_rules! eat_separator (
 /// and will intersperse the space parser everywhere
 ///
 /// ```ignore
-/// #[macro_export]
+/// #[macro_export(local_inner_macros)]
 /// macro_rules! ws (
 ///   ($i:expr, $($args:tt)*) => (
 ///     {
@@ -737,7 +737,7 @@ macro_rules! eat_separator (
 ///   )
 /// );
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! sep (
   ($i:expr,  $separator:path, tuple ! ($($rest:tt)*) ) => {
     tuple_sep!($i, $separator, (), $($rest)*)
@@ -871,7 +871,7 @@ where
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ws (
   ($i:expr, $($args:tt)*) => (
     {

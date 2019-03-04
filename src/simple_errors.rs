@@ -13,19 +13,19 @@
 //! you can know precisely which parser got to which part of the input.
 //! The main drawback is that it is a lot slower than default error
 //! management.
-use util::{Convert, ErrorKind};
 use lib::std::convert::From;
+use util::{Convert, ErrorKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Context<I, E = u32> {
   Code(I, ErrorKind<E>),
 }
 
-impl<I, F, E: From<F>> Convert<Context<I, F>> for Context<I, E> {
+impl<I, H: From<I>, F, E: From<F>> Convert<Context<I, F>> for Context<H, E> {
   fn convert(c: Context<I, F>) -> Self {
     let Context::Code(i, e) = c;
 
-    Context::Code(i, ErrorKind::convert(e))
+    Context::Code(i.into(), ErrorKind::convert(e))
   }
 }
 
@@ -133,7 +133,7 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 ///     assert_eq!(parser(a), Err(Err::Error(Context::Code(a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! fix_error (
   ($i:expr, $t:ty, $submac:ident!( $($args:tt)* )) => (
     {
@@ -172,7 +172,7 @@ macro_rules! fix_error (
 /// combines a parser R -> IResult<R,S> and
 /// a parser S -> IResult<S,T> to return another
 /// parser R -> IResult<R,T>
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     flat_map!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));

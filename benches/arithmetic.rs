@@ -1,10 +1,13 @@
-#![feature(test)]
-extern crate test;
-
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate criterion;
+extern crate jemallocator;
 
-use test::Bencher;
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
+use criterion::Criterion;
 use nom::digit;
 
 // Parser definition
@@ -61,10 +64,14 @@ named!(
   )
 );
 
-#[bench]
-fn arithmetic(b: &mut Bencher) {
+fn arithmetic(c: &mut Criterion) {
   let data = &b"  2*2 / ( 5 - 1) + 3 / 4 * (2 - 7 + 567 *12 /2) + 3*(1+2*( 45 /2));";
 
-  println!("parsed:\n{:?}", expr(&data[..]));
-  b.iter(|| expr(&data[..]).unwrap());
+  expr(&data[..]).expect("should parse correctly");
+  c.bench_function("arithmetic", move |b| {
+    b.iter(|| expr(&data[..]).unwrap());
+  });
 }
+
+criterion_group!(benches, arithmetic);
+criterion_main!(benches);

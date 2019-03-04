@@ -1,9 +1,13 @@
-#![feature(test)]
-extern crate test;
-
 #[macro_use]
 extern crate nom;
+#[macro_use]
+extern crate criterion;
+extern crate jemallocator;
 
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
+use criterion::*;
 use nom::{alphanumeric, multispace, space};
 
 use std::str;
@@ -224,8 +228,7 @@ key4 = value4
 }
 */
 
-#[bench]
-fn bench_ini(b: &mut test::Bencher) {
+fn bench_ini(c: &mut Criterion) {
   let str = "[owner]
 name=John Doe
 organization=Acme Widgets Inc.
@@ -236,12 +239,18 @@ port=143
 file=payroll.dat
 \0";
 
-  b.iter(|| categories(str.as_bytes()).unwrap());
-  b.bytes = str.len() as u64;
+  c.bench(
+    "bench ini",
+    Benchmark::new(
+      "parse",
+      move |b| {
+        b.iter(|| categories(str.as_bytes()).unwrap());
+      },
+    ).throughput(Throughput::Bytes(str.len() as u32)),
+  );
 }
 
-#[bench]
-fn bench_ini_keys_and_values(b: &mut test::Bencher) {
+fn bench_ini_keys_and_values(c: &mut Criterion) {
   let str = "server=192.0.2.62
 port=143
 file=payroll.dat
@@ -249,14 +258,30 @@ file=payroll.dat
 
   named!(acc<Vec<(&str, &str)>>, many0!(key_value));
 
-  b.iter(|| acc(str.as_bytes()).unwrap());
-  b.bytes = str.len() as u64;
+  c.bench(
+    "bench ini keys and values",
+    Benchmark::new(
+      "parse",
+      move |b| {
+        b.iter(|| acc(str.as_bytes()).unwrap());
+      },
+    ).throughput(Throughput::Bytes(str.len() as u32)),
+  );
 }
 
-#[bench]
-fn bench_ini_key_value(b: &mut test::Bencher) {
+fn bench_ini_key_value(c: &mut Criterion) {
   let str = "server=192.0.2.62\n";
 
-  b.iter(|| key_value(str.as_bytes()).unwrap());
-  b.bytes = str.len() as u64;
+  c.bench(
+    "bench ini key value",
+    Benchmark::new(
+      "parse",
+      move |b| {
+        b.iter(|| key_value(str.as_bytes()).unwrap());
+      },
+    ).throughput(Throughput::Bytes(str.len() as u32)),
+  );
 }
+
+criterion_group!(benches, bench_ini, bench_ini_keys_and_values, bench_ini_key_value);
+criterion_main!(benches);

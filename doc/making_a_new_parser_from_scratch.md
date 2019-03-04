@@ -1,4 +1,4 @@
-% Making a new parser from scratch
+# Making a new parser from scratch
 
 Writing a parser is a very fun, interactive process, but sometimes a daunting task. How do you test it? How to  see ambiguities in specifications?
 
@@ -20,20 +20,15 @@ Usually, you can separate the parsing functions in their own module, so you coul
 
 
 ```rust
-# #[macro_use] extern crate nom;
-# use nom::IResult;
-# fn main() {
 fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> {
     take!(input, i * 10)
 }
 
 // will make a parser taking 20 bytes
 named!(parser, apply!(take_wrapper, 2));
-# }
-
 ```
 
-```ignore
+```rust
 #[macro_use]
 extern crate nom;
 pub mod parser;
@@ -42,9 +37,7 @@ pub mod parser;
 And use the methods and structure from `parser` there. The `src/parser.rs` would then import nom functions and structures if needed:
 
 ```rust
-# #[macro_use] extern crate nom;
 use nom::{be_u16, be_u32};
-# fn main() {}
 ```
 
 # Writing a first parser
@@ -56,9 +49,10 @@ error type. This enum can either be `Ok((i,o))` containing the remaining input
 and the output value, or, on the `Err` side, an error or an indication that more
 data is needed.
 
-```ignore
+```rust
 pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
-#[derive(Debug,PartialEq,Eq,CLone,Copy)]
+
+#[derive(Debug, PartialEq, Eq, CLone, Copy)]
 pub enum Needed {
   Unknown,
   Size(u32)
@@ -71,18 +65,18 @@ pub enum Err<I, E = u32> {
   Failure(Context<I, E>),
 }
 
-#[derive(Debug,PartialEq,Eq,Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Err<P,E=u32>{
   Code(ErrorKind<E>),
-  Node(ErrorKind<E>, Box<Err<P,E>>),
+  Node(ErrorKind<E>, Box<Err<P, E>>),
   Position(ErrorKind<E>, P),
-  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
+  NodePosition(ErrorKind<E>, P, Box<Err<P, E>>)
 }
 
-#[derive(Debug,PartialEq,Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum IResult<I,O,E=u32> {
-  Done(I,O),
-  Error(Err<I,E>),
+  Done(I, O),
+  Error(Err<I, E>),
   Incomplete(Needed)
 }
 
@@ -99,8 +93,6 @@ nom uses this type everywhere. Every combination of parsers will pattern match o
 nom provides a macro for function definition, called `named!`:
 
 ```rust
-# #[macro_use] extern crate nom;
-# fn main() {}
 named!(my_function(&[u8]) -> &[u8], tag!("abcd"));
 
 named!(my_function2<&[u8], &[u8]>, tag!("abcd"));
@@ -111,9 +103,6 @@ named!(my_function3, tag!("abcd"));
 But you could as easily define the function yourself like this:
 
 ```rust
-# #[macro_use] extern crate nom;
-# fn main() {}
-# use nom::IResult;
 fn my_function(input: &[u8]) -> IResult<&[u8], &[u8]> {
   tag!(input, "abcd")
 }
@@ -122,16 +111,12 @@ fn my_function(input: &[u8]) -> IResult<&[u8], &[u8]> {
 Note that we pass the input to the first parser in the manual definition, while we do not when we use `named!`. This is a macro trick specific to nom: every parser takes the input as first parameter, and the macros take care of giving the remaining input to the next parser. As an example, take a simple parser like the following one, which recognizes the word "hello" then takes the next 5 bytes:
 
 ```rust
-# #[macro_use] extern crate nom;
-# fn main() {}
 named!(prefixed, preceded!(tag!("hello"), take!(5)));
 ```
 
 Once the macros have expanded, this would correspond to:
 
-```ignore
-# #[macro_use] extern crate nom;
-# fn main() {}
+```rust
 fn prefixed(i: &[u8]) -> ::nom::IResult<&[u8], &[u8]> {
     {
         match {
@@ -184,11 +169,11 @@ Since it is easy to combine small parsers, I encourage you to write small functi
 
 # Finding the right combinator
 
-nom has a lot of different combinators, depending on the use case. They are all described in the [reference](http://rust.unhandledexpression.com/nom/).
+nom has a lot of different combinators, depending on the use case. They are all described in the [reference](https://docs.rs/nom).
 
-[Basic functions](http://rust.unhandledexpression.com/nom/#functions) are available. They deal mostly in recognizing character types, like `alphanumeric` or `digit`. They also parse big endian and little endian integers and floats of multiple sizes.
+[Basic functions](https://docs.rs/nom/#functions) are available. They deal mostly in recognizing character types, like `alphanumeric` or `digit`. They also parse big endian and little endian integers and floats of multiple sizes.
 
-Most of the macros are there to combine parsers, and they do not depend on the input type. this is the case for all of those defined in [src/macros.rs](https://github.com/Geal/nom/blob/master/src/macros.rs). The reference indicates a [possible type signature](http://rust.unhandledexpression.com/nom/#macros) for what the macros expect and return. In case of doubt, the documentation often indicates a [code example](http://rust.unhandledexpression.com/nom/macro.many0!.html) after the macro definition.
+Most of the macros are there to combine parsers, and they do not depend on the input type. this is the case for all of those defined in [src/macros.rs](https://github.com/Geal/nom/blob/master/src/macros.rs). The reference indicates a [possible type signature](https://docs.rs/nom/#macros) for what the macros expect and return. In case of doubt, the documentation often indicates a [code example](https://docs.rs/nom/macro.many0!.html) after the macro definition.
 
 ## Type specific combinators
 
@@ -204,7 +189,7 @@ Regular expression related macros are in [src/regexp.rs](https://github.com/Geal
 
 Once you have a parser function, a good trick is to test it on a lot of the samples you gathered, and integrate this to your unit tests. To that end, put all of the test files in a folder like `assets` and refer to test files like this:
 
-```ignore
+```rust
 #[test]
 fn header_test() {
   let data = include_bytes!("../assets/axolotl-piano.gif");
@@ -217,7 +202,7 @@ The `include_bytes!` macro (provided by Rust's standard library) will integrate 
 
 If your parser handles textual data, you can just use a lot of strings directly in the test, like this:
 
-```ignore
+```rust
 #[test]
 fn factor_test() {
   assert_eq!(factor(&b"3"[..]),       Ok((&b""[..], 3)));
@@ -233,7 +218,7 @@ The more samples and test cases you get, the more you can experiment with your p
 
 While Rust macros are really useful to get a simpler syntax, they can sometimes give cryptic errors. As an example, `named!(manytag, many0!(take!(5)));` would result in the following error:
 
-```ignore
+```
 <nom macros>:6:38: 6:41 error: mismatched types:
  expected `&[u8]`,
     found `collections::vec::Vec<&[u8]>`
@@ -251,11 +236,11 @@ This particular one is caused by `named!` generating a function returning a `IRe
 
 There are a few tools you can use to debug how code is generated.
 
-## trace_macros
+## trace\_macros
 
 The `trace_macros` feature show how macros are applied. To use it, add `#![feature(trace_macros)]` at the top of your file (you need Rust nightly for this), then apply it like this:
 
-```ignore
+```rust
 trace_macros!(true);
 named!(manytag< Vec<&[u8]> >, many0!(take!(5)));
 trace_macros!(false);
@@ -263,7 +248,7 @@ trace_macros!(false);
 
 It will result in the following output during compilation:
 
-```ignore
+```rust
 named! { manytag , many0 ! ( take ! ( 5 ) ) }
 many0! { i , take ! ( 5 ) }
 take! { input , 5 }
@@ -276,8 +261,6 @@ rustc can show how code is expanded with the option `--pretty=expanded`. If you 
 It will print the `manytag` function like this:
 
 ```rust
-# #[macro_use] extern crate nom;
-# fn main() {}
 fn manytag(i: &[u8]) -> ::nom::IResult<&[u8], Vec<&[u8]>> {
     let mut res = Vec::new();
     let mut input = i;

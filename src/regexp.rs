@@ -3,7 +3,7 @@
 macro_rules! regex (
   ($re: ident, $s:expr) => (
     lazy_static! {
-      static ref $re: ::regex::Regex = ::regex::Regex::new($s).unwrap();
+      static ref $re: $crate::lib::regex::Regex = $crate::lib::regex::Regex::new($s).unwrap();
     }
   );
 );
@@ -13,7 +13,7 @@ macro_rules! regex (
 macro_rules! regex_bytes (
   ($re: ident, $s:expr) => (
     lazy_static! {
-      static ref $re: ::regex::bytes::Regex = ::regex::bytes::Regex::new($s).unwrap();
+      static ref $re: $crate::lib::regex::bytes::Regex = $crate::lib::regex::bytes::Regex::new($s).unwrap();
     }
   );
 );
@@ -22,7 +22,7 @@ macro_rules! regex_bytes (
 /// Returns the whole input if a match is found
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_match (
   ($i:expr, $re:expr) => (
     {
@@ -31,7 +31,7 @@ macro_rules! re_match (
 
       use $crate::InputLength;
       use $crate::Slice;
-      let re = ::regex::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::Regex::new($re).unwrap();
       if re.is_match(&$i) {
         Ok(($i.slice($i.input_len()..), $i))
       } else {
@@ -47,7 +47,7 @@ macro_rules! re_match (
 /// Returns the whole input if a match is found. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_match_static (
   ($i:expr, $re:expr) => (
     {
@@ -71,7 +71,7 @@ macro_rules! re_match_static (
 /// Returns the whole input if a match is found
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_match (
   ($i:expr, $re:expr) => (
     {
@@ -80,7 +80,7 @@ macro_rules! re_bytes_match (
 
       use $crate::InputLength;
       use $crate::Slice;
-      let re = ::regex::bytes::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
       if re.is_match(&$i) {
         Ok(($i.slice($i.input_len()..), $i))
       } else {
@@ -96,7 +96,7 @@ macro_rules! re_bytes_match (
 /// Returns the whole input if a match is found. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_match_static (
   ($i:expr, $re:expr) => (
     {
@@ -120,7 +120,7 @@ macro_rules! re_bytes_match_static (
 /// Returns the first match
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_find (
   ($i:expr, $re:expr) => (
     {
@@ -128,7 +128,7 @@ macro_rules! re_find (
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
-      let re = ::regex::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::Regex::new($re).unwrap();
       if let Some(m) = re.find(&$i) {
         Ok(($i.slice(m.end()..), $i.slice(m.start()..m.end())))
       } else {
@@ -144,7 +144,7 @@ macro_rules! re_find (
 /// Returns the first match. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_find_static (
   ($i:expr, $re:expr) => (
     {
@@ -168,7 +168,7 @@ macro_rules! re_find_static (
 /// Returns the first match
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_find (
   ($i:expr, $re:expr) => (
     {
@@ -176,7 +176,7 @@ macro_rules! re_bytes_find (
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
-      let re = ::regex::bytes::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
       if let Some(m) = re.find(&$i) {
         Ok(($i.slice(m.end()..), $i.slice(m.start()..m.end())))
       } else {
@@ -192,7 +192,7 @@ macro_rules! re_bytes_find (
 /// Returns the first match. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_find_static (
   ($i:expr, $re:expr) => (
     {
@@ -216,7 +216,7 @@ macro_rules! re_bytes_find_static (
 /// Returns all the matched parts
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_matches (
   ($i:expr, $re:expr) => (
     {
@@ -224,7 +224,7 @@ macro_rules! re_matches (
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
-      let re = ::regex::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::Regex::new($re).unwrap();
       let v: Vec<_> = re.find_iter(&$i).map(|m| $i.slice(m.start()..m.end())).collect();
       if v.len() != 0 {
         let offset = {
@@ -245,7 +245,7 @@ macro_rules! re_matches (
 /// Returns all the matched parts. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_matches_static (
   ($i:expr, $re:expr) => (
     {
@@ -273,7 +273,7 @@ macro_rules! re_matches_static (
 /// Returns all the matched parts
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_matches (
   ($i:expr, $re:expr) => (
     {
@@ -281,7 +281,7 @@ macro_rules! re_bytes_matches (
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
-      let re = ::regex::bytes::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
       let v: Vec<_> = re.find_iter(&$i).map(|m| $i.slice(m.start()..m.end())).collect();
       if v.len() != 0 {
         let offset = {
@@ -302,7 +302,7 @@ macro_rules! re_bytes_matches (
 /// Returns all the matched parts. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_matches_static (
   ($i:expr, $re:expr) => (
     {
@@ -330,7 +330,7 @@ macro_rules! re_bytes_matches_static (
 /// Returns the first capture group
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_capture (
   ($i:expr, $re:expr) => (
     {
@@ -338,7 +338,7 @@ macro_rules! re_capture (
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
-      let re = ::regex::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::Regex::new($re).unwrap();
       if let Some(c) = re.captures(&$i) {
         let v:Vec<_> = c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
         let offset = {
@@ -359,7 +359,7 @@ macro_rules! re_capture (
 /// Returns the first capture group. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_capture_static (
   ($i:expr, $re:expr) => (
     {
@@ -387,7 +387,7 @@ macro_rules! re_capture_static (
 /// Returns the first capture group
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_capture (
   ($i:expr, $re:expr) => (
     {
@@ -395,7 +395,7 @@ macro_rules! re_bytes_capture (
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
-      let re = ::regex::bytes::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
       if let Some(c) = re.captures(&$i) {
         let v:Vec<_> = c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect();
         let offset = {
@@ -416,7 +416,7 @@ macro_rules! re_bytes_capture (
 /// Returns the first capture group. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_capture_static (
   ($i:expr, $re:expr) => (
     {
@@ -444,7 +444,7 @@ macro_rules! re_bytes_capture_static (
 /// Returns all the capture groups
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_captures (
   ($i:expr, $re:expr) => (
     {
@@ -452,7 +452,7 @@ macro_rules! re_captures (
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
-      let re = ::regex::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::Regex::new($re).unwrap();
       let v:Vec<Vec<_>> = re.captures_iter(&$i)
         .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap())
              .map(|m| $i.slice(m.start()..m.end())).collect()).collect();
@@ -475,7 +475,7 @@ macro_rules! re_captures (
 /// Returns all the capture groups. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_captures_static (
   ($i:expr, $re:expr) => (
     {
@@ -504,7 +504,7 @@ macro_rules! re_captures_static (
 /// Returns all the capture groups
 ///
 /// requires the `regexp` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_captures (
   ($i:expr, $re:expr) => (
     {
@@ -512,7 +512,7 @@ macro_rules! re_bytes_captures (
       use $crate::{Err,ErrorKind,IResult};
 
       use $crate::Slice;
-      let re = ::regex::bytes::Regex::new($re).unwrap();
+      let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
       let v:Vec<Vec<_>> = re.captures_iter(&$i)
         .map(|c| c.iter().filter(|el| el.is_some()).map(|el| el.unwrap()).map(|m| $i.slice(m.start()..m.end())).collect()).collect();
       if v.len() != 0 {
@@ -534,7 +534,7 @@ macro_rules! re_bytes_captures (
 /// Returns all the capture groups. Regular expression calculated at compile time
 ///
 /// requires the `regexp_macros` feature
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! re_bytes_captures_static (
   ($i:expr, $re:expr) => (
     {

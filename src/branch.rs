@@ -165,7 +165,7 @@
 ///  or empty input (End Of File). If none of them work, `preceded!` will fail and
 ///  "ef" will be tested.
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! alt (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)* ) => (
     compile_error!("alt uses '|' as separator, not ',':
@@ -277,7 +277,7 @@ macro_rules! alt (
 /// alt_complete!(parser_1 | parser_2 | ... | parser_n)
 /// ```
 /// **For more in depth examples, refer to the documentation of `alt!`**
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! alt_complete (
   // Recursive rules (must include `complete!` around the head)
 
@@ -435,7 +435,7 @@ macro_rules! alt_complete (
 ///  );
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! switch (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $( $($p:pat)|+ => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
@@ -559,7 +559,7 @@ macro_rules! switch (
 /// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
     {
@@ -602,7 +602,7 @@ macro_rules! permutation (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! permutation_init (
   ((), $e:ident?, $($rest:tt)*) => (
     permutation_init!(($crate::lib::std::option::Option::None), $($rest)*)
@@ -651,7 +651,7 @@ macro_rules! permutation_init (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! succ (
   (0, $submac:ident ! ($($rest:tt)*)) => ($submac!(1, $($rest)*));
   (1, $submac:ident ! ($($rest:tt)*)) => ($submac!(2, $($rest)*));
@@ -679,7 +679,7 @@ macro_rules! succ (
 // permutation_unwrap. This is a bit ugly, but it will have no
 // impact on the generated code
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! acc (
   (0, $tup:expr) => ($tup.0);
   (1, $tup:expr) => ($tup.1);
@@ -705,7 +705,7 @@ macro_rules! acc (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! permutation_unwrap (
   ($it:tt,  (), $res:ident, $e:ident?, $($rest:tt)*) => (
     succ!($it, permutation_unwrap!((acc!($it, $res)), $res, $($rest)*));
@@ -781,7 +781,7 @@ macro_rules! permutation_unwrap (
 );
 
 #[doc(hidden)]
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! permutation_iterator (
   ($it:tt,$i:expr, $all_done:expr, $needed:expr, $res:expr, $e:ident?, $($rest:tt)*) => (
     permutation_iterator!($it, $i, $all_done, $needed, $res, call!($e), $($rest)*);
