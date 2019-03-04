@@ -301,7 +301,7 @@ macro_rules! delimited(
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! do_parse (
   (__impl $i:expr, ( $($rest:expr),* )) => (
     $crate::lib::std::result::Result::Ok(($i, ( $($rest),* )))
@@ -312,7 +312,7 @@ macro_rules! do_parse (
   );
 
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) ) => (
-    compile_error!("do_parse is missing the return value. A do_parse call must end
+    nom_compile_error!("do_parse is missing the return value. A do_parse call must end
       with a return value between parenthesis, as follows:
 
       do_parse!(
@@ -324,10 +324,10 @@ macro_rules! do_parse (
   );
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
-    compile_error!("do_parse uses >> as separator, not ~");
+    nom_compile_error!("do_parse uses >> as separator, not ~");
   );
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
-    compile_error!("do_parse uses >> as separator, not ~");
+    nom_compile_error!("do_parse uses >> as separator, not ~");
   );
   (__impl $i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     do_parse!(__impl $i, $field: call!($e) ~ $($rest)*);
@@ -422,7 +422,7 @@ macro_rules! do_parse (
     }
   );
   ($submac:ident!( $($args:tt)* ) >> $($rest:tt)* ) => (
-    compile_error!("if you are using do_parse outside of a named! macro, you must
+    nom_compile_error!("if you are using do_parse outside of a named! macro, you must
         pass the input data as first argument, like this:
 
         let res = do_parse!(input,
@@ -434,6 +434,11 @@ macro_rules! do_parse (
   ($e:ident! >> $($rest:tt)* ) => (
     do_parse!( call!($e) >> $($rest)*);
   );
+);
+
+#[macro_export]
+macro_rules! nom_compile_error (
+  (( $(args:tt)* )) => ( compile_error!($($args)*) );
 );
 
 #[cfg(test)]
