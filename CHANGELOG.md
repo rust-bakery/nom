@@ -8,6 +8,12 @@
 
 ### Fixed
 
+## 4.2.2 - 2019-03-04
+
+### Fixed
+
+- regression in do_parse macro import for edition 2018
+
 ## 4.2.1 - 2019-02-27
 
 ### Fixed
