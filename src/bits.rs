@@ -47,23 +47,24 @@ macro_rules! bits_impl (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::{Context,Err,Needed};
+      use $crate::Slice;
 
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
         Err(Err::Error(e)) => {
           let err = match e {
-            Context::Code((i,b), kind) => Context::Code(&i[b/8..], kind),
+            Context::Code((i,b), kind) => Context::Code(i.slice(b/8..), kind),
             Context::List(mut v) => {
-              Context::List(v.drain(..).map(|((i,b), kind)| (&i[b/8..], kind)).collect())
+              Context::List(v.drain(..).map(|((i,b), kind)| (i.slice(b/8..), kind)).collect())
             }
           };
           Err(Err::Error(err))
         },
         Err(Err::Failure(e)) => {
           let err = match e {
-            Context::Code((i,b), kind) => Context::Code(&i[b/8..], kind),
+            Context::Code((i,b), kind) => Context::Code(i.slice(b/8..), kind),
             Context::List(mut v) => {
-              Context::List(v.drain(..).map(|((i,b), kind)| (&i[b/8..], kind)).collect())
+              Context::List(v.drain(..).map(|((i,b), kind)| (i.slice(b/8..), kind)).collect())
             }
           };
           Err(Err::Failure(err))
@@ -76,7 +77,7 @@ macro_rules! bits_impl (
         Ok(((i, bit_index), o))             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          Ok((&i[byte_index..], o))
+          Ok((i.slice(byte_index..), o))
         }
       }
     }
@@ -92,6 +93,7 @@ macro_rules! bits_impl (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,Context};
+      use $crate::Slice;
 
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
@@ -111,7 +113,7 @@ macro_rules! bits_impl (
         Ok(((i, bit_index), o))             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          Ok((&i[byte_index..], o))
+          Ok((i.slice(byte_index..), o))
         }
       }
     }
@@ -159,14 +161,14 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context,ErrorKind};
+      use $crate::{Err,Needed,Context,Slice,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
-        inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
+        inp = $macro_i.0.slice(1 + $macro_i.1 / 8 ..);
       }
       else {
-        inp = & $macro_i.0[$macro_i.1 / 8 ..];
+        inp = $macro_i.0.slice($macro_i.1 / 8 ..);
       }
 
       let sub = $submac!(inp, $($args)*);
@@ -221,14 +223,14 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context,ErrorKind};
+      use $crate::{Err,Needed,Context,Slice,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
-        inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
+        inp = $macro_i.0.slice(1 + $macro_i.1 / 8 ..);
       }
       else {
-        inp = & $macro_i.0[$macro_i.1 / 8 ..];
+        inp = $macro_i.0.slice($macro_i.1 / 8 ..);
       }
 
       let sub = $submac!(inp, $($args)*);
@@ -281,9 +283,10 @@ macro_rules! take_bits (
 
       use $crate::lib::std::ops::Div;
       use $crate::lib::std::convert::Into;
+      use $crate::Slice;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
-      let res : IResult<(&[u8],usize), $t> = if $count == 0 {
+      let res : IResult<_, $t> = if $count == 0 {
         Ok(( (input, bit_offset), (0 as u8).into()))
       } else {
         let cnt = ($count as usize + bit_offset).div(8);
@@ -316,7 +319,7 @@ macro_rules! take_bits (
               offset = 0;
             }
           }
-          Ok(( (&input[cnt..], end_offset) , acc))
+          Ok(( (input.slice(cnt..), end_offset) , acc))
         }
       };
       res
@@ -354,7 +357,7 @@ macro_rules! tag_bits (
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i, o))    => {
           if let $p = o {
-            let res: IResult<(&[u8],usize),$t> = Ok((i, o));
+            let res: IResult<_,$t> = Ok((i, o));
             res
           } else {
             let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
@@ -375,6 +378,7 @@ mod tests {
   use lib::std::ops::{AddAssign, Shl, Shr};
   use internal::{Err, Needed};
   use util::ErrorKind;
+  use types::CompleteByteSlice;
 
   #[test]
   fn take_bits() {
@@ -395,6 +399,7 @@ mod tests {
     assert_eq!(take_bits!((sl, 6), u16, 11), Ok(((&sl[2..], 1), 1504)));
     assert_eq!(take_bits!((sl, 0), u32, 20), Ok(((&sl[2..], 4), 700_163)));
     assert_eq!(take_bits!((sl, 4), u32, 20), Ok(((&sl[3..], 0), 716_851)));
+    assert_eq!(take_bits!((CompleteByteSlice(sl), 4), u32, 20), Ok(((sl[3..].into(), 0), 716_851)));
     assert_eq!(
       take_bits!((sl, 4), u32, 22),
       Err(Err::Incomplete(Needed::Size(22)))
@@ -408,6 +413,7 @@ mod tests {
 
     assert_eq!(tag_bits!((sl, 0), u8, 3, 0b101), Ok(((&sl[0..], 3), 5)));
     assert_eq!(tag_bits!((sl, 0), u8, 4, 0b1010), Ok(((&sl[0..], 4), 10)));
+    assert_eq!(tag_bits!((CompleteByteSlice(sl), 0), u8, 4, 0b1010), Ok(((sl[0..].into(), 4), 10)));
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
@@ -438,6 +444,15 @@ mod tests {
       ch_bytes(&input[1..]),
       Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits)))
     );
+  }
+
+  named!(bits_bytes_bs, bits!(bytes!(::rest)));
+  named!(bits_bytes_cbs<CompleteByteSlice, CompleteByteSlice>, bits!(bytes!(::rest)));
+  #[test]
+  fn bits_bytes() {
+    let input = [0b10_10_10_10];
+    assert_eq!(bits_bytes_bs(&input[..]), Ok((&[][..], &[0b10_10_10_10][..])));
+    assert_eq!(bits_bytes_cbs(CompleteByteSlice(&input[..])), Ok(([][..].into(), [0b10_10_10_10][..].into())));
   }
 
   #[derive(PartialEq, Debug)]

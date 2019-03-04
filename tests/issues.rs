@@ -280,6 +280,32 @@ named_args!(issue_771(count: usize)<Vec<u32>>,
   length_count!(value!(count), call!(nom::be_u32))
 );
 
+#[test]
+fn issue_768() {
+  named!(bit_vec8<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 8))));
+  named!(bit_vec4<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 4))));
+  named!(bit_vec3<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 3))));
+  named!(bit_vec11<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 11))));
+
+  let m: Vec<u8> = vec![70, 97, 106, 121, 86, 66, 105, 98, 86, 106, 101];
+  assert_eq!(
+    bit_vec8(CompleteByteSlice(m.as_slice())),
+    Ok((CompleteByteSlice(&[]), vec![70, 97, 106, 121, 86, 66, 105, 98, 86, 106, 101]))
+  );
+  assert_eq!(
+    bit_vec4(CompleteByteSlice(m.as_slice())),
+    Ok((CompleteByteSlice(&[]), vec![4, 6, 6, 1, 6, 10, 7, 9, 5, 6, 4, 2, 6, 9, 6, 2, 5, 6, 6, 10, 6, 5]))
+  );
+  assert_eq!(
+    bit_vec3(CompleteByteSlice(m.as_slice())),
+    Ok((CompleteByteSlice(&[]), vec![2, 1, 4, 6, 0, 5, 5, 2, 3, 6, 2, 5, 3, 1, 0, 2, 3, 2, 2, 6, 1, 1, 2, 6, 3, 2, 4, 6, 2]))
+  );
+  assert_eq!(
+    bit_vec11(CompleteByteSlice(m.as_slice())),
+    Ok((CompleteByteSlice(&[]), vec![563, 90, 1266, 1380, 308, 1417, 717, 613]))
+  );
+}
+
 /// This test is in a separate module to check that all required symbols are imported in
 /// `escaped_transform!()`. Without the module, the `use`-es of the current module would
 /// mask the error ('"Use of undeclared type or module `Needed`" in escaped_transform!').
