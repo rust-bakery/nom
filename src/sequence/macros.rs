@@ -93,21 +93,19 @@ macro_rules! tuple_parser (
 #[macro_export(local_inner_macros)]
 macro_rules! pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      tuple!($i, $submac!($($args)*), $submac2!($($args2)*))
-    }
+    pair!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    pair!($i, $submac!($($args)*), call!($g));
+    pair!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    pair!($i, call!($f), $submac!($($args)*));
+    pair!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    pair!($i, call!($f), call!($g));
+    $crate::pairc($i, $f, $g)
   );
 );
 
@@ -115,21 +113,17 @@ macro_rules! pair(
 /// separated_pair(X,sep,Y) returns (x,y)
 #[macro_export(local_inner_macros)]
 macro_rules! separated_pair(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-        Err(e)    => Err(e),
-        Ok((i1, (o1, _, o2))) => {
-          Ok((i1, (o1, o2)))
-        }
-      }
-    }
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    separated_pair!($i, |i| $submac!(i, $($args)*), $($rest)*)
   );
-
-  ($i:expr, $f:expr, $($rest:tt)+) => (
-    separated_pair!($i, call!($f), $($rest)*);
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    separated_pair!($i, $f, |i| $submac!(i, $($args)*), $($rest)*)
+  );
+  ($i:expr, $f:expr, $g:expr, $submac:ident!( $($args:tt)* )) => (
+    separated_pair!($i, $f, $g, |i| $submac!(i, $($args)*))
+  );
+  ($i:expr, $f:expr, $g:expr, $h:expr) => (
+    $crate::separated_pairc($i, $f, $g, $h)
   );
 );
 
@@ -138,28 +132,19 @@ macro_rules! separated_pair(
 #[macro_export(local_inner_macros)]
 macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        Err(e) => Err(e),
-        Ok((remaining, (_,o)))    => {
-          Ok((remaining, o))
-        }
-      }
-    }
+    preceded!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    preceded!($i, $submac!($($args)*), call!($g));
+    preceded!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    preceded!($i, call!($f), $submac!($($args)*));
+    preceded!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    preceded!($i, call!($f), call!($g));
+    $crate::precededc($i, $f, $g)
   );
 );
 
@@ -168,28 +153,19 @@ macro_rules! preceded(
 #[macro_export(local_inner_macros)]
 macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        Err(e) => Err(e),
-        Ok((remaining, (o,_)))    => {
-          Ok((remaining, o))
-        }
-      }
-    }
+    terminated!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    terminated!($i, $submac!($($args)*), call!($g));
+    terminated!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    terminated!($i, call!($f), $submac!($($args)*));
+    terminated!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    terminated!($i, call!($f), call!($g));
+    $crate::terminatedc($i, $f, $g)
   );
 );
 
@@ -213,21 +189,17 @@ macro_rules! terminated(
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! delimited(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-        Err(e) => Err(e),
-        Ok((i1, (_, o, _)))   => {
-          Ok((i1, o))
-        }
-      }
-    }
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    delimited!($i, |i| $submac!(i, $($args)*), $($rest)*)
   );
-
-  ($i:expr, $f:expr, $($rest:tt)+) => (
-    delimited!($i, call!($f), $($rest)*);
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    delimited!($i, $f, |i| $submac!(i, $($args)*), $($rest)*)
+  );
+  ($i:expr, $f:expr, $g:expr, $submac:ident!( $($args:tt)* )) => (
+    delimited!($i, $f, $g, |i| $submac!(i, $($args)*))
+  );
+  ($i:expr, $f:expr, $g:expr, $h:expr) => (
+    $crate::delimitedc($i, $f, $g, $h)
   );
 );
 

@@ -20,27 +20,7 @@ use traits::{need_more, AtEof};
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! one_of (
-  ($i:expr, $inp: expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed};
-
-      use $crate::Slice;
-      use $crate::AsChar;
-      use $crate::FindToken;
-      use $crate::InputIter;
-
-      match ($i).iter_elements().next().map(|c| {
-        (c, $inp.find_token(c))
-      }) {
-        None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!($i, $crate::ErrorKind::OneOf::<u32>))),
-        //the unwrap should be safe here
-        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
-      }
-    }
-  );
+  ($i:expr, $inp: expr) => ( $crate::one_ofc($i, $inp) );
 );
 
 /// matches anything but the provided characters
@@ -59,27 +39,7 @@ macro_rules! one_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! none_of (
-  ($i:expr, $inp: expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed};
-
-      use $crate::Slice;
-      use $crate::AsChar;
-      use $crate::FindToken;
-      use $crate::InputIter;
-
-      match ($i).iter_elements().next().map(|c| {
-        (c, !$inp.find_token(c))
-      }) {
-        None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!($i, $crate::ErrorKind::NoneOf::<u32>))),
-        //the unwrap should be safe here
-        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
-      }
-    }
-  );
+  ($i:expr, $inp: expr) => ( $crate::none_ofc($i, $inp) );
 );
 
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
@@ -97,30 +57,7 @@ macro_rules! none_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! char (
-  ($i:expr, $c: expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed};
-
-      use $crate::Slice;
-      use $crate::AsChar;
-      use $crate::InputIter;
-
-      match ($i).iter_elements().next().map(|c| {
-        let b = c.as_char() == $c;
-        b
-      }) {
-        None        => $crate::need_more($i, Needed::Size(1)),
-        Some(false) => {
-          let e: $crate::ErrorKind<u32> = $crate::ErrorKind::Char;
-          Err(Err::Error($crate::Context::Code($i, e)))
-        },
-        //the unwrap should be safe here
-        Some(true)  => Ok(( $i.slice($c.len()..), $i.iter_elements().next().unwrap().as_char() ))
-      }
-    }
-  );
+  ($i:expr, $c: expr) => ( $crate::charc($i, $c) );
 );
 
 named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'));

@@ -241,48 +241,10 @@ macro_rules! separated_nonempty_list_complete {
 #[macro_export(local_inner_macros)]
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,AtEof};
-
-      let ret;
-      let mut res   = $crate::lib::std::vec::Vec::new();
-      let mut input = $i.clone();
-
-      loop {
-        let input_ = input.clone();
-        match $submac!(input_, $($args)*) {
-          Ok((i, o))              => {
-            // loop trip must always consume (otherwise infinite loops)
-            if i == input {
-
-              if i.at_eof() {
-                ret = Ok((input, res));
-              } else {
-                ret = Err(Err::Error(error_position!(input, $crate::ErrorKind::Many0)));
-              }
-              break;
-            }
-            res.push(o);
-
-            input = i;
-          },
-          Err(Err::Error(_))      => {
-            ret = Ok((input, res));
-            break;
-          },
-          Err(e) => {
-            ret = Err(e);
-            break;
-          },
-        }
-      }
-
-      ret
-    }
+    many0!($i, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr) => (
-    many0!($i, call!($f));
+    $crate::many0c($i, $f)
   );
 );
 
@@ -317,55 +279,10 @@ macro_rules! many0(
 #[macro_export(local_inner_macros)]
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::Err;
-
-      use $crate::InputLength;
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(Err::Error(_))      => Err(Err::Error(
-          error_position!(i_, $crate::ErrorKind::Many1)
-        )),
-        Err(Err::Failure(_))      => Err(Err::Failure(
-          error_position!(i_, $crate::ErrorKind::Many1)
-        )),
-        Err(i) => Err(i),
-        Ok((i1,o1))   => {
-          let mut res    = $crate::lib::std::vec::Vec::with_capacity(4);
-          res.push(o1);
-          let mut input  = i1;
-          let mut error = $crate::lib::std::option::Option::None;
-          loop {
-            let input_ = input.clone();
-            match $submac!(input_, $($args)*) {
-              Err(Err::Error(_))                    => {
-                break;
-              },
-              Err(e) => {
-                error = $crate::lib::std::option::Option::Some(e);
-                break;
-              },
-              Ok((i, o)) => {
-                if i.input_len() == input.input_len() {
-                  break;
-                }
-                res.push(o);
-                input = i;
-              }
-            }
-          }
-
-          match error {
-            $crate::lib::std::option::Option::Some(e) => Err(e),
-            $crate::lib::std::option::Option::None    => Ok((input, res))
-          }
-        }
-      }
-    }
+    many1!($i, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr) => (
-    many1!($i, call!($f));
+    $crate::many1c($i, $f)
   );
 );
 
@@ -1401,7 +1318,7 @@ mod tests {
   #[test]
   #[cfg(feature = "alloc")]
   fn many1() {
-    named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
+    named!(multi<&[u8],Vec<&[u8]> >, many1!(dbg_dmp!(tag!("abcd"))));
 
     let a = &b"abcdef"[..];
     let b = &b"abcdabcdefgh"[..];

@@ -810,7 +810,7 @@ where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -839,7 +839,7 @@ where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + ParseTo<f32> + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -854,7 +854,7 @@ where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + ParseTo<f32> + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -868,7 +868,7 @@ where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + ParseTo<f64> + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -883,7 +883,7 @@ where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + ParseTo<f64> + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
