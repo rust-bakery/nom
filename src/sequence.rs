@@ -999,7 +999,7 @@ mod tests {
   }
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
-  //#[test]
+  #[test]
   fn do_parse_destructor() {
     struct A(u8, u8);
     struct B {
