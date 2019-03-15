@@ -134,7 +134,10 @@ macro_rules! separated_pair(
 );
 
 /// `preceded!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, O>`
-/// preceded(opening, X) returns X
+///
+/// There's some part (the prefix) which the first argument of the macro will parse and return `Ok(T)` if found.
+/// `T` can be `()`, and is dropped. The second argument should be something which parses the next portion of 
+/// the stream (the prefixed content), and returns the desired output type, `O`, when successful.
 #[macro_export(local_inner_macros)]
 macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
