@@ -4,7 +4,7 @@
 ## Basic elements
 Those are used to recognize the lowest level elements of your grammar, like, "here is a dot", or "here is an big endian integer".
 
-| combinator|usage | input | output | comment |
+| combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [char](https://docs.rs/nom/4.0.0/nom/macro.char.html) | `char!('a')` |  `"abc"` | `Ok(("bc", 'a'))`| matches one character (works with non ASCII chars too) | 
 |[is_a](https://docs.rs/nom/4.0.0/nom/macro.is_a.html) | ` is_a!("ab")` |  `"ababc"` | `Ok(("c", "abab"))`|matches a sequence of any of the characters passed as arguments|
@@ -32,7 +32,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 |[permutation](https://docs.rs/nom/4.0.0/nom/macro.permutation.html) | `permutation!(tag!("ab"), tag!("cd"), tag!("12"))` |  `"cd12abc"` | `Ok( ("c", ("ab", "cd", "12") )`|succeeds when all its child parser have succeeded, whatever the order|
 
 ## Sequence combinators
-| combinator|usage | input | output | comment |
+| combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [delimited](https://docs.rs/nom/4.0.0/nom/macro.delimited.html) |`delimited!(char!('('), take(2), char!(')'))` |  `"(ab)cd"` | `Ok( ("cd", "ab") )`||
 | [preceded](https://docs.rs/nom/4.0.0/nom/macro.preceded.html) |`preceded!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", "XY") )`||
@@ -44,7 +44,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 
 ## Applying a parser multiple times
 
-| combinatoe|usage | input | output | comment |
+| combinatoer | usage | input | output | comment |
 |---|---|---|---|---|
 | [count](https://docs.rs/nom/4.0.0/nom/macro.count.html) |`count!(take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", vec!("ab", "cd", "ef")) )`|applies the child parser a specified number of times|
 | [count_fixed](https://docs.rs/nom/4.0.0/nom/macro.count_fixed.html) |`count_fixed!(&[u8], take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", ["ab", "cd", "ef"]))`|applies the child parser a fixed number of times and returns a fixed size array. The type must be specified and it must be `Copy`|
