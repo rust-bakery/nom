@@ -1,113 +1,704 @@
 #[macro_use]
 mod macros;
 
-use internal::{Err,IResult};
+use crate::Context;
+use internal::{Err, IResult, Needed};
+use std::fmt::Debug;
+use traits::{need_more, AtEof, InputLength};
 use util::ErrorKind;
-use traits::{AtEof,InputLength};
 
-pub fn many0c<I: Clone+InputLength+AtEof, O, F>(mut input: I, mut f: F) -> IResult<I, Vec<O>>
-  where F: FnMut(I) -> IResult<I, O> {
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn many0<Input, Output, Error, F>(mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength + AtEof,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  move |mut input: Input| {
+    let mut acc = ::lib::std::vec::Vec::with_capacity(4);
 
-  let mut acc = Vec::with_capacity(4);
+    loop {
+      let input_ = input.clone();
+      match f(input_) {
+        Err(Err::Error(_)) => return Ok((input, acc)),
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Err(Err::Incomplete(n)) => {
+          if input.at_eof() {
+            return Ok((input, acc));
+          } else {
+            return Err(Err::Incomplete(n));
+          }
+        }
+        Ok((i, o)) => {
+          if input.input_len() == i.input_len() {
+            return Err(Err::Error(error_position!(i, ErrorKind::Many0)));
+          }
+
+          input = i;
+          acc.push(o);
+        }
+      }
+    }
+  }
+}
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn many0c<Input, Output, Error, F>(input: Input, mut f: F) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength + AtEof,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  many0(f)(input)
+}
+
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn many1<Input, Output: Debug, Error, F>(f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + Copy + AtEof + InputLength + Debug,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+{
+  move |mut input: Input| {
+    let input_ = input.clone();
+    match f(input_) {
+      Err(_) => return Err(Err::Error(error_position!(input, ErrorKind::Many1))),
+      Ok((i2, o)) => {
+        let mut acc = ::lib::std::vec::Vec::with_capacity(4);
+        acc.push(o);
+        let mut input = i2;
+
+        loop {
+          let input_ = input.clone();
+          match f(input_) {
+            Err(Err::Error(_)) => return Ok((input, acc)),
+            Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+            Err(Err::Incomplete(n)) => {
+              if input.at_eof() {
+                return Ok((input, acc));
+              } else {
+                return Err(Err::Incomplete(n));
+              }
+            }
+            Ok((i, o)) => {
+              if input.input_len() == i.input_len() {
+                return Err(Err::Error(error_position!(i, ErrorKind::Many1)));
+              }
+
+              input = i;
+              acc.push(o);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn many1c<Input, Output: Debug, Error, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + Copy + AtEof + InputLength + Debug,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+{
+  many1(f)(input)
+}
+
+//FIXME: streaming
+/// `many_till!(Input -> IResult<Input,Output>, Input -> IResult<Input,P>) => Input -> IResult<Input, (Vec<Output>, P)>`
+#[cfg(feature = "alloc")]
+pub fn many_till<Input, Output, P, Error, F, G>(mut f: F, mut g: G) -> impl FnOnce(Input) -> IResult<Input, (Vec<Output>, P), Error>
+where
+  Input: Clone + PartialEq + InputLength + AtEof,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(Input) -> IResult<Input, P, Error>,
+{
+  move |i: Input| {
+    let ret;
+    let mut res = ::lib::std::vec::Vec::new();
+    let mut input = i.clone();
+
+    loop {
+      let _input = input.clone();
+      let _input2 = input.clone();
+
+      match g(_input) {
+        Ok((i, o)) => {
+          ret = Ok((i, (res, o)));
+          break;
+        }
+        Err(e1) => {
+          match f(_input2) {
+            Err(Err::Error(err)) => {
+              //fn unify_types<T>(_: &T, _: &T) {}
+              let e = Err::Error(error_node_position!(input, ErrorKind::ManyTill, err));
+              //unify_types(&e1, &e);
+
+              ret = Err(e);
+              break;
+            }
+            Err(e) => {
+              ret = Err(e);
+              break;
+            }
+            Ok((i, o)) => {
+              // loop trip must always consume (otherwise infinite loops)
+              if i == input {
+                ret = Err(Err::Error(error_position!(input, ErrorKind::ManyTill)));
+                break;
+              }
+
+              res.push(o);
+              input = i;
+            }
+          }
+        }
+      }
+    }
+
+    ret
+  }
+}
+
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn many_tillc<Input, Output, P, Error, F, G>(i: Input, mut f: F, mut g: G) -> IResult<Input, (Vec<Output>, P), Error>
+where
+  Input: Clone + PartialEq + InputLength + AtEof,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(Input) -> IResult<Input, P, Error>,
+{
+  many_till(f, g)(i)
+}
+
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn separated_list<Input, Output, Output2, Error, F, G>(mut sep: G, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(Input) -> IResult<Input, Output2, Error>,
+{
+  move |i: Input| {
+    let mut res = ::lib::std::vec::Vec::new();
+    let mut input = i.clone();
+
+    // get the first element
+    let input_ = input.clone();
+    match f(input_) {
+      Err(Err::Error(_)) => Ok((input, res)),
+      Err(e) => Err(e),
+      Ok((i, o)) => {
+        if i.input_len() == input.input_len() {
+          Err(Err::Error(error_position!(input, ErrorKind::SeparatedList)))
+        } else {
+          res.push(o);
+          input = i;
+
+          let ret;
+
+          loop {
+            // get the separator first
+            let input_ = input.clone();
+            match sep(input_) {
+              Err(Err::Error(_)) => {
+                ret = Ok((input, res));
+                break;
+              }
+              Err(e) => {
+                ret = Err(e);
+                break;
+              }
+              Ok((i2, _)) => {
+                let i2_len = i2.input_len();
+                if i2_len == input.input_len() {
+                  ret = Ok((input, res));
+                  break;
+                }
+
+                // get the element next
+                match f(i2) {
+                  Err(Err::Error(_)) => {
+                    ret = Ok((input, res));
+                    break;
+                  }
+                  Err(e) => {
+                    ret = Err(e);
+                    break;
+                  }
+                  Ok((i3, o3)) => {
+                    if i3.input_len() == i2_len {
+                      ret = Ok((input, res));
+                      break;
+                    }
+                    res.push(o3);
+                    input = i3;
+                  }
+                }
+              }
+            }
+          }
+
+          ret
+        }
+      }
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+pub fn separated_listc<Input, Output, Output2, Error, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(Input) -> IResult<Input, Output2, Error>,
+{
+  separated_list(sep, f)(i)
+}
+
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn separated_non_empty_list<Input, Output, Output2, Error, F, G>(mut sep: G, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(Input) -> IResult<Input, Output2, Error>,
+{
+  move |i: Input| {
+    let mut res = ::lib::std::vec::Vec::new();
+    let mut input = i.clone();
+
+    // get the first element
+    let input_ = input.clone();
+    match f(input_) {
+      Err(e) => Err(e),
+      Ok((i, o)) => {
+        if i.input_len() == input.input_len() {
+          let e = ErrorKind::SeparatedNonEmptyList;
+          Err(Err::Error(error_position!(input, e)))
+        } else {
+          res.push(o);
+          input = i;
+
+          let ret;
+
+          loop {
+            // get the separator first
+            let input_ = input.clone();
+            match sep(input_) {
+              Err(Err::Error(_)) => {
+                ret = Ok((input, res));
+                break;
+              }
+              Err(e) => {
+                ret = Err(e);
+                break;
+              }
+              Ok((i2, _)) => {
+                let i2_len = i2.input_len();
+                if i2_len == input.input_len() {
+                  ret = Ok((input, res));
+                  break;
+                }
+
+                // get the element next
+                match f(i2) {
+                  Err(Err::Error(_)) => {
+                    ret = Ok((input, res));
+                    break;
+                  }
+                  Err(e) => {
+                    ret = Err(e);
+                    break;
+                  }
+                  Ok((i3, o3)) => {
+                    if i3.input_len() == i2_len {
+                      ret = Ok((input, res));
+                      break;
+                    }
+                    res.push(o3);
+                    input = i3;
+                  }
+                }
+              }
+            }
+          }
+
+          ret
+        }
+      }
+    }
+  }
+}
+
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn separated_non_empty_listc<Input, Output, Output2, Error, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(Input) -> IResult<Input, Output2, Error>,
+{
+  separated_non_empty_list(sep, f)(i)
+}
+
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn many_m_n<Input, Output, Error, F>(m: usize, n: usize, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength + AtEof,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  move |i: Input| {
+    let mut res = ::lib::std::vec::Vec::with_capacity(m);
+    let mut input = i.clone();
+    let mut count: usize = 0;
+    let mut err = false;
+    let mut incomplete: Option<Needed> = None;
+    let mut failure: Option<Context<_, _>> = None;
+
+    loop {
+      if count == n {
+        break;
+      }
+      let _i = input.clone();
+      match f(_i) {
+        Ok((i, o)) => {
+          // do not allow parsers that do not consume input (causes infinite loops)
+          if i.input_len() == input.input_len() {
+            break;
+          }
+          res.push(o);
+          input = i;
+          count += 1;
+        }
+        Err(Err::Error(_)) => {
+          err = true;
+          break;
+        }
+        Err(Err::Incomplete(i)) => {
+          incomplete = Some(i);
+          break;
+        }
+        Err(Err::Failure(e)) => {
+          failure = Some(e);
+          break;
+        }
+      }
+    }
+
+    if count < m {
+      if err {
+        Err(Err::Error(error_position!(i, ErrorKind::ManyMN)))
+      } else {
+        match failure {
+          Some(i2) => Err(Err::Failure(i2)),
+          None => match incomplete {
+            Some(i2) => need_more(i, i2),
+            None => need_more(i, Needed::Unknown),
+          },
+        }
+      }
+    } else {
+      match failure {
+        Some(i) => Err(Err::Failure(i)),
+        None => match incomplete {
+          Some(i2) => need_more(i, i2),
+          None => Ok((input, res)),
+        },
+      }
+    }
+  }
+}
+
+//FIXME: streaming
+#[cfg(feature = "alloc")]
+pub fn many_m_nc<Input, Output, Error, F>(i: Input, m: usize, n: usize, mut f: F) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength + AtEof,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  many_m_n(m, n, f)(i)
+}
+
+//FIXME: streaming
+pub fn many0_count<Input, Output, Error, F>(i: Input, mut f: F) -> IResult<Input, usize, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  let ret;
+  let mut count: usize = 0;
+  let mut input = i.clone();
 
   loop {
     let input_ = input.clone();
     match f(input_) {
-      Err(Err::Error(_)) => return Ok((input, acc)),
-      Err(Err::Failure(e)) => return  Err(Err::Failure(e)),
-      Err(Err::Incomplete(n)) => {
-        if input.at_eof() {
-          return Ok((input, acc));
-        } else {
-          return Err(Err::Incomplete(n));
+      Ok((i, _)) => {
+        //  loop trip must always consume (otherwise infinite loops)
+        if i == input {
+          if i.at_eof() {
+            ret = Ok((input, count));
+          } else {
+            ret = Err(Err::Error(error_position!(input, ErrorKind::Many0Count)));
+          }
+          break;
         }
-      }
-      Ok((i, o)) => {
-        if input.input_len() == i.input_len() {
-          return Err(Err::Error(error_position!(i, ErrorKind::Many0)))
-        }
-
+        count += 1;
         input = i;
-        acc.push(o);
+      }
+
+      Err(Err::Error(_)) => {
+        ret = Ok((input, count));
+        break;
+      }
+
+      Err(e) => {
+        ret = Err(e);
+        break;
       }
     }
   }
+
+  ret
 }
 
-use std::fmt::Debug;
-pub fn many1c<I: Clone+Copy+AtEof+InputLength+Debug, O:Debug, F>(input: I, f: F) -> IResult<I, Vec<O>>
-  where F: Fn(I) -> IResult<I, O> {
-  let input_ = input.clone();
-  match f(input_) {
-    Err(_) => {
-      return Err(Err::Error(error_position!(input, ErrorKind::Many1)))
-    },
-    Ok((i2, o)) => {
-      let mut acc = Vec::with_capacity(4);
-      acc.push(o);
-      let mut input = i2;
+//FIXME: streaming
+pub fn many1_count<Input, Output, Error, F>(i: Input, mut f: F) -> IResult<Input, usize, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  let i_ = i.clone();
+  match f(i_) {
+    Err(Err::Error(_)) => Err(Err::Error(error_position!(i, ErrorKind::Many1Count))),
+    Err(Err::Failure(_)) => Err(Err::Failure(error_position!(i, ErrorKind::Many1Count))),
+    Err(i) => Err(i),
+    Ok((i1, _)) => {
+      let mut count: usize = 1;
+      let mut input = i1;
+      let mut error = None;
 
       loop {
         let input_ = input.clone();
         match f(input_) {
-          Err(Err::Error(_)) => return Ok((input, acc)),
-          Err(Err::Failure(e)) => return  Err(Err::Failure(e)),
-          Err(Err::Incomplete(n)) => {
-            if input.at_eof() {
-              return Ok((input, acc));
-            } else {
-              return Err(Err::Incomplete(n));
-            }
+          Err(Err::Error(_)) => {
+            break;
           }
-          Ok((i, o)) => {
-            if input.input_len() == i.input_len() {
-              return Err(Err::Error(error_position!(i, ErrorKind::Many1)))
-            }
 
+          Err(e) => {
+            error = Some(e);
+            break;
+          }
+
+          Ok((i, _)) => {
+            if i.input_len() == input.input_len() {
+              break;
+            }
+            count += 1;
             input = i;
-            acc.push(o);
           }
         }
+      }
+
+      match error {
+        Some(e) => Err(e),
+        None => Ok((input, count)),
       }
     }
   }
 }
 
-pub fn separated_list<I: Clone+InputLength, O, O2, F, G>(input: I, mut sep: G, mut f: F) -> IResult<I, Vec<O>>
-  where F: FnMut(I) -> IResult<I, O>,
-        G: FnMut(I) -> IResult<I, O2> {
-  let mut acc = Vec::new();
-  let (input, o) = f(input)?;
-  acc.push(o);
-
-  let mut i = input;
+pub fn count<Input, Output, Error, F>(i: Input, mut f: F, count: usize) -> IResult<Input, Vec<Output>, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  let ret;
+  let mut input = i.clone();
+  let mut res = ::lib::std::vec::Vec::new();
 
   loop {
-    if i.input_len() == 0 {
-      return Ok((i, acc));
+    if res.len() == count {
+      ret = Ok((input, res));
+      break;
     }
 
-    let i_ = i.clone();
-    match sep(i_) {
-      Err(_) => return Ok((i, acc)),
-      Ok((i2, _)) => {
-        if i.input_len() == i2.input_len() {
-          return Err(Err::Error(error_position!(i, ErrorKind::Many0)))
+    let input_ = input.clone();
+    match f(input_) {
+      Ok((i, o)) => {
+        res.push(o);
+        input = i;
+      }
+      Err(Err::Error(e)) => {
+        fn unify_types<T>(_: &T, _: &T) {}
+        let e2 = error_position!(i, ErrorKind::Count);
+        unify_types(&e, &e2);
+
+        ret = Err(Err::Error(e2));
+        break;
+      }
+      Err(e) => {
+        ret = Err(e);
+        break;
+      }
+    }
+  }
+
+  ret
+}
+
+//FIXME: streaming
+pub fn fold_many0<Input, Output, Error, F, G, R>(i: Input, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(R, Output) -> R,
+{
+  let ret;
+  let mut res = init;
+  let mut input = i.clone();
+
+  loop {
+    let mut i_ = input.clone();
+    match f(i_) {
+      Ok((i, o)) => {
+        // loop trip must always consume (otherwise infinite loops)
+        if i == input {
+          if i.at_eof() {
+            ret = Ok((input, res));
+          } else {
+            ret = Err(Err::Error(error_position!(input, ErrorKind::Many0)));
+          }
+          break;
         }
 
-        let i2_ = i2.clone();
-        match f(i2_) {
-          Err(_) => return Ok((i, acc)),
-          Ok((i3, o)) => {
-            if i2.input_len() == i3.input_len() {
-              return Err(Err::Error(error_position!(i, ErrorKind::Many0)))
-            }
+        res = g(res, o);
+        input = i;
+      }
+      Err(Err::Error(_)) => {
+        ret = Ok((input, res));
+        break;
+      }
+      Err(e) => {
+        ret = Err(e);
+        break;
+      }
+    }
+  }
 
-            i = i3;
-            acc.push(o);
+  ret
+}
+
+//FIXME: streaming
+pub fn fold_many1<Input, Output, Error, F, G, R>(i: Input, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(R, Output) -> R,
+{
+  let _i = i.clone();
+  match f(_i) {
+    Err(Err::Error(_)) => Err(Err::Error(error_position!(i, ErrorKind::Many1))),
+    Err(Err::Failure(_)) => Err(Err::Failure(error_position!(i, ErrorKind::Many1))),
+    Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+    Ok((i1, o1)) => {
+      let mut acc = g(init, o1);
+      let mut input = i1;
+      let mut incomplete: Option<Needed> = None;
+      let mut failure: Option<Context<_, _>> = None;
+      loop {
+        let _input = input.clone();
+        match f(_input) {
+          Err(Err::Error(_)) => {
+            break;
+          }
+          Err(Err::Incomplete(i)) => {
+            incomplete = Some(i);
+            break;
+          }
+          Err(Err::Failure(e)) => {
+            failure = Some(e);
+            break;
+          }
+          Ok((i, o)) => {
+            if i.input_len() == input.input_len() {
+              if !i.at_eof() {
+                failure = Some(error_position!(i, ErrorKind::Many1));
+              }
+              break;
+            }
+            acc = g(acc, o);
+            input = i;
           }
         }
+      }
+
+      match failure {
+        Some(e) => Err(Err::Failure(e)),
+        None => match incomplete {
+          Some(i2) => need_more(i, i2),
+          None => Ok((input, acc)),
+        },
       }
     }
   }
 }
+
+//FIXME: streaming
+pub fn fold_many_m_n<Input, Output, Error, F, G, R>(i: Input, m: usize, n: usize, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  G: FnMut(R, Output) -> R,
+{
+  let mut acc = init;
+  let mut input = i.clone();
+  let mut count: usize = 0;
+  let mut err = false;
+  let mut incomplete: Option<Needed> = None;
+  loop {
+    if count == n {
+      break;
+    }
+
+    let _input = input.clone();
+    match f(_input) {
+      Ok((i, o)) => {
+        // do not allow parsers that do not consume input (causes infinite loops)
+        if i.input_len() == input.input_len() {
+          break;
+        }
+        acc = g(acc, o);
+        input = i;
+        count += 1;
+      }
+      //FInputXMError: handle failure properly
+      Err(Err::Error(_)) | Err(Err::Failure(_)) => {
+        err = true;
+        break;
+      }
+      Err(Err::Incomplete(i)) => {
+        incomplete = Some(i);
+        break;
+      }
+    }
+  }
+
+  if count < m {
+    if err {
+      Err(Err::Error(error_position!(i, ErrorKind::ManyMN)))
+    } else {
+      match incomplete {
+        Some(i) => Err(Err::Incomplete(i)),
+        None => Err(Err::Incomplete(Needed::Unknown)),
+      }
+    }
+  } else {
+    match incomplete {
+      Some(i) => Err(Err::Incomplete(i)),
+      None => Ok((input, acc)),
+    }
+  }
+}
+

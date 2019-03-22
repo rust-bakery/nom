@@ -1,9 +1,8 @@
 /// Character level parsers
-
 use internal::{IResult, Needed};
-use traits::{AsChar, InputIter, InputLength, Slice};
 use lib::std::ops::RangeFrom;
 use traits::{need_more, AtEof};
+use traits::{AsChar, InputIter, InputLength, Slice};
 
 /// matches one of the provided characters
 ///
@@ -20,7 +19,7 @@ use traits::{need_more, AtEof};
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! one_of (
-  ($i:expr, $inp: expr) => ( $crate::one_ofc($i, $inp) );
+  ($i:expr, $inp: expr) => ( $crate::one_of($inp)($i) );
 );
 
 /// matches anything but the provided characters
@@ -39,7 +38,7 @@ macro_rules! one_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! none_of (
-  ($i:expr, $inp: expr) => ( $crate::none_ofc($i, $inp) );
+  ($i:expr, $inp: expr) => ( $crate::none_of($inp)($i) );
 );
 
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
@@ -57,7 +56,7 @@ macro_rules! none_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! char (
-  ($i:expr, $c: expr) => ( $crate::charc($i, $c) );
+  ($i:expr, $c: expr) => ( $crate::char($c)($i) );
 );
 
 named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'));
