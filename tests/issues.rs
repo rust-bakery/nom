@@ -142,9 +142,9 @@ named!(
 
 named!(issue_308(&str) -> bool,
     do_parse! (
-        tag_s! ("foo") >>
+        tag! ("foo") >>
         b: alt_complete! (
-            map! (tag_s! ("1"), |_: &str|->bool {true}) |
+            map! (tag! ("1"), |_: &str|->bool {true}) |
             value! (false)
         ) >>
         (b) ));
@@ -268,7 +268,7 @@ fn atom_specials(c: u8) -> bool {
 
 named!(
     capability<&str>,
-    do_parse!(tag_s!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
+    do_parse!(tag!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
 );
 
 #[test]
