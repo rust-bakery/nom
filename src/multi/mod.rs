@@ -11,7 +11,7 @@ use util::ErrorKind;
 #[cfg(feature = "alloc")]
 pub fn many0<Input, Output, Error, F>(mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength + AtEof,
+  Input: Clone + PartialEq + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
 {
   move |mut input: Input| {
@@ -30,7 +30,7 @@ where
           }
         }
         Ok((i, o)) => {
-          if input.input_len() == i.input_len() {
+          if i == input {
             return Err(Err::Error(error_position!(i, ErrorKind::Many0)));
           }
 
@@ -45,7 +45,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn many0c<Input, Output, Error, F>(input: Input, mut f: F) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength + AtEof,
+  Input: Clone + PartialEq + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
 {
   many0(f)(input)
@@ -55,7 +55,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn many1<Input, Output: Debug, Error, F>(f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + Copy + AtEof + InputLength + Debug,
+  Input: Clone + Copy + AtEof + PartialEq + Debug,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |mut input: Input| {
@@ -80,7 +80,7 @@ where
               }
             }
             Ok((i, o)) => {
-              if input.input_len() == i.input_len() {
+              if i == input {
                 return Err(Err::Error(error_position!(i, ErrorKind::Many1)));
               }
 
@@ -98,7 +98,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn many1c<Input, Output: Debug, Error, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + Copy + AtEof + InputLength + Debug,
+  Input: Clone + Copy + AtEof + PartialEq + Debug,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   many1(f)(input)
