@@ -386,6 +386,64 @@ macro_rules! error_node_position(
 
 #[cfg(test)]
 mod tests {
+  #[cfg(not(feature = "verbose-errors"))]
+  use simple_errors::Context;
+  #[cfg(feature = "verbose-errors")]
+  use verbose_errors::Context;
+  use super::*;
+  use util::ErrorKind;
+
+  #[macro_export]
+  macro_rules! assert_size (
+    ($t:ty, $sz:expr) => (
+      assert_eq!(::std::mem::size_of::<$t>(), $sz);
+    );
+  );
+
+  #[test]
+  #[cfg(not(feature = "verbose-errors"))]
+  #[cfg(target_pointer_width = "64")]
+  fn size_test() {
+    assert_size!(IResult<&[u8], &[u8], u32>, 40);
+    assert_size!(IResult<&str, &str, u32>, 40);
+    assert_size!(Needed, 16);
+    assert_size!(Context<u32>, 12);
+    assert_size!(Err<u32>, 24);
+    assert_size!(ErrorKind<u32>, 8);
+  }
+
+  #[test]
+  #[cfg(feature = "verbose-errors")]
+  #[cfg(target_pointer_width = "64")]
+  fn size_test() {
+    assert_size!(IResult<&[u8], &[u8], u32>, 48);
+    assert_size!(IResult<&str, &str, u32>, 48);
+    assert_size!(Needed, 16);
+    assert_size!(Context<u32>, 32);
+    assert_size!(Err<u32>, 40);
+    assert_size!(ErrorKind<u32>, 8);
+  }
+
+  type IResultNoVerbose<I, O, E = u32> = Result<(I, O), ErrNoVerbose<I, E>>;
+  enum ErrNoVerbose<I, E = u32> {
+    /// There was not enough data
+    Incomplete(Needed),
+    /// The parser had an error (recoverable)
+    Error(I, ErrorKind<E>),
+    /// The parser had an unrecoverable error: we got to the right
+    /// branch and we know other branches won't work, so backtrack
+    /// as fast as possible
+    Failure(I, ErrorKind<E>),
+  }
+
+  #[test]
+  #[cfg(not(feature = "verbose-errors"))]
+  #[cfg(target_pointer_width = "64")]
+  fn no_verbose_size_test() {
+    assert_size!(IResultNoVerbose<&[u8], &[u8], Vec<(&[u8], u32)>>, 64);
+    assert_size!(ErrNoVerbose<Vec<(&[u8], u32)>>, 40);
+    assert_size!(ErrorKind<Vec<(&[u8], u32)>>, 32);
+  }
 
   /*
   const REST: [u8; 0] = [];
