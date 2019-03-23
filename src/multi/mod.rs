@@ -1,7 +1,7 @@
 #[macro_use]
 mod macros;
 
-use crate::Context;
+use ::Context;
 use internal::{Err, IResult, Needed};
 use std::fmt::Debug;
 use traits::{need_more, AtEof, InputLength};

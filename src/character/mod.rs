@@ -3,7 +3,7 @@ mod macros;
 
 pub use self::macros::anychar;
 
-use crate::Context;
+use ::Context;
 use internal::{Err, IResult, Needed};
 use std::ops::RangeFrom;
 use traits::{need_more, AsChar, AtEof, FindToken, InputIter, InputLength, Slice};

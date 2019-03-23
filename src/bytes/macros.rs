@@ -42,7 +42,7 @@ macro_rules! tag (
 #[macro_export(local_inner_macros)]
 macro_rules! tag_no_case (
   ($i:expr, $tag: expr) => ({
-    let res: $crate::IResult<_, _, u32>  = $crate::tag_no_case($tag)($i);
+    let res: $crate::IResult<_, _, u32> = $crate::tag_no_case($tag)($i);
     res
   });
 );
@@ -63,7 +63,8 @@ macro_rules! tag_no_case (
 #[macro_export(local_inner_macros)]
 macro_rules! is_not (
   ($input:expr, $arr:expr) => ({
-    $crate::is_not($arr)($input)
+    let res: $crate::IResult<_, _, u32> = $crate::is_not($arr)($input);
+    res
   });
 );
 
@@ -86,7 +87,8 @@ macro_rules! is_not (
 #[macro_export(local_inner_macros)]
 macro_rules! is_a (
   ($input:expr, $arr:expr) => ({
-    $crate::is_a($arr)($input)
+    let res: $crate::IResult<_, _, u32> = $crate::is_a($arr)($input);
+    res
   });
 );
 
@@ -372,7 +374,8 @@ macro_rules! escaped_transform (
 #[macro_export(local_inner_macros)]
 macro_rules! take_while (
   ($input:expr, $submac:ident!( $($args:tt)* )) => ({
-    take_while!($input, (|c| $submac!(c, $($args)*)))
+    let res: $crate::IResult<_, _, u32> = take_while!($input, (|c| $submac!(c, $($args)*)));
+    res
   });
   ($input:expr, $f:expr) => (
     $crate::take_while($f)($input)
@@ -401,7 +404,8 @@ macro_rules! take_while (
 #[macro_export(local_inner_macros)]
 macro_rules! take_while1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => ({
-    take_while1!($input, (|c| $submac!(c, $($args)*)))
+    let res: $crate::IResult<_, _, u32> = take_while1!($input, (|c| $submac!(c, $($args)*)));
+    res
   });
   ($input:expr, $f:expr) => (
     $crate::take_while1($f)($input)
@@ -428,7 +432,8 @@ macro_rules! take_while1 (
 #[macro_export(local_inner_macros)]
 macro_rules! take_while_m_n (
   ($input:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => ({
-    take_while_m_n!($input, $m, $n, (|c| $submac!(c, $($args)*)))
+    let res: $crate::IResult<_, _, u32> = take_while_m_n!($input, $m, $n, (|c| $submac!(c, $($args)*)));
+    res
   });
   ($input:expr, $m:expr, $n:expr, $f:expr) => (
     $crate::take_while_m_n($m, $n, $f)($input)
@@ -455,7 +460,8 @@ macro_rules! take_while_m_n (
 #[macro_export(local_inner_macros)]
 macro_rules! take_till (
   ($input:expr, $submac:ident!( $($args:tt)* )) => ({
-    take_till!($input, (|c| $submac!(c, $($args)*)))
+    let res: $crate::IResult<_, _, u32> = take_till!($input, (|c| $submac!(c, $($args)*)));
+    res
   });
   ($input:expr, $f:expr) => (
     $crate::take_till($f)($input)
@@ -484,7 +490,8 @@ macro_rules! take_till (
 #[macro_export(local_inner_macros)]
 macro_rules! take_till1 (
   ($input:expr, $submac:ident!( $($args:tt)* )) => ({
-    take_till1!($input, (|c| $submac!(c, $($args)*)))
+    let res: $crate::IResult<_, _, u32> = take_till1!($input, (|c| $submac!(c, $($args)*)));
+    res
   });
   ($input:expr, $f:expr) => (
     $crate::take_till1($f)($input)
