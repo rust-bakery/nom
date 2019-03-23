@@ -791,7 +791,7 @@ mod tests {
   #[test]
   #[cfg(feature = "alloc")]
   fn many1() {
-    named!(multi<&[u8],Vec<&[u8]> >, many1!(dbg_dmp!(tag!("abcd"))));
+    named!(multi<&[u8],Vec<&[u8]> >, many1!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcdabcdefgh"[..];

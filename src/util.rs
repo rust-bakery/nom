@@ -161,6 +161,7 @@ macro_rules! dbg (
 ///    f(a);
 /// # }
 #[macro_export(local_inner_macros)]
+#[cfg(feature = "std")]
 macro_rules! dbg_dmp (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {

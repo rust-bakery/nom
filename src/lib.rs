@@ -386,7 +386,7 @@ pub mod lib {
 
   #[cfg(feature = "std")]
   pub mod std {
-    pub use std::{boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
+    pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
     pub mod prelude {
       pub use std::prelude as v1;
     }

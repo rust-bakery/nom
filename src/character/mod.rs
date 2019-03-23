@@ -5,8 +5,8 @@ pub use self::macros::anychar;
 
 use ::Context;
 use internal::{Err, IResult, Needed};
-use std::ops::RangeFrom;
-use traits::{need_more, AsChar, AtEof, FindToken, InputIter, InputLength, Slice};
+use ::lib::std::ops::RangeFrom;
+use traits::{need_more, AsChar, AtEof, FindToken, InputIter, Slice};
 use util::ErrorKind;
 
 pub fn char<I>(c: char) -> impl Fn(I) -> IResult<I, char>

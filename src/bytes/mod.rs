@@ -2,7 +2,7 @@
 mod macros;
 
 use lib::std::result::Result::*;
-use std::ops::RangeFrom;
+use ::lib::std::ops::RangeFrom;
 use traits::{
   need_more, need_more_err, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake,
   InputTakeAtPosition, Slice, ToUsize,

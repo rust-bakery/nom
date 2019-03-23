@@ -3,8 +3,9 @@ mod macros;
 
 use ::Context;
 use internal::{Err, IResult, Needed};
-use std::fmt::Debug;
 use traits::{need_more, AtEof, InputLength};
+#[cfg(feature = "alloc")]
+use ::lib::std::vec::Vec;
 use util::ErrorKind;
 
 //FIXME: streaming
@@ -53,9 +54,9 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many1<Input, Output: Debug, Error, F>(f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn many1<Input, Output, Error, F>(f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + Copy + AtEof + PartialEq + Debug,
+  Input: Clone + Copy + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |mut input: Input| {
@@ -96,9 +97,9 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many1c<Input, Output: Debug, Error, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn many1c<Input, Output, Error, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + Copy + AtEof + PartialEq + Debug,
+  Input: Clone + Copy + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   many1(f)(input)
@@ -509,6 +510,7 @@ where
   }
 }
 
+#[cfg(feature = "alloc")]
 pub fn count<Input, Output, Error, F>(i: Input, mut f: F, count: usize) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
