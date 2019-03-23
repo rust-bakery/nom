@@ -1,7 +1,7 @@
 [package]
 
 name = "nom"
-version = "4.2.2"
+version = "4.2.3"
 authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
@@ -18,7 +18,8 @@ include = [
   ".travis.yml",
   "Cargo.toml",
   "src/*.rs",
-  "tests/*.rs"
+  "tests/*.rs",
+  "build.rs"
 ]
 
 [features]
