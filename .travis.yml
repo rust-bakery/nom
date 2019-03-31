@@ -8,7 +8,7 @@ rust:
   - nightly
   - beta
   - stable
-  - 1.24.1
+  - 1.26.2
 
 env:
   matrix:
