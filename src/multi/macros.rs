@@ -596,7 +596,7 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err, IResult, Needed};
+  use internal::{Err, IResult, Needed, ParseError};
   use lib::std::str::{self, FromStr};
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
@@ -630,8 +630,8 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error($crate::Context::Code($i, $crate::ErrorKind::Tag::<u32>)))
+        let res: IResult<_,_,_> = if reduced != b {
+          Err($crate::Err::Error($crate::make_error($i, $crate::ErrorKind::Tag)))
         } else if m < blen {
           Err($crate::Err::Incomplete(Needed::Size(blen)))
         } else {
@@ -646,7 +646,7 @@ mod tests {
     ($i:expr, $count:expr) => (
       {
         let cnt = $count as usize;
-        let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
+        let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
           Err($crate::Err::Incomplete(Needed::Size(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
@@ -834,7 +834,7 @@ mod tests {
   fn infinite_many() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       println!("input: {:?}", input);
-      Err(Err::Error(error_position!(input, ErrorKind::Custom(0u32))))
+      Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     }
 
     // should not go into an infinite loop
@@ -949,8 +949,17 @@ mod tests {
   #[derive(Debug, Clone, PartialEq)]
   pub struct NilError;
 
-  impl From<u32> for NilError {
-    fn from(_: u32) -> Self {
+  impl<I> From<(I,ErrorKind)> for NilError {
+    fn from(_: (I, ErrorKind)) -> Self {
+      NilError
+    }
+  }
+
+  impl<I> ParseError<I> for NilError {
+    fn from_error_kind(_: I, _: ErrorKind) -> NilError {
+      NilError
+    }
+    fn append(_: I, _: ErrorKind, _: NilError) -> NilError {
       NilError
     }
   }

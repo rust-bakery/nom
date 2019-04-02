@@ -37,7 +37,8 @@ mod test {
     const INPUT: &str = "Hello";
     const TAG: &str = "Hello World!";
 
-    match tag!(INPUT, TAG) {
+    let res: IResult<_,_,(_, ErrorKind)> = tag!(INPUT, TAG);
+    match res {
       Err(Err::Incomplete(_)) => (),
       other => {
         panic!(
@@ -54,7 +55,8 @@ mod test {
     const INPUT: &str = "Hello World!";
     const TAG: &str = "Random"; // TAG must be closer than INPUT.
 
-    match tag!(INPUT, TAG) {
+    let res: IResult<_,_,(_, ErrorKind)> = tag!(INPUT, TAG);
+    match res {
       Err(Err::Error(_)) => (),
       other => {
         panic!(
@@ -71,7 +73,8 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
 
-    match take!(INPUT, 9) {
+    let res: IResult<_,_,(_, ErrorKind)> = take!(INPUT, 9);
+    match res {
       Ok((extra, output)) => {
         assert!(
           extra == LEFTOVER,
@@ -100,7 +103,8 @@ mod test {
     const CONSUMED: &str = "βèƒôřè";
     const LEFTOVER: &str = "ÂßÇ∂áƒƭèř";
 
-    match take_until!(INPUT, FIND) {
+    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    match res {
       Ok((extra, output)) => {
         assert!(
           extra == LEFTOVER,
@@ -128,7 +132,8 @@ mod test {
   fn take_s_incomplete() {
     const INPUT: &str = "βèƒôřèÂßÇá";
 
-    match take!(INPUT, 13) {
+    let res: IResult<_,_,(_, ErrorKind)> = take!(INPUT, 13);
+    match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
         "Parser `take` didn't require more input when it should have. \
@@ -404,7 +409,8 @@ mod test {
     const INPUT: &str = "βèƒôřè";
     const FIND: &str = "βèƒôřèÂßÇ";
 
-    match take_until!(INPUT, FIND) {
+    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
         "Parser `take_until` didn't require more input when it should have. \
@@ -485,7 +491,8 @@ mod test {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const FIND: &str = "Ráñδô₥";
 
-    match take_until_and_consume!(INPUT, FIND) {
+    let res: IResult<_,_,(_, ErrorKind)> = take_until_and_consume!(INPUT, FIND);
+    match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
         "Parser `take_until_and_consume` didn't fail when it should have. \
@@ -500,7 +507,8 @@ mod test {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const FIND: &str = "Ráñδô₥";
 
-    match take_until!(INPUT, FIND) {
+    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
         "Parser `take_until_and_consume` didn't fail when it should have. \

@@ -451,8 +451,8 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error(error_position!($i, $crate::ErrorKind::Tag::<u32>)))
+        let res: IResult<_,_,_> = if reduced != b {
+          Err($crate::Err::Error(error_position!($i, $crate::ErrorKind::Tag)))
         } else if m < blen {
           need_more($i, Needed::Size(blen))
         } else {
@@ -468,7 +468,7 @@ mod tests {
       {
         use $crate::need_more;
         let cnt = $count as usize;
-        let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
+        let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
           need_more($i, Needed::Size(cnt))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
@@ -492,8 +492,6 @@ mod tests {
 
   #[cfg(all(feature = "std", feature = "verbose-errors"))]
   use util::{add_error_pattern, error_to_list, print_error};
-  #[cfg(feature = "verbose-errors")]
-  use verbose_errors::Context;
 
   #[cfg(feature = "std")]
   #[cfg(feature = "verbose-errors")]
@@ -626,10 +624,12 @@ mod tests {
       preceded!(
         tag!("efgh"),
         add_return_error!(
-          ErrorKind::Custom(42u32),
+          //ErrorKind::Custom(42u32),
+          ErrorKind::Char,
           do_parse!(
                  tag!("ijkl")                                     >>
-            res: add_return_error!(ErrorKind::Custom(128u32), tag!("mnop")) >>
+            //res: add_return_error!(ErrorKind::Custom(128u32), tag!("mnop")) >>
+            res: add_return_error!(ErrorKind::Eof, tag!("mnop")) >>
             (res)
           )
         )
@@ -646,10 +646,13 @@ mod tests {
     let res_c = err_test(c);
     assert_eq!(res_a,
                Err(Err::Error(error_node_position!(blah,
-                                                   ErrorKind::Custom(42u32),
+                                                   //ErrorKind::Custom(42u32),
+                                                   ErrorKind::Eof,
                                                    error_position!(blah, ErrorKind::Tag)))));
-    assert_eq!(res_b, Err(Err::Error(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42u32),
-      error_node_position!(blah, ErrorKind::Custom(128u32), error_position!(blah, ErrorKind::Tag))))));
+    //assert_eq!(res_b, Err(Err::Error(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42u32),
+    //  error_node_position!(blah, ErrorKind::Custom(128u32), error_position!(blah, ErrorKind::Tag))))));
+    assert_eq!(res_b, Err(Err::Error(error_node_position!(&b"ijklblah"[..], ErrorKind::Eof,
+      error_node_position!(blah, ErrorKind::Eof, error_position!(blah, ErrorKind::Tag))))));
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
   }
 

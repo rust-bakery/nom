@@ -1,5 +1,5 @@
 /// Character level parsers
-use internal::{IResult, Needed};
+use internal::{IResult, Needed, ParseError};
 use lib::std::ops::RangeFrom;
 use traits::{need_more, AtEof};
 use traits::{AsChar, InputIter, InputLength, Slice};
@@ -74,7 +74,7 @@ named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 /// assert_eq!(anychar("abc"), Ok(("bc",'a')));
 /// # }
 /// ```
-pub fn anychar<T>(input: T) -> IResult<T, char>
+pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
   T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
   <T as InputIter>::Item: AsChar,
@@ -159,6 +159,6 @@ mod tests {
   #[test]
   fn anychar_str() {
     use super::anychar;
-    assert_eq!(anychar("Ә"), Ok(("", 'Ә')));
+    assert_eq!(anychar::<_, (&str, ErrorKind)>("Ә"), Ok(("", 'Ә')));
   }
 }

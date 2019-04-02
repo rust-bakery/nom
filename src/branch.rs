@@ -469,7 +469,7 @@ macro_rules! switch (
               Ok(o) => Ok(o),
               Err(e) => Err(e),
             }),*,
-            _    => Err(Err::convert(Err::Error(error_position!($i, ErrorKind::Switch::<u32>))))
+            _    => Err(Err::convert(Err::Error(error_position!($i, ErrorKind::Switch))))
           }
         }
       }
@@ -855,8 +855,9 @@ macro_rules! permutation_iterator (
 mod tests {
   #[cfg(feature = "alloc")]
   use lib::std::string::{String, ToString};
-  use internal::{Err, IResult, Needed};
+  use internal::{Err, IResult, Needed, ParseError};
   use util::ErrorKind;
+  use std::fmt::Debug;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -887,8 +888,8 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: IResult<_,_,u32> = if reduced != b {
-          let e: ErrorKind<u32> = ErrorKind::Tag::<u32>;
+        let res: IResult<_,_,_> = if reduced != b {
+          let e: ErrorKind = ErrorKind::Tag;
           Err(Err::Error(error_position!($i, e)))
         } else if m < blen {
           //let e:Err<&[u8], u32> = need_more($i, Needed::Size(blen));
@@ -908,7 +909,7 @@ mod tests {
         use $crate::need_more;
 
         let cnt = $count as usize;
-        let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
+        let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
           need_more($i, Needed::Size(cnt))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
@@ -937,6 +938,17 @@ mod tests {
   }
 
   #[cfg(feature = "alloc")]
+  impl<I: Debug> ParseError<I> for ErrorStr {
+    fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+      ErrorStr(format!("custom error message: ({:?}, {:?})", input, kind))
+    }
+
+    fn append(input: I, kind: ErrorKind, other: Self) -> Self {
+      ErrorStr(format!("custom error message: ({:?}, {:?}) - {:?}", input, kind, other))
+    }
+  }
+
+  #[cfg(feature = "alloc")]
   #[test]
   fn alt() {
     fn work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
@@ -945,11 +957,7 @@ mod tests {
 
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
-      use Context;
-      Err(Err::Error(Context::Code(
-        &b""[..],
-        ErrorKind::Custom(ErrorStr("abcd".to_string())),
-      )))
+      Err(Err::Error(ErrorStr("abcd".to_string())))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {

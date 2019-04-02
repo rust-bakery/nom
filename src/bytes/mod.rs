@@ -7,10 +7,10 @@ use traits::{
   need_more, need_more_err, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake,
   InputTakeAtPosition, Slice, ToUsize,
 };
-use {Context, Err, ErrorKind, IResult, Needed};
+use {Err, ErrorKind, IResult, Needed, ParseError};
 
 //FIXME: streaming
-pub fn tag<T, Input, Error>(tag: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn tag<'a, T: 'a, Input:'a, Error: ParseError<Input>>(tag: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + Compare<T> + AtEof,
   T: InputLength,
@@ -21,8 +21,8 @@ where
       CompareResult::Ok => Ok(i.take_split(tag_len)),
       CompareResult::Incomplete => need_more(i, Needed::Size(tag_len)),
       CompareResult::Error => {
-        let e: ErrorKind<Error> = ErrorKind::Tag;
-        Err(Err::Error(Context::Code(i, e)))
+        let e: ErrorKind = ErrorKind::Tag;
+        Err(Err::Error(Error::from_error_kind(i, e)))
       }
     };
     res
@@ -30,7 +30,7 @@ where
 }
 
 //FIXME: streaming
-pub fn tag_no_case<T, Input, Error>(tag: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn tag_no_case<T, Input, Error: ParseError<Input>>(tag: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + Compare<T> + AtEof,
   T: InputLength,
@@ -42,8 +42,8 @@ where
       CompareResult::Ok => Ok(i.take_split(tag_len)),
       CompareResult::Incomplete => need_more(i, Needed::Size(tag_len)),
       CompareResult::Error => {
-        let e: ErrorKind<Error> = ErrorKind::Tag;
-        Err(Err::Error(Context::Code(i, e)))
+        let e: ErrorKind = ErrorKind::Tag;
+        Err(Err::Error(Error::from_error_kind(i, e)))
       }
     };
     res
@@ -51,31 +51,31 @@ where
 }
 
 //FIXME: streaming
-pub fn is_not<T, Input, Error>(arr: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn is_not<T, Input, Error: ParseError<Input>>(arr: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   T: InputLength + FindToken<<Input as InputTakeAtPosition>::Item>,
 {
   move |i: Input| {
-    let e: ErrorKind<Error> = ErrorKind::IsNot;
+    let e: ErrorKind = ErrorKind::IsNot;
     i.split_at_position1(|c| arr.find_token(c), e)
   }
 }
 
 //FIXME: streaming
-pub fn is_a<T, Input, Error>(arr: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn is_a<T, Input, Error: ParseError<Input>>(arr: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   T: InputLength + FindToken<<Input as InputTakeAtPosition>::Item>,
 {
   move |i: Input| {
-    let e: ErrorKind<Error> = ErrorKind::IsA;
+    let e: ErrorKind = ErrorKind::IsA;
     i.split_at_position1(|c| !arr.find_token(c), e)
   }
 }
 
 //FIXME: streaming
-pub fn take_while<F, Input, Error>(cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn take_while<F, Input, Error: ParseError<Input>>(cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
@@ -84,19 +84,19 @@ where
 }
 
 //FIXME: streaming
-pub fn take_while1<F, Input, Error>(cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn take_while1<F, Input, Error: ParseError<Input>>(cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
 {
   move |i: Input| {
-    let e: ErrorKind<Error> = ErrorKind::TakeWhile1;
+    let e: ErrorKind = ErrorKind::TakeWhile1;
     i.split_at_position1(|c| !cond(c), e)
   }
 }
 
 //FIXME: streaming
-pub fn take_while_m_n<F, Input, Error>(m: usize, n: usize, cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn take_while_m_n<F, Input, Error: ParseError<Input>>(m: usize, n: usize, cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + AtEof + InputIter + InputLength + Slice<RangeFrom<usize>>,
   F: Fn(<Input as InputIter>::RawItem) -> bool,
@@ -115,8 +115,8 @@ where
             res
           }
         } else {
-          let e = ErrorKind::TakeWhileMN::<Error>;
-          Err(Err::Error(error_position!(input, e)))
+          let e = ErrorKind::TakeWhileMN;
+          Err(Err::Error(Error::from_error_kind(input, e)))
         }
       }
       None => {
@@ -130,8 +130,8 @@ where
               let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
               res
             } else {
-              let e = ErrorKind::TakeWhileMN::<Error>;
-              Err(Err::Error(error_position!(input, e)))
+              let e = ErrorKind::TakeWhileMN;
+              Err(Err::Error(Error::from_error_kind(input, e)))
             }
           } else {
             let needed = if m > len { m - len } else { 1 };
@@ -144,7 +144,7 @@ where
 }
 
 //FIXME: streaming
-pub fn take_till<F, Input, Error>(cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn take_till<F, Input, Error: ParseError<Input>>(cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
@@ -153,19 +153,19 @@ where
 }
 
 //FIXME: streaming
-pub fn take_till1<F, Input, Error>(cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn take_till1<F, Input, Error: ParseError<Input>>(cond: F) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
 {
   move |i: Input| {
-    let e: ErrorKind<Error> = ErrorKind::TakeTill1;
+    let e: ErrorKind = ErrorKind::TakeTill1;
     i.split_at_position1(cond, e)
   }
 }
 
 //FIXME: streaming
-pub fn take<C, Input, Error>(count: C) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn take<C, Input, Error: ParseError<Input>>(count: C) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputIter + InputTake + AtEof,
   C: ToUsize,
@@ -178,7 +178,7 @@ where
 }
 
 //FIXME: streaming
-pub fn take_until<T, Input, Error>(tag: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
+pub fn take_until<T, Input, Error: ParseError<Input>>(tag: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + FindSubstring<T> + AtEof,
   T: InputLength,

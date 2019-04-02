@@ -13,9 +13,8 @@
 //! you can know precisely which parser got to which part of the input.
 //! The main drawback is that it is a lot slower than default error
 //! management.
-use lib::std::convert::From;
-use util::{Convert, ErrorKind};
 
+/*
 #[derive(Debug, Clone, PartialEq)]
 pub enum Context<I, E = u32> {
   Code(I, ErrorKind<E>),
@@ -38,6 +37,7 @@ impl<I, E> Context<I, E> {
     ErrorKind::convert(e)
   }
 }
+*/
 
 /*
 impl<I,O,E> IResult<I,O,E> {
@@ -105,6 +105,7 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
 /// ```
+/// # //FIXME
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// # use std::convert::From;
@@ -112,25 +113,27 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 /// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///     // will add a Custom(42) error to the error chain
-///     named!(err_test, add_return_error!(ErrorKind::Custom(42u32), tag!("abcd")));
-///
-///     #[derive(Debug,Clone,PartialEq)]
-///     pub struct ErrorStr(String);
-///
-///     // Convert to IResult<&[u8], &[u8], ErrorStr>
-///     impl From<u32> for ErrorStr {
-///       fn from(i: u32) -> Self {
-///         ErrorStr(format!("custom error code: {}", i))
-///       }
-///     }
-///
-///     named!(parser<&[u8], &[u8], ErrorStr>,
-///         fix_error!(ErrorStr, err_test)
-///       );
-///
-///     let a = &b"efghblah"[..];
-///     assert_eq!(parser(a), Err(Err::Error(Context::Code(a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))))));
+/// #    /*
+/// #    // will add a Custom(42) error to the error chain
+/// #    named!(err_test, add_return_error!(ErrorKind::Custom(42u32), tag!("abcd")));
+/// #
+/// #    #[derive(Debug,Clone,PartialEq)]
+/// #    pub struct ErrorStr(String);
+/// #
+/// #    // Convert to IResult<&[u8], &[u8], ErrorStr>
+/// #    impl From<u32> for ErrorStr {
+/// #      fn from(i: u32) -> Self {
+/// #        ErrorStr(format!("custom error code: {}", i))
+/// #      }
+/// #    }
+/// #
+/// #    named!(parser<&[u8], &[u8], ErrorStr>,
+/// #        fix_error!(ErrorStr, err_test)
+/// #      );
+/// #
+/// #    let a = &b"efghblah"[..];
+/// #    assert_eq!(parser(a), Err(Err::Error(Context::Code(a, ErrorKind::Custom(ErrorStr("custom error code: 42".to_string()))))));
+/// # */
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -139,21 +142,26 @@ macro_rules! fix_error (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::Err;
-      use $crate::{Convert,Context,ErrorKind};
 
       match $submac!($i, $($args)*) {
         Ok((i,o)) => Ok((i,o)),
         Err(e) => {
           let e2 = match e {
             Err::Error(err) => {
+              /*
               let Context::Code(i, code) = err;
               let code2: ErrorKind<$t> = ErrorKind::convert(code);
               Err::Error(Context::Code(i, code2))
+              */
+              Err::Error(err.into())
             },
             Err::Failure(err) => {
+              /*
               let Context::Code(i, code) = err;
               let code2: ErrorKind<$t> = ErrorKind::convert(code);
               Err::Failure(Context::Code(i, code2))
+              */
+              Err::Failure(err.into())
             },
             Err::Incomplete(e) => Err::Incomplete(e),
           };
@@ -189,11 +197,11 @@ macro_rules! flat_map(
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Convert,Err};
+      use $crate::Err;
 
       ($submac!($i, $($args)*)).and_then(|(i,o)| {
         match $submac2!(o, $($args2)*) {
-          Err(e)      => Err(Err::convert(e)),
+          Err(e)      => Err(e.into()),
           Ok((_, o2)) => Ok((i, o2))
         }
       })

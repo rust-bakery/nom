@@ -4,24 +4,40 @@
 #[macro_use]
 extern crate nom;
 
-use nom::IResult;
+use nom::{IResult, ErrorKind, ParseError};
 use nom::digit;
 
 use std::convert::From;
 
+#[derive(Debug)]
 pub struct CustomError(String);
-impl From<u32> for CustomError {
-  fn from(error: u32) -> Self {
-    CustomError(format!("error code was: {}", error))
+
+impl From<(&str, ErrorKind)> for CustomError {
+  fn from(error: (&str, ErrorKind)) -> Self {
+    CustomError(format!("error code was: {:?}", error))
   }
 }
 
+impl ParseError<&str> for CustomError {
+  fn from_error_kind(input: &str, kind: ErrorKind) -> Self {
+    CustomError(format!("error code was: {:?}", kind))
+  }
+
+  fn append(input: &str, kind: ErrorKind, other: CustomError) -> Self {
+    CustomError(format!("{:?}\nerror code was: {:?}", other, kind))
+
+  }
+
+}
+
 fn test1(input: &str) -> IResult<&str, &str, CustomError> {
-  fix_error!(input, CustomError, tag!("abcd"))
+  //fix_error!(input, CustomError, tag!("abcd"))
+  tag!(input, "abcd")
 }
 
 fn test2(input: &str) -> IResult<&str, &str, CustomError> {
-  terminated!(input, test1, fix_error!(CustomError, digit))
+  //terminated!(input, test1, fix_error!(CustomError, digit))
+  terminated!(input, test1, digit)
 }
 
 fn test3(input: &str) -> IResult<&str, &str, CustomError> {

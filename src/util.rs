@@ -284,7 +284,7 @@ pub fn generate_colors<E>(v: &[(ErrorKind<E>, usize, usize)]) -> HashMap<u32, u8
   h
 }
 
-pub fn code_from_offset<E>(v: &[(ErrorKind<E>, usize, usize)], offset: usize) -> Option<u32> {
+pub fn code_from_offset(v: &[(ErrorKind, usize, usize)], offset: usize) -> Option<u32> {
   let mut acc: Option<(u32, usize, usize)> = None;
   for &(ref ek, s, e) in v.iter() {
     let c = error_to_u32(ek);
@@ -439,8 +439,8 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug,PartialEq,Eq,Hash,Clone)]
 #[allow(deprecated)]
-pub enum ErrorKind<E = u32> {
-  Custom(E),
+pub enum ErrorKind {
+  //Custom(E),
   Tag,
   MapRes,
   MapOpt,
@@ -515,9 +515,9 @@ pub enum ErrorKind<E = u32> {
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(deprecated)]
-pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
+pub fn error_to_u32(e: &ErrorKind) -> u32 {
   match *e {
-    ErrorKind::Custom(_)                 => 0,
+    //ErrorKind::Custom(_)                 => 0,
     ErrorKind::Tag                       => 1,
     ErrorKind::MapRes                    => 2,
     ErrorKind::MapOpt                    => 3,
@@ -585,12 +585,12 @@ pub fn error_to_u32<E>(e: &ErrorKind<E>) -> u32 {
   }
 }
 
-impl<E> ErrorKind<E> {
+impl ErrorKind {
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[allow(deprecated)]
   pub fn description(&self) -> &str {
     match *self {
-      ErrorKind::Custom(_)                 => "Custom error",
+      //ErrorKind::Custom(_)                 => "Custom error",
       ErrorKind::Tag                       => "Tag",
       ErrorKind::MapRes                    => "Map on Result",
       ErrorKind::MapOpt                    => "Map on Option",
@@ -661,15 +661,15 @@ impl<E> ErrorKind<E> {
   /// Convert Err into an ErrorKind.
   ///
   /// This allows application code to use ErrorKind and stay independent from the `verbose-errors` features activation.
-  pub fn into_error_kind(self) -> ErrorKind<E> {
+  pub fn into_error_kind(self) -> ErrorKind {
     self
   }
 }
-
 pub trait Convert<T> {
   fn convert(T) -> Self;
 }
 
+/*
 impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[allow(deprecated)]
@@ -677,6 +677,7 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
     match e {
       ErrorKind::Custom(c)                 => ErrorKind::Custom(E::from(c)),
       ErrorKind::Tag                       => ErrorKind::Tag,
+      ErrorKind::T(s)                      => ErrorKind::T(s),
       ErrorKind::MapRes                    => ErrorKind::MapRes,
       ErrorKind::MapOpt                    => ErrorKind::MapOpt,
       ErrorKind::Alt                       => ErrorKind::Alt,
@@ -743,3 +744,4 @@ impl<F, E: From<F>> Convert<ErrorKind<F>> for ErrorKind<E> {
     }
   }
 }
+*/

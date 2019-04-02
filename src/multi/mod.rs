@@ -1,8 +1,7 @@
 #[macro_use]
 mod macros;
 
-use ::Context;
-use internal::{Err, IResult, Needed};
+use internal::{Err, IResult, Needed, ParseError};
 use traits::{need_more, AtEof, InputLength};
 #[cfg(feature = "alloc")]
 use ::lib::std::vec::Vec;
@@ -10,7 +9,7 @@ use util::ErrorKind;
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many0<Input, Output, Error, F>(mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn many0<Input, Output, Error: ParseError<Input>, F>(mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + PartialEq + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -32,7 +31,7 @@ where
         }
         Ok((i, o)) => {
           if i == input {
-            return Err(Err::Error(error_position!(i, ErrorKind::Many0)));
+            return Err(Err::Error(Error::from_error_kind(i, ErrorKind::Many0)));
           }
 
           input = i;
@@ -44,7 +43,7 @@ where
 }
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many0c<Input, Output, Error, F>(input: Input, mut f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn many0c<Input, Output, Error: ParseError<Input>, F>(input: Input, mut f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + PartialEq + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -54,7 +53,7 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many1<Input, Output, Error, F>(f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn many1<Input, Output, Error: ParseError<Input>, F>(f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + Copy + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
@@ -62,7 +61,7 @@ where
   move |mut input: Input| {
     let input_ = input.clone();
     match f(input_) {
-      Err(_) => return Err(Err::Error(error_position!(input, ErrorKind::Many1))),
+      Err(_) => return Err(Err::Error(Error::from_error_kind(input, ErrorKind::Many1))),
       Ok((i2, o)) => {
         let mut acc = ::lib::std::vec::Vec::with_capacity(4);
         acc.push(o);
@@ -82,7 +81,7 @@ where
             }
             Ok((i, o)) => {
               if i == input {
-                return Err(Err::Error(error_position!(i, ErrorKind::Many1)));
+                return Err(Err::Error(Error::from_error_kind(i, ErrorKind::Many1)));
               }
 
               input = i;
@@ -97,7 +96,7 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many1c<Input, Output, Error, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn many1c<Input, Output, Error: ParseError<Input>, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + Copy + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
@@ -108,7 +107,7 @@ where
 //FIXME: streaming
 /// `many_till!(Input -> IResult<Input,Output>, Input -> IResult<Input,P>) => Input -> IResult<Input, (Vec<Output>, P)>`
 #[cfg(feature = "alloc")]
-pub fn many_till<Input, Output, P, Error, F, G>(mut f: F, mut g: G) -> impl FnOnce(Input) -> IResult<Input, (Vec<Output>, P), Error>
+pub fn many_till<Input, Output, P, Error: ParseError<Input>, F, G>(mut f: F, mut g: G) -> impl FnOnce(Input) -> IResult<Input, (Vec<Output>, P), Error>
 where
   Input: Clone + PartialEq + InputLength + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -132,7 +131,7 @@ where
           match f(_input2) {
             Err(Err::Error(err)) => {
               //fn unify_types<T>(_: &T, _: &T) {}
-              let e = Err::Error(error_node_position!(input, ErrorKind::ManyTill, err));
+              let e = Err::Error(Error::append(input, ErrorKind::ManyTill, err));
               //unify_types(&e1, &e);
 
               ret = Err(e);
@@ -145,7 +144,7 @@ where
             Ok((i, o)) => {
               // loop trip must always consume (otherwise infinite loops)
               if i == input {
-                ret = Err(Err::Error(error_position!(input, ErrorKind::ManyTill)));
+                ret = Err(Err::Error(Error::from_error_kind(input, ErrorKind::ManyTill)));
                 break;
               }
 
@@ -163,7 +162,7 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many_tillc<Input, Output, P, Error, F, G>(i: Input, mut f: F, mut g: G) -> IResult<Input, (Vec<Output>, P), Error>
+pub fn many_tillc<Input, Output, P, Error: ParseError<Input>, F, G>(i: Input, mut f: F, mut g: G) -> IResult<Input, (Vec<Output>, P), Error>
 where
   Input: Clone + PartialEq + InputLength + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -174,7 +173,7 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn separated_list<Input, Output, Output2, Error, F, G>(mut sep: G, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(mut sep: G, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -191,7 +190,7 @@ where
       Err(e) => Err(e),
       Ok((i, o)) => {
         if i.input_len() == input.input_len() {
-          Err(Err::Error(error_position!(input, ErrorKind::SeparatedList)))
+          Err(Err::Error(Error::from_error_kind(input, ErrorKind::SeparatedList)))
         } else {
           res.push(o);
           input = i;
@@ -248,7 +247,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-pub fn separated_listc<Input, Output, Output2, Error, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -259,7 +258,7 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn separated_non_empty_list<Input, Output, Output2, Error, F, G>(mut sep: G, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_non_empty_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(mut sep: G, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -276,7 +275,7 @@ where
       Ok((i, o)) => {
         if i.input_len() == input.input_len() {
           let e = ErrorKind::SeparatedNonEmptyList;
-          Err(Err::Error(error_position!(input, e)))
+          Err(Err::Error(Error::from_error_kind(input, e)))
         } else {
           res.push(o);
           input = i;
@@ -334,7 +333,7 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn separated_non_empty_listc<Input, Output, Output2, Error, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_non_empty_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -345,7 +344,7 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many_m_n<Input, Output, Error, F>(m: usize, n: usize, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn many_m_n<Input, Output, Error: ParseError<Input>, F>(m: usize, n: usize, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -356,7 +355,7 @@ where
     let mut count: usize = 0;
     let mut err = false;
     let mut incomplete: Option<Needed> = None;
-    let mut failure: Option<Context<_, _>> = None;
+    let mut failure: Option<Error> = None;
 
     loop {
       if count == n {
@@ -390,7 +389,7 @@ where
 
     if count < m {
       if err {
-        Err(Err::Error(error_position!(i, ErrorKind::ManyMN)))
+        Err(Err::Error(Error::from_error_kind(i, ErrorKind::ManyMN)))
       } else {
         match failure {
           Some(i2) => Err(Err::Failure(i2)),
@@ -414,7 +413,7 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many_m_nc<Input, Output, Error, F>(i: Input, m: usize, n: usize, mut f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn many_m_nc<Input, Output, Error: ParseError<Input>, F>(i: Input, m: usize, n: usize, mut f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -423,7 +422,7 @@ where
 }
 
 //FIXME: streaming
-pub fn many0_count<Input, Output, Error, F>(i: Input, mut f: F) -> IResult<Input, usize, Error>
+pub fn many0_count<Input, Output, Error: ParseError<Input>, F>(i: Input, mut f: F) -> IResult<Input, usize, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -441,7 +440,7 @@ where
           if i.at_eof() {
             ret = Ok((input, count));
           } else {
-            ret = Err(Err::Error(error_position!(input, ErrorKind::Many0Count)));
+            ret = Err(Err::Error(Error::from_error_kind(input, ErrorKind::Many0Count)));
           }
           break;
         }
@@ -465,15 +464,15 @@ where
 }
 
 //FIXME: streaming
-pub fn many1_count<Input, Output, Error, F>(i: Input, mut f: F) -> IResult<Input, usize, Error>
+pub fn many1_count<Input, Output, Error: ParseError<Input>, F>(i: Input, mut f: F) -> IResult<Input, usize, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
 {
   let i_ = i.clone();
   match f(i_) {
-    Err(Err::Error(_)) => Err(Err::Error(error_position!(i, ErrorKind::Many1Count))),
-    Err(Err::Failure(_)) => Err(Err::Failure(error_position!(i, ErrorKind::Many1Count))),
+    Err(Err::Error(_)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Many1Count))),
+    Err(Err::Failure(_)) => Err(Err::Failure(Error::from_error_kind(i, ErrorKind::Many1Count))),
     Err(i) => Err(i),
     Ok((i1, _)) => {
       let mut count: usize = 1;
@@ -511,7 +510,7 @@ where
 }
 
 #[cfg(feature = "alloc")]
-pub fn count<Input, Output, Error, F>(i: Input, mut f: F, count: usize) -> IResult<Input, Vec<Output>, Error>
+pub fn count<Input, Output, Error: ParseError<Input>, F>(i: Input, mut f: F, count: usize) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -534,7 +533,7 @@ where
       }
       Err(Err::Error(e)) => {
         fn unify_types<T>(_: &T, _: &T) {}
-        let e2 = error_position!(i, ErrorKind::Count);
+        let e2 = Error::from_error_kind(i, ErrorKind::Count);
         unify_types(&e, &e2);
 
         ret = Err(Err::Error(e2));
@@ -551,7 +550,7 @@ where
 }
 
 //FIXME: streaming
-pub fn fold_many0<Input, Output, Error, F, G, R>(i: Input, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+pub fn fold_many0<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -570,7 +569,7 @@ where
           if i.at_eof() {
             ret = Ok((input, res));
           } else {
-            ret = Err(Err::Error(error_position!(input, ErrorKind::Many0)));
+            ret = Err(Err::Error(Error::from_error_kind(input, ErrorKind::Many0)));
           }
           break;
         }
@@ -593,7 +592,7 @@ where
 }
 
 //FIXME: streaming
-pub fn fold_many1<Input, Output, Error, F, G, R>(i: Input, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+pub fn fold_many1<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -601,14 +600,14 @@ where
 {
   let _i = i.clone();
   match f(_i) {
-    Err(Err::Error(_)) => Err(Err::Error(error_position!(i, ErrorKind::Many1))),
-    Err(Err::Failure(_)) => Err(Err::Failure(error_position!(i, ErrorKind::Many1))),
+    Err(Err::Error(_)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Many1))),
+    Err(Err::Failure(_)) => Err(Err::Failure(Error::from_error_kind(i, ErrorKind::Many1))),
     Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
     Ok((i1, o1)) => {
       let mut acc = g(init, o1);
       let mut input = i1;
       let mut incomplete: Option<Needed> = None;
-      let mut failure: Option<Context<_, _>> = None;
+      let mut failure: Option<Error> = None;
       loop {
         let _input = input.clone();
         match f(_input) {
@@ -626,7 +625,7 @@ where
           Ok((i, o)) => {
             if i.input_len() == input.input_len() {
               if !i.at_eof() {
-                failure = Some(error_position!(i, ErrorKind::Many1));
+                failure = Some(Error::from_error_kind(i, ErrorKind::Many1));
               }
               break;
             }
@@ -648,7 +647,7 @@ where
 }
 
 //FIXME: streaming
-pub fn fold_many_m_n<Input, Output, Error, F, G, R>(i: Input, m: usize, n: usize, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+pub fn fold_many_m_n<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, m: usize, n: usize, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -689,7 +688,7 @@ where
 
   if count < m {
     if err {
-      Err(Err::Error(error_position!(i, ErrorKind::ManyMN)))
+      Err(Err::Error(Error::from_error_kind(i, ErrorKind::ManyMN)))
     } else {
       match incomplete {
         Some(i) => Err(Err::Incomplete(i)),

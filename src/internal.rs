@@ -1,12 +1,7 @@
 //! Basic types to build the parsers
 
 use self::Needed::*;
-
-#[cfg(feature = "verbose-errors")]
-use verbose_errors::Context;
-
-#[cfg(not(feature = "verbose-errors"))]
-use simple_errors::Context;
+use util::ErrorKind;
 
 /// Holds the result of parsing functions
 ///
@@ -15,7 +10,7 @@ use simple_errors::Context;
 /// The `Ok` side is an enum containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
 ///
-pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
+pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -69,24 +64,48 @@ impl Needed {
 /// The main drawback is that it is a lot slower than default error
 /// management.
 #[derive(Debug, Clone, PartialEq)]
-pub enum Err<I, E = u32> {
+pub enum Err<E> {
   /// There was not enough data
   Incomplete(Needed),
   /// The parser had an error (recoverable)
-  Error(Context<I, E>),
+  Error(E),
   /// The parser had an unrecoverable error: we got to the right
   /// branch and we know other branches won't work, so backtrack
   /// as fast as possible
-  Failure(Context<I, E>),
+  Failure(E),
 }
 
+pub trait ParseError<I> {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self;
+  fn append(input: I, kind: ErrorKind, other: Self) -> Self;
+  //fn or(self, other: Self) -> Self;
+}
+
+impl<I> ParseError<I> for (I, ErrorKind) {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    (input, kind)
+  }
+
+  fn append(input: I, kind: ErrorKind, other: Self) -> Self {
+    other
+  }
+}
+
+pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
+  E::from_error_kind(input, kind)
+}
+
+pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) -> E {
+  E::append(input, kind, other)
+}
+
+/*
 #[cfg(feature = "std")]
 use std::fmt;
 
 #[cfg(feature = "std")]
-impl<I, E> fmt::Display for Err<I, E>
+impl<E> fmt::Display for Err<E>
 where
-  I: fmt::Debug,
   E: fmt::Debug,
 {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -98,7 +117,7 @@ where
 use std::error::Error;
 
 #[cfg(feature = "std")]
-impl<I, E> Error for Err<I, E>
+impl<E> Error for Err<E>
 where
   I: fmt::Debug,
   E: fmt::Debug,
@@ -116,19 +135,21 @@ where
     None
   }
 }
+*/
 
 use util::Convert;
 
-impl<I, H: From<I>, F, E: From<F>> Convert<Err<I, F>> for Err<H, E> {
-  fn convert(e: Err<I, F>) -> Self {
+impl<F, E: From<F>> Convert<Err<F>> for Err<E> {
+  fn convert(e: Err<F>) -> Self {
     match e {
       Err::Incomplete(n) => Err::Incomplete(n),
-      Err::Failure(c) => Err::Failure(Context::convert(c)),
-      Err::Error(c) => Err::Error(Context::convert(c)),
+      Err::Failure(c) => Err::Failure(c.into()),
+      Err::Error(c) => Err::Error(c.into()),
     }
   }
 }
 
+/*
 impl<I, E> Err<I, E> {
   pub fn into_error_kind(self) -> ::util::ErrorKind<E> {
     match self {
@@ -145,6 +166,7 @@ impl<I, E> Err<I, E> {
     }
   }
 }
+*/
 
 /*
 #[cfg(feature = "verbose-errors")]
@@ -323,7 +345,7 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
 #[macro_export(local_inner_macros)]
 macro_rules! error_position(
   ($input: expr, $code:expr) => ({
-    $crate::Context::Code($input, $code)
+    $crate::make_error($input, $code)
   });
 );
 
@@ -336,7 +358,7 @@ macro_rules! error_position(
 #[macro_export(local_inner_macros)]
 macro_rules! error_position(
   ($input:expr, $code:expr) => ({
-    $crate::Context::Code($input, $code)
+    $crate::make_error($input, $code)
   });
 );
 
@@ -349,21 +371,7 @@ macro_rules! error_position(
 #[macro_export(local_inner_macros)]
 macro_rules! error_node_position(
   ($input:expr, $code:expr, $next:expr) => {
-    {
-    let mut error_vec = match $next {
-      $crate::Context::Code(i, e) => {
-        let mut v = $crate::lib::std::vec::Vec::new();
-        v.push((i, e));
-        v
-      },
-      $crate::Context::List(v) => {
-        v
-      },
-    };
-
-    error_vec.push(($input, $code));
-    $crate::Context::List(error_vec)
-    }
+    $crate::append_error($input, $code, $next)
   }
 );
 
@@ -377,19 +385,12 @@ macro_rules! error_node_position(
 #[macro_export(local_inner_macros)]
 macro_rules! error_node_position(
   ($input:expr, $code:expr, $next:expr) => ({
-    fn unify_types<T>(_: &T, _: &T) {}
-    let res = $crate::Context::Code($input, $code);
-    unify_types(&res, &$next);
-    res
+    $crate::append_error($input, $code, $next)
   });
 );
 
 #[cfg(test)]
 mod tests {
-  #[cfg(not(feature = "verbose-errors"))]
-  use simple_errors::Context;
-  #[cfg(feature = "verbose-errors")]
-  use verbose_errors::Context;
   use super::*;
   use util::ErrorKind;
 
@@ -404,12 +405,11 @@ mod tests {
   #[cfg(not(feature = "verbose-errors"))]
   #[cfg(target_pointer_width = "64")]
   fn size_test() {
-    assert_size!(IResult<&[u8], &[u8], u32>, 40);
+    assert_size!(IResult<&[u8], &[u8], (&[u8], u32)>, 40);
     assert_size!(IResult<&str, &str, u32>, 40);
     assert_size!(Needed, 16);
-    assert_size!(Context<u32>, 12);
     assert_size!(Err<u32>, 24);
-    assert_size!(ErrorKind<u32>, 8);
+    assert_size!(ErrorKind, 1);
   }
 
   #[test]
@@ -419,21 +419,21 @@ mod tests {
     assert_size!(IResult<&[u8], &[u8], u32>, 48);
     assert_size!(IResult<&str, &str, u32>, 48);
     assert_size!(Needed, 16);
-    assert_size!(Context<u32>, 32);
     assert_size!(Err<u32>, 40);
-    assert_size!(ErrorKind<u32>, 8);
+    assert_size!(ErrorKind, 8);
   }
 
+  /*
   type IResultNoVerbose<I, O, E = u32> = Result<(I, O), ErrNoVerbose<I, E>>;
   enum ErrNoVerbose<I, E = u32> {
     /// There was not enough data
     Incomplete(Needed),
     /// The parser had an error (recoverable)
-    Error(I, ErrorKind<E>),
+    Error(I, ErrorKind),
     /// The parser had an unrecoverable error: we got to the right
     /// branch and we know other branches won't work, so backtrack
     /// as fast as possible
-    Failure(I, ErrorKind<E>),
+    Failure(I, ErrorKind),
   }
 
   #[test]
@@ -441,9 +441,10 @@ mod tests {
   #[cfg(target_pointer_width = "64")]
   fn no_verbose_size_test() {
     assert_size!(IResultNoVerbose<&[u8], &[u8], Vec<(&[u8], u32)>>, 64);
-    assert_size!(ErrNoVerbose<Vec<(&[u8], u32)>>, 40);
+    assert_size!(ErrNoVerbose<Vec<(&[u8], u32)>>, 56);
     assert_size!(ErrorKind<Vec<(&[u8], u32)>>, 32);
   }
+  */
 
   /*
   const REST: [u8; 0] = [];

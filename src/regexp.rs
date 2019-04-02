@@ -35,7 +35,7 @@ macro_rules! re_match (
       if re.is_match(&$i) {
         Ok(($i.slice($i.input_len()..), $i))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatch::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatch)));
         res
       }
     }
@@ -60,7 +60,7 @@ macro_rules! re_match_static (
       if RE.is_match(&$i) {
         Ok(($i.slice($i.input_len()..), $i))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatch::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatch)));
         res
       }
     }
@@ -84,7 +84,7 @@ macro_rules! re_bytes_match (
       if re.is_match(&$i) {
         Ok(($i.slice($i.input_len()..), $i))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatch::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatch)));
         res
       }
     }
@@ -109,7 +109,7 @@ macro_rules! re_bytes_match_static (
       if RE.is_match(&$i) {
         Ok(($i.slice($i.input_len()..), $i))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatch::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatch)));
         res
       }
     }
@@ -132,7 +132,7 @@ macro_rules! re_find (
       if let Some(m) = re.find(&$i) {
         Ok(($i.slice(m.end()..), $i.slice(m.start()..m.end())))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpFind::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpFind)));
         res
       }
     }
@@ -156,7 +156,7 @@ macro_rules! re_find_static (
       if let Some(m) = RE.find(&$i) {
         Ok(($i.slice(m.end()..), $i.slice(m.start()..m.end())))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpFind::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpFind)));
         res
       }
     }
@@ -180,7 +180,7 @@ macro_rules! re_bytes_find (
       if let Some(m) = re.find(&$i) {
         Ok(($i.slice(m.end()..), $i.slice(m.start()..m.end())))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpFind::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpFind)));
         res
       }
     }
@@ -204,7 +204,7 @@ macro_rules! re_bytes_find_static (
       if let Some(m) = RE.find(&$i) {
         Ok(($i.slice(m.end()..), $i.slice(m.start()..m.end())))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpFind::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpFind)));
         res
       }
     }
@@ -233,7 +233,7 @@ macro_rules! re_matches (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatches::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatches)));
         res
       }
     }
@@ -262,7 +262,7 @@ macro_rules! re_matches_static (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatches::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatches)));
         res
       }
     }
@@ -290,7 +290,7 @@ macro_rules! re_bytes_matches (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatches::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatches)));
         res
       }
     }
@@ -319,7 +319,7 @@ macro_rules! re_bytes_matches_static (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatches::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpMatches)));
         res
       }
     }
@@ -347,7 +347,7 @@ macro_rules! re_capture (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture)));
         res
       }
     }
@@ -376,7 +376,7 @@ macro_rules! re_capture_static (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture)));
         res
       }
     }
@@ -404,7 +404,7 @@ macro_rules! re_bytes_capture (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture)));
         res
       }
     }
@@ -433,7 +433,7 @@ macro_rules! re_bytes_capture_static (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture)));
         res
       }
     }
@@ -463,7 +463,7 @@ macro_rules! re_captures (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture)));
         res
       }
     }
@@ -493,7 +493,7 @@ macro_rules! re_captures_static (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture)));
         res
       }
     }
@@ -522,7 +522,7 @@ macro_rules! re_bytes_captures (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture)));
         res
       }
     }
@@ -552,7 +552,7 @@ macro_rules! re_bytes_captures_static (
         };
         Ok(($i.slice(offset..), v))
       } else {
-        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture::<u32>)));
+        let res: IResult<_,_> = Err(Err::Error(error_position!($i, ErrorKind::RegexpCapture)));
         res
       }
     }
@@ -573,7 +573,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpMatch::<u32>
+        ErrorKind::RegexpMatch
       ),))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
@@ -588,7 +588,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpMatch::<u32>
+        ErrorKind::RegexpMatch
       ),))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
@@ -602,7 +602,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpFind::<u32>
+        ErrorKind::RegexpFind
       ),))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
@@ -617,7 +617,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpFind::<u32>
+        ErrorKind::RegexpFind
       ),))
     );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
@@ -632,7 +632,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpMatches::<u32>
+        ErrorKind::RegexpMatches
       )))
     );
     assert_eq!(
@@ -651,7 +651,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpMatches::<u32>
+        ErrorKind::RegexpMatches
       )))
     );
     assert_eq!(
@@ -672,7 +672,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpCapture::<u32>
+        ErrorKind::RegexpCapture
       )))
     );
     assert_eq!(
@@ -697,7 +697,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpCapture::<u32>
+        ErrorKind::RegexpCapture
       )))
     );
     assert_eq!(
@@ -724,7 +724,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpCapture::<u32>
+        ErrorKind::RegexpCapture
       )))
     );
     assert_eq!(
@@ -755,7 +755,7 @@ mod tests {
       rm("blah"),
       Err(Err::Error(error_position!(
         &"blah"[..],
-        ErrorKind::RegexpCapture::<u32>
+        ErrorKind::RegexpCapture
       )))
     );
     assert_eq!(
@@ -778,7 +778,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpMatch::<u32>
+        ErrorKind::RegexpMatch
       )))
     );
     assert_eq!(
@@ -796,7 +796,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpMatch::<u32>
+        ErrorKind::RegexpMatch
       )))
     );
     assert_eq!(
@@ -813,7 +813,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpFind::<u32>
+        ErrorKind::RegexpFind
       )))
     );
     assert_eq!(
@@ -831,7 +831,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpFind::<u32>
+        ErrorKind::RegexpFind
       )))
     );
     assert_eq!(
@@ -852,7 +852,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpMatches::<u32>
+        ErrorKind::RegexpMatches
       )))
     );
     assert_eq!(
@@ -877,7 +877,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpMatches::<u32>
+        ErrorKind::RegexpMatches
       )))
     );
     assert_eq!(
@@ -911,7 +911,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpCapture::<u32>
+        ErrorKind::RegexpCapture
       )))
     );
     assert_eq!(
@@ -956,7 +956,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpCapture::<u32>
+        ErrorKind::RegexpCapture
       )))
     );
     assert_eq!(
@@ -1002,7 +1002,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpCapture::<u32>
+        ErrorKind::RegexpCapture
       )))
     );
     assert_eq!(
@@ -1059,7 +1059,7 @@ mod tests {
       rm(&b"blah"[..]),
       Err(Err::Error(error_position!(
         &b"blah"[..],
-        ErrorKind::RegexpCapture::<u32>
+        ErrorKind::RegexpCapture
       )))
     );
     assert_eq!(

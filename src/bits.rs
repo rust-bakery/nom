@@ -46,28 +46,16 @@ macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Context,Err,Needed};
+      use $crate::{Err,Needed};
       use $crate::Slice;
 
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        Err(Err::Error(e)) => {
-          let err = match e {
-            Context::Code((i,b), kind) => Context::Code(i.slice(b/8..), kind),
-            Context::List(mut v) => {
-              Context::List(v.drain(..).map(|((i,b), kind)| (i.slice(b/8..), kind)).collect())
-            }
-          };
-          Err(Err::Error(err))
+        Err(Err::Error(((i,b), kind))) => {
+          Err(Err::Error((i.slice(b/8..), kind)))
         },
-        Err(Err::Failure(e)) => {
-          let err = match e {
-            Context::Code((i,b), kind) => Context::Code(i.slice(b/8..), kind),
-            Context::List(mut v) => {
-              Context::List(v.drain(..).map(|((i,b), kind)| (i.slice(b/8..), kind)).collect())
-            }
-          };
-          Err(Err::Failure(err))
+        Err(Err::Failure(((i, b), kind))) => {
+          Err(Err::Failure((i.slice(b/8..), kind)))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
@@ -92,18 +80,16 @@ macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context};
+      use $crate::{Err,Needed};
       use $crate::Slice;
 
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        Err(Err::Error(e)) => {
-          let Context::Code(_,err) = e;
-          Err(Err::Error(error_position!($i, err)))
+        Err(Err::Error(((i,b), kind))) => {
+          Err(Err::Error((i.slice(b/8..), kind)))
         },
-        Err(Err::Failure(e)) => {
-          let Context::Code(_,err) = e;
-          Err(Err::Failure(error_position!($i, err)))
+        Err(Err::Failure(((i, b), kind))) => {
+          Err(Err::Failure((i.slice(b/8..), kind)))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
@@ -161,7 +147,7 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context,Slice,ErrorKind};
+      use $crate::{Err,Needed,Slice,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -181,25 +167,11 @@ macro_rules! bytes_impl (
         Ok((i, o)) => {
           Ok(((i, 0), o))
         },
-        Err(Err::Error(e)) => {
-          let err = match e {
-            Context::Code(i, c) => Context::Code((i,0), c),
-            Context::List(mut v) => {
-              let (i, c) = v.remove(0);
-              Context::Code((i,0), c)
-            }
-          };
-          Err(Err::Error(err))
+        Err(Err::Error((i, kind))) => {
+          Err(Err::Error(((i, 0), kind)))
         },
-        Err(Err::Failure(e)) => {
-          let err = match e {
-            Context::Code(i, c) => Context::Code((i,0), c),
-            Context::List(mut v) => {
-              let (i, c) = v.remove(0);
-              Context::Code((i,0), c)
-            }
-          };
-          Err(Err::Error(err))
+        Err(Err::Failure((i, kind))) => {
+          Err(Err::Error(((i, 0), kind)))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
@@ -223,7 +195,7 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context,Slice,ErrorKind};
+      use $crate::{Err,Needed,Slice,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -243,13 +215,11 @@ macro_rules! bytes_impl (
         Ok((i, o)) => {
           Ok(((i, 0), o))
         },
-        Err(Err::Error(e)) => {
-          let Context::Code(i, c) = e;
-          Err(Err::Error(Context::Code((i,0), c)))
+        Err(Err::Error((i, kind))) => {
+          Err(Err::Error(((i, 0), kind)))
         },
-        Err(Err::Failure(e)) => {
-          let Context::Code(i, c) = e;
-          Err(Err::Failure(Context::Code((i,0), c)))
+        Err(Err::Failure((i, kind))) => {
+          Err(Err::Error(((i, 0), kind)))
         },
       };
       res
@@ -360,12 +330,12 @@ macro_rules! tag_bits (
             let res: IResult<_,$t> = Ok((i, o));
             res
           } else {
-            let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
+            let e: $crate::ErrorKind = $crate::ErrorKind::TagBits;
             Err(Err::Error(error_position!($i, e)))
           }
         },
         _                              => {
-          let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
+          let e: $crate::ErrorKind = $crate::ErrorKind::TagBits;
           Err(Err::Error(error_position!($i, e)))
         }
       }
