@@ -69,9 +69,9 @@ named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::anychar;
+/// # use nom::{anychar, ErrorKind};
 /// # fn main() {
-/// assert_eq!(anychar("abc"), Ok(("bc",'a')));
+/// assert_eq!(anychar::<_,(&str, ErrorKind)>("abc"), Ok(("bc",'a')));
 /// # }
 /// ```
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>

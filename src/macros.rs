@@ -418,6 +418,7 @@ macro_rules! apply (
   ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
 );
 
+//FIXME: error rewrite
 /// Prevents backtracking if the child parser fails
 ///
 /// This parser will do an early return instead of sending
@@ -439,12 +440,12 @@ macro_rules! apply (
 /// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///     named!(err_test<&[u8],&[u8],u32>, alt!(
+///     named!(err_test<&[u8],&[u8]>, alt!(
 ///       tag!("abcd") |
-///       preceded!(tag!("efgh"), return_error!(ErrorKind::Custom(42u32),
+///       preceded!(tag!("efgh"), return_error!(ErrorKind::Eof,
 ///           do_parse!(
 ///                  tag!("ijkl")                                        >>
-///             res: return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
+///             res: return_error!(ErrorKind::Tag, tag!("mnop")) >>
 ///             (res)
 ///           )
 ///         )
@@ -459,9 +460,9 @@ macro_rules! apply (
 ///     let res_a = err_test(a);
 ///     let res_b = err_test(b);
 ///     let res_c = err_test(c);
-///     assert_eq!(res_a, Err(Err::Failure(error_node_position!(blah, ErrorKind::Custom(42), error_position!(blah, ErrorKind::Tag)))));
-///     assert_eq!(res_b, Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42),
-///       error_node_position!(blah, ErrorKind::Custom(128), error_position!(blah, ErrorKind::Tag))))
+///     assert_eq!(res_a, Err(Err::Failure(error_node_position!(blah, ErrorKind::Eof, error_position!(blah, ErrorKind::Tag)))));
+///     assert_eq!(res_b, Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Eof,
+///       error_node_position!(blah, ErrorKind::Tag, error_position!(blah, ErrorKind::Tag))))
 ///     ));
 /// # }
 /// ```
@@ -482,7 +483,7 @@ macro_rules! return_error (
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))              => Ok((i, o)),
         Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-          return Err(Err::Failure(append_error($i, $code, e)))
+          return Err(Err::Failure($crate::append_error($i, $code, e)))
         }
       }
     }
@@ -514,6 +515,7 @@ macro_rules! return_error (
   );
 );
 
+//FIXME: error rewrite
 /// Add an error if the child parser fails
 ///
 /// While error! does an early return and avoids backtracking,
@@ -526,11 +528,11 @@ macro_rules! return_error (
 /// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///     named!(err_test, add_return_error!(ErrorKind::Custom(42u32), tag!("abcd")));
+///     named!(err_test, add_return_error!(ErrorKind::Tag, tag!("abcd")));
 ///
 ///     let a = &b"efghblah"[..];
 ///     let res_a = err_test(a);
-///     assert_eq!(res_a, Err(Err::Error(error_node_position!(a, ErrorKind::Custom(42), error_position!(a, ErrorKind::Tag)))));
+///     assert_eq!(res_a, Err(Err::Error(error_node_position!(a, ErrorKind::Tag, error_position!(a, ErrorKind::Tag)))));
 /// # }
 /// ```
 ///
@@ -1159,6 +1161,7 @@ macro_rules! cond(
   );
 );
 
+//FIXME: error rewrite
 /// `cond_reduce!(bool, I -> IResult<I,O>) => I -> IResult<I, O>`
 /// Conditional combinator with error
 ///
@@ -1174,6 +1177,7 @@ macro_rules! cond(
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err,ErrorKind,IResult};
 /// # fn main() {
+///  /*
 ///  let b = true;
 ///  let f = closure!(&'static[u8],
 ///    cond_reduce!( b, tag!("abcd") )
@@ -1187,6 +1191,7 @@ macro_rules! cond(
 ///    cond_reduce!( b2, tag!("abcd") )
 ///  );
 ///  assert_eq!(f2(&a[..]), Err(Err::Error(error_position!(&a[..], ErrorKind::CondReduce))));
+///  */
 ///  # }
 /// ```
 ///

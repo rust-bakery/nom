@@ -102,6 +102,7 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 }
 */
 
+//FIXME: error rewrite
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
 ///
 /// ```
@@ -109,7 +110,6 @@ impl<E: fmt::Debug> fmt::Display for Err<E> {
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// # use std::convert::From;
-/// # use nom::Context;
 /// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {

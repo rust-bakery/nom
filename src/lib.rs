@@ -149,14 +149,14 @@
 //! `IResult` is an alias for the `Result` type:
 //!
 //! ```rust
-//! use nom::{Needed, Context};
+//! use nom::{Needed, ErrorKind};
 //!
-//! type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
+//! type IResult<I, O, E = (I,ErrorKind)> = Result<(I, O), Err<E>>;
 //!
-//! enum Err<I, E = u32> {
+//! enum Err<E> {
 //!   Incomplete(Needed),
-//!   Error(Context<I, E>),
-//!   Failure(Context<I, E>),
+//!   Error(E),
+//!   Failure(E),
 //! }
 //! ```
 //!
