@@ -19,11 +19,11 @@ impl From<(&str, ErrorKind)> for CustomError {
 }
 
 impl ParseError<&str> for CustomError {
-  fn from_error_kind(input: &str, kind: ErrorKind) -> Self {
+  fn from_error_kind(_: &str, kind: ErrorKind) -> Self {
     CustomError(format!("error code was: {:?}", kind))
   }
 
-  fn append(input: &str, kind: ErrorKind, other: CustomError) -> Self {
+  fn append(_: &str, kind: ErrorKind, other: CustomError) -> Self {
     CustomError(format!("{:?}\nerror code was: {:?}", other, kind))
 
   }

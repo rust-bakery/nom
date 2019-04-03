@@ -1565,11 +1565,11 @@ mod tests {
   }
 
   impl<I> ParseError<I> for CustomError {
-    fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    fn from_error_kind(_: I, _: ErrorKind) -> Self {
       CustomError("from_error_kind")
     }
 
-    fn append(input: I, kind: ErrorKind, other: CustomError) -> Self {
+    fn append(_: I, _: ErrorKind, _: CustomError) -> Self {
       CustomError("append")
     }
   }

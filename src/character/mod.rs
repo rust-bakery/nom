@@ -53,3 +53,7 @@ where
   }
 }
 
+named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'));
+
+named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
+

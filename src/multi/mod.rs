@@ -58,7 +58,7 @@ where
   Input: Clone + Copy + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
-  move |mut input: Input| {
+  move |input: Input| {
     let input_ = input.clone();
     match f(input_) {
       Err(_) => return Err(Err::Error(Error::from_error_kind(input, ErrorKind::Many1))),
@@ -127,7 +127,7 @@ where
           ret = Ok((i, (res, o)));
           break;
         }
-        Err(e1) => {
+        Err(_) => {
           match f(_input2) {
             Err(Err::Error(err)) => {
               //fn unify_types<T>(_: &T, _: &T) {}
@@ -561,7 +561,7 @@ where
   let mut input = i.clone();
 
   loop {
-    let mut i_ = input.clone();
+    let i_ = input.clone();
     match f(i_) {
       Ok((i, o)) => {
         // loop trip must always consume (otherwise infinite loops)

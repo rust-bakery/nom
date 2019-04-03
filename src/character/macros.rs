@@ -59,10 +59,6 @@ macro_rules! char (
   ($i:expr, $c: expr) => ( $crate::char($c)($i) );
 );
 
-named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'));
-
-named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
-
 /// matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
 ///

@@ -86,7 +86,7 @@ impl<I> ParseError<I> for (I, ErrorKind) {
     (input, kind)
   }
 
-  fn append(input: I, kind: ErrorKind, other: Self) -> Self {
+  fn append(_: I, _: ErrorKind, other: Self) -> Self {
     other
   }
 }
