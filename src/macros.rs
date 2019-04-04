@@ -519,7 +519,7 @@ macro_rules! return_error (
 
 /// Add an error if the child parser fails
 ///
-/// While error! does an early return and avoids backtracking,
+/// While `return_error!` does an early return and avoids backtracking,
 /// add_return_error! backtracks normally. It just provides more context
 /// for an error
 ///
