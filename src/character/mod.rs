@@ -19,8 +19,8 @@ where
   }) {
     None => need_more(i, Needed::Size(1)),
     Some((_, false)) => {
-      let e: ErrorKind = ErrorKind::Char;
-      Err(Err::Error(Error::from_error_kind(i, e)))
+      //let e: ErrorKind = ErrorKind::Char;
+      Err(Err::Error(Error::from_char(i, c)))
     }
     Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
   }

@@ -75,10 +75,18 @@ pub enum Err<E> {
   Failure(E),
 }
 
-pub trait ParseError<I> {
+pub trait ParseError<I>: Sized {
   fn from_error_kind(input: I, kind: ErrorKind) -> Self;
+
   fn append(input: I, kind: ErrorKind, other: Self) -> Self;
-  //fn or(self, other: Self) -> Self;
+
+  fn from_char(input: I, _: char) -> Self {
+    Self::from_error_kind(input, ErrorKind::Char)
+  }
+
+  fn or(self, other: Self) -> Self {
+    other
+  }
 }
 
 impl<I> ParseError<I> for (I, ErrorKind) {
