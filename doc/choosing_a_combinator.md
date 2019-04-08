@@ -34,7 +34,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 ## Sequence combinators
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
-| [delimited](https://docs.rs/nom/4.0.0/nom/macro.delimited.html) |`delimited!(char!('('), take(2), char!(')'))` |  `"(ab)cd"` | `Ok( ("cd", "ab") )`||
+| [delimited](https://docs.rs/nom/4.0.0/nom/macro.delimited.html) |`delimited!(char!('('), take!(2), char!(')'))` |  `"(ab)cd"` | `Ok( ("cd", "ab") )`||
 | [preceded](https://docs.rs/nom/4.0.0/nom/macro.preceded.html) |`preceded!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", "XY") )`||
 | [terminated](https://docs.rs/nom/4.0.0/nom/macro.terminated.html) |`terminated!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", "ab") )`||
 | [pair](https://docs.rs/nom/4.0.0/nom/macro.pair.html) |`pair!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", ("ab", "XY")) )`||
