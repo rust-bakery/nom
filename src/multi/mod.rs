@@ -42,6 +42,8 @@ where
   }
 }
 //FIXME: streaming
+// this implementation is used for type inference issues in macros
+#[doc(hidden)]
 #[cfg(feature = "alloc")]
 pub fn many0c<Input, Output, Error: ParseError<Input>, F>(input: Input, mut f: F) -> IResult<Input, Vec<Output>, Error>
 where
@@ -95,6 +97,8 @@ where
 }
 
 //FIXME: streaming
+// this implementation is used for type inference issues in macros
+#[doc(hidden)]
 #[cfg(feature = "alloc")]
 pub fn many1c<Input, Output, Error: ParseError<Input>, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
 where
@@ -161,6 +165,8 @@ where
 }
 
 //FIXME: streaming
+// this implementation is used for type inference issues in macros
+#[doc(hidden)]
 #[cfg(feature = "alloc")]
 pub fn many_tillc<Input, Output, P, Error: ParseError<Input>, F, G>(i: Input, mut f: F, mut g: G) -> IResult<Input, (Vec<Output>, P), Error>
 where
@@ -246,6 +252,8 @@ where
   }
 }
 
+// this implementation is used for type inference issues in macros
+#[doc(hidden)]
 #[cfg(feature = "alloc")]
 pub fn separated_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
 where
@@ -332,6 +340,8 @@ where
 }
 
 //FIXME: streaming
+// this implementation is used for type inference issues in macros
+#[doc(hidden)]
 #[cfg(feature = "alloc")]
 pub fn separated_non_empty_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
 where
@@ -412,8 +422,10 @@ where
 }
 
 //FIXME: streaming
+// this implementation is used for type inference issues in macros
+#[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn many_m_nc<Input, Output, Error: ParseError<Input>, F>(i: Input, m: usize, n: usize, mut f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn many_m_nc<Input, Output, Error: ParseError<Input>, F>(i: Input, m: usize, n: usize, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,

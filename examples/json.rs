@@ -7,6 +7,7 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use nom::{AsBytes, Err, ErrorKind, IResult, Offset, ParseError};
 use nom::{alphanumeric, recognize_float, take_while, delimitedc, char, tag, precededc, separated_listc, terminatedc, alt};
+use nom::{delimited, preceded, separated_list, terminated};
 use std::str;
 use std::iter::repeat;
 use std::collections::HashMap;
@@ -38,7 +39,8 @@ fn string<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str
   //delimitedc(i, char('\"'), parse_str, char('\"'))
   let (i, _) = char('\"')(i)?;
 
-  ctx("string", |i| terminatedc(i, parse_str, char('\"')))(i)
+  //ctx("string", |i| terminatedc(i, parse_str, char('\"')))(i)
+  ctx("string", terminated(parse_str, char('\"')))(i)
 }
 
 
@@ -58,11 +60,17 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) ->IResult<&'a str, bool, 
 fn array<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, Vec<JsonValue>, E> {
   let (i, _) = char('[')(i)?;
 
-  ctx(
+  /*ctx(
     "array",
     |i| terminatedc(i,
       |i| separated_listc(i, |i| precededc(i, sp, char(',')), value),
       |i| precededc(i, sp, char(']')))
+     )(i)*/
+  ctx(
+    "array",
+    terminated(
+      |i| separated_listc(i, preceded(sp, char(',')), value),
+      preceded(sp, char(']')))
      )(i)
 }
 
@@ -74,7 +82,7 @@ fn hash<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, 
   let (i, _) = char('{')(i)?;
   ctx(
     "map",
-    |i| terminatedc(i,
+    terminated(
       |i| map!(i,
         separated_list!(preceded!(sp, char!(',')), key_value),
         |tuple_vec| tuple_vec
@@ -82,7 +90,7 @@ fn hash<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, 
           .map(|(k, v)| (String::from(k), v))
           .collect()
       ),
-      |i| precededc(i, sp, char('}')))
+      preceded(sp, char('}')))
      )(i)
 
 /*
