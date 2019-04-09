@@ -106,7 +106,7 @@ mod parse_int {
 #[test]
 fn usize_length_bytes_issue() {
   use nom::be_u16;
-  let _: IResult<&[u8], &[u8], u32> = length_bytes!(b"012346", be_u16);
+  let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_bytes!(b"012346", be_u16);
 }
 
 /*
@@ -227,8 +227,12 @@ fn issue_667() {
 
 #[test]
 fn issue_721() {
-  assert_eq!(parse_to!("1234", u16), Ok(("", 1234)));
-  assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
+  named!(f1<&str, u16>, parse_to!(u16));
+  named!(f2<&str, String>, parse_to!(String));
+  assert_eq!(f1("1234"), Ok(("", 1234)));
+  assert_eq!(f2("foo"), Ok(("", "foo".to_string())));
+  //assert_eq!(parse_to!("1234", u16), Ok(("", 1234)));
+  //assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
 }
 
 #[cfg(feature = "alloc")]
@@ -257,7 +261,7 @@ named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"
 #[test]
 fn issue_752() {
     assert_eq!(
-        Err::Error(nom::Context::Code("ab", nom::ErrorKind::ParseTo)),
+        Err::Error(("ab", nom::ErrorKind::ParseTo)),
         parse_to!("ab", usize).unwrap_err()
     )
 }
@@ -323,7 +327,7 @@ named!(multi_617<&[u8], () >, fold_many0!( digits, (), |_, _| {}));
 named!(multi_617_fails<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
 
 mod issue_647 {
-  use nom::{Err,be_f64};
+  use nom::{Err,be_f64, ErrorKind};
   pub type Input<'a> = &'a [u8];
 
   #[derive(PartialEq, Debug, Clone)]
@@ -332,7 +336,7 @@ mod issue_647 {
       v: Vec<f64>
   }
 
-  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<&'a [u8]>> {
+  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<(&'a [u8], ErrorKind)>> {
       separated_list_complete!(input, tag!(","),be_f64)
   }
 
