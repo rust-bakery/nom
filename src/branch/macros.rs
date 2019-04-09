@@ -168,7 +168,7 @@
 #[macro_export(local_inner_macros)]
 macro_rules! alt (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)* ) => (
-    compile_error!("alt uses '|' as separator, not ',':
+    nom_compile_error!("alt uses '|' as separator, not ',':
 
       alt!(
         tag!(\"abcd\") |
