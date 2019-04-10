@@ -642,6 +642,22 @@ mod tests {
     );
   );
 
+  macro_rules! take(
+    ($i:expr, $count:expr) => (
+      {
+        use $crate::need_more;
+
+        let cnt = $count as usize;
+        let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
+          need_more($i, Needed::Size(cnt))
+        } else {
+          Ok((&$i[cnt..],&$i[0..cnt]))
+        };
+        res
+      }
+    );
+  );
+
   #[test]
   #[cfg(feature = "alloc")]
   fn separated_list() {
