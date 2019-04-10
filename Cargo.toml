@@ -148,6 +148,10 @@ harness = false
 name = "json"
 harness = false
 
+[[example]]
+name = "json"
+required-features = ["alloc"]
+
 [badges]
 travis-ci = { repository = "Geal/nom" }
 coveralls = { repository = "Geal/nom", branch = "master", service = "github" }

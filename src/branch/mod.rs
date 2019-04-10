@@ -5,7 +5,6 @@ use internal::{Err, IResult, Needed, ParseError};
 use ::lib::std::ops::RangeFrom;
 use traits::{need_more, AsChar, AtEof, FindToken, InputIter, Slice};
 use util::ErrorKind;
-use std::ops::Deref;
 
 pub fn or<I: Clone, O, E: ParseError<I>, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, O, E>
 where

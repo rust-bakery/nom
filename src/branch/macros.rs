@@ -855,9 +855,9 @@ macro_rules! permutation_iterator (
 mod tests {
   #[cfg(feature = "alloc")]
   use lib::std::string::{String, ToString};
+  use lib::std::fmt::Debug;
   use internal::{Err, IResult, Needed, ParseError};
   use util::ErrorKind;
-  use std::fmt::Debug;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (

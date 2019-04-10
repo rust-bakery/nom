@@ -104,11 +104,13 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
   E::append(input, kind, other)
 }
 
+#[cfg(feature = "alloc")]
 #[derive(Clone,Debug,PartialEq)]
 pub struct VerboseError<I> {
-  pub errors: Vec<(I, VerboseErrorKind)>,
+  pub errors: ::lib::std::vec::Vec<(I, VerboseErrorKind)>,
 }
 
+#[cfg(feature = "alloc")]
 #[derive(Clone,Debug,PartialEq)]
 pub enum VerboseErrorKind {
   Context(&'static str),
@@ -116,6 +118,7 @@ pub enum VerboseErrorKind {
   Nom(ErrorKind),
 }
 
+#[cfg(feature = "alloc")]
 impl<I> ParseError<I> for VerboseError<I> {
   fn from_error_kind(input: I, kind: ErrorKind) -> Self {
     VerboseError {
@@ -140,6 +143,7 @@ impl<I> ParseError<I> for VerboseError<I> {
   }
 }
 
+#[cfg(feature = "alloc")]
 pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl FnOnce(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E> {
@@ -411,7 +415,7 @@ mod tests {
   #[macro_export]
   macro_rules! assert_size (
     ($t:ty, $sz:expr) => (
-      assert_eq!(::std::mem::size_of::<$t>(), $sz);
+      assert_eq!(::lib::std::mem::size_of::<$t>(), $sz);
     );
   );
 

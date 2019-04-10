@@ -898,11 +898,11 @@ macro_rules! ws (
 mod tests {
   #[cfg(feature = "alloc")]
   use lib::std::string::{String, ToString};
+  use lib::std::fmt::Debug;
   use internal::{Err, IResult, Needed, ParseError};
   use super::sp;
   use util::ErrorKind;
   use types::CompleteStr;
-  use std::fmt::Debug;
 
   #[test]
   fn spaaaaace() {
