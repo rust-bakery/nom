@@ -12,18 +12,18 @@ use std::convert::From;
 #[derive(Debug)]
 pub struct CustomError(String);
 
-impl From<(&str, ErrorKind)> for CustomError {
-  fn from(error: (&str, ErrorKind)) -> Self {
+impl<'a> From<(&'a str, ErrorKind)> for CustomError {
+  fn from(error: (&'a str, ErrorKind)) -> Self {
     CustomError(format!("error code was: {:?}", error))
   }
 }
 
-impl ParseError<&str> for CustomError {
-  fn from_error_kind(_: &str, kind: ErrorKind) -> Self {
+impl<'a> ParseError<&'a str> for CustomError {
+  fn from_error_kind(_: &'a str, kind: ErrorKind) -> Self {
     CustomError(format!("error code was: {:?}", kind))
   }
 
-  fn append(_: &str, kind: ErrorKind, other: CustomError) -> Self {
+  fn append(_: &'a str, kind: ErrorKind, other: CustomError) -> Self {
     CustomError(format!("{:?}\nerror code was: {:?}", other, kind))
 
   }
