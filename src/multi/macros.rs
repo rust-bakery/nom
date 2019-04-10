@@ -516,7 +516,7 @@ macro_rules! fold_many0(
     fold_many0!($i, |i| $submac!(i, $($args)*), $init, $fold_f)
   );
   ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
-    $crate::fold_many0($i, $f, $init, $fold_f)
+    $crate::fold_many0($f, $init, $fold_f)($i)
   );
 );
 

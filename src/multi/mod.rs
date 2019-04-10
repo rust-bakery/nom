@@ -529,7 +529,7 @@ where
 {
   move |i: Input | {
     let mut input = i.clone();
-    let mut res = ::lib::std::vec::Vec::new();
+    let mut res = ::lib::std::vec::Vec::with_capacity(count);
 
     for _ in 0..count {
       let input_ = input.clone();
@@ -555,45 +555,40 @@ where
   }
 }
 //FIXME: streaming
-pub fn fold_many0<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, f: F, init: R, g: G) -> IResult<Input, R, Error>
+pub fn fold_many0<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(f: F, init: R, g: G) -> impl Fn(Input) -> IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(R, Output) -> R,
 {
-  let ret;
-  let mut res = init;
-  let mut input = i.clone();
+  move |i: Input| {
+    let mut res = init.clone();
+    let mut input = i.clone();
 
-  loop {
-    let i_ = input.clone();
-    match f(i_) {
-      Ok((i, o)) => {
-        // loop trip must always consume (otherwise infinite loops)
-        if i == input {
-          if i.at_eof() {
-            ret = Ok((input, res));
-          } else {
-            ret = Err(Err::Error(Error::from_error_kind(input, ErrorKind::Many0)));
+    loop {
+      let i_ = input.clone();
+      match f(i_) {
+        Ok((i, o)) => {
+          // loop trip must always consume (otherwise infinite loops)
+          if i == input {
+            return if i.at_eof() {
+              Ok((input, res))
+            } else {
+              Err(Err::Error(Error::from_error_kind(input, ErrorKind::Many0)))
+            }
           }
-          break;
+          res = g(res, o);
+          input = i;
         }
-
-        res = g(res, o);
-        input = i;
-      }
-      Err(Err::Error(_)) => {
-        ret = Ok((input, res));
-        break;
-      }
-      Err(e) => {
-        ret = Err(e);
-        break;
+        Err(Err::Error(_)) => {
+          return Ok((input, res));
+        }
+        Err(e) => {
+          return Err(e);
+        }
       }
     }
   }
-
-  ret
 }
 
 //FIXME: streaming
