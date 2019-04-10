@@ -522,45 +522,38 @@ where
 }
 
 #[cfg(feature = "alloc")]
-pub fn count<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F, count: usize) -> IResult<Input, Vec<Output>, Error>
+pub fn count<Input, Output, Error: ParseError<Input>, F>(f: F, count: usize) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
-  let ret;
-  let mut input = i.clone();
-  let mut res = ::lib::std::vec::Vec::new();
+  move |i: Input | {
+    let mut input = i.clone();
+    let mut res = ::lib::std::vec::Vec::new();
 
-  loop {
-    if res.len() == count {
-      ret = Ok((input, res));
-      break;
-    }
+    for _ in 0..count {
+      let input_ = input.clone();
+      match f(input_) {
+        Ok((i, o)) => {
+          res.push(o);
+          input = i;
+        }
+        Err(Err::Error(e)) => {
+          fn unify_types<T>(_: &T, _: &T) {}
+          let e2 = Error::from_error_kind(i, ErrorKind::Count);
+          unify_types(&e, &e2);
 
-    let input_ = input.clone();
-    match f(input_) {
-      Ok((i, o)) => {
-        res.push(o);
-        input = i;
-      }
-      Err(Err::Error(e)) => {
-        fn unify_types<T>(_: &T, _: &T) {}
-        let e2 = Error::from_error_kind(i, ErrorKind::Count);
-        unify_types(&e, &e2);
-
-        ret = Err(Err::Error(e2));
-        break;
-      }
-      Err(e) => {
-        ret = Err(e);
-        break;
+          return Err(Err::Error(e2));
+        }
+        Err(e) => {
+          return Err(e);
+        }
       }
     }
+
+    Ok((input, res))
   }
-
-  ret
 }
-
 //FIXME: streaming
 pub fn fold_many0<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, f: F, init: R, g: G) -> IResult<Input, R, Error>
 where

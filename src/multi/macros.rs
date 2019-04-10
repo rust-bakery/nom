@@ -313,7 +313,7 @@ macro_rules! count(
     count!($i, |i| $submac!(i, $($args)*), $count)
   );
   ($i:expr, $f:expr, $count: expr) => (
-    $crate::count($i, $f, $count)
+    $crate::count($f, $count)($i)
   );
 );
 
