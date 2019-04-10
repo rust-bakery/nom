@@ -592,58 +592,60 @@ where
 }
 
 //FIXME: streaming
-pub fn fold_many1<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, f: F, init: R, g: G) -> IResult<Input, R, Error>
+pub fn fold_many1<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(f: F, init: R, g: G) -> impl Fn(Input) -> IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(R, Output) -> R,
 {
-  let _i = i.clone();
-  match f(_i) {
-    Err(Err::Error(_)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Many1))),
-    Err(Err::Failure(_)) => Err(Err::Failure(Error::from_error_kind(i, ErrorKind::Many1))),
-    Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-    Ok((i1, o1)) => {
-      let mut acc = g(init, o1);
-      let mut input = i1;
-      let mut incomplete: Option<Needed> = None;
-      let mut failure: Option<Error> = None;
-      loop {
-        let _input = input.clone();
-        match f(_input) {
-          Err(Err::Error(_)) => {
-            break;
-          }
-          Err(Err::Incomplete(i)) => {
-            incomplete = Some(i);
-            break;
-          }
-          Err(Err::Failure(e)) => {
-            failure = Some(e);
-            break;
-          }
-          Ok((i, o)) => {
-            if i.input_len() == input.input_len() {
-              if !i.at_eof() {
-                failure = Some(Error::from_error_kind(i, ErrorKind::Many1));
-              }
+  move |i: Input| {
+    let _i = i.clone();
+    match f(_i) {
+      Err(Err::Error(_)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Many1))),
+      Err(Err::Failure(_)) => Err(Err::Failure(Error::from_error_kind(i, ErrorKind::Many1))),
+      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+      Ok((i1, o1)) => {
+        let mut acc = g(init.clone(), o1);
+        let mut input = i1;
+        loop {
+          let _input = input.clone();
+          match f(_input) {
+            Err(Err::Error(_)) => {
               break;
             }
-            acc = g(acc, o);
-            input = i;
+            Err(Err::Incomplete(i2)) => {
+              return need_more(i,i2);
+            }
+            Err(Err::Failure(e)) => {
+              return Err(Err::Failure(e));
+            }
+            Ok((i, o)) => {
+              if i.input_len() == input.input_len() {
+                if !i.at_eof() {
+                  return Err(Err::Failure(Error::from_error_kind(i, ErrorKind::Many1)));
+                }
+                break;
+              }
+              acc = g(acc, o);
+              input = i;
+            }
           }
         }
-      }
 
-      match failure {
-        Some(e) => Err(Err::Failure(e)),
-        None => match incomplete {
-          Some(i2) => need_more(i, i2),
-          None => Ok((input, acc)),
-        },
+        Ok((input, acc))
       }
     }
   }
+}
+
+#[doc(hidden)]
+pub fn fold_many1c<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(i: Input, f: F, init: R, g: G) -> IResult<Input, R, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(R, Output) -> R,
+{
+  fold_many1(f, init, g)(i)
 }
 
 //FIXME: streaming
