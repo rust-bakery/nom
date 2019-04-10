@@ -5,9 +5,9 @@ extern crate jemallocator;
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use nom::{AsBytes, Err, ErrorKind, IResult, Offset, ParseError};
+use nom::{AsBytes, Err, ErrorKind, IResult, Offset, ParseError, VerboseError, VerboseErrorKind};
 use nom::{alphanumeric, recognize_float, take_while, delimitedc, char, tag, precededc, separated_listc, terminatedc, alt};
-use nom::{delimited, preceded, separated_list, terminated};
+use nom::{delimited, preceded, separated_list, terminated, context};
 use std::str;
 use std::iter::repeat;
 use std::collections::HashMap;
@@ -35,12 +35,12 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, &'a str,
     escaped!(i, call!(alphanumeric), '\\', one_of!("\"n\\"))
 }
 
-fn string<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, &'a str, E> {
+fn string<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, &'a str, E> {
   //delimitedc(i, char('\"'), parse_str, char('\"'))
   let (i, _) = char('\"')(i)?;
 
-  //ctx("string", |i| terminatedc(i, parse_str, char('\"')))(i)
-  ctx("string", terminated(parse_str, char('\"')))(i)
+  //context("string", |i| terminatedc(i, parse_str, char('\"')))(i)
+  context("string", terminated(parse_str, char('\"')))(i)
 }
 
 
@@ -57,16 +57,16 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) ->IResult<&'a str, bool, 
   */
 }
 
-fn array<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, Vec<JsonValue>, E> {
+fn array<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, Vec<JsonValue>, E> {
   let (i, _) = char('[')(i)?;
 
-  /*ctx(
+  /*context(
     "array",
     |i| terminatedc(i,
       |i| separated_listc(i, |i| precededc(i, sp, char(',')), value),
       |i| precededc(i, sp, char(']')))
      )(i)*/
-  ctx(
+  context(
     "array",
     terminated(
       |i| separated_listc(i, preceded(sp, char(',')), value),
@@ -74,13 +74,13 @@ fn array<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str,
      )(i)
 }
 
-fn key_value<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, (&'a str, JsonValue), E> {
+fn key_value<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, (&'a str, JsonValue), E> {
   separated_pair!(i, preceded!(sp, string), preceded!(sp, char!(':')), value)
 }
 
-fn hash<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, HashMap<String, JsonValue>, E> {
+fn hash<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, HashMap<String, JsonValue>, E> {
   let (i, _) = char('{')(i)?;
-  ctx(
+  context(
     "map",
     terminated(
       |i| map!(i,
@@ -108,7 +108,7 @@ fn hash<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, 
   */
 }
 
-fn value<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, JsonValue, E> {
+fn value<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, JsonValue, E> {
   preceded!(i,
     sp,
     alt!(
@@ -120,7 +120,7 @@ fn value<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str,
     ))
 }
 
-fn root<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, JsonValue, E> {
+fn root<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, JsonValue, E> {
   delimited!(i,
     sp,
     alt( (
@@ -134,78 +134,7 @@ fn root<'a, E: ParseError<&'a str>+Ctx<&'a str>>(i: &'a str) ->IResult<&'a str, 
     not!(complete!(sp)))
 }
 
-#[derive(Clone,Debug,PartialEq)]
-struct VerboseError<'a> {
-  errors: Vec<(&'a str, VerboseErrorKind)>,
-}
-
-#[derive(Clone,Debug,PartialEq)]
-pub enum VerboseErrorKind {
-  Context(&'static str),
-  Char(char),
-  //Tag(String),
-  Nom(ErrorKind),
-}
-
-impl<'a> ParseError<&'a str> for VerboseError<'a> {
-  fn from_error_kind(input: &'a str, kind: ErrorKind) -> Self {
-    VerboseError {
-      errors: vec![(input, VerboseErrorKind::Nom(kind))]
-    }
-  }
-
-  fn append(input: &'a str, kind: ErrorKind, mut other: Self) -> Self {
-    other.errors.push((input, VerboseErrorKind::Nom(kind)));
-    other
-  }
-
-  fn from_char(input: &'a str, c: char) -> Self {
-    VerboseError {
-      errors: vec![(input, VerboseErrorKind::Char(c))]
-    }
-  }
-
-  /*fn from_tag<T:AsBytes>(input: &'a str, t: T) -> Self {
-    VerboseError {
-      errors: vec![(input, VerboseErrorKind::Char(c))]
-    }
-  }*/
-}
-
-trait Ctx<I> {
-  fn add_context(input: I, ctx: &'static str, other: Self) -> Self;
-}
-
-impl<I> Ctx<I> for (I, ErrorKind) {
-  fn add_context(input: I, ctx: &'static str, other: Self) -> Self {
-    other
-  }
-}
-
-impl<'a> Ctx<&'a str> for VerboseError<'a> {
-  fn add_context(input: &'a str, ctx: &'static str, mut other: Self) -> Self {
-    other.errors.push((input, VerboseErrorKind::Context(ctx)));
-    other
-  }
-}
-
-fn ctx<'a, E: ParseError<&'a str>+Ctx<&'a str>, F, O>(context: &'static str, f: F) -> impl FnOnce(&'a str) -> IResult<&'a str, O, E>
-where
-  F: Fn(&'a str) -> IResult<&'a str, O, E> {
-
-    move |i: &'a str| {
-      match f(i) {
-        Ok(o) => Ok(o),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-          Err(Err::Failure(E::add_context(i, context, e)))
-        }
-      }
-    }
-
-}
-
-fn convert_error(input: &str, e: VerboseError) -> String {
+fn convert_error(input: &str, e: VerboseError<&str>) -> String {
   let lines: Vec<_> = input.lines().map(String::from).collect();
   //println!("lines: {:#?}", lines);
 
@@ -264,9 +193,9 @@ fn main() {
 
   println!("will try to parse:\n\n**********\n{}\n**********\n", data);
   println!("basic errors - `root::<(&str, ErrorKind)>(data)`:\n{:#?}\n", root::<(&str, ErrorKind)>(data));
-  println!("parsed verbose: {:#?}", root::<VerboseError>(data));
+  println!("parsed verbose: {:#?}", root::<VerboseError<&str>>(data));
 
-  match root::<VerboseError>(data) {
+  match root::<VerboseError<&str>>(data) {
     Err(Err::Error(e)) | Err(Err::Failure(e)) => {
       println!("verbose errors - `root::<VerboseError>(data)`:\n{}", convert_error(data, e));
     },

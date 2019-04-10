@@ -87,6 +87,10 @@ pub trait ParseError<I>: Sized {
   fn or(self, other: Self) -> Self {
     other
   }
+
+  fn add_context(input: I, ctx: &'static str, other: Self) -> Self {
+    other
+  }
 }
 
 impl<I> ParseError<I> for (I, ErrorKind) {
@@ -112,6 +116,59 @@ pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
 pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) -> E {
   E::append(input, kind, other)
 }
+
+#[derive(Clone,Debug,PartialEq)]
+pub struct VerboseError<I> {
+  pub errors: Vec<(I, VerboseErrorKind)>,
+}
+
+#[derive(Clone,Debug,PartialEq)]
+pub enum VerboseErrorKind {
+  Context(&'static str),
+  Char(char),
+  Nom(ErrorKind),
+}
+
+impl<I> ParseError<I> for VerboseError<I> {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    VerboseError {
+      errors: vec![(input, VerboseErrorKind::Nom(kind))]
+    }
+  }
+
+  fn append(input: I, kind: ErrorKind, mut other: Self) -> Self {
+    other.errors.push((input, VerboseErrorKind::Nom(kind)));
+    other
+  }
+
+  fn from_char(input: I, c: char) -> Self {
+    VerboseError {
+      errors: vec![(input, VerboseErrorKind::Char(c))]
+    }
+  }
+
+  fn add_context(input: I, ctx: &'static str, mut other: Self) -> Self {
+    other.errors.push((input, VerboseErrorKind::Context(ctx)));
+    other
+  }
+}
+
+pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl FnOnce(I) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E> {
+
+    move |i: I| {
+      match f(i.clone()) {
+        Ok(o) => Ok(o),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+          Err(Err::Failure(E::add_context(i, context, e)))
+        }
+      }
+    }
+
+}
+
 
 /*
 #[cfg(feature = "std")]
