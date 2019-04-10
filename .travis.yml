@@ -81,15 +81,15 @@ script:
 after_success: |
   case "$TRAVIS_RUST_VERSION" in
     nightly)
-      cargo bench --verbose
-      cargo coveralls --verbose
-      cargo bench --verbose
-      if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ]; then
-        cargo bench > benches-variable
-        git fetch
-        git checkout master
-        cargo bench > benches-control
-        cargo benchcmp benches-control benches-variable
+      if [ "$FEATURES" == '--features "regexp regexp_macros"' ]; then
+        cargo coveralls --verbose
+        cargo bench --verbose
+        if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ]; then
+          git fetch
+          git checkout master
+          cargo bench --verbose
+        fi
+        ;;
       fi
       ;;
     *)
