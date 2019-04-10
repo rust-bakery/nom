@@ -1015,8 +1015,6 @@ macro_rules! opt(
 ///
 /// ```ignore
 /// # #[macro_use] extern crate nom;
-/// # #[cfg(feature = "verbose-errors")]
-/// # use nom::Err::Position;
 /// # use nom::ErrorKind;
 /// # fn main() {
 ///  named!( o<&[u8], Result<&[u8], nom::Err<&[u8]> > >, opt_res!( tag!( "abcd" ) ) );
@@ -1517,26 +1515,6 @@ mod tests {
     assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
   }
 
-  #[cfg(feature = "verbose-errors")]
-  #[test]
-  fn opt_res() {
-    named!(opt_res_abcd<&[u8], Result<&[u8], Err<&[u8]> > >, opt_res!(tag!("abcd")));
-
-    let a = &b"abcdef"[..];
-    let b = &b"bcdefg"[..];
-    let c = &b"ab"[..];
-    assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
-    assert_eq!(
-      opt_res_abcd(b),
-      Ok((
-        &b"bcdefg"[..],
-        Err(Err::Error(error_position!(b, ErrorKind::Tag)))
-      ))
-    );
-    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
-  }
-
-  #[cfg(not(feature = "verbose-errors"))]
   #[test]
   fn opt_res() {
     named!(opt_res_abcd<&[u8], Result<&[u8], Err<(&[u8], ErrorKind)>> >, opt_res!(tag!("abcd")));
@@ -1734,24 +1712,6 @@ mod tests {
     assert_eq!(test(&b"1"[..]), Ok((&b""[..], ValidValue::One)));
     assert_eq!(test(&b"2"[..]), Ok((&b""[..], ValidValue::Two)));
 
-    #[cfg(feature = "verbose-errors")]
-    {
-      assert_eq!(
-        test(&b"3"[..]),
-        Err(
-          Err::Error(
-            Context::List(
-              vec![
-              (&b"3"[..], ErrorKind::Custom(ParseError::InvalidValue(b'3'))),
-              (&b"3"[..], ErrorKind::MapRes)
-              ]
-            )
-          )
-        )
-      );
-    }
-
-    #[cfg(not(feature = "verbose-errors"))]
     {
       assert_eq!(test(&b"3"[..]), Err(Err::Error(::make_error(&b"3"[..], ErrorKind::MapRes))));
     }

@@ -399,10 +399,6 @@ pub mod lib {
 pub use self::traits::*;
 pub use self::util::*;
 
-#[cfg(feature = "verbose-errors")]
-pub use self::verbose_errors::*;
-
-#[cfg(not(feature = "verbose-errors"))]
 pub use self::simple_errors::*;
 
 pub use self::branch::*;
@@ -427,11 +423,6 @@ pub use self::str::*;
 #[macro_use]
 mod util;
 
-#[cfg(feature = "verbose-errors")]
-#[macro_use]
-pub mod verbose_errors;
-
-#[cfg(not(feature = "verbose-errors"))]
 #[macro_use]
 pub mod simple_errors;
 

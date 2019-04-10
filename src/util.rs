@@ -1,8 +1,5 @@
-#[cfg(feature = "verbose-errors")]
 #[cfg(feature = "std")]
 use internal::{Err, IResult};
-#[cfg(feature = "verbose-errors")]
-use verbose_errors::Context;
 
 #[cfg(feature = "std")]
 use std::collections::HashMap;
@@ -182,7 +179,7 @@ macro_rules! dbg_dmp (
   );
 );
 
-#[cfg(feature = "verbose-errors")]
+/*FIXME: convert functions to new error management
 pub fn error_to_list<P: Clone, E: Clone>(e: &Context<P, E>) -> Vec<(P, ErrorKind<E>)> {
   match e {
     &Context::Code(ref i, ref err) => {
@@ -198,17 +195,14 @@ pub fn error_to_list<P: Clone, E: Clone>(e: &Context<P, E>) -> Vec<(P, ErrorKind
   }
 }
 
-#[cfg(feature = "verbose-errors")]
 pub fn compare_error_paths<P: Clone + PartialEq, E: Clone + PartialEq>(e1: &Context<P, E>, e2: &Context<P, E>) -> bool {
   error_to_list(e1) == error_to_list(e2)
 }
 
 #[cfg(feature = "std")]
-#[cfg(feature = "verbose-errors")]
 use lib::std::hash::Hash;
 
 #[cfg(feature = "std")]
-#[cfg(feature = "verbose-errors")]
 pub fn add_error_pattern<'a, I: Clone + Hash + Eq, O, E: Clone + Hash + Eq>(
   h: &mut HashMap<Vec<(I, ErrorKind<E>)>, &'a str>,
   res: IResult<I, O, E>,
@@ -231,7 +225,6 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 }
 
 #[cfg(feature = "std")]
-#[cfg(feature = "verbose-errors")]
 pub fn prepare_errors<O, E: Clone>(input: &[u8], res: IResult<&[u8], O, E>) -> Option<Vec<(ErrorKind<E>, usize, usize)>> {
   if let Err(Err::Error(e)) = res {
     let mut v: Vec<(ErrorKind<E>, usize, usize)> = Vec::new();
@@ -259,7 +252,6 @@ pub fn prepare_errors<O, E: Clone>(input: &[u8], res: IResult<&[u8], O, E>) -> O
 }
 
 #[cfg(feature = "std")]
-#[cfg(feature = "verbose-errors")]
 pub fn print_error<O, E: Clone>(input: &[u8], res: IResult<&[u8], O, E>) {
   if let Some(v) = prepare_errors(input, res) {
     let colors = generate_colors(&v);
@@ -271,7 +263,6 @@ pub fn print_error<O, E: Clone>(input: &[u8], res: IResult<&[u8], O, E>) {
 }
 
 #[cfg(feature = "std")]
-#[cfg(feature = "verbose-errors")]
 pub fn generate_colors<E>(v: &[(ErrorKind<E>, usize, usize)]) -> HashMap<u32, u8> {
   let mut h: HashMap<u32, u8> = HashMap::new();
   let mut color = 0;
@@ -349,7 +340,6 @@ pub fn print_codes(colors: &HashMap<u32, u8>, names: &HashMap<u32, &str>) -> Str
 }
 
 #[cfg(feature = "std")]
-#[cfg(feature = "verbose-errors")]
 pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usize, usize)]) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
@@ -434,6 +424,7 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
 
   String::from_utf8_lossy(&v[..]).into_owned()
 }
+  */
 
 /// indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -657,14 +648,8 @@ impl ErrorKind {
       ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
     }
   }
-
-  /// Convert Err into an ErrorKind.
-  ///
-  /// This allows application code to use ErrorKind and stay independent from the `verbose-errors` features activation.
-  pub fn into_error_kind(self) -> ErrorKind {
-    self
-  }
 }
+
 pub trait Convert<T> {
   fn convert(T) -> Self;
 }

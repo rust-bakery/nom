@@ -15,7 +15,6 @@ rust:
 env:
   matrix:
     - FEATURES='--features "regexp regexp_macros"'
-    - FEATURES='--features "regexp regexp_macros verbose-errors"'
 
 before_script:
   - eval git pull --rebase https://github.com/Geal/nom master

@@ -38,41 +38,7 @@ macro_rules! bits (
   );
 );
 
-#[cfg(feature = "verbose-errors")]
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
-macro_rules! bits_impl (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed};
-      use $crate::Slice;
 
-      let input = ($i, 0usize);
-      match $submac!(input, $($args)*) {
-        Err(Err::Error(((i,b), kind))) => {
-          Err(Err::Error((i.slice(b/8..), kind)))
-        },
-        Err(Err::Failure(((i, b), kind))) => {
-          Err(Err::Failure((i.slice(b/8..), kind)))
-        },
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          //println!("bits parser returned Needed::Size({})", i);
-          Err(Err::Incomplete(Needed::Size(i / 8 + 1)))
-        },
-        Ok(((i, bit_index), o))             => {
-          let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
-          //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          Ok((i.slice(byte_index..), o))
-        }
-      }
-    }
-  );
-);
-
-#[cfg(not(feature = "verbose-errors"))]
 /// Internal parser, do not use directly
 #[doc(hidden)]
 #[macro_export(local_inner_macros)]
@@ -139,55 +105,6 @@ macro_rules! bytes (
   );
 );
 
-#[cfg(feature = "verbose-errors")]
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
-macro_rules! bytes_impl (
-  ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Slice,ErrorKind};
-
-      let inp;
-      if $macro_i.1 % 8 != 0 {
-        inp = $macro_i.0.slice(1 + $macro_i.1 / 8 ..);
-      }
-      else {
-        inp = $macro_i.0.slice($macro_i.1 / 8 ..);
-      }
-
-      let sub = $submac!(inp, $($args)*);
-      let res = match sub {
-        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
-          Some(v) => Err::Incomplete(Needed::Size(v)),
-          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
-        }),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Ok((i, o)) => {
-          Ok(((i, 0), o))
-        },
-        Err(Err::Error((i, kind))) => {
-          Err(Err::Error(((i, 0), kind)))
-        },
-        Err(Err::Failure((i, kind))) => {
-          Err(Err::Error(((i, 0), kind)))
-        },
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
-          Some(v) => Err::Incomplete(Needed::Size(v)),
-          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
-        }),
-        Ok((i, o)) => {
-          Ok(((i, 0), o))
-        }
-      };
-      res
-    }
-  );
-);
-
-#[cfg(not(feature = "verbose-errors"))]
 /// Internal parser, do not use directly
 #[doc(hidden)]
 #[macro_export(local_inner_macros)]

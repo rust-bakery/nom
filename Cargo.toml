@@ -29,7 +29,6 @@ std = ["alloc", "memchr/use_std"]
 default = ["std"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
-verbose-errors = ["alloc"]
 
 [dependencies.regex]
 version = "^1.0"
@@ -55,7 +54,7 @@ jemallocator = "^0.1"
 version_check = "^0.1"
 
 [package.metadata.docs.rs]
-features = [ "alloc", "std", "regexp", "regexp_macros", "verbose-errors" ]
+features = [ "alloc", "std", "regexp", "regexp_macros"]
 all-features = true
 
 [profile.bench]

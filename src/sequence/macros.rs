@@ -416,9 +416,6 @@ macro_rules! nom_compile_error (
 #[cfg(test)]
 mod tests {
   use internal::{Err, IResult, Needed};
-  #[cfg(feature = "alloc")]
-  #[cfg(feature = "verbose-errors")]
-  use lib::std::vec::Vec;
   use nom::be_u16;
   use util::ErrorKind;
 
@@ -490,22 +487,19 @@ mod tests {
     b: Option<u8>,
   }
 
-  #[cfg(all(feature = "std", feature = "verbose-errors"))]
+  /*FIXME: convert code examples to new error management
   use util::{add_error_pattern, error_to_list, print_error};
 
   #[cfg(feature = "std")]
-  #[cfg(feature = "verbose-errors")]
   #[cfg_attr(rustfmt, rustfmt_skip)]
   fn error_to_string<P: Clone + PartialEq>(e: &Context<P, u32>) -> &'static str {
     let v: Vec<(P, ErrorKind<u32>)> = error_to_list(e);
     // do it this way if you can use slice patterns
-    /*
-    match &v[..] {
-      [ErrorKind::Custom(42), ErrorKind::Tag]                         => "missing `ijkl` tag",
-      [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag] => "missing `mnop` tag after `ijkl`",
-      _            => "unrecognized error"
-    }
-    */
+    //match &v[..] {
+    //  [ErrorKind::Custom(42), ErrorKind::Tag]                         => "missing `ijkl` tag",
+    //  [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag] => "missing `mnop` tag after `ijkl`",
+    //  _            => "unrecognized error"
+    //}
 
     let collected: Vec<ErrorKind<u32>> = v.iter().map(|&(_, ref e)| e.clone()).collect();
     if &collected[..] == [ErrorKind::Custom(42), ErrorKind::Tag] {
@@ -518,103 +512,19 @@ mod tests {
   }
 
   // do it this way if you can use box patterns
-  /*use $crate::lib::std::str;
-  fn error_to_string(e:Err) -> String
-    match e {
-      NodePosition(ErrorKind::Custom(42), i1, box Position(ErrorKind::Tag, i2)) => {
-        format!("missing `ijkl` tag, found '{}' instead", str::from_utf8(i2).unwrap())
-      },
-      NodePosition(ErrorKind::Custom(42), i1, box NodePosition(ErrorKind::Custom(128), i2,  box Position(ErrorKind::Tag, i3))) => {
-        format!("missing `mnop` tag after `ijkl`, found '{}' instead", str::from_utf8(i3).unwrap())
-      },
-      _ => "unrecognized error".to_string()
-    }
-  }*/
-
-  #[cfg(feature = "verbose-errors")]
-  #[cfg(feature = "std")]
-  use std::collections;
-
-  #[cfg_attr(rustfmt, rustfmt_skip)]
-  #[cfg(feature = "std")]
-  #[cfg(feature = "verbose-errors")]
-  #[test]
-  fn err() {
-    named!(err_test, alt!(
-      tag!("abcd") |
-      preceded!(
-        tag!("efgh"),
-        return_error!(
-          ErrorKind::Custom(42),
-          do_parse!(
-                 tag!("ijkl")                                        >>
-            res: return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
-            (res)
-          )
-        )
-      )
-    ));
-    let a = &b"efghblah"[..];
-    let b = &b"efghijklblah"[..];
-    let c = &b"efghijklmnop"[..];
-
-    let blah = &b"blah"[..];
-
-    let res_a = err_test(a);
-    let res_b = err_test(b);
-    let res_c = err_test(c);
-    assert_eq!(res_a,
-               Err(Err::Failure(error_node_position!(blah,
-                                                     ErrorKind::Custom(42),
-                                                     error_position!(blah, ErrorKind::Tag)))));
-    assert_eq!(res_b,
-               Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42),
-      error_node_position!(blah, ErrorKind::Custom(128), error_position!(blah, ErrorKind::Tag))))));
-    assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
-
-    // Merr-like error matching
-    let mut err_map = collections::HashMap::new();
-    assert!(add_error_pattern(&mut err_map,
-                              err_test(&b"efghpouet"[..]),
-                              "missing `ijkl` tag"));
-    assert!(add_error_pattern(&mut err_map,
-                              err_test(&b"efghijklpouet"[..]),
-                              "missing `mnop` tag after `ijkl`"));
-
-    let res_a2 = res_a.clone();
-    match res_a {
-      Err(Err::Error(e)) |
-      Err(Err::Failure(e)) => {
-        let collected: Vec<ErrorKind<u32>> =
-          error_to_list(&e).iter().map(|&(_, ref e)| e.clone()).collect();
-        assert_eq!(collected, [ErrorKind::Custom(42), ErrorKind::Tag]);
-        assert_eq!(error_to_string(&e), "missing `ijkl` tag");
-        //FIXME: why?
-        //assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `ijkl` tag"));
-        assert_eq!(err_map.get(&error_to_list(&e)), None);
-      }
-      _ => panic!(),
-    };
-
-    let res_b2 = res_b.clone();
-    match res_b {
-      Err(Err::Error(e)) |
-      Err(Err::Failure(e)) => {
-        let collected: Vec<ErrorKind<u32>> =
-          error_to_list(&e).iter().map(|&(_, ref e)| e.clone()).collect();
-        assert_eq!(collected,
-                   [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag]);
-        assert_eq!(error_to_string(&e), "missing `mnop` tag after `ijkl`");
-        //FIXME: why?
-        //assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `mnop` tag after `ijkl`"));
-        assert_eq!(err_map.get(&error_to_list(&e)), None);
-      }
-      _ => panic!(),
-    };
-
-    print_error(a, res_a2);
-    print_error(b, res_b2);
-  }
+  //use $crate::lib::std::str;
+  //fn error_to_string(e:Err) -> String
+  //  match e {
+  //    NodePosition(ErrorKind::Custom(42), i1, box Position(ErrorKind::Tag, i2)) => {
+  //      format!("missing `ijkl` tag, found '{}' instead", str::from_utf8(i2).unwrap())
+  //    },
+  //    NodePosition(ErrorKind::Custom(42), i1, box NodePosition(ErrorKind::Custom(128), i2,  box Position(ErrorKind::Tag, i3))) => {
+  //      format!("missing `mnop` tag after `ijkl`, found '{}' instead", str::from_utf8(i3).unwrap())
+  //    },
+  //    _ => "unrecognized error".to_string()
+  //  }
+  //}
+  */
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[allow(unused_variables)]

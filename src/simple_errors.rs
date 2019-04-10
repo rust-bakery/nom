@@ -5,14 +5,6 @@
 //! `Context::Code(I, ErrorKind<E=u32>)` (with `I` and `E` configurable).
 //! It contains an error code and the input position that triggered it.
 //!
-//! If you activate the `verbose-errors` compilation flags, it will add another
-//! variant to the enum: `Context::List(Vec<(I, ErrorKind<E>)>)`.
-//! This variant aggregates positions and error codes as the code backtracks
-//! through the nested parsers.
-//! The verbose errors feature allows for very flexible error management:
-//! you can know precisely which parser got to which part of the input.
-//! The main drawback is that it is a lot slower than default error
-//! management.
 
 /*
 #[derive(Debug, Clone, PartialEq)]
@@ -28,15 +20,6 @@ impl<I, H: From<I>, F, E: From<F>> Convert<Context<I, F>> for Context<H, E> {
   }
 }
 
-impl<I, E> Context<I, E> {
-  /// Convert Err into ErrorKind.
-  ///
-  /// This allows application code to use ErrorKind and stay independent from the verbose-errors features activation.
-  pub fn into_error_kind(self) -> ErrorKind<E> {
-    let Context::Code(_, e) = self;
-    ErrorKind::convert(e)
-  }
-}
 */
 
 /*

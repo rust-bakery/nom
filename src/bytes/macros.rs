@@ -215,9 +215,6 @@ macro_rules! escaped (
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///
-/// WARNING: if you do not use the `verbose-errors` feature, this combinator will currently fail to build
-/// because of a type inference error
-///
 /// # Example
 /// ```ignore
 /// # #[macro_use] extern crate nom;
@@ -937,10 +934,8 @@ macro_rules! length_bytes(
 mod tests {
   use internal::{Err, Needed, IResult};
   #[cfg(feature = "alloc")]
-  #[cfg(feature = "verbose-errors")]
   use lib::std::string::String;
   #[cfg(feature = "alloc")]
-  #[cfg(feature = "verbose-errors")]
   use lib::std::vec::Vec;
   use nom::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
   use types::{CompleteByteSlice, CompleteStr};
@@ -1090,13 +1085,11 @@ mod tests {
   }
 
   #[cfg(feature = "alloc")]
-  #[cfg(feature = "verbose-errors")]
   fn to_s(i: Vec<u8>) -> String {
     String::from_utf8_lossy(&i).into_owned()
   }
 
   #[cfg(feature = "alloc")]
-  #[cfg(feature = "verbose-errors")]
   #[test]
   fn escape_transform() {
     use lib::std::str;
@@ -1148,17 +1141,6 @@ mod tests {
     );
     assert_eq!(esc2(&b"ab&egrave;DEF;"[..]), Ok((&b";"[..], String::from("abèDEF"))));
     assert_eq!(esc2(&b"ab&egrave;D&agrave;EF;"[..]), Ok((&b";"[..], String::from("abèDàEF"))));
-  }
-
-  #[cfg(feature = "verbose-errors")]
-  #[test]
-  fn issue_84() {
-    let r0 = is_a!(&b"aaaaefgh"[..], "abcd");
-    assert_eq!(r0, Ok((&b"efgh"[..], &b"aaaa"[..])));
-    let r1 = is_a!(&b"aaaa;"[..], "abcd");
-    assert_eq!(r1, Ok((&b";"[..], &b"aaaa"[..])));
-    let r2 = is_a!(&b"1;"[..], "123456789");
-    assert_eq!(r2, Ok((&b";"[..], &b"1"[..])));
   }
 
   #[cfg(feature = "std")]

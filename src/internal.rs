@@ -50,19 +50,6 @@ impl Needed {
 /// to decide on the next parser to apply, and that parser fails, you know there's no need
 /// to try other parsers, you were already in the right branch, so the data is invalid
 ///
-/// Depending on a compilation flag, the content of the `Context` enum
-/// can change. In the default case, it will only have one variant:
-/// `Context::Code(I, ErrorKind<E=u32>)` (with `I` and `E` configurable).
-/// It contains an error code and the input position that triggered it.
-///
-/// If you activate the `verbose-errors` compilation flags, it will add another
-/// variant to the enum: `Context::List(Vec<(I, ErrorKind<E>)>)`.
-/// This variant aggregates positions and error codes as the code backtracks
-/// through the nested parsers.
-/// The verbose errors feature allows for very flexible error management:
-/// you can know precisely which parser got to which part of the input.
-/// The main drawback is that it is a lot slower than default error
-/// management.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Err<E> {
   /// There was not enough data
@@ -197,8 +184,6 @@ where
     match self {
       &Err::Incomplete(..) => "there was not enough data",
       &Err::Error(Context::Code(_, ref error_kind)) | &Err::Failure(Context::Code(_, ref error_kind)) => error_kind.description(),
-      #[cfg(feature = "verbose-errors")]
-      &Err::Error(Context::List(..)) | &Err::Failure(Context::List(..)) => "list of errors",
     }
   }
 
@@ -240,17 +225,6 @@ impl<I, E> Err<I, E> {
 */
 
 /*
-#[cfg(feature = "verbose-errors")]
-/// This is the same as IResult, but without Done
-///
-/// This is used as the Error type when converting to std::result::Result
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IError<I,E=u32> {
-  Error(Err<I,E>),
-  Incomplete(Needed)
-}
-
-#[cfg(not(feature = "verbose-errors"))]
 /// This is the same as IResult, but without Done
 ///
 /// This is used as the Error type when converting to std::result::Result
@@ -408,23 +382,8 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   }
 }*/
 
-#[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`
 /// and the position in the input
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
-#[macro_export(local_inner_macros)]
-macro_rules! error_position(
-  ($input: expr, $code:expr) => ({
-    $crate::make_error($input, $code)
-  });
-);
-
-#[cfg(not(feature = "verbose-errors"))]
-/// creates a parse error from a `nom::ErrorKind`
-/// and the position in the input
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
 macro_rules! error_position(
@@ -433,25 +392,9 @@ macro_rules! error_position(
   });
 );
 
-#[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`,
 /// the position in the input and the next error in
 /// the parsing tree.
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
-#[macro_export(local_inner_macros)]
-macro_rules! error_node_position(
-  ($input:expr, $code:expr, $next:expr) => {
-    $crate::append_error($input, $code, $next)
-  }
-);
-
-#[cfg(not(feature = "verbose-errors"))]
-/// creates a parse error from a `nom::ErrorKind`,
-/// the position in the input and the next error in
-/// the parsing tree.
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
 macro_rules! error_node_position(
@@ -473,7 +416,6 @@ mod tests {
   );
 
   #[test]
-  #[cfg(not(feature = "verbose-errors"))]
   #[cfg(target_pointer_width = "64")]
   fn size_test() {
     assert_size!(IResult<&[u8], &[u8], (&[u8], u32)>, 40);
@@ -482,40 +424,6 @@ mod tests {
     assert_size!(Err<u32>, 24);
     assert_size!(ErrorKind, 1);
   }
-
-  #[test]
-  #[cfg(feature = "verbose-errors")]
-  #[cfg(target_pointer_width = "64")]
-  fn size_test() {
-    assert_size!(IResult<&[u8], &[u8], u32>, 48);
-    assert_size!(IResult<&str, &str, u32>, 48);
-    assert_size!(Needed, 16);
-    assert_size!(Err<u32>, 40);
-    assert_size!(ErrorKind, 8);
-  }
-
-  /*
-  type IResultNoVerbose<I, O, E = u32> = Result<(I, O), ErrNoVerbose<I, E>>;
-  enum ErrNoVerbose<I, E = u32> {
-    /// There was not enough data
-    Incomplete(Needed),
-    /// The parser had an error (recoverable)
-    Error(I, ErrorKind),
-    /// The parser had an unrecoverable error: we got to the right
-    /// branch and we know other branches won't work, so backtrack
-    /// as fast as possible
-    Failure(I, ErrorKind),
-  }
-
-  #[test]
-  #[cfg(not(feature = "verbose-errors"))]
-  #[cfg(target_pointer_width = "64")]
-  fn no_verbose_size_test() {
-    assert_size!(IResultNoVerbose<&[u8], &[u8], Vec<(&[u8], u32)>>, 64);
-    assert_size!(ErrNoVerbose<Vec<(&[u8], u32)>>, 56);
-    assert_size!(ErrorKind<Vec<(&[u8], u32)>>, 32);
-  }
-  */
 
   /*
   const REST: [u8; 0] = [];
