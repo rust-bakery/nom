@@ -99,6 +99,12 @@ impl<I> ParseError<I> for (I, ErrorKind) {
   }
 }
 
+impl<I> ParseError<I> for () {
+  fn from_error_kind(_: I, _: ErrorKind) -> Self { }
+
+  fn append(_: I, _: ErrorKind, _: Self) -> Self { }
+}
+
 pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
   E::from_error_kind(input, kind)
 }
