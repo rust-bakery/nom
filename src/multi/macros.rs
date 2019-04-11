@@ -453,37 +453,19 @@ macro_rules! length_data(
 #[macro_export(local_inner_macros)]
 macro_rules! length_value(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Convert};
-
-      match $submac!($i, $($args)*) {
-        Err(e)     => Err(e),
-        Ok((i, o)) => {
-          match take!(i, o as usize) {
-            Err(e)       => Err(Err::convert(e)),
-            Ok((i2, o2)) => {
-              match complete!(o2, $submac2!($($args2)*)) {
-                Err(e)      => Err(Err::convert(e)),
-                Ok((_, o3)) => Ok((i2, o3))
-              }
-            }
-          }
-        }
-      }
-    }
+    length_value!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    length_value!($i, $submac!($($args)*), call!($g));
+    length_value!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    length_value!($i, call!($f), $submac!($($args)*));
+    length_value!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    length_value!($i, call!($f), call!($g));
+    $crate::length_valuec($i, $f, $g);
   );
 );
 

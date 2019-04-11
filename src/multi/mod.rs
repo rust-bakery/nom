@@ -2,7 +2,7 @@
 mod macros;
 
 use internal::{Err, IResult, Needed, ParseError};
-use traits::{need_more, AtEof, InputLength};
+use traits::{need_more, AtEof, InputLength, InputTake};
 #[cfg(feature = "alloc")]
 use ::lib::std::vec::Vec;
 use util::ErrorKind;
@@ -698,4 +698,38 @@ where
   G: Fn(R, Output) -> R,
 {
   fold_many_m_n(m, n, f, init, g)(i)
+}
+
+pub fn length_value<Input, Output, N, Error: ParseError<Input>, F, G>(mut f: F, mut g: G) -> impl FnOnce(Input) -> IResult<Input, Output, Error>
+where
+  Input: Clone + InputLength + InputTake,
+  N: Copy + Into<usize>,
+  F: FnMut(Input) -> IResult<Input, N, Error>,
+  G: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  move |i: Input| {
+    let (i, length) = f(i)?;
+    if i.input_len() < length.into() {
+      Err(Err::Incomplete(Needed::Size(length.into())))
+    } else {
+      let (rest, i) = i.take_split(length.into());
+      match g(i.clone()) {
+        Err(Err::Incomplete(_)) =>
+          Err(Err::Error(Error::from_error_kind(i, ErrorKind::Complete))),
+        Err(e) => Err(e),
+        Ok((_, o)) => Ok((rest,o)),
+      }
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn length_valuec<Input, Output, N, Error: ParseError<Input>, F, G>(i: Input, mut f: F, mut g: G) -> IResult<Input, Output, Error>
+where
+  Input: Clone + InputLength + InputTake,
+  N: Copy + Into<usize>,
+  F: FnMut(Input) -> IResult<Input, N, Error>,
+  G: FnMut(Input) -> IResult<Input, Output, Error>,
+{
+  length_value(f, g)(i)
 }
