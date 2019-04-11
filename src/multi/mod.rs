@@ -649,59 +649,53 @@ where
 }
 
 //FIXME: streaming
-pub fn fold_many_m_n<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, m: usize, n: usize, f: F, init: R, g: G) -> IResult<Input, R, Error>
+pub fn fold_many_m_n<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(Input) ->IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(R, Output) -> R,
 {
-  let mut acc = init;
-  let mut input = i.clone();
-  let mut count: usize = 0;
-  let mut err = false;
-  let mut incomplete: Option<Needed> = None;
-  loop {
-    if count == n {
-      break;
-    }
-
-    let _input = input.clone();
-    match f(_input) {
-      Ok((i, o)) => {
-        // do not allow parsers that do not consume input (causes infinite loops)
-        if i.input_len() == input.input_len() {
+  move |i: Input| {
+    let mut acc = init.clone();
+    let mut input = i.clone();
+    for count in 0..n {
+      let _input = input.clone();
+      match f(_input) {
+        Ok((i, o)) => {
+          // do not allow parsers that do not consume input (causes infinite loops)
+          if i.input_len() == input.input_len() {
+            if count < m {
+              return Err(Err::Incomplete(Needed::Unknown));
+            } else {
+              break;
+            }
+          }
+          acc = g(acc, o);
+          input = i;
+        }
+        //FInputXMError: handle failure properly
+        Err(Err::Error(_)) | Err(Err::Failure(_)) => if count < m {
+          return Err(Err::Error(Error::from_error_kind(i, ErrorKind::ManyMN)));
+        } else {
           break;
         }
-        acc = g(acc, o);
-        input = i;
-        count += 1;
-      }
-      //FInputXMError: handle failure properly
-      Err(Err::Error(_)) | Err(Err::Failure(_)) => {
-        err = true;
-        break;
-      }
-      Err(Err::Incomplete(i)) => {
-        incomplete = Some(i);
-        break;
-      }
-    }
-  }
 
-  if count < m {
-    if err {
-      Err(Err::Error(Error::from_error_kind(i, ErrorKind::ManyMN)))
-    } else {
-      match incomplete {
-        Some(i) => Err(Err::Incomplete(i)),
-        None => Err(Err::Incomplete(Needed::Unknown)),
+        Err(Err::Incomplete(i)) => {
+          return Err(Err::Incomplete(i));
+        }
       }
     }
-  } else {
-    match incomplete {
-      Some(i) => Err(Err::Incomplete(i)),
-      None => Ok((input, acc)),
-    }
+
+    Ok((input, acc))
   }
 }
 
+#[doc(hidden)]
+pub fn fold_many_m_nc<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(i: Input, m: usize, n: usize, f: F, init: R, g: G) -> IResult<Input, R, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(R, Output) -> R,
+{
+  fold_many_m_n(m, n, f, init, g)(i)
+}

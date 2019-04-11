@@ -590,7 +590,7 @@ macro_rules! fold_many_m_n(
     fold_many_m_n!($i, $m, $n, |i| $submac!(i, $($args)*), $init, $fold_f)
   );
   ($i:expr, $m:expr, $n:expr, $f:expr, $init:expr, $fold_f:expr) => (
-    $crate::fold_many_m_n($i, $m, $n, $f, $init, $fold_f)
+    $crate::fold_many_m_nc($i, $m, $n, $f, $init, $fold_f)
   );
 );
 
