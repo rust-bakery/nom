@@ -389,7 +389,7 @@ macro_rules! named_attr (
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// # fn main() {
-///   fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> { take!(input, i * 10) }
+///   fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8], &[u8]> { take!(input, i * 10) }
 ///
 ///   // will make a parser taking 20 bytes
 ///   named!(parser, call!(take_wrapper, 2));
@@ -440,7 +440,7 @@ macro_rules! apply (
 /// # use nom::Err;
 /// # use nom::ErrorKind;
 /// # fn main() {
-///     named!(err_test<&[u8],&[u8]>, alt!(
+///     named!(err_test<&[u8], &[u8]>, alt!(
 ///       tag!("abcd") |
 ///       preceded!(tag!("efgh"), return_error!(ErrorKind::Eof,
 ///           do_parse!(
@@ -610,7 +610,7 @@ macro_rules! complete (
 /// # use nom::ErrorKind;
 /// # use nom::IResult;
 ///
-///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
+///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8], &[u8]> {
 ///    let (i1, sz)     = try_parse!(input, nom::be_u8);
 ///    let (i2, length) = try_parse!(i1, expr_opt!(size.checked_add(sz)));
 ///    let (i3, data)   = try_parse!(i2, take!(length));
@@ -642,7 +642,7 @@ macro_rules! try_parse (
   );
 );
 
-/// `map!(I -> IResult<I,O>, O -> P) => I -> IResult<I, P>`
+/// `map!(I -> IResult<I, O>, O -> P) => I -> IResult<I, P>`
 /// maps a function on the result of a parser
 #[macro_export(local_inner_macros)]
 macro_rules! map(
@@ -666,7 +666,7 @@ macro_rules! map(
   );
 );
 
-/// `map_res!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P>`
+/// `map_res!(I -> IResult<I, O>, O -> Result<P>) => I -> IResult<I, P>`
 /// maps a function returning a Result on the output of a parser
 #[macro_export(local_inner_macros)]
 macro_rules! map_res (
@@ -707,7 +707,7 @@ macro_rules! map_res (
 
 //FIXME
 /*
-/// `map_res_err!(I -> IResult<I,O>, O -> Result<P>) => I -> IResult<I, P>`
+/// `map_res_err!(I -> IResult<I, O>, O -> Result<P>) => I -> IResult<I, P>`
 /// maps a function returning a Result on the output of a parser, preserving the returned error
 #[macro_export(local_inner_macros)]
 macro_rules! map_res_err (
@@ -747,7 +747,7 @@ macro_rules! map_res_err (
 );
 */
 
-/// `map_opt!(I -> IResult<I,O>, O -> Option<P>) => I -> IResult<I, P>`
+/// `map_opt!(I -> IResult<I, O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
 #[macro_export(local_inner_macros)]
 macro_rules! map_opt (
@@ -812,7 +812,7 @@ macro_rules! parse_to (
   );
 );
 
-/// `verify!(I -> IResult<I,O>, O -> bool) => I -> IResult<I, O>`
+/// `verify!(I -> IResult<I, O>, O -> bool) => I -> IResult<I, O>`
 /// returns the result of the child parser if it satisfies a verification function
 ///
 /// ```
@@ -898,8 +898,8 @@ macro_rules! value (
   );
 );
 
-/// `expr_res!(Result<E,O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Result<T,E> and returns a Ok((I,T)) if Ok
+/// `expr_res!(Result<E, O>) => I -> IResult<I, O>`
+/// evaluate an expression that returns a Result<T, E> and returns a Ok((I, T)) if Ok
 ///
 /// See expr_opt for an example
 #[macro_export(local_inner_macros)]
@@ -926,9 +926,9 @@ macro_rules! expr_res (
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
 /// # use nom::IResult;
-/// # use nom::{be_u8,ErrorKind};
+/// # use nom::{be_u8, ErrorKind};
 ///
-///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8],&[u8]> {
+///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8], &[u8]> {
 ///    do_parse!(input,
 ///      sz:     be_u8                             >>
 ///      length: expr_opt!(size.checked_add(sz))   >> // checking for integer overflow (returns an Option)
