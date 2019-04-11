@@ -8,12 +8,12 @@ use std::str::FromStr;
 #[macro_export]
 macro_rules! complete_named (
   ($name:ident, $submac:ident!( $($args:tt)* )) => (
-    fn $name( i: CompleteStr ) -> nom::IResult<CompleteStr, CompleteStr, u32> {
+    fn $name( i: CompleteStr ) -> nom::IResult<CompleteStr, CompleteStr> {
       $submac!(i, $($args)*)
     }
   );
   ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-    fn $name( i: CompleteStr ) -> nom::IResult<CompleteStr, $o, u32> {
+    fn $name( i: CompleteStr ) -> nom::IResult<CompleteStr, $o> {
       $submac!(i, $($args)*)
     }
   );

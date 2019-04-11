@@ -1,12 +1,7 @@
 //! Basic types to build the parsers
 
 use self::Needed::*;
-
-#[cfg(feature = "verbose-errors")]
-use verbose_errors::Context;
-
-#[cfg(not(feature = "verbose-errors"))]
-use simple_errors::Context;
+use util::ErrorKind;
 
 /// Holds the result of parsing functions
 ///
@@ -15,7 +10,7 @@ use simple_errors::Context;
 /// The `Ok` side is an enum containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
 ///
-pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
+pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -55,38 +50,124 @@ impl Needed {
 /// to decide on the next parser to apply, and that parser fails, you know there's no need
 /// to try other parsers, you were already in the right branch, so the data is invalid
 ///
-/// Depending on a compilation flag, the content of the `Context` enum
-/// can change. In the default case, it will only have one variant:
-/// `Context::Code(I, ErrorKind<E=u32>)` (with `I` and `E` configurable).
-/// It contains an error code and the input position that triggered it.
-///
-/// If you activate the `verbose-errors` compilation flags, it will add another
-/// variant to the enum: `Context::List(Vec<(I, ErrorKind<E>)>)`.
-/// This variant aggregates positions and error codes as the code backtracks
-/// through the nested parsers.
-/// The verbose errors feature allows for very flexible error management:
-/// you can know precisely which parser got to which part of the input.
-/// The main drawback is that it is a lot slower than default error
-/// management.
 #[derive(Debug, Clone, PartialEq)]
-pub enum Err<I, E = u32> {
+pub enum Err<E> {
   /// There was not enough data
   Incomplete(Needed),
   /// The parser had an error (recoverable)
-  Error(Context<I, E>),
+  Error(E),
   /// The parser had an unrecoverable error: we got to the right
   /// branch and we know other branches won't work, so backtrack
   /// as fast as possible
-  Failure(Context<I, E>),
+  Failure(E),
 }
 
+pub trait ParseError<I>: Sized {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self;
+
+  fn append(input: I, kind: ErrorKind, other: Self) -> Self;
+
+  fn from_char(input: I, _: char) -> Self {
+    Self::from_error_kind(input, ErrorKind::Char)
+  }
+
+  fn or(self, other: Self) -> Self {
+    other
+  }
+
+  fn add_context(input: I, ctx: &'static str, other: Self) -> Self {
+    other
+  }
+}
+
+impl<I> ParseError<I> for (I, ErrorKind) {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    (input, kind)
+  }
+
+  fn append(_: I, _: ErrorKind, other: Self) -> Self {
+    other
+  }
+}
+
+impl<I> ParseError<I> for () {
+  fn from_error_kind(_: I, _: ErrorKind) -> Self { }
+
+  fn append(_: I, _: ErrorKind, _: Self) -> Self { }
+}
+
+pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
+  E::from_error_kind(input, kind)
+}
+
+pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) -> E {
+  E::append(input, kind, other)
+}
+
+#[cfg(feature = "alloc")]
+#[derive(Clone,Debug,PartialEq)]
+pub struct VerboseError<I> {
+  pub errors: ::lib::std::vec::Vec<(I, VerboseErrorKind)>,
+}
+
+#[cfg(feature = "alloc")]
+#[derive(Clone,Debug,PartialEq)]
+pub enum VerboseErrorKind {
+  Context(&'static str),
+  Char(char),
+  Nom(ErrorKind),
+}
+
+#[cfg(feature = "alloc")]
+impl<I> ParseError<I> for VerboseError<I> {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    VerboseError {
+      errors: vec![(input, VerboseErrorKind::Nom(kind))]
+    }
+  }
+
+  fn append(input: I, kind: ErrorKind, mut other: Self) -> Self {
+    other.errors.push((input, VerboseErrorKind::Nom(kind)));
+    other
+  }
+
+  fn from_char(input: I, c: char) -> Self {
+    VerboseError {
+      errors: vec![(input, VerboseErrorKind::Char(c))]
+    }
+  }
+
+  fn add_context(input: I, ctx: &'static str, mut other: Self) -> Self {
+    other.errors.push((input, VerboseErrorKind::Context(ctx)));
+    other
+  }
+}
+
+#[cfg(feature = "alloc")]
+pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl FnOnce(I) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E> {
+
+    move |i: I| {
+      match f(i.clone()) {
+        Ok(o) => Ok(o),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+          Err(Err::Failure(E::add_context(i, context, e)))
+        }
+      }
+    }
+
+}
+
+
+/*
 #[cfg(feature = "std")]
 use std::fmt;
 
 #[cfg(feature = "std")]
-impl<I, E> fmt::Display for Err<I, E>
+impl<E> fmt::Display for Err<E>
 where
-  I: fmt::Debug,
   E: fmt::Debug,
 {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -98,7 +179,7 @@ where
 use std::error::Error;
 
 #[cfg(feature = "std")]
-impl<I, E> Error for Err<I, E>
+impl<E> Error for Err<E>
 where
   I: fmt::Debug,
   E: fmt::Debug,
@@ -107,8 +188,6 @@ where
     match self {
       &Err::Incomplete(..) => "there was not enough data",
       &Err::Error(Context::Code(_, ref error_kind)) | &Err::Failure(Context::Code(_, ref error_kind)) => error_kind.description(),
-      #[cfg(feature = "verbose-errors")]
-      &Err::Error(Context::List(..)) | &Err::Failure(Context::List(..)) => "list of errors",
     }
   }
 
@@ -116,19 +195,21 @@ where
     None
   }
 }
+*/
 
 use util::Convert;
 
-impl<I, H: From<I>, F, E: From<F>> Convert<Err<I, F>> for Err<H, E> {
-  fn convert(e: Err<I, F>) -> Self {
+impl<F, E: From<F>> Convert<Err<F>> for Err<E> {
+  fn convert(e: Err<F>) -> Self {
     match e {
       Err::Incomplete(n) => Err::Incomplete(n),
-      Err::Failure(c) => Err::Failure(Context::convert(c)),
-      Err::Error(c) => Err::Error(Context::convert(c)),
+      Err::Failure(c) => Err::Failure(c.into()),
+      Err::Error(c) => Err::Error(c.into()),
     }
   }
 }
 
+/*
 impl<I, E> Err<I, E> {
   pub fn into_error_kind(self) -> ::util::ErrorKind<E> {
     match self {
@@ -145,19 +226,9 @@ impl<I, E> Err<I, E> {
     }
   }
 }
+*/
 
 /*
-#[cfg(feature = "verbose-errors")]
-/// This is the same as IResult, but without Done
-///
-/// This is used as the Error type when converting to std::result::Result
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum IError<I,E=u32> {
-  Error(Err<I,E>),
-  Incomplete(Needed)
-}
-
-#[cfg(not(feature = "verbose-errors"))]
 /// This is the same as IResult, but without Done
 ///
 /// This is used as the Error type when converting to std::result::Result
@@ -315,77 +386,48 @@ impl<'a,I,E> GetOutput<&'a str> for IResult<I,&'a str,E> {
   }
 }*/
 
-#[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`
 /// and the position in the input
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
-#[macro_export(local_inner_macros)]
-macro_rules! error_position(
-  ($input: expr, $code:expr) => ({
-    $crate::Context::Code($input, $code)
-  });
-);
-
-#[cfg(not(feature = "verbose-errors"))]
-/// creates a parse error from a `nom::ErrorKind`
-/// and the position in the input
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
 macro_rules! error_position(
   ($input:expr, $code:expr) => ({
-    $crate::Context::Code($input, $code)
+    $crate::make_error($input, $code)
   });
 );
 
-#[cfg(feature = "verbose-errors")]
 /// creates a parse error from a `nom::ErrorKind`,
 /// the position in the input and the next error in
 /// the parsing tree.
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
-#[macro_export(local_inner_macros)]
-macro_rules! error_node_position(
-  ($input:expr, $code:expr, $next:expr) => {
-    {
-    let mut error_vec = match $next {
-      $crate::Context::Code(i, e) => {
-        let mut v = $crate::lib::std::vec::Vec::new();
-        v.push((i, e));
-        v
-      },
-      $crate::Context::List(v) => {
-        v
-      },
-    };
-
-    error_vec.push(($input, $code));
-    $crate::Context::List(error_vec)
-    }
-  }
-);
-
-#[cfg(not(feature = "verbose-errors"))]
-/// creates a parse error from a `nom::ErrorKind`,
-/// the position in the input and the next error in
-/// the parsing tree.
-/// if "verbose-errors" is not activated,
-/// it default to only the error code
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
 macro_rules! error_node_position(
   ($input:expr, $code:expr, $next:expr) => ({
-    fn unify_types<T>(_: &T, _: &T) {}
-    let res = $crate::Context::Code($input, $code);
-    unify_types(&res, &$next);
-    res
+    $crate::append_error($input, $code, $next)
   });
 );
 
 #[cfg(test)]
 mod tests {
+  use super::*;
+  use util::ErrorKind;
+
+  #[macro_export]
+  macro_rules! assert_size (
+    ($t:ty, $sz:expr) => (
+      assert_eq!(::lib::std::mem::size_of::<$t>(), $sz);
+    );
+  );
+
+  #[test]
+  #[cfg(target_pointer_width = "64")]
+  fn size_test() {
+    assert_size!(IResult<&[u8], &[u8], (&[u8], u32)>, 40);
+    assert_size!(IResult<&str, &str, u32>, 40);
+    assert_size!(Needed, 16);
+    assert_size!(Err<u32>, 24);
+    assert_size!(ErrorKind, 1);
+  }
 
   /*
   const REST: [u8; 0] = [];

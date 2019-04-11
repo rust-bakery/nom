@@ -8,7 +8,7 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::Criterion;
-use nom::{alphanumeric, recognize_float};
+use nom::{ErrorKind, alphanumeric, recognize_float};
 
 
 use std::str;
@@ -100,28 +100,28 @@ fn json_bench(c: &mut Criterion) {
 fn recognize_float_bytes(c: &mut Criterion) {
   use nom::recognize_float;
   c.bench_function("recognize float bytes", |b| {
-    b.iter(|| recognize_float(&b"-1.234E-12"[..]));
+    b.iter(|| recognize_float::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
   });
 }
 
 fn recognize_float_str(c: &mut Criterion) {
   use nom::recognize_float;
   c.bench_function("recognize float str", |b| {
-    b.iter(|| recognize_float("-1.234E-12"));
+    b.iter(|| recognize_float::<_, (_,ErrorKind)>("-1.234E-12"));
   });
 }
 
 fn float_bytes(c: &mut Criterion) {
   use nom::float;
   c.bench_function("float bytes", |b| {
-    b.iter(|| float(&b"-1.234E-12"[..]));
+    b.iter(|| float::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
   });
 }
 
 fn float_str(c: &mut Criterion) {
   use nom::float_s;
   c.bench_function("float str", |b| {
-    b.iter(|| float_s("-1.234E-12"));
+    b.iter(|| float_s::<_, (_,ErrorKind)>("-1.234E-12"));
   });
 }
 

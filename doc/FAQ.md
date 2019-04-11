@@ -1,4 +1,4 @@
-% FAQ
+# FAQ
 
 ### Using nightly to get better error messages
 

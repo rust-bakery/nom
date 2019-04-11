@@ -38,7 +38,7 @@ macro_rules! bits (
   );
 );
 
-#[cfg(feature = "verbose-errors")]
+
 /// Internal parser, do not use directly
 #[doc(hidden)]
 #[macro_export(local_inner_macros)]
@@ -46,62 +46,16 @@ macro_rules! bits_impl (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Context,Err,Needed};
+      use $crate::{Err,Needed};
+      use $crate::Slice;
 
       let input = ($i, 0usize);
       match $submac!(input, $($args)*) {
-        Err(Err::Error(e)) => {
-          let err = match e {
-            Context::Code((i,b), kind) => Context::Code(&i[b/8..], kind),
-            Context::List(mut v) => {
-              Context::List(v.drain(..).map(|((i,b), kind)| (&i[b/8..], kind)).collect())
-            }
-          };
-          Err(Err::Error(err))
+        Err(Err::Error(((i,b), kind))) => {
+          Err(Err::Error((i.slice(b/8..), kind)))
         },
-        Err(Err::Failure(e)) => {
-          let err = match e {
-            Context::Code((i,b), kind) => Context::Code(&i[b/8..], kind),
-            Context::List(mut v) => {
-              Context::List(v.drain(..).map(|((i,b), kind)| (&i[b/8..], kind)).collect())
-            }
-          };
-          Err(Err::Failure(err))
-        },
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          //println!("bits parser returned Needed::Size({})", i);
-          Err(Err::Incomplete(Needed::Size(i / 8 + 1)))
-        },
-        Ok(((i, bit_index), o))             => {
-          let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
-          //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          Ok((&i[byte_index..], o))
-        }
-      }
-    }
-  );
-);
-
-#[cfg(not(feature = "verbose-errors"))]
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
-macro_rules! bits_impl (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context};
-
-      let input = ($i, 0usize);
-      match $submac!(input, $($args)*) {
-        Err(Err::Error(e)) => {
-          let Context::Code(_,err) = e;
-          Err(Err::Error(error_position!($i, err)))
-        },
-        Err(Err::Failure(e)) => {
-          let Context::Code(_,err) = e;
-          Err(Err::Failure(error_position!($i, err)))
+        Err(Err::Failure(((i, b), kind))) => {
+          Err(Err::Failure((i.slice(b/8..), kind)))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
         Err(Err::Incomplete(Needed::Size(i))) => {
@@ -111,7 +65,7 @@ macro_rules! bits_impl (
         Ok(((i, bit_index), o))             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          Ok((&i[byte_index..], o))
+          Ok((i.slice(byte_index..), o))
         }
       }
     }
@@ -151,7 +105,6 @@ macro_rules! bytes (
   );
 );
 
-#[cfg(feature = "verbose-errors")]
 /// Internal parser, do not use directly
 #[doc(hidden)]
 #[macro_export(local_inner_macros)]
@@ -159,14 +112,14 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context,ErrorKind};
+      use $crate::{Err,Needed,Slice,ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
-        inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
+        inp = $macro_i.0.slice(1 + $macro_i.1 / 8 ..);
       }
       else {
-        inp = & $macro_i.0[$macro_i.1 / 8 ..];
+        inp = $macro_i.0.slice($macro_i.1 / 8 ..);
       }
 
       let sub = $submac!(inp, $($args)*);
@@ -179,75 +132,11 @@ macro_rules! bytes_impl (
         Ok((i, o)) => {
           Ok(((i, 0), o))
         },
-        Err(Err::Error(e)) => {
-          let err = match e {
-            Context::Code(i, c) => Context::Code((i,0), c),
-            Context::List(mut v) => {
-              let (i, c) = v.remove(0);
-              Context::Code((i,0), c)
-            }
-          };
-          Err(Err::Error(err))
+        Err(Err::Error((i, kind))) => {
+          Err(Err::Error(((i, 0), kind)))
         },
-        Err(Err::Failure(e)) => {
-          let err = match e {
-            Context::Code(i, c) => Context::Code((i,0), c),
-            Context::List(mut v) => {
-              let (i, c) = v.remove(0);
-              Context::Code((i,0), c)
-            }
-          };
-          Err(Err::Error(err))
-        },
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
-          Some(v) => Err::Incomplete(Needed::Size(v)),
-          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
-        }),
-        Ok((i, o)) => {
-          Ok(((i, 0), o))
-        }
-      };
-      res
-    }
-  );
-);
-
-#[cfg(not(feature = "verbose-errors"))]
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
-macro_rules! bytes_impl (
-  ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Context,ErrorKind};
-
-      let inp;
-      if $macro_i.1 % 8 != 0 {
-        inp = & $macro_i.0[1 + $macro_i.1 / 8 ..];
-      }
-      else {
-        inp = & $macro_i.0[$macro_i.1 / 8 ..];
-      }
-
-      let sub = $submac!(inp, $($args)*);
-      let res = match sub {
-        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
-          Some(v) => Err::Incomplete(Needed::Size(v)),
-          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
-        }),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Ok((i, o)) => {
-          Ok(((i, 0), o))
-        },
-        Err(Err::Error(e)) => {
-          let Context::Code(i, c) = e;
-          Err(Err::Error(Context::Code((i,0), c)))
-        },
-        Err(Err::Failure(e)) => {
-          let Context::Code(i, c) = e;
-          Err(Err::Failure(Context::Code((i,0), c)))
+        Err(Err::Failure((i, kind))) => {
+          Err(Err::Error(((i, 0), kind)))
         },
       };
       res
@@ -281,9 +170,10 @@ macro_rules! take_bits (
 
       use $crate::lib::std::ops::Div;
       use $crate::lib::std::convert::Into;
+      use $crate::Slice;
       //println!("taking {} bits from {:?}", $count, $i);
       let (input, bit_offset) = $i;
-      let res : IResult<(&[u8],usize), $t> = if $count == 0 {
+      let res : IResult<_, $t> = if $count == 0 {
         Ok(( (input, bit_offset), (0 as u8).into()))
       } else {
         let cnt = ($count as usize + bit_offset).div(8);
@@ -316,7 +206,7 @@ macro_rules! take_bits (
               offset = 0;
             }
           }
-          Ok(( (&input[cnt..], end_offset) , acc))
+          Ok(( (input.slice(cnt..), end_offset) , acc))
         }
       };
       res
@@ -354,15 +244,15 @@ macro_rules! tag_bits (
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Ok((i, o))    => {
           if let $p = o {
-            let res: IResult<(&[u8],usize),$t> = Ok((i, o));
+            let res: IResult<_,$t> = Ok((i, o));
             res
           } else {
-            let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
+            let e: $crate::ErrorKind = $crate::ErrorKind::TagBits;
             Err(Err::Error(error_position!($i, e)))
           }
         },
         _                              => {
-          let e: $crate::ErrorKind<u32> = $crate::ErrorKind::TagBits;
+          let e: $crate::ErrorKind = $crate::ErrorKind::TagBits;
           Err(Err::Error(error_position!($i, e)))
         }
       }
@@ -375,6 +265,7 @@ mod tests {
   use lib::std::ops::{AddAssign, Shl, Shr};
   use internal::{Err, Needed};
   use util::ErrorKind;
+  use types::CompleteByteSlice;
 
   #[test]
   fn take_bits() {
@@ -395,6 +286,7 @@ mod tests {
     assert_eq!(take_bits!((sl, 6), u16, 11), Ok(((&sl[2..], 1), 1504)));
     assert_eq!(take_bits!((sl, 0), u32, 20), Ok(((&sl[2..], 4), 700_163)));
     assert_eq!(take_bits!((sl, 4), u32, 20), Ok(((&sl[3..], 0), 716_851)));
+    assert_eq!(take_bits!((CompleteByteSlice(sl), 4), u32, 20), Ok(((sl[3..].into(), 0), 716_851)));
     assert_eq!(
       take_bits!((sl, 4), u32, 22),
       Err(Err::Incomplete(Needed::Size(22)))
@@ -408,6 +300,7 @@ mod tests {
 
     assert_eq!(tag_bits!((sl, 0), u8, 3, 0b101), Ok(((&sl[0..], 3), 5)));
     assert_eq!(tag_bits!((sl, 0), u8, 4, 0b1010), Ok(((&sl[0..], 4), 10)));
+    assert_eq!(tag_bits!((CompleteByteSlice(sl), 0), u8, 4, 0b1010), Ok(((sl[0..].into(), 4), 10)));
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
@@ -438,6 +331,15 @@ mod tests {
       ch_bytes(&input[1..]),
       Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits)))
     );
+  }
+
+  named!(bits_bytes_bs, bits!(bytes!(::rest)));
+  named!(bits_bytes_cbs<CompleteByteSlice, CompleteByteSlice>, bits!(bytes!(::rest)));
+  #[test]
+  fn bits_bytes() {
+    let input = [0b10_10_10_10];
+    assert_eq!(bits_bytes_bs(&input[..]), Ok((&[][..], &[0b10_10_10_10][..])));
+    assert_eq!(bits_bytes_cbs(CompleteByteSlice(&input[..])), Ok(([][..].into(), [0b10_10_10_10][..].into())));
   }
 
   #[derive(PartialEq, Debug)]
