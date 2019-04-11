@@ -27,7 +27,7 @@ pub fn tag_cl<'a, 'b>(rec: &'a [u8]) -> Box<Fn(&'b [u8]) -> IResult<&'b [u8], &'
     if i.len() >= rec.len() && &i[0..rec.len()] == rec {
       Ok((&i[rec.len()..], &i[0..rec.len()]))
     } else {
-      let e: ErrorKind<u32> = ErrorKind::TagClosure;
+      let e: ErrorKind = ErrorKind::TagClosure;
       Err(Err::Error(error_position!(i, e)))
     }
   })
@@ -45,7 +45,7 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
   Ok(((), input))
 }
 
-pub fn crlf<T>(input: T) -> IResult<T, T>
+pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputIter + AtEof,
@@ -56,15 +56,15 @@ where
     CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
     CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf),
     CompareResult::Error => {
-      let e: ErrorKind<u32> = ErrorKind::CrLf;
-      Err(Err::Error(error_position!(input, e)))
+      let e: ErrorKind = ErrorKind::CrLf;
+      Err(Err::Error(E::from_error_kind(input, e)))
     }
   }
 }
 
 // FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
 // public methods
-pub fn not_line_ending<T>(input: T) -> IResult<T, T>
+pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputIter + InputLength + AtEof,
@@ -93,8 +93,8 @@ where
           //FIXME: calculate the right index
           CompareResult::Incomplete => need_more_err(input, Needed::Unknown, ErrorKind::Tag),
           CompareResult::Error => {
-            let e: ErrorKind<u32> = ErrorKind::Tag;
-            Err(Err::Error(error_position!(input, e)))
+            let e: ErrorKind = ErrorKind::Tag;
+            Err(Err::Error(E::from_error_kind(input, e)))
           }
           CompareResult::Ok => Ok((input.slice(index..), input.slice(..index))),
         }
@@ -106,7 +106,7 @@ where
 }
 
 /// Recognizes an end of line (both '\n' and '\r\n')
-pub fn line_ending<T>(input: T) -> IResult<T, T>
+pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputIter + InputLength + AtEof,
@@ -114,19 +114,19 @@ where
 {
   match input.compare("\n") {
     CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
-    CompareResult::Incomplete => need_more_err(input, Needed::Size(1), ErrorKind::CrLf::<u32>),
+    CompareResult::Incomplete => need_more_err(input, Needed::Size(1), ErrorKind::CrLf),
     CompareResult::Error => {
       match input.compare("\r\n") {
         //FIXME: is this the right index?
         CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-        CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf::<u32>),
-        CompareResult::Error => Err(Err::Error(error_position!(input, ErrorKind::CrLf::<u32>))),
+        CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf),
+        CompareResult::Error => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
       }
     }
   }
 }
 
-pub fn eol<T>(input: T) -> IResult<T, T>
+pub fn eol<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputIter + InputLength + AtEof,
@@ -181,7 +181,7 @@ pub fn is_space(chr: u8) -> bool {
 /// Recognizes one or more lowercase and uppercase alphabetic characters.
 /// For ASCII strings: a-zA-Z
 /// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
-pub fn alpha<T>(input: T) -> IResult<T, T, u32>
+pub fn alpha<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -192,7 +192,7 @@ where
 /// Recognizes zero or more lowercase and uppercase alphabetic characters.
 /// For ASCII strings: a-zA-Z
 /// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
-pub fn alpha0<T>(input: T) -> IResult<T, T, u32>
+pub fn alpha0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -203,7 +203,7 @@ where
 /// Recognizes one or more lowercase and uppercase alphabetic characters
 /// For ASCII strings: a-zA-Z
 /// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
-pub fn alpha1<T>(input: T) -> IResult<T, T, u32>
+pub fn alpha1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -212,7 +212,7 @@ where
 }
 
 /// Recognizes one or more numerical characters: 0-9
-pub fn digit<T>(input: T) -> IResult<T, T>
+pub fn digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -221,7 +221,7 @@ where
 }
 
 /// Recognizes zero or more numerical characters: 0-9
-pub fn digit0<T>(input: T) -> IResult<T, T>
+pub fn digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -230,7 +230,7 @@ where
 }
 
 /// Recognizes one or more numerical characters: 0-9
-pub fn digit1<T>(input: T) -> IResult<T, T>
+pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -239,7 +239,7 @@ where
 }
 
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
-pub fn hex_digit<T>(input: T) -> IResult<T, T>
+pub fn hex_digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -248,7 +248,7 @@ where
 }
 
 /// Recognizes zero or more hexadecimal numerical characters: 0-9, A-F, a-f
-pub fn hex_digit0<T>(input: T) -> IResult<T, T>
+pub fn hex_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -256,7 +256,7 @@ where
   input.split_at_position(|item| !item.is_hex_digit())
 }
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
-pub fn hex_digit1<T>(input: T) -> IResult<T, T>
+pub fn hex_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -265,7 +265,7 @@ where
 }
 
 /// Recognizes one or more octal characters: 0-7
-pub fn oct_digit<T>(input: T) -> IResult<T, T>
+pub fn oct_digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -274,7 +274,7 @@ where
 }
 
 /// Recognizes zero or more octal characters: 0-7
-pub fn oct_digit0<T>(input: T) -> IResult<T, T>
+pub fn oct_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -283,7 +283,7 @@ where
 }
 
 /// Recognizes one or more octal characters: 0-7
-pub fn oct_digit1<T>(input: T) -> IResult<T, T>
+pub fn oct_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -294,7 +294,7 @@ where
 /// Recognizes one or more numerical and alphabetic characters
 /// For ASCII strings: 0-9a-zA-Z
 /// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
-pub fn alphanumeric<T>(input: T) -> IResult<T, T>
+pub fn alphanumeric<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -305,7 +305,7 @@ where
 /// Recognizes zero or more numerical and alphabetic characters.
 /// For ASCII strings: 0-9a-zA-Z
 /// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
-pub fn alphanumeric0<T>(input: T) -> IResult<T, T>
+pub fn alphanumeric0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -315,7 +315,7 @@ where
 /// Recognizes one or more numerical and alphabetic characters.
 /// For ASCII strings: 0-9a-zA-Z
 /// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
-pub fn alphanumeric1<T>(input: T) -> IResult<T, T>
+pub fn alphanumeric1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -324,7 +324,7 @@ where
 }
 
 /// Recognizes one or more spaces and tabs
-pub fn space<T>(input: T) -> IResult<T, T>
+pub fn space<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -333,7 +333,7 @@ where
 }
 
 /// Recognizes zero or more spaces and tabs
-pub fn space0<T>(input: T) -> IResult<T, T>
+pub fn space0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -344,7 +344,7 @@ where
   })
 }
 /// Recognizes one or more spaces and tabs
-pub fn space1<T>(input: T) -> IResult<T, T>
+pub fn space1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -359,7 +359,7 @@ where
 }
 
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
-pub fn multispace<T>(input: T) -> IResult<T, T>
+pub fn multispace<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -368,7 +368,7 @@ where
 }
 
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds
-pub fn multispace0<T>(input: T) -> IResult<T, T>
+pub fn multispace0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -379,7 +379,7 @@ where
   })
 }
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
-pub fn multispace1<T>(input: T) -> IResult<T, T>
+pub fn multispace1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -393,7 +393,7 @@ where
   )
 }
 
-pub fn sized_buffer(input: &[u8]) -> IResult<&[u8], &[u8]> {
+pub fn sized_buffer<'a, E: ParseError<&'a[u8]>>(input: &'a[u8]) -> IResult<&'a[u8], &'a[u8], E> {
   if input.is_empty() {
     return need_more(input, Needed::Unknown);
   }
@@ -409,7 +409,7 @@ pub fn sized_buffer(input: &[u8]) -> IResult<&[u8], &[u8]> {
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 #[inline]
-pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
+pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
   if i.len() < 1 {
     need_more(i, Needed::Size(1))
   } else {
@@ -419,7 +419,7 @@ pub fn be_u8(i: &[u8]) -> IResult<&[u8], u8> {
 
 /// Recognizes big endian unsigned 2 bytes integer
 #[inline]
-pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
+pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
   if i.len() < 2 {
     need_more(i, Needed::Size(2))
   } else {
@@ -430,7 +430,7 @@ pub fn be_u16(i: &[u8]) -> IResult<&[u8], u16> {
 
 /// Recognizes big endian unsigned 3 byte integer
 #[inline]
-pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
+pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 3 {
     need_more(i, Needed::Size(3))
   } else {
@@ -441,7 +441,7 @@ pub fn be_u24(i: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes big endian unsigned 4 bytes integer
 #[inline]
-pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
+pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 4 {
     need_more(i, Needed::Size(4))
   } else {
@@ -452,7 +452,7 @@ pub fn be_u32(i: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes big endian unsigned 8 bytes integer
 #[inline]
-pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
+pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
@@ -465,7 +465,7 @@ pub fn be_u64(i: &[u8]) -> IResult<&[u8], u64, u32> {
 /// Recognizes big endian unsigned 16 bytes integer
 #[inline]
 #[cfg(stable_i128)]
-pub fn be_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
+pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
   if i.len() < 16 {
     need_more(i, Needed::Size(16))
   } else {
@@ -491,19 +491,19 @@ pub fn be_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
 
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
 #[inline]
-pub fn be_i8(i: &[u8]) -> IResult<&[u8], i8> {
+pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
   map!(i, be_u8, |x| x as i8)
 }
 
 /// Recognizes big endian signed 2 bytes integer
 #[inline]
-pub fn be_i16(i: &[u8]) -> IResult<&[u8], i16> {
+pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
   map!(i, be_u16, |x| x as i16)
 }
 
 /// Recognizes big endian signed 3 bytes integer
 #[inline]
-pub fn be_i24(i: &[u8]) -> IResult<&[u8], i32> {
+pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
   // Same as the unsigned version but we need to sign-extend manually here
   map!(i, be_u24, |x| if x & 0x80_00_00 != 0 {
     (x | 0xff_00_00_00) as i32
@@ -514,26 +514,26 @@ pub fn be_i24(i: &[u8]) -> IResult<&[u8], i32> {
 
 /// Recognizes big endian signed 4 bytes integer
 #[inline]
-pub fn be_i32(i: &[u8]) -> IResult<&[u8], i32> {
+pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
   map!(i, be_u32, |x| x as i32)
 }
 
 /// Recognizes big endian signed 8 bytes integer
 #[inline]
-pub fn be_i64(i: &[u8]) -> IResult<&[u8], i64> {
+pub fn be_i64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
   map!(i, be_u64, |x| x as i64)
 }
 
 /// Recognizes big endian signed 16 bytes integer
 #[inline]
 #[cfg(stable_i128)]
-pub fn be_i128(i: &[u8]) -> IResult<&[u8], i128> {
+pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128, E> {
   map!(i, be_u128, |x| x as i128)
 }
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 #[inline]
-pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
+pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
   if i.len() < 1 {
     need_more(i, Needed::Size(1))
   } else {
@@ -543,7 +543,7 @@ pub fn le_u8(i: &[u8]) -> IResult<&[u8], u8> {
 
 /// Recognizes little endian unsigned 2 bytes integer
 #[inline]
-pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
+pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
   if i.len() < 2 {
     need_more(i, Needed::Size(2))
   } else {
@@ -554,7 +554,7 @@ pub fn le_u16(i: &[u8]) -> IResult<&[u8], u16> {
 
 /// Recognizes little endian unsigned 3 byte integer
 #[inline]
-pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
+pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 3 {
     need_more(i, Needed::Size(3))
   } else {
@@ -565,7 +565,7 @@ pub fn le_u24(i: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes little endian unsigned 4 bytes integer
 #[inline]
-pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
+pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 4 {
     need_more(i, Needed::Size(4))
   } else {
@@ -576,7 +576,7 @@ pub fn le_u32(i: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes little endian unsigned 8 bytes integer
 #[inline]
-pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
+pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
   if i.len() < 8 {
     need_more(i, Needed::Size(8))
   } else {
@@ -589,7 +589,7 @@ pub fn le_u64(i: &[u8]) -> IResult<&[u8], u64> {
 /// Recognizes little endian unsigned 16 bytes integer
 #[inline]
 #[cfg(stable_i128)]
-pub fn le_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
+pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
   if i.len() < 16 {
     need_more(i, Needed::Size(16))
   } else {
@@ -615,19 +615,19 @@ pub fn le_u128(i: &[u8]) -> IResult<&[u8], u128, u32> {
 
 /// Recognizes a signed 1 byte integer (equivalent to take!(1)
 #[inline]
-pub fn le_i8(i: &[u8]) -> IResult<&[u8], i8> {
+pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
   map!(i, le_u8, |x| x as i8)
 }
 
 /// Recognizes little endian signed 2 bytes integer
 #[inline]
-pub fn le_i16(i: &[u8]) -> IResult<&[u8], i16> {
+pub fn le_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
   map!(i, le_u16, |x| x as i16)
 }
 
 /// Recognizes little endian signed 3 bytes integer
 #[inline]
-pub fn le_i24(i: &[u8]) -> IResult<&[u8], i32> {
+pub fn le_i24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
   // Same as the unsigned version but we need to sign-extend manually here
   map!(i, le_u24, |x| if x & 0x80_00_00 != 0 {
     (x | 0xff_00_00_00) as i32
@@ -638,20 +638,20 @@ pub fn le_i24(i: &[u8]) -> IResult<&[u8], i32> {
 
 /// Recognizes little endian signed 4 bytes integer
 #[inline]
-pub fn le_i32(i: &[u8]) -> IResult<&[u8], i32> {
+pub fn le_i32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
   map!(i, le_u32, |x| x as i32)
 }
 
 /// Recognizes little endian signed 8 bytes integer
 #[inline]
-pub fn le_i64(i: &[u8]) -> IResult<&[u8], i64> {
+pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
   map!(i, le_u64, |x| x as i64)
 }
 
 /// Recognizes little endian signed 16 bytes integer
 #[inline]
 #[cfg(stable_i128)]
-pub fn le_i128(i: &[u8]) -> IResult<&[u8], i128> {
+pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128, E> {
   map!(i, le_u128, |x| x as i128)
 }
 
@@ -700,7 +700,7 @@ macro_rules! i128 ( ($i:expr, $e:expr) => ( {if $crate::Endianness::Big == $e { 
 
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
-pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
+pub fn be_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f32, E> {
   match be_u32(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f32::from_bits(o))),
@@ -709,7 +709,7 @@ pub fn be_f32(input: &[u8]) -> IResult<&[u8], f32> {
 
 /// Recognizes big endian 8 bytes floating point number
 #[inline]
-pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
+pub fn be_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f64, E> {
   match be_u64(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f64::from_bits(o))),
@@ -718,7 +718,7 @@ pub fn be_f64(input: &[u8]) -> IResult<&[u8], f64> {
 
 /// Recognizes little endian 4 bytes floating point number
 #[inline]
-pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
+pub fn le_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f32, E> {
   match le_u32(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f32::from_bits(o))),
@@ -727,7 +727,7 @@ pub fn le_f32(input: &[u8]) -> IResult<&[u8], f32> {
 
 /// Recognizes little endian 8 bytes floating point number
 #[inline]
-pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
+pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f64, E> {
   match le_u64(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f64::from_bits(o))),
@@ -736,7 +736,7 @@ pub fn le_f64(input: &[u8]) -> IResult<&[u8], f64> {
 
 /// Recognizes a hex-encoded integer
 #[inline]
-pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
+pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   match is_a!(input, &b"0123456789abcdefABCDEF"[..]) {
     Err(e) => Err(e),
     Ok((i, o)) => {
@@ -764,13 +764,13 @@ pub fn hex_u32(input: &[u8]) -> IResult<&[u8], u32> {
 
 /// Recognizes non empty buffers
 #[inline]
-pub fn non_empty<T>(input: T) -> IResult<T, T>
+pub fn non_empty<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputLength + AtEof,
 {
   if input.input_len() == 0 {
-    return need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty::<u32>);
+    return need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty);
   } else {
     Ok((input.slice(input.input_len()..), input))
   }
@@ -778,7 +778,7 @@ where
 
 /// Return the remaining input.
 #[inline]
-pub fn rest<T>(input: T) -> IResult<T, T>
+pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputLength,
@@ -788,7 +788,7 @@ where
 
 /// Return the length of the remaining input.
 #[inline]
-pub fn rest_len<T>(input: T) -> IResult<T, usize>
+pub fn rest_len<T, E: ParseError<T>>(input: T) -> IResult<T, usize, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputLength,
@@ -799,18 +799,18 @@ where
 
 /// Return the remaining input, for strings.
 #[inline]
-pub fn rest_s(input: &str) -> IResult<&str, &str> {
+pub fn rest_s<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'a str, E> {
   Ok((&input[input.len()..], input))
 }
 
 #[allow(unused_imports)]
 #[cfg_attr(rustfmt, rustfmt_skip)]
-pub fn recognize_float<T>(input: T) -> IResult<T, T, u32>
+pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -834,12 +834,12 @@ where
 /// Recognizes floating point number in a byte string and returns a f32
 #[cfg(feature = "alloc")]
 //pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
-pub fn float<T>(input: T) -> IResult<T, f32, u32>
+pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + ParseTo<f32> + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -849,12 +849,12 @@ where
 /// Recognizes floating point number in a string and returns a f32
 #[cfg(feature = "alloc")]
 #[deprecated(since = "4.1.0", note = "Please use `float` instead")]
-pub fn float_s<T>(input: T) -> IResult<T, f32, u32>
+pub fn float_s<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + ParseTo<f32> + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -863,12 +863,12 @@ where
 
 /// Recognizes floating point number in a byte string and returns a f64
 #[cfg(feature = "alloc")]
-pub fn double<T>(input: T) -> IResult<T, f64, u32>
+pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + ParseTo<f64> + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -878,12 +878,12 @@ where
 /// Recognizes floating point number in a string and returns a f64
 #[cfg(feature = "alloc")]
 #[deprecated(since = "4.1.0", note = "Please use `double` instead")]
-pub fn double_s<T>(input: T) -> IResult<T, f64, u32>
+pub fn double_s<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + ParseTo<f64> + AtEof,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -893,8 +893,15 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, IResult, Needed};
+  use internal::{Err, IResult, Needed, ParseError};
   use types::{CompleteByteSlice, CompleteStr};
+
+  macro_rules! assert_parse(
+    ($left: expr, $right: expr) => {
+      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
+      assert_eq!(res, $right);
+    };
+  );
 
   #[test]
   #[cfg(feature = "alloc")]
@@ -922,91 +929,92 @@ mod tests {
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
     let f: &[u8] = b" ;";
-    assert_eq!(alpha(a), Err(Err::Incomplete(Needed::Size(1))));
+    //assert_eq!(alpha::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(alpha(a), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      alpha(CompleteByteSlice(a)),
+      alpha::<_, (_, ErrorKind)>(CompleteByteSlice(a)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
     );
     assert_eq!(
       alpha(b),
-      Err(Err::Error(error_position!(b, ErrorKind::Alpha)))
+      Err(Err::Error((b, ErrorKind::Alpha)))
     );
-    assert_eq!(alpha(c), Ok((&c[1..], &b"a"[..])));
-    assert_eq!(alpha(d), Ok(("é12".as_bytes(), &b"az"[..])));
+    assert_eq!(alpha::<_, (_, ErrorKind)>(c), Ok((&c[1..], &b"a"[..])));
+    assert_eq!(alpha::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
     assert_eq!(
       digit(a),
-      Err(Err::Error(error_position!(a, ErrorKind::Digit)))
+      Err(Err::Error((a, ErrorKind::Digit)))
     );
-    assert_eq!(digit(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(digit::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      digit(CompleteByteSlice(b)),
+      digit::<_, (_, ErrorKind)>(CompleteByteSlice(b)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
     );
     assert_eq!(
       digit(c),
-      Err(Err::Error(error_position!(c, ErrorKind::Digit)))
+      Err(Err::Error((c, ErrorKind::Digit)))
     );
     assert_eq!(
       digit(d),
-      Err(Err::Error(error_position!(d, ErrorKind::Digit)))
+      Err(Err::Error((d, ErrorKind::Digit)))
     );
-    assert_eq!(hex_digit(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(hex_digit::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      hex_digit(CompleteByteSlice(a)),
+      hex_digit::<_, (_, ErrorKind)>(CompleteByteSlice(a)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
     );
-    assert_eq!(hex_digit(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(hex_digit::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      hex_digit(CompleteByteSlice(b)),
+      hex_digit::<_, (_, ErrorKind)>(CompleteByteSlice(b)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
     );
-    assert_eq!(hex_digit(c), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(hex_digit::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      hex_digit(CompleteByteSlice(c)),
+      hex_digit::<_, (_, ErrorKind)>(CompleteByteSlice(c)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(c)))
     );
-    assert_eq!(hex_digit(d), Ok(("zé12".as_bytes(), &b"a"[..])));
+    assert_eq!(hex_digit::<_, (_, ErrorKind)>(d), Ok(("zé12".as_bytes(), &b"a"[..])));
     assert_eq!(
       hex_digit(e),
-      Err(Err::Error(error_position!(e, ErrorKind::HexDigit)))
+      Err(Err::Error((e, ErrorKind::HexDigit)))
     );
     assert_eq!(
       oct_digit(a),
-      Err(Err::Error(error_position!(a, ErrorKind::OctDigit)))
+      Err(Err::Error((a, ErrorKind::OctDigit)))
     );
-    assert_eq!(oct_digit(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(oct_digit::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      oct_digit(CompleteByteSlice(b)),
+      oct_digit::<_, (_, ErrorKind)>(CompleteByteSlice(b)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
     );
     assert_eq!(
       oct_digit(c),
-      Err(Err::Error(error_position!(c, ErrorKind::OctDigit)))
+      Err(Err::Error((c, ErrorKind::OctDigit)))
     );
     assert_eq!(
       oct_digit(d),
-      Err(Err::Error(error_position!(d, ErrorKind::OctDigit)))
+      Err(Err::Error((d, ErrorKind::OctDigit)))
     );
-    assert_eq!(alphanumeric(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      alphanumeric(CompleteByteSlice(a)),
+      alphanumeric::<_, (_, ErrorKind)>(CompleteByteSlice(a)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
     );
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
-    assert_eq!(alphanumeric(c), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      alphanumeric(CompleteByteSlice(c)),
+      alphanumeric::<_, (_, ErrorKind)>(CompleteByteSlice(c)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(c)))
     );
-    assert_eq!(alphanumeric(d), Ok(("é12".as_bytes(), &b"az"[..])));
-    assert_eq!(space(e), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
+    assert_eq!(space::<_, (_, ErrorKind)>(e), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      space(CompleteByteSlice(e)),
+      space::<_, (_, ErrorKind)>(CompleteByteSlice(e)),
       Ok((CompleteByteSlice(empty), CompleteByteSlice(b" ")))
     );
-    assert_eq!(space(f), Ok((&b";"[..], &b" "[..])));
+    assert_eq!(space::<_, (_, ErrorKind)>(f), Ok((&b";"[..], &b" "[..])));
     assert_eq!(
-      space(CompleteByteSlice(f)),
+      space::<_, (_, ErrorKind)>(CompleteByteSlice(f)),
       Ok((CompleteByteSlice(b";"), CompleteByteSlice(b" ")))
     );
   }
@@ -1020,88 +1028,88 @@ mod tests {
     let c = "a123";
     let d = "azé12";
     let e = " ";
-    assert_eq!(alpha(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alpha::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      alpha(CompleteStr(a)),
+      alpha::<_, (_, ErrorKind)>(CompleteStr(a)),
       Ok((CompleteStr(empty), CompleteStr(a)))
     );
     assert_eq!(
       alpha(b),
-      Err(Err::Error(error_position!(b, ErrorKind::Alpha)))
+      Err(Err::Error((b, ErrorKind::Alpha)))
     );
-    assert_eq!(alpha(c), Ok((&c[1..], &"a"[..])));
-    assert_eq!(alpha(d), Ok(("12", &"azé"[..])));
+    assert_eq!(alpha::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
+    assert_eq!(alpha::<_, (_, ErrorKind)>(d), Ok(("12", &"azé"[..])));
     assert_eq!(
       digit(a),
-      Err(Err::Error(error_position!(a, ErrorKind::Digit)))
+      Err(Err::Error((a, ErrorKind::Digit)))
     );
-    assert_eq!(digit(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(digit::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      digit(CompleteStr(b)),
+      digit::<_, (_, ErrorKind)>(CompleteStr(b)),
       Ok((CompleteStr(empty), CompleteStr(b)))
     );
     assert_eq!(
       digit(c),
-      Err(Err::Error(error_position!(c, ErrorKind::Digit)))
+      Err(Err::Error((c, ErrorKind::Digit)))
     );
     assert_eq!(
       digit(d),
-      Err(Err::Error(error_position!(d, ErrorKind::Digit)))
+      Err(Err::Error((d, ErrorKind::Digit)))
     );
-    assert_eq!(hex_digit(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(hex_digit::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      hex_digit(CompleteStr(a)),
+      hex_digit::<_, (_, ErrorKind)>(CompleteStr(a)),
       Ok((CompleteStr(empty), CompleteStr(a)))
     );
-    assert_eq!(hex_digit(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(hex_digit::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      hex_digit(CompleteStr(b)),
+      hex_digit::<_, (_, ErrorKind)>(CompleteStr(b)),
       Ok((CompleteStr(empty), CompleteStr(b)))
     );
-    assert_eq!(hex_digit(c), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(hex_digit::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      hex_digit(CompleteStr(c)),
+      hex_digit::<_, (_, ErrorKind)>(CompleteStr(c)),
       Ok((CompleteStr(empty), CompleteStr(c)))
     );
-    assert_eq!(hex_digit(d), Ok(("zé12", &"a"[..])));
+    assert_eq!(hex_digit::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
     assert_eq!(
       hex_digit(e),
-      Err(Err::Error(error_position!(e, ErrorKind::HexDigit)))
+      Err(Err::Error((e, ErrorKind::HexDigit)))
     );
     assert_eq!(
       oct_digit(a),
-      Err(Err::Error(error_position!(a, ErrorKind::OctDigit)))
+      Err(Err::Error((a, ErrorKind::OctDigit)))
     );
-    assert_eq!(oct_digit(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(oct_digit::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      oct_digit(CompleteStr(b)),
+      oct_digit::<_, (_, ErrorKind)>(CompleteStr(b)),
       Ok((CompleteStr(empty), CompleteStr(b)))
     );
     assert_eq!(
       oct_digit(c),
-      Err(Err::Error(error_position!(c, ErrorKind::OctDigit)))
+      Err(Err::Error((c, ErrorKind::OctDigit)))
     );
     assert_eq!(
       oct_digit(d),
-      Err(Err::Error(error_position!(d, ErrorKind::OctDigit)))
+      Err(Err::Error((d, ErrorKind::OctDigit)))
     );
-    assert_eq!(alphanumeric(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      alphanumeric(CompleteStr(a)),
+      alphanumeric::<_, (_, ErrorKind)>(CompleteStr(a)),
       Ok((CompleteStr(empty), CompleteStr(a)))
     );
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
-    assert_eq!(alphanumeric(c), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      alphanumeric(CompleteStr(c)),
+      alphanumeric::<_, (_, ErrorKind)>(CompleteStr(c)),
       Ok((CompleteStr(empty), CompleteStr(c)))
     );
-    assert_eq!(alphanumeric(d), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(d), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(
-      alphanumeric(CompleteStr(d)),
+      alphanumeric::<_, (_, ErrorKind)>(CompleteStr(d)),
       Ok((CompleteStr(""), CompleteStr("azé12")))
     );
-    assert_eq!(space(e), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(space::<_, (_, ErrorKind)>(e), Err(Err::Incomplete(Needed::Size(1))));
   }
 
   use traits::Offset;
@@ -1114,43 +1122,43 @@ mod tests {
     let e = &b" \t\r\n;"[..];
     let f = &b"123abcDEF;"[..];
 
-    match alpha(a) {
+    match alpha::<_, (_, ErrorKind)>(a) {
       Ok((i, _)) => {
         assert_eq!(a.offset(i) + i.len(), a.len());
       }
       _ => panic!("wrong return type in offset test for alpha"),
     }
-    match digit(b) {
+    match digit::<_, (_, ErrorKind)>(b) {
       Ok((i, _)) => {
         assert_eq!(b.offset(i) + i.len(), b.len());
       }
       _ => panic!("wrong return type in offset test for digit"),
     }
-    match alphanumeric(c) {
+    match alphanumeric::<_, (_, ErrorKind)>(c) {
       Ok((i, _)) => {
         assert_eq!(c.offset(i) + i.len(), c.len());
       }
       _ => panic!("wrong return type in offset test for alphanumeric"),
     }
-    match space(d) {
+    match space::<_, (_, ErrorKind)>(d) {
       Ok((i, _)) => {
         assert_eq!(d.offset(i) + i.len(), d.len());
       }
       _ => panic!("wrong return type in offset test for space"),
     }
-    match multispace(e) {
+    match multispace::<_, (_, ErrorKind)>(e) {
       Ok((i, _)) => {
         assert_eq!(e.offset(i) + i.len(), e.len());
       }
       _ => panic!("wrong return type in offset test for multispace"),
     }
-    match hex_digit(f) {
+    match hex_digit::<_, (_, ErrorKind)>(f) {
       Ok((i, _)) => {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
       _ => panic!("wrong return type in offset test for hex_digit"),
     }
-    match oct_digit(f) {
+    match oct_digit::<_, (_, ErrorKind)>(f) {
       Ok((i, _)) => {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
@@ -1161,25 +1169,25 @@ mod tests {
   #[test]
   fn is_not_line_ending_bytes() {
     let a: &[u8] = b"ab12cd\nefgh";
-    assert_eq!(not_line_ending(a), Ok((&b"\nefgh"[..], &b"ab12cd"[..])));
+    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(a), Ok((&b"\nefgh"[..], &b"ab12cd"[..])));
 
     let b: &[u8] = b"ab12cd\nefgh\nijkl";
     assert_eq!(
-      not_line_ending(b),
+      not_line_ending::<_, (_, ErrorKind)>(b),
       Ok((&b"\nefgh\nijkl"[..], &b"ab12cd"[..]))
     );
 
     let c: &[u8] = b"ab12cd\r\nefgh\nijkl";
     assert_eq!(
-      not_line_ending(c),
+      not_line_ending::<_, (_, ErrorKind)>(c),
       Ok((&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..]))
     );
 
     let d = CompleteByteSlice(b"ab12cd");
-    assert_eq!(not_line_ending(d), Ok((CompleteByteSlice(b""), d)));
+    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Ok((CompleteByteSlice(b""), d)));
 
     let d: &[u8] = b"ab12cd";
-    assert_eq!(not_line_ending(d), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Err(Err::Incomplete(Needed::Unknown)));
   }
 
   #[test]
@@ -1204,14 +1212,14 @@ mod tests {
     let f = "βèƒôřè\rÂßÇáƒƭèř";
     assert_eq!(
       not_line_ending(f),
-      Err(Err::Error(error_position!(f, ErrorKind::Tag)))
+      Err(Err::Error((f, ErrorKind::Tag)))
     );
 
     let g = CompleteStr("ab12cd");
-    assert_eq!(not_line_ending(g), Ok((CompleteStr(""), g)));
+    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g), Ok((CompleteStr(""), g)));
 
     let g2: &str = "ab12cd";
-    assert_eq!(not_line_ending(g2), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g2), Err(Err::Incomplete(Needed::Unknown)));
   }
 
   #[test]
@@ -1222,7 +1230,7 @@ mod tests {
     let o: Vec<u8> = vec![4, 5, 6];
     //let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
     let arr: [u8; 6usize] = [3, 4, 5, 6, 7, 8];
-    let res = sized_buffer(&arr[..]);
+    let res = sized_buffer::<(_, ErrorKind)>(&arr[..]);
     assert_eq!(res, Ok((&i[..], &o[..])))
   }
 
@@ -1235,45 +1243,46 @@ mod tests {
     assert_eq!(res, Ok((&v2[..], ())));
   }*/
 
+
   #[test]
   fn i8_tests() {
-    assert_eq!(be_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_eq!(be_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_eq!(be_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_eq!(be_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse!(be_i8(&[0x00]), Ok((&b""[..], 0)));
+    assert_parse!(be_i8(&[0x7f]), Ok((&b""[..], 127)));
+    assert_parse!(be_i8(&[0xff]), Ok((&b""[..], -1)));
+    assert_parse!(be_i8(&[0x80]), Ok((&b""[..], -128)));
   }
 
   #[test]
   fn i16_tests() {
-    assert_eq!(be_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_eq!(be_i16(&[0x7f, 0xff]), Ok((&b""[..], 32_767_i16)));
-    assert_eq!(be_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_eq!(be_i16(&[0x80, 0x00]), Ok((&b""[..], -32_768_i16)));
+    assert_parse!(be_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(be_i16(&[0x7f, 0xff]), Ok((&b""[..], 32_767_i16)));
+    assert_parse!(be_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse!(be_i16(&[0x80, 0x00]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
   fn u24_tests() {
-    assert_eq!(be_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_eq!(be_u24(&[0x00, 0xFF, 0xFF]), Ok((&b""[..], 65_535_u32)));
-    assert_eq!(be_u24(&[0x12, 0x34, 0x56]), Ok((&b""[..], 1_193_046_u32)));
+    assert_parse!(be_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(be_u24(&[0x00, 0xFF, 0xFF]), Ok((&b""[..], 65_535_u32)));
+    assert_parse!(be_u24(&[0x12, 0x34, 0x56]), Ok((&b""[..], 1_193_046_u32)));
   }
 
   #[test]
   fn i24_tests() {
-    assert_eq!(be_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_eq!(be_i24(&[0xFF, 0x00, 0x00]), Ok((&b""[..], -65_536_i32)));
-    assert_eq!(be_i24(&[0xED, 0xCB, 0xAA]), Ok((&b""[..], -1_193_046_i32)));
+    assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
+    assert_parse!(be_i24(&[0xFF, 0x00, 0x00]), Ok((&b""[..], -65_536_i32)));
+    assert_parse!(be_i24(&[0xED, 0xCB, 0xAA]), Ok((&b""[..], -1_193_046_i32)));
   }
 
   #[test]
   fn i32_tests() {
-    assert_eq!(be_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_eq!(
+    assert_parse!(be_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(
       be_i32(&[0x7f, 0xff, 0xff, 0xff]),
       Ok((&b""[..], 2_147_483_647_i32))
     );
-    assert_eq!(be_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_eq!(
+    assert_parse!(be_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse!(
       be_i32(&[0x80, 0x00, 0x00, 0x00]),
       Ok((&b""[..], -2_147_483_648_i32))
     );
@@ -1281,19 +1290,19 @@ mod tests {
 
   #[test]
   fn i64_tests() {
-    assert_eq!(
+    assert_parse!(
       be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
       Ok((&b""[..], 0))
     );
-    assert_eq!(
+    assert_parse!(
       be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
       Ok((&b""[..], 9_223_372_036_854_775_807_i64))
     );
-    assert_eq!(
+    assert_parse!(
       be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
       Ok((&b""[..], -1))
     );
-    assert_eq!(
+    assert_parse!(
       be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
       Ok((&b""[..], -9_223_372_036_854_775_808_i64))
     );
@@ -1302,19 +1311,19 @@ mod tests {
   #[test]
   #[cfg(stable_i128)]
   fn i128_tests() {
-    assert_eq!(
+    assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
       Ok((&b""[..], 0))
     );
-    assert_eq!(
+    assert_parse!(
       be_i128(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
       Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
     );
-    assert_eq!(
+    assert_parse!(
       be_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
       Ok((&b""[..], -1))
     );
-    assert_eq!(
+    assert_parse!(
       be_i128(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
       Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
     );
@@ -1322,43 +1331,43 @@ mod tests {
 
   #[test]
   fn le_i8_tests() {
-    assert_eq!(le_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_eq!(le_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_eq!(le_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_eq!(le_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse!(le_i8(&[0x00]), Ok((&b""[..], 0)));
+    assert_parse!(le_i8(&[0x7f]), Ok((&b""[..], 127)));
+    assert_parse!(le_i8(&[0xff]), Ok((&b""[..], -1)));
+    assert_parse!(le_i8(&[0x80]), Ok((&b""[..], -128)));
   }
 
   #[test]
   fn le_i16_tests() {
-    assert_eq!(le_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_eq!(le_i16(&[0xff, 0x7f]), Ok((&b""[..], 32_767_i16)));
-    assert_eq!(le_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_eq!(le_i16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
+    assert_parse!(le_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(le_i16(&[0xff, 0x7f]), Ok((&b""[..], 32_767_i16)));
+    assert_parse!(le_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse!(le_i16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
   fn le_u24_tests() {
-    assert_eq!(le_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_eq!(le_u24(&[0xFF, 0xFF, 0x00]), Ok((&b""[..], 65_535_u32)));
-    assert_eq!(le_u24(&[0x56, 0x34, 0x12]), Ok((&b""[..], 1_193_046_u32)));
+    assert_parse!(le_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(le_u24(&[0xFF, 0xFF, 0x00]), Ok((&b""[..], 65_535_u32)));
+    assert_parse!(le_u24(&[0x56, 0x34, 0x12]), Ok((&b""[..], 1_193_046_u32)));
   }
 
   #[test]
   fn le_i24_tests() {
-    assert_eq!(le_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_eq!(le_i24(&[0x00, 0x00, 0xFF]), Ok((&b""[..], -65_536_i32)));
-    assert_eq!(le_i24(&[0xAA, 0xCB, 0xED]), Ok((&b""[..], -1_193_046_i32)));
+    assert_parse!(le_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
+    assert_parse!(le_i24(&[0x00, 0x00, 0xFF]), Ok((&b""[..], -65_536_i32)));
+    assert_parse!(le_i24(&[0xAA, 0xCB, 0xED]), Ok((&b""[..], -1_193_046_i32)));
   }
 
   #[test]
   fn le_i32_tests() {
-    assert_eq!(le_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_eq!(
+    assert_parse!(le_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(
       le_i32(&[0xff, 0xff, 0xff, 0x7f]),
       Ok((&b""[..], 2_147_483_647_i32))
     );
-    assert_eq!(le_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_eq!(
+    assert_parse!(le_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse!(
       le_i32(&[0x00, 0x00, 0x00, 0x80]),
       Ok((&b""[..], -2_147_483_648_i32))
     );
@@ -1366,19 +1375,19 @@ mod tests {
 
   #[test]
   fn le_i64_tests() {
-    assert_eq!(
+    assert_parse!(
       le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
       Ok((&b""[..], 0))
     );
-    assert_eq!(
+    assert_parse!(
       le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
       Ok((&b""[..], 9_223_372_036_854_775_807_i64))
     );
-    assert_eq!(
+    assert_parse!(
       le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
       Ok((&b""[..], -1))
     );
-    assert_eq!(
+    assert_parse!(
       le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
       Ok((&b""[..], -9_223_372_036_854_775_808_i64))
     );
@@ -1387,19 +1396,19 @@ mod tests {
   #[test]
   #[cfg(stable_i128)]
   fn le_i128_tests() {
-    assert_eq!(
+    assert_parse!(
       le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
       Ok((&b""[..], 0))
     );
-    assert_eq!(
+    assert_parse!(
       le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
       Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
     );
-    assert_eq!(
+    assert_parse!(
       le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
       Ok((&b""[..], -1))
     );
-    assert_eq!(
+    assert_parse!(
       le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
       Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
     );
@@ -1407,8 +1416,8 @@ mod tests {
 
   #[test]
   fn be_f32_tests() {
-    assert_eq!(be_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
-    assert_eq!(
+    assert_parse!(be_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
+    assert_parse!(
       be_f32(&[0x4d, 0x31, 0x1f, 0xd8]),
       Ok((&b""[..], 185_728_392_f32))
     );
@@ -1416,11 +1425,11 @@ mod tests {
 
   #[test]
   fn be_f64_tests() {
-    assert_eq!(
+    assert_parse!(
       be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
       Ok((&b""[..], 0_f64))
     );
-    assert_eq!(
+    assert_parse!(
       be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00]),
       Ok((&b""[..], 185_728_392_f64))
     );
@@ -1428,8 +1437,8 @@ mod tests {
 
   #[test]
   fn le_f32_tests() {
-    assert_eq!(le_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
-    assert_eq!(
+    assert_parse!(le_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
+    assert_parse!(
       le_f32(&[0xd8, 0x1f, 0x31, 0x4d]),
       Ok((&b""[..], 185_728_392_f32))
     );
@@ -1437,11 +1446,11 @@ mod tests {
 
   #[test]
   fn le_f64_tests() {
-    assert_eq!(
+    assert_parse!(
       le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
       Ok((&b""[..], 0_f64))
     );
-    assert_eq!(
+    assert_parse!(
       le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41]),
       Ok((&b""[..], 185_728_392_f64))
     );
@@ -1449,21 +1458,21 @@ mod tests {
 
   #[test]
   fn hex_u32_tests() {
-    assert_eq!(
+    assert_parse!(
       hex_u32(&b";"[..]),
       Err(Err::Error(error_position!(&b";"[..], ErrorKind::IsA)))
     );
-    assert_eq!(hex_u32(&b"ff;"[..]), Ok((&b";"[..], 255)));
-    assert_eq!(hex_u32(&b"1be2;"[..]), Ok((&b";"[..], 7138)));
-    assert_eq!(hex_u32(&b"c5a31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
-    assert_eq!(hex_u32(&b"C5A31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
-    assert_eq!(hex_u32(&b"00c5a31be2;"[..]), Ok((&b"e2;"[..], 12_952_347)));
-    assert_eq!(
+    assert_parse!(hex_u32(&b"ff;"[..]), Ok((&b";"[..], 255)));
+    assert_parse!(hex_u32(&b"1be2;"[..]), Ok((&b";"[..], 7138)));
+    assert_parse!(hex_u32(&b"c5a31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
+    assert_parse!(hex_u32(&b"C5A31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
+    assert_parse!(hex_u32(&b"00c5a31be2;"[..]), Ok((&b"e2;"[..], 12_952_347)));
+    assert_parse!(
       hex_u32(&b"c5a31be201;"[..]),
       Ok((&b"01;"[..], 3_315_801_058))
     );
-    assert_eq!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
-    assert_eq!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
+    assert_parse!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
+    assert_parse!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
   }
 
   /*
@@ -1485,20 +1494,20 @@ mod tests {
   fn rest_on_slices() {
     let input: &[u8] = &b"Hello, world!"[..];
     let empty: &[u8] = &b""[..];
-    assert_eq!(rest(input), Ok((empty, input)));
+    assert_parse!(rest(input), Ok((empty, input)));
   }
 
   #[test]
   fn rest_on_strs() {
     let input: &str = "Hello, world!";
     let empty: &str = "";
-    assert_eq!(rest(input), Ok((empty, input)));
+    assert_parse!(rest(input), Ok((empty, input)));
   }
 
   #[test]
   fn rest_len_on_slices() {
     let input: &[u8] = &b"Hello, world!"[..];
-    assert_eq!(rest_len(input), Ok((input, input.len())));
+    assert_parse!(rest_len(input), Ok((input, input.len())));
   }
 
   #[test]
@@ -1558,11 +1567,13 @@ mod tests {
     );
   }
 
+  //FIXME
+  /*
   #[test]
   #[cfg(feature = "std")]
   fn manual_configurable_endianness_test() {
     let x = 1;
-    let int_parse: Box<Fn(&[u8]) -> IResult<&[u8], u16>> = if x == 2 {
+    let int_parse: Box<Fn(&[u8]) -> IResult<&[u8], u16, (&[u8], ErrorKind)>> = if x == 2 {
       Box::new(be_u16)
     } else {
       Box::new(le_u16)
@@ -1570,6 +1581,7 @@ mod tests {
     println!("{:?}", int_parse(&b"3"[..]));
     assert_eq!(int_parse(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
   }
+  */
 
   use lib::std::convert::From;
   impl From<u32> for CustomError {
@@ -1578,25 +1590,36 @@ mod tests {
     }
   }
 
+  impl<I> ParseError<I> for CustomError {
+    fn from_error_kind(_: I, _: ErrorKind) -> Self {
+      CustomError
+    }
+
+    fn append(_: I, _: ErrorKind, _: CustomError) -> Self {
+      CustomError
+    }
+  }
+
   struct CustomError;
   #[allow(dead_code)]
   fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], CustomError> {
-    fix_error!(input, CustomError, alphanumeric)
+    //fix_error!(input, CustomError, alphanumeric)
+    alphanumeric(input)
   }
 
   #[test]
   fn hex_digit_test() {
     let i = &b"0123456789abcdefABCDEF;"[..];
-    assert_eq!(hex_digit(i), Ok((&b";"[..], &i[..i.len() - 1])));
+    assert_parse!(hex_digit(i), Ok((&b";"[..], &i[..i.len() - 1])));
 
     let i = &b"g"[..];
-    assert_eq!(
+    assert_parse!(
       hex_digit(i),
       Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
     );
 
     let i = &b"G"[..];
-    assert_eq!(
+    assert_parse!(
       hex_digit(i),
       Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
     );
@@ -1618,10 +1641,10 @@ mod tests {
   #[test]
   fn oct_digit_test() {
     let i = &b"01234567;"[..];
-    assert_eq!(oct_digit(i), Ok((&b";"[..], &i[..i.len() - 1])));
+    assert_parse!(oct_digit(i), Ok((&b";"[..], &i[..i.len() - 1])));
 
     let i = &b"8"[..];
-    assert_eq!(
+    assert_parse!(
       oct_digit(i),
       Err(Err::Error(error_position!(i, ErrorKind::OctDigit)))
     );
@@ -1664,28 +1687,28 @@ mod tests {
   fn check_windows_lineending() {
     let input = b"\r\n";
     let output = line_ending(&input[..]);
-    assert_eq!(output, Ok((&b""[..], &b"\r\n"[..])));
+    assert_parse!(output, Ok((&b""[..], &b"\r\n"[..])));
   }
 
   #[test]
   fn check_unix_lineending() {
     let input = b"\n";
     let output = line_ending(&input[..]);
-    assert_eq!(output, Ok((&b""[..], &b"\n"[..])));
+    assert_parse!(output, Ok((&b""[..], &b"\n"[..])));
   }
 
   #[test]
   fn cr_lf() {
-    assert_eq!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_eq!(crlf(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(
+    assert_parse!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
+    assert_parse!(crlf(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(
       crlf(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
     );
 
-    assert_eq!(crlf("\r\na"), Ok(("a", "\r\n")));
-    assert_eq!(crlf("\r"), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(
+    assert_parse!(crlf("\r\na"), Ok(("a", "\r\n")));
+    assert_parse!(crlf("\r"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(
       crlf("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
     );
@@ -1693,18 +1716,18 @@ mod tests {
 
   #[test]
   fn end_of_line() {
-    assert_eq!(eol(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
-    assert_eq!(eol(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_eq!(eol(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(
+    assert_parse!(eol(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
+    assert_parse!(eol(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
+    assert_parse!(eol(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(
       eol(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
     );
 
-    assert_eq!(eol("\na"), Ok(("a", "\n")));
-    assert_eq!(eol("\r\na"), Ok(("a", "\r\n")));
-    assert_eq!(eol("\r"), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(
+    assert_parse!(eol("\na"), Ok(("a", "\n")));
+    assert_parse!(eol("\r\na"), Ok(("a", "\r\n")));
+    assert_parse!(eol("\r"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(
       eol("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
     );
@@ -1737,33 +1760,33 @@ mod tests {
 
       println!("now parsing: {} -> {}", test, expected32);
 
-      assert_eq!(
+      assert_parse!(
         recognize_float(CompleteStr(test)),
         Ok((CompleteStr(""), CompleteStr(test)))
       );
       let larger = format!("{};", test);
-      assert_eq!(recognize_float(&larger[..]), Ok((";", test)));
+      assert_parse!(recognize_float(&larger[..]), Ok((";", test)));
 
-      assert_eq!(float(larger.as_bytes()), Ok((&b";"[..], expected32)));
-      assert_eq!(float(&larger[..]), Ok((";", expected32)));
-      assert_eq!(float(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected32)));
-      assert_eq!(float(CompleteStr(test)), Ok((CompleteStr(""), expected32)));
+      assert_parse!(float(larger.as_bytes()), Ok((&b";"[..], expected32)));
+      assert_parse!(float(&larger[..]), Ok((";", expected32)));
+      assert_parse!(float(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected32)));
+      assert_parse!(float(CompleteStr(test)), Ok((CompleteStr(""), expected32)));
 
-      assert_eq!(double(larger.as_bytes()), Ok((&b";"[..], expected64)));
-      assert_eq!(double(&larger[..]), Ok((";", expected64)));
-      assert_eq!(double(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected64)));
-      assert_eq!(double(CompleteStr(test)), Ok((CompleteStr(""), expected64)));
+      assert_parse!(double(larger.as_bytes()), Ok((&b";"[..], expected64)));
+      assert_parse!(double(&larger[..]), Ok((";", expected64)));
+      assert_parse!(double(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected64)));
+      assert_parse!(double(CompleteStr(test)), Ok((CompleteStr(""), expected64)));
 
       //deprecated functions
       #[allow(deprecated)]
       {
-        assert_eq!(float_s(&larger[..]), Ok((";", expected32)));
-        assert_eq!(double_s(&larger[..]), Ok((";", expected64)));
+        assert_parse!(float_s(&larger[..]), Ok((";", expected32)));
+        assert_parse!(double_s(&larger[..]), Ok((";", expected64)));
       }
     }
 
     let remaining_exponent = "-1.234E-";
-    assert_eq!(
+    assert_parse!(
       recognize_float(remaining_exponent),
       Err(Err::Incomplete(Needed::Size(1)))
     );

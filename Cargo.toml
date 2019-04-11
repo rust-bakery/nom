@@ -1,7 +1,7 @@
 [package]
 
 name = "nom"
-version = "4.2.1"
+version = "4.2.3"
 authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
@@ -18,7 +18,9 @@ include = [
   ".travis.yml",
   "Cargo.toml",
   "src/*.rs",
-  "tests/*.rs"
+  "src/*/*.rs",
+  "tests/*.rs",
+  "build.rs"
 ]
 
 [features]
@@ -27,7 +29,6 @@ std = ["alloc", "memchr/use_std"]
 default = ["std"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
-verbose-errors = ["alloc"]
 
 [dependencies.regex]
 version = "^1.0"
@@ -53,7 +54,7 @@ jemallocator = "^0.1"
 version_check = "^0.1"
 
 [package.metadata.docs.rs]
-features = [ "alloc", "std", "regexp", "regexp_macros", "verbose-errors" ]
+features = [ "alloc", "std", "regexp", "regexp_macros"]
 all-features = true
 
 [profile.bench]
@@ -146,6 +147,10 @@ harness = false
 [[bench]]
 name = "json"
 harness = false
+
+[[example]]
+name = "json"
+required-features = ["alloc"]
 
 [badges]
 travis-ci = { repository = "Geal/nom" }

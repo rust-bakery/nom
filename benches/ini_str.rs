@@ -34,10 +34,10 @@ fn is_line_ending_or_comment(chr: char) -> bool {
   chr == ';' || chr == '\n'
 }
 
-named!(alphanumeric<CompleteStr,CompleteStr>,         take_while_s!(is_alphanumeric));
-named!(not_line_ending<CompleteStr,CompleteStr>,      is_not_s!("\r\n"));
-named!(space<CompleteStr,CompleteStr>,                take_while_s!(is_space));
-named!(space_or_line_ending<CompleteStr,CompleteStr>, is_a_s!(" \r\n"));
+named!(alphanumeric<CompleteStr,CompleteStr>,         take_while!(is_alphanumeric));
+named!(not_line_ending<CompleteStr,CompleteStr>,      is_not!("\r\n"));
+named!(space<CompleteStr,CompleteStr>,                take_while!(is_space));
+named!(space_or_line_ending<CompleteStr,CompleteStr>, is_a!(" \r\n"));
 
 fn right_bracket(c: char) -> bool {
   c == ']'
@@ -45,9 +45,9 @@ fn right_bracket(c: char) -> bool {
 
 named!(category     <CompleteStr, &str>,
   do_parse!(
-          tag_s!("[")                 >>
-    name: take_till_s!(right_bracket) >>
-          tag_s!("]")                 >>
+          tag!("[")                 >>
+    name: take_till!(right_bracket) >>
+          tag!("]")                 >>
           opt!(space_or_line_ending)  >>
     (name.0)
   )
@@ -57,11 +57,11 @@ named!(key_value    <CompleteStr,(&str,&str)>,
   do_parse!(
     key: alphanumeric                              >>
          opt!(space)                               >>
-         tag_s!("=")                               >>
+         tag!("=")                               >>
          opt!(space)                               >>
-    val: take_till_s!(is_line_ending_or_comment)   >>
+    val: take_till!(is_line_ending_or_comment)   >>
          opt!(space)                               >>
-         opt!(pair!(tag_s!(";"), not_line_ending)) >>
+         opt!(pair!(tag!(";"), not_line_ending)) >>
          opt!(space_or_line_ending)                >>
     (key.0, val.0)
   )

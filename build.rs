@@ -1,7 +1,7 @@
 extern crate version_check;
 
 fn main() {
-  match version_check::is_min_version("1.26.0") {
+  match version_check::is_min_version("1.28.0") {
     Some((true, _actual_version)) => {
       println!("cargo:rustc-cfg=stable_i128");
     }

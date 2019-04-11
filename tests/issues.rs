@@ -106,7 +106,7 @@ mod parse_int {
 #[test]
 fn usize_length_bytes_issue() {
   use nom::be_u16;
-  let _: IResult<&[u8], &[u8], u32> = length_bytes!(b"012346", be_u16);
+  let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_bytes!(b"012346", be_u16);
 }
 
 /*
@@ -142,9 +142,9 @@ named!(
 
 named!(issue_308(&str) -> bool,
     do_parse! (
-        tag_s! ("foo") >>
+        tag! ("foo") >>
         b: alt_complete! (
-            map! (tag_s! ("1"), |_: &str|->bool {true}) |
+            map! (tag! ("1"), |_: &str|->bool {true}) |
             value! (false)
         ) >>
         (b) ));
@@ -227,8 +227,12 @@ fn issue_667() {
 
 #[test]
 fn issue_721() {
-  assert_eq!(parse_to!("1234", u16), Ok(("", 1234)));
-  assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
+  named!(f1<&str, u16>, parse_to!(u16));
+  named!(f2<&str, String>, parse_to!(String));
+  assert_eq!(f1("1234"), Ok(("", 1234)));
+  assert_eq!(f2("foo"), Ok(("", "foo".to_string())));
+  //assert_eq!(parse_to!("1234", u16), Ok(("", 1234)));
+  //assert_eq!(parse_to!("foo", String), Ok(("", "foo".to_string())));
 }
 
 #[cfg(feature = "alloc")]
@@ -257,7 +261,7 @@ named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"
 #[test]
 fn issue_752() {
     assert_eq!(
-        Err::Error(nom::Context::Code("ab", nom::ErrorKind::ParseTo)),
+        Err::Error(("ab", nom::ErrorKind::ParseTo)),
         parse_to!("ab", usize).unwrap_err()
     )
 }
@@ -268,7 +272,7 @@ fn atom_specials(c: u8) -> bool {
 
 named!(
     capability<&str>,
-    do_parse!(tag_s!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
+    do_parse!(tag!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
 );
 
 #[test]
@@ -279,6 +283,32 @@ fn issue_759() {
 named_args!(issue_771(count: usize)<Vec<u32>>,
   length_count!(value!(count), call!(nom::be_u32))
 );
+
+#[test]
+fn issue_768() {
+  named!(bit_vec8<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 8))));
+  named!(bit_vec4<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 4))));
+  named!(bit_vec3<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 3))));
+  named!(bit_vec11<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 11))));
+
+  let m: Vec<u8> = vec![70, 97, 106, 121, 86, 66, 105, 98, 86, 106, 101];
+  assert_eq!(
+    bit_vec8(CompleteByteSlice(m.as_slice())),
+    Ok((CompleteByteSlice(&[]), vec![70, 97, 106, 121, 86, 66, 105, 98, 86, 106, 101]))
+  );
+  assert_eq!(
+    bit_vec4(CompleteByteSlice(m.as_slice())),
+    Ok((CompleteByteSlice(&[]), vec![4, 6, 6, 1, 6, 10, 7, 9, 5, 6, 4, 2, 6, 9, 6, 2, 5, 6, 6, 10, 6, 5]))
+  );
+  assert_eq!(
+    bit_vec3(CompleteByteSlice(m.as_slice())),
+    Ok((CompleteByteSlice(&[]), vec![2, 1, 4, 6, 0, 5, 5, 2, 3, 6, 2, 5, 3, 1, 0, 2, 3, 2, 2, 6, 1, 1, 2, 6, 3, 2, 4, 6, 2]))
+  );
+  assert_eq!(
+    bit_vec11(CompleteByteSlice(m.as_slice())),
+    Ok((CompleteByteSlice(&[]), vec![563, 90, 1266, 1380, 308, 1417, 717, 613]))
+  );
+}
 
 /// This test is in a separate module to check that all required symbols are imported in
 /// `escaped_transform!()`. Without the module, the `use`-es of the current module would
@@ -297,7 +327,7 @@ named!(multi_617<&[u8], () >, fold_many0!( digits, (), |_, _| {}));
 named!(multi_617_fails<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
 
 mod issue_647 {
-  use nom::{Err,be_f64};
+  use nom::{Err,be_f64, ErrorKind};
   pub type Input<'a> = &'a [u8];
 
   #[derive(PartialEq, Debug, Clone)]
@@ -306,7 +336,7 @@ mod issue_647 {
       v: Vec<f64>
   }
 
-  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<&'a [u8]>> {
+  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<(&'a [u8], ErrorKind)>> {
       separated_list_complete!(input, tag!(","),be_f64)
   }
 

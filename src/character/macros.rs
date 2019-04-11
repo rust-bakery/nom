@@ -1,9 +1,8 @@
 /// Character level parsers
-
-use internal::{IResult, Needed};
-use traits::{AsChar, InputIter, InputLength, Slice};
+use internal::{IResult, Needed, ParseError};
 use lib::std::ops::RangeFrom;
 use traits::{need_more, AtEof};
+use traits::{AsChar, InputIter, InputLength, Slice};
 
 /// matches one of the provided characters
 ///
@@ -20,27 +19,7 @@ use traits::{need_more, AtEof};
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! one_of (
-  ($i:expr, $inp: expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed};
-
-      use $crate::Slice;
-      use $crate::AsChar;
-      use $crate::FindToken;
-      use $crate::InputIter;
-
-      match ($i).iter_elements().next().map(|c| {
-        (c, $inp.find_token(c))
-      }) {
-        None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!($i, $crate::ErrorKind::OneOf::<u32>))),
-        //the unwrap should be safe here
-        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
-      }
-    }
-  );
+  ($i:expr, $inp: expr) => ( $crate::one_of($inp)($i) );
 );
 
 /// matches anything but the provided characters
@@ -59,27 +38,7 @@ macro_rules! one_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! none_of (
-  ($i:expr, $inp: expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed};
-
-      use $crate::Slice;
-      use $crate::AsChar;
-      use $crate::FindToken;
-      use $crate::InputIter;
-
-      match ($i).iter_elements().next().map(|c| {
-        (c, !$inp.find_token(c))
-      }) {
-        None             => $crate::need_more($i, Needed::Size(1)),
-        Some((_, false)) => Err(Err::Error(error_position!($i, $crate::ErrorKind::NoneOf::<u32>))),
-        //the unwrap should be safe here
-        Some((c, true))  => Ok(( $i.slice(c.len()..), $i.iter_elements().next().unwrap().as_char() ))
-      }
-    }
-  );
+  ($i:expr, $inp: expr) => ( $crate::none_of($inp)($i) );
 );
 
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
@@ -97,35 +56,8 @@ macro_rules! none_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! char (
-  ($i:expr, $c: expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed};
-
-      use $crate::Slice;
-      use $crate::AsChar;
-      use $crate::InputIter;
-
-      match ($i).iter_elements().next().map(|c| {
-        let b = c.as_char() == $c;
-        b
-      }) {
-        None        => $crate::need_more($i, Needed::Size(1)),
-        Some(false) => {
-          let e: $crate::ErrorKind<u32> = $crate::ErrorKind::Char;
-          Err(Err::Error($crate::Context::Code($i, e)))
-        },
-        //the unwrap should be safe here
-        Some(true)  => Ok(( $i.slice($c.len()..), $i.iter_elements().next().unwrap().as_char() ))
-      }
-    }
-  );
+  ($i:expr, $c: expr) => ( $crate::char($c)($i) );
 );
-
-named!(#[doc="Matches a newline character '\\n'"], pub newline<char>, char!('\n'));
-
-named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 
 /// matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
@@ -133,12 +65,12 @@ named!(#[doc="Matches a tab character '\\t'"], pub tab<char>, char!('\t'));
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::anychar;
+/// # use nom::{anychar, ErrorKind};
 /// # fn main() {
-/// assert_eq!(anychar("abc"), Ok(("bc",'a')));
+/// assert_eq!(anychar::<_,(&str, ErrorKind)>("abc"), Ok(("bc",'a')));
 /// # }
 /// ```
-pub fn anychar<T>(input: T) -> IResult<T, char>
+pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
   T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
   <T as InputIter>::Item: AsChar,
@@ -223,6 +155,6 @@ mod tests {
   #[test]
   fn anychar_str() {
     use super::anychar;
-    assert_eq!(anychar("Ә"), Ok(("", 'Ә')));
+    assert_eq!(anychar::<_, (&str, ErrorKind)>("Ә"), Ok(("", 'Ә')));
   }
 }

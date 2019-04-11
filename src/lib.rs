@@ -149,14 +149,14 @@
 //! `IResult` is an alias for the `Result` type:
 //!
 //! ```rust
-//! use nom::{Needed, Context};
+//! use nom::{Needed, ErrorKind};
 //!
-//! type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
+//! type IResult<I, O, E = (I,ErrorKind)> = Result<(I, O), Err<E>>;
 //!
-//! enum Err<I, E = u32> {
+//! enum Err<E> {
 //!   Incomplete(Needed),
-//!   Error(Context<I, E>),
-//!   Failure(Context<I, E>),
+//!   Error(E),
+//!   Failure(E),
 //! }
 //! ```
 //!
@@ -387,7 +387,7 @@ pub mod lib {
 
   #[cfg(feature = "std")]
   pub mod std {
-    pub use std::{boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
+    pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
     pub mod prelude {
       pub use std::prelude as v1;
     }
@@ -400,10 +400,6 @@ pub mod lib {
 pub use self::traits::*;
 pub use self::util::*;
 
-#[cfg(feature = "verbose-errors")]
-pub use self::verbose_errors::*;
-
-#[cfg(not(feature = "verbose-errors"))]
 pub use self::simple_errors::*;
 
 pub use self::branch::*;
@@ -428,11 +424,6 @@ pub use self::str::*;
 #[macro_use]
 mod util;
 
-#[cfg(feature = "verbose-errors")]
-#[macro_use]
-pub mod verbose_errors;
-
-#[cfg(not(feature = "verbose-errors"))]
 #[macro_use]
 pub mod simple_errors;
 

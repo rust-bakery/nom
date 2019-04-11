@@ -898,7 +898,8 @@ macro_rules! ws (
 mod tests {
   #[cfg(feature = "alloc")]
   use lib::std::string::{String, ToString};
-  use internal::{Err, IResult, Needed};
+  use lib::std::fmt::Debug;
+  use internal::{Err, IResult, Needed, ParseError};
   use super::sp;
   use util::ErrorKind;
   use types::CompleteStr;
@@ -1052,16 +1053,27 @@ mod tests {
   pub struct ErrorStr(String);
 
   #[cfg(feature = "alloc")]
-  impl From<u32> for ErrorStr {
-    fn from(i: u32) -> Self {
-      ErrorStr(format!("custom error code: {}", i))
+  impl<'a> From<(&'a[u8], ErrorKind)> for ErrorStr {
+    fn from(i: (&'a[u8], ErrorKind)) -> Self {
+      ErrorStr(format!("custom error code: {:?}", i))
     }
   }
 
   #[cfg(feature = "alloc")]
-  impl<'a> From<&'a str> for ErrorStr {
-    fn from(i: &'a str) -> Self {
-      ErrorStr(format!("custom error message: {}", i))
+  impl<'a> From<(&'a str, ErrorKind)> for ErrorStr {
+    fn from(i: (&'a str, ErrorKind)) -> Self {
+      ErrorStr(format!("custom error message: {:?}", i))
+    }
+  }
+
+  #[cfg(feature = "alloc")]
+  impl<I: Debug> ParseError<I> for ErrorStr {
+    fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+      ErrorStr(format!("custom error message: ({:?}, {:?})", input, kind))
+    }
+
+    fn append(input: I, kind: ErrorKind, other: Self) -> Self {
+      ErrorStr(format!("custom error message: ({:?}, {:?}) - {:?}", input, kind, other))
     }
   }
 
@@ -1074,11 +1086,7 @@ mod tests {
 
     #[allow(unused_variables)]
     fn dont_work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
-      use Context;
-      Err(Err::Error(Context::Code(
-        &b""[..],
-        ErrorKind::Custom(ErrorStr("abcd".to_string())),
-      )))
+      Err(Err::Error(ErrorStr("abcd".to_string())))
     }
 
     fn work2(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
@@ -1098,7 +1106,7 @@ mod tests {
     let a = &b"\tabcd"[..];
     assert_eq!(
       alt1(a),
-      Err(Err::Error(error_position!(a, ErrorKind::Alt::<ErrorStr>)))
+      Err(Err::Error(error_position!(a, ErrorKind::Alt)))
     );
     assert_eq!(alt2(a), Ok((&b""[..], a)));
     assert_eq!(alt3(a), Ok((a, &b""[..])));

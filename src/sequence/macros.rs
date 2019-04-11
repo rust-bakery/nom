@@ -93,21 +93,19 @@ macro_rules! tuple_parser (
 #[macro_export(local_inner_macros)]
 macro_rules! pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      tuple!($i, $submac!($($args)*), $submac2!($($args2)*))
-    }
+    pair!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    pair!($i, $submac!($($args)*), call!($g));
+    pair!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    pair!($i, call!($f), $submac!($($args)*));
+    pair!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    pair!($i, call!($f), call!($g));
+    $crate::pairc($i, $f, $g)
   );
 );
 
@@ -115,21 +113,17 @@ macro_rules! pair(
 /// separated_pair(X,sep,Y) returns (x,y)
 #[macro_export(local_inner_macros)]
 macro_rules! separated_pair(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-        Err(e)    => Err(e),
-        Ok((i1, (o1, _, o2))) => {
-          Ok((i1, (o1, o2)))
-        }
-      }
-    }
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    separated_pair!($i, |i| $submac!(i, $($args)*), $($rest)*)
   );
-
-  ($i:expr, $f:expr, $($rest:tt)+) => (
-    separated_pair!($i, call!($f), $($rest)*);
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    separated_pair!($i, $f, |i| $submac!(i, $($args)*), $($rest)*)
+  );
+  ($i:expr, $f:expr, $g:expr, $submac:ident!( $($args:tt)* )) => (
+    separated_pair!($i, $f, $g, |i| $submac!(i, $($args)*))
+  );
+  ($i:expr, $f:expr, $g:expr, $h:expr) => (
+    $crate::separated_pairc($i, $f, $g, $h)
   );
 );
 
@@ -138,28 +132,19 @@ macro_rules! separated_pair(
 #[macro_export(local_inner_macros)]
 macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        Err(e) => Err(e),
-        Ok((remaining, (_,o)))    => {
-          Ok((remaining, o))
-        }
-      }
-    }
+    preceded!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    preceded!($i, $submac!($($args)*), call!($g));
+    preceded!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    preceded!($i, call!($f), $submac!($($args)*));
+    preceded!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    preceded!($i, call!($f), call!($g));
+    $crate::precededc($i, $f, $g)
   );
 );
 
@@ -168,28 +153,19 @@ macro_rules! preceded(
 #[macro_export(local_inner_macros)]
 macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match tuple!($i, $submac!($($args)*), $submac2!($($args2)*)) {
-        Err(e) => Err(e),
-        Ok((remaining, (o,_)))    => {
-          Ok((remaining, o))
-        }
-      }
-    }
+    terminated!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    terminated!($i, $submac!($($args)*), call!($g));
+    terminated!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    terminated!($i, call!($f), $submac!($($args)*));
+    terminated!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    terminated!($i, call!($f), call!($g));
+    $crate::terminatedc($i, $f, $g)
   );
 );
 
@@ -213,21 +189,17 @@ macro_rules! terminated(
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! delimited(
-  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)+) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match tuple_parser!($i, (), $submac!($($args)*), $($rest)*) {
-        Err(e) => Err(e),
-        Ok((i1, (_, o, _)))   => {
-          Ok((i1, o))
-        }
-      }
-    }
+  ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    delimited!($i, |i| $submac!(i, $($args)*), $($rest)*)
   );
-
-  ($i:expr, $f:expr, $($rest:tt)+) => (
-    delimited!($i, call!($f), $($rest)*);
+  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
+    delimited!($i, $f, |i| $submac!(i, $($args)*), $($rest)*)
+  );
+  ($i:expr, $f:expr, $g:expr, $submac:ident!( $($args:tt)* )) => (
+    delimited!($i, $f, $g, |i| $submac!(i, $($args)*))
+  );
+  ($i:expr, $f:expr, $g:expr, $h:expr) => (
+    $crate::delimitedc($i, $f, $g, $h)
   );
 );
 
@@ -301,7 +273,7 @@ macro_rules! delimited(
 /// # }
 /// ```
 ///
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! do_parse (
   (__impl $i:expr, ( $($rest:expr),* )) => (
     $crate::lib::std::result::Result::Ok(($i, ( $($rest),* )))
@@ -312,7 +284,7 @@ macro_rules! do_parse (
   );
 
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) ) => (
-    compile_error!("do_parse is missing the return value. A do_parse call must end
+    nom_compile_error!("do_parse is missing the return value. A do_parse call must end
       with a return value between parenthesis, as follows:
 
       do_parse!(
@@ -324,10 +296,10 @@ macro_rules! do_parse (
   );
 
   (__impl $i:expr, $field:ident : $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
-    compile_error!("do_parse uses >> as separator, not ~");
+    nom_compile_error!("do_parse uses >> as separator, not ~");
   );
   (__impl $i:expr, $submac:ident!( $($args:tt)* ) ~ $($rest:tt)* ) => (
-    compile_error!("do_parse uses >> as separator, not ~");
+    nom_compile_error!("do_parse uses >> as separator, not ~");
   );
   (__impl $i:expr, $field:ident : $e:ident ~ $($rest:tt)*) => (
     do_parse!(__impl $i, $field: call!($e) ~ $($rest)*);
@@ -422,7 +394,7 @@ macro_rules! do_parse (
     }
   );
   ($submac:ident!( $($args:tt)* ) >> $($rest:tt)* ) => (
-    compile_error!("if you are using do_parse outside of a named! macro, you must
+    nom_compile_error!("if you are using do_parse outside of a named! macro, you must
         pass the input data as first argument, like this:
 
         let res = do_parse!(input,
@@ -436,14 +408,16 @@ macro_rules! do_parse (
   );
 );
 
+#[macro_export]
+macro_rules! nom_compile_error (
+  (( $(args:tt)* )) => ( compile_error!($($args)*) );
+);
+
 #[cfg(test)]
 mod tests {
   use internal::{Err, IResult, Needed};
-  use util::ErrorKind;
   use nom::be_u16;
-  #[cfg(feature = "alloc")]
-  #[cfg(feature = "verbose-errors")]
-  use lib::std::vec::Vec;
+  use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -474,8 +448,8 @@ mod tests {
         let reduced = &$i[..m];
         let b       = &$bytes[..m];
 
-        let res: IResult<_,_,u32> = if reduced != b {
-          Err($crate::Err::Error(error_position!($i, $crate::ErrorKind::Tag::<u32>)))
+        let res: IResult<_,_,_> = if reduced != b {
+          Err($crate::Err::Error(error_position!($i, $crate::ErrorKind::Tag)))
         } else if m < blen {
           need_more($i, Needed::Size(blen))
         } else {
@@ -491,7 +465,7 @@ mod tests {
       {
         use $crate::need_more;
         let cnt = $count as usize;
-        let res:IResult<&[u8],&[u8],u32> = if $i.len() < cnt {
+        let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
           need_more($i, Needed::Size(cnt))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
@@ -513,24 +487,19 @@ mod tests {
     b: Option<u8>,
   }
 
-  #[cfg(all(feature = "std", feature = "verbose-errors"))]
+  /*FIXME: convert code examples to new error management
   use util::{add_error_pattern, error_to_list, print_error};
-  #[cfg(feature = "verbose-errors")]
-  use verbose_errors::Context;
 
   #[cfg(feature = "std")]
-  #[cfg(feature = "verbose-errors")]
   #[cfg_attr(rustfmt, rustfmt_skip)]
   fn error_to_string<P: Clone + PartialEq>(e: &Context<P, u32>) -> &'static str {
     let v: Vec<(P, ErrorKind<u32>)> = error_to_list(e);
     // do it this way if you can use slice patterns
-    /*
-    match &v[..] {
-      [ErrorKind::Custom(42), ErrorKind::Tag]                         => "missing `ijkl` tag",
-      [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag] => "missing `mnop` tag after `ijkl`",
-      _            => "unrecognized error"
-    }
-    */
+    //match &v[..] {
+    //  [ErrorKind::Custom(42), ErrorKind::Tag]                         => "missing `ijkl` tag",
+    //  [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag] => "missing `mnop` tag after `ijkl`",
+    //  _            => "unrecognized error"
+    //}
 
     let collected: Vec<ErrorKind<u32>> = v.iter().map(|&(_, ref e)| e.clone()).collect();
     if &collected[..] == [ErrorKind::Custom(42), ErrorKind::Tag] {
@@ -543,103 +512,19 @@ mod tests {
   }
 
   // do it this way if you can use box patterns
-  /*use $crate::lib::std::str;
-  fn error_to_string(e:Err) -> String
-    match e {
-      NodePosition(ErrorKind::Custom(42), i1, box Position(ErrorKind::Tag, i2)) => {
-        format!("missing `ijkl` tag, found '{}' instead", str::from_utf8(i2).unwrap())
-      },
-      NodePosition(ErrorKind::Custom(42), i1, box NodePosition(ErrorKind::Custom(128), i2,  box Position(ErrorKind::Tag, i3))) => {
-        format!("missing `mnop` tag after `ijkl`, found '{}' instead", str::from_utf8(i3).unwrap())
-      },
-      _ => "unrecognized error".to_string()
-    }
-  }*/
-
-  #[cfg(feature = "verbose-errors")]
-  #[cfg(feature = "std")]
-  use std::collections;
-
-  #[cfg_attr(rustfmt, rustfmt_skip)]
-  #[cfg(feature = "std")]
-  #[cfg(feature = "verbose-errors")]
-  #[test]
-  fn err() {
-    named!(err_test, alt!(
-      tag!("abcd") |
-      preceded!(
-        tag!("efgh"),
-        return_error!(
-          ErrorKind::Custom(42),
-          do_parse!(
-                 tag!("ijkl")                                        >>
-            res: return_error!(ErrorKind::Custom(128), tag!("mnop")) >>
-            (res)
-          )
-        )
-      )
-    ));
-    let a = &b"efghblah"[..];
-    let b = &b"efghijklblah"[..];
-    let c = &b"efghijklmnop"[..];
-
-    let blah = &b"blah"[..];
-
-    let res_a = err_test(a);
-    let res_b = err_test(b);
-    let res_c = err_test(c);
-    assert_eq!(res_a,
-               Err(Err::Failure(error_node_position!(blah,
-                                                     ErrorKind::Custom(42),
-                                                     error_position!(blah, ErrorKind::Tag)))));
-    assert_eq!(res_b,
-               Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42),
-      error_node_position!(blah, ErrorKind::Custom(128), error_position!(blah, ErrorKind::Tag))))));
-    assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
-
-    // Merr-like error matching
-    let mut err_map = collections::HashMap::new();
-    assert!(add_error_pattern(&mut err_map,
-                              err_test(&b"efghpouet"[..]),
-                              "missing `ijkl` tag"));
-    assert!(add_error_pattern(&mut err_map,
-                              err_test(&b"efghijklpouet"[..]),
-                              "missing `mnop` tag after `ijkl`"));
-
-    let res_a2 = res_a.clone();
-    match res_a {
-      Err(Err::Error(e)) |
-      Err(Err::Failure(e)) => {
-        let collected: Vec<ErrorKind<u32>> =
-          error_to_list(&e).iter().map(|&(_, ref e)| e.clone()).collect();
-        assert_eq!(collected, [ErrorKind::Custom(42), ErrorKind::Tag]);
-        assert_eq!(error_to_string(&e), "missing `ijkl` tag");
-        //FIXME: why?
-        //assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `ijkl` tag"));
-        assert_eq!(err_map.get(&error_to_list(&e)), None);
-      }
-      _ => panic!(),
-    };
-
-    let res_b2 = res_b.clone();
-    match res_b {
-      Err(Err::Error(e)) |
-      Err(Err::Failure(e)) => {
-        let collected: Vec<ErrorKind<u32>> =
-          error_to_list(&e).iter().map(|&(_, ref e)| e.clone()).collect();
-        assert_eq!(collected,
-                   [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag]);
-        assert_eq!(error_to_string(&e), "missing `mnop` tag after `ijkl`");
-        //FIXME: why?
-        //assert_eq!(err_map.get(&error_to_list(&e)), Some(&"missing `mnop` tag after `ijkl`"));
-        assert_eq!(err_map.get(&error_to_list(&e)), None);
-      }
-      _ => panic!(),
-    };
-
-    print_error(a, res_a2);
-    print_error(b, res_b2);
-  }
+  //use $crate::lib::std::str;
+  //fn error_to_string(e:Err) -> String
+  //  match e {
+  //    NodePosition(ErrorKind::Custom(42), i1, box Position(ErrorKind::Tag, i2)) => {
+  //      format!("missing `ijkl` tag, found '{}' instead", str::from_utf8(i2).unwrap())
+  //    },
+  //    NodePosition(ErrorKind::Custom(42), i1, box NodePosition(ErrorKind::Custom(128), i2,  box Position(ErrorKind::Tag, i3))) => {
+  //      format!("missing `mnop` tag after `ijkl`, found '{}' instead", str::from_utf8(i3).unwrap())
+  //    },
+  //    _ => "unrecognized error".to_string()
+  //  }
+  //}
+  */
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[allow(unused_variables)]
@@ -649,10 +534,12 @@ mod tests {
       preceded!(
         tag!("efgh"),
         add_return_error!(
-          ErrorKind::Custom(42u32),
+          //ErrorKind::Custom(42u32),
+          ErrorKind::Char,
           do_parse!(
                  tag!("ijkl")                                     >>
-            res: add_return_error!(ErrorKind::Custom(128u32), tag!("mnop")) >>
+            //res: add_return_error!(ErrorKind::Custom(128u32), tag!("mnop")) >>
+            res: add_return_error!(ErrorKind::Eof, tag!("mnop")) >>
             (res)
           )
         )
@@ -669,10 +556,13 @@ mod tests {
     let res_c = err_test(c);
     assert_eq!(res_a,
                Err(Err::Error(error_node_position!(blah,
-                                                   ErrorKind::Custom(42u32),
+                                                   //ErrorKind::Custom(42u32),
+                                                   ErrorKind::Eof,
                                                    error_position!(blah, ErrorKind::Tag)))));
-    assert_eq!(res_b, Err(Err::Error(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42u32),
-      error_node_position!(blah, ErrorKind::Custom(128u32), error_position!(blah, ErrorKind::Tag))))));
+    //assert_eq!(res_b, Err(Err::Error(error_node_position!(&b"ijklblah"[..], ErrorKind::Custom(42u32),
+    //  error_node_position!(blah, ErrorKind::Custom(128u32), error_position!(blah, ErrorKind::Tag))))));
+    assert_eq!(res_b, Err(Err::Error(error_node_position!(&b"ijklblah"[..], ErrorKind::Eof,
+      error_node_position!(blah, ErrorKind::Eof, error_position!(blah, ErrorKind::Tag))))));
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
   }
 
@@ -699,18 +589,9 @@ mod tests {
     named!(tag_def, tag!("def"));
     named!( pair_abc_def<&[u8],(&[u8], &[u8])>, pair!(tag_abc, tag_def) );
 
-    assert_eq!(
-      pair_abc_def(&b"abcdefghijkl"[..]),
-      Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])))
-    );
-    assert_eq!(
-      pair_abc_def(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
-    assert_eq!(
-      pair_abc_def(&b"abcd"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
+    assert_eq!(pair_abc_def(&b"abcdefghijkl"[..]), Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..]))));
+    assert_eq!(pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(pair_abc_def(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(
       pair_abc_def(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -736,14 +617,8 @@ mod tests {
       sep_pair_abc_def(&b"abc,defghijkl"[..]),
       Ok((&b"ghijkl"[..], (&b"abc"[..], &b"def"[..])))
     );
-    assert_eq!(
-      sep_pair_abc_def(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
-    assert_eq!(
-      sep_pair_abc_def(&b"abc,d"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
+    assert_eq!(sep_pair_abc_def(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(sep_pair_abc_def(&b"abc,d"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(
       sep_pair_abc_def(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -764,18 +639,9 @@ mod tests {
     named!(tag_efgh, tag!("efgh"));
     named!( preceded_abcd_efgh<&[u8], &[u8]>, preceded!(tag_abcd, tag_efgh) );
 
-    assert_eq!(
-      preceded_abcd_efgh(&b"abcdefghijkl"[..]),
-      Ok((&b"ijkl"[..], &b"efgh"[..]))
-    );
-    assert_eq!(
-      preceded_abcd_efgh(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
-    assert_eq!(
-      preceded_abcd_efgh(&b"abcde"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
+    assert_eq!(preceded_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"efgh"[..])));
+    assert_eq!(preceded_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(preceded_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(
       preceded_abcd_efgh(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -796,18 +662,9 @@ mod tests {
     named!(tag_efgh, tag!("efgh"));
     named!( terminated_abcd_efgh<&[u8], &[u8]>, terminated!(tag_abcd, tag_efgh) );
 
-    assert_eq!(
-      terminated_abcd_efgh(&b"abcdefghijkl"[..]),
-      Ok((&b"ijkl"[..], &b"abcd"[..]))
-    );
-    assert_eq!(
-      terminated_abcd_efgh(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
-    assert_eq!(
-      terminated_abcd_efgh(&b"abcde"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
+    assert_eq!(terminated_abcd_efgh(&b"abcdefghijkl"[..]), Ok((&b"ijkl"[..], &b"abcd"[..])));
+    assert_eq!(terminated_abcd_efgh(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(terminated_abcd_efgh(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(4))));
     assert_eq!(
       terminated_abcd_efgh(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -829,32 +686,17 @@ mod tests {
     named!(tag_ghi, tag!("ghi"));
     named!( delimited_abc_def_ghi<&[u8], &[u8]>, delimited!(tag_abc, tag_def, tag_ghi) );
 
-    assert_eq!(
-      delimited_abc_def_ghi(&b"abcdefghijkl"[..]),
-      Ok((&b"jkl"[..], &b"def"[..]))
-    );
-    assert_eq!(
-      delimited_abc_def_ghi(&b"ab"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
-    assert_eq!(
-      delimited_abc_def_ghi(&b"abcde"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
-    assert_eq!(
-      delimited_abc_def_ghi(&b"abcdefgh"[..]),
-      Err(Err::Incomplete(Needed::Size(3)))
-    );
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefghijkl"[..]), Ok((&b"jkl"[..], &b"def"[..])));
+    assert_eq!(delimited_abc_def_ghi(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(delimited_abc_def_ghi(&b"abcdefgh"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(
       delimited_abc_def_ghi(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
     );
     assert_eq!(
       delimited_abc_def_ghi(&b"xxxdefghi"[..]),
-      Err(Err::Error(error_position!(
-        &b"xxxdefghi"[..],
-        ErrorKind::Tag
-      ),))
+      Err(Err::Error(error_position!(&b"xxxdefghi"[..], ErrorKind::Tag),))
     );
     assert_eq!(
       delimited_abc_def_ghi(&b"abcxxxghi"[..]),
@@ -871,15 +713,9 @@ mod tests {
     named!(tuple_3<&[u8], (u16, &[u8], &[u8]) >,
     tuple!( be_u16 , take!(3), tag!("fg") ) );
 
-    assert_eq!(
-      tuple_3(&b"abcdefgh"[..]),
-      Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])))
-    );
+    assert_eq!(tuple_3(&b"abcdefgh"[..]), Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..]))));
     assert_eq!(tuple_3(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(
-      tuple_3(&b"abcde"[..]),
-      Err(Err::Incomplete(Needed::Size(2)))
-    );
+    assert_eq!(tuple_3(&b"abcde"[..]), Err(Err::Incomplete(Needed::Size(2))));
     assert_eq!(
       tuple_3(&b"abcdejk"[..]),
       Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag)))
@@ -915,19 +751,10 @@ mod tests {
 
     //trace_macros!(false);
 
-    assert_eq!(
-      do_parser(&b"abcdabcdefghefghX"[..]),
-      Ok((&b"X"[..], (1, 2)))
-    );
+    assert_eq!(do_parser(&b"abcdabcdefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
     assert_eq!(do_parser(&b"abcdefghefghX"[..]), Ok((&b"X"[..], (1, 2))));
-    assert_eq!(
-      do_parser(&b"abcdab"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
-    assert_eq!(
-      do_parser(&b"abcdefghef"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
-    );
+    assert_eq!(do_parser(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(do_parser(&b"abcdefghef"[..]), Err(Err::Incomplete(Needed::Size(4))));
   }
 
   #[cfg_attr(rustfmt, rustfmt_skip)]
