@@ -44,7 +44,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 
 ## Applying a parser multiple times
 
-| combinatoer | usage | input | output | comment |
+| combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [count](https://docs.rs/nom/4.0.0/nom/macro.count.html) |`count!(take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", vec!("ab", "cd", "ef")) )`|applies the child parser a specified number of times|
 | [count_fixed](https://docs.rs/nom/4.0.0/nom/macro.count_fixed.html) |`count_fixed!(&[u8], take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", ["ab", "cd", "ef"]))`|applies the child parser a fixed number of times and returns a fixed size array. The type must be specified and it must be `Copy`|
