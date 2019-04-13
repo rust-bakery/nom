@@ -45,7 +45,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn many0c<Input, Output, Error: ParseError<Input>, F>(input: Input, mut f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn many0c<Input, Output, Error: ParseError<Input>, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + PartialEq + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -168,7 +168,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn many_tillc<Input, Output, P, Error: ParseError<Input>, F, G>(i: Input, mut f: F, mut g: G) -> IResult<Input, (Vec<Output>, P), Error>
+pub fn many_tillc<Input, Output, P, Error: ParseError<Input>, F, G>(i: Input, f: F, g: G) -> IResult<Input, (Vec<Output>, P), Error>
 where
   Input: Clone + PartialEq + InputLength + AtEof,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -255,7 +255,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn separated_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, sep: G, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
   F: FnMut(Input) -> IResult<Input, Output, Error>,
@@ -343,7 +343,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn separated_non_empty_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, mut sep: G, mut f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_non_empty_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, sep: G, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
   F: FnMut(Input) -> IResult<Input, Output, Error>,

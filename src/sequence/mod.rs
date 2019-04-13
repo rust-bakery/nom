@@ -106,7 +106,7 @@ where
 
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
-pub fn delimitedc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(input: I, mut first: F, mut sep: G, mut second: H) -> IResult<I, O2, E>
+pub fn delimitedc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(input: I, first: F, sep: G, second: H) -> IResult<I, O2, E>
 where
   F: FnMut(I) -> IResult<I, O1, E>,
   G: FnMut(I) -> IResult<I, O2, E>,

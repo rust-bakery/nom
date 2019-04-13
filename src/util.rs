@@ -1,11 +1,3 @@
-#[cfg(feature = "std")]
-use internal::{Err, IResult};
-
-#[cfg(feature = "std")]
-use std::collections::HashMap;
-
-#[cfg(feature = "alloc")]
-use lib::std::string::ToString;
 #[cfg(feature = "alloc")]
 use lib::std::vec::Vec;
 

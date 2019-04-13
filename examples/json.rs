@@ -7,8 +7,8 @@ extern crate jemallocator;
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use nom::{AsBytes, Err, ErrorKind, IResult, Offset, ParseError, VerboseError, VerboseErrorKind};
-use nom::{alphanumeric, recognize_float, take_while, delimitedc, char, tag, precededc, separated_listc, terminatedc, alt};
+use nom::{Err, ErrorKind, IResult, Offset, ParseError, VerboseError, VerboseErrorKind};
+use nom::{alphanumeric, recognize_float, take_while, char, tag, separated_listc, alt};
 use nom::{delimited, preceded, separated_list, terminated, context};
 use std::str;
 use std::iter::repeat;

@@ -75,7 +75,7 @@ pub trait ParseError<I>: Sized {
     other
   }
 
-  fn add_context(input: I, ctx: &'static str, other: Self) -> Self {
+  fn add_context(_input: I, _ctx: &'static str, other: Self) -> Self {
     other
   }
 }
