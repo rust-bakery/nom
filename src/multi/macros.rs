@@ -39,7 +39,7 @@ macro_rules! separated_nonempty_list(
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::separated_non_empty_listc($i, $f, $g)
+    $crate::separated_nonempty_listc($i, $f, $g)
   );
 );
 

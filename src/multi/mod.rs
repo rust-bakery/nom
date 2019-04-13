@@ -113,7 +113,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn many_till<Input, Output, P, Error: ParseError<Input>, F, G>(f: F, g: G) -> impl Fn(Input) -> IResult<Input, (Vec<Output>, P), Error>
 where
-  Input: Clone + PartialEq + InputLength + AtEof,
+  Input: Clone + PartialEq + AtEof,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(Input) -> IResult<Input, P, Error>,
 {
@@ -170,7 +170,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn many_tillc<Input, Output, P, Error: ParseError<Input>, F, G>(i: Input, f: F, g: G) -> IResult<Input, (Vec<Output>, P), Error>
 where
-  Input: Clone + PartialEq + InputLength + AtEof,
+  Input: Clone + PartialEq  + AtEof,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(Input) -> IResult<Input, P, Error>,
 {
@@ -181,72 +181,49 @@ where
 #[cfg(feature = "alloc")]
 pub fn separated_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(sep: G, f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength,
+  Input: Clone + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(Input) -> IResult<Input, Output2, Error>,
 {
   move |i: Input| {
-    let mut res = ::lib::std::vec::Vec::new();
-    let mut input = i.clone();
+    let mut res = Vec::new();
+    let mut i = i.clone();
 
-    // get the first element
-    let input_ = input.clone();
-    match f(input_) {
-      Err(Err::Error(_)) => Ok((input, res)),
-      Err(e) => Err(e),
-      Ok((i, o)) => {
-        if i.input_len() == input.input_len() {
-          Err(Err::Error(Error::from_error_kind(input, ErrorKind::SeparatedList)))
-        } else {
-          res.push(o);
-          input = i;
+    match f(i.clone()) {
+      Err(Err::Error(_)) => return Ok((i, res)),
+      Err(e)=> return Err(e),
+      Ok((i1, o)) => {
+        if i1 == i {
+          return Err(Err::Error(Error::from_error_kind(i1, ErrorKind::SeparatedList)));
+        }
 
-          let ret;
+        res.push(o);
+        i = i1;
+      }
+    }
 
-          loop {
-            // get the separator first
-            let input_ = input.clone();
-            match sep(input_) {
-              Err(Err::Error(_)) => {
-                ret = Ok((input, res));
-                break;
-              }
-              Err(e) => {
-                ret = Err(e);
-                break;
-              }
-              Ok((i2, _)) => {
-                let i2_len = i2.input_len();
-                if i2_len == input.input_len() {
-                  ret = Ok((input, res));
-                  break;
-                }
-
-                // get the element next
-                match f(i2) {
-                  Err(Err::Error(_)) => {
-                    ret = Ok((input, res));
-                    break;
-                  }
-                  Err(e) => {
-                    ret = Err(e);
-                    break;
-                  }
-                  Ok((i3, o3)) => {
-                    if i3.input_len() == i2_len {
-                      ret = Ok((input, res));
-                      break;
-                    }
-                    res.push(o3);
-                    input = i3;
-                  }
-                }
-              }
-            }
+    loop {
+      match sep(i.clone()) {
+        Err(Err::Error(_)) => return Ok((i, res)),
+        Err(e) => return Err(e),
+        Ok((i1, _)) => {
+          if i1 == i {
+            return Ok((i, res));
           }
 
-          ret
-        }
+          match f(i1.clone()) {
+            Err(Err::Error(_)) => return Ok((i, res)),
+            Err(e) => return Err(e),
+            Ok((i2, o)) => {
+              if i2 == i {
+                return Ok((i2, res));
+              }
+
+              res.push(o);
+              i = i2;
+            }
+          }
+        }  
       }
     }
   }
@@ -257,7 +234,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn separated_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, sep: G, f: F) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength,
+  Input: Clone + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(Input) -> IResult<Input, Output2, Error>,
 {
@@ -266,74 +243,51 @@ where
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn separated_non_empty_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(sep: G, f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_nonempty_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(sep: G, f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength,
+  Input: Clone + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(Input) -> IResult<Input, Output2, Error>,
 {
   move |i: Input| {
-    let mut res = ::lib::std::vec::Vec::new();
-    let mut input = i.clone();
+    let mut res = Vec::new();
+    let mut i = i.clone();
 
-    // get the first element
-    let input_ = input.clone();
-    match f(input_) {
-      Err(e) => Err(e),
-      Ok((i, o)) => {
-        if i.input_len() == input.input_len() {
-          let e = ErrorKind::SeparatedNonEmptyList;
-          Err(Err::Error(Error::from_error_kind(input, e)))
-        } else {
-          res.push(o);
-          input = i;
+    // Parse the first element
+    match f(i.clone()) {
+      Err(e)=> return Err(e),
+      Ok((i1, o)) => {
+        if i1 == i {
+          return Err(Err::Error(Error::from_error_kind(i1, ErrorKind::SeparatedList)));
+        }
 
-          let ret;
+        res.push(o);
+        i = i1;
+      }
+    }
 
-          loop {
-            // get the separator first
-            let input_ = input.clone();
-            match sep(input_) {
-              Err(Err::Error(_)) => {
-                ret = Ok((input, res));
-                break;
-              }
-              Err(e) => {
-                ret = Err(e);
-                break;
-              }
-              Ok((i2, _)) => {
-                let i2_len = i2.input_len();
-                if i2_len == input.input_len() {
-                  ret = Ok((input, res));
-                  break;
-                }
-
-                // get the element next
-                match f(i2) {
-                  Err(Err::Error(_)) => {
-                    ret = Ok((input, res));
-                    break;
-                  }
-                  Err(e) => {
-                    ret = Err(e);
-                    break;
-                  }
-                  Ok((i3, o3)) => {
-                    if i3.input_len() == i2_len {
-                      ret = Ok((input, res));
-                      break;
-                    }
-                    res.push(o3);
-                    input = i3;
-                  }
-                }
-              }
-            }
+    loop {
+      match sep(i.clone()) {
+        Err(Err::Error(_)) => return Ok((i, res)),
+        Err(e) => return Err(e),
+        Ok((i1, _)) => {
+          if i1 == i {
+            return Ok((i, res));
           }
 
-          ret
-        }
+          match f(i1.clone()) {
+            Err(Err::Error(_)) => return Ok((i, res)),
+            Err(e) => return Err(e),
+            Ok((i2, o)) => {
+              if i2 == i {
+                return Ok((i2, res));
+              }
+
+              res.push(o);
+              i = i2;
+            }
+          }
+        }  
       }
     }
   }
@@ -343,20 +297,20 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn separated_non_empty_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, sep: G, f: F) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_nonempty_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, sep: G, f: F) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength,
+  Input: Clone + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(Input) -> IResult<Input, Output2, Error>,
 {
-  separated_non_empty_list(sep, f)(i)
+  separated_nonempty_list(sep, f)(i)
 }
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many_m_n<Input, Output, Error: ParseError<Input>, F>(m: usize, n: usize, f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength + AtEof,
+  Input: Clone + PartialEq + AtEof,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |i: Input| {
@@ -375,7 +329,7 @@ where
       match f(_i) {
         Ok((i, o)) => {
           // do not allow parsers that do not consume input (causes infinite loops)
-          if i.input_len() == input.input_len() {
+          if i == input {
             break;
           }
           res.push(o);
@@ -427,7 +381,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn many_m_nc<Input, Output, Error: ParseError<Input>, F>(i: Input, m: usize, n: usize, f: F) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength + AtEof,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   many_m_n(m, n, f)(i)
@@ -436,7 +390,7 @@ where
 //FIXME: streaming
 pub fn many0_count<Input, Output, Error: ParseError<Input>, F>(f: F) -> impl Fn(Input) -> IResult<Input, usize, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |i: Input| {
@@ -470,7 +424,7 @@ where
 #[doc(hidden)]
 pub fn many0_countc<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F) -> IResult<Input, usize, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   many0_count(f)(i)
@@ -479,7 +433,7 @@ where
 //FIXME: streaming
 pub fn many1_count<Input, Output, Error: ParseError<Input>, F>(f: F) -> impl Fn(Input) -> IResult<Input, usize, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |i: Input| {
@@ -514,7 +468,7 @@ where
 #[doc(hidden)]
 pub fn many1_countc<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F) -> IResult<Input, usize, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   many1_count(f)(i)
@@ -523,7 +477,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn count<Input, Output, Error: ParseError<Input>, F>(f: F, count: usize) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |i: Input | {
@@ -556,7 +510,7 @@ where
 //FIXME: streaming
 pub fn fold_many0<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(f: F, init: R, g: G) -> impl Fn(Input) -> IResult<Input, R, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(R, Output) -> R,
 {
@@ -593,7 +547,7 @@ where
 //FIXME: streaming
 pub fn fold_many1<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(f: F, init: R, g: G) -> impl Fn(Input) -> IResult<Input, R, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(R, Output) -> R,
 {
@@ -619,7 +573,7 @@ where
               return Err(Err::Failure(e));
             }
             Ok((i, o)) => {
-              if i.input_len() == input.input_len() {
+              if i == input {
                 if !i.at_eof() {
                   return Err(Err::Failure(Error::from_error_kind(i, ErrorKind::Many1)));
                 }
@@ -640,7 +594,7 @@ where
 #[doc(hidden)]
 pub fn fold_many1c<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(i: Input, f: F, init: R, g: G) -> IResult<Input, R, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(R, Output) -> R,
 {
@@ -650,7 +604,7 @@ where
 //FIXME: streaming
 pub fn fold_many_m_n<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(Input) ->IResult<Input, R, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(R, Output) -> R,
 {
@@ -662,7 +616,7 @@ where
       match f(_input) {
         Ok((i, o)) => {
           // do not allow parsers that do not consume input (causes infinite loops)
-          if i.input_len() == input.input_len() {
+          if i == input {
             if count < m {
               return Err(Err::Incomplete(Needed::Unknown));
             } else {
@@ -692,7 +646,7 @@ where
 #[doc(hidden)]
 pub fn fold_many_m_nc<Input, Output, Error: ParseError<Input>, F, G, R: Clone>(i: Input, m: usize, n: usize, f: F, init: R, g: G) -> IResult<Input, R, Error>
 where
-  Input: Clone + InputLength + AtEof + PartialEq,
+  Input: Clone + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
   G: Fn(R, Output) -> R,
 {
