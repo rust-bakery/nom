@@ -90,12 +90,11 @@ where
   separated_pair(first, sep, second)(input)
 }
 
-// needs FnMut because fold_many0 in tests/reborrow_fold.rs will not compile otherwise
-pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(mut first: F, mut sep: G, mut second: H) -> impl FnMut(I) -> IResult<I, O2, E>
+pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(first: F, sep: G, second: H) -> impl Fn(I) -> IResult<I, O2, E>
 where
-  F: FnMut(I) -> IResult<I, O1, E>,
-  G: FnMut(I) -> IResult<I, O2, E>,
-  H: FnMut(I) -> IResult<I, O3, E>,
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(I) -> IResult<I, O2, E>,
+  H: Fn(I) -> IResult<I, O3, E>,
 {
   move |input: I| {
     let (input, _) = first(input)?;
@@ -108,9 +107,9 @@ where
 #[doc(hidden)]
 pub fn delimitedc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(input: I, first: F, sep: G, second: H) -> IResult<I, O2, E>
 where
-  F: FnMut(I) -> IResult<I, O1, E>,
-  G: FnMut(I) -> IResult<I, O2, E>,
-  H: FnMut(I) -> IResult<I, O3, E>,
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(I) -> IResult<I, O2, E>,
+  H: Fn(I) -> IResult<I, O3, E>,
 {
   delimited(first, sep, second)(input)
 }

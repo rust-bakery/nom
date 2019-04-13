@@ -9,10 +9,10 @@ use util::ErrorKind;
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many0<Input, Output, Error: ParseError<Input>, F>(mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn many0<Input, Output, Error: ParseError<Input>, F>(f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + PartialEq + AtEof,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |mut input: Input| {
     let mut acc = ::lib::std::vec::Vec::with_capacity(4);
@@ -48,7 +48,7 @@ where
 pub fn many0c<Input, Output, Error: ParseError<Input>, F>(input: Input, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + PartialEq + AtEof,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   many0(f)(input)
 }
@@ -111,11 +111,11 @@ where
 //FIXME: streaming
 /// `many_till!(Input -> IResult<Input,Output>, Input -> IResult<Input,P>) => Input -> IResult<Input, (Vec<Output>, P)>`
 #[cfg(feature = "alloc")]
-pub fn many_till<Input, Output, P, Error: ParseError<Input>, F, G>(mut f: F, mut g: G) -> impl FnOnce(Input) -> IResult<Input, (Vec<Output>, P), Error>
+pub fn many_till<Input, Output, P, Error: ParseError<Input>, F, G>(f: F, g: G) -> impl Fn(Input) -> IResult<Input, (Vec<Output>, P), Error>
 where
   Input: Clone + PartialEq + InputLength + AtEof,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(Input) -> IResult<Input, P, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(Input) -> IResult<Input, P, Error>,
 {
   move |i: Input| {
     let ret;
@@ -171,19 +171,19 @@ where
 pub fn many_tillc<Input, Output, P, Error: ParseError<Input>, F, G>(i: Input, f: F, g: G) -> IResult<Input, (Vec<Output>, P), Error>
 where
   Input: Clone + PartialEq + InputLength + AtEof,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(Input) -> IResult<Input, P, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(Input) -> IResult<Input, P, Error>,
 {
   many_till(f, g)(i)
 }
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn separated_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(mut sep: G, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(sep: G, f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(Input) -> IResult<Input, Output2, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(Input) -> IResult<Input, Output2, Error>,
 {
   move |i: Input| {
     let mut res = ::lib::std::vec::Vec::new();
@@ -258,19 +258,19 @@ where
 pub fn separated_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, sep: G, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(Input) -> IResult<Input, Output2, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(Input) -> IResult<Input, Output2, Error>,
 {
   separated_list(sep, f)(i)
 }
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn separated_non_empty_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(mut sep: G, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn separated_non_empty_list<Input, Output, Output2, Error: ParseError<Input>, F, G>(sep: G, f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(Input) -> IResult<Input, Output2, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(Input) -> IResult<Input, Output2, Error>,
 {
   move |i: Input| {
     let mut res = ::lib::std::vec::Vec::new();
@@ -346,18 +346,18 @@ where
 pub fn separated_non_empty_listc<Input, Output, Output2, Error: ParseError<Input>, F, G>(i: Input, sep: G, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(Input) -> IResult<Input, Output2, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(Input) -> IResult<Input, Output2, Error>,
 {
   separated_non_empty_list(sep, f)(i)
 }
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]
-pub fn many_m_n<Input, Output, Error: ParseError<Input>, F>(m: usize, n: usize, mut f: F) -> impl FnOnce(Input) -> IResult<Input, Vec<Output>, Error>
+pub fn many_m_n<Input, Output, Error: ParseError<Input>, F>(m: usize, n: usize, f: F) -> impl Fn(Input) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |i: Input| {
     let mut res = ::lib::std::vec::Vec::with_capacity(m);
@@ -428,16 +428,16 @@ where
 pub fn many_m_nc<Input, Output, Error: ParseError<Input>, F>(i: Input, m: usize, n: usize, f: F) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   many_m_n(m, n, f)(i)
 }
 
 //FIXME: streaming
-pub fn many0_count<Input, Output, Error: ParseError<Input>, F>(i: Input, mut f: F) -> IResult<Input, usize, Error>
+pub fn many0_count<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F) -> IResult<Input, usize, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   let ret;
   let mut count: usize = 0;
@@ -476,10 +476,10 @@ where
 }
 
 //FIXME: streaming
-pub fn many1_count<Input, Output, Error: ParseError<Input>, F>(i: Input, mut f: F) -> IResult<Input, usize, Error>
+pub fn many1_count<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F) -> IResult<Input, usize, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   let i_ = i.clone();
   match f(i_) {
@@ -522,10 +522,10 @@ where
 }
 
 #[cfg(feature = "alloc")]
-pub fn count<Input, Output, Error: ParseError<Input>, F>(i: Input, mut f: F, count: usize) -> IResult<Input, Vec<Output>, Error>
+pub fn count<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F, count: usize) -> IResult<Input, Vec<Output>, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
 {
   let ret;
   let mut input = i.clone();
@@ -562,11 +562,11 @@ where
 }
 
 //FIXME: streaming
-pub fn fold_many0<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+pub fn fold_many0<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, f: F, init: R, g: G) -> IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(R, Output) -> R,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(R, Output) -> R,
 {
   let ret;
   let mut res = init;
@@ -604,11 +604,11 @@ where
 }
 
 //FIXME: streaming
-pub fn fold_many1<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+pub fn fold_many1<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, f: F, init: R, g: G) -> IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(R, Output) -> R,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(R, Output) -> R,
 {
   let _i = i.clone();
   match f(_i) {
@@ -659,11 +659,11 @@ where
 }
 
 //FIXME: streaming
-pub fn fold_many_m_n<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, m: usize, n: usize, mut f: F, init: R, mut g: G) -> IResult<Input, R, Error>
+pub fn fold_many_m_n<Input, Output, Error: ParseError<Input>, F, G, R>(i: Input, m: usize, n: usize, f: F, init: R, g: G) -> IResult<Input, R, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
-  G: FnMut(R, Output) -> R,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  G: Fn(R, Output) -> R,
 {
   let mut acc = init;
   let mut input = i.clone();
