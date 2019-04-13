@@ -11,7 +11,10 @@ where
 {
   move |i: I| {
     match f(i.clone()) {
-      Err(Err::Error(e)) => g(i),
+      Err(Err::Error(e)) => g(i).map_err(|e2| match e2 {
+        Err::Error(e2) => Err::Error(e.or(e2)),
+        e2 => e2,
+      }),
       res => res
     }
   }
