@@ -911,7 +911,7 @@ macro_rules! take_until_either1 (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::be_u8;
+/// # use nom::number::be_u8;
 /// # fn main() {
 ///  named!(with_length, length_bytes!( be_u8 ));
 ///  let r = with_length(&b"\x05abcdefgh"[..]);
@@ -1622,7 +1622,7 @@ mod tests {
 
   #[test]
   fn length_bytes() {
-    use nom::le_u8;
+    use number::le_u8;
     named!(x, length_bytes!(le_u8));
     assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));

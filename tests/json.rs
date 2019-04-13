@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{is_alphanumeric, recognize_float};
+use nom::{is_alphanumeric, number::recognize_float};
 
 use std::str;
 use std::collections::HashMap;

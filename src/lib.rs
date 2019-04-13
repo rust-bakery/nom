@@ -285,7 +285,7 @@
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
-//! use nom::{ErrorKind, Needed,be_u16};
+//! use nom::{ErrorKind, Needed, number::be_u16};
 //!
 //! named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
 //!   tuple!(
@@ -458,5 +458,8 @@ pub mod whitespace;
 mod regexp;
 
 mod str;
+
+#[macro_use]
+pub mod number;
 
 pub mod types;

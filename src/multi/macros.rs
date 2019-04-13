@@ -600,7 +600,8 @@ mod tests {
   use lib::std::str::{self, FromStr};
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
-  use nom::{be_u16, be_u8, digit, le_u16};
+  use nom::digit;
+  use number::{be_u16, be_u8, le_u16};
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
