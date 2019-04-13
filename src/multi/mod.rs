@@ -434,45 +434,46 @@ where
 }
 
 //FIXME: streaming
-pub fn many0_count<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F) -> IResult<Input, usize, Error>
+pub fn many0_count<Input, Output, Error: ParseError<Input>, F>(f: F) -> impl Fn(Input) -> IResult<Input, usize, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
-  let ret;
-  let mut count: usize = 0;
-  let mut input = i.clone();
+  move |i: Input| {
+    let mut input = i.clone();
+    let mut count = 0;
 
-  loop {
-    let input_ = input.clone();
-    match f(input_) {
-      Ok((i, _)) => {
-        //  loop trip must always consume (otherwise infinite loops)
-        if i == input {
-          if i.at_eof() {
-            ret = Ok((input, count));
-          } else {
-            ret = Err(Err::Error(Error::from_error_kind(input, ErrorKind::Many0Count)));
+    loop {
+      let input_ = input.clone();
+      match f(input_) {
+        Ok((i, _)) => {
+          //  loop trip must always consume (otherwise infinite loops)
+          if i == input {
+            return if i.at_eof() {
+              Ok((input, count))
+            } else {
+              Err(Err::Error(Error::from_error_kind(input, ErrorKind::Many0Count)))
+            }
           }
-          break;
+          input = i;
+          count += 1;
         }
-        count += 1;
-        input = i;
-      }
 
-      Err(Err::Error(_)) => {
-        ret = Ok((input, count));
-        break;
-      }
+        Err(Err::Error(_)) => return Ok((input, count)),
 
-      Err(e) => {
-        ret = Err(e);
-        break;
+        Err(e) => return Err(e),
       }
     }
   }
+}
 
-  ret
+#[doc(hidden)]
+pub fn many0_countc<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F) -> IResult<Input, usize, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+{
+  many0_count(f)(i)
 }
 
 //FIXME: streaming
@@ -700,12 +701,12 @@ where
   fold_many_m_n(m, n, f, init, g)(i)
 }
 
-pub fn length_value<Input, Output, N, Error: ParseError<Input>, F, G>(mut f: F, mut g: G) -> impl FnOnce(Input) -> IResult<Input, Output, Error>
+pub fn length_value<Input, Output, N, Error: ParseError<Input>, F, G>(f: F, g: G) -> impl Fn(Input) -> IResult<Input, Output, Error>
 where
   Input: Clone + InputLength + InputTake,
   N: Copy + Into<usize>,
-  F: FnMut(Input) -> IResult<Input, N, Error>,
-  G: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, N, Error>,
+  G: Fn(Input) -> IResult<Input, Output, Error>,
 {
   move |i: Input| {
     let (i, length) = f(i)?;
@@ -724,12 +725,12 @@ where
 }
 
 #[doc(hidden)]
-pub fn length_valuec<Input, Output, N, Error: ParseError<Input>, F, G>(i: Input, mut f: F, mut g: G) -> IResult<Input, Output, Error>
+pub fn length_valuec<Input, Output, N, Error: ParseError<Input>, F, G>(i: Input, f: F, g: G) -> IResult<Input, Output, Error>
 where
   Input: Clone + InputLength + InputTake,
   N: Copy + Into<usize>,
-  F: FnMut(Input) -> IResult<Input, N, Error>,
-  G: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Fn(Input) -> IResult<Input, N, Error>,
+  G: Fn(Input) -> IResult<Input, Output, Error>,
 {
   length_value(f, g)(i)
 }

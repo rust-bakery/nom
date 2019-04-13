@@ -254,11 +254,11 @@ macro_rules! many_m_n(
 #[macro_export]
 macro_rules! many0_count {
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    many0_count!($i, |i| $submac!(i, $($args)*))
+    $crate::many0_countc($i, |i| $submac!(i, $($args)*))
   );
 
   ($i:expr, $f:expr) => (
-    $crate::many0_count($i, $f)
+    $crate::many0_countc($i, $f)
   );
 }
 
