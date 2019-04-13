@@ -477,49 +477,47 @@ where
 }
 
 //FIXME: streaming
-pub fn many1_count<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F) -> IResult<Input, usize, Error>
+pub fn many1_count<Input, Output, Error: ParseError<Input>, F>(f: F) -> impl Fn(Input) -> IResult<Input, usize, Error>
 where
   Input: Clone + InputLength + AtEof + PartialEq,
   F: Fn(Input) -> IResult<Input, Output, Error>,
 {
-  let i_ = i.clone();
-  match f(i_) {
-    Err(Err::Error(_)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Many1Count))),
-    Err(Err::Failure(_)) => Err(Err::Failure(Error::from_error_kind(i, ErrorKind::Many1Count))),
-    Err(i) => Err(i),
-    Ok((i1, _)) => {
-      let mut count: usize = 1;
-      let mut input = i1;
-      let mut error = None;
+  move |i: Input| {
+    let i_ = i.clone();
+    match f(i_) {
+      Err(Err::Error(_)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Many1Count))),
+      Err(Err::Failure(_)) => Err(Err::Failure(Error::from_error_kind(i, ErrorKind::Many1Count))),
+      Err(i) => Err(i),
+      Ok((i1, _)) => {
+        let mut count = 1;
+        let mut input = i1;
 
-      loop {
-        let input_ = input.clone();
-        match f(input_) {
-          Err(Err::Error(_)) => {
-            break;
-          }
-
-          Err(e) => {
-            error = Some(e);
-            break;
-          }
-
-          Ok((i, _)) => {
-            if i.input_len() == input.input_len() {
-              break;
+        loop {
+          let input_ = input.clone();
+          match f(input_) {
+            Err(Err::Error(_)) => return Ok((input, count)),
+            Err(e) => return Err(e),
+            Ok((i, _)) => {
+              if i == input{
+                return Ok((input, count));
+              }
+              count += 1;
+              input = i;
             }
-            count += 1;
-            input = i;
           }
         }
       }
-
-      match error {
-        Some(e) => Err(e),
-        None => Ok((input, count)),
-      }
     }
   }
+}
+
+#[doc(hidden)]
+pub fn many1_countc<Input, Output, Error: ParseError<Input>, F>(i: Input, f: F) -> IResult<Input, usize, Error>
+where
+  Input: Clone + InputLength + AtEof + PartialEq,
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+{
+  many1_count(f)(i)
 }
 
 #[cfg(feature = "alloc")]
