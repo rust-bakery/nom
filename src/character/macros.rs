@@ -1,8 +1,4 @@
 /// Character level parsers
-use internal::{IResult, Needed, ParseError};
-use lib::std::ops::RangeFrom;
-use traits::{need_more, AtEof};
-use traits::{AsChar, InputIter, InputLength, Slice};
 
 /// matches one of the provided characters
 ///
@@ -19,7 +15,7 @@ use traits::{AsChar, InputIter, InputLength, Slice};
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! one_of (
-  ($i:expr, $inp: expr) => ( $crate::one_of($inp)($i) );
+  ($i:expr, $inp: expr) => ( $crate::character::one_of($inp)($i) );
 );
 
 /// matches anything but the provided characters
@@ -38,7 +34,7 @@ macro_rules! one_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! none_of (
-  ($i:expr, $inp: expr) => ( $crate::none_of($inp)($i) );
+  ($i:expr, $inp: expr) => ( $crate::character::none_of($inp)($i) );
 );
 
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
@@ -56,34 +52,8 @@ macro_rules! none_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! char (
-  ($i:expr, $c: expr) => ( $crate::char($c)($i) );
+  ($i:expr, $c: expr) => ( $crate::character::char($c)($i) );
 );
-
-/// matches one byte as a character. Note that the input type will
-/// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
-///
-/// # Example
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::{anychar, ErrorKind};
-/// # fn main() {
-/// assert_eq!(anychar::<_,(&str, ErrorKind)>("abc"), Ok(("bc",'a')));
-/// # }
-/// ```
-pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
-where
-  T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
-  <T as InputIter>::Item: AsChar,
-{
-  let mut it = input.iter_indices();
-  match it.next() {
-    None => need_more(input, Needed::Size(1)),
-    Some((_, c)) => match it.next() {
-      None => Ok((input.slice(input.input_len()..), c.as_char())),
-      Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
-    },
-  }
-}
 
 #[cfg(test)]
 mod tests {
@@ -150,11 +120,5 @@ mod tests {
 
     let b = CompleteStr("cde");
     assert_eq!(f(b), Ok((CompleteStr("de"), 'c')));
-  }
-
-  #[test]
-  fn anychar_str() {
-    use super::anychar;
-    assert_eq!(anychar::<_, (&str, ErrorKind)>("Ә"), Ok(("", 'Ә')));
   }
 }

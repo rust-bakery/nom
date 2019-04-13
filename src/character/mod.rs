@@ -1,13 +1,16 @@
 #[macro_use]
 mod macros;
 
-pub use self::macros::anychar;
+pub mod streaming;
+pub mod complete;
 
 use internal::{Err, IResult, Needed, ParseError};
 use ::lib::std::ops::RangeFrom;
 use traits::{need_more, AsChar, AtEof, FindToken, InputIter, Slice};
 use util::ErrorKind;
 
+// backward compatible version that can handle streaming and complete versions at the same time
+#[doc(hidden)]
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter + AtEof,
@@ -26,7 +29,8 @@ where
   }
 }
 
-
+// backward compatible version that can handle streaming and complete versions at the same time
+#[doc(hidden)]
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter + AtEof,
@@ -40,6 +44,8 @@ where
   }
 }
 
+// backward compatible version that can handle streaming and complete versions at the same time
+#[doc(hidden)]
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter + AtEof,

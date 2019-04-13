@@ -412,7 +412,6 @@ pub use self::sequence::*;
 pub use self::bits::*;
 pub use self::bytes::*;
 
-pub use self::character::*;
 pub use self::nom::*;
 
 pub use self::whitespace::*;
@@ -447,7 +446,7 @@ mod bytes;
 pub mod bits;
 
 #[macro_use]
-mod character;
+pub mod character;
 #[macro_use]
 mod nom;
 
