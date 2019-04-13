@@ -62,33 +62,32 @@ where
   F: Fn(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
-  move |input: I| {
-    let input_ = input.clone();
-    match f(input_) {
-      Err(_) => return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many1))),
-      Ok((i2, o)) => {
+  move |i: I| {
+    let mut i = i.clone();
+    match f(i.clone()) {
+      Err(_) => return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
+      Ok((i1, o)) => {
         let mut acc = ::lib::std::vec::Vec::with_capacity(4);
         acc.push(o);
-        let mut input = i2;
+        i = i1;
 
         loop {
-          let input_ = input.clone();
-          match f(input_) {
-            Err(Err::Error(_)) => return Ok((input, acc)),
+          match f(i.clone()) {
+            Err(Err::Error(_)) => return Ok((i, acc)),
             Err(Err::Failure(e)) => return Err(Err::Failure(e)),
             Err(Err::Incomplete(n)) => {
-              if input.at_eof() {
-                return Ok((input, acc));
+              if i.at_eof() {
+                return Ok((i, acc));
               } else {
                 return Err(Err::Incomplete(n));
               }
             }
-            Ok((i, o)) => {
-              if i == input {
+            Ok((i1, o)) => {
+              if i1 == i {
                 return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
               }
 
-              input = i;
+              i = i1;
               acc.push(o);
             }
           }
@@ -122,49 +121,31 @@ where
   E: ParseError<I>,
 {
   move |i: I| {
-    let ret;
     let mut res = ::lib::std::vec::Vec::new();
-    let mut input = i.clone();
-
+    let mut i = i.clone();
     loop {
-      let _input = input.clone();
-      let _input2 = input.clone();
-
-      match g(_input) {
-        Ok((i, o)) => {
-          ret = Ok((i, (res, o)));
-          break;
-        }
+      match g(i.clone()) {
+        Ok((i1, o)) => return Ok((i1, (res, o))),
         Err(_) => {
-          match f(_input2) {
-            Err(Err::Error(err)) => {
+          match f(i.clone()) {
+            Err(Err::Error(err)) =>
               //fn unify_types<T>(_: &T, _: &T) {}
-              let e = Err::Error(E::append(input, ErrorKind::ManyTill, err));
+              return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
               //unify_types(&e1, &e);
-
-              ret = Err(e);
-              break;
-            }
-            Err(e) => {
-              ret = Err(e);
-              break;
-            }
-            Ok((i, o)) => {
+            Err(e) => return Err(e),
+            Ok((i1, o)) => {
               // loop trip must always consume (otherwise infinite loops)
-              if i == input {
-                ret = Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyTill)));
-                break;
+              if i1 == i {
+                return Err(Err::Error(E::from_error_kind(i1, ErrorKind::ManyTill)));
               }
 
               res.push(o);
-              input = i;
+              i = i1;
             }
           }
         }
       }
     }
-
-    ret
   }
 }
 
