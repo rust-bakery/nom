@@ -7,6 +7,10 @@ use traits::{need_more, AtEof, InputLength, InputTake};
 use ::lib::std::vec::Vec;
 use util::ErrorKind;
 
+/// Repeats the embedded parser until it fails
+/// and returns the results in a `Vec`.
+/// # Arguments
+/// * `f` The parser to apply.
 //FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many0<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
@@ -54,11 +58,17 @@ where
   many0(f)(input)
 }
 
+/// Runs the embedded parser until it fails and
+/// returns the results in a `Vec`. Fails if
+/// the embedded parser does not produce at least
+/// one result.
+/// # Arguments
+/// * `f` The parser to apply.
 //FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many1<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + Copy + AtEof + PartialEq,
+  I: Clone + AtEof + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
@@ -110,6 +120,9 @@ where
   many1(f)(input)
 }
 
+/// Applies the parser `f` until the parser `g` produces
+/// a result. Returns a pair consisting of the results of
+/// `f` in a `Vec` and the result of `g`.
 //FIXME: streaming
 /// `many_till!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (Vec<O>, P)>`
 #[cfg(feature = "alloc")]
@@ -163,6 +176,11 @@ where
   many_till(f, g)(i)
 }
 
+/// Alternates between two parsers to produce
+/// a list of elements.
+/// # Arguments
+/// * `f` Parses the elements of the list.
+/// * `sep` Parses the separator between list elements.
 //FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn separated_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
@@ -229,6 +247,12 @@ where
   separated_list(sep, f)(i)
 }
 
+/// Alternates between two parsers to produce
+/// a list of elements. Fails if the element
+/// parser does not produce at least one element.
+/// # Arguments
+/// * `f` Parses the elements of the list.
+/// * `sep` Parses the separator between list elements.
 //FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn separated_nonempty_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
@@ -296,6 +320,13 @@ where
   separated_nonempty_list(sep, f)(i)
 }
 
+/// Repeats the embedded parser `n` times or until it fails
+/// and returns the results in a `Vec`. Fails if the
+/// embedded parser does not succeed at least `m` times.
+/// # Arguments
+/// * `m` The minimum number of iterations.
+/// * `n` The maximum number of iterations.
+/// * `f` The parser to apply.
 //FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many_m_n<I, O, E, F>(m: usize, n: usize, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
@@ -379,6 +410,10 @@ where
   many_m_n(m, n, f)(i)
 }
 
+/// Repeats the embedded parser until it fails
+/// and returns the number of successful iterations.
+/// # Arguments
+/// * `f` The parser to apply.
 //FIXME: streaming
 pub fn many0_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
 where
@@ -424,6 +459,12 @@ where
   many0_count(f)(i)
 }
 
+/// Repeats the embedded parser until it fails
+/// and returns the number of successful iterations.
+/// Fails if the embedded parser does not succeed
+/// at least once.
+/// # Arguments
+/// * `f` The parser to apply.
 //FIXME: streaming
 pub fn many1_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
 where
@@ -470,6 +511,11 @@ where
   many1_count(f)(i)
 }
 
+/// Runs the embedded parser a specified number
+/// of times. Returns the results in a `Vec`.
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `count` How often to apply the parser.
 #[cfg(feature = "alloc")]
 pub fn count<I, O, E, F>(f: F, count: usize) -> impl Fn(I) -> IResult<I, Vec<O>, E>
 where
@@ -504,6 +550,14 @@ where
     Ok((input, res))
   }
 }
+
+/// Applies a parser until it fails and accumulates
+/// the results using a given function and initial value.
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `init` The initial value.
+/// * `g` The function that combines a result of `f` with
+///       the current accumulator.
 //FIXME: streaming
 pub fn fold_many0<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
 where
@@ -543,6 +597,15 @@ where
   }
 }
 
+/// Applies a parser until it fails and accumulates
+/// the results using a given function and initial value.
+/// Fails if the embedded parser does not succeed at least
+/// once.
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `init` The initial value.
+/// * `g` The function that combines a result of `f` with
+///       the current accumulator.
 //FIXME: streaming
 pub fn fold_many1<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
 where
@@ -604,6 +667,17 @@ where
   fold_many1(f, init, g)(i)
 }
 
+/// Applies a parser `n` times or until it fails and accumulates
+/// the results using a given function and initial value.
+/// Fails if the embedded parser does not succeed at least `m`
+/// times.
+/// # Arguments
+/// * `m` The minimum number of iterations.
+/// * `n` The maximum number of iterations.
+/// * `f` The parser to apply.
+/// * `init` The initial value.
+/// * `g` The function that combines a result of `f` with
+///       the current accumulator.
 //FIXME: streaming
 pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(I) ->IResult<I, R, E>
 where
