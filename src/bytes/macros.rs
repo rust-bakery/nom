@@ -19,7 +19,7 @@
 #[macro_export(local_inner_macros)]
 macro_rules! tag (
   ($i:expr, $tag: expr) => ({
-    $crate::tag($tag)($i)
+    $crate::bytes::streaming::tag($tag)($i)
   });
 );
 
@@ -41,8 +41,7 @@ macro_rules! tag (
 #[macro_export(local_inner_macros)]
 macro_rules! tag_no_case (
   ($i:expr, $tag: expr) => ({
-    let res: $crate::IResult<_, _, _> = $crate::tag_no_case($tag)($i);
-    res
+    $crate::bytes::streaming::tag_no_case($tag)($i)
   });
 );
 
@@ -62,8 +61,7 @@ macro_rules! tag_no_case (
 #[macro_export(local_inner_macros)]
 macro_rules! is_not (
   ($input:expr, $arr:expr) => ({
-    let res: $crate::IResult<_, _, _> = $crate::is_not($arr)($input);
-    res
+    $crate::bytes::streaming::is_not($arr)($input)
   });
 );
 
@@ -86,8 +84,7 @@ macro_rules! is_not (
 #[macro_export(local_inner_macros)]
 macro_rules! is_a (
   ($input:expr, $arr:expr) => ({
-    let res: $crate::IResult<_, _, _> = $crate::is_a($arr)($input);
-    res
+    $crate::bytes::streaming::is_a($arr)($input)
   });
 );
 
@@ -374,7 +371,7 @@ macro_rules! take_while (
     res
   });
   ($input:expr, $f:expr) => (
-    $crate::take_while($f)($input)
+    $crate::bytes::streaming::take_while($f)($input)
   );
 );
 
@@ -404,7 +401,7 @@ macro_rules! take_while1 (
     res
   });
   ($input:expr, $f:expr) => (
-    $crate::take_while1($f)($input)
+    $crate::bytes::streaming::take_while1($f)($input)
   );
 );
 
@@ -432,7 +429,7 @@ macro_rules! take_while_m_n (
     res
   });
   ($input:expr, $m:expr, $n:expr, $f:expr) => (
-    $crate::take_while_m_n($m, $n, $f)($input)
+    $crate::bytes::streaming::take_while_m_n($m, $n, $f)($input)
   );
 );
 
@@ -460,7 +457,7 @@ macro_rules! take_till (
     res
   });
   ($input:expr, $f:expr) => (
-    $crate::take_till($f)($input)
+    $crate::bytes::streaming::take_till($f)($input)
   );
 );
 
@@ -490,7 +487,7 @@ macro_rules! take_till1 (
     res
   });
   ($input:expr, $f:expr) => (
-    $crate::take_till1($f)($input)
+    $crate::bytes::streaming::take_till1($f)($input)
   );
 );
 
@@ -513,7 +510,7 @@ macro_rules! take_till1 (
 macro_rules! take (
   ($i:expr, $count:expr) => ({
     let c = $count as usize;
-    let res: $crate::IResult<_,_,_> = $crate::take(c)($i);
+    let res: $crate::IResult<_,_,_> = $crate::bytes::streaming::take(c)($i);
     res
   });
 );
@@ -647,7 +644,7 @@ macro_rules! take_until_and_consume1 (
 #[macro_export(local_inner_macros)]
 macro_rules! take_until (
   ($i:expr, $substr:expr) => ({
-    let res: $crate::IResult<_,_,_> = $crate::take_until($substr)($i);
+    let res: $crate::IResult<_,_,_> = $crate::bytes::streaming::take_until($substr)($i);
     res
   });
 );

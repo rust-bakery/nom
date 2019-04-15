@@ -1,6 +1,5 @@
 use internal::*;
 use error::ParseError;
-use traits::AsChar;
 
 pub mod streaming;
 pub mod complete;

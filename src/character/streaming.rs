@@ -2,7 +2,7 @@ use internal::{Err, IResult, Needed};
 use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{AsChar, AtEof, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
-use traits::{need_more_err, Compare, CompareResult};
+use traits::{Compare, CompareResult};
 
 use error::ErrorKind;
 
@@ -60,7 +60,7 @@ where
   match input.compare("\r\n") {
     //FIXME: is this the right index?
     CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-    CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf),
+    CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(2))),
     CompareResult::Error => {
       let e: ErrorKind = ErrorKind::CrLf;
       Err(Err::Error(E::from_error_kind(input, e)))
@@ -97,7 +97,7 @@ where
         let comp = sliced.compare("\r\n");
         match comp {
           //FIXME: calculate the right index
-          CompareResult::Incomplete => need_more_err(input, Needed::Unknown, ErrorKind::Tag),
+          CompareResult::Incomplete => Err(Err::Incomplete(Needed::Unknown)),
           CompareResult::Error => {
             let e: ErrorKind = ErrorKind::Tag;
             Err(Err::Error(E::from_error_kind(input, e)))
@@ -120,12 +120,12 @@ where
 {
   match input.compare("\n") {
     CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
-    CompareResult::Incomplete => need_more_err(input, Needed::Size(1), ErrorKind::CrLf),
+    CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(1))),
     CompareResult::Error => {
       match input.compare("\r\n") {
         //FIXME: is this the right index?
         CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-        CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf),
+        CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(2))),
         CompareResult::Error => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
       }
     }

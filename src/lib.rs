@@ -408,7 +408,6 @@ pub use self::multi::*;
 pub use self::sequence::*;
 
 pub use self::bits::*;
-pub use self::bytes::*;
 
 pub use self::nom::*;
 
@@ -439,7 +438,7 @@ mod multi;
 pub mod methods;
 
 #[macro_use]
-mod bytes;
+pub mod bytes;
 #[macro_use]
 pub mod bits;
 

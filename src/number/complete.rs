@@ -1,7 +1,7 @@
 use internal::*;
 use error::ParseError;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use traits::{need_more, AtEof, ParseTo};
+use traits::{AtEof, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Offset, Slice};
 use error::{ErrorKind, make_error};
@@ -135,7 +135,7 @@ pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
 #[inline]
 pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
   if i.len() < 1 {
-    need_more(i, Needed::Size(1))
+    Err(Err::Error(make_error(i, ErrorKind::Eof)))
   } else {
     Ok((&i[1..], i[0]))
   }

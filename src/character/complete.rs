@@ -2,7 +2,7 @@ use internal::{Err, IResult, Needed};
 use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{AsChar, AtEof, FindToken, InputIter, InputLength,  InputTakeAtPosition, Slice};
-use traits::{need_more_err, Compare, CompareResult};
+use traits::{Compare, CompareResult};
 use error::ErrorKind;
 
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
@@ -53,8 +53,7 @@ where
   match input.compare("\r\n") {
     //FIXME: is this the right index?
     CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-    CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf),
-    CompareResult::Error => {
+    _ => {
       let e: ErrorKind = ErrorKind::CrLf;
       Err(Err::Error(E::from_error_kind(input, e)))
     }
@@ -90,12 +89,11 @@ where
         let comp = sliced.compare("\r\n");
         match comp {
           //FIXME: calculate the right index
-          CompareResult::Incomplete => need_more_err(input, Needed::Unknown, ErrorKind::Tag),
-          CompareResult::Error => {
+          CompareResult::Ok => Ok((input.slice(index..), input.slice(..index))),
+          _ => {
             let e: ErrorKind = ErrorKind::Tag;
             Err(Err::Error(E::from_error_kind(input, e)))
           }
-          CompareResult::Ok => Ok((input.slice(index..), input.slice(..index))),
         }
       } else {
         Ok((input.slice(index..), input.slice(..index)))
@@ -113,13 +111,12 @@ where
 {
   match input.compare("\n") {
     CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
-    CompareResult::Incomplete => need_more_err(input, Needed::Size(1), ErrorKind::CrLf),
+    CompareResult::Incomplete => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
     CompareResult::Error => {
       match input.compare("\r\n") {
         //FIXME: is this the right index?
         CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-        CompareResult::Incomplete => need_more_err(input, Needed::Size(2), ErrorKind::CrLf),
-        CompareResult::Error => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
+        _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
       }
     }
   }
@@ -804,14 +801,14 @@ mod tests {
   #[test]
   fn cr_lf() {
     assert_parse!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(crlf(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(crlf(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
     assert_parse!(
       crlf(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
     );
 
     assert_parse!(crlf("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(crlf("\r"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(crlf("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
     assert_parse!(
       crlf("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
@@ -822,7 +819,7 @@ mod tests {
   fn end_of_line() {
     assert_parse!(eol(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
     assert_parse!(eol(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(eol(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(eol(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
     assert_parse!(
       eol(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
@@ -830,7 +827,7 @@ mod tests {
 
     assert_parse!(eol("\na"), Ok(("a", "\n")));
     assert_parse!(eol("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(eol("\r"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(eol("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
     assert_parse!(
       eol("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
