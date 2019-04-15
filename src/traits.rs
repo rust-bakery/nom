@@ -1,7 +1,7 @@
 //! Traits input types have to implement to work with nom combinators
 //!
 use internal::{Err, IResult, Needed};
-use error::{ParseError, ErrorKind, make_error};
+use error::{ParseError, ErrorKind};
 use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::iter::Enumerate;
 use lib::std::slice::Iter;
@@ -562,7 +562,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
     match self.split_at_position(predicate) {
-      Err(Err::Incomplete(i)) => {
+      Err(Err::Incomplete(_)) => {
         Ok(self.take_split(self.input_len()))
       },
       res => res,
@@ -572,7 +572,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
     match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(i)) => {
+      Err(Err::Incomplete(_)) => {
         if self.input_len() == 0 {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
@@ -676,7 +676,7 @@ impl<'a> InputTakeAtPosition for &'a str {
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
     match self.split_at_position(predicate) {
-      Err(Err::Incomplete(i)) => {
+      Err(Err::Incomplete(_)) => {
         Ok(self.take_split(self.input_len()))
       },
       res => res,
@@ -686,7 +686,7 @@ impl<'a> InputTakeAtPosition for &'a str {
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
     match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(i)) => {
+      Err(Err::Incomplete(_)) => {
         if self.input_len() == 0 {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {

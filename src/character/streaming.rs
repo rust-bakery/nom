@@ -2,7 +2,7 @@ use internal::{Err, IResult, Needed};
 use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{AsChar, AtEof, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
-use traits::{need_more_err, ParseTo, Compare, CompareResult};
+use traits::{need_more_err, Compare, CompareResult};
 
 use error::ErrorKind;
 
@@ -404,7 +404,7 @@ where
 mod tests {
   use super::*;
   use internal::{Err, IResult, Needed};
-  use error::{ErrorKind, ParseError};
+  use error::ErrorKind;
   use types::{CompleteByteSlice, CompleteStr};
 
 

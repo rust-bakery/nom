@@ -2,7 +2,7 @@ use internal::{Err, IResult, Needed};
 use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{AsChar, AtEof, FindToken, InputIter, InputLength,  InputTakeAtPosition, Slice};
-use traits::{need_more_err, ParseTo, Compare, CompareResult};
+use traits::{need_more_err, Compare, CompareResult};
 use error::ErrorKind;
 
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
@@ -398,7 +398,6 @@ where
 mod tests {
   use super::*;
   use internal::{Err, IResult, Needed};
-  use error::ParseError;
   use types::{CompleteByteSlice, CompleteStr};
 
 

@@ -6,10 +6,8 @@ pub mod complete;
 
 use internal::{Err, IResult, Needed};
 use error::ParseError;
-use ::lib::std::ops::{Range, RangeFrom, RangeTo};
+use ::lib::std::ops::RangeFrom;
 use traits::{need_more, AsChar, AtEof, FindToken, InputIter, Slice};
-use traits::{InputLength, InputTakeAtPosition};
-use traits::{need_more_err, ParseTo, Compare, CompareResult};
 use error::ErrorKind;
 
 // backward compatible version that can handle streaming and complete versions at the same time
@@ -104,20 +102,3 @@ pub fn is_space(chr: u8) -> bool {
   chr == b' ' || chr == b'\t'
 }
 
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-  use internal::{Err, IResult, Needed};
-  use error::ParseError;
-  use types::{CompleteByteSlice, CompleteStr};
-
-
-  macro_rules! assert_parse(
-    ($left: expr, $right: expr) => {
-      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
-      assert_eq!(res, $right);
-    };
-  );
-
-}

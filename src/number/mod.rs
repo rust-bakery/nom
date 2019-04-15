@@ -1,12 +1,6 @@
 use internal::*;
 use error::ParseError;
-use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use traits::{need_more, need_more_err, AtEof, ParseTo};
-use lib::std::ops::{Range, RangeFrom, RangeTo};
-use traits::{Compare, CompareResult, Offset, Slice};
-use error::ErrorKind;
-use lib::std::mem::transmute;
-use character::streaming::digit;
+use traits::AsChar;
 
 pub mod streaming;
 pub mod complete;
@@ -85,8 +79,8 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, IResult, Needed};
-  use types::{CompleteByteSlice, CompleteStr};
+  use internal::Err;
+  use error::ErrorKind;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {

@@ -1,11 +1,10 @@
 use internal::*;
 use error::ParseError;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use traits::{need_more, need_more_err, AtEof, ParseTo};
+use traits::{need_more, AtEof, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
-use traits::{Compare, CompareResult, Offset, Slice};
+use traits::{Offset, Slice};
 use error::{ErrorKind, make_error};
-use lib::std::mem::transmute;
 use character::complete::{digit, digit1};
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
@@ -382,7 +381,8 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, IResult, Needed};
+  use internal::Err;
+  use error::ErrorKind;
   use types::{CompleteByteSlice, CompleteStr};
 
   macro_rules! assert_parse(
