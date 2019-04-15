@@ -363,39 +363,9 @@ where
   flat_map!(input, recognize_float, parse_to!(f32))
 }
 
-/// Recognizes floating point number in a string and returns a f32
-#[cfg(feature = "alloc")]
-#[deprecated(since = "4.1.0", note = "Please use `float` instead")]
-pub fn float_s<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: Clone + Offset,
-  T: InputIter + InputLength + ParseTo<f32> + AtEof,
-  <T as InputIter>::Item: AsChar+Copy,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
-{
-  flat_map!(input, call!(recognize_float), parse_to!(f32))
-}
-
 /// Recognizes floating point number in a byte string and returns a f64
 #[cfg(feature = "alloc")]
 pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: Clone + Offset,
-  T: InputIter + InputLength + ParseTo<f64> + AtEof,
-  <T as InputIter>::Item: AsChar+Copy,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
-{
-  flat_map!(input, call!(recognize_float), parse_to!(f64))
-}
-
-/// Recognizes floating point number in a string and returns a f64
-#[cfg(feature = "alloc")]
-#[deprecated(since = "4.1.0", note = "Please use `double` instead")]
-pub fn double_s<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
@@ -695,12 +665,6 @@ mod tests {
       assert_parse!(double(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected64)));
       assert_parse!(double(CompleteStr(test)), Ok((CompleteStr(""), expected64)));
 
-      //deprecated functions
-      #[allow(deprecated)]
-      {
-        assert_parse!(float_s(&larger[..]), Ok((";", expected32)));
-        assert_parse!(double_s(&larger[..]), Ok((";", expected64)));
-      }
     }
 
     let remaining_exponent = "-1.234E-";
