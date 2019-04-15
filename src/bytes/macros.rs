@@ -102,7 +102,7 @@ macro_rules! is_a (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::character::alpha;
+/// # use nom::character::complete::alpha;
 /// # fn main() {
 ///  named!(esc, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
 ///  assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], &b"abcd"[..])));
@@ -937,7 +937,7 @@ mod tests {
   use lib::std::string::String;
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
-  use character::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
+  use character::streaming::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
   use types::{CompleteByteSlice, CompleteStr};
   use error::ErrorKind;
   use character::is_alphabetic;

@@ -9,7 +9,7 @@
 extern crate nom;
 
 use std::str;
-use nom::character::{alpha, is_digit};
+use nom::character::{streaming::alpha, is_digit};
 
 // issue #617
 named!(multi<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));

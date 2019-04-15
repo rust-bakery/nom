@@ -242,7 +242,7 @@ macro_rules! many_m_n(
 ///
 /// ```
 /// #[macro_use] extern crate nom;
-/// use nom::character::digit;
+/// use nom::character::streaming::digit;
 ///
 /// named!(number<&[u8], usize>, many0_count!(pair!(digit, tag!(","))));
 ///
@@ -267,7 +267,7 @@ macro_rules! many0_count {
 ///
 /// ```
 /// #[macro_use] extern crate nom;
-/// use nom::character::digit;
+/// use nom::character::streaming::digit;
 ///
 /// named!(number<&[u8], usize>, many1_count!(pair!(digit, tag!(","))));
 ///
@@ -601,7 +601,7 @@ mod tests {
   use lib::std::str::{self, FromStr};
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
-  use character::digit;
+  use character::streaming::digit;
   use number::streaming::{be_u16, be_u8, le_u16};
   use error::ErrorKind;
 
@@ -695,7 +695,7 @@ mod tests {
   #[test]
   #[cfg(feature = "alloc")]
   fn separated_list_complete() {
-    use character::alpha;
+    use character::complete::alpha;
 
     named!(multi<&[u8],Vec<&[u8]> >, separated_list_complete!(tag!(","), alpha));
     let a = &b"abcdef;"[..];
@@ -744,7 +744,7 @@ mod tests {
   #[test]
   #[cfg(feature = "alloc")]
   fn separated_nonempty_list_complete() {
-    use character::alpha;
+    use character::complete::alpha;
 
     named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list_complete!(tag!(","), alpha));
     let a = &b"abcdef;"[..];

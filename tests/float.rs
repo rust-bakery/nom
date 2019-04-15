@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::character::digit;
+use nom::character::streaming::digit;
 
 use std::str;
 use std::str::FromStr;

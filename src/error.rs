@@ -109,7 +109,7 @@ where
 
 /// indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
-#[derive(Debug,PartialEq,Eq,Hash,Clone)]
+#[derive(Debug,PartialEq,Eq,Hash,Clone,Copy)]
 #[allow(deprecated)]
 pub enum ErrorKind {
   //Custom(E),

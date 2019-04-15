@@ -6,7 +6,7 @@ use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use error::ErrorKind;
 use lib::std::mem::transmute;
-use character::digit;
+use character::streaming::digit;
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 #[inline]

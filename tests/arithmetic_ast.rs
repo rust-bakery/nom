@@ -6,7 +6,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 use std::str::FromStr;
 
-use nom::character::{digit, multispace};
+use nom::character::complete::{digit, multispace};
 use nom::types::CompleteStr;
 
 pub enum Expr {

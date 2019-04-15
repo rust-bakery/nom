@@ -1,8 +1,7 @@
 //! Traits input types have to implement to work with nom combinators
 //!
 use internal::{Err, IResult, Needed};
-use error::ParseError;
-use error::ErrorKind;
+use error::{ParseError, ErrorKind, make_error};
 use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::iter::Enumerate;
 use lib::std::slice::Iter;
@@ -469,6 +468,14 @@ pub trait InputTakeAtPosition: Sized {
   fn split_at_position1<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool;
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool;
 }
 
 impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput> InputTakeAtPosition for T {
@@ -510,6 +517,22 @@ impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput
       }
     }
   }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      res => res,
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      res => res,
+    }
+  }
 }
 
 impl<'a> InputTakeAtPosition for &'a [u8] {
@@ -533,6 +556,30 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
       None => Err(Err::Incomplete(Needed::Size(1))),
+    }
+  }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(i)) => {
+        Ok(self.take_split(self.input_len()))
+      },
+      res => res,
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(i)) => {
+        if self.input_len() == 0 {
+          Err(Err::Error(E::from_error_kind(self, e)))
+        } else {
+          Ok(self.take_split(self.input_len()))
+        }
+      },
+      res => res,
     }
   }
 }
@@ -578,6 +625,28 @@ impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
       }
     }
   }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      res => res,
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(_)) => {
+        if self.input_len() == 0 {
+          Err(Err::Error(E::from_error_kind(CompleteByteSlice(self.0), e)))
+        } else {
+          Ok(self.take_split(self.input_len()))
+        }
+      },
+      res => res,
+    }
+  }
 }
 
 impl<'a> InputTakeAtPosition for &'a str {
@@ -601,6 +670,30 @@ impl<'a> InputTakeAtPosition for &'a str {
       Some((0, _)) => Err(Err::Error(E::from_error_kind(self, e))),
       Some((i, _)) => Ok((&self[i..], &self[..i])),
       None => Err(Err::Incomplete(Needed::Size(1))),
+    }
+  }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(i)) => {
+        Ok(self.take_split(self.input_len()))
+      },
+      res => res,
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(i)) => {
+        if self.input_len() == 0 {
+          Err(Err::Error(E::from_error_kind(self, e)))
+        } else {
+          Ok(self.take_split(self.input_len()))
+        }
+      },
+      res => res,
     }
   }
 }
@@ -636,6 +729,28 @@ impl<'a> InputTakeAtPosition for CompleteStr<'a> {
           Ok((CompleteStr(i), CompleteStr(o)))
         }
       }
+    }
+  }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      res => res,
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(_)) => {
+        if self.input_len() == 0 {
+          Err(Err::Error(E::from_error_kind(CompleteStr(self.0), e)))
+        } else {
+          Ok(self.take_split(self.input_len()))
+        }
+      },
+      res => res,
     }
   }
 }

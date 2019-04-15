@@ -6,7 +6,7 @@ use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use error::{ErrorKind, make_error};
 use lib::std::mem::transmute;
-use character::digit;
+use character::complete::{digit, digit1};
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1)
 #[inline]
@@ -341,7 +341,9 @@ where
       opt!(tuple!(
         alt!(char!('e') | char!('E')),
         opt!(alt!(char!('+') | char!('-'))),
-        digit
+        // fixme: convert errors to failure here, since parsing a e or E indicates we should
+        // have an exponent
+        digit1
         )
       )
     )
@@ -706,7 +708,7 @@ mod tests {
     let remaining_exponent = "-1.234E-";
     assert_parse!(
       recognize_float(remaining_exponent),
-      Err(Err::Incomplete(Needed::Size(1)))
+      Err(Err::Error(("", ErrorKind::Digit)))
     );
   }
 

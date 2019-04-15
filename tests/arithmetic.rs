@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::character::digit;
+use nom::character::complete::digit;
 use nom::types::CompleteStr;
 
 // Parser definition
