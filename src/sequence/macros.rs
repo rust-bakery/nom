@@ -8,7 +8,7 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # use nom::number::be_u16;
 /// // the return type depends of the children parsers
 /// named!(parser<&[u8], (u16, &[u8], &[u8]) >,
@@ -417,7 +417,7 @@ macro_rules! nom_compile_error (
 mod tests {
   use internal::{Err, IResult, Needed};
   use number::be_u16;
-  use util::ErrorKind;
+  use error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -449,7 +449,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: IResult<_,_,_> = if reduced != b {
-          Err($crate::Err::Error(error_position!($i, $crate::ErrorKind::Tag)))
+          Err($crate::Err::Error(error_position!($i, $crate::error::ErrorKind::Tag)))
         } else if m < blen {
           need_more($i, Needed::Size(blen))
         } else {

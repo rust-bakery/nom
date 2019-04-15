@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-  use {Err, ErrorKind, IResult};
+  use {Err, error::ErrorKind, IResult};
 
   #[test]
   fn tagtr_succeed() {

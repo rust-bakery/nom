@@ -115,7 +115,7 @@ macro_rules! escaped (
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind,need_more};
+      use $crate::{Err,Needed,IResult,error::ErrorKind,need_more};
       use $crate::AsChar;
       use $crate::InputIter;
       use $crate::InputLength;
@@ -245,7 +245,7 @@ macro_rules! escaped_transform (
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
       use $crate::AsChar;
       use $crate::ExtendInto;
       use $crate::InputIter;
@@ -386,7 +386,7 @@ macro_rules! take_while (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,ErrorKind};
+/// # use nom::{Err,error::ErrorKind};
 /// # use nom::character::is_alphanumeric;
 /// # fn main() {
 ///  named!( alpha, take_while1!( is_alphanumeric ) );
@@ -472,7 +472,7 @@ macro_rules! take_till (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,ErrorKind};
+/// # use nom::{Err, error::ErrorKind};
 /// # fn main() {
 ///  named!( till1_colon, take_till1!(|ch| ch == b':') );
 ///
@@ -564,7 +564,7 @@ macro_rules! take_until_and_consume (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Needed,IResult,ErrorKind,need_more_err};
+      use $crate::{Needed,IResult,error::ErrorKind,need_more_err};
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::Slice;
@@ -605,7 +605,7 @@ macro_rules! take_until_and_consume1 (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,ErrorKind,need_more_err};
+      use $crate::{Err,Needed,IResult,error::ErrorKind,need_more_err};
 
       use $crate::InputLength;
       use $crate::FindSubstring;
@@ -675,7 +675,7 @@ macro_rules! take_until1 (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
+      use $crate::{Err,Needed,IResult,need_more_err,error::ErrorKind};
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::InputTake;
@@ -719,7 +719,7 @@ macro_rules! take_until_either_and_consume (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Needed,IResult,need_more_err,ErrorKind};
+      use $crate::{Needed,IResult,need_more_err,error::ErrorKind};
 
       use $crate::InputLength;
       use $crate::InputIter;
@@ -778,7 +778,7 @@ macro_rules! take_until_either_and_consume1 (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more_err,ErrorKind};
+      use $crate::{Err,Needed,IResult,need_more_err,error::ErrorKind};
 
       use $crate::InputLength;
       use $crate::InputIter;
@@ -839,7 +839,7 @@ macro_rules! take_until_either (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Needed,IResult,need_more_err,ErrorKind};
+      use $crate::{Needed,IResult,need_more_err,error::ErrorKind};
 
       use $crate::InputIter;
       use $crate::FindToken;
@@ -939,7 +939,7 @@ mod tests {
   use lib::std::vec::Vec;
   use character::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
   use types::{CompleteByteSlice, CompleteStr};
-  use util::ErrorKind;
+  use error::ErrorKind;
   use character::is_alphabetic;
 
   macro_rules! one_of (

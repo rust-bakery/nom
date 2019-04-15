@@ -7,12 +7,12 @@ use nom::types::CompleteStr;
 #[macro_export]
 macro_rules! complete_named (
   ($name:ident, $submac:ident!( $($args:tt)* )) => (
-    fn $name( i: CompleteStr ) -> nom::IResult<CompleteStr, CompleteStr, (CompleteStr, nom::ErrorKind)> {
+    fn $name( i: CompleteStr ) -> nom::IResult<CompleteStr, CompleteStr, (CompleteStr, nom::error::ErrorKind)> {
       $submac!(i, $($args)*)
     }
   );
   ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-    fn $name( i: CompleteStr ) -> nom::IResult<CompleteStr, $o, (CompleteStr, nom::ErrorKind)> {
+    fn $name( i: CompleteStr ) -> nom::IResult<CompleteStr, $o, (CompleteStr, nom::error::ErrorKind)> {
       $submac!(i, $($args)*)
     }
   );

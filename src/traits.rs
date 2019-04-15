@@ -2,6 +2,7 @@
 //!
 use internal::{Err, IResult, Needed};
 use error::ParseError;
+use error::ErrorKind;
 use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::iter::Enumerate;
 use lib::std::slice::Iter;
@@ -16,8 +17,6 @@ use memchr;
 use lib::std::string::String;
 #[cfg(feature = "alloc")]
 use lib::std::vec::Vec;
-
-use util::ErrorKind;
 
 /// abstract method to calculate the input length
 pub trait InputLength {

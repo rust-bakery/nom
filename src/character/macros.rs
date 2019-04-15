@@ -23,7 +23,7 @@ macro_rules! one_of (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,ErrorKind};
+/// # use nom::{Err,error::ErrorKind};
 /// # fn main() {
 /// named!(no_letter_a<char>, none_of!(&b"abc"[..]));
 /// assert_eq!(no_letter_a(b"123"), Ok((&b"23"[..], '1')));
@@ -42,7 +42,7 @@ macro_rules! none_of (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,ErrorKind};
+/// # use nom::{Err,error::ErrorKind};
 /// # fn main() {
 /// named!(match_letter_a<char>, char!('a'));
 /// assert_eq!(match_letter_a(b"abc"), Ok((&b"bc"[..],'a')));
@@ -58,7 +58,7 @@ macro_rules! char (
 #[cfg(test)]
 mod tests {
   use internal::Err;
-  use util::ErrorKind;
+  use error::ErrorKind;
 
   #[test]
   fn one_of() {

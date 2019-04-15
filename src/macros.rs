@@ -100,7 +100,7 @@ macro_rules! named (
         named_attr!(#$($args)*);
     );
     ($name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: $i ) -> $crate::IResult<$i,$o,($i, $crate::ErrorKind)> {
+        fn $name( i: $i ) -> $crate::IResult<$i,$o,($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
@@ -110,22 +110,22 @@ macro_rules! named (
         }
     );
     ($name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::ErrorKind)> {
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::ErrorKind)> {
+        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($name:ident, $submac:ident!( $($args:tt)* )) => (
-        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::ErrorKind)> {
+        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::ErrorKind)> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
@@ -135,23 +135,23 @@ macro_rules! named (
         }
     );
     (pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::ErrorKind)> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::ErrorKind)> {
+        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     (pub $name:ident, $submac:ident!( $($args:tt)* )) => (
-        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::ErrorKind)> {
+        pub fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     (pub(crate) $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         #[allow(unused_variables)]
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::ErrorKind)> {
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
@@ -163,19 +163,19 @@ macro_rules! named (
     );
     (pub(crate) $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
         #[allow(unused_variables)]
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::ErrorKind)> {
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     (pub(crate) $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
         #[allow(unused_variables)]
-        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::ErrorKind)> {
+        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     (pub(crate) $name:ident, $submac:ident!( $($args:tt)* )) => (
         #[allow(unused_variables)]
-        pub(crate) fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::ErrorKind)> {
+        pub(crate) fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
@@ -293,7 +293,7 @@ macro_rules! named_args {
 macro_rules! named_attr (
     ($(#[$attr:meta])*, $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::ErrorKind)> {
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
@@ -305,25 +305,25 @@ macro_rules! named_attr (
     );
     ($(#[$attr:meta])*, $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::ErrorKind)> {
+        fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, (&'a[u8], $crate::ErrorKind)> {
+        fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a [u8], $o, (&'a[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, $name:ident, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::ErrorKind)> {
+        fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, pub $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        pub fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::ErrorKind)> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
@@ -335,25 +335,25 @@ macro_rules! named_attr (
     );
     ($(#[$attr:meta])*, pub $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::ErrorKind)> {
+        pub fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, pub $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        pub fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a[u8], $o, (&'a[u8], $crate::ErrorKind)> {
+        pub fn $name<'a>( i: &'a[u8] ) -> $crate::IResult<&'a[u8], $o, (&'a[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, pub $name:ident, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&'a[u8], &'a[u8], (&'a[u8], $crate::ErrorKind)> {
+        pub fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&'a[u8], &'a[u8], (&'a[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, pub(crate) $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::ErrorKind)> {
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
@@ -365,19 +365,19 @@ macro_rules! named_attr (
     );
     ($(#[$attr:meta])*, pub(crate) $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::ErrorKind)> {
+        pub(crate) fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, pub(crate) $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::ErrorKind)> {
+        pub(crate) fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, pub(crate) $name:ident, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        pub(crate) fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::ErrorKind)> {
+        pub(crate) fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
             $submac!(i, $($args)*)
         }
     );
@@ -438,7 +438,7 @@ macro_rules! apply (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///     named!(err_test<&[u8], &[u8]>, alt!(
 ///       tag!("abcd") |
@@ -526,7 +526,7 @@ macro_rules! return_error (
 /// # #[macro_use] extern crate nom;
 /// # use std::collections;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///     named!(err_test, add_return_error!(ErrorKind::Tag, tag!("abcd")));
 ///
@@ -541,7 +541,7 @@ macro_rules! add_return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       match $submac!($i, $($args)*) {
         Ok((i, o)) => Ok((i, o)),
@@ -567,7 +567,7 @@ macro_rules! add_return_error (
 /// # #[macro_use] extern crate nom;
 /// # use std::collections;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///     named!(take_5, complete!(take!(5)));
 ///
@@ -582,7 +582,7 @@ macro_rules! complete (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -607,7 +607,7 @@ macro_rules! complete (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # use nom::IResult;
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8], &[u8]> {
@@ -682,7 +682,7 @@ macro_rules! map_res (
           match $submac2!(o, $($args2)*) {
             Ok(output) => Ok((i, output)),
             Err(_) => {
-              let e = $crate::ErrorKind::MapRes;
+              let e = $crate::error::ErrorKind::MapRes;
               Err(Err::Error(error_position!($i, e)))
             },
           }
@@ -723,8 +723,8 @@ macro_rules! map_res_err (
           match $submac2!(o, $($args2)*) {
             Ok(output) => Ok((i, output)),
             Err(e) => {
-              let e = Context::convert(Context::Code($i, $crate::ErrorKind::Custom(e)));
-              Err(Err::Error(error_node_position!($i, $crate::ErrorKind::MapRes, e)))
+              let e = Context::convert(Context::Code($i, $crate::error::ErrorKind::Custom(e)));
+              Err(Err::Error(error_node_position!($i, $crate::error::ErrorKind::MapRes, e)))
             },
           }
         },
@@ -797,7 +797,7 @@ macro_rules! parse_to (
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       use $crate::ParseTo;
       use $crate::Slice;
@@ -827,7 +827,7 @@ macro_rules! verify (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -907,7 +907,7 @@ macro_rules! expr_res (
   ($i:expr, $e:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       match $e {
         Ok(output) => Ok(($i, output)),
@@ -926,7 +926,7 @@ macro_rules! expr_res (
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
 /// # use nom::IResult;
-/// # use nom::{number::be_u8, ErrorKind};
+/// # use nom::{number::be_u8, error::ErrorKind};
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8], &[u8]> {
 ///    do_parse!(input,
@@ -952,7 +952,7 @@ macro_rules! expr_opt (
   ($i:expr, $e:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       match $e {
         $crate::lib::std::option::Option::Some(output) => Ok(($i, output)),
@@ -1173,7 +1173,7 @@ macro_rules! cond(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,ErrorKind,IResult};
+/// # use nom::{Err,error::ErrorKind,IResult};
 /// # fn main() {
 ///  /*
 ///  let b = true;
@@ -1260,7 +1260,7 @@ macro_rules! peek(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 /// named!(not_e, do_parse!(
 ///     res: tag!("abc")      >>
@@ -1280,7 +1280,7 @@ macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{ErrorKind,Err,IResult};
+      use $crate::{error::ErrorKind,Err,IResult};
 
       let i_ = $i.clone();
 
@@ -1357,7 +1357,7 @@ macro_rules! eof (
   ($i:expr,) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{AtEof,Err,ErrorKind};
+      use $crate::{AtEof,Err,error::ErrorKind};
 
       use $crate::InputLength;
       if ($i).at_eof() && ($i).input_len() == 0 {
@@ -1425,7 +1425,7 @@ macro_rules! recognize (
 mod tests {
   use internal::{Err, IResult, Needed};
   use error::ParseError;
-  use util::ErrorKind;
+  use error::ErrorKind;
   #[cfg(feature = "alloc")]
   use lib::std::boxed::Box;
 
@@ -1433,7 +1433,7 @@ mod tests {
   macro_rules! tag (
     ($i:expr, $tag: expr) => ({
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,ErrorKind};
+      use $crate::{Err,Needed,IResult,error::ErrorKind};
       use $crate::{Compare,CompareResult,InputLength,Slice,need_more};
 
       let res: IResult<_,_> = match ($i).compare($tag) {

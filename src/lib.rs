@@ -149,7 +149,7 @@
 //! `IResult` is an alias for the `Result` type:
 //!
 //! ```rust
-//! use nom::{Needed, ErrorKind};
+//! use nom::{Needed, error::ErrorKind};
 //!
 //! type IResult<I, O, E = (I,ErrorKind)> = Result<(I, O), Err<E>>;
 //!
@@ -234,7 +234,7 @@
 //!
 //! assert_eq!(alt_tags(b"abcdxxx"), Ok((&b"xxx"[..], &b"abcd"[..])));
 //! assert_eq!(alt_tags(b"efghxxx"), Ok((&b"xxx"[..], &b"efgh"[..])));
-//! assert_eq!(alt_tags(b"ijklxxx"), Err(nom::Err::Error(error_position!(&b"ijklxxx"[..], nom::ErrorKind::Alt))));
+//! assert_eq!(alt_tags(b"ijklxxx"), Err(nom::Err::Error(error_position!(&b"ijklxxx"[..], nom::error::ErrorKind::Alt))));
 //! # }
 //! ```
 //!
@@ -285,7 +285,7 @@
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
-//! use nom::{ErrorKind, Needed, number::be_u16};
+//! use nom::{error::ErrorKind, Needed, number::be_u16};
 //!
 //! named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
 //!   tuple!(

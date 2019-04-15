@@ -3,7 +3,7 @@ mod macros;
 
 use internal::{Err, IResult};
 use error::ParseError;
-use util::ErrorKind;
+use error::ErrorKind;
 
 pub fn or<I: Clone, O, E: ParseError<I>, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, O, E>
 where

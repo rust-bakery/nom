@@ -124,7 +124,7 @@ macro_rules! many0(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # use nom::types::CompleteByteSlice;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
@@ -163,7 +163,7 @@ macro_rules! many1(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///    named!(multi<&[u8], (Vec<&[u8]>, &[u8]) >, many_till!( tag!( "abcd" ), tag!( "efgh" ) ) );
 ///
@@ -208,7 +208,7 @@ macro_rules! many_till(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many_m_n!(2, 4, tag!( "abcd" ) ) );
 ///
@@ -293,7 +293,7 @@ macro_rules! many1_count {
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///  named!(counter< Vec<&[u8]> >, count!( tag!( "abcd" ), 2 ) );
 ///
@@ -324,7 +324,7 @@ macro_rules! count(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///  named!(counter< [&[u8]; 2] >, count_fixed!( &[u8], tag!( "abcd" ), 2 ) );
 ///  // can omit the type specifier if returning slices
@@ -365,7 +365,7 @@ macro_rules! count_fixed (
           },
           Err(Err::Error(e))  => {
             fn unify_types<T>(_: &T, _: &T) {}
-            let e2 = error_position!($i, $crate::ErrorKind::Count);
+            let e2 = error_position!($i, $crate::error::ErrorKind::Count);
             unify_types(&e, &e2);
             ret = Err(Err::Error(e2));
             break;
@@ -528,7 +528,7 @@ macro_rules! fold_many0(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >,
 ///    fold_many1!( tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
@@ -565,7 +565,7 @@ macro_rules! fold_many1(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >,
 ///    fold_many_m_n!(2, 4, tag!( "abcd" ), Vec::new(), |mut acc: Vec<_>, item| {
@@ -603,7 +603,7 @@ mod tests {
   use lib::std::vec::Vec;
   use character::digit;
   use number::{be_u16, be_u8, le_u16};
-  use util::ErrorKind;
+  use error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -633,7 +633,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: IResult<_,_,_> = if reduced != b {
-          Err($crate::Err::Error($crate::error::make_error($i, $crate::ErrorKind::Tag)))
+          Err($crate::Err::Error($crate::error::make_error($i, $crate::error::ErrorKind::Tag)))
         } else if m < blen {
           Err($crate::Err::Incomplete(Needed::Size(blen)))
         } else {

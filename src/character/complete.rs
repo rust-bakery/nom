@@ -2,7 +2,7 @@ use internal::{Err, IResult};
 use error::ParseError;
 use ::lib::std::ops::RangeFrom;
 use traits::{AsChar, AtEof, FindToken, InputIter, InputLength, Slice};
-use util::ErrorKind;
+use error::ErrorKind;
 
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
@@ -67,7 +67,7 @@ where
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{character::complete::anychar, ErrorKind};
+/// # use nom::{character::complete::anychar, error::ErrorKind};
 /// # fn main() {
 /// assert_eq!(anychar::<_,(&str, ErrorKind)>("abc"), Ok(("bc",'a')));
 /// # }

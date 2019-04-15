@@ -10,7 +10,7 @@ use ::lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{need_more, AsChar, AtEof, FindToken, InputIter, Slice};
 use traits::{InputLength, InputTakeAtPosition};
 use traits::{need_more_err, ParseTo, Compare, CompareResult};
-use util::ErrorKind;
+use error::ErrorKind;
 
 // backward compatible version that can handle streaming and complete versions at the same time
 #[doc(hidden)]

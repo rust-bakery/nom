@@ -8,7 +8,7 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::Criterion;
-use nom::{ErrorKind, character::alphanumeric, number::recognize_float};
+use nom::{error::ErrorKind, character::alphanumeric, number::recognize_float};
 
 
 use std::str;

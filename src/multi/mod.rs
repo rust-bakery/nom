@@ -6,7 +6,7 @@ use error::ParseError;
 use traits::{need_more, AtEof, InputLength};
 #[cfg(feature = "alloc")]
 use ::lib::std::vec::Vec;
-use util::ErrorKind;
+use error::ErrorKind;
 
 //FIXME: streaming
 #[cfg(feature = "alloc")]

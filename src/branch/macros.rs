@@ -242,7 +242,7 @@ macro_rules! alt (
 
   (__impl $i:expr, __end) => (
     {
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
       let e2 = ErrorKind::Alt;
       let err = Err::Error(error_position!($i, e2));
 
@@ -366,7 +366,7 @@ macro_rules! alt_complete (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::ErrorKind;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
 ///  named!(sw,
 ///    switch!(take!(4),
@@ -441,7 +441,7 @@ macro_rules! switch (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Convert,ErrorKind};
+      use $crate::{Err,Convert,error::ErrorKind};
 
       let i_ = $i.clone();
       match map!(i_, $submac!($($args)*), Some) {
@@ -497,7 +497,7 @@ macro_rules! switch (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,ErrorKind,Needed};
+/// # use nom::{Err,error::ErrorKind,Needed};
 /// # fn main() {
 /// named!(perm<(&[u8], &[u8], &[u8])>,
 ///   permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
@@ -528,7 +528,7 @@ macro_rules! switch (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,ErrorKind,Needed};
+/// # use nom::{Err,error::ErrorKind,Needed};
 /// # fn main() {
 /// named!(perm<&str, (Option<&str>, &str, &str)>,
 ///   permutation!(tag!("abcd")?, tag!("efg"), tag!("hi"))
@@ -565,7 +565,7 @@ macro_rules! permutation (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Convert,ErrorKind};
+      use $crate::{Err,Convert,error::ErrorKind};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
@@ -858,7 +858,7 @@ mod tests {
   use lib::std::fmt::Debug;
   use internal::{Err, IResult, Needed};
   use error::ParseError;
-  use util::ErrorKind;
+  use error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (

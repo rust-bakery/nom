@@ -4,7 +4,7 @@ use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use traits::{need_more, need_more_err, AtEof, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
-use util::ErrorKind;
+use error::ErrorKind;
 use lib::std::mem::transmute;
 use character::digit;
 

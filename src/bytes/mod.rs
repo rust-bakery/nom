@@ -8,7 +8,7 @@ use traits::{
   InputTakeAtPosition, Slice, ToUsize,
 };
 use internal::{Err, IResult, Needed};
-use util::ErrorKind;
+use error::ErrorKind;
 use error::ParseError;
 
 //FIXME: streaming

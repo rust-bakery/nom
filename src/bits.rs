@@ -112,7 +112,7 @@ macro_rules! bytes_impl (
   ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Slice,ErrorKind};
+      use $crate::{Err,Needed,Slice,error::ErrorKind};
 
       let inp;
       if $macro_i.1 % 8 != 0 {
@@ -247,12 +247,12 @@ macro_rules! tag_bits (
             let res: IResult<_,$t> = Ok((i, o));
             res
           } else {
-            let e: $crate::ErrorKind = $crate::ErrorKind::TagBits;
+            let e: $crate::error::ErrorKind = $crate::error::ErrorKind::TagBits;
             Err(Err::Error(error_position!($i, e)))
           }
         },
         _                              => {
-          let e: $crate::ErrorKind = $crate::ErrorKind::TagBits;
+          let e: $crate::error::ErrorKind = $crate::error::ErrorKind::TagBits;
           Err(Err::Error(error_position!($i, e)))
         }
       }
@@ -264,7 +264,7 @@ macro_rules! tag_bits (
 mod tests {
   use lib::std::ops::{AddAssign, Shl, Shr};
   use internal::{Err, Needed};
-  use util::ErrorKind;
+  use error::ErrorKind;
   use types::CompleteByteSlice;
 
   #[test]

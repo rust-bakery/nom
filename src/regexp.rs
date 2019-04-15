@@ -27,7 +27,7 @@ macro_rules! re_match (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -52,7 +52,7 @@ macro_rules! re_match_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -76,7 +76,7 @@ macro_rules! re_bytes_match (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -101,7 +101,7 @@ macro_rules! re_bytes_match_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::InputLength;
       use $crate::Slice;
@@ -125,7 +125,7 @@ macro_rules! re_find (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       let re = $crate::lib::regex::Regex::new($re).unwrap();
@@ -149,7 +149,7 @@ macro_rules! re_find_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       regex!(RE, $re);
@@ -173,7 +173,7 @@ macro_rules! re_bytes_find (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
@@ -197,7 +197,7 @@ macro_rules! re_bytes_find_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
@@ -221,7 +221,7 @@ macro_rules! re_matches (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       let re = $crate::lib::regex::Regex::new($re).unwrap();
@@ -250,7 +250,7 @@ macro_rules! re_matches_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       regex!(RE, $re);
@@ -278,7 +278,7 @@ macro_rules! re_bytes_matches (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
@@ -307,7 +307,7 @@ macro_rules! re_bytes_matches_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
@@ -335,7 +335,7 @@ macro_rules! re_capture (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       let re = $crate::lib::regex::Regex::new($re).unwrap();
@@ -364,7 +364,7 @@ macro_rules! re_capture_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       regex!(RE, $re);
@@ -392,7 +392,7 @@ macro_rules! re_bytes_capture (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
@@ -421,7 +421,7 @@ macro_rules! re_bytes_capture_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
@@ -449,7 +449,7 @@ macro_rules! re_captures (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       let re = $crate::lib::regex::Regex::new($re).unwrap();
@@ -480,7 +480,7 @@ macro_rules! re_captures_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       regex!(RE, $re);
@@ -509,7 +509,7 @@ macro_rules! re_bytes_captures (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       let re = $crate::lib::regex::bytes::Regex::new($re).unwrap();
@@ -539,7 +539,7 @@ macro_rules! re_bytes_captures_static (
   ($i:expr, $re:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
 
       use $crate::Slice;
       regex_bytes!(RE, $re);
@@ -562,7 +562,7 @@ macro_rules! re_bytes_captures_static (
 mod tests {
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
-  use util::ErrorKind;
+  use error::ErrorKind;
   use internal::Err;
 
   #[test]

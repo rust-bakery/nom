@@ -1,7 +1,7 @@
 //! Basic types to build the parsers
 
 use self::Needed::*;
-use util::ErrorKind;
+use error::ErrorKind;
 
 /// Holds the result of parsing functions
 ///
@@ -62,8 +62,6 @@ pub enum Err<E> {
   Failure(E),
 }
 
-
-
 /*
 #[cfg(feature = "std")]
 use std::fmt;
@@ -115,7 +113,7 @@ impl<F, E: From<F>> Convert<Err<F>> for Err<E> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use util::ErrorKind;
+  use error::ErrorKind;
 
   #[macro_export]
   macro_rules! assert_size (

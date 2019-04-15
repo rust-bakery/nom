@@ -374,7 +374,7 @@ macro_rules! permutation_sep (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,ErrorKind,Convert};
+      use $crate::{Err,error::ErrorKind,Convert};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
@@ -532,7 +532,7 @@ macro_rules! alt_sep (
         Ok((i,o))     => Ok((i,$gen(o))),
         Err(Err::Error(e))      => {
           fn unify_types<T>(_: &T, _: &T) {}
-          let e2 = error_position!($i, $crate::ErrorKind::Alt);
+          let e2 = error_position!($i, $crate::error::ErrorKind::Alt);
           unify_types(&e, &e2);
           Err(Err::Error(e2))
         },
@@ -554,7 +554,7 @@ macro_rules! alt_sep (
         Ok((i,o))     => Ok((i,o)),
         Err(Err::Error(e))      => {
           fn unify_types<T>(_: &T, _: &T) {}
-          let e2 = error_position!($i, $crate::ErrorKind::Alt);
+          let e2 = error_position!($i, $crate::error::ErrorKind::Alt);
           unify_types(&e, &e2);
           Err(Err::Error(e2))
         },
@@ -567,14 +567,14 @@ macro_rules! alt_sep (
     use $crate::lib::std::result::Result::*;
     use $crate::{Err,Needed,IResult};
 
-    Err(Err::Error(error_position!($i, $crate::ErrorKind::Alt)))
+    Err(Err::Error(error_position!($i, $crate::error::ErrorKind::Alt)))
   });
 
   (__impl $i:expr, $separator:path) => ({
     use $crate::lib::std::result::Result::*;
     use $crate::{Err,Needed,IResult};
 
-    Err(Err::Error(error_position!($i, $crate::ErrorKind::Alt)))
+    Err(Err::Error(error_position!($i, $crate::error::ErrorKind::Alt)))
   });
 
   ($i:expr, $separator:path, $($rest:tt)*) => (
@@ -648,22 +648,22 @@ macro_rules! switch_sep (
 
       match sep!($i, $separator, $submac!($($args)*)) {
         Err(Err::Error(e))      => Err(Err::Error(error_node_position!(
-            $i, $crate::ErrorKind::Switch, e
+            $i, $crate::error::ErrorKind::Switch, e
         ))),
         Err(Err::Failure(e))    => Err(Err::Failure(
-            error_node_position!($i, $crate::ErrorKind::Switch, e))),
+            error_node_position!($i, $crate::error::ErrorKind::Switch, e))),
         Err(e) => Err(e),
         Ok((i, o))    => {
           match o {
             $($p => match sep!(i, $separator, $subrule!($($args2)*)) {
               Err(Err::Error(e)) => Err(Err::Error(error_node_position!(
-                  $i, $crate::ErrorKind::Switch, e
+                  $i, $crate::error::ErrorKind::Switch, e
               ))),
               Err(Err::Failure(e))    => Err(Err::Failure(
-                  error_node_position!($i, $crate::ErrorKind::Switch, e))),
+                  error_node_position!($i, $crate::error::ErrorKind::Switch, e))),
               a => a,
             }),*,
-            _    => Err(Err::Error(error_position!($i, $crate::ErrorKind::Switch)))
+            _    => Err(Err::Error(error_position!($i, $crate::error::ErrorKind::Switch)))
           }
         }
       }
@@ -902,7 +902,7 @@ mod tests {
   use internal::{Err, IResult, Needed};
   use error::ParseError;
   use super::sp;
-  use util::ErrorKind;
+  use error::ErrorKind;
   use types::CompleteStr;
 
   #[test]
