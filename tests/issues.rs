@@ -5,7 +5,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{space, Err, IResult, Needed, ErrorKind, le_u64, is_digit};
+use nom::{character::{is_digit, streaming::space}, Err, IResult, Needed, error::ErrorKind, number::streaming::le_u64};
 use nom::types::{CompleteStr, CompleteByteSlice};
 
 #[allow(dead_code)]
@@ -69,7 +69,7 @@ fn issue_58() {
 #[cfg(feature = "std")]
 mod parse_int {
   use nom::HexDisplay;
-  use nom::{digit, space, IResult};
+  use nom::{IResult, character::streaming::{digit, space}};
   use std::str;
 
   named!(parse_ints<Vec<i32>>, many0!(spaces_or_int));
@@ -105,7 +105,7 @@ mod parse_int {
 
 #[test]
 fn usize_length_bytes_issue() {
-  use nom::be_u16;
+  use nom::number::streaming::be_u16;
   let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_bytes!(b"012346", be_u16);
 }
 
@@ -156,7 +156,7 @@ fn issue_302(input: &[u8]) -> IResult<&[u8], Option<Vec<u64>>> {
 
 #[test]
 fn issue_655() {
-  use nom::{line_ending, not_line_ending};
+  use nom::character::streaming::{line_ending, not_line_ending};
   named!(twolines(&str) -> (&str, &str),
     do_parse!(
       l1 : not_line_ending >>
@@ -178,7 +178,7 @@ named!(issue_666 <CompleteByteSlice, CompleteByteSlice>, dbg_dmp!(tag!("abc")));
 
 #[test]
 fn issue_667() {
-  use nom::alpha;
+  use nom::character::streaming::alpha;
 
   named!(foo <CompleteByteSlice, Vec<CompleteByteSlice>>,
     many0!(
@@ -261,7 +261,7 @@ named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"
 #[test]
 fn issue_752() {
     assert_eq!(
-        Err::Error(("ab", nom::ErrorKind::ParseTo)),
+        Err::Error(("ab", nom::error::ErrorKind::ParseTo)),
         parse_to!("ab", usize).unwrap_err()
     )
 }
@@ -281,7 +281,7 @@ fn issue_759() {
 }
 
 named_args!(issue_771(count: usize)<Vec<u32>>,
-  length_count!(value!(count), call!(nom::be_u32))
+  length_count!(value!(count), call!(nom::number::streaming::be_u32))
 );
 
 #[test]
@@ -315,7 +315,7 @@ fn issue_768() {
 /// mask the error ('"Use of undeclared type or module `Needed`" in escaped_transform!').
 mod issue_780 {
   named!(issue_780<&str, String>,
-    escaped_transform!(call!(::nom::alpha), '\\', tag!("n"))
+    escaped_transform!(call!(::nom::character::streaming::alpha), '\\', tag!("n"))
   );
 }
 
@@ -327,7 +327,7 @@ named!(multi_617<&[u8], () >, fold_many0!( digits, (), |_, _| {}));
 named!(multi_617_fails<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
 
 mod issue_647 {
-  use nom::{Err,be_f64, ErrorKind};
+  use nom::{Err, number::streaming::be_f64, error::ErrorKind};
   pub type Input<'a> = &'a [u8];
 
   #[derive(PartialEq, Debug, Clone)]
