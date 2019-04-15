@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{alphanumeric, multispace, space};
+use nom::character::{alphanumeric, multispace, space};
 use nom::types::CompleteByteSlice;
 
 use std::str;

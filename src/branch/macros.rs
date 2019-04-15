@@ -57,7 +57,7 @@
 /// // Let's make a helper function that returns true when not a space
 /// // we are required to do this because the `take_while!` macro is limited
 /// // to idents, so we can't negate `ìs_space` at the call site
-/// fn is_not_space(c: u8) -> bool { ! nom::is_space(c) }
+/// fn is_not_space(c: u8) -> bool { ! nom::character::is_space(c) }
 ///
 /// // Our parser will return the `Dragon` variant when matching "dragon",
 /// // the `Beast` variant when matching "beast" and otherwise it will consume

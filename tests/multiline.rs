@@ -2,7 +2,7 @@
 extern crate nom;
 
 use nom::types::CompleteStr;
-use nom::{alphanumeric, eol};
+use nom::character::{alphanumeric, eol};
 use nom::IResult;
 
 pub fn end_of_line(input: CompleteStr) -> IResult<CompleteStr, CompleteStr> {

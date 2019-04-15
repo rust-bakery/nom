@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::digit;
+use nom::character::digit;
 use nom::types::CompleteByteSlice;
 
 // Parser definition

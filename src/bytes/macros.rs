@@ -102,7 +102,7 @@ macro_rules! is_a (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::alpha;
+/// # use nom::character::alpha;
 /// # fn main() {
 ///  named!(esc, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
 ///  assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], &b"abcd"[..])));
@@ -359,7 +359,7 @@ macro_rules! escaped_transform (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::is_alphanumeric;
+/// # use nom::character::is_alphanumeric;
 /// # fn main() {
 ///  named!( alpha, take_while!( is_alphanumeric ) );
 ///
@@ -387,7 +387,7 @@ macro_rules! take_while (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err,ErrorKind};
-/// # use nom::is_alphanumeric;
+/// # use nom::character::is_alphanumeric;
 /// # fn main() {
 ///  named!( alpha, take_while1!( is_alphanumeric ) );
 ///
@@ -417,7 +417,7 @@ macro_rules! take_while1 (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::is_alphanumeric;
+/// # use nom::character::is_alphanumeric;
 /// # fn main() {
 ///  named!( alpha, take_while!( is_alphanumeric ) );
 ///
@@ -937,9 +937,10 @@ mod tests {
   use lib::std::string::String;
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
-  use nom::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
+  use character::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
   use types::{CompleteByteSlice, CompleteStr};
   use util::ErrorKind;
+  use character::is_alphabetic;
 
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
@@ -1396,7 +1397,6 @@ mod tests {
 
   #[test]
   fn take_while() {
-    use nom::is_alphabetic;
     named!(f, take_while!(is_alphabetic));
     let a = b"";
     let b = b"abcd";
@@ -1411,7 +1411,6 @@ mod tests {
 
   #[test]
   fn take_while1() {
-    use nom::is_alphabetic;
     named!(f, take_while1!(is_alphabetic));
     let a = b"";
     let b = b"abcd";
@@ -1426,7 +1425,6 @@ mod tests {
 
   #[test]
   fn take_while_m_n() {
-    use nom::is_alphabetic;
     named!(x, take_while_m_n!(2, 4, is_alphabetic));
     let a = b"";
     let b = b"a";
@@ -1445,7 +1443,6 @@ mod tests {
 
   #[test]
   fn take_while_m_n_complete() {
-    use nom::is_alphabetic;
     named!(x<CompleteByteSlice,CompleteByteSlice>, take_while_m_n!(2, 4, is_alphabetic));
     let a = CompleteByteSlice(b"");
     let b = CompleteByteSlice(b"a");
@@ -1464,7 +1461,7 @@ mod tests {
 
   #[test]
   fn take_while1_complete() {
-    use nom::is_alphabetic;
+
     named!(f<CompleteByteSlice, CompleteByteSlice>, take_while1!(is_alphabetic));
     let a = CompleteByteSlice(b"");
     let b = CompleteByteSlice(b"abcd");
@@ -1483,7 +1480,7 @@ mod tests {
 
   #[test]
   fn take_till() {
-    use nom::is_alphabetic;
+
     named!(f, take_till!(is_alphabetic));
     let a = b"";
     let b = b"abcd";
@@ -1498,7 +1495,7 @@ mod tests {
 
   #[test]
   fn take_till_complete() {
-    use nom::is_alphabetic;
+
     named!(f<CompleteByteSlice, CompleteByteSlice>, take_till!(is_alphabetic));
     let a = CompleteByteSlice(b"");
     let b = CompleteByteSlice(b"abcd");
@@ -1513,7 +1510,7 @@ mod tests {
 
   #[test]
   fn take_till1() {
-    use nom::is_alphabetic;
+
     named!(f, take_till1!(is_alphabetic));
     let a = b"";
     let b = b"abcd";
@@ -1604,7 +1601,7 @@ mod tests {
   #[cfg(nightly)]
   #[bench]
   fn take_while_bench(b: &mut Bencher) {
-    use nom::is_alphabetic;
+
     named!(f, take_while!(is_alphabetic));
     b.iter(|| f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..]));
   }
@@ -1612,7 +1609,7 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn recognize_take_while() {
-    use nom::is_alphanumeric;
+    use ::character::is_alphanumeric;
     named!(x, take_while!(is_alphanumeric));
     named!(y, recognize!(x));
     assert_eq!(x(&b"ab."[..]), Ok((&b"."[..], &b"ab"[..])));
