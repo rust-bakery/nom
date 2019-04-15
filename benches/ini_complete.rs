@@ -8,7 +8,7 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
-use nom::character::{alphanumeric, multispace, space};
+use nom::character::complete::{alphanumeric, multispace, space};
 use nom::types::CompleteByteSlice;
 
 use std::str;

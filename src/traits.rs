@@ -561,25 +561,24 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
 
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
-    match self.split_at_position(predicate) {
-      Err(Err::Incomplete(_)) => {
-        Ok(self.take_split(self.input_len()))
-      },
-      res => res,
+    match (0..self.len()).find(|b| predicate(self[*b])) {
+      Some(i) => Ok((&self[i..], &self[..i])),
+      None => Ok(self.take_split(self.input_len())),
     }
   }
 
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
-    match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(_)) => {
-        if self.input_len() == 0 {
+    match (0..self.len()).find(|b| predicate(self[*b])) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(i) => Ok((&self[i..], &self[..i])),
+      None => {
+        if self.len() == 0 {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
           Ok(self.take_split(self.input_len()))
         }
       },
-      res => res,
     }
   }
 }
@@ -675,25 +674,24 @@ impl<'a> InputTakeAtPosition for &'a str {
 
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
-    match self.split_at_position(predicate) {
-      Err(Err::Incomplete(_)) => {
-        Ok(self.take_split(self.input_len()))
-      },
-      res => res,
+    match self.char_indices().find(|&(_, c)| predicate(c)) {
+      Some((i, _)) => Ok((&self[i..], &self[..i])),
+      None =>  Ok(self.take_split(self.input_len()))
     }
   }
 
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
-    match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(_)) => {
-        if self.input_len() == 0 {
+    match self.char_indices().find(|&(_, c)| predicate(c)) {
+      Some((0, _)) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some((i, _)) => Ok((&self[i..], &self[..i])),
+      None => {
+        if self.len() == 0 {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
           Ok(self.take_split(self.input_len()))
         }
       },
-      res => res,
     }
   }
 }

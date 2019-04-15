@@ -8,7 +8,7 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::Criterion;
-use nom::character::digit;
+use nom::character::complete::digit;
 
 // Parser definition
 
