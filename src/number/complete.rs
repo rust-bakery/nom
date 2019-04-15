@@ -343,7 +343,7 @@ where
         opt!(alt!(char!('+') | char!('-'))),
         // fixme: convert errors to failure here, since parsing a e or E indicates we should
         // have an exponent
-        digit1
+        return_error!(ErrorKind::Digit, digit1)
         )
       )
     )
@@ -672,7 +672,7 @@ mod tests {
     let remaining_exponent = "-1.234E-";
     assert_parse!(
       recognize_float(remaining_exponent),
-      Err(Err::Error(("", ErrorKind::Digit)))
+      Err(Err::Failure(("", ErrorKind::Digit)))
     );
   }
 
