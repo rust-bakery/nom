@@ -3,7 +3,7 @@
 extern crate nom;
 
 use nom::{Err, Needed};
-use nom::number::be_u64;
+use nom::number::streaming::be_u64;
 
 // Parser definition
 
@@ -128,7 +128,7 @@ fn overflow_incomplete_count_fixed() {
 #[test]
 #[cfg(feature = "alloc")]
 fn overflow_incomplete_length_count() {
-  use nom::number::be_u8;
+  use nom::number::streaming::be_u8;
   named!(multi<&[u8], Vec<&[u8]> >, length_count!( be_u8, length_bytes!(be_u64) ) );
 
   assert_eq!(

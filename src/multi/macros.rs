@@ -602,7 +602,7 @@ mod tests {
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
   use character::digit;
-  use number::{be_u16, be_u8, le_u16};
+  use number::streaming::{be_u16, be_u8, le_u16};
   use error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order

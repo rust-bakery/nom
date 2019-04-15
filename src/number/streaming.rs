@@ -12,7 +12,7 @@ use character::digit;
 #[inline]
 pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
   if i.len() < 1 {
-    need_more(i, Needed::Size(1))
+    Err(Err::Incomplete(Needed::Size(1)))
   } else {
     Ok((&i[1..], i[0]))
   }
@@ -22,7 +22,7 @@ pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> 
 #[inline]
 pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
   if i.len() < 2 {
-    need_more(i, Needed::Size(2))
+    Err(Err::Incomplete(Needed::Size(2)))
   } else {
     let res = ((i[0] as u16) << 8) + i[1] as u16;
     Ok((&i[2..], res))
@@ -33,7 +33,7 @@ pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E
 #[inline]
 pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 3 {
-    need_more(i, Needed::Size(3))
+    Err(Err::Incomplete(Needed::Size(3)))
   } else {
     let res = ((i[0] as u32) << 16) + ((i[1] as u32) << 8) + (i[2] as u32);
     Ok((&i[3..], res))
@@ -44,7 +44,7 @@ pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 #[inline]
 pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 4 {
-    need_more(i, Needed::Size(4))
+    Err(Err::Incomplete(Needed::Size(4)))
   } else {
     let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
     Ok((&i[4..], res))
@@ -55,7 +55,7 @@ pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 #[inline]
 pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
   if i.len() < 8 {
-    need_more(i, Needed::Size(8))
+    Err(Err::Incomplete(Needed::Size(8)))
   } else {
     let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) + ((i[4] as u64) << 24)
       + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
@@ -68,7 +68,7 @@ pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E
 #[cfg(stable_i128)]
 pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
   if i.len() < 16 {
-    need_more(i, Needed::Size(16))
+    Err(Err::Incomplete(Needed::Size(16)))
   } else {
     let res = ((i[0] as u128) << 120)
       + ((i[1] as u128) << 112)
@@ -136,7 +136,7 @@ pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
 #[inline]
 pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
   if i.len() < 1 {
-    need_more(i, Needed::Size(1))
+    Err(Err::Incomplete(Needed::Size(1)))
   } else {
     Ok((&i[1..], i[0]))
   }
@@ -146,7 +146,7 @@ pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E>
 #[inline]
 pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
   if i.len() < 2 {
-    need_more(i, Needed::Size(2))
+    Err(Err::Incomplete(Needed::Size(2)))
   } else {
     let res = ((i[1] as u16) << 8) + i[0] as u16;
     Ok((&i[2..], res))
@@ -157,7 +157,7 @@ pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, 
 #[inline]
 pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 3 {
-    need_more(i, Needed::Size(3))
+    Err(Err::Incomplete(Needed::Size(3)))
   } else {
     let res = (i[0] as u32) + ((i[1] as u32) << 8) + ((i[2] as u32) << 16);
     Ok((&i[3..], res))
@@ -168,7 +168,7 @@ pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, 
 #[inline]
 pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 4 {
-    need_more(i, Needed::Size(4))
+    Err(Err::Incomplete(Needed::Size(4)))
   } else {
     let res = ((i[3] as u32) << 24) + ((i[2] as u32) << 16) + ((i[1] as u32) << 8) + i[0] as u32;
     Ok((&i[4..], res))
@@ -179,7 +179,7 @@ pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, 
 #[inline]
 pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
   if i.len() < 8 {
-    need_more(i, Needed::Size(8))
+    Err(Err::Incomplete(Needed::Size(8)))
   } else {
     let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) + ((i[3] as u64) << 24)
       + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
@@ -192,7 +192,7 @@ pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, 
 #[cfg(stable_i128)]
 pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
   if i.len() < 16 {
-    need_more(i, Needed::Size(16))
+    Err(Err::Incomplete(Needed::Size(16)))
   } else {
     let res = ((i[15] as u128) << 120)
       + ((i[14] as u128) << 112)
@@ -255,49 +255,6 @@ pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, 
 pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128, E> {
   map!(i, le_u128, |x| x as i128)
 }
-
-/// Configurable endianness
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum Endianness {
-  Big,
-  Little,
-}
-
-/// if the parameter is nom::Endianness::Big, parse a big endian u16 integer,
-/// otherwise a little endian u16 integer
-#[macro_export(local_inner_macros)]
-macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::be_u16($i) } else { $crate::number::le_u16($i) } } ););
-/// if the parameter is nom::Endianness::Big, parse a big endian u32 integer,
-/// otherwise a little endian u32 integer
-#[macro_export(local_inner_macros)]
-macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::be_u32($i) } else { $crate::number::le_u32($i) } } ););
-/// if the parameter is nom::Endianness::Big, parse a big endian u64 integer,
-/// otherwise a little endian u64 integer
-#[macro_export(local_inner_macros)]
-macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::be_u64($i) } else { $crate::number::le_u64($i) } } ););
-/// if the parameter is nom::Endianness::Big, parse a big endian u128 integer,
-/// otherwise a little endian u128 integer
-#[macro_export(local_inner_macros)]
-#[cfg(stable_i128)]
-macro_rules! u128 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::be_u128($i) } else { $crate::number::le_u128($i) } } ););
-
-/// if the parameter is nom::Endianness::Big, parse a big endian i16 integer,
-/// otherwise a little endian i16 integer
-#[macro_export(local_inner_macros)]
-macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::be_i16($i) } else { $crate::number::le_i16($i) } } ););
-/// if the parameter is nom::Endianness::Big, parse a big endian i32 integer,
-/// otherwise a little endian i32 integer
-#[macro_export(local_inner_macros)]
-macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::be_i32($i) } else { $crate::number::le_i32($i) } } ););
-/// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
-/// otherwise a little endian i64 integer
-#[macro_export(local_inner_macros)]
-macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::be_i64($i) } else { $crate::number::le_i64($i) } } ););
-/// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
-/// otherwise a little endian i64 integer
-#[macro_export(local_inner_macros)]
-#[cfg(stable_i128)]
-macro_rules! i128 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::be_i128($i) } else { $crate::number::le_i128($i) } } ););
 
 /// Recognizes big endian 4 bytes floating point number
 #[inline]
@@ -693,79 +650,6 @@ mod tests {
     assert_parse!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
     assert_parse!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
   }
-
-  #[test]
-  fn configurable_endianness() {
-    named!(be_tst16<u16>, u16!(Endianness::Big));
-    named!(le_tst16<u16>, u16!(Endianness::Little));
-    assert_eq!(be_tst16(&[0x80, 0x00]), Ok((&b""[..], 32_768_u16)));
-    assert_eq!(le_tst16(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
-
-    named!(be_tst32<u32>, u32!(Endianness::Big));
-    named!(le_tst32<u32>, u32!(Endianness::Little));
-    assert_eq!(
-      be_tst32(&[0x12, 0x00, 0x60, 0x00]),
-      Ok((&b""[..], 302_014_464_u32))
-    );
-    assert_eq!(
-      le_tst32(&[0x12, 0x00, 0x60, 0x00]),
-      Ok((&b""[..], 6_291_474_u32))
-    );
-
-    named!(be_tst64<u64>, u64!(Endianness::Big));
-    named!(le_tst64<u64>, u64!(Endianness::Little));
-    assert_eq!(
-      be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
-      Ok((&b""[..], 1_297_142_246_100_992_000_u64))
-    );
-    assert_eq!(
-      le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
-      Ok((&b""[..], 36_028_874_334_666_770_u64))
-    );
-
-    named!(be_tsti16<i16>, i16!(Endianness::Big));
-    named!(le_tsti16<i16>, i16!(Endianness::Little));
-    assert_eq!(be_tsti16(&[0x00, 0x80]), Ok((&b""[..], 128_i16)));
-    assert_eq!(le_tsti16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
-
-    named!(be_tsti32<i32>, i32!(Endianness::Big));
-    named!(le_tsti32<i32>, i32!(Endianness::Little));
-    assert_eq!(
-      be_tsti32(&[0x00, 0x12, 0x60, 0x00]),
-      Ok((&b""[..], 1_204_224_i32))
-    );
-    assert_eq!(
-      le_tsti32(&[0x00, 0x12, 0x60, 0x00]),
-      Ok((&b""[..], 6_296_064_i32))
-    );
-
-    named!(be_tsti64<i64>, i64!(Endianness::Big));
-    named!(le_tsti64<i64>, i64!(Endianness::Little));
-    assert_eq!(
-      be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
-      Ok((&b""[..], 71_881_672_479_506_432_i64))
-    );
-    assert_eq!(
-      le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
-      Ok((&b""[..], 36_028_874_334_732_032_i64))
-    );
-  }
-
-  //FIXME
-  /*
-  #[test]
-  #[cfg(feature = "std")]
-  fn manual_configurable_endianness_test() {
-    let x = 1;
-    let int_parse: Box<Fn(&[u8]) -> IResult<&[u8], u16, (&[u8], ErrorKind)>> = if x == 2 {
-      Box::new(be_u16)
-    } else {
-      Box::new(le_u16)
-    };
-    println!("{:?}", int_parse(&b"3"[..]));
-    assert_eq!(int_parse(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
-  }
-  */
 
   #[test]
   #[cfg(feature = "std")]

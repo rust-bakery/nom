@@ -285,7 +285,7 @@
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
-//! use nom::{error::ErrorKind, Needed, number::be_u16};
+//! use nom::{error::ErrorKind, Needed, number::streaming::be_u16};
 //!
 //! named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
 //!   tuple!(

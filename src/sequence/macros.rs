@@ -9,7 +9,7 @@
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::error::ErrorKind;
-/// # use nom::number::be_u16;
+/// # use nom::number::streaming::be_u16;
 /// // the return type depends of the children parsers
 /// named!(parser<&[u8], (u16, &[u8], &[u8]) >,
 ///   tuple!(
@@ -216,7 +216,7 @@ macro_rules! delimited(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err,Needed};
-/// use nom::number::be_u8;
+/// use nom::number::streaming::be_u8;
 ///
 /// // this parser implements a common pattern in binary formats,
 /// // the TAG-LENGTH-VALUE, where you first recognize a specific
@@ -259,7 +259,7 @@ macro_rules! delimited(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// use nom::number::be_u8;
+/// use nom::number::streaming::be_u8;
 /// named!(tag_length_value<(u8, &[u8])>,
 ///   do_parse!(
 ///     tag!( &[ 42u8 ][..] ) >>
@@ -416,7 +416,7 @@ macro_rules! nom_compile_error (
 #[cfg(test)]
 mod tests {
   use internal::{Err, IResult, Needed};
-  use number::be_u16;
+  use number::streaming::be_u16;
   use error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
@@ -760,7 +760,7 @@ mod tests {
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[test]
   fn do_parse_dependency() {
-    use number::be_u8;
+    use number::streaming::be_u8;
 
     named!(length_value,
       do_parse!(

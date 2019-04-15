@@ -611,7 +611,7 @@ macro_rules! complete (
 /// # use nom::IResult;
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8], &[u8]> {
-///    let (i1, sz)     = try_parse!(input, nom::number::be_u8);
+///    let (i1, sz)     = try_parse!(input, nom::number::streaming::be_u8);
 ///    let (i2, length) = try_parse!(i1, expr_opt!(size.checked_add(sz)));
 ///    let (i3, data)   = try_parse!(i2, take!(length));
 ///    return Ok((i3, data));
@@ -818,7 +818,7 @@ macro_rules! parse_to (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
-///  named!(check<u32>, verify!(nom::number::be_u32, |val:u32| val >= 0 && val < 3));
+///  named!(check<u32>, verify!(nom::number::streaming::be_u32, |val:u32| val >= 0 && val < 3));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -926,7 +926,7 @@ macro_rules! expr_res (
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
 /// # use nom::IResult;
-/// # use nom::{number::be_u8, error::ErrorKind};
+/// # use nom::{number::streaming::be_u8, error::ErrorKind};
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8], &[u8]> {
 ///    do_parse!(input,
