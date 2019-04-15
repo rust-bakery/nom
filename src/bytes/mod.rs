@@ -7,7 +7,9 @@ use traits::{
   need_more, need_more_err, AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake,
   InputTakeAtPosition, Slice, ToUsize,
 };
-use {Err, ErrorKind, IResult, Needed, ParseError};
+use internal::{Err, IResult, Needed};
+use util::ErrorKind;
+use error::ParseError;
 
 //FIXME: streaming
 pub fn tag<'a, T: 'a, Input:'a, Error: ParseError<Input>>(tag: T) -> impl FnOnce(Input) -> IResult<Input, Input, Error>

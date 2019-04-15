@@ -596,7 +596,8 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err, IResult, Needed, ParseError};
+  use internal::{Err, IResult, Needed};
+  use error::ParseError;
   use lib::std::str::{self, FromStr};
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
@@ -632,7 +633,7 @@ mod tests {
         let b       = &$bytes[..m];
 
         let res: IResult<_,_,_> = if reduced != b {
-          Err($crate::Err::Error($crate::make_error($i, $crate::ErrorKind::Tag)))
+          Err($crate::Err::Error($crate::error::make_error($i, $crate::ErrorKind::Tag)))
         } else if m < blen {
           Err($crate::Err::Incomplete(Needed::Size(blen)))
         } else {

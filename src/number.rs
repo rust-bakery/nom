@@ -1,4 +1,5 @@
 use internal::*;
+use error::ParseError;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use traits::{need_more, need_more_err, AtEof, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
@@ -452,7 +453,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, IResult, Needed, ParseError};
+  use internal::{Err, IResult, Needed};
   use types::{CompleteByteSlice, CompleteStr};
 
   macro_rules! assert_parse(

@@ -400,8 +400,6 @@ pub mod lib {
 pub use self::traits::*;
 pub use self::util::*;
 
-pub use self::simple_errors::*;
-
 pub use self::branch::*;
 pub use self::internal::*;
 pub use self::macros::*;
@@ -424,7 +422,7 @@ pub use self::str::*;
 mod util;
 
 #[macro_use]
-pub mod simple_errors;
+pub mod error;
 
 #[macro_use]
 mod internal;

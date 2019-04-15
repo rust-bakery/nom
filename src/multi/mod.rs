@@ -1,7 +1,8 @@
 #[macro_use]
 mod macros;
 
-use internal::{Err, IResult, Needed, ParseError};
+use internal::{Err, IResult, Needed};
+use error::ParseError;
 use traits::{need_more, AtEof, InputLength};
 #[cfg(feature = "alloc")]
 use ::lib::std::vec::Vec;

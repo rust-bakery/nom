@@ -13,6 +13,7 @@ use lib::std::boxed::Box;
 #[cfg(feature = "std")]
 use lib::std::fmt::Debug;
 use internal::*;
+use error::ParseError;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use traits::{need_more, need_more_err, AtEof, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
@@ -104,7 +105,8 @@ pub fn rest_s<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, IResult, Needed, ParseError};
+  use internal::{Err, IResult, Needed};
+  use error::ParseError;
   use types::{CompleteByteSlice, CompleteStr};
 
   macro_rules! assert_parse(

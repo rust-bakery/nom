@@ -1,7 +1,8 @@
 #[macro_use]
 mod macros;
 
-use internal::{IResult, ParseError};
+use internal::IResult;
+use error::ParseError;
 
 pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, (O1, O2), E>
 where

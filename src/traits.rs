@@ -1,6 +1,7 @@
 //! Traits input types have to implement to work with nom combinators
 //!
-use internal::{Err, IResult, Needed, ParseError};
+use internal::{Err, IResult, Needed};
+use error::ParseError;
 use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use lib::std::iter::Enumerate;
 use lib::std::slice::Iter;

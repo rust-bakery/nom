@@ -4,7 +4,8 @@ mod macros;
 pub mod streaming;
 pub mod complete;
 
-use internal::{Err, IResult, Needed, ParseError};
+use internal::{Err, IResult, Needed};
+use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{need_more, AsChar, AtEof, FindToken, InputIter, Slice};
 use traits::{InputLength, InputTakeAtPosition};
@@ -416,7 +417,8 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, IResult, Needed, ParseError};
+  use internal::{Err, IResult, Needed};
+  use error::ParseError;
   use types::{CompleteByteSlice, CompleteStr};
 
 

@@ -1,4 +1,5 @@
-use internal::{Err, IResult, ParseError};
+use internal::{Err, IResult};
+use error::ParseError;
 use ::lib::std::ops::RangeFrom;
 use traits::{AsChar, AtEof, FindToken, InputIter, InputLength, Slice};
 use util::ErrorKind;

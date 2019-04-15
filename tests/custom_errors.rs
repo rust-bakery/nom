@@ -4,7 +4,8 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult, ErrorKind, ParseError};
+use nom::{IResult, ErrorKind};
+use nom::error::ParseError;
 use nom::character::digit;
 
 use std::convert::From;

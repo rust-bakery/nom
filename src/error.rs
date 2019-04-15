@@ -6,65 +6,129 @@
 //! It contains an error code and the input position that triggered it.
 //!
 
+use internal::{Err, IResult};
+use util::ErrorKind;
+
+pub trait ParseError<I>: Sized {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self;
+
+  fn append(input: I, kind: ErrorKind, other: Self) -> Self;
+
+  fn from_char(input: I, _: char) -> Self {
+    Self::from_error_kind(input, ErrorKind::Char)
+  }
+
+  fn or(self, other: Self) -> Self {
+    other
+  }
+
+  fn add_context(_input: I, _ctx: &'static str, other: Self) -> Self {
+    other
+  }
+}
+
+impl<I> ParseError<I> for (I, ErrorKind) {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    (input, kind)
+  }
+
+  fn append(_: I, _: ErrorKind, other: Self) -> Self {
+    other
+  }
+}
+
+impl<I> ParseError<I> for () {
+  fn from_error_kind(_: I, _: ErrorKind) -> Self { }
+
+  fn append(_: I, _: ErrorKind, _: Self) -> Self { }
+}
+
+pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
+  E::from_error_kind(input, kind)
+}
+
+pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) -> E {
+  E::append(input, kind, other)
+}
+
+#[cfg(feature = "alloc")]
+#[derive(Clone,Debug,PartialEq)]
+pub struct VerboseError<I> {
+  pub errors: ::lib::std::vec::Vec<(I, VerboseErrorKind)>,
+}
+
+#[cfg(feature = "alloc")]
+#[derive(Clone,Debug,PartialEq)]
+pub enum VerboseErrorKind {
+  Context(&'static str),
+  Char(char),
+  Nom(ErrorKind),
+}
+
+#[cfg(feature = "alloc")]
+impl<I> ParseError<I> for VerboseError<I> {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    VerboseError {
+      errors: vec![(input, VerboseErrorKind::Nom(kind))]
+    }
+  }
+
+  fn append(input: I, kind: ErrorKind, mut other: Self) -> Self {
+    other.errors.push((input, VerboseErrorKind::Nom(kind)));
+    other
+  }
+
+  fn from_char(input: I, c: char) -> Self {
+    VerboseError {
+      errors: vec![(input, VerboseErrorKind::Char(c))]
+    }
+  }
+
+  fn add_context(input: I, ctx: &'static str, mut other: Self) -> Self {
+    other.errors.push((input, VerboseErrorKind::Context(ctx)));
+    other
+  }
+}
+
+#[cfg(feature = "alloc")]
+pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl FnOnce(I) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E> {
+
+    move |i: I| {
+      match f(i.clone()) {
+        Ok(o) => Ok(o),
+        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+          Err(Err::Failure(E::add_context(i, context, e)))
+        }
+      }
+    }
+
+}
+
+/// creates a parse error from a `nom::ErrorKind`
+/// and the position in the input
+#[allow(unused_variables)]
+#[macro_export(local_inner_macros)]
+macro_rules! error_position(
+  ($input:expr, $code:expr) => ({
+    $crate::error::make_error($input, $code)
+  });
+);
+
+/// creates a parse error from a `nom::ErrorKind`,
+/// the position in the input and the next error in
+/// the parsing tree.
+#[allow(unused_variables)]
+#[macro_export(local_inner_macros)]
+macro_rules! error_node_position(
+  ($input:expr, $code:expr, $next:expr) => ({
+    $crate::error::append_error($input, $code, $next)
+  });
+);
+
 /*
-#[derive(Debug, Clone, PartialEq)]
-pub enum Context<I, E = u32> {
-  Code(I, ErrorKind<E>),
-}
-
-impl<I, H: From<I>, F, E: From<F>> Convert<Context<I, F>> for Context<H, E> {
-  fn convert(c: Context<I, F>) -> Self {
-    let Context::Code(i, e) = c;
-
-    Context::Code(i.into(), ErrorKind::convert(e))
-  }
-}
-
-*/
-
-/*
-impl<I,O,E> IResult<I,O,E> {
-  /// Maps a `IResult<I, O, E>` to `IResult<I, O, N>` by appling a function
-  /// to a contained `Error` value, leaving `Done` and `Incomplete` value
-  /// untouched.
-  #[inline]
-  pub fn map_err<N, F>(self, f: F) -> IResult<I, O, N>
-   where F: FnOnce(Err<E>) -> Err<N> {
-    match self {
-      Error(e)      => Error(f(e)),
-      Incomplete(n) => Incomplete(n),
-      Done(i, o)    => Done(i, o),
-    }
-  }
-
-  /// Unwrap the contained `Error(E)` value, or panic if the `IResult` is not
-  /// `Error`.
-  pub fn unwrap_err(self) -> Err<E> {
-    match self {
-      Error(e)      => e,
-      Done(_, _)    => panic!("unwrap_err() called on an IResult that is Done"),
-      Incomplete(_) => panic!("unwrap_err() called on an IResult that is Incomplete"),
-    }
-  }
-
-  /// Convert the IResult to a std::result::Result
-  pub fn to_full_result(self) -> Result<O, IError<E>> {
-    match self {
-      Done(_, o)    => Ok(o),
-      Incomplete(n) => Err(IError::Incomplete(n)),
-      Error(e)      => Err(IError::Error(e))
-    }
-  }
-
-  /// Convert the IResult to a std::result::Result, or panic if the `IResult` is `Incomplete`
-  pub fn to_result(self) -> Result<O, Err<E>> {
-    match self {
-      Done(_, o)    => Ok(o),
-      Error(e)      => Err(e),
-      Incomplete(_) => panic!("to_result() called on an IResult that is Incomplete")
-    }
-  }
-}
 
 #[cfg(feature = "std")]
 use $crate::lib::std::any::Any;

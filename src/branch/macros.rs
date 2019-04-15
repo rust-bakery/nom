@@ -856,7 +856,8 @@ mod tests {
   #[cfg(feature = "alloc")]
   use lib::std::string::{String, ToString};
   use lib::std::fmt::Debug;
-  use internal::{Err, IResult, Needed, ParseError};
+  use internal::{Err, IResult, Needed};
+  use error::ParseError;
   use util::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order

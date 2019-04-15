@@ -483,7 +483,7 @@ macro_rules! return_error (
         Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
         Ok((i, o))              => Ok((i, o)),
         Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-          return Err(Err::Failure($crate::append_error($i, $code, e)))
+          return Err(Err::Failure($crate::error::append_error($i, $code, e)))
         }
       }
     }
@@ -806,7 +806,7 @@ macro_rules! parse_to (
       let res: Option<$t> = ($i).parse_to();
       match res {
         Some(output) => Ok(($i.slice($i.input_len()..), output)),
-        None         => Err(Err::Error($crate::make_error($i, ErrorKind::ParseTo)))
+        None         => Err(Err::Error($crate::error::make_error($i, ErrorKind::ParseTo)))
       }
     }
   );
@@ -1292,7 +1292,7 @@ macro_rules! not(
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
         Err(_) => Ok(($i, ())),
         Ok(_)  => {
-          let c = $crate::make_error($i, ErrorKind::Not);
+          let c = $crate::error::make_error($i, ErrorKind::Not);
           let err =  Err(Err::Error(c));
           let default = Ok(($i, ()));
 
@@ -1423,7 +1423,8 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err, IResult, Needed, ParseError};
+  use internal::{Err, IResult, Needed};
+  use error::ParseError;
   use util::ErrorKind;
   #[cfg(feature = "alloc")]
   use lib::std::boxed::Box;
@@ -1445,7 +1446,7 @@ mod tests {
         },
         CompareResult::Error => {
           let e:ErrorKind = ErrorKind::Tag;
-          Err(Err::Error($crate::make_error($i, e)))
+          Err(Err::Error($crate::error::make_error($i, e)))
         }
       };
       res
@@ -1713,7 +1714,7 @@ mod tests {
     assert_eq!(test(&b"2"[..]), Ok((&b""[..], ValidValue::Two)));
 
     {
-      assert_eq!(test(&b"3"[..]), Err(Err::Error(::make_error(&b"3"[..], ErrorKind::MapRes))));
+      assert_eq!(test(&b"3"[..]), Err(Err::Error(::error::make_error(&b"3"[..], ErrorKind::MapRes))));
     }
   }
   */
