@@ -11,7 +11,7 @@ use nom::{Err, IResult, Offset, error::{VerboseError, VerboseErrorKind}};
 use nom::{character::complete::alphanumeric, take_while, tag, separated_listc, alt};
 use nom::{delimited, preceded, separated_list, terminated, error::context};
 use nom::character::complete::char;
-use nom::number::recognize_float;
+use nom::number::complete::recognize_float;
 use nom::error::{ErrorKind,ParseError};
 use std::str;
 use std::iter::repeat;
