@@ -535,16 +535,15 @@ where
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 //FIXME: streaming
-pub fn fold_many0<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
+pub fn fold_many0<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl FnOnce(I) -> IResult<I, R, E>
 where
   I: Clone + AtEof + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
-  R: Clone,
 {
   move |i: I| {
-    let mut res = init.clone();
+    let mut res = init;
     let mut input = i.clone();
 
     loop {
@@ -573,6 +572,17 @@ where
   }
 }
 
+#[doc(hidden)]
+pub fn fold_many0c<I, O, E, F, G, R>(i: I, f: F, init: R, g: G) -> IResult<I, R, E>
+where
+  I: Clone + AtEof + PartialEq,
+  F: Fn(I) -> IResult<I, O, E>,
+  G: Fn(R, O) -> R,
+  E: ParseError<I>,
+{
+  fold_many0(f, init, g)(i)
+}
+
 /// Applies a parser until it fails and accumulates
 /// the results using a given function and initial value.
 /// Fails if the embedded parser does not succeed at least
@@ -583,13 +593,12 @@ where
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 //FIXME: streaming
-pub fn fold_many1<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
+pub fn fold_many1<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl FnOnce(I) -> IResult<I, R, E>
 where
   I: Clone + AtEof + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
-  R: Clone,
 {
   move |i: I| {
     let _i = i.clone();
@@ -598,7 +607,7 @@ where
       Err(Err::Failure(_)) => Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1))),
       Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
       Ok((i1, o1)) => {
-        let mut acc = g(init.clone(), o1);
+        let mut acc = g(init, o1);
         let mut input = i1;
         loop {
           let _input = input.clone();
@@ -638,7 +647,6 @@ where
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
-  R: Clone,
 {
   fold_many1(f, init, g)(i)
 }
@@ -655,16 +663,15 @@ where
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 //FIXME: streaming
-pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(I) ->IResult<I, R, E>
+pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, f: F, init: R, g: G) -> impl FnOnce(I) ->IResult<I, R, E>
 where
   I: Clone + AtEof + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
-  R: Clone,
 {
   move |i: I| {
-    let mut acc = init.clone();
+    let mut acc = init;
     let mut input = i.clone();
     for count in 0..n {
       let _input = input.clone();
@@ -705,7 +712,6 @@ where
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
-  R: Clone,
 {
   fold_many_m_n(m, n, f, init, g)(i)
 }
