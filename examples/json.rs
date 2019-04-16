@@ -8,8 +8,13 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use nom::{Err, IResult, Offset, error::{VerboseError, VerboseErrorKind}};
-use nom::{character::complete::alphanumeric, bytes::complete::{take_while, tag}, separated_list, separated_listc, alt};
-use nom::{sequence::{preceded, terminated}, error::context};
+use nom::{
+  character::complete::alphanumeric,
+  bytes::complete::{take_while, tag},
+  multi::separated_listc,
+  branch::alt,
+  sequence::{preceded, terminated}, error::context
+};
 use nom::character::complete::char;
 use nom::number::complete::recognize_float;
 use nom::error::{ErrorKind,ParseError};

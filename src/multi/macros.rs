@@ -18,7 +18,7 @@ macro_rules! separated_list(
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::separated_listc($i, $f, $g)
+    $crate::multi::separated_listc($i, $f, $g)
   );
 );
 
@@ -39,7 +39,7 @@ macro_rules! separated_nonempty_list(
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::separated_nonempty_listc($i, $f, $g)
+    $crate::multi::separated_nonempty_listc($i, $f, $g)
   );
 );
 
@@ -112,7 +112,7 @@ macro_rules! many0(
     many0!($i, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr) => (
-    $crate::many0c($i, $f)
+    $crate::multi::many0c($i, $f)
   );
 );
 
@@ -150,7 +150,7 @@ macro_rules! many1(
     many1!($i, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr) => (
-    $crate::many1c($i, $f)
+    $crate::multi::many1c($i, $f)
   );
 );
 
@@ -195,7 +195,7 @@ macro_rules! many_till(
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::many_tillc($i, $f, $g)
+    $crate::multi::many_tillc($i, $f, $g)
   );
 );
 
@@ -230,7 +230,7 @@ macro_rules! many_m_n(
     many_m_n!($i, $m, $n, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $m:expr, $n: expr, $f:expr) => (
-    $crate::many_m_nc($i, $m, $n, $f)
+    $crate::multi::many_m_nc($i, $m, $n, $f)
   );
 );
 
@@ -254,11 +254,11 @@ macro_rules! many_m_n(
 #[macro_export]
 macro_rules! many0_count {
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    $crate::many0_countc($i, |i| $submac!(i, $($args)*))
+    $crate::multi::many0_countc($i, |i| $submac!(i, $($args)*))
   );
 
   ($i:expr, $f:expr) => (
-    $crate::many0_countc($i, $f)
+    $crate::multi::many0_countc($i, $f)
   );
 }
 
@@ -279,11 +279,11 @@ macro_rules! many0_count {
 #[macro_export]
 macro_rules! many1_count {
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    $crate::many1_countc($i, |i| $submac!(i, $($args)*))
+    $crate::multi::many1_countc($i, |i| $submac!(i, $($args)*))
   );
 
   ($i:expr, $f:expr) => (
-    $crate::many1_countc($i, $f)
+    $crate::multi::many1_countc($i, $f)
   );
 }
 
@@ -313,7 +313,7 @@ macro_rules! count(
     count!($i, |i| $submac!(i, $($args)*), $count)
   );
   ($i:expr, $f:expr, $count: expr) => (
-    $crate::count($f, $count)($i)
+    $crate::multi::count($f, $count)($i)
   );
 );
 
@@ -465,7 +465,7 @@ macro_rules! length_value(
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::length_valuec($i, $f, $g);
+    $crate::multi::length_valuec($i, $f, $g);
   );
 );
 
@@ -498,7 +498,7 @@ macro_rules! fold_many0(
     fold_many0!($i, |i| $submac!(i, $($args)*), $init, $fold_f)
   );
   ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
-    $crate::fold_many0($f, $init, $fold_f)($i)
+    $crate::multi::fold_many0($f, $init, $fold_f)($i)
   );
 );
 
@@ -532,7 +532,7 @@ macro_rules! fold_many1(
     fold_many1!($i, |i| $submac!(i, $($args)*), $init, $fold_f)
   );
   ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
-    $crate::fold_many1c($i, $f, $init, $fold_f)
+    $crate::multi::fold_many1c($i, $f, $init, $fold_f)
   );
   ($i:expr, $f:expr, $init:expr, $fold_f:expr) => (
     fold_many1!($i, call!($f), $init, $fold_f);
@@ -572,7 +572,7 @@ macro_rules! fold_many_m_n(
     fold_many_m_n!($i, $m, $n, |i| $submac!(i, $($args)*), $init, $fold_f)
   );
   ($i:expr, $m:expr, $n:expr, $f:expr, $init:expr, $fold_f:expr) => (
-    $crate::fold_many_m_nc($i, $m, $n, $f, $init, $fold_f)
+    $crate::multi::fold_many_m_nc($i, $m, $n, $f, $init, $fold_f)
   );
 );
 

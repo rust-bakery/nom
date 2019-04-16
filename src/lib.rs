@@ -400,11 +400,9 @@ pub mod lib {
 pub use self::traits::*;
 pub use self::util::*;
 
-pub use self::branch::*;
 pub use self::internal::*;
 pub use self::macros::*;
 pub use self::methods::*;
-pub use self::multi::*;
 
 pub use self::bits::*;
 
@@ -428,11 +426,11 @@ mod traits;
 #[macro_use]
 mod macros;
 #[macro_use]
-mod branch;
+pub mod branch;
 #[macro_use]
 pub mod sequence;
 #[macro_use]
-mod multi;
+pub mod multi;
 #[macro_use]
 pub mod methods;
 
