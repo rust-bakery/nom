@@ -114,3 +114,63 @@ where
 {
   delimited(first, sep, second)(input)
 }
+
+pub trait Tuple<I,O,E> {
+  fn parse(&self, input: I) -> IResult<I,O,E>;
+}
+
+macro_rules! tuple_parser(
+  ($name1:ident $ty1:ident, $name2: ident $ty2:ident, $($name:ident $ty:ident),*) => (
+    tuple_parser!(__impl $name1 $ty1, $name2 $ty2; $($name $ty),*);
+  );
+  (__impl $($name:ident $ty: ident),+; $name1:ident $ty1:ident, $($name2:ident $ty2:ident),*) => (
+    tuple_impl!($($name $ty),+);
+    tuple_parser!(__impl $($name $ty),+ , $name1 $ty1; $($name2 $ty2),*);
+  );
+  (__impl $($name:ident $ty: ident),+; $name1:ident $ty1:ident) => (
+    tuple_impl!($($name $ty),+);
+    tuple_impl!($($name $ty),+, $name1 $ty1);
+  );
+);
+
+macro_rules! tuple_impl(
+  ($($name:ident $ty: ident),+) => (
+    impl<
+      Input: Clone, $($ty),+ , Error: ParseError<Input>,
+      $($name: Fn(Input) -> IResult<Input, $ty, Error>),+
+    > Tuple<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
+
+      fn parse(&self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
+        tuple_inner!(0, self, input, (), $($name)+)
+
+      }
+    }
+  );
+);
+
+macro_rules! tuple_inner(
+  ($it:tt, $self:expr, $input:expr, (), $head:ident $($id:ident)+) => ({
+    let (i, o) = acc!($it, $self)($input.clone())?;
+
+    succ!($it, tuple_inner!($self, i, ( o ), $($id)+))
+  });
+  ($it:tt, $self:expr, $input:expr, ($($parsed:tt)*), $head:ident $($id:ident)+) => ({
+    let (i, o) = acc!($it, $self)($input.clone())?;
+
+    succ!($it, tuple_inner!($self, i, ($($parsed)* , o), $($id)+))
+  });
+  ($it:tt, $self:expr, $input:expr, ($($parsed:tt)*), $head:ident) => ({
+    let (i, o) = acc!($it, $self)($input.clone())?;
+
+    Ok((i, ($($parsed)* , o)))
+  });
+);
+
+tuple_parser!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ J, FnK K, FnL L,
+  FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
+
+pub fn tuple<I: Clone, O, E: ParseError<I>, List: Tuple<I,O,E>>(l: List)  -> impl Fn(I) -> IResult<I, O, E> {
+  move |i: I| {
+    l.parse(i)
+  }
+}
