@@ -501,7 +501,7 @@ where
 {
   move |i: I | {
     let mut input = i.clone();
-    let mut res = ::lib::std::vec::Vec::with_capacity(count);
+    let mut res = ::lib::std::vec::Vec::new();
 
     for _ in 0..count {
       let input_ = input.clone();
