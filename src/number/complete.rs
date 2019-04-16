@@ -351,7 +351,6 @@ where
 
 /// Recognizes floating point number in a byte string and returns a f32
 #[cfg(feature = "alloc")]
-//pub fn float(input: &[u8]) -> IResult<&[u8], f32> {
 pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -361,7 +360,13 @@ where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
-  flat_map!(input, recognize_float, parse_to!(f32))
+  match recognize_float(input) {
+    Err(e) => Err(e),
+    Ok((i, s)) => match s.parse_to() {
+      Some(n) => Ok((i, n)),
+      None =>  Err(Err::Error(E::from_error_kind(i, ErrorKind::ParseTo)))
+    }
+  }
 }
 
 /// Recognizes floating point number in a byte string and returns a f64
@@ -375,7 +380,13 @@ where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
-  flat_map!(input, call!(recognize_float), parse_to!(f64))
+  match recognize_float(input) {
+    Err(e) => Err(e),
+    Ok((i, s)) => match s.parse_to() {
+      Some(n) => Ok((i, n)),
+      None =>  Err(Err::Error(E::from_error_kind(i, ErrorKind::ParseTo)))
+    }
+  }
 }
 
 #[cfg(test)]
