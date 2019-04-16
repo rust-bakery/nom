@@ -529,7 +529,11 @@ impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
     match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      Err(Err::Incomplete(_)) => if self.input_len() == 0 {
+        Err(Err::Error(E::from_error_kind(self.clone(), e)))
+      } else {
+        Ok(self.take_split(self.input_len()))
+      }
       res => res,
     }
   }

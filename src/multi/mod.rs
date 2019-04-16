@@ -26,14 +26,14 @@ where
     loop {
       match f(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, acc)),
-        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
         Err(Err::Incomplete(n)) => {
           if i.at_eof() {
             return Ok((i, acc));
           } else {
             return Err(Err::Incomplete(n));
           }
-        }
+        },
+        Err(e) => return Err(e),
         Ok((i1, o)) => {
           if i1 == i {
             return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
@@ -76,7 +76,8 @@ where
   move |i: I| {
     let mut i = i.clone();
     match f(i.clone()) {
-      Err(_) => return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
+      Err(Err::Error(err)) => return Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
+      Err(e) => return Err(e),
       Ok((i1, o)) => {
         let mut acc = ::lib::std::vec::Vec::with_capacity(4);
         acc.push(o);
@@ -143,9 +144,7 @@ where
         Err(_) => {
           match f(i.clone()) {
             Err(Err::Error(err)) =>
-              //fn unify_types<T>(_: &T, _: &T) {}
               return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
-              //unify_types(&e1, &e);
             Err(e) => return Err(e),
             Ok((i1, o)) => {
               // loop trip must always consume (otherwise infinite loops)
@@ -197,7 +196,7 @@ where
 
     match f(i.clone()) {
       Err(Err::Error(_)) => return Ok((i, res)),
-      Err(e)=> return Err(e),
+      Err(e) => return Err(e),
       Ok((i1, o)) => {
         if i1 == i {
           return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
@@ -350,7 +349,11 @@ where
         Ok((i, o)) => {
           // do not allow parsers that do not consume input (causes infinite loops)
           if i == input {
-            break;
+            if count < m {
+              return Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyMN)));
+            } else {
+              return Ok((input, res));
+            }
           }
           res.push(o);
           input = i;
@@ -452,7 +455,6 @@ where
     let i_ = i.clone();
     match f(i_) {
       Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1Count))),
-      Err(Err::Failure(_)) => Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1Count))),
       Err(i) => Err(i),
       Ok((i1, _)) => {
         let mut count = 1;
@@ -464,8 +466,8 @@ where
             Err(Err::Error(_)) => return Ok((input, count)),
             Err(e) => return Err(e),
             Ok((i, _)) => {
-              if i == input{
-                return Ok((input, count));
+              if i == input {
+                return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1Count)));
               }
               count += 1;
               input = i;
@@ -511,11 +513,7 @@ where
           input = i;
         }
         Err(Err::Error(e)) => {
-          fn unify_types<T>(_: &T, _: &T) {}
-          let e2 = E::from_error_kind(i, ErrorKind::Count);
-          unify_types(&e, &e2);
-
-          return Err(Err::Error(e2));
+          return Err(Err::Error(E::append(i, ErrorKind::Count, e)));
         }
         Err(e) => {
           return Err(e);
@@ -604,8 +602,7 @@ where
     let _i = i.clone();
     match f(_i) {
       Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
-      Err(Err::Failure(_)) => Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1))),
-      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+      Err(e) => return Err(e),
       Ok((i1, o1)) => {
         let mut acc = g(init, o1);
         let mut input = i1;
@@ -689,15 +686,12 @@ where
           input = i;
         }
         //FInputXMError: handle failure properly
-        Err(Err::Error(_)) | Err(Err::Failure(_)) => if count < m {
+        Err(Err::Error(_)) => if count < m {
           return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
         } else {
           break;
         }
-
-        Err(Err::Incomplete(i)) => {
-          return Err(Err::Incomplete(i));
-        }
+        Err(e) => return Err(e),
       }
     }
 

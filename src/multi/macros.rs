@@ -788,7 +788,7 @@ mod tests {
     assert_eq!(multi(a), Ok((&b"ef"[..], res1)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res2)));
-    assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Many1))));
+    assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Tag))));
     assert_eq!(multi(d), Err(Err::Incomplete(Needed::Size(4))));
   }
 
@@ -830,7 +830,7 @@ mod tests {
 
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
-    assert_eq!(multi1(a), Err(Err::Error(error_position!(a, ErrorKind::Many1))));
+    assert_eq!(multi1(a), Err(Err::Error(error_position!(a, ErrorKind::Tag))));
   }
 
   #[test]
@@ -844,7 +844,7 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    assert_eq!(multi(a), Err(Err::Error(error_position!(a, ErrorKind::ManyMN))));
+    assert_eq!(multi(a), Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag))));
     let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res1)));
     let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
@@ -864,14 +864,14 @@ mod tests {
     assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]])));
     assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Count))));
+    assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
     assert_eq!(
       cnt_2(&b"xxxabcabcdef"[..]),
-      Err(Err::Error(error_position!(&b"xxxabcabcdef"[..], ErrorKind::Count)))
+      Err(Err::Error(error_position!(&b"xxxabcabcdef"[..], ErrorKind::Tag)))
     );
     assert_eq!(
       cnt_2(&b"abcxxxabcdef"[..]),
-      Err(Err::Error(error_position!(&b"abcxxxabcdef"[..], ErrorKind::Count)))
+      Err(Err::Error(error_position!(&b"xxxabcdef"[..], ErrorKind::Tag)))
     );
   }
 
@@ -1002,7 +1002,7 @@ mod tests {
     assert_eq!(cnt(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit))));
     assert_eq!(
       cnt(&b"2abcxxx"[..]),
-      Err(Err::Error(error_position!(&b"abcxxx"[..], ErrorKind::Count)))
+      Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
     );
   }
 
