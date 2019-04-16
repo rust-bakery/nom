@@ -340,9 +340,6 @@ where
     let mut res = ::lib::std::vec::Vec::with_capacity(m);
     let mut input = i.clone();
     let mut count: usize = 0;
-    let mut err = false;
-    let mut incomplete: Option<Needed> = None;
-    let mut failure: Option<E> = None;
 
     loop {
       if count == n {
@@ -359,42 +356,20 @@ where
           input = i;
           count += 1;
         }
-        Err(Err::Error(_)) => {
-          err = true;
-          break;
+        Err(Err::Error(e)) => {
+          if count < m {
+            return Err(Err::Error(E::append(input, ErrorKind::ManyMN, e)));
+          } else {
+            return Ok((input, res));
+          }
         }
-        Err(Err::Incomplete(i)) => {
-          incomplete = Some(i);
-          break;
-        }
-        Err(Err::Failure(e)) => {
-          failure = Some(e);
-          break;
+        Err(e) => {
+          return Err(e);
         }
       }
     }
 
-    if count < m {
-      if err {
-        Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)))
-      } else {
-        match failure {
-          Some(i2) => Err(Err::Failure(i2)),
-          None => match incomplete {
-            Some(i2) => need_more(i, i2),
-            None => need_more(i, Needed::Unknown),
-          },
-        }
-      }
-    } else {
-      match failure {
-        Some(i) => Err(Err::Failure(i)),
-        None => match incomplete {
-          Some(i2) => need_more(i, i2),
-          None => Ok((input, res)),
-        },
-      }
-    }
+    Ok((input, res))
   }
 }
 
