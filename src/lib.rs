@@ -405,7 +405,6 @@ pub use self::internal::*;
 pub use self::macros::*;
 pub use self::methods::*;
 pub use self::multi::*;
-pub use self::sequence::*;
 
 pub use self::bits::*;
 
@@ -431,7 +430,7 @@ mod macros;
 #[macro_use]
 mod branch;
 #[macro_use]
-mod sequence;
+pub mod sequence;
 #[macro_use]
 mod multi;
 #[macro_use]

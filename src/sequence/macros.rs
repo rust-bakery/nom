@@ -105,7 +105,7 @@ macro_rules! pair(
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::pairc($i, $f, $g)
+    $crate::sequence::pairc($i, $f, $g)
   );
 );
 
@@ -123,7 +123,7 @@ macro_rules! separated_pair(
     separated_pair!($i, $f, $g, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr, $g:expr, $h:expr) => (
-    $crate::separated_pairc($i, $f, $g, $h)
+    $crate::sequence::separated_pairc($i, $f, $g, $h)
   );
 );
 
@@ -144,7 +144,7 @@ macro_rules! preceded(
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::precededc($i, $f, $g)
+    $crate::sequence::precededc($i, $f, $g)
   );
 );
 
@@ -165,7 +165,7 @@ macro_rules! terminated(
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::terminatedc($i, $f, $g)
+    $crate::sequence::terminatedc($i, $f, $g)
   );
 );
 
@@ -199,7 +199,7 @@ macro_rules! delimited(
     delimited!($i, $f, $g, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr, $g:expr, $h:expr) => (
-    $crate::delimitedc($i, $f, $g, $h)
+    $crate::sequence::delimitedc($i, $f, $g, $h)
   );
 );
 
