@@ -62,6 +62,9 @@ debug = true
 lto = true
 codegen-units = 1
 
+[lib]
+bench = false
+
 [[test]]
 name = "arithmetic"
 
