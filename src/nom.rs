@@ -102,6 +102,46 @@ pub fn rest_s<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'
   Ok((&input[input.len()..], input))
 }
 
+pub fn map<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> O2,
+{
+  move |input: I| {
+    let (input, o1) = first(input)?;
+    Ok((input, second(o1)))
+  }
+}
+
+pub fn map_res<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> Result<O2, E2>,
+{
+  move |input: I| {
+    let i = input.clone();
+    let (input, o1) = first(input)?;
+    match second(o1) {
+      Ok(o2) => Ok((input, o2)),
+      Err(_) => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapRes))),
+    }
+  }
+}
+
+pub fn opt<I:Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, Option<O>, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |input: I| {
+    let i = input.clone();
+    match f(input) {
+      Ok((i, o)) => Ok((i, Some(o))),
+      Err(Err::Error(_)) => Ok((i, None)),
+      Err(e) => Err(e),
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -132,8 +172,6 @@ mod tests {
       ),))
     );
   }
-
-  
 
   #[test]
   #[cfg(feature = "alloc")]
