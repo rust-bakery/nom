@@ -294,29 +294,25 @@ pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 /// Recognizes a hex-encoded integer
 #[inline]
 pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  match is_a!(input, &b"0123456789abcdefABCDEF"[..]) {
-    Err(e) => Err(e),
-    Ok((i, o)) => {
-      // Do not parse more than 8 characters for a u32
-      let (parsed, remaining) = if o.len() <= 8 {
-        (o, i)
-      } else {
-        (&input[..8], &input[8..])
-      };
+  let (i, o) = ::bytes::complete::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
+  // Do not parse more than 8 characters for a u32
+  let (parsed, remaining) = if o.len() <= 8 {
+    (o, i)
+  } else {
+    (&input[..8], &input[8..])
+  };
 
-      let res = parsed
-        .iter()
-        .rev()
-        .enumerate()
-        .map(|(k, &v)| {
-          let digit = v as char;
-          digit.to_digit(16).unwrap_or(0) << (k * 4)
-        })
-        .sum();
+  let res = parsed
+    .iter()
+    .rev()
+    .enumerate()
+    .map(|(k, &v)| {
+      let digit = v as char;
+      digit.to_digit(16).unwrap_or(0) << (k * 4)
+    })
+    .sum();
 
-      Ok((remaining, res))
-    }
-  }
+  Ok((remaining, res))
 }
 
 #[allow(unused_imports)]
@@ -394,7 +390,6 @@ mod tests {
   use super::*;
   use internal::Err;
   use error::ErrorKind;
-  use types::{CompleteByteSlice, CompleteStr};
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -632,6 +627,7 @@ mod tests {
     );
     assert_parse!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
     assert_parse!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
+    assert_parse!(hex_u32(&b"12af"[..]), Ok((&b""[..], 0x12af)));
   }
 
   #[test]
@@ -661,23 +657,14 @@ mod tests {
 
       println!("now parsing: {} -> {}", test, expected32);
 
-      assert_parse!(
-        recognize_float(CompleteStr(test)),
-        Ok((CompleteStr(""), CompleteStr(test)))
-      );
       let larger = format!("{};", test);
       assert_parse!(recognize_float(&larger[..]), Ok((";", test)));
 
       assert_parse!(float(larger.as_bytes()), Ok((&b";"[..], expected32)));
       assert_parse!(float(&larger[..]), Ok((";", expected32)));
-      assert_parse!(float(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected32)));
-      assert_parse!(float(CompleteStr(test)), Ok((CompleteStr(""), expected32)));
 
       assert_parse!(double(larger.as_bytes()), Ok((&b";"[..], expected64)));
       assert_parse!(double(&larger[..]), Ok((";", expected64)));
-      assert_parse!(double(CompleteByteSlice(test.as_bytes())), Ok((CompleteByteSlice(&b""[..]), expected64)));
-      assert_parse!(double(CompleteStr(test)), Ok((CompleteStr(""), expected64)));
-
     }
 
     let remaining_exponent = "-1.234E-";

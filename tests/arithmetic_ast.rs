@@ -6,8 +6,15 @@ use std::fmt::{Debug, Display, Formatter};
 
 use std::str::FromStr;
 
-use nom::character::complete::{digit, multispace};
-use nom::types::CompleteStr;
+use nom::{
+  IResult,
+  character::complete::{digit, multispace0 as multispace},
+  sequence::{preceded, delimited},
+  multi::many0,
+  branch::alt,
+  bytes::complete::tag,
+  map, map_res
+};
 
 pub enum Expr {
   Value(i64),
@@ -54,24 +61,30 @@ impl Debug for Expr {
   }
 }
 
-named!(parens< CompleteStr, Expr >, delimited!(
-    delimited!(opt!(multispace), tag!("("), opt!(multispace)),
-    map!(map!(expr, Box::new), Expr::Paren),
-    delimited!(opt!(multispace), tag!(")"), opt!(multispace))
-  )
-);
+fn parens(i: &str) -> IResult<&str, Expr> {
+  delimited(
+    multispace,
+    delimited(
+      tag("("),
+      map(expr, |e| Expr::Paren(Box::new(e))),
+      tag(")")
+    ),
+    multispace
+  )(i)
+}
 
-named!(factor< CompleteStr, Expr >, alt_complete!(
-    map!(
-      map_res!(
-        delimited!(opt!(multispace), digit, opt!(multispace)),
-        |s: CompleteStr| { FromStr::from_str(s.0) }
+fn factor(i: &str) -> IResult<&str, Expr> {
+  alt((
+    map(
+      map_res(
+        delimited(multispace, digit, multispace),
+        FromStr::from_str
       ),
       Expr::Value
-    )
-  | parens
-  )
-);
+    ),
+    parens
+  ))(i)
+}
 
 fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
   remainder.into_iter().fold(initial, |acc, pair| {
@@ -85,64 +98,76 @@ fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
   })
 }
 
-named!(term< CompleteStr, Expr >, do_parse!(
-    initial: factor >>
-    remainder: many0!(
-           alt!(
-             do_parse!(tag!("*") >> mul: factor >> (Oper::Mul, mul)) |
-             do_parse!(tag!("/") >> div: factor >> (Oper::Div, div))
-           )
-         ) >>
-    (fold_exprs(initial, remainder))
-));
+fn term(i: &str) -> IResult<&str, Expr> {
+  let (i, initial) = factor(i)?;
+  let (i, remainder) = many0(alt((
+    |i| {
+      let(i, mul) = preceded(tag("*"), factor)(i)?;
+      Ok((i,(Oper::Mul, mul)))
+    },
+    |i| {
+      let(i, div) = preceded(tag("/"), factor)(i)?;
+      Ok((i, (Oper::Div, div)))
+    },
 
-named!(expr< CompleteStr, Expr >, do_parse!(
-    initial: term >>
-    remainder: many0!(
-           alt!(
-             do_parse!(tag!("+") >> add: term >> (Oper::Add, add)) |
-             do_parse!(tag!("-") >> sub: term >> (Oper::Sub, sub))
-           )
-         ) >>
-    (fold_exprs(initial, remainder))
-));
+  )))(i)?;
+
+  Ok((i, fold_exprs(initial, remainder)))
+}
+
+fn expr(i: &str) -> IResult<&str, Expr> {
+  let (i, initial) = term(i)?;
+  let (i, remainder) = many0(alt((
+    |i| {
+      let(i, add) = preceded(tag("+"), term)(i)?;
+      Ok((i,(Oper::Add, add)))
+    },
+    |i| {
+      let(i, sub) = preceded(tag("-"), term)(i)?;
+      Ok((i, (Oper::Sub, sub)))
+    },
+
+  )))(i)?;
+
+  Ok((i, fold_exprs(initial, remainder)))
+}
 
 #[test]
 fn factor_test() {
   assert_eq!(
-    factor(CompleteStr("  3  ")).map(|(i, x)| (i, format!("{:?}", x))),
-    Ok((CompleteStr(""), String::from("3")))
+    factor("  3  ").map(|(i, x)| (i, format!("{:?}", x))),
+    Ok(("", String::from("3")))
   );
 }
 
 #[test]
 fn term_test() {
   assert_eq!(
-    term(CompleteStr(" 3 *  5   ")).map(|(i, x)| (i, format!("{:?}", x))),
-    Ok((CompleteStr(""), String::from("(3 * 5)")))
+    term(" 3 *  5   ").map(|(i, x)| (i, format!("{:?}", x))),
+    Ok(("", String::from("(3 * 5)")))
   );
 }
 
 #[test]
 fn expr_test() {
   assert_eq!(
-    expr(CompleteStr(" 1 + 2 *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
-    Ok((CompleteStr(""), String::from("(1 + (2 * 3))")))
+    expr(" 1 + 2 *  3 ").map(|(i, x)| (i, format!("{:?}", x))),
+    Ok(("", String::from("(1 + (2 * 3))")))
   );
   assert_eq!(
-    expr(CompleteStr(" 1 + 2 *  3 / 4 - 5 ")).map(|(i, x)| (i, format!("{:?}", x))),
-    Ok((CompleteStr(""), String::from("((1 + ((2 * 3) / 4)) - 5)")))
+    expr(" 1 + 2 *  3 / 4 - 5 ").map(|(i, x)| (i, format!("{:?}", x))),
+    Ok(("", String::from("((1 + ((2 * 3) / 4)) - 5)")))
   );
   assert_eq!(
-    expr(CompleteStr(" 72 / 2 / 3 ")).map(|(i, x)| (i, format!("{:?}", x))),
-    Ok((CompleteStr(""), String::from("((72 / 2) / 3)")))
+    expr(" 72 / 2 / 3 ").map(|(i, x)| (i, format!("{:?}", x))),
+    Ok(("", String::from("((72 / 2) / 3)")))
   );
 }
 
 #[test]
 fn parens_test() {
   assert_eq!(
-    expr(CompleteStr(" ( 1 + 2 ) *  3 ")).map(|(i, x)| (i, format!("{:?}", x))),
-    Ok((CompleteStr(""), String::from("([(1 + 2)] * 3)")))
+    expr(" ( 1 + 2 ) *  3 ").map(|(i, x)| (i, format!("{:?}", x))),
+    Ok(("", String::from("([(1 + 2)] * 3)")))
   );
 }

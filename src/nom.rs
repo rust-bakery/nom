@@ -147,7 +147,6 @@ mod tests {
   use super::*;
   use internal::{Err, IResult, Needed};
   use error::ParseError;
-  use types::{CompleteByteSlice, CompleteStr};
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {

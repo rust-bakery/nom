@@ -15,7 +15,7 @@
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! one_of (
-  ($i:expr, $inp: expr) => ( $crate::character::one_of($inp)($i) );
+  ($i:expr, $inp: expr) => ( $crate::character::streaming::one_of($inp)($i) );
 );
 
 /// matches anything but the provided characters
@@ -34,7 +34,7 @@ macro_rules! one_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! none_of (
-  ($i:expr, $inp: expr) => ( $crate::character::none_of($inp)($i) );
+  ($i:expr, $inp: expr) => ( $crate::character::streaming::none_of($inp)($i) );
 );
 
 /// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
@@ -52,7 +52,7 @@ macro_rules! none_of (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! char (
-  ($i:expr, $c: expr) => ( $crate::character::char($c)($i) );
+  ($i:expr, $c: expr) => ( $crate::character::streaming::char($c)($i) );
 );
 
 #[cfg(test)]
@@ -108,17 +108,5 @@ mod tests {
 
     let b = &"cde"[..];
     assert_eq!(f(b), Ok((&"de"[..], 'c')));
-  }
-
-  use types::CompleteStr;
-  #[test]
-  fn complete_char() {
-    named!(f<CompleteStr, char>, char!('c'));
-
-    let a = CompleteStr("abcd");
-    assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
-
-    let b = CompleteStr("cde");
-    assert_eq!(f(b), Ok((CompleteStr("de"), 'c')));
   }
 }

@@ -903,7 +903,6 @@ mod tests {
   use error::ParseError;
   use super::sp;
   use error::ErrorKind;
-  use types::CompleteStr;
 
   #[test]
   fn spaaaaace() {
@@ -1112,20 +1111,6 @@ mod tests {
     assert_eq!(alt2(a), Ok((&b""[..], a)));
     assert_eq!(alt3(a), Ok((a, &b""[..])));
 
-    named!(alt4<CompleteStr, CompleteStr>, ws!(alt!(tag!("abcd") | tag!("efgh"))));
-    assert_eq!(
-      alt4(CompleteStr("\tabcd")),
-      Ok((CompleteStr(""), CompleteStr(r"abcd")))
-    );
-    assert_eq!(
-      alt4(CompleteStr("  efgh ")),
-      Ok((CompleteStr(""), CompleteStr("efgh")))
-    );
-
-    // test the alternative syntax
-    named!(alt5<CompleteStr, bool>, ws!(alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true })));
-    assert_eq!(alt5(CompleteStr("\tabcd")), Ok((CompleteStr(""), false)));
-    assert_eq!(alt5(CompleteStr("  efgh ")), Ok((CompleteStr(""), true)));
   }
 
   /*FIXME: alt_complete works, but ws will return Incomplete on end of input
@@ -1143,31 +1128,6 @@ mod tests {
     assert_eq!(ac(a), Err(Err::Error(error_position!(&a[1..], ErrorKind::Alt))));
   }
   */
-
-  #[allow(unused_variables)]
-  #[test]
-  fn switch() {
-    named!(sw<CompleteStr,CompleteStr>,
-      ws!(switch!(take!(4),
-        CompleteStr("abcd") => take!(2) |
-        CompleteStr("efgh") => take!(4)
-      ))
-    );
-
-    let a = CompleteStr(" abcd ef gh");
-    assert_eq!(sw(a), Ok((CompleteStr("gh"), CompleteStr("ef"))));
-
-    let b = CompleteStr("\tefgh ijkl ");
-    assert_eq!(sw(b), Ok((CompleteStr(""), CompleteStr("ijkl"))));
-    let c = CompleteStr("afghijkl");
-    assert_eq!(
-      sw(c),
-      Err(Err::Error(error_position!(
-        CompleteStr("afghijkl"),
-        ErrorKind::Switch
-      )))
-    );
-  }
 
   named!(str_parse(&str) -> &str, ws!(tag!("test")));
   #[allow(unused_variables)]

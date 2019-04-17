@@ -453,9 +453,6 @@ impl<'a> InputTake for &'a str {
 /// `InputTakeAtPosition` (like the one for `&[u8]`).
 pub trait UnspecializedInput {}
 
-use types::CompleteStr;
-use types::CompleteByteSlice;
-
 /// methods to take as much input as possible until the provided function returns true for the current element
 ///
 /// a large part of nom's basic parsers are built using this trait
@@ -587,71 +584,6 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   }
 }
 
-impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
-  type Item = u8;
-
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match (0..self.0.len()).find(|b| predicate(self.0[*b])) {
-      Some(i) => Ok((
-        CompleteByteSlice(&self.0[i..]),
-        CompleteByteSlice(&self.0[..i]),
-      )),
-      None => {
-        let (i, o) = self.0.take_split(self.0.len());
-        Ok((CompleteByteSlice(i), CompleteByteSlice(o)))
-      }
-    }
-  }
-
-  fn split_at_position1<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match (0..self.0.len()).find(|b| predicate(self.0[*b])) {
-      Some(0) => Err(Err::Error(E::from_error_kind(CompleteByteSlice(self.0), e))),
-      Some(i) => Ok((
-        CompleteByteSlice(&self.0[i..]),
-        CompleteByteSlice(&self.0[..i]),
-      )),
-      None => {
-        if self.0.len() == 0 {
-          Err(Err::Error(E::from_error_kind(CompleteByteSlice(self.0), e)))
-        } else {
-          Ok((
-            CompleteByteSlice(&self.0[self.0.len()..]),
-            CompleteByteSlice(self.0),
-          ))
-        }
-      }
-    }
-  }
-
-  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
-    match self.split_at_position(predicate) {
-      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
-      res => res,
-    }
-  }
-
-  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
-    match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(_)) => {
-        if self.input_len() == 0 {
-          Err(Err::Error(E::from_error_kind(CompleteByteSlice(self.0), e)))
-        } else {
-          Ok(self.take_split(self.input_len()))
-        }
-      },
-      res => res,
-    }
-  }
-}
-
 impl<'a> InputTakeAtPosition for &'a str {
   type Item = char;
 
@@ -696,63 +628,6 @@ impl<'a> InputTakeAtPosition for &'a str {
           Ok(self.take_split(self.input_len()))
         }
       },
-    }
-  }
-}
-
-impl<'a> InputTakeAtPosition for CompleteStr<'a> {
-  type Item = char;
-
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.0.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i, _)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
-      None => {
-        let (i, o) = self.0.take_split(self.0.len());
-        Ok((CompleteStr(i), CompleteStr(o)))
-      }
-    }
-  }
-
-  fn split_at_position1<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.0.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0, _)) => Err(Err::Error(E::from_error_kind(CompleteStr(self.0), e))),
-      Some((i, _)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
-      None => {
-        if self.0.len() == 0 {
-          Err(Err::Error(E::from_error_kind(CompleteStr(self.0), e)))
-        } else {
-          let (i, o) = self.0.take_split(self.0.len());
-          Ok((CompleteStr(i), CompleteStr(o)))
-        }
-      }
-    }
-  }
-
-  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
-    match self.split_at_position(predicate) {
-      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
-      res => res,
-    }
-  }
-
-  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
-    match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(_)) => {
-        if self.input_len() == 0 {
-          Err(Err::Error(E::from_error_kind(CompleteStr(self.0), e)))
-        } else {
-          Ok(self.take_split(self.input_len()))
-        }
-      },
-      res => res,
     }
   }
 }

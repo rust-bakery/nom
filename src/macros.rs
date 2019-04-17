@@ -1614,8 +1614,6 @@ mod tests {
 
   #[test]
   fn not() {
-    use types::CompleteStr;
-
     named!(not_aaa<()>, not!(tag!("aaa")));
     assert_eq!(
       not_aaa(&b"aaa"[..]),
@@ -1623,23 +1621,6 @@ mod tests {
     );
     assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
-
-    named!(not_aaa_complete<CompleteStr, ()>, not!(tag!("aaa")));
-    assert_eq!(
-      not_aaa_complete(CompleteStr("aaa")),
-      Err(Err::Error(error_position!(
-        CompleteStr("aaa"),
-        ErrorKind::Not
-      )))
-    );
-    assert_eq!(
-      not_aaa_complete(CompleteStr("aa")),
-      Ok((CompleteStr("aa"), ()))
-    );
-    assert_eq!(
-      not_aaa_complete(CompleteStr("abcd")),
-      Ok((CompleteStr("abcd"), ()))
-    );
   }
 
   #[test]

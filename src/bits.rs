@@ -265,7 +265,6 @@ mod tests {
   use lib::std::ops::{AddAssign, Shl, Shr};
   use internal::{Err, Needed};
   use error::ErrorKind;
-  use types::CompleteByteSlice;
 
   #[test]
   fn take_bits() {
@@ -286,7 +285,6 @@ mod tests {
     assert_eq!(take_bits!((sl, 6), u16, 11), Ok(((&sl[2..], 1), 1504)));
     assert_eq!(take_bits!((sl, 0), u32, 20), Ok(((&sl[2..], 4), 700_163)));
     assert_eq!(take_bits!((sl, 4), u32, 20), Ok(((&sl[3..], 0), 716_851)));
-    assert_eq!(take_bits!((CompleteByteSlice(sl), 4), u32, 20), Ok(((sl[3..].into(), 0), 716_851)));
     assert_eq!(
       take_bits!((sl, 4), u32, 22),
       Err(Err::Incomplete(Needed::Size(22)))
@@ -300,7 +298,6 @@ mod tests {
 
     assert_eq!(tag_bits!((sl, 0), u8, 3, 0b101), Ok(((&sl[0..], 3), 5)));
     assert_eq!(tag_bits!((sl, 0), u8, 4, 0b1010), Ok(((&sl[0..], 4), 10)));
-    assert_eq!(tag_bits!((CompleteByteSlice(sl), 0), u8, 4, 0b1010), Ok(((sl[0..].into(), 4), 10)));
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
@@ -334,12 +331,10 @@ mod tests {
   }
 
   named!(bits_bytes_bs, bits!(bytes!(::rest)));
-  named!(bits_bytes_cbs<CompleteByteSlice, CompleteByteSlice>, bits!(bytes!(::rest)));
   #[test]
   fn bits_bytes() {
     let input = [0b10_10_10_10];
     assert_eq!(bits_bytes_bs(&input[..]), Ok((&[][..], &[0b10_10_10_10][..])));
-    assert_eq!(bits_bytes_cbs(CompleteByteSlice(&input[..])), Ok(([][..].into(), [0b10_10_10_10][..].into())));
   }
 
   #[derive(PartialEq, Debug)]

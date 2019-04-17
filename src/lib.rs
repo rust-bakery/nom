@@ -455,5 +455,3 @@ mod str;
 
 #[macro_use]
 pub mod number;
-
-pub mod types;

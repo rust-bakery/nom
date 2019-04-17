@@ -76,12 +76,6 @@ required-features = ["alloc"]
 name = "blockbuf-arithmetic"
 
 [[test]]
-name = "complete_arithmetic"
-
-[[test]]
-name = "complete_float"
-
-[[test]]
 name = "css"
 
 [[test]]

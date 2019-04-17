@@ -1,13 +1,13 @@
 use internal::{Err, IResult, Needed};
 use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};
-use traits::{AsChar, AtEof, FindToken, InputIter, InputLength,  InputTakeAtPosition, Slice};
+use traits::{AsChar, AtEof, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
 use traits::{Compare, CompareResult};
 use error::ErrorKind;
 
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter + AtEof,
+  I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar,
 {
   move |i: I| match (i).iter_elements().next().map(|t| {
@@ -22,7 +22,7 @@ where
 
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter + AtEof,
+  I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar + Copy,
   T: FindToken<<I as InputIter>::Item>,
 {
@@ -34,7 +34,7 @@ where
 
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter + AtEof,
+  I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar + Copy,
   T: FindToken<<I as InputIter>::Item>,
 {
@@ -47,7 +47,7 @@ where
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + AtEof,
+  T: InputIter,
   T: Compare<&'static str>,
 {
   match input.compare("\r\n") {
@@ -106,7 +106,7 @@ where
 pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength,
   T: Compare<&'static str>,
 {
   match input.compare("\n") {
@@ -125,7 +125,7 @@ where
 pub fn eol<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength,
   T: Compare<&'static str>,
 {
   line_ending(input)
@@ -134,7 +134,7 @@ where
 /// matches a newline character '\\n'
 pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter + AtEof,
+  I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar,
 {
   char('\n')(input)
@@ -143,7 +143,7 @@ where
 /// matches a tab character '\t'
 pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter + AtEof,
+  I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar,
 {
   char('\t')(input)
@@ -162,7 +162,7 @@ where
 /// ```
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
-  T: InputIter + InputLength + Slice<RangeFrom<usize>> + AtEof,
+  T: InputIter + InputLength + Slice<RangeFrom<usize>>,
   <T as InputIter>::Item: AsChar,
 {
   let mut it = input.iter_indices();
@@ -394,9 +394,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, IResult, Needed};
-  use types::{CompleteByteSlice, CompleteStr};
-
+  use internal::{Err, Needed};
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -418,10 +416,6 @@ mod tests {
     //assert_eq!(alpha::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
     assert_parse!(alpha(a), Ok((empty, a)));
     assert_eq!(
-      alpha::<_, (_, ErrorKind)>(CompleteByteSlice(a)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
-    );
-    assert_eq!(
       alpha(b),
       Err(Err::Error((b, ErrorKind::Alpha)))
     );
@@ -433,10 +427,6 @@ mod tests {
     );
     assert_eq!(digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(
-      digit::<_, (_, ErrorKind)>(CompleteByteSlice(b)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
-    );
-    assert_eq!(
       digit(c),
       Err(Err::Error((c, ErrorKind::Digit)))
     );
@@ -445,20 +435,8 @@ mod tests {
       Err(Err::Error((d, ErrorKind::Digit)))
     );
     assert_eq!(hex_digit::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(
-      hex_digit::<_, (_, ErrorKind)>(CompleteByteSlice(a)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
-    );
     assert_eq!(hex_digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      hex_digit::<_, (_, ErrorKind)>(CompleteByteSlice(b)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
-    );
     assert_eq!(hex_digit::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(
-      hex_digit::<_, (_, ErrorKind)>(CompleteByteSlice(c)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(c)))
-    );
     assert_eq!(hex_digit::<_, (_, ErrorKind)>(d), Ok(("zé12".as_bytes(), &b"a"[..])));
     assert_eq!(
       hex_digit(e),
@@ -470,10 +448,6 @@ mod tests {
     );
     assert_eq!(oct_digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(
-      oct_digit::<_, (_, ErrorKind)>(CompleteByteSlice(b)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(b)))
-    );
-    assert_eq!(
       oct_digit(c),
       Err(Err::Error((c, ErrorKind::OctDigit)))
     );
@@ -482,27 +456,11 @@ mod tests {
       Err(Err::Error((d, ErrorKind::OctDigit)))
     );
     assert_eq!(alphanumeric::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(
-      alphanumeric::<_, (_, ErrorKind)>(CompleteByteSlice(a)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(a)))
-    );
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(
-      alphanumeric::<_, (_, ErrorKind)>(CompleteByteSlice(c)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(c)))
-    );
     assert_eq!(alphanumeric::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
     assert_eq!(space::<_, (_, ErrorKind)>(e), Ok((empty, e)));
-    assert_eq!(
-      space::<_, (_, ErrorKind)>(CompleteByteSlice(e)),
-      Ok((CompleteByteSlice(empty), CompleteByteSlice(b" ")))
-    );
     assert_eq!(space::<_, (_, ErrorKind)>(f), Ok((&b";"[..], &b" "[..])));
-    assert_eq!(
-      space::<_, (_, ErrorKind)>(CompleteByteSlice(f)),
-      Ok((CompleteByteSlice(b";"), CompleteByteSlice(b" ")))
-    );
   }
 
   #[cfg(feature = "alloc")]
@@ -516,10 +474,6 @@ mod tests {
     let e = " ";
     assert_eq!(alpha::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     assert_eq!(
-      alpha::<_, (_, ErrorKind)>(CompleteStr(a)),
-      Ok((CompleteStr(empty), CompleteStr(a)))
-    );
-    assert_eq!(
       alpha(b),
       Err(Err::Error((b, ErrorKind::Alpha)))
     );
@@ -531,10 +485,6 @@ mod tests {
     );
     assert_eq!(digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(
-      digit::<_, (_, ErrorKind)>(CompleteStr(b)),
-      Ok((CompleteStr(empty), CompleteStr(b)))
-    );
-    assert_eq!(
       digit(c),
       Err(Err::Error((c, ErrorKind::Digit)))
     );
@@ -543,20 +493,8 @@ mod tests {
       Err(Err::Error((d, ErrorKind::Digit)))
     );
     assert_eq!(hex_digit::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(
-      hex_digit::<_, (_, ErrorKind)>(CompleteStr(a)),
-      Ok((CompleteStr(empty), CompleteStr(a)))
-    );
     assert_eq!(hex_digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      hex_digit::<_, (_, ErrorKind)>(CompleteStr(b)),
-      Ok((CompleteStr(empty), CompleteStr(b)))
-    );
     assert_eq!(hex_digit::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(
-      hex_digit::<_, (_, ErrorKind)>(CompleteStr(c)),
-      Ok((CompleteStr(empty), CompleteStr(c)))
-    );
     assert_eq!(hex_digit::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
     assert_eq!(
       hex_digit(e),
@@ -568,10 +506,6 @@ mod tests {
     );
     assert_eq!(oct_digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(
-      oct_digit::<_, (_, ErrorKind)>(CompleteStr(b)),
-      Ok((CompleteStr(empty), CompleteStr(b)))
-    );
-    assert_eq!(
       oct_digit(c),
       Err(Err::Error((c, ErrorKind::OctDigit)))
     );
@@ -580,21 +514,9 @@ mod tests {
       Err(Err::Error((d, ErrorKind::OctDigit)))
     );
     assert_eq!(alphanumeric::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(
-      alphanumeric::<_, (_, ErrorKind)>(CompleteStr(a)),
-      Ok((CompleteStr(empty), CompleteStr(a)))
-    );
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(
-      alphanumeric::<_, (_, ErrorKind)>(CompleteStr(c)),
-      Ok((CompleteStr(empty), CompleteStr(c)))
-    );
     assert_eq!(alphanumeric::<_, (_, ErrorKind)>(d), Ok((empty, d)));
-    assert_eq!(
-      alphanumeric::<_, (_, ErrorKind)>(CompleteStr(d)),
-      Ok((CompleteStr(""), CompleteStr("azé12")))
-    );
     assert_eq!(space::<_, (_, ErrorKind)>(e), Ok((empty, e)));
   }
 
@@ -669,9 +591,6 @@ mod tests {
       Ok((&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..]))
     );
 
-    let d = CompleteByteSlice(b"ab12cd");
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Ok((CompleteByteSlice(b""), d)));
-
     let d: &[u8] = b"ab12cd";
     assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Err(Err::Incomplete(Needed::Unknown)));
   }
@@ -700,9 +619,6 @@ mod tests {
       not_line_ending(f),
       Err(Err::Error((f, ErrorKind::Tag)))
     );
-
-    let g = CompleteStr("ab12cd");
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g), Ok((CompleteStr(""), g)));
 
     let g2: &str = "ab12cd";
     assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g2), Err(Err::Incomplete(Needed::Unknown)));
@@ -832,10 +748,5 @@ mod tests {
       eol("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
     );
-  }
-
-  #[allow(dead_code)]
-  pub fn end_of_line_completestr(input: CompleteStr) -> IResult<CompleteStr, CompleteStr> {
-    alt!(input, eof!() | eol)
   }
 }

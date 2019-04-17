@@ -10,7 +10,6 @@ use criterion::*;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use nom::IResult;
-use nom::types::CompleteStr;
 
 use std::collections::HashMap;
 
@@ -34,26 +33,26 @@ fn is_line_ending_or_comment(chr: char) -> bool {
   chr == ';' || chr == '\n'
 }
 
-named!(alphanumeric<CompleteStr,CompleteStr>,         take_while!(is_alphanumeric));
-named!(not_line_ending<CompleteStr,CompleteStr>,      is_not!("\r\n"));
-named!(space<CompleteStr,CompleteStr>,                take_while!(is_space));
-named!(space_or_line_ending<CompleteStr,CompleteStr>, is_a!(" \r\n"));
+named!(alphanumeric<&str,&str>,         take_while!(is_alphanumeric));
+named!(not_line_ending<&str,&str>,      is_not!("\r\n"));
+named!(space<&str,&str>,                take_while!(is_space));
+named!(space_or_line_ending<&str,&str>, is_a!(" \r\n"));
 
 fn right_bracket(c: char) -> bool {
   c == ']'
 }
 
-named!(category     <CompleteStr, &str>,
+named!(category     <&str, &str>,
   do_parse!(
           tag!("[")                 >>
     name: take_till!(right_bracket) >>
           tag!("]")                 >>
           opt!(space_or_line_ending)  >>
-    (name.0)
+    (name)
   )
 );
 
-named!(key_value    <CompleteStr,(&str,&str)>,
+named!(key_value    <&str,(&str,&str)>,
   do_parse!(
     key: alphanumeric                              >>
          opt!(space)                               >>
@@ -63,26 +62,26 @@ named!(key_value    <CompleteStr,(&str,&str)>,
          opt!(space)                               >>
          opt!(pair!(tag!(";"), not_line_ending)) >>
          opt!(space_or_line_ending)                >>
-    (key.0, val.0)
+    (key, val)
   )
 );
 
-named!(keys_and_values_aggregator<CompleteStr, Vec<(&str, &str)> >, many0!(key_value));
+named!(keys_and_values_aggregator<&str, Vec<(&str, &str)> >, many0!(key_value));
 
-fn keys_and_values(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, &str>> {
+fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
   match keys_and_values_aggregator(input) {
     Ok((i, tuple_vec)) => Ok((i, tuple_vec.into_iter().collect())),
     Err(e) => Err(e),
   }
 }
 
-named!(category_and_keys<CompleteStr,(&str,HashMap<&str,&str>)>,
+named!(category_and_keys<&str,(&str,HashMap<&str,&str>)>,
   pair!(category, keys_and_values)
 );
 
-named!(categories_aggregator<CompleteStr, Vec<(&str, HashMap<&str,&str>)> >, many0!(category_and_keys));
+named!(categories_aggregator<&str, Vec<(&str, HashMap<&str,&str>)> >, many0!(category_and_keys));
 
-fn categories(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, HashMap<&str, &str>>> {
+fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str>>> {
   match categories_aggregator(input) {
     Ok((i, tuple_vec)) => Ok((i, tuple_vec.into_iter().collect())),
     Err(e) => Err(e),
@@ -91,17 +90,13 @@ fn categories(input: CompleteStr) -> IResult<CompleteStr, HashMap<&str, HashMap<
 
 #[test]
 fn parse_category_test() {
-  let ini_file = CompleteStr(
-    "[category]
+  let ini_file = "[category]
 
 parameter=value
-key = value2",
-  );
+key = value2";
 
-  let ini_without_category = CompleteStr(
-    "parameter=value
-key = value2",
-  );
+  let ini_without_category = "parameter=value
+key = value2";
 
   let res = category(ini_file);
   println!("{:?}", res);
@@ -115,12 +110,10 @@ key = value2",
 
 #[test]
 fn parse_key_value_test() {
-  let ini_file = CompleteStr(
-    "parameter=value
-key = value2",
-  );
+  let ini_file = "parameter=value
+key = value2";
 
-  let ini_without_key_value = CompleteStr("key = value2");
+  let ini_without_key_value = "key = value2";
 
   let res = key_value(ini_file);
   println!("{:?}", res);
@@ -134,12 +127,10 @@ key = value2",
 
 #[test]
 fn parse_key_value_with_space_test() {
-  let ini_file = CompleteStr(
-    "parameter = value
-key = value2",
-  );
+  let ini_file = "parameter = value
+key = value2";
 
-  let ini_without_key_value = CompleteStr("key = value2");
+  let ini_without_key_value = "key = value2";
 
   let res = key_value(ini_file);
   println!("{:?}", res);
@@ -153,12 +144,10 @@ key = value2",
 
 #[test]
 fn parse_key_value_with_comment_test() {
-  let ini_file = CompleteStr(
-    "parameter=value;abc
-key = value2",
-  );
+  let ini_file = "parameter=value;abc
+key = value2";
 
-  let ini_without_key_value = CompleteStr("key = value2");
+  let ini_without_key_value = "key = value2";
 
   let res = key_value(ini_file);
   println!("{:?}", res);
@@ -172,15 +161,13 @@ key = value2",
 
 #[test]
 fn parse_multiple_keys_and_values_test() {
-  let ini_file = CompleteStr(
-    "parameter=value;abc
+  let ini_file = "parameter=value;abc
 
 key = value2
 
-[category]",
-  );
+[category]";
 
-  let ini_without_key_value = CompleteStr("[category]");
+  let ini_without_key_value = "[category]";
 
   let res = keys_and_values(ini_file);
   println!("{:?}", res);
@@ -198,16 +185,14 @@ key = value2
 #[test]
 fn parse_category_then_multiple_keys_and_values_test() {
   //FIXME: there can be an empty line or a comment line after a category
-  let ini_file = CompleteStr(
-    "[abcd]
+  let ini_file = "[abcd]
 parameter=value;abc
 
 key = value2
 
-[category]",
-  );
+[category]";
 
-  let ini_after_parser = CompleteStr("[category]");
+  let ini_after_parser = "[category]";
 
   let res = category_and_keys(ini_file);
   println!("{:?}", res);
@@ -224,8 +209,7 @@ key = value2
 
 #[test]
 fn parse_multiple_categories_test() {
-  let ini_file = CompleteStr(
-    "[abcd]
+  let ini_file = "[abcd]
 
 parameter=value;abc
 
@@ -234,8 +218,7 @@ key = value2
 [category]
 parameter3=value3
 key4 = value4
-",
-  );
+";
 
   let res = categories(ini_file);
   //println!("{:?}", res);
@@ -253,7 +236,7 @@ key4 = value4
   let mut expected_h: HashMap<&str, HashMap<&str, &str>> = HashMap::new();
   expected_h.insert("abcd", expected_1);
   expected_h.insert("category", expected_2);
-  assert_eq!(res, Ok((CompleteStr(""), expected_h)));
+  assert_eq!(res, Ok(("", expected_h)));
 }
 
 fn bench_ini_str(c: &mut Criterion) {
@@ -272,7 +255,7 @@ file=payroll.dat
     Benchmark::new(
       "parse",
       move |b| {
-        b.iter(|| categories(CompleteStr(s)).unwrap());
+        b.iter(|| categories(s).unwrap());
       },
     ).throughput(Throughput::Bytes(s.len() as u32)),
   );

@@ -125,7 +125,6 @@ macro_rules! many0(
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
 /// # use nom::error::ErrorKind;
-/// # use nom::types::CompleteByteSlice;
 /// # fn main() {
 ///  named!(multi<&[u8], Vec<&[u8]> >, many1!( tag!( "abcd" ) ) );
 ///
@@ -134,13 +133,7 @@ macro_rules! many0(
 ///
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&a[..]), Ok((&b"efgh"[..], res)));
-///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Many1))));
-///
-///  named!(multi_complete<CompleteByteSlice, Vec<CompleteByteSlice> >, many1!( tag!( "abcd" ) ) );
-///  let c = CompleteByteSlice(b"abcdabcd");
-///
-///  let res = vec![CompleteByteSlice(b"abcd"), CompleteByteSlice(b"abcd")];
-///  assert_eq!(multi_complete(c), Ok((CompleteByteSlice(b""), res)));
+///  assert_eq!(multi(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Tag))));
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
@@ -216,7 +209,7 @@ macro_rules! many_till(
 ///  let b = b"abcdabcdefgh";
 ///  let c = b"abcdabcdabcdabcdabcdefgh";
 ///
-///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(&a[..], ErrorKind::ManyMN))));
+///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(&b"efgh"[..], ErrorKind::Tag))));
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&b[..]),Ok((&b"efgh"[..], res)));
 ///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
@@ -302,7 +295,7 @@ macro_rules! many1_count {
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///
 ///  assert_eq!(counter(&a[..]),Ok((&b"abcdef"[..], res)));
-///  assert_eq!(counter(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Count))));
+///  assert_eq!(counter(&b[..]), Err(Err::Error(error_position!(&b"efgh"[..], ErrorKind::Tag))));
 /// # }
 /// ```
 ///

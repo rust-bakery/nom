@@ -6,7 +6,6 @@
 extern crate nom;
 
 use nom::{character::{is_digit, streaming::space}, Err, IResult, Needed, error::ErrorKind, number::streaming::le_u64};
-use nom::types::{CompleteStr, CompleteByteSlice};
 
 #[allow(dead_code)]
 struct Range {
@@ -173,58 +172,6 @@ fn issue_655() {
   assert_eq!(twolines("foé\r\nbar\n"), Ok(("", ("foé", "bar"))));
 }
 
-#[cfg(feature = "std")]
-named!(issue_666 <CompleteByteSlice, CompleteByteSlice>, dbg_dmp!(tag!("abc")));
-
-#[test]
-fn issue_667() {
-  use nom::character::streaming::alpha;
-
-  named!(foo <CompleteByteSlice, Vec<CompleteByteSlice>>,
-    many0!(
-      alt!(alpha | is_a!("_"))
-    )
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"")),
-    Ok((CompleteByteSlice(b""), vec![]))
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"loremipsum")),
-    Ok((
-      CompleteByteSlice(b""),
-      vec![CompleteByteSlice(b"loremipsum")]
-    ))
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"lorem_ipsum")),
-    Ok((
-      CompleteByteSlice(b""),
-      vec![
-        CompleteByteSlice(b"lorem"),
-        CompleteByteSlice(b"_"),
-        CompleteByteSlice(b"ipsum"),
-      ]
-    ))
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"_lorem_ipsum")),
-    Ok((
-      CompleteByteSlice(b""),
-      vec![
-        CompleteByteSlice(b"_"),
-        CompleteByteSlice(b"lorem"),
-        CompleteByteSlice(b"_"),
-        CompleteByteSlice(b"ipsum"),
-      ]
-    ))
-  );
-  assert_eq!(
-    foo(CompleteByteSlice(b"!@#$")),
-    Ok((CompleteByteSlice(b"!@#$"), vec![]))
-  );
-}
-
 #[test]
 fn issue_721() {
   named!(f1<&str, u16>, parse_to!(u16));
@@ -254,10 +201,6 @@ named!(issue_724<&str, i32>,
   )
 );
 
-named!(issue_741_str<CompleteStr, CompleteStr>, re_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
-named!(issue_741_bytes<CompleteByteSlice, CompleteByteSlice>, re_bytes_match!(r"^_?[A-Za-z][0-9A-Z_a-z-]*"));
-
-
 #[test]
 fn issue_752() {
     assert_eq!(
@@ -283,32 +226,6 @@ fn issue_759() {
 named_args!(issue_771(count: usize)<Vec<u32>>,
   length_count!(value!(count), call!(nom::number::streaming::be_u32))
 );
-
-#[test]
-fn issue_768() {
-  named!(bit_vec8<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 8))));
-  named!(bit_vec4<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 4))));
-  named!(bit_vec3<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 3))));
-  named!(bit_vec11<CompleteByteSlice, Vec<u16>>, bits!(many0!(take_bits!(u16, 11))));
-
-  let m: Vec<u8> = vec![70, 97, 106, 121, 86, 66, 105, 98, 86, 106, 101];
-  assert_eq!(
-    bit_vec8(CompleteByteSlice(m.as_slice())),
-    Ok((CompleteByteSlice(&[]), vec![70, 97, 106, 121, 86, 66, 105, 98, 86, 106, 101]))
-  );
-  assert_eq!(
-    bit_vec4(CompleteByteSlice(m.as_slice())),
-    Ok((CompleteByteSlice(&[]), vec![4, 6, 6, 1, 6, 10, 7, 9, 5, 6, 4, 2, 6, 9, 6, 2, 5, 6, 6, 10, 6, 5]))
-  );
-  assert_eq!(
-    bit_vec3(CompleteByteSlice(m.as_slice())),
-    Ok((CompleteByteSlice(&[]), vec![2, 1, 4, 6, 0, 5, 5, 2, 3, 6, 2, 5, 3, 1, 0, 2, 3, 2, 2, 6, 1, 1, 2, 6, 3, 2, 4, 6, 2]))
-  );
-  assert_eq!(
-    bit_vec11(CompleteByteSlice(m.as_slice())),
-    Ok((CompleteByteSlice(&[]), vec![563, 90, 1266, 1380, 308, 1417, 717, 613]))
-  );
-}
 
 /// This test is in a separate module to check that all required symbols are imported in
 /// `escaped_transform!()`. Without the module, the `use`-es of the current module would
