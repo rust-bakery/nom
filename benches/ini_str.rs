@@ -9,7 +9,13 @@ use criterion::*;
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use nom::IResult;
+use nom::{
+  IResult, map_res, opt,
+  bytes::complete::{take_while, is_a},
+  sequence::{delimited, terminated},
+  character::complete::{char, alphanumeric, space0 as space, not_line_ending}
+};
+
 
 use std::collections::HashMap;
 
@@ -33,15 +39,25 @@ fn is_line_ending_or_comment(chr: char) -> bool {
   chr == ';' || chr == '\n'
 }
 
+/*
 named!(alphanumeric<&str,&str>,         take_while!(is_alphanumeric));
 named!(not_line_ending<&str,&str>,      is_not!("\r\n"));
 named!(space<&str,&str>,                take_while!(is_space));
 named!(space_or_line_ending<&str,&str>, is_a!(" \r\n"));
+*/
+fn space_or_line_ending(i: &str) -> IResult<&str, &str> {
+  is_a(" \r\n")(i)
+}
 
 fn right_bracket(c: char) -> bool {
   c == ']'
 }
 
+fn category(i: &str) -> IResult<&str, &str> {
+  terminated(delimited(char('['), take_while(|c| c != ']'), char(']')), opt(is_a(" \r\n")))(i)
+}
+
+/*
 named!(category     <&str, &str>,
   do_parse!(
           tag!("[")                 >>
@@ -51,6 +67,7 @@ named!(category     <&str, &str>,
     (name)
   )
 );
+*/
 
 named!(key_value    <&str,(&str,&str)>,
   do_parse!(

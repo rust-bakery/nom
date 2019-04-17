@@ -8,11 +8,16 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
-use nom::character::complete::{alphanumeric, multispace, space};
-
+use nom::{
+  map_res, IResult,
+  sequence::delimited,
+  bytes::complete::take_while,
+  character::complete::{alphanumeric, multispace, space, char}
+};
 use std::str;
 use std::collections::HashMap;
 
+/*
 named!(category<&[u8], &str>, map_res!(
     delimited!(
       char!('['),
@@ -23,6 +28,15 @@ named!(category<&[u8], &str>, map_res!(
 ));
 
 fn complete_byte_slice_to_str<'a>(s: &'a [u8]) -> Result<&'a str, str::Utf8Error> {
+  str::from_utf8(s)
+}
+*/
+
+fn category(i: &[u8]) -> IResult<&[u8], &str> {
+  map_res(delimited(char('['), take_while(|c| c != b']'), char(']')), str::from_utf8)(i)
+}
+
+fn complete_byte_slice_to_str<'a>(s: &'a[u8]) -> Result<&'a str, str::Utf8Error> {
   str::from_utf8(s)
 }
 
