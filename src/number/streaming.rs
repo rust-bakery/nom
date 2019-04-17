@@ -295,7 +295,6 @@ pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   let (i, o) = ::bytes::streaming::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
 
-  println!("hex_u32: is_a result: ({:?}, {:?})", i, o);
   // Do not parse more than 8 characters for a u32
   let (parsed, remaining) = if o.len() <= 8 {
     (o, i)
