@@ -52,7 +52,7 @@ data is needed.
 ```rust
 pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
 
-#[derive(Debug, PartialEq, Eq, CLone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Needed {
   Unknown,
   Size(u32)
