@@ -1,10 +1,3 @@
-//! Useful parser combinators
-//!
-//! A number of useful parser combinators have already been implemented.
-//! Some of them use macros, other are implemented through functions.
-//! Hopefully, the syntax will converge to onely one way in the future,
-//! but the macros system makes no promises.
-//!
 #![allow(unused_imports)]
 
 #[cfg(feature = "alloc")]
@@ -20,6 +13,9 @@ use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use error::ErrorKind;
 use lib::std::mem::transmute;
+
+#[macro_use]
+mod macros;
 
 #[cfg(feature = "alloc")]
 #[inline]

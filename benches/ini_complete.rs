@@ -9,7 +9,8 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
 use nom::{
-  map_res, IResult,
+  IResult,
+  combinator::map_res,
   sequence::delimited,
   bytes::complete::take_while,
   character::complete::{alphanumeric, multispace, space, char}

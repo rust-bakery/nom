@@ -83,7 +83,7 @@ macro_rules! bits_impl (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::rest;
+/// # use nom::combinator::rest;
 /// # fn main() {
 ///  named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
 ///    take_bits!(u8, 4),
@@ -330,7 +330,7 @@ mod tests {
     );
   }
 
-  named!(bits_bytes_bs, bits!(bytes!(::rest)));
+  named!(bits_bytes_bs, bits!(bytes!(::combinator::rest)));
   #[test]
   fn bits_bytes() {
     let input = [0b10_10_10_10];

@@ -10,6 +10,7 @@ use nom::{
   IResult,
   character::complete::{digit, multispace0 as multispace},
   sequence::{preceded, delimited},
+  combinator::{map, map_res},
   multi::many0,
   branch::alt,
   bytes::complete::tag,

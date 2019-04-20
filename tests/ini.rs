@@ -5,6 +5,7 @@ use nom::{
   IResult, map_res,
   bytes::complete::take_while,
   sequence::delimited,
+  combinator::map_res,
   character::complete::{char, alphanumeric, multispace0 as multispace, space0 as space}
 };
 

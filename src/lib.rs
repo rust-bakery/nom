@@ -399,15 +399,9 @@ pub mod lib {
 
 pub use self::traits::*;
 pub use self::util::*;
-
 pub use self::internal::*;
-pub use self::macros::*;
 pub use self::methods::*;
-
 pub use self::bits::*;
-
-pub use self::nom::*;
-
 pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
@@ -424,7 +418,7 @@ pub mod error;
 mod internal;
 mod traits;
 #[macro_use]
-mod macros;
+pub mod combinator;
 #[macro_use]
 pub mod branch;
 #[macro_use]
@@ -441,8 +435,6 @@ pub mod bits;
 
 #[macro_use]
 pub mod character;
-#[macro_use]
-mod nom;
 
 #[macro_use]
 pub mod whitespace;

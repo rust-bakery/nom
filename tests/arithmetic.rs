@@ -7,6 +7,7 @@ use nom::{
   map_res,
   error::ErrorKind,
   branch::alt,
+  combinator::map_res,
   character::complete::char,
   bytes::complete::tag,
   character::complete::{digit, space0 as space},
