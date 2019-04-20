@@ -14,7 +14,6 @@ use nom::{
   multi::many0,
   branch::alt,
   bytes::complete::tag,
-  map, map_res
 };
 
 pub enum Expr {
