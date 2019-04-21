@@ -10,6 +10,9 @@ use traits::{Compare, CompareResult};
 
 use error::ErrorKind;
 
+/// Recognizes one character
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -21,14 +24,15 @@ where
   }) {
     None => Err(Err::Incomplete(Needed::Size(1))),
     Some((_, false)) => {
-      //let e: ErrorKind = ErrorKind::Char;
       Err(Err::Error(Error::from_char(i, c)))
     }
     Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
   }
 }
 
-
+/// Recognizes one of the provided characters
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -42,6 +46,9 @@ where
   }
 }
 
+/// Recognizes a character that is not in the provided characters
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -55,6 +62,9 @@ where
   }
 }
 
+/// recognizes the string "\r\n"
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -72,8 +82,10 @@ where
   }
 }
 
-// FIXME: when rust-lang/rust#17436 is fixed, macros will be able to export
-// public methods
+//FIXME: remove?
+/// recognizes a string of any char except '\r' or '\n'
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -112,6 +124,8 @@ where
 }
 
 /// Recognizes an end of line (both '\n' and '\r\n')
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -132,6 +146,8 @@ where
   }
 }
 
+//FIXME: remove
+/// alias for line_ending
 pub fn eol<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -142,6 +158,8 @@ where
 }
 
 /// matches a newline character '\\n'
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -151,6 +169,8 @@ where
 }
 
 /// matches a tab character '\t'
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -170,6 +190,8 @@ where
 /// assert_eq!(anychar::<_,(&str, ErrorKind)>("abc"), Ok(("bc",'a')));
 /// # }
 /// ```
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
   T: InputIter + InputLength + Slice<RangeFrom<usize>>,
@@ -185,9 +207,13 @@ where
   }
 }
 
+//FIXME: remove?
 /// Recognizes one or more lowercase and uppercase alphabetic characters.
 /// For ASCII strings: a-zA-Z
 /// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphabetic character)
 pub fn alpha<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -199,6 +225,9 @@ where
 /// Recognizes zero or more lowercase and uppercase alphabetic characters.
 /// For ASCII strings: a-zA-Z
 /// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphabetic character)
 pub fn alpha0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -210,6 +239,9 @@ where
 /// Recognizes one or more lowercase and uppercase alphabetic characters
 /// For ASCII strings: a-zA-Z
 /// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphabetic character)
 pub fn alpha1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -218,7 +250,11 @@ where
   input.split_at_position1(|item| !item.is_alpha(), ErrorKind::Alpha)
 }
 
+//FIXME: remove?
 /// Recognizes one or more numerical characters: 0-9
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non digit character)
 pub fn digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -228,6 +264,9 @@ where
 }
 
 /// Recognizes zero or more numerical characters: 0-9
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non digit character)
 pub fn digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -237,6 +276,9 @@ where
 }
 
 /// Recognizes one or more numerical characters: 0-9
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non digit character)
 pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -245,7 +287,11 @@ where
   input.split_at_position1(|item| !item.is_dec_digit(), ErrorKind::Digit)
 }
 
+//FIXME: remove?
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non hexadecimal digit character)
 pub fn hex_digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -255,6 +301,9 @@ where
 }
 
 /// Recognizes zero or more hexadecimal numerical characters: 0-9, A-F, a-f
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non hexadecimal digit character)
 pub fn hex_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -262,7 +311,11 @@ where
 {
   input.split_at_position(|item| !item.is_hex_digit())
 }
+
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non hexadecimal digit character)
 pub fn hex_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -271,7 +324,11 @@ where
   input.split_at_position1(|item| !item.is_hex_digit(), ErrorKind::HexDigit)
 }
 
+//FIXME: remove?
 /// Recognizes one or more octal characters: 0-7
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non octal digit character)
 pub fn oct_digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -281,6 +338,9 @@ where
 }
 
 /// Recognizes zero or more octal characters: 0-7
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non octal digit character)
 pub fn oct_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -290,6 +350,9 @@ where
 }
 
 /// Recognizes one or more octal characters: 0-7
+////
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non octal digit character)
 pub fn oct_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -298,9 +361,13 @@ where
   input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
+//FIXME: remove?
 /// Recognizes one or more numerical and alphabetic characters
 /// For ASCII strings: 0-9a-zA-Z
 /// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphanumerical character)
 pub fn alphanumeric<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -312,6 +379,9 @@ where
 /// Recognizes zero or more numerical and alphabetic characters.
 /// For ASCII strings: 0-9a-zA-Z
 /// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphanumerical character)
 pub fn alphanumeric0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -322,6 +392,9 @@ where
 /// Recognizes one or more numerical and alphabetic characters.
 /// For ASCII strings: 0-9a-zA-Z
 /// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphanumerical character)
 pub fn alphanumeric1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -330,7 +403,11 @@ where
   input.split_at_position1(|item| !item.is_alphanum(), ErrorKind::AlphaNumeric)
 }
 
+//FIXME: remove?
 /// Recognizes one or more spaces and tabs
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character)
 pub fn space<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -340,6 +417,9 @@ where
 }
 
 /// Recognizes zero or more spaces and tabs
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character)
 pub fn space0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -351,6 +431,9 @@ where
   })
 }
 /// Recognizes one or more spaces and tabs
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character)
 pub fn space1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -365,7 +448,11 @@ where
   )
 }
 
+//FIXME: remove?
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character)
 pub fn multispace<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -375,6 +462,9 @@ where
 }
 
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character)
 pub fn multispace0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -385,7 +475,11 @@ where
     !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
   })
 }
+
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds
+///
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character)
 pub fn multispace1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
