@@ -76,16 +76,19 @@ impl HexDisplay for str {
   }
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! nom_line (
   () => (line!());
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! nom_println (
   ($($args:tt)*) => (println!($($args)*));
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! nom_stringify (
   ($($args:tt)*) => (stringify!($($args)*));

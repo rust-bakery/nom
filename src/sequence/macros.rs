@@ -408,6 +408,7 @@ macro_rules! do_parse (
   );
 );
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! nom_compile_error (
   (( $(args:tt)* )) => ( compile_error!($($args)*) );

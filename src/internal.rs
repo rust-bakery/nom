@@ -115,6 +115,7 @@ mod tests {
   use super::*;
   use error::ErrorKind;
 
+  #[doc(hidden)]
   #[macro_export]
   macro_rules! assert_size (
     ($t:ty, $sz:expr) => (

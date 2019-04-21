@@ -421,7 +421,6 @@ mod tests {
 
   #[test]
   fn character() {
-    let empty: &[u8] = b"";
     let a: &[u8] = b"abcd";
     let b: &[u8] = b"1234";
     let c: &[u8] = b"a123";
@@ -481,7 +480,6 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn character_s() {
-    let empty = "";
     let a = "abcd";
     let b = "1234";
     let c = "a123";

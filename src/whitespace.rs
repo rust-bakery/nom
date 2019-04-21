@@ -94,6 +94,7 @@
 //! ```
 //!
 
+/// applies the separator parser before the other parser
 #[macro_export(local_inner_macros)]
 macro_rules! wrap_sep (
   ($i:expr, $separator:expr, $submac:ident!( $($args:tt)* )) => ({
