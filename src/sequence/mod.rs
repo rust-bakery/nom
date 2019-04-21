@@ -1,3 +1,5 @@
+//! combinators applying parsers in sequence
+
 #[macro_use]
 mod macros;
 

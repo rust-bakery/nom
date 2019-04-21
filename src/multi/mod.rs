@@ -1,3 +1,5 @@
+//! combinators applying their child parser multiple times
+
 #[macro_use]
 mod macros;
 

@@ -1,3 +1,5 @@
+//! choice combinators
+
 #[macro_use]
 mod macros;
 

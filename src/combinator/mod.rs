@@ -1,3 +1,5 @@
+//! general purpose combinators
+
 #![allow(unused_imports)]
 
 #[cfg(feature = "alloc")]

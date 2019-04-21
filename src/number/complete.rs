@@ -1,3 +1,5 @@
+//! parsers recognizing numbers, complete input version
+
 use internal::*;
 use error::ParseError;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};

@@ -1,3 +1,7 @@
+//! character specific parsers and combinators, complete input version
+//!
+//! functions recognizing specific characters
+
 use internal::{Err, IResult, Needed};
 use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};

@@ -1,3 +1,5 @@
+//! parsers recognizing bytes streams, complete input version
+
 use lib::std::result::Result::*;
 use ::lib::std::ops::RangeFrom;
 use traits::{

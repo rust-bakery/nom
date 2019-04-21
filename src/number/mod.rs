@@ -1,3 +1,5 @@
+//! parsers recognizing numbers
+
 use internal::*;
 use error::ParseError;
 

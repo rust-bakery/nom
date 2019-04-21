@@ -1,3 +1,5 @@
+//! parsers recognizing numbers, streaming version
+
 use internal::*;
 use error::{ErrorKind, ParseError};
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};

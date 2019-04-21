@@ -1,3 +1,5 @@
+//! method combinators
+
 /// do not use: method combinators moved to the nom-methods crate
 #[macro_export]
 macro_rules! method (
