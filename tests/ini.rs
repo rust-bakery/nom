@@ -2,7 +2,7 @@
 extern crate nom;
 
 use nom::{
-  IResult, map_res,
+  IResult,
   bytes::complete::take_while,
   sequence::delimited,
   combinator::map_res,

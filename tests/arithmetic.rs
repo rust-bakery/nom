@@ -4,7 +4,6 @@ extern crate nom;
 
 use nom::{
   IResult, Err,
-  map_res,
   error::ErrorKind,
   branch::alt,
   combinator::map_res,
