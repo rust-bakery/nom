@@ -99,11 +99,11 @@ macro_rules! is_a (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::character::complete::alpha;
+/// # use nom::character::complete::digit;
 /// # fn main() {
-///  named!(esc, escaped!(call!(alpha), '\\', one_of!("\"n\\")));
-///  assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], &b"abcd"[..])));
-///  assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], &b"ab\\\"cd"[..])));
+///  named!(esc, escaped!(call!(digit), '\\', one_of!("\"n\\")));
+///  assert_eq!(esc(&b"123;"[..]), Ok((&b";"[..], &b"123"[..])));
+///  assert_eq!(esc(&b"12\\\"34;"[..]), Ok((&b";"[..], &b"12\\\"34"[..])));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
