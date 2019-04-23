@@ -356,6 +356,7 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alpha;
+/// # #[cfg(feature = "alloc")]
 /// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alpha(input)
@@ -365,6 +366,8 @@ where
 /// assert_eq!(parser("1c"), Err(Err::Error(("1c", ErrorKind::Alpha))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Alpha))));
 /// # }
+/// # #[cfg(not(feature = "alloc"))]
+/// # fn main() {}
 /// ```
 pub fn alpha<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -387,6 +390,7 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alpha0;
+/// # #[cfg(feature = "alloc")]
 /// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alpha0(input)
@@ -396,6 +400,8 @@ where
 /// assert_eq!(parser("1c"), Ok(("1c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// # }
+/// # #[cfg(not(feature = "alloc"))]
+/// # fn main() {}
 /// ```
 pub fn alpha0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -418,6 +424,7 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alpha1;
+/// # #[cfg(feature = "alloc")]
 /// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alpha1(input)
@@ -427,6 +434,8 @@ where
 /// assert_eq!(parser("1c"), Err(Err::Error(("1c", ErrorKind::Alpha))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Alpha))));
 /// # }
+/// # #[cfg(not(feature = "alloc"))]
+/// # fn main() {}
 /// ```
 pub fn alpha1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -703,6 +712,7 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alphanumeric;
+/// # #[cfg(feature = "alloc")]
 /// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alphanumeric(input)
@@ -712,6 +722,8 @@ where
 /// assert_eq!(parser("&H2"), Err(Err::Error(("&H2", ErrorKind::AlphaNumeric))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::AlphaNumeric))));
 /// # }
+/// # #[cfg(not(feature = "alloc"))]
+/// # fn main() {}
 /// ```
 pub fn alphanumeric<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -734,6 +746,7 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alphanumeric0;
+/// # #[cfg(feature = "alloc")]
 /// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alphanumeric0(input)
@@ -743,6 +756,8 @@ where
 /// assert_eq!(parser("&Z21c"), Ok(("&Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// # }
+/// # #[cfg(not(feature = "alloc"))]
+/// # fn main() {}
 /// ```
 pub fn alphanumeric0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -765,6 +780,7 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alphanumeric1;
+/// # #[cfg(feature = "alloc")]
 /// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alphanumeric1(input)
@@ -774,6 +790,8 @@ where
 /// assert_eq!(parser("&H2"), Err(Err::Error(("&H2", ErrorKind::AlphaNumeric))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::AlphaNumeric))));
 /// # }
+/// # #[cfg(not(feature = "alloc"))]
+/// # fn main() {}
 /// ```
 pub fn alphanumeric1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
