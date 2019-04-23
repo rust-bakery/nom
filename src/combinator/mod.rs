@@ -126,6 +126,18 @@ where
   }
 }
 
+pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> H,
+  H: Fn(I) -> IResult<I, O2, E>
+{
+  move |input: I| {
+    let (input, o1) = first(input)?;
+    second(o1)(input)
+  }
+}
+
 pub fn opt<I:Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, Option<O>, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
