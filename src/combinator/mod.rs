@@ -126,6 +126,21 @@ where
   }
 }
 
+pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> Option<O2>,
+{
+  move |input: I| {
+    let i = input.clone();
+    let (input, o1) = first(input)?;
+    match second(o1) {
+      Some(o2) => Ok((input, o2)),
+      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapOpt))),
+    }
+  }
+}
+
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
