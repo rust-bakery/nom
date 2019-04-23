@@ -756,7 +756,7 @@ macro_rules! map_opt (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
