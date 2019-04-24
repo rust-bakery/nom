@@ -141,6 +141,24 @@ where
   }
 }
 
+pub fn map_parser<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> IResult<O1, O2, E>,
+  O1: InputLength,
+{
+  move |input: I| {
+    let i = input.clone();
+    let (input, o1) = first(input)?;
+    let (o1, o2) = second(o1)?;
+    if o1.input_len() == 0 {
+        Ok((input, o2))
+    } else {
+        Err(Err::Error(E::from_error_kind(i, ErrorKind::MapParser)))
+    }
+  }
+}
+
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
