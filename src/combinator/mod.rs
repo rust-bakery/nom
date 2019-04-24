@@ -151,11 +151,7 @@ where
     let i = input.clone();
     let (input, o1) = first(input)?;
     let (o1, o2) = second(o1)?;
-    if o1.input_len() == 0 {
-        Ok((input, o2))
-    } else {
-        Err(Err::Error(E::from_error_kind(i, ErrorKind::MapParser)))
-    }
+    Ok((input, o2))
   }
 }
 
