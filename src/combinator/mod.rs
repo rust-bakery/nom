@@ -28,9 +28,32 @@ pub trait Parser<I, O, E: ParseError<I>> {
         I: 'a,
         O: 'a,
         O2: 'a,
-        E: 'a, 
+        E: 'a,
         G: Fn(O) -> O2 + 'a {
             BoxedParser::new(map(self, g))
+    }
+
+    fn map_opt<'a, G, O2>(self, g: G) -> BoxedParser<'a, I, O2, E>
+    where
+        Self: Sized + 'a,
+        I: Clone + 'a,
+        O: 'a,
+        O2: 'a,
+        E: 'a,
+        G: Fn(O) -> Option<O2> + 'a {
+            BoxedParser::new(map_opt(self, g))
+    }
+
+    fn map_res<'a, G, O2, E2>(self, g: G) -> BoxedParser<'a, I, O2, E>
+    where
+        Self: Sized + 'a,
+        I: Clone + 'a,
+        O: 'a,
+        O2: 'a,
+        E: 'a,
+        E2: 'a,
+        G: Fn(O) -> Result<O2, E2> + 'a {
+            BoxedParser::new(map_res(self, g))
     }
 }
 
@@ -157,12 +180,12 @@ where
 
 pub fn map_res<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(O1) -> Result<O2, E2>,
 {
   move |input: I| {
     let i = input.clone();
-    let (input, o1) = first(input)?;
+    let (input, o1) = first.parse(input)?;
     match second(o1) {
       Ok(o2) => Ok((input, o2)),
       Err(_) => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapRes))),
@@ -172,12 +195,12 @@ where
 
 pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(O1) -> Option<O2>,
 {
   move |input: I| {
     let i = input.clone();
-    let (input, o1) = first(input)?;
+    let (input, o1) = first.parse(input)?;
     match second(o1) {
       Some(o2) => Ok((input, o2)),
       None => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapOpt))),
