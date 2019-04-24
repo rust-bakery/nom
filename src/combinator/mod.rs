@@ -19,6 +19,19 @@ use lib::std::mem::transmute;
 #[macro_use]
 mod macros;
 
+trait Parser<I, O, E> {
+    fn parse(&self, input: I) -> IResult<I, O, E>;
+}
+
+impl<I, O, E, F> Parser<I, O, E> for F
+where
+  F: Fn(I) -> IResult<I, O, E>
+{
+    fn parse(&self, i: I) -> IResult<I, O, E> {
+        self(i)
+    }
+}
+
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn tag_cl<'a, 'b>(rec: &'a [u8]) -> Box<Fn(&'b [u8]) -> IResult<&'b [u8], &'b [u8]> + 'a> {
