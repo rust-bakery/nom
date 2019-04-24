@@ -19,11 +19,22 @@ use lib::std::mem::transmute;
 #[macro_use]
 mod macros;
 
-trait Parser<I, O, E> {
+pub trait Parser<I, O, E: ParseError<I>> {
     fn parse(&self, input: I) -> IResult<I, O, E>;
+
+    fn map<'a, G, O2>(self, g: G) -> BoxedParser<'a, I, O2, E>
+    where
+        Self: Sized + 'a,
+        I: 'a,
+        O: 'a,
+        O2: 'a,
+        E: 'a, 
+        G: Fn(O) -> O2 + 'a {
+            BoxedParser::new(map(self, g))
+    }
 }
 
-impl<I, O, E, F> Parser<I, O, E> for F
+impl<I, O, E: ParseError<I>, F> Parser<I, O, E> for F
 where
   F: Fn(I) -> IResult<I, O, E>
 {
@@ -32,11 +43,11 @@ where
     }
 }
 
-struct BoxedParser<'a, I, O, E> {
+pub struct BoxedParser<'a, I, O, E> {
     parser: Box<dyn Parser<I, O, E> + 'a>,
 }
 
-impl<'a, I, O, E> BoxedParser<'a, I, O, E> {
+impl<'a, I, O, E: ParseError<I>> BoxedParser<'a, I, O, E> {
     fn new<P>(parser: P) -> Self
     where
       P: Parser<I, O, E> + 'a {
@@ -46,7 +57,7 @@ impl<'a, I, O, E> BoxedParser<'a, I, O, E> {
     }
 }
 
-impl<'a, I, O, E> Parser<I, O, E> for BoxedParser<'a, I, O, E> {
+impl<'a, I, O, E: ParseError<I>> Parser<I, O, E> for BoxedParser<'a, I, O, E> {
     fn parse(&self, i: I) -> IResult<I, O, E> {
         self.parser.parse(i)
     }
@@ -135,11 +146,11 @@ pub fn rest_s<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'
 
 pub fn map<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(O1) -> O2,
 {
   move |input: I| {
-    let (input, o1) = first(input)?;
+    let (input, o1) = first.parse(input)?;
     Ok((input, second(o1)))
   }
 }
