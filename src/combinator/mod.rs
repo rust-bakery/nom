@@ -186,6 +186,8 @@ mod tests {
   use super::*;
   use internal::{Err, IResult, Needed};
   use error::ParseError;
+  use crate::bytes::complete::take;
+  use crate::number::complete::be_u8;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -292,5 +294,22 @@ mod tests {
     ::character::streaming::alphanumeric(input)
   }
 
+  #[test]
+  fn test_flat_map() {
+      let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
+      assert_parse!(flat_map(be_u8, take)(input), Ok((&[103, 104][..], &[100, 101, 102][..])));
+  }
   
+  #[test]
+  fn test_map_opt() {
+      let input: &[u8] = &[50][..];
+      assert_parse!(map_opt(be_u8, |u| if u < 20 {Some(u)} else {None})(input), Err(Err::Error((&[50][..], ErrorKind::MapOpt))));
+      assert_parse!(map_opt(be_u8, |u| if u > 20 {Some(u)} else {None})(input), Ok((&[][..], 50)));
+  }
+
+  #[test]
+  fn test_map_parser() {
+      let input: &[u8] = &[100, 101, 102, 103, 104][..];
+      assert_parse!(map_parser(take(4usize), take(2usize))(input), Ok((&[104][..], &[100, 101][..])));
+  }
 }
