@@ -22,6 +22,7 @@ mod macros;
 pub trait Parser<I, O, E: ParseError<I>> {
     fn parse(&self, input: I) -> IResult<I, O, E>;
 
+    #[cfg(feature = "alloc")]
     fn map<'a, G, O2>(self, g: G) -> BoxedParser<'a, I, O2, E>
     where
         Self: Sized + 'a,
@@ -33,6 +34,7 @@ pub trait Parser<I, O, E: ParseError<I>> {
             BoxedParser::new(map(self, g))
     }
 
+    #[cfg(feature = "alloc")]
     fn map_opt<'a, G, O2>(self, g: G) -> BoxedParser<'a, I, O2, E>
     where
         Self: Sized + 'a,
@@ -44,6 +46,7 @@ pub trait Parser<I, O, E: ParseError<I>> {
             BoxedParser::new(map_opt(self, g))
     }
 
+    #[cfg(feature = "alloc")]
     fn map_res<'a, G, O2, E2>(self, g: G) -> BoxedParser<'a, I, O2, E>
     where
         Self: Sized + 'a,
@@ -56,6 +59,7 @@ pub trait Parser<I, O, E: ParseError<I>> {
             BoxedParser::new(map_res(self, g))
     }
 
+    #[cfg(feature = "alloc")]
     fn flat_map<'a, G, H, O2>(self, g: G) -> BoxedParser<'a, I, O2, E>
     where
         Self: Sized + 'a,
@@ -78,10 +82,12 @@ where
     }
 }
 
+#[cfg(feature = "alloc")]
 pub struct BoxedParser<'a, I, O, E> {
     parser: Box<dyn Parser<I, O, E> + 'a>,
 }
 
+#[cfg(feature = "alloc")]
 impl<'a, I, O, E: ParseError<I>> BoxedParser<'a, I, O, E> {
     fn new<P>(parser: P) -> Self
     where
@@ -92,6 +98,7 @@ impl<'a, I, O, E: ParseError<I>> BoxedParser<'a, I, O, E> {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl<'a, I, O, E: ParseError<I>> Parser<I, O, E> for BoxedParser<'a, I, O, E> {
     fn parse(&self, i: I) -> IResult<I, O, E> {
         self.parser.parse(i)
@@ -390,5 +397,17 @@ mod tests {
   fn test_map_parser() {
       let input: &[u8] = &[100, 101, 102, 103, 104][..];
       assert_parse!(map_parser(take(4usize), take(2usize))(input), Ok((&[104][..], &[100, 101][..])));
+  }
+
+  #[test]
+  #[cfg(feature = "alloc")]
+  fn test_parser_trait() {
+      use lib::std::str;
+
+      let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
+      assert_parse!(
+          be_u8.map(|u| u + 1).flat_map(take).map_res(str::from_utf8).map_opt(|s| s.get(1..=2)).parse(input),
+          Ok((&[104][..], "ef"))
+      );
   }
 }
