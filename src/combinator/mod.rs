@@ -186,8 +186,8 @@ mod tests {
   use super::*;
   use internal::{Err, IResult, Needed};
   use error::ParseError;
-  use crate::bytes::complete::take;
-  use crate::number::complete::be_u8;
+  use bytes::complete::take;
+  use number::complete::be_u8;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
