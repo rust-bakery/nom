@@ -55,6 +55,18 @@ pub trait Parser<I, O, E: ParseError<I>> {
         G: Fn(O) -> Result<O2, E2> + 'a {
             BoxedParser::new(map_res(self, g))
     }
+
+    fn flat_map<'a, G, H, O2>(self, g: G) -> BoxedParser<'a, I, O2, E>
+    where
+        Self: Sized + 'a,
+        I: 'a,
+        O: 'a,
+        O2: 'a,
+        E: 'a,
+        G: Fn(O) -> H + 'a,
+        H: Parser<I, O2, E> + 'a {
+            BoxedParser::new(flat_map(self, g))
+    }
 }
 
 impl<I, O, E: ParseError<I>, F> Parser<I, O, E> for F
@@ -224,13 +236,13 @@ where
 
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(O1) -> H,
-  H: Fn(I) -> IResult<I, O2, E>
+  H: Parser<I, O2, E>
 {
   move |input: I| {
-    let (input, o1) = first(input)?;
-    second(o1)(input)
+    let (input, o1) = first.parse(input)?;
+    second(o1).parse(input)
   }
 }
 
