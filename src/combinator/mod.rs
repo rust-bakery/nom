@@ -32,6 +32,26 @@ where
     }
 }
 
+struct BoxedParser<'a, I, O, E> {
+    parser: Box<dyn Parser<I, O, E> + 'a>,
+}
+
+impl<'a, I, O, E> BoxedParser<'a, I, O, E> {
+    fn new<P>(parser: P) -> Self
+    where
+      P: Parser<I, O, E> + 'a {
+        Self {
+            parser: Box::new(parser)
+        }
+    }
+}
+
+impl<'a, I, O, E> Parser<I, O, E> for BoxedParser<'a, I, O, E> {
+    fn parse(&self, i: I) -> IResult<I, O, E> {
+        self.parser.parse(i)
+    }
+}
+
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn tag_cl<'a, 'b>(rec: &'a [u8]) -> Box<Fn(&'b [u8]) -> IResult<&'b [u8], &'b [u8]> + 'a> {
