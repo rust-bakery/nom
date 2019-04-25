@@ -247,17 +247,9 @@ impl AsChar for char {
   fn as_char(self) -> char {
     self
   }
-  #[cfg(feature = "alloc")]
   #[inline]
   fn is_alpha(self) -> bool {
     self.is_alphabetic()
-  }
-  #[cfg(not(feature = "alloc"))]
-  #[inline]
-  fn is_alpha(self) -> bool {
-    unimplemented!(
-      "error[E0658]: use of unstable library feature 'core_char_ext': the stable interface is `impl char` in later crate (see issue #32110)"
-    )
   }
   #[inline]
   fn is_alphanum(self) -> bool {
