@@ -466,15 +466,6 @@ macro_rules! flat_map(
     flat_map!(__impl $i, call!($f), call!($g));
   );
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      ($submac!($i, $($args)*)).and_then(|(i,o)| {
-        match $submac2!(o, $($args2)*) {
-          Err(e)      => Err(e.into()),
-          Ok((_, o2)) => Ok((i, o2))
-        }
-      })
-    }
+    $crate::combinator::map_parserc($i, move |i| {$submac!(i, $($args)*)}, move |i| {$submac2!(i, $($args2)*)})
   );
 );

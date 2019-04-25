@@ -111,6 +111,14 @@ where
   }
 }
 
+pub fn mapc<I, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> O2,
+{
+  map(first, second)(input)
+}
+
 pub fn map_res<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -124,6 +132,14 @@ where
       Err(_) => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapRes))),
     }
   }
+}
+
+pub fn map_resc<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> Result<O2, E2>,
+{
+  map_res(first, second)(input)
 }
 
 pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
@@ -141,6 +157,14 @@ where
   }
 }
 
+pub fn map_optc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> Option<O2>,
+{
+  map_opt(first, second)(input)
+}
+
 pub fn map_parser<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -153,6 +177,15 @@ where
     let (o1, o2) = second(o1)?;
     Ok((input, o2))
   }
+}
+
+pub fn map_parserc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(O1) -> IResult<O1, O2, E>,
+  O1: InputLength,
+{
+  map_parser(first, second)(input)
 }
 
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
