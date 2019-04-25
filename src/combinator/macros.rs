@@ -648,15 +648,7 @@ macro_rules! try_parse (
 macro_rules! map(
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    {
-      pub fn _unify<T, R, F: FnOnce(T) -> R>(f: F, t: T) -> R {
-       f(t)
-      }
-
-      ($submac!($i, $($args)*)).map(|(i,o)| {
-        (i, _unify($g, o))
-      })
-    }
+    $crate::combinator::mapc($i, move |i| {$submac!(i, $($args)*)}, $g)
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     map!(__impl $i, $submac!($($args)*), $g);
@@ -672,24 +664,7 @@ macro_rules! map(
 macro_rules! map_res (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::Err;
-
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Ok((i,o)) => {
-          match $submac2!(o, $($args2)*) {
-            Ok(output) => Ok((i, output)),
-            Err(_) => {
-              let e = $crate::error::ErrorKind::MapRes;
-              Err(Err::Error(error_position!($i, e)))
-            },
-          }
-        },
-        Err(e) => Err(e),
-      }
-    }
+    $crate::combinator::map_resc($i, move |i| {$submac!(i, $($args)*)}, move |i| {$submac2!(i, $($args2)*)})
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     map_res!(__impl $i, $submac!($($args)*), call!($g));
@@ -753,23 +728,7 @@ macro_rules! map_res_err (
 macro_rules! map_opt (
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::{Err,error::ErrorKind};
-
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Ok((i, o))              => match $submac2!(o, $($args2)*) {
-          Some(output) => Ok((i, output)),
-          None         => {
-            let e = ErrorKind::MapOpt;
-            Err(Err::Error(error_position!($i, e)))
-        }
-        },
-        Err(e) => Err(e)
-      }
-    }
+    $crate::combinator::map_optc($i, move |i| {$submac!(i, $($args)*)}, move |i| {$submac2!(i, $($args2)*)})
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
     map_opt!(__impl $i, $submac!($($args)*), call!($g));
