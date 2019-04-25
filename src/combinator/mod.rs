@@ -111,6 +111,7 @@ where
   }
 }
 
+#[doc(hidden)]
 pub fn mapc<I, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -134,6 +135,7 @@ where
   }
 }
 
+#[doc(hidden)]
 pub fn map_resc<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -157,6 +159,7 @@ where
   }
 }
 
+#[doc(hidden)]
 pub fn map_optc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -179,6 +182,7 @@ where
   }
 }
 
+#[doc(hidden)]
 pub fn map_parserc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
