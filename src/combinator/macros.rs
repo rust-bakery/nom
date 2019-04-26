@@ -580,18 +580,7 @@ macro_rules! add_return_error (
 #[macro_export(local_inner_macros)]
 macro_rules! complete (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,error::ErrorKind};
-
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(Err::Incomplete(_)) =>  {
-          Err(Err::Error(error_position!($i, ErrorKind::Complete)))
-        },
-        rest => rest
-      }
-    }
+    $crate::combinator::completec($i, move |i| { $submac!(i, $($args)*) })
   );
   ($i:expr, $f:expr) => (
     complete!($i, call!($f));

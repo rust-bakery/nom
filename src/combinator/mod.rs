@@ -218,6 +218,29 @@ where
   }
 }
 
+pub fn complete<I: Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |input: I| {
+    let i = input.clone();
+    match f(input) {
+      Err(Err::Incomplete(_)) => {
+        Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete)))
+      },
+      rest => rest
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn completec<I: Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+    complete(f)(input)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
