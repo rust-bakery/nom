@@ -5,7 +5,7 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{character::{is_digit, streaming::space}, Err, IResult, Needed, error::ErrorKind, number::streaming::le_u64};
+use nom::{character::{is_digit, streaming::space1 as space}, Err, IResult, Needed, error::ErrorKind, number::streaming::le_u64};
 
 #[allow(dead_code)]
 struct Range {
@@ -68,7 +68,7 @@ fn issue_58() {
 #[cfg(feature = "std")]
 mod parse_int {
   use nom::HexDisplay;
-  use nom::{IResult, character::streaming::{digit, space}};
+  use nom::{IResult, character::streaming::{digit1 as digit, space1 as space}};
   use std::str;
 
   named!(parse_ints<Vec<i32>>, many0!(spaces_or_int));
@@ -232,7 +232,7 @@ named_args!(issue_771(count: usize)<Vec<u32>>,
 /// mask the error ('"Use of undeclared type or module `Needed`" in escaped_transform!').
 mod issue_780 {
   named!(issue_780<&str, String>,
-    escaped_transform!(call!(::nom::character::streaming::alpha), '\\', tag!("n"))
+    escaped_transform!(call!(::nom::character::streaming::alpha1), '\\', tag!("n"))
   );
 }
 
