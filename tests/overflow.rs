@@ -113,19 +113,6 @@ fn overflow_incomplete_count() {
 }
 
 #[test]
-fn overflow_incomplete_count_fixed() {
-  named!(
-    counter<[&[u8]; 2]>,
-    count_fixed!(&[u8], length_bytes!(be_u64), 2)
-  );
-
-  assert_eq!(
-    counter(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551599)))
-  );
-}
-
-#[test]
 #[cfg(feature = "alloc")]
 fn overflow_incomplete_length_count() {
   use nom::number::streaming::be_u8;

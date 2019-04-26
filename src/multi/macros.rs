@@ -310,74 +310,6 @@ macro_rules! count(
   );
 );
 
-/// `count_fixed!(O, I -> IResult<I,O>, nb) => I -> IResult<I, [O; nb]>`
-/// Applies the child parser a fixed number of times and returns a fixed size array
-/// The type must be specified and it must be `Copy`
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::Err;
-/// # use nom::error::ErrorKind;
-/// # fn main() {
-///  named!(counter< [&[u8]; 2] >, count_fixed!( &[u8], tag!( "abcd" ), 2 ) );
-///  // can omit the type specifier if returning slices
-///  // named!(counter< [&[u8]; 2] >, count_fixed!( tag!( "abcd" ), 2 ) );
-///
-///  let a = b"abcdabcdabcdef";
-///  let b = b"abcdefgh";
-///  let res = [&b"abcd"[..], &b"abcd"[..]];
-///
-///  assert_eq!(counter(&a[..]),Ok((&b"abcdef"[..], res)));
-///  assert_eq!(counter(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::Count))));
-/// # }
-/// ```
-///
-#[macro_export(local_inner_macros)]
-macro_rules! count_fixed (
-  ($i:expr, $typ:ty, $submac:ident!( $($args:tt)* ), $count: expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::Err;
-
-      let ret;
-      let mut input = $i.clone();
-      // `$typ` must be Copy, and thus having no destructor, this is panic safe
-      let mut res: [$typ; $count] = unsafe{[$crate::lib::std::mem::uninitialized(); $count as usize]};
-      let mut cnt: usize = 0;
-
-      loop {
-        if cnt == $count {
-          ret = Ok((input, res)); break;
-        }
-
-        match $submac!(input, $($args)*) {
-          Ok((i,o)) => {
-            res[cnt] = o;
-            cnt += 1;
-            input = i;
-          },
-          Err(Err::Error(e))  => {
-            fn unify_types<T>(_: &T, _: &T) {}
-            let e2 = error_position!($i, $crate::error::ErrorKind::Count);
-            unify_types(&e, &e2);
-            ret = Err(Err::Error(e2));
-            break;
-          },
-          Err(e) => {
-            ret = Err(e);
-            break;
-          },
-        }
-      }
-
-      ret
-    }
-);
-  ($i:expr, $typ: ty, $f:expr, $count: expr) => (
-    count_fixed!($i, $typ, call!($f), $count);
-  );
-);
-
 /// `length_count!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// gets a number from the first parser, then applies the second parser that many times
 #[macro_export(local_inner_macros)]
@@ -900,31 +832,6 @@ mod tests {
     assert_eq!(counter_2(error_2), Ok((error_2_remain, parsed_err_2)));
   }
 
-  #[test]
-  fn count_fixed() {
-    const TIMES: usize = 2;
-    named!(tag_abc, tag!("abc"));
-    named!( cnt_2<&[u8], [&[u8]; TIMES] >, count_fixed!(&[u8], tag_abc, TIMES ) );
-
-    assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Ok((&b"abcdef"[..], [&b"abc"[..], &b"abc"[..]])));
-    assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Count))));
-    assert_eq!(
-      cnt_2(&b"xxxabcabcdef"[..]),
-      Err(Err::Error(error_position!(&b"xxxabcabcdef"[..], ErrorKind::Count)))
-    );
-    assert_eq!(
-      cnt_2(&b"abcxxxabcdef"[..]),
-      Err(Err::Error(error_position!(&b"abcxxxabcdef"[..], ErrorKind::Count)))
-    );
-  }
-
-  #[allow(dead_code)]
-  pub fn compile_count_fixed(input: &[u8]) -> IResult<&[u8], ()> {
-    do_parse!(input, tag!("abcd") >> count_fixed!(u16, le_u16, 4) >> eof!() >> ())
-  }
-
   #[derive(Debug, Clone, PartialEq)]
   pub struct NilError;
 
@@ -941,38 +848,6 @@ mod tests {
     fn append(_: I, _: ErrorKind, _: NilError) -> NilError {
       NilError
     }
-  }
-
-  #[allow(unused_variables)]
-  #[test]
-  fn count_fixed_no_type() {
-    const TIMES: usize = 2;
-    named!(tag_abc, tag!("abc"));
-    named!( counter_2<&[u8], [&[u8]; TIMES], NilError >, count_fixed!(&[u8], fix_error!(NilError, tag_abc), TIMES ) );
-
-    let done = &b"abcabcabcdef"[..];
-    let parsed_main = [&b"abc"[..], &b"abc"[..]];
-    let rest = &b"abcdef"[..];
-    let incomplete_1 = &b"ab"[..];
-    let incomplete_2 = &b"abcab"[..];
-    let error = &b"xxx"[..];
-    let error_1 = &b"xxxabcabcdef"[..];
-    let error_1_remain = &b"xxxabcabcdef"[..];
-    let error_2 = &b"abcxxxabcdef"[..];
-    let error_2_remain = &b"abcxxxabcdef"[..];
-
-    assert_eq!(counter_2(done), Ok((rest, parsed_main)));
-    assert_eq!(counter_2(incomplete_1), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(counter_2(incomplete_2), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(counter_2(error), Err(Err::Error(error_position!(error, ErrorKind::Count))));
-    assert_eq!(
-      counter_2(error_1),
-      Err(Err::Error(error_position!(error_1_remain, ErrorKind::Count)))
-    );
-    assert_eq!(
-      counter_2(error_2),
-      Err(Err::Error(error_position!(error_2_remain, ErrorKind::Count)))
-    );
   }
 
   named!(pub number<u32>, map_res!(
