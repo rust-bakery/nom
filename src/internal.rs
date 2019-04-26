@@ -62,6 +62,16 @@ pub enum Err<E> {
   Failure(E),
 }
 
+impl<E> Err<E> {
+  pub fn is_incomplete(&self) -> bool {
+    if let Err::Incomplete(_) = self {
+      true
+    } else {
+      false
+    }
+  }
+}
+
 /*
 #[cfg(feature = "std")]
 use std::fmt;
