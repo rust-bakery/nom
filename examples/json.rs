@@ -9,7 +9,7 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use nom::{Err, IResult, Offset, error::{VerboseError, VerboseErrorKind}};
 use nom::{
-  character::complete::alphanumeric,
+  character::complete::alphanumeric1 as alphanumeric,
   bytes::complete::{take_while, tag},
   multi::separated_listc,
   branch::alt,

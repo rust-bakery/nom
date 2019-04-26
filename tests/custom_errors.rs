@@ -6,7 +6,7 @@ extern crate nom;
 
 use nom::IResult;
 use nom::error::{ErrorKind,ParseError};
-use nom::character::streaming::digit;
+use nom::character::streaming::digit1 as digit;
 
 use std::convert::From;
 

@@ -8,6 +8,18 @@
 
 ### Fixed
 
+## 5.0.0 - ?
+
+### Thanks
+
+### Added
+
+### Fixed
+
+### Removed
+
+- character parsers that were aliases to their `*1` version: eol, alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace
+
 ## 4.2.3 - 2019-03-23
 
 ### Fixed

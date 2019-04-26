@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use nom::{
   IResult,
-  character::complete::{digit, multispace0 as multispace},
+  character::complete::{digit1 as digit, multispace0 as multispace},
   sequence::{preceded, delimited},
   combinator::{map, map_res},
   multi::many0,

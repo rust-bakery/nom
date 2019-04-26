@@ -99,9 +99,9 @@ macro_rules! is_a (
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
-/// # use nom::character::complete::digit;
+/// # use nom::character::complete::digit1;
 /// # fn main() {
-///  named!(esc, escaped!(call!(digit), '\\', one_of!("\"n\\")));
+///  named!(esc, escaped!(call!(digit1), '\\', one_of!("\"n\\")));
 ///  assert_eq!(esc(&b"123;"[..]), Ok((&b";"[..], &b"123"[..])));
 ///  assert_eq!(esc(&b"12\\\"34;"[..]), Ok((&b";"[..], &b"12\\\"34"[..])));
 /// # }
@@ -934,7 +934,7 @@ mod tests {
   use lib::std::string::String;
   #[cfg(feature = "alloc")]
   use lib::std::vec::Vec;
-  use character::streaming::{alpha, alphanumeric, digit, hex_digit, multispace, oct_digit, space};
+  use character::streaming::{alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit, multispace1 as multispace, oct_digit1 as oct_digit, space1 as space};
   use error::ErrorKind;
   use character::is_alphabetic;
 

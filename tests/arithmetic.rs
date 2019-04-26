@@ -9,7 +9,7 @@ use nom::{
   combinator::map_res,
   character::complete::char,
   bytes::complete::tag,
-  character::complete::{digit, space0 as space},
+  character::complete::{digit1 as digit, space0 as space},
   multi::fold_many0,
   sequence::{delimited, pair}
 };

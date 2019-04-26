@@ -4,7 +4,7 @@ extern crate nom;
 use nom::{
   branch::alt,
   sequence::{delimited, pair, preceded},
-  character::complete::{digit, space0 as space},
+  character::complete::{digit1 as digit, space0 as space},
   bytes::complete::tag
 };
 

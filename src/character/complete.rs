@@ -127,7 +127,6 @@ where
   }
 }
 
-//FIXME: remove?
 //FIXME: there's still an incomplete
 /// Recognizes a string of any char except '\r' or '\n'.
 ///
@@ -226,35 +225,6 @@ where
   }
 }
 
-//FIXME: remove
-/// Alias for [`line_ending`].
-///
-/// *complete version*: Will return an error if there's not enough input data.
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::eol;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///     eol(input)
-/// }
-///
-/// assert_eq!(parser("\r\nc"), Ok(("c", "\r\n")));
-/// assert_eq!(parser("ab\r\nc"), Err(Err::Error(("ab\r\nc", ErrorKind::CrLf))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::CrLf))));
-/// # }
-/// ```
-pub fn eol<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength,
-  T: Compare<&'static str>,
-{
-  line_ending(input)
-}
-
 /// Matches a newline character '\n'.
 ///
 /// *complete version*: Will return an error if there's not enough input data.
@@ -342,38 +312,6 @@ where
   }
 }
 
-//FIXME: remove?
-/// Recognizes one or more lowercase and uppercase alphabetic characters.
-///
-/// * For ASCII strings: a-zA-Z
-/// * For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
-///
-/// *complete version*: Will return an error if there's not enough input data,
-/// or the whole input if no terminating token is found (a non alphabetic character).
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::alpha;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///     alpha(input)
-/// }
-///
-/// assert_eq!(parser("ab1c"), Ok(("1c", "ab")));
-/// assert_eq!(parser("1c"), Err(Err::Error(("1c", ErrorKind::Alpha))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Alpha))));
-/// # }
-/// ```
-pub fn alpha<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
-{
-  alpha1(input)
-}
-
 /// Recognizes zero or more lowercase and uppercase alphabetic characters.
 ///
 /// * For ASCII strings: a-zA-Z
@@ -436,35 +374,6 @@ where
   input.split_at_position1_complete(|item| !item.is_alpha(), ErrorKind::Alpha)
 }
 
-//FIXME: remove?
-/// Recognizes one or more numerical characters: 0-9
-///
-/// *complete version*: Will return an error if there's not enough input data,
-/// or the whole input if no terminating token is found (a non digit character).
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::digit;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///     digit(input)
-/// }
-///
-/// assert_eq!(parser("21c"), Ok(("c", "21")));
-/// assert_eq!(parser("c1"), Err(Err::Error(("c1", ErrorKind::Digit))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Digit))));
-/// # }
-/// ```
-pub fn digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
-{
-  digit1(input)
-}
-
 /// Recognizes zero or more numerical characters: 0-9
 ///
 /// *complete version*: Will return the whole input if no terminating token is found (a non digit
@@ -521,35 +430,6 @@ where
   input.split_at_position1_complete(|item| !item.is_dec_digit(), ErrorKind::Digit)
 }
 
-//FIXME: remove?
-/// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
-///
-/// *complete version*: Will return an error if there's not enough input data,
-/// or the whole input if no terminating token is found (a non hexadecimal digit character).
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::hex_digit;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///     hex_digit(input)
-/// }
-///
-/// assert_eq!(parser("21cZ"), Ok(("Z", "21c")));
-/// assert_eq!(parser("H2"), Err(Err::Error(("H2", ErrorKind::HexDigit))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::HexDigit))));
-/// # }
-/// ```
-pub fn hex_digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
-{
-  hex_digit1(input)
-}
-
 /// Recognizes zero or more hexadecimal numerical characters: 0-9, A-F, a-f
 ///
 /// *complete version*: Will return the whole input if no terminating token is found (a non hexadecimal digit character).
@@ -602,35 +482,6 @@ where
   <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position1_complete(|item| !item.is_hex_digit(), ErrorKind::HexDigit)
-}
-
-//FIXME: remove?
-/// Recognizes one or more octal characters: 0-7
-///
-/// *complete version*: Will return an error if there's not enough input data,
-/// or the whole input if no terminating token is found (a non octal digit character).
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::oct_digit;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///     oct_digit(input)
-/// }
-///
-/// assert_eq!(parser("21cZ"), Ok(("cZ", "21")));
-/// assert_eq!(parser("H2"), Err(Err::Error(("H2", ErrorKind::OctDigit))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::OctDigit))));
-/// # }
-/// ```
-pub fn oct_digit<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
-{
-  oct_digit1(input)
 }
 
 /// Recognizes zero or more octal characters: 0-7
@@ -687,38 +538,6 @@ where
   <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position1_complete(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
-}
-
-//FIXME: remove?
-/// Recognizes one or more numerical and alphabetic characters.
-///
-/// * For ASCII strings: 0-9a-zA-Z
-/// * For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
-///
-/// *complete version*: Will return an error if there's not enough input data,
-/// or the whole input if no terminating token is found (a non alphanumerical character).
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::alphanumeric;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///     alphanumeric(input)
-/// }
-///
-/// assert_eq!(parser("21cZ%1"), Ok(("%1", "21cZ")));
-/// assert_eq!(parser("&H2"), Err(Err::Error(("&H2", ErrorKind::AlphaNumeric))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::AlphaNumeric))));
-/// # }
-/// ```
-pub fn alphanumeric<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
-{
-  alphanumeric1(input)
 }
 
 /// Recognizes zero or more numerical and alphabetic characters.
@@ -781,35 +600,6 @@ where
   <T as InputTakeAtPosition>::Item: AsChar,
 {
   input.split_at_position1_complete(|item| !item.is_alphanum(), ErrorKind::AlphaNumeric)
-}
-
-//FIXME: remove?
-/// Recognizes one or more spaces and tabs.
-///
-/// *complete version*: Will return an error if there's not enough input data,
-/// or the whole input if no terminating token is found (a non space character).
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::space;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///     space(input)
-/// }
-///
-/// assert_eq!(parser(" \t21c"), Ok(("21c", " \t")));
-/// assert_eq!(parser("H2"), Err(Err::Error(("H2", ErrorKind::Space))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Space))));
-/// # }
-/// ```
-pub fn space<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar + Clone,
-{
-  space1(input)
 }
 
 /// Recognizes zero or more spaces and tabs.
@@ -877,35 +667,6 @@ where
   )
 }
 
-//FIXME: remove?
-/// Recognizes one or more spaces, tabs, carriage returns and line feeds.
-///
-/// *complete version*: will return an error if there's not enough input data,
-/// or the whole input if no terminating token is found (a non space character).
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::multispace;
-/// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
-///     multispace(input)
-/// }
-///
-/// assert_eq!(parser(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
-/// assert_eq!(parser("H2"), Err(Err::Error(("H2", ErrorKind::MultiSpace))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::MultiSpace))));
-/// # }
-/// ```
-pub fn multispace<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar + Clone,
-{
-  multispace1(input)
-}
-
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds.
 ///
 /// *complete version*: will return the whole input if no terminating token is found (a non space
@@ -936,6 +697,7 @@ where
     !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
   })
 }
+
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds.
 ///
 /// *complete version*: will return an error if there's not enough input data,
@@ -974,6 +736,7 @@ where
 mod tests {
   use super::*;
   use internal::{Err, Needed};
+  use bytes::complete::take_while;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -992,54 +755,54 @@ mod tests {
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
     let f: &[u8] = b" ;";
-    //assert_eq!(alpha::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_parse!(alpha(a), Ok((empty, a)));
+    //assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(alpha1(a), Ok((empty, a)));
     assert_eq!(
-      alpha(b),
+      alpha1(b),
       Err(Err::Error((b, ErrorKind::Alpha)))
     );
-    assert_eq!(alpha::<_, (_, ErrorKind)>(c), Ok((&c[1..], &b"a"[..])));
-    assert_eq!(alpha::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &b"a"[..])));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
     assert_eq!(
-      digit(a),
+      digit1(a),
       Err(Err::Error((a, ErrorKind::Digit)))
     );
-    assert_eq!(digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
+    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(
-      digit(c),
+      digit1(c),
       Err(Err::Error((c, ErrorKind::Digit)))
     );
     assert_eq!(
-      digit(d),
+      digit1(d),
       Err(Err::Error((d, ErrorKind::Digit)))
     );
-    assert_eq!(hex_digit::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(hex_digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(hex_digit::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(hex_digit::<_, (_, ErrorKind)>(d), Ok(("zé12".as_bytes(), &b"a"[..])));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12".as_bytes(), &b"a"[..])));
     assert_eq!(
-      hex_digit(e),
+      hex_digit1(e),
       Err(Err::Error((e, ErrorKind::HexDigit)))
     );
     assert_eq!(
-      oct_digit(a),
+      oct_digit1(a),
       Err(Err::Error((a, ErrorKind::OctDigit)))
     );
-    assert_eq!(oct_digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
+    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(
-      oct_digit(c),
+      oct_digit1(c),
       Err(Err::Error((c, ErrorKind::OctDigit)))
     );
     assert_eq!(
-      oct_digit(d),
+      oct_digit1(d),
       Err(Err::Error((d, ErrorKind::OctDigit)))
     );
-    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(a), Ok((empty, a)));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
-    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
-    assert_eq!(space::<_, (_, ErrorKind)>(e), Ok((empty, e)));
-    assert_eq!(space::<_, (_, ErrorKind)>(f), Ok((&b";"[..], &b" "[..])));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
+    assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
+    assert_eq!(space1::<_, (_, ErrorKind)>(f), Ok((&b";"[..], &b" "[..])));
   }
 
   #[cfg(feature = "alloc")]
@@ -1051,52 +814,52 @@ mod tests {
     let c = "a123";
     let d = "azé12";
     let e = " ";
-    assert_eq!(alpha::<_, (_, ErrorKind)>(a), Ok((empty, a)));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     assert_eq!(
-      alpha(b),
+      alpha1(b),
       Err(Err::Error((b, ErrorKind::Alpha)))
     );
-    assert_eq!(alpha::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
-    assert_eq!(alpha::<_, (_, ErrorKind)>(d), Ok(("12", &"azé"[..])));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("12", &"azé"[..])));
     assert_eq!(
-      digit(a),
+      digit1(a),
       Err(Err::Error((a, ErrorKind::Digit)))
     );
-    assert_eq!(digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
+    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(
-      digit(c),
+      digit1(c),
       Err(Err::Error((c, ErrorKind::Digit)))
     );
     assert_eq!(
-      digit(d),
+      digit1(d),
       Err(Err::Error((d, ErrorKind::Digit)))
     );
-    assert_eq!(hex_digit::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(hex_digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(hex_digit::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(hex_digit::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
     assert_eq!(
-      hex_digit(e),
+      hex_digit1(e),
       Err(Err::Error((e, ErrorKind::HexDigit)))
     );
     assert_eq!(
-      oct_digit(a),
+      oct_digit1(a),
       Err(Err::Error((a, ErrorKind::OctDigit)))
     );
-    assert_eq!(oct_digit::<_, (_, ErrorKind)>(b), Ok((empty, b)));
+    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(
-      oct_digit(c),
+      oct_digit1(c),
       Err(Err::Error((c, ErrorKind::OctDigit)))
     );
     assert_eq!(
-      oct_digit(d),
+      oct_digit1(d),
       Err(Err::Error((d, ErrorKind::OctDigit)))
     );
-    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(a), Ok((empty, a)));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
-    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(alphanumeric::<_, (_, ErrorKind)>(d), Ok((empty, d)));
-    assert_eq!(space::<_, (_, ErrorKind)>(e), Ok((empty, e)));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok((empty, d)));
+    assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
   }
 
   use traits::Offset;
@@ -1109,43 +872,43 @@ mod tests {
     let e = &b" \t\r\n;"[..];
     let f = &b"123abcDEF;"[..];
 
-    match alpha::<_, (_, ErrorKind)>(a) {
+    match alpha1::<_, (_, ErrorKind)>(a) {
       Ok((i, _)) => {
         assert_eq!(a.offset(i) + i.len(), a.len());
       }
       _ => panic!("wrong return type in offset test for alpha"),
     }
-    match digit::<_, (_, ErrorKind)>(b) {
+    match digit1::<_, (_, ErrorKind)>(b) {
       Ok((i, _)) => {
         assert_eq!(b.offset(i) + i.len(), b.len());
       }
       _ => panic!("wrong return type in offset test for digit"),
     }
-    match alphanumeric::<_, (_, ErrorKind)>(c) {
+    match alphanumeric1::<_, (_, ErrorKind)>(c) {
       Ok((i, _)) => {
         assert_eq!(c.offset(i) + i.len(), c.len());
       }
       _ => panic!("wrong return type in offset test for alphanumeric"),
     }
-    match space::<_, (_, ErrorKind)>(d) {
+    match space1::<_, (_, ErrorKind)>(d) {
       Ok((i, _)) => {
         assert_eq!(d.offset(i) + i.len(), d.len());
       }
       _ => panic!("wrong return type in offset test for space"),
     }
-    match multispace::<_, (_, ErrorKind)>(e) {
+    match multispace1::<_, (_, ErrorKind)>(e) {
       Ok((i, _)) => {
         assert_eq!(e.offset(i) + i.len(), e.len());
       }
       _ => panic!("wrong return type in offset test for multispace"),
     }
-    match hex_digit::<_, (_, ErrorKind)>(f) {
+    match hex_digit1::<_, (_, ErrorKind)>(f) {
       Ok((i, _)) => {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
       _ => panic!("wrong return type in offset test for hex_digit"),
     }
-    match oct_digit::<_, (_, ErrorKind)>(f) {
+    match oct_digit1::<_, (_, ErrorKind)>(f) {
       Ok((i, _)) => {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
@@ -1176,6 +939,7 @@ mod tests {
 
   #[test]
   fn is_not_line_ending_str() {
+
     /*
     let a: &str = "ab12cd\nefgh";
     assert_eq!(not_line_ending(a), Ok((&"\nefgh"[..], &"ab12cd"[..])));
@@ -1206,17 +970,17 @@ mod tests {
   #[test]
   fn hex_digit_test() {
     let i = &b"0123456789abcdefABCDEF;"[..];
-    assert_parse!(hex_digit(i), Ok((&b";"[..], &i[..i.len() - 1])));
+    assert_parse!(hex_digit1(i), Ok((&b";"[..], &i[..i.len() - 1])));
 
     let i = &b"g"[..];
     assert_parse!(
-      hex_digit(i),
+      hex_digit1(i),
       Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
     );
 
     let i = &b"G"[..];
     assert_parse!(
-      hex_digit(i),
+      hex_digit1(i),
       Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
     );
 
@@ -1237,11 +1001,11 @@ mod tests {
   #[test]
   fn oct_digit_test() {
     let i = &b"01234567;"[..];
-    assert_parse!(oct_digit(i), Ok((&b";"[..], &i[..i.len() - 1])));
+    assert_parse!(oct_digit1(i), Ok((&b";"[..], &i[..i.len() - 1])));
 
     let i = &b"8"[..];
     assert_parse!(
-      oct_digit(i),
+      oct_digit1(i),
       Err(Err::Error(error_position!(i, ErrorKind::OctDigit)))
     );
 
@@ -1312,19 +1076,19 @@ mod tests {
 
   #[test]
   fn end_of_line() {
-    assert_parse!(eol(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
-    assert_parse!(eol(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(eol(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
+    assert_parse!(line_ending(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
+    assert_parse!(line_ending(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
+    assert_parse!(line_ending(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
     assert_parse!(
-      eol(&b"\ra"[..]),
+      line_ending(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
     );
 
-    assert_parse!(eol("\na"), Ok(("a", "\n")));
-    assert_parse!(eol("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(eol("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
+    assert_parse!(line_ending("\na"), Ok(("a", "\n")));
+    assert_parse!(line_ending("\r\na"), Ok(("a", "\r\n")));
+    assert_parse!(line_ending("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
     assert_parse!(
-      eol("\ra"),
+      line_ending("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
     );
   }

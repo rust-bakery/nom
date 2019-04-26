@@ -6,7 +6,7 @@ use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use traits::{AtEof, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Offset, Slice};
-use character::streaming::digit;
+use character::streaming::digit1;
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1))
 ///
@@ -393,13 +393,13 @@ where
     tuple!(
       opt!(alt!(char!('+') | char!('-'))),
       alt!(
-        value!((), tuple!(digit, opt!(pair!(char!('.'), opt!(digit)))))
-      | value!((), tuple!(char!('.'), digit))
+        value!((), tuple!(digit1, opt!(pair!(char!('.'), opt!(digit1)))))
+      | value!((), tuple!(char!('.'), digit1))
       ),
       opt!(tuple!(
         alt!(char!('e') | char!('E')),
         opt!(alt!(char!('+') | char!('-'))),
-        digit
+        digit1
         )
       )
     )

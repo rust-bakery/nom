@@ -6,7 +6,7 @@ use nom::{
   combinator::{map_res, opt},
   bytes::complete::{take_while, is_a},
   sequence::{delimited, terminated},
-  character::complete::{char, alphanumeric, space0 as space, not_line_ending}
+  character::complete::{char, alphanumeric1 as alphanumeric, space0 as space}
 };
 
 use std::collections::HashMap;
@@ -29,6 +29,10 @@ fn is_space(chr: char) -> bool {
 
 fn is_line_ending_or_comment(chr: char) -> bool {
   chr == ';' || chr == '\n'
+}
+
+fn not_line_ending(i: &str) -> IResult<&str, &str> {
+  take_while(|c| c != '\r' && c != '\n')(i)
 }
 
 fn space_or_line_ending(i: &str) -> IResult<&str, &str> {

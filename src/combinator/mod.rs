@@ -328,7 +328,7 @@ mod tests {
   #[allow(dead_code)]
   fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], CustomError> {
     //fix_error!(input, CustomError, alphanumeric)
-    ::character::streaming::alphanumeric(input)
+    ::character::streaming::alphanumeric1(input)
   }
 
   #[test]

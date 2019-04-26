@@ -6,7 +6,7 @@ use nom::{
   bytes::complete::take_while,
   sequence::delimited,
   combinator::map_res,
-  character::complete::{char, alphanumeric, multispace0 as multispace, space0 as space}
+  character::complete::{char, alphanumeric1 as alphanumeric, multispace0 as multispace, space0 as space}
 };
 
 use std::str;

@@ -5,7 +5,7 @@ use nom::{
   IResult,
   multi::many0,
   sequence::terminated,
-  character::complete::{alphanumeric, eol}
+  character::complete::{alphanumeric1 as alphanumeric, line_ending as eol}
 };
 
 pub fn end_of_line(input: &str) -> IResult<&str, &str> {
