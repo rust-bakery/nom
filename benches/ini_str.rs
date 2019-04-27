@@ -14,7 +14,7 @@ use nom::{
   combinator::{map_res, opt},
   bytes::complete::{take_while, is_a},
   sequence::{delimited, terminated},
-  character::complete::{char, alphanumeric, space0 as space, not_line_ending}
+  character::complete::{char, alphanumeric1 as  alphanumeric, space0 as space, not_line_ending}
 };
 
 

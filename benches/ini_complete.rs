@@ -13,7 +13,7 @@ use nom::{
   combinator::map_res,
   sequence::delimited,
   bytes::complete::take_while,
-  character::complete::{alphanumeric, multispace, space, char}
+  character::complete::{alphanumeric1 as alphanumeric, multispace1 as multispace, space1 as space, char}
 };
 use std::str;
 use std::collections::HashMap;

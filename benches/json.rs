@@ -8,7 +8,7 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::Criterion;
-use nom::{error::ErrorKind, character::complete::alphanumeric, number::complete::recognize_float};
+use nom::{error::ErrorKind, character::complete::alphanumeric1 as alphanumeric, number::complete::recognize_float};
 
 
 use std::str;
@@ -98,7 +98,6 @@ fn json_bench(c: &mut Criterion) {
 }
 
 fn recognize_float_bytes(c: &mut Criterion) {
-  use nom::number::complete::recognize_float;
   println!("recognize_float_bytes result: {:?}", recognize_float::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
   c.bench_function("recognize float bytes", |b| {
     b.iter(|| recognize_float::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
@@ -106,7 +105,6 @@ fn recognize_float_bytes(c: &mut Criterion) {
 }
 
 fn recognize_float_str(c: &mut Criterion) {
-  use nom::number::complete::recognize_float;
   println!("recognize_float_str result: {:?}", recognize_float::<_, (_,ErrorKind)>("-1.234E-12"));
   c.bench_function("recognize float str", |b| {
     b.iter(|| recognize_float::<_, (_,ErrorKind)>("-1.234E-12"));
