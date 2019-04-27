@@ -736,7 +736,6 @@ where
 mod tests {
   use super::*;
   use internal::{Err, Needed};
-  use bytes::complete::take_while;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -1023,6 +1022,8 @@ mod tests {
 
   #[test]
   fn full_line_windows() {
+    //let not_line_ending = |i:&[u8]| take_while(|c| c != b'\r' && c != b'\n')(i);
+
     named!(
       take_full_line<(&[u8], &[u8])>,
       tuple!(not_line_ending, line_ending)
@@ -1034,6 +1035,7 @@ mod tests {
 
   #[test]
   fn full_line_unix() {
+    //let not_line_ending = |i:&[u8]| take_while(|c| c != b'\n')(i);
     named!(
       take_full_line<(&[u8], &[u8])>,
       tuple!(not_line_ending, line_ending)

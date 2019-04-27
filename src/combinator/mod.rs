@@ -175,9 +175,8 @@ where
   O1: InputLength,
 {
   move |input: I| {
-    let i = input.clone();
     let (input, o1) = first(input)?;
-    let (o1, o2) = second(o1)?;
+    let (_, o2) = second(o1)?;
     Ok((input, o2))
   }
 }
