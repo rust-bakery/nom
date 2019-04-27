@@ -277,37 +277,6 @@ mod test {
   }
 
   #[test]
-  fn take_until_and_consume_succeed() {
-    const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
-    const FIND: &str = "ÂßÇ";
-    const OUTPUT: &str = "βèƒôřè";
-    const LEFTOVER: &str = "áƒƭèř";
-
-    match take_until_and_consume!(INPUT, FIND) {
-      Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_until_and_consume`\
-           consumed leftover input. Leftover `{}`.",
-          extra
-        );
-        assert!(
-          output == OUTPUT,
-          "Parser `take_until_and_consume`\
-           doens't return the string it selected on success. Expected `{}`, got `{}`.",
-          OUTPUT,
-          output
-        );
-      }
-      other => panic!(
-        "Parser `take_until_and_consume` didn't succeed when it should have. \
-         Got `{:?}`.",
-        other
-      ),
-    };
-  }
-
-  #[test]
   fn take_while_succeed_some() {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const CONSUMED: &str = "βèƒôřèÂßÇ";
@@ -383,21 +352,6 @@ mod test {
       }
       other => panic!(
         "Parser `take_while1` didn't succeed when it should have. \
-         Got `{:?}`.",
-        other
-      ),
-    };
-  }
-
-  #[test]
-  fn take_until_and_consume_incomplete() {
-    const INPUT: &str = "βèƒôřè";
-    const FIND: &str = "βèƒôřèÂßÇ";
-
-    match take_until_and_consume!(INPUT, FIND) {
-      Err(Err::Incomplete(_)) => (),
-      other => panic!(
-        "Parser `take_until_and_consume` didn't require more input when it should have. \
          Got `{:?}`.",
         other
       ),
@@ -487,22 +441,6 @@ mod test {
   }
 
   #[test]
-  fn take_until_and_consume_error() {
-    const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
-    const FIND: &str = "Ráñδô₥";
-
-    let res: IResult<_,_,(_, ErrorKind)> = take_until_and_consume!(INPUT, FIND);
-    match res {
-      Err(Err::Incomplete(_)) => (),
-      other => panic!(
-        "Parser `take_until_and_consume` didn't fail when it should have. \
-         Got `{:?}`.",
-        other
-      ),
-    };
-  }
-
-  #[test]
   fn take_until_error() {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const FIND: &str = "Ráñδô₥";
@@ -511,7 +449,7 @@ mod test {
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
-        "Parser `take_until_and_consume` didn't fail when it should have. \
+        "Parser `take_until` didn't fail when it should have. \
          Got `{:?}`.",
         other
       ),

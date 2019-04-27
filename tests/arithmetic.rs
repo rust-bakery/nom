@@ -3,8 +3,7 @@ extern crate nom;
 
 
 use nom::{
-  IResult, Err,
-  error::ErrorKind,
+  IResult,
   branch::alt,
   combinator::map_res,
   character::complete::char,
