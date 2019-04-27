@@ -28,7 +28,7 @@ impl Needed {
 
   /// Maps a `Needed` to `Needed` by appling a function to a contained `Size` value.
   #[inline]
-  pub fn map<F: FnOnce(usize) -> usize>(self, f: F) -> Needed {
+  pub fn map<F: Fn(usize) -> usize>(self, f: F) -> Needed {
     match self {
       Unknown => Unknown,
       Size(n) => Size(f(n)),

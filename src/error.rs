@@ -90,7 +90,7 @@ impl<I> ParseError<I> for VerboseError<I> {
 }
 
 #[cfg(feature = "alloc")]
-pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl FnOnce(I) -> IResult<I, O, E>
+pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E> {
 
