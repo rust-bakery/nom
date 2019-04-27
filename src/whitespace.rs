@@ -829,23 +829,6 @@ macro_rules! sep (
   };
 );
 
-use internal::IResult;
-use traits::{AsChar, FindToken, InputTakeAtPosition};
-#[allow(unused_imports)]
-pub fn sp<'a, T>(input: T) -> IResult<T, T>
-where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar + Clone,
-  &'a str: FindToken<<T as InputTakeAtPosition>::Item>,
-{
-  input.split_at_position(|item| {
-    let c = item.clone().as_char();
-    !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
-  })
-  //this could be written as followed, but not using FindToken is faster
-  //eat_separator!(input, " \t\r\n")
-}
-
 /// `ws!(I -> IResult<I,O>) => I -> IResult<I, O>`
 ///
 /// transforms a parser to automatically consume
@@ -876,15 +859,15 @@ where
 macro_rules! ws (
   ($i:expr, $($args:tt)*) => (
     {
-      use $crate::sp;
       use $crate::Convert;
       use $crate::Err;
       use $crate::lib::std::result::Result::*;
+      use $crate::character::complete::multispace0;
 
-      match sep!($i, sp, $($args)*) {
+      match sep!($i, multispace0, $($args)*) {
         Err(e) => Err(e),
         Ok((i1,o))    => {
-          match (sp)(i1) {
+          match (multispace0)(i1) {
             Err(e) => Err(Err::convert(e)),
             Ok((i2,_))    => Ok((i2, o))
           }
@@ -902,12 +885,12 @@ mod tests {
   use lib::std::fmt::Debug;
   use internal::{Err, IResult, Needed};
   use error::ParseError;
-  use super::sp;
+  use character::complete::multispace0 as sp;
   use error::ErrorKind;
 
   #[test]
   fn spaaaaace() {
-    assert_eq!(sp(&b" \t abc "[..]), Ok((&b"abc "[..], &b" \t "[..])));
+    assert_eq!(sp::<_,(_,ErrorKind)>(&b" \t abc "[..]), Ok((&b"abc "[..], &b" \t "[..])));
   }
 
   #[test]

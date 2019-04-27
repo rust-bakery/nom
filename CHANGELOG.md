@@ -20,6 +20,7 @@
 
 - character parsers that were aliases to their `*1` version: eol, alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace
 - `count_fixed` macro
+- `whitespace::sp` can be replaced by `character::complete::multispace0`
 
 ## 4.2.3 - 2019-03-23
 
