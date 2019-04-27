@@ -9,6 +9,7 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::Criterion;
 use nom::{error::ErrorKind, character::complete::alphanumeric1 as alphanumeric, number::complete::recognize_float};
+use nom::number::complete::float;
 
 
 use std::str;
@@ -22,8 +23,6 @@ pub enum JsonValue {
   Array(Vec<JsonValue>),
   Object(HashMap<String, JsonValue>),
 }
-
-named!(float<f32>, flat_map!(recognize_float, parse_to!(f32)));
 
 //FIXME: verify how json strings are formatted
 named!(

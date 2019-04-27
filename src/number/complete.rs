@@ -3,8 +3,7 @@
 use internal::*;
 use error::ParseError;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use traits::{AtEof, ParseTo};
-use lib::std::ops::{Range, RangeFrom, RangeTo};
+use lib::std::ops::{RangeFrom, RangeTo};
 use traits::{Offset, Slice};
 use error::{ErrorKind, make_error};
 use character::complete::digit1;
@@ -383,10 +382,10 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + AtEof,
-  <T as InputIter>::Item: AsChar+Copy,
+  T: InputIter,
+  <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -412,13 +411,13 @@ where
 /// Recognizes floating point number in a byte string and returns a f32
 ///
 /// *complete version*: can parse until the end of input
-#[cfg(feature = "alloc")]
+#[cfg(not(feature = "lexical"))]
 pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + ParseTo<f32> + AtEof,
-  <T as InputIter>::Item: AsChar+Copy,
+  T: InputIter + InputLength + ::traits::ParseTo<f32>,
+  <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
@@ -426,7 +425,49 @@ where
     Err(e) => Err(e),
     Ok((i, s)) => match s.parse_to() {
       Some(n) => Ok((i, n)),
-      None =>  Err(Err::Error(E::from_error_kind(i, ErrorKind::ParseTo)))
+      None =>  Err(Err::Error(E::from_error_kind(i, ErrorKind::Float)))
+    }
+  }
+}
+
+/// Recognizes floating point number in a byte string and returns a f32
+///
+/// *complete version*: can parse until the end of input
+///
+/// this function uses the lexical-core crate for float parsing by default, you
+/// can deactivate it by removing the "lexical" feature
+#[cfg(feature = "lexical")]
+pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
+where
+  T: ::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
+{
+  let res = ::lexical_core::try_atof32_slice(input.as_bytes());
+
+  match res.error.code {
+    ::lexical_core::ErrorCode::Success => Ok((input.slice(input.input_len()..), res.value)),
+    ::lexical_core::ErrorCode::InvalidDigit => Ok((input.slice(res.error.index..), res.value)),
+    _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
+  }
+}
+
+/// Recognizes floating point number in a byte string and returns a f64
+///
+/// *complete version*: can parse until the end of input
+#[cfg(not(feature = "lexical"))]
+pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
+where
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + ::traits::ParseTo<f64>,
+  <T as InputIter>::Item: AsChar,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar
+{
+  match recognize_float(input) {
+    Err(e) => Err(e),
+    Ok((i, s)) => match s.parse_to() {
+      Some(n) => Ok((i, n)),
+      None =>  Err(Err::Error(E::from_error_kind(i, ErrorKind::Float)))
     }
   }
 }
@@ -434,22 +475,20 @@ where
 /// Recognizes floating point number in a byte string and returns a f64
 ///
 /// *complete version*: can parse until the end of input
-#[cfg(feature = "alloc")]
+///
+/// this function uses the lexical-core crate for float parsing by default, you
+/// can deactivate it by removing the "lexical" feature
+#[cfg(feature = "lexical")]
 pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: Clone + Offset,
-  T: InputIter + InputLength + ParseTo<f64> + AtEof,
-  <T as InputIter>::Item: AsChar+Copy,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  T: ::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
 {
-  match recognize_float(input) {
-    Err(e) => Err(e),
-    Ok((i, s)) => match s.parse_to() {
-      Some(n) => Ok((i, n)),
-      None =>  Err(Err::Error(E::from_error_kind(i, ErrorKind::ParseTo)))
-    }
+  let res = ::lexical_core::try_atof64_slice(input.as_bytes());
+
+  match res.error.code {
+    ::lexical_core::ErrorCode::Success => Ok((input.slice(input.input_len()..), res.value)),
+    ::lexical_core::ErrorCode::InvalidDigit => Ok((input.slice(res.error.index..), res.value)),
+    _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
   }
 }
 

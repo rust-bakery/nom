@@ -183,6 +183,7 @@ pub enum ErrorKind {
   TooLarge,
   Many0Count,
   Many1Count,
+  Float,
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -254,6 +255,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::TooLarge                  => 71,
     ErrorKind::Many0Count                => 72,
     ErrorKind::Many1Count                => 73,
+    ErrorKind::Float                     => 74,
   }
 }
 
@@ -327,6 +329,7 @@ impl ErrorKind {
       ErrorKind::TooLarge                  => "Needed data size is too large",
       ErrorKind::Many0Count                => "Count occurrence of >=0 patterns",
       ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
+      ErrorKind::Float                     => "Float",
     }
   }
 }

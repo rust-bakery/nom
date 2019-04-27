@@ -366,6 +366,8 @@ extern crate lazy_static;
 extern crate memchr;
 #[cfg(feature = "regexp")]
 pub extern crate regex;
+#[cfg(feature = "lexical")]
+extern crate lexical_core;
 #[cfg(nightly)]
 extern crate test;
 

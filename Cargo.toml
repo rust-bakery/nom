@@ -26,9 +26,10 @@ include = [
 [features]
 alloc = []
 std = ["alloc", "memchr/use_std"]
-default = ["std"]
+default = ["std", "lexical"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
+lexical = ["lexical-core"]
 
 [dependencies.regex]
 version = "^1.0"
@@ -42,9 +43,9 @@ optional = true
 version = "^2.0"
 default-features = false
 
-#[dev-dependencies.bytes]
-#git = "https://github.com/carllerche/bytes"
-#rev = "a7d38e29"
+[dependencies.lexical-core]
+version = "^0.4.0"
+optional = true
 
 [dev-dependencies]
 criterion = "0.2"
@@ -54,7 +55,7 @@ jemallocator = "^0.1"
 version_check = "^0.1"
 
 [package.metadata.docs.rs]
-features = [ "alloc", "std", "regexp", "regexp_macros"]
+features = [ "alloc", "std", "regexp", "regexp_macros", "lexical"]
 all-features = true
 
 [profile.bench]
