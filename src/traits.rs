@@ -909,40 +909,6 @@ macro_rules! slice_ranges_impl {
 slice_ranges_impl! {str}
 slice_ranges_impl! {[T]}
 
-/// indicates whether more data can come later in input
-///
-/// When working with complete data, like a file that was entirely loaded
-/// in memory, you should use input types like `CompleteByteSlice` and
-/// `CompleteStr` to wrap the data.  The `at_eof` method of those types
-/// always returns true, thus indicating to nom that it should not handle
-/// partial data cases.
-///
-/// When working will partial data, like data coming from the network in
-/// buffers, the `at_eof` method can indicate if we expect more data to come,
-/// and let nom know that some parsers could still handle more data
-pub trait AtEof {
-  fn at_eof(&self) -> bool;
-}
-
-// Tuple for bit parsing
-impl<I: AtEof, T> AtEof for (I, T) {
-  fn at_eof(&self) -> bool {
-    self.0.at_eof()
-  }
-}
-
-impl<'a, T> AtEof for &'a [T] {
-  fn at_eof(&self) -> bool {
-    false
-  }
-}
-
-impl<'a> AtEof for &'a str {
-  fn at_eof(&self) -> bool {
-    false
-  }
-}
-
 macro_rules! array_impls {
   ($($N:expr)+) => {
     $(
