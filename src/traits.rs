@@ -438,7 +438,7 @@ impl<'a> InputTake for &'a str {
 ///
 /// When implementing a custom input type, it is possible to use directly the
 /// default implementation: if the input type implements `InputLength`, `InputIter`,
-/// `InputTake`, `AtEof` and `Clone`, you can implement `UnspecializedInput` and get
+/// `InputTake` and `Clone`, you can implement `UnspecializedInput` and get
 /// a default version of `InputTakeAtPosition`.
 ///
 /// For performance reasons, you might want to write a custom implementation of
@@ -467,7 +467,7 @@ pub trait InputTakeAtPosition: Sized {
     P: Fn(Self::Item) -> bool;
 }
 
-impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput> InputTakeAtPosition for T {
+impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputTakeAtPosition for T {
   type Item = <T as InputIter>::RawItem;
 
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
@@ -476,13 +476,7 @@ impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput
   {
     match self.position(predicate) {
       Some(n) => Ok(self.take_split(n)),
-      None => {
-        if self.at_eof() {
-          Ok(self.take_split(self.input_len()))
-        } else {
-          Err(Err::Incomplete(Needed::Size(1)))
-        }
-      }
+      None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 
@@ -493,17 +487,7 @@ impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput
     match self.position(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
       Some(n) => Ok(self.take_split(n)),
-      None => {
-        if self.at_eof() {
-          if self.input_len() == 0 {
-            Err(Err::Error(E::from_error_kind(self.clone(), e)))
-          } else {
-            Ok(self.take_split(self.input_len()))
-          }
-        } else {
-          Err(Err::Incomplete(Needed::Size(1)))
-        }
-      }
+      None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 
