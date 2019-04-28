@@ -924,22 +924,6 @@ pub trait AtEof {
   fn at_eof(&self) -> bool;
 }
 
-pub fn need_more<I: AtEof, O, E: ParseError<I>>(input: I, needed: Needed) -> IResult<I, O, E> {
-  if input.at_eof() {
-    Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof)))
-  } else {
-    Err(Err::Incomplete(needed))
-  }
-}
-
-pub fn need_more_err<I: AtEof, O, E: ParseError<I>>(input: I, needed: Needed, err: ErrorKind) -> IResult<I, O, E> {
-  if input.at_eof() {
-    Err(Err::Error(E::from_error_kind(input, err)))
-  } else {
-    Err(Err::Incomplete(needed))
-  }
-}
-
 // Tuple for bit parsing
 impl<I: AtEof, T> AtEof for (I, T) {
   fn at_eof(&self) -> bool {

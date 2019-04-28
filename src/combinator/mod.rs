@@ -9,8 +9,7 @@ use lib::std::boxed::Box;
 use lib::std::fmt::Debug;
 use internal::*;
 use error::ParseError;
-use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use traits::{need_more, need_more_err, ParseTo};
+use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use error::ErrorKind;
@@ -46,7 +45,7 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
 
 pub fn sized_buffer<'a, E: ParseError<&'a[u8]>>(input: &'a[u8]) -> IResult<&'a[u8], &'a[u8], E> {
   if input.is_empty() {
-    return need_more(input, Needed::Unknown);
+    return Err(Err::Incomplete(Needed::Unknown));
   }
 
   let len = input[0] as usize;
@@ -54,7 +53,7 @@ pub fn sized_buffer<'a, E: ParseError<&'a[u8]>>(input: &'a[u8]) -> IResult<&'a[u
   if input.len() >= len + 1 {
     Ok((&input[len + 1..], &input[1..len + 1]))
   } else {
-    need_more(input, Needed::Size(1 + len))
+    Err(Err::Incomplete(Needed::Size(1 + len)))
   }
 }
 
@@ -67,7 +66,7 @@ where
   T: InputLength,
 {
   if input.input_len() == 0 {
-    return need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty);
+    return Err(Err::Incomplete(Needed::Unknown));
   } else {
     Ok((input.slice(input.input_len()..), input))
   }
