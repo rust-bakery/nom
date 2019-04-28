@@ -3,7 +3,7 @@
 use lib::std::result::Result::*;
 use ::lib::std::ops::RangeFrom;
 use traits::{
-  AtEof, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake,
+  Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake,
   InputTakeAtPosition, Slice, ToUsize,
 };
 use internal::{Err, IResult, Needed};
@@ -92,7 +92,7 @@ where
 
 pub fn take_while_m_n<F, Input, Error: ParseError<Input>>(m: usize, n: usize, cond: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
-  Input: InputTake + AtEof + InputIter + InputLength + Slice<RangeFrom<usize>>,
+  Input: InputTake + InputIter + InputLength + Slice<RangeFrom<usize>>,
   F: Fn(<Input as InputIter>::RawItem) -> bool,
 {
   move |i: Input| {
@@ -119,17 +119,12 @@ where
           let res: IResult<_, _, Error> = Ok(input.take_split(n));
           res
         } else {
-          if input.at_eof() {
-            if len >= m && len <= n {
-              let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
-              res
-            } else {
-              let e = ErrorKind::TakeWhileMN;
-              Err(Err::Error(Error::from_error_kind(input, e)))
-            }
+          if len >= m && len <= n {
+            let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
+            res
           } else {
-            let needed = if m > len { m - len } else { 1 };
-            Err(Err::Incomplete(Needed::Size(needed)))
+            let e = ErrorKind::TakeWhileMN;
+            Err(Err::Error(Error::from_error_kind(input, e)))
           }
         }
       }

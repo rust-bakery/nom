@@ -5,7 +5,7 @@
 use internal::{Err, IResult, Needed};
 use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};
-use traits::{AsChar, AtEof, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
+use traits::{AsChar, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
 use traits::{Compare, CompareResult};
 use error::ErrorKind;
 
@@ -150,7 +150,7 @@ where
 pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength + AtEof,
+  T: InputIter + InputLength,
   T: Compare<&'static str>,
   <T as InputIter>::Item: AsChar,
   <T as InputIter>::RawItem: AsChar,
@@ -160,11 +160,7 @@ where
     c == '\r' || c == '\n'
   }) {
     None => {
-      if input.at_eof() {
-        Ok((input.slice(input.input_len()..), input))
-      } else {
-        Err(Err::Incomplete(Needed::Unknown))
-      }
+      Ok((input.slice(input.input_len()..), input))
     }
     Some(index) => {
       let mut it = input.slice(index..).iter_elements();
