@@ -1292,11 +1292,7 @@ macro_rules! tap (
 
 /// `eof!()` returns its input if it is at the end of input data
 ///
-/// This combinator works with the `AtEof` trait that input types must implement.
-/// If an input type's `at_eof` method returns true, it means there will be no
-/// more refills (like what happens when buffering big files).
-///
-/// When we're at the end of the data and `at_eof` returns true, this combinator
+/// When we're at the end of the data, this combinator
 /// will succeed
 ///
 /// TODO: example
@@ -1305,10 +1301,10 @@ macro_rules! eof (
   ($i:expr,) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{AtEof,Err,error::ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       use $crate::InputLength;
-      if ($i).at_eof() && ($i).input_len() == 0 {
+      if ($i).input_len() == 0 {
         Ok(($i, $i))
       } else {
         //FIXME what do we do with need_more?
@@ -1319,10 +1315,6 @@ macro_rules! eof (
 );
 
 /// `exact!()` will fail if the child parser does not consume the whole data
-///
-/// This combinator works with the `AtEof` trait that input types must implement.
-/// If an input type's `at_eof` method returns true, it means there will be no
-/// more refills (like what happens when buffering big files).
 ///
 /// TODO: example
 #[macro_export(local_inner_macros)]
