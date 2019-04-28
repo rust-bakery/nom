@@ -10,7 +10,7 @@ use lib::std::fmt::Debug;
 use internal::*;
 use error::ParseError;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use traits::{need_more, need_more_err, AtEof, ParseTo};
+use traits::{need_more, need_more_err, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{Compare, CompareResult, Offset, Slice};
 use error::ErrorKind;
@@ -64,7 +64,7 @@ pub fn sized_buffer<'a, E: ParseError<&'a[u8]>>(input: &'a[u8]) -> IResult<&'a[u
 pub fn non_empty<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputLength + AtEof,
+  T: InputLength,
 {
   if input.input_len() == 0 {
     return need_more_err(input, Needed::Unknown, ErrorKind::NonEmpty);
