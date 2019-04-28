@@ -143,8 +143,8 @@ where
 /// }
 ///
 /// assert_eq!(parser("ab\r\nc"), Ok(("\r\nc", "ab")));
-/// assert_eq!(parser("abc"), Err(Err::Incomplete(Needed::Unknown)));
-/// assert_eq!(parser(""), Err(Err::Incomplete(Needed::Unknown)));
+/// assert_eq!(parser("abc"), Ok(("", "abc")));
+/// assert_eq!(parser(""), Ok(("", "")));
 /// # }
 /// ```
 pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -929,7 +929,7 @@ mod tests {
     );
 
     let d: &[u8] = b"ab12cd";
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Ok((&[][..], &d[..])));
   }
 
   #[test]
@@ -959,7 +959,7 @@ mod tests {
     );
 
     let g2: &str = "ab12cd";
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g2), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g2), Ok(("", g2)));
   }
 
   #[test]
