@@ -240,6 +240,21 @@ where
     complete(f)(input)
 }
 
+pub fn all_consuming<I, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
+where
+  I: InputLength,
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |input: I| {
+    let (input, res) = f(input)?;
+    if input.input_len() == 0 {
+      Ok((input, res))
+    } else {
+      Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof)))
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -370,5 +385,12 @@ mod tests {
   fn test_map_parser() {
       let input: &[u8] = &[100, 101, 102, 103, 104][..];
       assert_parse!(map_parser(take(4usize), take(2usize))(input), Ok((&[104][..], &[100, 101][..])));
+  }
+
+  #[test]
+  fn test_all_consuming() {
+      let input: &[u8] = &[100, 101, 102][..];
+      assert_parse!(all_consuming(take(2usize))(input), Err(Err::Error((&[102][..], ErrorKind::Eof))));
+      assert_parse!(all_consuming(take(3usize))(input), Ok((&[][..], &[100, 101, 102][..])));
   }
 }
