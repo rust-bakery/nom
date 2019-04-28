@@ -1307,7 +1307,6 @@ macro_rules! eof (
       if ($i).input_len() == 0 {
         Ok(($i, $i))
       } else {
-        //FIXME what do we do with need_more?
         Err(Err::Error(error_position!($i, ErrorKind::Eof)))
       }
     }
@@ -1374,7 +1373,7 @@ mod tests {
     ($i:expr, $tag: expr) => ({
       use $crate::lib::std::result::Result::*;
       use $crate::{Err,Needed,IResult,error::ErrorKind};
-      use $crate::{Compare,CompareResult,InputLength,Slice,need_more};
+      use $crate::{Compare,CompareResult,InputLength,Slice};
 
       let res: IResult<_,_> = match ($i).compare($tag) {
         CompareResult::Ok => {
@@ -1382,7 +1381,7 @@ mod tests {
           Ok(($i.slice(blen..), $i.slice(..blen)))
         },
         CompareResult::Incomplete => {
-          need_more($i, Needed::Size($tag.input_len()))
+          Err(Err::Incomplete(Needed::Size($tag.input_len())))
         },
         CompareResult::Error => {
           let e:ErrorKind = ErrorKind::Tag;
@@ -1398,7 +1397,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          $crate::need_more($i, $crate::Needed::Size(cnt))
+          Err($crate::Err::Incomplete($crate::Needed::Size(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };

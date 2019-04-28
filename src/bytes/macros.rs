@@ -112,7 +112,7 @@ macro_rules! escaped (
   (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,error::ErrorKind,need_more};
+      use $crate::{Err,Needed,IResult,error::ErrorKind};
       use $crate::AsChar;
       use $crate::InputIter;
       use $crate::InputLength;
@@ -144,7 +144,7 @@ macro_rules! escaped (
               if input.iter_elements().next().unwrap().as_char() == control_char {
                 let next = control_char.len_utf8();
                 if next >= input.input_len() {
-                  return need_more($i, Needed::Size(next - input.input_len() + 1));
+                  return Err(Err::Incomplete(Needed::Size(next - input.input_len() + 1)));
                 } else {
                   match $escapable!(input.slice(next..), $($args2)*) {
                     Ok((i,_)) => {
@@ -249,7 +249,6 @@ macro_rules! escaped_transform (
       use $crate::InputLength;
       use $crate::Needed;
       use $crate::Slice;
-      use $crate::need_more;
 
       let cl = || -> $crate::IResult<_,_,_> {
         use $crate::Offset;
@@ -281,7 +280,7 @@ macro_rules! escaped_transform (
                 let input_len = $i.input_len();
 
                 if next >= input_len {
-                  return need_more($i, Needed::Size(next - input_len + 1));
+                  return Err(Err::Incomplete(Needed::Size(next - input_len + 1)));
                 } else {
                   match $transform!($i.slice(next..), $($args2)*) {
                     Ok((i,o)) => {
@@ -584,7 +583,7 @@ macro_rules! take_until1 (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Needed,IResult,need_more_err,error::ErrorKind};
+      use $crate::{Err,Needed,IResult,error::ErrorKind};
       use $crate::InputLength;
       use $crate::FindSubstring;
       use $crate::InputTake;
@@ -592,7 +591,7 @@ macro_rules! take_until1 (
 
       let res: IResult<_,_> = match input.find_substring($substr) {
         None => {
-          need_more_err($i, Needed::Size(1 + $substr.input_len()), ErrorKind::TakeUntil)
+          Err(Err::Incomplete(Needed::Size(1 + $substr.input_len())))
         },
         Some(0) => {
           let e = ErrorKind::TakeUntil;

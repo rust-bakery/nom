@@ -880,7 +880,6 @@ mod tests {
   macro_rules! tag_bytes (
     ($i:expr, $bytes: expr) => (
       {
-        use $crate::need_more;
         use $crate::lib::std::cmp::min;
 
         let len = $i.len();
@@ -893,9 +892,7 @@ mod tests {
           let e: ErrorKind = ErrorKind::Tag;
           Err(Err::Error(error_position!($i, e)))
         } else if m < blen {
-          //let e:Err<&[u8], u32> = need_more($i, Needed::Size(blen));
-          //Err(e)
-          need_more($i, Needed::Size(blen))
+          Err(Err::Incomplete(Needed::Size(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -907,11 +904,9 @@ mod tests {
   macro_rules! take(
     ($i:expr, $count:expr) => (
       {
-        use $crate::need_more;
-
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
-          need_more($i, Needed::Size(cnt))
+          Err(Err::Incomplete(Needed::Size(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };

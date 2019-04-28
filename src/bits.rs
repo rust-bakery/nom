@@ -58,10 +58,7 @@ macro_rules! bits_impl (
           Err(Err::Failure((i.slice(b/8..), kind)))
         },
         Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => {
-          //println!("bits parser returned Needed::Size({})", i);
-          $crate::need_more($i, $crate::Needed::Size(i / 8 + 1))
-        },
+        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size(i / 8 + 1))),
         Ok(((i, bit_index), o))             => {
           let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
           //println!("bit index=={} => byte index=={}", bit_index, byte_index);
@@ -166,7 +163,7 @@ macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Needed,IResult};
+      use $crate::{Err,Needed,IResult};
 
       use $crate::lib::std::ops::Div;
       use $crate::lib::std::convert::Into;
@@ -179,7 +176,7 @@ macro_rules! take_bits (
         let cnt = ($count as usize + bit_offset).div(8);
         if input.len() * 8 < $count as usize + bit_offset {
           //println!("returning incomplete: {}", $count as usize + bit_offset);
-          $crate::need_more($i, Needed::Size($count as usize))
+          Err(Err::Incomplete(Needed::Size($count as usize)))
         } else {
           let mut acc:$t            = (0 as u8).into();
           let mut offset: usize     = bit_offset;
