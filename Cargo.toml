@@ -50,6 +50,7 @@ optional = true
 [dev-dependencies]
 criterion = "0.2"
 jemallocator = "^0.1"
+doc-comment = "0.3"
 
 [build-dependencies]
 version_check = "^0.1"

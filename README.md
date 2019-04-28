@@ -50,6 +50,8 @@ named!(hex_color<&str, Color>,
   )
 );
 
+fn main() {}
+
 #[test]
 fn parse_color() {
   assert_eq!(hex_color("#2F14DF"), Ok(("", Color {
@@ -195,7 +197,7 @@ nom = "^4.2"
 
 Then include it in your code like this:
 
-```rust
+```rust,ignore
 #[macro_use]
 extern crate nom;
 ```

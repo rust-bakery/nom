@@ -370,6 +370,11 @@ pub extern crate regex;
 extern crate lexical_core;
 #[cfg(nightly)]
 extern crate test;
+#[cfg(test)]
+extern crate doc_comment;
+
+#[cfg(test)]
+doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.
