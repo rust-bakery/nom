@@ -230,6 +230,29 @@ where
 /// # Arguments
 /// * `f` Parses the elements of the list.
 /// * `sep` Parses the separator between list elements.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// use nom::multi::separated_list;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let separator_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("|")(s)
+/// };
+/// let embedded_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let parser = |s: &'static str| {
+///   separated_list::<_, _, _, (_, ErrorKind), _, _>(separator_parser, embedded_parser)(s)
+/// };
+///
+/// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
+/// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
+/// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
+/// # }
+/// ```
 //FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn separated_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
