@@ -923,6 +923,36 @@ where
   fold_many_m_n(m, n, f, init, g)(i)
 }
 
+/// Gets a number from the first parser,
+/// takes a subslice of the input of that size,
+/// then applies the second parser on that subslice.
+/// If the second parser returns Incomplete,
+/// length_value will return an error.
+/// # Arguments
+/// * `f` The parser to apply.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::complete::be_u16;
+/// use nom::multi::length_value;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let first_parser = |s: &'static [u8]| {
+///   be_u16(s)
+/// };
+/// let second_parser = |s: &'static [u8]| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let parser = |s: &'static [u8]| {
+///   length_value::<_, _, _, (_, ErrorKind), _, _>(first_parser, second_parser)(s)
+/// };
+///
+/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
+/// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error((&b"123"[..], ErrorKind::Tag))));
+/// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Size(3))));
+/// # }
+/// ```
 pub fn length_value<I, O, N, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, O, E>
 where
   I: Clone + InputLength + InputTake,
