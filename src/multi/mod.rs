@@ -14,6 +14,25 @@ use error::ErrorKind;
 /// and returns the results in a `Vec`.
 /// # Arguments
 /// * `f` The parser to apply.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// use nom::multi::many0;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let embedded_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let parser = |s: &'static str| {
+///   many0::<_, _, (_, ErrorKind), _>(embedded_parser)(s)
+/// };
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// # }
+/// ```
 //FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many0<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
