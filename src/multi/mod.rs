@@ -641,6 +641,26 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `count` How often to apply the parser.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// use nom::multi::count;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let embedded_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let parser = |s: &'static str| {
+///   count::<_, _, (_, ErrorKind), _>(embedded_parser, 2)(s)
+/// };
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// # }
+/// ```
 #[cfg(feature = "alloc")]
 pub fn count<I, O, E, F>(f: F, count: usize) -> impl Fn(I) -> IResult<I, Vec<O>, E>
 where
