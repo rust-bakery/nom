@@ -504,6 +504,25 @@ where
 /// and returns the number of successful iterations.
 /// # Arguments
 /// * `f` The parser to apply.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// use nom::multi::many0_count;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let embedded_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let parser = |s: &'static str| {
+///   many0_count::<_, _, (_, ErrorKind), _>(embedded_parser)(s)
+/// };
+///
+/// assert_eq!(parser("abcabc"), Ok(("", 2)));
+/// assert_eq!(parser("abc123"), Ok(("123", 1)));
+/// assert_eq!(parser("123123"), Ok(("123123", 0)));
+/// assert_eq!(parser(""), Ok(("", 0)));
+/// # }
+/// ```
 //FIXME: streaming
 pub fn many0_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
 where
