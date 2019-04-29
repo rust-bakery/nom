@@ -151,8 +151,30 @@ where
 /// Applies the parser `f` until the parser `g` produces
 /// a result. Returns a pair consisting of the results of
 /// `f` in a `Vec` and the result of `g`.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// use nom::multi::many_till;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let condition_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("end")(s)
+/// };
+/// let embedded_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let parser = |s: &'static str| {
+///   many_till::<_, _, _, (_, ErrorKind), _, _>(embedded_parser, condition_parser)(s)
+/// };
+///
+/// assert_eq!(parser("abcabcend"), Ok(("", (vec!["abc", "abc"], "end"))));
+/// assert_eq!(parser("abc123end"), Err(Err::Error(("123end", ErrorKind::Tag))));
+/// assert_eq!(parser("123123end"), Err(Err::Error(("123123end", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
+/// # }
+/// ```
 //FIXME: streaming
-/// `many_till!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (Vec<O>, P)>`
 #[cfg(feature = "alloc")]
 pub fn many_till<I, O, P, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, (Vec<O>, P), E>
 where
