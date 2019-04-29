@@ -680,6 +680,29 @@ where
 /// * `init` The initial value.
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// use nom::multi::fold_many0;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let combiner = |mut acc: Vec<_>, item| {
+///     acc.push(item);
+///     acc
+/// };
+/// let embedded_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let parser = |s: &'static str| {
+///   fold_many0::<_, _, (_, ErrorKind), _, _, _>(embedded_parser, Vec::new(), combiner)(s)
+/// };
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// # }
+/// ```
 //FIXME: streaming
 pub fn fold_many0<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
 where
