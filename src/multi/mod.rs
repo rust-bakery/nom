@@ -571,6 +571,25 @@ where
 /// at least once.
 /// # Arguments
 /// * `f` The parser to apply.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// use nom::multi::many1_count;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let embedded_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let parser = |s: &'static str| {
+///   many1_count::<_, _, (_, ErrorKind), _>(embedded_parser)(s)
+/// };
+///
+/// assert_eq!(parser("abcabc"), Ok(("", 2)));
+/// assert_eq!(parser("abc123"), Ok(("123", 1)));
+/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1Count))));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1Count))));
+/// # }
+/// ```
 //FIXME: streaming
 pub fn many1_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
 where
