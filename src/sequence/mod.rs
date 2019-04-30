@@ -55,7 +55,7 @@ where
   pair(first, second)(input)
 }
 
-/// Matches an object from the first parser and discard it,
+/// Matches an object from the first parser and discards it,
 /// then gets an object from the second parser.
 /// # Arguments
 /// * `first` The opening parser.
@@ -104,6 +104,34 @@ where
   preceded(first, second)(input)
 }
 
+/// Gets an object from the first parser,
+/// then matches an object from the second parser and discards it.
+/// # Arguments
+/// * `first` The first parser to apply.
+/// * `second` The second parser to match an object.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::sequence::terminated;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// let first_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("abc")(s)
+/// };
+/// let second_parser = |s: &'static str| {
+///   tag::<_, _, (_, ErrorKind)>("efg")(s)
+/// };
+/// let parser = |s: &'static str| {
+///   terminated::<_, _, _, (_, ErrorKind), _, _>(first_parser, second_parser)(s)
+/// };
+///
+/// assert_eq!(parser("abcefg"), Ok(("", "abc")));
+/// assert_eq!(parser("abcefghij"), Ok(("hij", "abc")));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// # }
+/// ```
 pub fn terminated<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O1, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
