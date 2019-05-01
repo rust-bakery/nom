@@ -428,11 +428,11 @@ macro_rules! permutation_iterator_sep (
     use $crate::lib::std::result::Result::*;
     use $crate::Err;
 
-    if acc!($it, $res) == $crate::lib::std::option::Option::None {
+    if $res.$it == $crate::lib::std::option::Option::None {
       match {sep!($i, $separator, $submac!($($args)*))} {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = $crate::lib::std::option::Option::Some(o);
+          $res.$it = $crate::lib::std::option::Option::Some(o);
           continue;
         },
         Err(Err::Error(_)) => {
@@ -461,11 +461,11 @@ macro_rules! permutation_iterator_sep (
     use $crate::lib::std::result::Result::*;
     use $crate::Err;
 
-    if acc!($it, $res) == $crate::lib::std::option::Option::None {
+    if $res.$it == $crate::lib::std::option::Option::None {
       match sep!($i, $separator, $submac!($($args)*)) {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = $crate::lib::std::option::Option::Some(o);
+          $res.$it = $crate::lib::std::option::Option::Some(o);
           continue;
         },
         Err(Err::Error(_)) => {

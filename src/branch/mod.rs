@@ -61,7 +61,7 @@ macro_rules! tuple_choice_impl(
 
 macro_rules! tuple_choice_inner(
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident $($id:ident)+) => (
-    match acc!($it, $self)($input.clone()) {
+    match $self.$it($input.clone()) {
       Err(Err::Error(e)) => {
         if $err.is_none() {
           $err = Some(e);
@@ -74,7 +74,7 @@ macro_rules! tuple_choice_inner(
     }
   );
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident) => (
-    match acc!($it, $self)($input.clone()) {
+    match $self.$it($input.clone()) {
       Err(Err::Error(e)) => {
         if $err.is_none() {
           $err = Some(e);

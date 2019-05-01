@@ -675,43 +675,14 @@ macro_rules! succ (
   (19, $submac:ident ! ($($rest:tt)*)) => ($submac!(20, $($rest)*));
 );
 
-// HACK: for some reason, Rust 1.11 does not accept $res.$it in
-// permutation_unwrap. This is a bit ugly, but it will have no
-// impact on the generated code
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
-macro_rules! acc (
-  (0, $tup:expr) => ($tup.0);
-  (1, $tup:expr) => ($tup.1);
-  (2, $tup:expr) => ($tup.2);
-  (3, $tup:expr) => ($tup.3);
-  (4, $tup:expr) => ($tup.4);
-  (5, $tup:expr) => ($tup.5);
-  (6, $tup:expr) => ($tup.6);
-  (7, $tup:expr) => ($tup.7);
-  (8, $tup:expr) => ($tup.8);
-  (9, $tup:expr) => ($tup.9);
-  (10, $tup:expr) => ($tup.10);
-  (11, $tup:expr) => ($tup.11);
-  (12, $tup:expr) => ($tup.12);
-  (13, $tup:expr) => ($tup.13);
-  (14, $tup:expr) => ($tup.14);
-  (15, $tup:expr) => ($tup.15);
-  (16, $tup:expr) => ($tup.16);
-  (17, $tup:expr) => ($tup.17);
-  (18, $tup:expr) => ($tup.18);
-  (19, $tup:expr) => ($tup.19);
-  (20, $tup:expr) => ($tup.20);
-);
-
 #[doc(hidden)]
 #[macro_export(local_inner_macros)]
 macro_rules! permutation_unwrap (
   ($it:tt,  (), $res:ident, $e:ident?, $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!((acc!($it, $res)), $res, $($rest)*));
+    succ!($it, permutation_unwrap!(($res.$it), $res, $($rest)*));
   );
   ($it:tt,  (), $res:ident, $e:ident, $($rest:tt)*) => ({
-    let res = acc!($it, $res);
+    let res = $res.$it;
     if res.is_some() {
       succ!($it, permutation_unwrap!((res.unwrap()), $res, $($rest)*))
     } else {
@@ -720,10 +691,10 @@ macro_rules! permutation_unwrap (
   });
 
   ($it:tt,  (), $res:ident, $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!((acc!($it, $res)), $res, $($rest)*));
+    succ!($it, permutation_unwrap!(($res.$it), $res, $($rest)*));
   );
   ($it:tt,  (), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => ({
-    let res = acc!($it, $res);
+    let res = $res.$it;
     if res.is_some() {
       succ!($it, permutation_unwrap!((res.unwrap()), $res, $($rest)*))
     } else {
@@ -732,10 +703,10 @@ macro_rules! permutation_unwrap (
   });
 
   ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident?, $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res)), $res, $($rest)*));
+    succ!($it, permutation_unwrap!(($($parsed),* , $res.$it), $res, $($rest)*));
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident, $($rest:tt)*) => ({
-    let res = acc!($it, $res);
+    let res = $res.$it;
     if res.is_some() {
       succ!($it, permutation_unwrap!(($($parsed),* , res.unwrap()), $res, $($rest)*))
     } else {
@@ -744,10 +715,10 @@ macro_rules! permutation_unwrap (
   });
 
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
-    succ!($it, permutation_unwrap!(($($parsed),* , acc!($it, $res)), $res, $($rest)*));
+    succ!($it, permutation_unwrap!(($($parsed),* , $res.$it), $res, $($rest)*));
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => ({
-    let res = acc!($it, $res);
+    let res = $res.$it;
     if res.is_some() {
       succ!($it, permutation_unwrap!(($($parsed),* , res.unwrap()), $res, $($rest)*))
     } else {
@@ -756,10 +727,10 @@ macro_rules! permutation_unwrap (
   });
 
   ($it:tt, ($($parsed:expr),*), $res:ident?, $e:ident) => (
-    $crate::lib::std::option::Option::Some(($($parsed),* , { acc!($it, $res) }))
+    $crate::lib::std::option::Option::Some(($($parsed),* , { $res.$it }))
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $e:ident) => ({
-    let res = acc!($it, $res);
+    let res = $res.$it;
     if res.is_some() {
       $crate::lib::std::option::Option::Some(($($parsed),* , res.unwrap() ))
     } else {
@@ -768,10 +739,10 @@ macro_rules! permutation_unwrap (
   });
 
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )?) => (
-    $crate::lib::std::option::Option::Some(($($parsed),* , { acc!($it, $res) }))
+    $crate::lib::std::option::Option::Some(($($parsed),* , { $res.$it }))
   );
   ($it:tt, ($($parsed:expr),*), $res:ident, $submac:ident!( $($args:tt)* )) => ({
-    let res = acc!($it, $res);
+    let res = $res.$it;
     if res.is_some() {
       $crate::lib::std::option::Option::Some(($($parsed),* , res.unwrap() ))
     } else {
@@ -798,11 +769,11 @@ macro_rules! permutation_iterator (
     use $crate::lib::std::option::Option::*;
     use $crate::Err;
 
-    if acc!($it, $res).is_none() {
+    if $res.$it.is_none() {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = Some(o);
+          $res.$it = Some(o);
           continue;
         },
         Err(Err::Error(_)) => {
@@ -832,11 +803,11 @@ macro_rules! permutation_iterator (
     use $crate::lib::std::option::Option::*;
     use $crate::Err;
 
-    if acc!($it, $res).is_none() {
+    if $res.$it.is_none() {
       match $submac!($i, $($args)*) {
         Ok((i,o))     => {
           $i = i;
-          acc!($it, $res) = Some(o);
+          $res.$it = Some(o);
           continue;
         },
         Err(Err::Error(_)) => {
