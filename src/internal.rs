@@ -22,6 +22,7 @@ pub enum Needed {
 }
 
 impl Needed {
+  /// indicates if we know how many bytes we need
   pub fn is_known(&self) -> bool {
     *self != Unknown
   }

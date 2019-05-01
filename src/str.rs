@@ -145,9 +145,10 @@ mod test {
 
   use internal::Needed;
 
-  pub fn is_alphabetic(c: char) -> bool {
+  fn is_alphabetic(c: char) -> bool {
     (c as u8 >= 0x41 && c as u8 <= 0x5A) || (c as u8 >= 0x61 && c as u8 <= 0x7A)
   }
+
   #[test]
   fn take_while() {
     named!(f<&str,&str>, take_while!(is_alphabetic));

@@ -18,26 +18,6 @@ use lib::std::mem::transmute;
 #[macro_use]
 mod macros;
 
-#[cfg(feature = "alloc")]
-#[inline]
-pub fn tag_cl<'a, 'b>(rec: &'a [u8]) -> Box<Fn(&'b [u8]) -> IResult<&'b [u8], &'b [u8]> + 'a> {
-  Box::new(move |i: &'b [u8]| -> IResult<&'b [u8], &'b [u8]> {
-    if i.len() >= rec.len() && &i[0..rec.len()] == rec {
-      Ok((&i[rec.len()..], &i[0..rec.len()]))
-    } else {
-      let e: ErrorKind = ErrorKind::TagClosure;
-      Err(Err::Error(error_position!(i, e)))
-    }
-  })
-}
-
-#[cfg(feature = "std")]
-#[inline]
-pub fn print<T: Debug>(input: T) -> IResult<T, ()> {
-  println!("{:?}", input);
-  Ok((input, ()))
-}
-
 #[inline]
 pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
   Ok(((), input))
@@ -268,23 +248,6 @@ mod tests {
       assert_eq!(res, $right);
     };
   );
-
-  #[test]
-  #[cfg(feature = "alloc")]
-  fn tag_closure() {
-    let x = tag_cl(&b"abcd"[..]);
-    let r = x(&b"abcdabcdefgh"[..]);
-    assert_eq!(r, Ok((&b"abcdefgh"[..], &b"abcd"[..])));
-
-    let r2 = x(&b"abcefgh"[..]);
-    assert_eq!(
-      r2,
-      Err(Err::Error(error_position!(
-        &b"abcefgh"[..],
-        ErrorKind::TagClosure
-      ),))
-    );
-  }
 
   #[test]
   #[cfg(feature = "alloc")]
