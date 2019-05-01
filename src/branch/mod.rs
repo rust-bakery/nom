@@ -26,6 +26,33 @@ pub trait Alt<I, O, E> {
   fn choice(&self, input: I) -> IResult<I, O, E>;
 }
 
+/// tests a list of parsers one by one until one succeeds
+///
+/// It takes as argument a tuple of parsers.
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, Needed, IResult};
+/// use nom::character::complete::{alpha1, digit1};
+/// use nom::branch::alt;
+/// # fn main() {
+/// fn parser(input: &str) -> IResult<&str, &str> {
+///   alt((alpha1, digit1))(input)
+/// };
+///
+/// // the first parser, alpha1, recognizes the input
+/// assert_eq!(parser("abc"), Ok(("", "abc")));
+///
+/// // the first parser returns an error, so alt tries the second one
+/// assert_eq!(parser("123456"), Ok(("", "123456")));
+///
+/// // both parsers failed, and with the default error type, alt will return the last error
+/// assert_eq!(parser(" "), Err(Err::Error(error_position!(" ", ErrorKind::Digit))));
+/// # }
+/// ```
+///
+/// with a custom error type, it is possible to have alt return the error of the parser
+/// that went the farthest in the input data
 pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
   move |i: I| l.choice(i)
 }
@@ -35,6 +62,32 @@ pub trait Permutation<I, O, E> {
   fn permutation(&self, input: I) -> IResult<I, O, E>;
 }
 
+/// applies a list of parsers in any order
+///
+/// permutation will succeed if all of the child parsers succeeded.
+/// It takes as argument a tuple of parsers, and returns a
+/// tuple of the parser results.
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, Needed, IResult};
+/// use nom::character::complete::{alpha1, digit1};
+/// use nom::branch::permutation;
+/// # fn main() {
+/// fn parser(input: &str) -> IResult<&str, (&str, &str)> {
+///   permutation((alpha1, digit1))(input)
+/// };
+///
+/// // permutation recognizes alphabetic characters then digit
+/// assert_eq!(parser("abc123"), Ok(("", ("abc", "123"))));
+///
+/// // but also in inverse order
+/// assert_eq!(parser("123abc"), Ok(("", ("abc", "123"))));
+///
+/// // it will fail if one of the parsers failed
+/// assert_eq!(parser("abc;"), Err(Err::Error(error_position!(";", ErrorKind::Permutation))));
+/// # }
+/// ```
 pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
   move |i: I| l.permutation(i)
 }
@@ -188,8 +241,6 @@ macro_rules! permutation_trait_inner(
   });
 );
 
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
 macro_rules! permutation_trait_unwrap (
   ($it:tt,  (), $res:ident, $e:ident, $($name:ident),+) => ({
     let res = $res.$it;
@@ -217,7 +268,6 @@ macro_rules! permutation_trait_unwrap (
       $crate::lib::std::option::Option::None
     }
   });
-
 );
 
 permutation_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ J, FnK K, FnL L, FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
