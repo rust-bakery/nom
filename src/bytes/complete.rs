@@ -99,10 +99,18 @@ where
       Some(idx) => {
         if idx >= m {
           if idx <= n {
-            let res: IResult<_, _, Error> = Ok(input.take_split(idx));
+            let res: IResult<_, _, Error> = if let Some(index) = input.slice_index(idx) {
+              Ok(input.take_split(index))
+            } else {
+              Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+            };
             res
           } else {
-            let res: IResult<_, _, Error> = Ok(input.take_split(n));
+            let res: IResult<_, _, Error> = if let Some(index) = input.slice_index(n) {
+              Ok(input.take_split(index))
+            } else {
+              Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+            };
             res
           }
         } else {

@@ -880,6 +880,13 @@ mod tests {
     assert_eq!(g("點點點a"), Ok(("a", "點點點")));
   }
 
+  #[test]
+  fn take_while_m_n_utf8() {
+    named!(parser<&str, &str>, take_while_m_n!(1, 1, |c| c == 'A' || c == '😃'));
+    assert_eq!(parser("A!"), Ok(("!", "A")));
+    assert_eq!(parser("😃!"), Ok(("!", "😃")));
+  }
+
   #[cfg(nightly)]
   use test::Bencher;
 
