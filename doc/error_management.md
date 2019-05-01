@@ -54,40 +54,19 @@ Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by " tag ! (
 As a reminder, here are the basic types of nom:
 
 ```rust
-pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
-#[derive(Debug,PartialEq,Eq,CLone,Copy)]
+pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Needed {
   Unknown,
   Size(u32)
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Err<I, E = u32> {
+pub enum Err<E> {
   Incomplete(Needed),
-  Error(Context<I, E>),
-  Failure(Context<I, E>),
-}
-
-#[derive(Debug,PartialEq,Eq,Clone)]
-pub enum Err<P,E=u32>{
-  Code(ErrorKind<E>),
-  Node(ErrorKind<E>, Box<Err<P,E>>),
-  Position(ErrorKind<E>, P),
-  NodePosition(ErrorKind<E>, P, Box<Err<P,E>>)
-}
-
-#[derive(Debug,PartialEq,Eq)]
-pub enum IResult<I,O,E=u32> {
-  Done(I,O),
-  Error(Err<I,E>),
-  Incomplete(Needed)
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Context<I, E = u32> {
-  Code(I, ErrorKind<E>),
-  /// only available if the compilation feature `verbose-errors` is active
-  List(Vec<(I, ErrorKind<E>)>),
+  Error(E),
+  Failure(E),
 }
 ```
 

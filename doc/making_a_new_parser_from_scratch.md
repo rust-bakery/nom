@@ -50,7 +50,7 @@ and the output value, or, on the `Err` side, an error or an indication that more
 data is needed.
 
 ```rust
-pub type IResult<I, O, E = u32> = Result<(I, O), Err<I, E>>;
+pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Needed {
@@ -59,32 +59,10 @@ pub enum Needed {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Err<I, E = u32> {
+pub enum Err<E> {
   Incomplete(Needed),
-  Error(Context<I, E>),
-  Failure(Context<I, E>),
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Err<P,E=u32>{
-  Code(ErrorKind<E>),
-  Node(ErrorKind<E>, Box<Err<P, E>>),
-  Position(ErrorKind<E>, P),
-  NodePosition(ErrorKind<E>, P, Box<Err<P, E>>)
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum IResult<I,O,E=u32> {
-  Done(I, O),
-  Error(Err<I, E>),
-  Incomplete(Needed)
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Context<I, E = u32> {
-  Code(I, ErrorKind<E>),
-  /// only available if the compilation feature `verbose-errors` is active
-  List(Vec<(I, ErrorKind<E>)>),
+  Error(E),
+  Failure(E),
 }
 ```
 
@@ -151,7 +129,7 @@ fn prefixed(i: &[u8]) -> ::nom::IResult<&[u8], &[u8]> {
                 let cnt = $count as usize;
 
                 let res: IResult<_,_,u32> = match input.slice_index(cnt) {
-                    None        => $crate::need_more(input, Needed::Size(cnt)),
+                    None        => Err(Err::Incomplete(Needed::Size(cnt))),
                     Some(index) => Ok((input.slice(index..), input.slice(..index)))
                 };
                 res
