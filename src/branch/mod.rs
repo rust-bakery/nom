@@ -21,26 +21,40 @@ where
   }
 }
 
+/// helper trait for arguments to [alt]
 pub trait Alt<I, O, E> {
   fn choice(&self, input: I) -> IResult<I, O, E>;
 }
 
-macro_rules! tuple_choice(
+pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
+  move |i: I| l.choice(i)
+}
+
+/// helper trait for arguments to [permutation]
+pub trait Permutation<I, O, E> {
+  fn permutation(&self, input: I) -> IResult<I, O, E>;
+}
+
+pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
+  move |i: I| l.permutation(i)
+}
+
+macro_rules! alt_trait(
   ($first:ident $second:ident $($id: ident)+) => (
-    tuple_choice!(__impl $first $second; $($id)+);
+    alt_trait!(__impl $first $second; $($id)+);
   );
   (__impl $($current:ident)*; $head:ident $($id: ident)+) => (
-    tuple_choice_impl!($($current)*);
+    alt_trait_impl!($($current)*);
 
-    tuple_choice!(__impl $($current)* $head; $($id)+);
+    alt_trait!(__impl $($current)* $head; $($id)+);
   );
   (__impl $($current:ident)*; $head:ident) => (
-    tuple_choice_impl!($($current)*);
-    tuple_choice_impl!($($current)* $head);
+    alt_trait_impl!($($current)*);
+    alt_trait_impl!($($current)* $head);
   );
 );
 
-macro_rules! tuple_choice_impl(
+macro_rules! alt_trait_impl(
   ($($id:ident)+) => (
     impl<
       Input: Clone, Output, Error: ParseError<Input>,
@@ -49,7 +63,7 @@ macro_rules! tuple_choice_impl(
 
       fn choice(&self, input: Input) -> IResult<Input, Output, Error> {
         let mut err = None;
-        tuple_choice_inner!(0, self, input, err, $($id)+);
+        alt_trait_inner!(0, self, input, err, $($id)+);
 
         Err(Err::Error(Error::append(input, ErrorKind::Alt, err.unwrap())))
       }
@@ -57,7 +71,7 @@ macro_rules! tuple_choice_impl(
   );
 );
 
-macro_rules! tuple_choice_inner(
+macro_rules! alt_trait_inner(
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident $($id:ident)+) => (
     match $self.$it($input.clone()) {
       Err(Err::Error(e)) => {
@@ -66,7 +80,7 @@ macro_rules! tuple_choice_inner(
         } else {
           $err = Some($err.unwrap().or(e));
         }
-        succ!($it, tuple_choice_inner!($self, $input, $err, $($id)+))
+        succ!($it, alt_trait_inner!($self, $input, $err, $($id)+))
       },
       res => return res,
     }
@@ -85,15 +99,7 @@ macro_rules! tuple_choice_inner(
   );
 );
 
-tuple_choice!(A B C D E F G H I J K L M N O P Q R S T U);
-
-pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
-  move |i: I| l.choice(i)
-}
-
-pub trait Permutation<I, O, E> {
-  fn permutation(&self, input: I) -> IResult<I, O, E>;
-}
+alt_trait!(A B C D E F G H I J K L M N O P Q R S T U);
 
 macro_rules! permutation_trait(
   ($name1:ident $ty1:ident, $name2:ident $ty2:ident) => (
@@ -215,7 +221,3 @@ macro_rules! permutation_trait_unwrap (
 );
 
 permutation_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ J, FnK K, FnL L, FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
-
-pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
-  move |i: I| l.permutation(i)
-}
