@@ -108,98 +108,25 @@ macro_rules! is_a (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! escaped (
-  // Internal parser, do not use directly
-  (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $escapable:ident!(  $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
     {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,IResult,error::ErrorKind};
-      use $crate::AsChar;
-      use $crate::InputIter;
-      use $crate::InputLength;
-      use $crate::InputTake;
-      use $crate::Slice;
-
-      let cl = || -> IResult<_,_,_> {
-        use $crate::Offset;
-        let mut input = $i.clone();
-        let control_char = $control_char.as_char();
-
-        while input.input_len() > 0 {
-          match $normal!(input, $($args)*) {
-            Ok((i, _)) => {
-              if i.input_len() == 0 {
-                return Ok(($i.slice($i.input_len()..), $i))
-              } else {
-                input = i;
-              }
-            },
-            Err(Err::Failure(e)) => {
-              return Err(Err::Failure(e));
-            },
-            Err(Err::Incomplete(i)) => {
-              return Err(Err::Incomplete(i));
-            },
-            Err(Err::Error(_)) => {
-              // unwrap() should be safe here since index < $i.input_len()
-              if input.iter_elements().next().unwrap().as_char() == control_char {
-                let next = control_char.len_utf8();
-                if next >= input.input_len() {
-                  return Err(Err::Incomplete(Needed::Size(next - input.input_len() + 1)));
-                } else {
-                  match $escapable!(input.slice(next..), $($args2)*) {
-                    Ok((i,_)) => {
-                      if i.input_len() == 0 {
-                        return Ok(($i.slice($i.input_len()..), $i))
-                      } else {
-                        input = i;
-                      }
-                    },
-                    Err(e) => return Err(e)
-                  }
-                }
-              } else {
-                let index = $i.offset(&input);
-                return Ok($i.take_split(index));
-              }
-            },
-          }
-        }
-        let index = $i.offset(&input);
-        Ok($i.take_split(index))
-      };
-
-      match cl() {
-        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
-        Ok((i, o))    => Ok((i, o)),
-        Err(Err::Error(e))      => {
-          let e2 = ErrorKind::Escaped;
-          Err(Err::Error(error_node_position!($i, e2, e)))
-        },
-        Err(Err::Failure(e))      => {
-          let e2 = ErrorKind::Escaped;
-          Err(Err::Failure(error_node_position!($i, e2, e)))
-        }
-      }
+     escaped!($i, |i| $submac1!(i, $($args)*), $control_char,  |i| $submac2!(i, $($args2)*))
     }
   );
-  // Internal parser, do not use directly
-  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+  ($i:expr, $normal:expr, $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
     {
-     escaped!(__impl $i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+     escaped!($i, $normal, $control_char,  |i| $submac2!(i, $($args2)*))
     }
   );
-  // Internal parser, do not use directly
-  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
-     escaped!(__impl $i, $submac1!($($args)*), $control_char, call!($g))
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $escapable:expr ) => (
     {
-      escaped!(__impl_1 $i, $submac!($($args)*), $control_char, $($rest)*)
+     escaped!($i, |i| $submac1!(i, $($args)*), $control_char,  $escapable)
     }
   );
-
-  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
-    escaped!(__impl_1 $i, call!($f), $control_char, $($rest)*)
+  ($i:expr, $normal:expr, $control_char: expr, $escapable:expr) => (
+    {
+      $crate::bytes::complete::escapedc($i, $normal, $control_char, $escapable)
+    }
   );
 );
 
@@ -238,112 +165,25 @@ macro_rules! escaped (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! escaped_transform (
-  // Internal parser, do not use directly
-  (__impl $i: expr, $normal:ident!(  $($args:tt)* ), $control_char: expr, $transform:ident!(  $($args2:tt)* )) => (
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
     {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,error::ErrorKind};
-      use $crate::AsChar;
-      use $crate::ExtendInto;
-      use $crate::InputIter;
-      use $crate::InputLength;
-      use $crate::Needed;
-      use $crate::Slice;
-
-      let cl = || -> $crate::IResult<_,_,_> {
-        use $crate::Offset;
-        let mut index  = 0;
-        let mut res = $i.new_builder();
-        let control_char = $control_char.as_char();
-
-        while index < $i.input_len() {
-          let remainder = $i.slice(index..);
-          match $normal!(remainder, $($args)*) {
-            Ok((i,o)) => {
-              o.extend_into(&mut res);
-              if i.input_len() == 0 {
-                return Ok(($i.slice($i.input_len()..), res));
-              } else {
-                index = $i.offset(&i);
-              }
-            },
-            Err(Err::Incomplete(i)) => {
-              return Err(Err::Incomplete(i))
-            },
-            Err(Err::Failure(e)) => {
-              return Err(Err::Failure(e))
-            },
-            Err(Err::Error(_)) => {
-              // unwrap() should be safe here since index < $i.input_len()
-              if remainder.iter_elements().next().unwrap().as_char() == control_char {
-                let next = index + control_char.len_utf8();
-                let input_len = $i.input_len();
-
-                if next >= input_len {
-                  return Err(Err::Incomplete(Needed::Size(next - input_len + 1)));
-                } else {
-                  match $transform!($i.slice(next..), $($args2)*) {
-                    Ok((i,o)) => {
-                      o.extend_into(&mut res);
-                      if i.input_len() == 0 {
-                        return Ok(($i.slice($i.input_len()..), res))
-                      } else {
-                        index = $i.offset(&i);
-                      }
-                    },
-                    Err(Err::Error(e)) => {
-                      return Err(Err::Error(e))
-                    },
-                    Err(Err::Incomplete(i)) => {
-                      return Err(Err::Incomplete(i))
-                    },
-                    Err(Err::Failure(e)) => {
-                      return Err(Err::Failure(e))
-                    },
-                  }
-                }
-              } else {
-                return Ok((remainder, res))
-              }
-            }
-          }
-        }
-        Ok(($i.slice(index..), res))
-      };
-      match cl() {
-        Err(Err::Incomplete(x)) => Err(Err::Incomplete(x)),
-        Ok((i, o))    => Ok((i, o)),
-        Err(Err::Error(e))      => {
-          let e2 = ErrorKind::EscapedTransform;
-          Err(Err::Error(error_node_position!($i, e2, e)))
-        },
-        Err(Err::Failure(e))      => {
-          let e2 = ErrorKind::EscapedTransform;
-          Err(Err::Failure(error_node_position!($i, e2, e)))
-        }
-      }
+     escaped_transform!($i, |i| $submac1!(i, $($args)*), $control_char,  |i| $submac2!(i, $($args2)*))
     }
   );
-
-  // Internal parser, do not use directly
-  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
+  ($i:expr, $normal:expr, $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
     {
-     escaped_transform!(__impl $i, $submac1!($($args)*), $control_char,  $submac2!($($args2)*))
+     escaped_transform!($i, $normal, $control_char,  |i| $submac2!(i, $($args2)*))
     }
   );
-  // Internal parser, do not use directly
-  (__impl_1 $i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $g:expr) => (
-     escaped_transform!(__impl $i, $submac1!($($args)*), $control_char, call!($g))
-  );
-
-  ($i:expr, $submac:ident!( $($args:tt)* ), $control_char: expr, $($rest:tt)+) => (
+  ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $transform:expr ) => (
     {
-      escaped_transform!(__impl_1 $i, $submac!($($args)*), $control_char, $($rest)*)
+     escaped_transform!($i, |i| $submac1!(i, $($args)*), $control_char,  $transform)
     }
   );
-
-  ($i:expr, $f:expr, $control_char: expr, $($rest:tt)+) => (
-    escaped_transform!(__impl_1 $i, call!($f), $control_char, $($rest)*)
+  ($i:expr, $normal:expr, $control_char: expr, $transform:expr) => (
+    {
+      $crate::bytes::complete::escaped_transformc($i, $normal, $control_char, $transform)
+    }
   );
 );
 
@@ -711,7 +551,7 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], &b"\\\"abcd"[..])));
     assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], &b"\\n"[..])));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_position!(&b"AB\\"[..], ErrorKind::Escaped))));
     assert_eq!(
       esc(&b"AB\\A"[..]),
       Err(Err::Error(error_node_position!(
@@ -734,7 +574,7 @@ mod tests {
     assert_eq!(esc("\\\"abcd;"), Ok((";", "\\\"abcd")));
     assert_eq!(esc("\\n;"), Ok((";", "\\n")));
     assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
-    assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(esc("AB\\"), Err(Err::Error(error_position!("AB\\", ErrorKind::Escaped))));
     assert_eq!(
       esc("AB\\A"),
       Err(Err::Error(error_node_position!(
@@ -782,7 +622,7 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], String::from("\"abcd"))));
     assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], String::from("\n"))));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], String::from("ab\""))));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_position!(&b"\\"[..], ErrorKind::EscapedTransform))));
     assert_eq!(
       esc(&b"AB\\A"[..]),
       Err(Err::Error(error_node_position!(
@@ -826,7 +666,7 @@ mod tests {
     assert_eq!(esc("\\\"abcd;"), Ok((";", String::from("\"abcd"))));
     assert_eq!(esc("\\n;"), Ok((";", String::from("\n"))));
     assert_eq!(esc("ab\\\"12"), Ok(("12", String::from("ab\""))));
-    assert_eq!(esc("AB\\"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(esc("AB\\"), Err(Err::Error(error_position!("\\", ErrorKind::EscapedTransform))));
     assert_eq!(
       esc("AB\\A"),
       Err(Err::Error(error_node_position!(
