@@ -7,20 +7,6 @@ use error::ErrorKind;
 use error::ParseError;
 use internal::{Err, IResult};
 
-pub fn or<I: Clone, O, E: ParseError<I>, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, O, E>
-where
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O, E>,
-{
-  move |i: I| match f(i.clone()) {
-    Err(Err::Error(e)) => g(i).map_err(|e2| match e2 {
-      Err::Error(e2) => Err::Error(e.or(e2)),
-      e2 => e2,
-    }),
-    res => res,
-  }
-}
-
 /// helper trait for arguments to [alt]
 pub trait Alt<I, O, E> {
   fn choice(&self, input: I) -> IResult<I, O, E>;
