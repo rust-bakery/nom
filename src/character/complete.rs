@@ -2,7 +2,7 @@
 //!
 //! Functions recognizing specific characters.
 
-use internal::{Err, IResult, Needed};
+use internal::{Err, IResult};
 use error::ParseError;
 use ::lib::std::ops::{Range, RangeFrom, RangeTo};
 use traits::{AsChar, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
