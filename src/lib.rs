@@ -382,6 +382,7 @@ pub mod lib {
   /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
   /// as well as `core` or `std`
   #[cfg(not(feature = "std"))]
+  /// internal std exports for no_std compatibility
   pub mod std {
     #[cfg(feature = "alloc")]
     #[cfg_attr(feature = "alloc", macro_use)]
@@ -394,6 +395,7 @@ pub mod lib {
   }
 
   #[cfg(feature = "std")]
+  /// internal std exports for no_std compatibility
   pub mod std {
     pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
     pub mod prelude {

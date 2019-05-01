@@ -731,7 +731,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, Needed};
+  use internal::Err;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {

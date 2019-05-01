@@ -79,6 +79,24 @@ pub fn rest_s<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'
   Ok((&input[input.len()..], input))
 }
 
+/// maps a function on the result of a parser
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::character::complete::digit1;
+/// use nom::combinator::map;
+/// # fn main() {
+///
+/// let parse = map(digit1, |s: &str| s.len());
+///
+/// // the parser will count how many characters were returned by digit1
+/// assert_eq!(parse("123456"), Ok(("", 6)));
+///
+/// // this will fail if digit1 fails
+/// assert_eq!(parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
+/// # }
+/// ```
 pub fn map<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -99,6 +117,27 @@ where
   map(first, second)(input)
 }
 
+/// applies a function returning a Result over the result of a parser
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::character::complete::digit1;
+/// use nom::combinator::map_res;
+/// # fn main() {
+///
+/// let parse = map_res(digit1, |s: &str| s.parse::<u8>());
+///
+/// // the parser will convert the result of digit1 to a number
+/// assert_eq!(parse("123"), Ok(("", 123)));
+///
+/// // this will fail if digit1 fails
+/// assert_eq!(parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
+///
+/// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
+/// assert_eq!(parse("123456"), Err(Err::Error(("123456", ErrorKind::MapRes))));
+/// # }
+/// ```
 pub fn map_res<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,

@@ -632,7 +632,24 @@ macro_rules! try_parse (
 );
 
 /// `map!(I -> IResult<I, O>, O -> P) => I -> IResult<I, P>`
+///
 /// maps a function on the result of a parser
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::character::complete::digit1;
+/// # fn main() {
+///
+/// named!(parse<&str, usize>, map!(digit1, |s| s.len()));
+///
+/// // the parser will count how many characters were returned by digit1
+/// assert_eq!(parse("123456"), Ok(("", 6)));
+///
+/// // this will fail if digit1 fails
+/// assert_eq!(parse("abc"), Err(Err::Error(error_position!("abc", ErrorKind::Digit))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! map(
   // Internal parser, do not use directly
@@ -649,6 +666,25 @@ macro_rules! map(
 
 /// `map_res!(I -> IResult<I, O>, O -> Result<P>) => I -> IResult<I, P>`
 /// maps a function returning a Result on the output of a parser
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::character::complete::digit1;
+/// # fn main() {
+///
+/// named!(parse<&str, u8>, map_res!(digit1, |s: &str| s.parse::<u8>()));
+///
+/// // the parser will convet the result of digit1 to a number
+/// assert_eq!(parse("123"), Ok(("", 123)));
+///
+/// // this will fail if digit1 fails
+/// assert_eq!(parse("abc"), Err(Err::Error(error_position!("abc", ErrorKind::Digit))));
+///
+/// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
+/// assert_eq!(parse("123456"), Err(Err::Error(error_position!("123456", ErrorKind::MapRes))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! map_res (
   // Internal parser, do not use directly
