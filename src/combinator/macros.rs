@@ -1182,7 +1182,7 @@ macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Convert,Err,ErrorKind,IResult};
+      use $crate::{Convert,Err,error::ErrorKind,IResult};
       let default_err = Err(Err::convert(Err::Error(error_position!($i, ErrorKind::CondReduce))));
 
       if $cond {
