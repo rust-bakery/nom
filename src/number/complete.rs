@@ -12,18 +12,16 @@ use character::complete::digit1;
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u8;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_u8::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_u8(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
@@ -38,18 +36,16 @@ pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u16;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_u16::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_u16(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0003)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
@@ -65,18 +61,16 @@ pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u24;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_u24::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_u24(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x000305)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
@@ -92,18 +86,16 @@ pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u32;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_u32::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_u32(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x00030507)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
@@ -119,18 +111,16 @@ pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u64;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_u64::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_u64(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0001020304050607)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
@@ -147,18 +137,16 @@ pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u128;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_u128::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_u128(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 #[cfg(stable_i128)]
@@ -190,18 +178,16 @@ pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128,
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i8;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_i8::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_i8(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
@@ -212,18 +198,16 @@ pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i16;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_i16::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_i16(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0003)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
@@ -234,18 +218,16 @@ pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i24;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_i24::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_i24(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x000305)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
@@ -261,18 +243,16 @@ pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i32;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_i32::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_i32(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x00030507)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
@@ -283,18 +263,16 @@ pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i64;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_i64::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_i64(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0001020304050607)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_i64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
@@ -305,18 +283,16 @@ pub fn be_i64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i128;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_i128::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_i128(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 #[cfg(stable_i128)]
@@ -328,18 +304,16 @@ pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u8;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_u8::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_u8(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
@@ -354,18 +328,16 @@ pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E>
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u16;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_u16::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_u16(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0300)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
@@ -381,18 +353,16 @@ pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u24;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_u24::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_u24(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x050300)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
@@ -408,18 +378,16 @@ pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u32;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_u32::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_u32(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x07050300)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
@@ -435,18 +403,16 @@ pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u64;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_u64::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_u64(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0706050403020100)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
@@ -463,18 +429,16 @@ pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u128;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_u128::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_u128(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 #[cfg(stable_i128)]
@@ -506,18 +470,16 @@ pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i8;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_i8::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_i8(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
@@ -528,18 +490,16 @@ pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E>
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i16;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_i16::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_i16(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0300)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
@@ -550,18 +510,16 @@ pub fn le_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i24;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_i24::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_i24(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x050300)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_i24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
@@ -577,18 +535,16 @@ pub fn le_i24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i32;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_i32::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_i32(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x07050300)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_i32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
@@ -599,18 +555,16 @@ pub fn le_i32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i64;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_i64::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_i64(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0706050403020100)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
@@ -621,18 +575,16 @@ pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, 
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i128;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_i128::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_i128(s)
 /// };
 ///
 /// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
 /// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 #[cfg(stable_i128)]
@@ -644,18 +596,16 @@ pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_f32;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_f32::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_f32(s)
 /// };
 ///
 /// assert_eq!(parser(&[0x41, 0x48, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
 /// assert_eq!(parser(b"abc"), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f32, E> {
@@ -669,18 +619,16 @@ pub fn be_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_f64;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   be_f64::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   be_f64(s)
 /// };
 ///
 /// assert_eq!(parser(&[0x40, 0x29, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
 /// assert_eq!(parser(b"abc"), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn be_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f64, E> {
@@ -694,18 +642,16 @@ pub fn be_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_f32;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_f32::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_f32(s)
 /// };
 ///
 /// assert_eq!(parser(&[0x00, 0x00, 0x48, 0x41][..]), Ok((&b""[..], 12.5)));
 /// assert_eq!(parser(b"abc"), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f32, E> {
@@ -719,18 +665,16 @@ pub fn le_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_f64;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   le_f64::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   le_f64(s)
 /// };
 ///
 /// assert_eq!(parser(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x29, 0x40][..]), Ok((&b""[..], 12.5)));
 /// assert_eq!(parser(b"abc"), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
-/// # }
 /// ```
 #[inline]
 pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f64, E> {
@@ -744,19 +688,17 @@ pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 ///
 /// *complete version*: will parse until the end of input if it has less than 8 bytes
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::hex_u32;
-/// # fn main() {
-/// let parser = |s: &'static [u8]| {
-///   hex_u32::<(_, ErrorKind)>(s)
+///
+/// let parser = |s| {
+///   hex_u32(s)
 /// };
 ///
 /// assert_eq!(parser(b"01AE"), Ok((&b""[..], 0x01AE)));
 /// assert_eq!(parser(b"abc"), Ok((&b""[..], 0x0ABC)));
 /// assert_eq!(parser(b"ggg"), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
-/// # }
 /// ```
 #[inline]
 pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], u32, E> {
@@ -781,9 +723,24 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], 
   Ok((remaining, res))
 }
 
-/// Recognizes floating point number in a byte string and returns a f32
+/// Recognizes floating point number in a byte string and returns the corresponding slice
 ///
 /// *complete version*: can parse until the end of input
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::complete::recognize_float;
+///
+/// let parser = |s| {
+///   recognize_float(s)
+/// };
+///
+/// assert_eq!(parser("11e-1"), Ok(("", "11e-1")));
+/// assert_eq!(parser("123E-02"), Ok(("", "123E-02")));
+/// assert_eq!(parser("123K-01"), Ok(("K-01", "123")));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
+/// ```
 #[allow(unused_imports)]
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -818,12 +775,11 @@ where
 ///
 /// *complete version*: can parse until the end of input
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::float;
-/// # fn main() {
-/// let parser = |s: &'static str| {
+///
+/// let parser = |s| {
 ///   float::<_, (_, ErrorKind)>(s)
 /// };
 ///
@@ -831,7 +787,6 @@ where
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
 /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
-/// # }
 /// ```
 #[cfg(not(feature = "lexical"))]
 pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
@@ -859,12 +814,11 @@ where
 /// this function uses the lexical-core crate for float parsing by default, you
 /// can deactivate it by removing the "lexical" feature
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::float;
-/// # fn main() {
-/// let parser = |s: &'static str| {
+///
+/// let parser = |s| {
 ///   float::<_, (_, ErrorKind)>(s)
 /// };
 ///
@@ -872,7 +826,6 @@ where
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
 /// assert_eq!(parser("abc"), Ok(("abc", 0.0)));
-/// # }
 /// ```
 #[cfg(feature = "lexical")]
 pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
@@ -892,12 +845,11 @@ where
 ///
 /// *complete version*: can parse until the end of input
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::double;
-/// # fn main() {
-/// let parser = |s: &'static str| {
+///
+/// let parser = |s| {
 ///   double::<_, (_, ErrorKind)>(s)
 /// };
 ///
@@ -905,7 +857,6 @@ where
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
 /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
-/// # }
 /// ```
 #[cfg(not(feature = "lexical"))]
 pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
@@ -933,12 +884,11 @@ where
 /// this function uses the lexical-core crate for float parsing by default, you
 /// can deactivate it by removing the "lexical" feature
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::double;
-/// # fn main() {
-/// let parser = |s: &'static str| {
+///
+/// let parser = |s| {
 ///   double::<_, (_, ErrorKind)>(s)
 /// };
 ///
@@ -946,7 +896,6 @@ where
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
 /// assert_eq!(parser("abc"), Ok(("abc", 0.0)));
-/// # }
 /// ```
 #[cfg(feature = "lexical")]
 pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
