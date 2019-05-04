@@ -15,25 +15,19 @@ use error::ErrorKind;
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many0;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   many0::<_, _, (_, ErrorKind), _>(embedded_parser)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   many0(tag("abc"))(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
-/// # }
 /// ```
-//FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many0<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
 where
@@ -60,7 +54,6 @@ where
     }
   }
 }
-//FIXME: streaming
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
@@ -80,25 +73,19 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many1;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   many1::<_, _, (_, ErrorKind), _>(embedded_parser)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   many1(tag("abc"))(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// # }
 /// ```
-//FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many1<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
 where
@@ -135,7 +122,6 @@ where
   }
 }
 
-//FIXME: streaming
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
@@ -152,19 +138,12 @@ where
 /// a result. Returns a pair consisting of the results of
 /// `f` in a `Vec` and the result of `g`.
 /// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many_till;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let condition_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("end")(s)
-/// };
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   many_till::<_, _, _, (_, ErrorKind), _, _>(embedded_parser, condition_parser)(s)
+///
+/// fn parser(s: &str) -> IResult<&str, (Vec<&str>, &str)> {
+///   many_till(tag("abc"), tag("end"))(s)
 /// };
 ///
 /// assert_eq!(parser("abcabcend"), Ok(("", (vec!["abc", "abc"], "end"))));
@@ -172,9 +151,7 @@ where
 /// assert_eq!(parser("123123end"), Err(Err::Error(("123123end", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
-/// # }
 /// ```
-//FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many_till<I, O, P, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, (Vec<O>, P), E>
 where
@@ -211,7 +188,6 @@ where
   }
 }
 
-//FIXME: streaming
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
@@ -231,29 +207,20 @@ where
 /// * `f` Parses the elements of the list.
 /// * `sep` Parses the separator between list elements.
 /// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::separated_list;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let separator_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("|")(s)
-/// };
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   separated_list::<_, _, _, (_, ErrorKind), _, _>(separator_parser, embedded_parser)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   separated_list(tag("|"), tag("abc"))(s)
+/// }
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
 /// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
 /// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
-/// # }
 /// ```
-//FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn separated_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
 where
@@ -327,28 +294,20 @@ where
 /// * `sep` Parses the separator between list elements.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::separated_nonempty_list;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let separator_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("|")(s)
-/// };
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   separated_nonempty_list::<_, _, _, (_, ErrorKind), _, _>(separator_parser, embedded_parser)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   separated_nonempty_list(tag("|"), tag("abc"))(s)
+/// }
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
 /// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
 /// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
-/// # }
 /// ```
-//FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn separated_nonempty_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
 where
@@ -401,7 +360,6 @@ where
   }
 }
 
-//FIXME: streaming
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
@@ -424,25 +382,20 @@ where
 /// * `f` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many_m_n;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   many_m_n::<_, _, (_, ErrorKind), _>(0, 2, embedded_parser)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   many_m_n(0, 2, tag("abc"))(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
-/// # }
 /// ```
-//FIXME: streaming
 #[cfg(feature = "alloc")]
 pub fn many_m_n<I, O, E, F>(m: usize, n: usize, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
 where
@@ -487,7 +440,6 @@ where
   }
 }
 
-//FIXME: streaming
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
@@ -506,24 +458,19 @@ where
 /// * `f` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many0_count;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   many0_count::<_, _, (_, ErrorKind), _>(embedded_parser)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, usize> {
+///   many0_count(tag("abc"))(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", 2)));
 /// assert_eq!(parser("abc123"), Ok(("123", 1)));
 /// assert_eq!(parser("123123"), Ok(("123123", 0)));
 /// assert_eq!(parser(""), Ok(("", 0)));
-/// # }
 /// ```
-//FIXME: streaming
 pub fn many0_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
 where
   I: Clone + PartialEq,
@@ -573,24 +520,19 @@ where
 /// * `f` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many1_count;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   many1_count::<_, _, (_, ErrorKind), _>(embedded_parser)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, usize> {
+///   many1_count(tag("abc"))(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", 2)));
 /// assert_eq!(parser("abc123"), Ok(("123", 1)));
 /// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1Count))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1Count))));
-/// # }
 /// ```
-//FIXME: streaming
 pub fn many1_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
 where
   I: Clone + PartialEq,
@@ -643,23 +585,19 @@ where
 /// * `count` How often to apply the parser.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::count;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   count::<_, _, (_, ErrorKind), _>(embedded_parser, 2)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   count(tag("abc"), 2)(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
-/// # }
 /// ```
 #[cfg(feature = "alloc")]
 pub fn count<I, O, E, F>(f: F, count: usize) -> impl Fn(I) -> IResult<I, Vec<O>, E>
@@ -701,28 +639,26 @@ where
 ///       the current accumulator.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::fold_many0;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let combiner = |mut acc: Vec<_>, item| {
-///     acc.push(item);
-///     acc
-/// };
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   fold_many0::<_, _, (_, ErrorKind), _, _, _>(embedded_parser, Vec::new(), combiner)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold_many0(
+///     tag("abc"),
+///     Vec::new(),
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
-/// # }
 /// ```
-//FIXME: streaming
 pub fn fold_many0<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
@@ -781,28 +717,26 @@ where
 ///       the current accumulator.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::fold_many1;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let combiner = |mut acc: Vec<_>, item| {
-///     acc.push(item);
-///     acc
-/// };
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   fold_many1::<_, _, (_, ErrorKind), _, _, _>(embedded_parser, Vec::new(), combiner)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold_many1(
+///     tag("abc"),
+///     Vec::new(),
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1))));
-/// # }
 /// ```
-//FIXME: streaming
 pub fn fold_many1<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
@@ -870,29 +804,29 @@ where
 ///       the current accumulator.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::fold_many_m_n;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let combiner = |mut acc: Vec<_>, item| {
-///     acc.push(item);
-///     acc
-/// };
-/// let embedded_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   fold_many_m_n::<_, _, (_, ErrorKind), _, _, _>(0, 2, embedded_parser, Vec::new(), combiner)(s)
-/// };
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold_many_m_n(
+///     0,
+///     2,
+///     tag("abc"),
+///     Vec::new(),
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
-/// # }
 /// ```
-//FIXME: streaming
 pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(I) ->IResult<I, R, E>
 where
   I: Clone + PartialEq,
@@ -951,26 +885,19 @@ where
 /// * `f` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_value;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let first_parser = |s: &'static [u8]| {
-///   be_u16(s)
-/// };
-/// let second_parser = |s: &'static [u8]| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let parser = |s: &'static [u8]| {
-///   length_value::<_, _, _, (_, ErrorKind), _, _>(first_parser, second_parser)(s)
-/// };
+///
+/// fn parser(s: &[u8]) -> IResult<&[u8], &[u8]> {
+///   length_value(be_u16, tag("abc"))(s)
+/// }
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
 /// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error((&b"123"[..], ErrorKind::Tag))));
 /// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Size(3))));
-/// # }
 /// ```
 pub fn length_value<I, O, N, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, O, E>
 where
