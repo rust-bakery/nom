@@ -496,32 +496,7 @@ where
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///
 /// # Example
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed};
-/// # use std::str::from_utf8;
-/// use nom::bytes::streaming::escaped_transform;
-/// use nom::character::streaming::alpha0;
-/// fn to_s(i:Vec<u8>) -> String {
-///   String::from_utf8_lossy(&i).into_owned()
-/// }
-/// named!(
-///   transform<String>,
-///   map!(
-///     escaped_transform!(
-///       alpha0,
-///       '\\',
-///       alt!(
-///           tag!("\\")       => { |_| &b"\\"[..] }
-///         | tag!("\"")       => { |_| &b"\""[..] }
-///         | tag!("n")        => { |_| &b"\n"[..] }
-///       )
-///     ),
-///     to_s
-///   )
-/// );
-/// assert_eq!(transform(&b"ab\\\"cd"[..]), Ok((&b""[..], String::from("ab\"cd"))));//
-/// ```
+/// Currently Unavailable
 pub fn escaped_transform<Input, Error, F, G, O1, O2, ExtendItem, Output>(
   normal: F,
   control_char: char,
