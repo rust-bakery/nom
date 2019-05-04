@@ -10,9 +10,21 @@ use traits::{Compare, CompareResult};
 
 use error::ErrorKind;
 
-/// Recognizes one character
+/// Recognizes one character.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::character::streaming::char;
+/// # fn main() {
+/// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b"abc"[..]), Ok((&b"bc"[..], 'a')));
+/// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b"bc"[..]), Err(Err::Error((&b"bc"[..], ErrorKind::Char))));
+/// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b""[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -30,9 +42,21 @@ where
   }
 }
 
-/// Recognizes one of the provided characters
+/// Recognizes one of the provided characters.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::character::streaming::one_of;
+/// # fn main() {
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("abc")("b"), Ok(("", 'b')));
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -46,9 +70,21 @@ where
   }
 }
 
-/// Recognizes a character that is not in the provided characters
+/// Recognizes a character that is not in the provided characters.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::character::streaming::none_of;
+/// # fn main() {
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -62,9 +98,21 @@ where
   }
 }
 
-/// recognizes the string "\r\n"
+/// Recognizes the string "\r\n".
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::crlf;
+/// # fn main() {
+/// assert_eq!(crlf::<_, (_, ErrorKind)>("\r\nc"), Ok(("c", "\r\n")));
+/// assert_eq!(crlf::<_, (_, ErrorKind)>("ab\r\nc"), Err(Err::Error(("ab\r\nc", ErrorKind::CrLf))));
+/// assert_eq!(crlf::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(2))));
+/// # }
+/// ```
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -82,9 +130,21 @@ where
   }
 }
 
-/// recognizes a string of any char except '\r' or '\n'
+/// Recognizes a string of any char except '\r' or '\n'.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::not_line_ending;
+/// # fn main() {
+/// assert_eq!(not_line_ending::<_, (_, ErrorKind)>("ab\r\nc"), Ok(("\r\nc", "ab")));
+/// assert_eq!(not_line_ending::<_, (_, ErrorKind)>("abc"), Err(Err::Incomplete(Needed::Unknown)));
+/// assert_eq!(not_line_ending::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Unknown)));
+/// # }
+/// ```
 pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -122,9 +182,21 @@ where
   }
 }
 
-/// Recognizes an end of line (both '\n' and '\r\n')
+/// Recognizes an end of line (both '\n' and '\r\n').
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::line_ending;
+/// # fn main() {
+/// assert_eq!(line_ending::<_, (_, ErrorKind)>("\r\nc"), Ok(("c", "\r\n")));
+/// assert_eq!(line_ending::<_, (_, ErrorKind)>("ab\r\nc"), Err(Err::Error(("ab\r\nc", ErrorKind::CrLf))));
+/// assert_eq!(line_ending::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -145,9 +217,21 @@ where
   }
 }
 
-/// matches a newline character '\\n'
+/// Matches a newline character '\\n'.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::newline;
+/// # fn main() {
+/// assert_eq!(newline::<_, (_, ErrorKind)>("\nc"), Ok(("c", '\n')));
+/// assert_eq!(newline::<_, (_, ErrorKind)>("\r\nc"), Err(Err::Error(("\r\nc", ErrorKind::Char))));
+/// assert_eq!(newline::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -156,9 +240,21 @@ where
   char('\n')(input)
 }
 
-/// matches a tab character '\t'
+/// Matches a tab character '\t'.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::tab;
+/// # fn main() {
+/// assert_eq!(tab::<_, (_, ErrorKind)>("\tc"), Ok(("c", '\t')));
+/// assert_eq!(tab::<_, (_, ErrorKind)>("\r\nc"), Err(Err::Error(("\r\nc", ErrorKind::Char))));
+/// assert_eq!(tab::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
@@ -167,19 +263,20 @@ where
   char('\t')(input)
 }
 
-/// matches one byte as a character. Note that the input type will
+/// Matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
 ///
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+///
 /// # Example
+///
 /// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::{character::streaming::anychar, error::ErrorKind};
+/// # use nom::{character::streaming::anychar, Err, error::ErrorKind, IResult, Needed};
 /// # fn main() {
-/// assert_eq!(anychar::<_,(&str, ErrorKind)>("abc"), Ok(("bc",'a')));
+/// assert_eq!(anychar::<_, (_, ErrorKind)>("abc"), Ok(("bc",'a')));
+/// assert_eq!(anychar::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
 /// # }
 /// ```
-///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
   T: InputIter + InputLength + Slice<RangeFrom<usize>>,
@@ -196,11 +293,24 @@ where
 }
 
 /// Recognizes zero or more lowercase and uppercase alphabetic characters.
-/// For ASCII strings: a-zA-Z
-/// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non alphabetic character)
+/// * For ASCII strings: a-zA-Z
+/// * For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphabetic character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::alpha0;
+/// # fn main() {
+/// assert_eq!(alpha0::<_, (_, ErrorKind)>("ab1c"), Ok(("1c", "ab")));
+/// assert_eq!(alpha0::<_, (_, ErrorKind)>("1c"), Ok(("1c", "")));
+/// assert_eq!(alpha0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn alpha0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -209,12 +319,25 @@ where
   input.split_at_position(|item| !item.is_alpha())
 }
 
-/// Recognizes one or more lowercase and uppercase alphabetic characters
-/// For ASCII strings: a-zA-Z
-/// For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more lowercase and uppercase alphabetic characters.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non alphabetic character)
+/// * For ASCII strings: a-zA-Z
+/// * For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphabetic character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::alpha1;
+/// # fn main() {
+/// assert_eq!(alpha1::<_, (_, ErrorKind)>("aB1c"), Ok(("1c", "aB")));
+/// assert_eq!(alpha1::<_, (_, ErrorKind)>("1c"), Err(Err::Error(("1c", ErrorKind::Alpha))));
+/// assert_eq!(alpha1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn alpha1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -225,8 +348,20 @@ where
 
 /// Recognizes zero or more numerical characters: 0-9
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non digit character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non digit character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::digit0;
+/// # fn main() {
+/// assert_eq!(digit0::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
+/// assert_eq!(digit0::<_, (_, ErrorKind)>("a21c"), Ok(("a21c", "")));
+/// assert_eq!(digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -237,8 +372,20 @@ where
 
 /// Recognizes one or more numerical characters: 0-9
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non digit character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non digit character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::digit1;
+/// # fn main() {
+/// assert_eq!(digit1::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
+/// assert_eq!(digit1::<_, (_, ErrorKind)>("c1"), Err(Err::Error(("c1", ErrorKind::Digit))));
+/// assert_eq!(digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -249,8 +396,20 @@ where
 
 /// Recognizes zero or more hexadecimal numerical characters: 0-9, A-F, a-f
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non hexadecimal digit character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non hexadecimal digit character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::hex_digit0;
+/// # fn main() {
+/// assert_eq!(hex_digit0::<_, (_, ErrorKind)>("21cZ"), Ok(("Z", "21c")));
+/// assert_eq!(hex_digit0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
+/// assert_eq!(hex_digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn hex_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -261,8 +420,20 @@ where
 
 /// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non hexadecimal digit character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non hexadecimal digit character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::hex_digit1;
+/// # fn main() {
+/// assert_eq!(hex_digit1::<_, (_, ErrorKind)>("21cZ"), Ok(("Z", "21c")));
+/// assert_eq!(hex_digit1::<_, (_, ErrorKind)>("H2"), Err(Err::Error(("H2", ErrorKind::HexDigit))));
+/// assert_eq!(hex_digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn hex_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -273,8 +444,20 @@ where
 
 /// Recognizes zero or more octal characters: 0-7
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non octal digit character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non octal digit character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::oct_digit0;
+/// # fn main() {
+/// assert_eq!(oct_digit0::<_, (_, ErrorKind)>("21cZ"), Ok(("cZ", "21")));
+/// assert_eq!(oct_digit0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
+/// assert_eq!(oct_digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn oct_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -284,9 +467,21 @@ where
 }
 
 /// Recognizes one or more octal characters: 0-7
-////
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non octal digit character)
+///
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non octal digit character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::oct_digit1;
+/// # fn main() {
+/// assert_eq!(oct_digit1::<_, (_, ErrorKind)>("21cZ"), Ok(("cZ", "21")));
+/// assert_eq!(oct_digit1::<_, (_, ErrorKind)>("H2"), Err(Err::Error(("H2", ErrorKind::OctDigit))));
+/// assert_eq!(oct_digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn oct_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -296,11 +491,24 @@ where
 }
 
 /// Recognizes zero or more numerical and alphabetic characters.
-/// For ASCII strings: 0-9a-zA-Z
-/// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non alphanumerical character)
+/// * For ASCII strings: 0-9a-zA-Z
+/// * For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphanumerical character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::alphanumeric0;
+/// # fn main() {
+/// assert_eq!(alphanumeric0::<_, (_, ErrorKind)>("21cZ%1"), Ok(("%1", "21cZ")));
+/// assert_eq!(alphanumeric0::<_, (_, ErrorKind)>("&Z21c"), Ok(("&Z21c", "")));
+/// assert_eq!(alphanumeric0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn alphanumeric0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -310,11 +518,24 @@ where
 }
 
 /// Recognizes one or more numerical and alphabetic characters.
-/// For ASCII strings: 0-9a-zA-Z
-/// For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non alphanumerical character)
+/// * For ASCII strings: 0-9a-zA-Z
+/// * For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+///
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non alphanumerical character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::alphanumeric1;
+/// # fn main() {
+/// assert_eq!(alphanumeric1::<_, (_, ErrorKind)>("21cZ%1"), Ok(("%1", "21cZ")));
+/// assert_eq!(alphanumeric1::<_, (_, ErrorKind)>("&H2"), Err(Err::Error(("&H2", ErrorKind::AlphaNumeric))));
+/// assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn alphanumeric1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -323,10 +544,22 @@ where
   input.split_at_position1(|item| !item.is_alphanum(), ErrorKind::AlphaNumeric)
 }
 
-/// Recognizes zero or more spaces and tabs
+/// Recognizes zero or more spaces and tabs.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non space character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::space0;
+/// # fn main() {
+/// assert_eq!(space0::<_, (_, ErrorKind)>(" \t21c"), Ok(("21c", " \t")));
+/// assert_eq!(space0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
+/// assert_eq!(space0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn space0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -337,10 +570,22 @@ where
     !(c == ' ' || c == '\t')
   })
 }
-/// Recognizes one or more spaces and tabs
+/// Recognizes one or more spaces and tabs.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non space character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::space1;
+/// # fn main() {
+/// assert_eq!(space1::<_, (_, ErrorKind)>(" \t21c"), Ok(("21c", " \t")));
+/// assert_eq!(space1::<_, (_, ErrorKind)>("H2"), Err(Err::Error(("H2", ErrorKind::Space))));
+/// assert_eq!(space1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn space1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -355,10 +600,22 @@ where
   )
 }
 
-/// Recognizes zero or more spaces, tabs, carriage returns and line feeds
+/// Recognizes zero or more spaces, tabs, carriage returns and line feeds.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non space character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::multispace0;
+/// # fn main() {
+/// assert_eq!(multispace0::<_, (_, ErrorKind)>(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
+/// assert_eq!(multispace0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
+/// assert_eq!(multispace0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn multispace0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -370,10 +627,22 @@ where
   })
 }
 
-/// Recognizes one or more spaces, tabs, carriage returns and line feeds
+/// Recognizes one or more spaces, tabs, carriage returns and line feeds.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
-/// or if no terminating token is found (a non space character)
+/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non space character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::multispace1;
+/// # fn main() {
+/// assert_eq!(multispace1::<_, (_, ErrorKind)>(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
+/// assert_eq!(multispace1::<_, (_, ErrorKind)>("H2"), Err(Err::Error(("H2", ErrorKind::MultiSpace))));
+/// assert_eq!(multispace1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// # }
+/// ```
 pub fn multispace1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
