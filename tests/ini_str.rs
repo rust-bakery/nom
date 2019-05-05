@@ -3,29 +3,13 @@ extern crate nom;
 
 use nom::{
   IResult,
-  combinator::{map_res, opt},
+  combinator::opt,
   bytes::complete::{take_while, is_a},
   sequence::{delimited, terminated},
   character::complete::{char, alphanumeric1 as alphanumeric, space0 as space}
 };
 
 use std::collections::HashMap;
-
-fn is_alphabetic(chr: char) -> bool {
-  (chr as u8 >= 0x41 && chr as u8 <= 0x5A) || (chr as u8 >= 0x61 && chr as u8 <= 0x7A)
-}
-
-fn is_digit(chr: char) -> bool {
-  chr as u8 >= 0x30 && chr as u8 <= 0x39
-}
-
-fn is_alphanumeric(chr: char) -> bool {
-  is_alphabetic(chr) || is_digit(chr)
-}
-
-fn is_space(chr: char) -> bool {
-  chr == ' ' || chr == '\t'
-}
 
 fn is_line_ending_or_comment(chr: char) -> bool {
   chr == ';' || chr == '\n'
@@ -37,10 +21,6 @@ fn not_line_ending(i: &str) -> IResult<&str, &str> {
 
 fn space_or_line_ending(i: &str) -> IResult<&str, &str> {
   is_a(" \r\n")(i)
-}
-
-fn right_bracket(c: char) -> bool {
-  c == ']'
 }
 
 fn category(i: &str) -> IResult<&str, &str> {
