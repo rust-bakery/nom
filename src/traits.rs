@@ -715,7 +715,6 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   }
 
   //FIXME: this version is too simple and does not use the current locale
-  #[cfg(feature = "alloc")]
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
     let pos = self
@@ -733,12 +732,6 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
         }
       }
     }
-  }
-
-  #[cfg(not(feature = "alloc"))]
-  #[inline(always)]
-  fn compare_no_case(&self, _: &'b str) -> CompareResult {
-    unimplemented!()
   }
 }
 
