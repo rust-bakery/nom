@@ -9,7 +9,20 @@ use character::streaming::digit1;
 
 /// Recognizes an unsigned 1 byte integer (equivalent to take!(1))
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enoughdata
+/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_u8;
+///
+/// /*let parser = |s| {
+///   be_u8::<(_, ErrorKind)>(s)
+/// };*/
+/// let parser = be_u8::<(_, ErrorKind)>;
+///
+/// assert_eq!(parser(b"\x00\x01abcd"), Ok((&b"\x01abcd"[..], 0x00)));
+/// assert_eq!(parser(b""), Err(Err::Incomplete(Needed::Size(1))));
+/// ```
 #[inline]
 pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
   if i.len() < 1 {
@@ -22,6 +35,19 @@ pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> 
 /// Recognizes big endian unsigned 2 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_u16;
+///
+/// let parser = |s| {
+///   be_u16::<(_, ErrorKind)>(s)
+/// };
+///
+/// assert_eq!(parser(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0001)));
+/// assert_eq!(parser(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// ```
 #[inline]
 pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
   if i.len() < 2 {
@@ -35,6 +61,19 @@ pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E
 /// Recognizes big endian unsigned 3 byte integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_u24;
+///
+/// let parser = |s| {
+///   be_u24::<(_, ErrorKind)>(s)
+/// };
+///
+/// assert_eq!(parser(b"\x00\x01\x02abcd"), Ok((&b"abcd"[..], 0x000102)));
+/// assert_eq!(parser(b"\x01"), Err(Err::Incomplete(Needed::Size(3))));
+/// ```
 #[inline]
 pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 3 {
@@ -48,6 +87,19 @@ pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 /// Recognizes big endian unsigned 4 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_u32;
+///
+/// let parser = |s| {
+///   be_u32::<(_, ErrorKind)>(s)
+/// };
+///
+/// assert_eq!(parser(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x00010203)));
+/// assert_eq!(parser(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// ```
 #[inline]
 pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
   if i.len() < 4 {
@@ -61,6 +113,19 @@ pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 /// Recognizes big endian unsigned 8 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// 
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_u64;
+///
+/// let parser = |s| {
+///   be_u64::<(_, ErrorKind)>(s)
+/// };
+///
+/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0001020304050607)));
+/// assert_eq!(parser(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// ```
 #[inline]
 pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
   if i.len() < 8 {
@@ -72,9 +137,21 @@ pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E
   }
 }
 
-/// Recognizes big endian unsigned 16 bytes integer
+/// Recognizes a big endian unsigned 16 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_u128;
+///
+/// let parser = |s| {
+///   be_u128::<(_, ErrorKind)>(s)
+/// };
+///
+/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x00010203040506070809101112131415)));
+/// assert_eq!(parser(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// ```
 #[inline]
 #[cfg(stable_i128)]
 pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
@@ -104,22 +181,52 @@ pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128,
 /// Recognizes a signed 1 byte integer (equivalent to take!(1))
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_i8;
+///
+/// let parser = be_i8::<(_, ErrorKind)>;
+///
+/// assert_eq!(parser(b"\x00\x01abcd"), Ok((&b"\x01abcd"[..], 0x00)));
+/// assert_eq!(parser(b""), Err(Err::Incomplete(Needed::Size(1))));
+/// ```
 #[inline]
 pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
   map!(i, be_u8, |x| x as i8)
 }
 
-/// Recognizes big endian signed 2 bytes integer
+/// Recognizes a big endian signed 2 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_i16;
+///
+/// let parser = be_i16::<(_, ErrorKind)>;
+///
+/// assert_eq!(parser(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0001)));
+/// assert_eq!(parser(b""), Err(Err::Incomplete(Needed::Size(2))));
+/// ```
 #[inline]
 pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
   map!(i, be_u16, |x| x as i16)
 }
 
-/// Recognizes big endian signed 3 bytes integer
+/// Recognizes a big endian signed 3 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_i24;
+///
+/// let parser = be_i24::<(_, ErrorKind)>;
+///
+/// assert_eq!(parser(b"\x00\x01\x02abcd"), Ok((&b"abcd"[..], 0x000102)));
+/// assert_eq!(parser(b""), Err(Err::Incomplete(Needed::Size(3))));
+/// ```
 #[inline]
 pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
   // Same as the unsigned version but we need to sign-extend manually here
@@ -130,9 +237,19 @@ pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
   })
 }
 
-/// Recognizes big endian signed 4 bytes integer
+/// Recognizes a big endian signed 4 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_i32;
+///
+/// let parser = be_i32::<(_, ErrorKind)>;
+///
+/// assert_eq!(parser(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x00010203)));
+/// assert_eq!(parser(b""), Err(Err::Incomplete(Needed::Size(4))));
+/// ```
 #[inline]
 pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
   map!(i, be_u32, |x| x as i32)
@@ -141,14 +258,35 @@ pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
 /// Recognizes big endian signed 8 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// 
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_i64;
+///
+/// let parser = be_i64::<(_, ErrorKind)>;
+///
+/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0001020304050607)));
+/// assert_eq!(parser(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// ```
 #[inline]
 pub fn be_i64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
   map!(i, be_u64, |x| x as i64)
 }
 
-/// Recognizes big endian signed 16 bytes integer
+/// Recognizes a big endian signed 16 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::be_i128;
+///
+/// let parser = be_i128::<(_, ErrorKind)>;
+///
+/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x00010203040506070809101112131415)));
+/// assert_eq!(parser(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// ```
 #[inline]
 #[cfg(stable_i128)]
 pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128, E> {
