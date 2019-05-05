@@ -715,7 +715,7 @@ macro_rules! map_res_err (
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::Convert, Err};
+      use $crate::Err;
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -1182,7 +1182,7 @@ macro_rules! cond_reduce(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Convert,Err,error::ErrorKind,IResult};
+      use $crate::{Err,error::ErrorKind,IResult};
       let default_err = Err(Err::convert(Err::Error(error_position!($i, ErrorKind::CondReduce))));
 
       if $cond {
@@ -1223,7 +1223,7 @@ macro_rules! peek(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Convert,Err};
+      use $crate::Err;
 
       let i_ = $i.clone();
       match $submac!(i_, $($args)*) {
@@ -1309,7 +1309,7 @@ macro_rules! tap (
   ($i:expr, $name:ident : $submac:ident!( $($args:tt)* ) => $e:expr) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Convert,Err,Needed,IResult};
+      use $crate::{Err,Needed,IResult};
 
       match $submac!($i, $($args)*) {
         Ok((i,o)) => {
@@ -1614,7 +1614,6 @@ mod tests {
 
   #[test]
   fn parse_to() {
-    //use util::Convert;
     let res: IResult<_, _, (&str, ErrorKind)> = parse_to!("ab", usize);
 
     assert_eq!(

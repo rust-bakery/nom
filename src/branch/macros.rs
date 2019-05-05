@@ -441,7 +441,7 @@ macro_rules! switch (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Convert,error::ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       let i_ = $i.clone();
       match map!(i_, $submac!($($args)*), Some) {
@@ -565,7 +565,7 @@ macro_rules! permutation (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,Convert,error::ErrorKind};
+      use $crate::{Err,error::ErrorKind};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;

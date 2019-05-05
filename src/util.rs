@@ -420,8 +420,3 @@ pub fn print_offsets<E>(input: &[u8], from: usize, offsets: &[(ErrorKind<E>, usi
   String::from_utf8_lossy(&v[..]).into_owned()
 }
   */
-
-pub trait Convert<T> {
-  fn convert(T) -> Self;
-}
-

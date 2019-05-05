@@ -71,6 +71,15 @@ impl<E> Err<E> {
       false
     }
   }
+
+  pub fn convert<F>(e: Err<F>) -> Self
+    where E: From<F> {
+    match e {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Failure(c) => Err::Failure(c.into()),
+      Err::Error(c) => Err::Error(c.into()),
+    }
+  }
 }
 
 /*
@@ -108,18 +117,6 @@ where
   }
 }
 */
-
-use util::Convert;
-
-impl<F, E: From<F>> Convert<Err<F>> for Err<E> {
-  fn convert(e: Err<F>) -> Self {
-    match e {
-      Err::Incomplete(n) => Err::Incomplete(n),
-      Err::Failure(c) => Err::Failure(c.into()),
-      Err::Error(c) => Err::Error(c.into()),
-    }
-  }
-}
 
 #[cfg(test)]
 mod tests {

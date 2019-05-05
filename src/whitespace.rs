@@ -44,7 +44,6 @@
 //! macro_rules! sp (
 //!   ($i:expr, $($args:tt)*) => (
 //!     {
-//!       use nom::Convert;
 //!       use nom::Err;
 //!
 //!       match sep!($i, space, $($args)*) {
@@ -99,7 +98,7 @@
 macro_rules! wrap_sep (
   ($i:expr, $separator:expr, $submac:ident!( $($args:tt)* )) => ({
     use $crate::lib::std::result::Result::*;
-    use $crate::{Err,Convert,IResult};
+    use $crate::{Err,IResult};
 
     fn unify_types<I,O,P,E>(_: &IResult<I,O,E>, _: &IResult<I,P,E>) {}
 
@@ -375,7 +374,7 @@ macro_rules! permutation_sep (
     {
       use $crate::lib::std::result::Result::*;
       use $crate::lib::std::option::Option::*;
-      use $crate::{Err,error::ErrorKind,Convert};
+      use $crate::{Err,error::ErrorKind};
 
       let mut res    = permutation_init!((), $($rest)*);
       let mut input  = $i;
@@ -859,7 +858,6 @@ macro_rules! sep (
 macro_rules! ws (
   ($i:expr, $($args:tt)*) => (
     {
-      use $crate::Convert;
       use $crate::Err;
       use $crate::lib::std::result::Result::*;
       use $crate::character::complete::multispace0;

@@ -317,7 +317,7 @@ macro_rules! length_count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Convert};
+      use $crate::Err;
 
       match $submac!($i, $($args)*) {
         Err(e)     => Err(Err::convert(e)),
@@ -352,7 +352,7 @@ macro_rules! length_count(
 macro_rules! length_data(
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
     use $crate::lib::std::result::Result::*;
-    use $crate::{Convert,Err};
+    use $crate::Err;
 
     match $submac!($i, $($args)*) {
       Err(e)     => Err(e),
