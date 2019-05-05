@@ -94,7 +94,7 @@ where
 ///
 /// It doesn't consume the matched character,
 ///
-/// It will return a `Err::Incomplete(Needed::Size(1))` if the pattern wasn't met
+/// It will return a `Err::Error(("", ErrorKind::IsNot))` if the pattern wasn't met
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
