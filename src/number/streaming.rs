@@ -580,7 +580,13 @@ where
 
   match res.error.code {
     ::lexical_core::ErrorCode::Success => Err(Err::Incomplete(Needed::Unknown)),
-    ::lexical_core::ErrorCode::InvalidDigit => Ok((input.slice(res.error.index..), res.value)),
+    ::lexical_core::ErrorCode::InvalidDigit => {
+      if res.error.index == 0 {
+        Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+      } else {
+        Ok((input.slice(res.error.index..), res.value))
+      }
+    },
     _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
   }
 }
@@ -622,11 +628,16 @@ where
 
   match res.error.code {
     ::lexical_core::ErrorCode::Success => Err(Err::Incomplete(Needed::Unknown)),
-    ::lexical_core::ErrorCode::InvalidDigit => Ok((input.slice(res.error.index..), res.value)),
+    ::lexical_core::ErrorCode::InvalidDigit => {
+      if res.error.index == 0 {
+        Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+      } else {
+        Ok((input.slice(res.error.index..), res.value))
+      }
+    }
     _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
   }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -780,7 +780,7 @@ where
 /// use nom::number::complete::float;
 ///
 /// let parser = |s| {
-///   float::<_, (_, ErrorKind)>(s)
+///   float(s)
 /// };
 ///
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
@@ -819,13 +819,13 @@ where
 /// use nom::number::complete::float;
 ///
 /// let parser = |s| {
-///   float::<_, (_, ErrorKind)>(s)
+///   float(s)
 /// };
 ///
 /// assert_eq!(parser("1.1"), Ok(("", 1.1)));
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Ok(("abc", 0.0)));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
 /// ```
 #[cfg(feature = "lexical")]
 pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
@@ -836,7 +836,11 @@ where
 
   match res.error.code {
     ::lexical_core::ErrorCode::Success => Ok((input.slice(input.input_len()..), res.value)),
-    ::lexical_core::ErrorCode::InvalidDigit => Ok((input.slice(res.error.index..), res.value)),
+    ::lexical_core::ErrorCode::InvalidDigit => if res.error.index == 0 {
+      Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+    } else {
+      Ok((input.slice(res.error.index..), res.value))
+    },
     _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
   }
 }
@@ -850,7 +854,7 @@ where
 /// use nom::number::complete::double;
 ///
 /// let parser = |s| {
-///   double::<_, (_, ErrorKind)>(s)
+///   double(s)
 /// };
 ///
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
@@ -889,13 +893,13 @@ where
 /// use nom::number::complete::double;
 ///
 /// let parser = |s| {
-///   double::<_, (_, ErrorKind)>(s)
+///   double(s)
 /// };
 ///
 /// assert_eq!(parser("1.1"), Ok(("", 1.1)));
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Ok(("abc", 0.0)));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
 /// ```
 #[cfg(feature = "lexical")]
 pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
@@ -906,7 +910,11 @@ where
 
   match res.error.code {
     ::lexical_core::ErrorCode::Success => Ok((input.slice(input.input_len()..), res.value)),
-    ::lexical_core::ErrorCode::InvalidDigit => Ok((input.slice(res.error.index..), res.value)),
+    ::lexical_core::ErrorCode::InvalidDigit => if res.error.index == 0 {
+      Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+    } else {
+      Ok((input.slice(res.error.index..), res.value))
+    },
     _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
   }
 }
