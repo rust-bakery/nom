@@ -8,31 +8,22 @@ use error::ParseError;
 
 /// Gets an object from the first parser,
 /// then gets another object from the second parser.
+///
 /// # Arguments
 /// * `first` The first parser to apply.
 /// * `second` The second parser to apply.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::pair;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let first_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let second_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("efg")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   pair::<_, _, _, (_, ErrorKind), _, _>(first_parser, second_parser)(s)
-/// };
+///
+/// let parser = pair(tag("abc"), tag("efg"));
 ///
 /// assert_eq!(parser("abcefg"), Ok(("", ("abc", "efg"))));
 /// assert_eq!(parser("abcefghij"), Ok(("hij", ("abc", "efg"))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
-/// # }
 /// ```
 pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, (O1, O2), E>
 where
@@ -57,31 +48,22 @@ where
 
 /// Matches an object from the first parser and discards it,
 /// then gets an object from the second parser.
+///
 /// # Arguments
 /// * `first` The opening parser.
 /// * `second` The second parser to get object.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::preceded;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let first_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let second_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("efg")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   preceded::<_, _, _, (_, ErrorKind), _, _>(first_parser, second_parser)(s)
-/// };
+///
+/// let parser = preceded(tag("abc"), tag("efg"));
 ///
 /// assert_eq!(parser("abcefg"), Ok(("", "efg")));
 /// assert_eq!(parser("abcefghij"), Ok(("hij", "efg")));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
-/// # }
 /// ```
 pub fn preceded<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
@@ -106,31 +88,22 @@ where
 
 /// Gets an object from the first parser,
 /// then matches an object from the second parser and discards it.
+///
 /// # Arguments
 /// * `first` The first parser to apply.
 /// * `second` The second parser to match an object.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::terminated;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let first_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let second_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("efg")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   terminated::<_, _, _, (_, ErrorKind), _, _>(first_parser, second_parser)(s)
-/// };
+///
+/// let parser = terminated(tag("abc"), tag("efg"));
 ///
 /// assert_eq!(parser("abcefg"), Ok(("", "abc")));
 /// assert_eq!(parser("abcefghij"), Ok(("hij", "abc")));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
-/// # }
 /// ```
 pub fn terminated<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O1, E>
 where
@@ -156,35 +129,23 @@ where
 /// Gets an object from the first parser,
 /// then matches an object from the sep_parser and discards it,
 /// then gets another object from the second parser.
+///
 /// # Arguments
 /// * `first` The first parser to apply.
 /// * `sep` The separator parser to apply.
 /// * `second` The second parser to apply.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::separated_pair;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let first_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let sep_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("|")(s)
-/// };
-/// let second_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("efg")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   separated_pair::<_, _, _, _, (_, ErrorKind), _, _, _>(first_parser, sep_parser, second_parser)(s)
-/// };
+///
+/// let parser = separated_pair(tag("abc"), tag("|"), tag("efg"));
 ///
 /// assert_eq!(parser("abc|efg"), Ok(("", ("abc", "efg"))));
 /// assert_eq!(parser("abc|efghij"), Ok(("hij", ("abc", "efg"))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
-/// # }
 /// ```
 pub fn separated_pair<I, O1, O2, O3, E: ParseError<I>, F, G, H>(first: F, sep: G, second: H) -> impl Fn(I) -> IResult<I, (O1, O3), E>
 where
@@ -213,35 +174,23 @@ where
 /// Matches an object from the first parser,
 /// then gets an object from the sep_parser,
 /// then matches another object from the second parser.
+///
 /// # Arguments
 /// * `first` The first parser to apply.
 /// * `sep` The separator parser to apply.
 /// * `second` The second parser to apply.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::delimited;
 /// use nom::bytes::complete::tag;
-/// # fn main() {
-/// let first_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("abc")(s)
-/// };
-/// let sep_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("|")(s)
-/// };
-/// let second_parser = |s: &'static str| {
-///   tag::<_, _, (_, ErrorKind)>("efg")(s)
-/// };
-/// let parser = |s: &'static str| {
-///   delimited::<_, _, _, _, (_, ErrorKind), _, _, _>(first_parser, sep_parser, second_parser)(s)
-/// };
+///
+/// let parser = delimited(tag("abc"), tag("|"), tag("efg"));
 ///
 /// assert_eq!(parser("abc|efg"), Ok(("", "|")));
 /// assert_eq!(parser("abc|efghij"), Ok(("hij", "|")));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
-/// # }
 /// ```
 pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(first: F, sep: G, second: H) -> impl Fn(I) -> IResult<I, O2, E>
 where
