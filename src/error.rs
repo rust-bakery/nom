@@ -104,9 +104,8 @@ where
       match f(i.clone()) {
         Ok(o) => Ok(o),
         Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-          Err(Err::Failure(E::add_context(i, context, e)))
-        }
+        Err(Err::Error(e)) => Err(Err::Error(E::add_context(i, context, e))),
+        Err(Err::Failure(e)) => Err(Err::Failure(E::add_context(i, context, e))),
       }
     }
 
