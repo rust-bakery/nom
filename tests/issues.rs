@@ -279,3 +279,13 @@ fn issue_848_overflow_incomplete_bits_to_bytes() {
   named!(parser<&[u8], &[u8]>, bits!(bytes!(take!(0x2000000000000000))));
   assert_eq!(parser(&b""[..]), Err(Err::Failure(error_position!(&b""[..], ErrorKind::TooLarge))));
 }
+
+#[test]
+fn issue_942() {
+  use nom::error::ParseError;
+  pub fn parser<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, usize, E> {
+    use nom::{character::complete::char, error::context, multi::many0_count};
+    many0_count(context("char_a", char('a')))(i)
+  }
+  assert_eq!(parser::<()>("aaa"), Ok(("", 3)));
+}
