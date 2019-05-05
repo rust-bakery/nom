@@ -8,7 +8,7 @@ use traits::{Offset, Slice};
 use error::{ErrorKind, make_error};
 use character::complete::digit1;
 
-/// Recognizes an unsigned 1 byte integer (equivalent to take!(1))
+/// Recognizes an unsigned 1 byte integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -32,7 +32,7 @@ pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> 
   }
 }
 
-/// Recognizes big endian unsigned 2 bytes integer
+/// Recognizes a big endian unsigned 2 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -57,7 +57,7 @@ pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E
   }
 }
 
-/// Recognizes big endian unsigned 3 byte integer
+/// Recognizes a big endian unsigned 3 byte integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -82,7 +82,7 @@ pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
   }
 }
 
-/// Recognizes big endian unsigned 4 bytes integer
+/// Recognizes a big endian unsigned 4 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -107,7 +107,7 @@ pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
   }
 }
 
-/// Recognizes big endian unsigned 8 bytes integer
+/// Recognizes a big endian unsigned 8 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -133,7 +133,7 @@ pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E
   }
 }
 
-/// Recognizes big endian unsigned 16 bytes integer
+/// Recognizes a big endian unsigned 16 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -174,7 +174,7 @@ pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128,
   }
 }
 
-/// Recognizes a signed 1 byte integer (equivalent to take!(1)
+/// Recognizes a signed 1 byte integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -194,7 +194,7 @@ pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> 
   map!(i, be_u8, |x| x as i8)
 }
 
-/// Recognizes big endian signed 2 bytes integer
+/// Recognizes a big endian signed 2 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -214,7 +214,7 @@ pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, 
   map!(i, be_u16, |x| x as i16)
 }
 
-/// Recognizes big endian signed 3 bytes integer
+/// Recognizes a big endian signed 3 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -239,7 +239,7 @@ pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
   })
 }
 
-/// Recognizes big endian signed 4 bytes integer
+/// Recognizes a big endian signed 4 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -259,7 +259,7 @@ pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
   map!(i, be_u32, |x| x as i32)
 }
 
-/// Recognizes big endian signed 8 bytes integer
+/// Recognizes a big endian signed 8 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -279,7 +279,7 @@ pub fn be_i64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E
   map!(i, be_u64, |x| x as i64)
 }
 
-/// Recognizes big endian signed 16 bytes integer
+/// Recognizes a big endian signed 16 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -300,7 +300,7 @@ pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
   map!(i, be_u128, |x| x as i128)
 }
 
-/// Recognizes an unsigned 1 byte integer (equivalent to take!(1))
+/// Recognizes an unsigned 1 byte integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -324,7 +324,7 @@ pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E>
   }
 }
 
-/// Recognizes little endian unsigned 2 bytes integer
+/// Recognizes a little endian unsigned 2 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -349,7 +349,7 @@ pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, 
   }
 }
 
-/// Recognizes little endian unsigned 3 byte integer
+/// Recognizes a little endian unsigned 3 byte integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -374,7 +374,7 @@ pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, 
   }
 }
 
-/// Recognizes little endian unsigned 4 bytes integer
+/// Recognizes a little endian unsigned 4 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -399,7 +399,7 @@ pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, 
   }
 }
 
-/// Recognizes little endian unsigned 8 bytes integer
+/// Recognizes a little endian unsigned 8 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -425,7 +425,7 @@ pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, 
   }
 }
 
-/// Recognizes little endian unsigned 16 bytes integer
+/// Recognizes a little endian unsigned 16 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -466,7 +466,7 @@ pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128
   }
 }
 
-/// Recognizes a signed 1 byte integer (equivalent to take!(1))
+/// Recognizes a signed 1 byte integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -486,7 +486,7 @@ pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E>
   map!(i, le_u8, |x| x as i8)
 }
 
-/// Recognizes little endian signed 2 bytes integer
+/// Recognizes a little endian signed 2 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -506,7 +506,7 @@ pub fn le_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, 
   map!(i, le_u16, |x| x as i16)
 }
 
-/// Recognizes little endian signed 3 bytes integer
+/// Recognizes a little endian signed 3 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -531,7 +531,7 @@ pub fn le_i24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, 
   })
 }
 
-/// Recognizes little endian signed 4 bytes integer
+/// Recognizes a little endian signed 4 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -551,7 +551,7 @@ pub fn le_i32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, 
   map!(i, le_u32, |x| x as i32)
 }
 
-/// Recognizes little endian signed 8 bytes integer
+/// Recognizes a little endian signed 8 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -571,7 +571,7 @@ pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, 
   map!(i, le_u64, |x| x as i64)
 }
 
-/// Recognizes little endian signed 16 bytes integer
+/// Recognizes a little endian signed 16 bytes integer
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -592,7 +592,7 @@ pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
   map!(i, le_u128, |x| x as i128)
 }
 
-/// Recognizes big endian 4 bytes floating point number
+/// Recognizes a big endian 4 bytes floating point number
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -615,7 +615,7 @@ pub fn be_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
   }
 }
 
-/// Recognizes big endian 8 bytes floating point number
+/// Recognizes a big endian 8 bytes floating point number
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -638,7 +638,7 @@ pub fn be_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
   }
 }
 
-/// Recognizes little endian 4 bytes floating point number
+/// Recognizes a little endian 4 bytes floating point number
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
@@ -661,7 +661,7 @@ pub fn le_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
   }
 }
 
-/// Recognizes little endian 8 bytes floating point number
+/// Recognizes a little endian 8 bytes floating point number
 ///
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
