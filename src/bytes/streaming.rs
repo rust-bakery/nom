@@ -191,9 +191,10 @@ where
 /// The parser will return the longest slice that matches the given predicate *(a function that
 /// takes the input and returns a bool)*
 ///
+/// It will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met
+///
 /// # Streaming Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::Size(1))` or if the pattern reaches the end of the input.
-/// And will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met
 ///
 /// # Example
 /// ```rust
