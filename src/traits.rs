@@ -90,8 +90,9 @@ impl<'a> Offset for &'a str {
   }
 }
 
-/// casts the input type to a byte slice
+/// Helper trait for types that can be viewed as a byte slice
 pub trait AsBytes {
+  /// casts the input type to a byte slice
   fn as_bytes(&self) -> &[u8];
 }
 
@@ -612,8 +613,11 @@ impl<'a> InputTakeAtPosition for &'a str {
 /// if more data was needed
 #[derive(Debug, PartialEq)]
 pub enum CompareResult {
+  /// comparison was successful
   Ok,
+  /// we need more data to be sure
   Incomplete,
+  /// comparison failed
   Error,
 }
 
@@ -735,8 +739,9 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   }
 }
 
-/// look for self in the given input stream
+/// look for a token in self
 pub trait FindToken<T> {
+  /// returns true if self contains the token
   fn find_token(&self, token: T) -> bool;
 }
 
@@ -783,6 +788,7 @@ impl<'a> FindToken<char> for &'a str {
 
 /// look for a substring in self
 pub trait FindSubstring<T> {
+  /// returns the byte position of the substring if it is found
   fn find_substring(&self, substr: T) -> Option<usize>;
 }
 
@@ -838,6 +844,8 @@ impl<'a, 'b> FindSubstring<&'b str> for &'a str {
 
 /// used to integrate str's parse() method
 pub trait ParseTo<R> {
+  /// succeeds if `parse()` succeeded. The byte slice implementation
+  /// will first convert it to a &str, then apply the `parse()` function
   fn parse_to(&self) -> Option<R>;
 }
 
@@ -860,6 +868,7 @@ impl<'a, R: FromStr> ParseTo<R> for &'a str {
 /// something else than a `&[T]` or `&str`
 pub trait Slice<R> {
   #[inline(always)]
+  /// slices self according to the range argument
   fn slice(&self, range: R) -> Self;
 }
 
@@ -1054,7 +1063,14 @@ impl ExtendInto for char {
   }
 }
 
+/// Helper trait to convert numbers to usize
+///
+/// by default, usize implements `From<u8>` and `From<u16>` but not
+/// `From<u32>` and `From<u64>` because that would be invalid on some
+/// platforms. This trait implements the conversion for platforms
+/// with 32 and 64 bits pointer platforms
 pub trait ToUsize {
+  /// converts self to usize
   fn to_usize(&self) -> usize;
 }
 

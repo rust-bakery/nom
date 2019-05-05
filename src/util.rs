@@ -2,6 +2,7 @@
 use lib::std::vec::Vec;
 
 #[cfg(feature = "std")]
+/// Helper trait to show a byte slice as a hex dump
 pub trait HexDisplay {
   /// Converts the value of `self` to a hex dump, returning the owned
   /// string.

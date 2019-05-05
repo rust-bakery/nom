@@ -53,14 +53,20 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 #[cfg(feature = "alloc")]
 #[derive(Clone,Debug,PartialEq)]
 pub struct VerboseError<I> {
+  /// list of errors accumulated by `VerboseError`, containing the affected
+  /// part of input data, and some context
   pub errors: ::lib::std::vec::Vec<(I, VerboseErrorKind)>,
 }
 
 #[cfg(feature = "alloc")]
 #[derive(Clone,Debug,PartialEq)]
+/// error context for `VerboseError`
 pub enum VerboseErrorKind {
+  /// static string added by the `context` function
   Context(&'static str),
+  /// indicates which character was expected by the `char` function
   Char(char),
+  /// error kind given by various nom parsers
   Nom(ErrorKind),
 }
 
@@ -110,7 +116,7 @@ where
 /// indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug,PartialEq,Eq,Hash,Clone,Copy)]
-#[allow(deprecated)]
+#[allow(deprecated,missing_docs)]
 pub enum ErrorKind {
   Tag,
   MapRes,
@@ -171,9 +177,9 @@ pub enum ErrorKind {
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(deprecated)]
+/// converts an ErrorKind to a number
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
   match *e {
-    //ErrorKind::Custom(_)                 => 0,
     ErrorKind::Tag                       => 1,
     ErrorKind::MapRes                    => 2,
     ErrorKind::MapOpt                    => 3,
@@ -235,9 +241,9 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
 impl ErrorKind {
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[allow(deprecated)]
+  /// converts an ErrorKind to a text description
   pub fn description(&self) -> &str {
     match *self {
-      //ErrorKind::Custom(_)                 => "Custom error",
       ErrorKind::Tag                       => "Tag",
       ErrorKind::MapRes                    => "Map on Result",
       ErrorKind::MapOpt                    => "Map on Option",

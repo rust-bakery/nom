@@ -117,7 +117,11 @@ where
   delimited(first, sep, second)(input)
 }
 
+/// helper trait for the tuple combinator
+///
+/// this trait is implemented for tuples of parsers of up to 21 elements
 pub trait Tuple<I,O,E> {
+  /// parses the input and returns a tuple of results of each parser
   fn parse(&self, input: I) -> IResult<I,O,E>;
 }
 
@@ -171,6 +175,7 @@ macro_rules! tuple_trait_inner(
 tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ J, FnK K, FnL L,
   FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
 
+/// applies a tuple of parsers one by one and returns their results as a tuple
 pub fn tuple<I: Clone, O, E: ParseError<I>, List: Tuple<I,O,E>>(l: List)  -> impl Fn(I) -> IResult<I, O, E> {
   move |i: I| {
     l.parse(i)

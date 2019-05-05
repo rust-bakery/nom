@@ -389,6 +389,8 @@ pub mod lib {
     pub use alloc::{boxed, string, vec};
 
     pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+
+    /// internal reproduction of std prelude
     pub mod prelude {
       pub use core::prelude as v1;
     }
@@ -398,6 +400,8 @@ pub mod lib {
   /// internal std exports for no_std compatibility
   pub mod std {
     pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
+
+    /// internal reproduction of std prelude
     pub mod prelude {
       pub use std::prelude as v1;
     }

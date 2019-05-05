@@ -7,8 +7,11 @@ use error::ErrorKind;
 use error::ParseError;
 use internal::{Err, IResult};
 
-/// helper trait for arguments to [alt]
+/// helper trait for the [alt] combinator
+///
+/// this trait is implemented for tuples of up to 21 elements
 pub trait Alt<I, O, E> {
+  /// tests each parser in the tuple and returns the result of the first one that succeeds
   fn choice(&self, input: I) -> IResult<I, O, E>;
 }
 
@@ -43,8 +46,11 @@ pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(l: List) -> impl F
   move |i: I| l.choice(i)
 }
 
-/// helper trait for arguments to [permutation]
+/// helper trait for the [permutation] combinator
+///
+/// this trait is implemented for tuples of up to 21 elements
 pub trait Permutation<I, O, E> {
+  /// tries to apply all parsers in the tuple in various orders until all of them succeed
   fn permutation(&self, input: I) -> IResult<I, O, E>;
 }
 

@@ -19,10 +19,12 @@ use lib::std::mem::transmute;
 mod macros;
 
 #[inline]
+// FIXME: remove?
 pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
   Ok(((), input))
 }
 
+// FIXME: remove?
 pub fn sized_buffer<'a, E: ParseError<&'a[u8]>>(input: &'a[u8]) -> IResult<&'a[u8], &'a[u8], E> {
   if input.is_empty() {
     return Err(Err::Incomplete(Needed::Unknown));
@@ -162,6 +164,27 @@ where
   map_res(first, second)(input)
 }
 
+/// applies a function returning an Option over the result of a parser
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::character::complete::digit1;
+/// use nom::combinator::map_opt;
+/// # fn main() {
+///
+/// let parse = map_opt(digit1, |s: &str| s.parse::<u8>().ok());
+///
+/// // the parser will convert the result of digit1 to a number
+/// assert_eq!(parse("123"), Ok(("", 123)));
+///
+/// // this will fail if digit1 fails
+/// assert_eq!(parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
+///
+/// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
+/// assert_eq!(parse("123456"), Err(Err::Error(("123456", ErrorKind::MapOpt))));
+/// # }
+/// ```
 pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -186,6 +209,7 @@ where
   map_opt(first, second)(input)
 }
 
+/// applies a parser over the result of another one
 pub fn map_parser<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -221,6 +245,7 @@ where
   }
 }
 
+/// optional parser: will return None if not successful
 pub fn opt<I:Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, Option<O>, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
@@ -235,6 +260,7 @@ where
   }
 }
 
+/// transforms Incomplete into Error
 pub fn complete<I: Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
@@ -258,6 +284,7 @@ where
     complete(f)(input)
 }
 
+/// succeeds if all the input has been consumed
 pub fn all_consuming<I, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   I: InputLength,

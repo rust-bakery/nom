@@ -64,6 +64,7 @@ pub enum Err<E> {
 }
 
 impl<E> Err<E> {
+  /// tests if the result is Incomplete
   pub fn is_incomplete(&self) -> bool {
     if let Err::Incomplete(_) = self {
       true
@@ -72,6 +73,7 @@ impl<E> Err<E> {
     }
   }
 
+  /// automatically converts between errors if the underlying type supports it
   pub fn convert<F>(e: Err<F>) -> Self
     where E: From<F> {
     match e {
