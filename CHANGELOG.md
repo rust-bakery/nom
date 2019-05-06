@@ -13,6 +13,7 @@
 ### Thanks
 
 ### Added
+- the `lexical-core` crate is now used by default (through the `lexical` compilation feature) to parse floats from text
 
 ### Fixed
 
@@ -21,6 +22,10 @@
 - character parsers that were aliases to their `*1` version: eol, alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace
 - `count_fixed` macro
 - `whitespace::sp` can be replaced by `character::complete::multispace0`
+- method combinators are now in the nom-methods crate
+- `take_until_either`, `take_until_either1`, `take_until_either_and_consume` and `take_until_either_and_consume1`: they can be replaced with `is_not` (possibly combined with something else)
+- `take_until_and_consume`, `take_until_and_consume1`: they can be replaced with `take_until` combined with `take`
+- `sized_buffer` and `length_bytes!`: they can be replaced with the `length_data` function
 
 ## 4.2.3 - 2019-03-23
 
