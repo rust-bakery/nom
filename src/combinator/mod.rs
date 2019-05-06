@@ -11,6 +11,7 @@ use internal::*;
 use error::ParseError;
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, ParseTo};
 use lib::std::ops::{Range, RangeFrom, RangeTo};
+use lib::std::borrow::Borrow;
 use traits::{Compare, CompareResult, Offset, Slice};
 use error::ErrorKind;
 use lib::std::mem::transmute;
@@ -272,6 +273,41 @@ where
   }
 }
 
+/// returns the result of the child parser if it satisfies a verification function
+pub fn verify<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O1, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(&O2) -> bool,
+  //&O1: Deref<Target=O2>,
+  //O1: AsRef<O2>,
+  O1: Borrow<O2>,
+  O2: ?Sized,
+{
+  move |input: I| {
+    let i = input.clone();
+    let (input, o) = first(input)?;
+
+    if second(o.borrow()) {
+      Ok((input, o))
+    } else {
+      Err(Err::Error(E::from_error_kind(i, ErrorKind::Verify)))
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn verifyc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O1, E>
+where
+  F: Fn(I) -> IResult<I, O1, E>,
+  G: Fn(&O2) -> bool,
+  //&O1: Deref<Target=O2>,
+  //O1: AsRef<O2>,
+  O1: Borrow<O2>,
+  O2: ?Sized,
+{
+  verify(first, second)(input)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -380,5 +416,29 @@ mod tests {
       let input: &[u8] = &[100, 101, 102][..];
       assert_parse!(all_consuming(take(2usize))(input), Err(Err::Error((&[102][..], ErrorKind::Eof))));
       assert_parse!(all_consuming(take(3usize))(input), Ok((&[][..], &[100, 101, 102][..])));
+  }
+
+  #[test]
+  fn test_verify_ref() {
+    use bytes::complete::take;
+
+    let parser1 = verify(take(3u8), |s: &[u8]| s == &b"abc"[..]);
+
+    assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], &b"abc"[..])));
+    assert_eq!(parser1(&b"defg"[..]), Err(Err::Error((&b"defg"[..], ErrorKind::Verify))));
+
+    fn parser2(i: &[u8]) -> IResult<&[u8], u32> {
+      verify(::number::streaming::be_u32, |val: &u32| *val >= 0 && *val < 3)(i)
+    }
+  }
+
+  #[test]
+  #[cfg(feature = "alloc")]
+  fn test_verify_alloc() {
+    use bytes::complete::take;
+    let parser1 = verify(map(take(3u8), |s: &[u8]| s.to_vec()), |s: &[u8]| s == &b"abc"[..]);
+
+    assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], (&b"abc").to_vec())));
+    assert_eq!(parser1(&b"defg"[..]), Err(Err::Error((&b"defg"[..], ErrorKind::Verify))));
   }
 }

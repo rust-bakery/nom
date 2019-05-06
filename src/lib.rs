@@ -388,7 +388,7 @@ pub mod lib {
     #[cfg_attr(feature = "alloc", macro_use)]
     pub use alloc::{boxed, string, vec};
 
-    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str, borrow};
 
     /// internal reproduction of std prelude
     pub mod prelude {
@@ -399,7 +399,7 @@ pub mod lib {
   #[cfg(feature = "std")]
   /// internal std exports for no_std compatibility
   pub mod std {
-    pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
+    pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec, borrow};
 
     /// internal reproduction of std prelude
     pub mod prelude {

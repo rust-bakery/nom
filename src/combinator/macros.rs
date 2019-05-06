@@ -802,39 +802,22 @@ macro_rules! parse_to (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
-///  named!(check<u32>, verify!(nom::number::streaming::be_u32, |val:u32| val >= 0 && val < 3));
+///  named!(check<u32>, verify!(nom::number::streaming::be_u32, |val: &u32| *val >= 0 && *val < 3));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! verify (
-  // Internal parser, do not use directly
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,error::ErrorKind};
-
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Err(e)     => Err(e),
-        Ok((i, o)) => if $submac2!(o, $($args2)*) {
-          Ok((i, o))
-        } else {
-          Err(Err::Error(error_position!($i, ErrorKind::Verify)))
-        }
-      }
-    }
-  );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    verify!(__impl $i, $submac!($($args)*), call!($g));
+    $crate::combinator::verifyc($i, |i| $submac!(i, $($args)*), $g)
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    verify!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
+    $crate::combinator::verifyc($i, |i| $submac!(i, $($args)*), |&o| $submac2!(o, $($args2)*))
   );
   ($i:expr, $f:expr, $g:expr) => (
-    verify!(__impl $i, call!($f), call!($g));
+    $crate::combinator::verify($f, $g)($i)
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    verify!(__impl $i, call!($f), $submac!($($args)*));
+    $crate::combinator::verify($f, |&o| $submac2!(o, $($args)*))($i)
   );
 );
 
