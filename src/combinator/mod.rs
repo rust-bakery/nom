@@ -18,12 +18,6 @@ use lib::std::mem::transmute;
 #[macro_use]
 mod macros;
 
-#[inline]
-// FIXME: remove?
-pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
-  Ok(((), input))
-}
-
 /// Recognizes non empty buffers
 #[inline]
 pub fn non_empty<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -57,12 +51,6 @@ where
 {
   let len = input.input_len();
   Ok((input, len))
-}
-
-/// Return the remaining input, for strings.
-#[inline]
-pub fn rest_s<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'a str, E> {
-  Ok((&input[input.len()..], input))
 }
 
 /// maps a function on the result of a parser
