@@ -351,22 +351,11 @@ macro_rules! length_count(
 #[macro_export(local_inner_macros)]
 macro_rules! length_data(
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
-    use $crate::lib::std::result::Result::*;
-    use $crate::Err;
-
-    match $submac!($i, $($args)*) {
-      Err(e)     => Err(e),
-      Ok((i, o)) => {
-        match take!(i, o as usize) {
-          Err(e)       => Err(Err::convert(e)),
-          Ok((i2, o2)) => Ok((i2, o2))
-        }
-      }
-    }
+    $crate::multi::length_data(|i| $submac!(i, $($args)*))($i)
   });
 
   ($i:expr, $f:expr) => (
-    length_data!($i, call!($f));
+    $crate::multi::length_data($f)($i)
   );
 );
 

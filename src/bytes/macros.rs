@@ -446,32 +446,6 @@ macro_rules! take_until1 (
   );
 );
 
-/// `length_bytes!(&[T] -> IResult<&[T], nb>) => &[T] -> IResult<&[T], &[T]>`
-/// Gets a number from the first parser, then extracts that many bytes from the
-/// remaining stream
-///
-/// # Example
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::number::streaming::be_u8;
-/// # fn main() {
-///  named!(with_length, length_bytes!( be_u8 ));
-///  let r = with_length(&b"\x05abcdefgh"[..]);
-///  assert_eq!(r, Ok((&b"fgh"[..], &b"abcde"[..])));
-/// # }
-/// ```
-#[macro_export(local_inner_macros)]
-macro_rules! length_bytes(
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      length_data!($i, $submac!($($args)*))
-    }
-  );
-  ($i:expr, $f:expr) => (
-    length_data!($i, call!($f))
-  )
-);
-
 #[cfg(test)]
 mod tests {
   use internal::{Err, Needed, IResult};
@@ -912,13 +886,13 @@ mod tests {
   #[test]
   fn length_bytes() {
     use number::streaming::le_u8;
-    named!(x, length_bytes!(le_u8));
+    named!(x, length_data!(le_u8));
     assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));
     assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::Size(2))));
     assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::Size(2))));
 
-    named!(y, do_parse!(tag!("magic") >> b: length_bytes!(le_u8) >> (b)));
+    named!(y, do_parse!(tag!("magic") >> b: length_data!(le_u8) >> (b)));
     assert_eq!(y(b"magic\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(y(b"magic\x02.."), Ok((&[][..], &b".."[..])));
     assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::Size(2))));

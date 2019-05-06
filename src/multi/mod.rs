@@ -5,7 +5,7 @@ mod macros;
 
 use internal::{Err, IResult, Needed};
 use error::ParseError;
-use traits::{InputLength, InputTake};
+use traits::{InputLength, InputTake, ToUsize};
 #[cfg(feature = "alloc")]
 use ::lib::std::vec::Vec;
 use error::ErrorKind;
@@ -888,6 +888,48 @@ where
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u16;
+/// use nom::multi::length_data;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &[u8]) -> IResult<&[u8], &[u8]> {
+///   length_data(be_u16)(s)
+/// }
+///
+/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
+/// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Size(3))));
+/// ```
+pub fn length_data<I, N, E, F>(f: F) -> impl Fn(I) -> IResult<I, I, E>
+where
+  I: Clone + InputLength + InputTake,
+  N: Copy + ToUsize,
+  F: Fn(I) -> IResult<I, N, E>,
+  E: ParseError<I>,
+{
+  move |i: I| {
+    let (i, length) = f(i)?;
+
+    let length: usize = length.to_usize();
+
+    if i.input_len() < length {
+      Err(Err::Incomplete(Needed::Size(length)))
+    } else {
+      Ok(i.take_split(length))
+    }
+  }
+}
+
+/// Gets a number from the first parser,
+/// takes a subslice of the input of that size,
+/// then applies the second parser on that subslice.
+/// If the second parser returns Incomplete,
+/// length_value will return an error.
+/// # Arguments
+/// * `f` The parser to apply.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::Needed::Size;
+/// use nom::number::complete::be_u16;
 /// use nom::multi::length_value;
 /// use nom::bytes::complete::tag;
 ///
@@ -902,7 +944,7 @@ where
 pub fn length_value<I, O, N, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, O, E>
 where
   I: Clone + InputLength + InputTake,
-  N: Copy + Into<usize>,
+  N: Copy + ToUsize,
   F: Fn(I) -> IResult<I, N, E>,
   G: Fn(I) -> IResult<I, O, E>,
   E: ParseError<I>,
@@ -910,7 +952,7 @@ where
   move |i: I| {
     let (i, length) = f(i)?;
 
-    let length: usize = length.into();
+    let length: usize = length.to_usize();
 
     if i.input_len() < length {
       Err(Err::Incomplete(Needed::Size(length)))
@@ -930,7 +972,7 @@ where
 pub fn length_valuec<I, O, N, E, F, G>(i: I, f: F, g: G) -> IResult<I, O, E>
 where
   I: Clone + InputLength + InputTake,
-  N: Copy + Into<usize>,
+  N: Copy + ToUsize,
   F: Fn(I) -> IResult<I, N, E>,
   G: Fn(I) -> IResult<I, O, E>,
   E: ParseError<I>,

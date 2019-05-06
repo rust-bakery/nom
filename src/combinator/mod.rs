@@ -24,22 +24,6 @@ pub fn begin(input: &[u8]) -> IResult<(), &[u8]> {
   Ok(((), input))
 }
 
-// FIXME: remove?
-pub fn sized_buffer<'a, E: ParseError<&'a[u8]>>(input: &'a[u8]) -> IResult<&'a[u8], &'a[u8], E> {
-  if input.is_empty() {
-    return Err(Err::Incomplete(Needed::Unknown));
-  }
-
-  let len = input[0] as usize;
-
-  if input.len() >= len + 1 {
-    Ok((&input[len + 1..], &input[1..len + 1]))
-  } else {
-    Err(Err::Incomplete(Needed::Size(1 + len)))
-  }
-}
-
-
 /// Recognizes non empty buffers
 #[inline]
 pub fn non_empty<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -314,18 +298,6 @@ mod tests {
       assert_eq!(res, $right);
     };
   );
-
-  #[test]
-  #[cfg(feature = "alloc")]
-  fn buffer_with_size() {
-    use lib::std::vec::Vec;
-    let i: Vec<u8> = vec![7, 8];
-    let o: Vec<u8> = vec![4, 5, 6];
-    //let arr:[u8; 6usize] = [3, 4, 5, 6, 7, 8];
-    let arr: [u8; 6usize] = [3, 4, 5, 6, 7, 8];
-    let res = sized_buffer::<(_, ErrorKind)>(&arr[..]);
-    assert_eq!(res, Ok((&i[..], &o[..])))
-  }
 
   /*#[test]
   fn t1() {
