@@ -802,7 +802,7 @@ macro_rules! parse_to (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
-///  named!(check<u32>, verify!(nom::number::streaming::be_u32, |val: &u32| *val >= 0 && *val < 3));
+///  named!(check<u32>, verify!(nom::number::streaming::be_u32, |val: &u32| *val < 3));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]

@@ -428,7 +428,7 @@ mod tests {
     assert_eq!(parser1(&b"defg"[..]), Err(Err::Error((&b"defg"[..], ErrorKind::Verify))));
 
     fn parser2(i: &[u8]) -> IResult<&[u8], u32> {
-      verify(::number::streaming::be_u32, |val: &u32| *val >= 0 && *val < 3)(i)
+      verify(::number::streaming::be_u32, |val: &u32| *val < 3)(i)
     }
   }
 
