@@ -848,7 +848,7 @@ where
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
-/// use nom::number::streaming:double;
+/// use nom::number::streaming::double;
 ///
 /// let parser = |s| {
 ///   double(s)
