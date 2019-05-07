@@ -958,20 +958,11 @@ macro_rules! expr_opt (
 macro_rules! opt(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
     {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::Err;
-
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Ok((i,o))          => Ok((i, Some(o))),
-        Err(Err::Error(_)) => Ok(($i, None)),
-        Err(e)             => Err(e),
-      }
+      $crate::combinator::optc($i, |i| $submac!(i, $($args)*))
     }
   );
   ($i:expr, $f:expr) => (
-    opt!($i, call!($f));
+    $crate::combinator::opt($f)($i)
   );
 );
 
@@ -1102,88 +1093,10 @@ macro_rules! cond_with_error(
 #[macro_export(local_inner_macros)]
 macro_rules! cond(
   ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::lib::std::option::Option::*;
-      use $crate::Err;
-
-      if $cond {
-        let i_ = $i.clone();
-        match $submac!(i_, $($args)*) {
-          Ok((i,o))               => Ok((i, Some(o))),
-          Err(Err::Error(_))      => {
-            Ok(($i, None))
-          },
-          Err(e) => Err(e),
-        }
-      } else {
-        Ok(($i, None))
-      }
-    }
+    $crate::combinator::condc($i, $cond, |i|  $submac!(i, $($args)*) )
   );
   ($i:expr, $cond:expr, $f:expr) => (
-    cond!($i, $cond, call!($f));
-  );
-);
-
-//FIXME: error rewrite
-/// `cond_reduce!(bool, I -> IResult<I,O>) => I -> IResult<I, O>`
-/// Conditional combinator with error
-///
-/// Wraps another parser and calls it if the
-/// condition is met. This combinator returns
-/// an error if the condition is false
-///
-/// This is especially useful if a parser depends
-/// on the value returned by a preceding parser in
-/// a `do_parse!`.
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::{Err,error::ErrorKind,IResult};
-/// # fn main() {
-///  /*
-///  let b = true;
-///  let f = closure!(&'static[u8],
-///    cond_reduce!( b, tag!("abcd") )
-///  );
-///
-///  let a = b"abcdef";
-///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], &b"abcd"[..])));
-///
-///  let b2 = false;
-///  let f2 = closure!(&'static[u8],
-///    cond_reduce!( b2, tag!("abcd") )
-///  );
-///  assert_eq!(f2(&a[..]), Err(Err::Error(error_position!(&a[..], ErrorKind::CondReduce))));
-///  */
-///  # }
-/// ```
-///
-#[macro_export(local_inner_macros)]
-macro_rules! cond_reduce(
-  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,error::ErrorKind,IResult};
-      let default_err = Err(Err::convert(Err::Error(error_position!($i, ErrorKind::CondReduce))));
-
-      if $cond {
-        let sub_res = $submac!($i, $($args)*);
-        fn unify_types<I,O,E>(_: &IResult<I,O,E>, _: &IResult<I,O,E>) {}
-        unify_types(&sub_res, &default_err);
-
-        match sub_res {
-          Ok((i,o)) => Ok((i, o)),
-          Err(e)    => Err(e),
-        }
-      } else {
-        default_err
-      }
-    }
-  );
-  ($i:expr, $cond:expr, $f:expr) => (
-    cond_reduce!($i, $cond, call!($f));
+    $crate::combinator::cond($cond, $f)($i)
   );
 );
 
@@ -1204,19 +1117,11 @@ macro_rules! cond_reduce(
 #[macro_export(local_inner_macros)]
 macro_rules! peek(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::Err;
-
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Ok((_,o)) => Ok(($i, o)),
-        Err(e)    => Err(Err::convert(e)),
-      }
-    }
+    $crate::combinator::peekc($i, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr) => (
     peek!($i, call!($f));
+    $crate::combinator::peek($f)($i)
   );
 );
 
@@ -1527,7 +1432,7 @@ mod tests {
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
     assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(f_true(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
+    assert_eq!(f_true(&b"xxx"[..]), Err(Err::Error(CustomError("test"))));
 
     assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
     assert_eq!(f_false(&b"ab"[..]), Ok((&b"ab"[..], None)));
@@ -1551,7 +1456,7 @@ mod tests {
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
     assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(f_true(&b"xxx"[..]), Ok((&b"xxx"[..], None)));
+    assert_eq!(f_true(&b"xxx"[..]), Err(Err::Error(CustomError("test"))));
 
     assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
     assert_eq!(f_false(&b"ab"[..]), Ok((&b"ab"[..], None)));

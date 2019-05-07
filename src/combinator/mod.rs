@@ -233,6 +233,61 @@ where
   }
 }
 
+#[doc(hidden)]
+pub fn optc<I:Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, Option<O>, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  opt(f)(input)
+}
+
+/// call the parser if the condition is met
+pub fn cond<I:Clone, O, E: ParseError<I>, F>(b: bool, f: F) -> impl Fn(I) -> IResult<I, Option<O>, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |input: I| {
+    if b {
+      match f(input) {
+        Ok((i, o)) => Ok((i, Some(o))),
+        Err(e) => Err(e),
+      }
+    } else {
+      Ok((input, None))
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn condc<I:Clone, O, E: ParseError<I>, F>(input: I, b: bool, f: F) -> IResult<I, Option<O>, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  cond(b, f)(input)
+}
+
+/// optional parser: will return None if not successful
+pub fn peek<I:Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |input: I| {
+    let i = input.clone();
+    match f(input) {
+      Ok((_, o)) => Ok((i, o)),
+      Err(e) => Err(e),
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn peekc<I:Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  peek(f)(input)
+}
+
 /// transforms Incomplete into Error
 pub fn complete<I: Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
 where

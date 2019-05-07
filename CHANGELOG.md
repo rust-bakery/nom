@@ -17,6 +17,11 @@
 
 ### Fixed
 
+### Changed
+
+- the verify combinator's condition function now takes its argument by reference
+- `cond` will now return the error of the parser instead of None
+
 ### Removed
 
 - character parsers that were aliases to their `*1` version: eol, alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace
@@ -27,6 +32,7 @@
 - `take_until_and_consume`, `take_until_and_consume1`: they can be replaced with `take_until` combined with `take`
 - `sized_buffer` and `length_bytes!`: they can be replaced with the `length_data` function
 - `begin` and `rest_s` function
+- `cond_reduce`
 
 ## 4.2.3 - 2019-03-23
 
