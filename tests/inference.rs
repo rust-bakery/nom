@@ -46,8 +46,8 @@ fn wrap_suffix(input: &Option<Vec<&[u8]>>) -> Option<String> {
 
 #[cfg(feature = "alloc")]
 named!(parse_suffix<&[u8],Option<String>>,do_parse!(
-  u: opt!(many1!(alt_complete!(
-    tag!("%") | tag!("#")  | tag!("@") | alpha
+  u: opt!(many1!(alt!(
+    complete!(tag!("%")) | complete!(tag!("#"))  | complete!(tag!("@")) | complete!(alpha)
   ))) >>
   (wrap_suffix(&u))
 ));

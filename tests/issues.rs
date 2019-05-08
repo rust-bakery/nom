@@ -142,8 +142,8 @@ named!(
 named!(issue_308(&str) -> bool,
     do_parse! (
         tag! ("foo") >>
-        b: alt_complete! (
-            map! (tag! ("1"), |_: &str|->bool {true}) |
+        b: alt! (
+            complete!(map! (tag! ("1"), |_: &str|->bool {true})) |
             value! (false)
         ) >>
         (b) ));
@@ -254,7 +254,7 @@ mod issue_647 {
   }
 
   fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<(&'a [u8], ErrorKind)>> {
-      separated_list_complete!(input, tag!(","),be_f64)
+      separated_list!(input, complete!(tag!(",")), complete!(be_f64))
   }
 
   named!(data<Input,Data>, map!(
