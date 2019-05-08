@@ -19,21 +19,14 @@ use lib::std::mem::transmute;
 #[macro_use]
 mod macros;
 
-/// Recognizes non empty buffers
-#[inline]
-pub fn non_empty<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
-where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputLength,
-{
-  if input.input_len() == 0 {
-    return Err(Err::Incomplete(Needed::Unknown));
-  } else {
-    Ok((input.slice(input.input_len()..), input))
-  }
-}
-
-/// Return the remaining input.
+/// Return the remaining input
+///
+/// ```rust
+/// # use nom::error::ErrorKind;
+/// use nom::combinator::rest;
+/// assert_eq!(rest::<_,(_, ErrorKind)>("abc"), Ok(("", "abc")));
+/// assert_eq!(rest::<_,(_, ErrorKind)>(""), Ok(("", "")));
+/// ```
 #[inline]
 pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -43,7 +36,14 @@ where
   Ok((input.slice(input.input_len()..), input))
 }
 
-/// Return the length of the remaining input.
+/// Return the length of the remaining input
+///
+/// ```rust
+/// # use nom::error::ErrorKind;
+/// use nom::combinator::rest_len;
+/// assert_eq!(rest_len::<_,(_, ErrorKind)>("abc"), Ok(("abc", 3)));
+/// assert_eq!(rest_len::<_,(_, ErrorKind)>(""), Ok(("", 0)));
+/// ```
 #[inline]
 pub fn rest_len<T, E: ParseError<T>>(input: T) -> IResult<T, usize, E>
 where
@@ -183,6 +183,22 @@ where
 }
 
 /// applies a parser over the result of another one
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::character::complete::digit1;
+/// use nom::bytes::complete::take;
+/// use nom::combinator::map_parser;
+/// # fn main() {
+///
+/// let parse = map_parser(take(5u8), digit1);
+///
+/// assert_eq!(parse("12345"), Ok(("", "12345")));
+/// assert_eq!(parse("123ab"), Ok(("", "123")));
+/// assert_eq!(parse("123"), Err(Err::Error(("123", ErrorKind::Eof))));
+/// # }
+/// ```
 pub fn map_parser<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -207,6 +223,21 @@ where
 }
 
 /// creates a new parser from the output of the first parser, then apply that parser over the rest of the input
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::bytes::complete::take;
+/// use nom::number::complete::be_u8;
+/// use nom::combinator::flat_map;
+/// # fn main() {
+///
+/// let parse = flat_map(be_u8, take);
+///
+/// assert_eq!(parse(&[2, 0, 1, 2][..]), Ok((&[2][..], &[0, 1][..])));
+/// assert_eq!(parse(&[4, 0, 1, 2][..]), Err(Err::Error((&[0, 1, 2][..], ErrorKind::Eof))));
+/// # }
+/// ```
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -220,6 +251,22 @@ where
 }
 
 /// optional parser: will return None if not successful
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::opt;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// fn parser(i: &str) -> IResult<&str, Option<&str>> {
+///   opt(alpha1)(i)
+/// }
+///
+/// assert_eq!(parser("abcd;"), Ok((";", Some("abcd"))));
+/// assert_eq!(parser("123;"), Ok(("123;", None)));
+/// # }
+/// ```
 pub fn opt<I:Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, Option<O>, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
@@ -242,7 +289,25 @@ where
   opt(f)(input)
 }
 
-/// call the parser if the condition is met
+/// calls the parser if the condition is met
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::cond;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// fn parser(b: bool, i: &str) -> IResult<&str, Option<&str>> {
+///   cond(b, alpha1)(i)
+/// }
+///
+/// assert_eq!(parser(true, "abcd;"), Ok((";", Some("abcd"))));
+/// assert_eq!(parser(false, "abcd;"), Ok(("abcd;", None)));
+/// assert_eq!(parser(true, "123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
+/// assert_eq!(parser(false, "123;"), Ok(("123;", None)));
+/// # }
+/// ```
 pub fn cond<I:Clone, O, E: ParseError<I>, F>(b: bool, f: F) -> impl Fn(I) -> IResult<I, Option<O>, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
@@ -267,7 +332,21 @@ where
   cond(b, f)(input)
 }
 
-/// optional parser: will return None if not successful
+/// tries to apply its parser without consuming the input
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::peek;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// let parser = peek(alpha1);
+///
+/// assert_eq!(parser("abcd;"), Ok(("abcd;", "abcd")));
+/// assert_eq!(parser("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
+/// # }
+/// ```
 pub fn peek<I:Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
@@ -290,6 +369,20 @@ where
 }
 
 /// transforms Incomplete into Error
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::bytes::streaming::take;
+/// use nom::combinator::complete;
+/// # fn main() {
+///
+/// let parser = complete(take(5u8));
+///
+/// assert_eq!(parser("abcdefg"), Ok(("fg", "abcde")));
+/// assert_eq!(parser("abcd"), Err(Err::Error(("abcd", ErrorKind::Complete))));
+/// # }
+/// ```
 pub fn complete<I: Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
@@ -313,7 +406,22 @@ where
     complete(f)(input)
 }
 
-/// succeeds if all the input has been consumed
+/// succeeds if all the input has been consumed by its child parser
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::all_consuming;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// let parser = all_consuming(alpha1);
+///
+/// assert_eq!(parser("abcd"), Ok(("", "abcd")));
+/// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Eof))));
+/// assert_eq!(parser("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
+/// # }
+/// ```
 pub fn all_consuming<I, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   I: InputLength,
@@ -330,6 +438,24 @@ where
 }
 
 /// returns the result of the child parser if it satisfies a verification function
+///
+/// the verification function takes as argument a reference to the output of the
+/// parser
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::verify;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// let parser = verify(alpha1, |s: &str| s.len() == 4);
+///
+/// assert_eq!(parser("abcd"), Ok(("", "abcd")));
+/// assert_eq!(parser("abcde"), Err(Err::Error(("abcde", ErrorKind::Verify))));
+/// assert_eq!(parser("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
+/// # }
+/// ```
 pub fn verify<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O1, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -361,6 +487,20 @@ where
 }
 
 /// succeeds if the child parser returns an error
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::not;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// let parser = not(alpha1);
+///
+/// assert_eq!(parser("123"), Ok(("123", ())));
+/// assert_eq!(parser("abcd"), Err(Err::Error(("abcd", ErrorKind::Not))));
+/// # }
+/// ```
 pub fn not<I: Clone, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, (), E>
 where
   F: Fn(I) -> IResult<I, O, E>,
@@ -384,6 +524,21 @@ where
 }
 
 /// if the child parser was successful, return the consumed input as produced value
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::recognize;
+/// use nom::character::complete::{char, alpha1};
+/// use nom::sequence::separated_pair;
+/// # fn main() {
+///
+/// let parser = recognize(separated_pair(alpha1, char(','), alpha1));
+///
+/// assert_eq!(parser("abcd,efgh"), Ok(("", "abcd,efgh")));
+/// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
+/// # }
+/// ```
 pub fn recognize<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, I, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
@@ -409,6 +564,20 @@ where
 }
 
 /// transforms an error to failure
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::cut;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// let parser = cut(alpha1);
+///
+/// assert_eq!(parser("abcd;"), Ok((";", "abcd")));
+/// assert_eq!(parser("123;"), Err(Err::Failure(("123;", ErrorKind::Alpha))));
+/// # }
+/// ```
 pub fn cut<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,

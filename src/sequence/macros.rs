@@ -88,8 +88,21 @@ macro_rules! tuple_parser (
 );
 
 /// `pair!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
-/// pair(X,Y), returns (x,y)
+/// pair returns a tuple of the results of its two child parsers of both succeed
 ///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Err;
+/// # use nom::error::ErrorKind;
+/// # use nom::character::complete::{alpha1, digit1};
+/// named!(parser<&str, (&str, &str)>, pair!(alpha1, digit1));
+///
+/// # fn main() {
+/// assert_eq!(parser("abc123"), Ok(("", ("abc", "123"))));
+/// assert_eq!(parser("123abc"), Err(Err::Error(("123abc", ErrorKind::Alpha))));
+/// assert_eq!(parser("abc;123"), Err(Err::Error((";123", ErrorKind::Digit))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -110,7 +123,22 @@ macro_rules! pair(
 );
 
 /// `separated_pair!(I -> IResult<I,O>, I -> IResult<I, T>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
-/// separated_pair(X,sep,Y) returns (x,y)
+/// separated_pair(X,sep,Y) returns a tuple of its first and third child parsers
+/// if all 3 succeed
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Err;
+/// # use nom::error::ErrorKind;
+/// # use nom::character::complete::{alpha1, digit1};
+/// named!(parser<&str, (&str, &str)>, separated_pair!(alpha1, char!(','), digit1));
+///
+/// # fn main() {
+/// assert_eq!(parser("abc,123"), Ok(("", ("abc", "123"))));
+/// assert_eq!(parser("123,abc"), Err(Err::Error(("123,abc", ErrorKind::Alpha))));
+/// assert_eq!(parser("abc;123"), Err(Err::Error((";123", ErrorKind::Char))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! separated_pair(
   ($i:expr, $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
@@ -128,7 +156,21 @@ macro_rules! separated_pair(
 );
 
 /// `preceded!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, O>`
-/// preceded(opening, X) returns X
+/// preceded returns the result of its second parser if both succeed
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Err;
+/// # use nom::error::ErrorKind;
+/// # use nom::character::complete::{alpha1};
+/// named!(parser<&str, &str>, preceded!(char!('-'), alpha1));
+///
+/// # fn main() {
+/// assert_eq!(parser("-abc"), Ok(("", "abc")));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
+/// assert_eq!(parser("-123"), Err(Err::Error(("123", ErrorKind::Alpha))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! preceded(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -149,7 +191,21 @@ macro_rules! preceded(
 );
 
 /// `terminated!(I -> IResult<I,O>, I -> IResult<I,T>) => I -> IResult<I, O>`
-/// terminated(X, closing) returns X
+/// terminated returns the result of its first parser if both succeed
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::Err;
+/// # use nom::error::ErrorKind;
+/// # use nom::character::complete::{alpha1};
+/// named!(parser<&str, &str>, terminated!(alpha1, char!(';')));
+///
+/// # fn main() {
+/// assert_eq!(parser("abc;"), Ok(("", "abc")));
+/// assert_eq!(parser("abc,"), Err(Err::Error((",", ErrorKind::Char))));
+/// assert_eq!(parser("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! terminated(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -174,17 +230,18 @@ macro_rules! terminated(
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
-/// named!(bracketed,
+/// # use nom::character::complete::{alpha1};
+/// named!(parens,
 ///     delimited!(
 ///         tag!("("),
-///         take_until!(")"),
+///         alpha1,
 ///         tag!(")")
 ///     )
 /// );
 ///
 /// # fn main() {
 /// let input = &b"(test)"[..];
-/// assert_eq!(bracketed(input), Ok((&b""[..], &b"test"[..])));
+/// assert_eq!(parens(input), Ok((&b""[..], &b"test"[..])));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]

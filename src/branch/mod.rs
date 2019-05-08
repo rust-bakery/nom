@@ -7,7 +7,7 @@ use error::ErrorKind;
 use error::ParseError;
 use internal::{Err, IResult};
 
-/// helper trait for the [alt] combinator
+/// helper trait for the [alt()] combinator
 ///
 /// this trait is implemented for tuples of up to 21 elements
 pub trait Alt<I, O, E> {
