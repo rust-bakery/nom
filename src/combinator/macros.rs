@@ -1242,23 +1242,10 @@ macro_rules! exact (
 #[macro_export(local_inner_macros)]
 macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      use $crate::Offset;
-      use $crate::Slice;
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Ok((i,_)) => {
-          let index = (&$i).offset(&i);
-          Ok((i, ($i).slice(..index)))
-        },
-        Err(e)    => Err(e)
-      }
-    }
+    $crate::combinator::recognizec($i, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr) => (
-    recognize!($i, call!($f))
+    $crate::combinator::recognize($f)($i)
   );
 );
 

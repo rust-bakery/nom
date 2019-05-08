@@ -382,6 +382,31 @@ where
   not(parser)(input)
 }
 
+/// if the child parser was successful, return the consumed input as produced value
+pub fn recognize<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, I, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |input: I| {
+    let i = input.clone();
+    match parser(i) {
+      Ok((i, _)) => {
+        let index = input.offset(&i);
+        Ok((i, input.slice(..index)))
+      },
+      Err(e) => Err(e),
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn recognizec<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, I, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  recognize(parser)(input)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
