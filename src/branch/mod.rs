@@ -46,7 +46,7 @@ pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(l: List) -> impl F
   move |i: I| l.choice(i)
 }
 
-/// helper trait for the [permutation] combinator
+/// helper trait for the [permutation()] combinator
 ///
 /// this trait is implemented for tuples of up to 21 elements
 pub trait Permutation<I, O, E> {
