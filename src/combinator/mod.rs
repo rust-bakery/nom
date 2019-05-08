@@ -333,8 +333,6 @@ pub fn verify<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> 
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(&O2) -> bool,
-  //&O1: Deref<Target=O2>,
-  //O1: AsRef<O2>,
   O1: Borrow<O2>,
   O2: ?Sized,
 {
@@ -355,12 +353,33 @@ pub fn verifyc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, sec
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(&O2) -> bool,
-  //&O1: Deref<Target=O2>,
-  //O1: AsRef<O2>,
   O1: Borrow<O2>,
   O2: ?Sized,
 {
   verify(first, second)(input)
+}
+
+/// succeeds if the child parser returns an error
+pub fn not<I: Clone, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, (), E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |input: I| {
+    let i = input.clone();
+    match parser(input) {
+      Ok(_) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Not))),
+      Err(Err::Error(_)) => Ok((i, ())),
+      Err(e) => Err(e),
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn notc<I: Clone, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, (), E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  not(parser)(input)
 }
 
 #[cfg(test)]

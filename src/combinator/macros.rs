@@ -1125,7 +1125,7 @@ macro_rules! peek(
   );
 );
 
-/// `not!(I -> IResult<I,O>) => I -> IResult<I, O>`
+/// `not!(I -> IResult<I,O>) => I -> IResult<I, ()>`
 /// returns a result only if the embedded parser returns Error or Err(Err::Incomplete)
 /// does not consume the input
 ///
@@ -1150,32 +1150,10 @@ macro_rules! peek(
 #[macro_export(local_inner_macros)]
 macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{error::ErrorKind,Err,IResult};
-
-      let i_ = $i.clone();
-
-      //we need this to avoid type inference errors
-      fn unify_types<I,O,P,E>(_: &IResult<I,O,E>, _: &IResult<I,P,E>) {}
-
-      match $submac!(i_, $($args)*) {
-        Err(Err::Failure(e)) => Err(Err::Failure(e)),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Err(_) => Ok(($i, ())),
-        Ok(_)  => {
-          let c = $crate::error::make_error($i, ErrorKind::Not);
-          let err =  Err(Err::Error(c));
-          let default = Ok(($i, ()));
-
-          unify_types(&err, &default);
-          err
-        },
-      }
-    }
+    $crate::combinator::notc($i, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr) => (
-    not!($i, call!($f));
+    $crate::combinator::not($f)($i)
   );
 );
 
