@@ -407,6 +407,28 @@ where
   recognize(parser)(input)
 }
 
+/// transforms an error to failure
+pub fn cut<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |input: I| {
+    let i = input.clone();
+    match parser(i) {
+      Err(Err::Error(e)) => Err(Err::Failure(e)),
+      rest => rest,
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn cutc<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, O, E>
+where
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  cut(parser)(input)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
