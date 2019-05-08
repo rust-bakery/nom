@@ -307,8 +307,16 @@ impl<'a> AsChar for &'a char {
 
 /// abstracts common iteration operations on the input type
 pub trait InputIter {
+  /// the current input type is a sequence of that `Item` type.
+  ///
+  /// example: `u8` for `&[u8]` or `char` for &str`
   type Item;
+  /// an iterator over the input type, producing the item and its position
+  /// for use with [Slice]. If we're iterating over `&str`, the position
+  /// corresponds to the byte index of the character
   type Iter: Iterator<Item = (usize, Self::Item)>;
+
+  /// an iterator over the input type, producing the item
   type IterElem: Iterator<Item = Self::Item>;
 
   /// returns an iterator over the elements and their byte offsets
@@ -444,19 +452,43 @@ pub trait UnspecializedInput {}
 ///
 /// a large part of nom's basic parsers are built using this trait
 pub trait InputTakeAtPosition: Sized {
+  /// the current input type is a sequence of that `Item` type.
+  ///
+  /// example: `u8` for `&[u8]` or `char` for &str`
   type Item;
 
+  /// looks for the first element of the input type for which the condition returns true,
+  /// and returns the input up to this position
+  ///
+  /// *streaming version*: if no element is found matching the condition, this will return `Incomplete`
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
+
+  /// looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position
+  ///
+  /// fails if the produced slice is empty
+  ///
+  /// *streaming version*: if no element is found matching the condition, this will return `Incomplete`
   fn split_at_position1<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
 
+  /// looks for the first element of the input type for which the condition returns true,
+  /// and returns the input up to this position
+  ///
+  /// *complete version*: if no element is found matching the condition, this will return the whole input
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
 
+  /// looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position
+  ///
+  /// fails if the produced slice is empty
+  ///
+  /// *complete version*: if no element is found matching the condition, this will return the whole input
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
@@ -969,8 +1001,15 @@ array_impls! {
 }
 
 /// abtracts something which can extend an `Extend`
+/// used to build modified input slices in `escaped_transform`
 pub trait ExtendInto {
+
+  /// the current input type is a sequence of that `Item` type.
+  ///
+  /// example: `u8` for `&[u8]` or `char` for &str`
   type Item;
+
+  /// the type that will be produced
   type Extender: Extend<Self::Item>;
 
   /// create a new `Extend` of the correct type

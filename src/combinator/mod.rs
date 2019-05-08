@@ -206,6 +206,7 @@ where
   map_parser(first, second)(input)
 }
 
+/// creates a new parser from the output of the first parser, then apply that parser over the rest of the input
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
@@ -540,6 +541,7 @@ mod tests {
   }
 
   #[test]
+  #[allow(unused)]
   fn test_verify_ref() {
     use bytes::complete::take;
 

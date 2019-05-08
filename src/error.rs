@@ -8,19 +8,37 @@
 
 use internal::{Err, IResult};
 
+/// this trait must be implemented by the error type of a nom parser
+///
+/// There are already implementations of it for `(Input, ErrorKind)`
+/// and `VerboseError<Input>`.
+///
+/// It provides methods to create an error from some combinators,
+/// and combine existing errors in combinators like `alt`
 pub trait ParseError<I>: Sized {
+
+  /// creates an error from the input position and an [ErrorKind]
   fn from_error_kind(input: I, kind: ErrorKind) -> Self;
 
+  /// combines an existing error with a new one created from the input
+  /// positionsition and an [ErrorKind]. This is useful when backtracking
+  /// through a parse tree, accumulating error context on the way
   fn append(input: I, kind: ErrorKind, other: Self) -> Self;
 
+  /// creates an error from an input position and an expected character
   fn from_char(input: I, _: char) -> Self {
     Self::from_error_kind(input, ErrorKind::Char)
   }
 
+  /// combines two existing error. This function is used to compare errors
+  /// generated in various branches of [alt]
   fn or(self, other: Self) -> Self {
     other
   }
 
+  /// create a new error from an input position, a static string and an existing error.
+  /// This is used mainly in the [context] combinator, to add user friendly information
+  /// to errors when backtracking through a parse tree
   fn add_context(_input: I, _ctx: &'static str, other: Self) -> Self {
     other
   }
@@ -42,14 +60,21 @@ impl<I> ParseError<I> for () {
   fn append(_: I, _: ErrorKind, _: Self) -> Self { }
 }
 
+/// creates an error from the input position and an [ErrorKind]
 pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
   E::from_error_kind(input, kind)
 }
 
+/// combines an existing error with a new one created from the input
+/// positionsition and an [ErrorKind]. This is useful when backtracking
+/// through a parse tree, accumulating error context on the way
 pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) -> E {
   E::append(input, kind, other)
 }
 
+/// this error type accumulates errors and their position when backtracking
+/// through a parse tree. With some post processing (cf `examples/json.rs`),
+/// it can be used to display user friendly error messages
 #[cfg(feature = "alloc")]
 #[derive(Clone,Debug,PartialEq)]
 pub struct VerboseError<I> {
@@ -95,6 +120,9 @@ impl<I> ParseError<I> for VerboseError<I> {
   }
 }
 
+/// create a new error from an input position, a static string and an existing error.
+/// This is used mainly in the [context] combinator, to add user friendly information
+/// to errors when backtracking through a parse tree
 #[cfg(feature = "alloc")]
 pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
