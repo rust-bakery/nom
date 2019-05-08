@@ -64,17 +64,6 @@
 //! ```
 #[allow(unused_variables)]
 
-/// Wraps a parser in a closure
-#[macro_export(local_inner_macros)]
-macro_rules! closure (
-    ($ty:ty, $submac:ident!( $($args:tt)* )) => (
-        |i: $ty| { $submac!(i, $($args)*) }
-    );
-    ($submac:ident!( $($args:tt)* )) => (
-        |i| { $submac!(i, $($args)*) }
-    );
-);
-
 /// Makes a function from a parser combination
 ///
 /// The type can be set up if the compiler needs
@@ -401,23 +390,6 @@ macro_rules! call (
   ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
 );
 
-/// emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::IResult;
-/// # fn main() {
-///   fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> { take!(input, i * 10) }
-///
-///   // will make a parser taking 20 bytes
-///   named!(parser, apply!(take_wrapper, 2));
-/// # }
-/// ```
-#[macro_export(local_inner_macros)]
-macro_rules! apply (
-  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
-);
-
 //FIXME: error rewrite
 /// Prevents backtracking if the child parser fails
 ///
@@ -705,48 +677,6 @@ macro_rules! map_res (
   );
 );
 
-//FIXME
-/*
-/// `map_res_err!(I -> IResult<I, O>, O -> Result<P>) => I -> IResult<I, P>`
-/// maps a function returning a Result on the output of a parser, preserving the returned error
-#[macro_export(local_inner_macros)]
-macro_rules! map_res_err (
-  // Internal parser, do not use directly
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::Err;
-
-      let i_ = $i.clone();
-      match $submac!(i_, $($args)*) {
-        Ok((i,o)) => {
-          match $submac2!(o, $($args2)*) {
-            Ok(output) => Ok((i, output)),
-            Err(e) => {
-              let e = Context::convert(Context::Code($i, $crate::error::ErrorKind::Custom(e)));
-              Err(Err::Error(error_node_position!($i, $crate::error::ErrorKind::MapRes, e)))
-            },
-          }
-        },
-        Err(e) => Err(e),
-      }
-    }
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map_res_err!(__impl $i, $submac!($($args)*), call!($g));
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    map_res_err!(__impl $i, $submac!($($args)*), $submac2!($($args2)*));
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map_res_err!(__impl $i, call!($f), call!($g));
-  );
-  ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    map_res_err!(__impl $i, call!($f), $submac!($($args)*));
-  );
-);
-*/
-
 /// `map_opt!(I -> IResult<I, O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
 #[macro_export(local_inner_macros)]
@@ -1004,60 +934,6 @@ macro_rules! opt_res (
   );
 );
 
-/// `cond_with_error!(bool, I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
-/// Conditional combinator
-///
-/// Wraps another parser and calls it if the
-/// condition is met. This combinator returns
-/// an Option of the return type of the child
-/// parser.
-///
-/// This is especially useful if a parser depends
-/// on the value returned by a preceding parser in
-/// a `do_parse!`.
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::IResult;
-/// # fn main() {
-///  let b = true;
-///  let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
-///    cond!( b, tag!("abcd") ))
-///  );
-///
-///  let a = b"abcdef";
-///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-///
-///  let b2 = false;
-///  let f2:Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
-///    cond!( b2, tag!("abcd") ))
-///  );
-///  assert_eq!(f2(&a[..]), Ok((&b"abcdef"[..], None)));
-///  # }
-/// ```
-///
-#[macro_export(local_inner_macros)]
-macro_rules! cond_with_error(
-  ($i:expr, $cond:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      if $cond {
-        match $submac!($i, $($args)*) {
-          Ok((i,o)) => Ok((i, $crate::lib::std::option::Option::Some(o))),
-          Err(e)    => Err(e),
-        }
-      } else {
-        let res: $crate::lib::std::result::Result<_,_> = Ok(($i, $crate::lib::std::option::Option::None));
-        res
-      }
-    }
-  );
-  ($i:expr, $cond:expr, $f:expr) => (
-    cond_with_error!($i, $cond, call!($f));
-  );
-);
-
 /// `cond!(bool, I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
 /// Conditional combinator
 ///
@@ -1074,19 +950,18 @@ macro_rules! cond_with_error(
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// # fn main() {
-///  let b = true;
-///  let f: Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
-///    cond!( b, tag!("abcd") ))
-///  );
+///  fn f_true(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
+///    cond!(i, true, tag!("abcd"))
+///  }
+///
+///  fn f_false(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
+///    cond!(i, false, tag!("abcd"))
+///  }
 ///
 ///  let a = b"abcdef";
-///  assert_eq!(f(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
+///  assert_eq!(f_true(&a[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
 ///
-///  let b2 = false;
-///  let f2:Box<Fn(&'static [u8]) -> IResult<&[u8],Option<&[u8]>>> = Box::new(closure!(&'static[u8],
-///    cond!( b2, tag!("abcd") ))
-///  );
-///  assert_eq!(f2(&a[..]), Ok((&b"abcdef"[..], None)));
+///  assert_eq!(f_false(&a[..]), Ok((&b"abcdef"[..], None)));
 ///  # }
 /// ```
 ///
@@ -1325,8 +1200,8 @@ mod tests {
     fn sum3(a: u8, b: u8, c: u8) -> u8 {
       a + b + c
     }
-    let a = apply!(1, sum2, 2);
-    let b = apply!(1, sum3, 2, 3);
+    let a = call!(1, sum2, 2);
+    let b = call!(1, sum3, 2, 3);
 
     assert_eq!(a, 3);
     assert_eq!(b, 6);
@@ -1385,15 +1260,13 @@ mod tests {
   #[test]
   #[cfg(feature = "alloc")]
   fn cond() {
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
-      &'static [u8],
-      fix_error!(CustomError, cond!(true, tag!("abcd")))
-    ));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
-      &'static [u8],
-      fix_error!(CustomError, cond!(false, tag!("abcd")))
-    ));
-    //let f_false = closure!(&'static [u8], cond!( false, tag!("abcd") ) );
+    fn f_true(i: &[u8]) -> IResult<&[u8], Option<&[u8]>, CustomError> {
+      fix_error!(i, CustomError, cond!(true, tag!("abcd")))
+    }
+
+    fn f_false(i: &[u8]) -> IResult<&[u8], Option<&[u8]>, CustomError> {
+      fix_error!(i, CustomError, cond!(false, tag!("abcd")))
+    }
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
     assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
@@ -1409,15 +1282,13 @@ mod tests {
   fn cond_wrapping() {
     // Test that cond!() will wrap a given identifier in the call!() macro.
     named!(tag_abcd, tag!("abcd"));
-    let f_true: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
-      &'static [u8],
-      fix_error!(CustomError, cond!(true, tag_abcd))
-    ));
-    let f_false: Box<Fn(&'static [u8]) -> IResult<&[u8], Option<&[u8]>, CustomError>> = Box::new(closure!(
-      &'static [u8],
-      fix_error!(CustomError, cond!(false, tag_abcd))
-    ));
-    //let f_false = closure!(&'static [u8], cond!( b2, tag!("abcd") ) );
+    fn f_true(i: &[u8]) -> IResult<&[u8], Option<&[u8]>, CustomError> {
+      fix_error!(i, CustomError, cond!(true, tag_abcd))
+    }
+
+    fn f_false(i: &[u8]) -> IResult<&[u8], Option<&[u8]>, CustomError> {
+      fix_error!(i, CustomError, cond!(false, tag_abcd))
+    }
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
     assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));

@@ -32,7 +32,7 @@
 - `take_until_and_consume`, `take_until_and_consume1`: they can be replaced with `take_until` combined with `take`
 - `sized_buffer` and `length_bytes!`: they can be replaced with the `length_data` function
 - `begin` and `rest_s` function
-- `cond_reduce`
+- `cond_reduce!`, `cond_with_error!`, `closure!`, `apply`, `map_res_err!`
 
 ## 4.2.3 - 2019-03-23
 
