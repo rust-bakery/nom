@@ -206,6 +206,7 @@ where
 /// # Arguments
 /// * `f` Parses the elements of the list.
 /// * `sep` Parses the separator between list elements.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::separated_list;

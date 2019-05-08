@@ -1,7 +1,24 @@
 //! Parsers for applying parsers multiple times
 
 /// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
+/// separated_list(sep, X) returns a Vec<X>
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::separated_list;
+/// use nom::bytes::complete::tag;
+///
+/// # fn main() {
+/// named!(parser<&str, Vec<&str>>, separated_list!(tag("|"), tag("abc")));
+///
+/// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
+/// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
+/// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
+/// # }
+/// ```
 #[cfg(feature = "alloc")]
 #[macro_export(local_inner_macros)]
 macro_rules! separated_list(
@@ -23,7 +40,25 @@ macro_rules! separated_list(
 );
 
 /// `separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_nonempty_list(sep, X) returns Vec<X> will return Incomplete if there may be more elements
+/// separated_nonempty_list(sep, X) returns a Vec<X>
+///
+/// it will return an error if there is no element in the list
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::separated_nonempty_list;
+/// use nom::bytes::complete::tag;
+///
+/// # fn main() {
+/// named!(parser<&str, Vec<&str>>, separated_nonempty_list!(tag("|"), tag("abc")));
+///
+/// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
+/// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
+/// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! separated_nonempty_list(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -272,6 +307,19 @@ macro_rules! count(
 
 /// `length_count!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// gets a number from the first parser, then applies the second parser that many times
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, Needed};
+/// # use nom::error::ErrorKind;
+/// use nom::number::complete::be_u8;
+/// # fn main() {
+/// named!(parser<Vec<&[u8]>>, length_count!(be_u8, tag!("abc")));
+///
+/// assert_eq!(parser(&b"\x02abcabcabc"[..]), Ok(((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))));
+/// assert_eq!(parser(&b"\x04abcabcabc"[..]), Err(Err::Incomplete(Needed::Size(3))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! length_count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -308,6 +356,19 @@ macro_rules! length_count(
 ///
 /// `length_data` gets a number from the first parser, than takes a subslice of the input
 /// of that size, and returns that subslice
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, Needed};
+/// # use nom::error::ErrorKind;
+/// use nom::number::complete::be_u8;
+/// # fn main() {
+/// named!(parser, length_data!(be_u8));
+///
+/// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], &b"abcabc"[..])));
+/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::Size(6))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! length_data(
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
@@ -324,6 +385,20 @@ macro_rules! length_data(
 /// Gets a number from the first parser, takes a subslice of the input of that size,
 /// then applies the second parser on that subslice. If the second parser returns
 /// `Incomplete`, `length_value` will return an error
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, Needed};
+/// # use nom::error::ErrorKind;
+/// use nom::number::complete::be_u8;
+/// use nom::bytes::complete::tag;
+/// # fn main() {
+/// named!(parser< Vec<&[u8]> >, length_value!(be_u8, many0!(tag("abc"))));
+///
+/// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]])));
+/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::Size(6))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! length_value(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
