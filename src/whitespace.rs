@@ -586,60 +586,6 @@ macro_rules! alt_sep (
 
 #[doc(hidden)]
 #[macro_export(local_inner_macros)]
-macro_rules! alt_complete_sep (
-  ($i:expr, $separator:path, $e:path | $($rest:tt)*) => (
-    alt_complete_sep!($i, $separator, complete!(call!($e)) | $($rest)*);
-  );
-
-  ($i:expr, $separator:path, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      let res = complete!($i, sep!($separator, $subrule!($($args)*)));
-      match res {
-        Ok((_,_)) => res,
-        _ => alt_complete_sep!($i, $separator, $($rest)*),
-      }
-    }
-  );
-
-  ($i:expr, $separator:path, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
-
-      match complete!($i, sep!($separator, $subrule!($($args)*))) {
-        Ok((i,o)) => Ok((i,$gen(o))),
-        _ => alt_complete_sep!($i, $separator, $($rest)*),
-      }
-    }
-  );
-
-  ($i:expr, $separator:path, $e:path => { $gen:expr } | $($rest:tt)*) => (
-    alt_complete_sep!($i, $separator, complete!(call!($e)) => { $gen } | $($rest)*);
-  );
-
-  // Tail (non-recursive) rules
-
-  ($i:expr, $separator:path, $e:path => { $gen:expr }) => (
-    alt_complete_sep!($i, $separator, call!($e) => { $gen });
-  );
-
-  ($i:expr, $separator:path, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt_sep!(__impl $i, $separator, complete!($subrule!($($args)*)) => { $gen })
-  );
-
-  ($i:expr, $separator:path, $e:path) => (
-    alt_complete_sep!($i, $separator, call!($e));
-  );
-
-  ($i:expr, $separator:path, $subrule:ident!( $($args:tt)*)) => (
-    alt_sep!(__impl $i, $separator, complete!($subrule!($($args)*)))
-  );
-);
-
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
 macro_rules! switch_sep (
   (__impl $i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $($p:pat => $subrule:ident!( $($args2:tt)* ))|* ) => (
     {
@@ -788,12 +734,6 @@ macro_rules! sep (
     wrap_sep!($i,
       $separator,
       alt_sep!($separator, $($rest)*)
-    )
-  };
-  ($i:expr,  $separator:path, alt_complete ! ($($rest:tt)*) ) => {
-    wrap_sep!($i,
-      $separator,
-      alt_complete_sep!($separator, $($rest)*)
     )
   };
   ($i:expr,  $separator:path, switch ! ($($rest:tt)*) ) => {
@@ -1094,22 +1034,6 @@ mod tests {
     assert_eq!(alt3(a), Ok((a, &b""[..])));
 
   }
-
-  /*FIXME: alt_complete works, but ws will return Incomplete on end of input
-  #[test]
-  fn alt_complete() {
-    named!(ac<&[u8], &[u8]>,
-      ws!(alt_complete!(tag!("abcd") | tag!("ef") | tag!("ghi") | tag!("kl")))
-    );
-
-    let a = &b""[..];
-    assert_eq!(ac(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
-    let a = &b" \tef "[..];
-    assert_eq!(ac(a),Ok((&b""[..], &b"ef"[..])));
-    let a = &b" cde"[..];
-    assert_eq!(ac(a), Err(Err::Error(error_position!(&a[1..], ErrorKind::Alt))));
-  }
-  */
 
   named!(str_parse(&str) -> &str, ws!(tag!("test")));
   #[allow(unused_variables)]

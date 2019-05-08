@@ -131,9 +131,6 @@
 ///  );
 /// ```
 ///
-/// If you want the `complete!` combinator to be applied to all rules then use the convenience
-/// `alt_complete!` macro (see below).
-///
 /// This behaviour of `alt!` can get especially confusing if multiple alternatives have different
 /// sizes but a common prefix, like this:
 ///
@@ -254,108 +251,6 @@ macro_rules! alt (
     {
       alt!(__impl $i, $($rest)* | __end)
     }
-  );
-);
-
-/// Is equivalent to the `alt!` combinator, except that it will not return `Incomplete`
-/// when one of the constituting parsers returns `Incomplete`. Instead, it will try the
-/// next alternative in the chain.
-///
-/// You should use this combinator only if you know you
-/// will not receive partial input for the rules you're trying to match (this
-/// is almost always the case for parsing programming languages).
-///
-/// ```rust,ignore
-/// alt_complete!(I -> IResult<I,O> | I -> IResult<I,O> | ... | I -> IResult<I,O> ) => I -> IResult<I, O>
-/// ```
-/// All the parsers must have the same return type.
-///
-/// If one of the parsers return `Incomplete`, `alt_complete!` will try the next alternative.
-/// If there is no other parser left to try, an `Error` will be returned.
-///
-/// ```rust,ignore
-/// alt_complete!(parser_1 | parser_2 | ... | parser_n)
-/// ```
-/// **For more in depth examples, refer to the documentation of `alt!`**
-#[macro_export(local_inner_macros)]
-macro_rules! alt_complete (
-  // Recursive rules (must include `complete!` around the head)
-
-  ($i:expr, $e:path | $($rest:tt)*) => (
-    alt_complete!($i, complete!(call!($e)) | $($rest)*);
-  );
-
-  ($i:expr, $subrule:ident!( $($args:tt)*) | $($rest:tt)*) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::Err;
-
-      let i_ = $i.clone();
-      let res = complete!(i_, $subrule!($($args)*));
-      match res {
-        Ok((_,_)) => res,
-        Err(Err::Failure(e)) => Err(Err::Failure(e)),
-        e => {
-          let out = alt_complete!($i, $($rest)*);
-
-          if let (&Err(Err::Error(ref e1)), &Err(Err::Error(ref e2))) = (&e, &out) {
-            // Compile-time hack to ensure that res's E type is not under-specified.
-            // This all has no effect at runtime.
-            fn unify_types<T>(_: &T, _: &T) {}
-            unify_types(e1, e2);
-          }
-
-          out
-        },
-      }
-    }
-  );
-
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr } | $($rest:tt)+) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::Err;
-
-      let i_ = $i.clone();
-      match complete!(i_, $subrule!($($args)*)) {
-        Ok((i,o)) => Ok((i,$gen(o))),
-        Err(Err::Failure(e)) => Err(Err::Failure(e)),
-        e => {
-          let out = alt_complete!($i, $($rest)*);
-
-          if let (&Err(Err::Error(ref e1)), &Err(Err::Error(ref e2))) = (&e, &out) {
-            // Compile-time hack to ensure that res's E type is not under-specified.
-            // This all has no effect at runtime.
-            fn unify_types<T>(_: &T, _: &T) {}
-            unify_types(e1, e2);
-          }
-
-          out
-        },
-      }
-    }
-  );
-
-  ($i:expr, $e:path => { $gen:expr } | $($rest:tt)*) => (
-    alt_complete!($i, complete!(call!($e)) => { $gen } | $($rest)*);
-  );
-
-  // Tail (non-recursive) rules
-
-  ($i:expr, $e:path => { $gen:expr }) => (
-    alt_complete!($i, call!($e) => { $gen });
-  );
-
-  ($i:expr, $subrule:ident!( $($args:tt)* ) => { $gen:expr }) => (
-    alt!(__impl $i, complete!($subrule!($($args)*)) => { $gen } | __end)
-  );
-
-  ($i:expr, $e:path) => (
-    alt_complete!($i, call!($e));
-  );
-
-  ($i:expr, $subrule:ident!( $($args:tt)*)) => (
-    alt!(__impl $i, complete!($subrule!($($args)*)) | __end)
   );
 );
 
@@ -981,20 +876,6 @@ mod tests {
     assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(3))));
     let a = &b"defg"[..];
     assert_eq!(alt1(a), Ok((&b"g"[..], &b"def"[..])));
-  }
-
-  #[test]
-  fn alt_complete() {
-    named!(ac<&[u8], &[u8]>,
-      alt_complete!(tag!("abcd") | tag!("ef") | tag!("ghi") | tag!("kl"))
-    );
-
-    let a = &b""[..];
-    assert_eq!(ac(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
-    let a = &b"ef"[..];
-    assert_eq!(ac(a), Ok((&b""[..], &b"ef"[..])));
-    let a = &b"cde"[..];
-    assert_eq!(ac(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
   }
 
   #[allow(unused_variables)]
