@@ -306,12 +306,8 @@ impl<'a> AsChar for &'a char {
 }
 
 /// abstracts common iteration operations on the input type
-///
-/// it needs a distinction between `Item` and `RawItem` because
-/// `&[T]` iterates on references
 pub trait InputIter {
   type Item;
-  type RawItem;
   type Iter: Iterator<Item = (usize, Self::Item)>;
   type IterElem: Iterator<Item = Self::Item>;
 
@@ -322,7 +318,7 @@ pub trait InputIter {
   /// finds the byte position of the element
   fn position<P>(&self, predicate: P) -> Option<usize>
   where
-    P: Fn(Self::RawItem) -> bool;
+    P: Fn(Self::Item) -> bool;
   /// get the byte offset from the element's position in the stream
   fn slice_index(&self, count: usize) -> Option<usize>;
 }
@@ -341,7 +337,6 @@ fn star(r_u8: &u8) -> u8 {
 
 impl<'a> InputIter for &'a [u8] {
   type Item = u8;
-  type RawItem = u8;
   type Iter = Enumerate<Self::IterElem>;
   type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
 
@@ -384,7 +379,6 @@ impl<'a> InputTake for &'a [u8] {
 
 impl<'a> InputIter for &'a str {
   type Item = char;
-  type RawItem = char;
   type Iter = CharIndices<'a>;
   type IterElem = Chars<'a>;
   #[inline]
@@ -397,7 +391,7 @@ impl<'a> InputIter for &'a str {
   }
   fn position<P>(&self, predicate: P) -> Option<usize>
   where
-    P: Fn(Self::RawItem) -> bool,
+    P: Fn(Self::Item) -> bool,
   {
     for (o, c) in self.char_indices() {
       if predicate(c) {
@@ -469,7 +463,7 @@ pub trait InputTakeAtPosition: Sized {
 }
 
 impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputTakeAtPosition for T {
-  type Item = <T as InputIter>::RawItem;
+  type Item = <T as InputIter>::Item;
 
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where

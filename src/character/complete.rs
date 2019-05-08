@@ -153,7 +153,7 @@ where
   T: InputIter + InputLength,
   T: Compare<&'static str>,
   <T as InputIter>::Item: AsChar,
-  <T as InputIter>::RawItem: AsChar,
+  <T as InputIter>::Item: AsChar,
 {
   match input.position(|item| {
     let c = item.as_char();

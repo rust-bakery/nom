@@ -251,7 +251,7 @@ where
 pub fn take_while_m_n<F, Input, Error: ParseError<Input>>(m: usize, n: usize, cond: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + InputIter + InputLength + Slice<RangeFrom<usize>>,
-  F: Fn(<Input as InputIter>::RawItem) -> bool,
+  F: Fn(<Input as InputIter>::Item) -> bool,
 {
   move |i: Input| {
     let input = i;
