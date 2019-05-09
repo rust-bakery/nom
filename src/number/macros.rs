@@ -1,8 +1,5 @@
 //! parsers recognizing numbers
 
-use internal::*;
-use error::ParseError;
-
 /// if the parameter is nom::Endianness::Big, parse a big endian u16 integer,
 /// otherwise a little endian u16 integer
 ///

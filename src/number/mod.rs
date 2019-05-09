@@ -1,8 +1,5 @@
 //! parsers recognizing numbers
 
-use internal::*;
-use error::ParseError;
-
 #[macro_use]
 mod macros;
 
