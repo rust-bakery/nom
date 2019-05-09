@@ -1211,47 +1211,4 @@ mod tests {
     //assert_eq!(ErrorKind::convert(ErrorKind::ParseTo), ErrorKind::ParseTo::<u64>);
   }
 
-  //FIXME
-  /*
-  #[test]
-  fn map_res_err() {
-    use be_u8;
-
-    #[derive(Debug, Eq, PartialEq)]
-    enum ParseError {
-      InvalidValue(u8),
-    }
-
-    impl From<u32> for ParseError {
-      fn from(_: u32) -> Self {
-        unreachable!()
-      }
-    }
-
-    #[derive(Debug, Eq, PartialEq)]
-    enum ValidValue {
-      One,
-      Two,
-    }
-
-    fn validate(value: u8) -> Result<ValidValue, ParseError> {
-      match value {
-        b'1' => Ok(ValidValue::One),
-        b'2' => Ok(ValidValue::Two),
-        _ => Err(ParseError::InvalidValue(value))
-      }
-    }
-
-    named!(test<&[u8], ValidValue, ParseError>,
-      map_res_err!(fix_error!(ParseError, be_u8), validate)
-    );
-
-    assert_eq!(test(&b"1"[..]), Ok((&b""[..], ValidValue::One)));
-    assert_eq!(test(&b"2"[..]), Ok((&b""[..], ValidValue::Two)));
-
-    {
-      assert_eq!(test(&b"3"[..]), Err(Err::Error(::error::make_error(&b"3"[..], ErrorKind::MapRes))));
-    }
-  }
-  */
 }

@@ -1,4 +1,8 @@
-# List of parsers and combinators
+# List of macros parsers and combinators
+
+**note**: this list is meant to provide a nicer way to find a nom macros than reading through the
+documentation on docs.rs, since rustdoc puts all the macros at the top level. Function combinators
+are organized in module so they are a bit easier to find.
 
 ## Basic elements
 
@@ -17,10 +21,6 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | [take_while](https://docs.rs/nom/4.0.0/nom/macro.take_while.html) |`take_while!(is_alphabetic)` |  `"abc123"` | `Ok(("123", "abc"))`| returns the longest list of bytes for which the provided function returns true. `take_while1` does the same, but must return at least one character|
 | [take_till](https://docs.rs/nom/4.0.0/nom/macro.take_till.html) |`take_till!(is_alphabetic)` |  `"123abc"` | `Ok(("abc", "123))`|returns the longest list of bytes or characters until the provided function returns true. `take_till1` does the same, but must return at least one character. This is the reverse behaviour from `take_while`: `take_till!(f)` is equivalent to `take_while!(|c| !f(c))`|
 | [take_until](https://docs.rs/nom/4.0.0/nom/macro.take_until.html) | `take_until!("world")` |  `"Hello world"` | `Ok(("world", "Hello "))`|returns the longest list of bytes or characters until the provided tag is found. `take_until1` does the same, but must return at least one character|
-| [take_until_ and_consume](https://docs.rs/nom/4.0.0/nom/macro.take_until_and_consume.html) | `take_until_and_consume!("world")` |  `"Hello world!"` | `Ok(("!", "Hello "))`| same as `take_until` but consumes the tag. `take_until_and_consume1` does the same, but must return at least one character|
-| [take_until_either](https://docs.rs/nom/4.0.0/nom/macro.take_until_either.html) |`take_until_either!` |  `` | ``|DEPRECATED? returns the longest list of bytes until any of the provided characters are found|
-| [take_until_ either_and_consume](https://docs.rs/nom/4.0.0/nom/macro.take_until_either_and_consume.html) |`take_until_either_and_consume` |  `` | ``|DEPRECATED? same as take_until_either!, but consumes the terminating character|
-| [value](https://docs.rs/nom/4.0.0/nom/macro.value.html) | `value!(42, tag!("abcd"))` |`"abcdef"` | `Ok(("ef", 42))`|replaces the result of the child parser with the provided value. Can also be used without a child parser. `value!(42)` would return the `42` value without consuming the input|
 
 
 ## Choice combinators
@@ -72,22 +72,14 @@ Parsing integers from binary formats can be done in two ways: with parser functi
 
 - `eof!`: returns its input if it is at the end of input data
 - `complete!`: replaces an `Incomplete` returned by the child parser with an `Error`
-- `alt_complete!`: is equivalent to the `alt!` combinator, except that it will not return `Incomplete` when one of the constituting parsers returns `Incomplete`. Instead, it will try the next alternative in the chain.
-- `separated_list_complete!`: This is equivalent to the `separated_list!` combinator, except that it will return `Error` when either the separator or element subparser returns `Incomplete`.
-- `separated_nonempty_list_complete!`: This is equivalent to the `separated_nonempty_list!` combinator, except that it will return `Error` when either the separator or element subparser returns `Incomplete`.
 
 ## Modifiers
 
 - `cond!`: conditional combinator. Wraps another parser and calls it if the condition is met.
-- `cond_reduce!`: conditional combinator with error. Returns an Error if the condition is false. 
-- `cond_with_error!`:
-- `expr_opt!`: evaluates an expression that returns a `Option` and returns a `Ok((I,T))` if the return value is `Some`
-- `expr_res!`: evaluates an expression that returns a `Result` and returns a `Ok((I,T))` if the return value is `Ok`
 - `flat_map!`:
 - `map!`: maps a function on the result of a parser
 - `map_opt!`: maps a function returning an `Option` on the output of a parser
 - `map_res!`: maps a function returning a `Result` on the output of a parser
-- `map_res_err!`: maps a function returning a `Result` on the output of a parser, preserving the returned error
 - `not!`: returns a result only if the embedded parser returns `Error` or `Incomplete`. Does not consume the input.
 - `opt!`: make the underlying parser optional
 - `opt_res!`: make the underlying parser optional
@@ -136,10 +128,7 @@ Whitespace delimited formats parsing
 ## Remaining combinators
 
 - `apply!`: emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
-- `apply_m!`: emulate function currying for method calls on structs: `apply_m!(self.my_function, arg1, arg2, ...)` becomes `self.my_function(input, arg1, arg2, ...)`
 - `call!`: Used to wrap common expressions and function as macros
-- `call_m!`: Used to called methods then move self back into self
-- `closure!`: Wraps a parser in a closure
 - `method!`: Makes a method from a parser combination
 - `named!`: Makes a function from a parser combination
 - `named_args!`: Makes a function from a parser combination with arguments.
@@ -163,10 +152,8 @@ Use these functions with a combinator like `take_while!`:
 - `crlf`:
 - `digit`: Recognizes one or more numerical characters: `[0-9]`
 - `double`: Recognizes floating point number in a byte string and returns a `f64`
-- `double_s`: Recognizes floating point number in a string and returns a `f64`
 - `eol`:
 - `float`: Recognizes floating point number in a byte string and returns a `f32`
-- `float_s`: Recognizes floating point number in a string and returns a `f32`
 - `hex_digit`: Recognizes one or more hexadecimal numerical characters: `[0-9A-Fa-f]`
 - `hex_u32`: Recognizes a hex-encoded integer
 - `line_ending`: Recognizes an end of line (both `\n` and `\r\n`)
@@ -176,9 +163,7 @@ Use these functions with a combinator like `take_while!`:
 - `not_line_ending`:
 - `oct_digit`: Recognizes one or more octal characters: `[0-7]`
 - `rest`: Return the remaining input.
-- `rest_s`: Return the remaining input, for strings.
 - `shift`:
 - `sized_buffer`:
 - `space`: Recognizes one or more spaces and tabs
 - `tab`: Matches a tab character `\t`
-- `tag_cl`:
