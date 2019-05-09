@@ -59,6 +59,7 @@ macro_rules! separated_list(
 /// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
 /// # }
 /// ```
+#[cfg(feature = "alloc")]
 #[macro_export(local_inner_macros)]
 macro_rules! separated_nonempty_list(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -321,6 +322,7 @@ macro_rules! count(
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
+#[cfg(feature = "alloc")]
 macro_rules! length_count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {
@@ -391,11 +393,12 @@ macro_rules! length_data(
 /// # use nom::{Err, Needed};
 /// # use nom::error::ErrorKind;
 /// use nom::number::complete::be_u8;
+/// use nom::character::complete::alpha0;
 /// use nom::bytes::complete::tag;
 /// # fn main() {
-/// named!(parser< Vec<&[u8]> >, length_value!(be_u8, many0!(tag("abc"))));
+/// named!(parser, length_value!(be_u8, alpha0));
 ///
-/// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]])));
+/// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], &b"abcabc"[..])));
 /// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::Size(6))));
 /// # }
 /// ```

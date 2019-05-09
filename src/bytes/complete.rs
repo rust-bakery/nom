@@ -537,6 +537,7 @@ where
 ///
 /// assert_eq!(parser("ab\\\"cd"), Ok(("", String::from("ab\"cd"))));
 /// ```
+#[cfg(feature = "alloc")]
 pub fn escaped_transform<Input, Error, F, G, O1, O2, ExtendItem, Output>(
   normal: F,
   control_char: char,
@@ -607,6 +608,7 @@ where
 }
 
 #[doc(hidden)]
+#[cfg(feature = "alloc")]
 pub fn escaped_transformc<Input, Error, F, G, O1, O2, ExtendItem, Output>(
   i: Input,
   normal: F,

@@ -163,6 +163,7 @@ macro_rules! escaped (
 ///  assert_eq!(transform(&b"ab\\\"cd"[..]), Ok((&b""[..], String::from("ab\"cd"))));
 /// # }
 /// ```
+#[cfg(feature = "alloc")]
 #[macro_export(local_inner_macros)]
 macro_rules! escaped_transform (
   ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (
