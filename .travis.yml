@@ -84,12 +84,12 @@ after_success: |
         git checkout master &&
         cargo bench --verbose
       fi
-      ;;
 
       if [ "$FEATURES" == '--features "regexp regexp_macros"' ]; then
-        cargo coveralls --verbose --features $FEATURES &&
+        cargo coveralls --verbose --all-features &&
         cargo bench --verbose
       fi
+      ;;
 
     *)
       cargo coveralls --verbose
