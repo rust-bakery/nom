@@ -20,7 +20,6 @@ before_script:
   - export PATH=$HOME/.cargo/bin:$PATH
   - cargo install cargo-update   || echo "cargo-update already installed"
   - cargo install cargo-travis   || echo "cargo-travis already installed"
-  - cargo install cargo-benchcmp || echo "cargo-benchcmp already installed"
   - cargo install-update -a
 
 matrix:
@@ -80,17 +79,18 @@ script:
 after_success: |
   case "$TRAVIS_RUST_VERSION" in
     nightly)
-      if [ "$FEATURES" == '--features "regexp regexp_macros"' ]; then
-        cargo coveralls --verbose --features $FEATURES &&
-        cargo bench --verbose
-      fi
-
       if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ]; then
         git fetch &&
         git checkout master &&
         cargo bench --verbose
       fi
       ;;
+
+      if [ "$FEATURES" == '--features "regexp regexp_macros"' ]; then
+        cargo coveralls --verbose --features $FEATURES &&
+        cargo bench --verbose
+      fi
+
     *)
       cargo coveralls --verbose
       ;;
