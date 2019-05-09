@@ -409,19 +409,9 @@ macro_rules! fix_error (
         Err(e) => {
           let e2 = match e {
             Err::Error(err) => {
-              /*
-              let Context::Code(i, code) = err;
-              let code2: ErrorKind<$t> = ErrorKind::convert(code);
-              Err::Error(Context::Code(i, code2))
-              */
               Err::Error(err.into())
             },
             Err::Failure(err) => {
-              /*
-              let Context::Code(i, code) = err;
-              let code2: ErrorKind<$t> = ErrorKind::convert(code);
-              Err::Failure(Context::Code(i, code2))
-              */
               Err::Failure(err.into())
             },
             Err::Incomplete(e) => Err::Incomplete(e),
@@ -470,3 +460,215 @@ macro_rules! flat_map(
     $crate::combinator::map_parserc($i, move |i| {$submac!(i, $($args)*)}, move |i| {$submac2!(i, $($args2)*)})
   );
 );
+
+/*
+#[cfg(feature = "alloc")]
+use lib::std::{vec::Vec, collections::HashMap};
+
+#[cfg(feature = "std")]
+use lib::std::hash::Hash;
+
+#[cfg(feature = "std")]
+pub fn add_error_pattern<'a, I: Clone + Hash + Eq, O, E: Clone + Hash + Eq>(
+  h: &mut HashMap<VerboseError<I>, &'a str>,
+  e: VerboseError<I>,
+  message: &'a str,
+) -> bool {
+  h.insert(e, message);
+  true
+}
+
+pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
+  let start = input.as_ptr();
+  let off1 = s.as_ptr() as usize - start as usize;
+  let off2 = off1 + s.len();
+  (off1, off2)
+}
+
+#[cfg(feature = "std")]
+pub fn prepare_errors<O, E: Clone>(input: &[u8], e: VerboseError<&[u8]>) -> Option<Vec<(ErrorKind, usize, usize)>> {
+  let mut v: Vec<(ErrorKind, usize, usize)> = Vec::new();
+
+  for (p, kind) in e.errors.drain(..) {
+    let (o1, o2) = slice_to_offsets(input, p);
+    v.push((kind, o1, o2));
+  }
+
+  v.reverse();
+  Some(v)
+}
+
+#[cfg(feature = "std")]
+pub fn print_error<O, E: Clone>(input: &[u8], res: VerboseError<&[u8]>) {
+  if let Some(v) = prepare_errors(input, res) {
+    let colors = generate_colors(&v);
+    println!("parser codes: {}", print_codes(&colors, &HashMap::new()));
+    println!("{}", print_offsets(input, 0, &v));
+  } else {
+    println!("not an error");
+  }
+}
+
+#[cfg(feature = "std")]
+pub fn generate_colors<E>(v: &[(ErrorKind, usize, usize)]) -> HashMap<u32, u8> {
+  let mut h: HashMap<u32, u8> = HashMap::new();
+  let mut color = 0;
+
+  for &(ref c, _, _) in v.iter() {
+    h.insert(error_to_u32(c), color + 31);
+    color = color + 1 % 7;
+  }
+
+  h
+}
+
+pub fn code_from_offset(v: &[(ErrorKind, usize, usize)], offset: usize) -> Option<u32> {
+  let mut acc: Option<(u32, usize, usize)> = None;
+  for &(ref ek, s, e) in v.iter() {
+    let c = error_to_u32(ek);
+    if s <= offset && offset <= e {
+      if let Some((_, start, end)) = acc {
+        if start <= s && e <= end {
+          acc = Some((c, s, e));
+        }
+      } else {
+        acc = Some((c, s, e));
+      }
+    }
+  }
+  if let Some((code, _, _)) = acc {
+    return Some(code);
+  } else {
+    return None;
+  }
+}
+
+#[cfg(feature = "alloc")]
+pub fn reset_color(v: &mut Vec<u8>) {
+  v.push(0x1B);
+  v.push(b'[');
+  v.push(0);
+  v.push(b'm');
+}
+
+#[cfg(feature = "alloc")]
+pub fn write_color(v: &mut Vec<u8>, color: u8) {
+  v.push(0x1B);
+  v.push(b'[');
+  v.push(1);
+  v.push(b';');
+  let s = color.to_string();
+  let bytes = s.as_bytes();
+  v.extend(bytes.iter().cloned());
+  v.push(b'm');
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(feature = "cargo-clippy", allow(implicit_hasher))]
+pub fn print_codes(colors: &HashMap<u32, u8>, names: &HashMap<u32, &str>) -> String {
+  let mut v = Vec::new();
+  for (code, &color) in colors {
+    if let Some(&s) = names.get(code) {
+      let bytes = s.as_bytes();
+      write_color(&mut v, color);
+      v.extend(bytes.iter().cloned());
+    } else {
+      let s = code.to_string();
+      let bytes = s.as_bytes();
+      write_color(&mut v, color);
+      v.extend(bytes.iter().cloned());
+    }
+    reset_color(&mut v);
+    v.push(b' ');
+  }
+  reset_color(&mut v);
+
+  String::from_utf8_lossy(&v[..]).into_owned()
+}
+
+#[cfg(feature = "std")]
+pub fn print_offsets(input: &[u8], from: usize, offsets: &[(ErrorKind, usize, usize)]) -> String {
+  let mut v = Vec::with_capacity(input.len() * 3);
+  let mut i = from;
+  let chunk_size = 8;
+  let mut current_code: Option<u32> = None;
+  let mut current_code2: Option<u32> = None;
+
+  let colors = generate_colors(&offsets);
+
+  for chunk in input.chunks(chunk_size) {
+    let s = format!("{:08x}", i);
+    for &ch in s.as_bytes().iter() {
+      v.push(ch);
+    }
+    v.push(b'\t');
+
+    let mut k = i;
+    let mut l = i;
+    for &byte in chunk {
+      if let Some(code) = code_from_offset(&offsets, k) {
+        if let Some(current) = current_code {
+          if current != code {
+            reset_color(&mut v);
+            current_code = Some(code);
+            if let Some(&color) = colors.get(&code) {
+              write_color(&mut v, color);
+            }
+          }
+        } else {
+          current_code = Some(code);
+          if let Some(&color) = colors.get(&code) {
+            write_color(&mut v, color);
+          }
+        }
+      }
+      v.push(CHARS[(byte >> 4) as usize]);
+      v.push(CHARS[(byte & 0xf) as usize]);
+      v.push(b' ');
+      k = k + 1;
+    }
+
+    reset_color(&mut v);
+
+    if chunk_size > chunk.len() {
+      for _ in 0..(chunk_size - chunk.len()) {
+        v.push(b' ');
+        v.push(b' ');
+        v.push(b' ');
+      }
+    }
+    v.push(b'\t');
+
+    for &byte in chunk {
+      if let Some(code) = code_from_offset(&offsets, l) {
+        if let Some(current) = current_code2 {
+          if current != code {
+            reset_color(&mut v);
+            current_code2 = Some(code);
+            if let Some(&color) = colors.get(&code) {
+              write_color(&mut v, color);
+            }
+          }
+        } else {
+          current_code2 = Some(code);
+          if let Some(&color) = colors.get(&code) {
+            write_color(&mut v, color);
+          }
+        }
+      }
+      if (byte >= 32 && byte <= 126) || byte >= 128 {
+        v.push(byte);
+      } else {
+        v.push(b'.');
+      }
+      l = l + 1;
+    }
+    reset_color(&mut v);
+
+    v.push(b'\n');
+    i = i + chunk_size;
+  }
+
+  String::from_utf8_lossy(&v[..]).into_owned()
+}
+*/
