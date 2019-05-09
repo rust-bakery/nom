@@ -140,18 +140,18 @@ macro_rules! escaped (
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///
 /// # Example
-/// ```ignore
+/// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::alpha;
-/// # use $crate::lib::std::str::from_utf8;
+/// # use nom::character::complete::alpha1;
+/// # use nom::lib::std::str::from_utf8;
 /// # fn main() {
 /// fn to_s(i:Vec<u8>) -> String {
 ///   String::from_utf8_lossy(&i).into_owned()
 /// }
-
+///
 ///  named!(transform < String >,
 ///    map!(
-///      escaped_transform!(call!(alpha), '\\',
+///      escaped_transform!(call!(alpha1), '\\',
 ///        alt!(
 ///            tag!("\\")       => { |_| &b"\\"[..] }
 ///          | tag!("\"")       => { |_| &b"\""[..] }

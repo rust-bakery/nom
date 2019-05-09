@@ -526,8 +526,27 @@ where
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///
-/// # Example
-/// Currently Unavailable
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use std::str::from_utf8;
+/// use nom::bytes::streaming::escaped_transform;
+/// use nom::character::streaming::alpha1;
+///
+/// fn parser(input: &str) -> IResult<&str, String> {
+///   escaped_transform(
+///     alpha1,
+///     '\\',
+///     |i:&str| alt!(i,
+///         tag!("\\")       => { |_| "\\" }
+///       | tag!("\"")       => { |_| "\"" }
+///       | tag!("n")        => { |_| "\n" }
+///     )
+///   )(input)
+/// }
+///
+/// assert_eq!(parser("ab\\\"cd\""), Ok(("\"", String::from("ab\"cd"))));
+/// ```
 pub fn escaped_transform<Input, Error, F, G, O1, O2, ExtendItem, Output>(
   normal: F,
   control_char: char,
