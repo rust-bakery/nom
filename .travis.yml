@@ -17,10 +17,6 @@ env:
 before_script:
   - eval git pull --rebase https://github.com/Geal/nom master
   - eval git log --pretty=oneline HEAD~5..HEAD
-  - export PATH=$HOME/.cargo/bin:$PATH
-  - cargo install cargo-update   || echo "cargo-update already installed"
-  - cargo install cargo-travis   || echo "cargo-travis already installed"
-  - cargo install-update -a
 
 matrix:
   include:
@@ -36,6 +32,15 @@ matrix:
         - export PATH=$HOME/.cargo/bin:$PATH
       script:
         - eval cargo doc --verbose $DOC_FEATURES
+    - rust: nightly
+      env: FEATURES='--features "std lexical regexp regexp_macros"'
+      before_script:
+        - export PATH=$HOME/.cargo/bin:$PATH
+        - cargo install cargo-update   || echo "cargo-update already installed"
+        - cargo install cargo-travis   || echo "cargo-travis already installed"
+        - cargo install-update -a
+      script:
+        cargo coveralls --verbose $FEATURES
   allow_failures:
     - rust: stable
       env: FEATURES=''
@@ -86,12 +91,10 @@ after_success: |
       fi
 
       if [ "$FEATURES" == '--features "regexp regexp_macros"' ]; then
-        cargo coveralls --verbose --all-features &&
         cargo bench --verbose
       fi
       ;;
 
     *)
-      cargo coveralls --verbose
       ;;
   esac
