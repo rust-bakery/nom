@@ -447,10 +447,9 @@ macro_rules! complete (
 /// # use nom::IResult;
 ///
 ///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8], &[u8]> {
-///    let (i1, sz)     = try_parse!(input, nom::number::streaming::be_u8);
-///    let (i2, length) = try_parse!(i1, expr_opt!(size.checked_add(sz)));
-///    let (i3, data)   = try_parse!(i2, take!(length));
-///    return Ok((i3, data));
+///    let (i1, length)     = try_parse!(input, map_opt!(nom::number::streaming::be_u8, |sz| size.checked_add(sz)));
+///    let (i2, data)   = try_parse!(i1, take!(length));
+///    return Ok((i2, data));
 ///  }
 /// # fn main() {
 /// let arr1 = [1, 2, 3, 4, 5];
@@ -460,7 +459,7 @@ macro_rules! complete (
 /// let arr2 = [0xFE, 2, 3, 4, 5];
 /// // size is overflowing
 /// let r1 = take_add(&arr2[..], 42);
-/// assert_eq!(r1, Err(Err::Error(error_position!(&[2,3,4,5][..], ErrorKind::ExprOpt))));
+/// assert_eq!(r1, Err(Err::Error(error_position!(&[254, 2,3,4,5][..], ErrorKind::MapOpt))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -554,6 +553,25 @@ macro_rules! map_res (
 
 /// `map_opt!(I -> IResult<I, O>, O -> Option<P>) => I -> IResult<I, P>`
 /// maps a function returning an Option on the output of a parser
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::character::complete::digit1;
+/// # fn main() {
+///
+/// named!(parser<&str, u8>, map_opt!(digit1, |s: &str| s.parse::<u8>().ok()));
+///
+/// // the parser will convert the result of digit1 to a number
+/// assert_eq!(parser("123"), Ok(("", 123)));
+///
+/// // this will fail if digit1 fails
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
+///
+/// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
+/// assert_eq!(parser("123456"), Err(Err::Error(("123456", ErrorKind::MapOpt))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! map_opt (
   // Internal parser, do not use directly
@@ -579,6 +597,23 @@ macro_rules! map_opt (
 /// input to the specified type
 ///
 /// this will completely consume the input
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::character::complete::digit1;
+/// # fn main() {
+///
+/// named!(parser<&str, u8>, parse_to!(u8));
+///
+/// assert_eq!(parser("123"), Ok(("", 123)));
+///
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::ParseTo))));
+///
+/// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
+/// assert_eq!(parser("123456"), Err(Err::Error(("123456", ErrorKind::ParseTo))));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! parse_to (
   ($i:expr, $t:ty ) => (
@@ -666,70 +701,6 @@ macro_rules! value (
     {
       let res: $crate::IResult<_,_> = Ok(($i, $res));
       res
-    }
-  );
-);
-
-/// `expr_res!(Result<E, O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Result<T, E> and returns a Ok((I, T)) if Ok
-///
-/// See expr_opt for an example
-#[macro_export(local_inner_macros)]
-macro_rules! expr_res (
-  ($i:expr, $e:expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,error::ErrorKind};
-
-      match $e {
-        Ok(output) => Ok(($i, output)),
-        Err(_)     => Err(Err::Error(error_position!($i, ErrorKind::ExprRes)))
-      }
-    }
-  );
-);
-
-/// `expr_opt!(Option<O>) => I -> IResult<I, O>`
-/// evaluate an expression that returns a Option<T> and returns a Ok((I,T)) if Some
-///
-/// Useful when doing computations in a chain
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::Err;
-/// # use nom::IResult;
-/// # use nom::{number::streaming::be_u8, error::ErrorKind};
-///
-///  fn take_add(input:&[u8], size: u8) -> IResult<&[u8], &[u8]> {
-///    do_parse!(input,
-///      sz:     be_u8                             >>
-///      length: expr_opt!(size.checked_add(sz))   >> // checking for integer overflow (returns an Option)
-///      data:   take!(length)                     >>
-///      (data)
-///    )
-///  }
-/// # fn main() {
-/// let arr1 = [1, 2, 3, 4, 5];
-/// let r1 = take_add(&arr1[..], 1);
-/// assert_eq!(r1, Ok((&[4,5][..], &[2,3][..])));
-///
-/// let arr2 = [0xFE, 2, 3, 4, 5];
-/// // size is overflowing
-/// let r1 = take_add(&arr2[..], 42);
-/// assert_eq!(r1, Err(Err::Error(error_position!(&[2,3,4,5][..], ErrorKind::ExprOpt))));
-/// # }
-/// ```
-#[macro_export(local_inner_macros)]
-macro_rules! expr_opt (
-  ($i:expr, $e:expr) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,error::ErrorKind};
-
-      match $e {
-        $crate::lib::std::option::Option::Some(output) => Ok(($i, output)),
-        $crate::lib::std::option::Option::None         => Err(Err::Error(error_position!($i, ErrorKind::ExprOpt)))
-      }
     }
   );
 );
@@ -947,7 +918,18 @@ macro_rules! tap (
 /// When we're at the end of the data, this combinator
 /// will succeed
 ///
-/// TODO: example
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use std::str;
+/// # use nom::{Err, error::ErrorKind};
+/// # fn main() {
+///  named!(parser, eof!());
+///
+///  assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+///  assert_eq!(parser(&b""[..]), Ok((&b""[..], &b""[..])));
+/// # }
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! eof (
   ($i:expr,) => (
