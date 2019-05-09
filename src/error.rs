@@ -447,6 +447,17 @@ macro_rules! fix_error (
 /// combines a parser R -> IResult<R,S> and
 /// a parser S -> IResult<S,T> to return another
 /// parser R -> IResult<R,T>
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind};
+/// use nom::number::complete::recognize_float;
+///
+/// named!(parser<&str, f64>, flat_map!(recognize_float, parse_to!(f64)));
+///
+/// assert_eq!(parser("123.45;"), Ok((";", 123.45)));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
+/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! flat_map(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
