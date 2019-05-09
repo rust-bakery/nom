@@ -1,14 +1,21 @@
 # How nom macros work
 
-nom uses Rust macros heavily to provide a nice syntax and generate parsing code. This has multiple advantages:
+nom uses Rust macros heavily to provide a nice syntax and generate parsing code.
+This has multiple advantages:
 
 * it gives the appearance of combining functions without the runtime cost of closures
 * it helps Rust's code inference and borrow checking (less lifetime issues than iterator based solutions)
 * the generated code is very linear, just a large chain of pattern matching
 
+As a prerequisite, if you need more information on macros, please refer to
+[the little book of Rust macros](https://danielkeep.github.io/tlborm/book/README.html)
+and the [Macromancy talk](https://www.youtube.com/watch?v=8rodUyaGkQo)
+
 # Defining a new macro
 
-Let's take the `opt!` macro as example: `opt!` returns `IResult<I,Option<O>>`, producing a `Some(o)` if the child parser succeeded, and None otherwise. Here is how you could use it:
+Let's take the `opt!` macro as example: `opt!` returns `IResult<I,Option<O>>`,
+producing a `Some(o)` if the child parser succeeded, and None otherwise. Here
+is how you could use it:
 
 ```rust
 named!(opt_tag<Option<&[u8]>>, opt!(digit));
@@ -32,7 +39,8 @@ macro_rules! opt(
 );
 ```
 
-To define a Rust macro, you indicate the name of the macro, then each pattern it is meant to apply to:
+To define a Rust macro, you indicate the name of the macro, then each pattern it
+is meant to apply to:
 
 ```rust
 macro_rules! my_macro (
@@ -43,7 +51,8 @@ macro_rules! my_macro (
 
 ## Passing input
 
-The first thing you can see in `opt!` is that the pattern have an additional parameter that you do not use:
+The first thing you can see in `opt!` is that the pattern have an additional
+parameter that you do not use:
 
 ```rust
 ($i:expr, $f:expr)
@@ -55,7 +64,9 @@ while you call:
 opt!(digit)
 ```
 
-This is the first trick of nom macros: the first parameter, usually `$i` or `$input`, is the input data, passed by the parent parser. The expression using `named!` will translate like this:
+This is the first trick of nom macros: the first parameter, usually `$i` or `$input`,
+is the input data, passed by the parent parser. The expression using `named!` will
+translate like this:
 
 ```rust
 named!(opt_tag<Option<&[u8]>>, opt!(digit));
@@ -69,9 +80,12 @@ fn opt_tag(input:&[u8]) -> IResult<&[u8], Option<&[u8]>> {
 }
 ```
 
-This is how combinators hide all the plumbing: they receive the input automatically from the parent parser, may use that input, and pass the remaining input to the child parser.
+This is how combinators hide all the plumbing: they receive the input automatically
+from the parent parser, may use that input, and pass the remaining input to the child
+parser.
 
-When you have multiple submacros, such as this example, the input is always passed to the first, top level combinator:
+When you have multiple submacros, such as this example, the input is always passed
+to the first, top level combinator:
 
 ```rust
 macro_rules! multispaced (
@@ -84,7 +98,9 @@ macro_rules! multispaced (
 );
 ```
 
-Here, `delimited!` will apply `opt!(multispace)` on the input, and if successful, will apply `$submac!($($args)*)` on the remaining input, and if successful, store the output and apply `opt!(multispace)` on the remaining input.
+Here, `delimited!` will apply `opt!(multispace)` on the input, and if successful,
+will apply `$submac!($($args)*)` on the remaining input, and if successful, store
+the output and apply `opt!(multispace)` on the remaining input.
 
 ## Applying on macros or functions
 
@@ -108,7 +124,9 @@ The first pattern is used to receive a macro as child parser, like this:
 opt!(tag!("abcd"))
 ```
 
-The second pattern can receive a function, and transforms it in a macro, then calls itself again. This is done to avoid repeating code. Applying `opt!` with `digit` as argument would be transformed from this:
+The second pattern can receive a function, and transforms it in a macro, then calls
+itself again. This is done to avoid repeating code. Applying `opt!` with `digit`
+as argument would be transformed from this:
 
 ```rust
 opt!(digit)
@@ -120,11 +138,14 @@ transformed with the second pattern:
 opt!(call!(digit))
 ```
 
-The `call!` macro transforms `call!(input, f)` into `f(input)`. If you need to pass more parameters to the function, you can Use `call!(input, f, arg, arg2)` to get `f(input, arg, arg2)`.
+The `call!` macro transforms `call!(input, f)` into `f(input)`. If you need to pass
+more parameters to the function, you can Use `call!(input, f, arg, arg2)` to get
+`f(input, arg, arg2)`.
 
 ## Using the macro's parameters
 
-The macro argument is decomposed into `$submac:ident!`, the macro's name and a bang, and `( $($args:tt)* )`, the tokens contained between the parenthesis of the macro call.
+The macro argument is decomposed into `$submac:ident!`, the macro's name and a bang,
+and `( $($args:tt)* )`, the tokens contained between the parenthesis of the macro call.
 
 ```rust
 ($i:expr, $submac:ident!( $($args:tt)* )) => ({
@@ -157,7 +178,6 @@ As an example, see how the `preceded!` macro works:
   );
 ```
 
-It applies the first parser, and if it succeeds, discards its result, and applies the remaining input `i1` to the second parser.
-
-If you need more tips, please refer to [the little book of Rust macros](https://danielkeep.github.io/tlborm/book/README.html).
+It applies the first parser, and if it succeeds, discards its result, and applies
+the remaining input `i1` to the second parser.
 
