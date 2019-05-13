@@ -7,7 +7,11 @@
 [![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.31.0+-lightgray.svg)](#rust-version-requirements)
 
-nom is a parser combinators library written in Rust. Its goal is to provide tools to build safe parsers without compromising the speed or memory consumption. To that end, it uses extensively Rust's *strong typing* and *memory safety* to produce fast and correct parsers, and provides macros and traits to abstract most of the error prone plumbing.
+nom is a parser combinators library written in Rust. Its goal is to provide tools
+to build safe parsers without compromising the speed or memory consumption. To
+that end, it uses extensively Rust's *strong typing* and *memory safety* to produce
+fast and correct parsers, and provides functions, macros and traits to abstract most of the
+error prone plumbing.
 
 ![nom logo in CC0 license, by Ange Albertini](https://raw.githubusercontent.com/Geal/nom/master/assets/nom.png)
 
@@ -18,8 +22,13 @@ nom is a parser combinators library written in Rust. Its goal is to provide tool
 [Hexadecimal color](https://developer.mozilla.org/en-US/docs/Web/CSS/color) parser:
 
 ```rust
-#[macro_use]
 extern crate nom;
+use nom::{
+  IResult,
+  bytes::complete::{tag, take_while_m_n},
+  combinator::map_res,
+  sequence::tuple
+};
 
 #[derive(Debug,PartialEq)]
 pub struct Color {
@@ -36,19 +45,19 @@ fn is_hex_digit(c: char) -> bool {
   c.is_digit(16)
 }
 
-named!(hex_primary<&str, u8>,
-  map_res!(take_while_m_n!(2, 2, is_hex_digit), from_hex)
-);
+fn hex_primary(input: &str) -> IResult<&str, u8> {
+  map_res(
+    take_while_m_n(2, 2, is_hex_digit),
+    from_hex
+  )(input)
+}
 
-named!(hex_color<&str, Color>,
-  do_parse!(
-           tag!("#")   >>
-    red:   hex_primary >>
-    green: hex_primary >>
-    blue:  hex_primary >>
-    (Color { red, green, blue })
-  )
-);
+fn hex_color(input: &str) -> IResult<&str, Color> {
+  let (input, _) = tag("#")(input)?;
+  let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+
+  Ok((input, Color { red, green, blue }))
+}
 
 fn main() {}
 
@@ -93,7 +102,7 @@ Example projects:
 
 ### Text format parsers
 
-While nom was made for binary format at first, but it soon grew to work just as
+While nom was made for binary format at first, it soon grew to work just as
 well with text formats. From line based formats like CSV, to more complex, nested
 formats such as JSON, nom can manage it, and provides you with useful tools:
 
@@ -140,7 +149,7 @@ It allows you to build powerful, deterministic state machines for your protocols
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/parser/http11.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
 - [using nom with generators](https://github.com/Geal/generator_nom)
 
 ## Parser combinators
@@ -171,7 +180,6 @@ nom parsers are for:
 - [x] **string-oriented**: the same kind of combinators can apply on UTF-8 strings as well
 - [x] **zero-copy**: if a parser returns a subset of its input data, it will return a slice of that input, without copying
 - [x] **streaming**: nom can work on partial data and detect when it needs more data to produce a correct result
-- [x] **macro based syntax**: easier parser building through macro usage
 - [x] **descriptive errors**: the parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages.
 - [x] **custom error types**: you can provide a specific type to improve errors returned by parsers
 - [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real world data. So far, the only flaws found by fuzzing were in code written outside of nom
@@ -181,7 +189,7 @@ Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks
 
 ## Rust version requirements
 
-The 4.0 series of nom requires **Rustc version 1.28 or greater**.
+The 5.0 series of nom requires **Rustc version 1.31 or greater**.
 
 Travis CI always has a build with a pinned version of Rustc matching the oldest supported Rust release.
 The current policy is that this will only be updated in the next major nom release.
@@ -192,7 +200,7 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "^4.2"
+nom = "5"
 ```
 
 Then include it in your code like this:
@@ -202,8 +210,8 @@ Then include it in your code like this:
 extern crate nom;
 ```
 
-**NOTE: if you have existing code using nom below the 4.0 version, please take a look
-at the [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_4.md)
+**NOTE: if you have existing code using nom below the 5.0 version, please take a look
+at the [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md)
 to handle the breaking changes.**
 
 There are a few compilation features:
@@ -216,7 +224,7 @@ You can activate those features like this:
 
 ```toml
 [dependencies.nom]
-version = "^4.2"
+version = "^5"
 features = ["regexp"]
 ```
 
@@ -227,7 +235,7 @@ features = ["regexp"]
 
 # Parsers written with nom
 
-Here is a list of known projects using nom:
+Here is a (non exhaustive) list of known projects using nom:
 
 - Text file formats:
   * [Ceph Crush](https://github.com/cholcombe973/crushtool)

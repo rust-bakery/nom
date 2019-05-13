@@ -6,8 +6,13 @@
 //! ## Example
 //!
 //! ```rust
-//! #[macro_use]
 //! extern crate nom;
+//!
+//! use nom::{
+//!   IResult,
+//!   bytes::complete::{tag, take_while_m_n},
+//!   combinator::map_res,
+//!   sequence::tuple};
 //!
 //! #[derive(Debug,PartialEq)]
 //! pub struct Color {
@@ -24,19 +29,19 @@
 //!   c.is_digit(16)
 //! }
 //!
-//! named!(hex_primary<&str, u8>,
-//!   map_res!(take_while_m_n!(2, 2, is_hex_digit), from_hex)
-//! );
+//! fn hex_primary(input: &str) -> IResult<&str, u8> {
+//!   map_res(
+//!     take_while_m_n(2, 2, is_hex_digit),
+//!     from_hex
+//!   )(input)
+//! }
 //!
-//! named!(hex_color<&str, Color>,
-//!   do_parse!(
-//!            tag!("#")   >>
-//!     red:   hex_primary >>
-//!     green: hex_primary >>
-//!     blue:  hex_primary >>
-//!     (Color { red, green, blue })
-//!   )
-//! );
+//! fn hex_color(input: &str) -> IResult<&str, Color> {
+//!   let (input, _) = tag("#")(input)?;
+//!   let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+//!
+//!   Ok((input, Color { red, green, blue }))
+//! }
 //!
 //! fn main() {
 //!   assert_eq!(hex_color("#2F14DF"), Ok(("", Color {
@@ -50,18 +55,15 @@
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!
 //! There are a few [guides](https://github.com/Geal/nom/tree/master/doc) with more details
-//! about [the design of nom](https://github.com/Geal/nom/blob/master/doc/how_nom_macros_work.md),
+//! about [the design of nom macros](https://github.com/Geal/nom/blob/master/doc/how_nom_macros_work.md),
 //! [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
 //! or the [error management system](https://github.com/Geal/nom/blob/master/doc/error_management.md).
 //!
 //! **Looking for a specific combinator? Read the
 //! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**
 //!
-//! If you are upgrading to nom 2.0, please read the
-//! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md).
-//!
-//! If you are upgrading to nom 4.0, please read the
-//! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_4.md).
+//! If you are upgrading to nom 5.0, please read the
+//! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md).
 //!
 //! See also the [FAQ](https://github.com/Geal/nom/blob/master/doc/FAQ.md).
 //!
@@ -70,14 +72,14 @@
 //! Parser combinators are an approach to parsers that is very different from
 //! software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and
 //! [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar
-//! in a separate file and generating the corresponding code, you use very small
-//! functions with very specific purpose, like "take 5 bytes", or "recognize the
+//! in a separate syntax and generating the corresponding code, you use very small
+//! functions with a very specific purpose, like "take 5 bytes", or "recognize the
 //! word 'HTTP'", and assemble then in meaningful patterns like "recognize
 //! 'HTTP', then a space, then a version".
 //! The resulting code is small, and looks like the grammar you would have
 //! written with other parser approaches.
 //!
-//! This has a few advantages:
+//! This gives us a few advantages:
 //!
 //! - the parsers are small and easy to write
 //! - the parsers components are easy to reuse (if they're general enough, please add them to nom!)
@@ -88,17 +90,23 @@
 //! Here is an example of one such parser, to recognize text between parentheses:
 //!
 //! ```rust
-//! #[macro_use]
-//! extern crate nom;
+//! use nom::{
+//!   IResult,
+//!   sequence::delimited,
+//!   character::complete::char,
+//!   bytes::complete::is_not
+//! };
 //!
-//! # fn main() {
-//! named!(parens, delimited!(char!('('), is_not!(")"), char!(')')));
-//! # }
+//! fn parens(input: &str) -> IResult<&str, &str> {
+//!   delimited(char('('), is_not(")"), char(')'))(input)
+//! }
 //! ```
 //!
-//! It defines a function named `parens`, which will recognize a sequence of the character `(`, the longest byte array not containing `)`, then the character `)`, and will return the byte array in the middle.
+//! It defines a function named `parens` which will recognize a sequence of the
+//! character `(`, the longest byte array not containing `)`, then the character
+//! `)`, and will return the byte array in the middle.
 //!
-//! Here is another parser, written without using nom's macros this time:
+//! Here is another parser, written without using nom's combinators this time:
 //!
 //! ```rust
 //! #[macro_use]
@@ -118,9 +126,18 @@
 //! ```
 //!
 //! This function takes a byte array as input, and tries to consume 4 bytes.
-//! Writing all the parsers manually, like this, is dangerous, despite Rust's safety features. There
-//! are still a lot of mistakes one can make. That's why nom provides a list of macros to help in
-//! developing parsers.
+//! Writing all the parsers manually, like this, is dangerous, despite Rust's
+//! safety features. There are still a lot of mistakes one can make. That's why
+//! nom provides a list of function and macros to help in developing parsers.
+//!
+//! With functions, you would write it like this:
+//!
+//! ```rust
+//! use nom::{IResult, bytes::streaming::take};
+//! fn take4(input: &str) -> IResult<&str, &str> {
+//!   take(4u8)(input)
+//! }
+//! ```
 //!
 //! With macros, you would write it like this:
 //!
@@ -132,6 +149,13 @@
 //! named!(take4, take!(4));
 //! # }
 //! ```
+//!
+//! nom has used macros for combinators from versions 1 to 4, and from version
+//! 5, it proposes new combinators as functions, but still allows the macros style
+//! (macros have been rewritten to use the functions under the hood).
+//! For new parsers, we recommend using the functions instead of macros, since
+//! rustc messages will be much easier to understand.
+//!
 //!
 //! A parser in nom is a function which, for an input type `I`, an output type `O`
 //! and an optional error type `E`, will have the following signature:
@@ -163,7 +187,7 @@
 //! It can have the following values:
 //!
 //! - a correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
-//! - an error `Err(Err::Error(c))` with `c` an enum that contains an error code with its position in the input, and optionally a chain of accumulated errors;
+//! - an error `Err(Err::Error(c))` with `c` an error that can be built from the input position and a parser specific error
 //! - an error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
 //! - an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and test another parser
 //!
@@ -171,102 +195,79 @@
 //! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/master/doc).
 //! .
 //!
-//! ## Making new parsers with macros
+//! ## Making new parsers with function combinators
 //!
-//! Macros are the main way to make new parsers by combining other ones. Those macros accept other macros or function names as arguments. You then need to make a function out of that combinator with **`named!`**, or a closure with **`closure!`**. Here is how you would do, with the **`tag!`** and **`take!`** combinators:
+//! nom is based on functions that generate parsers, with a signature like
+//! this: `(arguments) -> impl Fn(Input) -> IResult<Input, Output, Error>`.
+//! The arguments of a combinator can be direct values (like `take` which uses
+//! a number of bytes or character as argument) or even other parsers (like
+//! `delimited` which takes as argument 3 parsers, and returns the result of
+//! the second one if all are successful).
 //!
-//! ```rust
-//! # #[macro_use] extern crate nom;
-//! # fn main() {
-//! named!(abcd_parser, tag!("abcd")); // will consume bytes if the input begins with "abcd"
-//!
-//! named!(take_10, take!(10));        // will consume and return 10 bytes of input
-//! # }
-//! ```
-//!
-//! The **`named!`** macro can take three different syntaxes:
-//!
-//! ```rust,ignore
-//! named!(my_function( &[u8] ) -> &[u8], tag!("abcd"));
-//!
-//! named!(my_function<&[u8], &[u8]>, tag!("abcd"));
-//!
-//! named!(my_function, tag!("abcd")); // when you know the parser takes &[u8] as input, and returns &[u8] as output
-//! ```
-//!
-//! **IMPORTANT NOTE**: Rust's macros can be very sensitive to the syntax, so you may encounter an error compiling parsers like this one:
+//! Here are some examples:
 //!
 //! ```rust
-//! # #[macro_use] extern crate nom;
-//! # #[cfg(feature = "alloc")]
-//! # fn main() {
-//! named!(my_function<&[u8], Vec<&[u8]>>, many0!(tag!("abcd")));
-//! # }
+//! use nom::IResult;
+//! use nom::bytes::complete::{tag, take};
+//! fn abcd_parser(i: &str) -> IResult<&str, &str> {
+//!   tag("abcd")(i) // will consume bytes if the input begins with "abcd"
+//! }
 //!
-//! # #[cfg(not(feature = "alloc"))]
-//! # fn main() {}
+//! fn take_10(i: &[u8]) -> IResult<&[u8], &[u8]> {
+//!   take(10u8)(i) // will consume and return 10 bytes of input
+//! }
 //! ```
-//!
-//! You will get the following error: `error: expected an item keyword`. This
-//! happens because `>>` is seen as an operator, so the macro parser does not
-//! recognize what we want. There is a way to avoid it, by inserting a space:
-//!
-//! ```rust
-//! # #[macro_use] extern crate nom;
-//! # #[cfg(feature = "alloc")]
-//! # fn main() {
-//! named!(my_function<&[u8], Vec<&[u8]> >, many0!(tag!("abcd")));
-//! # }
-//! # #[cfg(not(feature = "alloc"))]
-//! # fn main() {}
-//! ```
-//!
-//! This will compile correctly. I am very sorry for this inconvenience.
 //!
 //! ## Combining parsers
 //!
-//! There are more high level patterns, like the **`alt!`** combinator, which provides a choice between multiple parsers. If one branch fails, it tries the next, and returns the result of the first parser that succeeds:
+//! There are higher level patterns, like the **`alt`** combinator, which
+//! provides a choice between multiple parsers. If one branch fails, it tries
+//! the next, and returns the result of the first parser that succeeds:
 //!
 //! ```rust
-//! # #[macro_use] extern crate nom;
-//! # fn main() {
-//! named!(alt_tags, alt!(tag!("abcd") | tag!("efgh")));
+//! use nom::IResult;
+//! use nom::branch::alt;
+//! use nom::bytes::complete::tag;
 //!
-//! assert_eq!(alt_tags(b"abcdxxx"), Ok((&b"xxx"[..], &b"abcd"[..])));
-//! assert_eq!(alt_tags(b"efghxxx"), Ok((&b"xxx"[..], &b"efgh"[..])));
-//! assert_eq!(alt_tags(b"ijklxxx"), Err(nom::Err::Error(error_position!(&b"ijklxxx"[..], nom::error::ErrorKind::Alt))));
-//! # }
+//! let alt_tags = alt((tag("abcd"), tag("efgh")));
+//!
+//! assert_eq!(alt_tags(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
+//! assert_eq!(alt_tags(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
+//! assert_eq!(alt_tags(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
 //! ```
 //!
-//! The pipe `|` character is used as separator.
-//!
-//! The **`opt!`** combinator makes a parser optional. If the child parser returns an error, **`opt!`** will succeed and return None:
+//! The **`opt`** combinator makes a parser optional. If the child parser returns
+//! an error, **`opt`** will still succeed and return None:
 //!
 //! ```rust
-//! # #[macro_use] extern crate nom;
-//! # fn main() {
-//! named!( abcd_opt< &[u8], Option<&[u8]> >, opt!( tag!("abcd") ) );
+//! use nom::{IResult, combinator::opt, bytes::complete::tag};
+//! fn abcd_opt(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
+//!   opt(tag("abcd"))(i)
+//! }
 //!
-//! assert_eq!(abcd_opt(b"abcdxxx"), Ok((&b"xxx"[..], Some(&b"abcd"[..]))));
-//! assert_eq!(abcd_opt(b"efghxxx"), Ok((&b"efghxxx"[..], None)));
-//! # }
+//! assert_eq!(abcd_opt(&b"abcdxxx"[..]), Ok((&b"xxx"[..], Some(&b"abcd"[..]))));
+//! assert_eq!(abcd_opt(&b"efghxxx"[..]), Ok((&b"efghxxx"[..], None)));
 //! ```
 //!
-//! **`many0!`** applies a parser 0 or more times, and returns a vector of the aggregated results:
+//! **`many0`** applies a parser 0 or more times, and returns a vector of the aggregated results:
 //!
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # #[cfg(feature = "alloc")]
 //! # fn main() {
+//! use nom::{IResult, multi::many0, bytes::complete::tag};
 //! use std::str;
 //!
-//! named!(multi< Vec<&str> >, many0!( map_res!(tag!( "abcd" ), str::from_utf8) ) );
-//! let a = b"abcdef";
-//! let b = b"abcdabcdef";
-//! let c = b"azerty";
-//! assert_eq!(multi(a), Ok((&b"ef"[..],     vec!["abcd"])));
-//! assert_eq!(multi(b), Ok((&b"ef"[..],     vec!["abcd", "abcd"])));
-//! assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
+//! fn multi(i: &str) -> IResult<&str, Vec<&str>> {
+//!   many0(tag("abcd"))(i)
+//! }
+//!
+//! let a = "abcdef";
+//! let b = "abcdabcdef";
+//! let c = "azerty";
+//! assert_eq!(multi(a), Ok(("ef",     vec!["abcd"])));
+//! assert_eq!(multi(b), Ok(("ef",     vec!["abcd", "abcd"])));
+//! assert_eq!(multi(c), Ok(("azerty", Vec::new())));
 //! # }
 //! # #[cfg(not(feature = "alloc"))]
 //! # fn main() {}
@@ -274,26 +275,24 @@
 //!
 //! Here are some basic combining macros available:
 //!
-//! - **`opt!`**: will make the parser optional (if it returns the `O` type, the new parser returns `Option<O>`)
-//! - **`many0!`**: will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
-//! - **`many1!`**: will apply the parser 1 or more times
+//! - **`opt`**: will make the parser optional (if it returns the `O` type, the new parser returns `Option<O>`)
+//! - **`many0`**: will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
+//! - **`many1`**: will apply the parser 1 or more times
 //!
-//! There are more complex (and more useful) parsers like `do_parse!` and `tuple!`, which are used to apply a series of parsers then assemble their results.
+//! There are more complex (and more useful) parsers like `tuple!`, which is
+//! used to apply a series of parsers then assemble their results.
 //!
-//! Example with `tuple!`:
+//! Example with `tuple`:
 //!
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
-//! use nom::{error::ErrorKind, Needed, number::streaming::be_u16};
+//! use nom::{error::ErrorKind, Needed,
+//! number::streaming::be_u16,
+//! bytes::streaming::{tag, take},
+//! sequence::tuple};
 //!
-//! named!(tpl<&[u8], (u16, &[u8], &[u8]) >,
-//!   tuple!(
-//!     be_u16 ,
-//!     take!(3),
-//!     tag!("fg")
-//!   )
-//! );
+//! let tpl = tuple((be_u16, take(3u8), tag("fg")));
 //!
 //! assert_eq!(
 //!   tpl(&b"abcdefgh"[..]),
@@ -304,16 +303,17 @@
 //! );
 //! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::Size(2))));
 //! let input = &b"abcdejk"[..];
-//! assert_eq!(tpl(input), Err(nom::Err::Error(error_position!(&input[5..], ErrorKind::Tag))));
+//! assert_eq!(tpl(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
 //! # }
 //! ```
 //!
-//! Example with `do_parse!`:
+//! But you can also use a sequence of combinators written in imperative style,
+//! thanks to the `?` operator:
 //!
 //! ```rust
 //! # #[macro_use] extern crate nom;
 //! # fn main() {
-//! use nom::IResult;
+//! use nom::{IResult, bytes::complete::tag};
 //!
 //! #[derive(Debug, PartialEq)]
 //! struct A {
@@ -324,30 +324,20 @@
 //! fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,1)) }
 //! fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,2)) }
 //!
-//! named!(f<&[u8],A>,
-//!   do_parse!(    // the parser takes a byte array as input, and returns an A struct
-//!     tag!("abcd")       >>      // begins with "abcd"
-//!     opt!(tag!("abcd")) >>      // this is an optional parser
-//!     aa: ret_int1       >>      // the return value of ret_int1, if it does not fail, will be stored in aa
-//!     tag!("efgh")       >>
-//!     bb: ret_int2       >>
-//!     tag!("efgh")       >>
+//! fn f(i: &[u8]) -> IResult<&[u8], A> {
+//!   // if successful, the parser returns `Ok((remaining_input, output_value))` that we can destructure
+//!   let (i, _) = tag("abcd")(i)?;
+//!   let (i, a) = ret_int1(i)?;
+//!   let (i, _) = tag("efgh")(i)?;
+//!   let (i, b) = ret_int2(i)?;
 //!
-//!     (A{a: aa, b: bb})          // the final tuple will be able to use the variable defined previously
-//!   )
-//! );
+//!   Ok((i, A { a, b }))
+//! }
 //!
-//! let r = f(b"abcdabcdefghefghX");
+//! let r = f(b"abcdefghX");
 //! assert_eq!(r, Ok((&b"X"[..], A{a: 1, b: 2})));
-//!
-//! let r2 = f(b"abcdefghefghX");
-//! assert_eq!(r2, Ok((&b"X"[..], A{a: 1, b: 2})));
 //! # }
 //! ```
-//!
-//! The double right arrow `>>` is used as separator between every parser in the sequence, and the last closure can see the variables storing the result of parsers. Unless the specified return type is already a tuple, the final line should be that type wrapped in a tuple.
-//!
-//! More examples of [`do_parse!`](macro.do_parse.html) and [`tuple!`](macro.tuple.html) usage can be found in the [INI file parser example](tests/ini.rs).
 //!
 //! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
 #![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
