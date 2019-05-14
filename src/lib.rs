@@ -93,6 +93,7 @@
 //! use nom::{
 //!   IResult,
 //!   sequence::delimited,
+//!   // see the "streaming/complete" paragraph lower for an explanation of these submodules
 //!   character::complete::char,
 //!   bytes::complete::is_not
 //! };
@@ -339,6 +340,64 @@
 //! # }
 //! ```
 //!
+//! ## Streaming / Complete
+//!
+//! Some of nom's modules have `streaming` or `complete` submodules. They hold
+//! different variants of the same combinators.
+//!
+//! A streaming parser assumes that we might not have all of the input data.
+//! This can happen with some network protocol or large file parsers, where the
+//! input buffer can be full and need to be resized or refilled.
+//!
+//! A complete parser assumes that we already have all of the input data.
+//! This will be the common case with small files that can be read intirely to
+//! memory.
+//!
+//! Here is how it works in practice:
+//!
+//! ```rust
+//! use nom::{IResult, Err, Needed, error::ErrorKind, bytes, character};
+//!
+//! fn take_streaming(i: &[u8]) -> IResult<&[u8], &[u8]> {
+//!   bytes::streaming::take(4u8)(i)
+//! }
+//!
+//! fn take_complete(i: &[u8]) -> IResult<&[u8], &[u8]> {
+//!   bytes::complete::take(4u8)(i)
+//! }
+//!
+//! // both parsers will take 4 bytes as expected
+//! assert_eq!(take_streaming(&b"abcde"[..]), Ok((&b"e"[..], &b"abcd"[..])));
+//! assert_eq!(take_complete(&b"abcde"[..]), Ok((&b"e"[..], &b"abcd"[..])));
+//!
+//! // if the input is smaller than 4 bytes, the streaming parser
+//! // will return `Incomplete` to indicate that we need more data
+//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::Size(4))));
+//!
+//! // but the complete parser will return an error
+//! assert_eq!(take_complete(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+//!
+//! // the alpha0 function recognizes 0 or more alphabetic characters
+//! fn alpha0_streaming(i: &str) -> IResult<&str, &str> {
+//!   character::streaming::alpha0(i)
+//! }
+//!
+//! fn alpha0_complete(i: &str) -> IResult<&str, &str> {
+//!   character::complete::alpha0(i)
+//! }
+//!
+//! // if there's a clear limit to the recognized characters, both parsers work the same way
+//! assert_eq!(alpha0_streaming("abcd;"), Ok((";", "abcd")));
+//! assert_eq!(alpha0_complete("abcd;"), Ok((";", "abcd")));
+//!
+//! // but when there's no limit, the streaming version returns `Incomplete`, because it cannot
+//! // know if more input data should be recognized. The whole input could be "abcd;", or
+//! // "abcde;"
+//! assert_eq!(alpha0_streaming("abcd"), Err(Err::Incomplete(Needed::Size(1))));
+//!
+//! // while the complete version knows that all of the data is there
+//! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
+//! ```
 //! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
 #![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
