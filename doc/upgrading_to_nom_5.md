@@ -12,7 +12,7 @@ versions:
 reducing the parsing speed. Since compilation features are additive, if a
 dependency used nom with `verbose-errors`, it would be activated for all dependencies
 
-The new error management simplifies the internal type, reomving the `Context`
+The new error management simplifies the internal type, removing the `Context`
 type and the error conversions that needed to happen everywhere.
 
 Here's how the types change. Before:

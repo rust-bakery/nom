@@ -1,32 +1,43 @@
 # Making a new parser from scratch
 
-Writing a parser is a very fun, interactive process, but sometimes a daunting task. How do you test it? How to  see ambiguities in specifications?
+Writing a parser is a very fun, interactive process, but sometimes a daunting
+task. How do you test it? How to  see ambiguities in specifications?
 
-nom is designed to abstract data manipulation (counting array offsets, converting to structures, etc) while providing a safe, composable API. It also takes care of making the code easy to test and read, but it can be confusing at first, if you are not familiar with parser combinators, or if you are not used to Rust macros.
+nom is designed to abstract data manipulation (counting array offsets,
+converting to structures, etc) while providing a safe, composable API. It also
+takes care of making the code easy to test and read, but it can be confusing at
+first, if you are not familiar with parser combinators, or if you are not used
+to Rust macros and generic functions.
 
-This document is here to help you in getting started with nom. If you need more specific help, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
+This document is here to help you in getting started with nom. If you need more
+specific help, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc),
+go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
 # First step: the initial research
 
-A big part of the initial work lies in accumulating enough documentation and samples to understand the format. The specification is useful, but specifications represent an "official" point of view, that may not be the real world usage. Any blog post or open source code is useful, because it shows how people understand the format, and how they work around each other's bugs (if you think a specification ensures every implementation is consistent with the others, think again).
+A big part of the initial work lies in accumulating enough documentation and
+samples to understand the format. The specification is useful, but specifications
+represent an "official" point of view, that may not be the real world usage. Any
+blog post or open source code is useful, because it shows how people understand
+the format, and how they work around each other's bugs (if you think a
+specification ensures every implementation is consistent with the others, think again).
 
-You should get a lot of samples (file or network traces) to test your code. The easy way is to use a small number of samples coming from the same source and develop everything around them, to realize later that they share a very specific bug.
+You should get a lot of samples (file or network traces) to test your code. The
+easy way is to use a small number of samples coming from the same source and
+develop everything around them, to realize later that they share a very specific
+bug.
 
 # Code organization
 
-While it is tempting to insert the parsing code right inside the rest of the logic, it usually results in  unmaintainable code, and makes testing challenging. Parser combinators, the parsing technique used in nom, assemble a lot of small functions to make powerful parsers. This means that those functions only depend on their input, not on an external state. This makes it easy to parse the input partially, and to test those functions independently.
+While it is tempting to insert the parsing code right inside the rest of the
+logic, it usually results in  unmaintainable code, and makes testing challenging.
+Parser combinators, the parsing technique used in nom, assemble a lot of small
+functions to make powerful parsers. This means that those functions only depend
+on their input, not on an external state. This makes it easy to parse the input
+partially, and to test those functions independently.
 
-Usually, you can separate the parsing functions in their own module, so you could have a `src/lib.rs` file containing this:
-
-
-```rust
-fn take_wrapper(input: &[u8], i: u8) -> IResult<&[u8],&[u8]> {
-    take!(input, i * 10)
-}
-
-// will make a parser taking 20 bytes
-named!(parser, apply!(take_wrapper, 2));
-```
+Usually, you can separate the parsing functions in their own module, so you
+could have a `src/lib.rs` file containing this:
 
 ```rust
 #[macro_use]
@@ -34,15 +45,24 @@ extern crate nom;
 pub mod parser;
 ```
 
-And use the methods and structure from `parser` there. The `src/parser.rs` would then import nom functions and structures if needed:
+And the `src/parser.rs` file:
 
 ```rust
-use nom::{be_u16, be_u32};
+use nom::number::complete::be_u16;
+use nom::bytes::complete::take;
+
+pub fn length_value(input: &[u8]) -> IResult<&[u8],&[u8]> {
+    let (input, length) = be_u16(input)?;
+    take(length)(input)
+}
 ```
 
 # Writing a first parser
 
-Let's parse a simple expression like `(12345)`. nom parsers are functions that use the `nom::IResult` type everywhere. As an example, a parser taking a byte slice `&[u8]` and returning a 32 bits unsigned integer `u32` would have this signature: `fn parse_u32(input: &[u8]) -> IResult<&[u8], u32>`.
+Let's parse a simple expression like `(12345)`. nom parsers are functions that
+use the `nom::IResult` type everywhere. As an example, a parser taking a byte
+slice `&[u8]` and returning a 32 bits unsigned integer `u32` would have this
+signature: `fn parse_u32(input: &[u8]) -> IResult<&[u8], u32>`.
 
 The `IResult` type depends on the input and output types, and an optional custom
 error type. This enum can either be `Ok((i,o))` containing the remaining input
@@ -66,106 +86,66 @@ pub enum Err<E> {
 }
 ```
 
-nom uses this type everywhere. Every combination of parsers will pattern match on this to know if it must return a value, an error, consume more data, etc. But this is done behind the scenes most of the time.
+nom uses this type everywhere. Every combination of parsers will pattern match
+on this to know if it must return a value, an error, consume more data, etc.
+But this is done behind the scenes most of the time.
 
-nom provides a macro for function definition, called `named!`:
+Parsers are usually built from the bottom up, by first writing parsers for the
+smallest elements, then assembling them in more complex parsers by using
+combinators.
 
-```rust
-named!(my_function(&[u8]) -> &[u8], tag!("abcd"));
-
-named!(my_function2<&[u8], &[u8]>, tag!("abcd"));
-
-named!(my_function3, tag!("abcd"));
-```
-
-But you could as easily define the function yourself like this:
+As an example, here is how we could build a (non spec compliant) HTTP request
+line parser:
 
 ```rust
-fn my_function(input: &[u8]) -> IResult<&[u8], &[u8]> {
-  tag!(input, "abcd")
+// first implement the basic parsers
+let method = take_while1(is_alpha);
+let space = take_while1(|c| c == ' ');
+let url = take_while1(|c| c!= ' ');
+let is_version = |c| c >= b'0' && c <= b'9' || c == b'.';
+let http = tag("HTTP/");
+let version = take_while1(is_version);
+let line_ending = tag("\r\n");
+
+// combine http and version to extract the version string
+// preceded will return the result of the second parser
+// if both succeed
+let http_version = preceded(http, version);
+
+// combine all previous parsers in one function
+fn request_line(i: &[u8]) -> IResult<&[u8], Request> {
+
+  // tuple takes as argument a tuple of parsers and will return
+  // a tuple of their results
+  let (input, (method, _, url, _, version, _)) =
+    tuple((method, space, url, space, http_version, line_ending))(i)?;
+
+  Ok((input, Request { method, url, version }))
 }
 ```
 
-Note that we pass the input to the first parser in the manual definition, while we do not when we use `named!`. This is a macro trick specific to nom: every parser takes the input as first parameter, and the macros take care of giving the remaining input to the next parser. As an example, take a simple parser like the following one, which recognizes the word "hello" then takes the next 5 bytes:
-
-```rust
-named!(prefixed, preceded!(tag!("hello"), take!(5)));
-```
-
-Once the macros have expanded, this would correspond to:
-
-```rust
-fn prefixed(i: &[u8]) -> ::nom::IResult<&[u8], &[u8]> {
-    {
-        match {
-            use ::std::result::Result::*;
-            use $crate::{Err,Needed,IResult,ErrorKind};
-            use $crate::{Compare,CompareResult,InputLength,Slice,need_more};
-
-            let res: IResult<_,_> = match ($i).compare($tag) {
-                CompareResult::Ok => {
-                    let blen = $tag.input_len();
-                    Ok(($i.slice(blen..), $i.slice(..blen)))
-                },
-                CompareResult::Incomplete => {
-                    need_more($i, Needed::Size($tag.input_len()))
-                },
-                CompareResult::Error => {
-                    let e:ErrorKind<u32> = ErrorKind::Tag;
-                    Err(Err::Error($crate::Context::Code($i, e)))
-                }
-            };
-            res
-        } {
-            Err(e) => Err(e),
-            Ok((i1, _))= > {
-                use ::std::result::Result::*;
-                use ::std::option::Option::*;
-                use $crate::{Needed,IResult};
-
-                use $crate::InputIter;
-                use $crate::Slice;
-                let input = i1;
-                let cnt = $count as usize;
-
-                let res: IResult<_,_,u32> = match input.slice_index(cnt) {
-                    None        => Err(Err::Incomplete(Needed::Size(cnt))),
-                    Some(index) => Ok((input.slice(index..), input.slice(..index)))
-                };
-                res
-            }
-        }
-    }
-}
-```
-
-While this may look like a lot of code, the compiler and the CPU will happily optimize everything, do not worry. You can see that the function matches on the result of the first parser, stops there if it returned an error or incomplete, and if it returned a value, takes the remaining input `i1`, applies the second parser on it, then matches on the result (and returns the value `o2` and the remaining input `i2`).
-
-A lot of complex patterns are implemented that way: generic macros combining other macros or functions. This will handle partial consumption and passing data slices for you.
-
-Since it is easy to combine small parsers, I encourage you to write small functions corresponding to specific parts of the format, test them independently, then combine them in more general parsers.
+Since it is easy to combine small parsers, I encourage you to write small
+functions corresponding to specific parts of the format, test them
+independently, then combine them in more general parsers.
 
 # Finding the right combinator
 
-nom has a lot of different combinators, depending on the use case. They are all described in the [reference](https://docs.rs/nom).
+nom has a lot of different combinators, depending on the use case. They are all
+described in the [reference](https://docs.rs/nom).
 
-[Basic functions](https://docs.rs/nom/#functions) are available. They deal mostly in recognizing character types, like `alphanumeric` or `digit`. They also parse big endian and little endian integers and floats of multiple sizes.
+[Basic functions](https://docs.rs/nom/#functions) are available. They deal mostly
+in recognizing character types, like `alphanumeric` or `digit`. They also parse
+big endian and little endian integers and floats of multiple sizes.
 
-Most of the macros are there to combine parsers, and they do not depend on the input type. this is the case for all of those defined in [src/macros.rs](https://github.com/Geal/nom/blob/master/src/macros.rs). The reference indicates a [possible type signature](https://docs.rs/nom/#macros) for what the macros expect and return. In case of doubt, the documentation often indicates a [code example](https://docs.rs/nom/macro.many0!.html) after the macro definition.
-
-## Type specific combinators
-
-Byte slice related macros can be found in [src/bytes.rs](https://github.com/Geal/nom/blob/master/src/bytes.rs). This file contains the following combinators: `tag!`, `is_not!`, `is_a!`, `escaped!`, `escaped_transform!`, `take_while!`, `take_while1!`, `take_till!`, `take!`, `take_str!`, `take_until_and_consume!`, `take_until_either!`, `take_until_either_and_consume`.
-
-Bit stream related macros are in [src/bits.rs](https://github.com/Geal/nom/blob/master/src/bits.rs).
-
-Character related macros are in [src/character.rs](https://github.com/Geal/nom/blob/master/src/character.rs).
-
-Regular expression related macros are in [src/regexp.rs](https://github.com/Geal/nom/blob/master/src/regexp.rs).
+Most of the functions are there to combine parsers, and they are generic over
+the input type. 
 
 # Testing the parsers
 
-Once you have a parser function, a good trick is to test it on a lot of the samples you gathered, and integrate this to your unit tests. To that end, put all of the test files in a folder like `assets` and refer to test files like this:
+Once you have a parser function, a good trick is to test it on a lot of the
+samples you gathered, and integrate this to your unit tests. To that end, put
+all of the test files in a folder like `assets` and refer to test files like
+this:
 
 ```rust
 #[test]
@@ -176,45 +156,55 @@ fn header_test() {
   // ...
 ```
 
-The `include_bytes!` macro (provided by Rust's standard library) will integrate the file as a byte slice in your code. You can then just refer to the part of the input the parser has to handle via its offset. Here, we take the first 100 bytes of a GIF file to parse its header (complete code [here](https://github.com/Geal/gif.rs/blob/master/src/parser.rs#L305-L309)).
+The `include_bytes!` macro (provided by Rust's standard library) will integrate
+the file as a byte slice in your code. You can then just refer to the part of
+the input the parser has to handle via its offset. Here, we take the first 100
+bytes of a GIF file to parse its header
+(complete code [here](https://github.com/Geal/gif.rs/blob/master/src/parser.rs#L305-L309)).
 
-If your parser handles textual data, you can just use a lot of strings directly in the test, like this:
+If your parser handles textual data, you can just use a lot of strings directly
+in the test, like this:
 
 ```rust
 #[test]
 fn factor_test() {
-  assert_eq!(factor(&b"3"[..]),       Ok((&b""[..], 3)));
-  assert_eq!(factor(&b" 12"[..]),     Ok((&b""[..], 12)));
-  assert_eq!(factor(&b"537  "[..]),   Ok((&b""[..], 537)));
-  assert_eq!(factor(&b"  24   "[..]), Ok((&b""[..], 24)));
+  assert_eq!(factor("3"),       Ok(("", 3)));
+  assert_eq!(factor(" 12"),     Ok(("", 12)));
+  assert_eq!(factor("537  "),   Ok(("", 537)));
+  assert_eq!(factor("  24   "), Ok(("", 24)));
 }
 ```
 
-The more samples and test cases you get, the more you can experiment with your parser design.
+The more samples and test cases you get, the more you can experiment with your
+parser design.
 
 # Debugging the parsers
 
-While Rust macros are really useful to get a simpler syntax, they can sometimes give cryptic errors. As an example, `named!(manytag, many0!(take!(5)));` would result in the following error:
-
-```
-<nom macros>:6:38: 6:41 error: mismatched types:
- expected `&[u8]`,
-    found `collections::vec::Vec<&[u8]>`
-(expected &-ptr,
-    found struct `collections::vec::Vec`) [E0308]
-<nom macros>:6 } Ok ( ( input , res ) ) } ) ; ( $ i : expr , $ f : expr )
-                                                    ^~~
-<nom macros>:20:1: 20:34 note: in this expansion of many0! (defined in <nom macros>)
-tests/arithmetic.rs:13:1: 13:35 note: in this expansion of named! (defined in <nom macros>)
-<nom macros>:6:38: 6:41 help: run `rustc --explain E0308` to see a detailed explanation
-error: aborting due to previous error
-```
-
-This particular one is caused by `named!` generating a function returning a `IResult< &[u8], &[u8] >`, while `many0!(take!(5))` returns a `IResult< &[u8], Vec<&[u8]> >`.
-
 There are a few tools you can use to debug how code is generated.
 
-## trace\_macros
+## dbg_dmp
+
+this function wraps a parser that accepts a `&[u8]` as input and
+prints its hexdump if the child parser encountered an error:
+
+```rust
+use nom::{util::dbg_dmp, bytes::complete::tag};
+
+fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  dbg_dmp(tag("abcd"))(i)
+}
+
+  let a = &b"efghijkl"[..];
+
+// Will print the following message:
+// Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by ' tag ! ( "abcd" ) '
+// 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
+f(a);
+```
+
+## macros specific debugging tools
+
+### trace\_macros
 
 The `trace_macros` feature show how macros are applied. To use it, add `#![feature(trace_macros)]` at the top of your file (you need Rust nightly for this), then apply it like this:
 
@@ -232,7 +222,7 @@ many0! { i , take ! ( 5 ) }
 take! { input , 5 }
 ```
 
-## Pretty printing
+### Pretty printing
 
 rustc can show how code is expanded with the option `--pretty=expanded`. If you want to use it with cargo, use the following command line: `cargo rustc <cargo options> -- -Z unstable-options --pretty=expanded`
 
@@ -260,3 +250,8 @@ fn manytag(i: &[u8]) -> ::nom::IResult<&[u8], Vec<&[u8]>> {
     Ok((input, res))
 }
 ```
+
+### nom-trace
+
+The [nom-trace crate](https://github.com/rust-bakery/nom-trace) extends
+the principle of `dbg_dmp!` to give more context to a parse tree.
