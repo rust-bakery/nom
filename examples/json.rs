@@ -7,20 +7,21 @@ extern crate jemallocator;
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use nom::{Err, IResult, Offset, error::{VerboseError, VerboseErrorKind}};
 use nom::{
-  character::complete::alphanumeric1 as alphanumeric,
-  bytes::complete::{take_while, tag},
-  multi::separated_listc,
   branch::alt,
-  sequence::{preceded, terminated}, error::context
+  bytes::complete::{escaped, tag, take_while},
+  character::complete::{alphanumeric1 as alphanumeric, char, one_of},
+  combinator::{complete, map, not},
+  error::{context, ErrorKind, ParseError},
+  error::{VerboseError, VerboseErrorKind},
+  multi::separated_list,
+  number::complete::double,
+  sequence::{delimited, preceded, separated_pair, terminated},
+  Err, IResult, Offset,
 };
-use nom::character::complete::char;
-use nom::number::complete::recognize_float;
-use nom::error::{ErrorKind,ParseError};
-use std::str;
-use std::iter::repeat;
 use std::collections::HashMap;
+use std::iter::repeat;
+use std::str;
 
 #[derive(Debug, PartialEq)]
 pub enum JsonValue {
@@ -31,117 +32,78 @@ pub enum JsonValue {
   Object(HashMap<String, JsonValue>),
 }
 
-fn sp<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, &'a str, E> {
+fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
   let chars = " \t\r\n";
 
   take_while(move |c| chars.contains(c))(i)
 }
 
-fn float<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, f64, E> {
-  flat_map!(i, recognize_float, parse_to!(f64))
+fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+  escaped(alphanumeric, '\\', one_of("\"n\\"))(i)
 }
 
-fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, &'a str, E> {
-    escaped!(i, call!(alphanumeric), '\\', one_of!("\"n\\"))
-}
-
-fn string<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, &'a str, E> {
-  //delimitedc(i, char('\"'), parse_str, char('\"'))
+fn string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
   let (i, _) = char('\"')(i)?;
 
-  //context("string", |i| terminatedc(i, parse_str, char('\"')))(i)
   context("string", terminated(parse_str, char('\"')))(i)
 }
 
-
-fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) ->IResult<&'a str, bool, E> {
-  alt( (
-      |i| tag("false")(i).map(|(i,_)| (i, false)),
-      |i| tag("true")(i).map(|(i,_)| (i, true))
+fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool, E> {
+  alt((
+      map(tag("false"), |_| false),
+      map(tag("true"), |_| true)
   ))(input)
-  /*
-  match tag::<&'static str, &'a str, E>("false")(i) {
-    Ok((i, _)) => Ok((i, false)),
-    Err(_) => tag("true")(i).map(|(i,_)| (i, true))
-  }
-  */
 }
 
-fn array<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, Vec<JsonValue>, E> {
+fn array<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonValue>, E> {
   let (i, _) = char('[')(i)?;
 
-  /*context(
-    "array",
-    |i| terminatedc(i,
-      |i| separated_listc(i, |i| precededc(i, sp, char(',')), value),
-      |i| precededc(i, sp, char(']')))
-     )(i)*/
   context(
     "array",
     terminated(
-      |i| separated_listc(i, preceded(sp, char(',')), value),
+      separated_list(preceded(sp, char(',')), value),
       preceded(sp, char(']')))
-     )(i)
+  )(i)
 }
 
-fn key_value<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, (&'a str, JsonValue), E> {
-  separated_pair!(i, preceded!(sp, string), preceded!(sp, char!(':')), value)
+fn key_value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (&'a str, JsonValue), E> {
+  separated_pair(preceded(sp, string), preceded(sp, char(':')), value)(i)
 }
 
-fn hash<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, HashMap<String, JsonValue>, E> {
+fn hash<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
   let (i, _) = char('{')(i)?;
   context(
     "map",
     terminated(
-      |i| map!(i,
-        separated_list!(preceded!(sp, char!(',')), key_value),
-        |tuple_vec| tuple_vec
-          .into_iter()
-          .map(|(k, v)| (String::from(k), v))
-          .collect()
-      ),
-      preceded(sp, char('}')))
-     )(i)
-
-/*
-  map!(i,
-    delimited!(
-      char!('{'),
-      separated_list!(preceded!(sp, char!(',')), key_value),
-      preceded!(sp, char!('}'))
+      map(
+        separated_list(preceded(sp, char(',')), key_value),
+        |tuple_vec| {
+          tuple_vec.into_iter().map(|(k, v)| (String::from(k), v)).collect()
+      }),
+      preceded(sp, char('}')),
     ),
-    |tuple_vec| tuple_vec
-      .into_iter()
-      .map(|(k, v)| (String::from(k), v))
-      .collect()
-  )
-  */
+  )(i)
 }
 
-fn value<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, JsonValue, E> {
-  preceded!(i,
+fn value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
+  preceded(
     sp,
-    alt!(
-      hash    => { |h| JsonValue::Object(h)            } |
-      array   => { |v| JsonValue::Array(v)             } |
-      string  => { |s| JsonValue::Str(String::from(s)) } |
-      float   => { |f| JsonValue::Num(f)               } |
-      boolean => { |b| JsonValue::Boolean(b)           }
-    ))
+    alt((
+      map(hash, JsonValue::Object),
+      map(array, JsonValue::Array),
+      map(string, |s| JsonValue::Str(String::from(s))),
+      map(double, JsonValue::Num),
+      map(boolean, JsonValue::Boolean),
+    )),
+  )(i)
 }
 
-fn root<'a, E: ParseError<&'a str>>(i: &'a str) ->IResult<&'a str, JsonValue, E> {
-  delimited!(i,
+fn root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
+  delimited(
     sp,
-    alt( (
-      |input| hash(input).map(|(i,h)| (i, JsonValue::Object(h))),
-      |input| array(input).map(|(i,v)| (i, JsonValue::Array(v)))
-    ) ),
-    /*alt!(
-      hash    => { |h| JsonValue::Object(h)            } |
-      array   => { |v| JsonValue::Array(v)             }
-    ),*/
-    not!(complete!(sp)))
+    alt((map(hash, JsonValue::Object), map(array, JsonValue::Array))),
+    not(complete(sp)),
+  )(i)
 }
 
 fn convert_error(input: &str, e: VerboseError<&str>) -> String {
@@ -156,7 +118,7 @@ fn convert_error(input: &str, e: VerboseError<&str>) -> String {
     let mut line = 0;
     let mut column = 0;
 
-    for (j,l) in lines.iter().enumerate() {
+    for (j, l) in lines.iter().enumerate() {
       if offset <= l.len() {
         line = j;
         column = offset;
@@ -166,24 +128,23 @@ fn convert_error(input: &str, e: VerboseError<&str>) -> String {
       }
     }
 
-
     match kind {
       VerboseErrorKind::Char(c) => {
         result += &format!("{}: at line {}:\n", i, line);
         result += &lines[line];
         result += "\n";
         if column > 0 {
-          result += &repeat(' ').take(column-1).collect::<String>();
+          result += &repeat(' ').take(column - 1).collect::<String>();
         }
         result += "^\n";
         result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
-      },
+      }
       VerboseErrorKind::Context(s) => {
         result += &format!("{}: at line {}, in {}:\n", i, line, s);
         result += &lines[line];
         result += "\n";
         if column > 0 {
-          result += &repeat(' ').take(column -1).collect::<String>();
+          result += &repeat(' ').take(column - 1).collect::<String>();
         }
         result += "^\n\n";
       }
@@ -202,13 +163,16 @@ fn main() {
   } ";
 
   println!("will try to parse:\n\n**********\n{}\n**********\n", data);
-  println!("basic errors - `root::<(&str, ErrorKind)>(data)`:\n{:#?}\n", root::<(&str, ErrorKind)>(data));
+  println!(
+    "basic errors - `root::<(&str, ErrorKind)>(data)`:\n{:#?}\n",
+    root::<(&str, ErrorKind)>(data)
+  );
   println!("parsed verbose: {:#?}", root::<VerboseError<&str>>(data));
 
   match root::<VerboseError<&str>>(data) {
     Err(Err::Error(e)) | Err(Err::Failure(e)) => {
       println!("verbose errors - `root::<VerboseError>(data)`:\n{}", convert_error(data, e));
-    },
+    }
     _ => panic!(),
   }
 }
