@@ -1,6 +1,5 @@
 #![cfg(feature = "alloc")]
 
-#[macro_use]
 extern crate nom;
 extern crate jemallocator;
 
@@ -43,9 +42,13 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
 }
 
 fn string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-  let (i, _) = char('\"')(i)?;
-
-  context("string", cut(terminated(parse_str, char('\"'))))(i)
+  context("string",
+    preceded(
+      char('\"'),
+      cut(terminated(
+          parse_str,
+          char('\"')
+  ))))(i)
 }
 
 fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool, E> {
@@ -56,24 +59,23 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool,
 }
 
 fn array<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonValue>, E> {
-  let (i, _) = char('[')(i)?;
-
   context(
     "array",
+    preceded(char('['),
     cut(terminated(
       separated_list(preceded(sp, char(',')), value),
       preceded(sp, char(']'))))
-  )(i)
+  ))(i)
 }
 
 fn key_value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (&'a str, JsonValue), E> {
-  separated_pair(preceded(sp, string), preceded(sp, char(':')), value)(i)
+separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value)(i)
 }
 
 fn hash<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
-  let (i, _) = char('{')(i)?;
   context(
     "map",
+    preceded(char('{'),
     cut(terminated(
       map(
         separated_list(preceded(sp, char(',')), key_value),
@@ -82,7 +84,7 @@ fn hash<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<Stri
       }),
       preceded(sp, char('}')),
     ))
-  )(i)
+  ))(i)
 }
 
 fn value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
@@ -108,7 +110,6 @@ fn root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E
 
 fn convert_error(input: &str, e: VerboseError<&str>) -> String {
   let lines: Vec<_> = input.lines().map(String::from).collect();
-  //println!("lines: {:#?}", lines);
 
   let mut result = String::new();
 
