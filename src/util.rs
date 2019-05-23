@@ -146,10 +146,10 @@ macro_rules! dbg (
 /// It also displays the input in hexdump format
 ///
 /// ```rust
-/// use nom::{util::dbg_dmp, bytes::complete::tag};
+/// use nom::{IResult, dbg_dmp, bytes::complete::tag};
 ///
 /// fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-///   dbg_dmp(tag("abcd"))(i)
+///   dbg_dmp(tag("abcd"), "tag")(i)
 /// }
 ///
 ///   let a = &b"efghijkl"[..];
@@ -160,7 +160,7 @@ macro_rules! dbg (
 /// f(a);
 /// ```
 #[cfg(feature = "std")]
-fn dbg_dmp<'a, F, O, E: Debug>(f: F, context: &'static str) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
+pub fn dbg_dmp<'a, F, O, E: Debug>(f: F, context: &'static str) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
   where F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E> {
   move |i: &'a [u8]| {
       match f(i) {
