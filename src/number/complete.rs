@@ -6,7 +6,10 @@ use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use lib::std::ops::{RangeFrom, RangeTo};
 use traits::{Offset, Slice};
 use error::{ErrorKind, make_error};
-use character::complete::digit1;
+use character::complete::{char, digit1};
+use combinator::{opt, cut, map, recognize};
+use branch::alt;
+use sequence::{tuple, pair};
 
 /// Recognizes an unsigned 1 byte integer
 ///
@@ -739,7 +742,7 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], 
 /// assert_eq!(parser("11e-1"), Ok(("", "11e-1")));
 /// assert_eq!(parser("123E-02"), Ok(("", "123E-02")));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", "123")));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
 /// ```
 #[allow(unused_imports)]
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -748,27 +751,24 @@ where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter,
-  <T as InputIter>::Item: AsChar,
+  <T as InputIter>::Item: AsChar+Copy,
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
-  recognize!(input,
-    tuple!(
-      opt!(alt!(char!('+') | char!('-'))),
-      alt!(
-        value!((), tuple!(digit1, opt!(pair!(char!('.'), opt!(digit1)))))
-      | value!((), tuple!(char!('.'), digit1))
-      ),
-      opt!(tuple!(
-        alt!(char!('e') | char!('E')),
-        opt!(alt!(char!('+') | char!('-'))),
-        // fixme: convert errors to failure here, since parsing a e or E indicates we should
-        // have an exponent
-        return_error!(ErrorKind::Digit, digit1)
-        )
-      )
-    )
-  )
+  recognize(
+    tuple((
+      opt(alt((char('+'), char('-')))),
+      alt((
+        map(tuple((digit1, opt(pair(char('.'), opt(digit1))))), |_| ()),
+        map(tuple((char('.'), digit1)), |_| ())
+      )),
+      opt(tuple((
+        alt((char('e'), char('E'))),
+        opt(alt((char('+'), char('-')))),
+        cut(digit1)
+      )))
+    ))
+  )(input)
 }
 
 /// Recognizes floating point number in a byte string and returns a f32

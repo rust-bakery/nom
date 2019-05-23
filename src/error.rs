@@ -502,7 +502,7 @@ macro_rules! fix_error (
 /// named!(parser<&str, f64>, flat_map!(recognize_float, parse_to!(f64)));
 ///
 /// assert_eq!(parser("123.45;"), Ok((";", 123.45)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! flat_map(

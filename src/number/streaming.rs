@@ -5,7 +5,10 @@ use error::{ErrorKind, ParseError};
 use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use lib::std::ops::{RangeFrom, RangeTo};
 use traits::{Offset, Slice};
-use character::streaming::digit1;
+use character::streaming::{char, digit1};
+use sequence::{pair, tuple};
+use combinator::{cut, map, opt, recognize};
+use branch::alt;
 
 /// Recognizes an unsigned 1 byte integer
 ///
@@ -749,21 +752,20 @@ where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
 {
-  recognize!(input,
-    tuple!(
-      opt!(alt!(char!('+') | char!('-'))),
-      alt!(
-        value!((), tuple!(digit1, opt!(pair!(char!('.'), opt!(digit1)))))
-      | value!((), tuple!(char!('.'), digit1))
-      ),
-      opt!(tuple!(
-        alt!(char!('e') | char!('E')),
-        opt!(alt!(char!('+') | char!('-'))),
-        digit1
-        )
-      )
-    )
-  )
+  recognize(
+    tuple((
+      opt(alt((char('+'), char('-')))),
+      alt((
+        map(tuple((digit1, opt(pair(char('.'), opt(digit1))))), |_| ()),
+        map(tuple((char('.'), digit1)), |_| ())
+      )),
+      opt(tuple((
+        alt((char('e'), char('E'))),
+        opt(alt((char('+'), char('-')))),
+        cut(digit1)
+      )))
+    ))
+  )(input)
 }
 
 /// Recognizes floating point number in a byte string and returns a f32

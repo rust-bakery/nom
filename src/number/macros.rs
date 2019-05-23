@@ -188,9 +188,6 @@ macro_rules! i128 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big 
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use internal::Err;
-  use error::ErrorKind;
   use number::Endianness;
 
   macro_rules! assert_parse(
