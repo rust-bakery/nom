@@ -11,7 +11,7 @@ use nom::{
   branch::alt,
   bytes::complete::{escaped, tag, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
-  combinator::{complete, map, not, cut},
+  combinator::{map, opt, cut},
   error::{context, ErrorKind, ParseError},
   error::{VerboseError, VerboseErrorKind},
   multi::separated_list,
@@ -102,7 +102,7 @@ fn root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E
   delimited(
     sp,
     alt((map(hash, JsonValue::Object), map(array, JsonValue::Array))),
-    not(complete(sp)),
+    opt(sp),
   )(i)
 }
 
