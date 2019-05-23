@@ -11,7 +11,7 @@ use nom::{
   branch::alt,
   bytes::complete::{escaped, tag, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
-  combinator::{complete, map, not},
+  combinator::{complete, map, not, cut},
   error::{context, ErrorKind, ParseError},
   error::{VerboseError, VerboseErrorKind},
   multi::separated_list,
@@ -45,7 +45,7 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
 fn string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
   let (i, _) = char('\"')(i)?;
 
-  context("string", terminated(parse_str, char('\"')))(i)
+  context("string", cut(terminated(parse_str, char('\"'))))(i)
 }
 
 fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool, E> {
@@ -60,9 +60,9 @@ fn array<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonVal
 
   context(
     "array",
-    terminated(
+    cut(terminated(
       separated_list(preceded(sp, char(',')), value),
-      preceded(sp, char(']')))
+      preceded(sp, char(']'))))
   )(i)
 }
 
@@ -74,14 +74,14 @@ fn hash<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<Stri
   let (i, _) = char('{')(i)?;
   context(
     "map",
-    terminated(
+    cut(terminated(
       map(
         separated_list(preceded(sp, char(',')), key_value),
         |tuple_vec| {
           tuple_vec.into_iter().map(|(k, v)| (String::from(k), v)).collect()
       }),
       preceded(sp, char('}')),
-    ),
+    ))
   )(i)
 }
 
