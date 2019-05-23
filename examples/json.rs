@@ -125,8 +125,9 @@ fn convert_error(input: &str, e: VerboseError<&str>) -> String {
         column = offset;
         break;
       } else {
-        offset = offset - l.len();
+        offset = offset - l.len() - 1;
       }
+
     }
 
     match kind {
@@ -134,8 +135,9 @@ fn convert_error(input: &str, e: VerboseError<&str>) -> String {
         result += &format!("{}: at line {}:\n", i, line);
         result += &lines[line];
         result += "\n";
+
         if column > 0 {
-          result += &repeat(' ').take(column - 1).collect::<String>();
+          result += &repeat(' ').take(column).collect::<String>();
         }
         result += "^\n";
         result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
@@ -145,10 +147,19 @@ fn convert_error(input: &str, e: VerboseError<&str>) -> String {
         result += &lines[line];
         result += "\n";
         if column > 0 {
-          result += &repeat(' ').take(column - 1).collect::<String>();
+          result += &repeat(' ').take(column).collect::<String>();
         }
         result += "^\n\n";
-      }
+      },
+      /*VerboseErrorKind::Nom(e) => {
+        result += &format!("{}: at line {}, in {:?}:\n", i, line, e);
+        result += &lines[line];
+        result += "\n";
+        if column > 0 {
+          result += &repeat(' ').take(column).collect::<String>();
+        }
+        result += "^\n\n";
+      }*/
       _ => {}
     }
   }
