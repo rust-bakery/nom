@@ -2,7 +2,6 @@
 
 #[macro_use]
 extern crate nom;
-#[macro_use]
 extern crate criterion;
 extern crate jemallocator;
 
@@ -11,8 +10,6 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
 use nom::IResult;
-use std::env;
-use std::fs::File;
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug)]

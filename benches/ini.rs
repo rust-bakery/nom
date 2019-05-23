@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate nom;
-#[macro_use]
 extern crate criterion;
 extern crate jemallocator;
 
@@ -22,24 +21,6 @@ use std::collections::HashMap;
 fn category(i: &[u8]) -> IResult<&[u8], &str> {
   map_res(delimited(char('['), take_while(|c| c != b']'), char(']')), str::from_utf8)(i)
 }
-
-fn complete_byte_slice_to_str<'a>(s: &'a[u8]) -> Result<&'a str, str::Utf8Error> {
-  str::from_utf8(s)
-}
-
-/*
-named!(
-  category<&str>,
-  map_res!(
-    delimited!(
-      char!('['),
-      take_while!(call!(|c| c != ']' as u8)),
-      char!(']')
-    ),
-    str::from_utf8
-  )
-);
-*/
 
 named!(key_value    <&[u8],(&str,&str)>,
   do_parse!(
