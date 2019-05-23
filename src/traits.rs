@@ -797,7 +797,12 @@ impl<'a, 'b> FindToken<&'a u8> for &'b str {
 
 impl<'a> FindToken<char> for &'a [u8] {
   fn find_token(&self, token: char) -> bool {
-    memchr::memchr(token as u8, self).is_some()
+    for i in self.iter() {
+      if token as u8 == *i {
+        return true;
+      }
+    }
+    false
   }
 }
 
