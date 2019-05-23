@@ -739,7 +739,7 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], 
 /// assert_eq!(parser("11e-1;"), Ok((";", "11e-1")));
 /// assert_eq!(parser("123E-02;"), Ok((";", "123E-02")));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", "123")));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
 /// ```
 #[allow(unused_imports)]
 #[cfg_attr(rustfmt, rustfmt_skip)]
@@ -1182,6 +1182,7 @@ mod tests {
       ".3e-2",
       "1.e4",
       "1.2e4",
+      "12.34",
       "-1.234E-12",
       "-1.234e-12",
     ];

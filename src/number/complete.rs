@@ -1181,6 +1181,7 @@ mod tests {
       ".3e-2",
       "1.e4",
       "1.2e4",
+      "12.34",
       "-1.234E-12",
       "-1.234e-12",
     ];
@@ -1191,14 +1192,14 @@ mod tests {
 
       println!("now parsing: {} -> {}", test, expected32);
 
-      let larger = format!("{};", test);
-      assert_parse!(recognize_float(&larger[..]), Ok((";", test)));
+      let larger = format!("{}", test);
+      assert_parse!(recognize_float(&larger[..]), Ok(("", test)));
 
-      assert_parse!(float(larger.as_bytes()), Ok((&b";"[..], expected32)));
-      assert_parse!(float(&larger[..]), Ok((";", expected32)));
+      assert_parse!(float(larger.as_bytes()), Ok((&b""[..], expected32)));
+      assert_parse!(float(&larger[..]), Ok(("", expected32)));
 
-      assert_parse!(double(larger.as_bytes()), Ok((&b";"[..], expected64)));
-      assert_parse!(double(&larger[..]), Ok((";", expected64)));
+      assert_parse!(double(larger.as_bytes()), Ok((&b""[..], expected64)));
+      assert_parse!(double(&larger[..]), Ok(("", expected64)));
     }
 
     let remaining_exponent = "-1.234E-";
