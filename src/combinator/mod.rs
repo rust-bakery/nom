@@ -599,6 +599,97 @@ where
   cut(parser)(input)
 }
 
+/// creates an iterator from input data and a parser
+///
+/// call the iterator's [finish] method to get the remaining input if successful,
+/// or the error value if we encountered an error
+///
+/// ```rust
+/// use nom::{combinator::iterator, IResult, bytes::complete::tag, character::complete::alpha1, sequence::terminated};
+/// use std::collections::HashMap;
+///
+/// let data = "abc|defg|hijkl|mnopqr|123";
+/// let mut it = iterator(data, terminated(alpha1, tag("|")));
+///
+/// let parsed = it.map(|v| (v, v.len())).collect::<HashMap<_,_>>();
+/// let res: IResult<_,_> = it.finish();
+///
+/// assert_eq!(parsed, [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)].iter().cloned().collect());
+/// assert_eq!(res, Ok(("123", ())));
+/// ```
+pub fn iterator<Input, Output, Error, F>(input: Input, f: F) -> ParserIterator<Input, Error, F>
+where
+  F: Fn(Input) -> IResult<Input, Output, Error>,
+  Error: ParseError<Input> {
+
+    ParserIterator {
+      iterator: f,
+      input,
+      state: State::Running,
+    }
+}
+
+/// main structure associated to the [iterator] function
+pub struct ParserIterator<I, E, F> {
+  iterator: F,
+  input: I,
+  state: State<E>,
+}
+
+impl<I: Clone, E: Clone, F> ParserIterator<I, E, F> {
+  /// returns the remaining input if parsing was successful, or the error if we encountered an error
+  pub fn finish(self) -> IResult<I, (), E> {
+    match &self.state {
+      State::Running | State::Done => Ok((self.input.clone(), ())),
+      State::Failure(e) => Err(Err::Failure(e.clone())),
+      State::Incomplete(i) => Err(Err::Incomplete(i.clone())),
+    }
+  }
+}
+
+impl<'a, Input ,Output ,Error, F> core::iter::Iterator for &'a mut ParserIterator<Input, Error, F>
+    where
+    F: Fn(Input) -> IResult<Input, Output, Error>,
+    Input: Clone
+{
+  type Item = Output;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    if let State::Running = self.state {
+      let input = self.input.clone();
+
+      match (self.iterator)(input) {
+        Ok((i, o)) => {
+          self.input = i;
+          Some(o)
+        },
+        Err(Err::Error(_)) => {
+          self.state = State::Done;
+          None
+        },
+        Err(Err::Failure(e)) => {
+          self.state = State::Failure(e);
+          None
+        },
+        Err(Err::Incomplete(i)) => {
+          self.state = State::Incomplete(i);
+          None
+        },
+      }
+    } else {
+      None
+    }
+  }
+}
+
+enum State<E> {
+  Running,
+  Done,
+  Failure(E),
+  Incomplete(Needed),
+}
+
+
 #[cfg(test)]
 mod tests {
   use super::*;
