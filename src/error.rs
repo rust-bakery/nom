@@ -8,6 +8,11 @@
 
 use internal::{Err, IResult};
 
+#[cfg(feature="std")]
+use std::iter::repeat;
+#[cfg(feature="std")]
+use traits::Offset;
+
 /// this trait must be implemented by the error type of a nom parser
 ///
 /// There are already implementations of it for `(Input, ErrorKind)`
@@ -136,9 +141,66 @@ where
         Err(Err::Failure(e)) => Err(Err::Failure(E::add_context(i, context, e))),
       }
     }
-
 }
 
+/// transforms a `VerboseError` into a trace with input position information
+#[cfg(feature="std")]
+pub fn convert_error(input: &str, e: VerboseError<&str>) -> String {
+  let lines: Vec<_> = input.lines().map(String::from).collect();
+
+  let mut result = String::new();
+
+  for (i, (substring, kind)) in e.errors.iter().enumerate() {
+    let mut offset = input.offset(substring);
+
+    let mut line = 0;
+    let mut column = 0;
+
+    for (j, l) in lines.iter().enumerate() {
+      if offset <= l.len() {
+        line = j;
+        column = offset;
+        break;
+      } else {
+        offset = offset - l.len() - 1;
+      }
+    }
+
+    match kind {
+      VerboseErrorKind::Char(c) => {
+        result += &format!("{}: at line {}:\n", i, line);
+        result += &lines[line];
+        result += "\n";
+
+        if column > 0 {
+          result += &repeat(' ').take(column).collect::<String>();
+        }
+        result += "^\n";
+        result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
+      }
+      VerboseErrorKind::Context(s) => {
+        result += &format!("{}: at line {}, in {}:\n", i, line, s);
+        result += &lines[line];
+        result += "\n";
+        if column > 0 {
+          result += &repeat(' ').take(column).collect::<String>();
+        }
+        result += "^\n\n";
+      },
+      VerboseErrorKind::Nom(e) => {
+        result += &format!("{}: at line {}, in {:?}:\n", i, line, e);
+        result += &lines[line];
+        result += "\n";
+        if column > 0 {
+          result += &repeat(' ').take(column).collect::<String>();
+        }
+        result += "^\n\n";
+      }
+    }
+  }
+
+  result
+}
 
 /// indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
