@@ -736,6 +736,7 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], 
 ///   recognize_float(s)
 /// };
 ///
+/// assert_eq!(parser("12.34;"), Ok((";", "12.34")));
 /// assert_eq!(parser("11e-1;"), Ok((";", "11e-1")));
 /// assert_eq!(parser("123E-02;"), Ok((";", "123E-02")));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", "123")));
