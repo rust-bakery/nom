@@ -751,7 +751,7 @@ where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter,
-  <T as InputIter>::Item: AsChar+Copy,
+  <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
 {
@@ -793,7 +793,7 @@ pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + ::traits::ParseTo<f32>,
+  T: InputIter + InputLength + crate::traits::ParseTo<f32>,
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar
@@ -867,7 +867,7 @@ pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + ::traits::ParseTo<f64>,
+  T: InputIter + InputLength + crate::traits::ParseTo<f64>,
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar

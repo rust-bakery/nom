@@ -561,9 +561,9 @@ macro_rules! re_bytes_captures_static (
 #[cfg(test)]
 mod tests {
   #[cfg(feature = "alloc")]
-  use lib::std::vec::Vec;
-  use error::ErrorKind;
-  use internal::Err;
+  use crate::lib::std::vec::Vec;
+  use crate::error::ErrorKind;
+  use crate::internal::Err;
 
   #[test]
   fn re_match() {
