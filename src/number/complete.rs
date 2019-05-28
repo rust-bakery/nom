@@ -786,7 +786,7 @@ where
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
 /// ```
 #[cfg(not(feature = "lexical"))]
 pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
@@ -860,7 +860,7 @@ where
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Alt))));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
 /// ```
 #[cfg(not(feature = "lexical"))]
 pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
