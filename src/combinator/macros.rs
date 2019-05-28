@@ -983,11 +983,11 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err, IResult, Needed};
-  use error::ParseError;
-  use error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
+  use crate::error::ParseError;
+  use crate::error::ErrorKind;
   #[cfg(feature = "alloc")]
-  use lib::std::boxed::Box;
+  use crate::lib::std::boxed::Box;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -1094,7 +1094,7 @@ mod tests {
     assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
   }
 
-  use lib::std::convert::From;
+  use crate::lib::std::convert::From;
   #[derive(Debug, PartialEq)]
   pub struct CustomError(&'static str);
   impl<I> From<(I, ErrorKind)> for CustomError {

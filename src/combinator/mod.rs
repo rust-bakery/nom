@@ -3,18 +3,18 @@
 #![allow(unused_imports)]
 
 #[cfg(feature = "alloc")]
-use lib::std::boxed::Box;
+use crate::lib::std::boxed::Box;
 
 #[cfg(feature = "std")]
-use lib::std::fmt::Debug;
-use internal::*;
-use error::ParseError;
-use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, ParseTo};
-use lib::std::ops::{Range, RangeFrom, RangeTo};
-use lib::std::borrow::Borrow;
-use traits::{Compare, CompareResult, Offset, Slice};
-use error::ErrorKind;
-use lib::std::mem::transmute;
+use crate::lib::std::fmt::Debug;
+use crate::internal::*;
+use crate::error::ParseError;
+use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, ParseTo};
+use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::lib::std::borrow::Borrow;
+use crate::traits::{Compare, CompareResult, Offset, Slice};
+use crate::error::ErrorKind;
+use crate::lib::std::mem::transmute;
 
 #[macro_use]
 mod macros;
@@ -693,10 +693,10 @@ enum State<E> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::{Err, IResult, Needed};
-  use error::ParseError;
-  use bytes::complete::take;
-  use number::complete::be_u8;
+  use crate::internal::{Err, IResult, Needed};
+  use crate::error::ParseError;
+  use crate::bytes::complete::take;
+  use crate::number::complete::be_u8;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -750,7 +750,7 @@ mod tests {
     assert_parse!(rest_len(input), Ok((input, input.len())));
   }
 
-  use lib::std::convert::From;
+  use crate::lib::std::convert::From;
   impl From<u32> for CustomError {
     fn from(_: u32) -> Self {
       CustomError
@@ -771,7 +771,7 @@ mod tests {
   #[allow(dead_code)]
   fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], CustomError> {
     //fix_error!(input, CustomError, alphanumeric)
-    ::character::streaming::alphanumeric1(input)
+    crate::character::streaming::alphanumeric1(input)
   }
 
   #[test]
@@ -803,7 +803,7 @@ mod tests {
   #[test]
   #[allow(unused)]
   fn test_verify_ref() {
-    use bytes::complete::take;
+    use crate::bytes::complete::take;
 
     let parser1 = verify(take(3u8), |s: &[u8]| s == &b"abc"[..]);
 
@@ -811,14 +811,14 @@ mod tests {
     assert_eq!(parser1(&b"defg"[..]), Err(Err::Error((&b"defg"[..], ErrorKind::Verify))));
 
     fn parser2(i: &[u8]) -> IResult<&[u8], u32> {
-      verify(::number::streaming::be_u32, |val: &u32| *val < 3)(i)
+      verify(crate::number::streaming::be_u32, |val: &u32| *val < 3)(i)
     }
   }
 
   #[test]
   #[cfg(feature = "alloc")]
   fn test_verify_alloc() {
-    use bytes::complete::take;
+    use crate::bytes::complete::take;
     let parser1 = verify(map(take(3u8), |s: &[u8]| s.to_vec()), |s: &[u8]| s == &b"abc"[..]);
 
     assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], (&b"abc").to_vec())));

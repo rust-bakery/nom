@@ -473,9 +473,9 @@ macro_rules! nom_compile_error (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err, IResult, Needed};
-  use number::streaming::be_u16;
-  use error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
+  use crate::number::streaming::be_u16;
+  use crate::error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -816,7 +816,7 @@ mod tests {
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[test]
   fn do_parse_dependency() {
-    use number::streaming::be_u8;
+    use crate::number::streaming::be_u8;
 
     named!(length_value,
       do_parse!(

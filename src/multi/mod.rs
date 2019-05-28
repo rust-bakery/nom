@@ -3,12 +3,12 @@
 #[macro_use]
 mod macros;
 
-use internal::{Err, IResult, Needed};
-use error::ParseError;
-use traits::{InputLength, InputTake, ToUsize};
+use crate::internal::{Err, IResult, Needed};
+use crate::error::ParseError;
+use crate::traits::{InputLength, InputTake, ToUsize};
 #[cfg(feature = "alloc")]
-use ::lib::std::vec::Vec;
-use error::ErrorKind;
+use crate::lib::std::vec::Vec;
+use crate::error::ErrorKind;
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -36,7 +36,7 @@ where
   E: ParseError<I>,
 {
   move |i: I| {
-    let mut acc = ::lib::std::vec::Vec::with_capacity(4);
+    let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
     let mut i = i.clone();
     loop {
       match f(i.clone()) {
@@ -99,7 +99,7 @@ where
       Err(Err::Error(err)) => return Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
       Err(e) => return Err(e),
       Ok((i1, o)) => {
-        let mut acc = ::lib::std::vec::Vec::with_capacity(4);
+        let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
         acc.push(o);
         i = i1;
 
@@ -161,7 +161,7 @@ where
   E: ParseError<I>,
 {
   move |i: I| {
-    let mut res = ::lib::std::vec::Vec::new();
+    let mut res = crate::lib::std::vec::Vec::new();
     let mut i = i.clone();
     loop {
       match g(i.clone()) {
@@ -405,7 +405,7 @@ where
   E: ParseError<I>,
 {
   move |i: I| {
-    let mut res = ::lib::std::vec::Vec::with_capacity(m);
+    let mut res = crate::lib::std::vec::Vec::with_capacity(m);
     let mut input = i.clone();
     let mut count: usize = 0;
 
@@ -609,7 +609,7 @@ where
 {
   move |i: I | {
     let mut input = i.clone();
-    let mut res = ::lib::std::vec::Vec::new();
+    let mut res = crate::lib::std::vec::Vec::new();
 
     for _ in 0..count {
       let input_ = input.clone();

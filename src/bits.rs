@@ -259,9 +259,9 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use lib::std::ops::{AddAssign, Shl, Shr};
-  use internal::{Err, Needed};
-  use error::ErrorKind;
+  use crate::lib::std::ops::{AddAssign, Shl, Shr};
+  use crate::internal::{Err, Needed};
+  use crate::error::ErrorKind;
 
   #[test]
   fn take_bits() {
@@ -327,7 +327,7 @@ mod tests {
     );
   }
 
-  named!(bits_bytes_bs, bits!(bytes!(::combinator::rest)));
+  named!(bits_bytes_bs, bits!(bytes!(crate::combinator::rest)));
   #[test]
   fn bits_bytes() {
     let input = [0b10_10_10_10];

@@ -1,15 +1,15 @@
 //! parsers recognizing numbers, complete input version
 
-use internal::*;
-use error::ParseError;
-use traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use lib::std::ops::{RangeFrom, RangeTo};
-use traits::{Offset, Slice};
-use error::{ErrorKind, make_error};
-use character::complete::{char, digit1};
-use combinator::{opt, cut, map, recognize};
-use branch::alt;
-use sequence::{tuple, pair};
+use crate::internal::*;
+use crate::error::ParseError;
+use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
+use crate::lib::std::ops::{RangeFrom, RangeTo};
+use crate::traits::{Offset, Slice};
+use crate::error::{ErrorKind, make_error};
+use crate::character::complete::{char, digit1};
+use crate::combinator::{opt, cut, map, recognize};
+use crate::branch::alt;
+use crate::sequence::{tuple, pair};
 
 /// Recognizes an unsigned 1 byte integer
 ///
@@ -705,7 +705,7 @@ pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 /// ```
 #[inline]
 pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  let (i, o) = ::bytes::complete::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
+  let (i, o) = crate::bytes::complete::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
   // Do not parse more than 8 characters for a u32
   let (parsed, remaining) = if o.len() <= 8 {
     (o, i)
@@ -830,7 +830,7 @@ where
 #[cfg(feature = "lexical")]
 pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
-  T: ::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
+  T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
 {
   let res = ::lexical_core::try_atof32_slice(input.as_bytes());
 
@@ -904,7 +904,7 @@ where
 #[cfg(feature = "lexical")]
 pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
-  T: ::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
+  T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
 {
   let res = ::lexical_core::try_atof64_slice(input.as_bytes());
 
@@ -922,8 +922,8 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::Err;
-  use error::ErrorKind;
+  use crate::internal::Err;
+  use crate::error::ErrorKind;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {

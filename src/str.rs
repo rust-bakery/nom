@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-  use {Err, error::ErrorKind, IResult};
+  use crate::{Err, error::ErrorKind, IResult};
 
   #[test]
   fn tagtr_succeed() {
@@ -143,7 +143,7 @@ mod test {
     }
   }
 
-  use internal::Needed;
+  use crate::internal::Needed;
 
   fn is_alphabetic(c: char) -> bool {
     (c as u8 >= 0x41 && c as u8 <= 0x5A) || (c as u8 >= 0x61 && c as u8 <= 0x7A)

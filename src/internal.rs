@@ -1,7 +1,7 @@
 //! Basic types to build the parsers
 
 use self::Needed::*;
-use error::ErrorKind;
+use crate::error::ErrorKind;
 
 /// Holds the result of parsing functions
 ///
@@ -123,13 +123,13 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use error::ErrorKind;
+  use crate::error::ErrorKind;
 
   #[doc(hidden)]
   #[macro_export]
   macro_rules! assert_size (
     ($t:ty, $sz:expr) => (
-      assert_eq!(::lib::std::mem::size_of::<$t>(), $sz);
+      assert_eq!(crate::lib::std::mem::size_of::<$t>(), $sz);
     );
   );
 

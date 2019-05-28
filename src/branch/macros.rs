@@ -719,12 +719,12 @@ macro_rules! permutation_iterator (
 
 #[cfg(test)]
 mod tests {
-  use error::ErrorKind;
-  use error::ParseError;
-  use internal::{Err, IResult, Needed};
-  use lib::std::fmt::Debug;
+  use crate::error::ErrorKind;
+  use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
+  use crate::lib::std::fmt::Debug;
   #[cfg(feature = "alloc")]
-  use lib::std::string::{String, ToString};
+  use crate::lib::std::string::{String, ToString};
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (

@@ -1,7 +1,7 @@
 #[cfg(feature = "alloc")]
-use lib::std::vec::Vec;
+use crate::lib::std::vec::Vec;
 #[cfg(feature = "std")]
-use internal::IResult;
+use crate::internal::IResult;
 #[cfg(feature = "std")]
 use std::fmt::Debug;
 

@@ -6,12 +6,12 @@
 //! It contains an error code and the input position that triggered it.
 //!
 
-use internal::{Err, IResult};
+use crate::internal::{Err, IResult};
 
 #[cfg(feature="std")]
 use std::iter::repeat;
 #[cfg(feature="std")]
-use traits::Offset;
+use crate::traits::Offset;
 
 /// this trait must be implemented by the error type of a nom parser
 ///
@@ -85,7 +85,7 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 pub struct VerboseError<I> {
   /// list of errors accumulated by `VerboseError`, containing the affected
   /// part of input data, and some context
-  pub errors: ::lib::std::vec::Vec<(I, VerboseErrorKind)>,
+  pub errors: crate::lib::std::vec::Vec<(I, VerboseErrorKind)>,
 }
 
 #[cfg(feature = "alloc")]

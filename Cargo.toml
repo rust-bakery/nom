@@ -10,6 +10,7 @@ readme = "README.md"
 documentation = "https://docs.rs/nom"
 keywords = ["parser", "parser-combinators", "parsing", "streaming", "bit"]
 categories = ["parsing"]
+edition = "2018"
 
 include = [
   "CHANGELOG.md",

@@ -1,21 +1,21 @@
 //! Traits input types have to implement to work with nom combinators
 //!
-use internal::{Err, IResult, Needed};
-use error::{ParseError, ErrorKind};
-use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use lib::std::iter::Enumerate;
-use lib::std::slice::Iter;
-use lib::std::iter::Map;
-use lib::std::str::Chars;
-use lib::std::str::CharIndices;
-use lib::std::str::FromStr;
-use lib::std::str::from_utf8;
+use crate::internal::{Err, IResult, Needed};
+use crate::error::{ParseError, ErrorKind};
+use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use crate::lib::std::iter::Enumerate;
+use crate::lib::std::slice::Iter;
+use crate::lib::std::iter::Map;
+use crate::lib::std::str::Chars;
+use crate::lib::std::str::CharIndices;
+use crate::lib::std::str::FromStr;
+use crate::lib::std::str::from_utf8;
 use memchr;
 
 #[cfg(feature = "alloc")]
-use lib::std::string::String;
+use crate::lib::std::string::String;
 #[cfg(feature = "alloc")]
-use lib::std::vec::Vec;
+use crate::lib::std::vec::Vec;
 
 /// abstract method to calculate the input length
 pub trait InputLength {

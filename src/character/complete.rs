@@ -2,12 +2,12 @@
 //!
 //! Functions recognizing specific characters.
 
-use internal::{Err, IResult};
-use error::ParseError;
-use ::lib::std::ops::{Range, RangeFrom, RangeTo};
-use traits::{AsChar, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
-use traits::{Compare, CompareResult};
-use error::ErrorKind;
+use crate::internal::{Err, IResult};
+use crate::error::ParseError;
+use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::traits::{AsChar, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
+use crate::traits::{Compare, CompareResult};
+use crate::error::ErrorKind;
 
 /// Recognizes one character.
 ///
@@ -731,7 +731,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use internal::Err;
+  use crate::internal::Err;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -857,7 +857,7 @@ mod tests {
     assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
   }
 
-  use traits::Offset;
+  use crate::traits::Offset;
   #[test]
   fn offset() {
     let a = &b"abcd;"[..];
@@ -979,18 +979,18 @@ mod tests {
       Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
     );
 
-    assert!(::character::is_hex_digit(b'0'));
-    assert!(::character::is_hex_digit(b'9'));
-    assert!(::character::is_hex_digit(b'a'));
-    assert!(::character::is_hex_digit(b'f'));
-    assert!(::character::is_hex_digit(b'A'));
-    assert!(::character::is_hex_digit(b'F'));
-    assert!(!::character::is_hex_digit(b'g'));
-    assert!(!::character::is_hex_digit(b'G'));
-    assert!(!::character::is_hex_digit(b'/'));
-    assert!(!::character::is_hex_digit(b':'));
-    assert!(!::character::is_hex_digit(b'@'));
-    assert!(!::character::is_hex_digit(b'\x60'));
+    assert!(crate::character::is_hex_digit(b'0'));
+    assert!(crate::character::is_hex_digit(b'9'));
+    assert!(crate::character::is_hex_digit(b'a'));
+    assert!(crate::character::is_hex_digit(b'f'));
+    assert!(crate::character::is_hex_digit(b'A'));
+    assert!(crate::character::is_hex_digit(b'F'));
+    assert!(!crate::character::is_hex_digit(b'g'));
+    assert!(!crate::character::is_hex_digit(b'G'));
+    assert!(!crate::character::is_hex_digit(b'/'));
+    assert!(!crate::character::is_hex_digit(b':'));
+    assert!(!crate::character::is_hex_digit(b'@'));
+    assert!(!crate::character::is_hex_digit(b'\x60'));
   }
 
   #[test]
@@ -1004,16 +1004,16 @@ mod tests {
       Err(Err::Error(error_position!(i, ErrorKind::OctDigit)))
     );
 
-    assert!(::character::is_oct_digit(b'0'));
-    assert!(::character::is_oct_digit(b'7'));
-    assert!(!::character::is_oct_digit(b'8'));
-    assert!(!::character::is_oct_digit(b'9'));
-    assert!(!::character::is_oct_digit(b'a'));
-    assert!(!::character::is_oct_digit(b'A'));
-    assert!(!::character::is_oct_digit(b'/'));
-    assert!(!::character::is_oct_digit(b':'));
-    assert!(!::character::is_oct_digit(b'@'));
-    assert!(!::character::is_oct_digit(b'\x60'));
+    assert!(crate::character::is_oct_digit(b'0'));
+    assert!(crate::character::is_oct_digit(b'7'));
+    assert!(!crate::character::is_oct_digit(b'8'));
+    assert!(!crate::character::is_oct_digit(b'9'));
+    assert!(!crate::character::is_oct_digit(b'a'));
+    assert!(!crate::character::is_oct_digit(b'A'));
+    assert!(!crate::character::is_oct_digit(b'/'));
+    assert!(!crate::character::is_oct_digit(b':'));
+    assert!(!crate::character::is_oct_digit(b'@'));
+    assert!(!crate::character::is_oct_digit(b'\x60'));
   }
 
   #[test]

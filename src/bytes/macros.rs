@@ -449,14 +449,14 @@ macro_rules! take_until1 (
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err, Needed, IResult};
+  use crate::internal::{Err, Needed, IResult};
   #[cfg(feature = "alloc")]
-  use lib::std::string::String;
+  use crate::lib::std::string::String;
   #[cfg(feature = "alloc")]
-  use lib::std::vec::Vec;
-  use character::streaming::{alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit, multispace1 as multispace, oct_digit1 as oct_digit, space1 as space};
-  use error::ErrorKind;
-  use character::is_alphabetic;
+  use crate::lib::std::vec::Vec;
+  use crate::character::streaming::{alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit, multispace1 as multispace, oct_digit1 as oct_digit, space1 as space};
+  use crate::error::ErrorKind;
+  use crate::character::is_alphabetic;
 
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
@@ -574,7 +574,7 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn escape_transform() {
-    use lib::std::str;
+    use crate::lib::std::str;
 
     named!(
       esc<String>,
@@ -876,7 +876,7 @@ mod tests {
   #[test]
   #[cfg(feature = "std")]
   fn recognize_take_while() {
-    use ::character::is_alphanumeric;
+    use crate::character::is_alphanumeric;
     named!(x, take_while!(is_alphanumeric));
     named!(y, recognize!(x));
     assert_eq!(x(&b"ab."[..]), Ok((&b"."[..], &b"ab"[..])));
@@ -886,7 +886,7 @@ mod tests {
 
   #[test]
   fn length_bytes() {
-    use number::streaming::le_u8;
+    use crate::number::streaming::le_u8;
     named!(x, length_data!(le_u8));
     assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));

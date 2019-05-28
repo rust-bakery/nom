@@ -530,14 +530,14 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use internal::{Err, IResult, Needed};
-  use error::ParseError;
-  use lib::std::str::{self, FromStr};
+  use crate::internal::{Err, IResult, Needed};
+  use crate::error::ParseError;
+  use crate::lib::std::str::{self, FromStr};
   #[cfg(feature = "alloc")]
-  use lib::std::vec::Vec;
-  use character::streaming::digit1 as digit;
-  use number::streaming::{be_u16, be_u8};
-  use error::ErrorKind;
+  use crate::lib::std::vec::Vec;
+  use crate::character::streaming::digit1 as digit;
+  use crate::number::streaming::{be_u16, be_u8};
+  use crate::error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (

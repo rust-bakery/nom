@@ -57,8 +57,8 @@ macro_rules! char (
 
 #[cfg(test)]
 mod tests {
-  use internal::Err;
-  use error::ErrorKind;
+  use crate::internal::Err;
+  use crate::error::ErrorKind;
 
   #[test]
   fn one_of() {

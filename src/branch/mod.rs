@@ -3,9 +3,9 @@
 #[macro_use]
 mod macros;
 
-use error::ErrorKind;
-use error::ParseError;
-use internal::{Err, IResult};
+use crate::error::ErrorKind;
+use crate::error::ParseError;
+use crate::internal::{Err, IResult};
 
 /// helper trait for the [alt()] combinator
 ///

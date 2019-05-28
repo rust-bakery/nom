@@ -1,11 +1,11 @@
 //! parsers recognizing bytes streams, complete input version
 
-use error::ErrorKind;
-use error::ParseError;
-use internal::{Err, IResult};
-use lib::std::ops::RangeFrom;
-use lib::std::result::Result::*;
-use traits::{Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice, ToUsize};
+use crate::error::ErrorKind;
+use crate::error::ParseError;
+use crate::internal::{Err, IResult};
+use crate::lib::std::ops::RangeFrom;
+use crate::lib::std::result::Result::*;
+use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice, ToUsize};
 
 /// Recognizes a pattern
 ///
@@ -443,13 +443,13 @@ where
 ///
 pub fn escaped<Input, Error, F, G, O1, O2>(normal: F, control_char: char, escapable: G) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
-  Input: Clone + ::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
-  <Input as InputIter>::Item: ::traits::AsChar,
+  Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
+  <Input as InputIter>::Item: crate::traits::AsChar,
   F: Fn(Input) -> IResult<Input, O1, Error>,
   G: Fn(Input) -> IResult<Input, O2, Error>,
   Error: ParseError<Input>,
 {
-  use traits::AsChar;
+  use crate::traits::AsChar;
 
   move |input: Input| {
     let mut i = input.clone();
@@ -499,8 +499,8 @@ where
 #[doc(hidden)]
 pub fn escapedc<Input, Error, F, G, O1, O2>(i: Input, normal: F, control_char: char, escapable: G) -> IResult<Input, Input, Error>
 where
-  Input: Clone + ::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
-  <Input as InputIter>::Item: ::traits::AsChar,
+  Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
+  <Input as InputIter>::Item: crate::traits::AsChar,
   F: Fn(Input) -> IResult<Input, O1, Error>,
   G: Fn(Input) -> IResult<Input, O2, Error>,
   Error: ParseError<Input>,
@@ -544,19 +544,19 @@ pub fn escaped_transform<Input, Error, F, G, O1, O2, ExtendItem, Output>(
   transform: G,
 ) -> impl Fn(Input) -> IResult<Input, Output, Error>
 where
-  Input: Clone + ::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
-  Input: ::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O1: ::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O2: ::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  Output: core::iter::Extend<<Input as ::traits::ExtendInto>::Item>,
-  Output: core::iter::Extend<<O1 as ::traits::ExtendInto>::Item>,
-  Output: core::iter::Extend<<O2 as ::traits::ExtendInto>::Item>,
-  <Input as InputIter>::Item: ::traits::AsChar,
+  Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
+  Input: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  Output: core::iter::Extend<<Input as crate::traits::ExtendInto>::Item>,
+  Output: core::iter::Extend<<O1 as crate::traits::ExtendInto>::Item>,
+  Output: core::iter::Extend<<O2 as crate::traits::ExtendInto>::Item>,
+  <Input as InputIter>::Item: crate::traits::AsChar,
   F: Fn(Input) -> IResult<Input, O1, Error>,
   G: Fn(Input) -> IResult<Input, O2, Error>,
   Error: ParseError<Input>,
 {
-  use traits::AsChar;
+  use crate::traits::AsChar;
 
   move |input: Input| {
     let mut index = 0;
@@ -616,14 +616,14 @@ pub fn escaped_transformc<Input, Error, F, G, O1, O2, ExtendItem, Output>(
   transform: G,
 ) -> IResult<Input, Output, Error>
 where
-  Input: Clone + ::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
-  Input: ::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O1: ::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O2: ::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  Output: core::iter::Extend<<Input as ::traits::ExtendInto>::Item>,
-  Output: core::iter::Extend<<O1 as ::traits::ExtendInto>::Item>,
-  Output: core::iter::Extend<<O2 as ::traits::ExtendInto>::Item>,
-  <Input as InputIter>::Item: ::traits::AsChar,
+  Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
+  Input: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  Output: core::iter::Extend<<Input as crate::traits::ExtendInto>::Item>,
+  Output: core::iter::Extend<<O1 as crate::traits::ExtendInto>::Item>,
+  Output: core::iter::Extend<<O2 as crate::traits::ExtendInto>::Item>,
+  <Input as InputIter>::Item: crate::traits::AsChar,
   F: Fn(Input) -> IResult<Input, O1, Error>,
   G: Fn(Input) -> IResult<Input, O2, Error>,
   Error: ParseError<Input>,

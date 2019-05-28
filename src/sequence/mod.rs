@@ -3,8 +3,8 @@
 #[macro_use]
 mod macros;
 
-use internal::IResult;
-use error::ParseError;
+use crate::internal::IResult;
+use crate::error::ParseError;
 
 /// Gets an object from the first parser,
 /// then gets another object from the second parser.
