@@ -10,14 +10,19 @@ use std::collections::HashMap;
 
 fn main() {
   let mut data = "abcabcabcabc";
-  let data2 = data.clone();
 
   fn parser(i: &str) -> IResult<&str, &str> {
     tag("abc")(i)
   }
 
+  // `from_fn` (available from Rust 1.34) can create an iterator
+  // from a closure
   let it = std::iter::from_fn(move|| {
     match parser(data) {
+      // when successful, a nom parser returns a tuple of
+      // the remaining input and the output value.
+      // So we replace the captured input data with the
+      // remaining input, to be parsed on the next call
       Ok((i, o)) => {
         data = i;
         Some(o)
@@ -32,9 +37,10 @@ fn main() {
 
   println!("\n********************\n");
 
-  println!("data is now: {:?}", data2);
-
   let data = "abcabcabcabc";
+
+  // if `from_fn` is not available, it is possible to fold
+  // over an iterator of functions
   let res = std::iter::repeat(parser).take(3).try_fold((data, Vec::new()), |(data, mut acc), parser| {
     parser(data).map(|(i, o)| {
       acc.push(o);
@@ -49,6 +55,11 @@ fn main() {
 
   let data = "key1:value1,key2:value2,key3:value3,;";
 
+  // `nom::combinator::iterator` will return an iterator
+  // producing the parsed values. Compared to the previous
+  // solutions:
+  // - we can work with a normal iterator like `from_fn`
+  // - we can get the remaining input afterwards, like with the `try_fold` trick
   let mut nom_it = iterator(data, terminated(separated_pair(alphanumeric1, tag(":"), alphanumeric1), tag(",")));
 
   let res = nom_it.map(|(k, v)| (k.to_uppercase(), v)).collect::<HashMap<_, _>>();
