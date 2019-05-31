@@ -144,8 +144,16 @@ where
 }
 
 /// transforms a `VerboseError` into a trace with input position information
-#[cfg(feature="std")]
-pub fn convert_error(input: &str, e: VerboseError<&str>) -> String {
+#[cfg(feature="alloc")]
+pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
+  use crate::{
+    lib::std::{
+      string::String, vec::Vec,
+      iter::repeat
+    },
+    traits::Offset
+  };
+
   let lines: Vec<_> = input.lines().map(String::from).collect();
 
   let mut result = String::new();
