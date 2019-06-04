@@ -156,6 +156,9 @@ required-features = ["alloc"]
 #[[example]]
 #name = "iterator"
 
+[[example]]
+name = "s_expression"
+
 [badges]
 travis-ci = { repository = "Geal/nom" }
 coveralls = { repository = "Geal/nom", branch = "master", service = "github" }
