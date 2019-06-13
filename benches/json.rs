@@ -97,32 +97,32 @@ fn json_bench(c: &mut Criterion) {
 }
 
 fn recognize_float_bytes(c: &mut Criterion) {
-  println!("recognize_float_bytes result: {:?}", recognize_float::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
+  println!("recognize_float_bytes result: {:?}", recognize_float::<_, (&[u8],ErrorKind)>(&b"-1.234E-12"[..]));
   c.bench_function("recognize float bytes", |b| {
-    b.iter(|| recognize_float::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| recognize_float::<_, (&[u8],ErrorKind)>(&b"-1.234E-12"[..]));
   });
 }
 
 fn recognize_float_str(c: &mut Criterion) {
-  println!("recognize_float_str result: {:?}", recognize_float::<_, (_,ErrorKind)>("-1.234E-12"));
+  println!("recognize_float_str result: {:?}", recognize_float::<_, (&str,ErrorKind)>("-1.234E-12"));
   c.bench_function("recognize float str", |b| {
-    b.iter(|| recognize_float::<_, (_,ErrorKind)>("-1.234E-12"));
+    b.iter(|| recognize_float::<_, (&str,ErrorKind)>("-1.234E-12"));
   });
 }
 
 fn float_bytes(c: &mut Criterion) {
   use nom::number::complete::double;
-  println!("float_bytes result: {:?}", double::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
+  println!("float_bytes result: {:?}", double::<_, (&[u8],ErrorKind)>(&b"-1.234E-12"[..]));
   c.bench_function("float bytes", |b| {
-    b.iter(|| double::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| double::<_, (&[u8],ErrorKind)>(&b"-1.234E-12"[..]));
   });
 }
 
 fn float_str(c: &mut Criterion) {
   use nom::number::complete::double;
-  println!("float_str result: {:?}", double::<_, (_,ErrorKind)>("-1.234E-12"));
+  println!("float_str result: {:?}", double::<_, (&str,ErrorKind)>("-1.234E-12"));
   c.bench_function("float str", |b| {
-    b.iter(|| double::<_, (_,ErrorKind)>("-1.234E-12"));
+    b.iter(|| double::<_, (&str,ErrorKind)>("-1.234E-12"));
   });
 }
 

@@ -732,14 +732,16 @@ where
 mod tests {
   use super::*;
   use crate::internal::Err;
+  use lib::std::fmt::Debug;
 
-  macro_rules! assert_parse(
-    ($left: expr, $right: expr) => {
-      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
-      assert_eq!(res, $right);
-    };
-  );
-
+  #[inline]
+  fn assert_parse<I, O>(left: IResult<I, O>, right: IResult<I, O>)
+  where
+    I: Debug + PartialEq,
+    O: Debug + PartialEq,
+  {
+    assert_eq!(left, right);
+  }
 
   #[test]
   fn character() {
@@ -751,53 +753,29 @@ mod tests {
     let e: &[u8] = b" ";
     let f: &[u8] = b" ;";
     //assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_parse!(alpha1(a), Ok((empty, a)));
-    assert_eq!(
-      alpha1(b),
-      Err(Err::Error((b, ErrorKind::Alpha)))
-    );
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &b"a"[..])));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
-    assert_eq!(
-      digit1(a),
-      Err(Err::Error((a, ErrorKind::Digit)))
-    );
-    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      digit1(c),
-      Err(Err::Error((c, ErrorKind::Digit)))
-    );
-    assert_eq!(
-      digit1(d),
-      Err(Err::Error((d, ErrorKind::Digit)))
-    );
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12".as_bytes(), &b"a"[..])));
-    assert_eq!(
-      hex_digit1(e),
-      Err(Err::Error((e, ErrorKind::HexDigit)))
-    );
-    assert_eq!(
-      oct_digit1(a),
-      Err(Err::Error((a, ErrorKind::OctDigit)))
-    );
-    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      oct_digit1(c),
-      Err(Err::Error((c, ErrorKind::OctDigit)))
-    );
-    assert_eq!(
-      oct_digit1(d),
-      Err(Err::Error((d, ErrorKind::OctDigit)))
-    );
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
-    assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
-    assert_eq!(space1::<_, (_, ErrorKind)>(f), Ok((&b";"[..], &b" "[..])));
+    assert_parse(alpha1(a), Ok((empty, a)));
+    assert_eq!(alpha1(b), Err(Err::Error((b, ErrorKind::Alpha))));
+    assert_parse(alpha1(c), Ok((&c[1..], &b"a"[..])));
+    assert_parse(alpha1(d), Ok(("é12".as_bytes(), &b"az"[..])));
+    assert_parse(digit1(a), Err(Err::Error((a, ErrorKind::Digit))));
+    assert_parse(digit1(b), Ok((empty, b)));
+    assert_parse(digit1(c), Err(Err::Error((c, ErrorKind::Digit))));
+    assert_parse(digit1(d), Err(Err::Error((d, ErrorKind::Digit))));
+    assert_parse(hex_digit1(a), Ok((empty, a)));
+    assert_parse(hex_digit1(b), Ok((empty, b)));
+    assert_parse(hex_digit1(c), Ok((empty, c)));
+    assert_parse(hex_digit1(d), Ok(("zé12".as_bytes(), &b"a"[..])));
+    assert_parse(hex_digit1(e), Err(Err::Error((e, ErrorKind::HexDigit))));
+    assert_parse(oct_digit1(a), Err(Err::Error((a, ErrorKind::OctDigit))));
+    assert_parse(oct_digit1(b), Ok((empty, b)));
+    assert_parse(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
+    assert_parse(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
+    assert_parse(alphanumeric1(a), Ok((empty, a)));
+    //assert_parse(fix_error!(b,(), alphanumeric), Ok((empty, b)));
+    assert_parse(alphanumeric1(c), Ok((empty, c)));
+    assert_parse(alphanumeric1(d), Ok(("é12".as_bytes(), &b"az"[..])));
+    assert_parse(space1(e), Ok((empty, e)));
+    assert_parse(space1(f), Ok((&b";"[..], &b" "[..])));
   }
 
   #[cfg(feature = "alloc")]
@@ -809,52 +787,28 @@ mod tests {
     let c = "a123";
     let d = "azé12";
     let e = " ";
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(
-      alpha1(b),
-      Err(Err::Error((b, ErrorKind::Alpha)))
-    );
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("12", &"azé"[..])));
-    assert_eq!(
-      digit1(a),
-      Err(Err::Error((a, ErrorKind::Digit)))
-    );
-    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      digit1(c),
-      Err(Err::Error((c, ErrorKind::Digit)))
-    );
-    assert_eq!(
-      digit1(d),
-      Err(Err::Error((d, ErrorKind::Digit)))
-    );
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
-    assert_eq!(
-      hex_digit1(e),
-      Err(Err::Error((e, ErrorKind::HexDigit)))
-    );
-    assert_eq!(
-      oct_digit1(a),
-      Err(Err::Error((a, ErrorKind::OctDigit)))
-    );
-    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      oct_digit1(c),
-      Err(Err::Error((c, ErrorKind::OctDigit)))
-    );
-    assert_eq!(
-      oct_digit1(d),
-      Err(Err::Error((d, ErrorKind::OctDigit)))
-    );
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok((empty, d)));
-    assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
+    assert_parse(alpha1(a), Ok((empty, a)));
+    assert_parse(alpha1(b), Err(Err::Error((b, ErrorKind::Alpha))));
+    assert_parse(alpha1(c), Ok((&c[1..], &"a"[..])));
+    assert_parse(alpha1(d), Ok(("12", &"azé"[..])));
+    assert_parse(digit1(a), Err(Err::Error((a, ErrorKind::Digit))));
+    assert_parse(digit1(b), Ok((empty, b)));
+    assert_parse(digit1(c), Err(Err::Error((c, ErrorKind::Digit))));
+    assert_parse(digit1(d), Err(Err::Error((d, ErrorKind::Digit))));
+    assert_parse(hex_digit1(a), Ok((empty, a)));
+    assert_parse(hex_digit1(b), Ok((empty, b)));
+    assert_parse(hex_digit1(c), Ok((empty, c)));
+    assert_parse(hex_digit1(d), Ok(("zé12", &"a"[..])));
+    assert_parse(hex_digit1(e), Err(Err::Error((e, ErrorKind::HexDigit))));
+    assert_parse(oct_digit1(a), Err(Err::Error((a, ErrorKind::OctDigit))));
+    assert_parse(oct_digit1(b), Ok((empty, b)));
+    assert_parse(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
+    assert_parse(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
+    assert_parse(alphanumeric1(a), Ok((empty, a)));
+    //assert_parse(fix_error!(b,(), alphanumeric), Ok((empty, b)));
+    assert_parse(alphanumeric1(c), Ok((empty, c)));
+    assert_parse(alphanumeric1(d), Ok((empty, d)));
+    assert_parse(space1(e), Ok((empty, e)));
   }
 
   use crate::traits::Offset;
@@ -867,43 +821,43 @@ mod tests {
     let e = &b" \t\r\n;"[..];
     let f = &b"123abcDEF;"[..];
 
-    match alpha1::<_, (_, ErrorKind)>(a) {
+    match alpha1::<_, (&[u8], ErrorKind)>(a) {
       Ok((i, _)) => {
         assert_eq!(a.offset(i) + i.len(), a.len());
       }
       _ => panic!("wrong return type in offset test for alpha"),
     }
-    match digit1::<_, (_, ErrorKind)>(b) {
+    match digit1::<_, (&[u8], ErrorKind)>(b) {
       Ok((i, _)) => {
         assert_eq!(b.offset(i) + i.len(), b.len());
       }
       _ => panic!("wrong return type in offset test for digit"),
     }
-    match alphanumeric1::<_, (_, ErrorKind)>(c) {
+    match alphanumeric1::<_, (&[u8], ErrorKind)>(c) {
       Ok((i, _)) => {
         assert_eq!(c.offset(i) + i.len(), c.len());
       }
       _ => panic!("wrong return type in offset test for alphanumeric"),
     }
-    match space1::<_, (_, ErrorKind)>(d) {
+    match space1::<_, (&[u8], ErrorKind)>(d) {
       Ok((i, _)) => {
         assert_eq!(d.offset(i) + i.len(), d.len());
       }
       _ => panic!("wrong return type in offset test for space"),
     }
-    match multispace1::<_, (_, ErrorKind)>(e) {
+    match multispace1::<_, (&[u8], ErrorKind)>(e) {
       Ok((i, _)) => {
         assert_eq!(e.offset(i) + i.len(), e.len());
       }
       _ => panic!("wrong return type in offset test for multispace"),
     }
-    match hex_digit1::<_, (_, ErrorKind)>(f) {
+    match hex_digit1::<_, (&[u8], ErrorKind)>(f) {
       Ok((i, _)) => {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
       _ => panic!("wrong return type in offset test for hex_digit"),
     }
-    match oct_digit1::<_, (_, ErrorKind)>(f) {
+    match oct_digit1::<_, (&[u8], ErrorKind)>(f) {
       Ok((i, _)) => {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
@@ -914,70 +868,57 @@ mod tests {
   #[test]
   fn is_not_line_ending_bytes() {
     let a: &[u8] = b"ab12cd\nefgh";
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(a), Ok((&b"\nefgh"[..], &b"ab12cd"[..])));
+    assert_parse(not_line_ending(a), Ok((&b"\nefgh"[..], &b"ab12cd"[..])));
 
     let b: &[u8] = b"ab12cd\nefgh\nijkl";
-    assert_eq!(
-      not_line_ending::<_, (_, ErrorKind)>(b),
-      Ok((&b"\nefgh\nijkl"[..], &b"ab12cd"[..]))
-    );
+    assert_parse(not_line_ending(b), Ok((&b"\nefgh\nijkl"[..], &b"ab12cd"[..])));
 
     let c: &[u8] = b"ab12cd\r\nefgh\nijkl";
-    assert_eq!(
-      not_line_ending::<_, (_, ErrorKind)>(c),
-      Ok((&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..]))
+    assert_parse(
+      not_line_ending(c),
+      Ok((&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..])),
     );
 
     let d: &[u8] = b"ab12cd";
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Ok((&[][..], &d[..])));
+    assert_parse(not_line_ending(d), Ok((&[][..], &d[..])));
   }
 
   #[test]
   fn is_not_line_ending_str() {
-
     /*
     let a: &str = "ab12cd\nefgh";
-    assert_eq!(not_line_ending(a), Ok((&"\nefgh"[..], &"ab12cd"[..])));
+    assert_parse(not_line_ending(a), Ok((&"\nefgh"[..], &"ab12cd"[..])));
 
     let b: &str = "ab12cd\nefgh\nijkl";
-    assert_eq!(not_line_ending(b), Ok((&"\nefgh\nijkl"[..], &"ab12cd"[..])));
+    assert_parse(not_line_ending(b), Ok((&"\nefgh\nijkl"[..], &"ab12cd"[..])));
 
     let c: &str = "ab12cd\r\nefgh\nijkl";
-    assert_eq!(not_line_ending(c), Ok((&"\r\nefgh\nijkl"[..], &"ab12cd"[..])));
+    assert_parse(not_line_ending(c), Ok((&"\r\nefgh\nijkl"[..], &"ab12cd"[..])));
 
     let d = "βèƒôřè\nÂßÇáƒƭèř";
-    assert_eq!(not_line_ending(d), Ok((&"\nÂßÇáƒƭèř"[..], &"βèƒôřè"[..])));
+    assert_parse(not_line_ending(d), Ok((&"\nÂßÇáƒƭèř"[..], &"βèƒôřè"[..])));
 
     let e = "βèƒôřè\r\nÂßÇáƒƭèř";
-    assert_eq!(not_line_ending(e), Ok((&"\r\nÂßÇáƒƭèř"[..], &"βèƒôřè"[..])));
+    assert_parse(not_line_ending(e), Ok((&"\r\nÂßÇáƒƭèř"[..], &"βèƒôřè"[..])));
     */
 
     let f = "βèƒôřè\rÂßÇáƒƭèř";
-    assert_eq!(
-      not_line_ending(f),
-      Err(Err::Error((f, ErrorKind::Tag)))
-    );
+    assert_parse(not_line_ending(f), Err(Err::Error((f, ErrorKind::Tag))));
 
     let g2: &str = "ab12cd";
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g2), Ok(("", g2)));
+    assert_parse(not_line_ending(g2), Ok(("", g2)));
   }
 
   #[test]
   fn hex_digit_test() {
     let i = &b"0123456789abcdefABCDEF;"[..];
-    assert_parse!(hex_digit1(i), Ok((&b";"[..], &i[..i.len() - 1])));
+    assert_parse(hex_digit1(i), Ok((&b";"[..], &i[..i.len() - 1])));
 
     let i = &b"g"[..];
-    assert_parse!(
-      hex_digit1(i),
-      Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
-    );
+    assert_parse(hex_digit1(i), Err(Err::Error(error_position!(i, ErrorKind::HexDigit))));
 
     let i = &b"G"[..];
-    assert_parse!(
-      hex_digit1(i),
-      Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
-    );
+    assert_parse(hex_digit1(i), Err(Err::Error(error_position!(i, ErrorKind::HexDigit))));
 
     assert!(crate::character::is_hex_digit(b'0'));
     assert!(crate::character::is_hex_digit(b'9'));
@@ -996,13 +937,10 @@ mod tests {
   #[test]
   fn oct_digit_test() {
     let i = &b"01234567;"[..];
-    assert_parse!(oct_digit1(i), Ok((&b";"[..], &i[..i.len() - 1])));
+    assert_parse(oct_digit1(i), Ok((&b";"[..], &i[..i.len() - 1])));
 
     let i = &b"8"[..];
-    assert_parse!(
-      oct_digit1(i),
-      Err(Err::Error(error_position!(i, ErrorKind::OctDigit)))
-    );
+    assert_parse(oct_digit1(i), Err(Err::Error(error_position!(i, ErrorKind::OctDigit))));
 
     assert!(crate::character::is_oct_digit(b'0'));
     assert!(crate::character::is_oct_digit(b'7'));
@@ -1020,74 +958,62 @@ mod tests {
   fn full_line_windows() {
     //let not_line_ending = |i:&[u8]| take_while(|c| c != b'\r' && c != b'\n')(i);
 
-    named!(
-      take_full_line<(&[u8], &[u8])>,
-      tuple!(not_line_ending, line_ending)
-    );
+    named!(take_full_line<(&[u8], &[u8])>, tuple!(not_line_ending, line_ending));
     let input = b"abc\r\n";
     let output = take_full_line(input);
-    assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\r\n"[..]))));
+    assert_parse(output, Ok((&b""[..], (&b"abc"[..], &b"\r\n"[..]))));
   }
 
   #[test]
   fn full_line_unix() {
     //let not_line_ending = |i:&[u8]| take_while(|c| c != b'\n')(i);
-    named!(
-      take_full_line<(&[u8], &[u8])>,
-      tuple!(not_line_ending, line_ending)
-    );
+    named!(take_full_line<(&[u8], &[u8])>, tuple!(not_line_ending, line_ending));
     let input = b"abc\n";
     let output = take_full_line(input);
-    assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\n"[..]))));
+    assert_parse(output, Ok((&b""[..], (&b"abc"[..], &b"\n"[..]))));
   }
 
   #[test]
   fn check_windows_lineending() {
     let input = b"\r\n";
     let output = line_ending(&input[..]);
-    assert_parse!(output, Ok((&b""[..], &b"\r\n"[..])));
+    assert_parse(output, Ok((&b""[..], &b"\r\n"[..])));
   }
 
   #[test]
   fn check_unix_lineending() {
     let input = b"\n";
     let output = line_ending(&input[..]);
-    assert_parse!(output, Ok((&b""[..], &b"\n"[..])));
+    assert_parse(output, Ok((&b""[..], &b"\n"[..])));
   }
 
   #[test]
   fn cr_lf() {
-    assert_parse!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(crlf(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
-    assert_parse!(
-      crlf(&b"\ra"[..]),
-      Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
-    );
+    assert_parse(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
+    assert_parse(crlf(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
+    assert_parse(crlf(&b"\ra"[..]), Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf))));
 
-    assert_parse!(crlf("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(crlf("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
-    assert_parse!(
-      crlf("\ra"),
-      Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
-    );
+    assert_parse(crlf("\r\na"), Ok(("a", "\r\n")));
+    assert_parse(crlf("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
+    assert_parse(crlf("\ra"), Err(Err::Error(error_position!("\ra", ErrorKind::CrLf))));
   }
 
   #[test]
   fn end_of_line() {
-    assert_parse!(line_ending(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
-    assert_parse!(line_ending(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(line_ending(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
-    assert_parse!(
+    assert_parse(line_ending(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
+    assert_parse(line_ending(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
+    assert_parse(
+      line_ending(&b"\r"[..]),
+      Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))),
+    );
+    assert_parse(
       line_ending(&b"\ra"[..]),
-      Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
+      Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf))),
     );
 
-    assert_parse!(line_ending("\na"), Ok(("a", "\n")));
-    assert_parse!(line_ending("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(line_ending("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
-    assert_parse!(
-      line_ending("\ra"),
-      Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
-    );
+    assert_parse(line_ending("\na"), Ok(("a", "\n")));
+    assert_parse(line_ending("\r\na"), Ok(("a", "\r\n")));
+    assert_parse(line_ending("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
+    assert_parse(line_ending("\ra"), Err(Err::Error(error_position!("\ra", ErrorKind::CrLf))));
   }
 }

@@ -925,243 +925,219 @@ mod tests {
   use crate::internal::Err;
   use crate::error::ErrorKind;
 
-  macro_rules! assert_parse(
-    ($left: expr, $right: expr) => {
-      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
-      assert_eq!(res, $right);
-    };
-  );
+  #[inline]
+  fn assert_parse<I, O>(left: IResult<I, O>, right: IResult<I, O>)
+  where
+    I: ::lib::std::fmt::Debug + PartialEq,
+    O: ::lib::std::fmt::Debug + PartialEq,
+  {
+    assert_eq!(left, right);
+  }
 
   #[test]
   fn i8_tests() {
-    assert_parse!(be_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_parse!(be_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_parse!(be_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse(be_i8(&[0x00]), Ok((&b""[..], 0)));
+    assert_parse(be_i8(&[0x7f]), Ok((&b""[..], 127)));
+    assert_parse(be_i8(&[0xff]), Ok((&b""[..], -1)));
+    assert_parse(be_i8(&[0x80]), Ok((&b""[..], -128)));
   }
 
   #[test]
   fn i16_tests() {
-    assert_parse!(be_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_i16(&[0x7f, 0xff]), Ok((&b""[..], 32_767_i16)));
-    assert_parse!(be_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(be_i16(&[0x80, 0x00]), Ok((&b""[..], -32_768_i16)));
+    assert_parse(be_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse(be_i16(&[0x7f, 0xff]), Ok((&b""[..], 32_767_i16)));
+    assert_parse(be_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse(be_i16(&[0x80, 0x00]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
   fn u24_tests() {
-    assert_parse!(be_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_u24(&[0x00, 0xFF, 0xFF]), Ok((&b""[..], 65_535_u32)));
-    assert_parse!(be_u24(&[0x12, 0x34, 0x56]), Ok((&b""[..], 1_193_046_u32)));
+    assert_parse(be_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse(be_u24(&[0x00, 0xFF, 0xFF]), Ok((&b""[..], 65_535_u32)));
+    assert_parse(be_u24(&[0x12, 0x34, 0x56]), Ok((&b""[..], 1_193_046_u32)));
   }
 
   #[test]
   fn i24_tests() {
-    assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_parse!(be_i24(&[0xFF, 0x00, 0x00]), Ok((&b""[..], -65_536_i32)));
-    assert_parse!(be_i24(&[0xED, 0xCB, 0xAA]), Ok((&b""[..], -1_193_046_i32)));
+    assert_parse(be_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
+    assert_parse(be_i24(&[0xFF, 0x00, 0x00]), Ok((&b""[..], -65_536_i32)));
+    assert_parse(be_i24(&[0xED, 0xCB, 0xAA]), Ok((&b""[..], -1_193_046_i32)));
   }
 
   #[test]
   fn i32_tests() {
-    assert_parse!(be_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(
-      be_i32(&[0x7f, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], 2_147_483_647_i32))
-    );
-    assert_parse!(be_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(
-      be_i32(&[0x80, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], -2_147_483_648_i32))
-    );
+    assert_parse(be_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse(be_i32(&[0x7f, 0xff, 0xff, 0xff]), Ok((&b""[..], 2_147_483_647_i32)));
+    assert_parse(be_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse(be_i32(&[0x80, 0x00, 0x00, 0x00]), Ok((&b""[..], -2_147_483_648_i32)));
   }
 
   #[test]
   fn i64_tests() {
-    assert_parse!(
-      be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 0))
-    );
-    assert_parse!(
+    assert_parse(be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse(
       be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], 9_223_372_036_854_775_807_i64))
+      Ok((&b""[..], 9_223_372_036_854_775_807_i64)),
     );
-    assert_parse!(
-      be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], -1))
-    );
-    assert_parse!(
+    assert_parse(be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse(
       be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], -9_223_372_036_854_775_808_i64))
+      Ok((&b""[..], -9_223_372_036_854_775_808_i64)),
     );
   }
 
   #[test]
   #[cfg(stable_i128)]
   fn i128_tests() {
-    assert_parse!(
-      be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 0))
+    assert_parse(
+      be_i128(&[
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      ]),
+      Ok((&b""[..], 0)),
     );
-    assert_parse!(
-      be_i128(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
+    assert_parse(
+      be_i128(&[
+        0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      ]),
+      Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128)),
     );
-    assert_parse!(
-      be_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], -1))
+    assert_parse(
+      be_i128(&[
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      ]),
+      Ok((&b""[..], -1)),
     );
-    assert_parse!(
-      be_i128(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
+    assert_parse(
+      be_i128(&[
+        0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      ]),
+      Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128)),
     );
   }
 
   #[test]
   fn le_i8_tests() {
-    assert_parse!(le_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_parse!(le_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_parse!(le_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse(le_i8(&[0x00]), Ok((&b""[..], 0)));
+    assert_parse(le_i8(&[0x7f]), Ok((&b""[..], 127)));
+    assert_parse(le_i8(&[0xff]), Ok((&b""[..], -1)));
+    assert_parse(le_i8(&[0x80]), Ok((&b""[..], -128)));
   }
 
   #[test]
   fn le_i16_tests() {
-    assert_parse!(le_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_i16(&[0xff, 0x7f]), Ok((&b""[..], 32_767_i16)));
-    assert_parse!(le_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(le_i16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
+    assert_parse(le_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse(le_i16(&[0xff, 0x7f]), Ok((&b""[..], 32_767_i16)));
+    assert_parse(le_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse(le_i16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
   fn le_u24_tests() {
-    assert_parse!(le_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_u24(&[0xFF, 0xFF, 0x00]), Ok((&b""[..], 65_535_u32)));
-    assert_parse!(le_u24(&[0x56, 0x34, 0x12]), Ok((&b""[..], 1_193_046_u32)));
+    assert_parse(le_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse(le_u24(&[0xFF, 0xFF, 0x00]), Ok((&b""[..], 65_535_u32)));
+    assert_parse(le_u24(&[0x56, 0x34, 0x12]), Ok((&b""[..], 1_193_046_u32)));
   }
 
   #[test]
   fn le_i24_tests() {
-    assert_parse!(le_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_parse!(le_i24(&[0x00, 0x00, 0xFF]), Ok((&b""[..], -65_536_i32)));
-    assert_parse!(le_i24(&[0xAA, 0xCB, 0xED]), Ok((&b""[..], -1_193_046_i32)));
+    assert_parse(le_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
+    assert_parse(le_i24(&[0x00, 0x00, 0xFF]), Ok((&b""[..], -65_536_i32)));
+    assert_parse(le_i24(&[0xAA, 0xCB, 0xED]), Ok((&b""[..], -1_193_046_i32)));
   }
 
   #[test]
   fn le_i32_tests() {
-    assert_parse!(le_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(
-      le_i32(&[0xff, 0xff, 0xff, 0x7f]),
-      Ok((&b""[..], 2_147_483_647_i32))
-    );
-    assert_parse!(le_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(
-      le_i32(&[0x00, 0x00, 0x00, 0x80]),
-      Ok((&b""[..], -2_147_483_648_i32))
-    );
+    assert_parse(le_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse(le_i32(&[0xff, 0xff, 0xff, 0x7f]), Ok((&b""[..], 2_147_483_647_i32)));
+    assert_parse(le_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse(le_i32(&[0x00, 0x00, 0x00, 0x80]), Ok((&b""[..], -2_147_483_648_i32)));
   }
 
   #[test]
   fn le_i64_tests() {
-    assert_parse!(
-      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 0))
-    );
-    assert_parse!(
+    assert_parse(le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse(
       le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
-      Ok((&b""[..], 9_223_372_036_854_775_807_i64))
+      Ok((&b""[..], 9_223_372_036_854_775_807_i64)),
     );
-    assert_parse!(
-      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], -1))
-    );
-    assert_parse!(
+    assert_parse(le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse(
       le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
-      Ok((&b""[..], -9_223_372_036_854_775_808_i64))
+      Ok((&b""[..], -9_223_372_036_854_775_808_i64)),
     );
   }
 
   #[test]
   #[cfg(stable_i128)]
   fn le_i128_tests() {
-    assert_parse!(
-      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 0))
+    assert_parse(
+      le_i128(&[
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      ]),
+      Ok((&b""[..], 0)),
     );
-    assert_parse!(
-      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
-      Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
+    assert_parse(
+      le_i128(&[
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+      ]),
+      Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128)),
     );
-    assert_parse!(
-      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], -1))
+    assert_parse(
+      le_i128(&[
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      ]),
+      Ok((&b""[..], -1)),
     );
-    assert_parse!(
-      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
-      Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
+    assert_parse(
+      le_i128(&[
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
+      ]),
+      Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128)),
     );
   }
 
   #[test]
   fn be_f32_tests() {
-    assert_parse!(be_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
-    assert_parse!(
-      be_f32(&[0x4d, 0x31, 0x1f, 0xd8]),
-      Ok((&b""[..], 185_728_392_f32))
-    );
+    assert_parse(be_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
+    assert_parse(be_f32(&[0x4d, 0x31, 0x1f, 0xd8]), Ok((&b""[..], 185_728_392_f32)));
   }
 
   #[test]
   fn be_f64_tests() {
-    assert_parse!(
-      be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 0_f64))
-    );
-    assert_parse!(
+    assert_parse(be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f64)));
+    assert_parse(
       be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 185_728_392_f64))
+      Ok((&b""[..], 185_728_392_f64)),
     );
   }
 
   #[test]
   fn le_f32_tests() {
-    assert_parse!(le_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
-    assert_parse!(
-      le_f32(&[0xd8, 0x1f, 0x31, 0x4d]),
-      Ok((&b""[..], 185_728_392_f32))
-    );
+    assert_parse(le_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
+    assert_parse(le_f32(&[0xd8, 0x1f, 0x31, 0x4d]), Ok((&b""[..], 185_728_392_f32)));
   }
 
   #[test]
   fn le_f64_tests() {
-    assert_parse!(
-      le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], 0_f64))
-    );
-    assert_parse!(
+    assert_parse(le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f64)));
+    assert_parse(
       le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41]),
-      Ok((&b""[..], 185_728_392_f64))
+      Ok((&b""[..], 185_728_392_f64)),
     );
   }
 
   #[test]
   fn hex_u32_tests() {
-    assert_parse!(
-      hex_u32(&b";"[..]),
-      Err(Err::Error(error_position!(&b";"[..], ErrorKind::IsA)))
-    );
-    assert_parse!(hex_u32(&b"ff;"[..]), Ok((&b";"[..], 255)));
-    assert_parse!(hex_u32(&b"1be2;"[..]), Ok((&b";"[..], 7138)));
-    assert_parse!(hex_u32(&b"c5a31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
-    assert_parse!(hex_u32(&b"C5A31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
-    assert_parse!(hex_u32(&b"00c5a31be2;"[..]), Ok((&b"e2;"[..], 12_952_347)));
-    assert_parse!(
-      hex_u32(&b"c5a31be201;"[..]),
-      Ok((&b"01;"[..], 3_315_801_058))
-    );
-    assert_parse!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
-    assert_parse!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
-    assert_parse!(hex_u32(&b"12af"[..]), Ok((&b""[..], 0x12af)));
+    assert_parse(hex_u32(&b";"[..]), Err(Err::Error(error_position!(&b";"[..], ErrorKind::IsA))));
+    assert_parse(hex_u32(&b"ff;"[..]), Ok((&b";"[..], 255)));
+    assert_parse(hex_u32(&b"1be2;"[..]), Ok((&b";"[..], 7138)));
+    assert_parse(hex_u32(&b"c5a31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
+    assert_parse(hex_u32(&b"C5A31be2;"[..]), Ok((&b";"[..], 3_315_801_058)));
+    assert_parse(hex_u32(&b"00c5a31be2;"[..]), Ok((&b"e2;"[..], 12_952_347)));
+    assert_parse(hex_u32(&b"c5a31be201;"[..]), Ok((&b"01;"[..], 3_315_801_058)));
+    assert_parse(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
+    assert_parse(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
+    assert_parse(hex_u32(&b"12af"[..]), Ok((&b""[..], 0x12af)));
   }
 
   #[test]
@@ -1193,20 +1169,17 @@ mod tests {
       println!("now parsing: {} -> {}", test, expected32);
 
       let larger = format!("{}", test);
-      assert_parse!(recognize_float(&larger[..]), Ok(("", test)));
+      assert_parse(recognize_float(&larger[..]), Ok(("", test)));
 
-      assert_parse!(float(larger.as_bytes()), Ok((&b""[..], expected32)));
-      assert_parse!(float(&larger[..]), Ok(("", expected32)));
+      assert_parse(float(larger.as_bytes()), Ok((&b""[..], expected32)));
+      assert_parse(float(&larger[..]), Ok(("", expected32)));
 
-      assert_parse!(double(larger.as_bytes()), Ok((&b""[..], expected64)));
-      assert_parse!(double(&larger[..]), Ok(("", expected64)));
+      assert_parse(double(larger.as_bytes()), Ok((&b""[..], expected64)));
+      assert_parse(double(&larger[..]), Ok(("", expected64)));
     }
 
     let remaining_exponent = "-1.234E-";
-    assert_parse!(
-      recognize_float(remaining_exponent),
-      Err(Err::Failure(("", ErrorKind::Digit)))
-    );
+    assert_parse(recognize_float(remaining_exponent), Err(Err::Failure(("", ErrorKind::Digit))));
   }
 
 }

@@ -37,7 +37,7 @@ mod test {
     const INPUT: &str = "Hello";
     const TAG: &str = "Hello World!";
 
-    let res: IResult<_,_,(_, ErrorKind)> = tag!(INPUT, TAG);
+    let res: IResult<_, _, (&str, ErrorKind)> = tag!(INPUT, TAG);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => {
@@ -55,7 +55,7 @@ mod test {
     const INPUT: &str = "Hello World!";
     const TAG: &str = "Random"; // TAG must be closer than INPUT.
 
-    let res: IResult<_,_,(_, ErrorKind)> = tag!(INPUT, TAG);
+    let res: IResult<_, _, (&str, ErrorKind)> = tag!(INPUT, TAG);
     match res {
       Err(Err::Error(_)) => (),
       other => {
@@ -73,7 +73,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take!(INPUT, 9);
+    let res: IResult<_, _, (&str, ErrorKind)> = take!(INPUT, 9);
     match res {
       Ok((extra, output)) => {
         assert!(
@@ -103,7 +103,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřè";
     const LEFTOVER: &str = "ÂßÇ∂áƒƭèř";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (&str, ErrorKind)> = take_until!(INPUT, FIND);
     match res {
       Ok((extra, output)) => {
         assert!(
@@ -132,7 +132,7 @@ mod test {
   fn take_s_incomplete() {
     const INPUT: &str = "βèƒôřèÂßÇá";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take!(INPUT, 13);
+    let res: IResult<_, _, (&str, ErrorKind)> = take!(INPUT, 13);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
@@ -364,7 +364,7 @@ mod test {
     const INPUT: &str = "βèƒôřè";
     const FIND: &str = "βèƒôřèÂßÇ";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (&str, ErrorKind)> = take_until!(INPUT, FIND);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
@@ -446,7 +446,7 @@ mod test {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const FIND: &str = "Ráñδô₥";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (&str, ErrorKind)> = take_until!(INPUT, FIND);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(

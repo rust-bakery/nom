@@ -24,8 +24,8 @@ mod macros;
 /// ```rust
 /// # use nom::error::ErrorKind;
 /// use nom::combinator::rest;
-/// assert_eq!(rest::<_,(_, ErrorKind)>("abc"), Ok(("", "abc")));
-/// assert_eq!(rest::<_,(_, ErrorKind)>(""), Ok(("", "")));
+/// assert_eq!(rest::<_,(&str, ErrorKind)>("abc"), Ok(("", "abc")));
+/// assert_eq!(rest::<_,(&str, ErrorKind)>(""), Ok(("", "")));
 /// ```
 #[inline]
 pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -41,8 +41,8 @@ where
 /// ```rust
 /// # use nom::error::ErrorKind;
 /// use nom::combinator::rest_len;
-/// assert_eq!(rest_len::<_,(_, ErrorKind)>("abc"), Ok(("abc", 3)));
-/// assert_eq!(rest_len::<_,(_, ErrorKind)>(""), Ok(("", 0)));
+/// assert_eq!(rest_len::<_,(&str, ErrorKind)>("abc"), Ok(("abc", 3)));
+/// assert_eq!(rest_len::<_,(&str, ErrorKind)>(""), Ok(("", 0)));
 /// ```
 #[inline]
 pub fn rest_len<T, E: ParseError<T>>(input: T) -> IResult<T, usize, E>
@@ -698,13 +698,6 @@ mod tests {
   use crate::bytes::complete::take;
   use crate::number::complete::be_u8;
 
-  macro_rules! assert_parse(
-    ($left: expr, $right: expr) => {
-      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
-      assert_eq!(res, $right);
-    };
-  );
-
   /*#[test]
   fn t1() {
     let v1:Vec<u8> = vec![1,2,3];
@@ -734,20 +727,23 @@ mod tests {
   fn rest_on_slices() {
     let input: &[u8] = &b"Hello, world!"[..];
     let empty: &[u8] = &b""[..];
-    assert_parse!(rest(input), Ok((empty, input)));
+    let res: IResult<&[u8], &[u8]> = rest(input);
+    assert_eq!(res, Ok((empty, input)));
   }
 
   #[test]
   fn rest_on_strs() {
     let input: &str = "Hello, world!";
     let empty: &str = "";
-    assert_parse!(rest(input), Ok((empty, input)));
+    let res: IResult<&str, &str> = rest(input);
+    assert_eq!(res, Ok((empty, input)));
   }
 
   #[test]
   fn rest_len_on_slices() {
     let input: &[u8] = &b"Hello, world!"[..];
-    assert_parse!(rest_len(input), Ok((input, input.len())));
+    let res: IResult<&[u8], usize> = rest_len(input);
+    assert_eq!(res, Ok((input, input.len())));
   }
 
   use crate::lib::std::convert::From;
@@ -776,28 +772,35 @@ mod tests {
 
   #[test]
   fn test_flat_map() {
-      let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
-      assert_parse!(flat_map(be_u8, take)(input), Ok((&[103, 104][..], &[100, 101, 102][..])));
+    let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
+    let res: IResult<&[u8], &[u8]> = flat_map(be_u8, take)(input);
+    assert_eq!(res, Ok((&[103, 104][..], &[100, 101, 102][..])));
   }
-  
+
   #[test]
   fn test_map_opt() {
-      let input: &[u8] = &[50][..];
-      assert_parse!(map_opt(be_u8, |u| if u < 20 {Some(u)} else {None})(input), Err(Err::Error((&[50][..], ErrorKind::MapOpt))));
-      assert_parse!(map_opt(be_u8, |u| if u > 20 {Some(u)} else {None})(input), Ok((&[][..], 50)));
+    let input: &[u8] = &[50][..];
+    assert_eq!(
+      map_opt(be_u8, |u| if u < 20 { Some(u) } else { None })(input),
+      Err(Err::Error((&[50][..], ErrorKind::MapOpt)))
+    );
+    let res: IResult<&[u8], u8> = map_opt(be_u8, |u| if u > 20 { Some(u) } else { None })(input);
+    assert_eq!(res, Ok((&[][..], 50)));
   }
 
   #[test]
   fn test_map_parser() {
-      let input: &[u8] = &[100, 101, 102, 103, 104][..];
-      assert_parse!(map_parser(take(4usize), take(2usize))(input), Ok((&[104][..], &[100, 101][..])));
+    let input: &[u8] = &[100, 101, 102, 103, 104][..];
+    let res: IResult<&[u8], &[u8]> = map_parser(take(4usize), take(2usize))(input);
+    assert_eq!(res, Ok((&[104][..], &[100, 101][..])));
   }
 
   #[test]
   fn test_all_consuming() {
-      let input: &[u8] = &[100, 101, 102][..];
-      assert_parse!(all_consuming(take(2usize))(input), Err(Err::Error((&[102][..], ErrorKind::Eof))));
-      assert_parse!(all_consuming(take(3usize))(input), Ok((&[][..], &[100, 101, 102][..])));
+    let input: &[u8] = &[100, 101, 102][..];
+    assert_eq!(all_consuming(take(2usize))(input), Err(Err::Error((&[102][..], ErrorKind::Eof))));
+    let res: IResult<&[u8], &[u8]> = all_consuming(take(3usize))(input);
+    assert_eq!(res, Ok((&[][..], &[100, 101, 102][..])));
   }
 
   #[test]

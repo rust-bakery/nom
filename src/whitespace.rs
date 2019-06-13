@@ -828,7 +828,7 @@ mod tests {
 
   #[test]
   fn spaaaaace() {
-    assert_eq!(sp::<_,(_,ErrorKind)>(&b" \t abc "[..]), Ok((&b"abc "[..], &b" \t "[..])));
+    assert_eq!(sp::<_, (&[u8], ErrorKind)>(&b" \t abc "[..]), Ok((&b"abc "[..], &b" \t "[..])));
   }
 
   #[test]
