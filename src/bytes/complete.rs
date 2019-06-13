@@ -355,7 +355,7 @@ where
 }
 
 /// Returns an input slice containing the first N input elements (Input[..N])
-/// 
+///
 /// It will return `Err(Err::Error((_, ErrorKind::Eof)))` if the input is shorter than the argument
 ///
 /// # Example
@@ -483,6 +483,9 @@ where
             }
           } else {
             let index = input.offset(&i);
+            if index == 0 {
+              return Err(Err::Error(Error::from_error_kind(input, ErrorKind::Escaped)));
+            }
             return Ok(input.take_split(index));
           }
         }
@@ -597,6 +600,9 @@ where
               }
             }
           } else {
+            if index == 0 {
+              return Err(Err::Error(Error::from_error_kind(remainder, ErrorKind::EscapedTransform)));
+            }
             return Ok((remainder, res));
           }
         }
