@@ -131,7 +131,6 @@ parsing, and construct an AST in place.
 Example projects:
 
 - [PHP VM](https://github.com/tagua-vm/parser)
-- [Rust parser](https://github.com/dtolnay/syn)
 - eve language prototype
 - [xshade shading language](https://github.com/xshade-lang/xshade/)
 
