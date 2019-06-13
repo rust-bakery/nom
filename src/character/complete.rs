@@ -732,7 +732,7 @@ where
 mod tests {
   use super::*;
   use crate::internal::Err;
-  use lib::std::fmt::Debug;
+  use crate::lib::std::fmt::Debug;
 
   #[inline]
   fn assert_parse<I, O>(left: IResult<I, O>, right: IResult<I, O>)

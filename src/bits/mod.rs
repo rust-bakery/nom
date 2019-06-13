@@ -11,10 +11,10 @@
 //! transforming the whole slice to a vector of booleans. This should make it easy
 //! to see a byte slice as a bit stream, and parse code points of arbitrary bit length.
 
-use error::{ErrorKind, ParseError};
-use internal::{Err, IResult};
-use lib::std::ops::{AddAssign, RangeFrom, Shl, Shr};
-use traits::{InputIter, Slice};
+use crate::error::{ErrorKind, ParseError};
+use crate::internal::{Err, IResult};
+use crate::lib::std::ops::{AddAssign, RangeFrom, Shl, Shr};
+use crate::traits::{InputIter, Slice};
 
 #[macro_use]
 mod macros;

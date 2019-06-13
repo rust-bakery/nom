@@ -1,10 +1,10 @@
 //! parsers recognizing bit streams, complete input version
 
-use error::{ErrorKind, ParseError};
-use internal::{Err, IResult};
-use lib::std::ops::{AddAssign, RangeFrom, Shl, Shr};
-use take_bits_impl;
-use traits::{InputIter, Slice, ToUsize};
+use crate::error::{ErrorKind, ParseError};
+use crate::internal::{Err, IResult};
+use crate::lib::std::ops::{AddAssign, RangeFrom, Shl, Shr};
+use crate::take_bits_impl;
+use crate::traits::{InputIter, Slice, ToUsize};
 
 /// Consumes the specified number of bits and trys to coerce them to `O`.
 /// If `num` is greater then 64 or the coercion fails, an error will be returned.

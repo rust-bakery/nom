@@ -937,8 +937,8 @@ mod tests {
   #[inline]
   fn assert_parse<I, O>(left: IResult<I, O>, right: IResult<I, O>)
   where
-    I: ::lib::std::fmt::Debug + PartialEq,
-    O: ::lib::std::fmt::Debug + PartialEq,
+    I: crate::lib::std::fmt::Debug + PartialEq,
+    O: crate::lib::std::fmt::Debug + PartialEq,
   {
     assert_eq!(left, right);
   }

@@ -110,10 +110,10 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use combinator::rest;
-  use error::ErrorKind;
-  use internal::{Err, IResult, Needed};
-  use lib::std::ops::{AddAssign, Shl, Shr};
+  use crate::combinator::rest;
+  use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
+  use crate::lib::std::ops::{AddAssign, Shl, Shr};
 
   fn take(input: (&[u8], usize), take: usize) -> IResult<(&[u8], usize), usize> {
     take_bits!(input, take)
