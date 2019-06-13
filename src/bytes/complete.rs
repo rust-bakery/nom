@@ -434,11 +434,11 @@ where
 /// use nom::character::complete::one_of;
 ///
 /// fn esc(s: &str) -> IResult<&str, &str> {
-///   escaped(digit1, '\\', one_of("\"n\\"))(s)
+///   escaped(digit1, '\\', one_of(r#""n\"#))(s)
 /// }
 ///
 /// assert_eq!(esc("123;"), Ok((";", "123")));
-/// assert_eq!(esc("12\\\"34;"), Ok((";", "12\\\"34")));
+/// assert_eq!(esc(r#"12\"34;"#), Ok((";", r#"12\"34"#)));
 /// ```
 ///
 pub fn escaped<Input, Error, F, G, O1, O2>(normal: F, control_char: char, escapable: G) -> impl Fn(Input) -> IResult<Input, Input, Error>
