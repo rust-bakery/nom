@@ -594,8 +594,8 @@ impl<'a> InputTakeAtPosition for &'a str {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i, _)) => Ok((&self[i..], &self[..i])),
+    match self.find(predicate) {
+      Some(i) => Ok((&self[i..], &self[..i])),
       None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
@@ -604,26 +604,26 @@ impl<'a> InputTakeAtPosition for &'a str {
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0, _)) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some((i, _)) => Ok((&self[i..], &self[..i])),
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(i) => Ok((&self[i..], &self[..i])),
       None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
-    match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i, _)) => Ok((&self[i..], &self[..i])),
+    match self.find(predicate) {
+      Some(i) => Ok((&self[i..], &self[..i])),
       None =>  Ok(self.take_split(self.input_len()))
     }
   }
 
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
     where P: Fn(Self::Item) -> bool {
-    match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0, _)) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some((i, _)) => Ok((&self[i..], &self[..i])),
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(i) => Ok((&self[i..], &self[..i])),
       None => {
         if self.len() == 0 {
           Err(Err::Error(E::from_error_kind(self, e)))
