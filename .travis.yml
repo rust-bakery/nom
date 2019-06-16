@@ -41,7 +41,7 @@ matrix:
         - cargo install-update -a
         - mkdir -p target/kcov-master
       script:
-        RUST_BACKTRACE=1 cargo coveralls --verbose $FEATURES
+        RUST_BACKTRACE=1 cargo coveralls --verbose --all-features
   allow_failures:
     - rust: stable
       env: FEATURES=''
