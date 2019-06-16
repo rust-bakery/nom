@@ -143,7 +143,11 @@ where
 #[cfg(feature="alloc")]
 pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
   use crate::{
-    lib::std::iter::repeat,
+    lib::std::{
+      iter::repeat,
+      string::String,
+      vec::Vec
+    },
     traits::Offset
   };
 
