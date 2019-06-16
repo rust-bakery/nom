@@ -12,7 +12,7 @@
 //! to see a byte slice as a bit stream, and parse code points of arbitrary bit length.
 
 use crate::error::{ErrorKind, ParseError};
-use crate::internal::{Err, IResult};
+use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::ops::{AddAssign, RangeFrom, Shl, Shr};
 use crate::traits::{InputIter, Slice};
 
@@ -155,7 +155,7 @@ where
 /// ```
 pub fn bytes<I, O, E: ParseError<I>, P>(parser: P) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
-  I: InputIter<Item = u8> + Slice<RangeFrom<usize>>,
+  I: Clone + InputIter<Item = u8> + Slice<RangeFrom<usize>>,
   P: Fn(I) -> IResult<I, O, E>,
 {
   move |(input, offset): (I, usize)| {
@@ -164,15 +164,22 @@ where
     } else {
       input.slice((offset / 8)..)
     };
-    let (rest, res) = parser(inner)?;
-    Ok(((rest, 0), res))
+    let i = inner.clone();
+    match parser(i) {
+      Ok((rest, o)) => Ok(((rest, 0), o)),
+      Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
+        Some(v) => Err::Incomplete(Needed::Size(v)),
+        None => Err::Failure(E::from_error_kind(inner, ErrorKind::TooLarge)),
+      }),
+      Err(e) => Err(e),
+    }
   }
 }
 
 #[doc(hidden)]
 pub fn bytesc<I, O, E: ParseError<I>, P>(input: (I, usize), parser: P) -> IResult<(I, usize), O, E>
 where
-  I: InputIter<Item = u8> + Slice<RangeFrom<usize>>,
+  I: Clone + InputIter<Item = u8> + Slice<RangeFrom<usize>>,
   P: Fn(I) -> IResult<I, O, E>,
 {
   bytes(parser)(input)
