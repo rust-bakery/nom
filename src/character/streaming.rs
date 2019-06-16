@@ -292,10 +292,7 @@ where
   }
 }
 
-/// Recognizes zero or more lowercase and uppercase alphabetic characters.
-///
-/// * For ASCII strings: a-zA-Z
-/// * For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes zero or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
 /// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non alphabetic character).
@@ -319,10 +316,7 @@ where
   input.split_at_position(|item| !item.is_alpha())
 }
 
-/// Recognizes one or more lowercase and uppercase alphabetic characters.
-///
-/// * For ASCII strings: a-zA-Z
-/// * For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
 /// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non alphabetic character).
@@ -346,7 +340,7 @@ where
   input.split_at_position1(|item| !item.is_alpha(), ErrorKind::Alpha)
 }
 
-/// Recognizes zero or more numerical characters: 0-9
+/// Recognizes zero or more ASCII numerical characters: 0-9
 ///
 /// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non digit character).
@@ -370,7 +364,7 @@ where
   input.split_at_position(|item| !item.is_dec_digit())
 }
 
-/// Recognizes one or more numerical characters: 0-9
+/// Recognizes one or more ASCII numerical characters: 0-9
 ///
 /// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non digit character).
@@ -394,7 +388,7 @@ where
   input.split_at_position1(|item| !item.is_dec_digit(), ErrorKind::Digit)
 }
 
-/// Recognizes zero or more hexadecimal numerical characters: 0-9, A-F, a-f
+/// Recognizes zero or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
 /// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non hexadecimal digit character).
@@ -418,7 +412,7 @@ where
   input.split_at_position(|item| !item.is_hex_digit())
 }
 
-/// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
+/// Recognizes one or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
 /// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non hexadecimal digit character).
@@ -490,10 +484,7 @@ where
   input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
-/// Recognizes zero or more numerical and alphabetic characters.
-///
-/// * For ASCII strings: 0-9a-zA-Z
-/// * For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes zero or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
 /// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non alphanumerical character).
@@ -517,10 +508,7 @@ where
   input.split_at_position(|item| !item.is_alphanum())
 }
 
-/// Recognizes one or more numerical and alphabetic characters.
-///
-/// * For ASCII strings: 0-9a-zA-Z
-/// * For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
 /// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non alphanumerical character).
@@ -748,7 +736,7 @@ mod tests {
       Err(Err::Error((b, ErrorKind::Alpha)))
     );
     assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("12", &"azé"[..])));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12", &"az"[..])));
     assert_eq!(
       digit1(a),
       Err(Err::Error((a, ErrorKind::Digit)))
@@ -786,7 +774,7 @@ mod tests {
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
     //assert_eq!(fix_error!(b,(), alphanumeric1), Ok((empty, b)));
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok(("é12", "az")));
     assert_eq!(space1::<_, (_, ErrorKind)>(e), Err(Err::Incomplete(Needed::Size(1))));
   }
 

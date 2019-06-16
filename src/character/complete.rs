@@ -308,10 +308,7 @@ where
   }
 }
 
-/// Recognizes zero or more lowercase and uppercase alphabetic characters.
-///
-/// * For ASCII strings: a-zA-Z
-/// * For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes zero or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
 /// *complete version*: Will return the whole input if no terminating token is found (a non
 /// alphabetic character).
@@ -339,10 +336,7 @@ where
   input.split_at_position_complete(|item| !item.is_alpha())
 }
 
-/// Recognizes one or more lowercase and uppercase alphabetic characters.
-///
-/// * For ASCII strings: a-zA-Z
-/// * For UTF8 strings, any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
 /// *complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found  (a non alphabetic character).
@@ -370,17 +364,7 @@ where
   input.split_at_position1_complete(|item| !item.is_alpha(), ErrorKind::Alpha)
 }
 
-/// Recognizes zero or more numerical characters: 0-9
-///
-/// *complete version*: Will return the whole input if no terminating token is found (a non digit
-/// character).
-///
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
-/// # use nom::character::complete::digit0;
-/// # fn main() {
+/// Recognizes zero or more ASCII numerical characters: 0-9
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     digit0(input)
 /// }
@@ -398,7 +382,7 @@ where
   input.split_at_position_complete(|item| !item.is_dec_digit())
 }
 
-/// Recognizes one or more numerical characters: 0-9
+/// Recognizes one or more ASCII numerical characters: 0-9
 ///
 /// *complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non digit character).
@@ -426,7 +410,7 @@ where
   input.split_at_position1_complete(|item| !item.is_dec_digit(), ErrorKind::Digit)
 }
 
-/// Recognizes zero or more hexadecimal numerical characters: 0-9, A-F, a-f
+/// Recognizes zero or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
 /// *complete version*: Will return the whole input if no terminating token is found (a non hexadecimal digit character).
 ///
@@ -452,7 +436,7 @@ where
 {
   input.split_at_position_complete(|item| !item.is_hex_digit())
 }
-/// Recognizes one or more hexadecimal numerical characters: 0-9, A-F, a-f
+/// Recognizes one or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
 /// *complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non hexadecimal digit character).
@@ -536,10 +520,7 @@ where
   input.split_at_position1_complete(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
-/// Recognizes zero or more numerical and alphabetic characters.
-///
-/// * For ASCII strings: 0-9a-zA-Z
-/// * For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes zero or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
 /// *complete version*: Will return the whole input if no terminating token is found (a non
 /// alphanumerical character).
@@ -567,10 +548,7 @@ where
   input.split_at_position_complete(|item| !item.is_alphanum())
 }
 
-/// Recognizes one or more numerical and alphabetic characters.
-///
-/// * For ASCII strings: 0-9a-zA-Z
-/// * For UTF8 strings, 0-9 and any alphabetic code point (ie, not only the ASCII ones)
+/// Recognizes one or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
 /// *complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non alphanumerical character).
@@ -815,7 +793,7 @@ mod tests {
       Err(Err::Error((b, ErrorKind::Alpha)))
     );
     assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("12", &"azé"[..])));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12", &"az"[..])));
     assert_eq!(
       digit1(a),
       Err(Err::Error((a, ErrorKind::Digit)))
@@ -853,7 +831,7 @@ mod tests {
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok((empty, d)));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok(("é12", "az")));
     assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
   }
 

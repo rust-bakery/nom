@@ -250,7 +250,7 @@ impl AsChar for char {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    self.is_alphabetic()
+    self.is_ascii_alphabetic()
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -258,11 +258,11 @@ impl AsChar for char {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    self.is_digit(10)
+    self.is_ascii_digit()
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    self.is_digit(16)
+    self.is_ascii_hexdigit()
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
@@ -281,7 +281,7 @@ impl<'a> AsChar for &'a char {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    <char as AsChar>::is_alpha(*self)
+    self.is_ascii_alphabetic()
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -289,11 +289,11 @@ impl<'a> AsChar for &'a char {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    self.is_digit(10)
+    self.is_ascii_digit()
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    self.is_digit(16)
+    self.is_ascii_hexdigit()
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
