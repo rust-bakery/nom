@@ -190,13 +190,6 @@ macro_rules! i128 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big 
 mod tests {
   use crate::number::Endianness;
 
-  macro_rules! assert_parse(
-    ($left: expr, $right: expr) => {
-      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
-      assert_eq!(res, $right);
-    };
-  );
-
   #[test]
   fn configurable_endianness() {
     named!(be_tst16<u16>, u16!(Endianness::Big));

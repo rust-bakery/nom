@@ -6,13 +6,6 @@
 //! It contains an error code and the input position that triggered it.
 //!
 
-use crate::internal::{Err, IResult};
-
-#[cfg(feature="std")]
-use std::iter::repeat;
-#[cfg(feature="std")]
-use crate::traits::Offset;
-
 /// this trait must be implemented by the error type of a nom parser
 ///
 /// There are already implementations of it for `(Input, ErrorKind)`
@@ -125,6 +118,9 @@ impl<I> ParseError<I> for VerboseError<I> {
   }
 }
 
+#[cfg(feature = "alloc")]
+use crate::internal::{Err, IResult};
+
 /// create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
 /// to errors when backtracking through a parse tree
@@ -147,10 +143,7 @@ where
 #[cfg(feature="alloc")]
 pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
   use crate::{
-    lib::std::{
-      string::String, vec::Vec,
-      iter::repeat
-    },
+    lib::std::iter::repeat,
     traits::Offset
   };
 

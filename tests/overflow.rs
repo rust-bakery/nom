@@ -3,6 +3,7 @@
 extern crate nom;
 
 use nom::{Err, Needed};
+#[cfg(feature = "alloc")]
 use nom::number::streaming::be_u64;
 
 // Parser definition

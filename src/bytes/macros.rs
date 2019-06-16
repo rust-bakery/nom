@@ -458,6 +458,7 @@ mod tests {
   use crate::error::ErrorKind;
   use crate::character::is_alphabetic;
 
+  #[cfg(feature = "alloc")]
   macro_rules! one_of (
     ($i:expr, $inp: expr) => (
       {

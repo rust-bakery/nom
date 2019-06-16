@@ -819,10 +819,14 @@ macro_rules! ws (
 #[allow(dead_code)]
 mod tests {
   #[cfg(feature = "alloc")]
-  use crate::lib::std::string::{String, ToString};
-  use crate::lib::std::fmt::Debug;
+  use crate::{
+    error::ParseError,
+    lib::std::{
+      string::{String, ToString},
+      fmt::Debug
+    }
+  };
   use crate::internal::{Err, IResult, Needed};
-  use crate::error::ParseError;
   use crate::character::complete::multispace0 as sp;
   use crate::error::ErrorKind;
 
