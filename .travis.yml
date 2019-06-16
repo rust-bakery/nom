@@ -40,7 +40,7 @@ matrix:
         - cargo install cargo-travis   || echo "cargo-travis already installed"
         - cargo install-update -a
       script:
-        cargo coveralls --verbose $FEATURES
+        RUST_BACKTRACE=1 cargo coveralls --verbose $FEATURES
   allow_failures:
     - rust: stable
       env: FEATURES=''
