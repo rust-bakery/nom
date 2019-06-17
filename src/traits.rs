@@ -1144,6 +1144,24 @@ impl ToUsize for u64 {
   }
 }
 
+/// equivalent From implementation to avoid orphan rules in bits parsers
+pub trait ErrorConvert<E> {
+  /// transform to another error type
+  fn convert(self) -> E;
+}
+
+impl<I> ErrorConvert<(I, ErrorKind)> for ((I, usize), ErrorKind) {
+  fn convert(self) -> (I, ErrorKind) {
+    ((self.0).0, self.1)
+  }
+}
+
+impl<I> ErrorConvert<((I, usize), ErrorKind)> for (I, ErrorKind) {
+  fn convert(self) -> ((I, usize), ErrorKind) {
+    ((self.0, 0), self.1)
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

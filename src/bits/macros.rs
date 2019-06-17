@@ -20,52 +20,23 @@
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
+/// # use nom::{Err, Needed};
 /// # fn main() {
-///  named!( take_4_bits<u8>, bits!( take_bits!( u8, 4 ) ) );
+///  named!( take_4_bits<u8>, bits!( take_bits!( u8, 4u8 ) ) );
 ///
 ///  let input = vec![0xAB, 0xCD, 0xEF, 0x12];
 ///  let sl    = &input[..];
 ///
 ///  assert_eq!(take_4_bits( sl ), Ok( (&sl[1..], 0xA) ));
+///  assert_eq!(take_4_bits( &b""[..] ), Err(Err::Incomplete(Needed::Size(1))));
 /// # }
 #[macro_export(local_inner_macros)]
 macro_rules! bits (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    bits_impl!($i, $submac!($($args)*));
-  );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => ({
+    $crate::bits::bitsc($i, move |i| { $submac!(i, $($args)*) })
+  });
   ($i:expr, $f:expr) => (
-    bits_impl!($i, call!($f));
-  );
-);
-
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
-macro_rules! bits_impl (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed};
-      use $crate::Slice;
-
-      let input = ($i, 0usize);
-      match $submac!(input, $($args)*) {
-        Err(Err::Error(((i,b), kind))) => {
-          Err(Err::Error((i.slice(b/8..), kind)))
-        },
-        Err(Err::Failure(((i, b), kind))) => {
-          Err(Err::Failure((i.slice(b/8..), kind)))
-        },
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Err(Err::Incomplete(Needed::Size(i))) => Err(Err::Incomplete(Needed::Size(i / 8 + 1))),
-        Ok(((i, bit_index), o))             => {
-          let byte_index = bit_index / 8 + if bit_index % 8 == 0 { 0 } else { 1 } ;
-          //println!("bit index=={} => byte index=={}", bit_index, byte_index);
-          Ok((i.slice(byte_index..), o))
-        }
-      }
-    }
+    bits!($i, call!($f))
   );
 );
 
@@ -81,11 +52,13 @@ macro_rules! bits_impl (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::combinator::rest;
+/// # use nom::error::ErrorKind;
 /// # fn main() {
-///  named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
-///    take_bits!(u8, 4),
-///    take_bits!(u8, 8),
-///    bytes!(rest)
+///
+/// named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
+///    take_bits!(u8, 4u8),
+///    take_bits!(u8, 8u8),
+///    bytes!(rest::<_, (_, ErrorKind)>)
 /// )));
 ///
 ///  let input = &[0xde, 0xad, 0xbe, 0xaf];
@@ -94,50 +67,11 @@ macro_rules! bits_impl (
 /// # }
 #[macro_export(local_inner_macros)]
 macro_rules! bytes (
-  ($i:expr, $submac:ident!( $($args:tt)* )) => (
-    bytes_impl!($i, $submac!($($args)*));
-  );
+  ($i:expr, $submac:ident!( $($args:tt)* )) => ({
+    $crate::bits::bytesc($i, move |i| { $submac!(i, $($args)*) })
+  });
   ($i:expr, $f:expr) => (
-    bytes_impl!($i, call!($f));
-  );
-);
-
-/// Internal parser, do not use directly
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
-macro_rules! bytes_impl (
-  ($macro_i:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,Slice,error::ErrorKind};
-
-      let inp;
-      if $macro_i.1 % 8 != 0 {
-        inp = $macro_i.0.slice(1 + $macro_i.1 / 8 ..);
-      }
-      else {
-        inp = $macro_i.0.slice($macro_i.1 / 8 ..);
-      }
-
-      let sub = $submac!(inp, $($args)*);
-      let res = match sub {
-        Err(Err::Incomplete(Needed::Size(i))) => Err(match i.checked_mul(8) {
-          Some(v) => Err::Incomplete(Needed::Size(v)),
-          None => Err::Failure(error_position!((inp, 0),ErrorKind::TooLarge)),
-        }),
-        Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-        Ok((i, o)) => {
-          Ok(((i, 0), o))
-        },
-        Err(Err::Error((i, kind))) => {
-          Err(Err::Error(((i, 0), kind)))
-        },
-        Err(Err::Failure((i, kind))) => {
-          Err(Err::Error(((i, 0), kind)))
-        },
-      };
-      res
-    }
+    bytes!($i, call!($f))
   );
 );
 
@@ -149,63 +83,21 @@ macro_rules! bytes_impl (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
-///  named!( take_pair<(u8, u8)>, bits!( pair!( take_bits!(u8, 4), take_bits!(u8, 4) ) ) );
+/// named!(bits_pair<(&[u8], usize), (u8, u8)>, pair!( take_bits!(u8, 4u8), take_bits!(u8, 4u8) ) );
+/// named!( take_pair<(u8, u8)>, bits!( bits_pair ) );
 ///
-///  let input = vec![0xAB, 0xCD, 0xEF];
-///  let sl    = &input[..];
+/// let input = vec![0xAB, 0xCD, 0xEF];
+/// let sl    = &input[..];
 ///
-///  assert_eq!(take_pair( sl ),       Ok((&sl[1..], (0xA, 0xB))) );
-///  assert_eq!(take_pair( &sl[1..] ), Ok((&sl[2..], (0xC, 0xD))) );
+/// assert_eq!(take_pair( sl ),       Ok((&sl[1..], (0xA, 0xB))) );
+/// assert_eq!(take_pair( &sl[1..] ), Ok((&sl[2..], (0xC, 0xD))) );
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! take_bits (
   ($i:expr, $t:ty, $count:expr) => (
     {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,Needed,IResult};
-
-      use $crate::lib::std::ops::Div;
-      use $crate::lib::std::convert::Into;
-      use $crate::Slice;
-      //println!("taking {} bits from {:?}", $count, $i);
-      let (input, bit_offset) = $i;
-      let res : IResult<_, $t> = if $count == 0 {
-        Ok(( (input, bit_offset), (0 as u8).into()))
-      } else {
-        let cnt = ($count as usize + bit_offset).div(8);
-        if input.len() * 8 < $count as usize + bit_offset {
-          //println!("returning incomplete: {}", $count as usize + bit_offset);
-          Err(Err::Incomplete(Needed::Size($count as usize)))
-        } else {
-          let mut acc:$t            = (0 as u8).into();
-          let mut offset: usize     = bit_offset;
-          let mut remaining: usize  = $count;
-          let mut end_offset: usize = 0;
-
-          for byte in input.iter().take(cnt + 1) {
-            if remaining == 0 {
-              break;
-            }
-            let val: $t = if offset == 0 {
-              (*byte as u8).into()
-            } else {
-              (((*byte as u8) << offset) as u8 >> offset).into()
-            };
-
-            if remaining < 8 - offset {
-              acc += val >> (8 - offset - remaining);
-              end_offset = remaining + offset;
-              break;
-            } else {
-              acc += val << (remaining - (8 - offset));
-              remaining -= 8 - offset;
-              offset = 0;
-            }
-          }
-          Ok(( (input.slice(cnt..), end_offset) , acc))
-        }
-      };
+      let res: $crate::IResult<_, _> = $crate::bits::streaming::take_bits($count)($i);
       res
     }
   );
@@ -222,7 +114,7 @@ macro_rules! take_bits (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
-///  named!( take_a<u8>, bits!( tag_bits!(u8, 4, 0xA) ) );
+///  named!( take_a<u8>, bits!( tag_bits!(u8, 4usize, 0xA) ) );
 ///
 ///  let input = vec![0xAB, 0xCD, 0xEF];
 ///  let sl    = &input[..];
@@ -232,27 +124,10 @@ macro_rules! take_bits (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! tag_bits (
-  ($i:expr, $t:ty, $count:expr, $p: pat) => (
+  ($i:expr, $t:ty, $count:expr, $p: expr) => (
     {
-      use $crate::lib::std::result::Result::*;
-      use $crate::{Err,IResult};
-
-      match take_bits!($i, $t, $count) {
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Ok((i, o))    => {
-          if let $p = o {
-            let res: IResult<_,$t> = Ok((i, o));
-            res
-          } else {
-            let e: $crate::error::ErrorKind = $crate::error::ErrorKind::TagBits;
-            Err(Err::Error(error_position!($i, e)))
-          }
-        },
-        _                              => {
-          let e: $crate::error::ErrorKind = $crate::error::ErrorKind::TagBits;
-          Err(Err::Error(error_position!($i, e)))
-        }
-      }
+      let res: $crate::IResult<_, _> = $crate::bits::streaming::tag_bits($p, $count)($i);
+      res
     }
   )
 );
@@ -260,7 +135,7 @@ macro_rules! tag_bits (
 #[cfg(test)]
 mod tests {
   use crate::lib::std::ops::{AddAssign, Shl, Shr};
-  use crate::internal::{Err, Needed};
+  use crate::internal::{Err, Needed, IResult};
   use crate::error::ErrorKind;
 
   #[test]
@@ -268,22 +143,23 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(take_bits!((sl, 0), u8, 0), Ok(((sl, 0), 0)));
-    assert_eq!(take_bits!((sl, 0), u8, 8), Ok(((&sl[1..], 0), 170)));
-    assert_eq!(take_bits!((sl, 0), u8, 3), Ok(((&sl[0..], 3), 5)));
-    assert_eq!(take_bits!((sl, 0), u8, 6), Ok(((&sl[0..], 6), 42)));
-    assert_eq!(take_bits!((sl, 1), u8, 1), Ok(((&sl[0..], 2), 0)));
-    assert_eq!(take_bits!((sl, 1), u8, 2), Ok(((&sl[0..], 3), 1)));
-    assert_eq!(take_bits!((sl, 1), u8, 3), Ok(((&sl[0..], 4), 2)));
-    assert_eq!(take_bits!((sl, 6), u8, 3), Ok(((&sl[1..], 1), 5)));
-    assert_eq!(take_bits!((sl, 0), u16, 10), Ok(((&sl[1..], 2), 683)));
-    assert_eq!(take_bits!((sl, 0), u16, 8), Ok(((&sl[1..], 0), 170)));
-    assert_eq!(take_bits!((sl, 6), u16, 10), Ok(((&sl[2..], 0), 752)));
-    assert_eq!(take_bits!((sl, 6), u16, 11), Ok(((&sl[2..], 1), 1504)));
-    assert_eq!(take_bits!((sl, 0), u32, 20), Ok(((&sl[2..], 4), 700_163)));
-    assert_eq!(take_bits!((sl, 4), u32, 20), Ok(((&sl[3..], 0), 716_851)));
+    assert_eq!(take_bits!((sl, 0), u8, 0u8), Ok(((sl, 0), 0)));
+    assert_eq!(take_bits!((sl, 0), u8, 8u8), Ok(((&sl[1..], 0), 170)));
+    assert_eq!(take_bits!((sl, 0), u8, 3u8), Ok(((&sl[0..], 3), 5)));
+    assert_eq!(take_bits!((sl, 0), u8, 6u8), Ok(((&sl[0..], 6), 42)));
+    assert_eq!(take_bits!((sl, 1), u8, 1u8), Ok(((&sl[0..], 2), 0)));
+    assert_eq!(take_bits!((sl, 1), u8, 2u8), Ok(((&sl[0..], 3), 1)));
+    assert_eq!(take_bits!((sl, 1), u8, 3u8), Ok(((&sl[0..], 4), 2)));
+    assert_eq!(take_bits!((sl, 6), u8, 3u8), Ok(((&sl[1..], 1), 5)));
+    assert_eq!(take_bits!((sl, 0), u16, 10u8), Ok(((&sl[1..], 2), 683)));
+    assert_eq!(take_bits!((sl, 0), u16, 8u8), Ok(((&sl[1..], 0), 170)));
+    assert_eq!(take_bits!((sl, 6), u16, 10u8), Ok(((&sl[2..], 0), 752)));
+    assert_eq!(take_bits!((sl, 6), u16, 11u8), Ok(((&sl[2..], 1), 1504)));
+    assert_eq!(take_bits!((sl, 0), u32, 20u8), Ok(((&sl[2..], 4), 700_163)));
+    assert_eq!(take_bits!((sl, 4), u32, 20u8), Ok(((&sl[3..], 0), 716_851)));
+    let r: IResult<_,u32> = take_bits!((sl, 4), u32, 22u8);
     assert_eq!(
-      take_bits!((sl, 4), u32, 22),
+      r,
       Err(Err::Incomplete(Needed::Size(22)))
     );
   }
@@ -293,15 +169,15 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(tag_bits!((sl, 0), u8, 3, 0b101), Ok(((&sl[0..], 3), 5)));
-    assert_eq!(tag_bits!((sl, 0), u8, 4, 0b1010), Ok(((&sl[0..], 4), 10)));
+    assert_eq!(tag_bits!((sl, 0), u8, 3u8, 0b101), Ok(((&sl[0..], 3), 5)));
+    assert_eq!(tag_bits!((sl, 0), u8, 4u8, 0b1010), Ok(((&sl[0..], 4), 10)));
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
     do_parse!(
-      tag_bits!(u8, 3, 0b101) >>
-      x: take_bits!(u8, 4)    >>
-      y: take_bits!(u8, 5)    >>
+      tag_bits!(u8, 3u8, 0b101) >>
+      x: take_bits!(u8, 4u8)    >>
+      y: take_bits!(u8, 5u8)    >>
       (x,y)
     )
   );
@@ -327,7 +203,7 @@ mod tests {
     );
   }
 
-  named!(bits_bytes_bs, bits!(bytes!(crate::combinator::rest)));
+  named!(bits_bytes_bs, bits!(bytes!(crate::combinator::rest::<_, (&[u8], ErrorKind)>)));
   #[test]
   fn bits_bytes() {
     let input = [0b10_10_10_10];
@@ -371,15 +247,16 @@ mod tests {
     let sl = &input[..];
 
     assert_eq!(
-      take_bits!((sl, 0), FakeUint, 20),
+      take_bits!((sl, 0), FakeUint, 20u8),
       Ok(((&sl[2..], 4), FakeUint(700_163)))
     );
     assert_eq!(
-      take_bits!((sl, 4), FakeUint, 20),
+      take_bits!((sl, 4), FakeUint, 20u8),
       Ok(((&sl[3..], 0), FakeUint(716_851)))
     );
+    let r3: IResult<_, FakeUint> = take_bits!((sl, 4), FakeUint, 22u8);
     assert_eq!(
-      take_bits!((sl, 4), FakeUint, 22),
+      r3,
       Err(Err::Incomplete(Needed::Size(22)))
     );
   }
