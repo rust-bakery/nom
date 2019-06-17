@@ -276,7 +276,8 @@ named!(issue_775, take_till1!(|_| true));
 
 #[test]
 fn issue_848_overflow_incomplete_bits_to_bytes() {
-  named!(parser<&[u8], &[u8]>, bits!(bytes!(take!(0x2000000000000000))));
+  named!(take, take!(0x2000000000000000));
+  named!(parser<&[u8], &[u8]>, bits!(bytes!(take)));
   assert_eq!(parser(&b""[..]), Err(Err::Failure(error_position!(&b""[..], ErrorKind::TooLarge))));
 }
 

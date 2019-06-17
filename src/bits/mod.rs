@@ -7,8 +7,8 @@ mod macros;
 pub mod streaming;
 pub mod complete;
 
-use crate::error::ParseError;
-use crate::internal::{Err, IResult};
+use crate::error::{ParseError, ErrorKind};
+use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::ops::RangeFrom;
 use crate::traits::{Slice, ErrorConvert};
 
@@ -86,7 +86,7 @@ where
 /// ```
 pub fn bytes<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(parser: P) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E2>
 where
-  I: Slice<RangeFrom<usize>>,
+  I: Slice<RangeFrom<usize>> + Clone,
   P: Fn(I) -> IResult<I, O, E1>,
 {
   move |(input, offset): (I, usize)| {
@@ -95,9 +95,14 @@ where
     } else {
       input.slice((offset / 8)..)
     };
+    let i = (input.clone(), offset);
     match parser(inner) {
       Ok((rest, res)) => Ok(((rest, 0), res)),
-      Err(Err::Incomplete(n)) => Err(Err::Incomplete(n.map(|u| u * 8))),
+      Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
+      Err(Err::Incomplete(Needed::Size(sz))) => Err(match sz.checked_mul(8) {
+        Some(v) => Err::Incomplete(Needed::Size(v)),
+        None => Err::Failure(E2::from_error_kind(i, ErrorKind::TooLarge)),
+      }),
       Err(Err::Error(e)) => Err(Err::Error(e.convert())),
       Err(Err::Failure(e)) => Err(Err::Failure(e.convert())),
     }
@@ -107,7 +112,7 @@ where
 #[doc(hidden)]
 pub fn bytesc<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(input: (I, usize), parser: P) -> IResult<(I, usize), O, E2>
 where
-  I: Slice<RangeFrom<usize>>,
+  I: Slice<RangeFrom<usize>> + Clone,
   P: Fn(I) -> IResult<I, O, E1>,
 {
   bytes(parser)(input)
