@@ -33,14 +33,14 @@ matrix:
       script:
         - eval cargo doc --verbose $DOC_FEATURES
     - rust: nightly
-      env: FEATURES='--features "std lexical regexp regexp_macros"'
       before_script:
         - export PATH=$HOME/.cargo/bin:$PATH
         - cargo install cargo-update   || echo "cargo-update already installed"
         - cargo install cargo-travis   || echo "cargo-travis already installed"
         - cargo install-update -a
+        - mkdir -p target/kcov-master
       script:
-        cargo coveralls --verbose $FEATURES
+        cargo coveralls --verbose --all-features
   allow_failures:
     - rust: stable
       env: FEATURES=''
