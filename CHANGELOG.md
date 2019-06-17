@@ -32,6 +32,7 @@ bound. To get equivalent behaviour to `verbose-errors`, check out `nom::error::V
 - @lo48576 for error management fixes
 - @vaffeine for macros visibility fixes
 - @webholik and @Havvy for `escaped` and `escaped_transform` fixes
+- @proman21 for help on porting bits parsers
 
 ### Added
 
