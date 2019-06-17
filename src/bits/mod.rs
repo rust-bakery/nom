@@ -7,39 +7,10 @@ mod macros;
 pub mod streaming;
 pub mod complete;
 
-use crate::error::{ErrorKind, ParseError};
-use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::ops::{AddAssign, RangeFrom, Shl, Shr};
-use crate::traits::{InputIter, Slice, ErrorConvert};
-
-///blah 
-pub struct BitsInput<I> {
-  i: I,
-  index: usize,
-}
-
-/*
-impl<I> From<((I, usize), ErrorKind)> for (I, ErrorKind) {
-   fn from(e: ((I, usize), ErrorKind)) -> (I, ErrorKind) {
-     ((e.0).0, e.1)
-   }
-}
-*/
-
-impl<I> From<NomError<(I, usize)>> for NomError<I> {
-   fn from(e: NomError<(I, usize)>) -> NomError<I> {
-     NomError{
-      i: e.i.0,
-      e: e.e
-     }
-   }
-}
-
-/// blah
-pub struct NomError<I> {
-  i: I,
-  e: ErrorKind,
-}
+use crate::error::ParseError;
+use crate::internal::{Err, IResult};
+use crate::lib::std::ops::RangeFrom;
+use crate::traits::{Slice, ErrorConvert};
 
 
 /// Converts a byte-level input to a bit-level input, for consumption by a parser that uses bits.
@@ -65,7 +36,7 @@ pub struct NomError<I> {
 /// ```
 pub fn bits<I, O, E1: ParseError<(I, usize)>+ErrorConvert<E2>, E2: ParseError<I>, P>(parser: P) -> impl Fn(I) -> IResult<I, O, E2>
 where
-  I: InputIter<Item = u8> + Slice<RangeFrom<usize>>,
+  I: Slice<RangeFrom<usize>>,
   P: Fn((I, usize)) -> IResult<(I, usize), O, E1>,
 {
   move |input: I| match parser((input, 0)) {
@@ -82,7 +53,7 @@ where
 #[doc(hidden)]
 pub fn bitsc<I, O, E1: ParseError<(I, usize)>+ErrorConvert<E2>, E2: ParseError<I>, P>(input: I, parser: P) -> IResult<I, O, E2>
 where
-  I: InputIter<Item = u8> + Slice<RangeFrom<usize>>,
+  I: Slice<RangeFrom<usize>>,
   P: Fn((I, usize)) -> IResult<(I, usize), O, E1>,
 {
   bits(parser)(input)
@@ -115,7 +86,7 @@ where
 /// ```
 pub fn bytes<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(parser: P) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E2>
 where
-  I: InputIter<Item = u8> + Slice<RangeFrom<usize>>,
+  I: Slice<RangeFrom<usize>>,
   P: Fn(I) -> IResult<I, O, E1>,
 {
   move |(input, offset): (I, usize)| {
@@ -136,7 +107,7 @@ where
 #[doc(hidden)]
 pub fn bytesc<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(input: (I, usize), parser: P) -> IResult<(I, usize), O, E2>
 where
-  I: InputIter<Item = u8> + Slice<RangeFrom<usize>>,
+  I: Slice<RangeFrom<usize>>,
   P: Fn(I) -> IResult<I, O, E1>,
 {
   bytes(parser)(input)

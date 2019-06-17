@@ -97,7 +97,7 @@ macro_rules! bytes (
 macro_rules! take_bits (
   ($i:expr, $count:expr) => (
     {
-      let res: $crate::IResult<_, _> = $crate::bits::streaming::take_bits($count)($i);
+      let res: $crate::IResult<_, _> = $crate::bits::streaming::take($count)($i);
       res
     }
   );
@@ -126,7 +126,7 @@ macro_rules! take_bits (
 macro_rules! tag_bits (
   ($i:expr, $count:expr, $p: expr) => (
     {
-      let res: $crate::IResult<_, _> = $crate::bits::streaming::tag_bits($p, $count)($i);
+      let res: $crate::IResult<_, _> = $crate::bits::streaming::tag($p, $count)($i);
       res
     }
   )
