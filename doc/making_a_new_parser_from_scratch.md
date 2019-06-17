@@ -138,7 +138,7 @@ in recognizing character types, like `alphanumeric` or `digit`. They also parse
 big endian and little endian integers and floats of multiple sizes.
 
 Most of the functions are there to combine parsers, and they are generic over
-the input type. 
+the input type.
 
 # Testing the parsers
 

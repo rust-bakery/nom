@@ -1,112 +1,183 @@
 # Error management
 
-Parser combinators are useful tools to build parsers, but they are notoriously
-bad at error reporting. This happens because a tree of parser acts as a single
-parser, and the only error you get will come from the root parser.
+nom provides a powerful error system that can adapt to your needs: you can
+get reduced error information if you want to improve performance, or you can
+get a precise trace of parser application, with fine grained position information.
 
-This is especially annoying while developing, since you cannot know which parsers
-failed, and why.
-
-Nom provides a few tools to help you in reporting errors and debugging parsers.
-
-## Debugging macros
-
-There are two macros that you can use to check what is happening while you write your parsers: `dbg!` and `dbg_dmp!`.
-
-They take a parser or combinator as input and, if it returns an `Error` or `Incomplete`, will print the result and the parser passed as argument. It will return the result unmodified, so it can be added and removed from your parser without any impact.
-
-```rust
-#[macro_use] extern crate nom;
-
-fn main() {
-  named!(f, dbg!( tag!( "abcd" ) ) );
-
-  let a = &b"efgh"[..];
-  f(a);
-}
-```
-
-Result:
-
-```rust
-Error(Err::Error((0, [101, 102, 103, 104]))) at l.5 by " tag ! ( "abcd" ) "
-```
-
-The result sent by `dbg_dmp!` is slightly different:
-
-```rust
-#[macro_use] extern crate nom;
-
-fn main() {
-  named!(f, dbg_dmp!( tag!( "abcd" ) ) );
-
-  let a = &b"efghijkl"[..];
-  f(a);
-}
-```
-
-It will print, along with the result and the parser, a hexdump of the input buffer passed to the parser.
-
-```
-Error(Err::Error((0, [101, 102, 103, 104, 105, 106, 107, 108]))) at l.5 by " tag ! ( "abcd" ) "
-00000000        65 66 67 68 69 6a 6b 6c         efghijkl
-```
-
-## Error reporting
-
-As a reminder, here are the basic types of nom:
+This is done through the third type parameter of `IResult`, nom's parser result
+type:
 
 ```rust
 pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum Needed {
-  Unknown,
-  Size(u32)
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum Err<E> {
   Incomplete(Needed),
   Error(E),
   Failure(E),
-}
+  }
 ```
 
-The 3 variants of `Err` mean the following:
-- `Incomplete`: there's not enough data to decide, add more data (from the file or socket) and try again
-- `Error`: a parser encountered an error, but we can backtrack and try other branches
-- `Failure`: a parser encountered an error for which we should not backtrack. Typically, we are in the correct parser branch (a correct prefix was seen, etc) so there's no need to try other ones
+This error type is completely generic in nom's combinators, so you can choose
+exactly which error type you want to use when you define your parsers, or
+directly at the call site.
+See [the JSON parser](https://github.com/Geal/nom/blob/5405e1173f1052f7e006dcb0b9cfda2b06557b65/examples/json.rs#L209-L286)
+for an example of choosing different error types at the call site.
 
-You can decide which error type to use at function definition. The `named!`
-macro will generate parsers with the default error type `(Input, ErrorKind)`,
-that associates an error code with the position that triggered it.
-There's also the `VerboseError` type, that accumulates errors and positions
-as it backtracks through the parse tree.
+The `Err<E>` enum expresses 3 conditions for a parser error:
+- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules to indicate that we should buffer more data from a file or socket. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`
+- `Error` is a normal parser error. If a child parser of the `alt` combinator returns `Error`, it will try another child parser
+- `Failure` is an error from which we cannot recover: the `alt` combinator will not try other branches if a child parser returns `Failure`
 
+## the `ParseError` trait
 
-### Adding an error
-
-Sometimes, you want to provide an error code at a specific point in the parser
-tree. The `context` function can be used for this:
+To allow configurable error types, nom uses the `ParseError` trait in all
+combinators, defined as follows:
 
 ```rust
-fn string_parser(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
-  let (i, _) = char('\"')(i)?;
+pub trait ParseError<I>: Sized {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self;
 
-  context("string", terminated(parse_str, char('\"')))(i)
+  fn append(input: I, kind: ErrorKind, other: Self) -> Self;
+
+  fn from_char(input: I, _: char) -> Self {
+    Self::from_error_kind(input, ErrorKind::Char)
+  }
+
+  fn or(self, other: Self) -> Self {
+  other
+  }
+
+  fn add_context(_input: I, _ctx: &'static str, other: Self) -> Self {
+    other
+  }
 }
-
-assert_eq!(string_parser("\"abc;"), Err(Err::Error(VerboseError { errors: vec![
-  ("\"abc;", VerboseErrorKind::Context("string")),
-  (";", VerboseErrorKind::Char('\"'))
-])));
 ```
 
-This function allows use to add user friendly information to an error trace.
+Any error type has to implement that trait, that requires ways to build an
+error:
+- `from_error_kind`: from the input position and the `ErrorKind` enum that indicates in which parser we got an error
+- `append`: allows the creation of a chain of errors as we backtrack through the parser tree (various combinators will add more context)
+- `from_char`: creates an error that indicates which character we were expecting
+- `or`: in combinators like `alt`, allows choosing between errors from various branches (or accumulating them)
+- `add_context`: works like `append` but uses a static string instead of an `ErrorKind`. Usable with the `nom::error`::context` function
 
-## Error pattern matching
+This trait is currently implemented for 3 types:
+- `()`: if you want to ignore errors completely
+- `(I, ErrorKind)`: the default error type
+- `nom::error::VerboseError`: this type accumulates a chain of errors and leverages `from_char` and `add_context`
 
-Once you get a chain of errors with easily identifying codes, you probably want
-to match on these to provide useful error messages.
+The `VerboseError` type is especially useful if you need precise position information,
+and you want to a user friendly way of displaying the error.
+By calling the `nom::error::convert_error` function with the original input data
+(in `&str`) and the error, you can get a trace like this:
+
+```
+verbose errors - `root::<VerboseError>(data)`:
+0: at line 2:
+  "c": { 1"hello" : "world"
+         ^
+expected '}', found 1
+
+1: at line 2, in map:
+  "c": { 1"hello" : "world"
+       ^
+
+2: at line 0, in map:
+  { "a" : 42,
+  ^
+```
+
+## Debugging parsers
+
+While you are writing your parsers, you will sometimes need to follow
+which part of the parser sees which part of the input.
+
+To that end, nom provides the `dbg_dmp` function and macro, that will observe
+a parser's input and output, and print a hexdump of the input if there was an
+error. Here is what it could return:
+
+```rust
+fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  dbg_dmp(tag("abcd"), "tag")(i)
+}
+
+let a = &b"efghijkl"[..];
+
+// Will print the following message:
+// Error(Position(0, [101, 102, 103, 104, 105, 106, 107, 108])) at l.5 by ' tag ! ( "abcd" ) '
+// 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
+f(a);
+```
+
+You can go further with the [nom-trace crate](https://github.com/rust-bakery/nom-trace):
+
+```rust
+#[macro_use] extern crate nom;
+#[macro_use] extern crate nom_trace;
+
+//adds a thread local storage object to store the trace
+declare_trace!();
+
+pub fn main() {
+  named!(parser<&str, Vec<&str>>,
+    //wrap a parser with tr!() to add a trace point
+    tr!(preceded!(
+      tr!(tag!("data: ")),
+      tr!(delimited!(
+        tag!("("),
+        separated_list!(
+          tr!(tag!(",")),
+          tr!(nom::digit)
+        ),
+        tr!(tag!(")"))
+      ))
+    ))
+  );
+
+  println!("parsed: {:?}", parser("data: (1,2,3)"));
+
+  // prints the last parser trace
+  print_trace!();
+
+  // the list of trace events can be cleared
+  reset_trace!();
+}
+```
+
+This will display:
+
+```
+parsed: Ok(("", ["1", "2", "3"]))
+preceded        "data: (1,2,3)"
+
+        tag     "data: (1,2,3)"
+
+        -> Ok("data: ")
+        delimited       "(1,2,3)"
+
+                digit   "1,2,3)"
+
+                -> Ok("1")
+                tag     ",2,3)"
+
+                -> Ok(",")
+                digit   "2,3)"
+
+                -> Ok("2")
+                tag     ",3)"
+
+                -> Ok(",")
+                digit   "3)"
+
+                -> Ok("3")
+                tag     ")"
+
+                -> Error(Code(")", Tag))
+                tag     ")"
+
+                -> Ok(")")
+        -> Ok(["1", "2", "3"])
+-> Ok(["1", "2", "3"])
+```
+
 
