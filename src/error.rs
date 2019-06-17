@@ -143,17 +143,13 @@ where
 #[cfg(feature="alloc")]
 pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
   use crate::{
-    lib::std::{
-      iter::repeat,
-      string::String,
-      vec::Vec
-    },
+    lib::std:: iter::repeat,
     traits::Offset
   };
 
-  let lines: Vec<_> = input.lines().map(String::from).collect();
+  let lines: crate::lib::std::vec::Vec<_> = input.lines().map(crate::lib::std::string::String::from).collect();
 
-  let mut result = String::new();
+  let mut result = crate::lib::std::string::String::new();
 
   for (i, (substring, kind)) in e.errors.iter().enumerate() {
     let mut offset = input.offset(substring);
@@ -178,7 +174,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
         result += "\n";
 
         if column > 0 {
-          result += &repeat(' ').take(column).collect::<String>();
+          result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
         }
         result += "^\n";
         result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
@@ -188,7 +184,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
         result += &lines[line];
         result += "\n";
         if column > 0 {
-          result += &repeat(' ').take(column).collect::<String>();
+          result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
         }
         result += "^\n\n";
       },
@@ -197,7 +193,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
         result += &lines[line];
         result += "\n";
         if column > 0 {
-          result += &repeat(' ').take(column).collect::<String>();
+          result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
         }
         result += "^\n\n";
       }

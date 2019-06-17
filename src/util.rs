@@ -1,5 +1,3 @@
-#[cfg(feature = "alloc")]
-use crate::lib::std::vec::Vec;
 #[cfg(feature = "std")]
 use crate::internal::IResult;
 #[cfg(feature = "std")]
