@@ -10,20 +10,49 @@
 
 ## 5.0.0 - ?
 
+This version comes with a complete rewrite of nom internals to use functions as a base
+for parsers, instead of macros. Macros have been updated to use functions under
+the hood, so that most existing parsers will work directly or require minimal changes.
+
+The `CompleteByteSlice` and `CompleteStr` input types were removed. To get different
+behaviour related to streaming or complete input, there are different versions of some
+parsers in different submodules, like `nom::character::streaming::alpha0` and
+`nom::character::complete::alpha0`.
+
+The `verbose-errors` feature is gone, now the error type is decided through a generic
+bound. To get equivalent behaviour to `verbose-errors`, check out `nom::error::VerboseError`
+
 ### Thanks
 
-### Added
-- the `lexical-core` crate is now used by default (through the `lexical` compilation feature) to parse floats from text
+- @lowenheim helped in refactoring and error management
+- @Keruspe helped in refactoring and fixing tests
+- @pingiun, @Songbird0, @jeremystucki, @BeatButton, @NamsooCho, @Waelwindows, @rbtcollins, @MarkMcCaskey for a lot of help in rewriting the documentation and adding code examples
+- @GuillaumeGomez for documentation rewriting and checking
+- @iosmanthus for bug fixes
+- @lo48576 for error management fixes
+- @vaffeine for macros visibility fixes
+- @webholik and @Havvy for `escaped` and `escaped_transform` fixes
 
-### Fixed
+### Added
+
+- the `VerboseError` type accumulates position info and error codes, and can generate a trace with span information
+- the `lexical-core` crate is now used by default (through the `lexical` compilation feature) to parse floats from text
+- documentation and code examples for all functions and macros
 
 ### Changed
 
+- nom now uses functions instead of macros to generate parsers
+- macros now use the functions under the hood
+- the minimal Rust version is now 1.31
 - the verify combinator's condition function now takes its argument by reference
 - `cond` will now return the error of the parser instead of None
+- `alpha*`, `digit*`, `hex_digit*`, `alphanumeric*` now recognize only ASCII characters
 
 ### Removed
 
+- deprecated string parsers (with the `_s` suffix), the normal version can be used instead
+- `verbose-errors` is not needed anymore, now the error type can be decided when writing the parsers, and parsers provided by nom are generic over the error type
+- `AtEof`, `CompleteByteSlice` and `CompleteStr` are gone, instead some parsers are specialized to work on streaming or complete input, and provided in different modules
 - character parsers that were aliases to their `*1` version: eol, alpha, digit, hex_digit, oct_digit, alphanumeric, space, multispace
 - `count_fixed` macro
 - `whitespace::sp` can be replaced by `character::complete::multispace0`
@@ -1022,7 +1051,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased](https://github.com/Geal/nom/compare/4.2.3...HEAD)
+* [unreleased](https://github.com/Geal/nom/compare/5.0.0...HEAD)
+* [5.0.0](https://github.com/Geal/nom/compare/4.2.3...5.0.0)
 * [4.2.3](https://github.com/Geal/nom/compare/4.2.2...4.2.3)
 * [4.2.2](https://github.com/Geal/nom/compare/4.2.1...4.2.2)
 * [4.2.1](https://github.com/Geal/nom/compare/4.2.0...4.2.1)
