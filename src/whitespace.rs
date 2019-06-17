@@ -795,6 +795,7 @@ macro_rules! sep (
 /// ```
 ///
 #[macro_export(local_inner_macros)]
+#[deprecated(since = "5.0.0", note = "whitespace parsing only works with macros and will not be updated anymore")]
 macro_rules! ws (
   ($i:expr, $($args:tt)*) => (
     {
