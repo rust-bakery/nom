@@ -22,7 +22,7 @@
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, Needed};
 /// # fn main() {
-///  named!( take_4_bits<u8>, bits!( take_bits!( u8, 4u8 ) ) );
+///  named!( take_4_bits<u8>, bits!( take_bits!( 4u8 ) ) );
 ///
 ///  let input = vec![0xAB, 0xCD, 0xEF, 0x12];
 ///  let sl    = &input[..];
@@ -56,8 +56,8 @@ macro_rules! bits (
 /// # fn main() {
 ///
 /// named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
-///    take_bits!(u8, 4u8),
-///    take_bits!(u8, 8u8),
+///    take_bits!(4u8),
+///    take_bits!(8u8),
 ///    bytes!(rest::<_, (_, ErrorKind)>)
 /// )));
 ///
@@ -83,7 +83,7 @@ macro_rules! bytes (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
-/// named!(bits_pair<(&[u8], usize), (u8, u8)>, pair!( take_bits!(u8, 4u8), take_bits!(u8, 4u8) ) );
+/// named!(bits_pair<(&[u8], usize), (u8, u8)>, pair!( take_bits!(4u8), take_bits!(4u8) ) );
 /// named!( take_pair<(u8, u8)>, bits!( bits_pair ) );
 ///
 /// let input = vec![0xAB, 0xCD, 0xEF];
@@ -95,7 +95,7 @@ macro_rules! bytes (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! take_bits (
-  ($i:expr, $t:ty, $count:expr) => (
+  ($i:expr, $count:expr) => (
     {
       let res: $crate::IResult<_, _> = $crate::bits::streaming::take_bits($count)($i);
       res
@@ -114,7 +114,7 @@ macro_rules! take_bits (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
-///  named!( take_a<u8>, bits!( tag_bits!(u8, 4usize, 0xA) ) );
+///  named!( take_a<u8>, bits!( tag_bits!(4usize, 0xA) ) );
 ///
 ///  let input = vec![0xAB, 0xCD, 0xEF];
 ///  let sl    = &input[..];
@@ -124,7 +124,7 @@ macro_rules! take_bits (
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! tag_bits (
-  ($i:expr, $t:ty, $count:expr, $p: expr) => (
+  ($i:expr, $count:expr, $p: expr) => (
     {
       let res: $crate::IResult<_, _> = $crate::bits::streaming::tag_bits($p, $count)($i);
       res
@@ -143,21 +143,21 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(take_bits!((sl, 0), u8, 0u8), Ok(((sl, 0), 0)));
-    assert_eq!(take_bits!((sl, 0), u8, 8u8), Ok(((&sl[1..], 0), 170)));
-    assert_eq!(take_bits!((sl, 0), u8, 3u8), Ok(((&sl[0..], 3), 5)));
-    assert_eq!(take_bits!((sl, 0), u8, 6u8), Ok(((&sl[0..], 6), 42)));
-    assert_eq!(take_bits!((sl, 1), u8, 1u8), Ok(((&sl[0..], 2), 0)));
-    assert_eq!(take_bits!((sl, 1), u8, 2u8), Ok(((&sl[0..], 3), 1)));
-    assert_eq!(take_bits!((sl, 1), u8, 3u8), Ok(((&sl[0..], 4), 2)));
-    assert_eq!(take_bits!((sl, 6), u8, 3u8), Ok(((&sl[1..], 1), 5)));
-    assert_eq!(take_bits!((sl, 0), u16, 10u8), Ok(((&sl[1..], 2), 683)));
-    assert_eq!(take_bits!((sl, 0), u16, 8u8), Ok(((&sl[1..], 0), 170)));
-    assert_eq!(take_bits!((sl, 6), u16, 10u8), Ok(((&sl[2..], 0), 752)));
-    assert_eq!(take_bits!((sl, 6), u16, 11u8), Ok(((&sl[2..], 1), 1504)));
-    assert_eq!(take_bits!((sl, 0), u32, 20u8), Ok(((&sl[2..], 4), 700_163)));
-    assert_eq!(take_bits!((sl, 4), u32, 20u8), Ok(((&sl[3..], 0), 716_851)));
-    let r: IResult<_,u32> = take_bits!((sl, 4), u32, 22u8);
+    assert_eq!(take_bits!((sl, 0), 0u8), Ok(((sl, 0), 0)));
+    assert_eq!(take_bits!((sl, 0), 8u8), Ok(((&sl[1..], 0), 170)));
+    assert_eq!(take_bits!((sl, 0), 3u8), Ok(((&sl[0..], 3), 5)));
+    assert_eq!(take_bits!((sl, 0), 6u8), Ok(((&sl[0..], 6), 42)));
+    assert_eq!(take_bits!((sl, 1), 1u8), Ok(((&sl[0..], 2), 0)));
+    assert_eq!(take_bits!((sl, 1), 2u8), Ok(((&sl[0..], 3), 1)));
+    assert_eq!(take_bits!((sl, 1), 3u8), Ok(((&sl[0..], 4), 2)));
+    assert_eq!(take_bits!((sl, 6), 3u8), Ok(((&sl[1..], 1), 5)));
+    assert_eq!(take_bits!((sl, 0), 10u8), Ok(((&sl[1..], 2), 683)));
+    assert_eq!(take_bits!((sl, 0), 8u8), Ok(((&sl[1..], 0), 170)));
+    assert_eq!(take_bits!((sl, 6), 10u8), Ok(((&sl[2..], 0), 752)));
+    assert_eq!(take_bits!((sl, 6), 11u8), Ok(((&sl[2..], 1), 1504)));
+    assert_eq!(take_bits!((sl, 0), 20u8), Ok(((&sl[2..], 4), 700_163)));
+    assert_eq!(take_bits!((sl, 4), 20u8), Ok(((&sl[3..], 0), 716_851)));
+    let r: IResult<_,u32> = take_bits!((sl, 4), 22u8);
     assert_eq!(
       r,
       Err(Err::Incomplete(Needed::Size(22)))
@@ -169,15 +169,15 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(tag_bits!((sl, 0), u8, 3u8, 0b101), Ok(((&sl[0..], 3), 5)));
-    assert_eq!(tag_bits!((sl, 0), u8, 4u8, 0b1010), Ok(((&sl[0..], 4), 10)));
+    assert_eq!(tag_bits!((sl, 0), 3u8, 0b101), Ok(((&sl[0..], 3), 5)));
+    assert_eq!(tag_bits!((sl, 0), 4u8, 0b1010), Ok(((&sl[0..], 4), 10)));
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
     do_parse!(
-      tag_bits!(u8, 3u8, 0b101) >>
-      x: take_bits!(u8, 4u8)    >>
-      y: take_bits!(u8, 5u8)    >>
+      tag_bits!(3u8, 0b101) >>
+      x: take_bits!(4u8)    >>
+      y: take_bits!(5u8)    >>
       (x,y)
     )
   );
@@ -247,14 +247,14 @@ mod tests {
     let sl = &input[..];
 
     assert_eq!(
-      take_bits!((sl, 0), FakeUint, 20u8),
+      take_bits!((sl, 0), 20u8),
       Ok(((&sl[2..], 4), FakeUint(700_163)))
     );
     assert_eq!(
-      take_bits!((sl, 4), FakeUint, 20u8),
+      take_bits!((sl, 4), 20u8),
       Ok(((&sl[3..], 0), FakeUint(716_851)))
     );
-    let r3: IResult<_, FakeUint> = take_bits!((sl, 4), FakeUint, 22u8);
+    let r3: IResult<_, FakeUint> = take_bits!((sl, 4), 22u8);
     assert_eq!(
       r3,
       Err(Err::Incomplete(Needed::Size(22)))
