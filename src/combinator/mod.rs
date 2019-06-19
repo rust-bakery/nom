@@ -486,6 +486,38 @@ where
   verify(first, second)(input)
 }
 
+/// returns the provided value if the child parser succeeds
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::value;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// let parser = value(1234, alpha1);
+///
+/// assert_eq!(parser("abcd"), Ok(("", 1234)));
+/// assert_eq!(parser("123abcd;"), Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
+/// # }
+/// ```
+pub fn value<I, O1: Clone, O2, E: ParseError<I>, F>(val: O1, parser: F) -> impl Fn(I) -> IResult<I, O1, E>
+where
+  F: Fn(I) -> IResult<I, O2, E>,
+{
+  move |input: I| {
+    parser(input).map(|(i, _)| (i, val.clone()))
+  }
+}
+
+#[doc(hidden)]
+pub fn valuec<I, O1: Clone, O2, E: ParseError<I>, F>(input: I, val: O1, parser: F) -> IResult<I, O1, E>
+where
+  F: Fn(I) -> IResult<I, O2, E>,
+{
+  value(val, parser)(input)
+}
+
 /// succeeds if the child parser returns an error
 ///
 /// ```rust

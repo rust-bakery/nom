@@ -683,19 +683,10 @@ macro_rules! verify (
 #[macro_export(local_inner_macros)]
 macro_rules! value (
   ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
-    {
-      use $crate::lib::std::result::Result::*;
-
-      match $submac!($i, $($args)*) {
-        Ok((i,_)) => {
-          Ok((i, $res))
-        },
-        Err(e) => Err(e),
-      }
-    }
+    $crate::combinator::valuec($i, $res, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $res:expr, $f:expr) => (
-    value!($i, $res, call!($f))
+    $crate::combinator::valuec($i, $res, $f)
   );
   ($i:expr, $res:expr) => (
     {
