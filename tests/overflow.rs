@@ -1,4 +1,6 @@
 #![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
+#![cfg(target_pointer_width = "64")]
+
 #[macro_use]
 extern crate nom;
 
