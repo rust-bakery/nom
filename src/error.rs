@@ -547,15 +547,6 @@ mod tests {
     let input = "";
 
     let result: IResult<_, _, VerboseError<&str>> = char('x')(input);
-    match result.unwrap_err() {
-      crate::Err::Error(e) | crate::Err::Failure(e) => {
-        eprintln!("{:?}", e);
-        eprintln!("{}", convert_error(input, e));
-      }
-      crate::Err::Incomplete(_) => {
-        unreachable!();
-      }
-    }
   }
 }
 
