@@ -538,6 +538,7 @@ macro_rules! flat_map(
 
 
 #[cfg(test)]
+#[cfg(feature = "alloc")]
 mod tests {
   use super::*;
   use crate::character::complete::char;
