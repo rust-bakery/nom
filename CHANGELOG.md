@@ -8,7 +8,7 @@
 
 ### Fixed
 
-## 5.0.0 - ?
+## 5.0.0 - 2019-06-24
 
 This version comes with a complete rewrite of nom internals to use functions as a base
 for parsers, instead of macros. Macros have been updated to use functions under
