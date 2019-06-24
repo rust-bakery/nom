@@ -145,54 +145,69 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
   };
 
   let lines: crate::lib::std::vec::Vec<_> = input.lines().map(crate::lib::std::string::String::from).collect();
+  println!("lines: {:?}", lines);
 
   let mut result = crate::lib::std::string::String::new();
 
   for (i, (substring, kind)) in e.errors.iter().enumerate() {
     let mut offset = input.offset(substring);
 
-    let mut line = 0;
-    let mut column = 0;
-
-    for (j, l) in lines.iter().enumerate() {
-      if offset <= l.len() {
-        line = j;
-        column = offset;
-        break;
-      } else {
-        offset = offset - l.len() - 1;
+    if lines.is_empty() {
+      match kind {
+        VerboseErrorKind::Char(c) => {
+          result += &format!("{}: expected '{}', got empty input\n\n", i, c);
+        }
+        VerboseErrorKind::Context(s) => {
+          result += &format!("{}: in {}, got empty input\n\n", i, s);
+        },
+        VerboseErrorKind::Nom(e) => {
+          result += &format!("{}: in {:?}, got empty input\n\n", i, e);
+        }
       }
-    }
+    } else {
+      let mut line = 0;
+      let mut column = 0;
 
-    match kind {
-      VerboseErrorKind::Char(c) => {
-        result += &format!("{}: at line {}:\n", i, line);
-        result += &lines[line];
-        result += "\n";
-
-        if column > 0 {
-          result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
+      for (j, l) in lines.iter().enumerate() {
+        if offset <= l.len() {
+          line = j;
+          column = offset;
+          break;
+        } else {
+          offset = offset - l.len() - 1;
         }
-        result += "^\n";
-        result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
       }
-      VerboseErrorKind::Context(s) => {
-        result += &format!("{}: at line {}, in {}:\n", i, line, s);
-        result += &lines[line];
-        result += "\n";
-        if column > 0 {
-          result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
+
+      match kind {
+        VerboseErrorKind::Char(c) => {
+          result += &format!("{}: at line {}:\n", i, line);
+          result += &lines[line];
+          result += "\n";
+
+          if column > 0 {
+            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
+          }
+          result += "^\n";
+          result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
         }
-        result += "^\n\n";
-      },
-      VerboseErrorKind::Nom(e) => {
-        result += &format!("{}: at line {}, in {:?}:\n", i, line, e);
-        result += &lines[line];
-        result += "\n";
-        if column > 0 {
-          result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
+        VerboseErrorKind::Context(s) => {
+          result += &format!("{}: at line {}, in {}:\n", i, line, s);
+          result += &lines[line];
+          result += "\n";
+          if column > 0 {
+            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
+          }
+          result += "^\n\n";
+        },
+        VerboseErrorKind::Nom(e) => {
+          result += &format!("{}: at line {}, in {:?}:\n", i, line, e);
+          result += &lines[line];
+          result += "\n";
+          if column > 0 {
+            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
+          }
+          result += "^\n\n";
         }
-        result += "^\n\n";
       }
     }
   }
@@ -520,6 +535,29 @@ macro_rules! flat_map(
     $crate::combinator::map_parserc($i, move |i| {$submac!(i, $($args)*)}, move |i| {$submac2!(i, $($args2)*)})
   );
 );
+
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::character::complete::char;
+
+  #[test]
+  fn convert_error_panic() {
+    let input = "";
+
+    let result: IResult<_, _, VerboseError<&str>> = char('x')(input);
+    match result.unwrap_err() {
+      crate::Err::Error(e) | crate::Err::Failure(e) => {
+        eprintln!("{:?}", e);
+        eprintln!("{}", convert_error(input, e));
+      }
+      crate::Err::Incomplete(_) => {
+        unreachable!();
+      }
+    }
+  }
+}
 
 /*
 #[cfg(feature = "alloc")]
