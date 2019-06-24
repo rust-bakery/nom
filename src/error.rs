@@ -145,7 +145,6 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
   };
 
   let lines: crate::lib::std::vec::Vec<_> = input.lines().map(crate::lib::std::string::String::from).collect();
-  println!("lines: {:?}", lines);
 
   let mut result = crate::lib::std::string::String::new();
 
