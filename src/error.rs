@@ -1,10 +1,7 @@
 //! Error management
 //!
-//! Depending on a compilation flag, the content of the `Context` enum
-//! can change. In the default case, it will only have one variant:
-//! `Context::Code(I, ErrorKind<E=u32>)` (with `I` and `E` configurable).
-//! It contains an error code and the input position that triggered it.
-//!
+//! Parsers are generic over their error type, requiring that it implements
+//! the `error::ParseError<Input>` trait.
 
 /// this trait must be implemented by the error type of a nom parser
 ///
