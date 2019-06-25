@@ -140,73 +140,56 @@ where
 #[cfg(feature="alloc")]
 pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
   use crate::{
-    lib::std:: iter::repeat,
+    lib::std:: fmt::Write,
     traits::Offset
   };
-
-  let lines: crate::lib::std::vec::Vec<_> = input.lines().map(crate::lib::std::string::String::from).collect();
 
   let mut result = crate::lib::std::string::String::new();
 
   for (i, (substring, kind)) in e.errors.iter().enumerate() {
-    let mut offset = input.offset(substring);
+    let offset = input.offset(substring);
 
-    if lines.is_empty() {
-      match kind {
-        VerboseErrorKind::Char(c) => {
-          result += &format!("{}: expected '{}', got empty input\n\n", i, c);
+    let line_begin = memchr::memrchr(b'\n', input[..offset].as_bytes())
+      // Don't include preceding newline
+      .map(|off| off + 1)
+      .unwrap_or(0);
+    let line_end = memchr::memchr(b'\n', input[offset..].as_bytes())
+      .map(|off| off + offset)
+      .unwrap_or(input.len());
+    let line = &input[line_begin..line_end];
+
+    let line_num = input[..line_begin].bytes().fold(0, |acc, b| acc + (b == b'\n') as usize);
+    let column = offset - line_begin;
+
+    match kind {
+      VerboseErrorKind::Char(c) => {
+        writeln!(result, "{}: at line {}:", i, line_num).unwrap();
+        result += &line;
+        result += "\n";
+
+        // Format right aligned with width one greater than column (width includes the ^ char)
+        writeln!(result, "{1:>0$}", column + 1, '^').unwrap();
+        // Debug fmt, for chars, in case of control chars
+        write!(result, "expected {:?}, found ", c).unwrap();
+        match substring.chars().next() {
+          Some(next_char) => write!(result, "{:?}", next_char).unwrap(),
+          None => write!(result, "EOF").unwrap(),
         }
-        VerboseErrorKind::Context(s) => {
-          result += &format!("{}: in {}, got empty input\n\n", i, s);
-        },
-        VerboseErrorKind::Nom(e) => {
-          result += &format!("{}: in {:?}, got empty input\n\n", i, e);
-        }
+        result += "\n\n";
       }
-    } else {
-      let mut line = 0;
-      let mut column = 0;
-
-      for (j, l) in lines.iter().enumerate() {
-        if offset <= l.len() {
-          line = j;
-          column = offset;
-          break;
-        } else {
-          offset = offset - l.len() - 1;
-        }
+      VerboseErrorKind::Context(s) => {
+        writeln!(result, "{}: at line {}, in {}:", i, line_num, s).unwrap();
+        result += &line;
+        result += "\n";
+        // Format right aligned with width one greater than column (width includes the ^ char)
+        writeln!(result, "{1:>0$}\n", column + 1, '^').unwrap();
       }
-
-      match kind {
-        VerboseErrorKind::Char(c) => {
-          result += &format!("{}: at line {}:\n", i, line);
-          result += &lines[line];
-          result += "\n";
-
-          if column > 0 {
-            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
-          }
-          result += "^\n";
-          result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
-        }
-        VerboseErrorKind::Context(s) => {
-          result += &format!("{}: at line {}, in {}:\n", i, line, s);
-          result += &lines[line];
-          result += "\n";
-          if column > 0 {
-            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
-          }
-          result += "^\n\n";
-        },
-        VerboseErrorKind::Nom(e) => {
-          result += &format!("{}: at line {}, in {:?}:\n", i, line, e);
-          result += &lines[line];
-          result += "\n";
-          if column > 0 {
-            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
-          }
-          result += "^\n\n";
-        }
+      VerboseErrorKind::Nom(e) => {
+        writeln!(result, "{}: at line {}, in {:?}:", i, line_num, e).unwrap();
+        result += &line;
+        result += "\n";
+        // Format right aligned with width one greater than column (width includes the ^ char)
+        writeln!(result, "{1:>0$}\n", column + 1, '^').unwrap();
       }
     }
   }
@@ -564,6 +547,24 @@ mod tests {
       _ => panic!("Parse should not be incomplete"),
     };
     let _ = convert_error(input, err);
+  }
+
+  #[test]
+  fn multiline_convert_error() {
+    use crate::bytes::complete::tag;
+    let input = "a\nb\nc\na b c\nrest";
+
+    let parser = preceded(tag("a\nb\nc\na "), char('z'));
+    let err: VerboseError<&str> = match parser(input).unwrap_err() {
+      crate::Err::Error(e) | crate::Err::Failure(e) => e,
+      _ => panic!("Parse should not be incomplete"),
+    };
+    let expected = r"0: at line 3:
+a b c
+  ^
+expected 'z', found 'b'";
+
+    assert_eq!(expected, convert_error(input, err).trim());
   }
 }
 
