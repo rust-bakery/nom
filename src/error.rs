@@ -541,12 +541,29 @@ macro_rules! flat_map(
 mod tests {
   use super::*;
   use crate::character::complete::char;
+  use crate::sequence::preceded;
 
+  // see https://github.com/Geal/nom/issues/967
   #[test]
-  fn convert_error_panic() {
+  fn convert_error_empty_panic() {
     let input = "";
 
-    let result: IResult<_, _, VerboseError<&str>> = char('x')(input);
+    let err: VerboseError<&str> = match char('x')(input).unwrap_err() {
+      crate::Err::Error(e) | crate::Err::Failure(e) => e,
+      _ => panic!("Parse should not be incomplete"),
+    };
+    let _ = convert_error(input, err);
+  }
+
+  #[test]
+  fn convert_error_early_eof_panic() {
+    let input = "x";
+
+    let err: VerboseError<&str> = match preceded(char('x'), char('x'))(input).unwrap_err() {
+      crate::Err::Error(e) | crate::Err::Failure(e) => e,
+      _ => panic!("Parse should not be incomplete"),
+    };
+    let _ = convert_error(input, err);
   }
 }
 
