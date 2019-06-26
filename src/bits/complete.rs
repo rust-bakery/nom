@@ -6,7 +6,7 @@ use crate::internal::{Err, IResult};
 use crate::lib::std::ops::{AddAssign, RangeFrom, Shl, Shr, Div};
 use crate::traits::{InputIter, InputLength, Slice, ToUsize};
 
-/// generates a partser taking `count` bits
+/// generates a parser taking `count` bits
 pub fn take<I, O, C, E: ParseError<(I, usize)>>(count: C) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -53,7 +53,7 @@ where
   }
 }
 
-/// generates a partser taking `count` bits and comparing them to `pattern`
+/// generates a parser taking `count` bits and comparing them to `pattern`
 pub fn tag<I, O, C, E: ParseError<(I, usize)>>(pattern: O, count: C) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength + Clone,

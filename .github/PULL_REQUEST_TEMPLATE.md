@@ -15,7 +15,7 @@ Please provide the following information with this pull request:
 code, except for documentation typos)
 - a test case reproducing the issue. You can write it in [issues.rs](https://github.com/Geal/nom/blob/master/tests/issues.rs)
 - if adding a new combinator, please add code documentation and some unit tests
-in the same file. Also, pelase update the [combinatornator list](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
+in the same file. Also, please update the [combinator list](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
 
 ## Code style
 

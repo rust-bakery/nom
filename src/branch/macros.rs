@@ -82,7 +82,7 @@
 /// assert_eq!(result, Creature::Beast);
 /// assert_eq!(rest, b" of Gevaudan");
 ///
-/// // Given the input "demon hunter" the parser will return `Creature::Unkown(5)`
+/// // Given the input "demon hunter" the parser will return `Creature::Unknown(5)`
 /// // and the rest will be " hunter"
 /// let (rest, result) = creature(b"demon hunter").unwrap();
 /// assert_eq!(result, Creature::Unknown(5));

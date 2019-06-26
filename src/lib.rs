@@ -350,7 +350,7 @@
 //! input buffer can be full and need to be resized or refilled.
 //!
 //! A complete parser assumes that we already have all of the input data.
-//! This will be the common case with small files that can be read intirely to
+//! This will be the common case with small files that can be read entirely to
 //! memory.
 //!
 //! Here is how it works in practice:

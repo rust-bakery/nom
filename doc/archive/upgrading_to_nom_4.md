@@ -185,7 +185,7 @@ that transforms `Incomplete` in `Error`.
 nom 4 is much stricter about the behaviour with partial data, but provides better tools to deal with it.
 Thanks to the new `AtEof` trait for input types, nom now provides the `CompleteByteSlice(&[u8])` and
 `CompleteStr(&str)` input types, for which the `at_eof()` method always returns true.
-With these types, no need to put a `complete!()` combinator everywhere, you can juste apply those types
+With these types, no need to put a `complete!()` combinator everywhere, you can just apply those types
 like this:
 
 ```rust

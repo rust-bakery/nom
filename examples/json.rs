@@ -227,7 +227,7 @@ fn main() {
   );
 
   // nom also provides `the `VerboseError<Input>` type, which will generate a sort
-  // of backtrace of the path through the parser, accumulating info on input positons
+  // of backtrace of the path through the parser, accumulating info on input positions
   // and affected parsers.
   //
   // This will print:

@@ -26,7 +26,7 @@ Here are the traits we have to implement:
 | [AsBytes](https://docs.rs/nom/latest/nom/trait.AsBytes.html) | casts the input type to a byte slice |
 | [AsChar](https://docs.rs/nom/latest/nom/trait.AsChar.html) | transforms common types to a char for basic token parsing |
 | [Compare](https://docs.rs/nom/latest/nom/trait.Compare.html) | character comparison operations |
-| [ExtendInto](https://docs.rs/nom/latest/nom/trait.ExtendInto.html) |abtracts something which can extend an Extend |
+| [ExtendInto](https://docs.rs/nom/latest/nom/trait.ExtendInto.html) |abstracts something which can extend an Extend |
 | [FindSubstring](https://docs.rs/nom/latest/nom/trait.FindSubstring.html) | look for a substring in self |
 | [FindToken](https://docs.rs/nom/latest/nom/trait.FindToken.html) |look for self in the given input stream |
 | [InputIter](https://docs.rs/nom/latest/nom/trait.InputIter.html) | common iteration operations on the input type |

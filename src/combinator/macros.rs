@@ -521,7 +521,7 @@ macro_rules! map(
 ///
 /// named!(parse<&str, u8>, map_res!(digit1, |s: &str| s.parse::<u8>()));
 ///
-/// // the parser will convet the result of digit1 to a number
+/// // the parser will convert the result of digit1 to a number
 /// assert_eq!(parse("123"), Ok(("", 123)));
 ///
 /// // this will fail if digit1 fails
