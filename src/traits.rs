@@ -1005,7 +1005,7 @@ array_impls! {
     30 31 32
 }
 
-/// abtracts something which can extend an `Extend`
+/// abstracts something which can extend an `Extend`
 /// used to build modified input slices in `escaped_transform`
 pub trait ExtendInto {
 

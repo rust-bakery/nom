@@ -16,7 +16,7 @@ pub trait ParseError<I>: Sized {
   fn from_error_kind(input: I, kind: ErrorKind) -> Self;
 
   /// combines an existing error with a new one created from the input
-  /// positionsition and an [ErrorKind]. This is useful when backtracking
+  /// position and an [ErrorKind]. This is useful when backtracking
   /// through a parse tree, accumulating error context on the way
   fn append(input: I, kind: ErrorKind, other: Self) -> Self;
 
@@ -61,7 +61,7 @@ pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
 }
 
 /// combines an existing error with a new one created from the input
-/// positionsition and an [ErrorKind]. This is useful when backtracking
+/// position and an [ErrorKind]. This is useful when backtracking
 /// through a parse tree, accumulating error context on the way
 pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) -> E {
   E::append(input, kind, other)

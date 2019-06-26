@@ -106,7 +106,7 @@ bound. To get equivalent behaviour to `verbose-errors`, check out `nom::error::V
 
 ### Added
 
-- `many0_count` abd `many1_count` to count applications of a parser instead of
+- `many0_count` and `many1_count` to count applications of a parser instead of
 accumulating its results in a `Vec`
 
 ### Fixed
@@ -126,7 +126,7 @@ accumulating its results in a `Vec`
 
 - @xfix for fixing warnings, simplifying examples and performance fixes
 - @dvberkel for documentation fixes
-- @chifflier for fixinf warnings
+- @chifflier for fixing warnings
 - @myrrlyn for dead code elimination
 - @petrochenkov for removing redundant test macros
 - @tbelaire for documentation fixes
@@ -202,8 +202,8 @@ accumulating its results in a `Vec`
 - @passy for typo fixes
 - @ayrat555 for typo fixes
 - @GuillaumeGomez for documentation fixes
-- @jrakow for documentation fixes and fiwes for `switch!`
-- @phlosioneer for dicumentation fixes
+- @jrakow for documentation fixes and fixes for `switch!`
+- @phlosioneer for documentation fixes
 - @creativcoder for typo fixes
 - @derekdreery for typo fixes
 - @lucasem for implementing `Deref` on `CompleteStr` and `CompleteByteSlice`
