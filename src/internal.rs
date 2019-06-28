@@ -7,7 +7,7 @@ use crate::error::ErrorKind;
 ///
 /// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
 ///
-/// The `Ok` side is an enum containing the remainder of the input (the part of the data that
+/// The `Ok` side is a pair containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
 ///
 pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
