@@ -79,12 +79,12 @@
 /// # use nom::{named, tag};
 /// named!(my_function<&[u8], &[u8]>, tag!("abcd"));
 /// ```
-/// This one will have &[u8] as input type, &[u8] as output type:
+/// This one will have `&[u8]` as input type, `&[u8]` as output type:
 /// ```
 /// # use nom::{named, tag};
 /// named!(my_function, tag!("abcd"));
 /// ```
-/// Will use &[u8] as output type:
+/// Will use `&[u8]` as output type:
 /// ```
 /// # use nom::{named, tag};
 /// named!(my_function<&[u8]>, tag!("abcd"));
@@ -134,7 +134,7 @@ macro_rules! named (
 /// Makes a function from a parser combination with arguments.
 ///
 /// ```ignore
-/// //takes `&[u8]` as input
+/// //takes [`&[u8]`] as input
 /// named_args!(tagged(open_tag: &[u8], close_tag: &[u8])<&str>,
 ///   delimited!(tag!(open_tag), map_res!(take!(4), str::from_utf8), tag!(close_tag))
 /// );
