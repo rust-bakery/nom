@@ -108,6 +108,7 @@ name = "json"
 
 [[test]]
 name = "mp4"
+required-features = ["alloc"]
 
 [[test]]
 name = "multiline"
