@@ -44,7 +44,11 @@ where
         Err(e) => return Err(e),
         Ok((i1, o)) => {
           if i1 == i {
-            return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+            if acc.is_empty() {
+              return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+            } else {
+              return Ok((i, acc));
+            }
           }
 
           i = i1;
@@ -109,7 +113,11 @@ where
             Err(e) => return Err(e),
             Ok((i1, o)) => {
               if i1 == i {
-                return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
+                if acc.is_empty() {
+                  return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
+                } else {
+                  return Ok((i, acc));
+                }
               }
 
               i = i1;

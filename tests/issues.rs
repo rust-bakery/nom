@@ -290,3 +290,18 @@ fn issue_942() {
   }
   assert_eq!(parser::<()>("aaa"), Ok(("", 3)));
 }
+
+#[test]
+fn issue_982() {
+  pub fn parser0(s: &str) -> IResult<&str, Vec<&str>> {
+    use nom::{character::complete::alphanumeric0, multi::many0};
+    many0(alphanumeric0)(s)
+  }
+  assert_eq!(parser0("abc"), Ok(("", vec!["abc"])));
+
+  pub fn parser1(s: &str) -> IResult<&str, Vec<&str>> {
+    use nom::{character::complete::alphanumeric0, multi::many1};
+    many1(alphanumeric0)(s)
+  }
+  assert_eq!(parser1("abc"), Ok(("", vec!["abc"])));
+}
