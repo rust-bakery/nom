@@ -187,7 +187,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
             result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
           }
           result += "^\n";
-          result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
+          result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap_or(' '));
         }
         VerboseErrorKind::Context(s) => {
           result += &format!("{}: at line {}, in {}:\n", i, line, s);
