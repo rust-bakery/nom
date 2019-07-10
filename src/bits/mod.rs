@@ -19,14 +19,14 @@ use crate::traits::{Slice, ErrorConvert};
 /// away.
 ///
 /// # Example
-/// ```ignore
+/// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// use nom::bits::bits;
-/// use nom::bits::complete::take_bits;
+/// use nom::bits::complete::take;
 ///
 /// fn take_4_bits(input: &[u8]) -> IResult<&[u8], u64> {
-///   bits( take_bits(4usize) )(input)
+///   bits::<_, _, (_, _), _, _>( take(4usize) )(input)
 /// }
 ///
 /// let input = vec![0xAB, 0xCD, 0xEF, 0x12];
@@ -65,18 +65,18 @@ where
 /// A partial byte remaining in the input will be ignored and the given parser will start parsing
 /// at the next full byte.
 ///
-/// ```ignore
+/// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// # use nom::combinator::rest;
 /// # use nom::sequence::tuple;
-/// use nom::bits::{bits, bytes, streaming::take_bits};
+/// use nom::bits::{bits, bytes, streaming::take};
 ///
 /// fn parse(input: &[u8]) -> IResult<&[u8], (u8, u8, &[u8])> {
-///   bits(tuple((
-///     take_bits(4usize),
-///     take_bits(8usize),
-///     bytes(rest)
+///   bits::<_, _, (_, _), _, _>(tuple((
+///     take(4usize),
+///     take(8usize),
+///     bytes::<_, _, (_, _), _, _>(rest)
 ///   )))(input)
 /// }
 ///
