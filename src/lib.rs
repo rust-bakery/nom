@@ -422,7 +422,7 @@ extern crate test;
 #[cfg(test)]
 extern crate doc_comment;
 
-#[cfg(test)]
+#[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
