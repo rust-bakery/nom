@@ -290,3 +290,11 @@ fn issue_942() {
   }
   assert_eq!(parser::<()>("aaa"), Ok(("", 3)));
 }
+
+#[test]
+fn issue_many_m_n_with_zeros() {
+    use nom::multi::many_m_n;
+    use nom::character::complete::char;
+    let parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
+    assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
+}

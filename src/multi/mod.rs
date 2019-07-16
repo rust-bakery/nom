@@ -409,6 +409,10 @@ where
     let mut input = i.clone();
     let mut count: usize = 0;
 
+    if n == 0 {
+        return Ok((i, vec!()))
+    }
+
     loop {
       let _i = input.clone();
       match f(_i) {
