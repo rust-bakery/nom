@@ -144,7 +144,7 @@ macro_rules! delimited_sep (
   ($i:expr, $separator:path, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => ({
     use $crate::lib::std::result::Result::*;
 
-    match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)*) {
+    match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)+) {
       Err(e) => Err(e),
       Ok((remaining, (_,o,_))) => {
         Ok((remaining, o))
@@ -152,7 +152,7 @@ macro_rules! delimited_sep (
     }
   });
   ($i:expr, $separator:path, $f:expr, $($rest:tt)+) => (
-    delimited_sep!($i, $separator, call!($f), $($rest)*);
+    delimited_sep!($i, $separator, call!($f), $($rest)+);
   );
 );
 
@@ -162,7 +162,7 @@ macro_rules! separated_pair_sep (
   ($i:expr, $separator:path, $submac1:ident!( $($args1:tt)* ), $($rest:tt)+) => ({
     use $crate::lib::std::result::Result::*;
 
-    match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)*) {
+    match tuple_sep!($i, $separator, (), $submac1!($($args1)*), $($rest)+) {
       Err(e) => Err(e),
       Ok((remaining, (o1,_,o2))) => {
         Ok((remaining, (o1,o2)))
@@ -170,7 +170,7 @@ macro_rules! separated_pair_sep (
     }
   });
   ($i:expr, $separator:path, $f:expr, $($rest:tt)+) => (
-    separated_pair_sep!($i, $separator, call!($f), $($rest)*);
+    separated_pair_sep!($i, $separator, call!($f), $($rest)+);
   );
 );
 
@@ -508,7 +508,7 @@ macro_rules! alt_sep (
       match sep!($i, $separator, $subrule!( $($args)* )) {
         Ok((i,o))               => Ok((i,$gen(o))),
         Err(Err::Error(_))      => {
-          alt_sep!(__impl $i, $separator, $($rest)*)
+          alt_sep!(__impl $i, $separator, $($rest)+)
         },
         Err(e)            => Err(e),
       }

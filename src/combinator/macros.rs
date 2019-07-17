@@ -657,7 +657,7 @@ macro_rules! verify (
     $crate::combinator::verify($f, $g)($i)
   );
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    $crate::combinator::verify($f, |&o| $submac2!(o, $($args)*))($i)
+    $crate::combinator::verify($f, |&o| $submac!(o, $($args)*))($i)
   );
 );
 

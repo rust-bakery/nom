@@ -212,7 +212,7 @@ macro_rules! permutation_trait_inner(
         }
       };
     }
-    succ!($it, permutation_trait_inner!($self, $input, $res, $all_done, $($id)*));
+    succ!($it, permutation_trait_inner!($self, $input, $res, $all_done, $($id)+));
   });
   ($it:tt, $self:expr, $input:ident, $res:expr, $all_done:expr, $head:ident) => ({
     if $res.$it.is_none() {
