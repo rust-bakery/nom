@@ -429,6 +429,48 @@ where
   }
 }
 
+/// Returns the longest input slice until it matches the pattern, pattern is consumed.
+///
+/// It does consume the pattern
+///
+/// # Streaming Specific
+/// *Streaming version* will return a `Err::Incomplete(Needed::Size(N))` if the input doesn't
+/// contain the pattern or if the input is smaller than the pattern
+/// # Example
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::bytes::streaming::take_up_to;
+///
+/// fn up_to_eof(s: &str) -> IResult<&str, &str> {
+///   take_up_to("eof")(s)
+/// }
+///
+/// assert_eq!(up_to_eof("hello, worldeof"), Ok(("", "hello, world")));
+/// assert_eq!(up_to_eof("eof"), Ok(("", "")));
+/// assert_eq!(up_to_eof("hello, world"), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(up_to_eof(""), Err(Err::Incomplete(Needed::Size(3))));
+/// ```
+pub fn take_up_to<T, Input, Error: ParseError<Input>>(tag: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
+where
+  Input: InputTake + FindSubstring<T>,
+  T: InputLength + Clone,
+{
+  move |i: Input| {
+    let len = tag.input_len();
+    let t = tag.clone();
+
+    let res: IResult<_, _, Error> = match i.find_substring(t) {
+      None => Err(Err::Incomplete(Needed::Size(len))),
+      Some(index) => {
+        let (remain, consume) = i.take_split(index);
+        Ok((remain.take_split(len).0, consume))
+      }
+    };
+    res
+  }
+}
+
 /// Matches a byte string with escaped characters.
 ///
 /// * The first argument matches the normal characters (it must not accept the control character),
