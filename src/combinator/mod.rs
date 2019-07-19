@@ -242,7 +242,7 @@ pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> im
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(O1) -> H,
-  H: Fn(I) -> IResult<I, O2, E>
+  H: FnOnce(I) -> IResult<I, O2, E>
 {
   move |input: I| {
     let (input, o1) = first(input)?;
