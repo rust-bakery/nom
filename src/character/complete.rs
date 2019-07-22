@@ -24,7 +24,7 @@ use crate::error::ErrorKind;
 /// assert_eq!(char::<_, (&str, ErrorKind)>('a')(""), Err(Err::Error(("", ErrorKind::Char))));
 /// # }
 /// ```
-pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn char<I, Error: ParseError<I>>(c: char) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar,
@@ -53,7 +53,7 @@ where
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::OneOf))));
 /// # }
 /// ```
-pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar + Copy,
@@ -80,7 +80,7 @@ where
 /// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::NoneOf))));
 /// # }
 /// ```
-pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar + Copy,

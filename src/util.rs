@@ -158,8 +158,8 @@ macro_rules! dbg (
 /// f(a);
 /// ```
 #[cfg(feature = "std")]
-pub fn dbg_dmp<'a, F, O, E: Debug>(f: F, context: &'static str) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
-  where F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E> {
+pub fn dbg_dmp<'a, F, O, E: Debug>(mut f: F, context: &'static str) -> impl FnMut(&'a [u8]) -> IResult<&'a [u8], O, E>
+  where F: FnMut(&'a [u8]) -> IResult<&'a [u8], O, E> {
   move |i: &'a [u8]| {
       match f(i) {
         Err(e) => {

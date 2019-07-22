@@ -199,7 +199,7 @@
 //! ## Making new parsers with function combinators
 //!
 //! nom is based on functions that generate parsers, with a signature like
-//! this: `(arguments) -> impl Fn(Input) -> IResult<Input, Output, Error>`.
+//! this: `(arguments) -> impl FnMut(Input) -> IResult<Input, Output, Error>`.
 //! The arguments of a combinator can be direct values (like `take` which uses
 //! a number of bytes or character as argument) or even other parsers (like
 //! `delimited` which takes as argument 3 parsers, and returns the result of
@@ -230,7 +230,7 @@
 //! use nom::branch::alt;
 //! use nom::bytes::complete::tag;
 //!
-//! let alt_tags = alt((tag("abcd"), tag("efgh")));
+//! let mut alt_tags = alt((tag("abcd"), tag("efgh")));
 //!
 //! assert_eq!(alt_tags(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
 //! assert_eq!(alt_tags(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
@@ -293,7 +293,7 @@
 //! bytes::streaming::{tag, take},
 //! sequence::tuple};
 //!
-//! let tpl = tuple((be_u16, take(3u8), tag("fg")));
+//! let mut tpl = tuple((be_u16, take(3u8), tag("fg")));
 //!
 //! assert_eq!(
 //!   tpl(&b"abcdefgh"[..]),

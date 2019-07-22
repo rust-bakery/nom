@@ -34,10 +34,10 @@ use crate::traits::{Slice, ErrorConvert};
 ///
 /// assert_eq!(take_4_bits( sl ), Ok( (&sl[1..], 0xA) ));
 /// ```
-pub fn bits<I, O, E1: ParseError<(I, usize)>+ErrorConvert<E2>, E2: ParseError<I>, P>(parser: P) -> impl Fn(I) -> IResult<I, O, E2>
+pub fn bits<I, O, E1: ParseError<(I, usize)>+ErrorConvert<E2>, E2: ParseError<I>, P>(mut parser: P) -> impl FnMut(I) -> IResult<I, O, E2>
 where
   I: Slice<RangeFrom<usize>>,
-  P: Fn((I, usize)) -> IResult<(I, usize), O, E1>,
+  P: FnMut((I, usize)) -> IResult<(I, usize), O, E1>,
 {
   move |input: I| match parser((input, 0)) {
     Ok(((rest, offset), res)) => {
@@ -54,7 +54,7 @@ where
 pub fn bitsc<I, O, E1: ParseError<(I, usize)>+ErrorConvert<E2>, E2: ParseError<I>, P>(input: I, parser: P) -> IResult<I, O, E2>
 where
   I: Slice<RangeFrom<usize>>,
-  P: Fn((I, usize)) -> IResult<(I, usize), O, E1>,
+  P: FnMut((I, usize)) -> IResult<(I, usize), O, E1>,
 {
   bits(parser)(input)
 }
@@ -84,10 +84,10 @@ where
 ///
 /// assert_eq!(parse( input ), Ok(( &[][..], (0xd, 0xea, &[0xbe, 0xaf][..]) )));
 /// ```
-pub fn bytes<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(parser: P) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E2>
+pub fn bytes<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(mut parser: P) -> impl FnMut((I, usize)) -> IResult<(I, usize), O, E2>
 where
   I: Slice<RangeFrom<usize>> + Clone,
-  P: Fn(I) -> IResult<I, O, E1>,
+  P: FnMut(I) -> IResult<I, O, E1>,
 {
   move |(input, offset): (I, usize)| {
     let inner = if offset % 8 != 0 {
@@ -113,7 +113,7 @@ where
 pub fn bytesc<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(input: (I, usize), parser: P) -> IResult<(I, usize), O, E2>
 where
   I: Slice<RangeFrom<usize>> + Clone,
-  P: Fn(I) -> IResult<I, O, E1>,
+  P: FnMut(I) -> IResult<I, O, E1>,
 {
   bytes(parser)(input)
 }

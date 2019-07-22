@@ -122,9 +122,9 @@ use crate::internal::{Err, IResult};
 /// This is used mainly in the [context] combinator, to add user friendly information
 /// to errors when backtracking through a parse tree
 #[cfg(feature = "alloc")]
-pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Fn(I) -> IResult<I, O, E> {
+  F: FnMut(I) -> IResult<I, O, E> {
 
     move |i: I| {
       match f(i.clone()) {
@@ -241,7 +241,7 @@ pub enum ErrorKind {
   AlphaNumeric,
   Space,
   MultiSpace,
-  LengthValueFn,
+  LengthValueFnMut,
   Eof,
   Switch,
   TagBits,
@@ -296,7 +296,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::AlphaNumeric              => 19,
     ErrorKind::Space                     => 20,
     ErrorKind::MultiSpace                => 21,
-    ErrorKind::LengthValueFn             => 22,
+    ErrorKind::LengthValueFnMut             => 22,
     ErrorKind::Eof                       => 23,
     ErrorKind::Switch                    => 27,
     ErrorKind::TagBits                   => 28,
@@ -358,7 +358,7 @@ impl ErrorKind {
       ErrorKind::AlphaNumeric              => "AlphaNumeric",
       ErrorKind::Space                     => "Space",
       ErrorKind::MultiSpace                => "Multiple spaces",
-      ErrorKind::LengthValueFn             => "LengthValueFn",
+      ErrorKind::LengthValueFnMut             => "LengthValueFnMut",
       ErrorKind::Eof                       => "End of file",
       ErrorKind::Switch                    => "Switch",
       ErrorKind::TagBits                   => "Tag on bitstream",

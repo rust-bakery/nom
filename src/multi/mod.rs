@@ -29,10 +29,10 @@ use crate::error::ErrorKind;
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many0<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -60,7 +60,7 @@ where
 pub fn many0c<I, O, E, F>(input: I, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   many0(f)(input)
@@ -87,10 +87,10 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many1<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn many1<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -128,7 +128,7 @@ where
 pub fn many1c<I, O, E, F>(input: I, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + Copy + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   many1(f)(input)
@@ -153,11 +153,11 @@ where
 /// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many_till<I, O, P, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, (Vec<O>, P), E>
+pub fn many_till<I, O, P, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, (Vec<O>, P), E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, P, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(I) -> IResult<I, P, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -194,8 +194,8 @@ where
 pub fn many_tillc<I, O, P, E, F, G>(i: I, f: F, g: G) -> IResult<I, (Vec<O>, P), E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, P, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(I) -> IResult<I, P, E>,
   E: ParseError<I>,
 {
   many_till(f, g)(i)
@@ -223,11 +223,11 @@ where
 /// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn separated_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list<I, O, O2, E, F, G>(mut sep: G, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(I) -> IResult<I, O2, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -280,8 +280,8 @@ where
 pub fn separated_listc<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(I) -> IResult<I, O2, E>,
   E: ParseError<I>,
 {
   separated_list(sep, f)(i)
@@ -310,11 +310,11 @@ where
 /// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn separated_nonempty_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn separated_nonempty_list<I, O, O2, E, F, G>(mut sep: G, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(I) -> IResult<I, O2, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -367,8 +367,8 @@ where
 pub fn separated_nonempty_listc<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(I) -> IResult<I, O2, E>,
   E: ParseError<I>,
 {
   separated_nonempty_list(sep, f)(i)
@@ -398,10 +398,10 @@ where
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many_m_n<I, O, E, F>(m: usize, n: usize, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn many_m_n<I, O, E, F>(m: usize, n: usize, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -447,7 +447,7 @@ where
 pub fn many_m_nc<I, O, E, F>(i: I, m: usize, n: usize, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   many_m_n(m, n, f)(i)
@@ -472,10 +472,10 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", 0)));
 /// assert_eq!(parser(""), Ok(("", 0)));
 /// ```
-pub fn many0_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
+pub fn many0_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -507,7 +507,7 @@ where
 pub fn many0_countc<I, O, E, F>(i: I, f: F) -> IResult<I, usize, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   many0_count(f)(i)
@@ -534,10 +534,10 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1Count))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1Count))));
 /// ```
-pub fn many1_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
+pub fn many1_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -573,7 +573,7 @@ where
 pub fn many1_countc<I, O, E, F>(i: I, f: F) -> IResult<I, usize, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   many1_count(f)(i)
@@ -601,10 +601,10 @@ where
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn count<I, O, E, F>(f: F, count: usize) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn count<I, O, E, F>(mut f: F, count: usize) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I | {
@@ -660,11 +660,11 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
-pub fn fold_many0<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
+pub fn fold_many0<I, O, E, F, G, R>(mut f: F, init: R, mut g: G) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -699,8 +699,8 @@ where
 pub fn fold_many0c<I, O, E, F, G, R>(i: I, f: F, init: R, g: G) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -738,11 +738,11 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1))));
 /// ```
-pub fn fold_many1<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
+pub fn fold_many1<I, O, E, F, G, R>(mut f: F, init: R, mut g: G) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -784,8 +784,8 @@ where
 pub fn fold_many1c<I, O, E, F, G, R>(i: I, f: F, init: R, g: G) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -828,11 +828,11 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(I) ->IResult<I, R, E>
+pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, mut f: F, init: R, mut g: G) -> impl FnMut(I) ->IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -869,8 +869,8 @@ where
 pub fn fold_many_m_nc<I, O, E, F, G, R>(i: I, m: usize, n: usize, f: F, init: R, g: G) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
+  F: FnMut(I) -> IResult<I, O, E>,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -899,11 +899,11 @@ where
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
 /// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Size(3))));
 /// ```
-pub fn length_data<I, N, E, F>(f: F) -> impl Fn(I) -> IResult<I, I, E>
+pub fn length_data<I, N, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, I, E>
 where
   I: Clone + InputLength + InputTake,
   N: Copy + ToUsize,
-  F: Fn(I) -> IResult<I, N, E>,
+  F: FnMut(I) -> IResult<I, N, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -942,12 +942,12 @@ where
 /// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error((&b"123"[..], ErrorKind::Tag))));
 /// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Size(3))));
 /// ```
-pub fn length_value<I, O, N, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, O, E>
+pub fn length_value<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>
 where
   I: Clone + InputLength + InputTake,
   N: Copy + ToUsize,
-  F: Fn(I) -> IResult<I, N, E>,
-  G: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, N, E>,
+  G: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -974,8 +974,8 @@ pub fn length_valuec<I, O, N, E, F, G>(i: I, f: F, g: G) -> IResult<I, O, E>
 where
   I: Clone + InputLength + InputTake,
   N: Copy + ToUsize,
-  F: Fn(I) -> IResult<I, N, E>,
-  G: Fn(I) -> IResult<I, O, E>,
+  F: FnMut(I) -> IResult<I, N, E>,
+  G: FnMut(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
   length_value(f, g)(i)

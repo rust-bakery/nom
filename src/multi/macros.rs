@@ -421,7 +421,7 @@ macro_rules! length_value(
   );
 );
 
-/// `fold_many0!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
+/// `fold_many0!(I -> IResult<I,O>, R, FnMut(R, O) -> R) => I -> IResult<I, R>`
 /// Applies the parser 0 or more times and folds the list of return values
 ///
 /// the embedded parser may return Incomplete
@@ -454,7 +454,7 @@ macro_rules! fold_many0(
   );
 );
 
-/// `fold_many1!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
+/// `fold_many1!(I -> IResult<I,O>, R, FnMut(R, O) -> R) => I -> IResult<I, R>`
 /// Applies the parser 1 or more times and folds the list of return values
 ///
 /// the embedded parser may return Incomplete
@@ -491,7 +491,7 @@ macro_rules! fold_many1(
   );
 );
 
-/// `fold_many_m_n!(usize, usize, I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
+/// `fold_many_m_n!(usize, usize, I -> IResult<I,O>, R, FnMut(R, O) -> R) => I -> IResult<I, R>`
 /// Applies the parser between m and n times (n included) and folds the list of return value
 ///
 /// the embedded parser may return Incomplete

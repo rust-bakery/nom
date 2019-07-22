@@ -253,7 +253,7 @@ mod tests {
   #[cfg(feature = "std")]
   fn manual_configurable_endianness_test() {
     let x = 1;
-    let int_parse: Box<Fn(&[u8]) -> IResult<&[u8], u16, (&[u8], ErrorKind)>> = if x == 2 {
+    let int_parse: Box<FnMut(&[u8]) -> IResult<&[u8], u16, (&[u8], ErrorKind)>> = if x == 2 {
       Box::new(be_u16)
     } else {
       Box::new(le_u16)
