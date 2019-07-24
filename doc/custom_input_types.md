@@ -10,21 +10,20 @@ that can carry line and column information, or to parse
 
 ## Implementing a custom type
 
-Let's assume we have an input type we'll call `MyInput`. The goal is to define
-nom parsers with this signature: `MyInput -> IResult<MyInput, Output>`.
-To employ it in a `named!` parser, you can write it like this:
+Let's assume we have an input type we'll call `MyInput`. `MyInput` is a sequence of `MyItem` type.
+The goal is to define nom parsers with this signature: `MyInput -> IResult<MyInput, Output>`.
 
 ```rust
-named!(parser<MyInput, Output>, tag!("test"));
+fn parser(i: MyInput) -> IResult<MyInput, Output> {
+    tag("test")(i)
+}
 ```
 
-Here are the traits we have to implement:
-
+Here are the traits we have to implement for `MyInput`:
 
 | trait | usage |
 |---|---|
 | [AsBytes](https://docs.rs/nom/latest/nom/trait.AsBytes.html) | casts the input type to a byte slice |
-| [AsChar](https://docs.rs/nom/latest/nom/trait.AsChar.html) | transforms common types to a char for basic token parsing |
 | [Compare](https://docs.rs/nom/latest/nom/trait.Compare.html) | character comparison operations |
 | [ExtendInto](https://docs.rs/nom/latest/nom/trait.ExtendInto.html) |abstracts something which can extend an Extend |
 | [FindSubstring](https://docs.rs/nom/latest/nom/trait.FindSubstring.html) | look for a substring in self |
@@ -36,3 +35,9 @@ Here are the traits we have to implement:
 | [Offset](https://docs.rs/nom/latest/nom/trait.Offset.html) | calculate the offset between slices |
 | [ParseTo](https://docs.rs/nom/latest/nom/trait.ParseTo.html) | used to integrate `&str`'s parse() method |
 | [Slice](https://docs.rs/nom/latest/nom/trait.Slice.html) | slicing operations using ranges |
+
+Here are the traits we have to implement for `MyItem`:
+
+| trait | usage |
+|---|---|
+| [AsChar](https://docs.rs/nom/latest/nom/trait.AsChar.html) | transforms common types to a char for basic token parsing |
