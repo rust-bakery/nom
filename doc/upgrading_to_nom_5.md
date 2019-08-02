@@ -175,7 +175,7 @@ the closure that it returns.
 You can then use it that way:
 
 ```rust
-fn parser(i: &str) -> IResult<&str, &str> {
+fn parser(i: &str) -> IResult<&str, (&str, &str)> {
   pair(alpha0, digit0)(i)
 }
 
