@@ -689,10 +689,7 @@ macro_rules! value (
     $crate::combinator::valuec($i, $res, $f)
   );
   ($i:expr, $res:expr) => (
-    {
-      let res: $crate::IResult<_,_> = Ok(($i, $res));
-      res
-    }
+    Ok(($i, $res))
   );
 );
 
