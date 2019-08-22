@@ -12,8 +12,14 @@ use crate::error::ErrorKind;
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
+///
 /// # Arguments
 /// * `f` The parser to apply.
+///
+/// *Note*: if the parser passed to `many0` accepts empty inputs
+/// (like `alpha0` or `digit0`), `many0` will return an error,
+/// to prevent going into an infinite loop
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many0;
@@ -70,8 +76,14 @@ where
 /// returns the results in a `Vec`. Fails if
 /// the embedded parser does not produce at least
 /// one result.
+///
 /// # Arguments
 /// * `f` The parser to apply.
+///
+/// *Note*: if the parser passed to `many1` accepts empty inputs
+/// (like `alpha0` or `digit0`), `many1` will return an error,
+/// to prevent going into an infinite loop
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many1;
