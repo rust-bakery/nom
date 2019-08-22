@@ -610,7 +610,7 @@ where
 /// assert_eq!(parser("123;"), Err(Err::Failure(("123;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn cut<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn cut<I: Clone + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
@@ -624,7 +624,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn cutc<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, O, E>
+pub fn cutc<I: Clone + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
