@@ -422,8 +422,9 @@ extern crate test;
 #[cfg(test)]
 extern crate doc_comment;
 
-#[cfg(doctest)]
-doc_comment::doctest!("../README.md");
+//FIXME: reactivate doctest once https://github.com/rust-lang/rust/issues/62210 is done
+//#[cfg(doctest)]
+//doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.
