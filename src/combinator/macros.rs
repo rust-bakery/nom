@@ -832,7 +832,6 @@ macro_rules! peek(
     $crate::combinator::peekc($i, |i| $submac!(i, $($args)*))
   );
   ($i:expr, $f:expr) => (
-    peek!($i, call!($f));
     $crate::combinator::peek($f)($i)
   );
 );
