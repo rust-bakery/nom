@@ -47,7 +47,6 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [count](https://docs.rs/nom/5.0.1/nom/macro.count.html) |`count!(take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", vec!("ab", "cd", "ef")) )`|applies the child parser a specified number of times|
-| [count_fixed](https://docs.rs/nom/5.0.1/nom/macro.count_fixed.html) |`count_fixed!(&[u8], take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", ["ab", "cd", "ef"]))`|applies the child parser a fixed number of times and returns a fixed size array. The type must be specified and it must be `Copy`|
 | [many0](https://docs.rs/nom/5.0.1/nom/macro.many0.html) |`many0!(tag!("ab"))` |  `"abababc"` | `Ok( ("c", vec!("ab", "ab", "ab")) )`|Applies the parser 0 or more times and returns the list of results in a Vec. `many1` does the same operation but must return at least one element|
 | [many_m_n](https://docs.rs/nom/5.0.1/nom/macro.many_m_n.html) |`many_m_n!(1, 3, tag!("ab"))` |  `"ababc"` | `Ok( ("c", vec!("ab", "ab")) )`|applies the parser between m and n times (n included) and returns the list of results in a Vec|
 | [many_till](https://docs.rs/nom/5.0.1/nom/macro.many_till.html) |`many_till!( tag!( "ab" ), tag!( "ef" ) )` |  `"ababefg"` | `Ok( ("g", (vec!("ab", "ab"), "ef")) )`|Applies the first parser until the second applies. Returns a tuple containing the list of results from the first in a Vec and the result of the second.|
