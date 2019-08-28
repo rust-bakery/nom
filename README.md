@@ -247,6 +247,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
   * [proto files](https://github.com/tafia/protobuf-parser)
+  * [Fountain screenplay markup](https://github.com/adamchalmers/fountain-rs)
 - Programming languages:
   * [PHP](https://github.com/tagua-vm/parser)
   * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
