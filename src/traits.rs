@@ -339,7 +339,7 @@ pub trait InputTake: Sized {
   fn take_split(&self, count: usize) -> (Self, Self);
 }
 
-fn star(r_u8: &u8) -> u8 {
+pub(crate) fn star(r_u8: &u8) -> u8 {
   *r_u8
 }
 

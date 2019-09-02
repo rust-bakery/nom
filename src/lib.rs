@@ -412,15 +412,15 @@ extern crate alloc;
 #[cfg(feature = "regexp_macros")]
 #[macro_use]
 extern crate lazy_static;
+#[cfg(test)]
+extern crate doc_comment;
+#[cfg(feature = "lexical")]
+extern crate lexical_core;
 extern crate memchr;
 #[cfg(feature = "regexp")]
 pub extern crate regex;
-#[cfg(feature = "lexical")]
-extern crate lexical_core;
 #[cfg(nightly)]
 extern crate test;
-#[cfg(test)]
-extern crate doc_comment;
 
 //FIXME: reactivate doctest once https://github.com/rust-lang/rust/issues/62210 is done
 //#[cfg(doctest)]
@@ -438,7 +438,7 @@ pub mod lib {
     #[cfg_attr(feature = "alloc", macro_use)]
     pub use alloc::{boxed, string, vec};
 
-    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str, borrow};
+    pub use core::{borrow, cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
 
     /// internal reproduction of std prelude
     pub mod prelude {
@@ -449,7 +449,7 @@ pub mod lib {
   #[cfg(feature = "std")]
   /// internal std exports for no_std compatibility
   pub mod std {
-    pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec, borrow};
+    pub use std::{alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
 
     /// internal reproduction of std prelude
     pub mod prelude {
@@ -461,11 +461,11 @@ pub mod lib {
   pub use regex;
 }
 
-pub use self::traits::*;
-pub use self::util::*;
+pub use self::bits::*;
 pub use self::internal::*;
 pub use self::methods::*;
-pub use self::bits::*;
+pub use self::traits::*;
+pub use self::util::*;
 pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
@@ -511,3 +511,6 @@ mod str;
 
 #[macro_use]
 pub mod number;
+
+#[cfg(feature = "tendrils")]
+pub mod tendrils;
