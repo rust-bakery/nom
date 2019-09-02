@@ -482,6 +482,6 @@ mod tests {
       take_while(|c| c == 'a')(s)
     }
 
-    assert_eq!(parser(&Tendril::from("aaaabba")), Ok(("bba".into(), "aaaa".into())));
+    assert_eq!(parser(Tendril::from("aaaabba")), Ok(("bba".into(), "aaaa".into())));
   }
 }
