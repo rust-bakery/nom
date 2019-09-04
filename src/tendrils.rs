@@ -1,10 +1,11 @@
 //! Implements the required traits to enable parsing of [`Tendril`s](https://github.com/servo/tendril).
 //!
+#![allow(missing_docs)]
 
 use crate::lib::std::iter::Enumerate;
 use crate::lib::std::iter::Map;
 use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use crate::lib::std::slice::Iter;
+use crate::lib::std::slice;
 use crate::lib::std::str::CharIndices;
 use crate::lib::std::str::Chars;
 use crate::traits::*;
@@ -97,10 +98,72 @@ impl<'a, A: Atomicity> AsBytes for &'a Tendril<fmt::UTF8, A> {
   }
 }
 
-impl<'a, A: Atomicity> InputIter for &'a Tendril<fmt::Bytes, A> {
+rental! {
+    pub mod rentals {
+        use super::*;
+
+        /// Iterator over the `u8`s of a `Tendril<fmt::Byte>`.
+        #[rental]
+        pub struct TendrilByteIter<A: Atomicity> {
+            /// The owned tendril.
+            // TODO: can we avoid this box?
+            tendril: Box<Tendril<fmt::Bytes, A>>,
+            /// The iterator over the bytes of this tendril.
+            iter:    slice::Iter<'tendril, u8>,
+        }
+
+        /// Iterator over the `char`s of a `Tendril<fmt::UTF8>`.
+        #[rental]
+        pub struct TendrilCharIter<A: Atomicity> {
+            /// The owned tendril.
+            // TODO: can we avoid this box?
+            tendril: Box<Tendril<fmt::UTF8, A>>,
+            /// The iterator over the bytes of this tendril.
+            iter:    Chars<'tendril>,
+        }
+
+        /// Iterator over the `(i, char)`s of a `Tendril<fmt::UTF8>`.
+        #[rental]
+        pub struct TendrilCharIndexIter<A: Atomicity> {
+            /// The owned tendril.
+            // TODO: can we avoid this box?
+            tendril: Box<Tendril<fmt::UTF8, A>>,
+            /// The iterator over the bytes of this tendril.
+            iter:    CharIndices<'tendril>,
+        }
+    }
+}
+
+pub use rentals::*;
+
+impl<A: Atomicity> Iterator for TendrilByteIter<A> {
+  type Item = u8;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.rent_mut(|iter| iter.next().map(star))
+  }
+}
+
+impl<A: Atomicity> Iterator for TendrilCharIter<A> {
+  type Item = char;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.rent_mut(|iter| iter.next())
+  }
+}
+
+impl<A: Atomicity> Iterator for TendrilCharIndexIter<A> {
+  type Item = (usize, char);
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.rent_mut(|iter| iter.next())
+  }
+}
+
+impl<A: Atomicity> InputIter for Tendril<fmt::Bytes, A> {
   type Item = u8;
   type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
+  type IterElem = TendrilByteIter<A>;
 
   #[inline]
   fn iter_indices(&self) -> Self::Iter {
@@ -108,7 +171,7 @@ impl<'a, A: Atomicity> InputIter for &'a Tendril<fmt::Bytes, A> {
   }
   #[inline]
   fn iter_elements(&self) -> Self::IterElem {
-    self.iter().map(star)
+    TendrilByteIter::new(Box::new(self.clone()), |t| t[..].into_iter())
   }
   #[inline]
   fn position<P>(&self, predicate: P) -> Option<usize>
@@ -127,18 +190,18 @@ impl<'a, A: Atomicity> InputIter for &'a Tendril<fmt::Bytes, A> {
   }
 }
 
-impl<'a, A: Atomicity> InputIter for &'a Tendril<fmt::UTF8, A> {
+impl<A: Atomicity> InputIter for Tendril<fmt::UTF8, A> {
   type Item = char;
-  type Iter = CharIndices<'a>;
-  type IterElem = Chars<'a>;
+  type Iter = TendrilCharIndexIter<A>;
+  type IterElem = TendrilCharIter<A>;
 
   #[inline]
   fn iter_indices(&self) -> Self::Iter {
-    self.char_indices()
+    TendrilCharIndexIter::new(Box::new(self.clone()), |t| t[..].char_indices())
   }
   #[inline]
   fn iter_elements(&self) -> Self::IterElem {
-    self.chars()
+    TendrilCharIter::new(Box::new(self.clone()), |t| t[..].chars())
   }
   fn position<P>(&self, predicate: P) -> Option<usize>
   where
@@ -483,5 +546,21 @@ mod tests {
     }
 
     assert_eq!(parser(Tendril::from("aaaabba")), Ok(("bba".into(), "aaaa".into())));
+  }
+
+  #[test]
+  fn test_input_iter_byte() {
+    let input: Tendril<fmt::Bytes> = b"hello world"[..].into();
+    let output = input.iter_elements().collect::<Vec<u8>>();
+
+    assert_eq!(&output[..], &b"hello world"[..]);
+  }
+
+  #[test]
+  fn test_input_iter_char() {
+    let input: Tendril<fmt::UTF8> = "hello worldüa".into();
+    let output = input.iter_elements().collect::<String>();
+
+    assert_eq!(&output, "hello worldüa");
   }
 }

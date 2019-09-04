@@ -32,7 +32,7 @@ default = ["std", "lexical"]
 regexp = ["regex"]
 regexp_macros = ["regexp", "lazy_static"]
 lexical = ["lexical-core"]
-tendrils = ["tendril", "std"]
+tendrils = ["tendril", "std", "rental"]
 
 [dependencies.regex]
 version = "^1.0"
@@ -52,6 +52,10 @@ optional = true
 
 [dependencies.tendril]
 version = "^0.4.1"
+optional = true
+
+[dependencies.rental]
+version = "^0.5.4"
 optional = true
 
 [dev-dependencies]

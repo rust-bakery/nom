@@ -422,6 +422,10 @@ pub extern crate regex;
 #[cfg(nightly)]
 extern crate test;
 
+#[cfg(feature = "tendrils")]
+#[macro_use]
+extern crate rental;
+
 //FIXME: reactivate doctest once https://github.com/rust-lang/rust/issues/62210 is done
 //#[cfg(doctest)]
 //doc_comment::doctest!("../README.md");
