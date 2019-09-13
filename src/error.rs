@@ -544,20 +544,19 @@ macro_rules! flat_map(
 mod tests {
   use super::*;
   use crate::character::complete::char;
-  use crate::sequence::pair;
 
   #[test]
   fn convert_error_panic() {
-    let input = "a";
+    let input = "";
 
-    let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b'))(input);
+    let result: IResult<_, _, VerboseError<&str>> = char('x')(input);
     let err = match result.unwrap_err() {
       Err::Error(e) => e,
       _ => unreachable!(),
     };
 
     let msg = convert_error(&input, err);
-    assert_eq!(msg, "0: at line 0:\na\n ^\nexpected \'b\', got end of input\n\n");
+    assert_eq!(msg, "0: expected \'x\', got empty input\n\n");
   }
 }
 
