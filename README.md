@@ -255,6 +255,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [Lua](https://github.com/doomrobo/nom-lua53)
   * [SQL](https://github.com/ms705/nom-sql)
   * [Elm](https://github.com/cout970/Elm-interpreter)
+  * [SystemVerilog](https://github.com/dalance/sv-parser)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
