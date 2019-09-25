@@ -84,6 +84,8 @@ impl<E> Err<E> {
   }
 }
 
+impl<E: Eq> Eq for Err<E> {}
+
 /*
 #[cfg(feature = "std")]
 use std::fmt;
