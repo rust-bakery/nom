@@ -224,6 +224,12 @@ pub trait Tuple<I,O,E> {
   fn parse(&self, input: I) -> IResult<I,O,E>;
 }
 
+impl<Input, Output, Error: ParseError<Input>, F: Fn(Input) -> IResult<Input, Output, Error> > Tuple<Input, (Output,), Error> for (F,) {
+   fn parse(&self, input: Input) -> IResult<Input,(Output,),Error> {
+     self.0(input).map(|(i,o)| (i, (o,)))
+   }
+}
+
 macro_rules! tuple_trait(
   ($name1:ident $ty1:ident, $name2: ident $ty2:ident, $($name:ident $ty:ident),*) => (
     tuple_trait!(__impl $name1 $ty1, $name2 $ty2; $($name $ty),*);
@@ -288,5 +294,20 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 pub fn tuple<I: Clone, O, E: ParseError<I>, List: Tuple<I,O,E>>(l: List)  -> impl Fn(I) -> IResult<I, O, E> {
   move |i: I| {
     l.parse(i)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn single_element_tuples() {
+    use crate::character::complete::{alpha1, digit1};
+    use crate::{Err, error::ErrorKind};
+
+    let parser = tuple((alpha1,));
+    assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));
+    assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
   }
 }
