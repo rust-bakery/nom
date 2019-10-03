@@ -504,7 +504,7 @@ pub mod whitespace;
 
 #[cfg(feature = "regexp")]
 #[macro_use]
-mod regexp;
+pub mod regexp;
 
 mod str;
 
