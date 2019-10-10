@@ -3,12 +3,12 @@
 #[macro_use]
 mod macros;
 
-use crate::internal::{Err, IResult, Needed};
+use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::traits::{InputLength, InputTake, ToUsize};
+use crate::internal::{Err, IResult, Needed};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::error::ErrorKind;
+use crate::traits::{InputLength, InputTake, ToUsize};
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -180,8 +180,7 @@ where
         Ok((i1, o)) => return Ok((i1, (res, o))),
         Err(Err::Error(_)) => {
           match f(i.clone()) {
-            Err(Err::Error(err)) =>
-              return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
+            Err(Err::Error(err)) => return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
             Err(e) => return Err(e),
             Ok((i1, o)) => {
               // loop trip must always consume (otherwise infinite loops)
@@ -193,7 +192,7 @@ where
               i = i1;
             }
           }
-        },
+        }
         Err(e) => return Err(e),
       }
     }
@@ -335,7 +334,7 @@ where
 
     // Parse the first element
     match f(i.clone()) {
-      Err(e)=> return Err(e),
+      Err(e) => return Err(e),
       Ok((i1, o)) => {
         if i1 == i {
           return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
@@ -367,7 +366,7 @@ where
               i = i2;
             }
           }
-        }  
+        }
       }
     }
   }
@@ -422,7 +421,7 @@ where
     let mut count: usize = 0;
 
     if n == 0 {
-        return Ok((i, vec!()))
+      return Ok((i, vec![]));
     }
 
     loop {
@@ -623,7 +622,7 @@ where
   F: Fn(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
-  move |i: I | {
+  move |i: I| {
     let mut input = i.clone();
     let mut res = crate::lib::std::vec::Vec::new();
 
@@ -644,6 +643,58 @@ where
     }
 
     Ok((input, res))
+  }
+}
+
+/// Runs the embedded parser repeatedly, filling the given slice with results. This parser fails if
+/// the input runs out before the given slice is full.
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `buf` The slice to fill
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fill;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, [&str; 2]> {
+///   let mut buf = ["", ""];
+///   let (rest, ()) = fill(tag("abc"), &mut buf)(s)?;
+///   Ok((rest, buf))
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", ["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
+/// ```
+pub fn fill<'a, I, O, E, F>(f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
+where
+  I: Clone + PartialEq,
+  F: Fn(I) -> IResult<I, O, E> + 'a,
+  E: ParseError<I>,
+{
+  move |i: I| {
+    let mut input = i.clone();
+
+    for elem in buf.iter_mut() {
+      let input_ = input.clone();
+      match f(input_) {
+        Ok((i, o)) => {
+          *elem = o;
+          input = i;
+        }
+        Err(Err::Error(e)) => {
+          return Err(Err::Error(E::append(i, ErrorKind::Count, e)));
+        }
+        Err(e) => {
+          return Err(e);
+        }
+      }
+    }
+
+    Ok((input, ()))
   }
 }
 
@@ -844,7 +895,7 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(I) ->IResult<I, R, E>
+pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
@@ -868,10 +919,12 @@ where
           input = i;
         }
         //FInputXMError: handle failure properly
-        Err(Err::Error(_)) => if count < m {
-          return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
-        } else {
-          break;
+        Err(Err::Error(_)) => {
+          if count < m {
+            return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
+          } else {
+            break;
+          }
         }
         Err(e) => return Err(e),
       }
@@ -976,10 +1029,9 @@ where
     } else {
       let (rest, i) = i.take_split(length);
       match g(i.clone()) {
-        Err(Err::Incomplete(_)) =>
-          Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete))),
+        Err(Err::Incomplete(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete))),
         Err(e) => Err(e),
-        Ok((_, o)) => Ok((rest,o)),
+        Ok((_, o)) => Ok((rest, o)),
       }
     }
   }
