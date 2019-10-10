@@ -106,7 +106,7 @@ Parsing integers from binary formats can be done in two ways: with parser functi
 
 ## Binary format parsing
 
-- `length_data!`: gets a number from the first parser, than takes a subslice of the input of that size, and returns that subslice
+- `length_data!`: gets a number from the first parser, then takes a subslice of the input of that size, and returns that subslice
 - `length_bytes!`: alias for length_data
 - `length_value!`: gets a number from the first parser, takes a subslice of the input of that size, then applies the second parser on that subslice. If the second parser returns `Incomplete`, `length_value!` will return an error
 
