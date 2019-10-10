@@ -356,8 +356,8 @@ macro_rules! length_count(
 
 /// `length_data!(I -> IResult<I, nb>) => O`
 ///
-/// `length_data` gets a number from the first parser, than takes a subslice of the input
-/// of that size, and returns that subslice
+/// `length_data` gets a number from the first parser, then takes a subslice of the input
+/// of that size and returns that subslice
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
