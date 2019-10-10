@@ -270,7 +270,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [Redis database files](https://github.com/badboy/rdb-rs)
 - Network protocol formats:
   * [Bencode](https://github.com/jbaum98/bencode.rs)
-  * [IMAP](https://github.com/djc/imap-proto)
+  * [IMAP](https://github.com/djc/tokio-imap)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
   * [Pcap](https://github.com/ithinuel/pcap-rs)
