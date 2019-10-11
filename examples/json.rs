@@ -110,7 +110,7 @@ fn array<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonVal
 }
 
 fn key_value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (&'a str, JsonValue), E> {
-separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value)(i)
+  separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value)(i)
 }
 
 fn hash<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
