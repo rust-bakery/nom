@@ -36,6 +36,12 @@ Here are the traits we have to implement for `MyInput`:
 | [ParseTo](https://docs.rs/nom/latest/nom/trait.ParseTo.html) | used to integrate `&str`'s parse() method |
 | [Slice](https://docs.rs/nom/latest/nom/trait.Slice.html) | slicing operations using ranges |
 
+Here are the optional traits we may implement for `MyInput`:
+
+| trait | usage |
+|---|---|
+| [AsStr](https://docs.rs/nom/latest/nom/trait.AsStr.html) | casts the input type to a string slice |
+
 Here are the traits we have to implement for `MyItem`:
 
 | trait | usage |

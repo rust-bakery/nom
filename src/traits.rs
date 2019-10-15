@@ -1101,6 +1101,26 @@ impl ExtendInto for char {
   }
 }
 
+/// Helper trait for types that can be viewed as a string slice
+pub trait AsStr {
+  /// casts the input type to a string slice
+  fn as_str(&self) -> &str;
+}
+
+impl<'a> AsStr for &'a str {
+  #[inline(always)]
+  fn as_str(&self) -> &str {
+    self
+  }
+}
+
+impl AsStr for str {
+  #[inline(always)]
+  fn as_str(&self) -> &str {
+    self
+  }
+}
+
 /// Helper trait to convert numbers to usize
 ///
 /// by default, usize implements `From<u8>` and `From<u16>` but not

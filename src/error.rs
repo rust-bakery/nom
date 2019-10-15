@@ -137,19 +137,16 @@ where
 }
 
 /// transforms a `VerboseError` into a trace with input position information
-#[cfg(feature="alloc")]
-pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
-  use crate::{
-    lib::std:: iter::repeat,
-    traits::Offset
-  };
+#[cfg(feature = "alloc")]
+pub fn convert_error<T: crate::traits::AsStr, U: crate::traits::AsStr>(input: T, e: VerboseError<U>) -> crate::lib::std::string::String {
+  use crate::{lib::std::iter::repeat, traits::Offset};
 
-  let lines: crate::lib::std::vec::Vec<_> = input.lines().map(crate::lib::std::string::String::from).collect();
+  let lines: crate::lib::std::vec::Vec<_> = input.as_str().lines().map(crate::lib::std::string::String::from).collect();
 
   let mut result = crate::lib::std::string::String::new();
 
   for (i, (substring, kind)) in e.errors.iter().enumerate() {
-    let mut offset = input.offset(substring);
+    let mut offset = input.as_str().offset(substring.as_str());
 
     if lines.is_empty() {
       match kind {
@@ -158,7 +155,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
         }
         VerboseErrorKind::Context(s) => {
           result += &format!("{}: in {}, got empty input\n\n", i, s);
-        },
+        }
         VerboseErrorKind::Nom(e) => {
           result += &format!("{}: in {:?}, got empty input\n\n", i, e);
         }
@@ -187,7 +184,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
             result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
           }
           result += "^\n";
-          result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
+          result += &format!("expected '{}', found {}\n\n", c, substring.as_str().chars().next().unwrap());
         }
         VerboseErrorKind::Context(s) => {
           result += &format!("{}: at line {}, in {}:\n", i, line, s);
@@ -197,7 +194,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
             result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
           }
           result += "^\n\n";
-        },
+        }
         VerboseErrorKind::Nom(e) => {
           result += &format!("{}: at line {}, in {:?}:\n", i, line, e);
           result += &lines[line];
