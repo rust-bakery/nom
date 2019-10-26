@@ -260,6 +260,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [GIF](https://github.com/Geal/gif.rs)
   * [MagicaVoxel .vox](https://github.com/davidedmonds/dot_vox)
   * [midi](https://github.com/derekdreery/nom-midi-rs)
+  * [SWF](https://github.com/open-flash/swf-parser)
   * [WAVE](http://github.com/noise-Labs/wave)
 - Document formats:
   * [TAR](https://github.com/Keruspe/tar-parser.rs)
