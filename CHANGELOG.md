@@ -4,6 +4,11 @@
 
 ### Thanks
 
+### Changed
+
+- the minimal Rust version is now 1.36
+- stabilized the `alloc` feature
+
 ### Added
 
 ### Fixed
