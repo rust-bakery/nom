@@ -8,7 +8,7 @@ rust:
   - nightly
   - beta
   - stable
-  - 1.31.0
+  - 1.36.0
 
 env:
   matrix:
@@ -20,12 +20,18 @@ before_script:
 
 matrix:
   include:
+    - rust: stable
+      env: FEATURES=''
+    - rust: stable
+      env: FEATURES='--no-default-features'
+    - rust: stable
+      env: FEATURES='--no-default-features --features "alloc"'
+    - rust: nightly
+      env: FEATURES=''
     - rust: nightly
       env: FEATURES='--no-default-features'
     - rust: nightly
       env: FEATURES='--no-default-features --features "alloc"'
-    - rust: stable
-      env: FEATURES=''
     - rust: nightly
       env: DOC_FEATURES='--features "std lexical regexp regexp_macros" --no-default-features'
       before_script:

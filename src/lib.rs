@@ -399,7 +399,6 @@
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
 //! ```
 //! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
-#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
