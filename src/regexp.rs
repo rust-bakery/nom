@@ -2,9 +2,9 @@
 #[macro_export]
 macro_rules! regex (
   ($re: ident, $s:expr) => (
-    lazy_static! {
-      static ref $re: $crate::lib::regex::Regex = $crate::lib::regex::Regex::new($s).unwrap();
-    }
+    static $re: once_cell::sync::Lazy<$crate::lib::regex::Regex> = once_cell::sync::Lazy::new(|| {
+      $crate::lib::regex::Regex::new($s).unwrap()
+    });
   );
 );
 
@@ -12,9 +12,9 @@ macro_rules! regex (
 #[macro_export]
 macro_rules! regex_bytes (
   ($re: ident, $s:expr) => (
-    lazy_static! {
-      static ref $re: $crate::lib::regex::bytes::Regex = $crate::lib::regex::bytes::Regex::new($s).unwrap();
-    }
+    static $re: once_cell::sync::Lazy<$crate::lib::regex::bytes::Regex> = once_cell::sync::Lazy::new(|| {
+      $crate::lib::regex::bytes::Regex::new($s).unwrap()
+    });
   );
 );
 

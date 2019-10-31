@@ -410,8 +410,7 @@
 #[macro_use]
 extern crate alloc;
 #[cfg(feature = "regexp_macros")]
-#[macro_use]
-extern crate lazy_static;
+extern crate once_cell;
 extern crate memchr;
 #[cfg(feature = "regexp")]
 pub extern crate regex;
