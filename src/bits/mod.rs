@@ -23,10 +23,10 @@ use crate::traits::{Slice, ErrorConvert};
 /// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// use nom::bits::bits;
-/// use nom::bits::complete::take_bits;
+/// use nom::bits::complete::take;
 ///
 /// fn take_4_bits(input: &[u8]) -> IResult<&[u8], u64> {
-///   bits( take_bits(4usize) )(input)
+///   bits(take::<_, _, _, (_, _)>(4usize))(input)
 /// }
 ///
 /// let input = vec![0xAB, 0xCD, 0xEF, 0x12];
@@ -117,4 +117,3 @@ where
 {
   bytes(parser)(input)
 }
-
