@@ -256,7 +256,7 @@ macro_rules! take_while1 (
 /// # #[macro_use] extern crate nom;
 /// # use nom::character::is_alphanumeric;
 /// # fn main() {
-///  named!( alpha, take_while!( is_alphanumeric ) );
+///  named!( alpha, take_while_m_n!(3, 6, is_alphanumeric ) );
 ///
 ///  let r = alpha(&b"abcd\nefgh"[..]);
 ///  assert_eq!(r, Ok((&b"\nefgh"[..], &b"abcd"[..])));
