@@ -1109,22 +1109,26 @@ impl ExtendInto for char {
 /// with 32 and 64 bits pointer platforms
 pub trait ToUsize {
   /// converts self to usize
+  #[inline]
   fn to_usize(&self) -> usize;
 }
 
 impl ToUsize for u8 {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self as usize
   }
 }
 
 impl ToUsize for u16 {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self as usize
   }
 }
 
 impl ToUsize for usize {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self
   }
@@ -1132,6 +1136,7 @@ impl ToUsize for usize {
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl ToUsize for u32 {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self as usize
   }
@@ -1139,6 +1144,7 @@ impl ToUsize for u32 {
 
 #[cfg(target_pointer_width = "64")]
 impl ToUsize for u64 {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self as usize
   }
