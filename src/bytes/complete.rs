@@ -452,6 +452,10 @@ where
   use crate::traits::AsChar;
 
   move |input: Input| {
+    if input.input_len() == 0 {
+      return Err(Err::Error(Error::from_error_kind(input, ErrorKind::Escaped)));
+    }
+
     let mut i = input.clone();
 
     while i.input_len() > 0 {
@@ -562,6 +566,10 @@ where
   use crate::traits::AsChar;
 
   move |input: Input| {
+    if input.input_len() == 0 {
+      return Err(Err::Error(Error::from_error_kind(input, ErrorKind::EscapedTransform)));
+    }
+
     let mut index = 0;
     let mut res = input.new_builder();
 
