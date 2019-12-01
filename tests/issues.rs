@@ -298,3 +298,16 @@ fn issue_many_m_n_with_zeros() {
     let parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
     assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
 }
+
+#[test]
+fn issue_1082() {
+    use nom::bytes::complete::escaped_transform;
+    use nom::multi::many1;
+    use nom::IResult;
+    use nom::character::complete::{alpha1, char, one_of};
+
+    fn parser(i: &str) -> IResult<&str, Vec<String>> {
+        many1(escaped_transform(alpha1, '\\', one_of(r#"\\"#)))(i)
+    }
+    assert_eq!(parser("aaa\\\\"), Ok(("", vec!["aaa\\".to_owned()])));
+}

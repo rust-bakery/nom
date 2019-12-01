@@ -23,3 +23,14 @@ fn test_escaped() {
 fn test_escaped_transform() {
     assert_eq!(esc_trans("abcd"), Err(Err::Error(("abcd", ErrorKind::EscapedTransform))));
 }
+
+#[test]
+fn test_escaped_empty() {
+    assert_eq!(esc(""), Err(Err::Error(("", ErrorKind::Escaped))));
+}
+
+#[test]
+#[cfg(feature="alloc")]
+fn test_escaped_transform_empty() {
+    assert_eq!(esc_trans(""), Err(Err::Error(("", ErrorKind::EscapedTransform))));
+}
