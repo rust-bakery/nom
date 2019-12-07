@@ -73,14 +73,22 @@ impl<E> Err<E> {
     }
   }
 
+  /// Applies the given function to the inner error
+  pub fn map<E2, F>(self, f: F) -> Err<E2>
+    where F: FnOnce(E) -> E2
+  {
+    match self {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Failure(t) => Err::Failure(f(t)),
+      Err::Error(t) => Err::Error(f(t)),
+    }
+  }
+
   /// automatically converts between errors if the underlying type supports it
   pub fn convert<F>(e: Err<F>) -> Self
-    where E: From<F> {
-    match e {
-      Err::Incomplete(n) => Err::Incomplete(n),
-      Err::Failure(c) => Err::Failure(c.into()),
-      Err::Error(c) => Err::Error(c.into()),
-    }
+    where E: From<F>
+  {
+    e.map(Into::into)
   }
 }
 
@@ -166,6 +174,12 @@ mod tests {
     assert_size!(Needed, 16);
     assert_size!(Err<u32>, 24);
     assert_size!(ErrorKind, 1);
+  }
+
+  #[test]
+  fn err_map_test() {
+    let e = Err::Error(1);
+    assert_eq!(e.map(|v| v + 1), Err::Error(2));
   }
 
 }
