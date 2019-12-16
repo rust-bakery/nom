@@ -631,6 +631,31 @@ where
   cut(parser)(input)
 }
 
+/// automatically converts the child parser's output to another type
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// use nom::combinator::into;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// let parser = into(alpha1);
+///
+/// // the parser converts the &str output of the child parser into a Vec<u8>
+/// let bytes: IResult<&str, Vec<u8>> = parser("abcd");
+/// assert_eq!(bytes, Ok(("", vec![97, 98, 99, 100])));
+/// # }
+/// ```
+pub fn into<I, O1, O2, E, F>(parser: F) -> impl Fn(I) -> IResult<I, O2, E>
+where
+  O1: Into<O2>,
+  E: ParseError<I>,
+  F: Fn(I) -> IResult<I, O1, E>,
+{
+  map(parser, Into::into)
+}
+
 /// creates an iterator from input data and a parser
 ///
 /// call the iterator's [finish] method to get the remaining input if successful,
@@ -855,5 +880,17 @@ mod tests {
 
     assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], (&b"abc").to_vec())));
     assert_eq!(parser1(&b"defg"[..]), Err(Err::Error((&b"defg"[..], ErrorKind::Verify))));
+  }
+
+  #[test]
+  #[cfg(feature = "std")]
+  fn test_into() {
+    use crate::bytes::complete::take;
+    use crate::{error::ParseError, Err};
+
+    let parser = into(take(3u8));
+    let result: IResult<&[u8], Vec<u8>> = parser(&b"abcdefg"[..]);
+
+    assert_eq!(result, Ok((&b"defg"[..], vec![97, 98, 99])));
   }
 }
