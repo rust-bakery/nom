@@ -895,9 +895,7 @@ where
 
 /// Gets a number from the first parser,
 /// takes a subslice of the input of that size,
-/// then applies the second parser on that subslice.
-/// If the second parser returns Incomplete,
-/// length_value will return an error.
+/// and returns that subslice.
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
