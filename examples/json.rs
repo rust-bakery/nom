@@ -61,14 +61,26 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
 
 /// `tag(string)` generates a parser that recognizes the argument string.
 ///
-/// we can combine it with other functions, like `map` that takes the result
-/// of another parser, and applies a function over it (`map` itself generates
-/// a new parser`.
+/// we can combine it with other functions, like `value` that takes another
+/// parser, and if that parser returns without an error, returns a given
+/// constant value.
 ///
 /// `alt` is another combinator that tries multiple parsers one by one, until
 /// one of them succeeds
+///
+/// `value` is a combinator that returns its value if the inner parser
 fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool, E> {
-  alt((value(false, tag("false")), value(true, tag("true"))))(input)
+  // This is a parser that returns `true` if it sees the string "true", and
+  // an error otherwise
+  let parse_true = value(true, tag("true"))
+
+  // This is a parser that returns `true` if it sees the string "true", and
+  // an error otherwise
+  let parse_false = value(false, tag("false"));
+
+  // `alt` combines the two parsers. It returns the result of the first
+  // successful parser, or an error
+  alt((parse_true, parse_false))(input)
 }
 
 /// this parser combines the previous `parse_str` parser, that recognizes the
