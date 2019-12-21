@@ -10,7 +10,7 @@ use nom::{
   branch::alt,
   bytes::complete::{escaped, tag, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
-  combinator::{map, opt, cut},
+  combinator::{map, opt, cut, value},
   error::{context, convert_error, ErrorKind, ParseError,VerboseError},
   multi::separated_list,
   number::complete::double,
@@ -69,8 +69,8 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
 /// one of them succeeds
 fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool, E> {
   alt((
-      map(tag("false"), |_| false),
-      map(tag("true"), |_| true)
+      value(false, tag("false")),
+      value(true, tag("true")),
   ))(input)
 }
 
