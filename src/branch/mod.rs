@@ -107,7 +107,7 @@ macro_rules! alt_trait_impl(
     > Alt<Input, Output, Error> for ( $($id),+ ) {
 
       fn choice(&self, input: Input) -> IResult<Input, Output, Error> {
-        let mut err = None;
+        let mut err: Option<Error> = None;
         alt_trait_inner!(0, self, input, err, $($id)+);
 
         Err(Err::Error(Error::append(input, ErrorKind::Alt, err.unwrap())))
@@ -120,11 +120,10 @@ macro_rules! alt_trait_inner(
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident $($id:ident)+) => (
     match $self.$it($input.clone()) {
       Err(Err::Error(e)) => {
-        if $err.is_none() {
-          $err = Some(e);
-        } else {
-          $err = Some($err.unwrap().or(e));
-        }
+        $err = Some(match $err.take() {
+          None => e,
+          Some(prev) => prev.or(e),
+        });
         succ!($it, alt_trait_inner!($self, $input, $err, $($id)+))
       },
       res => return res,
@@ -133,11 +132,10 @@ macro_rules! alt_trait_inner(
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident) => (
     match $self.$it($input.clone()) {
       Err(Err::Error(e)) => {
-        if $err.is_none() {
-          $err = Some(e);
-        } else {
-          $err = Some($err.unwrap().or(e));
-        }
+        $err = Some(match $err.take() {
+          None => e,
+          Some(prev) => prev.or(e),
+        });
       },
       res => return res,
     }
