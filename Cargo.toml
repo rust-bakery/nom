@@ -169,6 +169,11 @@ name = "s_expression"
 path = "examples/s_expression.rs"
 required-features = ["alloc"]
 
+[[example]]
+name = "string"
+required-features = ["alloc"]
+path = "examples/string.rs"
+
 [badges]
 travis-ci = { repository = "Geal/nom" }
 coveralls = { repository = "Geal/nom", branch = "master", service = "github" }
