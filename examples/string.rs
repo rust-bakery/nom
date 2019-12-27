@@ -17,12 +17,10 @@ extern crate nom;
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use std::convert::TryInto;
-
 use nom::branch::alt;
 use nom::bytes::streaming::{is_not, take_while_m_n};
 use nom::character::streaming::{char, multispace1};
-use nom::combinator::{map, map_res, value, verify};
+use nom::combinator::{map, map_opt, map_res, value, verify};
 use nom::error::ParseError;
 use nom::multi::fold_many0;
 use nom::sequence::{delimited, preceded};
@@ -37,7 +35,7 @@ use nom::IResult;
 /// to parse sequences like \u{00AC}.
 fn parse_unicode<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, char, E> {
   // `take_while_m_n` parses between `m` and `n` bytes (inclusive) that match
-  // a predicate.
+  // a predicate. `parse_hex` here parses between 1 and 6 hexadecimal numerals.
   let parse_hex = take_while_m_n(1, 6, |c: char| c.is_ascii_hexdigit());
 
   // `preceeded` takes a prefix parser, and if it succeeds, returns the result
@@ -46,18 +44,20 @@ fn parse_unicode<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str,
     char('u'),
     // `delimited` is like `preceded`, but it parses both a prefix and a suffix.
     // It returns the result of the middle parser. In this case, it parses
-    // {XXXX}, where XXXX is 1 to 6 hex numerals.
+    // {XXXX}, where XXXX is 1 to 6 hex numerals, and returns XXXX
     delimited(char('{'), parse_hex, char('}')),
   );
 
   // `map_res` takes the result of a parser and applies a function that returns
   // a Result. In this case we take the hex bytes from parse_hex and attempt to
   // convert them to a u32.
-  let parse_u32 = map_res(parse_delimited_hex, |hex| u32::from_str_radix(hex, 16));
+  let parse_u32 = map_res(parse_delimited_hex, move |hex| u32::from_str_radix(hex, 16));
 
-  // Finally, we attempt to convert the u32 to a char. Not all u32 values are
-  // valid code points, so we have to use map_res again.
-  map_res(parse_u32, |value| value.try_into())(input)
+  // map_opt is like map_res, but it takes an Option instead of a Result. If
+  // the function returns None, map_opt returns an error. In this case, because
+  // not all u32 values are valid unicode code points, we have to fallibly
+  // convert to char with from_u32.
+  map_opt(parse_u32, |value| std::char::from_u32(value))(input)
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
@@ -92,12 +92,15 @@ fn parse_escaped_whitespace<'a, E: ParseError<&'a str>>(input: &'a str) -> IResu
 
 /// Parse a non-empty block of text that doesn't include \ or "
 fn parse_literal<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'a str, E> {
-  // `is_not` parses 0 or more characters that aren't one of the given characters.
+  // `is_not` parses a string of 0 or more characters that aren't one of the
+  // given characters.
+  let not_quote_slash = is_not("\"\\");
+
   // `verify` runs a parser, then runs a verification function on the output of
   // the parser. The verification function accepts out output only if it
   // returns true. In this case, we want to ensure that the output of is_not
   // is non-empty.
-  verify(is_not("\"\\"), |s: &str| !s.is_empty())(input)
+  verify(not_quote_slash, |s: &str| !s.is_empty())(input)
 }
 
 /// A string fragment contains a fragment of a string being parsed: either
