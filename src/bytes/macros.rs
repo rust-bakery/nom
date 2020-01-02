@@ -863,6 +863,12 @@ mod tests {
     assert_eq!(parser("😃!"), Ok(("!", "😃")));
   }
 
+  #[test]
+  fn take_while_m_n_utf8_full_match() {
+    named!(parser<&str, &str>, take_while_m_n!(1, 1, |c: char| c.is_alphabetic()));
+    assert_eq!(parser("øn"), Ok(("n", "ø")));
+  }
+
   #[cfg(nightly)]
   use test::Bencher;
 

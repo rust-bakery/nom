@@ -282,8 +282,10 @@ where
       None => {
         let len = input.input_len();
         if len >= n {
-          let res: IResult<_, _, Error> = Ok(input.take_split(n));
-          res
+          match input.slice_index(n) {
+            Some(index) => Ok(input.take_split(index)),
+            None => Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+          }
         } else {
           let needed = if m > len { m - len } else { 1 };
           Err(Err::Incomplete(Needed::Size(needed)))
