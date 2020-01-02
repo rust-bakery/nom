@@ -276,8 +276,10 @@ where
       None => {
         let len = input.input_len();
         if len >= n {
-          let res: IResult<_, _, Error> = Ok(input.take_split(n));
-          res
+          match input.slice_index(n) {
+            Some(index) => Ok(input.take_split(index)),
+            None => Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+          }
         } else {
           if len >= m && len <= n {
             let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
@@ -636,4 +638,21 @@ where
 {
   escaped_transform(normal, control_char, transform)(i)
 
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn complete_take_while_m_n_utf8_all_matching() {
+    let result: IResult<&str, &str> = super::take_while_m_n(1, 4, |c: char| c.is_alphabetic())("øn");
+    assert_eq!(result, Ok(("", "øn")));
+  }
+
+  #[test]
+  fn complete_take_while_m_n_utf8_all_matching_substring() {
+    let result: IResult<&str, &str> = super::take_while_m_n(1, 1, |c: char| c.is_alphabetic())("øn");
+    assert_eq!(result, Ok(("n", "ø")));
+  }
 }
