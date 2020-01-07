@@ -366,8 +366,8 @@ where
 
 /// Recognizes zero or more ASCII numerical characters: 0-9
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non digit
-/// character).
+/// *complete version*: Will return an error if there's not enough input data,
+/// or the whole input if no terminating token is found (a non digit character).
 ///
 /// # Example
 ///
