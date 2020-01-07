@@ -298,3 +298,21 @@ fn issue_many_m_n_with_zeros() {
     let parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
     assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
 }
+
+#[test]
+fn issue_1027_convert_error_panic_nonempty() {
+  use nom::error::{VerboseError, convert_error};
+  use nom::sequence::pair;
+  use nom::character::complete::char;
+
+  let input = "a";
+
+  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b'))(input);
+  let err = match result.unwrap_err() {
+    Err::Error(e) => e,
+    _ => unreachable!(),
+  };
+
+  let msg = convert_error(&input, err);
+  assert_eq!(msg, "0: at line 0:\na\n ^\nexpected \'b\', got end of input\n\n");
+}
