@@ -84,6 +84,34 @@ impl<E> Err<E> {
   }
 }
 
+impl<T> Err<(T, ErrorKind)> {
+  /// maps `Err<(T, ErrorKind)>` to `Err<(U, ErrorKind)>` with the given F: T -> U
+  pub fn map_input<U, F>(self, f: F) -> Err<(U, ErrorKind)>
+    where F: FnOnce(T) -> U {
+    match self {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Failure((input, k)) => Err::Failure((f(input), k)),
+      Err::Error((input, k)) => Err::Error((f(input), k)),
+    }
+  }
+}
+
+#[cfg(feature = "std")]
+impl Err<(&[u8], ErrorKind)> {
+  /// Obtaining ownership
+  pub fn to_owned(self) -> Err<(Vec<u8>, ErrorKind)> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
+#[cfg(feature = "std")]
+impl Err<(&str, ErrorKind)> {
+  /// automatically converts between errors if the underlying type supports it
+  pub fn to_owned(self) -> Err<(String, ErrorKind)> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
 impl<E: Eq> Eq for Err<E> {}
 
 /*
