@@ -72,7 +72,7 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
 fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool, E> {
   // This is a parser that returns `true` if it sees the string "true", and
   // an error otherwise
-  let parse_true = value(true, tag("true"))
+  let parse_true = value(true, tag("true"));
 
   // This is a parser that returns `true` if it sees the string "true", and
   // an error otherwise
