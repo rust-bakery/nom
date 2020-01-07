@@ -380,6 +380,7 @@ where
 /// }
 ///
 /// assert_eq!(parser("21c"), Ok(("c", "21")));
+/// assert_eq!(parser("21"), Ok(("", "21")));
 /// assert_eq!(parser("a21c"), Ok(("a21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// # }
