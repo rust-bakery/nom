@@ -811,7 +811,7 @@ mod tests {
       let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
       assert_parse!(flat_map(be_u8, take)(input), Ok((&[103, 104][..], &[100, 101, 102][..])));
   }
-  
+
   #[test]
   fn test_map_opt() {
       let input: &[u8] = &[50][..];

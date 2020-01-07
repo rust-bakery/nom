@@ -84,7 +84,36 @@ impl<E> Err<E> {
   }
 }
 
-/*
+impl<T> Err<(T, ErrorKind)> {
+  /// maps `Err<(T, ErrorKind)>` to `Err<(U, ErrorKind)>` with the given F: T -> U
+  pub fn map_input<U, F>(self, f: F) -> Err<(U, ErrorKind)>
+    where F: FnOnce(T) -> U {
+    match self {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Failure((input, k)) => Err::Failure((f(input), k)),
+      Err::Error((input, k)) => Err::Error((f(input), k)),
+    }
+  }
+}
+
+#[cfg(feature = "std")]
+impl Err<(&[u8], ErrorKind)> {
+  /// Obtaining ownership
+  pub fn to_owned(self) -> Err<(Vec<u8>, ErrorKind)> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
+#[cfg(feature = "std")]
+impl Err<(&str, ErrorKind)> {
+  /// automatically converts between errors if the underlying type supports it
+  pub fn to_owned(self) -> Err<(String, ErrorKind)> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
+impl<E: Eq> Eq for Err<E> {}
+
 #[cfg(feature = "std")]
 use std::fmt;
 
@@ -94,7 +123,12 @@ where
   E: fmt::Debug,
 {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?}", self)
+    match self {
+      Err::Incomplete(Needed::Size(u)) => write!(f, "Parsing requires {} bytes/chars", u),
+      Err::Incomplete(Needed::Unknown) => write!(f, "Parsing requires more data"),
+      Err::Failure(c) => write!(f, "Parsing Failure: {:?}", c),
+      Err::Error(c) => write!(f, "Parsing Error: {:?}", c),
+    }
   }
 }
 
@@ -104,21 +138,12 @@ use std::error::Error;
 #[cfg(feature = "std")]
 impl<E> Error for Err<E>
 where
-  I: fmt::Debug,
   E: fmt::Debug,
 {
-  fn description(&self) -> &str {
-    match self {
-      &Err::Incomplete(..) => "there was not enough data",
-      &Err::Error(Context::Code(_, ref error_kind)) | &Err::Failure(Context::Code(_, ref error_kind)) => error_kind.description(),
-    }
-  }
-
-  fn cause(&self) -> Option<&Error> {
-    None
+  fn source(&self) -> Option<&(dyn Error + 'static)> {
+    None // no underlying error
   }
 }
-*/
 
 #[cfg(test)]
 mod tests {

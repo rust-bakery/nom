@@ -113,7 +113,7 @@ pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 /// Recognizes a big endian unsigned 8 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
-/// 
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -258,7 +258,7 @@ pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
 /// Recognizes a big endian signed 8 bytes integer
 ///
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
-/// 
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;

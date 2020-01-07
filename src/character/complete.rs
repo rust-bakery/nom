@@ -365,11 +365,22 @@ where
 }
 
 /// Recognizes zero or more ASCII numerical characters: 0-9
+///
+/// *complete version*: Will return an error if there's not enough input data,
+/// or the whole input if no terminating token is found (a non digit character).
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::complete::digit0;
+/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     digit0(input)
 /// }
 ///
 /// assert_eq!(parser("21c"), Ok(("c", "21")));
+/// assert_eq!(parser("21"), Ok(("", "21")));
 /// assert_eq!(parser("a21c"), Ok(("a21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// # }
