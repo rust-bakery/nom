@@ -114,7 +114,6 @@ impl Err<(&str, ErrorKind)> {
 
 impl<E: Eq> Eq for Err<E> {}
 
-/*
 #[cfg(feature = "std")]
 use std::fmt;
 
@@ -124,7 +123,12 @@ where
   E: fmt::Debug,
 {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?}", self)
+    match self {
+      Err::Incomplete(Needed::Size(u)) => write!(f, "Parsing requires {} bytes/chars", u),
+      Err::Incomplete(Needed::Unknown) => write!(f, "Parsing requires more data"),
+      Err::Failure(c) => write!(f, "Parsing Failure: {:?}", c),
+      Err::Error(c) => write!(f, "Parsing Error: {:?}", c),
+    }
   }
 }
 
@@ -134,21 +138,12 @@ use std::error::Error;
 #[cfg(feature = "std")]
 impl<E> Error for Err<E>
 where
-  I: fmt::Debug,
   E: fmt::Debug,
 {
-  fn description(&self) -> &str {
-    match self {
-      &Err::Incomplete(..) => "there was not enough data",
-      &Err::Error(Context::Code(_, ref error_kind)) | &Err::Failure(Context::Code(_, ref error_kind)) => error_kind.description(),
-    }
-  }
-
-  fn cause(&self) -> Option<&Error> {
-    None
+  fn source(&self) -> Option<&(dyn Error + 'static)> {
+    None // no underlying error
   }
 }
-*/
 
 #[cfg(test)]
 mod tests {
