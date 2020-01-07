@@ -158,10 +158,10 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
 
       // Find the line that includes the subslice:
       // Find the *last* newline before the substring starts
-      let line_begin = offset - prefix.iter().rev().position(|&b| b == b'\n').unwrap_or(0);
+      let line_begin = prefix.iter().rev().position(|&b| b == b'\n').map(|pos| offset - pos).unwrap_or(0);
 
       // Find the full line after that newline
-      let line = input[line_begin..].lines().next().unwrap().trim_end();
+      let line = input[line_begin..].lines().next().unwrap_or(&input[line_begin..]).trim_end();
 
       // The (1-indexed) column number is the offset of our substring into that line
       let column_number = line.offset(substring) + 1;

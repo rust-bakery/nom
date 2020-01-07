@@ -314,5 +314,5 @@ fn issue_1027_convert_error_panic_nonempty() {
   };
 
   let msg = convert_error(&input, err);
-  assert_eq!(msg, "0: at line 0:\na\n ^\nexpected \'b\', got end of input\n\n");
+  assert_eq!(msg, "0: at line 1:\na\n ^\nexpected \'b\', got end of input\n\n");
 }
