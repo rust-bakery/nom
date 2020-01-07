@@ -8,13 +8,13 @@ This is done through the third type parameter of `IResult`, nom's parser result
 type:
 
 ```rust
-pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
+pub type IResult<I, O, E=(I, ErrorKind)> = Result<(I, O), Err<E>>;
 
 pub enum Err<E> {
-  Incomplete(Needed),
-  Error(E),
-  Failure(E),
-  }
+    Incomplete(Needed),
+    Error(E),
+    Failure(E),
+}
 ```
 
 This error type is completely generic in nom's combinators, so you can choose
@@ -35,21 +35,21 @@ combinators, defined as follows:
 
 ```rust
 pub trait ParseError<I>: Sized {
-  fn from_error_kind(input: I, kind: ErrorKind) -> Self;
+    fn from_error_kind(input: I, kind: ErrorKind) -> Self;
 
-  fn append(input: I, kind: ErrorKind, other: Self) -> Self;
+    fn append(input: I, kind: ErrorKind, other: Self) -> Self;
 
-  fn from_char(input: I, _: char) -> Self {
-    Self::from_error_kind(input, ErrorKind::Char)
-  }
+    fn from_char(input: I, _: char) -> Self {
+        Self::from_error_kind(input, ErrorKind::Char)
+    }
 
-  fn or(self, other: Self) -> Self {
-  other
-  }
+    fn or(self, other: Self) -> Self {
+        other
+    }
 
-  fn add_context(_input: I, _ctx: &'static str, other: Self) -> Self {
-    other
-  }
+    fn add_context(_input: I, _ctx: &'static str, other: Self) -> Self {
+        other
+    }
 }
 ```
 
@@ -98,7 +98,7 @@ error. Here is what it could return:
 
 ```rust
 fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-  dbg_dmp(tag("abcd"), "tag")(i)
+    dbg_dmp(tag("abcd"), "tag")(i)
 }
 
 let a = &b"efghijkl"[..];
@@ -119,28 +119,28 @@ You can go further with the [nom-trace crate](https://github.com/rust-bakery/nom
 declare_trace!();
 
 pub fn main() {
-  named!(parser<&str, Vec<&str>>,
-    //wrap a parser with tr!() to add a trace point
-    tr!(preceded!(
-      tr!(tag!("data: ")),
-      tr!(delimited!(
-        tag!("("),
-        separated_list!(
-          tr!(tag!(",")),
-          tr!(nom::digit)
-        ),
-        tr!(tag!(")"))
-      ))
-    ))
-  );
+    named!(parser<&str, Vec<&str>>,
+        //wrap a parser with tr!() to add a trace point
+        tr!(preceded!(
+        tr!(tag!("data: ")),
+        tr!(delimited!(
+            tag!("("),
+            separated_list!(
+            tr!(tag!(",")),
+            tr!(nom::digit)
+            ),
+            tr!(tag!(")"))
+        ))
+        ))
+    );
 
-  println!("parsed: {:?}", parser("data: (1,2,3)"));
+    println!("parsed: {:?}", parser("data: (1,2,3)"));
 
-  // prints the last parser trace
-  print_trace!();
+    // prints the last parser trace
+    print_trace!();
 
-  // the list of trace events can be cleared
-  reset_trace!();
+    // the list of trace events can be cleared
+    reset_trace!();
 }
 ```
 

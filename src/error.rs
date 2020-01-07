@@ -187,7 +187,11 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
             result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
           }
           result += "^\n";
-          result += &format!("expected '{}', found {}\n\n", c, substring.chars().next().unwrap());
+          if let Some(actual) = substring.chars().next() {
+            result += &format!("expected '{}', found {}\n\n", c, actual);
+          } else {
+            result += &format!("expected '{}', got end of input\n\n", c);
+          }
         }
         VerboseErrorKind::Context(s) => {
           result += &format!("{}: at line {}, in {}:\n", i, line, s);
@@ -535,7 +539,6 @@ macro_rules! flat_map(
   );
 );
 
-
 #[cfg(test)]
 #[cfg(feature = "alloc")]
 mod tests {
@@ -547,6 +550,13 @@ mod tests {
     let input = "";
 
     let result: IResult<_, _, VerboseError<&str>> = char('x')(input);
+    let err = match result.unwrap_err() {
+      Err::Error(e) => e,
+      _ => unreachable!(),
+    };
+
+    let msg = convert_error(&input, err);
+    assert_eq!(msg, "0: expected \'x\', got empty input\n\n");
   }
 }
 
