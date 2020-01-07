@@ -147,6 +147,10 @@ fn parse_string<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, 
     },
   );
 
+  // Finally, parse the string. Note that, if `build_string` could accept a raw
+  // " character, the closing delimiter " would never match. When using
+  // `delimited` with a looping parser (like fold_many0), be sure that the
+  // loop won't accidentally match your closing delimiter!
   delimited(char('"'), build_string, char('"'))(input)
 }
 
