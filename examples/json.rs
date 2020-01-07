@@ -1,7 +1,7 @@
 #![cfg(feature = "alloc")]
 
-extern crate nom;
 extern crate jemallocator;
+extern crate nom;
 
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
@@ -10,8 +10,8 @@ use nom::{
   branch::alt,
   bytes::complete::{escaped, tag, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
-  combinator::{map, opt, cut},
-  error::{context, convert_error, ErrorKind, ParseError,VerboseError},
+  combinator::{cut, map, opt, value},
+  error::{context, convert_error, ErrorKind, ParseError, VerboseError},
   multi::separated_list,
   number::complete::double,
   sequence::{delimited, preceded, separated_pair, terminated},
@@ -61,17 +61,26 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
 
 /// `tag(string)` generates a parser that recognizes the argument string.
 ///
-/// we can combine it with other functions, like `map` that takes the result
-/// of another parser, and applies a function over it (`map` itself generates
-/// a new parser`.
+/// we can combine it with other functions, like `value` that takes another
+/// parser, and if that parser returns without an error, returns a given
+/// constant value.
 ///
 /// `alt` is another combinator that tries multiple parsers one by one, until
 /// one of them succeeds
+///
+/// `value` is a combinator that returns its value if the inner parser
 fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool, E> {
-  alt((
-      map(tag("false"), |_| false),
-      map(tag("true"), |_| true)
-  ))(input)
+  // This is a parser that returns `true` if it sees the string "true", and
+  // an error otherwise
+  let parse_true = value(true, tag("true"))
+
+  // This is a parser that returns `true` if it sees the string "true", and
+  // an error otherwise
+  let parse_false = value(false, tag("false"));
+
+  // `alt` combines the two parsers. It returns the result of the first
+  // successful parser, or an error
+  alt((parse_true, parse_false))(input)
 }
 
 /// this parser combines the previous `parse_str` parser, that recognizes the
@@ -86,13 +95,7 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool,
 /// - `context` lets you add a static string to provide more information in the
 /// error chain (to indicate which parser had an error)
 fn string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-  context("string",
-    preceded(
-      char('\"'),
-      cut(terminated(
-          parse_str,
-          char('\"')
-  ))))(i)
+  context("string", preceded(char('\"'), cut(terminated(parse_str, char('\"')))))(i)
 }
 
 /// some combinators, like `separated_list` or `many0`, will call a parser repeatedly,
@@ -102,34 +105,37 @@ fn string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E
 fn array<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonValue>, E> {
   context(
     "array",
-    preceded(char('['),
-    cut(terminated(
-      separated_list(preceded(sp, char(',')), value),
-      preceded(sp, char(']'))))
-  ))(i)
+    preceded(
+      char('['),
+      cut(terminated(
+        separated_list(preceded(sp, char(',')), json_value),
+        preceded(sp, char(']')),
+      )),
+    ),
+  )(i)
 }
 
 fn key_value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (&'a str, JsonValue), E> {
-  separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value)(i)
+  separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), json_value)(i)
 }
 
 fn hash<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
   context(
     "map",
-    preceded(char('{'),
-    cut(terminated(
-      map(
-        separated_list(preceded(sp, char(',')), key_value),
-        |tuple_vec| {
+    preceded(
+      char('{'),
+      cut(terminated(
+        map(separated_list(preceded(sp, char(',')), key_value), |tuple_vec| {
           tuple_vec.into_iter().map(|(k, v)| (String::from(k), v)).collect()
-      }),
-      preceded(sp, char('}')),
-    ))
-  ))(i)
+        }),
+        preceded(sp, char('}')),
+      )),
+    ),
+  )(i)
 }
 
 /// here, we apply the space parser before trying to parse a value
-fn value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
+fn json_value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
   preceded(
     sp,
     alt((
@@ -144,11 +150,7 @@ fn value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, 
 
 /// the root element of a JSON parser is either an object or an array
 fn root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
-  delimited(
-    sp,
-    alt((map(hash, JsonValue::Object), map(array, JsonValue::Array))),
-    opt(sp),
-  )(i)
+  delimited(sp, alt((map(hash, JsonValue::Object), map(array, JsonValue::Array))), opt(sp))(i)
 }
 
 fn main() {
@@ -193,10 +195,7 @@ fn main() {
   //         ),
   //     ),
   // )
-  println!(
-    "parsing a valid file:\n{:#?}\n",
-    root::<(&str, ErrorKind)>(data)
-  );
+  println!("parsing a valid file:\n{:#?}\n", root::<(&str, ErrorKind)>(data));
 
   let data = "  { \"a\"\t: 42,
   \"b\": [ \"x\", \"y\", 12 ] ,
@@ -262,7 +261,6 @@ fn main() {
 
   match root::<VerboseError<&str>>(data) {
     Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-
       // here we use the `convert_error` function, to transform a `VerboseError<&str>`
       // into a printable trace.
       //
@@ -282,6 +280,6 @@ fn main() {
       //   ^
       println!("verbose errors - `root::<VerboseError>(data)`:\n{}", convert_error(data, e));
     }
-    _ => {},
+    _ => {}
   }
 }
