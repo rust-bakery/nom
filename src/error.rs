@@ -11,7 +11,6 @@
 /// It provides methods to create an error from some combinators,
 /// and combine existing errors in combinators like `alt`
 pub trait ParseError<I>: Sized {
-
   /// creates an error from the input position and an [ErrorKind]
   fn from_error_kind(input: I, kind: ErrorKind) -> Self;
 
@@ -50,9 +49,9 @@ impl<I> ParseError<I> for (I, ErrorKind) {
 }
 
 impl<I> ParseError<I> for () {
-  fn from_error_kind(_: I, _: ErrorKind) -> Self { }
+  fn from_error_kind(_: I, _: ErrorKind) -> Self {}
 
-  fn append(_: I, _: ErrorKind, _: Self) -> Self { }
+  fn append(_: I, _: ErrorKind, _: Self) -> Self {}
 }
 
 /// creates an error from the input position and an [ErrorKind]
@@ -71,7 +70,7 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 /// through a parse tree. With some post processing (cf `examples/json.rs`),
 /// it can be used to display user friendly error messages
 #[cfg(feature = "alloc")]
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct VerboseError<I> {
   /// list of errors accumulated by `VerboseError`, containing the affected
   /// part of input data, and some context
@@ -79,7 +78,7 @@ pub struct VerboseError<I> {
 }
 
 #[cfg(feature = "alloc")]
-#[derive(Clone,Debug,PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 /// error context for `VerboseError`
 pub enum VerboseErrorKind {
   /// static string added by the `context` function
@@ -94,7 +93,7 @@ pub enum VerboseErrorKind {
 impl<I> ParseError<I> for VerboseError<I> {
   fn from_error_kind(input: I, kind: ErrorKind) -> Self {
     VerboseError {
-      errors: vec![(input, VerboseErrorKind::Nom(kind))]
+      errors: vec![(input, VerboseErrorKind::Nom(kind))],
     }
   }
 
@@ -105,7 +104,7 @@ impl<I> ParseError<I> for VerboseError<I> {
 
   fn from_char(input: I, c: char) -> Self {
     VerboseError {
-      errors: vec![(input, VerboseErrorKind::Char(c))]
+      errors: vec![(input, VerboseErrorKind::Char(c))],
     }
   }
 
@@ -124,95 +123,108 @@ use crate::internal::{Err, IResult};
 #[cfg(feature = "alloc")]
 pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
-  F: Fn(I) -> IResult<I, O, E> {
-
-    move |i: I| {
-      match f(i.clone()) {
-        Ok(o) => Ok(o),
-        Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-        Err(Err::Error(e)) => Err(Err::Error(E::add_context(i, context, e))),
-        Err(Err::Failure(e)) => Err(Err::Failure(E::add_context(i, context, e))),
-      }
-    }
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  move |i: I| match f(i.clone()) {
+    Ok(o) => Ok(o),
+    Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+    Err(Err::Error(e)) => Err(Err::Error(E::add_context(i, context, e))),
+    Err(Err::Failure(e)) => Err(Err::Failure(E::add_context(i, context, e))),
+  }
 }
 
 /// transforms a `VerboseError` into a trace with input position information
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
-  use crate::{
-    lib::std:: iter::repeat,
-    traits::Offset
-  };
-
-  let lines: crate::lib::std::vec::Vec<_> = input.lines().map(crate::lib::std::string::String::from).collect();
+  use crate::lib::std::fmt::Write;
+  use crate::traits::Offset;
 
   let mut result = crate::lib::std::string::String::new();
 
   for (i, (substring, kind)) in e.errors.iter().enumerate() {
-    let mut offset = input.offset(substring);
+    let offset = input.offset(substring);
 
-    if lines.is_empty() {
+    if input.is_empty() {
       match kind {
-        VerboseErrorKind::Char(c) => {
-          result += &format!("{}: expected '{}', got empty input\n\n", i, c);
-        }
-        VerboseErrorKind::Context(s) => {
-          result += &format!("{}: in {}, got empty input\n\n", i, s);
-        },
-        VerboseErrorKind::Nom(e) => {
-          result += &format!("{}: in {:?}, got empty input\n\n", i, e);
-        }
+        VerboseErrorKind::Char(c) => write!(&mut result, "{}: expected '{}', got empty input\n\n", i, c),
+        VerboseErrorKind::Context(s) => write!(&mut result, "{}: in {}, got empty input\n\n", i, s),
+        VerboseErrorKind::Nom(e) => write!(&mut result, "{}: in {:?}, got empty input\n\n", i, e),
       }
     } else {
-      let mut line = 0;
-      let mut column = 0;
+      let prefix = &input.as_bytes()[..offset];
 
-      for (j, l) in lines.iter().enumerate() {
-        if offset <= l.len() {
-          line = j;
-          column = offset;
-          break;
-        } else {
-          offset = offset - l.len() - 1;
-        }
-      }
+      // Count the number of newlines in the first `offset` bytes of input
+      let line_number = prefix.iter().filter(|&&b| b == b'\n').count() + 1;
+
+      // Find the line that includes the subslice:
+      // Find the *last* newline before the substring starts
+      let line_begin = offset - prefix.iter().rev().position(|&b| b == b'\n').unwrap_or(0);
+
+      // Find the full line after that newline
+      let line = input[line_begin..].lines().next().unwrap().trim_end();
+
+      // The (1-indexed) column number is the offset of our substring into that line
+      let column_number = line.offset(substring) + 1;
 
       match kind {
-        VerboseErrorKind::Char(c) => {
-          result += &format!("{}: at line {}:\n", i, line);
-          result += &lines[line];
-          result += "\n";
-
-          if column > 0 {
-            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
-          }
-          result += "^\n";
-          if let Some(actual) = substring.chars().next() {
-            result += &format!("expected '{}', found {}\n\n", c, actual);
-          } else {
-            result += &format!("expected '{}', got end of input\n\n", c);
-          }
-        }
-        VerboseErrorKind::Context(s) => {
-          result += &format!("{}: at line {}, in {}:\n", i, line, s);
-          result += &lines[line];
-          result += "\n";
-          if column > 0 {
-            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
-          }
-          result += "^\n\n";
+        VerboseErrorKind::Char(c) => if let Some(actual) = substring.chars().next() {
+          write!(
+            &mut result,
+            "{i}: at line {line_number}:\n\
+               {line}\n\
+               {caret:>column$}\n\
+               expected '{expected}', found {actual}\n\n",
+            i = i,
+            line_number = line_number,
+            line = line,
+            caret = '^',
+            column = column_number,
+            expected = c,
+            actual = actual,
+          )
+        } else {
+          write!(
+            &mut result,
+            "{i}: at line {line_number}:\n\
+               {line}\n\
+               {caret:>column$}\n\
+               expected '{expected}', got end of input\n\n",
+            i = i,
+            line_number = line_number,
+            line = line,
+            caret = '^',
+            column = column_number,
+            expected = c,
+          )
         },
-        VerboseErrorKind::Nom(e) => {
-          result += &format!("{}: at line {}, in {:?}:\n", i, line, e);
-          result += &lines[line];
-          result += "\n";
-          if column > 0 {
-            result += &repeat(' ').take(column).collect::<crate::lib::std::string::String>();
-          }
-          result += "^\n\n";
-        }
+        VerboseErrorKind::Context(s) => write!(
+          &mut result,
+          "{i}: at line {line_number}, in {context}:\n\
+             {line}\n\
+             {caret:>column$}\n\n",
+          i = i,
+          line_number = line_number,
+          context = s,
+          line = line,
+          caret = '^',
+          column = column_number,
+        ),
+        VerboseErrorKind::Nom(e) => write!(
+          &mut result,
+          "{i}: at line {line_number}, in {nom_err:?}:\n\
+             {line}\n\
+             {caret:>column$}\n\n",
+          i = i,
+          line_number = line_number,
+          nom_err = e,
+          line = line,
+          caret = '^',
+          column = column_number,
+        ),
       }
     }
+    // Because `write!` to a `String` is infallible, this `unwrap` is fine.
+    .unwrap();
   }
 
   result
@@ -550,13 +562,6 @@ mod tests {
     let input = "";
 
     let result: IResult<_, _, VerboseError<&str>> = char('x')(input);
-    let err = match result.unwrap_err() {
-      Err::Error(e) => e,
-      _ => unreachable!(),
-    };
-
-    let msg = convert_error(&input, err);
-    assert_eq!(msg, "0: expected \'x\', got empty input\n\n");
   }
 }
 
