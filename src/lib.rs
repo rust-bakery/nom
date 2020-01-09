@@ -73,7 +73,7 @@
 //! software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and
 //! [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar
 //! in a separate syntax and generating the corresponding code, you use very small
-//! functions with a very specific purposes, like "take 5 bytes", or "recognize the
+//! functions with very specific purposes, like "take 5 bytes", or "recognize the
 //! word 'HTTP'", and assemble them in meaningful patterns like "recognize
 //! 'HTTP', then a space, then a version".
 //! The resulting code is small, and looks like the grammar you would have
