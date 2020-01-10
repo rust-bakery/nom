@@ -30,7 +30,6 @@ alloc = []
 std = ["alloc", "memchr/use_std"]
 default = ["std", "lexical"]
 regexp = ["regex"]
-regexp_macros = ["regexp", "lazy_static"]
 lexical = ["lexical-core"]
 
 [dependencies.regex]

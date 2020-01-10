@@ -408,9 +408,6 @@
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
 extern crate alloc;
-#[cfg(feature = "regexp_macros")]
-#[macro_use]
-extern crate lazy_static;
 extern crate memchr;
 #[cfg(feature = "regexp")]
 pub extern crate regex;
