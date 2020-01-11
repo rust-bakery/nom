@@ -26,6 +26,8 @@ use crate::sequence::{tuple, pair};
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
+#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
+Please use nom::number::complete::u8 instead.")]
 #[inline]
 pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
   if i.len() < 1 {
@@ -192,6 +194,8 @@ pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128,
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
+#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
+Please use nom::number::complete::i8 instead.")]
 #[inline]
 pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
   map!(i, be_u8, |x| x as i8)
@@ -318,6 +322,8 @@ pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
+#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
+Please use nom::number::complete::u8 instead.")]
 #[inline]
 pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
   if i.len() < 1 {
@@ -484,6 +490,8 @@ pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
+#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
+Please use nom::number::complete::i8 instead.")]
 #[inline]
 pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
   map!(i, le_u8, |x| x as i8)
