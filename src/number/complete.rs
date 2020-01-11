@@ -603,8 +603,6 @@ pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
   map!(i, le_u128, |x| x as i128)
 }
 
-//// TODO
-
 /// Recognizes an unsigned 1 byte integer
 ///
 /// Note that endianness does not apply to 1 byte numbers.
