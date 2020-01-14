@@ -21,7 +21,6 @@ use crate::lib::std::vec::Vec;
 pub trait InputLength {
   /// calculates the input length, as indicated by its name,
   /// and the name of the trait itself
-  #[inline]
   fn input_len(&self) -> usize;
 }
 
@@ -154,31 +153,24 @@ as_bytes_array_impls! {
 /// transforms common types to a char for basic token parsing
 pub trait AsChar {
   /// makes a char from self
-  #[inline]
   fn as_char(self) -> char;
 
   /// tests that self is an alphabetic character
   ///
   /// warning: for `&str` it recognizes alphabetic
   /// characters outside of the 52 ASCII letters
-  #[inline]
   fn is_alpha(self) -> bool;
 
   /// tests that self is an alphabetic character
   /// or a decimal digit
-  #[inline]
   fn is_alphanum(self) -> bool;
   /// tests that self is a decimal digit
-  #[inline]
   fn is_dec_digit(self) -> bool;
   /// tests that self is an hex digit
-  #[inline]
   fn is_hex_digit(self) -> bool;
   /// tests that self is an octal digit
-  #[inline]
   fn is_oct_digit(self) -> bool;
   /// gets the len in bytes for self
-  #[inline]
   fn len(self) -> usize;
 }
 
@@ -898,7 +890,6 @@ impl<'a, R: FromStr> ParseTo<R> for &'a str {
 /// `Index`, but can actually return
 /// something else than a `&[T]` or `&str`
 pub trait Slice<R> {
-  #[inline(always)]
   /// slices self according to the range argument
   fn slice(&self, range: R) -> Self;
 }
@@ -1018,10 +1009,8 @@ pub trait ExtendInto {
   type Extender: Extend<Self::Item>;
 
   /// create a new `Extend` of the correct type
-  #[inline]
   fn new_builder(&self) -> Self::Extender;
   /// accumulate the input into an accumulator
-  #[inline]
   fn extend_into(&self, acc: &mut Self::Extender);
 }
 
@@ -1109,7 +1098,6 @@ impl ExtendInto for char {
 /// with 32 and 64 bits pointer platforms
 pub trait ToUsize {
   /// converts self to usize
-  #[inline]
   fn to_usize(&self) -> usize;
 }
 
