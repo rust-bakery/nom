@@ -51,7 +51,7 @@ optional = true
 
 [dev-dependencies]
 criterion = "0.2"
-jemallocator = "^0.1"
+jemallocator = "^0.3"
 doc-comment = "0.3"
 
 [build-dependencies]
