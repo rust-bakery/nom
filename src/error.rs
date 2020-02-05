@@ -114,13 +114,11 @@ impl<I> ParseError<I> for VerboseError<I> {
   }
 }
 
-#[cfg(feature = "alloc")]
 use crate::internal::{Err, IResult};
 
 /// create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
 /// to errors when backtracking through a parse tree
-#[cfg(feature = "alloc")]
 pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
