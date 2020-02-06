@@ -368,6 +368,31 @@ where
   peek(f)(input)
 }
 
+/// returns its input if it is at the end of input data
+///
+/// When we're at the end of the data, this combinator
+/// will succeed
+///
+/// ```
+/// # #[macro_use] extern crate nom;
+/// # use std::str;
+/// # use nom::{Err, error::ErrorKind, IResult};
+/// # use nom::combinator::eof;
+///
+/// # fn main() {
+/// let parser = eof;
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Eof))));
+/// assert_eq!(parser(""), Ok(("", "")));
+/// # }
+/// ```
+pub fn eof<I: InputLength + Copy, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
+  if input.input_len() == 0 {
+    Ok((input, input))
+  } else {
+    Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof)))
+  }
+}
+
 /// transforms Incomplete into Error
 ///
 /// ```rust
@@ -746,21 +771,29 @@ mod tests {
     assert_eq!(res, Ok((&v2[..], ())));
   }*/
 
+  #[test]
+  fn eof_on_slices() {
+    let not_over: &[u8] = &b"Hello, world!"[..];
+    let is_over: &[u8] = &b""[..];
 
-  /*
-    #[test]
-    fn end_of_input() {
-        let not_over = &b"Hello, world!"[..];
-        let is_over = &b""[..];
-        named!(eof_test, eof!());
+    let res_not_over = eof(not_over);
+    assert_parse!(res_not_over, Err(Err::Error(error_position!(not_over, ErrorKind::Eof))));
 
-        let res_not_over = eof_test(not_over);
-        assert_eq!(res_not_over, Err(Err::Error(error_position!(not_over, ErrorKind::Eof))));
+    let res_over = eof(is_over);
+    assert_parse!(res_over, Ok((is_over, is_over)));
+  }
 
-        let res_over = eof_test(is_over);
-        assert_eq!(res_over, Ok((is_over, is_over)));
-    }
-    */
+  #[test]
+  fn eof_on_strs() {
+    let not_over: &str = "Hello, world!";
+    let is_over: &str = "";
+
+    let res_not_over = eof(not_over);
+    assert_parse!(res_not_over, Err(Err::Error(error_position!(not_over, ErrorKind::Eof))));
+
+    let res_over = eof(is_over);
+    assert_parse!(res_over, Ok((is_over, is_over)));
+  }
 
   #[test]
   fn rest_on_slices() {
