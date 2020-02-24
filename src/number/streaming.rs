@@ -831,7 +831,7 @@ where
 {
   match ::lexical_core::parse_partial(input.as_bytes()) {
     Ok((value, processed)) => {
-      if (processed == input.input_len()) {
+      if processed == input.input_len() {
         Err(Err::Incomplete(Needed::Unknown))
       } else {
         Ok((input.slice(processed..), value))
@@ -904,7 +904,7 @@ where
 {
   match ::lexical_core::parse_partial(input.as_bytes()) {
     Ok((value, processed)) => {
-      if (processed == input.input_len()) {
+      if processed == input.input_len() {
         Err(Err::Incomplete(Needed::Unknown))
       } else {
         Ok((input.slice(processed..), value))
