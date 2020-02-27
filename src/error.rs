@@ -77,6 +77,23 @@ pub struct VerboseError<I> {
   pub errors: crate::lib::std::vec::Vec<(I, VerboseErrorKind)>,
 }
 
+/// this error is the same as VerboseError but doesn't carry the input buffer
+#[cfg(feature = "alloc")]
+#[derive(Clone, Debug, PartialEq)]
+pub struct LightVerboseError {
+  /// list of errors accumulated by `LightVerboseError`, containing some context
+  pub errors: crate::lib::std::vec::Vec<VerboseErrorKind>,
+}
+
+#[cfg(feature = "alloc")]
+impl<I> From<VerboseError<I>> for LightVerboseError {
+    fn from(mut error: VerboseError<I>) -> LightVerboseError {
+        Self {
+            errors: error.errors.drain(..).map(|(_, kind)| kind).collect()
+        }
+    }
+}
+
 #[cfg(feature = "alloc")]
 #[derive(Clone, Debug, PartialEq)]
 /// error context for `VerboseError`
