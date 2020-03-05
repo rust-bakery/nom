@@ -77,7 +77,7 @@ fn parse_color() {
 - [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc)
 - [list of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
 
-If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
+If you need any help developing your parsers, please ping `geal` on IRC (freenode, geeknode, oftc), go to `#nom-parsers` on Freenode IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
 ## Why use nom
 
