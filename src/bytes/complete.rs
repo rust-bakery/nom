@@ -448,6 +448,73 @@ where
   }
 }
 
+/// Returns the shortest input slice till it matches the parser.
+///
+/// It doesn't consume the input to the parser. It will return `Err(Err::Error((_, ErrorKind::TakeUntilParserMatches)))`
+/// if the pattern wasn't met
+///
+/// # Simple Example
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, IResult};
+/// use nom::bytes::complete::{take_until_parser_matches, tag};
+///
+/// fn until_eof(s: &str) -> IResult<&str, &str> {
+///   take_until_parser_matches(tag("eof"))(s)
+/// }
+///
+/// assert_eq!(until_eof("hello, worldeof"), Ok(("eof", "hello, world")));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Error(("hello, world", ErrorKind::TakeUntilParserMatches))));
+/// assert_eq!(until_eof(""), Err(Err::Error(("", ErrorKind::TakeUntilParserMatches))));
+/// ```
+///
+/// # Powerful Example
+/// To show the power of this parser we will parse a line containing
+/// a set of flags at the end surrounded by brackets. Example:
+/// "Submit a PR [inprogress]"
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, IResult};
+/// use nom::bytes::complete::{is_not, take_until_parser_matches, tag};
+/// use nom::sequence::{delimited, tuple};
+/// use nom::multi::separated_list;
+///
+/// fn flag(i: &str) -> IResult<&str, &str> {
+///   delimited(tag("["), is_not("]\r\n"), tag("]"))(i)
+/// }
+///
+/// fn line_ending_with_flags(i: &str) -> IResult<&str, (&str, std::vec::Vec<&str>)> {
+///   tuple((
+///     take_until_parser_matches(flag),
+///     separated_list(tag(" "), flag),
+///   ))(i)
+/// }
+///
+/// assert_eq!(line_ending_with_flags("Parsing Seminar [important] [presentation]"), Ok(("", ("Parsing Seminar ", vec!["important", "presentation"]))));
+/// ```
+pub fn take_until_parser_matches<F, Input, O, Error>(f: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+where
+  Input: InputTake + InputLength + Clone,
+  F: Fn(Input) -> IResult<Input, O, Error>,
+  Error: ParseError<Input>,
+{
+  move |input: Input| {
+    let i = input.clone();
+    let input_length = i.input_len();
+    for ind in 0..input_length {
+      let (remaining, _consumed) = i.take_split(ind);
+      match f(remaining) {
+        Err(_) => (),
+        Ok(_) => {
+          let res: IResult<Input, Input, Error> = Ok(i.take_split(ind));
+          return res;
+        }
+      }
+    }
+    Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntilParserMatches)))
+  }
+}
+
 /// Matches a byte string with escaped characters.
 ///
 /// * The first argument matches the normal characters (it must not accept the control character)
@@ -724,5 +791,23 @@ mod tests {
     let result: IResult<&str, &str> =
       super::take_while_m_n(1, 1, |c: char| c.is_alphabetic())("øn");
     assert_eq!(result, Ok(("n", "ø")));
+  }
+
+  #[test]
+  fn take_until_parser_matches_success() {
+    let result: IResult<&str, &str> = super::take_until_parser_matches(tag("bbb"))("aaaaabbaaaabbbaaa");
+    assert_eq!(result, Ok(("bbbaaa", "aaaaabbaaaa")));
+  }
+
+  #[test]
+  fn take_until_parser_matches_failure() {
+    let result: IResult<&str, &str> = super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaa");
+    assert_eq!(result, Err(Err::Error(("aaaaabbaaaabbbaaa", ErrorKind::TakeUntilParserMatches))));
+  }
+
+  #[test]
+  fn take_until_parser_matches_incomplete() {
+    let result: IResult<&str, &str> = super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaaxy");
+    assert_eq!(result, Err(Err::Error(("aaaaabbaaaabbbaaaxy", ErrorKind::TakeUntilParserMatches))));
   }
 }
