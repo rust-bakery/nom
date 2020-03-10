@@ -256,6 +256,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [SQL](https://github.com/ms705/nom-sql)
   * [Elm](https://github.com/cout970/Elm-interpreter)
   * [SystemVerilog](https://github.com/dalance/sv-parser)
+  * [CSML](https://github.com/CSML-by-Clevy/csml-interpreter)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
