@@ -634,6 +634,9 @@ where
 /// creates an iterator from input data and a parser
 ///
 /// call the iterator's [finish] method to get the remaining input if successful,
+/// or the error value if we encountered an error,
+/// alternatively, use the iterator's [process] method to process the iterator inside a closure,
+/// returning the processed value along with the remaining input if successful,
 /// or the error value if we encountered an error
 ///
 /// ```rust
@@ -646,19 +649,23 @@ where
 /// let parsed = it.map(|v| (v, v.len())).collect::<HashMap<_,_>>();
 /// let res: IResult<_,_> = it.finish();
 ///
+/// type E<'a> = (&'a str, nom::error::ErrorKind);
+/// let parsed2 = iterator::<_, _, E, _>(data, terminated(alpha1, tag("|"))).process(|it| it.map(|v| (v, v.len())).collect::<HashMap<_,_>>());
+///
 /// assert_eq!(parsed, [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)].iter().cloned().collect());
 /// assert_eq!(res, Ok(("123", ())));
+/// assert_eq!(parsed2, Ok(("123", [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)].iter().cloned().collect())))
 /// ```
 pub fn iterator<Input, Output, Error, F>(input: Input, f: F) -> ParserIterator<Input, Error, F>
-where
-  F: Fn(Input) -> IResult<Input, Output, Error>,
-  Error: ParseError<Input> {
-
-    ParserIterator {
-      iterator: f,
-      input,
-      state: State::Running,
-    }
+  where
+      F: Fn(Input) -> IResult<Input, Output, Error>,
+      Error: ParseError<Input>,
+{
+  ParserIterator {
+    iterator: f,
+    input,
+    state: State::Running,
+  }
 }
 
 /// main structure associated to the [iterator] function
@@ -676,6 +683,14 @@ impl<I: Clone, E: Clone, F> ParserIterator<I, E, F> {
       State::Failure(e) => Err(Err::Failure(e.clone())),
       State::Incomplete(i) => Err(Err::Incomplete(i.clone())),
     }
+  }
+
+  /// a helper method that takes a closure that returns a value from the iterator,
+  /// returns the remaining input and that value if parsing was successful,
+  /// or the error if we encountered an error
+  pub fn process<R>(mut self, cls: impl FnOnce(&mut Self) -> R) -> IResult<I, R, E> {
+    let r = cls(&mut self);
+    self.finish().map(|(input, _)| (input, r))
   }
 }
 
