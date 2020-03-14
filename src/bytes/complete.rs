@@ -502,11 +502,53 @@ where
     let i = input.clone();
     let input_length = i.input_len();
     for ind in 0..input_length {
-      let (remaining, _consumed) = i.take_split(ind);
+      let (remaining, _taken) = i.take_split(ind);
       match f(remaining) {
         Err(_) => (),
         Ok(_) => {
           let res: IResult<Input, Input, Error> = Ok(i.take_split(ind));
+          return res;
+        }
+      }
+    }
+    Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntilParserMatches)))
+  }
+}
+
+/// Returns the shortest input slice till it matches the parser, additionally consuming the result of that parser.
+///
+/// It will return `Err(Err::Error((_, ErrorKind::TakeUntilParserMatches)))`
+/// if the pattern wasn't met
+///
+/// # Example
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, IResult};
+/// use nom::bytes::complete::{take_until_parser_matches_and_consume, tag};
+///
+/// fn until_eof(s: &str) -> IResult<&str, &str> {
+///   take_until_parser_matches_and_consume(tag("eof"))(s)
+/// }
+///
+/// assert_eq!(until_eof("hello, worldeof foobar"), Ok((" foobar", "hello, world")));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Error(("hello, world", ErrorKind::TakeUntilParserMatches))));
+/// assert_eq!(until_eof(""), Err(Err::Error(("", ErrorKind::TakeUntilParserMatches))));
+/// ```
+pub fn take_until_parser_matches_and_consume<F, Input, O, Error>(f: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+where
+  Input: InputTake + InputLength + Clone,
+  F: Fn(Input) -> IResult<Input, O, Error>,
+  Error: ParseError<Input>,
+{
+  move |input: Input| {
+    let i = input.clone();
+    let input_length = i.input_len();
+    for ind in 0..input_length {
+      let (remaining, taken) = i.take_split(ind);
+      match f(remaining) {
+        Err(_) => (),
+        Ok((inner_remaining, _parser_result)) => {
+          let res: IResult<Input, Input, Error> = Ok((inner_remaining, taken));
           return res;
         }
       }
