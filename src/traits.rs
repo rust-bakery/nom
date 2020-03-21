@@ -1156,6 +1156,155 @@ impl<I> ErrorConvert<((I, usize), ErrorKind)> for (I, ErrorKind) {
   }
 }
 
+/// Struct to carry auxiliary data along with the input.
+#[derive(Debug, Clone)]
+pub struct InputAux<Aux, I>(Aux, I);
+
+impl <Aux: Copy, I> InputAux<Aux, I> {
+  /// Create a new instance.
+  pub fn new(aux: Aux, buf: I) -> Self {
+    InputAux{0: aux, 1: buf}
+  }
+
+  /// Create new instances, each with a copy of the auxiliary data.
+  fn split(&self, t1: I, t2: I) -> (Self, Self) {
+    (Self{0: self.0, 1: t1}, Self{0: self.0, 1: t2})
+  }
+
+  /// Create a new instance with a copy of the auxiliary data.
+  fn repl(&self, buf: I) -> Self {
+    Self::new(self.0, buf)
+  }
+
+  /// Get a reference to the auxiliary data.
+  pub fn aux(&self) -> &Aux {
+    &self.0
+  }
+
+  /// Get a mutable reference to the auxiliary data.
+  pub fn aux_mut(&mut self) -> &mut Aux {
+    &mut self.0
+  }
+
+  /// Set the auxiliary data.
+  pub fn set(&mut self, aux: Aux) {
+    self.0 = aux;
+  }
+
+  /// Change the auxiliary data in place.
+  pub fn map(&mut self, f: impl FnOnce(Aux) -> Aux) {
+    self.0 = f(self.0);
+  }
+
+  /// Change the auxiliary data in place.
+  pub fn map2(&mut self, f: impl FnOnce(Aux) -> Aux) -> &mut Self {
+    self.0 = f(self.0);
+    self
+  }
+
+  /// Create a new instance with the auxiliary data changed.
+  pub fn map3(self, f: impl FnOnce(Aux) -> Aux) -> Self {
+    Self::new(f(self.0), self.1)
+  }
+}
+
+impl <Aux, I: PartialEq> PartialEq for InputAux<Aux, I> {
+  fn eq(&self, rhs: &Self) -> bool {
+    self.1 == rhs.1
+  }
+}
+
+impl <Aux, I: Eq> Eq for InputAux<Aux, I> {
+}
+
+impl <Aux: Copy, I: InputTake> InputTake for InputAux<Aux, I> {
+  fn take(&self, n: usize) -> Self {
+    InputAux::new(self.0, self.1.take(n))
+  }
+
+  fn take_split(&self, n: usize) -> (Self, Self) {
+    let (t1, t2) = self.1.take_split(n);
+
+    (InputAux::new(self.0, t1), InputAux(self.0,t2))
+  }
+}
+
+impl <Aux, I: InputLength> InputLength for InputAux<Aux, I> {
+  fn input_len(&self) -> usize {
+    self.1.input_len()
+  }
+}
+
+impl <Aux, I: InputIter> InputIter for InputAux<Aux, I> {
+  type Item = <I as InputIter>::Item;
+  type Iter = <I as InputIter>::Iter;
+  type IterElem = <I as InputIter>::IterElem;
+
+  fn iter_indices(&self) -> Self::Iter { self.1.iter_indices() }
+
+  fn iter_elements(&self) -> Self::IterElem { self.1.iter_elements() }
+
+  fn position<P: Fn(Self::Item) -> bool>(&self, p: P) -> Option<usize> {
+    self.1.position(p)
+  }
+
+  fn slice_index(&self, i: usize) -> Option<usize> {
+    self.1.slice_index(i)
+  }
+}
+
+impl <Aux: Copy, I: InputIter + InputTakeAtPosition> InputTakeAtPosition for InputAux<Aux, I> {
+  type Item = <I as InputTakeAtPosition>::Item;
+
+  fn split_at_position<P: Fn(Self::Item) -> bool, E: ParseError<Self>>(&self, pred: P) -> Result<(Self, Self), Err<E>> {
+    let r = self.1.split_at_position::<P, (I, ErrorKind)>(pred);
+    let r = r.map(|(p1, p2)| self.split(p1, p2));
+    let r = r.map_err(|e| e.map(|i| E::from_error_kind(self.repl(i.0), i.1)));
+    r
+  }
+
+  fn split_at_position1<P: Fn(Self::Item) -> bool, E: ParseError<Self>>(&self, pred: P, kind: ErrorKind) -> Result<(Self, Self), Err<E>> {
+    let r = self.1.split_at_position1::<P, (I, ErrorKind)>(pred, kind);
+    let r = r.map(|(p1, p2)| self.split(p1, p2));
+    let r = r.map_err(|e| { let ee = e.map(|i| { let o: E = E::from_error_kind(self.repl(i.0), i.1); o }); ee });
+    r
+  }
+
+  fn split_at_position_complete<P: Fn(Self::Item) -> bool, E: ParseError<Self>>(&self, pred: P) -> Result<(Self, Self), Err<E>> {
+    let r = self.1.split_at_position_complete::<P, (I, ErrorKind)>(pred);
+    let r = r.map(|(p1, p2)| self.split(p1, p2));
+    let r = r.map_err(|e| { let ee = e.map(|i| { let o: E = E::from_error_kind(self.repl(i.0), i.1); o }); ee });
+    r
+  }
+
+  fn split_at_position1_complete<P, E>(&self, pred: P, kind: ErrorKind) -> Result<(Self, Self), Err<E>>
+  where
+    P: Fn(Self::Item) -> bool,
+    E: ParseError<Self>,
+  {
+    let r = self.1.split_at_position1_complete::<P, (I, ErrorKind)>(pred, kind);
+    let r = r.map(|(p1, p2)| self.split(p1, p2));
+    let r = r.map_err(|e| { let ee = e.map(|i| { let o: E = E::from_error_kind(self.repl(i.0), i.1); o }); ee });
+    r
+  }
+}
+
+impl <Aux: Copy, I: Slice<std::ops::RangeFrom<usize>>> Slice<std::ops::RangeFrom<usize>> for InputAux<Aux, I> {
+  fn slice(&self, r: std::ops::RangeFrom<usize>) -> Self {
+    self.repl(self.1.slice(r))
+  }
+}
+
+impl <Aux, I: Compare<I>> Compare<I> for InputAux<Aux, I> {
+  fn compare(&self, v: I) -> CompareResult {
+    self.1.compare(v)
+  }
+
+  fn compare_no_case(&self, v: I) -> CompareResult {
+    self.1.compare_no_case(v)
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
