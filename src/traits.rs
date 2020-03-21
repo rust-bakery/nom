@@ -1,5 +1,6 @@
 //! Traits input types have to implement to work with nom combinators
 use crate::error::{ErrorKind, ParseError};
+use crate::input_aux::InputAux;
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::iter::{Copied, Enumerate};
 use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
@@ -58,6 +59,13 @@ where
   #[inline]
   fn input_len(&self) -> usize {
     self.len()
+  }
+}
+
+impl<Aux, I: InputLength> InputLength for InputAux<Aux, I> {
+  #[inline]
+  fn input_len(&self) -> usize {
+    self.input.input_len()
   }
 }
 
@@ -127,6 +135,12 @@ where
   }
 }
 
+impl<Aux, I: Offset> Offset for InputAux<Aux, I> {
+  fn offset(&self, second: &Self) -> usize {
+    self.input.offset(&second.input)
+  }
+}
+
 /// Helper trait for types that can be viewed as a byte slice
 pub trait AsBytes {
   /// Casts the input type to a byte slice
@@ -180,6 +194,13 @@ where
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
     self.as_slice()
+  }
+}
+
+impl<Aux, I: AsBytes> AsBytes for InputAux<Aux, I> {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    self.input.as_bytes()
   }
 }
 
@@ -562,6 +583,36 @@ where
   }
 }
 
+impl <Aux, I: InputIter> InputIter for InputAux<Aux, I> {
+  type Item = <I as InputIter>::Item;
+  type Iter = <I as InputIter>::Iter;
+  type IterElem = <I as InputIter>::IterElem;
+
+  fn iter_indices(&self) -> Self::Iter { self.input.iter_indices() }
+
+  fn iter_elements(&self) -> Self::IterElem { self.input.iter_elements() }
+
+  fn position<P: Fn(Self::Item) -> bool>(&self, p: P) -> Option<usize> {
+    self.input.position(p)
+  }
+
+  fn slice_index(&self, i: usize) -> Result<usize, Needed> {
+    self.input.slice_index(i)
+  }
+}
+
+impl <Aux: Copy, I: InputTake> InputTake for InputAux<Aux, I> {
+  fn take(&self, n: usize) -> Self {
+    InputAux::new(self.aux, self.input.take(n))
+  }
+
+  fn take_split(&self, n: usize) -> (Self, Self) {
+    let (t1, t2) = self.input.take_split(n);
+
+    (InputAux::new(self.aux, t1), InputAux::new(self.aux, t2))
+  }
+}
+
 /// Dummy trait used for default implementations (currently only used for `InputTakeAtPosition` and `Compare`).
 ///
 /// When implementing a custom input type, it is possible to use directly the
@@ -892,6 +943,42 @@ where
   }
 }
 
+impl <Aux: Copy, I: InputIter + InputTakeAtPosition> InputTakeAtPosition for InputAux<Aux, I> {
+  type Item = <I as InputTakeAtPosition>::Item;
+
+  fn split_at_position<P: Fn(Self::Item) -> bool, E: ParseError<Self>>(&self, pred: P) -> Result<(Self, Self), Err<E>> {
+    let r = self.input.split_at_position::<P, (I, ErrorKind)>(pred);
+    let r = r.map(|(p1, p2)| self.split_aux(p1, p2));
+    let r = r.map_err(|e| e.map(|i| E::from_error_kind(self.wrap_with(i.0), i.1)));
+    r
+  }
+
+  fn split_at_position1<P: Fn(Self::Item) -> bool, E: ParseError<Self>>(&self, pred: P, kind: ErrorKind) -> Result<(Self, Self), Err<E>> {
+    let r = self.input.split_at_position1::<P, (I, ErrorKind)>(pred, kind);
+    let r = r.map(|(p1, p2)| self.split_aux(p1, p2));
+    let r = r.map_err(|e| { let ee = e.map(|i| { let o: E = E::from_error_kind(self.wrap_with(i.0), i.1); o }); ee });
+    r
+  }
+
+  fn split_at_position_complete<P: Fn(Self::Item) -> bool, E: ParseError<Self>>(&self, pred: P) -> Result<(Self, Self), Err<E>> {
+    let r = self.input.split_at_position_complete::<P, (I, ErrorKind)>(pred);
+    let r = r.map(|(p1, p2)| self.split_aux(p1, p2));
+    let r = r.map_err(|e| { let ee = e.map(|i| { let o: E = E::from_error_kind(self.wrap_with(i.0), i.1); o }); ee });
+    r
+  }
+
+  fn split_at_position1_complete<P, E>(&self, pred: P, kind: ErrorKind) -> Result<(Self, Self), Err<E>>
+  where
+    P: Fn(Self::Item) -> bool,
+    E: ParseError<Self>,
+  {
+    let r = self.input.split_at_position1_complete::<P, (I, ErrorKind)>(pred, kind);
+    let r = r.map(|(p1, p2)| self.split_aux(p1, p2));
+    let r = r.map_err(|e| { let ee = e.map(|i| { let o: E = E::from_error_kind(self.wrap_with(i.0), i.1); o }); ee });
+    r
+  }
+}
+
 /// Indicates wether a comparison was successful, an error, or
 /// if more data was needed
 #[derive(Debug, PartialEq)]
@@ -1080,6 +1167,16 @@ where
   }
 }
 
+impl <Aux, I: Compare<I>> Compare<I> for InputAux<Aux, I> {
+  fn compare(&self, v: I) -> CompareResult {
+    self.input.compare(v)
+  }
+
+  fn compare_no_case(&self, v: I) -> CompareResult {
+    self.input.compare_no_case(v)
+  }
+}
+
 /// Look for a token in self
 pub trait FindToken<T> {
   /// Returns true if self contains the token
@@ -1141,6 +1238,12 @@ where
 {
   fn find_token(&self, token: (usize, bool)) -> bool {
     self.iter().copied().enumerate().any(|i| i == token)
+  }
+}
+
+impl<Aux, T, I: FindToken<T>> FindToken<T> for InputAux<Aux, I> {
+  fn find_token(&self, token: T) -> bool {
+    self.input.find_token(token)
   }
 }
 
@@ -1220,6 +1323,12 @@ where
   }
 }
 
+impl<Aux, T, I: FindSubstring<T>> FindSubstring<T> for InputAux<Aux, I> {
+  fn find_substring(&self, substr: T) -> Option<usize> {
+    self.input.find_substring(substr)
+  }
+}
+
 /// Used to integrate `str`'s `parse()` method
 pub trait ParseTo<R> {
   /// Succeeds if `parse()` succeeded. The byte slice implementation
@@ -1236,6 +1345,12 @@ impl<'a, R: FromStr> ParseTo<R> for &'a [u8] {
 impl<'a, R: FromStr> ParseTo<R> for &'a str {
   fn parse_to(&self) -> Option<R> {
     self.parse().ok()
+  }
+}
+
+impl<Aux, R: FromStr, I: ParseTo<R>> ParseTo<R> for InputAux<Aux, I> {
+  fn parse_to(&self) -> Option<R> {
+    self.input.parse_to()
   }
 }
 
@@ -1305,6 +1420,21 @@ slice_ranges_impl! {[T]}
 
 #[cfg(feature = "bitvec")]
 slice_ranges_impl! {BitSlice}
+
+macro_rules! aux_wrap {
+    ( $ty:ty ) => {
+      impl <Aux: Copy, I: Slice<$ty>> Slice<$ty> for InputAux<Aux, I> {
+        fn slice(&self, r: $ty) -> Self {
+          self.wrap_with(self.input.slice(r))
+        }
+      }
+    }
+}
+
+aux_wrap! {Range<usize>}
+aux_wrap! {RangeTo<usize>}
+aux_wrap! {RangeFrom<usize>}
+aux_wrap! {RangeFull}
 
 macro_rules! array_impls {
   ($($N:expr)+) => {

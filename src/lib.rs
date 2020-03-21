@@ -465,6 +465,7 @@ pub mod lib {
 
 pub use self::bits::*;
 pub use self::internal::*;
+pub use self::input_aux::InputAux;
 pub use self::traits::*;
 pub use self::util::*;
 
@@ -503,6 +504,8 @@ pub mod character;
 pub mod regexp;
 
 mod str;
+
+mod input_aux;
 
 #[macro_use]
 pub mod number;
