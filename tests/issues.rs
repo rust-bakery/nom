@@ -316,3 +316,19 @@ fn issue_1027_convert_error_panic_nonempty() {
   let msg = convert_error(&input, err);
   assert_eq!(msg, "0: at line 1:\na\n ^\nexpected \'b\', got end of input\n\n");
 }
+
+#[test]
+#[should_panic]
+fn issue_1120_trigger_stack_overlow() {
+  fn cp(i: &str) -> nom::IResult<&str, &str> {
+    use nom::branch::alt;
+    use nom::bytes::complete::tag;
+    use nom::sequence::delimited;
+
+    delimited(tag("("), alt((tag("x"), cp)), tag(")"))(i)
+  }
+
+  let n = 10000;
+  let buffer: String = (0..n).map(|_| '(').chain(vec!['x'].into_iter()).chain((0..n).map(|_| ')')).collect();
+  println!("{:?}", cp(&buffer));
+}
