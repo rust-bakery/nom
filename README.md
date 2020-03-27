@@ -253,9 +253,11 @@ Here is a (non exhaustive) list of known projects using nom:
   * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
+  * [Python](https://github.com/ProgVal/rust-python-parser)
   * [SQL](https://github.com/ms705/nom-sql)
   * [Elm](https://github.com/cout970/Elm-interpreter)
   * [SystemVerilog](https://github.com/dalance/sv-parser)
+  * [Turtle](https://github.com/vandenoever/rome/tree/master/src/io/turtle)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
