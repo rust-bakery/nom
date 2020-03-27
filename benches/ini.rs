@@ -9,14 +9,14 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 use criterion::*;
 
 use nom::{
-  IResult,
+  bytes::complete::take_while,
+  character::complete::{alphanumeric1 as alphanumeric, char, multispace1 as multispace, space1 as space},
   combinator::map_res,
   sequence::delimited,
-  bytes::complete::take_while,
-  character::complete::{alphanumeric1 as alphanumeric, multispace1 as multispace, space1 as space, char}
+  IResult,
 };
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 fn category(i: &[u8]) -> IResult<&[u8], &str> {
   map_res(delimited(char('['), take_while(|c| c != b']'), char(']')), str::from_utf8)(i)
@@ -238,12 +238,10 @@ file=payroll.dat
 
   c.bench(
     "bench ini",
-    Benchmark::new(
-      "parse",
-      move |b| {
-        b.iter(|| categories(str.as_bytes()).unwrap());
-      },
-    ).throughput(Throughput::Bytes(str.len() as u32)),
+    Benchmark::new("parse", move |b| {
+      b.iter(|| categories(str.as_bytes()).unwrap());
+    })
+    .throughput(Throughput::Bytes(str.len() as u32)),
   );
 }
 
@@ -257,12 +255,10 @@ file=payroll.dat
 
   c.bench(
     "bench ini keys and values",
-    Benchmark::new(
-      "parse",
-      move |b| {
-        b.iter(|| acc(str.as_bytes()).unwrap());
-      },
-    ).throughput(Throughput::Bytes(str.len() as u32)),
+    Benchmark::new("parse", move |b| {
+      b.iter(|| acc(str.as_bytes()).unwrap());
+    })
+    .throughput(Throughput::Bytes(str.len() as u32)),
   );
 }
 
@@ -271,12 +267,10 @@ fn bench_ini_key_value(c: &mut Criterion) {
 
   c.bench(
     "bench ini key value",
-    Benchmark::new(
-      "parse",
-      move |b| {
-        b.iter(|| key_value(str.as_bytes()).unwrap());
-      },
-    ).throughput(Throughput::Bytes(str.len() as u32)),
+    Benchmark::new("parse", move |b| {
+      b.iter(|| key_value(str.as_bytes()).unwrap());
+    })
+    .throughput(Throughput::Bytes(str.len() as u32)),
   );
 }
 

@@ -134,9 +134,9 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use crate::lib::std::ops::{AddAssign, Shl, Shr};
-  use crate::internal::{Err, Needed, IResult};
   use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
+  use crate::lib::std::ops::{AddAssign, Shl, Shr};
 
   #[test]
   fn take_bits() {
@@ -157,11 +157,8 @@ mod tests {
     assert_eq!(take_bits!((sl, 6), 11u8), Ok(((&sl[2..], 1), 1504)));
     assert_eq!(take_bits!((sl, 0), 20u8), Ok(((&sl[2..], 4), 700_163)));
     assert_eq!(take_bits!((sl, 4), 20u8), Ok(((&sl[3..], 0), 716_851)));
-    let r: IResult<_,u32> = take_bits!((sl, 4), 22u8);
-    assert_eq!(
-      r,
-      Err(Err::Incomplete(Needed::Size(22)))
-    );
+    let r: IResult<_, u32> = take_bits!((sl, 4), 22u8);
+    assert_eq!(r, Err(Err::Incomplete(Needed::Size(22))));
   }
 
   #[test]
@@ -246,18 +243,9 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(
-      take_bits!((sl, 0), 20u8),
-      Ok(((&sl[2..], 4), FakeUint(700_163)))
-    );
-    assert_eq!(
-      take_bits!((sl, 4), 20u8),
-      Ok(((&sl[3..], 0), FakeUint(716_851)))
-    );
+    assert_eq!(take_bits!((sl, 0), 20u8), Ok(((&sl[2..], 4), FakeUint(700_163))));
+    assert_eq!(take_bits!((sl, 4), 20u8), Ok(((&sl[3..], 0), FakeUint(716_851))));
     let r3: IResult<_, FakeUint> = take_bits!((sl, 4), 22u8);
-    assert_eq!(
-      r3,
-      Err(Err::Incomplete(Needed::Size(22)))
-    );
+    assert_eq!(r3, Err(Err::Incomplete(Needed::Size(22))));
   }
 }

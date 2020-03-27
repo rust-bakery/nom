@@ -473,9 +473,9 @@ macro_rules! nom_compile_error (
 
 #[cfg(test)]
 mod tests {
+  use crate::error::ErrorKind;
   use crate::internal::{Err, IResult, Needed};
   use crate::number::streaming::be_u16;
-  use crate::error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (

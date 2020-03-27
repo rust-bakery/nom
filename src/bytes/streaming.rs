@@ -5,7 +5,9 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::ops::RangeFrom;
 use crate::lib::std::result::Result::*;
-use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice, ToUsize};
+use crate::traits::{
+  Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice, ToUsize,
+};
 
 /// Recognizes a pattern
 ///
@@ -284,7 +286,7 @@ where
         if len >= n {
           match input.slice_index(n) {
             Some(index) => Ok(input.take_split(index)),
-            None => Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+            None => Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN))),
           }
         } else {
           let needed = if m > len { m - len } else { 1 };
@@ -641,5 +643,4 @@ where
   Error: ParseError<Input>,
 {
   escaped_transform(normal, control_char, transform)(i)
-
 }

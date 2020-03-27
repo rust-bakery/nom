@@ -530,14 +530,14 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, IResult, Needed};
+  use crate::character::streaming::digit1 as digit;
+  use crate::error::ErrorKind;
   use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
   use crate::lib::std::str::{self, FromStr};
   #[cfg(feature = "alloc")]
   use crate::lib::std::vec::Vec;
-  use crate::character::streaming::digit1 as digit;
   use crate::number::streaming::{be_u16, be_u8};
-  use crate::error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -804,7 +804,7 @@ mod tests {
   #[derive(Debug, Clone, PartialEq)]
   pub struct NilError;
 
-  impl<I> From<(I,ErrorKind)> for NilError {
+  impl<I> From<(I, ErrorKind)> for NilError {
     fn from(_: (I, ErrorKind)) -> Self {
       NilError
     }
@@ -837,10 +837,7 @@ mod tests {
     assert_eq!(cnt(&b"2ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(cnt(&b"3abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(cnt(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit))));
-    assert_eq!(
-      cnt(&b"2abcxxx"[..]),
-      Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
-    );
+    assert_eq!(cnt(&b"2abcxxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
@@ -984,5 +981,4 @@ mod tests {
       Err(Err::Error(error_position!(&b"hello"[..], ErrorKind::Many1Count)))
     );
   }
-
 }

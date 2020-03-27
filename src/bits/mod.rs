@@ -4,14 +4,13 @@
 #[macro_use]
 mod macros;
 
-pub mod streaming;
 pub mod complete;
+pub mod streaming;
 
-use crate::error::{ParseError, ErrorKind};
+use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::ops::RangeFrom;
-use crate::traits::{Slice, ErrorConvert};
-
+use crate::traits::{ErrorConvert, Slice};
 
 /// Converts a byte-level input to a bit-level input, for consumption by a parser that uses bits.
 ///
@@ -34,7 +33,7 @@ use crate::traits::{Slice, ErrorConvert};
 ///
 /// assert_eq!(take_4_bits( sl ), Ok( (&sl[1..], 0xA) ));
 /// ```
-pub fn bits<I, O, E1: ParseError<(I, usize)>+ErrorConvert<E2>, E2: ParseError<I>, P>(parser: P) -> impl Fn(I) -> IResult<I, O, E2>
+pub fn bits<I, O, E1: ParseError<(I, usize)> + ErrorConvert<E2>, E2: ParseError<I>, P>(parser: P) -> impl Fn(I) -> IResult<I, O, E2>
 where
   I: Slice<RangeFrom<usize>>,
   P: Fn((I, usize)) -> IResult<(I, usize), O, E1>,
@@ -51,7 +50,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn bitsc<I, O, E1: ParseError<(I, usize)>+ErrorConvert<E2>, E2: ParseError<I>, P>(input: I, parser: P) -> IResult<I, O, E2>
+pub fn bitsc<I, O, E1: ParseError<(I, usize)> + ErrorConvert<E2>, E2: ParseError<I>, P>(input: I, parser: P) -> IResult<I, O, E2>
 where
   I: Slice<RangeFrom<usize>>,
   P: Fn((I, usize)) -> IResult<(I, usize), O, E1>,
@@ -84,7 +83,9 @@ where
 ///
 /// assert_eq!(parse( input ), Ok(( &[][..], (0xd, 0xea, &[0xbe, 0xaf][..]) )));
 /// ```
-pub fn bytes<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(parser: P) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E2>
+pub fn bytes<I, O, E1: ParseError<I> + ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(
+  parser: P,
+) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E2>
 where
   I: Slice<RangeFrom<usize>> + Clone,
   P: Fn(I) -> IResult<I, O, E1>,
@@ -110,7 +111,10 @@ where
 }
 
 #[doc(hidden)]
-pub fn bytesc<I, O, E1: ParseError<I>+ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(input: (I, usize), parser: P) -> IResult<(I, usize), O, E2>
+pub fn bytesc<I, O, E1: ParseError<I> + ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(
+  input: (I, usize),
+  parser: P,
+) -> IResult<(I, usize), O, E2>
 where
   I: Slice<RangeFrom<usize>> + Clone,
   P: Fn(I) -> IResult<I, O, E1>,

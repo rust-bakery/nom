@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-  use crate::{Err, error::ErrorKind, IResult};
+  use crate::{error::ErrorKind, Err, IResult};
 
   #[test]
   fn tagtr_succeed() {
@@ -12,10 +12,7 @@ mod test {
 
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == " World!",
-          "Parser `tag` consumed leftover input."
-        );
+        assert!(extra == " World!", "Parser `tag` consumed leftover input.");
         assert!(
           output == TAG,
           "Parser `tag` doesn't return the tag it matched on success. \
@@ -37,7 +34,7 @@ mod test {
     const INPUT: &str = "Hello";
     const TAG: &str = "Hello World!";
 
-    let res: IResult<_,_,(_, ErrorKind)> = tag!(INPUT, TAG);
+    let res: IResult<_, _, (_, ErrorKind)> = tag!(INPUT, TAG);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => {
@@ -55,14 +52,11 @@ mod test {
     const INPUT: &str = "Hello World!";
     const TAG: &str = "Random"; // TAG must be closer than INPUT.
 
-    let res: IResult<_,_,(_, ErrorKind)> = tag!(INPUT, TAG);
+    let res: IResult<_, _, (_, ErrorKind)> = tag!(INPUT, TAG);
     match res {
       Err(Err::Error(_)) => (),
       other => {
-        panic!(
-          "Parser `tag` didn't fail when it should have. Got `{:?}`.`",
-          other
-        );
+        panic!("Parser `tag` didn't fail when it should have. Got `{:?}`.`", other);
       }
     };
   }
@@ -73,14 +67,10 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take!(INPUT, 9);
+    let res: IResult<_, _, (_, ErrorKind)> = take!(INPUT, 9);
     match res {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_s` consumed leftover input. Leftover `{}`.",
-          extra
-        );
+        assert!(extra == LEFTOVER, "Parser `take_s` consumed leftover input. Leftover `{}`.", extra);
         assert!(
           output == CONSUMED,
           "Parser `take_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
@@ -103,7 +93,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřè";
     const LEFTOVER: &str = "ÂßÇ∂áƒƭèř";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (_, ErrorKind)> = take_until!(INPUT, FIND);
     match res {
       Ok((extra, output)) => {
         assert!(
@@ -132,7 +122,7 @@ mod test {
   fn take_s_incomplete() {
     const INPUT: &str = "βèƒôřèÂßÇá";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take!(INPUT, 13);
+    let res: IResult<_, _, (_, ErrorKind)> = take!(INPUT, 13);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
@@ -174,10 +164,7 @@ mod test {
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
     assert_eq!(f(&c[..]), Ok((&"123"[..], &b[..])));
-    assert_eq!(
-      f(&d[..]),
-      Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1)))
-    );
+    assert_eq!(f(&d[..]), Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1))));
   }
 
   #[test]
@@ -193,10 +180,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_till` consumed leftover input."
-        );
+        assert!(extra == LEFTOVER, "Parser `take_till` consumed leftover input.");
         assert!(
           output == CONSUMED,
           "Parser `take_till` doesn't return the string it consumed on success. \
@@ -226,10 +210,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_while` consumed leftover input."
-        );
+        assert!(extra == LEFTOVER, "Parser `take_while` consumed leftover input.");
         assert!(
           output == CONSUMED,
           "Parser `take_while` doesn't return the string it consumed on success. \
@@ -257,11 +238,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `is_not` consumed leftover input. Leftover `{}`.",
-          extra
-        );
+        assert!(extra == LEFTOVER, "Parser `is_not` consumed leftover input. Leftover `{}`.", extra);
         assert!(
           output == CONSUMED,
           "Parser `is_not` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
@@ -290,10 +267,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_while` consumed leftover input."
-        );
+        assert!(extra == LEFTOVER, "Parser `take_while` consumed leftover input.");
         assert!(
           output == CONSUMED,
           "Parser `take_while` doesn't return the string it consumed on success. \
@@ -319,10 +293,7 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => panic!(
-        "Parser `is_not` didn't fail when it should have. Got `{:?}`.",
-        other
-      ),
+      other => panic!("Parser `is_not` didn't fail when it should have. Got `{:?}`.", other),
     };
   }
 
@@ -339,10 +310,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `take_while1` consumed leftover input."
-        );
+        assert!(extra == LEFTOVER, "Parser `take_while1` consumed leftover input.");
         assert!(
           output == CONSUMED,
           "Parser `take_while1` doesn't return the string it consumed on success. \
@@ -364,7 +332,7 @@ mod test {
     const INPUT: &str = "βèƒôřè";
     const FIND: &str = "βèƒôřèÂßÇ";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (_, ErrorKind)> = take_until!(INPUT, FIND);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
@@ -386,11 +354,7 @@ mod test {
     }
     match test(INPUT) {
       Ok((extra, output)) => {
-        assert!(
-          extra == LEFTOVER,
-          "Parser `is_a` consumed leftover input. Leftover `{}`.",
-          extra
-        );
+        assert!(extra == LEFTOVER, "Parser `is_a` consumed leftover input. Leftover `{}`.", extra);
         assert!(
           output == CONSUMED,
           "Parser `is_a` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
@@ -434,10 +398,7 @@ mod test {
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
-      other => panic!(
-        "Parser `is_a` didn't fail when it should have. Got `{:?}`.",
-        other
-      ),
+      other => panic!("Parser `is_a` didn't fail when it should have. Got `{:?}`.", other),
     };
   }
 
@@ -446,7 +407,7 @@ mod test {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const FIND: &str = "Ráñδô₥";
 
-    let res: IResult<_,_,(_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (_, ErrorKind)> = take_until!(INPUT, FIND);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
@@ -472,8 +433,8 @@ mod test {
   #[test]
   fn utf8_indexing() {
     named!(dot(&str) -> &str,
-        tag!(".")
-      );
+      tag!(".")
+    );
 
     let _ = dot("點");
   }

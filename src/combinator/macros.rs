@@ -970,9 +970,9 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, IResult, Needed};
-  use crate::error::ParseError;
   use crate::error::ErrorKind;
+  use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::lib::std::boxed::Box;
 
@@ -1073,10 +1073,7 @@ mod tests {
     assert_eq!(opt_res_abcd(a), Ok((&b"ef"[..], Ok(&b"abcd"[..]))));
     assert_eq!(
       opt_res_abcd(b),
-      Ok((
-        &b"bcdefg"[..],
-        Err(Err::Error(error_position!(b, ErrorKind::Tag)))
-      ))
+      Ok((&b"bcdefg"[..], Err(Err::Error(error_position!(b, ErrorKind::Tag)))))
     );
     assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
   }
@@ -1099,7 +1096,6 @@ mod tests {
       CustomError("append")
     }
   }
-
 
   #[test]
   #[cfg(feature = "alloc")]
@@ -1149,19 +1145,13 @@ mod tests {
 
     assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
     assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(
-      peek_tag(&b"xxx"[..]),
-      Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
-    );
+    assert_eq!(peek_tag(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
   }
 
   #[test]
   fn not() {
     named!(not_aaa<()>, not!(tag!("aaa")));
-    assert_eq!(
-      not_aaa(&b"aaa"[..]),
-      Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not)))
-    );
+    assert_eq!(not_aaa(&b"aaa"[..]), Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not))));
     assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::Size(3))));
     assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
   }
@@ -1172,10 +1162,7 @@ mod tests {
     assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
     assert_eq!(
       test(&b"bcdefg"[..]),
-      Err(Err::Error(error_position!(
-        &b"bcdefg"[..],
-        ErrorKind::Verify
-      )))
+      Err(Err::Error(error_position!(&b"bcdefg"[..], ErrorKind::Verify)))
     );
     assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
   }
@@ -1184,18 +1171,11 @@ mod tests {
   fn parse_to() {
     let res: IResult<_, _, (&str, ErrorKind)> = parse_to!("ab", usize);
 
-    assert_eq!(
-      res,
-      Err(Err::Error(error_position!(
-        "ab",
-        ErrorKind::ParseTo
-      )))
-    );
+    assert_eq!(res, Err(Err::Error(error_position!("ab", ErrorKind::ParseTo))));
 
     let res: IResult<_, _, (&str, ErrorKind)> = parse_to!("42", usize);
 
     assert_eq!(res, Ok(("", 42)));
     //assert_eq!(ErrorKind::convert(ErrorKind::ParseTo), ErrorKind::ParseTo::<u64>);
   }
-
 }

@@ -4,9 +4,9 @@
 extern crate nom;
 
 use nom::{
-  IResult, Needed, Err,
   error::ErrorKind,
-  number::streaming::{be_u16, be_u32, be_u64, be_f32}
+  number::streaming::{be_f32, be_u16, be_u32, be_u64},
+  Err, IResult, Needed,
 };
 
 use std::str;
@@ -316,4 +316,3 @@ named!(moov_header<&[u8],MP4BoxHeader>,
     (MP4BoxHeader{ length: length, tag: tag})
   )
 );
-

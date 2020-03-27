@@ -3,8 +3,8 @@
 #[macro_use]
 mod macros;
 
-use crate::internal::IResult;
 use crate::error::ParseError;
+use crate::internal::IResult;
 
 /// Gets an object from the first parser,
 /// then gets another object from the second parser.
@@ -219,15 +219,15 @@ where
 /// helper trait for the tuple combinator
 ///
 /// this trait is implemented for tuples of parsers of up to 21 elements
-pub trait Tuple<I,O,E> {
+pub trait Tuple<I, O, E> {
   /// parses the input and returns a tuple of results of each parser
-  fn parse(&self, input: I) -> IResult<I,O,E>;
+  fn parse(&self, input: I) -> IResult<I, O, E>;
 }
 
-impl<Input, Output, Error: ParseError<Input>, F: Fn(Input) -> IResult<Input, Output, Error> > Tuple<Input, (Output,), Error> for (F,) {
-   fn parse(&self, input: Input) -> IResult<Input,(Output,),Error> {
-     self.0(input).map(|(i,o)| (i, (o,)))
-   }
+impl<Input, Output, Error: ParseError<Input>, F: Fn(Input) -> IResult<Input, Output, Error>> Tuple<Input, (Output,), Error> for (F,) {
+  fn parse(&self, input: Input) -> IResult<Input, (Output,), Error> {
+    self.0(input).map(|(i, o)| (i, (o,)))
+  }
 }
 
 macro_rules! tuple_trait(
@@ -291,10 +291,8 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 /// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
 /// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
 /// ```
-pub fn tuple<I: Clone, O, E: ParseError<I>, List: Tuple<I,O,E>>(l: List)  -> impl Fn(I) -> IResult<I, O, E> {
-  move |i: I| {
-    l.parse(i)
-  }
+pub fn tuple<I: Clone, O, E: ParseError<I>, List: Tuple<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
+  move |i: I| l.parse(i)
 }
 
 #[cfg(test)]
@@ -304,7 +302,7 @@ mod tests {
   #[test]
   fn single_element_tuples() {
     use crate::character::complete::{alpha1, digit1};
-    use crate::{Err, error::ErrorKind};
+    use crate::{error::ErrorKind, Err};
 
     let parser = tuple((alpha1,));
     assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));

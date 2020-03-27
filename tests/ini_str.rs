@@ -2,11 +2,11 @@
 extern crate nom;
 
 use nom::{
-  IResult,
+  bytes::complete::{is_a, take_while},
+  character::complete::{alphanumeric1 as alphanumeric, char, space0 as space},
   combinator::opt,
-  bytes::complete::{take_while, is_a},
   sequence::{delimited, terminated},
-  character::complete::{char, alphanumeric1 as alphanumeric, space0 as space}
+  IResult,
 };
 
 use std::collections::HashMap;

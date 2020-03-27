@@ -1,15 +1,15 @@
 //! Traits input types have to implement to work with nom combinators
 //!
+use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::error::{ParseError, ErrorKind};
-use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use crate::lib::std::iter::Enumerate;
-use crate::lib::std::slice::Iter;
 use crate::lib::std::iter::Map;
-use crate::lib::std::str::Chars;
-use crate::lib::std::str::CharIndices;
-use crate::lib::std::str::FromStr;
+use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use crate::lib::std::slice::Iter;
 use crate::lib::std::str::from_utf8;
+use crate::lib::std::str::CharIndices;
+use crate::lib::std::str::Chars;
+use crate::lib::std::str::FromStr;
 use memchr;
 
 #[cfg(feature = "alloc")]
@@ -511,7 +511,9 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
   }
 
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
+  where
+    P: Fn(Self::Item) -> bool,
+  {
     match self.split_at_position(predicate) {
       Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
       res => res,
@@ -519,12 +521,16 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
   }
 
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
+  where
+    P: Fn(Self::Item) -> bool,
+  {
     match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(_)) => if self.input_len() == 0 {
-        Err(Err::Error(E::from_error_kind(self.clone(), e)))
-      } else {
-        Ok(self.take_split(self.input_len()))
+      Err(Err::Incomplete(_)) => {
+        if self.input_len() == 0 {
+          Err(Err::Error(E::from_error_kind(self.clone(), e)))
+        } else {
+          Ok(self.take_split(self.input_len()))
+        }
       }
       res => res,
     }
@@ -556,7 +562,9 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   }
 
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
+  where
+    P: Fn(Self::Item) -> bool,
+  {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(i) => Ok((&self[i..], &self[..i])),
       None => Ok(self.take_split(self.input_len())),
@@ -564,7 +572,9 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   }
 
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
+  where
+    P: Fn(Self::Item) -> bool,
+  {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
@@ -574,7 +584,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
         } else {
           Ok(self.take_split(self.input_len()))
         }
-      },
+      }
     }
   }
 }
@@ -604,15 +614,19 @@ impl<'a> InputTakeAtPosition for &'a str {
   }
 
   fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
+  where
+    P: Fn(Self::Item) -> bool,
+  {
     match self.find(predicate) {
       Some(i) => Ok((&self[i..], &self[..i])),
-      None =>  Ok(self.take_split(self.input_len()))
+      None => Ok(self.take_split(self.input_len())),
     }
   }
 
   fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
-    where P: Fn(Self::Item) -> bool {
+  where
+    P: Fn(Self::Item) -> bool,
+  {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
@@ -622,7 +636,7 @@ impl<'a> InputTakeAtPosition for &'a str {
         } else {
           Ok(self.take_split(self.input_len()))
         }
-      },
+      }
     }
   }
 }
@@ -903,31 +917,31 @@ macro_rules! impl_fn_slice {
 }
 
 macro_rules! slice_range_impl {
-    ( [ $for_type:ident ], $ty:ty ) => {
-        impl<'a, $for_type> Slice<$ty> for &'a [$for_type] {
-            impl_fn_slice!( $ty );
-        }
-    };
-    ( $for_type:ty, $ty:ty ) => {
-        impl<'a> Slice<$ty> for &'a $for_type {
-            impl_fn_slice!( $ty );
-        }
+  ( [ $for_type:ident ], $ty:ty ) => {
+    impl<'a, $for_type> Slice<$ty> for &'a [$for_type] {
+      impl_fn_slice!($ty);
     }
+  };
+  ( $for_type:ty, $ty:ty ) => {
+    impl<'a> Slice<$ty> for &'a $for_type {
+      impl_fn_slice!($ty);
+    }
+  };
 }
 
 macro_rules! slice_ranges_impl {
-    ( [ $for_type:ident ] ) => {
-        slice_range_impl! {[$for_type], Range<usize>}
-        slice_range_impl! {[$for_type], RangeTo<usize>}
-        slice_range_impl! {[$for_type], RangeFrom<usize>}
-        slice_range_impl! {[$for_type], RangeFull}
-    };
-    ( $for_type:ty ) => {
-        slice_range_impl! {$for_type, Range<usize>}
-        slice_range_impl! {$for_type, RangeTo<usize>}
-        slice_range_impl! {$for_type, RangeFrom<usize>}
-        slice_range_impl! {$for_type, RangeFull}
-    }
+  ( [ $for_type:ident ] ) => {
+    slice_range_impl! {[$for_type], Range<usize>}
+    slice_range_impl! {[$for_type], RangeTo<usize>}
+    slice_range_impl! {[$for_type], RangeFrom<usize>}
+    slice_range_impl! {[$for_type], RangeFull}
+  };
+  ( $for_type:ty ) => {
+    slice_range_impl! {$for_type, Range<usize>}
+    slice_range_impl! {$for_type, RangeTo<usize>}
+    slice_range_impl! {$for_type, RangeFrom<usize>}
+    slice_range_impl! {$for_type, RangeFull}
+  };
 }
 
 slice_ranges_impl! {str}
@@ -999,7 +1013,6 @@ array_impls! {
 /// abstracts something which can extend an `Extend`
 /// used to build modified input slices in `escaped_transform`
 pub trait ExtendInto {
-
   /// the current input type is a sequence of that `Item` type.
   ///
   /// example: `u8` for `&[u8]` or `char` for &str`
@@ -1043,7 +1056,6 @@ impl ExtendInto for &[u8] {
     acc.extend(self.iter().cloned());
   }
 }
-
 
 #[cfg(feature = "alloc")]
 impl ExtendInto for str {

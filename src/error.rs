@@ -165,36 +165,38 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
       let column_number = line.offset(substring) + 1;
 
       match kind {
-        VerboseErrorKind::Char(c) => if let Some(actual) = substring.chars().next() {
-          write!(
-            &mut result,
-            "{i}: at line {line_number}:\n\
+        VerboseErrorKind::Char(c) => {
+          if let Some(actual) = substring.chars().next() {
+            write!(
+              &mut result,
+              "{i}: at line {line_number}:\n\
                {line}\n\
                {caret:>column$}\n\
                expected '{expected}', found {actual}\n\n",
-            i = i,
-            line_number = line_number,
-            line = line,
-            caret = '^',
-            column = column_number,
-            expected = c,
-            actual = actual,
-          )
-        } else {
-          write!(
-            &mut result,
-            "{i}: at line {line_number}:\n\
+              i = i,
+              line_number = line_number,
+              line = line,
+              caret = '^',
+              column = column_number,
+              expected = c,
+              actual = actual,
+            )
+          } else {
+            write!(
+              &mut result,
+              "{i}: at line {line_number}:\n\
                {line}\n\
                {caret:>column$}\n\
                expected '{expected}', got end of input\n\n",
-            i = i,
-            line_number = line_number,
-            line = line,
-            caret = '^',
-            column = column_number,
-            expected = c,
-          )
-        },
+              i = i,
+              line_number = line_number,
+              line = line,
+              caret = '^',
+              column = column_number,
+              expected = c,
+            )
+          }
+        }
         VerboseErrorKind::Context(s) => write!(
           &mut result,
           "{i}: at line {line_number}, in {context}:\n\

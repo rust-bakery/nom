@@ -449,14 +449,17 @@ macro_rules! take_until1 (
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, Needed, IResult};
+  use crate::character::is_alphabetic;
+  use crate::character::streaming::{
+    alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit, multispace1 as multispace,
+    oct_digit1 as oct_digit, space1 as space,
+  };
+  use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::lib::std::string::String;
   #[cfg(feature = "alloc")]
   use crate::lib::std::vec::Vec;
-  use crate::character::streaming::{alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit, multispace1 as multispace, oct_digit1 as oct_digit, space1 as space};
-  use crate::error::ErrorKind;
-  use crate::character::is_alphabetic;
 
   #[cfg(feature = "alloc")]
   macro_rules! one_of (
@@ -527,7 +530,10 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], &b"\\\"abcd"[..])));
     assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], &b"\\n"[..])));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_position!(&b"AB\\"[..], ErrorKind::Escaped))));
+    assert_eq!(
+      esc(&b"AB\\"[..]),
+      Err(Err::Error(error_position!(&b"AB\\"[..], ErrorKind::Escaped)))
+    );
     assert_eq!(
       esc(&b"AB\\A"[..]),
       Err(Err::Error(error_node_position!(
@@ -598,7 +604,10 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], String::from("\"abcd"))));
     assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], String::from("\n"))));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], String::from("ab\""))));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_position!(&b"\\"[..], ErrorKind::EscapedTransform))));
+    assert_eq!(
+      esc(&b"AB\\"[..]),
+      Err(Err::Error(error_position!(&b"\\"[..], ErrorKind::EscapedTransform)))
+    );
     assert_eq!(
       esc(&b"AB\\A"[..]),
       Err(Err::Error(error_node_position!(
@@ -672,10 +681,10 @@ mod tests {
   fn take_str_test() {
     let a = b"omnomnom";
 
-    let res: IResult<_,_,(&[u8], ErrorKind)> = take_str!(&a[..], 5u32);
+    let res: IResult<_, _, (&[u8], ErrorKind)> = take_str!(&a[..], 5u32);
     assert_eq!(res, Ok((&b"nom"[..], "omnom")));
 
-    let res: IResult<_,_,(&[u8], ErrorKind)> = take_str!(&a[..], 9u32);
+    let res: IResult<_, _, (&[u8], ErrorKind)> = take_str!(&a[..], 9u32);
     assert_eq!(res, Err(Err::Incomplete(Needed::Size(9))));
   }
 
@@ -778,7 +787,6 @@ mod tests {
 
   #[test]
   fn take_till() {
-
     named!(f, take_till!(is_alphabetic));
     let a = b"";
     let b = b"abcd";
@@ -793,7 +801,6 @@ mod tests {
 
   #[test]
   fn take_till1() {
-
     named!(f, take_till1!(is_alphabetic));
     let a = b"";
     let b = b"abcd";
@@ -875,7 +882,6 @@ mod tests {
   #[cfg(nightly)]
   #[bench]
   fn take_while_bench(b: &mut Bencher) {
-
     named!(f, take_while!(is_alphabetic));
     b.iter(|| f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..]));
   }

@@ -3,7 +3,7 @@
 
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::ops::{AddAssign, RangeFrom, Shl, Shr, Div};
+use crate::lib::std::ops::{AddAssign, Div, RangeFrom, Shl, Shr};
 use crate::traits::{InputIter, InputLength, Slice, ToUsize};
 
 /// generates a parser taking `count` bits
@@ -22,9 +22,9 @@ where
       if input.input_len() * 8 < count + bit_offset {
         Err(Err::Incomplete(Needed::Size(count as usize)))
       } else {
-        let mut acc:O             = (0 as u8).into();
-        let mut offset: usize     = bit_offset;
-        let mut remaining: usize  = count;
+        let mut acc: O = (0 as u8).into();
+        let mut offset: usize = bit_offset;
+        let mut remaining: usize = count;
         let mut end_offset: usize = 0;
 
         for byte in input.iter_elements().take(cnt + 1) {
@@ -47,7 +47,7 @@ where
             offset = 0;
           }
         }
-        Ok(( (input.slice(cnt..), end_offset) , acc))
+        Ok(((input.slice(cnt..), end_offset), acc))
       }
     }
   }

@@ -6,8 +6,8 @@ extern crate nom;
 
 use nom::{character::is_alphanumeric, number::complete::recognize_float};
 
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 #[derive(Debug, PartialEq)]
 pub enum JsonValue {
@@ -25,27 +25,17 @@ named!(
   delimited!(
     char!('"'),
     //map_res!(escaped!(call!(alphanumeric), '\\', is_a!("\"n\\")), str::from_utf8),
-    map_res!(
-      escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")),
-      str::from_utf8
-    ),
+    map_res!(escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
     char!('"')
   )
 );
 
 named!(
   array<Vec<JsonValue>>,
-  ws!(delimited!(
-    char!('['),
-    separated_list!(char!(','), value),
-    char!(']')
-  ))
+  ws!(delimited!(char!('['), separated_list!(char!(','), value), char!(']')))
 );
 
-named!(
-  key_value<(&str, JsonValue)>,
-  ws!(separated_pair!(string, char!(':'), value))
-);
+named!(key_value<(&str, JsonValue)>, ws!(separated_pair!(string, char!(':'), value)));
 
 named!(
   hash<HashMap<String, JsonValue>>,
@@ -64,17 +54,16 @@ named!(
 named!(
   value<JsonValue>,
   ws!(alt!(
-      hash   => { |h|   JsonValue::Object(h)            } |
-      array  => { |v|   JsonValue::Array(v)             } |
-      string => { |s|   JsonValue::Str(String::from(s)) } |
-      float  => { |num| JsonValue::Num(num)             }
-    ))
+    hash   => { |h|   JsonValue::Object(h)            } |
+    array  => { |v|   JsonValue::Array(v)             } |
+    string => { |s|   JsonValue::Str(String::from(s)) } |
+    float  => { |num| JsonValue::Num(num)             }
+  ))
 );
 
 #[test]
 fn json_object() {
-  let input =
-    r#"{
+  let input = r#"{
       "a": 42,
       "b": "x"
     }\0"#;
@@ -89,16 +78,12 @@ fn json_object() {
 
 #[test]
 fn json_array() {
-  let input =
-    r#"[
+  let input = r#"[
       42,
       "x"
     ]\0"#;
 
-  let expected_vec = vec![
-    JsonValue::Num(42f32),
-    JsonValue::Str(String::from("x"))
-  ];
+  let expected_vec = vec![JsonValue::Num(42f32), JsonValue::Str(String::from("x"))];
   let expected = JsonValue::Array(expected_vec);
 
   assert_eq!(expected, value(input.as_bytes()).unwrap().1);

@@ -720,15 +720,15 @@ macro_rules! permutation_iterator (
 #[cfg(test)]
 mod tests {
   use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::{
     error::ParseError,
     lib::std::{
       fmt::Debug,
-      string::{String, ToString}
-    }
+      string::{String, ToString},
+    },
   };
-  use crate::internal::{Err, IResult, Needed};
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (

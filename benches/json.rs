@@ -8,12 +8,11 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::Criterion;
-use nom::{error::ErrorKind, character::complete::alphanumeric1 as alphanumeric, number::complete::recognize_float};
 use nom::number::complete::float;
+use nom::{character::complete::alphanumeric1 as alphanumeric, error::ErrorKind, number::complete::recognize_float};
 
-
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 #[derive(Debug, PartialEq)]
 pub enum JsonValue {
@@ -29,58 +28,38 @@ named!(
   string<&str>,
   delimited!(
     char!('\"'),
-    map_res!(
-      escaped!(call!(alphanumeric), '\\', one_of!("\"n\\")),
-      str::from_utf8
-    ),
+    map_res!(escaped!(call!(alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
     //map_res!(escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")), str::from_utf8),
     char!('\"')
   )
 );
 
-named!(
-  boolean<bool>,
-  alt!(value!(false, tag!("false")) | value!(true, tag!("true")))
-);
+named!(boolean<bool>, alt!(value!(false, tag!("false")) | value!(true, tag!("true"))));
 
 named!(
   array<Vec<JsonValue>>,
-  ws!(delimited!(
-    char!('['),
-    separated_list!(char!(','), value),
-    char!(']')
-  ))
+  ws!(delimited!(char!('['), separated_list!(char!(','), value), char!(']')))
 );
 
-named!(
-  key_value<(&str, JsonValue)>,
-  ws!(separated_pair!(string, char!(':'), value))
-);
+named!(key_value<(&str, JsonValue)>, ws!(separated_pair!(string, char!(':'), value)));
 
 named!(
   hash<HashMap<String, JsonValue>>,
   ws!(map!(
-    delimited!(
-      char!('{'),
-      separated_list!(char!(','), key_value),
-      char!('}')
-    ),
-    |tuple_vec| tuple_vec
-      .into_iter()
-      .map(|(k, v)| (String::from(k), v))
-      .collect()
+    delimited!(char!('{'), separated_list!(char!(','), key_value), char!('}')),
+    |tuple_vec| tuple_vec.into_iter().map(|(k, v)| (String::from(k), v)).collect()
   ))
 );
 
 named!(
   value<JsonValue>,
   ws!(alt!(
-      hash    => { |h| JsonValue::Object(h)            } |
-      array   => { |v| JsonValue::Array(v)             } |
-      string  => { |s| JsonValue::Str(String::from(s)) } |
-      float   => { |f| JsonValue::Num(f)               } |
-      boolean => { |b| JsonValue::Boolean(b)           }
-    ))
+    hash    => { |h| JsonValue::Object(h)            } |
+    array   => { |v| JsonValue::Array(v)             } |
+    string  => { |s| JsonValue::Str(String::from(s)) } |
+    float   => { |f| JsonValue::Num(f)               } |
+    boolean => { |b| JsonValue::Boolean(b)           }
+  ))
 );
 
 fn json_bench(c: &mut Criterion) {
@@ -97,34 +76,47 @@ fn json_bench(c: &mut Criterion) {
 }
 
 fn recognize_float_bytes(c: &mut Criterion) {
-  println!("recognize_float_bytes result: {:?}", recognize_float::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
+  println!(
+    "recognize_float_bytes result: {:?}",
+    recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+  );
   c.bench_function("recognize float bytes", |b| {
-    b.iter(|| recognize_float::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
   });
 }
 
 fn recognize_float_str(c: &mut Criterion) {
-  println!("recognize_float_str result: {:?}", recognize_float::<_, (_,ErrorKind)>("-1.234E-12"));
+  println!(
+    "recognize_float_str result: {:?}",
+    recognize_float::<_, (_, ErrorKind)>("-1.234E-12")
+  );
   c.bench_function("recognize float str", |b| {
-    b.iter(|| recognize_float::<_, (_,ErrorKind)>("-1.234E-12"));
+    b.iter(|| recognize_float::<_, (_, ErrorKind)>("-1.234E-12"));
   });
 }
 
 fn float_bytes(c: &mut Criterion) {
   use nom::number::complete::double;
-  println!("float_bytes result: {:?}", double::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
+  println!("float_bytes result: {:?}", double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
   c.bench_function("float bytes", |b| {
-    b.iter(|| double::<_, (_,ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
   });
 }
 
 fn float_str(c: &mut Criterion) {
   use nom::number::complete::double;
-  println!("float_str result: {:?}", double::<_, (_,ErrorKind)>("-1.234E-12"));
+  println!("float_str result: {:?}", double::<_, (_, ErrorKind)>("-1.234E-12"));
   c.bench_function("float str", |b| {
-    b.iter(|| double::<_, (_,ErrorKind)>("-1.234E-12"));
+    b.iter(|| double::<_, (_, ErrorKind)>("-1.234E-12"));
   });
 }
 
-criterion_group!(benches, json_bench, recognize_float_bytes, recognize_float_str, float_bytes, float_str);
+criterion_group!(
+  benches,
+  json_bench,
+  recognize_float_bytes,
+  recognize_float_str,
+  float_bytes,
+  float_str
+);
 criterion_main!(benches);

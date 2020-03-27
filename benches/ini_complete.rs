@@ -9,14 +9,14 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
 use nom::{
-  IResult,
+  bytes::complete::take_while,
+  character::complete::{alphanumeric1 as alphanumeric, char, multispace1 as multispace, space1 as space},
   combinator::map_res,
   sequence::delimited,
-  bytes::complete::take_while,
-  character::complete::{alphanumeric1 as alphanumeric, multispace1 as multispace, space1 as space, char}
+  IResult,
 };
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 /*
 named!(category<&[u8], &str>, map_res!(
@@ -37,7 +37,7 @@ fn category(i: &[u8]) -> IResult<&[u8], &str> {
   map_res(delimited(char('['), take_while(|c| c != b']'), char(']')), str::from_utf8)(i)
 }
 
-fn complete_byte_slice_to_str<'a>(s: &'a[u8]) -> Result<&'a str, str::Utf8Error> {
+fn complete_byte_slice_to_str<'a>(s: &'a [u8]) -> Result<&'a str, str::Utf8Error> {
   str::from_utf8(s)
 }
 
@@ -254,12 +254,10 @@ file=payroll.dat
 
   c.bench(
     "bench ini complete",
-    Benchmark::new(
-      "parse",
-      move |b| {
-        b.iter(|| categories(s.as_bytes()).unwrap());
-      },
-    ).throughput(Throughput::Bytes(s.len() as u32)),
+    Benchmark::new("parse", move |b| {
+      b.iter(|| categories(s.as_bytes()).unwrap());
+    })
+    .throughput(Throughput::Bytes(s.len() as u32)),
   );
 }
 
@@ -273,12 +271,10 @@ file=payroll.dat
 
   c.bench(
     "bench ini complete keys and values",
-    Benchmark::new(
-      "parse",
-      move |b| {
-        b.iter(|| acc(s.as_bytes()).unwrap());
-      },
-    ).throughput(Throughput::Bytes(s.len() as u32)),
+    Benchmark::new("parse", move |b| {
+      b.iter(|| acc(s.as_bytes()).unwrap());
+    })
+    .throughput(Throughput::Bytes(s.len() as u32)),
   );
 }
 
@@ -287,14 +283,17 @@ fn bench_ini_complete_key_value(c: &mut Criterion) {
 
   c.bench(
     "bench ini complete key value",
-    Benchmark::new(
-      "parse",
-      move |b| {
-        b.iter(|| key_value(s.as_bytes()).unwrap());
-      },
-    ).throughput(Throughput::Bytes(s.len() as u32)),
+    Benchmark::new("parse", move |b| {
+      b.iter(|| key_value(s.as_bytes()).unwrap());
+    })
+    .throughput(Throughput::Bytes(s.len() as u32)),
   );
 }
 
-criterion_group!(benches, bench_ini_complete, bench_ini_complete_keys_and_values, bench_ini_complete_key_value);
+criterion_group!(
+  benches,
+  bench_ini_complete,
+  bench_ini_complete_keys_and_values,
+  bench_ini_complete_key_value
+);
 criterion_main!(benches);
