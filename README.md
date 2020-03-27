@@ -269,14 +269,20 @@ Here is a (non exhaustive) list of known projects using nom:
   * [GZ](https://github.com/nharward/nom-gzip)
 - Database formats:
   * [Redis database files](https://github.com/badboy/rdb-rs)
+- Cryptographic formats:
+  * [X.509](https://github.com/rusticata/x509-parser)
 - Network protocol formats:
   * [Bencode](https://github.com/jbaum98/bencode.rs)
+  * [DHCP](https://github.com/rusticata/dhcp-parser)
   * [IMAP](https://github.com/djc/tokio-imap)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
   * [Pcap](https://github.com/ithinuel/pcap-rs)
+  * [Pcap + PcapNG](https://github.com/rusticata/pcap-parser)
+  * [IKEv2](https://github.com/rusticata/ipsec-parser)
   * [NTP](https://github.com/rusticata/ntp-parser)
   * [SNMP](https://github.com/rusticata/snmp-parser)
+  * [Kerberos v5](https://github.com/rusticata/kerberos-parser)
   * [DER](https://github.com/rusticata/der-parser)
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
