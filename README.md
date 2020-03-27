@@ -274,6 +274,8 @@ Here is a (non exhaustive) list of known projects using nom:
 - Network protocol formats:
   * [Bencode](https://github.com/jbaum98/bencode.rs)
   * [DHCP](https://github.com/rusticata/dhcp-parser)
+  * [HTTP](https://github.com/sozu-proxy/sozu/tree/master/lib/src/protocol/http)
+  * [URI](https://github.com/santifa/rrp/blob/master/src/uri.rs)
   * [IMAP](https://github.com/djc/tokio-imap)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
@@ -289,6 +291,8 @@ Here is a (non exhaustive) list of known projects using nom:
   * [GTP](https://github.com/fuerstenau/gorrosion-gtp)
 - Language specifications:
   * [BNF](https://github.com/snewt/bnf)
+- Misc formats:
+  * [Gameboy ROM](https://github.com/MarkMcCaskey/gameboy-rom-parser)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
