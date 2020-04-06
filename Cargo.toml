@@ -132,6 +132,11 @@ path = "benches/arithmetic.rs"
 harness = false
 
 [[bench]]
+name = "number"
+path = "benches/number.rs"
+harness = false
+
+[[bench]]
 name = "http"
 path = "benches/http.rs"
 harness = false
