@@ -253,9 +253,11 @@ Here is a (non exhaustive) list of known projects using nom:
   * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
+  * [Python](https://github.com/ProgVal/rust-python-parser)
   * [SQL](https://github.com/ms705/nom-sql)
   * [Elm](https://github.com/cout970/Elm-interpreter)
   * [SystemVerilog](https://github.com/dalance/sv-parser)
+  * [Turtle](https://github.com/vandenoever/rome/tree/master/src/io/turtle)
   * [CSML](https://github.com/CSML-by-Clevy/csml-interpreter)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
@@ -268,22 +270,30 @@ Here is a (non exhaustive) list of known projects using nom:
 - Document formats:
   * [TAR](https://github.com/Keruspe/tar-parser.rs)
   * [GZ](https://github.com/nharward/nom-gzip)
-- Database formats:
-  * [Redis database files](https://github.com/badboy/rdb-rs)
+- Cryptographic formats:
+  * [X.509](https://github.com/rusticata/x509-parser)
 - Network protocol formats:
   * [Bencode](https://github.com/jbaum98/bencode.rs)
+  * [DHCP](https://github.com/rusticata/dhcp-parser)
+  * [HTTP](https://github.com/sozu-proxy/sozu/tree/master/lib/src/protocol/http)
+  * [URI](https://github.com/santifa/rrp/blob/master/src/uri.rs)
   * [IMAP](https://github.com/djc/tokio-imap)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
   * [Pcap](https://github.com/ithinuel/pcap-rs)
+  * [Pcap + PcapNG](https://github.com/rusticata/pcap-parser)
+  * [IKEv2](https://github.com/rusticata/ipsec-parser)
   * [NTP](https://github.com/rusticata/ntp-parser)
   * [SNMP](https://github.com/rusticata/snmp-parser)
+  * [Kerberos v5](https://github.com/rusticata/kerberos-parser)
   * [DER](https://github.com/rusticata/der-parser)
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
   * [GTP](https://github.com/fuerstenau/gorrosion-gtp)
 - Language specifications:
   * [BNF](https://github.com/snewt/bnf)
+- Misc formats:
+  * [Gameboy ROM](https://github.com/MarkMcCaskey/gameboy-rom-parser)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
