@@ -237,7 +237,7 @@ file=payroll.dat
       move |b| {
         b.iter(|| categories(s).unwrap());
       },
-    ).throughput(Throughput::Bytes(s.len() as u32)),
+    ).throughput(Throughput::Bytes(s.len() as u64)),
   );
 }
 

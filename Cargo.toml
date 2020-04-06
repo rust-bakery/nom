@@ -50,7 +50,7 @@ version = ">= 0.6, < 0.8"
 optional = true
 
 [dev-dependencies]
-criterion = "0.2"
+criterion = "0.3"
 jemallocator = "^0.3"
 doc-comment = "0.3"
 

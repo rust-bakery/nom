@@ -259,7 +259,7 @@ file=payroll.dat
       move |b| {
         b.iter(|| categories(s.as_bytes()).unwrap());
       },
-    ).throughput(Throughput::Bytes(s.len() as u32)),
+    ).throughput(Throughput::Bytes(s.len() as u64)),
   );
 }
 
@@ -278,7 +278,7 @@ file=payroll.dat
       move |b| {
         b.iter(|| acc(s.as_bytes()).unwrap());
       },
-    ).throughput(Throughput::Bytes(s.len() as u32)),
+    ).throughput(Throughput::Bytes(s.len() as u64)),
   );
 }
 
@@ -292,7 +292,7 @@ fn bench_ini_complete_key_value(c: &mut Criterion) {
       move |b| {
         b.iter(|| key_value(s.as_bytes()).unwrap());
       },
-    ).throughput(Throughput::Bytes(s.len() as u32)),
+    ).throughput(Throughput::Bytes(s.len() as u64)),
   );
 }
 

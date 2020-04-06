@@ -190,7 +190,7 @@ Connection: keep-alive
       move |b| {
         b.iter(|| parse(data).unwrap());
       },
-    ).throughput(Throughput::Bytes(data.len() as u32)),
+    ).throughput(Throughput::Bytes(data.len() as u64)),
   );
 }
 
