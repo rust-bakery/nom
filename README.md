@@ -258,6 +258,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [Elm](https://github.com/cout970/Elm-interpreter)
   * [SystemVerilog](https://github.com/dalance/sv-parser)
   * [Turtle](https://github.com/vandenoever/rome/tree/master/src/io/turtle)
+  * [CSML](https://github.com/CSML-by-Clevy/csml-interpreter)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
