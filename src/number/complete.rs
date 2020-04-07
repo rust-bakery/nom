@@ -220,12 +220,15 @@ pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 ///   be_i8(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
+/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
-  map!(i, be_u8, |x| x as i8)
+pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u8, |x| x as i8)
 }
 
 /// Recognizes a big endian signed 2 bytes integer
@@ -240,12 +243,15 @@ pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> 
 ///   be_i16(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0003)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0003)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
-  map!(i, be_u16, |x| x as i16)
+pub fn be_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u16, |x| x as i16)
 }
 
 /// Recognizes a big endian signed 3 bytes integer
@@ -260,13 +266,16 @@ pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, 
 ///   be_i24(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x000305)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000305)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
+pub fn be_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   // Same as the unsigned version but we need to sign-extend manually here
-  map!(i, be_u24, |x| if x & 0x80_00_00 != 0 {
+  map!(input, be_u24, |x| if x & 0x80_00_00 != 0 {
     (x | 0xff_00_00_00) as i32
   } else {
     x as i32
@@ -285,12 +294,15 @@ pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
 ///   be_i32(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x00030507)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00030507)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
-  map!(i, be_u32, |x| x as i32)
+pub fn be_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u32, |x| x as i32)
 }
 
 /// Recognizes a big endian signed 8 bytes integer
@@ -305,12 +317,15 @@ pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
 ///   be_i64(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0001020304050607)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0001020304050607)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
-  map!(i, be_u64, |x| x as i64)
+pub fn be_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u64, |x| x as i64)
 }
 
 /// Recognizes a big endian signed 16 bytes integer
@@ -325,13 +340,16 @@ pub fn be_i64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E
 ///   be_i128(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128, E> {
-  map!(i, be_u128, |x| x as i128)
+pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u128, |x| x as i128)
 }
 
 /// Recognizes an unsigned 1 byte integer
@@ -346,15 +364,22 @@ pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
 ///   le_u8(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
+/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
-  if i.len() < 1 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 1;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    Ok((&i[1..], i[0]))
+    let mut res = 0u8;
+    res = input.iter_elements().next().unwrap();
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -370,16 +395,24 @@ pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E>
 ///   le_u16(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0300)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0300)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
-  if i.len() < 2 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn le_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 2;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[1] as u16) << 8) + i[0] as u16;
-    Ok((&i[2..], res))
+    let mut res = 0u16;
+    for (index, byte) in input.iter_indices().take(bound) {
+        res = res + ((byte as u16) << 8*index);
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -395,16 +428,24 @@ pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, 
 ///   le_u24(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x050300)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050300)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  if i.len() < 3 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn le_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 3;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = (i[0] as u32) + ((i[1] as u32) << 8) + ((i[2] as u32) << 16);
-    Ok((&i[3..], res))
+    let mut res = 0u32;
+    for (index, byte) in input.iter_indices().take(bound) {
+        res = res + ((byte as u32) << 8*index);
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -420,16 +461,24 @@ pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, 
 ///   le_u32(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x07050300)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07050300)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  if i.len() < 4 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn le_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 4;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[3] as u32) << 24) + ((i[2] as u32) << 16) + ((i[1] as u32) << 8) + i[0] as u32;
-    Ok((&i[4..], res))
+    let mut res = 0u32;
+    for (index, byte) in input.iter_indices().take(bound) {
+        res = res + ((byte as u32) << 8*index);
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -445,17 +494,24 @@ pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, 
 ///   le_u64(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0706050403020100)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0706050403020100)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
-  if i.len() < 8 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn le_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 8;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) + ((i[3] as u64) << 24)
-      + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
-    Ok((&i[8..], res))
+    let mut res = 0u64;
+    for (index, byte) in input.iter_indices().take(bound) {
+        res = res + ((byte as u64) << 8*index);
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -471,32 +527,25 @@ pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, 
 ///   le_u128(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
-  if i.len() < 16 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn le_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 16;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[15] as u128) << 120)
-      + ((i[14] as u128) << 112)
-      + ((i[13] as u128) << 104)
-      + ((i[12] as u128) << 96)
-      + ((i[11] as u128) << 88)
-      + ((i[10] as u128) << 80)
-      + ((i[9] as u128) << 72)
-      + ((i[8] as u128) << 64)
-      + ((i[7] as u128) << 56)
-      + ((i[6] as u128) << 48)
-      + ((i[5] as u128) << 40)
-      + ((i[4] as u128) << 32)
-      + ((i[3] as u128) << 24)
-      + ((i[2] as u128) << 16)
-      + ((i[1] as u128) << 8)
-      + i[0] as u128;
-    Ok((&i[16..], res))
+    let mut res = 0u128;
+    for (index, byte) in input.iter_indices().take(bound) {
+        res = res + ((byte as u128) << 8*index);
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -512,12 +561,15 @@ pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128
 ///   le_i8(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
+/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
-  map!(i, le_u8, |x| x as i8)
+pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u8, |x| x as i8)
 }
 
 /// Recognizes a little endian signed 2 bytes integer
@@ -532,12 +584,15 @@ pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E>
 ///   le_i16(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0300)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0300)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
-  map!(i, le_u16, |x| x as i16)
+pub fn le_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u16, |x| x as i16)
 }
 
 /// Recognizes a little endian signed 3 bytes integer
@@ -552,13 +607,16 @@ pub fn le_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, 
 ///   le_i24(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x050300)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050300)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
+pub fn le_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   // Same as the unsigned version but we need to sign-extend manually here
-  map!(i, le_u24, |x| if x & 0x80_00_00 != 0 {
+  map!(input, le_u24, |x| if x & 0x80_00_00 != 0 {
     (x | 0xff_00_00_00) as i32
   } else {
     x as i32
@@ -577,12 +635,15 @@ pub fn le_i24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, 
 ///   le_i32(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x07050300)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07050300)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
-  map!(i, le_u32, |x| x as i32)
+pub fn le_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u32, |x| x as i32)
 }
 
 /// Recognizes a little endian signed 8 bytes integer
@@ -597,12 +658,15 @@ pub fn le_i32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, 
 ///   le_i64(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0706050403020100)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0706050403020100)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
-  map!(i, le_u64, |x| x as i64)
+pub fn le_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u64, |x| x as i64)
 }
 
 /// Recognizes a little endian signed 16 bytes integer
@@ -617,13 +681,16 @@ pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, 
 ///   le_i128(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128, E> {
-  map!(i, le_u128, |x| x as i128)
+pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u128, |x| x as i128)
 }
 
 /// Recognizes a big endian 4 bytes floating point number
@@ -639,10 +706,13 @@ pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
 /// };
 ///
 /// assert_eq!(parser(&[0x41, 0x48, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(b"abc"), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f32, E> {
+pub fn be_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match be_u32(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f32::from_bits(o))),
@@ -662,10 +732,13 @@ pub fn be_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 /// };
 ///
 /// assert_eq!(parser(&[0x40, 0x29, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(b"abc"), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f64, E> {
+pub fn be_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match be_u64(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f64::from_bits(o))),
@@ -685,10 +758,13 @@ pub fn be_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 /// };
 ///
 /// assert_eq!(parser(&[0x00, 0x00, 0x48, 0x41][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(b"abc"), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f32, E> {
+pub fn le_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match le_u32(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f32::from_bits(o))),
@@ -708,10 +784,13 @@ pub fn le_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 /// };
 ///
 /// assert_eq!(parser(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x29, 0x40][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(b"abc"), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f64, E> {
+pub fn le_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match le_u64(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f64::from_bits(o))),
@@ -730,9 +809,9 @@ pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 ///   hex_u32(s)
 /// };
 ///
-/// assert_eq!(parser(b"01AE"), Ok((&b""[..], 0x01AE)));
-/// assert_eq!(parser(b"abc"), Ok((&b""[..], 0x0ABC)));
-/// assert_eq!(parser(b"ggg"), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
+/// assert_eq!(parser(&b"01AE"[..]), Ok((&b""[..], 0x01AE)));
+/// assert_eq!(parser(&b"abc"[..]), Ok((&b""[..], 0x0ABC)));
+/// assert_eq!(parser(&b"ggg"[..]), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
 /// ```
 #[inline]
 pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], u32, E> {
@@ -951,18 +1030,18 @@ mod tests {
 
   #[test]
   fn i8_tests() {
-    assert_parse!(be_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_parse!(be_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_parse!(be_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse!(be_i8(&[0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_i8(&[0x7f][..]), Ok((&b""[..], 127)));
+    assert_parse!(be_i8(&[0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(be_i8(&[0x80][..]), Ok((&b""[..], -128)));
   }
 
   #[test]
   fn i16_tests() {
-    assert_parse!(be_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_i16(&[0x7f, 0xff]), Ok((&b""[..], 32_767_i16)));
-    assert_parse!(be_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(be_i16(&[0x80, 0x00]), Ok((&b""[..], -32_768_i16)));
+    assert_parse!(be_i16(&[0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_i16(&[0x7f, 0xff][..]), Ok((&b""[..], 32_767_i16)));
+    assert_parse!(be_i16(&[0xff, 0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(be_i16(&[0x80, 0x00][..]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
@@ -974,21 +1053,21 @@ mod tests {
 
   #[test]
   fn i24_tests() {
-    assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_parse!(be_i24(&[0xFF, 0x00, 0x00]), Ok((&b""[..], -65_536_i32)));
-    assert_parse!(be_i24(&[0xED, 0xCB, 0xAA]), Ok((&b""[..], -1_193_046_i32)));
+    assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF][..]), Ok((&b""[..], -1_i32)));
+    assert_parse!(be_i24(&[0xFF, 0x00, 0x00][..]), Ok((&b""[..], -65_536_i32)));
+    assert_parse!(be_i24(&[0xED, 0xCB, 0xAA][..]), Ok((&b""[..], -1_193_046_i32)));
   }
 
   #[test]
   fn i32_tests() {
-    assert_parse!(be_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(be_i32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(
-      be_i32(&[0x7f, 0xff, 0xff, 0xff]),
+      be_i32(&[0x7f, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], 2_147_483_647_i32))
     );
-    assert_parse!(be_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse!(be_i32(&[0xff, 0xff, 0xff, 0xff][..]), Ok((&b""[..], -1)));
     assert_parse!(
-      be_i32(&[0x80, 0x00, 0x00, 0x00]),
+      be_i32(&[0x80, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], -2_147_483_648_i32))
     );
   }
@@ -996,19 +1075,19 @@ mod tests {
   #[test]
   fn i64_tests() {
     assert_parse!(
-      be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0))
     );
     assert_parse!(
-      be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], 9_223_372_036_854_775_807_i64))
     );
     assert_parse!(
-      be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], -1))
     );
     assert_parse!(
-      be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], -9_223_372_036_854_775_808_i64))
     );
   }
@@ -1017,63 +1096,63 @@ mod tests {
   #[cfg(stable_i128)]
   fn i128_tests() {
     assert_parse!(
-      be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0))
     );
     assert_parse!(
-      be_i128(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      be_i128(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
     );
     assert_parse!(
-      be_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      be_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], -1))
     );
     assert_parse!(
-      be_i128(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_i128(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
     );
   }
 
   #[test]
   fn le_i8_tests() {
-    assert_parse!(le_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_parse!(le_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_parse!(le_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse!(le_i8(&[0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(le_i8(&[0x7f][..]), Ok((&b""[..], 127)));
+    assert_parse!(le_i8(&[0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(le_i8(&[0x80][..]), Ok((&b""[..], -128)));
   }
 
   #[test]
   fn le_i16_tests() {
-    assert_parse!(le_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_i16(&[0xff, 0x7f]), Ok((&b""[..], 32_767_i16)));
-    assert_parse!(le_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(le_i16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
+    assert_parse!(le_i16(&[0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(le_i16(&[0xff, 0x7f][..]), Ok((&b""[..], 32_767_i16)));
+    assert_parse!(le_i16(&[0xff, 0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(le_i16(&[0x00, 0x80][..]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
   fn le_u24_tests() {
-    assert_parse!(le_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_u24(&[0xFF, 0xFF, 0x00]), Ok((&b""[..], 65_535_u32)));
-    assert_parse!(le_u24(&[0x56, 0x34, 0x12]), Ok((&b""[..], 1_193_046_u32)));
+    assert_parse!(le_u24(&[0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(le_u24(&[0xFF, 0xFF, 0x00][..]), Ok((&b""[..], 65_535_u32)));
+    assert_parse!(le_u24(&[0x56, 0x34, 0x12][..]), Ok((&b""[..], 1_193_046_u32)));
   }
 
   #[test]
   fn le_i24_tests() {
-    assert_parse!(le_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_parse!(le_i24(&[0x00, 0x00, 0xFF]), Ok((&b""[..], -65_536_i32)));
-    assert_parse!(le_i24(&[0xAA, 0xCB, 0xED]), Ok((&b""[..], -1_193_046_i32)));
+    assert_parse!(le_i24(&[0xFF, 0xFF, 0xFF][..]), Ok((&b""[..], -1_i32)));
+    assert_parse!(le_i24(&[0x00, 0x00, 0xFF][..]), Ok((&b""[..], -65_536_i32)));
+    assert_parse!(le_i24(&[0xAA, 0xCB, 0xED][..]), Ok((&b""[..], -1_193_046_i32)));
   }
 
   #[test]
   fn le_i32_tests() {
-    assert_parse!(le_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(le_i32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(
-      le_i32(&[0xff, 0xff, 0xff, 0x7f]),
+      le_i32(&[0xff, 0xff, 0xff, 0x7f][..]),
       Ok((&b""[..], 2_147_483_647_i32))
     );
-    assert_parse!(le_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse!(le_i32(&[0xff, 0xff, 0xff, 0xff][..]), Ok((&b""[..], -1)));
     assert_parse!(
-      le_i32(&[0x00, 0x00, 0x00, 0x80]),
+      le_i32(&[0x00, 0x00, 0x00, 0x80][..]),
       Ok((&b""[..], -2_147_483_648_i32))
     );
   }
@@ -1081,19 +1160,19 @@ mod tests {
   #[test]
   fn le_i64_tests() {
     assert_parse!(
-      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0))
     );
     assert_parse!(
-      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
+      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f][..]),
       Ok((&b""[..], 9_223_372_036_854_775_807_i64))
     );
     assert_parse!(
-      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], -1))
     );
     assert_parse!(
-      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
+      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80][..]),
       Ok((&b""[..], -9_223_372_036_854_775_808_i64))
     );
   }
@@ -1102,28 +1181,28 @@ mod tests {
   #[cfg(stable_i128)]
   fn le_i128_tests() {
     assert_parse!(
-      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0))
     );
     assert_parse!(
-      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
+      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f][..]),
       Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
     );
     assert_parse!(
-      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], -1))
     );
     assert_parse!(
-      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
+      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80][..]),
       Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
     );
   }
 
   #[test]
   fn be_f32_tests() {
-    assert_parse!(be_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
+    assert_parse!(be_f32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0_f32)));
     assert_parse!(
-      be_f32(&[0x4d, 0x31, 0x1f, 0xd8]),
+      be_f32(&[0x4d, 0x31, 0x1f, 0xd8][..]),
       Ok((&b""[..], 185_728_392_f32))
     );
   }
@@ -1131,20 +1210,20 @@ mod tests {
   #[test]
   fn be_f64_tests() {
     assert_parse!(
-      be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0_f64))
     );
     assert_parse!(
-      be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00]),
+      be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 185_728_392_f64))
     );
   }
 
   #[test]
   fn le_f32_tests() {
-    assert_parse!(le_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
+    assert_parse!(le_f32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0_f32)));
     assert_parse!(
-      le_f32(&[0xd8, 0x1f, 0x31, 0x4d]),
+      le_f32(&[0xd8, 0x1f, 0x31, 0x4d][..]),
       Ok((&b""[..], 185_728_392_f32))
     );
   }
@@ -1152,11 +1231,11 @@ mod tests {
   #[test]
   fn le_f64_tests() {
     assert_parse!(
-      le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0_f64))
     );
     assert_parse!(
-      le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41]),
+      le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41][..]),
       Ok((&b""[..], 185_728_392_f64))
     );
   }
