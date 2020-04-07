@@ -23,15 +23,22 @@ use crate::sequence::{tuple, pair};
 ///   be_u8(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(b""), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
+/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
-  if i.len() < 1 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 1;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    Ok((&i[1..], i[0]))
+    let mut res = 0u8;
+    res = input.iter_elements().next().unwrap();
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -47,16 +54,24 @@ pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> 
 ///   be_u16(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0003)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0003)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
-  if i.len() < 2 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 2;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u16) << 8) + i[1] as u16;
-    Ok((&i[2..], res))
+    let mut res = 0u16;
+    for byte in input.iter_elements().take(bound) {
+        res = (res << 8) + byte as u16;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -72,16 +87,24 @@ pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E
 ///   be_u24(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x000305)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000305)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  if i.len() < 3 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 3;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u32) << 16) + ((i[1] as u32) << 8) + (i[2] as u32);
-    Ok((&i[3..], res))
+    let mut res = 0u32;
+    for byte in input.iter_elements().take(bound) {
+        res = (res << 8) + byte as u32;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -97,16 +120,24 @@ pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 ///   be_u32(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x00030507)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00030507)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  if i.len() < 4 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 4;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
-    Ok((&i[4..], res))
+    let mut res = 0u32;
+    for byte in input.iter_elements().take(bound) {
+        res = (res << 8) + byte as u32;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -122,17 +153,24 @@ pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 ///   be_u64(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0001020304050607)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0001020304050607)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
-  if i.len() < 8 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 8;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) + ((i[4] as u64) << 24)
-      + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
-    Ok((&i[8..], res))
+    let mut res = 0u64;
+    for byte in input.iter_elements().take(bound) {
+        res = (res << 8) + byte as u64;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -148,32 +186,25 @@ pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E
 ///   be_u128(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
-/// assert_eq!(parser(b"\x01"), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
-  if i.len() < 16 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
+  where
+    I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 16;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u128) << 120)
-      + ((i[1] as u128) << 112)
-      + ((i[2] as u128) << 104)
-      + ((i[3] as u128) << 96)
-      + ((i[4] as u128) << 88)
-      + ((i[5] as u128) << 80)
-      + ((i[6] as u128) << 72)
-      + ((i[7] as u128) << 64)
-      + ((i[8] as u128) << 56)
-      + ((i[9] as u128) << 48)
-      + ((i[10] as u128) << 40)
-      + ((i[11] as u128) << 32)
-      + ((i[12] as u128) << 24)
-      + ((i[13] as u128) << 16)
-      + ((i[14] as u128) << 8)
-      + i[15] as u128;
-    Ok((&i[16..], res))
+    let mut res = 0u128;
+    for byte in input.iter_elements().take(bound) {
+        res = (res << 8) + byte as u128;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -936,9 +967,9 @@ mod tests {
 
   #[test]
   fn u24_tests() {
-    assert_parse!(be_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_u24(&[0x00, 0xFF, 0xFF]), Ok((&b""[..], 65_535_u32)));
-    assert_parse!(be_u24(&[0x12, 0x34, 0x56]), Ok((&b""[..], 1_193_046_u32)));
+    assert_parse!(be_u24(&[0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_u24(&[0x00, 0xFF, 0xFF][..]), Ok((&b""[..], 65_535_u32)));
+    assert_parse!(be_u24(&[0x12, 0x34, 0x56][..]), Ok((&b""[..], 1_193_046_u32)));
   }
 
   #[test]

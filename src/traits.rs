@@ -950,6 +950,29 @@ macro_rules! array_impls {
         }
       }
 
+      impl<'a> InputIter for &'a [u8; $N] {
+        type Item = u8;
+        type Iter = Enumerate<Self::IterElem>;
+        type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
+
+        fn iter_indices(&self) -> Self::Iter {
+          (&self).iter_indices()
+        }
+
+        fn iter_elements(&self) -> Self::IterElem {
+          (&self).iter_elements()
+        }
+
+        fn position<P>(&self, predicate: P) -> Option<usize>
+          where P: Fn(Self::Item) -> bool {
+          (&self).position(predicate)
+        }
+
+        fn slice_index(&self, count: usize) -> Option<usize> {
+          (&self).slice_index(count)
+        }
+      }
+
       impl<'a> Compare<[u8; $N]> for &'a [u8] {
         #[inline(always)]
         fn compare(&self, t: [u8; $N]) -> CompareResult {
