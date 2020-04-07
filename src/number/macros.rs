@@ -12,12 +12,12 @@
 /// named!(be<u16>, u16!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0001)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(1))));
 ///
 /// named!(le<u16>, u16!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(1))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -35,12 +35,12 @@ macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<u32>, u32!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x00010203)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(3))));
 ///
 /// named!(le<u32>, u32!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x03020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(3))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -58,12 +58,12 @@ macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<u64>, u64!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0001020304050607)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(7))));
 ///
 /// named!(le<u64>, u64!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0706050403020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(7))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -81,12 +81,12 @@ macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<u128>, u128!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x00010203040506070809101112131415)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(15))));
 ///
 /// named!(le<u128>, u128!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x15141312111009080706050403020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(15))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -105,12 +105,12 @@ macro_rules! u128 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big 
 /// named!(be<i16>, i16!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0001)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(1))));
 ///
 /// named!(le<i16>, i16!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(1))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -128,12 +128,12 @@ macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<i32>, i32!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x00010203)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(3))));
 ///
 /// named!(le<i32>, i32!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x03020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(3))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -151,12 +151,12 @@ macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<i64>, i64!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0001020304050607)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(7))));
 ///
 /// named!(le<i64>, i64!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0706050403020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(7))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -174,12 +174,12 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<i128>, i128!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x00010203040506070809101112131415)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(15))));
 ///
 /// named!(le<i128>, i128!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x15141312111009080706050403020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(15))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -199,14 +199,8 @@ mod tests {
 
     named!(be_tst32<u32>, u32!(Endianness::Big));
     named!(le_tst32<u32>, u32!(Endianness::Little));
-    assert_eq!(
-      be_tst32(&[0x12, 0x00, 0x60, 0x00]),
-      Ok((&b""[..], 302_014_464_u32))
-    );
-    assert_eq!(
-      le_tst32(&[0x12, 0x00, 0x60, 0x00]),
-      Ok((&b""[..], 6_291_474_u32))
-    );
+    assert_eq!(be_tst32(&[0x12, 0x00, 0x60, 0x00]), Ok((&b""[..], 302_014_464_u32)));
+    assert_eq!(le_tst32(&[0x12, 0x00, 0x60, 0x00]), Ok((&b""[..], 6_291_474_u32)));
 
     named!(be_tst64<u64>, u64!(Endianness::Big));
     named!(le_tst64<u64>, u64!(Endianness::Little));
@@ -226,14 +220,8 @@ mod tests {
 
     named!(be_tsti32<i32>, i32!(Endianness::Big));
     named!(le_tsti32<i32>, i32!(Endianness::Little));
-    assert_eq!(
-      be_tsti32(&[0x00, 0x12, 0x60, 0x00]),
-      Ok((&b""[..], 1_204_224_i32))
-    );
-    assert_eq!(
-      le_tsti32(&[0x00, 0x12, 0x60, 0x00]),
-      Ok((&b""[..], 6_296_064_i32))
-    );
+    assert_eq!(be_tsti32(&[0x00, 0x12, 0x60, 0x00]), Ok((&b""[..], 1_204_224_i32)));
+    assert_eq!(le_tsti32(&[0x00, 0x12, 0x60, 0x00]), Ok((&b""[..], 6_296_064_i32)));
 
     named!(be_tsti64<i64>, i64!(Endianness::Big));
     named!(le_tsti64<i64>, i64!(Endianness::Little));
