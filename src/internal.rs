@@ -73,18 +73,55 @@ impl<E> Err<E> {
     }
   }
 
+  /// Applies the given function to the inner error
+  pub fn map<E2, F>(self, f: F) -> Err<E2>
+    where F: FnOnce(E) -> E2
+  {
+    match self {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Failure(t) => Err::Failure(f(t)),
+      Err::Error(t) => Err::Error(f(t)),
+    }
+  }
+
   /// automatically converts between errors if the underlying type supports it
   pub fn convert<F>(e: Err<F>) -> Self
-    where E: From<F> {
-    match e {
+    where E: From<F>
+  {
+    e.map(Into::into)
+  }
+}
+
+impl<T> Err<(T, ErrorKind)> {
+  /// maps `Err<(T, ErrorKind)>` to `Err<(U, ErrorKind)>` with the given F: T -> U
+  pub fn map_input<U, F>(self, f: F) -> Err<(U, ErrorKind)>
+    where F: FnOnce(T) -> U {
+    match self {
       Err::Incomplete(n) => Err::Incomplete(n),
-      Err::Failure(c) => Err::Failure(c.into()),
-      Err::Error(c) => Err::Error(c.into()),
+      Err::Failure((input, k)) => Err::Failure((f(input), k)),
+      Err::Error((input, k)) => Err::Error((f(input), k)),
     }
   }
 }
 
-/*
+#[cfg(feature = "std")]
+impl Err<(&[u8], ErrorKind)> {
+  /// Obtaining ownership
+  pub fn to_owned(self) -> Err<(Vec<u8>, ErrorKind)> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
+#[cfg(feature = "std")]
+impl Err<(&str, ErrorKind)> {
+  /// automatically converts between errors if the underlying type supports it
+  pub fn to_owned(self) -> Err<(String, ErrorKind)> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
+impl<E: Eq> Eq for Err<E> {}
+
 #[cfg(feature = "std")]
 use std::fmt;
 
@@ -94,7 +131,12 @@ where
   E: fmt::Debug,
 {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{:?}", self)
+    match self {
+      Err::Incomplete(Needed::Size(u)) => write!(f, "Parsing requires {} bytes/chars", u),
+      Err::Incomplete(Needed::Unknown) => write!(f, "Parsing requires more data"),
+      Err::Failure(c) => write!(f, "Parsing Failure: {:?}", c),
+      Err::Error(c) => write!(f, "Parsing Error: {:?}", c),
+    }
   }
 }
 
@@ -104,21 +146,12 @@ use std::error::Error;
 #[cfg(feature = "std")]
 impl<E> Error for Err<E>
 where
-  I: fmt::Debug,
   E: fmt::Debug,
 {
-  fn description(&self) -> &str {
-    match self {
-      &Err::Incomplete(..) => "there was not enough data",
-      &Err::Error(Context::Code(_, ref error_kind)) | &Err::Failure(Context::Code(_, ref error_kind)) => error_kind.description(),
-    }
-  }
-
-  fn cause(&self) -> Option<&Error> {
-    None
+  fn source(&self) -> Option<&(dyn Error + 'static)> {
+    None // no underlying error
   }
 }
-*/
 
 #[cfg(test)]
 mod tests {
@@ -141,6 +174,12 @@ mod tests {
     assert_size!(Needed, 16);
     assert_size!(Err<u32>, 24);
     assert_size!(ErrorKind, 1);
+  }
+
+  #[test]
+  fn err_map_test() {
+    let e = Err::Error(1);
+    assert_eq!(e.map(|v| v + 1), Err::Error(2));
   }
 
 }

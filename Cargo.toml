@@ -1,7 +1,7 @@
 [package]
 
 name = "nom"
-version = "5.0.1"
+version = "5.1.1"
 authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
@@ -46,16 +46,16 @@ version = "^2.0"
 default-features = false
 
 [dependencies.lexical-core]
-version = "^0.4.0"
+version = ">= 0.6, < 0.8"
 optional = true
 
 [dev-dependencies]
-criterion = "0.2"
-jemallocator = "^0.1"
+criterion = "0.3"
+jemallocator = "^0.3"
 doc-comment = "0.3"
 
 [build-dependencies]
-version_check = "^0.1"
+version_check = "0.9"
 
 [package.metadata.docs.rs]
 features = [ "alloc", "std", "regexp", "regexp_macros", "lexical"]
@@ -132,6 +132,11 @@ path = "benches/arithmetic.rs"
 harness = false
 
 [[bench]]
+name = "number"
+path = "benches/number.rs"
+harness = false
+
+[[bench]]
 name = "http"
 path = "benches/http.rs"
 harness = false
@@ -168,6 +173,11 @@ path = "examples/json.rs"
 name = "s_expression"
 path = "examples/s_expression.rs"
 required-features = ["alloc"]
+
+[[example]]
+name = "string"
+required-features = ["alloc"]
+path = "examples/string.rs"
 
 [badges]
 travis-ci = { repository = "Geal/nom" }

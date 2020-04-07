@@ -367,7 +367,7 @@ where
               i = i2;
             }
           }
-        }  
+        }
       }
     }
   }
@@ -893,11 +893,10 @@ where
   fold_many_m_n(m, n, f, init, g)(i)
 }
 
-/// Gets a number from the first parser,
-/// takes a subslice of the input of that size,
-/// then applies the second parser on that subslice.
-/// If the second parser returns Incomplete,
-/// length_value will return an error.
+/// Gets a number from the parser and returns a
+/// subslice of the input of that size.
+/// If the parser returns Incomplete,
+/// length_data will return an error.
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust

@@ -256,7 +256,7 @@ macro_rules! take_while1 (
 /// # #[macro_use] extern crate nom;
 /// # use nom::character::is_alphanumeric;
 /// # fn main() {
-///  named!( alpha, take_while!( is_alphanumeric ) );
+///  named!( alpha, take_while_m_n!(3, 6, is_alphanumeric ) );
 ///
 ///  let r = alpha(&b"abcd\nefgh"[..]);
 ///  assert_eq!(r, Ok((&b"\nefgh"[..], &b"abcd"[..])));
@@ -861,6 +861,12 @@ mod tests {
     named!(parser<&str, &str>, take_while_m_n!(1, 1, |c| c == 'A' || c == '😃'));
     assert_eq!(parser("A!"), Ok(("!", "A")));
     assert_eq!(parser("😃!"), Ok(("!", "😃")));
+  }
+
+  #[test]
+  fn take_while_m_n_utf8_full_match() {
+    named!(parser<&str, &str>, take_while_m_n!(1, 1, |c: char| c.is_alphabetic()));
+    assert_eq!(parser("øn"), Ok(("n", "ø")));
   }
 
   #[cfg(nightly)]

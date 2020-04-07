@@ -837,18 +837,15 @@ pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
 {
-  let res = ::lexical_core::try_atof32_slice(input.as_bytes());
-
-  match res.error.code {
-    ::lexical_core::ErrorCode::Success => Err(Err::Incomplete(Needed::Unknown)),
-    ::lexical_core::ErrorCode::InvalidDigit => {
-      if res.error.index == 0 {
-        Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+  match ::lexical_core::parse_partial(input.as_bytes()) {
+    Ok((value, processed)) => {
+      if processed == input.input_len() {
+        Err(Err::Incomplete(Needed::Unknown))
       } else {
-        Ok((input.slice(res.error.index..), res.value))
+        Ok((input.slice(processed..), value))
       }
-    }
-    _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
+    },
+    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
   }
 }
 
@@ -913,18 +910,15 @@ pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
 {
-  let res = ::lexical_core::try_atof64_slice(input.as_bytes());
-
-  match res.error.code {
-    ::lexical_core::ErrorCode::Success => Err(Err::Incomplete(Needed::Unknown)),
-    ::lexical_core::ErrorCode::InvalidDigit => {
-      if res.error.index == 0 {
-        Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+  match ::lexical_core::parse_partial(input.as_bytes()) {
+    Ok((value, processed)) => {
+      if processed == input.input_len() {
+        Err(Err::Incomplete(Needed::Unknown))
       } else {
-        Ok((input.slice(res.error.index..), res.value))
+        Ok((input.slice(processed..), value))
       }
-    }
-    _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
+    },
+    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
   }
 }
 

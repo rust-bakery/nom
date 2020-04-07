@@ -21,7 +21,6 @@ use crate::lib::std::vec::Vec;
 pub trait InputLength {
   /// calculates the input length, as indicated by its name,
   /// and the name of the trait itself
-  #[inline]
   fn input_len(&self) -> usize;
 }
 
@@ -154,31 +153,24 @@ as_bytes_array_impls! {
 /// transforms common types to a char for basic token parsing
 pub trait AsChar {
   /// makes a char from self
-  #[inline]
   fn as_char(self) -> char;
 
   /// tests that self is an alphabetic character
   ///
   /// warning: for `&str` it recognizes alphabetic
   /// characters outside of the 52 ASCII letters
-  #[inline]
   fn is_alpha(self) -> bool;
 
   /// tests that self is an alphabetic character
   /// or a decimal digit
-  #[inline]
   fn is_alphanum(self) -> bool;
   /// tests that self is a decimal digit
-  #[inline]
   fn is_dec_digit(self) -> bool;
   /// tests that self is an hex digit
-  #[inline]
   fn is_hex_digit(self) -> bool;
   /// tests that self is an octal digit
-  #[inline]
   fn is_oct_digit(self) -> bool;
   /// gets the len in bytes for self
-  #[inline]
   fn len(self) -> usize;
 }
 
@@ -898,7 +890,6 @@ impl<'a, R: FromStr> ParseTo<R> for &'a str {
 /// `Index`, but can actually return
 /// something else than a `&[T]` or `&str`
 pub trait Slice<R> {
-  #[inline(always)]
   /// slices self according to the range argument
   fn slice(&self, range: R) -> Self;
 }
@@ -956,6 +947,29 @@ macro_rules! array_impls {
         #[inline]
         fn input_len(&self) -> usize {
           self.len()
+        }
+      }
+
+      impl<'a> InputIter for &'a [u8; $N] {
+        type Item = u8;
+        type Iter = Enumerate<Self::IterElem>;
+        type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
+
+        fn iter_indices(&self) -> Self::Iter {
+          (&self).iter_indices()
+        }
+
+        fn iter_elements(&self) -> Self::IterElem {
+          (&self).iter_elements()
+        }
+
+        fn position<P>(&self, predicate: P) -> Option<usize>
+          where P: Fn(Self::Item) -> bool {
+          (&self).position(predicate)
+        }
+
+        fn slice_index(&self, count: usize) -> Option<usize> {
+          (&self).slice_index(count)
         }
       }
 
@@ -1018,10 +1032,8 @@ pub trait ExtendInto {
   type Extender: Extend<Self::Item>;
 
   /// create a new `Extend` of the correct type
-  #[inline]
   fn new_builder(&self) -> Self::Extender;
   /// accumulate the input into an accumulator
-  #[inline]
   fn extend_into(&self, acc: &mut Self::Extender);
 }
 
@@ -1113,18 +1125,21 @@ pub trait ToUsize {
 }
 
 impl ToUsize for u8 {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self as usize
   }
 }
 
 impl ToUsize for u16 {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self as usize
   }
 }
 
 impl ToUsize for usize {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self
   }
@@ -1132,6 +1147,7 @@ impl ToUsize for usize {
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl ToUsize for u32 {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self as usize
   }
@@ -1139,6 +1155,7 @@ impl ToUsize for u32 {
 
 #[cfg(target_pointer_width = "64")]
 impl ToUsize for u64 {
+  #[inline]
   fn to_usize(&self) -> usize {
     *self as usize
   }
