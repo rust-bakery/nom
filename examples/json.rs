@@ -11,7 +11,7 @@ use nom::{
   bytes::complete::{escaped, tag, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
   combinator::{cut, map, opt, value},
-  error::{context, convert_error, ErrorKind, ParseError, VerboseError},
+  error::{context, convert_error, ErrorKind, ParseError, VerboseError, ContextError},
   multi::separated_list,
   number::complete::double,
   sequence::{delimited, preceded, separated_pair, terminated},
@@ -94,7 +94,7 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool,
 /// parsing the string
 /// - `context` lets you add a static string to provide more information in the
 /// error chain (to indicate which parser had an error)
-fn string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
   context("string", preceded(char('\"'), cut(terminated(parse_str, char('\"')))))(i)
 }
 
@@ -102,7 +102,7 @@ fn string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E
 /// accumulating results in a `Vec`, until it encounters an error.
 /// If you want more control on the parser application, check out the `iterator`
 /// combinator (cf `examples/iterator.rs`)
-fn array<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonValue>, E> {
+fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonValue>, E> {
   context(
     "array",
     preceded(
@@ -115,11 +115,11 @@ fn array<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonVal
   )(i)
 }
 
-fn key_value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (&'a str, JsonValue), E> {
+fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, (&'a str, JsonValue), E> {
   separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), json_value)(i)
 }
 
-fn hash<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
+fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
   context(
     "map",
     preceded(
@@ -135,7 +135,7 @@ fn hash<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<Stri
 }
 
 /// here, we apply the space parser before trying to parse a value
-fn json_value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
+fn json_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
   preceded(
     sp,
     alt((
@@ -149,7 +149,7 @@ fn json_value<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonVa
 }
 
 /// the root element of a JSON parser is either an object or an array
-fn root<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
+fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
   delimited(sp, alt((map(hash, JsonValue::Object), map(array, JsonValue::Array))), opt(sp))(i)
 }
 

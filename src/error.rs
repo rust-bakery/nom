@@ -29,7 +29,11 @@ pub trait ParseError<I>: Sized {
   fn or(self, other: Self) -> Self {
     other
   }
+}
 
+/// this trait is required by the `context` combinator to add a static string
+/// to an existing error
+pub trait ContextError<I>: Sized {
   /// create a new error from an input position, a static string and an existing error.
   /// This is used mainly in the [context] combinator, to add user friendly information
   /// to errors when backtracking through a parse tree
@@ -48,11 +52,15 @@ impl<I> ParseError<I> for (I, ErrorKind) {
   }
 }
 
+impl<I> ContextError<I> for (I, ErrorKind) {}
+
 impl<I> ParseError<I> for () {
   fn from_error_kind(_: I, _: ErrorKind) -> Self {}
 
   fn append(_: I, _: ErrorKind, _: Self) -> Self {}
 }
+
+impl<I> ContextError<I> for () {}
 
 /// creates an error from the input position and an [ErrorKind]
 pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
@@ -107,7 +115,10 @@ impl<I> ParseError<I> for VerboseError<I> {
       errors: vec![(input, VerboseErrorKind::Char(c))],
     }
   }
+}
 
+#[cfg(feature = "alloc")]
+impl<I> ContextError<I> for VerboseError<I> {
   fn add_context(input: I, ctx: &'static str, mut other: Self) -> Self {
     other.errors.push((input, VerboseErrorKind::Context(ctx)));
     other
@@ -119,7 +130,7 @@ use crate::internal::{Err, IResult};
 /// create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
 /// to errors when backtracking through a parse tree
-pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn context<I: Clone, E: ContextError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
