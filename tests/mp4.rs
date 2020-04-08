@@ -18,7 +18,7 @@ fn mp4_box(input: &[u8]) -> IResult<&[u8], &[u8]> {
       if i.len() >= sz - 4 {
         Ok((&i[(sz - 4)..], &i[0..(sz - 4)]))
       } else {
-        Err(Err::Incomplete(Needed::Size(offset as usize + 4)))
+        Err(Err::Incomplete(Needed::new(offset as usize + 4)))
       }
     }
     Err(e) => Err(e),
@@ -255,7 +255,7 @@ named!(filetype_parser<&[u8], FileType>,
 
 fn mvhd_box(input: &[u8]) -> IResult<&[u8], MvhdBox> {
   let res = if input.len() < 100 {
-    Err(Err::Incomplete(Needed::Size(100)))
+    Err(Err::Incomplete(Needed::new(100)))
   } else if input.len() == 100 {
     mvhd32(input)
   } else if input.len() == 112 {

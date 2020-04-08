@@ -2,6 +2,7 @@
 
 use self::Needed::*;
 use crate::error::ErrorKind;
+use core::num::NonZeroUsize;
 
 /// Holds the result of parsing functions
 ///
@@ -18,10 +19,18 @@ pub enum Needed {
   /// needs more data, but we do not know how much
   Unknown,
   /// contains the required data size
-  Size(usize),
+  Size(NonZeroUsize),
 }
 
 impl Needed {
+  /// creates Needed instance, returns `Needed::Unknown` if the argument is zero
+  pub fn new(s: usize) -> Self {
+    match NonZeroUsize::new(s) {
+      Some(sz) => Needed::Size(sz),
+      None => Needed::Unknown,
+    }
+  }
+
   /// indicates if we know how many bytes we need
   pub fn is_known(&self) -> bool {
     *self != Unknown
@@ -29,10 +38,10 @@ impl Needed {
 
   /// Maps a `Needed` to `Needed` by applying a function to a contained `Size` value.
   #[inline]
-  pub fn map<F: Fn(usize) -> usize>(self, f: F) -> Needed {
+  pub fn map<F: Fn(NonZeroUsize) -> usize>(self, f: F) -> Needed {
     match self {
       Unknown => Unknown,
-      Size(n) => Size(f(n)),
+      Size(n) => Needed::new(f(n)),
     }
   }
 }
@@ -171,8 +180,8 @@ mod tests {
   fn size_test() {
     assert_size!(IResult<&[u8], &[u8], (&[u8], u32)>, 40);
     assert_size!(IResult<&str, &str, u32>, 40);
-    assert_size!(Needed, 16);
-    assert_size!(Err<u32>, 24);
+    assert_size!(Needed, 8);
+    assert_size!(Err<u32>, 16);
     assert_size!(ErrorKind, 1);
   }
 

@@ -935,11 +935,11 @@ mod tests {
     );
     assert_eq!(
       do_parser(&b"abcd  ab"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
+      Err(Err::Incomplete(Needed::new(4)))
     );
     assert_eq!(
       do_parser(&b" abcd\tefgh\tef"[..]),
-      Err(Err::Incomplete(Needed::Size(4)))
+      Err(Err::Incomplete(Needed::new(4)))
     );
   }
 
@@ -972,7 +972,7 @@ mod tests {
     );
 
     let e = &b" efg \tabc"[..];
-    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[cfg(feature = "alloc")]

@@ -22,7 +22,7 @@ use crate::error::ErrorKind;
 /// # fn main() {
 /// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b"abc"[..]), Ok((&b"bc"[..], 'a')));
 /// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b"bc"[..]), Err(Err::Error((&b"bc"[..], ErrorKind::Char))));
-/// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b""[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
@@ -34,7 +34,7 @@ where
     let b = t.as_char() == c;
     (&c, b)
   }) {
-    None => Err(Err::Incomplete(Needed::Size(1))),
+    None => Err(Err::Incomplete(Needed::new(1))),
     Some((_, false)) => {
       Err(Err::Error(Error::from_char(i, c)))
     }
@@ -54,7 +54,7 @@ where
 /// # fn main() {
 /// assert_eq!(one_of::<_, _, (_, ErrorKind)>("abc")("b"), Ok(("", 'b')));
 /// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
-/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
@@ -64,7 +64,7 @@ where
   T: FindToken<<I as InputIter>::Item>,
 {
   move |i: I| match (i).iter_elements().next().map(|c| (c, list.find_token(c))) {
-    None => Err(Err::Incomplete(Needed::Size(1))),
+    None => Err(Err::Incomplete(Needed::new(1))),
     Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::OneOf))),
     Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
   }
@@ -82,7 +82,7 @@ where
 /// # fn main() {
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
@@ -92,7 +92,7 @@ where
   T: FindToken<<I as InputIter>::Item>,
 {
   move |i: I| match (i).iter_elements().next().map(|c| (c, !list.find_token(c))) {
-    None => Err(Err::Incomplete(Needed::Size(1))),
+    None => Err(Err::Incomplete(Needed::new(1))),
     Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::NoneOf))),
     Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
   }
@@ -110,7 +110,7 @@ where
 /// # fn main() {
 /// assert_eq!(crlf::<_, (_, ErrorKind)>("\r\nc"), Ok(("c", "\r\n")));
 /// assert_eq!(crlf::<_, (_, ErrorKind)>("ab\r\nc"), Err(Err::Error(("ab\r\nc", ErrorKind::CrLf))));
-/// assert_eq!(crlf::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(crlf::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(2))));
 /// # }
 /// ```
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -122,7 +122,7 @@ where
   match input.compare("\r\n") {
     //FIXME: is this the right index?
     CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-    CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(2))),
+    CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(2))),
     CompareResult::Error => {
       let e: ErrorKind = ErrorKind::CrLf;
       Err(Err::Error(E::from_error_kind(input, e)))
@@ -194,7 +194,7 @@ where
 /// # fn main() {
 /// assert_eq!(line_ending::<_, (_, ErrorKind)>("\r\nc"), Ok(("c", "\r\n")));
 /// assert_eq!(line_ending::<_, (_, ErrorKind)>("ab\r\nc"), Err(Err::Error(("ab\r\nc", ErrorKind::CrLf))));
-/// assert_eq!(line_ending::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(line_ending::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -205,12 +205,12 @@ where
 {
   match input.compare("\n") {
     CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
-    CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(1))),
+    CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(1))),
     CompareResult::Error => {
       match input.compare("\r\n") {
         //FIXME: is this the right index?
         CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-        CompareResult::Incomplete => Err(Err::Incomplete(Needed::Size(2))),
+        CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(2))),
         CompareResult::Error => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
       }
     }
@@ -229,7 +229,7 @@ where
 /// # fn main() {
 /// assert_eq!(newline::<_, (_, ErrorKind)>("\nc"), Ok(("c", '\n')));
 /// assert_eq!(newline::<_, (_, ErrorKind)>("\r\nc"), Err(Err::Error(("\r\nc", ErrorKind::Char))));
-/// assert_eq!(newline::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(newline::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
@@ -252,7 +252,7 @@ where
 /// # fn main() {
 /// assert_eq!(tab::<_, (_, ErrorKind)>("\tc"), Ok(("c", '\t')));
 /// assert_eq!(tab::<_, (_, ErrorKind)>("\r\nc"), Err(Err::Error(("\r\nc", ErrorKind::Char))));
-/// assert_eq!(tab::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(tab::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
@@ -274,7 +274,7 @@ where
 /// # use nom::{character::streaming::anychar, Err, error::ErrorKind, IResult, Needed};
 /// # fn main() {
 /// assert_eq!(anychar::<_, (_, ErrorKind)>("abc"), Ok(("bc",'a')));
-/// assert_eq!(anychar::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(anychar::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
@@ -284,7 +284,7 @@ where
 {
   let mut it = input.iter_indices();
   match it.next() {
-    None => Err(Err::Incomplete(Needed::Size(1))),
+    None => Err(Err::Incomplete(Needed::new(1))),
     Some((_, c)) => match it.next() {
       None => Ok((input.slice(input.input_len()..), c.as_char())),
       Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
@@ -305,7 +305,7 @@ where
 /// # fn main() {
 /// assert_eq!(alpha0::<_, (_, ErrorKind)>("ab1c"), Ok(("1c", "ab")));
 /// assert_eq!(alpha0::<_, (_, ErrorKind)>("1c"), Ok(("1c", "")));
-/// assert_eq!(alpha0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(alpha0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn alpha0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -329,7 +329,7 @@ where
 /// # fn main() {
 /// assert_eq!(alpha1::<_, (_, ErrorKind)>("aB1c"), Ok(("1c", "aB")));
 /// assert_eq!(alpha1::<_, (_, ErrorKind)>("1c"), Err(Err::Error(("1c", ErrorKind::Alpha))));
-/// assert_eq!(alpha1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(alpha1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn alpha1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -353,7 +353,7 @@ where
 /// # fn main() {
 /// assert_eq!(digit0::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
 /// assert_eq!(digit0::<_, (_, ErrorKind)>("a21c"), Ok(("a21c", "")));
-/// assert_eq!(digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -377,7 +377,7 @@ where
 /// # fn main() {
 /// assert_eq!(digit1::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
 /// assert_eq!(digit1::<_, (_, ErrorKind)>("c1"), Err(Err::Error(("c1", ErrorKind::Digit))));
-/// assert_eq!(digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -401,7 +401,7 @@ where
 /// # fn main() {
 /// assert_eq!(hex_digit0::<_, (_, ErrorKind)>("21cZ"), Ok(("Z", "21c")));
 /// assert_eq!(hex_digit0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
-/// assert_eq!(hex_digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(hex_digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn hex_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -425,7 +425,7 @@ where
 /// # fn main() {
 /// assert_eq!(hex_digit1::<_, (_, ErrorKind)>("21cZ"), Ok(("Z", "21c")));
 /// assert_eq!(hex_digit1::<_, (_, ErrorKind)>("H2"), Err(Err::Error(("H2", ErrorKind::HexDigit))));
-/// assert_eq!(hex_digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(hex_digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn hex_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -449,7 +449,7 @@ where
 /// # fn main() {
 /// assert_eq!(oct_digit0::<_, (_, ErrorKind)>("21cZ"), Ok(("cZ", "21")));
 /// assert_eq!(oct_digit0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
-/// assert_eq!(oct_digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(oct_digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn oct_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -473,7 +473,7 @@ where
 /// # fn main() {
 /// assert_eq!(oct_digit1::<_, (_, ErrorKind)>("21cZ"), Ok(("cZ", "21")));
 /// assert_eq!(oct_digit1::<_, (_, ErrorKind)>("H2"), Err(Err::Error(("H2", ErrorKind::OctDigit))));
-/// assert_eq!(oct_digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(oct_digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn oct_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -497,7 +497,7 @@ where
 /// # fn main() {
 /// assert_eq!(alphanumeric0::<_, (_, ErrorKind)>("21cZ%1"), Ok(("%1", "21cZ")));
 /// assert_eq!(alphanumeric0::<_, (_, ErrorKind)>("&Z21c"), Ok(("&Z21c", "")));
-/// assert_eq!(alphanumeric0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(alphanumeric0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn alphanumeric0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -521,7 +521,7 @@ where
 /// # fn main() {
 /// assert_eq!(alphanumeric1::<_, (_, ErrorKind)>("21cZ%1"), Ok(("%1", "21cZ")));
 /// assert_eq!(alphanumeric1::<_, (_, ErrorKind)>("&H2"), Err(Err::Error(("&H2", ErrorKind::AlphaNumeric))));
-/// assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn alphanumeric1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -545,7 +545,7 @@ where
 /// # fn main() {
 /// assert_eq!(space0::<_, (_, ErrorKind)>(" \t21c"), Ok(("21c", " \t")));
 /// assert_eq!(space0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
-/// assert_eq!(space0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(space0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn space0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -571,7 +571,7 @@ where
 /// # fn main() {
 /// assert_eq!(space1::<_, (_, ErrorKind)>(" \t21c"), Ok(("21c", " \t")));
 /// assert_eq!(space1::<_, (_, ErrorKind)>("H2"), Err(Err::Error(("H2", ErrorKind::Space))));
-/// assert_eq!(space1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(space1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn space1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -601,7 +601,7 @@ where
 /// # fn main() {
 /// assert_eq!(multispace0::<_, (_, ErrorKind)>(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
 /// assert_eq!(multispace0::<_, (_, ErrorKind)>("Z21c"), Ok(("Z21c", "")));
-/// assert_eq!(multispace0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(multispace0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn multispace0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -628,7 +628,7 @@ where
 /// # fn main() {
 /// assert_eq!(multispace1::<_, (_, ErrorKind)>(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
 /// assert_eq!(multispace1::<_, (_, ErrorKind)>("H2"), Err(Err::Error(("H2", ErrorKind::MultiSpace))));
-/// assert_eq!(multispace1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(multispace1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn multispace1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -672,8 +672,8 @@ mod tests {
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
     let f: &[u8] = b" ;";
-    //assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_parse!(alpha1(a), Err(Err::Incomplete(Needed::Size(1))));
+    //assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::new(1))));
+    assert_parse!(alpha1(a), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       alpha1(b),
       Err(Err::Error((b, ErrorKind::Alpha)))
@@ -684,7 +684,7 @@ mod tests {
       digit1(a),
       Err(Err::Error((a, ErrorKind::Digit)))
     );
-    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       digit1(c),
       Err(Err::Error((c, ErrorKind::Digit)))
@@ -693,9 +693,9 @@ mod tests {
       digit1(d),
       Err(Err::Error((d, ErrorKind::Digit)))
     );
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12".as_bytes(), &b"a"[..])));
     assert_eq!(
       hex_digit1(e),
@@ -705,7 +705,7 @@ mod tests {
       oct_digit1(a),
       Err(Err::Error((a, ErrorKind::OctDigit)))
     );
-    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       oct_digit1(c),
       Err(Err::Error((c, ErrorKind::OctDigit)))
@@ -714,11 +714,11 @@ mod tests {
       oct_digit1(d),
       Err(Err::Error((d, ErrorKind::OctDigit)))
     );
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::new(1))));
     //assert_eq!(fix_error!(b,(), alphanumeric1), Ok((empty, b)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
-    assert_eq!(space1::<_, (_, ErrorKind)>(e), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(space1::<_, (_, ErrorKind)>(e), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(space1::<_, (_, ErrorKind)>(f), Ok((&b";"[..], &b" "[..])));
   }
 
@@ -730,7 +730,7 @@ mod tests {
     let c = "a123";
     let d = "azé12";
     let e = " ";
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       alpha1(b),
       Err(Err::Error((b, ErrorKind::Alpha)))
@@ -741,7 +741,7 @@ mod tests {
       digit1(a),
       Err(Err::Error((a, ErrorKind::Digit)))
     );
-    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       digit1(c),
       Err(Err::Error((c, ErrorKind::Digit)))
@@ -750,9 +750,9 @@ mod tests {
       digit1(d),
       Err(Err::Error((d, ErrorKind::Digit)))
     );
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
     assert_eq!(
       hex_digit1(e),
@@ -762,7 +762,7 @@ mod tests {
       oct_digit1(a),
       Err(Err::Error((a, ErrorKind::OctDigit)))
     );
-    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       oct_digit1(c),
       Err(Err::Error((c, ErrorKind::OctDigit)))
@@ -771,11 +771,11 @@ mod tests {
       oct_digit1(d),
       Err(Err::Error((d, ErrorKind::OctDigit)))
     );
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::new(1))));
     //assert_eq!(fix_error!(b,(), alphanumeric1), Ok((empty, b)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok(("é12", "az")));
-    assert_eq!(space1::<_, (_, ErrorKind)>(e), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(space1::<_, (_, ErrorKind)>(e), Err(Err::Incomplete(Needed::new(1))));
   }
 
   use crate::traits::Offset;
@@ -975,14 +975,14 @@ mod tests {
   #[test]
   fn cr_lf() {
     assert_parse!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(crlf(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(crlf(&b"\r"[..]), Err(Err::Incomplete(Needed::new(2))));
     assert_parse!(
       crlf(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
     );
 
     assert_parse!(crlf("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(crlf("\r"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(crlf("\r"), Err(Err::Incomplete(Needed::new(2))));
     assert_parse!(
       crlf("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
@@ -993,7 +993,7 @@ mod tests {
   fn end_of_line() {
     assert_parse!(line_ending(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
     assert_parse!(line_ending(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(line_ending(&b"\r"[..]), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(line_ending(&b"\r"[..]), Err(Err::Incomplete(Needed::new(2))));
     assert_parse!(
       line_ending(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
@@ -1001,7 +1001,7 @@ mod tests {
 
     assert_parse!(line_ending("\na"), Ok(("a", "\n")));
     assert_parse!(line_ending("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(line_ending("\r"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_parse!(line_ending("\r"), Err(Err::Incomplete(Needed::new(2))));
     assert_parse!(
       line_ending("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))

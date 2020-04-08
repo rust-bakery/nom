@@ -15,7 +15,6 @@ use crate::traits::{Offset, Slice};
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_u8;
 ///
 /// let parser = |s| {
@@ -23,7 +22,7 @@ use crate::traits::{Offset, Slice};
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"\x01abcd"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
 pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
@@ -32,7 +31,7 @@ where
 {
   let bound: usize = 1;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(1)))
+    Err(Err::Incomplete(Needed::new(1)))
   } else {
     let res = input.iter_elements().next().unwrap();
 
@@ -46,7 +45,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_u16;
 ///
 /// let parser = |s| {
@@ -54,7 +52,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"abcd"[..], 0x0001)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
 pub fn be_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
@@ -63,7 +61,7 @@ where
 {
   let bound: usize = 2;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u16;
     for byte in input.iter_elements().take(bound) {
@@ -80,7 +78,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_u24;
 ///
 /// let parser = |s| {
@@ -88,7 +85,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02abcd"[..]), Ok((&b"abcd"[..], 0x000102)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 #[inline]
 pub fn be_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
@@ -97,7 +94,7 @@ where
 {
   let bound: usize = 3;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u32;
     for byte in input.iter_elements().take(bound) {
@@ -114,7 +111,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_u32;
 ///
 /// let parser = |s| {
@@ -122,7 +118,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03abcd"[..]), Ok((&b"abcd"[..], 0x00010203)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
 pub fn be_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
@@ -131,7 +127,7 @@ where
 {
   let bound: usize = 4;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u32;
     for byte in input.iter_elements().take(bound) {
@@ -148,7 +144,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_u64;
 ///
 /// let parser = |s| {
@@ -156,7 +151,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"[..]), Ok((&b"abcd"[..], 0x0001020304050607)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(7))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
 pub fn be_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
@@ -165,7 +160,7 @@ where
 {
   let bound: usize = 8;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u64;
     for byte in input.iter_elements().take(bound) {
@@ -181,7 +176,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_u128;
 ///
 /// let parser = |s| {
@@ -189,7 +183,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"[..]), Ok((&b"abcd"[..], 0x00010203040506070809101112131415)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(15))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
@@ -199,7 +193,7 @@ where
 {
   let bound: usize = 16;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u128;
     for byte in input.iter_elements().take(bound) {
@@ -215,13 +209,12 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_i8;
 ///
 /// let parser = be_i8::<_, (_, ErrorKind)>;
 ///
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"\x01abcd"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
 pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
@@ -236,13 +229,12 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_i16;
 ///
 /// let parser = be_i16::<_, (_, ErrorKind)>;
 ///
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"abcd"[..], 0x0001)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 #[inline]
 pub fn be_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
@@ -257,13 +249,12 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_i24;
 ///
 /// let parser = be_i24::<_, (_, ErrorKind)>;
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02abcd"[..]), Ok((&b"abcd"[..], 0x000102)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
 pub fn be_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
@@ -283,13 +274,12 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_i32;
 ///
 /// let parser = be_i32::<_, (_, ErrorKind)>;
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03abcd"[..]), Ok((&b"abcd"[..], 0x00010203)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
 /// ```
 #[inline]
 pub fn be_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
@@ -305,13 +295,12 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_i64;
 ///
 /// let parser = be_i64::<_, (_, ErrorKind)>;
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"[..]), Ok((&b"abcd"[..], 0x0001020304050607)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(7))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
 pub fn be_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
@@ -326,13 +315,12 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_i128;
 ///
 /// let parser = be_i128::<_, (_, ErrorKind)>;
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"[..]), Ok((&b"abcd"[..], 0x00010203040506070809101112131415)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(15))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
@@ -348,13 +336,12 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_u8;
 ///
 /// let parser = le_u8::<_, (_, ErrorKind)>;
 ///
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"\x01abcd"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
 pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
@@ -363,7 +350,7 @@ where
 {
   let bound: usize = 1;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(1)))
+    Err(Err::Incomplete(Needed::new(1)))
   } else {
     let res = input.iter_elements().next().unwrap();
 
@@ -377,7 +364,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_u16;
 ///
 /// let parser = |s| {
@@ -385,7 +371,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"abcd"[..], 0x0100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
 pub fn le_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
@@ -394,7 +380,7 @@ where
 {
   let bound: usize = 2;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u16;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -411,7 +397,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_u24;
 ///
 /// let parser = |s| {
@@ -419,7 +404,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02abcd"[..]), Ok((&b"abcd"[..], 0x020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 #[inline]
 pub fn le_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
@@ -428,7 +413,7 @@ where
 {
   let bound: usize = 3;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u32;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -445,7 +430,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_u32;
 ///
 /// let parser = |s| {
@@ -453,7 +437,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03abcd"[..]), Ok((&b"abcd"[..], 0x03020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
 pub fn le_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
@@ -462,7 +446,7 @@ where
 {
   let bound: usize = 4;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u32;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -479,7 +463,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_u64;
 ///
 /// let parser = |s| {
@@ -487,7 +470,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"[..]), Ok((&b"abcd"[..], 0x0706050403020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(7))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
 pub fn le_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
@@ -496,7 +479,7 @@ where
 {
   let bound: usize = 8;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u64;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -513,7 +496,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_u128;
 ///
 /// let parser = |s| {
@@ -521,7 +503,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"[..]), Ok((&b"abcd"[..], 0x15141312111009080706050403020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(15))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
@@ -531,7 +513,7 @@ where
 {
   let bound: usize = 16;
   if input.input_len() < bound {
-    Err(Err::Incomplete(Needed::Size(bound - input.input_len())))
+    Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = 0u128;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -547,13 +529,12 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_i8;
 ///
 /// let parser = le_i8::<_, (_, ErrorKind)>;
 ///
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"\x01abcd"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
 pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
@@ -569,7 +550,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_i16;
 ///
 /// let parser = |s| {
@@ -577,7 +557,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"abcd"[..], 0x0100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
 pub fn le_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
@@ -593,7 +573,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_i24;
 ///
 /// let parser = |s| {
@@ -601,7 +580,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02abcd"[..]), Ok((&b"abcd"[..], 0x020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 #[inline]
 pub fn le_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
@@ -622,7 +601,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_i32;
 ///
 /// let parser = |s| {
@@ -630,7 +608,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03abcd"[..]), Ok((&b"abcd"[..], 0x03020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
 pub fn le_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
@@ -646,7 +624,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_i64;
 ///
 /// let parser = |s| {
@@ -654,7 +631,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"[..]), Ok((&b"abcd"[..], 0x0706050403020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(7))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
 pub fn le_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
@@ -670,7 +647,6 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_i128;
 ///
 /// let parser = |s| {
@@ -678,7 +654,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"[..]), Ok((&b"abcd"[..], 0x15141312111009080706050403020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::Size(15))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
@@ -694,7 +670,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_f32;
 ///
 /// let parser = |s| {
@@ -702,7 +677,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&[0x40, 0x29, 0x00, 0x00][..]), Ok((&b""[..], 2.640625)));
-/// assert_eq!(parser(&[0x01][..]), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(parser(&[0x01][..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
 pub fn be_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
@@ -720,7 +695,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::be_f64;
 ///
 /// let parser = |s| {
@@ -728,7 +702,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&[0x40, 0x29, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(&[0x01][..]), Err(Err::Incomplete(Needed::Size(7))));
+/// assert_eq!(parser(&[0x01][..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
 pub fn be_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
@@ -746,7 +720,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_f32;
 ///
 /// let parser = |s| {
@@ -754,7 +727,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&[0x00, 0x00, 0x48, 0x41][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(&[0x01][..]), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(parser(&[0x01][..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
 pub fn le_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
@@ -772,7 +745,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::le_f64;
 ///
 /// let parser = |s| {
@@ -780,7 +752,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x41][..]), Ok((&b""[..], 3145728.0)));
-/// assert_eq!(parser(&[0x01][..]), Err(Err::Incomplete(Needed::Size(7))));
+/// assert_eq!(parser(&[0x01][..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
 pub fn le_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
@@ -798,7 +770,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::hex_u32;
 ///
 /// let parser = |s| {
@@ -806,7 +777,7 @@ where
 /// };
 ///
 /// assert_eq!(parser(b"01AE;"), Ok((&b";"[..], 0x01AE)));
-/// assert_eq!(parser(b"abc"), Err(Err::Incomplete(Needed::Size(1))));
+/// assert_eq!(parser(b"abc"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(parser(b"ggg"), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
 /// ```
 #[inline]
@@ -835,7 +806,6 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8]
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::recognize_float;
 ///
 /// let parser = |s| {
@@ -879,7 +849,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::float;
 ///
 /// let parser = |s| {
@@ -915,7 +884,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::float;
 ///
 /// let parser = |s| {
@@ -952,7 +920,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::double;
 ///
 /// let parser = |s| {
@@ -988,7 +955,6 @@ where
 /// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::number::streaming::double;
 ///
 /// let parser = |s| {
@@ -1039,7 +1005,7 @@ mod tests {
     assert_parse!(be_i8(&[0x7f][..]), Ok((&b""[..], 127)));
     assert_parse!(be_i8(&[0xff][..]), Ok((&b""[..], -1)));
     assert_parse!(be_i8(&[0x80][..]), Ok((&b""[..], -128)));
-    assert_parse!(be_i8(&[][..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(be_i8(&[][..]), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
@@ -1048,8 +1014,8 @@ mod tests {
     assert_parse!(be_i16(&[0x7f, 0xff][..]), Ok((&b""[..], 32_767_i16)));
     assert_parse!(be_i16(&[0xff, 0xff][..]), Ok((&b""[..], -1)));
     assert_parse!(be_i16(&[0x80, 0x00][..]), Ok((&b""[..], -32_768_i16)));
-    assert_parse!(be_i16(&[][..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_parse!(be_i16(&[0x00][..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(be_i16(&[][..]), Err(Err::Incomplete(Needed::new(2))));
+    assert_parse!(be_i16(&[0x00][..]), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
@@ -1057,9 +1023,9 @@ mod tests {
     assert_parse!(be_u24(&[0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(be_u24(&[0x00, 0xFF, 0xFF][..]), Ok((&b""[..], 65_535_u32)));
     assert_parse!(be_u24(&[0x12, 0x34, 0x56][..]), Ok((&b""[..], 1_193_046_u32)));
-    assert_parse!(be_u24(&[][..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_parse!(be_u24(&[0x00][..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_parse!(be_u24(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(be_u24(&[][..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_parse!(be_u24(&[0x00][..]), Err(Err::Incomplete(Needed::new(2))));
+    assert_parse!(be_u24(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
@@ -1067,9 +1033,9 @@ mod tests {
     assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF][..]), Ok((&b""[..], -1_i32)));
     assert_parse!(be_i24(&[0xFF, 0x00, 0x00][..]), Ok((&b""[..], -65_536_i32)));
     assert_parse!(be_i24(&[0xED, 0xCB, 0xAA][..]), Ok((&b""[..], -1_193_046_i32)));
-    assert_parse!(be_i24(&[][..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_parse!(be_i24(&[0x00][..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_parse!(be_i24(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(be_i24(&[][..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_parse!(be_i24(&[0x00][..]), Err(Err::Incomplete(Needed::new(2))));
+    assert_parse!(be_i24(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
@@ -1078,10 +1044,10 @@ mod tests {
     assert_parse!(be_i32(&[0x7f, 0xff, 0xff, 0xff][..]), Ok((&b""[..], 2_147_483_647_i32)));
     assert_parse!(be_i32(&[0xff, 0xff, 0xff, 0xff][..]), Ok((&b""[..], -1)));
     assert_parse!(be_i32(&[0x80, 0x00, 0x00, 0x00][..]), Ok((&b""[..], -2_147_483_648_i32)));
-    assert_parse!(be_i32(&[][..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_parse!(be_i32(&[0x00][..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_parse!(be_i32(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_parse!(be_i32(&[0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(be_i32(&[][..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_parse!(be_i32(&[0x00][..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_parse!(be_i32(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(2))));
+    assert_parse!(be_i32(&[0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
@@ -1096,19 +1062,19 @@ mod tests {
       be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], -9_223_372_036_854_775_808_i64))
     );
-    assert_parse!(be_i64(&[][..]), Err(Err::Incomplete(Needed::Size(8))));
-    assert_parse!(be_i64(&[0x00][..]), Err(Err::Incomplete(Needed::Size(7))));
-    assert_parse!(be_i64(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(6))));
-    assert_parse!(be_i64(&[0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(5))));
-    assert_parse!(be_i64(&[0x00, 0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_parse!(be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_parse!(be_i64(&[][..]), Err(Err::Incomplete(Needed::new(8))));
+    assert_parse!(be_i64(&[0x00][..]), Err(Err::Incomplete(Needed::new(7))));
+    assert_parse!(be_i64(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(6))));
+    assert_parse!(be_i64(&[0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(5))));
+    assert_parse!(be_i64(&[0x00, 0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_parse!(be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(3))));
     assert_parse!(
       be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(2)))
+      Err(Err::Incomplete(Needed::new(2)))
     );
     assert_parse!(
       be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(1)))
+      Err(Err::Incomplete(Needed::new(1)))
     );
   }
 
@@ -1131,51 +1097,51 @@ mod tests {
       be_i128(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
     );
-    assert_parse!(be_i128(&[][..]), Err(Err::Incomplete(Needed::Size(16))));
-    assert_parse!(be_i128(&[0x00][..]), Err(Err::Incomplete(Needed::Size(15))));
-    assert_parse!(be_i128(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(14))));
-    assert_parse!(be_i128(&[0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(13))));
-    assert_parse!(be_i128(&[0x00, 0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(12))));
-    assert_parse!(be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::Size(11))));
+    assert_parse!(be_i128(&[][..]), Err(Err::Incomplete(Needed::new(16))));
+    assert_parse!(be_i128(&[0x00][..]), Err(Err::Incomplete(Needed::new(15))));
+    assert_parse!(be_i128(&[0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(14))));
+    assert_parse!(be_i128(&[0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(13))));
+    assert_parse!(be_i128(&[0x00, 0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(12))));
+    assert_parse!(be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00][..]), Err(Err::Incomplete(Needed::new(11))));
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(10)))
+      Err(Err::Incomplete(Needed::new(10)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(9)))
+      Err(Err::Incomplete(Needed::new(9)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(8)))
+      Err(Err::Incomplete(Needed::new(8)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(7)))
+      Err(Err::Incomplete(Needed::new(7)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(6)))
+      Err(Err::Incomplete(Needed::new(6)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(5)))
+      Err(Err::Incomplete(Needed::new(5)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(4)))
+      Err(Err::Incomplete(Needed::new(4)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(3)))
+      Err(Err::Incomplete(Needed::new(3)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(2)))
+      Err(Err::Incomplete(Needed::new(2)))
     );
     assert_parse!(
       be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
-      Err(Err::Incomplete(Needed::Size(1)))
+      Err(Err::Incomplete(Needed::new(1)))
     );
   }
 
@@ -1293,7 +1259,7 @@ mod tests {
     assert_parse!(hex_u32(&b"c5a31be201;"[..]), Ok((&b"01;"[..], 3_315_801_058)));
     assert_parse!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
     assert_parse!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
-    assert_parse!(hex_u32(&b"12af"[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(hex_u32(&b"12af"[..]), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
@@ -1335,6 +1301,6 @@ mod tests {
     }
 
     let remaining_exponent = "-1.234E-";
-    assert_parse!(recognize_float(remaining_exponent), Err(Err::Incomplete(Needed::Size(1))));
+    assert_parse!(recognize_float(remaining_exponent), Err(Err::Incomplete(Needed::new(1))));
   }
 }

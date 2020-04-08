@@ -20,7 +20,7 @@ where
     } else {
       let cnt = (count + bit_offset).div(8);
       if input.input_len() * 8 < count + bit_offset {
-        Err(Err::Incomplete(Needed::Size(count as usize)))
+        Err(Err::Incomplete(Needed::new(count as usize)))
       } else {
         let mut acc:O             = (0 as u8).into();
         let mut offset: usize     = bit_offset;

@@ -414,7 +414,7 @@ macro_rules! switch (
 ///   error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)))));
 ///
 /// let e = &b"efgabc"[..];
-/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
 /// # }
 /// ```
 ///
@@ -451,7 +451,7 @@ macro_rules! switch (
 /// assert_eq!(perm(c), Ok(("jklm", expected)));
 ///
 /// let e = "efgabc";
-/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -762,7 +762,7 @@ mod tests {
           let e: ErrorKind = ErrorKind::Tag;
           Err(Err::Error(error_position!($i, e)))
         } else if m < blen {
-          Err(Err::Incomplete(Needed::Size(blen)))
+          Err(Err::Incomplete(Needed::new(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -776,7 +776,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
-          Err(Err::Incomplete(Needed::Size(cnt)))
+          Err(Err::Incomplete(Needed::new(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };
@@ -869,15 +869,15 @@ mod tests {
     named!(alt1, alt!(tag!("a") | tag!("bc") | tag!("def")));
 
     let a = &b""[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(1))));
     let a = &b"b"[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(2))));
     let a = &b"bcd"[..];
     assert_eq!(alt1(a), Ok((&b"d"[..], &b"bc"[..])));
     let a = &b"cde"[..];
     assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     let a = &b"de"[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(3))));
     let a = &b"defg"[..];
     assert_eq!(alt1(a), Ok((&b"g"[..], &b"def"[..])));
   }
@@ -929,7 +929,7 @@ mod tests {
     );
 
     let e = &b"efgabc"[..];
-    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
   }
 
   /*

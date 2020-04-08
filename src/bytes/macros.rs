@@ -432,7 +432,7 @@ macro_rules! take_until1 (
 
       let res: IResult<_,_> = match input.find_substring($substr) {
         None => {
-          Err(Err::Incomplete(Needed::Size(1 + $substr.input_len())))
+          Err(Err::Incomplete(Needed::new(1 + $substr.input_len())))
         },
         Some(0) => {
           let e = ErrorKind::TakeUntil;
@@ -471,7 +471,7 @@ mod tests {
         match ($i).iter_elements().next().map(|c| {
           $inp.find_token(c)
         }) {
-          None        => Err::<_,_>(Err::Incomplete(Needed::Size(1))),
+          None        => Err::<_,_>(Err::Incomplete(Needed::new(1))),
           Some(false) => Err(Err::Error(error_position!($i, ErrorKind::OneOf))),
           //the unwrap should be safe here
           Some(true)  => Ok(($i.slice(1..), $i.iter_elements().next().unwrap().as_char()))
@@ -514,7 +514,7 @@ mod tests {
     assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
 
     let e = &b"e"[..];
-    assert_eq!(a_or_b(e), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(a_or_b(e), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[cfg(feature = "alloc")]
@@ -676,21 +676,21 @@ mod tests {
     assert_eq!(res, Ok((&b"nom"[..], "omnom")));
 
     let res: IResult<_,_,(&[u8], ErrorKind)> = take_str!(&a[..], 9u32);
-    assert_eq!(res, Err(Err::Incomplete(Needed::Size(9))));
+    assert_eq!(res, Err(Err::Incomplete(Needed::new(9))));
   }
 
   #[test]
   fn take_until_incomplete() {
     named!(y, take_until!("end"));
-    assert_eq!(y(&b"nd"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(y(&b"123"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(y(&b"123en"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(y(&b"nd"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(y(&b"123"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(y(&b"123en"[..]), Err(Err::Incomplete(Needed::new(3))));
   }
 
   #[test]
   fn take_until_incomplete_s() {
     named!(ys<&str, &str>, take_until!("end"));
-    assert_eq!(ys("123en"), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(ys("123en"), Err(Err::Incomplete(Needed::new(3))));
   }
 
   #[test]
@@ -738,8 +738,8 @@ mod tests {
     let c = b"abcd123";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(f(&c[..]), Ok((&d[..], &b[..])));
     assert_eq!(f(&d[..]), Ok((&d[..], &a[..])));
   }
@@ -752,8 +752,8 @@ mod tests {
     let c = b"abcd123";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(f(&c[..]), Ok((&b"123"[..], &b[..])));
     assert_eq!(f(&d[..]), Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1))));
   }
@@ -768,9 +768,9 @@ mod tests {
     let e = b"abcde";
     let f = b"123";
 
-    assert_eq!(x(&a[..]), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(x(&b[..]), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(x(&a[..]), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(x(&b[..]), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(x(&d[..]), Ok((&b"123"[..], &c[..])));
     assert_eq!(x(&e[..]), Ok((&b"e"[..], &b"abcd"[..])));
     assert_eq!(x(&f[..]), Err(Err::Error(error_position!(&f[..], ErrorKind::TakeWhileMN))));
@@ -785,10 +785,10 @@ mod tests {
     let c = b"123abcd";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(f(&b[..]), Ok((&b"abcd"[..], &b""[..])));
     assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
-    assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
@@ -800,24 +800,24 @@ mod tests {
     let c = b"123abcd";
     let d = b"123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(f(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::TakeTill1))));
     assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
-    assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
   fn take_while_utf8() {
     named!(f<&str,&str>, take_while!(|c:char| { c != '點' }));
 
-    assert_eq!(f(""), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(""), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(f("abcd點"), Ok(("點", "abcd")));
     assert_eq!(f("abcd點a"), Ok(("點a", "abcd")));
 
     named!(g<&str,&str>, take_while!(|c:char| { c == '點' }));
 
-    assert_eq!(g(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(g(""), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(g("點abcd"), Ok(("abcd", "點")));
     assert_eq!(g("點點點a"), Ok(("a", "點點點")));
   }
@@ -826,14 +826,14 @@ mod tests {
   fn take_till_utf8() {
     named!(f<&str,&str>, take_till!(|c:char| { c == '點' }));
 
-    assert_eq!(f(""), Err(Err::Incomplete(Needed::Size(1))));
-    assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(f(""), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(f("abcd點"), Ok(("點", "abcd")));
     assert_eq!(f("abcd點a"), Ok(("點a", "abcd")));
 
     named!(g<&str,&str>, take_till!(|c:char| { c != '點' }));
 
-    assert_eq!(g(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(g(""), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(g("點abcd"), Ok(("abcd", "點")));
     assert_eq!(g("點點點a"), Ok(("a", "點點點")));
   }
@@ -842,16 +842,16 @@ mod tests {
   fn take_utf8() {
     named!(f<&str,&str>, take!(3));
 
-    assert_eq!(f(""), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(f("ab"), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(f("點"), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(f(""), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(f("ab"), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(f("點"), Err(Err::Incomplete(Needed::new(3))));
     assert_eq!(f("ab點cd"), Ok(("cd", "ab點")));
     assert_eq!(f("a點bcd"), Ok(("cd", "a點b")));
     assert_eq!(f("a點b"), Ok(("", "a點b")));
 
     named!(g<&str,&str>, take_while!(|c:char| { c == '點' }));
 
-    assert_eq!(g(""), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(g(""), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(g("點abcd"), Ok(("abcd", "點")));
     assert_eq!(g("點點點a"), Ok(("a", "點點點")));
   }
@@ -897,14 +897,14 @@ mod tests {
     named!(x, length_data!(le_u8));
     assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));
-    assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::new(2))));
 
     named!(y, do_parse!(tag!("magic") >> b: length_data!(le_u8) >> (b)));
     assert_eq!(y(b"magic\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(y(b"magic\x02.."), Ok((&[][..], &b".."[..])));
-    assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(y(b"magic\x02"), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(y(b"magic\x02"), Err(Err::Incomplete(Needed::new(2))));
   }
 
   #[cfg(feature = "alloc")]
@@ -914,7 +914,7 @@ mod tests {
     assert_eq!(test(&b"aBCdefgh"[..]), Ok((&b"efgh"[..], &b"aBCd"[..])));
     assert_eq!(test(&b"abcdefgh"[..]), Ok((&b"efgh"[..], &b"abcd"[..])));
     assert_eq!(test(&b"ABCDefgh"[..]), Ok((&b"efgh"[..], &b"ABCD"[..])));
-    assert_eq!(test(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(test(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(test(&b"Hello"[..]), Err(Err::Error(error_position!(&b"Hello"[..], ErrorKind::Tag))));
     assert_eq!(test(&b"Hel"[..]), Err(Err::Error(error_position!(&b"Hel"[..], ErrorKind::Tag))));
 
@@ -922,7 +922,7 @@ mod tests {
     assert_eq!(test2("aBCdefgh"), Ok(("efgh", "aBCd")));
     assert_eq!(test2("abcdefgh"), Ok(("efgh", "abcd")));
     assert_eq!(test2("ABCDefgh"), Ok(("efgh", "ABCD")));
-    assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(test2("Hello"), Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag))));
     assert_eq!(test2("Hel"), Err(Err::Error(error_position!(&"Hel"[..], ErrorKind::Tag))));
   }

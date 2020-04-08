@@ -44,7 +44,7 @@ where
       let byte_index = offset / 8 + if offset % 8 == 0 { 0 } else { 1 };
       Ok((rest.slice(byte_index..), res))
     }
-    Err(Err::Incomplete(n)) => Err(Err::Incomplete(n.map(|u| u / 8 + 1))),
+    Err(Err::Incomplete(n)) => Err(Err::Incomplete(n.map(|u| u.get() / 8 + 1))),
     Err(Err::Error(e)) => Err(Err::Error(e.convert())),
     Err(Err::Failure(e)) => Err(Err::Failure(e.convert())),
   }
@@ -99,8 +99,8 @@ where
     match parser(inner) {
       Ok((rest, res)) => Ok(((rest, 0), res)),
       Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
-      Err(Err::Incomplete(Needed::Size(sz))) => Err(match sz.checked_mul(8) {
-        Some(v) => Err::Incomplete(Needed::Size(v)),
+      Err(Err::Incomplete(Needed::Size(sz))) => Err(match sz.get().checked_mul(8) {
+        Some(v) => Err::Incomplete(Needed::new(v)),
         None => Err::Failure(E2::from_error_kind(i, ErrorKind::TooLarge)),
       }),
       Err(Err::Error(e)) => Err(Err::Error(e.convert())),

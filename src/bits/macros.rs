@@ -28,7 +28,7 @@
 ///  let sl    = &input[..];
 ///
 ///  assert_eq!(take_4_bits( sl ), Ok( (&sl[1..], 0xA) ));
-///  assert_eq!(take_4_bits( &b""[..] ), Err(Err::Incomplete(Needed::Size(1))));
+///  assert_eq!(take_4_bits( &b""[..] ), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 #[macro_export(local_inner_macros)]
 macro_rules! bits (
@@ -160,7 +160,7 @@ mod tests {
     let r: IResult<_,u32> = take_bits!((sl, 4), 22u8);
     assert_eq!(
       r,
-      Err(Err::Incomplete(Needed::Size(22)))
+      Err(Err::Incomplete(Needed::new(22)))
     );
   }
 
@@ -188,7 +188,7 @@ mod tests {
     let sl = &input[..];
     assert_eq!(ch((&input[..], 0)), Ok(((&sl[1..], 4), (5, 15))));
     assert_eq!(ch((&input[..], 4)), Ok(((&sl[2..], 0), (7, 16))));
-    assert_eq!(ch((&input[..1], 0)), Err(Err::Incomplete(Needed::Size(5))));
+    assert_eq!(ch((&input[..1], 0)), Err(Err::Incomplete(Needed::new(5))));
   }
 
   named!(ch_bytes<(u8, u8)>, bits!(ch));
@@ -196,7 +196,7 @@ mod tests {
   fn bits_to_bytes() {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     assert_eq!(ch_bytes(&input[..]), Ok((&input[2..], (5, 15))));
-    assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       ch_bytes(&input[1..]),
       Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits)))
@@ -257,7 +257,7 @@ mod tests {
     let r3: IResult<_, FakeUint> = take_bits!((sl, 4), 22u8);
     assert_eq!(
       r3,
-      Err(Err::Incomplete(Needed::Size(22)))
+      Err(Err::Incomplete(Needed::new(22)))
     );
   }
 }

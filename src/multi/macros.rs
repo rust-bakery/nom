@@ -318,7 +318,7 @@ macro_rules! count(
 /// named!(parser<Vec<&[u8]>>, length_count!(be_u8, tag!("abc")));
 ///
 /// assert_eq!(parser(&b"\x02abcabcabc"[..]), Ok(((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))));
-/// assert_eq!(parser(&b"\x04abcabcabc"[..]), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(parser(&b"\x04abcabcabc"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -368,7 +368,7 @@ macro_rules! length_count(
 /// named!(parser, length_data!(be_u8));
 ///
 /// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], &b"abcabc"[..])));
-/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::Size(6))));
+/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::new(6))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -399,7 +399,7 @@ macro_rules! length_data(
 /// named!(parser, length_value!(be_u8, alpha0));
 ///
 /// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], &b"abcabc"[..])));
-/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::Size(6))));
+/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::new(6))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -569,7 +569,7 @@ mod tests {
         let res: IResult<_,_,_> = if reduced != b {
           Err($crate::Err::Error($crate::error::make_error($i, $crate::error::ErrorKind::Tag)))
         } else if m < blen {
-          Err($crate::Err::Incomplete(Needed::Size(blen)))
+          Err($crate::Err::Incomplete(Needed::new(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -605,9 +605,9 @@ mod tests {
     let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(e), Ok((&b",ef"[..], res4)));
 
-    assert_eq!(multi(f), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(multi(h), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -633,9 +633,9 @@ mod tests {
     let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(d), Ok((&b",ef"[..], res3)));
 
-    assert_eq!(multi(f), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(multi(h), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -649,9 +649,9 @@ mod tests {
     assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
     assert_eq!(multi(&b"abcdabcdefgh"[..]), Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]])));
     assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
-    assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(
       multi_empty(&b"abcdef"[..]),
       Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0)))
@@ -683,7 +683,7 @@ mod tests {
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res2)));
     assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Tag))));
-    assert_eq!(multi(d), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(d), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -745,7 +745,7 @@ mod tests {
     assert_eq!(multi(c), Ok((&b"efgh"[..], res2)));
     let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(d), Ok((&b"Abcdefgh"[..], res3)));
-    assert_eq!(multi(e), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(e), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -756,8 +756,8 @@ mod tests {
     named!( cnt_2<&[u8], Vec<&[u8]> >, count!(tag_abc, TIMES ) );
 
     assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]])));
-    assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::new(3))));
     assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
     assert_eq!(
       cnt_2(&b"xxxabcabcdef"[..]),
@@ -834,8 +834,8 @@ mod tests {
     named!( cnt<&[u8], Vec<&[u8]> >, length_count!(number, tag_abc) );
 
     assert_eq!(cnt(&b"2abcabcabcdef"[..]), Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]])));
-    assert_eq!(cnt(&b"2ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt(&b"3abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(cnt(&b"2ab"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(cnt(&b"3abcab"[..]), Err(Err::Incomplete(Needed::new(3))));
     assert_eq!(cnt(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit))));
     assert_eq!(
       cnt(&b"2abcxxx"[..]),
@@ -848,7 +848,7 @@ mod tests {
     named!( take<&[u8], &[u8]>, length_data!(number) );
 
     assert_eq!(take(&b"6abcabcabcdef"[..]), Ok((&b"abcdef"[..], &b"abcabc"[..])));
-    assert_eq!(take(&b"3ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(take(&b"3ab"[..]), Err(Err::Incomplete(Needed::new(3))));
     assert_eq!(take(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit))));
     assert_eq!(take(&b"2abcxxx"[..]), Ok((&b"cxxx"[..], &b"ab"[..])));
   }
@@ -896,9 +896,9 @@ mod tests {
     assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
     assert_eq!(multi(&b"abcdabcdefgh"[..]), Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]])));
     assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
-    assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(
       multi_empty(&b"abcdef"[..]),
       Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0)))
@@ -924,7 +924,7 @@ mod tests {
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res2)));
     assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Many1))));
-    assert_eq!(multi(d), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(d), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -949,7 +949,7 @@ mod tests {
     assert_eq!(multi(c), Ok((&b"efgh"[..], res2)));
     let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(d), Ok((&b"Abcdefgh"[..], res3)));
-    assert_eq!(multi(e), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(e), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]

@@ -32,7 +32,7 @@ named!(parser02<&[u8],(&[u8],&[u8])>,
 fn overflow_incomplete_do_parse() {
   assert_eq!(
     parser01(&b"3"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551615)))
+    Err(Err::Incomplete(Needed::new(18446744073709551615)))
   );
 }
 
@@ -40,7 +40,7 @@ fn overflow_incomplete_do_parse() {
 fn overflow_incomplete_tuple() {
   assert_eq!(
     parser02(&b"3"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551615)))
+    Err(Err::Incomplete(Needed::new(18446744073709551615)))
   );
 }
 
@@ -52,7 +52,7 @@ fn overflow_incomplete_length_bytes() {
   // Trigger an overflow in length_data
   assert_eq!(
     multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xff\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551615)))
+    Err(Err::Incomplete(Needed::new(18446744073709551615)))
   );
 }
 
@@ -64,7 +64,7 @@ fn overflow_incomplete_many0() {
   // Trigger an overflow in many0
   assert_eq!(
     multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551599)))
+    Err(Err::Incomplete(Needed::new(18446744073709551599)))
   );
 }
 
@@ -76,7 +76,7 @@ fn overflow_incomplete_many1() {
   // Trigger an overflow in many1
   assert_eq!(
     multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551599)))
+    Err(Err::Incomplete(Needed::new(18446744073709551599)))
   );
 }
 
@@ -88,7 +88,7 @@ fn overflow_incomplete_many_till() {
   // Trigger an overflow in many_till
   assert_eq!(
     multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551599)))
+    Err(Err::Incomplete(Needed::new(18446744073709551599)))
   );
 }
 
@@ -100,7 +100,7 @@ fn overflow_incomplete_many_m_n() {
   // Trigger an overflow in many_m_n
   assert_eq!(
     multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551599)))
+    Err(Err::Incomplete(Needed::new(18446744073709551599)))
   );
 }
 
@@ -111,7 +111,7 @@ fn overflow_incomplete_count() {
 
   assert_eq!(
     counter(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551599)))
+    Err(Err::Incomplete(Needed::new(18446744073709551599)))
   );
 }
 
@@ -123,7 +123,7 @@ fn overflow_incomplete_length_count() {
 
   assert_eq!(
     multi(&b"\x04\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xee\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551598)))
+    Err(Err::Incomplete(Needed::new(18446744073709551598)))
   );
 }
 
@@ -134,6 +134,6 @@ fn overflow_incomplete_length_data() {
 
   assert_eq!(
     multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xff\xaa"[..]),
-    Err(Err::Incomplete(Needed::Size(18446744073709551615)))
+    Err(Err::Incomplete(Needed::new(18446744073709551615)))
   );
 }

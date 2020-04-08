@@ -495,7 +495,7 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
   {
     match self.position(predicate) {
       Some(n) => Ok(self.take_split(n)),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
@@ -506,7 +506,7 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
     match self.position(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
       Some(n) => Ok(self.take_split(n)),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
@@ -540,7 +540,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(i) => Ok((&self[i..], &self[..i])),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
@@ -551,7 +551,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
@@ -588,7 +588,7 @@ impl<'a> InputTakeAtPosition for &'a str {
   {
     match self.find(predicate) {
       Some(i) => Ok((&self[i..], &self[..i])),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
@@ -599,7 +599,7 @@ impl<'a> InputTakeAtPosition for &'a str {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
-      None => Err(Err::Incomplete(Needed::Size(1))),
+      None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 

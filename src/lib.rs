@@ -118,7 +118,7 @@
 //! # fn main() {
 //! fn take4(i: &[u8]) -> IResult<&[u8], &[u8]>{
 //!   if i.len() < 4 {
-//!     Err(Err::Incomplete(Needed::Size(4)))
+//!     Err(Err::Incomplete(Needed::new(4)))
 //!   } else {
 //!     Ok((&i[4..], &i[0..4]))
 //!   }
@@ -302,7 +302,7 @@
 //!     (0x6162u16, &b"cde"[..], &b"fg"[..])
 //!   ))
 //! );
-//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::Size(2))));
+//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
 //! let input = &b"abcdejk"[..];
 //! assert_eq!(tpl(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
 //! # }
@@ -372,7 +372,7 @@
 //!
 //! // if the input is smaller than 4 bytes, the streaming parser
 //! // will return `Incomplete` to indicate that we need more data
-//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::Size(4))));
+//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::new(4))));
 //!
 //! // but the complete parser will return an error
 //! assert_eq!(take_complete(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
@@ -393,7 +393,7 @@
 //! // but when there's no limit, the streaming version returns `Incomplete`, because it cannot
 //! // know if more input data should be recognized. The whole input could be "abcd;", or
 //! // "abcde;"
-//! assert_eq!(alpha0_streaming("abcd"), Err(Err::Incomplete(Needed::Size(1))));
+//! assert_eq!(alpha0_streaming("abcd"), Err(Err::Incomplete(Needed::new(1))));
 //!
 //! // while the complete version knows that all of the data is there
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
