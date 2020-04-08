@@ -429,12 +429,12 @@ impl<'a> InputTake for &'a str {
   }
 }
 
-/// Dummy trait used for default implementations (currently only used for `InputTakeAtPosition`).
+/// Dummy trait used for default implementations (currently only used for `InputTakeAtPosition` and `Compare`).
 ///
 /// When implementing a custom input type, it is possible to use directly the
 /// default implementation: if the input type implements `InputLength`, `InputIter`,
 /// `InputTake` and `Clone`, you can implement `UnspecializedInput` and get
-/// a default version of `InputTakeAtPosition`.
+/// a default version of `InputTakeAtPosition` and `Compare`.
 ///
 /// For performance reasons, you might want to write a custom implementation of
 /// `InputTakeAtPosition` (like the one for `&[u8]`).
@@ -697,6 +697,45 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     if !reduced.iter().zip(other).all(|(a, b)| match (*a, *b) {
       (0..=64, 0..=64) | (91..=96, 91..=96) | (123..=255, 123..=255) => a == b,
       (65..=90, 65..=90) | (97..=122, 97..=122) | (65..=90, 97..=122) | (97..=122, 65..=90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
+      _ => false,
+    }) {
+      CompareResult::Error
+    } else if m < blen {
+      CompareResult::Incomplete
+    } else {
+      CompareResult::Ok
+    }
+  }
+}
+
+impl<T: InputLength + InputIter<Item = u8> + InputTake + UnspecializedInput, O: InputLength + InputIter<Item = u8> + InputTake> Compare<O> for T {
+  #[inline(always)]
+  fn compare(&self, t: O) -> CompareResult {
+    let pos = self.iter_elements().zip(t.iter_elements()).position(|(a, b)| a != b);
+
+    match pos {
+      Some(_) => CompareResult::Error,
+      None => {
+        if self.input_len() >= t.input_len() {
+          CompareResult::Ok
+        } else {
+          CompareResult::Incomplete
+        }
+      }
+    }
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: O) -> CompareResult {
+    let len = self.input_len();
+    let blen = t.input_len();
+    let m = if len < blen { len } else { blen };
+    let reduced = self.take(m);
+    let other = t.take(m);
+
+    if !reduced.iter_elements().zip(other.iter_elements()).all(|(a, b)| match (a, b) {
+      (0..=64, 0..=64) | (91..=96, 91..=96) | (123..=255, 123..=255) => a == b,
+      (65..=90, 65..=90) | (97..=122, 97..=122) | (65..=90, 97..=122) | (97..=122, 65..=90) => a | 0b00_10_00_00 == b | 0b00_10_00_00,
       _ => false,
     }) {
       CompareResult::Error
