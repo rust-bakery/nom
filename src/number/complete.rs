@@ -35,8 +35,7 @@ where
   if input.input_len() < bound {
     Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let mut res = 0u8;
-    res = input.iter_elements().next().unwrap();
+    let res = input.iter_elements().next().unwrap();
 
     Ok((input.slice(bound..), res))
   }
@@ -376,8 +375,7 @@ where
   if input.input_len() < bound {
     Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let mut res = 0u8;
-    res = input.iter_elements().next().unwrap();
+    let res = input.iter_elements().next().unwrap();
 
     Ok((input.slice(bound..), res))
   }

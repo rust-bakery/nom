@@ -995,20 +995,20 @@ macro_rules! array_impls {
         type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
 
         fn iter_indices(&self) -> Self::Iter {
-          (&self).iter_indices()
+          (&self[..]).iter_indices()
         }
 
         fn iter_elements(&self) -> Self::IterElem {
-          (&self).iter_elements()
+          (&self[..]).iter_elements()
         }
 
         fn position<P>(&self, predicate: P) -> Option<usize>
           where P: Fn(Self::Item) -> bool {
-          (&self).position(predicate)
+          (&self[..]).position(predicate)
         }
 
         fn slice_index(&self, count: usize) -> Option<usize> {
-          (&self).slice_index(count)
+          (&self[..]).slice_index(count)
         }
       }
 
