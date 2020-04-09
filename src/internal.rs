@@ -162,6 +162,22 @@ where
   }
 }
 
+/// all nom parsers implement ths trait
+pub trait Parser<I, O, E> {
+  /// a parser takes in input type, and returns a `Result` containing
+  /// either the remaining input and the output value, or an error
+  fn parse(&mut self, input: I) -> IResult<I, O, E>;
+}
+
+impl<'a, I, O, E, F> Parser<I, O, E> for F
+where
+  F: FnMut(I) -> IResult<I, O, E> + 'a
+{
+  fn parse(&mut self, i: I) -> IResult<I, O, E> {
+    self(i)
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

@@ -10,7 +10,7 @@ fn esc(s: &str) -> IResult<&str, &str> {
 #[cfg(feature="alloc")]
 fn esc_trans(s: &str) -> IResult<&str, String> {
     use nom::bytes::complete::{escaped_transform, tag};
-    escaped_transform(digit1, '\\', |i: &str| tag("n")(i))(s)
+    escaped_transform(digit1, '\\', tag("n"))(s)
 }
 
 #[test]

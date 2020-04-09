@@ -3,6 +3,8 @@
 //! Parsers are generic over their error type, requiring that it implements
 //! the `error::ParseError<Input>` trait.
 
+use crate::internal::Parser;
+
 /// this trait must be implemented by the error type of a nom parser
 ///
 /// There are already implementations of it for `(Input, ErrorKind)`
@@ -130,11 +132,11 @@ use crate::internal::{Err, IResult};
 /// create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
 /// to errors when backtracking through a parse tree
-pub fn context<I: Clone, E: ContextError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn context<I: Clone, E: ContextError<I>, F, O>(context: &'static str, mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
-  move |i: I| match f(i.clone()) {
+  move |i: I| match f.parse(i.clone()) {
     Ok(o) => Ok(o),
     Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
     Err(Err::Error(e)) => Err(Err::Error(E::add_context(i, context, e))),

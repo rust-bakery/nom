@@ -2,7 +2,7 @@
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Needed};
+use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::ops::RangeFrom;
 use crate::lib::std::result::Result::*;
 use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice, ToUsize};
@@ -453,12 +453,12 @@ where
 /// assert_eq!(esc("12\\\"34;"), Ok((";", "12\\\"34")));
 /// ```
 ///
-pub fn escaped<Input, Error, F, G, O1, O2>(normal: F, control_char: char, escapable: G) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn escaped<Input, Error, F, G, O1, O2>(mut normal: F, control_char: char, mut escapable: G) -> impl FnMut(Input) -> IResult<Input, Input, Error>
 where
   Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
   <Input as InputIter>::Item: crate::traits::AsChar,
-  F: Fn(Input) -> IResult<Input, O1, Error>,
-  G: Fn(Input) -> IResult<Input, O2, Error>,
+  F: Parser<Input, O1, Error>,
+  G: Parser<Input, O2, Error>,
   Error: ParseError<Input>,
 {
   use crate::traits::AsChar;
@@ -467,7 +467,7 @@ where
     let mut i = input.clone();
 
     while i.input_len() > 0 {
-      match normal(i.clone()) {
+      match normal.parse(i.clone()) {
         Ok((i2, _)) => {
           if i2.input_len() == 0 {
             return Err(Err::Incomplete(Needed::Unknown));
@@ -482,7 +482,7 @@ where
             if next >= i.input_len() {
               return Err(Err::Incomplete(Needed::new(1)));
             } else {
-              match escapable(i.slice(next..)) {
+              match escapable.parse(i.slice(next..)) {
                 Ok((i2, _)) => {
                   if i2.input_len() == 0 {
                     return Err(Err::Incomplete(Needed::Unknown));
@@ -532,18 +532,20 @@ where
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// # use std::str::from_utf8;
-/// use nom::bytes::streaming::escaped_transform;
+/// use nom::bytes::streaming::{escaped_transform, tag};
 /// use nom::character::streaming::alpha1;
+/// use nom::branch::alt;
+/// use nom::combinator::value;
 ///
 /// fn parser(input: &str) -> IResult<&str, String> {
 ///   escaped_transform(
 ///     alpha1,
 ///     '\\',
-///     |i:&str| alt!(i,
-///         tag!("\\")       => { |_| "\\" }
-///       | tag!("\"")       => { |_| "\"" }
-///       | tag!("n")        => { |_| "\n" }
-///     )
+///     alt((
+///       value("\\", tag("\\")),
+///       value("\"", tag("\"")),
+///       value("n", tag("\n")),
+///     ))
 ///   )(input)
 /// }
 ///
@@ -551,10 +553,10 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 pub fn escaped_transform<Input, Error, F, G, O1, O2, ExtendItem, Output>(
-  normal: F,
+  mut normal: F,
   control_char: char,
-  transform: G,
-) -> impl Fn(Input) -> IResult<Input, Output, Error>
+  mut transform: G,
+) -> impl FnMut(Input) -> IResult<Input, Output, Error>
 where
   Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
   Input: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
@@ -564,8 +566,8 @@ where
   Output: core::iter::Extend<<O1 as crate::traits::ExtendInto>::Item>,
   Output: core::iter::Extend<<O2 as crate::traits::ExtendInto>::Item>,
   <Input as InputIter>::Item: crate::traits::AsChar,
-  F: Fn(Input) -> IResult<Input, O1, Error>,
-  G: Fn(Input) -> IResult<Input, O2, Error>,
+  F: Parser<Input, O1, Error>,
+  G: Parser<Input, O2, Error>,
   Error: ParseError<Input>,
 {
   use crate::traits::AsChar;
@@ -578,7 +580,7 @@ where
 
     while index < i.input_len() {
       let remainder = i.slice(index..);
-      match normal(remainder.clone()) {
+      match normal.parse(remainder.clone()) {
         Ok((i2, o)) => {
           o.extend_into(&mut res);
           if i2.input_len() == 0 {
@@ -596,7 +598,7 @@ where
             if next >= input_len {
               return Err(Err::Incomplete(Needed::Unknown));
             } else {
-              match transform(i.slice(next..)) {
+              match transform.parse(i.slice(next..)) {
                 Ok((i2, o)) => {
                   o.extend_into(&mut res);
                   if i2.input_len() == 0 {

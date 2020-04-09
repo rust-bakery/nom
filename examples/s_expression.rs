@@ -18,7 +18,7 @@ use nom::{
   error::{context, VerboseError},
   multi::many0,
   sequence::{delimited, preceded, terminated, tuple},
-  IResult,
+  IResult, Parser,
 };
 
 /// We start by defining the types that define the shape of data that we want.
@@ -147,9 +147,9 @@ fn parse_constant<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str
 ///
 /// Unlike the previous functions, this function doesn't take or consume input, instead it
 /// takes a parsing function and returns a new parsing function.
-fn s_exp<'a, O1, F>(inner: F) -> impl Fn(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>
+fn s_exp<'a, O1, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>
 where
-  F: Fn(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>,
+  F: Parser<&'a str, O1, VerboseError<&'a str>>,
 {
   delimited(
     char('('),
