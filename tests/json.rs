@@ -37,7 +37,7 @@ named!(
   array<Vec<JsonValue>>,
   ws!(delimited!(
     char!('['),
-    separated_list!(char!(','), value),
+    separated_list0!(char!(','), value),
     char!(']')
   ))
 );
@@ -50,7 +50,7 @@ named!(
 named!(
   hash<HashMap<String, JsonValue>>,
   ws!(map!(
-    delimited!(char!('{'), separated_list!(char!(','), key_value), char!('}')),
+    delimited!(char!('{'), separated_list0!(char!(','), key_value), char!('}')),
     |tuple_vec| {
       let mut h: HashMap<String, JsonValue> = HashMap::new();
       for (k, v) in tuple_vec {

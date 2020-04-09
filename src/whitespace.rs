@@ -630,22 +630,22 @@ macro_rules! switch_sep (
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
 #[macro_export(local_inner_macros)]
-macro_rules! separated_list_sep (
+macro_rules! separated_list0_sep (
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    separated_list!(
+    separated_list0!(
       $i,
       sep!($separator, $submac!($($args)*)),
       sep!($separator, $submac2!($($args2)*))
     )
   );
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    separated_list_sep!($i, $separator, $submac!($($args)*), call!($g));
+    separated_list0_sep!($i, $separator, $submac!($($args)*), call!($g));
   );
   ($i:expr, $separator:path, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    separated_list_sep!($i, $separator, call!($f), $submac!($($args)*));
+    separated_list0_sep!($i, $separator, call!($f), $submac!($($args)*));
   );
   ($i:expr, $separator:path, $f:expr, $g:expr) => (
-    separated_list_sep!($i, $separator, call!($f), call!($g));
+    separated_list0_sep!($i, $separator, call!($f), call!($g));
   );
 );
 
@@ -742,10 +742,10 @@ macro_rules! sep (
       switch_sep!($separator, $($rest)*)
     )
   };
-  ($i:expr,  $separator:path, separated_list ! ($($rest:tt)*) ) => {
+  ($i:expr,  $separator:path, separated_list0 ! ($($rest:tt)*) ) => {
     wrap_sep!($i,
       $separator,
-      separated_list_sep!($separator, $($rest)*)
+      separated_list0_sep!($separator, $($rest)*)
     )
   };
   ($i:expr,  $separator:path, many0 ! ($($rest:tt)*) ) => {
@@ -757,7 +757,7 @@ macro_rules! sep (
   ($i:expr, $separator:path, return_error!( $($args:tt)* )) => {
     return_error!($i, wrap_sep!($separator, $($args)*))
   };
-//FIXME: missing separated_nonempty_list,
+//FIXME: missing separated_list1,
 // many_till, many_m_n, count, count_fixed, fold_many0, fold_many1,
 // fold_many_m_n
   ($i:expr, $separator:path, $submac:ident!( $($args:tt)* )) => {
@@ -1055,7 +1055,7 @@ mod tests {
       do_parse!(
       tag!("pipeline") >>
       attributes: delimited!(char!('{'),
-                             separated_list!(char!(','), alt!(
+                             separated_list0!(char!(','), alt!(
                                space |
                                space
                              )),

@@ -221,11 +221,11 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::separated_list;
+/// use nom::multi::separated_list0;
 /// use nom::bytes::complete::tag;
 ///
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   separated_list(tag("|"), tag("abc"))(s)
+///   separated_list0(tag("|"), tag("abc"))(s)
 /// }
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
@@ -235,7 +235,7 @@ where
 /// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn separated_list<I, O, O2, E, F, G>(mut sep: G, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list0<I, O, O2, E, F, G>(mut sep: G, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
@@ -289,14 +289,14 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn separated_listc<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
+pub fn separated_list0c<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(I) -> IResult<I, O2, E>,
   E: ParseError<I>,
 {
-  separated_list(sep, f)(i)
+  separated_list0(sep, f)(i)
 }
 
 /// Alternates between two parsers to produce
@@ -308,11 +308,11 @@ where
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::separated_nonempty_list;
+/// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
 ///
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   separated_nonempty_list(tag("|"), tag("abc"))(s)
+///   separated_list1(tag("|"), tag("abc"))(s)
 /// }
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
@@ -322,7 +322,7 @@ where
 /// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn separated_nonempty_list<I, O, O2, E, F, G>(mut sep: G, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list1<I, O, O2, E, F, G>(mut sep: G, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
@@ -376,14 +376,14 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn separated_nonempty_listc<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
+pub fn separated_list1c<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(I) -> IResult<I, O2, E>,
   E: ParseError<I>,
 {
-  separated_nonempty_list(sep, f)(i)
+  separated_list1(sep, f)(i)
 }
 
 /// Repeats the embedded parser `n` times or until it fails

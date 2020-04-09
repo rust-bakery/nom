@@ -12,7 +12,7 @@ use nom::{
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
   combinator::{cut, map, opt, value},
   error::{context, convert_error, ErrorKind, ParseError, VerboseError, ContextError},
-  multi::separated_list,
+  multi::separated_list0,
   number::complete::double,
   sequence::{delimited, preceded, separated_pair, terminated},
   Err, IResult,
@@ -98,7 +98,7 @@ fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IRe
   context("string", preceded(char('\"'), cut(terminated(parse_str, char('\"')))))(i)
 }
 
-/// some combinators, like `separated_list` or `many0`, will call a parser repeatedly,
+/// some combinators, like `separated_list0` or `many0`, will call a parser repeatedly,
 /// accumulating results in a `Vec`, until it encounters an error.
 /// If you want more control on the parser application, check out the `iterator`
 /// combinator (cf `examples/iterator.rs`)
@@ -108,7 +108,7 @@ fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IRes
     preceded(
       char('['),
       cut(terminated(
-        separated_list(preceded(sp, char(',')), json_value),
+        separated_list0(preceded(sp, char(',')), json_value),
         preceded(sp, char(']')),
       )),
     ),
@@ -125,7 +125,7 @@ fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResu
     preceded(
       char('{'),
       cut(terminated(
-        map(separated_list(preceded(sp, char(',')), key_value), |tuple_vec| {
+        map(separated_list0(preceded(sp, char(',')), key_value), |tuple_vec| {
           tuple_vec.into_iter().map(|(k, v)| (String::from(k), v)).collect()
         }),
         preceded(sp, char('}')),

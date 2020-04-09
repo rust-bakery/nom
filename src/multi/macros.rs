@@ -1,16 +1,16 @@
 //! Parsers for applying parsers multiple times
 
-/// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_list(sep, X) returns a Vec<X>
+/// `separated_list0!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// separated_list0(sep, X) returns a Vec<X>
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::separated_list;
+/// use nom::multi::separated_list0;
 /// use nom::bytes::complete::tag;
 ///
 /// # fn main() {
-/// named!(parser<&str, Vec<&str>>, separated_list!(tag("|"), tag("abc")));
+/// named!(parser<&str, Vec<&str>>, separated_list0!(tag("|"), tag("abc")));
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
 /// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
@@ -21,36 +21,36 @@
 /// ```
 #[cfg(feature = "alloc")]
 #[macro_export(local_inner_macros)]
-macro_rules! separated_list(
+macro_rules! separated_list0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    separated_list!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
+    separated_list0!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    separated_list!($i, |i| $submac!(i, $($args)*), $g);
+    separated_list0!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    separated_list!($i, $f, |i| $submac!(i, $($args)*));
+    separated_list0!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::multi::separated_listc($i, $f, $g)
+    $crate::multi::separated_list0c($i, $f, $g)
   );
 );
 
-/// `separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_nonempty_list(sep, X) returns a Vec<X>
+/// `separated_list1!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// separated_list1(sep, X) returns a Vec<X>
 ///
 /// it will return an error if there is no element in the list
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::separated_nonempty_list;
+/// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
 ///
 /// # fn main() {
-/// named!(parser<&str, Vec<&str>>, separated_nonempty_list!(tag("|"), tag("abc")));
+/// named!(parser<&str, Vec<&str>>, separated_list1!(tag("|"), tag("abc")));
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
 /// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
@@ -61,21 +61,21 @@ macro_rules! separated_list(
 /// ```
 #[cfg(feature = "alloc")]
 #[macro_export(local_inner_macros)]
-macro_rules! separated_nonempty_list(
+macro_rules! separated_list1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    separated_nonempty_list!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
+    separated_list1!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    separated_nonempty_list!($i, |i| $submac!(i, $($args)*), $g);
+    separated_list1!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    separated_nonempty_list!($i, $f, |i| $submac!(i, $($args)*));
+    separated_list1!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::multi::separated_nonempty_listc($i, $f, $g)
+    $crate::multi::separated_list1c($i, $f, $g)
   );
 );
 
@@ -580,10 +580,10 @@ mod tests {
 
   #[test]
   #[cfg(feature = "alloc")]
-  fn separated_list() {
-    named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
-    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
-    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list!(tag!(".."), tag!("abcd")));
+  fn separated_list0() {
+    named!(multi<&[u8],Vec<&[u8]> >, separated_list0!(tag!(","), tag!("abcd")));
+    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list0!(tag!(","), tag!("")));
+    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list0!(tag!(".."), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
@@ -612,9 +612,9 @@ mod tests {
 
   #[test]
   #[cfg(feature = "alloc")]
-  fn separated_nonempty_list() {
-    named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(","), tag!("abcd")));
-    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(".."), tag!("abcd")));
+  fn separated_list1() {
+    named!(multi<&[u8],Vec<&[u8]> >, separated_list1!(tag!(","), tag!("abcd")));
+    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list1!(tag!(".."), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];

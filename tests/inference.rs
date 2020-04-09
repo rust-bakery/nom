@@ -24,7 +24,7 @@ named!(
         many_m_n!(
           0,
           1,
-          separated_list!(
+          separated_list0!(
             tag!("\n\t"),
             map_res!(take_while!(call!(|c| c != b'\n')), std::str::from_utf8)
           )
