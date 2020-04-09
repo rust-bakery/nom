@@ -291,7 +291,7 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 /// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
 /// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
 /// ```
-pub fn tuple<I: Clone, O, E: ParseError<I>, List: Tuple<I,O,E>>(mut l: List)  -> impl FnMut(I) -> IResult<I, O, E> {
+pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I,O,E>>(mut l: List)  -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| {
     l.parse(i)
   }

@@ -30,7 +30,7 @@ mod macros;
 #[inline]
 pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<RangeFrom<usize>>,
   T: InputLength,
 {
   Ok((input.slice(input.input_len()..), input))
@@ -47,7 +47,6 @@ where
 #[inline]
 pub fn rest_len<T, E: ParseError<T>>(input: T) -> IResult<T, usize, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputLength,
 {
   let len = input.input_len();
@@ -308,7 +307,7 @@ where
 /// assert_eq!(parser(false, "123;"), Ok(("123;", None)));
 /// # }
 /// ```
-pub fn cond<I:Clone, O, E: ParseError<I>, F>(b: bool, mut f: F) -> impl FnMut(I) -> IResult<I, Option<O>, E>
+pub fn cond<I, O, E: ParseError<I>, F>(b: bool, mut f: F) -> impl FnMut(I) -> IResult<I, Option<O>, E>
 where
   F: Parser<I, O, E>,
 {
@@ -325,7 +324,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn condc<I:Clone, O, E: ParseError<I>, F>(input: I, b: bool, f: F) -> IResult<I, Option<O>, E>
+pub fn condc<I, O, E: ParseError<I>, F>(input: I, b: bool, f: F) -> IResult<I, Option<O>, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
@@ -610,13 +609,12 @@ where
 /// assert_eq!(parser("123;"), Err(Err::Failure(("123;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn cut<I: Clone + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, O, E>
+pub fn cut<I, O, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
   F: Parser<I, O, E>,
 {
   move |input: I| {
-    let i = input.clone();
-    match parser.parse(i) {
+    match parser.parse(input) {
       Err(Err::Error(e)) => Err(Err::Failure(e)),
       rest => rest,
     }
@@ -624,7 +622,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn cutc<I: Clone + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, O, E>
+pub fn cutc<I, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
@@ -657,7 +655,7 @@ where
     ParserIterator {
       iterator: f,
       input,
-      state: State::Running,
+      state: Some(State::Running),
     }
 }
 
@@ -665,16 +663,16 @@ where
 pub struct ParserIterator<I, E, F> {
   iterator: F,
   input: I,
-  state: State<E>,
+  state: Option<State<E>>,
 }
 
-impl<I: Clone, E: Clone, F> ParserIterator<I, E, F> {
+impl<I: Clone, E, F> ParserIterator<I, E, F> {
   /// returns the remaining input if parsing was successful, or the error if we encountered an error
-  pub fn finish(self) -> IResult<I, (), E> {
-    match &self.state {
+  pub fn finish(mut self) -> IResult<I, (), E> {
+    match self.state.take().unwrap() {
       State::Running | State::Done => Ok((self.input.clone(), ())),
-      State::Failure(e) => Err(Err::Failure(e.clone())),
-      State::Incomplete(i) => Err(Err::Incomplete(i.clone())),
+      State::Failure(e) => Err(Err::Failure(e)),
+      State::Incomplete(i) => Err(Err::Incomplete(i)),
     }
   }
 }
@@ -687,24 +685,25 @@ impl<'a, Input ,Output ,Error, F> core::iter::Iterator for &'a mut ParserIterato
   type Item = Output;
 
   fn next(&mut self) -> Option<Self::Item> {
-    if let State::Running = self.state {
+    if let State::Running = self.state.take().unwrap() {
       let input = self.input.clone();
 
       match (self.iterator)(input) {
         Ok((i, o)) => {
           self.input = i;
+          self.state = Some(State::Running);
           Some(o)
         },
         Err(Err::Error(_)) => {
-          self.state = State::Done;
+          self.state = Some(State::Done);
           None
         },
         Err(Err::Failure(e)) => {
-          self.state = State::Failure(e);
+          self.state = Some(State::Failure(e));
           None
         },
         Err(Err::Incomplete(i)) => {
-          self.state = State::Incomplete(i);
+          self.state = Some(State::Incomplete(i));
           None
         },
       }

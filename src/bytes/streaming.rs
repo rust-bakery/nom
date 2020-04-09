@@ -25,7 +25,7 @@ use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputIter,
 /// assert_eq!(parser("Something"), Err(Err::Error(("Something", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(5))));
 /// ```
-pub fn tag<'a, T: 'a, Input: 'a, Error: ParseError<Input>>(tag: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn tag<T, Input, Error: ParseError<Input>>(tag: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + Compare<T>,
   T: InputLength + Clone,
@@ -112,7 +112,7 @@ where
 pub fn is_not<T, Input, Error: ParseError<Input>>(arr: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
-  T: InputLength + FindToken<<Input as InputTakeAtPosition>::Item>,
+  T: FindToken<<Input as InputTakeAtPosition>::Item>,
 {
   move |i: Input| {
     let e: ErrorKind = ErrorKind::IsNot;
@@ -147,7 +147,7 @@ where
 pub fn is_a<T, Input, Error: ParseError<Input>>(arr: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
-  T: InputLength + FindToken<<Input as InputTakeAtPosition>::Item>,
+  T: FindToken<<Input as InputTakeAtPosition>::Item>,
 {
   move |i: Input| {
     let e: ErrorKind = ErrorKind::IsA;
@@ -250,7 +250,7 @@ where
 /// ```
 pub fn take_while_m_n<F, Input, Error: ParseError<Input>>(m: usize, n: usize, cond: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
-  Input: InputTake + InputIter + InputLength + Slice<RangeFrom<usize>>,
+  Input: InputTake + InputIter + InputLength,
   F: Fn(<Input as InputIter>::Item) -> bool,
 {
   move |i: Input| {

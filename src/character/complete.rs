@@ -113,7 +113,7 @@ where
 /// ```
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>>,
   T: InputIter,
   T: Compare<&'static str>,
 {
