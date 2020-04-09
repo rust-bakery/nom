@@ -1068,7 +1068,7 @@ pub trait ExtendInto {
   type Item;
 
   /// the type that will be produced
-  type Extender: Extend<Self::Item>;
+  type Extender;
 
   /// create a new `Extend` of the correct type
   fn new_builder(&self) -> Self::Extender;
