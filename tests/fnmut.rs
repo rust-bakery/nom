@@ -2,10 +2,7 @@ extern crate nom;
 
 use nom::{
   bytes::complete::tag,
-  error::ErrorKind,
   multi::{many0, many0_count},
-  number::streaming::le_u64,
-  Err, IResult, Needed, Parser,
 };
 
 #[test]
@@ -29,7 +26,7 @@ fn parse() {
 fn accumulate() {
   let mut v = Vec::new();
 
-  let (i, count) = {
+  let (_, count) = {
     let mut parser = many0_count::<_, _, (), _>(|i| {
       let (i, o) = tag("abc")(i)?;
       v.push(o);
@@ -39,5 +36,6 @@ fn accumulate() {
   };
 
   println!("v: {:?}", v);
+  assert_eq!(count, 4);
   assert_eq!(v.len(), 4);
 }

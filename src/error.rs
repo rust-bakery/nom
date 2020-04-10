@@ -588,7 +588,7 @@ mod tests {
   fn convert_error_panic() {
     let input = "";
 
-    let result: IResult<_, _, VerboseError<&str>> = char('x')(input);
+    let _result: IResult<_, _, VerboseError<&str>> = char('x')(input);
   }
 }
 
