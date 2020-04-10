@@ -188,7 +188,7 @@ Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks
 
 ## Rust version requirements
 
-The 5.0 series of nom requires **Rustc version 1.36 or greater**.
+The 5.0 series of nom requires **Rustc version 1.37 or greater** (compatible with 1.36 if building without the `lexical` feature which includes the `lexical-core` dependency).
 
 Travis CI always has a build with a pinned version of Rustc matching the oldest supported Rust release.
 The current policy is that this will only be updated in the next major nom release.

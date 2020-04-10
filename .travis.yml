@@ -8,7 +8,7 @@ rust:
   - nightly
   - beta
   - stable
-  - 1.36.0
+  - 1.37.0
 
 env:
   matrix:
@@ -24,6 +24,9 @@ matrix:
       env: FEATURES=''
     - rust: stable
       env: FEATURES='--no-default-features'
+      # still compatible with 1.36.0 if not using lexical-core
+    - rust: 1.36.0
+      env: FEATURES='--no-default-features --features std'
     - rust: stable
       env: FEATURES='--no-default-features --features "alloc"'
     - rust: nightly
