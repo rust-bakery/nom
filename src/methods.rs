@@ -17,4 +17,3 @@ macro_rules! call_m (
 macro_rules! apply_m (
   ($($args:tt)*) => (compile_error!("method combinators moved to the nom-methods crate"););
 );
-

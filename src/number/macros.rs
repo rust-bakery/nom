@@ -199,8 +199,14 @@ mod tests {
 
     named!(be_tst32<u32>, u32!(Endianness::Big));
     named!(le_tst32<u32>, u32!(Endianness::Little));
-    assert_eq!(be_tst32(&[0x12, 0x00, 0x60, 0x00]), Ok((&b""[..], 302_014_464_u32)));
-    assert_eq!(le_tst32(&[0x12, 0x00, 0x60, 0x00]), Ok((&b""[..], 6_291_474_u32)));
+    assert_eq!(
+      be_tst32(&[0x12, 0x00, 0x60, 0x00]),
+      Ok((&b""[..], 302_014_464_u32))
+    );
+    assert_eq!(
+      le_tst32(&[0x12, 0x00, 0x60, 0x00]),
+      Ok((&b""[..], 6_291_474_u32))
+    );
 
     named!(be_tst64<u64>, u64!(Endianness::Big));
     named!(le_tst64<u64>, u64!(Endianness::Little));
@@ -220,8 +226,14 @@ mod tests {
 
     named!(be_tsti32<i32>, i32!(Endianness::Big));
     named!(le_tsti32<i32>, i32!(Endianness::Little));
-    assert_eq!(be_tsti32(&[0x00, 0x12, 0x60, 0x00]), Ok((&b""[..], 1_204_224_i32)));
-    assert_eq!(le_tsti32(&[0x00, 0x12, 0x60, 0x00]), Ok((&b""[..], 6_296_064_i32)));
+    assert_eq!(
+      be_tsti32(&[0x00, 0x12, 0x60, 0x00]),
+      Ok((&b""[..], 1_204_224_i32))
+    );
+    assert_eq!(
+      le_tsti32(&[0x00, 0x12, 0x60, 0x00]),
+      Ok((&b""[..], 6_296_064_i32))
+    );
 
     named!(be_tsti64<i64>, i64!(Endianness::Big));
     named!(le_tsti64<i64>, i64!(Endianness::Little));

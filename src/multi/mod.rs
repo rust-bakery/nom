@@ -3,12 +3,12 @@
 #[macro_use]
 mod macros;
 
-use crate::internal::{Err, IResult, Needed, Parser};
+use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::traits::{InputLength, InputTake, ToUsize};
+use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::error::ErrorKind;
+use crate::traits::{InputLength, InputTake, ToUsize};
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -165,7 +165,10 @@ where
 /// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many_till<I, O, P, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, (Vec<O>, P), E>
+pub fn many_till<I, O, P, E, F, G>(
+  mut f: F,
+  mut g: G,
+) -> impl FnMut(I) -> IResult<I, (Vec<O>, P), E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
@@ -180,8 +183,7 @@ where
         Ok((i1, o)) => return Ok((i1, (res, o))),
         Err(Err::Error(_)) => {
           match f.parse(i.clone()) {
-            Err(Err::Error(err)) =>
-              return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
+            Err(Err::Error(err)) => return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
             Err(e) => return Err(e),
             Ok((i1, o)) => {
               // loop trip must always consume (otherwise infinite loops)
@@ -193,7 +195,7 @@ where
               i = i1;
             }
           }
-        },
+        }
         Err(e) => return Err(e),
       }
     }
@@ -235,7 +237,10 @@ where
 /// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn separated_list0<I, O, O2, E, F, G>(mut sep: G, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list0<I, O, O2, E, F, G>(
+  mut sep: G,
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
@@ -322,7 +327,10 @@ where
 /// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn separated_list1<I, O, O2, E, F, G>(mut sep: G, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list1<I, O, O2, E, F, G>(
+  mut sep: G,
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
@@ -335,7 +343,7 @@ where
 
     // Parse the first element
     match f.parse(i.clone()) {
-      Err(e)=> return Err(e),
+      Err(e) => return Err(e),
       Ok((i1, o)) => {
         if i1 == i {
           return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
@@ -422,7 +430,7 @@ where
     let mut count: usize = 0;
 
     if n == 0 {
-        return Ok((i, vec!()))
+      return Ok((i, vec![]));
     }
 
     loop {
@@ -623,7 +631,7 @@ where
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
-  move |i: I | {
+  move |i: I| {
     let mut input = i.clone();
     let mut res = crate::lib::std::vec::Vec::new();
 
@@ -844,7 +852,13 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, mut f: F, init: R, g: G) -> impl FnMut(I) ->IResult<I, R, E>
+pub fn fold_many_m_n<I, O, E, F, G, R>(
+  m: usize,
+  n: usize,
+  mut f: F,
+  init: R,
+  g: G,
+) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
@@ -868,10 +882,12 @@ where
           input = i;
         }
         //FInputXMError: handle failure properly
-        Err(Err::Error(_)) => if count < m {
-          return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
-        } else {
-          break;
+        Err(Err::Error(_)) => {
+          if count < m {
+            return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
+          } else {
+            break;
+          }
         }
         Err(e) => return Err(e),
       }
@@ -882,7 +898,14 @@ where
 }
 
 #[doc(hidden)]
-pub fn fold_many_m_nc<I, O, E, F, G, R>(i: I, m: usize, n: usize, f: F, init: R, g: G) -> IResult<I, R, E>
+pub fn fold_many_m_nc<I, O, E, F, G, R>(
+  i: I,
+  m: usize,
+  n: usize,
+  f: F,
+  init: R,
+  g: G,
+) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
@@ -973,10 +996,9 @@ where
     } else {
       let (rest, i) = i.take_split(length);
       match g.parse(i.clone()) {
-        Err(Err::Incomplete(_)) =>
-          Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete))),
+        Err(Err::Incomplete(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete))),
         Err(e) => Err(e),
-        Ok((_, o)) => Ok((rest,o)),
+        Ok((_, o)) => Ok((rest, o)),
       }
     }
   }

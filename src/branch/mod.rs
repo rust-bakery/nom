@@ -42,7 +42,9 @@ pub trait Alt<I, O, E> {
 ///
 /// with a custom error type, it is possible to have alt return the error of the parser
 /// that went the farthest in the input data
-pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(mut l: List) -> impl FnMut(I) -> IResult<I, O, E> {
+pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
+  mut l: List,
+) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.choice(i)
 }
 
@@ -80,7 +82,9 @@ pub trait Permutation<I, O, E> {
 /// assert_eq!(parser("abc;"), Err(Err::Error(error_position!(";", ErrorKind::Permutation))));
 /// # }
 /// ```
-pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(mut l: List) -> impl FnMut(I) -> IResult<I, O, E> {
+pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(
+  mut l: List,
+) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.permutation(i)
 }
 

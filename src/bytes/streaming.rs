@@ -5,7 +5,10 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::ops::RangeFrom;
 use crate::lib::std::result::Result::*;
-use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice, ToUsize};
+use crate::traits::{
+  Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake,
+  InputTakeAtPosition, Slice, ToUsize,
+};
 
 /// Recognizes a pattern
 ///
@@ -25,7 +28,9 @@ use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputIter,
 /// assert_eq!(parser("Something"), Err(Err::Error(("Something", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(5))));
 /// ```
-pub fn tag<T, Input, Error: ParseError<Input>>(tag: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn tag<T, Input, Error: ParseError<Input>>(
+  tag: T,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + Compare<T>,
   T: InputLength + Clone,
@@ -66,7 +71,9 @@ where
 /// assert_eq!(parser("Something"), Err(Err::Error(("Something", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(5))));
 /// ```
-pub fn tag_no_case<T, Input, Error: ParseError<Input>>(tag: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn tag_no_case<T, Input, Error: ParseError<Input>>(
+  tag: T,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + Compare<T>,
   T: InputLength + Clone,
@@ -109,7 +116,9 @@ where
 /// assert_eq!(not_space("Nospace"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(not_space(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn is_not<T, Input, Error: ParseError<Input>>(arr: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn is_not<T, Input, Error: ParseError<Input>>(
+  arr: T,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   T: FindToken<<Input as InputTakeAtPosition>::Item>,
@@ -144,7 +153,9 @@ where
 /// assert_eq!(hex("D15EA5E"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(hex(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn is_a<T, Input, Error: ParseError<Input>>(arr: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn is_a<T, Input, Error: ParseError<Input>>(
+  arr: T,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   T: FindToken<<Input as InputTakeAtPosition>::Item>,
@@ -178,7 +189,9 @@ where
 /// assert_eq!(alpha(b"latin"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(alpha(b""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn take_while<F, Input, Error: ParseError<Input>>(cond: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_while<F, Input, Error: ParseError<Input>>(
+  cond: F,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
@@ -211,7 +224,9 @@ where
 /// assert_eq!(alpha(b"latin"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(alpha(b"12345"), Err(Err::Error((&b"12345"[..], ErrorKind::TakeWhile1))));
 /// ```
-pub fn take_while1<F, Input, Error: ParseError<Input>>(cond: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_while1<F, Input, Error: ParseError<Input>>(
+  cond: F,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
@@ -248,7 +263,11 @@ where
 /// assert_eq!(short_alpha(b"ed"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(short_alpha(b"12345"), Err(Err::Error((&b"12345"[..], ErrorKind::TakeWhileMN))));
 /// ```
-pub fn take_while_m_n<F, Input, Error: ParseError<Input>>(m: usize, n: usize, cond: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_while_m_n<F, Input, Error: ParseError<Input>>(
+  m: usize,
+  n: usize,
+  cond: F,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + InputIter + InputLength,
   F: Fn(<Input as InputIter>::Item) -> bool,
@@ -263,14 +282,20 @@ where
             let res: IResult<_, _, Error> = if let Some(index) = input.slice_index(idx) {
               Ok(input.take_split(index))
             } else {
-              Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+              Err(Err::Error(Error::from_error_kind(
+                input,
+                ErrorKind::TakeWhileMN,
+              )))
             };
             res
           } else {
             let res: IResult<_, _, Error> = if let Some(index) = input.slice_index(n) {
               Ok(input.take_split(index))
             } else {
-              Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+              Err(Err::Error(Error::from_error_kind(
+                input,
+                ErrorKind::TakeWhileMN,
+              )))
             };
             res
           }
@@ -284,7 +309,10 @@ where
         if len >= n {
           match input.slice_index(n) {
             Some(index) => Ok(input.take_split(index)),
-            None => Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+            None => Err(Err::Error(Error::from_error_kind(
+              input,
+              ErrorKind::TakeWhileMN,
+            ))),
           }
         } else {
           let needed = if m > len { m - len } else { 1 };
@@ -319,7 +347,9 @@ where
 /// assert_eq!(till_colon("12345"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(till_colon(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn take_till<F, Input, Error: ParseError<Input>>(cond: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_till<F, Input, Error: ParseError<Input>>(
+  cond: F,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
@@ -350,7 +380,9 @@ where
 /// assert_eq!(till_colon("12345"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(till_colon(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn take_till1<F, Input, Error: ParseError<Input>>(cond: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_till1<F, Input, Error: ParseError<Input>>(
+  cond: F,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTakeAtPosition,
   F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
@@ -381,7 +413,9 @@ where
 /// assert_eq!(take6("short"), Err(Err::Incomplete(Needed::new(6)))); //N doesn't change
 /// assert_eq!(take6(""), Err(Err::Incomplete(Needed::new(6))));
 /// ```
-pub fn take<C, Input, Error: ParseError<Input>>(count: C) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take<C, Input, Error: ParseError<Input>>(
+  count: C,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputIter + InputTake,
   C: ToUsize,
@@ -414,7 +448,9 @@ where
 /// assert_eq!(until_eof("hello, world"), Err(Err::Incomplete(Needed::new(3))));
 /// assert_eq!(until_eof(""), Err(Err::Incomplete(Needed::new(3))));
 /// ```
-pub fn take_until<T, Input, Error: ParseError<Input>>(tag: T) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_until<T, Input, Error: ParseError<Input>>(
+  tag: T,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + FindSubstring<T>,
   T: InputLength + Clone,
@@ -453,9 +489,19 @@ where
 /// assert_eq!(esc("12\\\"34;"), Ok((";", "12\\\"34")));
 /// ```
 ///
-pub fn escaped<Input, Error, F, G, O1, O2>(mut normal: F, control_char: char, mut escapable: G) -> impl FnMut(Input) -> IResult<Input, Input, Error>
+pub fn escaped<Input, Error, F, G, O1, O2>(
+  mut normal: F,
+  control_char: char,
+  mut escapable: G,
+) -> impl FnMut(Input) -> IResult<Input, Input, Error>
 where
-  Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
+  Input: Clone
+    + crate::traits::Offset
+    + InputLength
+    + InputTake
+    + InputTakeAtPosition
+    + Slice<RangeFrom<usize>>
+    + InputIter,
   <Input as InputIter>::Item: crate::traits::AsChar,
   F: Parser<Input, O1, Error>,
   G: Parser<Input, O2, Error>,
@@ -509,9 +555,20 @@ where
 }
 
 #[doc(hidden)]
-pub fn escapedc<Input, Error, F, G, O1, O2>(i: Input, normal: F, control_char: char, escapable: G) -> IResult<Input, Input, Error>
+pub fn escapedc<Input, Error, F, G, O1, O2>(
+  i: Input,
+  normal: F,
+  control_char: char,
+  escapable: G,
+) -> IResult<Input, Input, Error>
 where
-  Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
+  Input: Clone
+    + crate::traits::Offset
+    + InputLength
+    + InputTake
+    + InputTakeAtPosition
+    + Slice<RangeFrom<usize>>
+    + InputIter,
   <Input as InputIter>::Item: crate::traits::AsChar,
   F: Fn(Input) -> IResult<Input, O1, Error>,
   G: Fn(Input) -> IResult<Input, O2, Error>,
@@ -558,7 +615,13 @@ pub fn escaped_transform<Input, Error, F, G, O1, O2, ExtendItem, Output>(
   mut transform: G,
 ) -> impl FnMut(Input) -> IResult<Input, Output, Error>
 where
-  Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
+  Input: Clone
+    + crate::traits::Offset
+    + InputLength
+    + InputTake
+    + InputTakeAtPosition
+    + Slice<RangeFrom<usize>>
+    + InputIter,
   Input: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
@@ -630,7 +693,13 @@ pub fn escaped_transformc<Input, Error, F, G, O1, O2, ExtendItem, Output>(
   transform: G,
 ) -> IResult<Input, Output, Error>
 where
-  Input: Clone + crate::traits::Offset + InputLength + InputTake + InputTakeAtPosition + Slice<RangeFrom<usize>> + InputIter,
+  Input: Clone
+    + crate::traits::Offset
+    + InputLength
+    + InputTake
+    + InputTakeAtPosition
+    + Slice<RangeFrom<usize>>
+    + InputIter,
   Input: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
@@ -643,5 +712,4 @@ where
   Error: ParseError<Input>,
 {
   escaped_transform(normal, control_char, transform)(i)
-
 }

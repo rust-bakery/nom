@@ -970,9 +970,9 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, IResult, Needed};
-  use crate::error::ParseError;
   use crate::error::ErrorKind;
+  use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::lib::std::boxed::Box;
 
@@ -1100,7 +1100,6 @@ mod tests {
     }
   }
 
-
   #[test]
   #[cfg(feature = "alloc")]
   fn cond() {
@@ -1186,10 +1185,7 @@ mod tests {
 
     assert_eq!(
       res,
-      Err(Err::Error(error_position!(
-        "ab",
-        ErrorKind::ParseTo
-      )))
+      Err(Err::Error(error_position!("ab", ErrorKind::ParseTo)))
     );
 
     let res: IResult<_, _, (&str, ErrorKind)> = parse_to!("42", usize);
@@ -1197,5 +1193,4 @@ mod tests {
     assert_eq!(res, Ok(("", 42)));
     //assert_eq!(ErrorKind::convert(ErrorKind::ParseTo), ErrorKind::ParseTo::<u64>);
   }
-
 }

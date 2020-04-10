@@ -132,7 +132,10 @@ use crate::internal::{Err, IResult};
 /// create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
 /// to errors when backtracking through a parse tree
-pub fn context<I: Clone, E: ContextError<I>, F, O>(context: &'static str, mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
+pub fn context<I: Clone, E: ContextError<I>, F, O>(
+  context: &'static str,
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
   F: Parser<I, O, E>,
 {
@@ -157,7 +160,9 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
 
     if input.is_empty() {
       match kind {
-        VerboseErrorKind::Char(c) => write!(&mut result, "{}: expected '{}', got empty input\n\n", i, c),
+        VerboseErrorKind::Char(c) => {
+          write!(&mut result, "{}: expected '{}', got empty input\n\n", i, c)
+        }
         VerboseErrorKind::Context(s) => write!(&mut result, "{}: in {}, got empty input\n\n", i, s),
         VerboseErrorKind::Nom(e) => write!(&mut result, "{}: in {:?}, got empty input\n\n", i, e),
       }
@@ -169,45 +174,56 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
 
       // Find the line that includes the subslice:
       // Find the *last* newline before the substring starts
-      let line_begin = prefix.iter().rev().position(|&b| b == b'\n').map(|pos| offset - pos).unwrap_or(0);
+      let line_begin = prefix
+        .iter()
+        .rev()
+        .position(|&b| b == b'\n')
+        .map(|pos| offset - pos)
+        .unwrap_or(0);
 
       // Find the full line after that newline
-      let line = input[line_begin..].lines().next().unwrap_or(&input[line_begin..]).trim_end();
+      let line = input[line_begin..]
+        .lines()
+        .next()
+        .unwrap_or(&input[line_begin..])
+        .trim_end();
 
       // The (1-indexed) column number is the offset of our substring into that line
       let column_number = line.offset(substring) + 1;
 
       match kind {
-        VerboseErrorKind::Char(c) => if let Some(actual) = substring.chars().next() {
-          write!(
-            &mut result,
-            "{i}: at line {line_number}:\n\
+        VerboseErrorKind::Char(c) => {
+          if let Some(actual) = substring.chars().next() {
+            write!(
+              &mut result,
+              "{i}: at line {line_number}:\n\
                {line}\n\
                {caret:>column$}\n\
                expected '{expected}', found {actual}\n\n",
-            i = i,
-            line_number = line_number,
-            line = line,
-            caret = '^',
-            column = column_number,
-            expected = c,
-            actual = actual,
-          )
-        } else {
-          write!(
-            &mut result,
-            "{i}: at line {line_number}:\n\
+              i = i,
+              line_number = line_number,
+              line = line,
+              caret = '^',
+              column = column_number,
+              expected = c,
+              actual = actual,
+            )
+          } else {
+            write!(
+              &mut result,
+              "{i}: at line {line_number}:\n\
                {line}\n\
                {caret:>column$}\n\
                expected '{expected}', got end of input\n\n",
-            i = i,
-            line_number = line_number,
-            line = line,
-            caret = '^',
-            column = column_number,
-            expected = c,
-          )
-        },
+              i = i,
+              line_number = line_number,
+              line = line,
+              caret = '^',
+              column = column_number,
+              expected = c,
+            )
+          }
+        }
         VerboseErrorKind::Context(s) => write!(
           &mut result,
           "{i}: at line {line_number}, in {context}:\n\

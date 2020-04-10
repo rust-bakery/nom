@@ -130,7 +130,13 @@ mod tests {
   fn re_match() {
     named!(rm<&str,&str>, re_match!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatch),)));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(error_position!(
+        &"blah"[..],
+        ErrorKind::RegexpMatch
+      ),))
+    );
     assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
   }
 
@@ -138,7 +144,13 @@ mod tests {
   fn re_find() {
     named!(rm<&str,&str>, re_find!(r"^\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Ok(("", "2015-09-07")));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpFind),)));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(error_position!(
+        &"blah"[..],
+        ErrorKind::RegexpFind
+      ),))
+    );
     assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
   }
 
@@ -147,7 +159,13 @@ mod tests {
   fn re_matches() {
     named!(rm< &str,Vec<&str> >, re_matches!(r"\d{4}-\d{2}-\d{2}"));
     assert_eq!(rm("2015-09-07"), Ok(("", vec!["2015-09-07"])));
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpMatches))));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(error_position!(
+        &"blah"[..],
+        ErrorKind::RegexpMatches
+      )))
+    );
     assert_eq!(
       rm("aaa2015-09-07blah2015-09-09pouet"),
       Ok(("pouet", vec!["2015-09-07", "2015-09-09"]))
@@ -162,10 +180,19 @@ mod tests {
       rm("blah nom 0.3.11pouet"),
       Ok(("pouet", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]))
     );
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpCapture))));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(error_position!(
+        &"blah"[..],
+        ErrorKind::RegexpCapture
+      )))
+    );
     assert_eq!(
       rm("hello nom 0.3.11 world regex 0.1.41"),
-      Ok((" world regex 0.1.41", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]))
+      Ok((
+        " world regex 0.1.41",
+        vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]
+      ))
     );
   }
 
@@ -175,9 +202,18 @@ mod tests {
     named!(rm< &str,Vec<Vec<&str>> >, re_captures!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
     assert_eq!(
       rm("blah nom 0.3.11pouet"),
-      Ok(("pouet", vec![vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]]))
+      Ok((
+        "pouet",
+        vec![vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]]
+      ))
     );
-    assert_eq!(rm("blah"), Err(Err::Error(error_position!(&"blah"[..], ErrorKind::RegexpCapture))));
+    assert_eq!(
+      rm("blah"),
+      Err(Err::Error(error_position!(
+        &"blah"[..],
+        ErrorKind::RegexpCapture
+      )))
+    );
     assert_eq!(
       rm("hello nom 0.3.11 world regex 0.1.41 aaa"),
       Ok((
@@ -196,9 +232,15 @@ mod tests {
     assert_eq!(rm(&b"2015-09-07"[..]), Ok((&b""[..], &b"2015-09-07"[..])));
     assert_eq!(
       rm(&b"blah"[..]),
-      Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpMatch)))
+      Err(Err::Error(error_position!(
+        &b"blah"[..],
+        ErrorKind::RegexpMatch
+      )))
     );
-    assert_eq!(rm(&b"2015-09-07blah"[..]), Ok((&b""[..], &b"2015-09-07blah"[..])));
+    assert_eq!(
+      rm(&b"2015-09-07blah"[..]),
+      Ok((&b""[..], &b"2015-09-07blah"[..]))
+    );
   }
 
   #[test]
@@ -207,19 +249,31 @@ mod tests {
     assert_eq!(rm(&b"2015-09-07"[..]), Ok((&b""[..], &b"2015-09-07"[..])));
     assert_eq!(
       rm(&b"blah"[..]),
-      Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpFind)))
+      Err(Err::Error(error_position!(
+        &b"blah"[..],
+        ErrorKind::RegexpFind
+      )))
     );
-    assert_eq!(rm(&b"2015-09-07blah"[..]), Ok((&b"blah"[..], &b"2015-09-07"[..])));
+    assert_eq!(
+      rm(&b"2015-09-07blah"[..]),
+      Ok((&b"blah"[..], &b"2015-09-07"[..]))
+    );
   }
 
   #[cfg(feature = "alloc")]
   #[test]
   fn re_bytes_matches() {
     named!(rm<Vec<&[u8]>>, re_bytes_matches!(r"\d{4}-\d{2}-\d{2}"));
-    assert_eq!(rm(&b"2015-09-07"[..]), Ok((&b""[..], vec![&b"2015-09-07"[..]])));
+    assert_eq!(
+      rm(&b"2015-09-07"[..]),
+      Ok((&b""[..], vec![&b"2015-09-07"[..]]))
+    );
     assert_eq!(
       rm(&b"blah"[..]),
-      Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpMatches)))
+      Err(Err::Error(error_position!(
+        &b"blah"[..],
+        ErrorKind::RegexpMatches
+      )))
     );
     assert_eq!(
       rm(&b"aaa2015-09-07blah2015-09-09pouet"[..]),
@@ -230,23 +284,43 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn re_bytes_capture() {
-    named!(rm<Vec<&[u8]>>, re_bytes_capture!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
+    named!(
+      rm<Vec<&[u8]>>,
+      re_bytes_capture!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))")
+    );
     assert_eq!(
       rm(&b"blah nom 0.3.11pouet"[..]),
       Ok((
         &b"pouet"[..],
-        vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..],]
+        vec![
+          &b"nom 0.3.11"[..],
+          &b"nom"[..],
+          &b"0.3.11"[..],
+          &b"0"[..],
+          &b"3"[..],
+          &b"11"[..],
+        ]
       ))
     );
     assert_eq!(
       rm(&b"blah"[..]),
-      Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture)))
+      Err(Err::Error(error_position!(
+        &b"blah"[..],
+        ErrorKind::RegexpCapture
+      )))
     );
     assert_eq!(
       rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),
       Ok((
         &b" world regex 0.1.41"[..],
-        vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..],]
+        vec![
+          &b"nom 0.3.11"[..],
+          &b"nom"[..],
+          &b"0.3.11"[..],
+          &b"0"[..],
+          &b"3"[..],
+          &b"11"[..],
+        ]
       ))
     );
   }
@@ -254,7 +328,10 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn re_bytes_captures() {
-    named!(rm<Vec<Vec<&[u8]>>>, re_bytes_captures!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))"));
+    named!(
+      rm<Vec<Vec<&[u8]>>>,
+      re_bytes_captures!(r"([[:alpha:]]+)\s+((\d+).(\d+).(\d+))")
+    );
     assert_eq!(
       rm(&b"blah nom 0.3.11pouet"[..]),
       Ok((
@@ -271,14 +348,24 @@ mod tests {
     );
     assert_eq!(
       rm(&b"blah"[..]),
-      Err(Err::Error(error_position!(&b"blah"[..], ErrorKind::RegexpCapture)))
+      Err(Err::Error(error_position!(
+        &b"blah"[..],
+        ErrorKind::RegexpCapture
+      )))
     );
     assert_eq!(
       rm(&b"hello nom 0.3.11 world regex 0.1.41 aaa"[..]),
       Ok((
         &b" aaa"[..],
         vec![
-          vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..],],
+          vec![
+            &b"nom 0.3.11"[..],
+            &b"nom"[..],
+            &b"0.3.11"[..],
+            &b"0"[..],
+            &b"3"[..],
+            &b"11"[..],
+          ],
           vec![
             &b"regex 0.1.41"[..],
             &b"regex"[..],

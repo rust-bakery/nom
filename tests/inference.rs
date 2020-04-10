@@ -8,8 +8,8 @@
 #[macro_use]
 extern crate nom;
 
+use nom::character::{is_digit, streaming::alpha1 as alpha};
 use std::str;
-use nom::character::{streaming::alpha1 as alpha, is_digit};
 
 // issue #617
 named!(multi<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
@@ -28,7 +28,8 @@ named!(
             tag!("\n\t"),
             map_res!(take_while!(call!(|c| c != b'\n')), std::str::from_utf8)
           )
-        ) >> (rest)
+        )
+      >> (rest)
   )
 );
 

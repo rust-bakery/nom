@@ -97,7 +97,6 @@ macro_rules! nom_stringify (
   ($($args:tt)*) => (stringify!($($args)*));
 );
 
-
 /// Prints a message if the parser fails
 ///
 /// The message prints the `Error` or `Incomplete`
@@ -158,16 +157,19 @@ macro_rules! dbg (
 /// f(a);
 /// ```
 #[cfg(feature = "std")]
-pub fn dbg_dmp<'a, F, O, E: Debug>(f: F, context: &'static str) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
-  where F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E> {
-  move |i: &'a [u8]| {
-      match f(i) {
-        Err(e) => {
-          println!("{}: Error({:?}) at:\n{}", context, e, i.to_hex(8));
-          Err(e)
-        },
-        a => a,
-      }
+pub fn dbg_dmp<'a, F, O, E: Debug>(
+  f: F,
+  context: &'static str,
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
+where
+  F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E>,
+{
+  move |i: &'a [u8]| match f(i) {
+    Err(e) => {
+      println!("{}: Error({:?}) at:\n{}", context, e, i.to_hex(8));
+      Err(e)
+    }
+    a => a,
   }
 }
 
@@ -211,4 +213,3 @@ macro_rules! dbg_dmp (
       dbg_dmp!($i, call!($f));
   );
 );
-

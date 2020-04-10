@@ -9,13 +9,12 @@ use criterion::*;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use nom::{
-  IResult,
+  bytes::complete::{is_a, take_while},
+  character::complete::{alphanumeric1 as alphanumeric, char, not_line_ending, space0 as space},
   combinator::opt,
-  bytes::complete::{take_while, is_a},
   sequence::{delimited, terminated},
-  character::complete::{char, alphanumeric1 as  alphanumeric, space0 as space, not_line_ending}
+  IResult,
 };
-
 
 use std::collections::HashMap;
 
@@ -28,9 +27,11 @@ fn space_or_line_ending(i: &str) -> IResult<&str, &str> {
 }
 
 fn category(i: &str) -> IResult<&str, &str> {
-  terminated(delimited(char('['), take_while(|c| c != ']'), char(']')), opt(is_a(" \r\n")))(i)
+  terminated(
+    delimited(char('['), take_while(|c| c != ']'), char(']')),
+    opt(is_a(" \r\n")),
+  )(i)
 }
-
 
 named!(key_value    <&str,(&str,&str)>,
   do_parse!(
@@ -232,12 +233,10 @@ file=payroll.dat
 
   c.bench(
     "bench ini str",
-    Benchmark::new(
-      "parse",
-      move |b| {
-        b.iter(|| categories(s).unwrap());
-      },
-    ).throughput(Throughput::Bytes(s.len() as u64)),
+    Benchmark::new("parse", move |b| {
+      b.iter(|| categories(s).unwrap());
+    })
+    .throughput(Throughput::Bytes(s.len() as u64)),
   );
 }
 

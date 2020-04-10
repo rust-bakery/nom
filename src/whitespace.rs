@@ -795,7 +795,10 @@ macro_rules! sep (
 /// ```
 ///
 #[macro_export(local_inner_macros)]
-#[deprecated(since = "5.0.0", note = "whitespace parsing only works with macros and will not be updated anymore")]
+#[deprecated(
+  since = "5.0.0",
+  note = "whitespace parsing only works with macros and will not be updated anymore"
+)]
 macro_rules! ws (
   ($i:expr, $($args:tt)*) => (
     {
@@ -819,21 +822,24 @@ macro_rules! ws (
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
+  use crate::character::complete::multispace0 as sp;
+  use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::{
     error::ParseError,
     lib::std::{
+      fmt::Debug,
       string::{String, ToString},
-      fmt::Debug
-    }
+    },
   };
-  use crate::internal::{Err, IResult, Needed};
-  use crate::character::complete::multispace0 as sp;
-  use crate::error::ErrorKind;
 
   #[test]
   fn spaaaaace() {
-    assert_eq!(sp::<_,(_,ErrorKind)>(&b" \t abc "[..]), Ok((&b"abc "[..], &b" \t "[..])));
+    assert_eq!(
+      sp::<_, (_, ErrorKind)>(&b" \t abc "[..]),
+      Ok((&b"abc "[..], &b" \t "[..]))
+    );
   }
 
   #[test]
@@ -980,8 +986,8 @@ mod tests {
   pub struct ErrorStr(String);
 
   #[cfg(feature = "alloc")]
-  impl<'a> From<(&'a[u8], ErrorKind)> for ErrorStr {
-    fn from(i: (&'a[u8], ErrorKind)) -> Self {
+  impl<'a> From<(&'a [u8], ErrorKind)> for ErrorStr {
+    fn from(i: (&'a [u8], ErrorKind)) -> Self {
       ErrorStr(format!("custom error code: {:?}", i))
     }
   }
@@ -1000,7 +1006,10 @@ mod tests {
     }
 
     fn append(input: I, kind: ErrorKind, other: Self) -> Self {
-      ErrorStr(format!("custom error message: ({:?}, {:?}) - {:?}", input, kind, other))
+      ErrorStr(format!(
+        "custom error message: ({:?}, {:?}) - {:?}",
+        input, kind, other
+      ))
     }
   }
 
@@ -1031,13 +1040,9 @@ mod tests {
     }
 
     let a = &b"\tabcd"[..];
-    assert_eq!(
-      alt1(a),
-      Err(Err::Error(error_position!(a, ErrorKind::Alt)))
-    );
+    assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     assert_eq!(alt2(a), Ok((&b""[..], a)));
     assert_eq!(alt3(a), Ok((a, &b""[..])));
-
   }
 
   named!(str_parse(&str) -> &str, ws!(tag!("test")));

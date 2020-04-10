@@ -11,7 +11,7 @@ use criterion::Criterion;
 use nom::number::{complete, streaming};
 
 fn parser(i: &[u8]) -> nom::IResult<&[u8], u64> {
-    complete::be_u64(i)
+  complete::be_u64(i)
 }
 
 fn number(c: &mut Criterion) {

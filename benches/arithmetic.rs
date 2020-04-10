@@ -43,7 +43,8 @@ named!(
           } else {
             acc / val
           }
-        ) >> (res)
+        )
+      >> (res)
   )
 );
 
@@ -60,7 +61,8 @@ named!(
           } else {
             acc - val
           }
-        ) >> (res)
+        )
+      >> (res)
   )
 );
 

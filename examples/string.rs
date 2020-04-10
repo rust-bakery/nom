@@ -86,7 +86,9 @@ fn parse_escaped_char<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a
 
 /// Parse a backslash, followed by any amount of whitespace. This is used later
 /// to discard any escaped whitespace.
-fn parse_escaped_whitespace<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'a str, E> {
+fn parse_escaped_whitespace<'a, E: ParseError<&'a str>>(
+  input: &'a str,
+) -> IResult<&'a str, &'a str, E> {
   preceded(char('\\'), multispace1)(input)
 }
 
@@ -115,7 +117,9 @@ enum StringFragment<'a> {
 
 /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
 /// into a StringFragment.
-fn parse_fragment<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, StringFragment<'a>, E> {
+fn parse_fragment<'a, E: ParseError<&'a str>>(
+  input: &'a str,
+) -> IResult<&'a str, StringFragment<'a>, E> {
   alt((
     // The `map` combinator runs a parser, then applies a function to the output
     // of that parser.

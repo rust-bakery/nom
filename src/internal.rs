@@ -11,7 +11,7 @@ use core::num::NonZeroUsize;
 /// The `Ok` side is a pair containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
 ///
-pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
+pub type IResult<I, O, E = (I, ErrorKind)> = Result<(I, O), Err<E>>;
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -84,7 +84,8 @@ impl<E> Err<E> {
 
   /// Applies the given function to the inner error
   pub fn map<E2, F>(self, f: F) -> Err<E2>
-    where F: FnOnce(E) -> E2
+  where
+    F: FnOnce(E) -> E2,
   {
     match self {
       Err::Incomplete(n) => Err::Incomplete(n),
@@ -95,7 +96,8 @@ impl<E> Err<E> {
 
   /// automatically converts between errors if the underlying type supports it
   pub fn convert<F>(e: Err<F>) -> Self
-    where E: From<F>
+  where
+    E: From<F>,
   {
     e.map(Into::into)
   }
@@ -104,7 +106,9 @@ impl<E> Err<E> {
 impl<T> Err<(T, ErrorKind)> {
   /// maps `Err<(T, ErrorKind)>` to `Err<(U, ErrorKind)>` with the given F: T -> U
   pub fn map_input<U, F>(self, f: F) -> Err<(U, ErrorKind)>
-    where F: FnOnce(T) -> U {
+  where
+    F: FnOnce(T) -> U,
+  {
     match self {
       Err::Incomplete(n) => Err::Incomplete(n),
       Err::Failure((input, k)) => Err::Failure((f(input), k)),
@@ -169,20 +173,22 @@ pub trait Parser<I, O, E> {
   fn parse(&mut self, input: I) -> IResult<I, O, E>;
 
   /// maps a function over the result of a parser
-  fn map<G,O2>(self, g: G) -> Mapper<Self, G, O>
-      where G: Fn(O) -> O2,
-            Self: std::marker::Sized, {
+  fn map<G, O2>(self, g: G) -> Mapper<Self, G, O>
+  where
+    G: Fn(O) -> O2,
+    Self: std::marker::Sized,
+  {
     Mapper {
-        f: self,
-        g,
-        phantom: std::marker::PhantomData,
+      f: self,
+      g,
+      phantom: std::marker::PhantomData,
     }
   }
 }
 
 impl<'a, I, O, E, F> Parser<I, O, E> for F
 where
-  F: FnMut(I) -> IResult<I, O, E> + 'a
+  F: FnMut(I) -> IResult<I, O, E> + 'a,
 {
   fn parse(&mut self, i: I) -> IResult<I, O, E> {
     self(i)
@@ -196,12 +202,11 @@ pub struct Mapper<F, G, O1> {
   phantom: std::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Mapper<F, G, O1>
-{
+impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Mapper<F, G, O1> {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
     match self.f.parse(i) {
-        Err(e) => Err(e),
-        Ok((i, o)) => Ok((i, (self.g)(o))),
+      Err(e) => Err(e),
+      Ok((i, o)) => Ok((i, (self.g)(o))),
     }
   }
 }
@@ -234,5 +239,4 @@ mod tests {
     let e = Err::Error(1);
     assert_eq!(e.map(|v| v + 1), Err::Error(2));
   }
-
 }
