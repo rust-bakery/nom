@@ -173,16 +173,61 @@ pub trait Parser<I, O, E> {
   fn parse(&mut self, input: I) -> IResult<I, O, E>;
 
   /// maps a function over the result of a parser
-  fn map<G, O2>(self, g: G) -> Mapper<Self, G, O>
+  fn map<G, O2>(self, g: G) -> Map<Self, G, O>
   where
     G: Fn(O) -> O2,
     Self: std::marker::Sized,
   {
-    Mapper {
+    Map {
       f: self,
       g,
       phantom: std::marker::PhantomData,
     }
+  }
+
+  /// creates a second parser from the output of the first one, then apply over the rest of the input
+  fn flat_map<G, H, O2>(self, g: G) -> FlatMap<Self, G, O>
+  where
+    G: Fn(O) -> H,
+    H: Parser<I, O2, E>,
+    Self: std::marker::Sized,
+  {
+    FlatMap {
+      f: self,
+      g,
+      phantom: std::marker::PhantomData,
+    }
+  }
+
+  /// applies a second parser over the output of the first one
+  fn and_then<G, O2>(self, g: G) -> AndThen<Self, G, O>
+  where
+    G: Parser<O, O2, E>,
+    Self: std::marker::Sized,
+  {
+    AndThen {
+      f: self,
+      g,
+      phantom: std::marker::PhantomData,
+    }
+  }
+
+  /// applies a second parser after the first one, return their results as a tuple
+  fn and<G, O2>(self, g: G) -> And<Self, G>
+  where
+    G: Parser<I, O2, E>,
+    Self: std::marker::Sized,
+  {
+    And { f: self, g }
+  }
+
+  /// applies a second parser over the input if the first one failed
+  fn or<G>(self, g: G) -> Or<Self, G>
+  where
+    G: Parser<I, O, E>,
+    Self: std::marker::Sized,
+  {
+    Or { f: self, g }
   }
 }
 
@@ -195,18 +240,87 @@ where
   }
 }
 
-/// implementation of parser mapping
-pub struct Mapper<F, G, O1> {
+/// implementation of Parser:::map
+pub struct Map<F, G, O1> {
   f: F,
   g: G,
   phantom: std::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Mapper<F, G, O1> {
+impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
     match self.f.parse(i) {
       Err(e) => Err(e),
       Ok((i, o)) => Ok((i, (self.g)(o))),
+    }
+  }
+}
+
+/// implementation of Parser::flat_map
+pub struct FlatMap<F, G, O1> {
+  f: F,
+  g: G,
+  phantom: std::marker::PhantomData<O1>,
+}
+
+impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
+  for FlatMap<F, G, O1>
+{
+  fn parse(&mut self, i: I) -> IResult<I, O2, E> {
+    let (i, o1) = self.f.parse(i)?;
+    (self.g)(o1).parse(i)
+  }
+}
+
+/// implementation of Parser::and_then
+pub struct AndThen<F, G, O1> {
+  f: F,
+  g: G,
+  phantom: std::marker::PhantomData<O1>,
+}
+
+impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
+  for AndThen<F, G, O1>
+{
+  fn parse(&mut self, i: I) -> IResult<I, O2, E> {
+    let (i, o1) = self.f.parse(i)?;
+    let (_, o2) = self.g.parse(o1)?;
+    Ok((i, o2))
+  }
+}
+
+/// implementation of Parser::and
+pub struct And<F, G> {
+  f: F,
+  g: G,
+}
+
+impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, O2), E>
+  for And<F, G>
+{
+  fn parse(&mut self, i: I) -> IResult<I, (O1, O2), E> {
+    let (i, o1) = self.f.parse(i)?;
+    let (i, o2) = self.g.parse(i)?;
+    Ok((i, (o1, o2)))
+  }
+}
+
+/// implementation of Parser::or
+pub struct Or<F, G> {
+  f: F,
+  g: G,
+}
+
+impl<'a, I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Parser<I, O, E>>
+  Parser<I, O, E> for Or<F, G>
+{
+  fn parse(&mut self, i: I) -> IResult<I, O, E> {
+    match self.f.parse(i.clone()) {
+      Err(Err::Error(e1)) => match self.g.parse(i) {
+        Err(Err::Error(e2)) => Err(Err::Error(e1.or(e2))),
+        res => res,
+      },
+      res => res,
     }
   }
 }
