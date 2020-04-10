@@ -10,51 +10,50 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
-| [char](https://docs.rs/nom/4.0.0/nom/macro.char.html) | `char!('a')` |  `"abc"` | `Ok(("bc", 'a'))`| matches one character (works with non ASCII chars too) | 
-| [is_a](https://docs.rs/nom/4.0.0/nom/macro.is_a.html) | ` is_a!("ab")` |  `"ababc"` | `Ok(("c", "abab"))`|matches a sequence of any of the characters passed as arguments|
-| [is_not](https://docs.rs/nom/4.0.0/nom/macro.is_not.html) |`is_not!("cd")` |  `"ababc"` | `Ok(("c", "abab"))`|matches a sequence of none of the characters passed as arguments|
-| [one_of](https://docs.rs/nom/4.0.0/nom/macro.one_of.html) |`one_of!("abc")` |  `"abc"` | `Ok(("bc", 'a'))`|matches one of the provided characters (works with non ASCII characters too)|
-| [none_of](https://docs.rs/nom/4.0.0/nom/macro.none_of.html) |`none_of!("abc")` |  `"xyab"` | `Ok(("yab", 'x'))`|matches anything but the provided characters|
-| [tag](https://docs.rs/nom/4.0.0/nom/macro.tag.html) |`tag!("hello")` |  `"hello world"` | `Ok((" world", "hello"))`|recognizes a specific suite of characters or bytes|
-| [tag_no_case](https://docs.rs/nom/4.0.0/nom/macro.tag_no_case.html) |`tag_no_case!("hello")` |  `"HeLLo World"` | `Ok((" World", "HeLLo"))`|case insensitive comparison. Note that case insensitive comparison is not well defined for unicode, and that you might have bad surprises|
-| [take](https://docs.rs/nom/4.0.0/nom/macro.take.html) |`take!(4)` |  `"hello"` | `Ok(("o", "hell"))`|takes a specific number of bytes or characters|
-| [take_while](https://docs.rs/nom/4.0.0/nom/macro.take_while.html) |`take_while!(is_alphabetic)` |  `"abc123"` | `Ok(("123", "abc"))`| returns the longest list of bytes for which the provided function returns true. `take_while1` does the same, but must return at least one character|
-| [take_till](https://docs.rs/nom/4.0.0/nom/macro.take_till.html) |`take_till!(is_alphabetic)` |  `"123abc"` | `Ok(("abc", "123))`|returns the longest list of bytes or characters until the provided function returns true. `take_till1` does the same, but must return at least one character. This is the reverse behaviour from `take_while`: `take_till!(f)` is equivalent to `take_while!(|c| !f(c))`|
-| [take_until](https://docs.rs/nom/4.0.0/nom/macro.take_until.html) | `take_until!("world")` |  `"Hello world"` | `Ok(("world", "Hello "))`|returns the longest list of bytes or characters until the provided tag is found. `take_until1` does the same, but must return at least one character|
+| [char](https://docs.rs/nom/latest/nom/macro.char.html) | `char!('a')` |  `"abc"` | `Ok(("bc", 'a'))`| matches one character (works with non ASCII chars too) | 
+| [is_a](https://docs.rs/nom/latest/nom/macro.is_a.html) | ` is_a!("ab")` |  `"ababc"` | `Ok(("c", "abab"))`|matches a sequence of any of the characters passed as arguments|
+| [is_not](https://docs.rs/nom/latest/nom/macro.is_not.html) |`is_not!("cd")` |  `"ababc"` | `Ok(("c", "abab"))`|matches a sequence of none of the characters passed as arguments|
+| [one_of](https://docs.rs/nom/latest/nom/macro.one_of.html) |`one_of!("abc")` |  `"abc"` | `Ok(("bc", 'a'))`|matches one of the provided characters (works with non ASCII characters too)|
+| [none_of](https://docs.rs/nom/latest/nom/macro.none_of.html) |`none_of!("abc")` |  `"xyab"` | `Ok(("yab", 'x'))`|matches anything but the provided characters|
+| [tag](https://docs.rs/nom/latest/nom/macro.tag.html) |`tag!("hello")` |  `"hello world"` | `Ok((" world", "hello"))`|recognizes a specific suite of characters or bytes|
+| [tag_no_case](https://docs.rs/nom/latest/nom/macro.tag_no_case.html) |`tag_no_case!("hello")` |  `"HeLLo World"` | `Ok((" World", "HeLLo"))`|case insensitive comparison. Note that case insensitive comparison is not well defined for unicode, and that you might have bad surprises|
+| [take](https://docs.rs/nom/latest/nom/macro.take.html) |`take!(4)` |  `"hello"` | `Ok(("o", "hell"))`|takes a specific number of bytes or characters|
+| [take_while](https://docs.rs/nom/latest/nom/macro.take_while.html) |`take_while!(is_alphabetic)` |  `"abc123"` | `Ok(("123", "abc"))`| returns the longest list of bytes for which the provided function returns true. `take_while1` does the same, but must return at least one character|
+| [take_till](https://docs.rs/nom/latest/nom/macro.take_till.html) |`take_till!(is_alphabetic)` |  `"123abc"` | `Ok(("abc", "123"))`|returns the longest list of bytes or characters until the provided function returns true. `take_till1` does the same, but must return at least one character. This is the reverse behaviour from `take_while`: `take_till!(f)` is equivalent to `take_while!(|c| !f(c))`|
+| [take_until](https://docs.rs/nom/latest/nom/macro.take_until.html) | `take_until!("world")` |  `"Hello world"` | `Ok(("world", "Hello "))`|returns the longest list of bytes or characters until the provided tag is found. `take_until1` does the same, but must return at least one character|
 
 
 ## Choice combinators
 
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
-| [alt](https://docs.rs/nom/4.0.0/nom/macro.alt.html) |`alt!(tag!("ab") \| tag!("cd"))` |  `"cdef"` | `Ok( ("ef", "cd") )`|try a list of parsers and return the result of the first successful one|
-| [switch](https://docs.rs/nom/4.0.0/nom/macro.switch.html) |`switch!(take!(2), "ab" => tag!("XYZ") \| "cd" => tag!("123"))` |  `"cd1234"` | `Ok(("4", "123"))`|choose the next parser depending on the result of the first one, if successful, and returns the result of the second parser|
-| [permutation](https://docs.rs/nom/4.0.0/nom/macro.permutation.html) | `permutation!(tag!("ab"), tag!("cd"), tag!("12"))` |  `"cd12abc"` | `Ok( ("c", ("ab", "cd", "12") )`|succeeds when all its child parser have succeeded, whatever the order|
+| [alt](https://docs.rs/nom/latest/nom/macro.alt.html) |`alt!(tag!("ab") \| tag!("cd"))` |  `"cdef"` | `Ok( ("ef", "cd") )`|try a list of parsers and return the result of the first successful one|
+| [switch](https://docs.rs/nom/latest/nom/macro.switch.html) |`switch!(take!(2), "ab" => tag!("XYZ") \| "cd" => tag!("123"))` |  `"cd1234"` | `Ok(("4", "123"))`|choose the next parser depending on the result of the first one, if successful, and returns the result of the second parser|
+| [permutation](https://docs.rs/nom/latest/nom/macro.permutation.html) | `permutation!(tag!("ab"), tag!("cd"), tag!("12"))` |  `"cd12abc"` | `Ok( ("c", ("ab", "cd", "12") )`|succeeds when all its child parser have succeeded, whatever the order|
 
 ## Sequence combinators
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
-| [delimited](https://docs.rs/nom/4.0.0/nom/macro.delimited.html) |`delimited!(char!('('), take!(2), char!(')'))` |  `"(ab)cd"` | `Ok( ("cd", "ab") )`||
-| [preceded](https://docs.rs/nom/4.0.0/nom/macro.preceded.html) |`preceded!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", "XY") )`||
-| [terminated](https://docs.rs/nom/4.0.0/nom/macro.terminated.html) |`terminated!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", "ab") )`||
-| [pair](https://docs.rs/nom/4.0.0/nom/macro.pair.html) |`pair!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", ("ab", "XY")) )`||
-| [separated_pair](https://docs.rs/nom/4.0.0/nom/macro.separated_pair.html) |`separated_pair!(tag!("hello"), char!(','), tag!("world"))` |  `"hello,world!"` | `Ok( ("!", ("hello", "world")) )`||
-| [tuple](https://docs.rs/nom/4.0.0/nom/macro.tuple.html) |`tuple!(tag!("ab"), tag!("XY"), take!(1))` |  `"abXYZ!"` | `Ok( ("!", ("ab", "XY", "Z")) )`|chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
-| [do_parse](https://docs.rs/nom/4.0.0/nom/macro.do_parse.html) |`do_parse!(tag: take!(2) >> length: be_u8 >> data: take!(length) >> (Buffer { tag: tag, data: data}) )` |  `&[0, 0, 3, 1, 2, 3][..]` | `Buffer { tag: &[0, 0][..], data: &[1, 2, 3][..] }`|`do_parse` applies sub parsers in a sequence. it can store intermediary results and make them available for later parsers|
+| [delimited](https://docs.rs/nom/latest/nom/macro.delimited.html) |`delimited!(char!('('), take!(2), char!(')'))` |  `"(ab)cd"` | `Ok( ("cd", "ab") )`||
+| [preceded](https://docs.rs/nom/latest/nom/macro.preceded.html) |`preceded!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", "XY") )`||
+| [terminated](https://docs.rs/nom/latest/nom/macro.terminated.html) |`terminated!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", "ab") )`||
+| [pair](https://docs.rs/nom/latest/nom/macro.pair.html) |`pair!(tag!("ab"), tag!("XY"))` |  `"abXYZ"` | `Ok( ("Z", ("ab", "XY")) )`||
+| [separated_pair](https://docs.rs/nom/latest/nom/macro.separated_pair.html) |`separated_pair!(tag!("hello"), char!(','), tag!("world"))` |  `"hello,world!"` | `Ok( ("!", ("hello", "world")) )`||
+| [tuple](https://docs.rs/nom/latest/nom/macro.tuple.html) |`tuple!(tag!("ab"), tag!("XY"), take!(1))` |  `"abXYZ!"` | `Ok( ("!", ("ab", "XY", "Z")) )`|chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
+| [do_parse](https://docs.rs/nom/latest/nom/macro.do_parse.html) |`do_parse!(tag: take!(2) >> length: be_u8 >> data: take!(length) >> (Buffer { tag: tag, data: data}) )` |  `&[0, 0, 3, 1, 2, 3][..]` | `Buffer { tag: &[0, 0][..], data: &[1, 2, 3][..] }`|`do_parse` applies sub parsers in a sequence. it can store intermediary results and make them available for later parsers|
 
 ## Applying a parser multiple times
 
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
-| [count](https://docs.rs/nom/4.0.0/nom/macro.count.html) |`count!(take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", vec!("ab", "cd", "ef")) )`|applies the child parser a specified number of times|
-| [count_fixed](https://docs.rs/nom/4.0.0/nom/macro.count_fixed.html) |`count_fixed!(&[u8], take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", ["ab", "cd", "ef"]))`|applies the child parser a fixed number of times and returns a fixed size array. The type must be specified and it must be `Copy`|
-| [many0](https://docs.rs/nom/4.0.0/nom/macro.many0.html) |`many0!(tag!("ab"))` |  `"abababc"` | `Ok( ("c", vec!("ab", "ab", "ab")) )`|Applies the parser 0 or more times and returns the list of results in a Vec. `many1` does the same operation but must return at least one element|
-| [many_m_n](https://docs.rs/nom/4.0.0/nom/macro.many_m_n.html) |`many_m_n!(1, 3, tag!("ab"))` |  `"ababc"` | `Ok( ("c", vec!("ab", "ab")) )`|applies the parser between m and n times (n included) and returns the list of results in a Vec|
-| [many_till](https://docs.rs/nom/4.0.0/nom/macro.many_till.html) |`many_till!( tag!( "ab" ), tag!( "ef" ) )` |  `"ababefg"` | `Ok( ("g", (vec!("ab", "ab"), "ef")) )`|Applies the first parser until the second applies. Returns a tuple containing the list of results from the first in a Vec and the result of the second.|
-| [separated_list](https://docs.rs/nom/4.0.0/nom/macro.separated_list.html) |`separated_list!(tag!(","), tag!("ab"))` |  `"ab,ab,ab."` | `Ok( (".", vec!("ab", "ab", "ab")) )`|`separated_nonempty_list` works like `separated_list` but must returns at least one element|
-| [fold_many0](https://docs.rs/nom/4.0.0/nom/macro.fold_many0.html) |`fold_many0!(be_u8, 0, \|acc, item\| acc + item)` |  `[1, 2, 3]` | `Ok( ([], 6) )`|applies the parser 0 or more times and folds the list of return values. The `fold_many1` version must apply the child parser at least one time|
-| [fold_many_m_n](https://docs.rs/nom/4.0.0/nom/macro.fold_many_m_n.html) |`fold_many_m_n!(1, 2, be_u8, 0, \|acc, item\| acc + item)` |  `[1, 2, 3]` | `Ok( ([3], 3))`|applies the parser between m and n times (n included) and folds the list of return value|
-| [length_count](https://docs.rs/nom/4.0.0/nom/macro.length_count.html) |`length_count!(number, tag!("ab"))` |  `"2ababab"` | `Ok( ("ab", vec!("ab", "ab")) )`|gets a number from the first parser, then applies the second parser that many times|
+| [count](https://docs.rs/nom/latest/nom/macro.count.html) |`count!(take!(2), 3)` |  `"abcdefgh"` | `Ok( ("gh", vec!("ab", "cd", "ef")) )`|applies the child parser a specified number of times|
+| [many0](https://docs.rs/nom/latest/nom/macro.many0.html) |`many0!(tag!("ab"))` |  `"abababc"` | `Ok( ("c", vec!("ab", "ab", "ab")) )`|Applies the parser 0 or more times and returns the list of results in a Vec. `many1` does the same operation but must return at least one element|
+| [many_m_n](https://docs.rs/nom/latest/nom/macro.many_m_n.html) |`many_m_n!(1, 3, tag!("ab"))` |  `"ababc"` | `Ok( ("c", vec!("ab", "ab")) )`|applies the parser between m and n times (n included) and returns the list of results in a Vec|
+| [many_till](https://docs.rs/nom/latest/nom/macro.many_till.html) |`many_till!( tag!( "ab" ), tag!( "ef" ) )` |  `"ababefg"` | `Ok( ("g", (vec!("ab", "ab"), "ef")) )`|Applies the first parser until the second applies. Returns a tuple containing the list of results from the first in a Vec and the result of the second.|
+| [separated_list](https://docs.rs/nom/latest/nom/macro.separated_list.html) |`separated_list!(tag!(","), tag!("ab"))` |  `"ab,ab,ab."` | `Ok( (".", vec!("ab", "ab", "ab")) )`|`separated_nonempty_list` works like `separated_list` but must returns at least one element|
+| [fold_many0](https://docs.rs/nom/latest/nom/macro.fold_many0.html) |`fold_many0!(be_u8, 0, \|acc, item\| acc + item)` |  `[1, 2, 3]` | `Ok( ([], 6) )`|applies the parser 0 or more times and folds the list of return values. The `fold_many1` version must apply the child parser at least one time|
+| [fold_many_m_n](https://docs.rs/nom/latest/nom/macro.fold_many_m_n.html) |`fold_many_m_n!(1, 2, be_u8, 0, \|acc, item\| acc + item)` |  `[1, 2, 3]` | `Ok( ([3], 3))`|applies the parser between m and n times (n included) and folds the list of return value|
+| [length_count](https://docs.rs/nom/latest/nom/macro.length_count.html) |`length_count!(number, tag!("ab"))` |  `"2ababab"` | `Ok( ("ab", vec!("ab", "ab")) )`|gets a number from the first parser, then applies the second parser that many times|
 
 ## Integers
 
@@ -107,7 +106,7 @@ Parsing integers from binary formats can be done in two ways: with parser functi
 
 ## Binary format parsing
 
-- `length_data!`: gets a number from the first parser, than takes a subslice of the input of that size, and returns that subslice
+- `length_data!`: gets a number from the first parser, then takes a subslice of the input of that size, and returns that subslice
 - `length_bytes!`: alias for length_data
 - `length_value!`: gets a number from the first parser, takes a subslice of the input of that size, then applies the second parser on that subslice. If the second parser returns `Incomplete`, `length_value!` will return an error
 

@@ -5,7 +5,7 @@
 [![Build Status](https://travis-ci.org/Geal/nom.svg?branch=master)](https://travis-ci.org/Geal/nom)
 [![Coverage Status](https://coveralls.io/repos/Geal/nom/badge.svg?branch=master)](https://coveralls.io/r/Geal/nom?branch=master)
 [![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.31.0+-lightgray.svg)](#rust-version-requirements)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.36.0+-lightgray.svg)](#rust-version-requirements)
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools
 to build safe parsers without compromising the speed or memory consumption. To
@@ -77,7 +77,7 @@ fn parse_color() {
 - [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc)
 - [list of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
 
-If you need any help developing your parsers, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc), go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
+If you need any help developing your parsers, please ping `geal` on IRC (freenode, geeknode, oftc), go to `#nom-parsers` on Freenode IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
 ## Why use nom
 
@@ -188,7 +188,7 @@ Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks
 
 ## Rust version requirements
 
-The 5.0 series of nom requires **Rustc version 1.31 or greater**.
+The 5.0 series of nom requires **Rustc version 1.37 or greater** (compatible with 1.36 if building without the `lexical` feature which includes the `lexical-core` dependency).
 
 Travis CI always has a build with a pinned version of Rustc matching the oldest supported Rust release.
 The current policy is that this will only be updated in the next major nom release.
@@ -247,39 +247,53 @@ Here is a (non exhaustive) list of known projects using nom:
   * [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
   * [proto files](https://github.com/tafia/protobuf-parser)
+  * [Fountain screenplay markup](https://github.com/adamchalmers/fountain-rs)
 - Programming languages:
   * [PHP](https://github.com/tagua-vm/parser)
   * [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs)
   * [GLSL](https://github.com/phaazon/glsl)
   * [Lua](https://github.com/doomrobo/nom-lua53)
+  * [Python](https://github.com/ProgVal/rust-python-parser)
   * [SQL](https://github.com/ms705/nom-sql)
   * [Elm](https://github.com/cout970/Elm-interpreter)
+  * [SystemVerilog](https://github.com/dalance/sv-parser)
+  * [Turtle](https://github.com/vandenoever/rome/tree/master/src/io/turtle)
+  * [CSML](https://github.com/CSML-by-Clevy/csml-interpreter)
 - Interface definition formats:
   * [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
   * [GIF](https://github.com/Geal/gif.rs)
   * [MagicaVoxel .vox](https://github.com/davidedmonds/dot_vox)
   * [midi](https://github.com/derekdreery/nom-midi-rs)
+  * [SWF](https://github.com/open-flash/swf-parser)
   * [WAVE](http://github.com/noise-Labs/wave)
 - Document formats:
   * [TAR](https://github.com/Keruspe/tar-parser.rs)
   * [GZ](https://github.com/nharward/nom-gzip)
-- Database formats:
-  * [Redis database files](https://github.com/badboy/rdb-rs)
+- Cryptographic formats:
+  * [X.509](https://github.com/rusticata/x509-parser)
 - Network protocol formats:
   * [Bencode](https://github.com/jbaum98/bencode.rs)
-  * [IMAP](https://github.com/djc/imap-proto)
+  * [DHCP](https://github.com/rusticata/dhcp-parser)
+  * [HTTP](https://github.com/sozu-proxy/sozu/tree/master/lib/src/protocol/http)
+  * [URI](https://github.com/santifa/rrp/blob/master/src/uri.rs)
+  * [IMAP](https://github.com/djc/tokio-imap)
   * [IRC](https://github.com/Detegr/RBot-parser)
   * [Pcap-NG](https://github.com/richo/pcapng-rs)
   * [Pcap](https://github.com/ithinuel/pcap-rs)
+  * [Pcap + PcapNG](https://github.com/rusticata/pcap-parser)
+  * [IKEv2](https://github.com/rusticata/ipsec-parser)
   * [NTP](https://github.com/rusticata/ntp-parser)
   * [SNMP](https://github.com/rusticata/snmp-parser)
+  * [Kerberos v5](https://github.com/rusticata/kerberos-parser)
   * [DER](https://github.com/rusticata/der-parser)
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
   * [GTP](https://github.com/fuerstenau/gorrosion-gtp)
 - Language specifications:
   * [BNF](https://github.com/snewt/bnf)
+- Misc formats:
+  * [Gameboy ROM](https://github.com/MarkMcCaskey/gameboy-rom-parser)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 

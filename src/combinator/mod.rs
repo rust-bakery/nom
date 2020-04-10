@@ -5,16 +5,16 @@
 #[cfg(feature = "alloc")]
 use crate::lib::std::boxed::Box;
 
+use crate::error::ErrorKind;
+use crate::error::ParseError;
+use crate::internal::*;
+use crate::lib::std::borrow::Borrow;
 #[cfg(feature = "std")]
 use crate::lib::std::fmt::Debug;
-use crate::internal::*;
-use crate::error::ParseError;
-use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, ParseTo};
-use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
-use crate::lib::std::borrow::Borrow;
-use crate::traits::{Compare, CompareResult, Offset, Slice};
-use crate::error::ErrorKind;
 use crate::lib::std::mem::transmute;
+use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, ParseTo};
+use crate::traits::{Compare, CompareResult, Offset, Slice};
 
 #[macro_use]
 mod macros;
@@ -30,7 +30,7 @@ mod macros;
 #[inline]
 pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<RangeFrom<usize>>,
   T: InputLength,
 {
   Ok((input.slice(input.input_len()..), input))
@@ -47,7 +47,6 @@ where
 #[inline]
 pub fn rest_len<T, E: ParseError<T>>(input: T) -> IResult<T, usize, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputLength,
 {
   let len = input.input_len();
@@ -58,38 +57,38 @@ where
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult,Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map;
 /// # fn main() {
 ///
-/// let parse = map(digit1, |s: &str| s.len());
+/// let mut parser = map(digit1, |s: &str| s.len());
 ///
 /// // the parser will count how many characters were returned by digit1
-/// assert_eq!(parse("123456"), Ok(("", 6)));
+/// assert_eq!(parser.parse("123456"), Ok(("", 6)));
 ///
 /// // this will fail if digit1 fails
-/// assert_eq!(parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
+/// assert_eq!(parser.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
 /// # }
 /// ```
-pub fn map<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+pub fn map<I, O1, O2, E, F, G>(mut first: F, second: G) -> impl FnMut(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(O1) -> O2,
 {
   move |input: I| {
-    let (input, o1) = first(input)?;
+    let (input, o1) = first.parse(input)?;
     Ok((input, second(o1)))
   }
 }
 
 #[doc(hidden)]
-pub fn mapc<I, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+pub fn mapc<I, O1, O2, E, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(O1) -> O2,
 {
-  map(first, second)(input)
+  map(first, second).parse(input)
 }
 
 /// applies a function returning a Result over the result of a parser
@@ -101,7 +100,7 @@ where
 /// use nom::combinator::map_res;
 /// # fn main() {
 ///
-/// let parse = map_res(digit1, |s: &str| s.parse::<u8>());
+/// let mut parse = map_res(digit1, |s: &str| s.parse::<u8>());
 ///
 /// // the parser will convert the result of digit1 to a number
 /// assert_eq!(parse("123"), Ok(("", 123)));
@@ -113,14 +112,17 @@ where
 /// assert_eq!(parse("123456"), Err(Err::Error(("123456", ErrorKind::MapRes))));
 /// # }
 /// ```
-pub fn map_res<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+pub fn map_res<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(
+  mut first: F,
+  second: G,
+) -> impl FnMut(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(O1) -> Result<O2, E2>,
 {
   move |input: I| {
     let i = input.clone();
-    let (input, o1) = first(input)?;
+    let (input, o1) = first.parse(input)?;
     match second(o1) {
       Ok(o2) => Ok((input, o2)),
       Err(_) => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapRes))),
@@ -129,7 +131,11 @@ where
 }
 
 #[doc(hidden)]
-pub fn map_resc<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+pub fn map_resc<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(
+  input: I,
+  first: F,
+  second: G,
+) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(O1) -> Result<O2, E2>,
@@ -146,7 +152,7 @@ where
 /// use nom::combinator::map_opt;
 /// # fn main() {
 ///
-/// let parse = map_opt(digit1, |s: &str| s.parse::<u8>().ok());
+/// let mut parse = map_opt(digit1, |s: &str| s.parse::<u8>().ok());
 ///
 /// // the parser will convert the result of digit1 to a number
 /// assert_eq!(parse("123"), Ok(("", 123)));
@@ -158,14 +164,17 @@ where
 /// assert_eq!(parse("123456"), Err(Err::Error(("123456", ErrorKind::MapOpt))));
 /// # }
 /// ```
-pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+  mut first: F,
+  second: G,
+) -> impl FnMut(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(O1) -> Option<O2>,
 {
   move |input: I| {
     let i = input.clone();
-    let (input, o1) = first(input)?;
+    let (input, o1) = first.parse(input)?;
     match second(o1) {
       Some(o2) => Ok((input, o2)),
       None => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapOpt))),
@@ -174,7 +183,11 @@ where
 }
 
 #[doc(hidden)]
-pub fn map_optc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+pub fn map_optc<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+  input: I,
+  first: F,
+  second: G,
+) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(O1) -> Option<O2>,
@@ -192,28 +205,35 @@ where
 /// use nom::combinator::map_parser;
 /// # fn main() {
 ///
-/// let parse = map_parser(take(5u8), digit1);
+/// let mut parse = map_parser(take(5u8), digit1);
 ///
 /// assert_eq!(parse("12345"), Ok(("", "12345")));
 /// assert_eq!(parse("123ab"), Ok(("", "123")));
 /// assert_eq!(parse("123"), Err(Err::Error(("123", ErrorKind::Eof))));
 /// # }
 /// ```
-pub fn map_parser<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+pub fn map_parser<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+  mut first: F,
+  mut second: G,
+) -> impl FnMut(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(O1) -> IResult<O1, O2, E>,
+  F: Parser<I, O1, E>,
+  G: Parser<O1, O2, E>,
   O1: InputLength,
 {
   move |input: I| {
-    let (input, o1) = first(input)?;
-    let (_, o2) = second(o1)?;
+    let (input, o1) = first.parse(input)?;
+    let (_, o2) = second.parse(o1)?;
     Ok((input, o2))
   }
 }
 
 #[doc(hidden)]
-pub fn map_parserc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+pub fn map_parserc<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+  input: I,
+  first: F,
+  second: G,
+) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(O1) -> IResult<O1, O2, E>,
@@ -232,21 +252,24 @@ where
 /// use nom::combinator::flat_map;
 /// # fn main() {
 ///
-/// let parse = flat_map(be_u8, take);
+/// let mut parse = flat_map(be_u8, take);
 ///
 /// assert_eq!(parse(&[2, 0, 1, 2][..]), Ok((&[2][..], &[0, 1][..])));
 /// assert_eq!(parse(&[4, 0, 1, 2][..]), Err(Err::Error((&[0, 1, 2][..], ErrorKind::Eof))));
 /// # }
 /// ```
-pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(
+  mut first: F,
+  second: G,
+) -> impl FnMut(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(O1) -> H,
-  H: Fn(I) -> IResult<I, O2, E>
+  H: Parser<I, O2, E>,
 {
   move |input: I| {
-    let (input, o1) = first(input)?;
-    second(o1)(input)
+    let (input, o1) = first.parse(input)?;
+    second(o1).parse(input)
   }
 }
 
@@ -267,13 +290,13 @@ where
 /// assert_eq!(parser("123;"), Ok(("123;", None)));
 /// # }
 /// ```
-pub fn opt<I:Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, Option<O>, E>
+pub fn opt<I: Clone, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Option<O>, E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
   move |input: I| {
     let i = input.clone();
-    match f(input) {
+    match f.parse(input) {
       Ok((i, o)) => Ok((i, Some(o))),
       Err(Err::Error(_)) => Ok((i, None)),
       Err(e) => Err(e),
@@ -282,7 +305,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn optc<I:Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, Option<O>, E>
+pub fn optc<I: Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, Option<O>, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
@@ -308,13 +331,16 @@ where
 /// assert_eq!(parser(false, "123;"), Ok(("123;", None)));
 /// # }
 /// ```
-pub fn cond<I:Clone, O, E: ParseError<I>, F>(b: bool, f: F) -> impl Fn(I) -> IResult<I, Option<O>, E>
+pub fn cond<I, O, E: ParseError<I>, F>(
+  b: bool,
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, Option<O>, E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
   move |input: I| {
     if b {
-      match f(input) {
+      match f.parse(input) {
         Ok((i, o)) => Ok((i, Some(o))),
         Err(e) => Err(e),
       }
@@ -325,7 +351,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn condc<I:Clone, O, E: ParseError<I>, F>(input: I, b: bool, f: F) -> IResult<I, Option<O>, E>
+pub fn condc<I, O, E: ParseError<I>, F>(input: I, b: bool, f: F) -> IResult<I, Option<O>, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
@@ -341,19 +367,19 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-/// let parser = peek(alpha1);
+/// let mut parser = peek(alpha1);
 ///
 /// assert_eq!(parser("abcd;"), Ok(("abcd;", "abcd")));
 /// assert_eq!(parser("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn peek<I:Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn peek<I: Clone, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
   move |input: I| {
     let i = input.clone();
-    match f(input) {
+    match f.parse(input) {
       Ok((_, o)) => Ok((i, o)),
       Err(e) => Err(e),
     }
@@ -361,7 +387,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn peekc<I:Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, O, E>
+pub fn peekc<I: Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
@@ -377,23 +403,21 @@ where
 /// use nom::combinator::complete;
 /// # fn main() {
 ///
-/// let parser = complete(take(5u8));
+/// let mut parser = complete(take(5u8));
 ///
 /// assert_eq!(parser("abcdefg"), Ok(("fg", "abcde")));
 /// assert_eq!(parser("abcd"), Err(Err::Error(("abcd", ErrorKind::Complete))));
 /// # }
 /// ```
-pub fn complete<I: Clone, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn complete<I: Clone, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
   move |input: I| {
     let i = input.clone();
-    match f(input) {
-      Err(Err::Incomplete(_)) => {
-        Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete)))
-      },
-      rest => rest
+    match f.parse(input) {
+      Err(Err::Incomplete(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete))),
+      rest => rest,
     }
   }
 }
@@ -403,7 +427,7 @@ pub fn completec<I: Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I,
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
-    complete(f)(input)
+  complete(f)(input)
 }
 
 /// succeeds if all the input has been consumed by its child parser
@@ -415,20 +439,20 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-/// let parser = all_consuming(alpha1);
+/// let mut parser = all_consuming(alpha1);
 ///
 /// assert_eq!(parser("abcd"), Ok(("", "abcd")));
 /// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Eof))));
 /// assert_eq!(parser("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn all_consuming<I, O, E: ParseError<I>, F>(f: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn all_consuming<I, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
   I: InputLength,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
   move |input: I| {
-    let (input, res) = f(input)?;
+    let (input, res) = f.parse(input)?;
     if input.input_len() == 0 {
       Ok((input, res))
     } else {
@@ -449,23 +473,26 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-/// let parser = verify(alpha1, |s: &str| s.len() == 4);
+/// let mut parser = verify(alpha1, |s: &str| s.len() == 4);
 ///
 /// assert_eq!(parser("abcd"), Ok(("", "abcd")));
 /// assert_eq!(parser("abcde"), Err(Err::Error(("abcde", ErrorKind::Verify))));
 /// assert_eq!(parser("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn verify<I: Clone, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O1, E>
+pub fn verify<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+  mut first: F,
+  second: G,
+) -> impl FnMut(I) -> IResult<I, O1, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
+  F: Parser<I, O1, E>,
   G: Fn(&O2) -> bool,
   O1: Borrow<O2>,
   O2: ?Sized,
 {
   move |input: I| {
     let i = input.clone();
-    let (input, o) = first(input)?;
+    let (input, o) = first.parse(input)?;
 
     if second(o.borrow()) {
       Ok((input, o))
@@ -476,7 +503,11 @@ where
 }
 
 #[doc(hidden)]
-pub fn verifyc<I: Clone, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O1, E>
+pub fn verifyc<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+  input: I,
+  first: F,
+  second: G,
+) -> IResult<I, O1, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(&O2) -> bool,
@@ -495,23 +526,28 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-/// let parser = value(1234, alpha1);
+/// let mut parser = value(1234, alpha1);
 ///
 /// assert_eq!(parser("abcd"), Ok(("", 1234)));
 /// assert_eq!(parser("123abcd;"), Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn value<I, O1: Clone, O2, E: ParseError<I>, F>(val: O1, parser: F) -> impl Fn(I) -> IResult<I, O1, E>
+pub fn value<I, O1: Clone, O2, E: ParseError<I>, F>(
+  val: O1,
+  mut parser: F,
+) -> impl FnMut(I) -> IResult<I, O1, E>
 where
-  F: Fn(I) -> IResult<I, O2, E>,
+  F: Parser<I, O2, E>,
 {
-  move |input: I| {
-    parser(input).map(|(i, _)| (i, val.clone()))
-  }
+  move |input: I| parser.parse(input).map(|(i, _)| (i, val.clone()))
 }
 
 #[doc(hidden)]
-pub fn valuec<I, O1: Clone, O2, E: ParseError<I>, F>(input: I, val: O1, parser: F) -> IResult<I, O1, E>
+pub fn valuec<I, O1: Clone, O2, E: ParseError<I>, F>(
+  input: I,
+  val: O1,
+  parser: F,
+) -> IResult<I, O1, E>
 where
   F: Fn(I) -> IResult<I, O2, E>,
 {
@@ -527,19 +563,19 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-/// let parser = not(alpha1);
+/// let mut parser = not(alpha1);
 ///
 /// assert_eq!(parser("123"), Ok(("123", ())));
 /// assert_eq!(parser("abcd"), Err(Err::Error(("abcd", ErrorKind::Not))));
 /// # }
 /// ```
-pub fn not<I: Clone, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, (), E>
+pub fn not<I: Clone, O, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, (), E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
   move |input: I| {
     let i = input.clone();
-    match parser(input) {
+    match parser.parse(input) {
       Ok(_) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Not))),
       Err(Err::Error(_)) => Ok((i, ())),
       Err(e) => Err(e),
@@ -565,30 +601,35 @@ where
 /// use nom::sequence::separated_pair;
 /// # fn main() {
 ///
-/// let parser = recognize(separated_pair(alpha1, char(','), alpha1));
+/// let mut parser = recognize(separated_pair(alpha1, char(','), alpha1));
 ///
 /// assert_eq!(parser("abcd,efgh"), Ok(("", "abcd,efgh")));
 /// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
 /// # }
 /// ```
-pub fn recognize<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, I, E>
+pub fn recognize<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(
+  mut parser: F,
+) -> impl FnMut(I) -> IResult<I, I, E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
   move |input: I| {
     let i = input.clone();
-    match parser(i) {
+    match parser.parse(i) {
       Ok((i, _)) => {
         let index = input.offset(&i);
         Ok((i, input.slice(..index)))
-      },
+      }
       Err(e) => Err(e),
     }
   }
 }
 
 #[doc(hidden)]
-pub fn recognizec<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, I, E>
+pub fn recognizec<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(
+  input: I,
+  parser: F,
+) -> IResult<I, I, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
@@ -604,27 +645,24 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-/// let parser = cut(alpha1);
+/// let mut parser = cut(alpha1);
 ///
 /// assert_eq!(parser("abcd;"), Ok((";", "abcd")));
 /// assert_eq!(parser("123;"), Err(Err::Failure(("123;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn cut<I: Clone + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(parser: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn cut<I, O, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
-  move |input: I| {
-    let i = input.clone();
-    match parser(i) {
-      Err(Err::Error(e)) => Err(Err::Failure(e)),
-      rest => rest,
-    }
+  move |input: I| match parser.parse(input) {
+    Err(Err::Error(e)) => Err(Err::Failure(e)),
+    rest => rest,
   }
 }
 
 #[doc(hidden)]
-pub fn cutc<I: Clone + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, O, E>
+pub fn cutc<I, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, O, E>
 where
   F: Fn(I) -> IResult<I, O, E>,
 {
@@ -651,62 +689,63 @@ where
 /// ```
 pub fn iterator<Input, Output, Error, F>(input: Input, f: F) -> ParserIterator<Input, Error, F>
 where
-  F: Fn(Input) -> IResult<Input, Output, Error>,
-  Error: ParseError<Input> {
-
-    ParserIterator {
-      iterator: f,
-      input,
-      state: State::Running,
-    }
+  F: Parser<Input, Output, Error>,
+  Error: ParseError<Input>,
+{
+  ParserIterator {
+    iterator: f,
+    input,
+    state: Some(State::Running),
+  }
 }
 
 /// main structure associated to the [iterator] function
 pub struct ParserIterator<I, E, F> {
   iterator: F,
   input: I,
-  state: State<E>,
+  state: Option<State<E>>,
 }
 
-impl<I: Clone, E: Clone, F> ParserIterator<I, E, F> {
+impl<I: Clone, E, F> ParserIterator<I, E, F> {
   /// returns the remaining input if parsing was successful, or the error if we encountered an error
-  pub fn finish(self) -> IResult<I, (), E> {
-    match &self.state {
+  pub fn finish(mut self) -> IResult<I, (), E> {
+    match self.state.take().unwrap() {
       State::Running | State::Done => Ok((self.input.clone(), ())),
-      State::Failure(e) => Err(Err::Failure(e.clone())),
-      State::Incomplete(i) => Err(Err::Incomplete(i.clone())),
+      State::Failure(e) => Err(Err::Failure(e)),
+      State::Incomplete(i) => Err(Err::Incomplete(i)),
     }
   }
 }
 
-impl<'a, Input ,Output ,Error, F> core::iter::Iterator for &'a mut ParserIterator<Input, Error, F>
-    where
-    F: Fn(Input) -> IResult<Input, Output, Error>,
-    Input: Clone
+impl<'a, Input, Output, Error, F> core::iter::Iterator for &'a mut ParserIterator<Input, Error, F>
+where
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  Input: Clone,
 {
   type Item = Output;
 
   fn next(&mut self) -> Option<Self::Item> {
-    if let State::Running = self.state {
+    if let State::Running = self.state.take().unwrap() {
       let input = self.input.clone();
 
       match (self.iterator)(input) {
         Ok((i, o)) => {
           self.input = i;
+          self.state = Some(State::Running);
           Some(o)
-        },
+        }
         Err(Err::Error(_)) => {
-          self.state = State::Done;
+          self.state = Some(State::Done);
           None
-        },
+        }
         Err(Err::Failure(e)) => {
-          self.state = State::Failure(e);
+          self.state = Some(State::Failure(e));
           None
-        },
+        }
         Err(Err::Incomplete(i)) => {
-          self.state = State::Incomplete(i);
+          self.state = Some(State::Incomplete(i));
           None
-        },
+        }
       }
     } else {
       None
@@ -721,13 +760,12 @@ enum State<E> {
   Incomplete(Needed),
 }
 
-
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::internal::{Err, IResult, Needed};
-  use crate::error::ParseError;
   use crate::bytes::complete::take;
+  use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
   use crate::number::complete::be_u8;
 
   macro_rules! assert_parse(
@@ -746,21 +784,20 @@ mod tests {
     assert_eq!(res, Ok((&v2[..], ())));
   }*/
 
-
   /*
-    #[test]
-    fn end_of_input() {
-        let not_over = &b"Hello, world!"[..];
-        let is_over = &b""[..];
-        named!(eof_test, eof!());
+  #[test]
+  fn end_of_input() {
+      let not_over = &b"Hello, world!"[..];
+      let is_over = &b""[..];
+      named!(eof_test, eof!());
 
-        let res_not_over = eof_test(not_over);
-        assert_eq!(res_not_over, Err(Err::Error(error_position!(not_over, ErrorKind::Eof))));
+      let res_not_over = eof_test(not_over);
+      assert_eq!(res_not_over, Err(Err::Error(error_position!(not_over, ErrorKind::Eof))));
 
-        let res_over = eof_test(is_over);
-        assert_eq!(res_over, Ok((is_over, is_over)));
-    }
-    */
+      let res_over = eof_test(is_over);
+      assert_eq!(res_over, Ok((is_over, is_over)));
+  }
+  */
 
   #[test]
   fn rest_on_slices() {
@@ -808,28 +845,46 @@ mod tests {
 
   #[test]
   fn test_flat_map() {
-      let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
-      assert_parse!(flat_map(be_u8, take)(input), Ok((&[103, 104][..], &[100, 101, 102][..])));
+    let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
+    assert_parse!(
+      flat_map(be_u8, take)(input),
+      Ok((&[103, 104][..], &[100, 101, 102][..]))
+    );
   }
-  
+
   #[test]
   fn test_map_opt() {
-      let input: &[u8] = &[50][..];
-      assert_parse!(map_opt(be_u8, |u| if u < 20 {Some(u)} else {None})(input), Err(Err::Error((&[50][..], ErrorKind::MapOpt))));
-      assert_parse!(map_opt(be_u8, |u| if u > 20 {Some(u)} else {None})(input), Ok((&[][..], 50)));
+    let input: &[u8] = &[50][..];
+    assert_parse!(
+      map_opt(be_u8, |u| if u < 20 { Some(u) } else { None })(input),
+      Err(Err::Error((&[50][..], ErrorKind::MapOpt)))
+    );
+    assert_parse!(
+      map_opt(be_u8, |u| if u > 20 { Some(u) } else { None })(input),
+      Ok((&[][..], 50))
+    );
   }
 
   #[test]
   fn test_map_parser() {
-      let input: &[u8] = &[100, 101, 102, 103, 104][..];
-      assert_parse!(map_parser(take(4usize), take(2usize))(input), Ok((&[104][..], &[100, 101][..])));
+    let input: &[u8] = &[100, 101, 102, 103, 104][..];
+    assert_parse!(
+      map_parser(take(4usize), take(2usize))(input),
+      Ok((&[104][..], &[100, 101][..]))
+    );
   }
 
   #[test]
   fn test_all_consuming() {
-      let input: &[u8] = &[100, 101, 102][..];
-      assert_parse!(all_consuming(take(2usize))(input), Err(Err::Error((&[102][..], ErrorKind::Eof))));
-      assert_parse!(all_consuming(take(3usize))(input), Ok((&[][..], &[100, 101, 102][..])));
+    let input: &[u8] = &[100, 101, 102][..];
+    assert_parse!(
+      all_consuming(take(2usize))(input),
+      Err(Err::Error((&[102][..], ErrorKind::Eof)))
+    );
+    assert_parse!(
+      all_consuming(take(3usize))(input),
+      Ok((&[][..], &[100, 101, 102][..]))
+    );
   }
 
   #[test]
@@ -837,10 +892,13 @@ mod tests {
   fn test_verify_ref() {
     use crate::bytes::complete::take;
 
-    let parser1 = verify(take(3u8), |s: &[u8]| s == &b"abc"[..]);
+    let mut parser1 = verify(take(3u8), |s: &[u8]| s == &b"abc"[..]);
 
     assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], &b"abc"[..])));
-    assert_eq!(parser1(&b"defg"[..]), Err(Err::Error((&b"defg"[..], ErrorKind::Verify))));
+    assert_eq!(
+      parser1(&b"defg"[..]),
+      Err(Err::Error((&b"defg"[..], ErrorKind::Verify)))
+    );
 
     fn parser2(i: &[u8]) -> IResult<&[u8], u32> {
       verify(crate::number::streaming::be_u32, |val: &u32| *val < 3)(i)
@@ -851,9 +909,14 @@ mod tests {
   #[cfg(feature = "alloc")]
   fn test_verify_alloc() {
     use crate::bytes::complete::take;
-    let parser1 = verify(map(take(3u8), |s: &[u8]| s.to_vec()), |s: &[u8]| s == &b"abc"[..]);
+    let mut parser1 = verify(map(take(3u8), |s: &[u8]| s.to_vec()), |s: &[u8]| {
+      s == &b"abc"[..]
+    });
 
     assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], (&b"abc").to_vec())));
-    assert_eq!(parser1(&b"defg"[..]), Err(Err::Error((&b"defg"[..], ErrorKind::Verify))));
+    assert_eq!(
+      parser1(&b"defg"[..]),
+      Err(Err::Error((&b"defg"[..], ErrorKind::Verify)))
+    );
   }
 }

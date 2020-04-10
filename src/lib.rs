@@ -73,8 +73,8 @@
 //! software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and
 //! [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar
 //! in a separate syntax and generating the corresponding code, you use very small
-//! functions with a very specific purpose, like "take 5 bytes", or "recognize the
-//! word 'HTTP'", and assemble then in meaningful patterns like "recognize
+//! functions with very specific purposes, like "take 5 bytes", or "recognize the
+//! word 'HTTP'", and assemble them in meaningful patterns like "recognize
 //! 'HTTP', then a space, then a version".
 //! The resulting code is small, and looks like the grammar you would have
 //! written with other parser approaches.
@@ -118,7 +118,7 @@
 //! # fn main() {
 //! fn take4(i: &[u8]) -> IResult<&[u8], &[u8]>{
 //!   if i.len() < 4 {
-//!     Err(Err::Incomplete(Needed::Size(4)))
+//!     Err(Err::Incomplete(Needed::new(4)))
 //!   } else {
 //!     Ok((&i[4..], &i[0..4]))
 //!   }
@@ -230,7 +230,7 @@
 //! use nom::branch::alt;
 //! use nom::bytes::complete::tag;
 //!
-//! let alt_tags = alt((tag("abcd"), tag("efgh")));
+//! let mut alt_tags = alt((tag("abcd"), tag("efgh")));
 //!
 //! assert_eq!(alt_tags(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
 //! assert_eq!(alt_tags(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
@@ -293,7 +293,7 @@
 //! bytes::streaming::{tag, take},
 //! sequence::tuple};
 //!
-//! let tpl = tuple((be_u16, take(3u8), tag("fg")));
+//! let mut tpl = tuple((be_u16, take(3u8), tag("fg")));
 //!
 //! assert_eq!(
 //!   tpl(&b"abcdefgh"[..]),
@@ -302,7 +302,7 @@
 //!     (0x6162u16, &b"cde"[..], &b"fg"[..])
 //!   ))
 //! );
-//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::Size(2))));
+//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
 //! let input = &b"abcdejk"[..];
 //! assert_eq!(tpl(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
 //! # }
@@ -372,7 +372,7 @@
 //!
 //! // if the input is smaller than 4 bytes, the streaming parser
 //! // will return `Incomplete` to indicate that we need more data
-//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::Size(4))));
+//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::new(4))));
 //!
 //! // but the complete parser will return an error
 //! assert_eq!(take_complete(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
@@ -393,13 +393,12 @@
 //! // but when there's no limit, the streaming version returns `Incomplete`, because it cannot
 //! // know if more input data should be recognized. The whole input could be "abcd;", or
 //! // "abcde;"
-//! assert_eq!(alpha0_streaming("abcd"), Err(Err::Incomplete(Needed::Size(1))));
+//! assert_eq!(alpha0_streaming("abcd"), Err(Err::Incomplete(Needed::new(1))));
 //!
 //! // while the complete version knows that all of the data is there
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
 //! ```
 //! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
-#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
@@ -409,18 +408,15 @@
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
 extern crate alloc;
-#[cfg(feature = "regexp_macros")]
-#[macro_use]
-extern crate lazy_static;
+#[cfg(test)]
+extern crate doc_comment;
+#[cfg(feature = "lexical")]
+extern crate lexical_core;
 extern crate memchr;
 #[cfg(feature = "regexp")]
 pub extern crate regex;
-#[cfg(feature = "lexical")]
-extern crate lexical_core;
 #[cfg(nightly)]
 extern crate test;
-#[cfg(test)]
-extern crate doc_comment;
 
 //FIXME: reactivate doctest once https://github.com/rust-lang/rust/issues/62210 is done
 //#[cfg(doctest)]
@@ -438,7 +434,7 @@ pub mod lib {
     #[cfg_attr(feature = "alloc", macro_use)]
     pub use alloc::{boxed, string, vec};
 
-    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str, borrow};
+    pub use core::{borrow, cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
 
     /// internal reproduction of std prelude
     pub mod prelude {
@@ -449,7 +445,10 @@ pub mod lib {
   #[cfg(feature = "std")]
   /// internal std exports for no_std compatibility
   pub mod std {
-    pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec, borrow};
+    pub use std::{
+      alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result,
+      slice, str, string, vec,
+    };
 
     /// internal reproduction of std prelude
     pub mod prelude {
@@ -461,11 +460,11 @@ pub mod lib {
   pub use regex;
 }
 
-pub use self::traits::*;
-pub use self::util::*;
+pub use self::bits::*;
 pub use self::internal::*;
 pub use self::methods::*;
-pub use self::bits::*;
+pub use self::traits::*;
+pub use self::util::*;
 pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
@@ -505,7 +504,7 @@ pub mod whitespace;
 
 #[cfg(feature = "regexp")]
 #[macro_use]
-mod regexp;
+pub mod regexp;
 
 mod str;
 

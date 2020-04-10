@@ -3,8 +3,8 @@
 #[macro_use]
 mod macros;
 
-pub mod streaming;
 pub mod complete;
+pub mod streaming;
 
 /// Configurable endianness
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -14,4 +14,3 @@ pub enum Endianness {
   /// little endian
   Little,
 }
-

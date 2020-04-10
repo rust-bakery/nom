@@ -5,14 +5,14 @@ mod macros;
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult};
+use crate::internal::{Err, IResult, Parser};
 
 /// helper trait for the [alt()] combinator
 ///
 /// this trait is implemented for tuples of up to 21 elements
 pub trait Alt<I, O, E> {
   /// tests each parser in the tuple and returns the result of the first one that succeeds
-  fn choice(&self, input: I) -> IResult<I, O, E>;
+  fn choice(&mut self, input: I) -> IResult<I, O, E>;
 }
 
 /// tests a list of parsers one by one until one succeeds
@@ -42,7 +42,9 @@ pub trait Alt<I, O, E> {
 ///
 /// with a custom error type, it is possible to have alt return the error of the parser
 /// that went the farthest in the input data
-pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
+pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
+  mut l: List,
+) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.choice(i)
 }
 
@@ -51,7 +53,7 @@ pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(l: List) -> impl F
 /// this trait is implemented for tuples of up to 21 elements
 pub trait Permutation<I, O, E> {
   /// tries to apply all parsers in the tuple in various orders until all of them succeed
-  fn permutation(&self, input: I) -> IResult<I, O, E>;
+  fn permutation(&mut self, input: I) -> IResult<I, O, E>;
 }
 
 /// applies a list of parsers in any order
@@ -80,7 +82,9 @@ pub trait Permutation<I, O, E> {
 /// assert_eq!(parser("abc;"), Err(Err::Error(error_position!(";", ErrorKind::Permutation))));
 /// # }
 /// ```
-pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(l: List) -> impl Fn(I) -> IResult<I, O, E> {
+pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(
+  mut l: List,
+) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.permutation(i)
 }
 
@@ -103,11 +107,11 @@ macro_rules! alt_trait_impl(
   ($($id:ident)+) => (
     impl<
       Input: Clone, Output, Error: ParseError<Input>,
-      $($id: Fn(Input) -> IResult<Input, Output, Error>),+
+      $($id: Parser<Input, Output, Error>),+
     > Alt<Input, Output, Error> for ( $($id),+ ) {
 
-      fn choice(&self, input: Input) -> IResult<Input, Output, Error> {
-        let mut err = None;
+      fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
+        let mut err: Option<Error> = None;
         alt_trait_inner!(0, self, input, err, $($id)+);
 
         Err(Err::Error(Error::append(input, ErrorKind::Alt, err.unwrap())))
@@ -118,26 +122,24 @@ macro_rules! alt_trait_impl(
 
 macro_rules! alt_trait_inner(
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident $($id:ident)+) => (
-    match $self.$it($input.clone()) {
+    match $self.$it.parse($input.clone()) {
       Err(Err::Error(e)) => {
-        if $err.is_none() {
-          $err = Some(e);
-        } else {
-          $err = Some($err.unwrap().or(e));
-        }
+        $err = Some(match $err.take() {
+          None => e,
+          Some(prev) => prev.or(e),
+        });
         succ!($it, alt_trait_inner!($self, $input, $err, $($id)+))
       },
       res => return res,
     }
   );
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident) => (
-    match $self.$it($input.clone()) {
+    match $self.$it.parse($input.clone()) {
       Err(Err::Error(e)) => {
-        if $err.is_none() {
-          $err = Some(e);
-        } else {
-          $err = Some($err.unwrap().or(e));
-        }
+        $err = Some(match $err.take() {
+          None => e,
+          Some(prev) => prev.or(e),
+        });
       },
       res => return res,
     }
@@ -167,10 +169,10 @@ macro_rules! permutation_trait_impl(
   ($($name:ident $ty: ident),+) => (
     impl<
       Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Fn(Input) -> IResult<Input, $ty, Error>),+
+      $($name: Parser<Input, $ty, Error>),+
     > Permutation<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
 
-      fn permutation(&self, mut input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
+      fn permutation(&mut self, mut input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
         let mut res = permutation_init!((), $($name),+);
 
         loop {
@@ -198,7 +200,7 @@ macro_rules! permutation_trait_impl(
 macro_rules! permutation_trait_inner(
   ($it:tt, $self:expr, $input:ident, $res:expr, $all_done:expr, $head:ident $($id:ident)+) => ({
     if $res.$it.is_none() {
-      match $self.$it($input.clone()) {
+      match $self.$it.parse($input.clone()) {
         Ok((i,o))     => {
           $input = i;
           $res.$it = Some(o);
@@ -216,7 +218,7 @@ macro_rules! permutation_trait_inner(
   });
   ($it:tt, $self:expr, $input:ident, $res:expr, $all_done:expr, $head:ident) => ({
     if $res.$it.is_none() {
-      match $self.$it($input.clone()) {
+      match $self.$it.parse($input.clone()) {
         Ok((i,o))     => {
           $input = i;
           $res.$it = Some(o);

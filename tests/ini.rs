@@ -2,21 +2,26 @@
 extern crate nom;
 
 use nom::{
-  IResult,
   bytes::complete::take_while,
-  sequence::delimited,
+  character::complete::{
+    alphanumeric1 as alphanumeric, char, multispace0 as multispace, space0 as space,
+  },
   combinator::map_res,
-  character::complete::{char, alphanumeric1 as alphanumeric, multispace0 as multispace, space0 as space}
+  sequence::delimited,
+  IResult,
 };
 
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 fn category(i: &[u8]) -> IResult<&[u8], &str> {
-  map_res(delimited(char('['), take_while(|c| c != b']'), char(']')), str::from_utf8)(i)
+  map_res(
+    delimited(char('['), take_while(|c| c != b']'), char(']')),
+    str::from_utf8,
+  )(i)
 }
 
-fn complete_byte_slice_to_str<'a>(s: &'a[u8]) -> Result<&'a str, str::Utf8Error> {
+fn complete_byte_slice_to_str<'a>(s: &'a [u8]) -> Result<&'a str, str::Utf8Error> {
   str::from_utf8(s)
 }
 

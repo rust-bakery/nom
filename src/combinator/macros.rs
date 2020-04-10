@@ -970,9 +970,9 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, IResult, Needed};
-  use crate::error::ParseError;
   use crate::error::ErrorKind;
+  use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::lib::std::boxed::Box;
 
@@ -989,7 +989,7 @@ mod tests {
           Ok(($i.slice(blen..), $i.slice(..blen)))
         },
         CompareResult::Incomplete => {
-          Err(Err::Incomplete(Needed::Size($tag.input_len())))
+          Err(Err::Incomplete(Needed::new($tag.input_len())))
         },
         CompareResult::Error => {
           let e:ErrorKind = ErrorKind::Tag;
@@ -1005,7 +1005,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          Err($crate::Err::Incomplete($crate::Needed::Size(cnt)))
+          Err($crate::Err::Incomplete($crate::Needed::new(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };
@@ -1060,7 +1060,7 @@ mod tests {
     let c = &b"ab"[..];
     assert_eq!(opt_abcd(a), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
     assert_eq!(opt_abcd(b), Ok((&b"bcdefg"[..], None)));
-    assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -1078,7 +1078,7 @@ mod tests {
         Err(Err::Error(error_position!(b, ErrorKind::Tag)))
       ))
     );
-    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::new(4))));
   }
 
   use crate::lib::std::convert::From;
@@ -1100,7 +1100,6 @@ mod tests {
     }
   }
 
-
   #[test]
   #[cfg(feature = "alloc")]
   fn cond() {
@@ -1113,7 +1112,7 @@ mod tests {
     }
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(f_true(&b"xxx"[..]), Err(Err::Error(CustomError("test"))));
 
     assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
@@ -1135,7 +1134,7 @@ mod tests {
     }
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(f_true(&b"xxx"[..]), Err(Err::Error(CustomError("test"))));
 
     assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
@@ -1148,7 +1147,7 @@ mod tests {
     named!(peek_tag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
     assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
-    assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(
       peek_tag(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -1162,14 +1161,14 @@ mod tests {
       not_aaa(&b"aaa"[..]),
       Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not)))
     );
-    assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::new(3))));
     assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
   }
 
   #[test]
   fn verify() {
     named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == b'a'));
-    assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
+    assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::new(5))));
     assert_eq!(
       test(&b"bcdefg"[..]),
       Err(Err::Error(error_position!(
@@ -1186,10 +1185,7 @@ mod tests {
 
     assert_eq!(
       res,
-      Err(Err::Error(error_position!(
-        "ab",
-        ErrorKind::ParseTo
-      )))
+      Err(Err::Error(error_position!("ab", ErrorKind::ParseTo)))
     );
 
     let res: IResult<_, _, (&str, ErrorKind)> = parse_to!("42", usize);
@@ -1197,5 +1193,4 @@ mod tests {
     assert_eq!(res, Ok(("", 42)));
     //assert_eq!(ErrorKind::convert(ErrorKind::ParseTo), ErrorKind::ParseTo::<u64>);
   }
-
 }

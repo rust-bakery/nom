@@ -4,9 +4,9 @@
 #[macro_use]
 extern crate nom;
 
-use nom::IResult;
-use nom::error::{ErrorKind,ParseError};
 use nom::character::streaming::digit1 as digit;
+use nom::error::{ErrorKind, ParseError};
+use nom::IResult;
 
 use std::convert::From;
 
@@ -26,9 +26,7 @@ impl<'a> ParseError<&'a str> for CustomError {
 
   fn append(_: &'a str, kind: ErrorKind, other: CustomError) -> Self {
     CustomError(format!("{:?}\nerror code was: {:?}", other, kind))
-
   }
-
 }
 
 fn test1(input: &str) -> IResult<&str, &str, CustomError> {
@@ -42,9 +40,7 @@ fn test2(input: &str) -> IResult<&str, &str, CustomError> {
 }
 
 fn test3(input: &str) -> IResult<&str, &str, CustomError> {
-  verify!(input, test1, |s: &str| {
-    s.starts_with("abcd")
-  })
+  verify!(input, test1, |s: &str| { s.starts_with("abcd") })
 }
 
 #[cfg(feature = "alloc")]

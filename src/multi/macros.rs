@@ -1,16 +1,16 @@
 //! Parsers for applying parsers multiple times
 
-/// `separated_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_list(sep, X) returns a Vec<X>
+/// `separated_list0!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// separated_list0(sep, X) returns a Vec<X>
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::separated_list;
+/// use nom::multi::separated_list0;
 /// use nom::bytes::complete::tag;
 ///
 /// # fn main() {
-/// named!(parser<&str, Vec<&str>>, separated_list!(tag("|"), tag("abc")));
+/// named!(parser<&str, Vec<&str>>, separated_list0!(tag("|"), tag("abc")));
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
 /// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
@@ -21,36 +21,36 @@
 /// ```
 #[cfg(feature = "alloc")]
 #[macro_export(local_inner_macros)]
-macro_rules! separated_list(
+macro_rules! separated_list0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    separated_list!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
+    separated_list0!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    separated_list!($i, |i| $submac!(i, $($args)*), $g);
+    separated_list0!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    separated_list!($i, $f, |i| $submac!(i, $($args)*));
+    separated_list0!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::multi::separated_listc($i, $f, $g)
+    $crate::multi::separated_list0c($i, $f, $g)
   );
 );
 
-/// `separated_nonempty_list!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_nonempty_list(sep, X) returns a Vec<X>
+/// `separated_list1!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
+/// separated_list1(sep, X) returns a Vec<X>
 ///
 /// it will return an error if there is no element in the list
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::separated_nonempty_list;
+/// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
 ///
 /// # fn main() {
-/// named!(parser<&str, Vec<&str>>, separated_nonempty_list!(tag("|"), tag("abc")));
+/// named!(parser<&str, Vec<&str>>, separated_list1!(tag("|"), tag("abc")));
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
 /// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
@@ -61,21 +61,21 @@ macro_rules! separated_list(
 /// ```
 #[cfg(feature = "alloc")]
 #[macro_export(local_inner_macros)]
-macro_rules! separated_nonempty_list(
+macro_rules! separated_list1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
-    separated_nonempty_list!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
+    separated_list1!($i, |i| $submac!(i, $($args)*), |i| $submac2!(i, $($args2)*))
   );
 
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    separated_nonempty_list!($i, |i| $submac!(i, $($args)*), $g);
+    separated_list1!($i, |i| $submac!(i, $($args)*), $g);
   );
 
   ($i:expr, $f:expr, $submac:ident!( $($args:tt)* )) => (
-    separated_nonempty_list!($i, $f, |i| $submac!(i, $($args)*));
+    separated_list1!($i, $f, |i| $submac!(i, $($args)*));
   );
 
   ($i:expr, $f:expr, $g:expr) => (
-    $crate::multi::separated_nonempty_listc($i, $f, $g)
+    $crate::multi::separated_list1c($i, $f, $g)
   );
 );
 
@@ -318,7 +318,7 @@ macro_rules! count(
 /// named!(parser<Vec<&[u8]>>, length_count!(be_u8, tag!("abc")));
 ///
 /// assert_eq!(parser(&b"\x02abcabcabc"[..]), Ok(((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))));
-/// assert_eq!(parser(&b"\x04abcabcabc"[..]), Err(Err::Incomplete(Needed::Size(3))));
+/// assert_eq!(parser(&b"\x04abcabcabc"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -356,8 +356,8 @@ macro_rules! length_count(
 
 /// `length_data!(I -> IResult<I, nb>) => O`
 ///
-/// `length_data` gets a number from the first parser, than takes a subslice of the input
-/// of that size, and returns that subslice
+/// `length_data` gets a number from the first parser, then takes a subslice of the input
+/// of that size and returns that subslice
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -368,7 +368,7 @@ macro_rules! length_count(
 /// named!(parser, length_data!(be_u8));
 ///
 /// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], &b"abcabc"[..])));
-/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::Size(6))));
+/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::new(6))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -399,7 +399,7 @@ macro_rules! length_data(
 /// named!(parser, length_value!(be_u8, alpha0));
 ///
 /// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], &b"abcabc"[..])));
-/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::Size(6))));
+/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::new(6))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -530,14 +530,14 @@ macro_rules! fold_many_m_n(
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, IResult, Needed};
+  use crate::character::streaming::digit1 as digit;
+  use crate::error::ErrorKind;
   use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
   use crate::lib::std::str::{self, FromStr};
   #[cfg(feature = "alloc")]
   use crate::lib::std::vec::Vec;
-  use crate::character::streaming::digit1 as digit;
   use crate::number::streaming::{be_u16, be_u8};
-  use crate::error::ErrorKind;
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -569,7 +569,7 @@ mod tests {
         let res: IResult<_,_,_> = if reduced != b {
           Err($crate::Err::Error($crate::error::make_error($i, $crate::error::ErrorKind::Tag)))
         } else if m < blen {
-          Err($crate::Err::Incomplete(Needed::Size(blen)))
+          Err($crate::Err::Incomplete(Needed::new(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -580,10 +580,10 @@ mod tests {
 
   #[test]
   #[cfg(feature = "alloc")]
-  fn separated_list() {
-    named!(multi<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("abcd")));
-    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list!(tag!(","), tag!("")));
-    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list!(tag!(".."), tag!("abcd")));
+  fn separated_list0() {
+    named!(multi<&[u8],Vec<&[u8]> >, separated_list0!(tag!(","), tag!("abcd")));
+    named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list0!(tag!(","), tag!("")));
+    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list0!(tag!(".."), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
@@ -599,22 +599,25 @@ mod tests {
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Ok((&b"ef"[..], res2)));
     assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
-    assert_eq!(multi_empty(d), Err(Err::Error(error_position!(d, ErrorKind::SeparatedList))));
+    assert_eq!(
+      multi_empty(d),
+      Err(Err::Error(error_position!(d, ErrorKind::SeparatedList)))
+    );
     //let res3 = vec![&b""[..], &b""[..], &b""[..]];
     //assert_eq!(multi_empty(d),Ok((&b"abc"[..], res3)));
     let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(e), Ok((&b",ef"[..], res4)));
 
-    assert_eq!(multi(f), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(multi(h), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
   #[cfg(feature = "alloc")]
-  fn separated_nonempty_list() {
-    named!(multi<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(","), tag!("abcd")));
-    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_nonempty_list!(tag!(".."), tag!("abcd")));
+  fn separated_list1() {
+    named!(multi<&[u8],Vec<&[u8]> >, separated_list1!(tag!(","), tag!("abcd")));
+    named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list1!(tag!(".."), tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"abcd,abcdef"[..];
@@ -629,13 +632,16 @@ mod tests {
     assert_eq!(multi(a), Ok((&b"ef"[..], res1)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Ok((&b"ef"[..], res2)));
-    assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Tag))));
+    assert_eq!(
+      multi(c),
+      Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+    );
     let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(d), Ok((&b",ef"[..], res3)));
 
-    assert_eq!(multi(f), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::Size(2))));
-    assert_eq!(multi(h), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -647,14 +653,20 @@ mod tests {
     named!( multi_empty<&[u8],Vec<&[u8]> >, many0!(tag_empty) );
 
     assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
-    assert_eq!(multi(&b"abcdabcdefgh"[..]), Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]])));
+    assert_eq!(
+      multi(&b"abcdabcdefgh"[..]),
+      Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]))
+    );
     assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
-    assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(
       multi_empty(&b"abcdef"[..]),
-      Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0)))
+      Err(Err::Error(error_position!(
+        &b"abcdef"[..],
+        ErrorKind::Many0
+      )))
     );
   }
 
@@ -682,8 +694,11 @@ mod tests {
     assert_eq!(multi(a), Ok((&b"ef"[..], res1)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res2)));
-    assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Tag))));
-    assert_eq!(multi(d), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(
+      multi(c),
+      Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+    );
+    assert_eq!(multi(d), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -724,7 +739,10 @@ mod tests {
 
     named!(multi1<&[u8],Vec<&[u8]> >, many1!(tst));
     let a = &b"abcdef"[..];
-    assert_eq!(multi1(a), Err(Err::Error(error_position!(a, ErrorKind::Tag))));
+    assert_eq!(
+      multi1(a),
+      Err(Err::Error(error_position!(a, ErrorKind::Tag)))
+    );
   }
 
   #[test]
@@ -738,14 +756,17 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    assert_eq!(multi(a), Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag))));
+    assert_eq!(
+      multi(a),
+      Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
+    );
     let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res1)));
     let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(c), Ok((&b"efgh"[..], res2)));
     let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(d), Ok((&b"Abcdefgh"[..], res3)));
-    assert_eq!(multi(e), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(e), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -755,17 +776,29 @@ mod tests {
     named!(tag_abc, tag!("abc"));
     named!( cnt_2<&[u8], Vec<&[u8]> >, count!(tag_abc, TIMES ) );
 
-    assert_eq!(cnt_2(&b"abcabcabcdef"[..]), Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]])));
-    assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt_2(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag))));
+    assert_eq!(
+      cnt_2(&b"abcabcabcdef"[..]),
+      Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]))
+    );
+    assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(
+      cnt_2(&b"xxx"[..]),
+      Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    );
     assert_eq!(
       cnt_2(&b"xxxabcabcdef"[..]),
-      Err(Err::Error(error_position!(&b"xxxabcabcdef"[..], ErrorKind::Tag)))
+      Err(Err::Error(error_position!(
+        &b"xxxabcabcdef"[..],
+        ErrorKind::Tag
+      )))
     );
     assert_eq!(
       cnt_2(&b"abcxxxabcdef"[..]),
-      Err(Err::Error(error_position!(&b"xxxabcdef"[..], ErrorKind::Tag)))
+      Err(Err::Error(error_position!(
+        &b"xxxabcdef"[..],
+        ErrorKind::Tag
+      )))
     );
   }
 
@@ -794,8 +827,14 @@ mod tests {
     let error_2_remain = &b"abcxxxabcdef"[..];
 
     assert_eq!(counter_2(done), Ok((rest, parsed_done)));
-    assert_eq!(counter_2(incomplete_1), Ok((incomplete_1, parsed_incompl_1)));
-    assert_eq!(counter_2(incomplete_2), Ok((incomplete_2, parsed_incompl_2)));
+    assert_eq!(
+      counter_2(incomplete_1),
+      Ok((incomplete_1, parsed_incompl_1))
+    );
+    assert_eq!(
+      counter_2(incomplete_2),
+      Ok((incomplete_2, parsed_incompl_2))
+    );
     assert_eq!(counter_2(error), Ok((error_remain, parsed_err)));
     assert_eq!(counter_2(error_1), Ok((error_1_remain, parsed_err_1)));
     assert_eq!(counter_2(error_2), Ok((error_2_remain, parsed_err_2)));
@@ -804,7 +843,7 @@ mod tests {
   #[derive(Debug, Clone, PartialEq)]
   pub struct NilError;
 
-  impl<I> From<(I,ErrorKind)> for NilError {
+  impl<I> From<(I, ErrorKind)> for NilError {
     fn from(_: (I, ErrorKind)) -> Self {
       NilError
     }
@@ -833,10 +872,16 @@ mod tests {
     named!(tag_abc, tag!(&b"abc"[..]));
     named!( cnt<&[u8], Vec<&[u8]> >, length_count!(number, tag_abc) );
 
-    assert_eq!(cnt(&b"2abcabcabcdef"[..]), Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]])));
-    assert_eq!(cnt(&b"2ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt(&b"3abcab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(cnt(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit))));
+    assert_eq!(
+      cnt(&b"2abcabcabcdef"[..]),
+      Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]))
+    );
+    assert_eq!(cnt(&b"2ab"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(cnt(&b"3abcab"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(
+      cnt(&b"xxx"[..]),
+      Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit)))
+    );
     assert_eq!(
       cnt(&b"2abcxxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -847,9 +892,15 @@ mod tests {
   fn length_data() {
     named!( take<&[u8], &[u8]>, length_data!(number) );
 
-    assert_eq!(take(&b"6abcabcabcdef"[..]), Ok((&b"abcdef"[..], &b"abcabc"[..])));
-    assert_eq!(take(&b"3ab"[..]), Err(Err::Incomplete(Needed::Size(3))));
-    assert_eq!(take(&b"xxx"[..]), Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit))));
+    assert_eq!(
+      take(&b"6abcabcabcdef"[..]),
+      Ok((&b"abcdef"[..], &b"abcabc"[..]))
+    );
+    assert_eq!(take(&b"3ab"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(
+      take(&b"xxx"[..]),
+      Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit)))
+    );
     assert_eq!(take(&b"2abcxxx"[..]), Ok((&b"cxxx"[..], &b"ab"[..])));
   }
 
@@ -859,8 +910,14 @@ mod tests {
     named!(length_value_2<&[u8], (u8, u8) >, length_value!(be_u8, tuple!(be_u8, be_u8)));
 
     let i1 = [0, 5, 6];
-    assert_eq!(length_value_1(&i1), Err(Err::Error(error_position!(&b""[..], ErrorKind::Complete))));
-    assert_eq!(length_value_2(&i1), Err(Err::Error(error_position!(&b""[..], ErrorKind::Complete))));
+    assert_eq!(
+      length_value_1(&i1),
+      Err(Err::Error(error_position!(&b""[..], ErrorKind::Complete)))
+    );
+    assert_eq!(
+      length_value_2(&i1),
+      Err(Err::Error(error_position!(&b""[..], ErrorKind::Complete)))
+    );
 
     let i2 = [1, 5, 6, 3];
     assert_eq!(
@@ -894,14 +951,20 @@ mod tests {
     named!( multi_empty<&[u8],Vec<&[u8]> >, fold_many0!(tag_empty, Vec::new(), fold_into_vec) );
 
     assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
-    assert_eq!(multi(&b"abcdabcdefgh"[..]), Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]])));
+    assert_eq!(
+      multi(&b"abcdabcdefgh"[..]),
+      Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]))
+    );
     assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
-    assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::Size(4))));
-    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(
       multi_empty(&b"abcdef"[..]),
-      Err(Err::Error(error_position!(&b"abcdef"[..], ErrorKind::Many0)))
+      Err(Err::Error(error_position!(
+        &b"abcdef"[..],
+        ErrorKind::Many0
+      )))
     );
   }
 
@@ -923,8 +986,11 @@ mod tests {
     assert_eq!(multi(a), Ok((&b"ef"[..], res1)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res2)));
-    assert_eq!(multi(c), Err(Err::Error(error_position!(c, ErrorKind::Many1))));
-    assert_eq!(multi(d), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(
+      multi(c),
+      Err(Err::Error(error_position!(c, ErrorKind::Many1)))
+    );
+    assert_eq!(multi(d), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -942,14 +1008,17 @@ mod tests {
     let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
     let e = &b"AbcdAb"[..];
 
-    assert_eq!(multi(a), Err(Err::Error(error_position!(a, ErrorKind::ManyMN))));
+    assert_eq!(
+      multi(a),
+      Err(Err::Error(error_position!(a, ErrorKind::ManyMN)))
+    );
     let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res1)));
     let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(c), Ok((&b"efgh"[..], res2)));
     let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(d), Ok((&b"Abcdefgh"[..], res3)));
-    assert_eq!(multi(e), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(multi(e), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -963,7 +1032,10 @@ mod tests {
 
     assert_eq!(count0_nums(&b"123,45,junk"[..]), Ok((&b"junk"[..], 2)));
 
-    assert_eq!(count0_nums(&b"1,2,3,4,5,6,7,8,9,0,junk"[..]), Ok((&b"junk"[..], 10)));
+    assert_eq!(
+      count0_nums(&b"1,2,3,4,5,6,7,8,9,0,junk"[..]),
+      Ok((&b"junk"[..], 10))
+    );
 
     assert_eq!(count0_nums(&b"hello"[..]), Ok((&b"hello"[..], 0)));
   }
@@ -977,12 +1049,17 @@ mod tests {
 
     assert_eq!(count1_nums(&b"123,45,junk"[..]), Ok((&b"junk"[..], 2)));
 
-    assert_eq!(count1_nums(&b"1,2,3,4,5,6,7,8,9,0,junk"[..]), Ok((&b"junk"[..], 10)));
+    assert_eq!(
+      count1_nums(&b"1,2,3,4,5,6,7,8,9,0,junk"[..]),
+      Ok((&b"junk"[..], 10))
+    );
 
     assert_eq!(
       count1_nums(&b"hello"[..]),
-      Err(Err::Error(error_position!(&b"hello"[..], ErrorKind::Many1Count)))
+      Err(Err::Error(error_position!(
+        &b"hello"[..],
+        ErrorKind::Many1Count
+      )))
     );
   }
-
 }

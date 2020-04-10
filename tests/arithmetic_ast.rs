@@ -6,13 +6,13 @@ use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 
 use nom::{
-  IResult,
-  character::complete::{digit1 as digit, multispace0 as multispace},
-  sequence::{preceded, delimited},
-  combinator::{map, map_res},
-  multi::many0,
   branch::alt,
   bytes::complete::tag,
+  character::complete::{digit1 as digit, multispace0 as multispace},
+  combinator::{map, map_res},
+  multi::many0,
+  sequence::{delimited, preceded},
+  IResult,
 };
 
 pub enum Expr {
@@ -63,25 +63,18 @@ impl Debug for Expr {
 fn parens(i: &str) -> IResult<&str, Expr> {
   delimited(
     multispace,
-    delimited(
-      tag("("),
-      map(expr, |e| Expr::Paren(Box::new(e))),
-      tag(")")
-    ),
-    multispace
+    delimited(tag("("), map(expr, |e| Expr::Paren(Box::new(e))), tag(")")),
+    multispace,
   )(i)
 }
 
 fn factor(i: &str) -> IResult<&str, Expr> {
   alt((
     map(
-      map_res(
-        delimited(multispace, digit, multispace),
-        FromStr::from_str
-      ),
-      Expr::Value
+      map_res(delimited(multispace, digit, multispace), FromStr::from_str),
+      Expr::Value,
     ),
-    parens
+    parens,
   ))(i)
 }
 
@@ -101,14 +94,13 @@ fn term(i: &str) -> IResult<&str, Expr> {
   let (i, initial) = factor(i)?;
   let (i, remainder) = many0(alt((
     |i| {
-      let(i, mul) = preceded(tag("*"), factor)(i)?;
-      Ok((i,(Oper::Mul, mul)))
+      let (i, mul) = preceded(tag("*"), factor)(i)?;
+      Ok((i, (Oper::Mul, mul)))
     },
     |i| {
-      let(i, div) = preceded(tag("/"), factor)(i)?;
+      let (i, div) = preceded(tag("/"), factor)(i)?;
       Ok((i, (Oper::Div, div)))
     },
-
   )))(i)?;
 
   Ok((i, fold_exprs(initial, remainder)))
@@ -118,14 +110,13 @@ fn expr(i: &str) -> IResult<&str, Expr> {
   let (i, initial) = term(i)?;
   let (i, remainder) = many0(alt((
     |i| {
-      let(i, add) = preceded(tag("+"), term)(i)?;
-      Ok((i,(Oper::Add, add)))
+      let (i, add) = preceded(tag("+"), term)(i)?;
+      Ok((i, (Oper::Add, add)))
     },
     |i| {
-      let(i, sub) = preceded(tag("-"), term)(i)?;
+      let (i, sub) = preceded(tag("-"), term)(i)?;
       Ok((i, (Oper::Sub, sub)))
     },
-
   )))(i)?;
 
   Ok((i, fold_exprs(initial, remainder)))
