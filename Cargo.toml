@@ -127,6 +127,7 @@ name = "test1"
 
 [[test]]
 name = "fnmut"
+required-features = ["alloc"]
 
 [[bench]]
 name = "arithmetic"
