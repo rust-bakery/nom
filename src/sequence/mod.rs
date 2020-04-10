@@ -344,7 +344,7 @@ mod tests {
 
   #[test]
   fn single_element_tuples() {
-    use crate::character::complete::{alpha1, digit1};
+    use crate::character::complete::alpha1;
     use crate::{error::ErrorKind, Err};
 
     let mut parser = tuple((alpha1,));
