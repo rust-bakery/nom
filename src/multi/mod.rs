@@ -655,6 +655,58 @@ where
   }
 }
 
+/// Runs the embedded parser repeatedly, filling the given slice with results. This parser fails if
+/// the input runs out before the given slice is full.
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `buf` The slice to fill
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fill;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, [&str; 2]> {
+///   let mut buf = ["", ""];
+///   let (rest, ()) = fill(tag("abc"), &mut buf)(s)?;
+///   Ok((rest, buf))
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", ["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
+/// ```
+pub fn fill<'a, I, O, E, F>(f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
+where
+  I: Clone + PartialEq,
+  F: Fn(I) -> IResult<I, O, E> + 'a,
+  E: ParseError<I>,
+{
+  move |i: I| {
+    let mut input = i.clone();
+
+    for elem in buf.iter_mut() {
+      let input_ = input.clone();
+      match f(input_) {
+        Ok((i, o)) => {
+          *elem = o;
+          input = i;
+        }
+        Err(Err::Error(e)) => {
+          return Err(Err::Error(E::append(i, ErrorKind::Count, e)));
+        }
+        Err(e) => {
+          return Err(e);
+        }
+      }
+    }
+
+    Ok((input, ()))
+  }
+}
+
 /// Applies a parser until it fails and accumulates
 /// the results using a given function and initial value.
 /// # Arguments
