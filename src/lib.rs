@@ -464,7 +464,6 @@ pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
 pub use self::util::*;
-pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
 pub use self::regexp::*;
@@ -495,9 +494,6 @@ pub mod bits;
 
 #[macro_use]
 pub mod character;
-
-#[macro_use]
-pub mod whitespace;
 
 #[cfg(feature = "regexp")]
 #[macro_use]
