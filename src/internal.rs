@@ -176,12 +176,12 @@ pub trait Parser<I, O, E> {
   fn map<G, O2>(self, g: G) -> Map<Self, G, O>
   where
     G: Fn(O) -> O2,
-    Self: std::marker::Sized,
+    Self: core::marker::Sized,
   {
     Map {
       f: self,
       g,
-      phantom: std::marker::PhantomData,
+      phantom: core::marker::PhantomData,
     }
   }
 
@@ -190,12 +190,12 @@ pub trait Parser<I, O, E> {
   where
     G: Fn(O) -> H,
     H: Parser<I, O2, E>,
-    Self: std::marker::Sized,
+    Self: core::marker::Sized,
   {
     FlatMap {
       f: self,
       g,
-      phantom: std::marker::PhantomData,
+      phantom: core::marker::PhantomData,
     }
   }
 
@@ -203,12 +203,12 @@ pub trait Parser<I, O, E> {
   fn and_then<G, O2>(self, g: G) -> AndThen<Self, G, O>
   where
     G: Parser<O, O2, E>,
-    Self: std::marker::Sized,
+    Self: core::marker::Sized,
   {
     AndThen {
       f: self,
       g,
-      phantom: std::marker::PhantomData,
+      phantom: core::marker::PhantomData,
     }
   }
 
@@ -216,7 +216,7 @@ pub trait Parser<I, O, E> {
   fn and<G, O2>(self, g: G) -> And<Self, G>
   where
     G: Parser<I, O2, E>,
-    Self: std::marker::Sized,
+    Self: core::marker::Sized,
   {
     And { f: self, g }
   }
@@ -225,7 +225,7 @@ pub trait Parser<I, O, E> {
   fn or<G>(self, g: G) -> Or<Self, G>
   where
     G: Parser<I, O, E>,
-    Self: std::marker::Sized,
+    Self: core::marker::Sized,
   {
     Or { f: self, g }
   }
@@ -244,7 +244,7 @@ where
 pub struct Map<F, G, O1> {
   f: F,
   g: G,
-  phantom: std::marker::PhantomData<O1>,
+  phantom: core::marker::PhantomData<O1>,
 }
 
 impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
@@ -260,7 +260,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> fo
 pub struct FlatMap<F, G, O1> {
   f: F,
   g: G,
-  phantom: std::marker::PhantomData<O1>,
+  phantom: core::marker::PhantomData<O1>,
 }
 
 impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
@@ -276,7 +276,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>>
 pub struct AndThen<F, G, O1> {
   f: F,
   g: G,
-  phantom: std::marker::PhantomData<O1>,
+  phantom: core::marker::PhantomData<O1>,
 }
 
 impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
