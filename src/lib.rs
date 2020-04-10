@@ -462,7 +462,6 @@ pub mod lib {
 
 pub use self::bits::*;
 pub use self::internal::*;
-pub use self::methods::*;
 pub use self::traits::*;
 pub use self::util::*;
 pub use self::whitespace::*;
@@ -488,8 +487,6 @@ pub mod branch;
 pub mod sequence;
 #[macro_use]
 pub mod multi;
-#[macro_use]
-pub mod methods;
 
 #[macro_use]
 pub mod bytes;
