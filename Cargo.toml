@@ -125,6 +125,9 @@ name = "reborrow_fold"
 [[test]]
 name = "test1"
 
+[[test]]
+name = "fnmut"
+
 [[bench]]
 name = "arithmetic"
 path = "benches/arithmetic.rs"
