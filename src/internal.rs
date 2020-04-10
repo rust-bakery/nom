@@ -167,6 +167,17 @@ pub trait Parser<I, O, E> {
   /// a parser takes in input type, and returns a `Result` containing
   /// either the remaining input and the output value, or an error
   fn parse(&mut self, input: I) -> IResult<I, O, E>;
+
+  /// maps a function over the result of a parser
+  fn map<G,O2>(self, g: G) -> Mapper<Self, G, O>
+      where G: Fn(O) -> O2,
+            Self: std::marker::Sized, {
+    Mapper {
+        f: self,
+        g,
+        phantom: std::marker::PhantomData,
+    }
+  }
 }
 
 impl<'a, I, O, E, F> Parser<I, O, E> for F
@@ -175,6 +186,23 @@ where
 {
   fn parse(&mut self, i: I) -> IResult<I, O, E> {
     self(i)
+  }
+}
+
+/// implementation of parser mapping
+pub struct Mapper<F, G, O1> {
+  f: F,
+  g: G,
+  phantom: std::marker::PhantomData<O1>,
+}
+
+impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Mapper<F, G, O1>
+{
+  fn parse(&mut self, i: I) -> IResult<I, O2, E> {
+    match self.f.parse(i) {
+        Err(e) => Err(e),
+        Ok((i, o)) => Ok((i, (self.g)(o))),
+    }
   }
 }
 
