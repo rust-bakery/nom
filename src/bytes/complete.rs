@@ -501,7 +501,7 @@ where
   move |input: Input| {
     let i = input.clone();
     let input_length = i.input_len();
-    for ind in 0..input_length {
+    for ind in 0..=input_length {
       let (remaining, _taken) = i.take_split(ind);
       match f(remaining) {
         Err(_) => (),
@@ -543,7 +543,7 @@ where
   move |input: Input| {
     let i = input.clone();
     let input_length = i.input_len();
-    for ind in 0..input_length {
+    for ind in 0..=input_length {
       let (remaining, taken) = i.take_split(ind);
       match f(remaining) {
         Err(_) => (),
@@ -820,6 +820,8 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::character::complete::multispace0;
+  use crate::combinator::all_consuming;
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
@@ -851,5 +853,18 @@ mod tests {
   fn take_until_parser_matches_incomplete() {
     let result: IResult<&str, &str> = super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaaxy");
     assert_eq!(result, Err(Err::Error(("aaaaabbaaaabbbaaaxy", ErrorKind::TakeUntilParserMatches))));
+  }
+
+  #[test]
+  fn take_until_parser_matches_past_end_of_input() {
+    //! Ensure take_until_parser_matches will continue to attempt to match past the last character of the input
+    assert_eq!(
+      Ok(("\n", "foo bar baz")),
+      take_until_parser_matches::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))("foo bar baz\n")
+    );
+    assert_eq!(
+      Ok(("", "foo bar baz")),
+      take_until_parser_matches::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))("foo bar baz")
+    );
   }
 }
