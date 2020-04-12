@@ -477,7 +477,7 @@ where
 /// # use nom::{Err, error::ErrorKind, IResult};
 /// use nom::bytes::complete::{is_not, take_until_parser_matches, tag};
 /// use nom::sequence::{delimited, tuple};
-/// use nom::multi::separated_list;
+/// use nom::multi::separated_list1;
 ///
 /// fn flag(i: &str) -> IResult<&str, &str> {
 ///   delimited(tag("["), is_not("]\r\n"), tag("]"))(i)
@@ -486,16 +486,18 @@ where
 /// fn line_ending_with_flags(i: &str) -> IResult<&str, (&str, std::vec::Vec<&str>)> {
 ///   tuple((
 ///     take_until_parser_matches(flag),
-///     separated_list(tag(" "), flag),
+///     separated_list1(tag(" "), flag),
 ///   ))(i)
 /// }
 ///
 /// assert_eq!(line_ending_with_flags("Parsing Seminar [important] [presentation]"), Ok(("", ("Parsing Seminar ", vec!["important", "presentation"]))));
 /// ```
-pub fn take_until_parser_matches<F, Input, O, Error>(f: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_until_parser_matches<F, Input, O, Error>(
+  mut f: F,
+) -> impl FnMut(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + InputLength + Clone,
-  F: Fn(Input) -> IResult<Input, O, Error>,
+  F: Parser<Input, O, Error>,
   Error: ParseError<Input>,
 {
   move |input: Input| {
@@ -503,7 +505,7 @@ where
     let input_length = i.input_len();
     for ind in 0..=input_length {
       let (remaining, _taken) = i.take_split(ind);
-      match f(remaining) {
+      match f.parse(remaining) {
         Err(_) => (),
         Ok(_) => {
           let res: IResult<Input, Input, Error> = Ok(i.take_split(ind));
@@ -511,7 +513,10 @@ where
         }
       }
     }
-    Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntilParserMatches)))
+    Err(Err::Error(Error::from_error_kind(
+      i,
+      ErrorKind::TakeUntilParserMatches,
+    )))
   }
 }
 
@@ -534,10 +539,12 @@ where
 /// assert_eq!(until_eof("hello, world"), Err(Err::Error(("hello, world", ErrorKind::TakeUntilParserMatches))));
 /// assert_eq!(until_eof(""), Err(Err::Error(("", ErrorKind::TakeUntilParserMatches))));
 /// ```
-pub fn take_until_parser_matches_and_consume<F, Input, O, Error>(f: F) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_until_parser_matches_and_consume<F, Input, O, Error>(
+  mut f: F,
+) -> impl FnMut(Input) -> IResult<Input, Input, Error>
 where
   Input: InputTake + InputLength + Clone,
-  F: Fn(Input) -> IResult<Input, O, Error>,
+  F: Parser<Input, O, Error>,
   Error: ParseError<Input>,
 {
   move |input: Input| {
@@ -545,7 +552,7 @@ where
     let input_length = i.input_len();
     for ind in 0..=input_length {
       let (remaining, taken) = i.take_split(ind);
-      match f(remaining) {
+      match f.parse(remaining) {
         Err(_) => (),
         Ok((inner_remaining, _parser_result)) => {
           let res: IResult<Input, Input, Error> = Ok((inner_remaining, taken));
@@ -553,7 +560,10 @@ where
         }
       }
     }
-    Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntilParserMatches)))
+    Err(Err::Error(Error::from_error_kind(
+      i,
+      ErrorKind::TakeUntilParserMatches,
+    )))
   }
 }
 
@@ -839,20 +849,35 @@ mod tests {
 
   #[test]
   fn take_until_parser_matches_success() {
-    let result: IResult<&str, &str> = super::take_until_parser_matches(tag("bbb"))("aaaaabbaaaabbbaaa");
+    let result: IResult<&str, &str> =
+      super::take_until_parser_matches(tag("bbb"))("aaaaabbaaaabbbaaa");
     assert_eq!(result, Ok(("bbbaaa", "aaaaabbaaaa")));
   }
 
   #[test]
   fn take_until_parser_matches_failure() {
-    let result: IResult<&str, &str> = super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaa");
-    assert_eq!(result, Err(Err::Error(("aaaaabbaaaabbbaaa", ErrorKind::TakeUntilParserMatches))));
+    let result: IResult<&str, &str> =
+      super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaa");
+    assert_eq!(
+      result,
+      Err(Err::Error((
+        "aaaaabbaaaabbbaaa",
+        ErrorKind::TakeUntilParserMatches
+      )))
+    );
   }
 
   #[test]
   fn take_until_parser_matches_incomplete() {
-    let result: IResult<&str, &str> = super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaaxy");
-    assert_eq!(result, Err(Err::Error(("aaaaabbaaaabbbaaaxy", ErrorKind::TakeUntilParserMatches))));
+    let result: IResult<&str, &str> =
+      super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaaxy");
+    assert_eq!(
+      result,
+      Err(Err::Error((
+        "aaaaabbaaaabbbaaaxy",
+        ErrorKind::TakeUntilParserMatches
+      )))
+    );
   }
 
   #[test]
@@ -860,11 +885,27 @@ mod tests {
     //! Ensure take_until_parser_matches will continue to attempt to match past the last character of the input
     assert_eq!(
       Ok(("\n", "foo bar baz")),
-      take_until_parser_matches::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))("foo bar baz\n")
+      take_until_parser_matches::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))(
+        "foo bar baz\n"
+      )
     );
     assert_eq!(
       Ok(("", "foo bar baz")),
-      take_until_parser_matches::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))("foo bar baz")
+      take_until_parser_matches::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))(
+        "foo bar baz"
+      )
+    );
+    assert_eq!(
+      Ok(("", "foo bar baz")),
+      take_until_parser_matches_and_consume::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))(
+        "foo bar baz\n"
+      )
+    );
+    assert_eq!(
+      Ok(("", "foo bar baz")),
+      take_until_parser_matches_and_consume::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))(
+        "foo bar baz"
+      )
     );
   }
 }
