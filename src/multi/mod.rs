@@ -633,7 +633,7 @@ where
 {
   move |i: I| {
     let mut input = i.clone();
-    let mut res = crate::lib::std::vec::Vec::new();
+    let mut res = crate::lib::std::vec::Vec::with_capacity(count);
 
     for _ in 0..count {
       let input_ = input.clone();
