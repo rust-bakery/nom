@@ -760,6 +760,35 @@ enum State<E> {
   Incomplete(Needed),
 }
 
+/// a parser which always succeeds with given value without consuming any input.
+///
+/// It can be used for example as the last alternative in `alt` to
+/// specify the default case.
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::branch::alt;
+/// use nom::combinator::{success, value};
+/// use nom::character::complete::char;
+/// # fn main() {
+///
+/// let mut parser = success::<_,_,(_,ErrorKind)>(10);
+/// assert_eq!(parser("xyz"), Ok(("xyz", 10)));
+///
+/// let mut sign = alt((value(-1, char('-')), value(1, char('+')), success::<_,_,(_,ErrorKind)>(1)));
+/// assert_eq!(sign("+10"), Ok(("10", 1)));
+/// assert_eq!(sign("-10"), Ok(("10", -1)));
+/// assert_eq!(sign("10"), Ok(("10", 1)));
+/// # }
+/// ```
+pub fn success<I: Clone + Slice<RangeTo<usize>>, O: Clone, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E>
+{
+  move |input: I| {
+    Ok((input, val.clone()))
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
