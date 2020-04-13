@@ -133,6 +133,7 @@ Whitespace delimited formats parsing
 - `named_args!`: Makes a function from a parser combination with arguments.
 - `named_attr!`: Makes a function from a parser combination, with attributes
 - `try_parse!`: A bit like `std::try!`, this macro will return the remaining input and parsed value if the child parser returned `Ok`, and will do an early return for `Error` and `Incomplete`. This can provide more flexibility than `do_parse!` if needed.
+- `success`: Returns a value without consuming any input, always succeeds.
 
 ## Character test functions
 
