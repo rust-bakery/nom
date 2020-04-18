@@ -1,4 +1,4 @@
-//! choice combinators
+//! Choice combinators
 
 #[macro_use]
 mod macros;
@@ -7,15 +7,15 @@ use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Parser};
 
-/// helper trait for the [alt()] combinator
+/// Helper trait for the [alt()] combinator.
 ///
-/// this trait is implemented for tuples of up to 21 elements
+/// This trait is implemented for tuples of up to 21 elements
 pub trait Alt<I, O, E> {
-  /// tests each parser in the tuple and returns the result of the first one that succeeds
+  /// Tests each parser in the tuple and returns the result of the first one that succeeds
   fn choice(&mut self, input: I) -> IResult<I, O, E>;
 }
 
-/// tests a list of parsers one by one until one succeeds
+/// Tests a list of parsers one by one until one succeeds.
 ///
 /// It takes as argument a tuple of parsers.
 ///
@@ -40,7 +40,7 @@ pub trait Alt<I, O, E> {
 /// # }
 /// ```
 ///
-/// with a custom error type, it is possible to have alt return the error of the parser
+/// With a custom error type, it is possible to have alt return the error of the parser
 /// that went the farthest in the input data
 pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
   mut l: List,
@@ -48,17 +48,17 @@ pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
   move |i: I| l.choice(i)
 }
 
-/// helper trait for the [permutation()] combinator
+/// Helper trait for the [permutation()] combinator.
 ///
-/// this trait is implemented for tuples of up to 21 elements
+/// This trait is implemented for tuples of up to 21 elements
 pub trait Permutation<I, O, E> {
-  /// tries to apply all parsers in the tuple in various orders until all of them succeed
+  /// Tries to apply all parsers in the tuple in various orders until all of them succeed
   fn permutation(&mut self, input: I) -> IResult<I, O, E>;
 }
 
-/// applies a list of parsers in any order
+/// Applies a list of parsers in any order.
 ///
-/// permutation will succeed if all of the child parsers succeeded.
+/// Permutation will succeed if all of the child parsers succeeded.
 /// It takes as argument a tuple of parsers, and returns a
 /// tuple of the parser results.
 ///
