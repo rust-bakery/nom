@@ -1,4 +1,4 @@
-//! bit level parsers
+//! Bit level parsers
 //!
 
 use crate::error::{ErrorKind, ParseError};
