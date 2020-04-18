@@ -1,7 +1,7 @@
 //! Parsers for applying parsers multiple times
 
 /// `separated_list0!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_list0(sep, X) returns a Vec<X>
+/// `separated_list0(sep, X)` returns a `Vec<X>`.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -40,9 +40,9 @@ macro_rules! separated_list0(
 );
 
 /// `separated_list1!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// separated_list1(sep, X) returns a Vec<X>
+/// `separated_list1(sep, X)` returns a `Vec<X>`.
 ///
-/// it will return an error if there is no element in the list
+/// It will return an error if there is no element in the list.
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -80,9 +80,9 @@ macro_rules! separated_list1(
 );
 
 /// `many0!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// Applies the parser 0 or more times and returns the list of results in a Vec.
+/// Applies the parser 0 or more times and returns the list of results in a `Vec`.
 ///
-/// The embedded parser may return Incomplete.
+/// The embedded parser may return `Incomplete`.
 ///
 /// `many0` will only return `Error` if the embedded parser does not consume any input
 /// (to avoid infinite loops).
@@ -113,9 +113,9 @@ macro_rules! many0(
 );
 
 /// `many1!(I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// Applies the parser 1 or more times and returns the list of results in a Vec
+/// Applies the parser 1 or more times and returns the list of results in a `Vec`.
 ///
-/// the embedded parser may return Incomplete
+/// The embedded parser may return `Incomplete`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -147,7 +147,7 @@ macro_rules! many1(
 /// Applies the first parser until the second applies. Returns a tuple containing the list
 /// of results from the first in a Vec and the result of the second.
 ///
-/// The first embedded parser may return Incomplete
+/// The first embedded parser may return `Incomplete`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -190,7 +190,7 @@ macro_rules! many_till(
 
 /// `many_m_n!(usize, usize, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
 /// Applies the parser between m and n times (n included) and returns the list of
-/// results in a Vec
+/// results in a `Vec`.
 ///
 /// the embedded parser may return Incomplete
 ///
@@ -277,7 +277,7 @@ macro_rules! many1_count {
 }
 
 /// `count!(I -> IResult<I,O>, nb) => I -> IResult<I, Vec<O>>`
-/// Applies the child parser a specified number of times
+/// Applies the child parser a specified number of times.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -307,7 +307,7 @@ macro_rules! count(
 );
 
 /// `length_count!(I -> IResult<I, nb>, I -> IResult<I,O>) => I -> IResult<I, Vec<O>>`
-/// gets a number from the first parser, then applies the second parser that many times
+/// Gets a number from the first parser, then applies the second parser that many times.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -357,7 +357,7 @@ macro_rules! length_count(
 /// `length_data!(I -> IResult<I, nb>) => O`
 ///
 /// `length_data` gets a number from the first parser, then takes a subslice of the input
-/// of that size and returns that subslice
+/// of that size and returns that subslice.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -386,7 +386,7 @@ macro_rules! length_data(
 ///
 /// Gets a number from the first parser, takes a subslice of the input of that size,
 /// then applies the second parser on that subslice. If the second parser returns
-/// `Incomplete`, `length_value` will return an error
+/// `Incomplete`, `length_value` will return an error.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -422,9 +422,9 @@ macro_rules! length_value(
 );
 
 /// `fold_many0!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
-/// Applies the parser 0 or more times and folds the list of return values
+/// Applies the parser 0 or more times and folds the list of return values.
 ///
-/// the embedded parser may return Incomplete
+/// The embedded parser may return `Incomplete`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -455,9 +455,9 @@ macro_rules! fold_many0(
 );
 
 /// `fold_many1!(I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
-/// Applies the parser 1 or more times and folds the list of return values
+/// Applies the parser 1 or more times and folds the list of return values.
 ///
-/// the embedded parser may return Incomplete
+/// The embedded parser may return `Incomplete`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -492,9 +492,9 @@ macro_rules! fold_many1(
 );
 
 /// `fold_many_m_n!(usize, usize, I -> IResult<I,O>, R, Fn(R, O) -> R) => I -> IResult<I, R>`
-/// Applies the parser between m and n times (n included) and folds the list of return value
+/// Applies the parser between m and n times (n included) and folds the list of return value.
 ///
-/// the embedded parser may return Incomplete
+/// The embedded parser may return `Incomplete`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
