@@ -11,8 +11,7 @@ use crate::traits::{Compare, CompareResult};
 
 /// Recognizes one character.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -40,8 +39,7 @@ where
 
 /// Recognizes one of the provided characters.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -67,8 +65,7 @@ where
 
 /// Recognizes a character that is not in the provided characters.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -94,8 +91,7 @@ where
 
 /// Recognizes the string "\r\n".
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -130,8 +126,7 @@ where
 //FIXME: there's still an incomplete
 /// Recognizes a string of any char except '\r' or '\n'.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -183,8 +178,7 @@ where
 
 /// Recognizes an end of line (both '\n' and '\r\n').
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -221,8 +215,7 @@ where
 
 /// Matches a newline character '\n'.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -248,8 +241,7 @@ where
 
 /// Matches a tab character '\t'.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -276,8 +268,7 @@ where
 /// Matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -308,9 +299,8 @@ where
 
 /// Recognizes zero or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non
+/// *Complete version*: Will return the whole input if no terminating token is found (a non
 /// alphabetic character).
-///
 /// # Example
 ///
 /// ```
@@ -336,9 +326,8 @@ where
 
 /// Recognizes one or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found  (a non alphabetic character).
-///
 /// # Example
 ///
 /// ```
@@ -364,9 +353,8 @@ where
 
 /// Recognizes zero or more ASCII numerical characters: 0-9
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non digit character).
-///
 /// # Example
 ///
 /// ```
@@ -393,9 +381,8 @@ where
 
 /// Recognizes one or more ASCII numerical characters: 0-9
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non digit character).
-///
 /// # Example
 ///
 /// ```
@@ -421,8 +408,7 @@ where
 
 /// Recognizes zero or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non hexadecimal digit character).
-///
+/// *Complete version*: Will return the whole input if no terminating token is found (a non hexadecimal digit character).
 /// # Example
 ///
 /// ```
@@ -447,9 +433,8 @@ where
 }
 /// Recognizes one or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non hexadecimal digit character).
-///
 /// # Example
 ///
 /// ```
@@ -475,9 +460,8 @@ where
 
 /// Recognizes zero or more octal characters: 0-7
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non octal
+/// *Complete version*: Will return the whole input if no terminating token is found (a non octal
 /// digit character).
-///
 /// # Example
 ///
 /// ```
@@ -503,9 +487,8 @@ where
 
 /// Recognizes one or more octal characters: 0-7
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non octal digit character).
-///
 /// # Example
 ///
 /// ```
@@ -531,9 +514,8 @@ where
 
 /// Recognizes zero or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non
+/// *Complete version*: Will return the whole input if no terminating token is found (a non
 /// alphanumerical character).
-///
 /// # Example
 ///
 /// ```
@@ -559,9 +541,8 @@ where
 
 /// Recognizes one or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non alphanumerical character).
-///
 /// # Example
 ///
 /// ```
@@ -587,9 +568,8 @@ where
 
 /// Recognizes zero or more spaces and tabs.
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non space
+/// *Complete version*: Will return the whole input if no terminating token is found (a non space
 /// character).
-///
 /// # Example
 ///
 /// ```
@@ -618,9 +598,8 @@ where
 
 /// Recognizes one or more spaces and tabs.
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non space character).
-///
 /// # Example
 ///
 /// ```
@@ -652,9 +631,8 @@ where
 
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds.
 ///
-/// *complete version*: will return the whole input if no terminating token is found (a non space
+/// *Complete version*: will return the whole input if no terminating token is found (a non space
 /// character).
-///
 /// # Example
 ///
 /// ```
@@ -683,9 +661,8 @@ where
 
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds.
 ///
-/// *complete version*: will return an error if there's not enough input data,
+/// *Complete version*: will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non space character).
-///
 /// # Example
 ///
 /// ```
