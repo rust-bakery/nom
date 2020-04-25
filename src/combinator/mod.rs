@@ -636,6 +636,60 @@ where
   recognize(parser)(input)
 }
 
+/// if the child parser was successful, return the consumed input with the output
+/// as a tuple. Functions similarly to [recognize](fn.recognize.html) except it
+/// returns the parser output aswell.
+///
+/// This can be useful expecially in cases where the output is not the same type
+/// as the input, or the input is a user defined type.
+///
+/// Returned tuple is of the format `(consumed input, produced output)`.
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, IResult};
+/// use nom::combinator::{consumed, value};
+/// use nom::character::complete::{char, alpha1};
+/// use nom::sequence::separated_pair;
+/// # fn main() {
+///
+/// let mut parser = consumed(value(true, separated_pair(alpha1, char(','), alpha1)));
+///
+/// assert_eq!(parser("abcd,efgh1"), Ok(("1", ("abcd,efgh", true))));
+/// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
+/// # }
+/// ```
+pub fn consumed<I, O, F, E>(mut parser: F) -> impl FnMut(I) -> IResult<I, (I, O), E>
+where
+  I: Clone + Offset + Slice<RangeTo<usize>>,
+  E: ParseError<I>,
+  F: Parser<I, O, E>
+{
+  move |input: I| {
+    let i = input.clone();
+    match parser.parse(i) {
+      Ok((remaining, result )) => {
+        let index = input.offset(&remaining);
+        let consumed = input.slice(..index);
+        Ok((remaining, (consumed, result)))
+      },
+      Err(e) => Err(e)
+    }
+  }
+}
+
+#[doc(hidden)]
+pub fn consumedc<I, O, E: ParseError<I>, F>(
+  input: I,
+  parser: F
+) -> IResult<I, (I, O), E>
+where
+  I: Clone + Offset + Slice<RangeTo<usize>>,
+  E: ParseError<E>,
+  F: Fn(I) -> IResult<I, O, E>
+{ consumed(parser)(input) }
+
+
 /// transforms an error to failure
 ///
 /// ```rust
