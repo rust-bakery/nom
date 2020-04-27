@@ -6,7 +6,8 @@ use core::num::NonZeroUsize;
 
 /// Holds the result of parsing functions
 ///
-/// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
+/// It depends on the input type `I`, the output type `O`, and the error type `E`
+/// (by default `(I, ErrorKind)`)
 ///
 /// The `Ok` side is a pair containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
