@@ -294,6 +294,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [BNF](https://github.com/snewt/bnf)
 - Misc formats:
   * [Gameboy ROM](https://github.com/MarkMcCaskey/gameboy-rom-parser)
+  * [ANT FIT](https://github.com/stadelmanma/fitparse-rs)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
