@@ -408,7 +408,7 @@
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
 extern crate alloc;
-#[cfg(test)]
+#[cfg(doctest)]
 extern crate doc_comment;
 #[cfg(feature = "lexical")]
 extern crate lexical_core;
@@ -418,9 +418,8 @@ pub extern crate regex;
 #[cfg(nightly)]
 extern crate test;
 
-//FIXME: reactivate doctest once https://github.com/rust-lang/rust/issues/62210 is done
-//#[cfg(doctest)]
-//doc_comment::doctest!("../README.md");
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.
