@@ -165,7 +165,7 @@
 //! fn parser(input: I) -> IResult<I, O, E>;
 //! ```
 //!
-//! Or like this, if you don't want to specify a custom error type (it will be `u32` by default):
+//! Or like this, if you don't want to specify a custom error type (it will be `(I, ErrorKind)` by default):
 //!
 //! ```rust,ignore
 //! fn parser(input: I) -> IResult<I, O>;
