@@ -64,7 +64,7 @@ fn parse_unicode<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str,
 fn parse_escaped_char<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, char, E> {
   preceded(
     char('\\'),
-    // `alt` tries each each parser in sequence, returning the result of
+    // `alt` tries each parser in sequence, returning the result of
     // the first successful match
     alt((
       parse_unicode,

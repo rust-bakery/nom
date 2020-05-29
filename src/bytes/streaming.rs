@@ -199,7 +199,7 @@ where
   move |i: Input| i.split_at_position(|c| !cond(c))
 }
 
-/// Returns the longest (atleast 1) input slice that matches the predicate
+/// Returns the longest (at least 1) input slice that matches the predicate
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
 /// takes the input and returns a bool)*
@@ -357,7 +357,7 @@ where
   move |i: Input| i.split_at_position(|c| cond(c))
 }
 
-/// Returns the longest (atleast 1) input slice till a predicate is met
+/// Returns the longest (at least 1) input slice till a predicate is met
 ///
 /// The parser will return the longest slice till the given predicate *(a function that
 /// takes the input and returns a bool)*
