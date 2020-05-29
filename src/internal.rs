@@ -166,7 +166,7 @@ where
   }
 }
 
-/// All nom parsers implement ths trait
+/// All nom parsers implement this trait
 pub trait Parser<I, O, E> {
   /// A parser takes in input type, and returns a `Result` containing
   /// either the remaining input and the output value, or an error
