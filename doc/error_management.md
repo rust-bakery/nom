@@ -87,6 +87,9 @@ expected '}', found 1
   ^
 ```
 
+See [examples/custom_error.rs](https://github.com/Geal/nom/blob/master/examples/custom_error.rs)
+for an example of example of implementing your custom errors.
+
 ## Debugging parsers
 
 While you are writing your parsers, you will sometimes need to follow
