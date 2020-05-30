@@ -1,4 +1,4 @@
-//! parsers recognizing bytes streams, complete input version
+//! Parsers recognizing bytes streams, complete input version
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;
@@ -51,12 +51,12 @@ where
   }
 }
 
-/// Recognizes a case insensitive pattern
+/// Recognizes a case insensitive pattern.
 ///
 /// The input data will be compared to the tag combinator's argument and will return the part of
-/// the input that matches the argument with no regard to case
+/// the input that matches the argument with no regard to case.
 ///
-/// It will return `Err(Err::Error((_, ErrorKind::Tag)))` if the input doesn't match the pattern
+/// It will return `Err(Err::Error((_, ErrorKind::Tag)))` if the input doesn't match the pattern.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -95,13 +95,13 @@ where
   }
 }
 
-/// Parse till certain characters are met
+/// Parse till certain characters are met.
 ///
 /// The parser will return the longest slice till one of the characters of the combinator's argument are met.
 ///
-/// It doesn't consume the matched character,
+/// It doesn't consume the matched character.
 ///
-/// It will return a `Err::Error(("", ErrorKind::IsNot))` if the pattern wasn't met
+/// It will return a `Err::Error(("", ErrorKind::IsNot))` if the pattern wasn't met.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -130,13 +130,12 @@ where
   }
 }
 
-/// Returns the longest slice of the matches the pattern
+/// Returns the longest slice of the matches the pattern.
 ///
 /// The parser will return the longest slice consisting of the characters in provided in the
-/// combinator's argument
+/// combinator's argument.
 ///
-/// It will return a `Err(Err::Error((_, ErrorKind::IsA)))` if the pattern wasn't met
-///
+/// It will return a `Err(Err::Error((_, ErrorKind::IsA)))` if the pattern wasn't met.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -166,11 +165,10 @@ where
   }
 }
 
-/// Returns the longest input slice (if any) that matches the predicate
+/// Returns the longest input slice (if any) that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
-/// takes the input and returns a bool)*
-///
+/// takes the input and returns a bool)*.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -197,13 +195,12 @@ where
   move |i: Input| i.split_at_position_complete(|c| !cond(c))
 }
 
-/// Returns the longest (atleast 1) input slice that matches the predicate
+/// Returns the longest (at least 1) input slice that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
-/// takes the input and returns a bool)*
+/// takes the input and returns a bool)*.
 ///
-/// It will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met
-///
+/// It will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -232,14 +229,13 @@ where
   }
 }
 
-/// Returns the longest (m <= len <= n) input slice  that matches the predicate
+/// Returns the longest (m <= len <= n) input slice  that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
-/// takes the input and returns a bool)*
+/// takes the input and returns a bool)*.
 ///
 /// It will return an `Err::Error((_, ErrorKind::TakeWhileMN))` if the pattern wasn't met or is out
-/// of range (m <= len <= n)
-///
+/// of range (m <= len <= n).
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -322,11 +318,10 @@ where
   }
 }
 
-/// Returns the longest input slice (if any) till a predicate is met
+/// Returns the longest input slice (if any) till a predicate is met.
 ///
 /// The parser will return the longest slice till the given predicate *(a function that
-/// takes the input and returns a bool)*
-///
+/// takes the input and returns a bool)*.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -352,14 +347,13 @@ where
   move |i: Input| i.split_at_position_complete(|c| cond(c))
 }
 
-/// Returns the longest (atleast 1) input slice till a predicate is met
+/// Returns the longest (at least 1) input slice till a predicate is met.
 ///
 /// The parser will return the longest slice till the given predicate *(a function that
-/// takes the input and returns a bool)*
+/// takes the input and returns a bool)*.
 ///
 /// It will return `Err(Err::Error((_, ErrorKind::TakeTill1)))` if the input is empty or the
-/// predicate matches the first input
-///
+/// predicate matches the first input.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -388,10 +382,9 @@ where
   }
 }
 
-/// Returns an input slice containing the first N input elements (Input[..N])
+/// Returns an input slice containing the first N input elements (Input[..N]).
 ///
-/// It will return `Err(Err::Error((_, ErrorKind::Eof)))` if the input is shorter than the argument
-///
+/// It will return `Err(Err::Error((_, ErrorKind::Eof)))` if the input is shorter than the argument.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -424,8 +417,7 @@ where
 /// Returns the longest input slice till it matches the pattern.
 ///
 /// It doesn't consume the pattern. It will return `Err(Err::Error((_, ErrorKind::TakeUntil)))`
-/// if the pattern wasn't met
-///
+/// if the pattern wasn't met.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -459,10 +451,9 @@ where
 
 /// Matches a byte string with escaped characters.
 ///
-/// * The first argument matches the normal characters (it must not accept the control character),
-/// * the second argument is the control character (like `\` in most languages),
-/// * the third argument matches the escaped characters
-///
+/// * The first argument matches the normal characters (it must not accept the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -578,9 +569,9 @@ where
 
 /// Matches a byte string with escaped characters.
 ///
-/// * The first argument matches the normal characters (it must not match the control character),
-/// * the second argument is the control character (like `\` in most languages),
-/// * the third argument matches the escaped characters and transforms them.
+/// * The first argument matches the normal characters (it must not match the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters and transforms them
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///
