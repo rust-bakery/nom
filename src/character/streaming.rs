@@ -1,6 +1,6 @@
-//! character specific parsers and combinators, streaming version
+//! Character specific parsers and combinators, streaming version
 //!
-//! functions recognizing specific characters
+//! Functions recognizing specific characters
 
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed};
@@ -12,8 +12,7 @@ use crate::error::ErrorKind;
 
 /// Recognizes one character.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -42,8 +41,7 @@ where
 
 /// Recognizes one of the provided characters.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -70,8 +68,7 @@ where
 
 /// Recognizes a character that is not in the provided characters.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -98,8 +95,7 @@ where
 
 /// Recognizes the string "\r\n".
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -130,8 +126,7 @@ where
 
 /// Recognizes a string of any char except '\r' or '\n'.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -180,8 +175,7 @@ where
 
 /// Recognizes an end of line (both '\n' and '\r\n').
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -215,8 +209,7 @@ where
 
 /// Matches a newline character '\\n'.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -238,8 +231,7 @@ where
 
 /// Matches a tab character '\t'.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -262,8 +254,7 @@ where
 /// Matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -290,9 +281,8 @@ where
 
 /// Recognizes zero or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non alphabetic character).
-///
 /// # Example
 ///
 /// ```
@@ -314,9 +304,8 @@ where
 
 /// Recognizes one or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non alphabetic character).
-///
 /// # Example
 ///
 /// ```
@@ -338,9 +327,8 @@ where
 
 /// Recognizes zero or more ASCII numerical characters: 0-9
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non digit character).
-///
 /// # Example
 ///
 /// ```
@@ -362,9 +350,8 @@ where
 
 /// Recognizes one or more ASCII numerical characters: 0-9
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non digit character).
-///
 /// # Example
 ///
 /// ```
@@ -386,9 +373,8 @@ where
 
 /// Recognizes zero or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non hexadecimal digit character).
-///
 /// # Example
 ///
 /// ```
@@ -410,9 +396,8 @@ where
 
 /// Recognizes one or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non hexadecimal digit character).
-///
 /// # Example
 ///
 /// ```
@@ -434,9 +419,8 @@ where
 
 /// Recognizes zero or more octal characters: 0-7
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non octal digit character).
-///
 /// # Example
 ///
 /// ```
@@ -458,9 +442,8 @@ where
 
 /// Recognizes one or more octal characters: 0-7
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non octal digit character).
-///
 /// # Example
 ///
 /// ```
@@ -482,9 +465,8 @@ where
 
 /// Recognizes zero or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non alphanumerical character).
-///
 /// # Example
 ///
 /// ```
@@ -506,9 +488,8 @@ where
 
 /// Recognizes one or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non alphanumerical character).
-///
 /// # Example
 ///
 /// ```
@@ -530,9 +511,8 @@ where
 
 /// Recognizes zero or more spaces and tabs.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non space character).
-///
 /// # Example
 ///
 /// ```
@@ -556,9 +536,8 @@ where
 }
 /// Recognizes one or more spaces and tabs.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non space character).
-///
 /// # Example
 ///
 /// ```
@@ -586,9 +565,8 @@ where
 
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non space character).
-///
 /// # Example
 ///
 /// ```
@@ -613,9 +591,8 @@ where
 
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds.
 ///
-/// *streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
 /// or if no terminating token is found (a non space character).
-///
 /// # Example
 ///
 /// ```

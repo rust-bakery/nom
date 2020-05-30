@@ -40,7 +40,7 @@ macro_rules! bits (
   );
 );
 
-/// Counterpart to bits, bytes! transforms its bit stream input into a byte slice for the underlying
+/// Counterpart to `bits`, `bytes!` transforms its bit stream input into a byte slice for the underlying
 /// parser, allowing byte-slice parsers to work on bit streams.
 ///
 /// Signature:

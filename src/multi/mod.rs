@@ -1,4 +1,4 @@
-//! combinators applying their child parser multiple times
+//! Combinators applying their child parser multiple times
 
 #[macro_use]
 mod macros;
@@ -80,9 +80,9 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 ///
-/// *Note*: if the parser passed to `many1` accepts empty inputs
+/// *Note*: If the parser passed to `many1` accepts empty inputs
 /// (like `alpha0` or `digit0`), `many1` will return an error,
-/// to prevent going into an infinite loop
+/// to prevent going into an infinite loop.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -970,8 +970,8 @@ where
 
 /// Gets a number from the parser and returns a
 /// subslice of the input of that size.
-/// If the parser returns Incomplete,
-/// length_data will return an error.
+/// If the parser returns `Incomplete`,
+/// `length_data` will return an error.
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
@@ -1011,8 +1011,8 @@ where
 /// Gets a number from the first parser,
 /// takes a subslice of the input of that size,
 /// then applies the second parser on that subslice.
-/// If the second parser returns Incomplete,
-/// length_value will return an error.
+/// If the second parser returns `Incomplete`,
+/// `length_value` will return an error.
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust

@@ -26,9 +26,9 @@ for an example of choosing different error types at the call site.
 The `Err<E>` enum expresses 3 conditions for a parser error:
 - `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules to indicate that we should buffer more data from a file or socket. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`
 - `Error` is a normal parser error. If a child parser of the `alt` combinator returns `Error`, it will try another child parser
-- `Failure` is an error from which we cannot recover: the `alt` combinator will not try other branches if a child parser returns `Failure`
+- `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`
 
-## the `ParseError` trait
+## The `ParseError` trait
 
 To allow configurable error types, nom uses the `ParseError` trait in all
 combinators, defined as follows:
@@ -55,19 +55,19 @@ pub trait ParseError<I>: Sized {
 
 Any error type has to implement that trait, that requires ways to build an
 error:
-- `from_error_kind`: from the input position and the `ErrorKind` enum that indicates in which parser we got an error
-- `append`: allows the creation of a chain of errors as we backtrack through the parser tree (various combinators will add more context)
-- `from_char`: creates an error that indicates which character we were expecting
-- `or`: in combinators like `alt`, allows choosing between errors from various branches (or accumulating them)
-- `add_context`: works like `append` but uses a static string instead of an `ErrorKind`. Usable with the `nom::error`::context` function
+- `from_error_kind`: From the input position and the `ErrorKind` enum that indicates in which parser we got an error
+- `append`: Allows the creation of a chain of errors as we backtrack through the parser tree (various combinators will add more context)
+- `from_char`: Creates an error that indicates which character we were expecting
+- `or`: In combinators like `alt`, allows choosing between errors from various branches (or accumulating them)
+- `add_context`: Works like `append` but uses a static string instead of an `ErrorKind`. Usable with the `nom::error`::context` function
 
 This trait is currently implemented for 3 types:
-- `()`: if you want to ignore errors completely
-- `(I, ErrorKind)`: the default error type
-- `nom::error::VerboseError`: this type accumulates a chain of errors and leverages `from_char` and `add_context`
+- `()`: If you want to ignore errors completely
+- `(I, ErrorKind)`: The default error type
+- `nom::error::VerboseError`: This type accumulates a chain of errors and leverages `from_char` and `add_context`
 
 The `VerboseError` type is especially useful if you need precise position information,
-and you want to a user friendly way of displaying the error.
+and you want to have a user friendly way of displaying the error.
 By calling the `nom::error::convert_error` function with the original input data
 (in `&str`) and the error, you can get a trace like this:
 
@@ -179,5 +179,3 @@ preceded        "data: (1,2,3)"
         -> Ok(["1", "2", "3"])
 -> Ok(["1", "2", "3"])
 ```
-
-

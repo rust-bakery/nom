@@ -1,7 +1,7 @@
 /// `re_match!(regexp) => &[T] -> IResult<&[T], &[T]>`
-/// Returns the whole input if a match is found
+/// Returns the whole input if a match is found.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_match (
   ($i:expr, $re:expr) => ( {
@@ -11,9 +11,9 @@ macro_rules! re_match (
 );
 
 /// `re_bytes_match!(regexp) => &[T] -> IResult<&[T], &[T]>`
-/// Returns the whole input if a match is found
+/// Returns the whole input if a match is found.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_bytes_match (
   ($i:expr, $re:expr) => ( {
@@ -23,9 +23,9 @@ macro_rules! re_bytes_match (
 );
 
 /// `re_find!(regexp) => &[T] -> IResult<&[T], &[T]>`
-/// Returns the first match
+/// Returns the first match.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_find (
   ($i:expr, $re:expr) => ( {
@@ -35,9 +35,9 @@ macro_rules! re_find (
 );
 
 /// `re_bytes_find!(regexp) => &[T] -> IResult<&[T], &[T]>`
-/// Returns the first match
+/// Returns the first match.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_bytes_find (
   ($i:expr, $re:expr) => ( {
@@ -47,9 +47,9 @@ macro_rules! re_bytes_find (
 );
 
 /// `re_matches!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
-/// Returns all the matched parts
+/// Returns all the matched parts.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_matches (
   ($i:expr, $re:expr) => ( {
@@ -59,9 +59,9 @@ macro_rules! re_matches (
 );
 
 /// `re_bytes_matches!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
-/// Returns all the matched parts
+/// Returns all the matched parts.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_bytes_matches (
   ($i:expr, $re:expr) => ( {
@@ -71,9 +71,9 @@ macro_rules! re_bytes_matches (
 );
 
 /// `re_capture!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
-/// Returns the capture groups of the first match
+/// Returns the capture groups of the first match.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_capture (
   ($i:expr, $re:expr) => ( {
@@ -83,9 +83,9 @@ macro_rules! re_capture (
 );
 
 /// `re_bytes_capture!(regexp) => &[T] -> IResult<&[T], Vec<&[T]>>`
-/// Returns the capture groups of the first match
+/// Returns the capture groups of the first match.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_bytes_capture (
   ($i:expr, $re:expr) => ( {
@@ -96,9 +96,9 @@ macro_rules! re_bytes_capture (
 );
 
 /// `re_captures!(regexp) => &[T] -> IResult<&[T], Vec<Vec<&[T]>>>`
-/// Returns the capture groups of all matches
+/// Returns the capture groups of all matches.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_captures (
   ($i:expr, $re:expr) => ( {
@@ -108,9 +108,9 @@ macro_rules! re_captures (
 );
 
 /// `re_bytes_captures!(regexp) => &[T] -> IResult<&[T], Vec<Vec<&[T]>>>`
-/// Returns the capture groups of all matches
+/// Returns the capture groups of all matches.
 ///
-/// requires the `regexp` feature
+/// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
 macro_rules! re_bytes_captures (
   ($i:expr, $re:expr) => ( {

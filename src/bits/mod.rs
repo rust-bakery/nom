@@ -1,4 +1,4 @@
-//! bit level parsers
+//! Bit level parsers
 //!
 
 #[macro_use]
@@ -63,7 +63,7 @@ where
   bits(parser)(input)
 }
 
-/// Counterpart to bits, bytes transforms its bit stream input into a byte slice for the underlying
+/// Counterpart to `bits`, `bytes` transforms its bit stream input into a byte slice for the underlying
 /// parser, allowing byte-slice parsers to work on bit streams.
 ///
 /// A partial byte remaining in the input will be ignored and the given parser will start parsing
