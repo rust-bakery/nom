@@ -1,4 +1,4 @@
-//! parsers recognizing numbers, streaming version
+//! Parsers recognizing numbers, streaming version
 
 use crate::branch::alt;
 use crate::character::streaming::{char, digit1};
@@ -10,9 +10,9 @@ use crate::sequence::{pair, tuple};
 use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use crate::traits::{Offset, Slice};
 
-/// Recognizes an unsigned 1 byte integer
+/// Recognizes an unsigned 1 byte integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_u8;
@@ -39,9 +39,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 2 bytes integer
+/// Recognizes a big endian unsigned 2 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -72,9 +72,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 3 byte integer
+/// Recognizes a big endian unsigned 3 byte integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -105,9 +105,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 4 bytes integer
+/// Recognizes a big endian unsigned 4 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -138,9 +138,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 8 bytes integer
+/// Recognizes a big endian unsigned 8 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -171,9 +171,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 16 bytes integer
+/// Recognizes a big endian unsigned 16 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_u128;
@@ -204,9 +204,9 @@ where
   }
 }
 
-/// Recognizes a signed 1 byte integer
+/// Recognizes a signed 1 byte integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_i8;
@@ -224,9 +224,9 @@ where
   map!(input, be_u8, |x| x as i8)
 }
 
-/// Recognizes a big endian signed 2 bytes integer
+/// Recognizes a big endian signed 2 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_i16;
@@ -244,9 +244,9 @@ where
   map!(input, be_u16, |x| x as i16)
 }
 
-/// Recognizes a big endian signed 3 bytes integer
+/// Recognizes a big endian signed 3 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_i24;
@@ -269,9 +269,9 @@ where
   })
 }
 
-/// Recognizes a big endian signed 4 bytes integer
+/// Recognizes a big endian signed 4 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_i32;
@@ -289,9 +289,9 @@ where
   map!(input, be_u32, |x| x as i32)
 }
 
-/// Recognizes a big endian signed 8 bytes integer
+/// Recognizes a big endian signed 8 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -310,9 +310,9 @@ where
   map!(input, be_u64, |x| x as i64)
 }
 
-/// Recognizes a big endian signed 16 bytes integer
+/// Recognizes a big endian signed 16 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_i128;
@@ -331,9 +331,9 @@ where
   map!(input, be_u128, |x| x as i128)
 }
 
-/// Recognizes an unsigned 1 byte integer
+/// Recognizes an unsigned 1 byte integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::le_u8;
@@ -358,9 +358,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 2 bytes integer
+/// Recognizes a little endian unsigned 2 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -391,9 +391,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 3 bytes integer
+/// Recognizes a little endian unsigned 3 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -424,9 +424,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 4 bytes integer
+/// Recognizes a little endian unsigned 4 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -457,9 +457,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 8 bytes integer
+/// Recognizes a little endian unsigned 8 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -490,9 +490,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 16 bytes integer
+/// Recognizes a little endian unsigned 16 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -524,9 +524,9 @@ where
   }
 }
 
-/// Recognizes a signed 1 byte integer
+/// Recognizes a signed 1 byte integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::le_i8;
@@ -544,9 +544,9 @@ where
   map!(input, le_u8, |x| x as i8)
 }
 
-/// Recognizes a little endian signed 2 bytes integer
+/// Recognizes a little endian signed 2 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -567,9 +567,9 @@ where
   map!(input, le_u16, |x| x as i16)
 }
 
-/// Recognizes a little endian signed 3 bytes integer
+/// Recognizes a little endian signed 3 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -595,9 +595,9 @@ where
   })
 }
 
-/// Recognizes a little endian signed 4 bytes integer
+/// Recognizes a little endian signed 4 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -618,9 +618,9 @@ where
   map!(input, le_u32, |x| x as i32)
 }
 
-/// Recognizes a little endian signed 8 bytes integer
+/// Recognizes a little endian signed 8 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -641,9 +641,9 @@ where
   map!(input, le_u64, |x| x as i64)
 }
 
-/// Recognizes a little endian signed 16 bytes integer
+/// Recognizes a little endian signed 16 bytes integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -665,9 +665,9 @@ where
   map!(input, le_u128, |x| x as i128)
 }
 
-/// Recognizes a big endian 4 bytes floating point number
+/// Recognizes a big endian 4 bytes floating point number.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_f32;
@@ -690,9 +690,9 @@ where
   }
 }
 
-/// Recognizes a big endian 8 bytes floating point number
+/// Recognizes a big endian 8 bytes floating point number.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::be_f64;
@@ -715,9 +715,9 @@ where
   }
 }
 
-/// Recognizes a little endian 4 bytes floating point number
+/// Recognizes a little endian 4 bytes floating point number.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::le_f32;
@@ -740,9 +740,9 @@ where
   }
 }
 
-/// Recognizes a little endian 8 bytes floating point number
+/// Recognizes a little endian 8 bytes floating point number.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::le_f64;
@@ -765,9 +765,9 @@ where
   }
 }
 
-/// Recognizes a hex-encoded integer
+/// Recognizes a hex-encoded integer.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if there is not enough data
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::hex_u32;
@@ -804,9 +804,9 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8]
   Ok((remaining, res))
 }
 
-/// Recognizes a floating point number in text format and returns the corresponding part of the input
+/// Recognizes a floating point number in text format and returns the corresponding part of the input.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -848,9 +848,9 @@ where
   )(input)
 }
 
-/// Recognizes floating point number in a byte string and returns a f32
+/// Recognizes floating point number in a byte string and returns a `f32`.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::float;
@@ -883,9 +883,9 @@ where
   }
 }
 
-/// Recognizes floating point number in a byte string and returns a f32
+/// Recognizes floating point number in a byte string and returns a `f32`.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::float;
@@ -919,9 +919,9 @@ where
   }
 }
 
-/// Recognizes floating point number in a byte string and returns a f64
+/// Recognizes floating point number in a byte string and returns a `f64`.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::double;
@@ -954,9 +954,9 @@ where
   }
 }
 
-/// Recognizes floating point number in a byte string and returns a f64
+/// Recognizes floating point number in a byte string and returns a `f64`.
 ///
-/// *streaming version*: will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if it reaches the end of input.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// use nom::number::streaming::double;

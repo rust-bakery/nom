@@ -1,4 +1,4 @@
-//! parsers recognizing numbers, complete input version
+//! Parsers recognizing numbers, complete input version
 
 use crate::branch::alt;
 use crate::character::complete::{char, digit1};
@@ -11,9 +11,9 @@ use crate::sequence::{pair, tuple};
 use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use crate::traits::{Offset, Slice};
 
-/// Recognizes an unsigned 1 byte integer
+/// Recognizes an unsigned 1 byte integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -41,9 +41,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 2 bytes integer
+/// Recognizes a big endian unsigned 2 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -74,9 +74,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 3 byte integer
+/// Recognizes a big endian unsigned 3 byte integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -107,9 +107,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 4 bytes integer
+/// Recognizes a big endian unsigned 4 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -140,9 +140,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 8 bytes integer
+/// Recognizes a big endian unsigned 8 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -173,9 +173,9 @@ where
   }
 }
 
-/// Recognizes a big endian unsigned 16 bytes integer
+/// Recognizes a big endian unsigned 16 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -207,9 +207,9 @@ where
   }
 }
 
-/// Recognizes a signed 1 byte integer
+/// Recognizes a signed 1 byte integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -230,9 +230,9 @@ where
   map!(input, be_u8, |x| x as i8)
 }
 
-/// Recognizes a big endian signed 2 bytes integer
+/// Recognizes a big endian signed 2 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -253,9 +253,9 @@ where
   map!(input, be_u16, |x| x as i16)
 }
 
-/// Recognizes a big endian signed 3 bytes integer
+/// Recognizes a big endian signed 3 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -281,9 +281,9 @@ where
   })
 }
 
-/// Recognizes a big endian signed 4 bytes integer
+/// Recognizes a big endian signed 4 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Teturns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -304,9 +304,9 @@ where
   map!(input, be_u32, |x| x as i32)
 }
 
-/// Recognizes a big endian signed 8 bytes integer
+/// Recognizes a big endian signed 8 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -327,9 +327,9 @@ where
   map!(input, be_u64, |x| x as i64)
 }
 
-/// Recognizes a big endian signed 16 bytes integer
+/// Recognizes a big endian signed 16 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -351,9 +351,9 @@ where
   map!(input, be_u128, |x| x as i128)
 }
 
-/// Recognizes an unsigned 1 byte integer
+/// Recognizes an unsigned 1 byte integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -381,9 +381,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 2 bytes integer
+/// Recognizes a little endian unsigned 2 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -414,9 +414,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 3 byte integer
+/// Recognizes a little endian unsigned 3 byte integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -447,9 +447,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 4 bytes integer
+/// Recognizes a little endian unsigned 4 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -480,9 +480,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 8 bytes integer
+/// Recognizes a little endian unsigned 8 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -513,9 +513,9 @@ where
   }
 }
 
-/// Recognizes a little endian unsigned 16 bytes integer
+/// Recognizes a little endian unsigned 16 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -547,9 +547,9 @@ where
   }
 }
 
-/// Recognizes a signed 1 byte integer
+/// Recognizes a signed 1 byte integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -570,9 +570,9 @@ where
   map!(input, le_u8, |x| x as i8)
 }
 
-/// Recognizes a little endian signed 2 bytes integer
+/// Recognizes a little endian signed 2 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -593,9 +593,9 @@ where
   map!(input, le_u16, |x| x as i16)
 }
 
-/// Recognizes a little endian signed 3 bytes integer
+/// Recognizes a little endian signed 3 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -621,9 +621,9 @@ where
   })
 }
 
-/// Recognizes a little endian signed 4 bytes integer
+/// Recognizes a little endian signed 4 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -644,9 +644,9 @@ where
   map!(input, le_u32, |x| x as i32)
 }
 
-/// Recognizes a little endian signed 8 bytes integer
+/// Recognizes a little endian signed 8 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -667,9 +667,9 @@ where
   map!(input, le_u64, |x| x as i64)
 }
 
-/// Recognizes a little endian signed 16 bytes integer
+/// Recognizes a little endian signed 16 bytes integer.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -691,9 +691,9 @@ where
   map!(input, le_u128, |x| x as i128)
 }
 
-/// Recognizes a big endian 4 bytes floating point number
+/// Recognizes a big endian 4 bytes floating point number.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -717,9 +717,9 @@ where
   }
 }
 
-/// Recognizes a big endian 8 bytes floating point number
+/// Recognizes a big endian 8 bytes floating point number.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -743,9 +743,9 @@ where
   }
 }
 
-/// Recognizes a little endian 4 bytes floating point number
+/// Recognizes a little endian 4 bytes floating point number.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -769,9 +769,9 @@ where
   }
 }
 
-/// Recognizes a little endian 8 bytes floating point number
+/// Recognizes a little endian 8 bytes floating point number.
 ///
-/// *complete version*: returns an error if there is not enough input data
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -795,9 +795,9 @@ where
   }
 }
 
-/// Recognizes a hex-encoded integer
+/// Recognizes a hex-encoded integer.
 ///
-/// *complete version*: will parse until the end of input if it has less than 8 bytes
+/// *Complete version*: Will parse until the end of input if it has less than 8 bytes.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -834,9 +834,9 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8]
   Ok((remaining, res))
 }
 
-/// Recognizes floating point number in a byte string and returns the corresponding slice
+/// Recognizes floating point number in a byte string and returns the corresponding slice.
 ///
-/// *complete version*: can parse until the end of input
+/// *Complete version*: Can parse until the end of input.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -879,9 +879,9 @@ where
   )(input)
 }
 
-/// Recognizes floating point number in a byte string and returns a f32
+/// Recognizes floating point number in a byte string and returns a f32.
 ///
-/// *complete version*: can parse until the end of input
+/// *Complete version*: Can parse until the end of input.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -915,12 +915,12 @@ where
   }
 }
 
-/// Recognizes floating point number in a byte string and returns a f32
+/// Recognizes floating point number in a byte string and returns a f32.
 ///
-/// *complete version*: can parse until the end of input
+/// *Complete version*: Can parse until the end of input.
 ///
-/// this function uses the lexical-core crate for float parsing by default, you
-/// can deactivate it by removing the "lexical" feature
+/// This function uses the `lexical-core` crate for float parsing by default, you
+/// can deactivate it by removing the "lexical" feature.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -946,9 +946,9 @@ where
   }
 }
 
-/// Recognizes floating point number in a byte string and returns a f64
+/// Recognizes floating point number in a byte string and returns a f64.
 ///
-/// *complete version*: can parse until the end of input
+/// *Complete version*: Can parse until the end of input.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -982,12 +982,12 @@ where
   }
 }
 
-/// Recognizes floating point number in a byte string and returns a f64
+/// Recognizes floating point number in a byte string and returns a f64.
 ///
-/// *complete version*: can parse until the end of input
+/// *Complete version*: Can parse until the end of input.
 ///
-/// this function uses the lexical-core crate for float parsing by default, you
-/// can deactivate it by removing the "lexical" feature
+/// This function uses the `lexical-core` crate for float parsing by default, you
+/// can deactivate it by removing the "lexical" feature.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;

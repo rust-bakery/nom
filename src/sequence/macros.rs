@@ -4,7 +4,7 @@
 /// The input type `I` must implement `nom::InputLength`.
 ///
 /// This combinator will count how much data is consumed by every child parser
-/// and take it into account if there is not enough data
+/// and take it into account if there is not enough data.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -38,7 +38,7 @@ macro_rules! tuple (
   );
 );
 
-/// Internal parser, do not use directly
+/// Internal parser, do not use directly.
 #[doc(hidden)]
 #[macro_export(local_inner_macros)]
 macro_rules! tuple_parser (
@@ -88,7 +88,7 @@ macro_rules! tuple_parser (
 );
 
 /// `pair!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
-/// pair returns a tuple of the results of its two child parsers of both succeed
+/// `pair` returns a tuple of the results of its two child parsers of both succeed.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -123,8 +123,8 @@ macro_rules! pair(
 );
 
 /// `separated_pair!(I -> IResult<I,O>, I -> IResult<I, T>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
-/// separated_pair(X,sep,Y) returns a tuple of its first and third child parsers
-/// if all 3 succeed
+/// `separated_pair(X,sep,Y)` returns a tuple of its first and third child parsers
+/// if all 3 succeed.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -156,7 +156,7 @@ macro_rules! separated_pair(
 );
 
 /// `preceded!(I -> IResult<I,T>, I -> IResult<I,O>) => I -> IResult<I, O>`
-/// preceded returns the result of its second parser if both succeed
+/// `preceded` returns the result of its second parser if both succeed.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -191,7 +191,7 @@ macro_rules! preceded(
 );
 
 /// `terminated!(I -> IResult<I,O>, I -> IResult<I,T>) => I -> IResult<I, O>`
-/// terminated returns the result of its first parser if both succeed
+/// `terminated` returns the result of its first parser if both succeed.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -226,7 +226,7 @@ macro_rules! terminated(
 );
 
 /// `delimited!(I -> IResult<I,T>, I -> IResult<I,O>, I -> IResult<I,U>) => I -> IResult<I, O>`
-/// delimited(opening, X, closing) returns X
+/// `delimited(opening, X, closing)` returns X.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -261,14 +261,14 @@ macro_rules! delimited(
 );
 
 /// `do_parse!(I->IResult<I,A> >> I->IResult<I,B> >> ... I->IResult<I,X> , ( O ) ) => I -> IResult<I, O>`
-/// do_parse applies sub parsers in a sequence.
-/// it can store intermediary results and make them available
-/// for later parsers
+/// `do_parse` applies sub parsers in a sequence.
+/// It can store intermediary results and make them available
+/// for later parsers.
 ///
 /// The input type `I` must implement `nom::InputLength`.
 ///
 /// This combinator will count how much data is consumed by every child parser
-/// and take it into account if there is not enough data
+/// and take it into account if there is not enough data.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;

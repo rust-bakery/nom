@@ -81,11 +81,11 @@
 //!
 //! This gives us a few advantages:
 //!
-//! - the parsers are small and easy to write
-//! - the parsers components are easy to reuse (if they're general enough, please add them to nom!)
-//! - the parsers components are easy to test separately (unit tests and property-based tests)
-//! - the parser combination code looks close to the grammar you would have written
-//! - you can build partial parsers, specific to the data you need at the moment, and ignore the rest
+//! - The parsers are small and easy to write
+//! - The parsers components are easy to reuse (if they're general enough, please add them to nom!)
+//! - The parsers components are easy to test separately (unit tests and property-based tests)
+//! - The parser combination code looks close to the grammar you would have written
+//! - You can build partial parsers, specific to the data you need at the moment, and ignore the rest
 //!
 //! Here is an example of one such parser, to recognize text between parentheses:
 //!
@@ -165,7 +165,7 @@
 //! fn parser(input: I) -> IResult<I, O, E>;
 //! ```
 //!
-//! Or like this, if you don't want to specify a custom error type (it will be `u32` by default):
+//! Or like this, if you don't want to specify a custom error type (it will be `(I, ErrorKind)` by default):
 //!
 //! ```rust,ignore
 //! fn parser(input: I) -> IResult<I, O>;
@@ -187,14 +187,13 @@
 //!
 //! It can have the following values:
 //!
-//! - a correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
-//! - an error `Err(Err::Error(c))` with `c` an error that can be built from the input position and a parser specific error
-//! - an error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
-//! - an error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: we cannot backtrack and test another parser
+//! - A correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
+//! - An error `Err(Err::Error(c))` with `c` an error that can be built from the input position and a parser specific error
+//! - An error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
+//! - An error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: We cannot backtrack and test another parser
 //!
 //! Please refer to the ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
 //! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/master/doc).
-//! .
 //!
 //! ## Making new parsers with function combinators
 //!
@@ -276,9 +275,9 @@
 //!
 //! Here are some basic combining macros available:
 //!
-//! - **`opt`**: will make the parser optional (if it returns the `O` type, the new parser returns `Option<O>`)
-//! - **`many0`**: will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
-//! - **`many1`**: will apply the parser 1 or more times
+//! - **`opt`**: Will make the parser optional (if it returns the `O` type, the new parser returns `Option<O>`)
+//! - **`many0`**: Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
+//! - **`many1`**: Will apply the parser 1 or more times
 //!
 //! There are more complex (and more useful) parsers like `tuple!`, which is
 //! used to apply a series of parsers then assemble their results.
@@ -398,7 +397,7 @@
 //! // while the complete version knows that all of the data is there
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
 //! ```
-//! **Going further:** read the [guides](https://github.com/Geal/nom/tree/master/doc)!
+//! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/master/doc)!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
@@ -408,7 +407,7 @@
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
 extern crate alloc;
-#[cfg(test)]
+#[cfg(doctest)]
 extern crate doc_comment;
 #[cfg(feature = "lexical")]
 extern crate lexical_core;
@@ -418,9 +417,8 @@ pub extern crate regex;
 #[cfg(nightly)]
 extern crate test;
 
-//FIXME: reactivate doctest once https://github.com/rust-lang/rust/issues/62210 is done
-//#[cfg(doctest)]
-//doc_comment::doctest!("../README.md");
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.

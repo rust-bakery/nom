@@ -6,24 +6,24 @@ use core::num::NonZeroUsize;
 
 /// Holds the result of parsing functions
 ///
-/// It depends on I, the input type, O, the output type, and E, the error type (by default u32)
+/// It depends on the input type `I`, the output type `O`, and the error type `E`
+/// (by default `(I, nom::ErrorKind)`)
 ///
 /// The `Ok` side is a pair containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
-///
 pub type IResult<I, O, E = (I, ErrorKind)> = Result<(I, O), Err<E>>;
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Needed {
-  /// needs more data, but we do not know how much
+  /// Needs more data, but we do not know how much
   Unknown,
-  /// contains the required data size
+  /// Contains the required data size
   Size(NonZeroUsize),
 }
 
 impl Needed {
-  /// creates Needed instance, returns `Needed::Unknown` if the argument is zero
+  /// Creates `Needed` instance, returns `Needed::Unknown` if the argument is zero
   pub fn new(s: usize) -> Self {
     match NonZeroUsize::new(s) {
       Some(sz) => Needed::Size(sz),
@@ -31,7 +31,7 @@ impl Needed {
     }
   }
 
-  /// indicates if we know how many bytes we need
+  /// Indicates if we know how many bytes we need
   pub fn is_known(&self) -> bool {
     *self != Unknown
   }
@@ -73,7 +73,7 @@ pub enum Err<E> {
 }
 
 impl<E> Err<E> {
-  /// tests if the result is Incomplete
+  /// Tests if the result is Incomplete
   pub fn is_incomplete(&self) -> bool {
     if let Err::Incomplete(_) = self {
       true
@@ -94,7 +94,7 @@ impl<E> Err<E> {
     }
   }
 
-  /// automatically converts between errors if the underlying type supports it
+  /// Automatically converts between errors if the underlying type supports it
   pub fn convert<F>(e: Err<F>) -> Self
   where
     E: From<F>,
@@ -104,7 +104,7 @@ impl<E> Err<E> {
 }
 
 impl<T> Err<(T, ErrorKind)> {
-  /// maps `Err<(T, ErrorKind)>` to `Err<(U, ErrorKind)>` with the given F: T -> U
+  /// Maps `Err<(T, ErrorKind)>` to `Err<(U, ErrorKind)>` with the given `F: T -> U`
   pub fn map_input<U, F>(self, f: F) -> Err<(U, ErrorKind)>
   where
     F: FnOnce(T) -> U,
@@ -127,7 +127,7 @@ impl Err<(&[u8], ErrorKind)> {
 
 #[cfg(feature = "std")]
 impl Err<(&str, ErrorKind)> {
-  /// automatically converts between errors if the underlying type supports it
+  /// Automatically converts between errors if the underlying type supports it
   pub fn to_owned(self) -> Err<(String, ErrorKind)> {
     self.map_input(ToOwned::to_owned)
   }
@@ -166,13 +166,13 @@ where
   }
 }
 
-/// all nom parsers implement this trait
+/// All nom parsers implement this trait
 pub trait Parser<I, O, E> {
-  /// a parser takes in input type, and returns a `Result` containing
+  /// A parser takes in input type, and returns a `Result` containing
   /// either the remaining input and the output value, or an error
   fn parse(&mut self, input: I) -> IResult<I, O, E>;
 
-  /// maps a function over the result of a parser
+  /// Maps a function over the result of a parser
   fn map<G, O2>(self, g: G) -> Map<Self, G, O>
   where
     G: Fn(O) -> O2,
@@ -185,7 +185,7 @@ pub trait Parser<I, O, E> {
     }
   }
 
-  /// creates a second parser from the output of the first one, then apply over the rest of the input
+  /// Creates a second parser from the output of the first one, then apply over the rest of the input
   fn flat_map<G, H, O2>(self, g: G) -> FlatMap<Self, G, O>
   where
     G: Fn(O) -> H,
@@ -199,7 +199,7 @@ pub trait Parser<I, O, E> {
     }
   }
 
-  /// applies a second parser over the output of the first one
+  /// Applies a second parser over the output of the first one
   fn and_then<G, O2>(self, g: G) -> AndThen<Self, G, O>
   where
     G: Parser<O, O2, E>,
@@ -212,7 +212,7 @@ pub trait Parser<I, O, E> {
     }
   }
 
-  /// applies a second parser after the first one, return their results as a tuple
+  /// Applies a second parser after the first one, return their results as a tuple
   fn and<G, O2>(self, g: G) -> And<Self, G>
   where
     G: Parser<I, O2, E>,
@@ -221,7 +221,7 @@ pub trait Parser<I, O, E> {
     And { f: self, g }
   }
 
-  /// applies a second parser over the input if the first one failed
+  /// Applies a second parser over the input if the first one failed
   fn or<G>(self, g: G) -> Or<Self, G>
   where
     G: Parser<I, O, E>,
@@ -240,7 +240,7 @@ where
   }
 }
 
-/// implementation of Parser:::map
+/// Implementation of `Parser:::map`
 pub struct Map<F, G, O1> {
   f: F,
   g: G,
@@ -256,7 +256,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> fo
   }
 }
 
-/// implementation of Parser::flat_map
+/// Implementation of `Parser::flat_map`
 pub struct FlatMap<F, G, O1> {
   f: F,
   g: G,
@@ -272,7 +272,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>>
   }
 }
 
-/// implementation of Parser::and_then
+/// Implementation of `Parser::and_then`
 pub struct AndThen<F, G, O1> {
   f: F,
   g: G,
@@ -289,7 +289,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, 
   }
 }
 
-/// implementation of Parser::and
+/// Implementation of `Parser::and`
 pub struct And<F, G> {
   f: F,
   g: G,
@@ -305,7 +305,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, 
   }
 }
 
-/// implementation of Parser::or
+/// Implementation of `Parser::or`
 pub struct Or<F, G> {
   f: F,
   g: G,

@@ -1,4 +1,4 @@
-//! parsers recognizing bytes streams
+//! Parsers recognizing bytes streams
 
 #[macro_use]
 mod macros;

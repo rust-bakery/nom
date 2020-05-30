@@ -5,38 +5,38 @@
 
 use crate::internal::Parser;
 
-/// this trait must be implemented by the error type of a nom parser
+/// This trait must be implemented by the error type of a nom parser.
 ///
 /// There are already implementations of it for `(Input, ErrorKind)`
 /// and `VerboseError<Input>`.
 ///
 /// It provides methods to create an error from some combinators,
-/// and combine existing errors in combinators like `alt`
+/// and combine existing errors in combinators like `alt`.
 pub trait ParseError<I>: Sized {
-  /// creates an error from the input position and an [ErrorKind]
+  /// Creates an error from the input position and an [ErrorKind]
   fn from_error_kind(input: I, kind: ErrorKind) -> Self;
 
-  /// combines an existing error with a new one created from the input
+  /// Combines an existing error with a new one created from the input
   /// position and an [ErrorKind]. This is useful when backtracking
   /// through a parse tree, accumulating error context on the way
   fn append(input: I, kind: ErrorKind, other: Self) -> Self;
 
-  /// creates an error from an input position and an expected character
+  /// Creates an error from an input position and an expected character
   fn from_char(input: I, _: char) -> Self {
     Self::from_error_kind(input, ErrorKind::Char)
   }
 
-  /// combines two existing error. This function is used to compare errors
+  /// Combines two existing errors. This function is used to compare errors
   /// generated in various branches of [alt]
   fn or(self, other: Self) -> Self {
     other
   }
 }
 
-/// this trait is required by the `context` combinator to add a static string
+/// This trait is required by the `context` combinator to add a static string
 /// to an existing error
 pub trait ContextError<I>: Sized {
-  /// create a new error from an input position, a static string and an existing error.
+  /// Create a new error from an input position, a static string and an existing error.
   /// This is used mainly in the [context] combinator, to add user friendly information
   /// to errors when backtracking through a parse tree
   fn add_context(_input: I, _ctx: &'static str, other: Self) -> Self {
@@ -64,38 +64,38 @@ impl<I> ParseError<I> for () {
 
 impl<I> ContextError<I> for () {}
 
-/// creates an error from the input position and an [ErrorKind]
+/// Creates an error from the input position and an [ErrorKind]
 pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
   E::from_error_kind(input, kind)
 }
 
-/// combines an existing error with a new one created from the input
+/// Combines an existing error with a new one created from the input
 /// position and an [ErrorKind]. This is useful when backtracking
 /// through a parse tree, accumulating error context on the way
 pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) -> E {
   E::append(input, kind, other)
 }
 
-/// this error type accumulates errors and their position when backtracking
+/// This error type accumulates errors and their position when backtracking
 /// through a parse tree. With some post processing (cf `examples/json.rs`),
 /// it can be used to display user friendly error messages
 #[cfg(feature = "alloc")]
 #[derive(Clone, Debug, PartialEq)]
 pub struct VerboseError<I> {
-  /// list of errors accumulated by `VerboseError`, containing the affected
+  /// List of errors accumulated by `VerboseError`, containing the affected
   /// part of input data, and some context
   pub errors: crate::lib::std::vec::Vec<(I, VerboseErrorKind)>,
 }
 
 #[cfg(feature = "alloc")]
 #[derive(Clone, Debug, PartialEq)]
-/// error context for `VerboseError`
+/// Error context for `VerboseError`
 pub enum VerboseErrorKind {
-  /// static string added by the `context` function
+  /// Static string added by the `context` function
   Context(&'static str),
-  /// indicates which character was expected by the `char` function
+  /// Indicates which character was expected by the `char` function
   Char(char),
-  /// error kind given by various nom parsers
+  /// Error kind given by various nom parsers
   Nom(ErrorKind),
 }
 
@@ -129,7 +129,7 @@ impl<I> ContextError<I> for VerboseError<I> {
 
 use crate::internal::{Err, IResult};
 
-/// create a new error from an input position, a static string and an existing error.
+/// Create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
 /// to errors when backtracking through a parse tree
 pub fn context<I: Clone, E: ContextError<I>, F, O>(
@@ -147,7 +147,7 @@ where
   }
 }
 
-/// transforms a `VerboseError` into a trace with input position information
+/// Transforms a `VerboseError` into a trace with input position information
 #[cfg(feature = "alloc")]
 pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
   use crate::lib::std::fmt::Write;
@@ -257,7 +257,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
   result
 }
 
-/// indicates which parser returned an error
+/// Indicates which parser returned an error
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug,PartialEq,Eq,Hash,Clone,Copy)]
 #[allow(deprecated,missing_docs)]
@@ -318,7 +318,7 @@ pub enum ErrorKind {
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(deprecated)]
-/// converts an ErrorKind to a number
+/// Converts an ErrorKind to a number
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
   match *e {
     ErrorKind::Tag                       => 1,
@@ -379,7 +379,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
 impl ErrorKind {
   #[cfg_attr(rustfmt, rustfmt_skip)]
   #[allow(deprecated)]
-  /// converts an ErrorKind to a text description
+  /// Converts an ErrorKind to a text description
   pub fn description(&self) -> &str {
     match *self {
       ErrorKind::Tag                       => "Tag",
@@ -438,7 +438,7 @@ impl ErrorKind {
   }
 }
 
-/// creates a parse error from a `nom::ErrorKind`
+/// Creates a parse error from a `nom::ErrorKind`
 /// and the position in the input
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
@@ -448,9 +448,9 @@ macro_rules! error_position(
   });
 );
 
-/// creates a parse error from a `nom::ErrorKind`,
+/// Creates a parse error from a `nom::ErrorKind`,
 /// the position in the input and the next error in
-/// the parsing tree.
+/// the parsing tree
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
 macro_rules! error_node_position(
@@ -545,9 +545,9 @@ macro_rules! fix_error (
 
 /// `flat_map!(R -> IResult<R,S>, S -> IResult<S,T>) => R -> IResult<R, T>`
 ///
-/// combines a parser R -> IResult<R,S> and
-/// a parser S -> IResult<S,T> to return another
-/// parser R -> IResult<R,T>
+/// Combines a parser `R -> IResult<R,S>` and
+/// a parser `S -> IResult<S,T>` to return another
+/// parser `R -> IResult<R,T>`
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
