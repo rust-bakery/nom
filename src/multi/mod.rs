@@ -1067,3 +1067,55 @@ where
 {
   length_value(f, g)(i)
 }
+
+/// Gets a number from the first parser,
+/// then applies the second parser that many times.
+/// Arguments
+/// * `f` The parser to apply to obtain the count.
+/// * `g` The parser to apply repeatedly.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::number::complete::be_u8;
+/// use nom::multi::length_count;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+///   length_count(be_u8, tag("abc"))(s)
+/// }
+///
+/// assert_eq!(parser(&b"\x02abcabcabc"[..]), Ok(((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))));
+/// assert_eq!(parser(b"\x03123123123"), Err(Err::Error((&b"123123123"[..], ErrorKind::Tag))));
+/// ```
+pub fn length_count<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+where
+  I: Clone + InputLength + InputTake,
+  N: Copy + ToUsize,
+  F: Parser<I, N, E>,
+  G: Parser<I, O, E>,
+  E: ParseError<I>,
+{
+  move |i: I| {
+    let (i, count) = f.parse(i)?;
+    let mut input = i.clone();
+    let mut res = crate::lib::std::vec::Vec::new();
+
+    for _ in 0..count.to_usize() {
+      let input_ = input.clone();
+      match g.parse(input_) {
+        Ok((i, o)) => {
+          res.push(o);
+          input = i;
+        }
+        Err(Err::Error(e)) => {
+          return Err(Err::Error(E::append(i, ErrorKind::Count, e)));
+        }
+        Err(e) => {
+          return Err(e);
+        }
+      }
+    }
+
+    Ok((input, res))
+  }
+}
