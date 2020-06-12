@@ -16,6 +16,7 @@ autoexamples = false
 include = [
   "CHANGELOG.md",
   "LICENSE",
+  "README.md",
   ".gitignore",
   ".travis.yml",
   "Cargo.toml",
