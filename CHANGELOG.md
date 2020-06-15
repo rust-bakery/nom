@@ -62,7 +62,7 @@
 - `convert_error` optimization
 - `alt` optimization
 
-## 5.0.1 - 2020-08-22
+## 5.0.1 - 2019-08-22
 
 ### Thanks
 
