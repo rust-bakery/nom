@@ -591,6 +591,7 @@ mod tests {
   fn separated_list0() {
     named!(multi<&[u8],Vec<&[u8]> >, separated_list0!(tag!(","), tag!("abcd")));
     named!(multi_empty<&[u8],Vec<&[u8]> >, separated_list0!(tag!(","), tag!("")));
+    named!(empty_sep<&[u8],Vec<&[u8]> >, separated_list0!(tag!(""), tag!("abc")));
     named!(multi_longsep<&[u8],Vec<&[u8]> >, separated_list0!(tag!(".."), tag!("abcd")));
 
     let a = &b"abcdef"[..];
@@ -601,18 +602,20 @@ mod tests {
     let f = &b"abc"[..];
     let g = &b"abcd."[..];
     let h = &b"abcd,abc"[..];
+    let i = &b"abcabc"[..];
 
     let res1 = vec![&b"abcd"[..]];
     assert_eq!(multi(a), Ok((&b"ef"[..], res1)));
     let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(b), Ok((&b"ef"[..], res2)));
     assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
+    let res3 = vec![&b""[..], &b""[..], &b""[..]];
+    assert_eq!(multi_empty(d), Ok((&b"abc"[..], res3)));
+    let i_err_pos = &i[3..];
     assert_eq!(
-      multi_empty(d),
-      Err(Err::Error(error_position!(d, ErrorKind::SeparatedList)))
+      empty_sep(i),
+      Err(Err::Error(error_position!(i_err_pos, ErrorKind::SeparatedList)))
     );
-    //let res3 = vec![&b""[..], &b""[..], &b""[..]];
-    //assert_eq!(multi_empty(d),Ok((&b"abc"[..], res3)));
     let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(e), Ok((&b",ef"[..], res4)));
 
