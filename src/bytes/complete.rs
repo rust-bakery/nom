@@ -19,7 +19,7 @@ use crate::traits::{
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::tag;
 ///
 /// fn parser(s: &str) -> IResult<&str, &str> {
@@ -27,8 +27,8 @@ use crate::traits::{
 /// }
 ///
 /// assert_eq!(parser("Hello, World!"), Ok((", World!", "Hello")));
-/// assert_eq!(parser("Something"), Err(Err::Error(("Something", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("Something"), Err(Err::Error(Error::new("Something", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// ```
 pub fn tag<T, Input, Error: ParseError<Input>>(
   tag: T,
@@ -60,7 +60,7 @@ where
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::tag_no_case;
 ///
 /// fn parser(s: &str) -> IResult<&str, &str> {
@@ -70,8 +70,8 @@ where
 /// assert_eq!(parser("Hello, World!"), Ok((", World!", "Hello")));
 /// assert_eq!(parser("hello, World!"), Ok((", World!", "hello")));
 /// assert_eq!(parser("HeLlO, World!"), Ok((", World!", "HeLlO")));
-/// assert_eq!(parser("Something"), Err(Err::Error(("Something", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("Something"), Err(Err::Error(Error::new("Something", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// ```
 pub fn tag_no_case<T, Input, Error: ParseError<Input>>(
   tag: T,
@@ -105,7 +105,7 @@ where
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::is_not;
 ///
 /// fn not_space(s: &str) -> IResult<&str, &str> {
@@ -115,7 +115,7 @@ where
 /// assert_eq!(not_space("Hello, World!"), Ok((" World!", "Hello,")));
 /// assert_eq!(not_space("Sometimes\t"), Ok(("\t", "Sometimes")));
 /// assert_eq!(not_space("Nospace"), Ok(("", "Nospace")));
-/// assert_eq!(not_space(""), Err(Err::Error(("", ErrorKind::IsNot))));
+/// assert_eq!(not_space(""), Err(Err::Error(Error::new("", ErrorKind::IsNot))));
 /// ```
 pub fn is_not<T, Input, Error: ParseError<Input>>(
   arr: T,
@@ -139,7 +139,7 @@ where
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::is_a;
 ///
 /// fn hex(s: &str) -> IResult<&str, &str> {
@@ -150,7 +150,7 @@ where
 /// assert_eq!(hex("DEADBEEF and others"), Ok((" and others", "DEADBEEF")));
 /// assert_eq!(hex("BADBABEsomething"), Ok(("something", "BADBABE")));
 /// assert_eq!(hex("D15EA5E"), Ok(("", "D15EA5E")));
-/// assert_eq!(hex(""), Err(Err::Error(("", ErrorKind::IsA))));
+/// assert_eq!(hex(""), Err(Err::Error(Error::new("", ErrorKind::IsA))));
 /// ```
 pub fn is_a<T, Input, Error: ParseError<Input>>(
   arr: T,
@@ -204,7 +204,7 @@ where
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_while1;
 /// use nom::character::is_alphabetic;
 ///
@@ -214,7 +214,7 @@ where
 ///
 /// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
 /// assert_eq!(alpha(b"latin"), Ok((&b""[..], &b"latin"[..])));
-/// assert_eq!(alpha(b"12345"), Err(Err::Error((&b"12345"[..], ErrorKind::TakeWhile1))));
+/// assert_eq!(alpha(b"12345"), Err(Err::Error(Error::new(&b"12345"[..], ErrorKind::TakeWhile1))));
 /// ```
 pub fn take_while1<F, Input, Error: ParseError<Input>>(
   cond: F,
@@ -239,7 +239,7 @@ where
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_while_m_n;
 /// use nom::character::is_alphabetic;
 ///
@@ -250,8 +250,8 @@ where
 /// assert_eq!(short_alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
 /// assert_eq!(short_alpha(b"lengthy"), Ok((&b"y"[..], &b"length"[..])));
 /// assert_eq!(short_alpha(b"latin"), Ok((&b""[..], &b"latin"[..])));
-/// assert_eq!(short_alpha(b"ed"), Err(Err::Error((&b"ed"[..], ErrorKind::TakeWhileMN))));
-/// assert_eq!(short_alpha(b"12345"), Err(Err::Error((&b"12345"[..], ErrorKind::TakeWhileMN))));
+/// assert_eq!(short_alpha(b"ed"), Err(Err::Error(Error::new(&b"ed"[..], ErrorKind::TakeWhileMN))));
+/// assert_eq!(short_alpha(b"12345"), Err(Err::Error(Error::new(&b"12345"[..], ErrorKind::TakeWhileMN))));
 /// ```
 pub fn take_while_m_n<F, Input, Error: ParseError<Input>>(
   m: usize,
@@ -357,7 +357,7 @@ where
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_till1;
 ///
 /// fn till_colon(s: &str) -> IResult<&str, &str> {
@@ -365,9 +365,9 @@ where
 /// }
 ///
 /// assert_eq!(till_colon("latin:123"), Ok((":123", "latin")));
-/// assert_eq!(till_colon(":empty matched"), Err(Err::Error((":empty matched", ErrorKind::TakeTill1))));
+/// assert_eq!(till_colon(":empty matched"), Err(Err::Error(Error::new(":empty matched", ErrorKind::TakeTill1))));
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
-/// assert_eq!(till_colon(""), Err(Err::Error(("", ErrorKind::TakeTill1))));
+/// assert_eq!(till_colon(""), Err(Err::Error(Error::new("", ErrorKind::TakeTill1))));
 /// ```
 pub fn take_till1<F, Input, Error: ParseError<Input>>(
   cond: F,
@@ -388,7 +388,7 @@ where
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take;
 ///
 /// fn take6(s: &str) -> IResult<&str, &str> {
@@ -397,8 +397,8 @@ where
 ///
 /// assert_eq!(take6("1234567"), Ok(("7", "123456")));
 /// assert_eq!(take6("things"), Ok(("", "things")));
-/// assert_eq!(take6("short"), Err(Err::Error(("short", ErrorKind::Eof))));
-/// assert_eq!(take6(""), Err(Err::Error(("", ErrorKind::Eof))));
+/// assert_eq!(take6("short"), Err(Err::Error(Error::new("short", ErrorKind::Eof))));
+/// assert_eq!(take6(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
 /// ```
 pub fn take<C, Input, Error: ParseError<Input>>(
   count: C,
@@ -421,7 +421,7 @@ where
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_until;
 ///
 /// fn until_eof(s: &str) -> IResult<&str, &str> {
@@ -429,8 +429,8 @@ where
 /// }
 ///
 /// assert_eq!(until_eof("hello, worldeof"), Ok(("eof", "hello, world")));
-/// assert_eq!(until_eof("hello, world"), Err(Err::Error(("hello, world", ErrorKind::TakeUntil))));
-/// assert_eq!(until_eof(""), Err(Err::Error(("", ErrorKind::TakeUntil))));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Error(Error::new("hello, world", ErrorKind::TakeUntil))));
+/// assert_eq!(until_eof(""), Err(Err::Error(Error::new("", ErrorKind::TakeUntil))));
 /// ```
 pub fn take_until<T, Input, Error: ParseError<Input>>(
   tag: T,

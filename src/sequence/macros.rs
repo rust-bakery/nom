@@ -93,14 +93,14 @@ macro_rules! tuple_parser (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::error::ErrorKind;
+/// # use nom::error::{Error, ErrorKind};
 /// # use nom::character::complete::{alpha1, digit1};
 /// named!(parser<&str, (&str, &str)>, pair!(alpha1, digit1));
 ///
 /// # fn main() {
 /// assert_eq!(parser("abc123"), Ok(("", ("abc", "123"))));
-/// assert_eq!(parser("123abc"), Err(Err::Error(("123abc", ErrorKind::Alpha))));
-/// assert_eq!(parser("abc;123"), Err(Err::Error((";123", ErrorKind::Digit))));
+/// assert_eq!(parser("123abc"), Err(Err::Error(Error::new("123abc", ErrorKind::Alpha))));
+/// assert_eq!(parser("abc;123"), Err(Err::Error(Error::new(";123", ErrorKind::Digit))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -129,14 +129,14 @@ macro_rules! pair(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::error::ErrorKind;
+/// # use nom::error::{Error, ErrorKind};
 /// # use nom::character::complete::{alpha1, digit1};
 /// named!(parser<&str, (&str, &str)>, separated_pair!(alpha1, char!(','), digit1));
 ///
 /// # fn main() {
 /// assert_eq!(parser("abc,123"), Ok(("", ("abc", "123"))));
-/// assert_eq!(parser("123,abc"), Err(Err::Error(("123,abc", ErrorKind::Alpha))));
-/// assert_eq!(parser("abc;123"), Err(Err::Error((";123", ErrorKind::Char))));
+/// assert_eq!(parser("123,abc"), Err(Err::Error(Error::new("123,abc", ErrorKind::Alpha))));
+/// assert_eq!(parser("abc;123"), Err(Err::Error(Error::new(";123", ErrorKind::Char))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -161,14 +161,14 @@ macro_rules! separated_pair(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::error::ErrorKind;
+/// # use nom::error::{Error, ErrorKind};
 /// # use nom::character::complete::{alpha1};
 /// named!(parser<&str, &str>, preceded!(char!('-'), alpha1));
 ///
 /// # fn main() {
 /// assert_eq!(parser("-abc"), Ok(("", "abc")));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
-/// assert_eq!(parser("-123"), Err(Err::Error(("123", ErrorKind::Alpha))));
+/// assert_eq!(parser("abc"), Err(Err::Error(Error::new("abc", ErrorKind::Char))));
+/// assert_eq!(parser("-123"), Err(Err::Error(Error::new("123", ErrorKind::Alpha))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -196,14 +196,14 @@ macro_rules! preceded(
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::Err;
-/// # use nom::error::ErrorKind;
+/// # use nom::error::{Error, ErrorKind};
 /// # use nom::character::complete::{alpha1};
 /// named!(parser<&str, &str>, terminated!(alpha1, char!(';')));
 ///
 /// # fn main() {
 /// assert_eq!(parser("abc;"), Ok(("", "abc")));
-/// assert_eq!(parser("abc,"), Err(Err::Error((",", ErrorKind::Char))));
-/// assert_eq!(parser("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
+/// assert_eq!(parser("abc,"), Err(Err::Error(Error::new(",", ErrorKind::Char))));
+/// assert_eq!(parser("123;"), Err(Err::Error(Error::new("123;", ErrorKind::Alpha))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]

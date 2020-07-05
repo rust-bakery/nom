@@ -355,7 +355,7 @@
 //! Here is how it works in practice:
 //!
 //! ```rust
-//! use nom::{IResult, Err, Needed, error::ErrorKind, bytes, character};
+//! use nom::{IResult, Err, Needed, error::{Error, ErrorKind}, bytes, character};
 //!
 //! fn take_streaming(i: &[u8]) -> IResult<&[u8], &[u8]> {
 //!   bytes::streaming::take(4u8)(i)
@@ -374,7 +374,7 @@
 //! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::new(1))));
 //!
 //! // but the complete parser will return an error
-//! assert_eq!(take_complete(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+//! assert_eq!(take_complete(&b"abc"[..]), Err(Err::Error(Error::new(&b"abc"[..], ErrorKind::Eof))));
 //!
 //! // the alpha0 function recognizes 0 or more alphabetic characters
 //! fn alpha0_streaming(i: &str) -> IResult<&str, &str> {

@@ -52,13 +52,13 @@ macro_rules! bits (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use nom::combinator::rest;
-/// # use nom::error::ErrorKind;
+/// # use nom::error::{Error, ErrorKind};
 /// # fn main() {
 ///
 /// named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
 ///    take_bits!(4u8),
 ///    take_bits!(8u8),
-///    bytes!(rest::<_, (_, ErrorKind)>)
+///    bytes!(rest::<_, Error<_>>)
 /// )));
 ///
 ///  let input = &[0xde, 0xad, 0xbe, 0xaf];
@@ -202,7 +202,7 @@ mod tests {
 
   named!(
     bits_bytes_bs,
-    bits!(bytes!(crate::combinator::rest::<_, (&[u8], ErrorKind)>))
+    bits!(bytes!(crate::combinator::rest::<_, crate::error::Error<&[u8]>>))
   );
   #[test]
   fn bits_bytes() {

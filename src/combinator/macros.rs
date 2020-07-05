@@ -105,7 +105,7 @@ macro_rules! named (
         named_attr!(#$($args)*);
     );
     ($vis:vis $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
+        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, $crate::error::Error<$i>> {
             $submac!(i, $($args)*)
         }
     );
@@ -115,17 +115,17 @@ macro_rules! named (
         }
     );
     ($vis:vis $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
+        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, $crate::error::Error<$i>> {
             $submac!(i, $($args)*)
         }
     );
     ($vis:vis $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::error::ErrorKind)> {
+        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, $crate::error::Error<&[u8]>> {
             $submac!(i, $($args)*)
         }
     );
     ($vis:vis $name:ident, $submac:ident!( $($args:tt)* )) => (
-        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
+        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], $crate::error::Error<&[u8]>> {
             $submac!(i, $($args)*)
         }
     );
@@ -217,7 +217,7 @@ macro_rules! named_args {
 macro_rules! named_attr (
     ($(#[$attr:meta])*, $vis:vis $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        $vis fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::error::ErrorKind)> {
+        $vis fn $name( i: $i ) -> $crate::IResult<$i,$o, $crate::error::Error<$i>> {
             $submac!(i, $($args)*)
         }
     );
@@ -229,19 +229,19 @@ macro_rules! named_attr (
     );
     ($(#[$attr:meta])*, $vis:vis $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
+        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, $crate::error::Error<$i>> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, $vis:vis $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::error::ErrorKind)> {
+        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, $crate::error::Error<&[u8]>> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, $vis:vis $name:ident, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        $vis fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
+        $vis fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], $crate::error::Error<&[u8]>> {
             $submac!(i, $($args)*)
         }
     );
@@ -556,7 +556,7 @@ macro_rules! map_res (
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::{Error, ErrorKind}, IResult};
 /// use nom::character::complete::digit1;
 /// # fn main() {
 ///
@@ -566,10 +566,10 @@ macro_rules! map_res (
 /// assert_eq!(parser("123"), Ok(("", 123)));
 ///
 /// // this will fail if digit1 fails
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
+/// assert_eq!(parser("abc"), Err(Err::Error(Error::new("abc", ErrorKind::Digit))));
 ///
 /// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
-/// assert_eq!(parser("123456"), Err(Err::Error(("123456", ErrorKind::MapOpt))));
+/// assert_eq!(parser("123456"), Err(Err::Error(Error::new("123456", ErrorKind::MapOpt))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -600,7 +600,7 @@ macro_rules! map_opt (
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::{Error, ErrorKind}, IResult};
 /// use nom::character::complete::digit1;
 /// # fn main() {
 ///
@@ -608,10 +608,10 @@ macro_rules! map_opt (
 ///
 /// assert_eq!(parser("123"), Ok(("", 123)));
 ///
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::ParseTo))));
+/// assert_eq!(parser("abc"), Err(Err::Error(Error::new("abc", ErrorKind::ParseTo))));
 ///
 /// // this will fail if the mapped function fails (a `u8` is too small to hold `123456`)
-/// assert_eq!(parser("123456"), Err(Err::Error(("123456", ErrorKind::ParseTo))));
+/// assert_eq!(parser("123456"), Err(Err::Error(Error::new("123456", ErrorKind::ParseTo))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -909,11 +909,11 @@ macro_rules! tap (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # use std::str;
-/// # use nom::{Err, error::ErrorKind};
+/// # use nom::{Err, error::{Error ,ErrorKind}};
 /// # fn main() {
 ///  named!(parser, eof!());
 ///
-///  assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+///  assert_eq!(parser(&b"abc"[..]), Err(Err::Error(Error::new(&b"abc"[..], ErrorKind::Eof))));
 ///  assert_eq!(parser(&b""[..]), Ok((&b""[..], &b""[..])));
 /// # }
 /// ```
@@ -1065,7 +1065,7 @@ mod tests {
 
   #[test]
   fn opt_res() {
-    named!(opt_res_abcd<&[u8], Result<&[u8], Err<(&[u8], ErrorKind)>> >, opt_res!(tag!("abcd")));
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<crate::error::Error<&[u8]>>> >, opt_res!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];
@@ -1086,6 +1086,11 @@ mod tests {
   pub struct CustomError(&'static str);
   impl<I> From<(I, ErrorKind)> for CustomError {
     fn from(_: (I, ErrorKind)) -> Self {
+      CustomError("test")
+    }
+  }
+  impl<I> From<crate::error::Error<I>> for CustomError {
+    fn from(_: crate::error::Error<I>) -> Self {
       CustomError("test")
     }
   }

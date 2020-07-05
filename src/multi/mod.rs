@@ -85,7 +85,7 @@ where
 /// to prevent going into an infinite loop.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::many1;
 /// use nom::bytes::complete::tag;
 ///
@@ -95,8 +95,8 @@ where
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
 pub fn many1<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
@@ -150,7 +150,7 @@ where
 /// a result. Returns a pair consisting of the results of
 /// `f` in a `Vec` and the result of `g`.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::many_till;
 /// use nom::bytes::complete::tag;
 ///
@@ -159,9 +159,9 @@ where
 /// };
 ///
 /// assert_eq!(parser("abcabcend"), Ok(("", (vec!["abc", "abc"], "end"))));
-/// assert_eq!(parser("abc123end"), Err(Err::Error(("123end", ErrorKind::Tag))));
-/// assert_eq!(parser("123123end"), Err(Err::Error(("123123end", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("abc123end"), Err(Err::Error(Error::new("123end", ErrorKind::Tag))));
+/// assert_eq!(parser("123123end"), Err(Err::Error(Error::new("123123end", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
 /// ```
 #[cfg(feature = "alloc")]
@@ -312,7 +312,7 @@ where
 /// * `f` Parses the elements of the list.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
 ///
@@ -323,8 +323,8 @@ where
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
 /// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
 /// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// assert_eq!(parser("def|abc"), Err(Err::Error(Error::new("def|abc", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
 pub fn separated_list1<I, O, O2, E, F, G>(
@@ -545,7 +545,7 @@ where
 /// * `f` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::many1_count;
 /// use nom::bytes::complete::tag;
 ///
@@ -555,8 +555,8 @@ where
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", 2)));
 /// assert_eq!(parser("abc123"), Ok(("123", 1)));
-/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1Count))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1Count))));
+/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1Count))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1Count))));
 /// ```
 pub fn many1_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
@@ -610,7 +610,7 @@ where
 /// * `count` How often to apply the parser.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::count;
 /// use nom::bytes::complete::tag;
 ///
@@ -619,9 +619,9 @@ where
 /// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Err(Err::Error(("123", ErrorKind::Tag))));
-/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("abc123"), Err(Err::Error(Error::new("123", ErrorKind::Tag))));
+/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
 #[cfg(feature = "alloc")]
@@ -662,7 +662,7 @@ where
 /// * `buf` The slice to fill
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::fill;
 /// use nom::bytes::complete::tag;
 ///
@@ -673,9 +673,9 @@ where
 /// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", ["abc", "abc"])));
-/// assert_eq!(parser("abc123"), Err(Err::Error(("123", ErrorKind::Tag))));
-/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("abc123"), Err(Err::Error(Error::new("123", ErrorKind::Tag))));
+/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
 /// ```
 pub fn fill<'a, I, O, E, F>(f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
@@ -794,7 +794,7 @@ where
 ///       the current accumulator.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::fold_many1;
 /// use nom::bytes::complete::tag;
 ///
@@ -811,8 +811,8 @@ where
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
-/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1))));
+/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
 /// ```
 pub fn fold_many1<I, O, E, F, G, R>(mut f: F, init: R, g: G) -> impl FnMut(I) -> IResult<I, R, E>
 where
@@ -1017,7 +1017,7 @@ where
 /// * `f` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_value;
 /// use nom::bytes::complete::tag;
@@ -1027,7 +1027,7 @@ where
 /// }
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
-/// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error((&b"123"[..], ErrorKind::Tag))));
+/// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error(Error::new(&b"123"[..], ErrorKind::Tag))));
 /// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 pub fn length_value<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>

@@ -1252,6 +1252,19 @@ impl<I> ErrorConvert<((I, usize), ErrorKind)> for (I, ErrorKind) {
   }
 }
 
+use crate::error;
+impl<I> ErrorConvert<error::Error<I>> for error::Error<(I, usize)> {
+  fn convert(self) -> error::Error<I> {
+    error::Error { input: self.input.0, code: self.code }
+  }
+}
+
+impl<I> ErrorConvert<error::Error<(I, usize)>> for error::Error<I> {
+  fn convert(self) -> error::Error<(I, usize)> {
+    error::Error { input: (self.input, 0), code: self.code }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

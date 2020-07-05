@@ -45,7 +45,7 @@ macro_rules! separated_list0(
 /// It will return an error if there is no element in the list.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
 ///
@@ -55,8 +55,8 @@ macro_rules! separated_list0(
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
 /// assert_eq!(parser("abc123abc"), Ok(("123abc", vec!["abc"])));
 /// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// assert_eq!(parser("def|abc"), Err(Err::Error(Error::new("def|abc", ErrorKind::Tag))));
 /// # }
 /// ```
 #[cfg(feature = "alloc")]

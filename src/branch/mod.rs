@@ -64,7 +64,7 @@ pub trait Permutation<I, O, E> {
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,error::ErrorKind, Needed, IResult};
+/// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::permutation;
 /// # fn main() {
@@ -79,14 +79,14 @@ pub trait Permutation<I, O, E> {
 /// assert_eq!(parser("123abc"), Ok(("", ("abc", "123"))));
 ///
 /// // it will fail if one of the parsers failed
-/// assert_eq!(parser("abc;"), Err(Err::Error((";", ErrorKind::Digit))));
+/// assert_eq!(parser("abc;"), Err(Err::Error(Error::new(";", ErrorKind::Digit))));
 /// # }
 /// ```
 ///
 /// The parsers are applied greedily: if there are multiple unapplied parsers
 /// that could parse the next slice of input, the first one is used.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// use nom::branch::permutation;
 /// use nom::character::complete::{anychar, char};
 ///
@@ -100,7 +100,7 @@ pub trait Permutation<I, O, E> {
 ///
 /// // anychar parses 'a', then char('a') fails on 'b',
 /// // even though char('a') followed by anychar would succeed
-/// assert_eq!(parser("ab"), Err(Err::Error(("b", ErrorKind::Char))));
+/// assert_eq!(parser("ab"), Err(Err::Error(Error::new("b", ErrorKind::Char))));
 /// # }
 /// ```
 ///

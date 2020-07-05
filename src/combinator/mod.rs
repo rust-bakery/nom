@@ -316,7 +316,7 @@ where
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// use nom::combinator::cond;
 /// use nom::character::complete::alpha1;
 /// # fn main() {
@@ -327,7 +327,7 @@ where
 ///
 /// assert_eq!(parser(true, "abcd;"), Ok((";", Some("abcd"))));
 /// assert_eq!(parser(false, "abcd;"), Ok(("abcd;", None)));
-/// assert_eq!(parser(true, "123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
+/// assert_eq!(parser(true, "123;"), Err(Err::Error(Error::new("123;", ErrorKind::Alpha))));
 /// assert_eq!(parser(false, "123;"), Ok(("123;", None)));
 /// # }
 /// ```

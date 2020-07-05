@@ -44,6 +44,34 @@ pub trait ContextError<I>: Sized {
   }
 }
 
+/// default error type, only contains the error' location and code
+#[derive(Debug,PartialEq)]
+pub struct Error<I> {
+    /// position of the error in the input data
+    pub input: I,
+    /// nom error code
+    pub code: ErrorKind,
+}
+
+impl<I> Error<I> {
+    /// creates a new basic error
+    pub fn new(input: I, code: ErrorKind) -> Error<I> {
+        Error { input, code }
+    }
+}
+
+impl<I> ParseError<I> for Error<I> {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    Error { input, code: kind }
+  }
+
+  fn append(_: I, _: ErrorKind, other: Self) -> Self {
+    other
+  }
+}
+
+impl<I> ContextError<I> for Error<I> {}
+
 impl<I> ParseError<I> for (I, ErrorKind) {
   fn from_error_kind(input: I, kind: ErrorKind) -> Self {
     (input, kind)
@@ -551,13 +579,13 @@ macro_rules! fix_error (
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind};
+/// # use nom::{Err, error::{Error, ErrorKind}};
 /// use nom::number::complete::recognize_float;
 ///
 /// named!(parser<&str, f64>, flat_map!(recognize_float, parse_to!(f64)));
 ///
 /// assert_eq!(parser("123.45;"), Ok((";", 123.45)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
+/// assert_eq!(parser("abc"), Err(Err::Error(Error::new("abc", ErrorKind::Char))));
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! flat_map(

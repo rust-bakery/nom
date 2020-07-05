@@ -1,7 +1,7 @@
 //! Basic types to build the parsers
 
 use self::Needed::*;
-use crate::error::ErrorKind;
+use crate::error::{self, ErrorKind};
 use core::num::NonZeroUsize;
 
 /// Holds the result of parsing functions
@@ -14,7 +14,7 @@ use core::num::NonZeroUsize;
 ///
 /// Outside of the parsing code, you can use the [Finish::finish] method to convert
 /// it to a more common result type
-pub type IResult<I, O, E = (I, ErrorKind)> = Result<(I, O), Err<E>>;
+pub type IResult<I, O, E = error::Error<I>> = Result<(I, O), Err<E>>;
 
 /// Helper trait to convert a parser's result to a more manageable type
 pub trait Finish<I,O,E> {

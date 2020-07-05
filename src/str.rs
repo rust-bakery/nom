@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-  use crate::{error::ErrorKind, Err, IResult};
+  use crate::{error, error::ErrorKind, Err, IResult};
 
   #[test]
   fn tagtr_succeed() {
@@ -34,7 +34,7 @@ mod test {
     const INPUT: &str = "Hello";
     const TAG: &str = "Hello World!";
 
-    let res: IResult<_, _, (_, ErrorKind)> = tag!(INPUT, TAG);
+    let res: IResult<_, _, error::Error<_>> = tag!(INPUT, TAG);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => {
@@ -52,7 +52,7 @@ mod test {
     const INPUT: &str = "Hello World!";
     const TAG: &str = "Random"; // TAG must be closer than INPUT.
 
-    let res: IResult<_, _, (_, ErrorKind)> = tag!(INPUT, TAG);
+    let res: IResult<_, _, error::Error<_>> = tag!(INPUT, TAG);
     match res {
       Err(Err::Error(_)) => (),
       other => {
@@ -70,7 +70,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take!(INPUT, 9);
+    let res: IResult<_, _, error::Error<_>> = take!(INPUT, 9);
     match res {
       Ok((extra, output)) => {
         assert!(
