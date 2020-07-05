@@ -255,10 +255,6 @@ where
       Err(Err::Error(_)) => return Ok((i, res)),
       Err(e) => return Err(e),
       Ok((i1, o)) => {
-        if i1 == i {
-          return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
-        }
-
         res.push(o);
         i = i1;
       }
@@ -277,10 +273,6 @@ where
             Err(Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i2, o)) => {
-              if i2 == i {
-                return Err(Err::Error(E::from_error_kind(i2, ErrorKind::SeparatedList)));
-              }
-
               res.push(o);
               i = i2;
             }
@@ -345,10 +337,6 @@ where
     match f.parse(i.clone()) {
       Err(e) => return Err(e),
       Ok((i1, o)) => {
-        if i1 == i {
-          return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
-        }
-
         res.push(o);
         i = i1;
       }
@@ -367,10 +355,6 @@ where
             Err(Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i2, o)) => {
-              if i2 == i {
-                return Err(Err::Error(E::from_error_kind(i2, ErrorKind::SeparatedList)));
-              }
-
               res.push(o);
               i = i2;
             }
