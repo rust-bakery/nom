@@ -28,7 +28,7 @@
 ///  let sl    = &input[..];
 ///
 ///  assert_eq!(take_4_bits( sl ), Ok( (&sl[1..], 0xA) ));
-///  assert_eq!(take_4_bits( &b""[..] ), Err(Err::Incomplete(Needed::Size(1))));
+///  assert_eq!(take_4_bits( &b""[..] ), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 #[macro_export(local_inner_macros)]
 macro_rules! bits (
@@ -40,7 +40,7 @@ macro_rules! bits (
   );
 );
 
-/// Counterpart to bits, bytes! transforms its bit stream input into a byte slice for the underlying
+/// Counterpart to `bits`, `bytes!` transforms its bit stream input into a byte slice for the underlying
 /// parser, allowing byte-slice parsers to work on bit streams.
 ///
 /// Signature:
@@ -134,9 +134,9 @@ macro_rules! tag_bits (
 
 #[cfg(test)]
 mod tests {
-  use crate::lib::std::ops::{AddAssign, Shl, Shr};
-  use crate::internal::{Err, Needed, IResult};
   use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
+  use crate::lib::std::ops::{AddAssign, Shl, Shr};
 
   #[test]
   fn take_bits() {
@@ -157,11 +157,8 @@ mod tests {
     assert_eq!(take_bits!((sl, 6), 11u8), Ok(((&sl[2..], 1), 1504)));
     assert_eq!(take_bits!((sl, 0), 20u8), Ok(((&sl[2..], 4), 700_163)));
     assert_eq!(take_bits!((sl, 4), 20u8), Ok(((&sl[3..], 0), 716_851)));
-    let r: IResult<_,u32> = take_bits!((sl, 4), 22u8);
-    assert_eq!(
-      r,
-      Err(Err::Incomplete(Needed::Size(22)))
-    );
+    let r: IResult<_, u32> = take_bits!((sl, 4), 22u8);
+    assert_eq!(r, Err(Err::Incomplete(Needed::new(22))));
   }
 
   #[test]
@@ -188,7 +185,7 @@ mod tests {
     let sl = &input[..];
     assert_eq!(ch((&input[..], 0)), Ok(((&sl[1..], 4), (5, 15))));
     assert_eq!(ch((&input[..], 4)), Ok(((&sl[2..], 0), (7, 16))));
-    assert_eq!(ch((&input[..1], 0)), Err(Err::Incomplete(Needed::Size(5))));
+    assert_eq!(ch((&input[..1], 0)), Err(Err::Incomplete(Needed::new(5))));
   }
 
   named!(ch_bytes<(u8, u8)>, bits!(ch));
@@ -196,18 +193,24 @@ mod tests {
   fn bits_to_bytes() {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     assert_eq!(ch_bytes(&input[..]), Ok((&input[2..], (5, 15))));
-    assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(ch_bytes(&input[..1]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       ch_bytes(&input[1..]),
       Err(Err::Error(error_position!(&input[1..], ErrorKind::TagBits)))
     );
   }
 
-  named!(bits_bytes_bs, bits!(bytes!(crate::combinator::rest::<_, (&[u8], ErrorKind)>)));
+  named!(
+    bits_bytes_bs,
+    bits!(bytes!(crate::combinator::rest::<_, (&[u8], ErrorKind)>))
+  );
   #[test]
   fn bits_bytes() {
     let input = [0b10_10_10_10];
-    assert_eq!(bits_bytes_bs(&input[..]), Ok((&[][..], &[0b10_10_10_10][..])));
+    assert_eq!(
+      bits_bytes_bs(&input[..]),
+      Ok((&[][..], &[0b10_10_10_10][..]))
+    );
   }
 
   #[derive(PartialEq, Debug)]
@@ -255,9 +258,6 @@ mod tests {
       Ok(((&sl[3..], 0), FakeUint(716_851)))
     );
     let r3: IResult<_, FakeUint> = take_bits!((sl, 4), 22u8);
-    assert_eq!(
-      r3,
-      Err(Err::Incomplete(Needed::Size(22)))
-    );
+    assert_eq!(r3, Err(Err::Incomplete(Needed::new(22))));
   }
 }

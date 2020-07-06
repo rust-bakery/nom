@@ -1,7 +1,7 @@
-//! parsers recognizing numbers
+//! Parsers recognizing numbers
 
-/// if the parameter is nom::Endianness::Big, parse a big endian u16 integer,
-/// otherwise a little endian u16 integer
+/// If the parameter is `nom::Endianness::Big`, parse a big endian u16 integer,
+/// otherwise a little endian u16 integer.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -12,19 +12,19 @@
 /// named!(be<u16>, u16!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0001)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::new(1))));
 ///
 /// named!(le<u16>, u16!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::streaming::be_u16($i) } else { $crate::number::streaming::le_u16($i) } } ););
 
-/// if the parameter is nom::Endianness::Big, parse a big endian u32 integer,
-/// otherwise a little endian u32 integer
+/// If the parameter is `nom::Endianness::Big`, parse a big endian u32 integer,
+/// otherwise a little endian u32 integer.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -35,19 +35,19 @@ macro_rules! u16 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<u32>, u32!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x00010203)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::new(3))));
 ///
 /// named!(le<u32>, u32!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x03020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::new(3))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::streaming::be_u32($i) } else { $crate::number::streaming::le_u32($i) } } ););
 
-/// if the parameter is nom::Endianness::Big, parse a big endian u64 integer,
-/// otherwise a little endian u64 integer
+/// If the parameter is `nom::Endianness::Big`, parse a big endian u64 integer,
+/// otherwise a little endian u64 integer.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -58,19 +58,19 @@ macro_rules! u32 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<u64>, u64!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0001020304050607)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::new(7))));
 ///
 /// named!(le<u64>, u64!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0706050403020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::new(7))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::streaming::be_u64($i) } else { $crate::number::streaming::le_u64($i) } } ););
 
-/// if the parameter is nom::Endianness::Big, parse a big endian u128 integer,
-/// otherwise a little endian u128 integer
+/// If the parameter is `nom::Endianness::Big`, parse a big endian u128 integer,
+/// otherwise a little endian u128 integer.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -81,20 +81,20 @@ macro_rules! u64 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<u128>, u128!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x00010203040506070809101112131415)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::new(15))));
 ///
 /// named!(le<u128>, u128!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x15141312111009080706050403020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::new(15))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 #[cfg(stable_i128)]
 macro_rules! u128 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::streaming::be_u128($i) } else { $crate::number::streaming::le_u128($i) } } ););
 
-/// if the parameter is nom::Endianness::Big, parse a big endian i16 integer,
-/// otherwise a little endian i16 integer
+/// If the parameter is `nom::Endianness::Big`, parse a big endian i16 integer,
+/// otherwise a little endian i16 integer.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -105,19 +105,19 @@ macro_rules! u128 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big 
 /// named!(be<i16>, i16!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0001)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::new(1))));
 ///
 /// named!(le<i16>, i16!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01abcd"), Ok((&b"abcd"[..], 0x0100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(2))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::streaming::be_i16($i) } else { $crate::number::streaming::le_i16($i) } } ););
 
-/// if the parameter is nom::Endianness::Big, parse a big endian i32 integer,
-/// otherwise a little endian i32 integer
+/// If the parameter is `nom::Endianness::Big`, parse a big endian i32 integer,
+/// otherwise a little endian i32 integer.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -128,19 +128,19 @@ macro_rules! i16 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<i32>, i32!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x00010203)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::new(3))));
 ///
 /// named!(le<i32>, i32!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03abcd"), Ok((&b"abcd"[..], 0x03020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::new(3))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::streaming::be_i32($i) } else { $crate::number::streaming::le_i32($i) } } ););
 
-/// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
-/// otherwise a little endian i64 integer
+/// If the parameter is `nom::Endianness::Big`, parse a big endian i64 integer,
+/// otherwise a little endian i64 integer.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -151,19 +151,19 @@ macro_rules! i32 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<i64>, i64!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0001020304050607)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::new(7))));
 ///
 /// named!(le<i64>, i64!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03\x04\x05\x06\x07abcd"), Ok((&b"abcd"[..], 0x0706050403020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(8))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::new(7))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big == $e { $crate::number::streaming::be_i64($i) } else { $crate::number::streaming::le_i64($i) } } ););
 
-/// if the parameter is nom::Endianness::Big, parse a big endian i64 integer,
-/// otherwise a little endian i64 integer
+/// If the parameter is `nom::Endianness::Big`, parse a big endian i64 integer,
+/// otherwise a little endian i64 integer.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -174,12 +174,12 @@ macro_rules! i64 ( ($i:expr, $e:expr) => ( {if $crate::number::Endianness::Big =
 /// named!(be<i128>, i128!(Endianness::Big));
 ///
 /// assert_eq!(be(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x00010203040506070809101112131415)));
-/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// assert_eq!(be(b"\x01"), Err(Err::Incomplete(Needed::new(15))));
 ///
 /// named!(le<i128>, i128!(Endianness::Little));
 ///
 /// assert_eq!(le(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x10\x11\x12\x13\x14\x15abcd"), Ok((&b"abcd"[..], 0x15141312111009080706050403020100)));
-/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::Size(16))));
+/// assert_eq!(le(b"\x01"), Err(Err::Incomplete(Needed::new(15))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]

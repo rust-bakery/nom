@@ -1,12 +1,12 @@
-//! character specific parsers and combinators
+//! Character specific parsers and combinators
 //!
-//! functions recognizing specific characters
+//! Functions recognizing specific characters
 
 #[macro_use]
 mod macros;
 
-pub mod streaming;
 pub mod complete;
+pub mod streaming;
 
 /// Tests if byte is ASCII alphabetic: A-Z, a-z
 ///
@@ -98,4 +98,3 @@ pub fn is_alphanumeric(chr: u8) -> bool {
 pub fn is_space(chr: u8) -> bool {
   chr == b' ' || chr == b'\t'
 }
-

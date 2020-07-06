@@ -7,11 +7,11 @@ use std::fmt::Debug;
 /// Helper trait to show a byte slice as a hex dump
 pub trait HexDisplay {
   /// Converts the value of `self` to a hex dump, returning the owned
-  /// string.
+  /// `String`.
   fn to_hex(&self, chunk_size: usize) -> String;
 
   /// Converts the value of `self` to a hex dump beginning at `from` address, returning the owned
-  /// string.
+  /// `String`.
   fn to_hex_from(&self, chunk_size: usize, from: usize) -> String;
 }
 
@@ -97,8 +97,7 @@ macro_rules! nom_stringify (
   ($($args:tt)*) => (stringify!($($args)*));
 );
 
-
-/// Prints a message if the parser fails
+/// Prints a message if the parser fails.
 ///
 /// The message prints the `Error` or `Incomplete`
 /// and the parser's calling code
@@ -136,7 +135,7 @@ macro_rules! dbg (
   );
 );
 
-/// Prints a message and the input if the parser fails
+/// Prints a message and the input if the parser fails.
 ///
 /// The message prints the `Error` or `Incomplete`
 /// and the parser's calling code.
@@ -158,20 +157,23 @@ macro_rules! dbg (
 /// f(a);
 /// ```
 #[cfg(feature = "std")]
-pub fn dbg_dmp<'a, F, O, E: Debug>(f: F, context: &'static str) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
-  where F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E> {
-  move |i: &'a [u8]| {
-      match f(i) {
-        Err(e) => {
-          println!("{}: Error({:?}) at:\n{}", context, e, i.to_hex(8));
-          Err(e)
-        },
-        a => a,
-      }
+pub fn dbg_dmp<'a, F, O, E: Debug>(
+  f: F,
+  context: &'static str,
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
+where
+  F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E>,
+{
+  move |i: &'a [u8]| match f(i) {
+    Err(e) => {
+      println!("{}: Error({:?}) at:\n{}", context, e, i.to_hex(8));
+      Err(e)
+    }
+    a => a,
   }
 }
 
-/// Prints a message and the input if the parser fails
+/// Prints a message and the input if the parser fails.
 ///
 /// The message prints the `Error` or `Incomplete`
 /// and the parser's calling code.
@@ -211,4 +213,3 @@ macro_rules! dbg_dmp (
       dbg_dmp!($i, call!($f));
   );
 );
-

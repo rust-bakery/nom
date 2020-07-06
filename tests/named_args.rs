@@ -3,9 +3,9 @@ extern crate nom;
 
 use nom::{
   branch::alt,
-  sequence::{delimited, pair, preceded},
+  bytes::complete::tag,
   character::complete::{digit1 as digit, space0 as space},
-  bytes::complete::tag
+  sequence::{delimited, pair, preceded},
 };
 
 // Parser definition
@@ -43,7 +43,7 @@ named_args!(brackets<'a>(open_tag: &str, close_tag: &str) <&'a[u8], i64>,
   ))
 );
 
-fn byte_slice_to_str<'a>(s: &'a[u8]) -> Result<&'a str, str::Utf8Error> {
+fn byte_slice_to_str<'a>(s: &'a [u8]) -> Result<&'a str, str::Utf8Error> {
   str::from_utf8(s)
 }
 
@@ -94,68 +94,29 @@ named!(expr <&[u8], i64>, do_parse!(
 
 #[test]
 fn factor_test() {
-  assert_eq!(
-    factor(&b"3"[..]),
-    Ok((&b""[..], 3))
-  );
-  assert_eq!(
-    factor(&b" 12"[..]),
-    Ok((&b""[..], 12))
-  );
-  assert_eq!(
-    factor(&b"537  "[..]),
-    Ok((&b""[..], 537))
-  );
-  assert_eq!(
-    factor(&b"  24   "[..]),
-    Ok((&b""[..], 24))
-  );
+  assert_eq!(factor(&b"3"[..]), Ok((&b""[..], 3)));
+  assert_eq!(factor(&b" 12"[..]), Ok((&b""[..], 12)));
+  assert_eq!(factor(&b"537  "[..]), Ok((&b""[..], 537)));
+  assert_eq!(factor(&b"  24   "[..]), Ok((&b""[..], 24)));
 }
 
 #[test]
 fn term_test() {
-  assert_eq!(
-    term(&b" 12 *2 /  3"[..]),
-    Ok((&b""[..], 8))
-  );
-  assert_eq!(
-    term(&b" 2* 3  *2 *2 /  3"[..]),
-    Ok((&b""[..], 8))
-  );
-  assert_eq!(
-    term(&b" 48 /  3/2"[..]),
-    Ok((&b""[..], 8))
-  );
+  assert_eq!(term(&b" 12 *2 /  3"[..]), Ok((&b""[..], 8)));
+  assert_eq!(term(&b" 2* 3  *2 *2 /  3"[..]), Ok((&b""[..], 8)));
+  assert_eq!(term(&b" 48 /  3/2"[..]), Ok((&b""[..], 8)));
 }
 
 #[test]
 fn expr_test() {
-  assert_eq!(
-    expr(&b" 1 +  2 "[..]),
-    Ok((&b""[..], 3))
-  );
-  assert_eq!(
-    expr(&b" 12 + 6 - 4+  3"[..]),
-    Ok((&b""[..], 17))
-  );
-  assert_eq!(
-    expr(&b" 1 + 2*3 + 4"[..]),
-    Ok((&b""[..], 11))
-  );
+  assert_eq!(expr(&b" 1 +  2 "[..]), Ok((&b""[..], 3)));
+  assert_eq!(expr(&b" 12 + 6 - 4+  3"[..]), Ok((&b""[..], 17)));
+  assert_eq!(expr(&b" 1 + 2*3 + 4"[..]), Ok((&b""[..], 11)));
 }
 
 #[test]
 fn parens_test() {
-  assert_eq!(
-    expr(&b" (  2 )"[..]),
-    Ok((&b""[..], 2))
-  );
-  assert_eq!(
-    expr(&b" 2* (  3 + 4 ) "[..]),
-    Ok((&b""[..], 14))
-  );
-  assert_eq!(
-    expr(&b"  2*2 / ( 5 - 1) + 3"[..]),
-    Ok((&b""[..], 4))
-  );
+  assert_eq!(expr(&b" (  2 )"[..]), Ok((&b""[..], 2)));
+  assert_eq!(expr(&b" 2* (  3 + 4 ) "[..]), Ok((&b""[..], 14)));
+  assert_eq!(expr(&b"  2*2 / ( 5 - 1) + 3"[..]), Ok((&b""[..], 4)));
 }

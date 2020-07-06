@@ -6,8 +6,8 @@ extern crate nom;
 
 use nom::{character::is_alphanumeric, number::complete::recognize_float};
 
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
 #[derive(Debug, PartialEq)]
 pub enum JsonValue {
@@ -35,22 +35,26 @@ named!(
 
 named!(
   array<Vec<JsonValue>>,
-  ws!(delimited!(
+  delimited!(
     char!('['),
-    separated_list!(char!(','), value),
+    separated_list0!(char!(','), value),
     char!(']')
-  ))
+  )
 );
 
 named!(
   key_value<(&str, JsonValue)>,
-  ws!(separated_pair!(string, char!(':'), value))
+  separated_pair!(string, char!(':'), value)
 );
 
 named!(
   hash<HashMap<String, JsonValue>>,
-  ws!(map!(
-    delimited!(char!('{'), separated_list!(char!(','), key_value), char!('}')),
+  map!(
+    delimited!(
+      char!('{'),
+      separated_list0!(char!(','), key_value),
+      char!('}')
+    ),
     |tuple_vec| {
       let mut h: HashMap<String, JsonValue> = HashMap::new();
       for (k, v) in tuple_vec {
@@ -58,26 +62,22 @@ named!(
       }
       h
     }
-  ))
+  )
 );
 
 named!(
   value<JsonValue>,
-  ws!(alt!(
-      hash   => { |h|   JsonValue::Object(h)            } |
-      array  => { |v|   JsonValue::Array(v)             } |
-      string => { |s|   JsonValue::Str(String::from(s)) } |
-      float  => { |num| JsonValue::Num(num)             }
-    ))
+  alt!(
+    hash   => { |h|   JsonValue::Object(h)            } |
+    array  => { |v|   JsonValue::Array(v)             } |
+    string => { |s|   JsonValue::Str(String::from(s)) } |
+    float  => { |num| JsonValue::Num(num)             }
+  )
 );
 
 #[test]
 fn json_object() {
-  let input =
-    r#"{
-      "a": 42,
-      "b": "x"
-    }\0"#;
+  let input = r#"{"a":42,"b":"x"}\0"#;
 
   let mut expected_map = HashMap::new();
   expected_map.insert(String::from("a"), JsonValue::Num(42f32));
@@ -89,16 +89,9 @@ fn json_object() {
 
 #[test]
 fn json_array() {
-  let input =
-    r#"[
-      42,
-      "x"
-    ]\0"#;
+  let input = r#"[42,"x"]\0"#;
 
-  let expected_vec = vec![
-    JsonValue::Num(42f32),
-    JsonValue::Str(String::from("x"))
-  ];
+  let expected_vec = vec![JsonValue::Num(42f32), JsonValue::Str(String::from("x"))];
   let expected = JsonValue::Array(expected_vec);
 
   assert_eq!(expected, value(input.as_bytes()).unwrap().1);
