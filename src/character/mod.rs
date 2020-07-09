@@ -1,6 +1,6 @@
-//! character specific parsers and combinators
+//! Character specific parsers and combinators
 //!
-//! functions recognizing specific characters
+//! Functions recognizing specific characters
 
 #[macro_use]
 mod macros;

@@ -3,9 +3,9 @@
 nom uses Rust macros heavily to provide a nice syntax and generate parsing code.
 This has multiple advantages:
 
-* it gives the appearance of combining functions without the runtime cost of closures
-* it helps Rust's code inference and borrow checking (less lifetime issues than iterator based solutions)
-* the generated code is very linear, just a large chain of pattern matching
+* It gives the appearance of combining functions without the runtime cost of closures
+* It helps Rust's code inference and borrow checking (less lifetime issues than iterator based solutions)
+* The generated code is very linear, just a large chain of pattern matching
 
 As a prerequisite, if you need more information on macros, please refer to
 [the little book of Rust macros](https://danielkeep.github.io/tlborm/book/README.html)
@@ -58,7 +58,7 @@ parameter that you do not use:
 ($i:expr, $f:expr)
 ```
 
-while you call:
+While you call:
 
 ```rust
 opt!(digit)
@@ -161,7 +161,7 @@ The macro is called with the input we got, as first argument, then we pattern
 match on the result. Every combinator or parser must return a `IResult`, which
 is a `Result<(I, O), nom::Err<I, E>>`, so you know which patterns you need to
 verify. If you need to call two parsers in a sequence, use the first parameter
-of `Ok((i,o))`: it is the input remaining after the first parser was applied.
+of `Ok((i,o))`: It is the input remaining after the first parser was applied.
 
 As an example, see how the `preceded!` macro works:
 
@@ -180,4 +180,3 @@ As an example, see how the `preceded!` macro works:
 
 It applies the first parser, and if it succeeds, discards its result, and applies
 the remaining input `i1` to the second parser.
-

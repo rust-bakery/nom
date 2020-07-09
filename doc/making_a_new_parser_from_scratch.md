@@ -1,7 +1,7 @@
 # Making a new parser from scratch
 
 Writing a parser is a very fun, interactive process, but sometimes a daunting
-task. How do you test it? How to  see ambiguities in specifications?
+task. How do you test it? How to see ambiguities in specifications?
 
 nom is designed to abstract data manipulation (counting array offsets,
 converting to structures, etc) while providing a safe, composable API. It also
@@ -185,7 +185,7 @@ There are a few tools you can use to debug how code is generated.
 
 ## dbg_dmp
 
-this function wraps a parser that accepts a `&[u8]` as input and
+This function wraps a parser that accepts a `&[u8]` as input and
 prints its hexdump if the child parser encountered an error:
 
 ```rust
@@ -203,7 +203,7 @@ fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
 f(a);
 ```
 
-## macros specific debugging tools
+## Macros specific debugging tools
 
 ### trace\_macros
 

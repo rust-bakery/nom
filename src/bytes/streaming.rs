@@ -1,4 +1,4 @@
-//! parsers recognizing bytes streams, streaming version
+//! Parsers recognizing bytes streams, streaming version
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;
@@ -10,10 +10,10 @@ use crate::traits::{
   InputTakeAtPosition, Slice, ToUsize,
 };
 
-/// Recognizes a pattern
+/// Recognizes a pattern.
 ///
 /// The input data will be compared to the tag combinator's argument and will return the part of
-/// the input that matches the argument
+/// the input that matches the argument.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -51,10 +51,10 @@ where
   }
 }
 
-/// Recognizes a case insensitive pattern
+/// Recognizes a case insensitive pattern.
 ///
 /// The input data will be compared to the tag combinator's argument and will return the part of
-/// the input that matches the argument with no regard to case
+/// the input that matches the argument with no regard to case.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -94,13 +94,13 @@ where
   }
 }
 
-/// Parse till certain characters are met
+/// Parse till certain characters are met.
 ///
 /// The parser will return the longest slice till one of the characters of the combinator's argument are met.
 ///
-/// It doesn't consume the matched character,
+/// It doesn't consume the matched character.
 ///
-/// It will return a `Err::Incomplete(Needed::new(1))` if the pattern wasn't met
+/// It will return a `Err::Incomplete(Needed::new(1))` if the pattern wasn't met.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -129,14 +129,14 @@ where
   }
 }
 
-/// Returns the longest slice of the matches the pattern
+/// Returns the longest slice of the matches the pattern.
 ///
 /// The parser will return the longest slice consisting of the characters in provided in the
-/// combinator's argument
+/// combinator's argument.
 ///
 /// # Streaming specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` if the pattern wasn't met
-/// or if the pattern reaches the end of the input
+/// or if the pattern reaches the end of the input.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -166,13 +166,13 @@ where
   }
 }
 
-/// Returns the longest input slice (if any) that matches the predicate
+/// Returns the longest input slice (if any) that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
-/// takes the input and returns a bool)*
+/// takes the input and returns a bool)*.
 ///
 /// # Streaming Specific
-/// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` if the pattern reaches the end of the input
+/// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` if the pattern reaches the end of the input.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -199,12 +199,12 @@ where
   move |i: Input| i.split_at_position(|c| !cond(c))
 }
 
-/// Returns the longest (atleast 1) input slice that matches the predicate
+/// Returns the longest (at least 1) input slice that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
-/// takes the input and returns a bool)*
+/// takes the input and returns a bool)*.
 ///
-/// It will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met
+/// It will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met.
 ///
 /// # Streaming Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` or if the pattern reaches the end of the input.
@@ -237,12 +237,12 @@ where
   }
 }
 
-/// Returns the longest (m <= len <= n) input slice  that matches the predicate
+/// Returns the longest (m <= len <= n) input slice  that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
-/// takes the input and returns a bool)*
+/// takes the input and returns a bool)*.
 ///
-/// It will return an `Err::Error((_, ErrorKind::TakeWhileMN))` if the pattern wasn't met
+/// It will return an `Err::Error((_, ErrorKind::TakeWhileMN))` if the pattern wasn't met.
 /// # Streaming Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(1))`  if the pattern reaches the end of the input or is too short.
 ///
@@ -323,14 +323,14 @@ where
   }
 }
 
-/// Returns the longest input slice (if any) till a predicate is met
+/// Returns the longest input slice (if any) till a predicate is met.
 ///
 /// The parser will return the longest slice till the given predicate *(a function that
-/// takes the input and returns a bool)*
+/// takes the input and returns a bool)*.
 ///
 /// # Streaming Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` if the match reaches the
-/// end of input or if there was not match
+/// end of input or if there was not match.
 ///
 /// # Example
 /// ```rust
@@ -357,14 +357,14 @@ where
   move |i: Input| i.split_at_position(|c| cond(c))
 }
 
-/// Returns the longest (atleast 1) input slice till a predicate is met
+/// Returns the longest (at least 1) input slice till a predicate is met.
 ///
 /// The parser will return the longest slice till the given predicate *(a function that
-/// takes the input and returns a bool)*
+/// takes the input and returns a bool)*.
 ///
 /// # Streaming Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` if the match reaches the
-/// end of input or if there was not match
+/// end of input or if there was not match.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -393,11 +393,11 @@ where
   }
 }
 
-/// Returns an input slice containing the first N input elements (Input[..N])
+/// Returns an input slice containing the first N input elements (Input[..N]).
 ///
 /// # Streaming Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(N))` where N is the
-/// argument if the input is less than the length provided
+/// argument if the input is less than the length provided.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -429,11 +429,11 @@ where
 
 /// Returns the longest input slice till it matches the pattern.
 ///
-/// It doesn't consume the pattern
+/// It doesn't consume the pattern.
 ///
 /// # Streaming Specific
 /// *Streaming version* will return a `Err::Incomplete(Needed::new(N))` if the input doesn't
-/// contain the pattern or if the input is smaller than the pattern
+/// contain the pattern or if the input is smaller than the pattern.
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -469,10 +469,9 @@ where
 
 /// Matches a byte string with escaped characters.
 ///
-/// * The first argument matches the normal characters (it must not accept the control character),
-/// * the second argument is the control character (like `\` in most languages),
-/// * the third argument matches the escaped characters
-///
+/// * The first argument matches the normal characters (it must not accept the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -579,9 +578,9 @@ where
 
 /// Matches a byte string with escaped characters.
 ///
-/// * The first argument matches the normal characters (it must not match the control character),
-/// * the second argument is the control character (like `\` in most languages),
-/// * the third argument matches the escaped characters and transforms them.
+/// * The first argument matches the normal characters (it must not match the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters and transforms them
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///

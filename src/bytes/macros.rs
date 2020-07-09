@@ -3,10 +3,9 @@
 #[allow(unused_variables)]
 
 /// `tag!(&[T]: nom::AsBytes) => &[T] -> IResult<&[T], &[T]>`
-/// declares a byte array as a suite to recognize
+/// declares a byte array as a suite to recognize.
 ///
-/// consumes the recognized characters
-///
+/// Consumes the recognized characters.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -24,10 +23,9 @@ macro_rules! tag (
 );
 
 /// `tag_no_case!(&[T]) => &[T] -> IResult<&[T], &[T]>`
-/// declares a case insensitive ascii string as a suite to recognize
+/// declares a case insensitive ascii string as a suite to recognize.
 ///
-/// consumes the recognized characters
-///
+/// Consumes the recognized characters.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -46,8 +44,7 @@ macro_rules! tag_no_case (
 );
 
 /// `is_not!(&[T:AsBytes]) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest list of bytes that do not appear in the provided array
-///
+/// returns the longest list of bytes that do not appear in the provided array.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -66,8 +63,7 @@ macro_rules! is_not (
 );
 
 /// `is_a!(&[T]) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest list of bytes that appear in the provided array
-///
+/// returns the longest list of bytes that appear in the provided array.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -92,10 +88,9 @@ macro_rules! is_a (
 /// U: AsChar`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument matches the normal characters (it must not accept the control character),
-/// the second argument is the control character (like `\` in most languages),
-/// the third argument matches the escaped characters
-///
+/// * The first argument matches the normal characters (it must not accept the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -133,12 +128,11 @@ macro_rules! escaped (
 /// `escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>>`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument matches the normal characters (it must not match the control character),
-/// the second argument is the control character (like `\` in most languages),
-/// the third argument matches the escaped characters and transforms them.
+/// * The first argument matches the normal characters (it must not match the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters and transforms them
 ///
-/// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
-///
+/// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character).
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -192,7 +186,6 @@ macro_rules! escaped_transform (
 /// returns the longest list of bytes until the provided function fails.
 ///
 /// The argument is either a function `T -> bool` or a macro returning a `bool`.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -218,8 +211,7 @@ macro_rules! take_while (
 /// `take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest (non empty) list of bytes until the provided function fails.
 ///
-/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`
-///
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -247,10 +239,9 @@ macro_rules! take_while1 (
 
 /// `take_while_m_n!(m: usize, n: usize, T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns a list of bytes or characters for which the provided function returns true.
-/// the returned list's size will be at least m, and at most n
+/// The returned list's size will be at least m, and at most n.
 ///
 /// The argument is either a function `T -> bool` or a macro returning a `bool`.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -274,10 +265,9 @@ macro_rules! take_while_m_n (
 );
 
 /// `take_till!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest list of bytes until the provided function succeeds
+/// returns the longest list of bytes until the provided function succeeds.
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool`.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -302,7 +292,7 @@ macro_rules! take_till (
 );
 
 /// `take_till1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest non empty list of bytes until the provided function succeeds
+/// returns the longest non empty list of bytes until the provided function succeeds.
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool`.
 ///
@@ -332,8 +322,7 @@ macro_rules! take_till1 (
 );
 
 /// `take!(nb) => &[T] -> IResult<&[T], &[T]>`
-/// generates a parser consuming the specified number of bytes
-///
+/// generates a parser consuming the specified number of bytes.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -356,8 +345,7 @@ macro_rules! take (
 );
 
 /// `take_str!(nb) => &[T] -> IResult<&[T], &str>`
-/// same as take! but returning a &str
-///
+/// same as `take!` but returning a `&str`.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -384,7 +372,6 @@ macro_rules! take_str (
 /// consumes data until it finds the specified tag.
 ///
 /// The remainder still contains the tag.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -403,10 +390,9 @@ macro_rules! take_until (
 );
 
 /// `take_until1!(tag) => &[T] -> IResult<&[T], &[T]>`
-/// consumes data (at least one byte) until it finds the specified tag
+/// consumes data (at least one byte) until it finds the specified tag.
 ///
 /// The remainder still contains the tag.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
