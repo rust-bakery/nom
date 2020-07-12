@@ -453,6 +453,16 @@ where
 /// It doesn't consume the input to the parser. It will return `Err(Err::Error((_, ErrorKind::TakeUntilParserMatches)))`
 /// if the pattern wasn't met
 ///
+/// The performance of this parser depends HEAVILY on the inner parser
+/// failing early. For each step on the input, this will run the inner
+/// parser against the remaining input, so if the inner parser does
+/// not fail fast then you will end up re-parsing the remaining input
+/// repeatedly.
+///
+/// If you are looking to match until a string
+/// (`take_until_parser_matches(tag("foo"))`) it would be faster to
+/// use `take_until("foo")`.
+///
 /// # Simple Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -524,6 +534,16 @@ where
 ///
 /// It will return `Err(Err::Error((_, ErrorKind::TakeUntilParserMatches)))`
 /// if the pattern wasn't met
+///
+/// The performance of this parser depends HEAVILY on the inner parser
+/// failing early. For each step on the input, this will run the inner
+/// parser against the remaining input, so if the inner parser does
+/// not fail fast then you will end up re-parsing the remaining input
+/// repeatedly.
+///
+/// If you are looking to match until a string
+/// (`take_until_parser_matches_and_consume(tag("foo"))`) it would be faster to
+/// use `terminated(take_until("foo"), tag("foo"))`.
 ///
 /// # Example
 /// ```rust
