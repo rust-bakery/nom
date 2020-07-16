@@ -638,9 +638,9 @@ where
 
 /// if the child parser was successful, return the consumed input with the output
 /// as a tuple. Functions similarly to [recognize](fn.recognize.html) except it
-/// returns the parser output aswell.
+/// returns the parser output as well.
 ///
-/// This can be useful expecially in cases where the output is not the same type
+/// This can be useful especially in cases where the output is not the same type
 /// as the input, or the input is a user defined type.
 ///
 /// Returned tuple is of the format `(consumed input, produced output)`.
@@ -648,15 +648,30 @@ where
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
-/// use nom::combinator::{consumed, value};
+/// use nom::combinator::{consumed, value, recognize, map};
 /// use nom::character::complete::{char, alpha1};
+/// use nom::bytes::complete::tag;
 /// use nom::sequence::separated_pair;
+///
+/// fn inner_parser(input: &str) -> IResult<&str, bool> {
+///     value(true, tag("1234"))(input)
+/// }
+///
 /// # fn main() {
 ///
-/// let mut parser = consumed(value(true, separated_pair(alpha1, char(','), alpha1)));
+/// let mut consumed_parser = consumed(value(true, separated_pair(alpha1, char(','), alpha1)));
 ///
-/// assert_eq!(parser("abcd,efgh1"), Ok(("1", ("abcd,efgh", true))));
-/// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
+/// assert_eq!(consumed_parser("abcd,efgh1"), Ok(("1", ("abcd,efgh", true))));
+/// assert_eq!(consumed_parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
+///
+///
+/// // the first output (representing the consumed input)
+/// // should be the same as that of the `recognize` parser.
+/// let mut recognize_parser = recognize(inner_parser);
+/// let mut consumed_parser = map(consumed(inner_parser), |(consumed, output)| consumed);
+///
+/// assert_eq!(recognize_parser("1234"), consumed_parser("1234"));
+/// assert_eq!(recognize_parser("abcd"), consumed_parser("abcd"));
 /// # }
 /// ```
 pub fn consumed<I, O, F, E>(mut parser: F) -> impl FnMut(I) -> IResult<I, (I, O), E>
