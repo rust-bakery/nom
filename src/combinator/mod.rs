@@ -782,11 +782,8 @@ enum State<E> {
 /// assert_eq!(sign("10"), Ok(("10", 1)));
 /// # }
 /// ```
-pub fn success<I: Clone + Slice<RangeTo<usize>>, O: Clone, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E>
-{
-  move |input: I| {
-    Ok((input, val.clone()))
-  }
+pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E> {
+  move |input: I| Ok((input, val.clone()))
 }
 
 #[cfg(test)]
