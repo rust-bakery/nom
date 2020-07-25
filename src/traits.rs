@@ -1,8 +1,7 @@
 //! Traits input types have to implement to work with nom combinators
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::iter::Enumerate;
-use crate::lib::std::iter::Map;
+use crate::lib::std::iter::{Copied, Enumerate};
 use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use crate::lib::std::slice::Iter;
 use crate::lib::std::str::from_utf8;
@@ -97,7 +96,7 @@ pub trait AsBytes {
 impl<'a> AsBytes for &'a str {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    <str as AsBytes>::as_bytes(self)
+    (*self).as_bytes()
   }
 }
 
@@ -334,14 +333,10 @@ pub trait InputTake: Sized {
   fn take_split(&self, count: usize) -> (Self, Self);
 }
 
-fn star(r_u8: &u8) -> u8 {
-  *r_u8
-}
-
 impl<'a> InputIter for &'a [u8] {
   type Item = u8;
   type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
+  type IterElem = Copied<Iter<'a, u8>>;
 
   #[inline]
   fn iter_indices(&self) -> Self::Iter {
@@ -349,7 +344,7 @@ impl<'a> InputIter for &'a [u8] {
   }
   #[inline]
   fn iter_elements(&self) -> Self::IterElem {
-    self.iter().map(star)
+    self.iter().copied()
   }
   #[inline]
   fn position<P>(&self, predicate: P) -> Option<usize>
@@ -716,6 +711,13 @@ pub trait Compare<T> {
   fn compare_no_case(&self, t: T) -> CompareResult;
 }
 
+fn lowercase_byte(c: u8) -> u8 {
+  match c {
+    b'A'..=b'Z' => c - b'A' + b'a',
+    _ => c,
+  }
+}
+
 impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
   #[inline(always)]
   fn compare(&self, t: &'b [u8]) -> CompareResult {
@@ -751,21 +753,13 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
 
   #[inline(always)]
   fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
-    let len = self.len();
-    let blen = t.len();
-    let m = if len < blen { len } else { blen };
-    let reduced = &self[..m];
-    let other = &t[..m];
-
-    if !reduced.iter().zip(other).all(|(a, b)| match (*a, *b) {
-      (0..=64, 0..=64) | (91..=96, 91..=96) | (123..=255, 123..=255) => a == b,
-      (65..=90, 65..=90) | (97..=122, 97..=122) | (65..=90, 97..=122) | (97..=122, 65..=90) => {
-        *a | 0b00_10_00_00 == *b | 0b00_10_00_00
-      }
-      _ => false,
-    }) {
+    if self
+      .iter()
+      .zip(t)
+      .any(|(a, b)| lowercase_byte(*a) != lowercase_byte(*b))
+    {
       CompareResult::Error
-    } else if m < blen {
+    } else if self.len() < t.len() {
       CompareResult::Incomplete
     } else {
       CompareResult::Ok
@@ -799,25 +793,13 @@ impl<
 
   #[inline(always)]
   fn compare_no_case(&self, t: O) -> CompareResult {
-    let len = self.input_len();
-    let blen = t.input_len();
-    let m = if len < blen { len } else { blen };
-    let reduced = self.take(m);
-    let other = t.take(m);
-
-    if !reduced
+    if self
       .iter_elements()
-      .zip(other.iter_elements())
-      .all(|(a, b)| match (a, b) {
-        (0..=64, 0..=64) | (91..=96, 91..=96) | (123..=255, 123..=255) => a == b,
-        (65..=90, 65..=90) | (97..=122, 97..=122) | (65..=90, 97..=122) | (97..=122, 65..=90) => {
-          a | 0b00_10_00_00 == b | 0b00_10_00_00
-        }
-        _ => false,
-      })
+      .zip(t.iter_elements())
+      .any(|(a, b)| lowercase_byte(a) != lowercase_byte(b))
     {
       CompareResult::Error
-    } else if m < blen {
+    } else if self.input_len() < t.input_len() {
       CompareResult::Incomplete
     } else {
       CompareResult::Ok
@@ -839,18 +821,7 @@ impl<'a, 'b> Compare<&'b str> for &'a [u8] {
 impl<'a, 'b> Compare<&'b str> for &'a str {
   #[inline(always)]
   fn compare(&self, t: &'b str) -> CompareResult {
-    let pos = self.chars().zip(t.chars()).position(|(a, b)| a != b);
-
-    match pos {
-      Some(_) => CompareResult::Error,
-      None => {
-        if self.len() >= t.len() {
-          CompareResult::Ok
-        } else {
-          CompareResult::Incomplete
-        }
-      }
-    }
+    self.as_bytes().compare(t.as_bytes())
   }
 
   //FIXME: this version is too simple and does not use the current locale
@@ -859,7 +830,7 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
     let pos = self
       .chars()
       .zip(t.chars())
-      .position(|(a, b)| a.to_lowercase().zip(b.to_lowercase()).any(|(a, b)| a != b));
+      .position(|(a, b)| a.to_lowercase().ne(b.to_lowercase()));
 
     match pos {
       Some(_) => CompareResult::Error,
@@ -894,7 +865,7 @@ impl<'a> FindToken<u8> for &'a str {
 
 impl<'a, 'b> FindToken<&'a u8> for &'b [u8] {
   fn find_token(&self, token: &u8) -> bool {
-    memchr::memchr(*token, self).is_some()
+    self.find_token(*token)
   }
 }
 
@@ -906,23 +877,13 @@ impl<'a, 'b> FindToken<&'a u8> for &'b str {
 
 impl<'a> FindToken<char> for &'a [u8] {
   fn find_token(&self, token: char) -> bool {
-    for i in self.iter() {
-      if token as u8 == *i {
-        return true;
-      }
-    }
-    false
+    self.iter().any(|i| *i == token as u8)
   }
 }
 
 impl<'a> FindToken<char> for &'a str {
   fn find_token(&self, token: char) -> bool {
-    for i in self.chars() {
-      if token == i {
-        return true;
-      }
-    }
-    false
+    self.chars().any(|i| i == token)
   }
 }
 
@@ -934,38 +895,35 @@ pub trait FindSubstring<T> {
 
 impl<'a, 'b> FindSubstring<&'b [u8]> for &'a [u8] {
   fn find_substring(&self, substr: &'b [u8]) -> Option<usize> {
-    let substr_len = substr.len();
+    if substr.len() > self.len() {
+      return None;
+    }
 
-    if substr_len == 0 {
+    let (&substr_first, substr_rest) = match substr.split_first() {
+      Some(split) => split,
       // an empty substring is found at position 0
       // This matches the behavior of str.find("").
-      Some(0)
-    } else if substr_len == 1 {
-      memchr::memchr(substr[0], self)
-    } else if substr_len > self.len() {
-      None
-    } else {
-      let max = self.len() - substr_len;
-      let mut offset = 0;
-      let mut haystack = &self[..];
+      None => return Some(0),
+    };
 
-      while let Some(position) = memchr::memchr(substr[0], haystack) {
-        offset += position;
+    if substr_rest.is_empty() {
+      return memchr::memchr(substr_first, self);
+    }
 
-        if offset > max {
-          return None;
-        }
+    let mut offset = 0;
+    let haystack = &self[..self.len() - substr_rest.len()];
 
-        if &haystack[position..position + substr_len] == substr {
-          return Some(offset);
-        }
-
-        haystack = &haystack[position + 1..];
-        offset += 1;
+    while let Some(position) = memchr::memchr(substr_first, &haystack[offset..]) {
+      offset += position;
+      let next_offset = offset + 1;
+      if &self[next_offset..][..substr_rest.len()] == substr_rest {
+        return Some(offset);
       }
 
-      None
+      offset = next_offset;
     }
+
+    None
   }
 }
 
@@ -1070,7 +1028,7 @@ macro_rules! array_impls {
       impl<'a> InputIter for &'a [u8; $N] {
         type Item = u8;
         type Iter = Enumerate<Self::IterElem>;
-        type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
+        type IterElem = Copied<Iter<'a, u8>>;
 
         fn iter_indices(&self) -> Self::Iter {
           (&self[..]).iter_indices()
@@ -1122,7 +1080,7 @@ macro_rules! array_impls {
 
       impl<'a> FindToken<&'a u8> for [u8; $N] {
         fn find_token(&self, token: &u8) -> bool {
-          memchr::memchr(*token, &self[..]).is_some()
+          self.find_token(*token)
         }
       }
     )+
@@ -1179,7 +1137,7 @@ impl ExtendInto for &[u8] {
   }
   #[inline]
   fn extend_into(&self, acc: &mut Vec<u8>) {
-    acc.extend(self.iter().cloned());
+    acc.extend_from_slice(self);
   }
 }
 
