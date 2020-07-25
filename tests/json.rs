@@ -1,98 +1,215 @@
 #![cfg(feature = "alloc")]
-//#![feature(trace_macros)]
-
-#[macro_use]
 extern crate nom;
 
-use nom::{character::is_alphanumeric, number::complete::recognize_float};
+use nom::{
+  branch::alt,
+  bytes::complete::{tag, take},
+  character::complete::{anychar, char, multispace0, none_of},
+  combinator::{map, map_res, value},
+  error::ParseError,
+  multi::{fold_many0, separated_list0},
+  number::complete::double,
+  sequence::{delimited, preceded, separated_pair},
+  IResult, Parser,
+};
 
 use std::collections::HashMap;
-use std::str;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum JsonValue {
+  Null,
+  Bool(bool),
   Str(String),
-  Num(f32),
+  Num(f64),
   Array(Vec<JsonValue>),
   Object(HashMap<String, JsonValue>),
 }
 
-named!(float<f32>, flat_map!(recognize_float, parse_to!(f32)));
+fn boolean(input: &str) -> IResult<&str, bool> {
+  alt((value(false, tag("false")), value(true, tag("true"))))(input)
+}
 
-//FIXME: verify how json strings are formatted
-named!(
-  string<&str>,
-  delimited!(
-    char!('"'),
-    //map_res!(escaped!(call!(alphanumeric), '\\', is_a!("\"n\\")), str::from_utf8),
-    map_res!(
-      escaped!(take_while1!(is_alphanumeric), '\\', one_of!("\"n\\")),
-      str::from_utf8
+fn character(input: &str) -> IResult<&str, char> {
+  let (input, c) = none_of("\"")(input)?;
+  if c == '\\' {
+    alt((
+      map_res(anychar, |c| {
+        Ok(match c {
+          '"' | '\\' | '/' => c,
+          'b' => '\x08',
+          'f' => '\x0C',
+          'n' => '\n',
+          'r' => '\r',
+          't' => '\t',
+          _ => return Err(()),
+        })
+      }),
+      map(
+        map_res(preceded(char('u'), take(4usize)), |s| {
+          u16::from_str_radix(s, 16)
+        }),
+        |c| unsafe { std::char::from_u32_unchecked(c as u32) },
+      ),
+    ))(input)
+  } else {
+    Ok((input, c))
+  }
+}
+
+fn string(input: &str) -> IResult<&str, String> {
+  delimited(
+    char('"'),
+    fold_many0(character, String::new(), |mut string, c| {
+      string.push(c);
+      string
+    }),
+    char('"'),
+  )(input)
+}
+
+fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, O, E>>(f: F) -> impl Parser<&'a str, O, E> {
+  delimited(multispace0, f, multispace0)
+}
+
+fn array(input: &str) -> IResult<&str, Vec<JsonValue>> {
+  delimited(
+    char('['),
+    ws(separated_list0(ws(char(',')), json_value)),
+    char(']'),
+  )(input)
+}
+
+fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
+  map(
+    delimited(
+      char('{'),
+      ws(separated_list0(
+        ws(char(',')),
+        separated_pair(string, ws(char(':')), json_value),
+      )),
+      char('}'),
     ),
-    char!('"')
-  )
-);
+    |key_values| key_values.into_iter().collect(),
+  )(input)
+}
 
-named!(
-  array<Vec<JsonValue>>,
-  delimited!(
-    char!('['),
-    separated_list0!(char!(','), value),
-    char!(']')
-  )
-);
+fn json_value(input: &str) -> IResult<&str, JsonValue> {
+  use JsonValue::*;
 
-named!(
-  key_value<(&str, JsonValue)>,
-  separated_pair!(string, char!(':'), value)
-);
+  alt((
+    value(Null, tag("null")),
+    map(boolean, Bool),
+    map(string, Str),
+    map(double, Num),
+    map(array, Array),
+    map(object, Object),
+  ))(input)
+}
 
-named!(
-  hash<HashMap<String, JsonValue>>,
-  map!(
-    delimited!(
-      char!('{'),
-      separated_list0!(char!(','), key_value),
-      char!('}')
-    ),
-    |tuple_vec| {
-      let mut h: HashMap<String, JsonValue> = HashMap::new();
-      for (k, v) in tuple_vec {
-        h.insert(String::from(k), v);
-      }
-      h
-    }
-  )
-);
+fn json(input: &str) -> IResult<&str, JsonValue> {
+  ws(json_value).parse(input)
+}
 
-named!(
-  value<JsonValue>,
-  alt!(
-    hash   => { |h|   JsonValue::Object(h)            } |
-    array  => { |v|   JsonValue::Array(v)             } |
-    string => { |s|   JsonValue::Str(String::from(s)) } |
-    float  => { |num| JsonValue::Num(num)             }
-  )
-);
+#[test]
+fn json_string() {
+  assert_eq!(string("\"\""), Ok(("", "".to_string())));
+  assert_eq!(string("\"abc\""), Ok(("", "abc".to_string())));
+  assert_eq!(
+    string("\"abc\\\"\\\\\\/\\b\\f\\n\\r\\t\\u0001\\u2014\u{2014}def\""),
+    Ok(("", "abc\"\\/\x08\x0C\n\r\t\x01——def".to_string())),
+  );
+
+  assert!(string("\"").is_err());
+  assert!(string("\"abc").is_err());
+  assert!(string("\"\\\"").is_err());
+  assert!(string("\"\\u123\"").is_err());
+}
 
 #[test]
 fn json_object() {
-  let input = r#"{"a":42,"b":"x"}\0"#;
+  use JsonValue::*;
 
-  let mut expected_map = HashMap::new();
-  expected_map.insert(String::from("a"), JsonValue::Num(42f32));
-  expected_map.insert(String::from("b"), JsonValue::Str(String::from("x")));
-  let expected = JsonValue::Object(expected_map);
+  let input = r#"{"a":42,"b":"x"}"#;
 
-  assert_eq!(expected, value(input.as_bytes()).unwrap().1);
+  let expected = Object(
+    vec![
+      ("a".to_string(), Num(42.0)),
+      ("b".to_string(), Str("x".to_string())),
+    ]
+    .into_iter()
+    .collect(),
+  );
+
+  assert_eq!(json(input), Ok(("", expected)));
 }
 
 #[test]
 fn json_array() {
-  let input = r#"[42,"x"]\0"#;
+  use JsonValue::*;
 
-  let expected_vec = vec![JsonValue::Num(42f32), JsonValue::Str(String::from("x"))];
-  let expected = JsonValue::Array(expected_vec);
+  let input = r#"[42,"x"]"#;
 
-  assert_eq!(expected, value(input.as_bytes()).unwrap().1);
+  let expected = Array(vec![Num(42.0), Str("x".to_string())]);
+
+  assert_eq!(json(input), Ok(("", expected)));
+}
+
+#[test]
+fn json_whitespace() {
+  use JsonValue::*;
+
+  let input = r#"
+  {
+    "null" : null,
+    "true"  :true ,
+    "false":  false  ,
+    "number" : 123e4 ,
+    "string" : " abc 123 " ,
+    "array" : [ false , 1 , "two" ] ,
+    "object" : { "a" : 1.0 , "b" : "c" } ,
+    "empty_array" : [  ] ,
+    "empty_object" : {   }
+  }
+  "#;
+
+  assert_eq!(
+    json(input),
+    Ok((
+      "",
+      Object(
+        vec![
+          ("null".to_string(), Null),
+          ("true".to_string(), Bool(true)),
+          ("false".to_string(), Bool(false)),
+          ("number".to_string(), Num(123e4)),
+          ("string".to_string(), Str(" abc 123 ".to_string())),
+          (
+            "array".to_string(),
+            Array(vec![Bool(false), Num(1.0), Str("two".to_string())])
+          ),
+          (
+            "object".to_string(),
+            Object(
+              vec![
+                ("a".to_string(), Num(1.0)),
+                ("b".to_string(), Str("c".to_string())),
+              ]
+              .into_iter()
+              .collect()
+            )
+          ),
+          (
+            "empty_array".to_string(),
+            Array(vec![]),
+          ),
+          (
+            "empty_object".to_string(),
+            Object(HashMap::new()),
+          ),
+        ]
+        .into_iter()
+        .collect()
+      )
+    ))
+  );
 }
