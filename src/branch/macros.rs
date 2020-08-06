@@ -566,6 +566,7 @@ macro_rules! succ (
   (17, $submac:ident ! ($($rest:tt)*)) => ($submac!(18, $($rest)*));
   (18, $submac:ident ! ($($rest:tt)*)) => ($submac!(19, $($rest)*));
   (19, $submac:ident ! ($($rest:tt)*)) => ($submac!(20, $($rest)*));
+  (20, $submac:ident ! ($($rest:tt)*)) => ($submac!(21, $($rest)*));
 );
 
 #[doc(hidden)]
