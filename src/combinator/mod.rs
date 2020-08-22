@@ -678,14 +678,14 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-/// let parser = into(alpha1);
+/// let mut parser = into(alpha1);
 ///
 /// // the parser converts the &str output of the child parser into a Vec<u8>
 /// let bytes: IResult<&str, Vec<u8>> = parser("abcd");
 /// assert_eq!(bytes, Ok(("", vec![97, 98, 99, 100])));
 /// # }
 /// ```
-pub fn into<I, O1, O2, E, F>(parser: F) -> impl Fn(I) -> IResult<I, O2, E>
+pub fn into<I, O1, O2, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   O1: Into<O2>,
   E: ParseError<I>,
@@ -977,7 +977,7 @@ mod tests {
     use crate::bytes::complete::take;
     use crate::{error::ParseError, Err};
 
-    let parser = into(take(3u8));
+    let mut parser = into(take(3u8));
     let result: IResult<&[u8], Vec<u8>> = parser(&b"abcdefg"[..]);
 
     assert_eq!(result, Ok((&b"defg"[..], vec![97, 98, 99])));
