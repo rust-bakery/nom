@@ -248,11 +248,11 @@ where
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::bytes::complete::take;
-/// use nom::number::complete::be_u8;
+/// use nom::number::complete::u8;
 /// use nom::combinator::flat_map;
 /// # fn main() {
 ///
-/// let mut parse = flat_map(be_u8, take);
+/// let mut parse = flat_map(u8, take);
 ///
 /// assert_eq!(parse(&[2, 0, 1, 2][..]), Ok((&[2][..], &[0, 1][..])));
 /// assert_eq!(parse(&[4, 0, 1, 2][..]), Err(Err::Error((&[0, 1, 2][..], ErrorKind::Eof))));
@@ -817,7 +817,7 @@ mod tests {
   use crate::bytes::complete::take;
   use crate::error::ParseError;
   use crate::internal::{Err, IResult, Needed};
-  use crate::number::complete::be_u8;
+  use crate::number::complete::u8;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -898,7 +898,7 @@ mod tests {
   fn test_flat_map() {
     let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
     assert_parse!(
-      flat_map(be_u8, take)(input),
+      flat_map(u8, take)(input),
       Ok((&[103, 104][..], &[100, 101, 102][..]))
     );
   }
@@ -907,11 +907,11 @@ mod tests {
   fn test_map_opt() {
     let input: &[u8] = &[50][..];
     assert_parse!(
-      map_opt(be_u8, |u| if u < 20 { Some(u) } else { None })(input),
+      map_opt(u8, |u| if u < 20 { Some(u) } else { None })(input),
       Err(Err::Error((&[50][..], ErrorKind::MapOpt)))
     );
     assert_parse!(
-      map_opt(be_u8, |u| if u > 20 { Some(u) } else { None })(input),
+      map_opt(u8, |u| if u > 20 { Some(u) } else { None })(input),
       Ok((&[][..], 50))
     );
   }

@@ -227,6 +227,7 @@ where
 #[deprecated(note = "Endianness does not apply to 1 byte numbers. \
 Please use nom::number::complete::i8 instead.")]
 #[inline]
+#[allow(deprecated)]
 pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -571,11 +572,12 @@ where
 #[deprecated(note = "Endianness does not apply to 1 byte numbers. \
 Please use nom::number::complete::i8 instead.")]
 #[inline]
+#[allow(deprecated)]
 pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u8, |x| x as i8)
+  map!(input, be_u8, |x| x as i8)
 }
 
 /// Recognizes a little endian signed 2 bytes integer.
@@ -1481,32 +1483,33 @@ mod tests {
 
   #[test]
   fn i8_tests() {
-    assert_parse!(i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_parse!(i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_parse!(i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_parse!(i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse!(i8(&[0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(i8(&[0x7f][..]), Ok((&b""[..], 127)));
+    assert_parse!(i8(&[0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(i8(&[0x80][..]), Ok((&b""[..], -128)));
   }
-  
+
   #[test]
+  #[allow(deprecated)]
   fn be_i8_tests() {
-    assert_parse!(be_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_parse!(be_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_parse!(be_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse!(be_i8(&[0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_i8(&[0x7f][..]), Ok((&b""[..], 127)));
+    assert_parse!(be_i8(&[0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(be_i8(&[0x80][..]), Ok((&b""[..], -128)));
   }
 
   #[test]
   fn be_i16_tests() {
-    assert_parse!(be_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_i16(&[0x7f, 0xff]), Ok((&b""[..], 32_767_i16)));
-    assert_parse!(be_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(be_i16(&[0x80, 0x00]), Ok((&b""[..], -32_768_i16)));
+    assert_parse!(be_i16(&[0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_i16(&[0x7f, 0xff][..]), Ok((&b""[..], 32_767_i16)));
+    assert_parse!(be_i16(&[0xff, 0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(be_i16(&[0x80, 0x00][..]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
   fn be_u24_tests() {
-    assert_parse!(be_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_u24(&[0x00, 0xFF, 0xFF]), Ok((&b""[..], 65_535_u32)));
+    assert_parse!(be_u24(&[0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_u24(&[0x00, 0xFF, 0xFF][..]), Ok((&b""[..], 65_535_u32)));
     assert_parse!(
       be_u24(&[0x12, 0x34, 0x56][..]),
       Ok((&b""[..], 1_193_046_u32))
@@ -1515,8 +1518,8 @@ mod tests {
 
   #[test]
   fn be_i24_tests() {
-    assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_parse!(be_i24(&[0xFF, 0x00, 0x00]), Ok((&b""[..], -65_536_i32)));
+    assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF][..]), Ok((&b""[..], -1_i32)));
+    assert_parse!(be_i24(&[0xFF, 0x00, 0x00][..]), Ok((&b""[..], -65_536_i32)));
     assert_parse!(
       be_i24(&[0xED, 0xCB, 0xAA][..]),
       Ok((&b""[..], -1_193_046_i32))
@@ -1524,7 +1527,7 @@ mod tests {
 
   #[test]
   fn be_i32_tests() {
-    assert_parse!(be_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(be_i32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(
       be_i32(&[0x7f, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], 2_147_483_647_i32))
@@ -1604,6 +1607,7 @@ mod tests {
   }
 
   #[test]
+  #[allow(deprecated)]
   fn le_i8_tests() {
     assert_parse!(le_i8(&[0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(le_i8(&[0x7f][..]), Ok((&b""[..], 127)));
