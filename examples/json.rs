@@ -11,8 +11,8 @@ use nom::{
   bytes::complete::{escaped, tag, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
   combinator::{cut, map, opt, value},
-  error::{context, convert_error, ErrorKind, ParseError, VerboseError, ContextError},
-  multi::separated_list,
+  error::{context, convert_error, ContextError, ErrorKind, ParseError, VerboseError},
+  multi::separated_list0,
   number::complete::double,
   sequence::{delimited, preceded, separated_pair, terminated},
   Err, IResult,
@@ -94,40 +94,61 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool,
 /// parsing the string
 /// - `context` lets you add a static string to provide more information in the
 /// error chain (to indicate which parser had an error)
-fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-  context("string", preceded(char('\"'), cut(terminated(parse_str, char('\"')))))(i)
+fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  i: &'a str,
+) -> IResult<&'a str, &'a str, E> {
+  context(
+    "string",
+    preceded(char('\"'), cut(terminated(parse_str, char('\"')))),
+  )(i)
 }
 
-/// some combinators, like `separated_list` or `many0`, will call a parser repeatedly,
+/// some combinators, like `separated_list0` or `many0`, will call a parser repeatedly,
 /// accumulating results in a `Vec`, until it encounters an error.
 /// If you want more control on the parser application, check out the `iterator`
 /// combinator (cf `examples/iterator.rs`)
-fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<JsonValue>, E> {
+fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  i: &'a str,
+) -> IResult<&'a str, Vec<JsonValue>, E> {
   context(
     "array",
     preceded(
       char('['),
       cut(terminated(
-        separated_list(preceded(sp, char(',')), json_value),
+        separated_list0(preceded(sp, char(',')), json_value),
         preceded(sp, char(']')),
       )),
     ),
   )(i)
 }
 
-fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, (&'a str, JsonValue), E> {
-  separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), json_value)(i)
+fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  i: &'a str,
+) -> IResult<&'a str, (&'a str, JsonValue), E> {
+  separated_pair(
+    preceded(sp, string),
+    cut(preceded(sp, char(':'))),
+    json_value,
+  )(i)
 }
 
-fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
+fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  i: &'a str,
+) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
   context(
     "map",
     preceded(
       char('{'),
       cut(terminated(
-        map(separated_list(preceded(sp, char(',')), key_value), |tuple_vec| {
-          tuple_vec.into_iter().map(|(k, v)| (String::from(k), v)).collect()
-        }),
+        map(
+          separated_list0(preceded(sp, char(',')), key_value),
+          |tuple_vec| {
+            tuple_vec
+              .into_iter()
+              .map(|(k, v)| (String::from(k), v))
+              .collect()
+          },
+        ),
         preceded(sp, char('}')),
       )),
     ),
@@ -135,7 +156,9 @@ fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResu
 }
 
 /// here, we apply the space parser before trying to parse a value
-fn json_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
+fn json_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  i: &'a str,
+) -> IResult<&'a str, JsonValue, E> {
   preceded(
     sp,
     alt((
@@ -149,8 +172,14 @@ fn json_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) ->
 }
 
 /// the root element of a JSON parser is either an object or an array
-fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, JsonValue, E> {
-  delimited(sp, alt((map(hash, JsonValue::Object), map(array, JsonValue::Array))), opt(sp))(i)
+fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  i: &'a str,
+) -> IResult<&'a str, JsonValue, E> {
+  delimited(
+    sp,
+    alt((map(hash, JsonValue::Object), map(array, JsonValue::Array))),
+    opt(sp),
+  )(i)
 }
 
 fn main() {
@@ -160,7 +189,10 @@ fn main() {
   }
   } ";
 
-  println!("will try to parse valid JSON data:\n\n**********\n{}\n**********\n", data);
+  println!(
+    "will try to parse valid JSON data:\n\n**********\n{}\n**********\n",
+    data
+  );
 
   // this will print:
   // Ok(
@@ -195,7 +227,10 @@ fn main() {
   //         ),
   //     ),
   // )
-  println!("parsing a valid file:\n{:#?}\n", root::<(&str, ErrorKind)>(data));
+  println!(
+    "parsing a valid file:\n{:#?}\n",
+    root::<(&str, ErrorKind)>(data)
+  );
 
   let data = "  { \"a\"\t: 42,
   \"b\": [ \"x\", \"y\", 12 ] ,
@@ -203,7 +238,10 @@ fn main() {
   }
   } ";
 
-  println!("will try to parse invalid JSON data:\n\n**********\n{}\n**********\n", data);
+  println!(
+    "will try to parse invalid JSON data:\n\n**********\n{}\n**********\n",
+    data
+  );
 
   // here we use `(Input, ErrorKind)` as error type, which is used by default
   // if you don't specify it. It contains the position of the error and some
@@ -278,7 +316,10 @@ fn main() {
       // 2: at line 0, in map:
       //   { "a" : 42,
       //   ^
-      println!("verbose errors - `root::<VerboseError>(data)`:\n{}", convert_error(data, e));
+      println!(
+        "verbose errors - `root::<VerboseError>(data)`:\n{}",
+        convert_error(data, e)
+      );
     }
     _ => {}
   }

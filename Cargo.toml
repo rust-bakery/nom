@@ -1,7 +1,7 @@
 [package]
 
 name = "nom"
-version = "5.1.1"
+version = "6.0.0-alpha1"
 authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
@@ -16,6 +16,7 @@ autoexamples = false
 include = [
   "CHANGELOG.md",
   "LICENSE",
+  "README.md",
   ".gitignore",
   ".travis.yml",
   "Cargo.toml",
@@ -124,6 +125,10 @@ name = "reborrow_fold"
 
 [[test]]
 name = "test1"
+
+[[test]]
+name = "fnmut"
+required-features = ["alloc"]
 
 [[bench]]
 name = "arithmetic"

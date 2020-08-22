@@ -61,7 +61,10 @@ pub mod str {
     E: ParseError<&'a str>,
   {
     move |i| {
-      let v: Vec<_> = re.find_iter(i).map(|m| i.slice(m.start()..m.end())).collect();
+      let v: Vec<_> = re
+        .find_iter(i)
+        .map(|m| i.slice(m.start()..m.end()))
+        .collect();
       if !v.is_empty() {
         let offset = {
           let end = v.last().unwrap();
@@ -208,7 +211,10 @@ pub mod str {
       let re = Regex::new(r"^\d{4}-\d{2}-\d{2}").unwrap();
       let rm = re_match(re);
       assert_parse!(rm("2015-09-07"), Ok(("", "2015-09-07")));
-      assert_eq!(rm("blah"), Err(Err::Error((&"blah"[..], ErrorKind::RegexpMatch))));
+      assert_eq!(
+        rm("blah"),
+        Err(Err::Error((&"blah"[..], ErrorKind::RegexpMatch)))
+      );
       assert_eq!(rm("2015-09-07blah"), Ok(("", "2015-09-07blah")));
     }
 
@@ -217,7 +223,10 @@ pub mod str {
       let re = Regex::new(r"^\d{4}-\d{2}-\d{2}").unwrap();
       let rm = re_find(re);
       assert_parse!(rm("2015-09-07"), Ok(("", "2015-09-07")));
-      assert_eq!(rm("blah"), Err(Err::Error((&"blah"[..], ErrorKind::RegexpFind))));
+      assert_eq!(
+        rm("blah"),
+        Err(Err::Error((&"blah"[..], ErrorKind::RegexpFind)))
+      );
       assert_eq!(rm("2015-09-07blah"), Ok(("blah", "2015-09-07")));
     }
 
@@ -227,7 +236,10 @@ pub mod str {
       let re = Regex::new(r"\d{4}-\d{2}-\d{2}").unwrap();
       let rm = re_matches(re);
       assert_parse!(rm("2015-09-07"), Ok(("", vec!["2015-09-07"])));
-      assert_eq!(rm("blah"), Err(Err::Error((&"blah"[..], ErrorKind::RegexpMatches))));
+      assert_eq!(
+        rm("blah"),
+        Err(Err::Error((&"blah"[..], ErrorKind::RegexpMatches)))
+      );
       assert_eq!(
         rm("aaa2015-09-07blah2015-09-09pouet"),
         Ok(("pouet", vec!["2015-09-07", "2015-09-09"]))
@@ -243,10 +255,16 @@ pub mod str {
         rm("blah nom 0.3.11pouet"),
         Ok(("pouet", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]))
       );
-      assert_eq!(rm("blah"), Err(Err::Error(("blah", ErrorKind::RegexpCapture))));
+      assert_eq!(
+        rm("blah"),
+        Err(Err::Error(("blah", ErrorKind::RegexpCapture)))
+      );
       assert_eq!(
         rm("hello nom 0.3.11 world regex 0.1.41"),
-        Ok((" world regex 0.1.41", vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]))
+        Ok((
+          " world regex 0.1.41",
+          vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]
+        ))
       );
     }
 
@@ -257,9 +275,15 @@ pub mod str {
       let rm = re_captures(re);
       assert_parse!(
         rm("blah nom 0.3.11pouet"),
-        Ok(("pouet", vec![vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]]))
+        Ok((
+          "pouet",
+          vec![vec!["nom 0.3.11", "nom", "0.3.11", "0", "3", "11"]]
+        ))
       );
-      assert_eq!(rm("blah"), Err(Err::Error((&"blah"[..], ErrorKind::RegexpCapture))));
+      assert_eq!(
+        rm("blah"),
+        Err(Err::Error((&"blah"[..], ErrorKind::RegexpCapture)))
+      );
       assert_eq!(
         rm("hello nom 0.3.11 world regex 0.1.41 aaa"),
         Ok((
@@ -333,7 +357,10 @@ pub mod bytes {
     E: ParseError<&'a [u8]>,
   {
     move |i| {
-      let v: Vec<_> = re.find_iter(i).map(|m| i.slice(m.start()..m.end())).collect();
+      let v: Vec<_> = re
+        .find_iter(i)
+        .map(|m| i.slice(m.start()..m.end()))
+        .collect();
       if !v.is_empty() {
         let offset = {
           let end = v.last().unwrap();
@@ -434,7 +461,9 @@ pub mod bytes {
   /// # }
   /// ```
   #[cfg(feature = "regexp")]
-  pub fn re_captures<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<Vec<&'a [u8]>>, E>
+  pub fn re_captures<'a, E>(
+    re: Regex,
+  ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<Vec<&'a [u8]>>, E>
   where
     E: ParseError<&'a [u8]>,
   {
@@ -480,8 +509,14 @@ pub mod bytes {
       let re = Regex::new(r"^\d{4}-\d{2}-\d{2}").unwrap();
       let rm = re_match(re);
       assert_parse!(rm(&b"2015-09-07"[..]), Ok((&b""[..], &b"2015-09-07"[..])));
-      assert_eq!(rm(&b"blah"[..]), Err(Err::Error((&b"blah"[..], ErrorKind::RegexpMatch))));
-      assert_eq!(rm(&b"2015-09-07blah"[..]), Ok((&b""[..], &b"2015-09-07blah"[..])));
+      assert_eq!(
+        rm(&b"blah"[..]),
+        Err(Err::Error((&b"blah"[..], ErrorKind::RegexpMatch)))
+      );
+      assert_eq!(
+        rm(&b"2015-09-07blah"[..]),
+        Ok((&b""[..], &b"2015-09-07blah"[..]))
+      );
     }
 
     #[test]
@@ -489,8 +524,14 @@ pub mod bytes {
       let re = Regex::new(r"^\d{4}-\d{2}-\d{2}").unwrap();
       let rm = re_find(re);
       assert_parse!(rm(&b"2015-09-07"[..]), Ok((&b""[..], &b"2015-09-07"[..])));
-      assert_eq!(rm(&b"blah"[..]), Err(Err::Error((&b"blah"[..], ErrorKind::RegexpFind))));
-      assert_eq!(rm(&b"2015-09-07blah"[..]), Ok((&b"blah"[..], &b"2015-09-07"[..])));
+      assert_eq!(
+        rm(&b"blah"[..]),
+        Err(Err::Error((&b"blah"[..], ErrorKind::RegexpFind)))
+      );
+      assert_eq!(
+        rm(&b"2015-09-07blah"[..]),
+        Ok((&b"blah"[..], &b"2015-09-07"[..]))
+      );
     }
 
     #[cfg(feature = "alloc")]
@@ -498,8 +539,14 @@ pub mod bytes {
     fn re_matches_bytes() {
       let re = Regex::new(r"\d{4}-\d{2}-\d{2}").unwrap();
       let rm = re_matches(re);
-      assert_parse!(rm(&b"2015-09-07"[..]), Ok((&b""[..], vec![&b"2015-09-07"[..]])));
-      assert_eq!(rm(&b"blah"[..]), Err(Err::Error((&b"blah"[..], ErrorKind::RegexpMatches))));
+      assert_parse!(
+        rm(&b"2015-09-07"[..]),
+        Ok((&b""[..], vec![&b"2015-09-07"[..]]))
+      );
+      assert_eq!(
+        rm(&b"blah"[..]),
+        Err(Err::Error((&b"blah"[..], ErrorKind::RegexpMatches)))
+      );
       assert_eq!(
         rm(&b"aaa2015-09-07blah2015-09-09pouet"[..]),
         Ok((&b"pouet"[..], vec![&b"2015-09-07"[..], &b"2015-09-09"[..]]))
@@ -515,15 +562,32 @@ pub mod bytes {
         rm(&b"blah nom 0.3.11pouet"[..]),
         Ok((
           &b"pouet"[..],
-          vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]
+          vec![
+            &b"nom 0.3.11"[..],
+            &b"nom"[..],
+            &b"0.3.11"[..],
+            &b"0"[..],
+            &b"3"[..],
+            &b"11"[..]
+          ]
         ))
       );
-      assert_eq!(rm(&b"blah"[..]), Err(Err::Error((&b"blah"[..], ErrorKind::RegexpCapture))));
+      assert_eq!(
+        rm(&b"blah"[..]),
+        Err(Err::Error((&b"blah"[..], ErrorKind::RegexpCapture)))
+      );
       assert_eq!(
         rm(&b"hello nom 0.3.11 world regex 0.1.41"[..]),
         Ok((
           &b" world regex 0.1.41"[..],
-          vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]]
+          vec![
+            &b"nom 0.3.11"[..],
+            &b"nom"[..],
+            &b"0.3.11"[..],
+            &b"0"[..],
+            &b"3"[..],
+            &b"11"[..]
+          ]
         ))
       );
     }
@@ -548,13 +612,23 @@ pub mod bytes {
         ))
       );
 
-      assert_eq!(rm(&b"blah"[..]), Err(Err::Error((&b"blah"[..], ErrorKind::RegexpCapture))));
+      assert_eq!(
+        rm(&b"blah"[..]),
+        Err(Err::Error((&b"blah"[..], ErrorKind::RegexpCapture)))
+      );
       assert_eq!(
         rm(&b"hello nom 0.3.11 world regex 0.1.41 aaa"[..]),
         Ok((
           &b" aaa"[..],
           vec![
-            vec![&b"nom 0.3.11"[..], &b"nom"[..], &b"0.3.11"[..], &b"0"[..], &b"3"[..], &b"11"[..]],
+            vec![
+              &b"nom 0.3.11"[..],
+              &b"nom"[..],
+              &b"0.3.11"[..],
+              &b"0"[..],
+              &b"3"[..],
+              &b"11"[..]
+            ],
             vec![
               &b"regex 0.1.41"[..],
               &b"regex"[..],

@@ -3,10 +3,9 @@
 #[allow(unused_variables)]
 
 /// `tag!(&[T]: nom::AsBytes) => &[T] -> IResult<&[T], &[T]>`
-/// declares a byte array as a suite to recognize
+/// declares a byte array as a suite to recognize.
 ///
-/// consumes the recognized characters
-///
+/// Consumes the recognized characters.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -24,10 +23,9 @@ macro_rules! tag (
 );
 
 /// `tag_no_case!(&[T]) => &[T] -> IResult<&[T], &[T]>`
-/// declares a case insensitive ascii string as a suite to recognize
+/// declares a case insensitive ascii string as a suite to recognize.
 ///
-/// consumes the recognized characters
-///
+/// Consumes the recognized characters.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -46,8 +44,7 @@ macro_rules! tag_no_case (
 );
 
 /// `is_not!(&[T:AsBytes]) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest list of bytes that do not appear in the provided array
-///
+/// returns the longest list of bytes that do not appear in the provided array.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -66,8 +63,7 @@ macro_rules! is_not (
 );
 
 /// `is_a!(&[T]) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest list of bytes that appear in the provided array
-///
+/// returns the longest list of bytes that appear in the provided array.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -92,10 +88,9 @@ macro_rules! is_a (
 /// U: AsChar`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument matches the normal characters (it must not accept the control character),
-/// the second argument is the control character (like `\` in most languages),
-/// the third argument matches the escaped characters
-///
+/// * The first argument matches the normal characters (it must not accept the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -133,12 +128,11 @@ macro_rules! escaped (
 /// `escaped_transform!(&[T] -> IResult<&[T], &[T]>, T, &[T] -> IResult<&[T], &[T]>) => &[T] -> IResult<&[T], Vec<T>>`
 /// matches a byte string with escaped characters.
 ///
-/// The first argument matches the normal characters (it must not match the control character),
-/// the second argument is the control character (like `\` in most languages),
-/// the third argument matches the escaped characters and transforms them.
+/// * The first argument matches the normal characters (it must not match the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters and transforms them
 ///
-/// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
-///
+/// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character).
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -192,7 +186,6 @@ macro_rules! escaped_transform (
 /// returns the longest list of bytes until the provided function fails.
 ///
 /// The argument is either a function `T -> bool` or a macro returning a `bool`.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -218,8 +211,7 @@ macro_rules! take_while (
 /// `take_while1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns the longest (non empty) list of bytes until the provided function fails.
 ///
-/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`
-///
+/// The argument is either a function `&[T] -> bool` or a macro returning a `bool`.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -247,10 +239,9 @@ macro_rules! take_while1 (
 
 /// `take_while_m_n!(m: usize, n: usize, T -> bool) => &[T] -> IResult<&[T], &[T]>`
 /// returns a list of bytes or characters for which the provided function returns true.
-/// the returned list's size will be at least m, and at most n
+/// The returned list's size will be at least m, and at most n.
 ///
 /// The argument is either a function `T -> bool` or a macro returning a `bool`.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -274,10 +265,9 @@ macro_rules! take_while_m_n (
 );
 
 /// `take_till!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest list of bytes until the provided function succeeds
+/// returns the longest list of bytes until the provided function succeeds.
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool`.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -302,7 +292,7 @@ macro_rules! take_till (
 );
 
 /// `take_till1!(T -> bool) => &[T] -> IResult<&[T], &[T]>`
-/// returns the longest non empty list of bytes until the provided function succeeds
+/// returns the longest non empty list of bytes until the provided function succeeds.
 ///
 /// The argument is either a function `&[T] -> bool` or a macro returning a `bool`.
 ///
@@ -332,8 +322,7 @@ macro_rules! take_till1 (
 );
 
 /// `take!(nb) => &[T] -> IResult<&[T], &[T]>`
-/// generates a parser consuming the specified number of bytes
-///
+/// generates a parser consuming the specified number of bytes.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -356,8 +345,7 @@ macro_rules! take (
 );
 
 /// `take_str!(nb) => &[T] -> IResult<&[T], &str>`
-/// same as take! but returning a &str
-///
+/// same as `take!` but returning a `&str`.
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -384,7 +372,6 @@ macro_rules! take_str (
 /// consumes data until it finds the specified tag.
 ///
 /// The remainder still contains the tag.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -403,10 +390,9 @@ macro_rules! take_until (
 );
 
 /// `take_until1!(tag) => &[T] -> IResult<&[T], &[T]>`
-/// consumes data (at least one byte) until it finds the specified tag
+/// consumes data (at least one byte) until it finds the specified tag.
 ///
 /// The remainder still contains the tag.
-///
 /// # Example
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -449,14 +435,17 @@ macro_rules! take_until1 (
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, Needed, IResult};
+  use crate::character::is_alphabetic;
+  use crate::character::streaming::{
+    alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
+    multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
+  };
+  use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::lib::std::string::String;
   #[cfg(feature = "alloc")]
   use crate::lib::std::vec::Vec;
-  use crate::character::streaming::{alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit, multispace1 as multispace, oct_digit1 as oct_digit, space1 as space};
-  use crate::error::ErrorKind;
-  use crate::character::is_alphabetic;
 
   #[cfg(feature = "alloc")]
   macro_rules! one_of (
@@ -491,7 +480,10 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"cde"[..], &b"b"[..])));
 
     let c = &b"cdef"[..];
-    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(c, ErrorKind::IsA))));
+    assert_eq!(
+      a_or_b(c),
+      Err(Err::Error(error_position!(c, ErrorKind::IsA)))
+    );
 
     let d = &b"bacdef"[..];
     assert_eq!(a_or_b(d), Ok((&b"cdef"[..], &b"ba"[..])));
@@ -508,7 +500,10 @@ mod tests {
     assert_eq!(a_or_b(b), Ok((&b"bde"[..], &b"c"[..])));
 
     let c = &b"abab"[..];
-    assert_eq!(a_or_b(c), Err(Err::Error(error_position!(c, ErrorKind::IsNot))));
+    assert_eq!(
+      a_or_b(c),
+      Err(Err::Error(error_position!(c, ErrorKind::IsNot)))
+    );
 
     let d = &b"cdefba"[..];
     assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
@@ -527,7 +522,13 @@ mod tests {
     assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], &b"\\\"abcd"[..])));
     assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], &b"\\n"[..])));
     assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_position!(&b"AB\\"[..], ErrorKind::Escaped))));
+    assert_eq!(
+      esc(&b"AB\\"[..]),
+      Err(Err::Error(error_position!(
+        &b"AB\\"[..],
+        ErrorKind::Escaped
+      )))
+    );
     assert_eq!(
       esc(&b"AB\\A"[..]),
       Err(Err::Error(error_node_position!(
@@ -550,7 +551,10 @@ mod tests {
     assert_eq!(esc("\\\"abcd;"), Ok((";", "\\\"abcd")));
     assert_eq!(esc("\\n;"), Ok((";", "\\n")));
     assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
-    assert_eq!(esc("AB\\"), Err(Err::Error(error_position!("AB\\", ErrorKind::Escaped))));
+    assert_eq!(
+      esc("AB\\"),
+      Err(Err::Error(error_position!("AB\\", ErrorKind::Escaped)))
+    );
     assert_eq!(
       esc("AB\\A"),
       Err(Err::Error(error_node_position!(
@@ -594,11 +598,26 @@ mod tests {
     );
 
     assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], String::from("abcd"))));
-    assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], String::from("ab\"cd"))));
-    assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], String::from("\"abcd"))));
+    assert_eq!(
+      esc(&b"ab\\\"cd;"[..]),
+      Ok((&b";"[..], String::from("ab\"cd")))
+    );
+    assert_eq!(
+      esc(&b"\\\"abcd;"[..]),
+      Ok((&b";"[..], String::from("\"abcd")))
+    );
     assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], String::from("\n"))));
-    assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], String::from("ab\""))));
-    assert_eq!(esc(&b"AB\\"[..]), Err(Err::Error(error_position!(&b"\\"[..], ErrorKind::EscapedTransform))));
+    assert_eq!(
+      esc(&b"ab\\\"12"[..]),
+      Ok((&b"12"[..], String::from("ab\"")))
+    );
+    assert_eq!(
+      esc(&b"AB\\"[..]),
+      Err(Err::Error(error_position!(
+        &b"\\"[..],
+        ErrorKind::EscapedTransform
+      )))
+    );
     assert_eq!(
       esc(&b"AB\\A"[..]),
       Err(Err::Error(error_node_position!(
@@ -622,8 +641,14 @@ mod tests {
         to_s
       )
     );
-    assert_eq!(esc2(&b"ab&egrave;DEF;"[..]), Ok((&b";"[..], String::from("abèDEF"))));
-    assert_eq!(esc2(&b"ab&egrave;D&agrave;EF;"[..]), Ok((&b";"[..], String::from("abèDàEF"))));
+    assert_eq!(
+      esc2(&b"ab&egrave;DEF;"[..]),
+      Ok((&b";"[..], String::from("abèDEF")))
+    );
+    assert_eq!(
+      esc2(&b"ab&egrave;D&agrave;EF;"[..]),
+      Ok((&b";"[..], String::from("abèDàEF")))
+    );
   }
 
   #[cfg(feature = "std")]
@@ -642,7 +667,13 @@ mod tests {
     assert_eq!(esc("\\\"abcd;"), Ok((";", String::from("\"abcd"))));
     assert_eq!(esc("\\n;"), Ok((";", String::from("\n"))));
     assert_eq!(esc("ab\\\"12"), Ok(("12", String::from("ab\""))));
-    assert_eq!(esc("AB\\"), Err(Err::Error(error_position!("\\", ErrorKind::EscapedTransform))));
+    assert_eq!(
+      esc("AB\\"),
+      Err(Err::Error(error_position!(
+        "\\",
+        ErrorKind::EscapedTransform
+      )))
+    );
     assert_eq!(
       esc("AB\\A"),
       Err(Err::Error(error_node_position!(
@@ -659,7 +690,10 @@ mod tests {
       ))
     );
     assert_eq!(esc2("ab&egrave;DEF;"), Ok((";", String::from("abèDEF"))));
-    assert_eq!(esc2("ab&egrave;D&agrave;EF;"), Ok((";", String::from("abèDàEF"))));
+    assert_eq!(
+      esc2("ab&egrave;D&agrave;EF;"),
+      Ok((";", String::from("abèDàEF")))
+    );
 
     named!(esc3<&str, String>, escaped_transform!(alpha, '␛',
       alt!(
@@ -672,10 +706,10 @@ mod tests {
   fn take_str_test() {
     let a = b"omnomnom";
 
-    let res: IResult<_,_,(&[u8], ErrorKind)> = take_str!(&a[..], 5u32);
+    let res: IResult<_, _, (&[u8], ErrorKind)> = take_str!(&a[..], 5u32);
     assert_eq!(res, Ok((&b"nom"[..], "omnom")));
 
-    let res: IResult<_,_,(&[u8], ErrorKind)> = take_str!(&a[..], 9u32);
+    let res: IResult<_, _, (&[u8], ErrorKind)> = take_str!(&a[..], 9u32);
     assert_eq!(res, Err(Err::Incomplete(Needed::new(9))));
   }
 
@@ -695,7 +729,10 @@ mod tests {
 
   #[test]
   fn recognize() {
-    named!(x, recognize!(delimited!(tag!("<!--"), take!(5usize), tag!("-->"))));
+    named!(
+      x,
+      recognize!(delimited!(tag!("<!--"), take!(5usize), tag!("-->")))
+    );
     let r = x(&b"<!-- abc --> aaa"[..]);
     assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..])));
 
@@ -755,7 +792,10 @@ mod tests {
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(f(&c[..]), Ok((&b"123"[..], &b[..])));
-    assert_eq!(f(&d[..]), Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1))));
+    assert_eq!(
+      f(&d[..]),
+      Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1)))
+    );
   }
 
   #[test]
@@ -773,12 +813,14 @@ mod tests {
     assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(x(&d[..]), Ok((&b"123"[..], &c[..])));
     assert_eq!(x(&e[..]), Ok((&b"e"[..], &b"abcd"[..])));
-    assert_eq!(x(&f[..]), Err(Err::Error(error_position!(&f[..], ErrorKind::TakeWhileMN))));
+    assert_eq!(
+      x(&f[..]),
+      Err(Err::Error(error_position!(&f[..], ErrorKind::TakeWhileMN)))
+    );
   }
 
   #[test]
   fn take_till() {
-
     named!(f, take_till!(is_alphabetic));
     let a = b"";
     let b = b"abcd";
@@ -793,7 +835,6 @@ mod tests {
 
   #[test]
   fn take_till1() {
-
     named!(f, take_till1!(is_alphabetic));
     let a = b"";
     let b = b"abcd";
@@ -801,7 +842,10 @@ mod tests {
     let d = b"123";
 
     assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
-    assert_eq!(f(&b[..]), Err(Err::Error(error_position!(&b[..], ErrorKind::TakeTill1))));
+    assert_eq!(
+      f(&b[..]),
+      Err(Err::Error(error_position!(&b[..], ErrorKind::TakeTill1)))
+    );
     assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
     assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::new(1))));
   }
@@ -875,7 +919,6 @@ mod tests {
   #[cfg(nightly)]
   #[bench]
   fn take_while_bench(b: &mut Bencher) {
-
     named!(f, take_while!(is_alphabetic));
     b.iter(|| f(&b"abcdefghijklABCDEejfrfrjgro12aa"[..]));
   }
@@ -915,16 +958,28 @@ mod tests {
     assert_eq!(test(&b"abcdefgh"[..]), Ok((&b"efgh"[..], &b"abcd"[..])));
     assert_eq!(test(&b"ABCDefgh"[..]), Ok((&b"efgh"[..], &b"ABCD"[..])));
     assert_eq!(test(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
-    assert_eq!(test(&b"Hello"[..]), Err(Err::Error(error_position!(&b"Hello"[..], ErrorKind::Tag))));
-    assert_eq!(test(&b"Hel"[..]), Err(Err::Error(error_position!(&b"Hel"[..], ErrorKind::Tag))));
+    assert_eq!(
+      test(&b"Hello"[..]),
+      Err(Err::Error(error_position!(&b"Hello"[..], ErrorKind::Tag)))
+    );
+    assert_eq!(
+      test(&b"Hel"[..]),
+      Err(Err::Error(error_position!(&b"Hel"[..], ErrorKind::Tag)))
+    );
 
     named!(test2<&str, &str>, tag_no_case!("ABcd"));
     assert_eq!(test2("aBCdefgh"), Ok(("efgh", "aBCd")));
     assert_eq!(test2("abcdefgh"), Ok(("efgh", "abcd")));
     assert_eq!(test2("ABCDefgh"), Ok(("efgh", "ABCD")));
     assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::new(4))));
-    assert_eq!(test2("Hello"), Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag))));
-    assert_eq!(test2("Hel"), Err(Err::Error(error_position!(&"Hel"[..], ErrorKind::Tag))));
+    assert_eq!(
+      test2("Hello"),
+      Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag)))
+    );
+    assert_eq!(
+      test2("Hel"),
+      Err(Err::Error(error_position!(&"Hel"[..], ErrorKind::Tag)))
+    );
   }
 
   #[test]

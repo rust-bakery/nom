@@ -1,14 +1,13 @@
 # Upgrading to nom 5.0
 
-
 ## Changes in error types
 
-**if you have a lot of unit tests, this is probably the biggest issue you'll encounter**
+**If you have a lot of unit tests, this is probably the biggest issue you'll encounter**
 
 Error management has been rewritten to avoid two issues present in previous
 versions:
-- the error type was causing type inference issues in macros
-- the `verbose-errors` was changing the API (adding a variant in an enum) and
+- The error type was causing type inference issues in macros
+- The `verbose-errors` was changing the API (adding a variant in an enum) and
 reducing the parsing speed. Since compilation features are additive, if a
 dependency used nom with `verbose-errors`, it would be activated for all dependencies
 
@@ -49,7 +48,7 @@ Now the error type is completely generic, so you can choose exactly
 what you need, from erasing errors entirely, to reproducing the
 `verbose-errors` feature with the [`VerboseError` type](https://docs.rs/nom/latest/nom/error/struct.VerboseError.html).
 The [`ErrorKind` enum](https://docs.rs/nom/latest/nom/error/enum.ErrorKind.html)
-is not generic now: it does not need to hold a custom error type.
+is not generic now: It does not need to hold a custom error type.
 
 Any error type has to implement the [`ParseError` trait](https://docs.rs/nom/latest/nom/error/trait.ParseError.html)
 that specifies methods to build an error from a position in input data,
@@ -67,7 +66,7 @@ error type `(Input, ErrorKind)`.
 Those types were introduced in nom 4 as alternative input types, to
 solve issues with streaming parsers.
 
-A core feature of nom is its support for streaming parsers: when you are
+A core feature of nom is its support for streaming parsers: When you are
 handling network packets or large files, you might not have all of the data.
 As an example, if you use a parser recognizing numbers and you pass as input
 "123", the parser will return `Err(Err::Incomplete(_))` because it cannot decide
@@ -114,15 +113,15 @@ list, we have functions that take other functions as arguments, and return
 functions.
 
 This technique has a lot of advantages over macros:
-- no type inference issues, you can explicitely describe the error type in
+- No type inference issues, you can explicitely describe the error type in
 function definitions
-- nicer compilation errors: rustc can show you exactly what is missing when calling
-a combinator, if you need to import new traits, etc
-- those functions are actually faster than nom 4's macros when built with link time
+- Nicer compilation errors: rustc can show you exactly what is missing when calling
+a combinator, if you need to import new traits, etc.
+- Those functions are actually faster than nom 4's macros when built with link time
 optimization
-- small gain in compilation speed (since code can be reused instead of regenerated
+- Small gain in compilation speed (since code can be reused instead of regenerated
 everywhere)
-- the macros are still there, but were rewritten to use the functions instead, so
+- The macros are still there, but were rewritten to use the functions instead, so
 they gain the performance benefit immediately
 
 In practice, nom parsers will have the following signature:

@@ -75,7 +75,7 @@ fn parse_color() {
 
 - [Reference documentation](https://docs.rs/nom)
 - [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc)
-- [list of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
+- [List of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
 
 If you need any help developing your parsers, please ping `geal` on IRC (freenode, geeknode, oftc), go to `#nom-parsers` on Freenode IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
@@ -83,16 +83,16 @@ If you need any help developing your parsers, please ping `geal` on IRC (freenod
 
 If you want to write:
 
-### binary format parsers
+### Binary format parsers
 
 nom was designed to properly parse binary formats from the beginning. Compared
 to the usual handwritten C parsers, nom parsers are just as fast, free from
 buffer overflow vulnerabilities, and handle common patterns for you:
 
 - [TLV](https://en.wikipedia.org/wiki/Type-length-value)
-- bit level parsing
-- hexadecimal viewer in the debugging macros for easy data analysis
-- streaming parsers for network formats and huge files
+- Bit level parsing
+- Hexadecimal viewer in the debugging macros for easy data analysis
+- Streaming parsers for network formats and huge files
 
 Example projects:
 
@@ -106,10 +106,10 @@ While nom was made for binary format at first, it soon grew to work just as
 well with text formats. From line based formats like CSV, to more complex, nested
 formats such as JSON, nom can manage it, and provides you with useful tools:
 
-- fast case insensitive comparison
-- recognizers for escaped strings
-- regular expressions can be embedded in nom parsers to represent complex character patterns succinctly
-- special care has been given to managing non ASCII characters properly
+- Fast case insensitive comparison
+- Recognizers for escaped strings
+- Regular expressions can be embedded in nom parsers to represent complex character patterns succinctly
+- Special care has been given to managing non ASCII characters properly
 
 Example projects:
 
@@ -139,7 +139,7 @@ Example projects:
 While a lot of formats (and the code handling them) assume that they can fit
 the complete data in memory, there are formats for which we only get a part
 of the data at once, like network formats, or huge files.
-nom has been designed for a correct behaviour with partial data: if there is
+nom has been designed for a correct behaviour with partial data: If there is
 not enough data to decide, nom will tell you it needs more instead of silently
 returning a wrong result. Whether your data comes entirely or in chunks, the
 result should be the same.
@@ -149,7 +149,7 @@ It allows you to build powerful, deterministic state machines for your protocols
 Example projects:
 
 - [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
-- [using nom with generators](https://github.com/Geal/generator_nom)
+- [Using nom with generators](https://github.com/Geal/generator_nom)
 
 ## Parser combinators
 
@@ -165,30 +165,30 @@ written with other parser approaches.
 
 This has a few advantages:
 
-- the parsers are small and easy to write
-- the parsers components are easy to reuse (if they're general enough, please add them to nom!)
-- the parsers components are easy to test separately (unit tests and property-based tests)
-- the parser combination code looks close to the grammar you would have written
-- you can build partial parsers, specific to the data you need at the moment, and ignore the rest
+- The parsers are small and easy to write
+- The parsers components are easy to reuse (if they're general enough, please add them to nom!)
+- The parsers components are easy to test separately (unit tests and property-based tests)
+- The parser combination code looks close to the grammar you would have written
+- You can build partial parsers, specific to the data you need at the moment, and ignore the rest
 
 ## Technical features
 
 nom parsers are for:
-- [x] **byte-oriented**: the basic type is `&[u8]` and parsers will work as much as possible on byte array slices (but are not limited to them)
+- [x] **byte-oriented**: The basic type is `&[u8]` and parsers will work as much as possible on byte array slices (but are not limited to them)
 - [x] **bit-oriented**: nom can address a byte slice as a bit stream
-- [x] **string-oriented**: the same kind of combinators can apply on UTF-8 strings as well
-- [x] **zero-copy**: if a parser returns a subset of its input data, it will return a slice of that input, without copying
+- [x] **string-oriented**: The same kind of combinators can apply on UTF-8 strings as well
+- [x] **zero-copy**: If a parser returns a subset of its input data, it will return a slice of that input, without copying
 - [x] **streaming**: nom can work on partial data and detect when it needs more data to produce a correct result
-- [x] **descriptive errors**: the parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages.
-- [x] **custom error types**: you can provide a specific type to improve errors returned by parsers
+- [x] **descriptive errors**: The parsers can aggregate a list of error codes with pointers to the incriminated input slice. Those error lists can be pattern matched to provide useful messages.
+- [x] **custom error types**: You can provide a specific type to improve errors returned by parsers
 - [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real world data. So far, the only flaws found by fuzzing were in code written outside of nom
-- [x] **speed**: benchmarks have shown that nom parsers often outperform many parser combinators library like Parsec and attoparsec, some regular expression engines and even handwritten C parsers
+- [x] **speed**: Benchmarks have shown that nom parsers often outperform many parser combinators library like Parsec and attoparsec, some regular expression engines and even handwritten C parsers
 
 Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
 
 ## Rust version requirements
 
-The 5.0 series of nom requires **Rustc version 1.36 or greater**.
+The 5.0 series of nom requires **Rustc version 1.37 or greater** (compatible with 1.36 if building without the `lexical` feature which includes the `lexical-core` dependency).
 
 Travis CI always has a build with a pinned version of Rustc matching the oldest supported Rust release.
 The current policy is that this will only be updated in the next major nom release.
@@ -209,15 +209,15 @@ Then include it in your code like this:
 extern crate nom;
 ```
 
-**NOTE: if you have existing code using nom below the 5.0 version, please take a look
+**NOTE: If you have existing code using nom below the 5.0 version, please take a look
 at the [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md)
 to handle the breaking changes.**
 
 There are a few compilation features:
 
 * `std`: (activated by default) if disabled, nom can work in `no_std` builds
-* `regexp`: enables regular expression parsers with the `regex` crate
-* `regexp_macros`: enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
+* `regexp`: Enables regular expression parsers with the `regex` crate
+* `regexp_macros`: Enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
 
 You can activate those features like this:
 
@@ -229,8 +229,8 @@ features = ["regexp"]
 
 # Related projects
 
-- [get line and column info in nom's input type](https://github.com/fflorent/nom_locate)
-- [using nom as lexer and parser](https://github.com/Rydgel/monkey-rust)
+- [Get line and column info in nom's input type](https://github.com/fflorent/nom_locate)
+- [Using nom as lexer and parser](https://github.com/Rydgel/monkey-rust)
 
 # Parsers written with nom
 
@@ -294,6 +294,9 @@ Here is a (non exhaustive) list of known projects using nom:
   * [BNF](https://github.com/snewt/bnf)
 - Misc formats:
   * [Gameboy ROM](https://github.com/MarkMcCaskey/gameboy-rom-parser)
+  * [ANT FIT](https://github.com/stadelmanma/fitparse-rs)
+  * [Version Numbers](https://github.com/fosskers/rs-versions)
+  * [Telcordia/Bellcore SR-4731 SOR OTDR files](https://github.com/JamesHarrison/otdrs)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 

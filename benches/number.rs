@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate nom;
 #[macro_use]
 extern crate criterion;
@@ -8,10 +7,10 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::Criterion;
-use nom::number::{complete, streaming};
+use nom::number::complete;
 
 fn parser(i: &[u8]) -> nom::IResult<&[u8], u64> {
-    complete::be_u64(i)
+  complete::be_u64(i)
 }
 
 fn number(c: &mut Criterion) {

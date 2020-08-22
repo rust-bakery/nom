@@ -1,17 +1,16 @@
-//! parsers recognizing numbers
+//! Parsers recognizing numbers
 
 #[macro_use]
 mod macros;
 
-pub mod streaming;
 pub mod complete;
+pub mod streaming;
 
 /// Configurable endianness
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Endianness {
-  /// big endian
+  /// Big endian
   Big,
-  /// little endian
+  /// Little endian
   Little,
 }
-
