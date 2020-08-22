@@ -11,7 +11,37 @@ use core::num::NonZeroUsize;
 ///
 /// The `Ok` side is a pair containing the remainder of the input (the part of the data that
 /// was not parsed) and the produced value. The `Err` side contains an instance of `nom::Err`.
+///
+/// Outside of the parsing code, you can use the [Finish::finish] method to convert
+/// it to a more common result type
 pub type IResult<I, O, E = (I, ErrorKind)> = Result<(I, O), Err<E>>;
+
+/// Helper trait to convert a parser's result to a more manageable type
+pub trait Finish<I,O,E> {
+    /// converts the parser's result to a type that is more consumable by error
+    /// management libraries. It keeps the same `Ok` branch, and merges `Err::Error`
+    /// and `Err::Failure` into the `Err` side.
+    ///
+    /// *warning*: if the result is `Err(Err::Incomplete(_))`, this method will panic.
+    /// - "complete" parsers: It will not be an issue, `Incomplete` is never used
+    /// - "streaming" parsers: `Incomplete` will be returned if there's not enough data
+    /// for the parser to decide, and you should gather more data before parsing again.
+    /// Once the parser returns either `Ok(_)`, `Err(Err::Error(_))` or `Err(Err::Failure(_))`,
+    /// you can get out of the parsing loop and call `finish()` on the parser's result
+    fn finish(self) -> Result<(I, O), E>;
+}
+
+impl<I,O,E> Finish<I,O,E> for IResult<I,O,E> {
+    fn finish(self) -> Result<(I, O), E> {
+        match self {
+            Ok(res) => Ok(res),
+            Err(Err::Error(e)) | Err(Err::Failure(e)) => Err(e),
+            Err(Err::Incomplete(_)) => {
+                panic!("Cannot call `finish()` on `Err(Err::Incomplete(_))`: this result means that the parser does not have enough data to decide, you should gather more data and try to reapply  the parser instead")
+            }
+        }
+    }
+}
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
