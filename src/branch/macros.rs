@@ -94,7 +94,7 @@
 ///
 /// **BE CAREFUL** there is a case where the behaviour of `alt!` can be confusing:
 ///
-/// when the alternatives have different lengths, like this case:
+/// When the alternatives have different lengths, like this case:
 ///
 /// ```ignore
 ///  named!( test, alt!( tag!( "abcd" ) | tag!( "ef" ) | tag!( "ghi" ) | tag!( "kl" ) ) );
@@ -138,7 +138,7 @@
 ///  named!( test, alt!( tag!( "abcd" ) | tag!( "ab" ) | tag!( "ef" ) ) );
 /// ```
 ///
-/// in that case, if you order by size, passing `"abcd"` as input will always be matched by the
+/// In that case, if you order by size, passing `"abcd"` as input will always be matched by the
 /// smallest parser, so the solution using `complete!` is better suited.
 ///
 /// You can also nest multiple `alt!`, like this:
@@ -382,13 +382,11 @@ macro_rules! switch (
   );
 );
 
-///
-///
 /// `permutation!(I -> IResult<I,A>, I -> IResult<I,B>, ... I -> IResult<I,X> ) => I -> IResult<I, (A,B,...X)>`
 /// applies its sub parsers in a sequence, but independent from their order
-/// this parser will only succeed if all of its sub parsers succeed
+/// this parser will only succeed if all of its sub parsers succeed.
 ///
-/// the tuple of results is in the same order as the parsers are declared
+/// The tuple of results is in the same order as the parsers are declared
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -414,7 +412,7 @@ macro_rules! switch (
 ///   error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)))));
 ///
 /// let e = &b"efgabc"[..];
-/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
 /// # }
 /// ```
 ///
@@ -451,7 +449,7 @@ macro_rules! switch (
 /// assert_eq!(perm(c), Ok(("jklm", expected)));
 ///
 /// let e = "efgabc";
-/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -720,15 +718,15 @@ macro_rules! permutation_iterator (
 #[cfg(test)]
 mod tests {
   use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::{
     error::ParseError,
     lib::std::{
       fmt::Debug,
-      string::{String, ToString}
-    }
+      string::{String, ToString},
+    },
   };
-  use crate::internal::{Err, IResult, Needed};
 
   // reproduce the tag and take macros, because of module import order
   macro_rules! tag (
@@ -762,7 +760,7 @@ mod tests {
           let e: ErrorKind = ErrorKind::Tag;
           Err(Err::Error(error_position!($i, e)))
         } else if m < blen {
-          Err(Err::Incomplete(Needed::Size(blen)))
+          Err(Err::Incomplete(Needed::new(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -776,7 +774,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
-          Err(Err::Incomplete(Needed::Size(cnt)))
+          Err(Err::Incomplete(Needed::new(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };
@@ -810,7 +808,10 @@ mod tests {
     }
 
     fn append(input: I, kind: ErrorKind, other: Self) -> Self {
-      ErrorStr(format!("custom error message: ({:?}, {:?}) - {:?}", input, kind, other))
+      ErrorStr(format!(
+        "custom error message: ({:?}, {:?}) - {:?}",
+        input, kind, other
+      ))
     }
   }
 
@@ -854,7 +855,10 @@ mod tests {
     assert_eq!(alt4(b), Ok((&b""[..], b)));
 
     // test the alternative syntax
-    named!(alt5<bool>, alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true }));
+    named!(
+      alt5<bool>,
+      alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true })
+    );
     assert_eq!(alt5(a), Ok((&b""[..], false)));
     assert_eq!(alt5(b), Ok((&b""[..], true)));
 
@@ -869,15 +873,15 @@ mod tests {
     named!(alt1, alt!(tag!("a") | tag!("bc") | tag!("def")));
 
     let a = &b""[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(1))));
     let a = &b"b"[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(2))));
     let a = &b"bcd"[..];
     assert_eq!(alt1(a), Ok((&b"d"[..], &b"bc"[..])));
     let a = &b"cde"[..];
     assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     let a = &b"de"[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(3))));
     let a = &b"defg"[..];
     assert_eq!(alt1(a), Ok((&b"g"[..], &b"def"[..])));
   }
@@ -899,7 +903,13 @@ mod tests {
     let b = &b"efghijkl"[..];
     assert_eq!(sw(b), Ok((&b""[..], &b"ijkl"[..])));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Err(Err::Error(error_position!(&b"afghijkl"[..], ErrorKind::Switch))));
+    assert_eq!(
+      sw(c),
+      Err(Err::Error(error_position!(
+        &b"afghijkl"[..],
+        ErrorKind::Switch
+      )))
+    );
 
     let a = &b"xxxxefgh"[..];
     assert_eq!(sw(a), Ok((&b"gh"[..], &b"ef"[..])));
@@ -907,7 +917,10 @@ mod tests {
 
   #[test]
   fn permutation() {
-    named!(perm<(&[u8], &[u8], &[u8])>, permutation!(tag!("abcd"), tag!("efg"), tag!("hi")));
+    named!(
+      perm<(&[u8], &[u8], &[u8])>,
+      permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
+    );
 
     let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
 
@@ -929,7 +942,7 @@ mod tests {
     );
 
     let e = &b"efgabc"[..];
-    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
   }
 
   /*

@@ -4,9 +4,78 @@
 
 ### Thanks
 
+### Changed
+
+- the minimal Rust version is now 1.36
+- stabilized the `alloc` feature
+
 ### Added
 
 ### Fixed
+
+## 5.1.1 - 2020-02-24
+
+### Thanks
+
+- @Alexhuszagh for float fixes
+- @AlexanderEkdahl, @JoshOrndorff, @akitsu-sanae for docs fixes
+- @ignatenkobrain: dependency update
+- @derekdreery: `map` implementation for errors
+- @Lucretiel for docs fixes and compilation fixes
+- adytzu2007: warning fixes
+- @lo48576: error management fixes
+
+### Fixed
+
+- C symbols compilation errors due to old lexical-core version
+
+### Added
+
+- `Err` now has a `map` function
+
+### Changed
+
+- Make `error::context()` available without `alloc` feature
+
+## 5.1.0 - 2020-01-07
+
+### Thanks
+
+- @Hywan, @nickmooney, @jplatte, @ngortheone, @ejmg, @SirWindfield, @demurgos, @spazm, @nyarly, @guedou, @adamnemecek, for docs fixes
+- @Alxandr for error management bugfixes
+- @Lucretiel for example fixes and optimizations
+- @adytzu2007 for optimizations
+- @audunhalland for utf8 fixes
+
+### Fixed
+
+- panic in `convert_error`
+- `compile_error` macro usage
+
+### Added
+
+- `std::error::Error`, `std::fmt::Display`, `Eq`, `ToOwned` implementations for errors
+- inline attribute for  `ToUsize`
+
+### Changed
+
+- `convert_error` optimization
+- `alt` optimization
+
+## 5.0.1 - 2019-08-22
+
+### Thanks
+
+- @waywardmonkeys, @phaazon, @dalance for docs fixes
+- @kali for `many0_m_n` fixes
+- @ia0 for macros fixes
+
+### Fixed
+
+- `many0_m_n` now supports the n=1 case
+- relaxed trait requirements in `cut`
+- `peek!` macro reimplementation
+- type inference in `value!`
 
 ## 5.0.0 - 2019-06-24
 
@@ -1052,7 +1121,10 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased](https://github.com/Geal/nom/compare/5.0.0...HEAD)
+* [unreleased](https://github.com/Geal/nom/compare/5.1.1...HEAD)
+* [5.1.1](https://github.com/Geal/nom/compare/5.1.0...5.1.1)
+* [5.1.0](https://github.com/Geal/nom/compare/5.0.1...5.1.0)
+* [5.0.1](https://github.com/Geal/nom/compare/5.0.0...5.0.1)
 * [5.0.0](https://github.com/Geal/nom/compare/4.2.3...5.0.0)
 * [4.2.3](https://github.com/Geal/nom/compare/4.2.2...4.2.3)
 * [4.2.2](https://github.com/Geal/nom/compare/4.2.1...4.2.2)

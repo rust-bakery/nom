@@ -1,14 +1,14 @@
-//! combinators applying their child parser multiple times
+//! Combinators applying their child parser multiple times
 
 #[macro_use]
 mod macros;
 
-use crate::internal::{Err, IResult, Needed};
+use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::traits::{InputLength, InputTake, ToUsize};
+use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::error::ErrorKind;
+use crate::traits::{InputLength, InputTake, ToUsize};
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -35,17 +35,17 @@ use crate::error::ErrorKind;
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many0<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
     let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
     let mut i = i.clone();
     loop {
-      match f(i.clone()) {
+      match f.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, acc)),
         Err(e) => return Err(e),
         Ok((i1, o)) => {
@@ -80,9 +80,9 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 ///
-/// *Note*: if the parser passed to `many1` accepts empty inputs
+/// *Note*: If the parser passed to `many1` accepts empty inputs
 /// (like `alpha0` or `digit0`), `many1` will return an error,
-/// to prevent going into an infinite loop
+/// to prevent going into an infinite loop.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -99,15 +99,15 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many1<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn many1<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
     let mut i = i.clone();
-    match f(i.clone()) {
+    match f.parse(i.clone()) {
       Err(Err::Error(err)) => return Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
       Err(e) => return Err(e),
       Ok((i1, o)) => {
@@ -116,7 +116,7 @@ where
         i = i1;
 
         loop {
-          match f(i.clone()) {
+          match f.parse(i.clone()) {
             Err(Err::Error(_)) => return Ok((i, acc)),
             Err(e) => return Err(e),
             Ok((i1, o)) => {
@@ -165,23 +165,25 @@ where
 /// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many_till<I, O, P, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, (Vec<O>, P), E>
+pub fn many_till<I, O, P, E, F, G>(
+  mut f: F,
+  mut g: G,
+) -> impl FnMut(I) -> IResult<I, (Vec<O>, P), E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, P, E>,
+  F: Parser<I, O, E>,
+  G: Parser<I, P, E>,
   E: ParseError<I>,
 {
   move |i: I| {
     let mut res = crate::lib::std::vec::Vec::new();
     let mut i = i.clone();
     loop {
-      match g(i.clone()) {
+      match g.parse(i.clone()) {
         Ok((i1, o)) => return Ok((i1, (res, o))),
         Err(Err::Error(_)) => {
-          match f(i.clone()) {
-            Err(Err::Error(err)) =>
-              return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
+          match f.parse(i.clone()) {
+            Err(Err::Error(err)) => return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
             Err(e) => return Err(e),
             Ok((i1, o)) => {
               // loop trip must always consume (otherwise infinite loops)
@@ -193,7 +195,7 @@ where
               i = i1;
             }
           }
-        },
+        }
         Err(e) => return Err(e),
       }
     }
@@ -221,11 +223,11 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::separated_list;
+/// use nom::multi::separated_list0;
 /// use nom::bytes::complete::tag;
 ///
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   separated_list(tag("|"), tag("abc"))(s)
+///   separated_list0(tag("|"), tag("abc"))(s)
 /// }
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
@@ -235,18 +237,21 @@ where
 /// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn separated_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list0<I, O, O2, E, F, G>(
+  mut sep: G,
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: Parser<I, O, E>,
+  G: Parser<I, O2, E>,
   E: ParseError<I>,
 {
   move |i: I| {
     let mut res = Vec::new();
     let mut i = i.clone();
 
-    match f(i.clone()) {
+    match f.parse(i.clone()) {
       Err(Err::Error(_)) => return Ok((i, res)),
       Err(e) => return Err(e),
       Ok((i1, o)) => {
@@ -260,7 +265,7 @@ where
     }
 
     loop {
-      match sep(i.clone()) {
+      match sep.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, res)),
         Err(e) => return Err(e),
         Ok((i1, _)) => {
@@ -268,7 +273,7 @@ where
             return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
           }
 
-          match f(i1.clone()) {
+          match f.parse(i1.clone()) {
             Err(Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i2, o)) => {
@@ -289,14 +294,14 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn separated_listc<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
+pub fn separated_list0c<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(I) -> IResult<I, O2, E>,
   E: ParseError<I>,
 {
-  separated_list(sep, f)(i)
+  separated_list0(sep, f)(i)
 }
 
 /// Alternates between two parsers to produce
@@ -308,11 +313,11 @@ where
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::separated_nonempty_list;
+/// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
 ///
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   separated_nonempty_list(tag("|"), tag("abc"))(s)
+///   separated_list1(tag("|"), tag("abc"))(s)
 /// }
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
@@ -322,11 +327,14 @@ where
 /// assert_eq!(parser("def|abc"), Err(Err::Error(("def|abc", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn separated_nonempty_list<I, O, O2, E, F, G>(sep: G, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list1<I, O, O2, E, F, G>(
+  mut sep: G,
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: Parser<I, O, E>,
+  G: Parser<I, O2, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -334,8 +342,8 @@ where
     let mut i = i.clone();
 
     // Parse the first element
-    match f(i.clone()) {
-      Err(e)=> return Err(e),
+    match f.parse(i.clone()) {
+      Err(e) => return Err(e),
       Ok((i1, o)) => {
         if i1 == i {
           return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
@@ -347,7 +355,7 @@ where
     }
 
     loop {
-      match sep(i.clone()) {
+      match sep.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, res)),
         Err(e) => return Err(e),
         Ok((i1, _)) => {
@@ -355,7 +363,7 @@ where
             return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
           }
 
-          match f(i1.clone()) {
+          match f.parse(i1.clone()) {
             Err(Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i2, o)) => {
@@ -376,14 +384,14 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
-pub fn separated_nonempty_listc<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
+pub fn separated_list1c<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(I) -> IResult<I, O2, E>,
   E: ParseError<I>,
 {
-  separated_nonempty_list(sep, f)(i)
+  separated_list1(sep, f)(i)
 }
 
 /// Repeats the embedded parser `n` times or until it fails
@@ -410,10 +418,10 @@ where
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn many_m_n<I, O, E, F>(m: usize, n: usize, f: F) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn many_m_n<I, O, E, F>(m: usize, n: usize, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -422,12 +430,12 @@ where
     let mut count: usize = 0;
 
     if n == 0 {
-        return Ok((i, vec!()))
+      return Ok((i, vec![]));
     }
 
     loop {
       let _i = input.clone();
-      match f(_i) {
+      match f.parse(_i) {
         Ok((i, o)) => {
           // do not allow parsers that do not consume input (causes infinite loops)
           if i == input {
@@ -488,10 +496,10 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", 0)));
 /// assert_eq!(parser(""), Ok(("", 0)));
 /// ```
-pub fn many0_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
+pub fn many0_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -500,7 +508,7 @@ where
 
     loop {
       let input_ = input.clone();
-      match f(input_) {
+      match f.parse(input_) {
         Ok((i, _)) => {
           //  loop trip must always consume (otherwise infinite loops)
           if i == input {
@@ -550,15 +558,15 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1Count))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1Count))));
 /// ```
-pub fn many1_count<I, O, E, F>(f: F) -> impl Fn(I) -> IResult<I, usize, E>
+pub fn many1_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
     let i_ = i.clone();
-    match f(i_) {
+    match f.parse(i_) {
       Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1Count))),
       Err(i) => Err(i),
       Ok((i1, _)) => {
@@ -567,7 +575,7 @@ where
 
         loop {
           let input_ = input.clone();
-          match f(input_) {
+          match f.parse(input_) {
             Err(Err::Error(_)) => return Ok((input, count)),
             Err(e) => return Err(e),
             Ok((i, _)) => {
@@ -617,19 +625,19 @@ where
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn count<I, O, E, F>(f: F, count: usize) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+pub fn count<I, O, E, F>(mut f: F, count: usize) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   E: ParseError<I>,
 {
-  move |i: I | {
+  move |i: I| {
     let mut input = i.clone();
-    let mut res = crate::lib::std::vec::Vec::new();
+    let mut res = crate::lib::std::vec::Vec::with_capacity(count);
 
     for _ in 0..count {
       let input_ = input.clone();
-      match f(input_) {
+      match f.parse(input_) {
         Ok((i, o)) => {
           res.push(o);
           input = i;
@@ -644,6 +652,58 @@ where
     }
 
     Ok((input, res))
+  }
+}
+
+/// Runs the embedded parser repeatedly, filling the given slice with results. This parser fails if
+/// the input runs out before the given slice is full.
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `buf` The slice to fill
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fill;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, [&str; 2]> {
+///   let mut buf = ["", ""];
+///   let (rest, ()) = fill(tag("abc"), &mut buf)(s)?;
+///   Ok((rest, buf))
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", ["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
+/// ```
+pub fn fill<'a, I, O, E, F>(f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
+where
+  I: Clone + PartialEq,
+  F: Fn(I) -> IResult<I, O, E> + 'a,
+  E: ParseError<I>,
+{
+  move |i: I| {
+    let mut input = i.clone();
+
+    for elem in buf.iter_mut() {
+      let input_ = input.clone();
+      match f(input_) {
+        Ok((i, o)) => {
+          *elem = o;
+          input = i;
+        }
+        Err(Err::Error(e)) => {
+          return Err(Err::Error(E::append(i, ErrorKind::Count, e)));
+        }
+        Err(e) => {
+          return Err(e);
+        }
+      }
+    }
+
+    Ok((input, ()))
   }
 }
 
@@ -676,10 +736,10 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
-pub fn fold_many0<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
+pub fn fold_many0<I, O, E, F, G, R>(mut f: F, init: R, g: G) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
@@ -690,7 +750,7 @@ where
 
     loop {
       let i_ = input.clone();
-      match f(i_) {
+      match f.parse(i_) {
         Ok((i, o)) => {
           // loop trip must always consume (otherwise infinite loops)
           if i == input {
@@ -754,10 +814,10 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Many1))));
 /// ```
-pub fn fold_many1<I, O, E, F, G, R>(f: F, init: R, g: G) -> impl Fn(I) -> IResult<I, R, E>
+pub fn fold_many1<I, O, E, F, G, R>(mut f: F, init: R, g: G) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
@@ -765,7 +825,7 @@ where
   move |i: I| {
     let _i = i.clone();
     let init = init.clone();
-    match f(_i) {
+    match f.parse(_i) {
       Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
       Err(e) => return Err(e),
       Ok((i1, o1)) => {
@@ -774,7 +834,7 @@ where
 
         loop {
           let _input = input.clone();
-          match f(_input) {
+          match f.parse(_input) {
             Err(Err::Error(_)) => {
               break;
             }
@@ -844,10 +904,16 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold_many_m_n<I, O, E, F, G, R>(m: usize, n: usize, f: F, init: R, g: G) -> impl Fn(I) ->IResult<I, R, E>
+pub fn fold_many_m_n<I, O, E, F, G, R>(
+  m: usize,
+  n: usize,
+  mut f: F,
+  init: R,
+  g: G,
+) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
@@ -857,7 +923,7 @@ where
     let mut input = i.clone();
     for count in 0..n {
       let _input = input.clone();
-      match f(_input) {
+      match f.parse(_input) {
         Ok((i, o)) => {
           // do not allow parsers that do not consume input (causes infinite loops)
           if i == input {
@@ -868,10 +934,12 @@ where
           input = i;
         }
         //FInputXMError: handle failure properly
-        Err(Err::Error(_)) => if count < m {
-          return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
-        } else {
-          break;
+        Err(Err::Error(_)) => {
+          if count < m {
+            return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
+          } else {
+            break;
+          }
         }
         Err(e) => return Err(e),
       }
@@ -882,7 +950,14 @@ where
 }
 
 #[doc(hidden)]
-pub fn fold_many_m_nc<I, O, E, F, G, R>(i: I, m: usize, n: usize, f: F, init: R, g: G) -> IResult<I, R, E>
+pub fn fold_many_m_nc<I, O, E, F, G, R>(
+  i: I,
+  m: usize,
+  n: usize,
+  f: F,
+  init: R,
+  g: G,
+) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
@@ -895,14 +970,13 @@ where
 
 /// Gets a number from the parser and returns a
 /// subslice of the input of that size.
-/// If the parser returns Incomplete,
-/// length_data will return an error.
+/// If the parser returns `Incomplete`,
+/// `length_data` will return an error.
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// # use nom::Needed::Size;
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_data;
 /// use nom::bytes::complete::tag;
@@ -912,22 +986,22 @@ where
 /// }
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
-/// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Size(3))));
+/// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Needed::new(3))));
 /// ```
-pub fn length_data<I, N, E, F>(f: F) -> impl Fn(I) -> IResult<I, I, E>
+pub fn length_data<I, N, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, I, E>
 where
-  I: Clone + InputLength + InputTake,
+  I: InputLength + InputTake,
   N: Copy + ToUsize,
-  F: Fn(I) -> IResult<I, N, E>,
+  F: Parser<I, N, E>,
   E: ParseError<I>,
 {
   move |i: I| {
-    let (i, length) = f(i)?;
+    let (i, length) = f.parse(i)?;
 
     let length: usize = length.to_usize();
 
     if i.input_len() < length {
-      Err(Err::Incomplete(Needed::Size(length)))
+      Err(Err::Incomplete(Needed::new(length)))
     } else {
       Ok(i.take_split(length))
     }
@@ -937,14 +1011,13 @@ where
 /// Gets a number from the first parser,
 /// takes a subslice of the input of that size,
 /// then applies the second parser on that subslice.
-/// If the second parser returns Incomplete,
-/// length_value will return an error.
+/// If the second parser returns `Incomplete`,
+/// `length_value` will return an error.
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// # use nom::Needed::Size;
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_value;
 /// use nom::bytes::complete::tag;
@@ -955,30 +1028,29 @@ where
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
 /// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error((&b"123"[..], ErrorKind::Tag))));
-/// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Size(3))));
+/// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Needed::new(3))));
 /// ```
-pub fn length_value<I, O, N, E, F, G>(f: F, g: G) -> impl Fn(I) -> IResult<I, O, E>
+pub fn length_value<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>
 where
   I: Clone + InputLength + InputTake,
   N: Copy + ToUsize,
-  F: Fn(I) -> IResult<I, N, E>,
-  G: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, N, E>,
+  G: Parser<I, O, E>,
   E: ParseError<I>,
 {
   move |i: I| {
-    let (i, length) = f(i)?;
+    let (i, length) = f.parse(i)?;
 
     let length: usize = length.to_usize();
 
     if i.input_len() < length {
-      Err(Err::Incomplete(Needed::Size(length)))
+      Err(Err::Incomplete(Needed::new(length)))
     } else {
       let (rest, i) = i.take_split(length);
-      match g(i.clone()) {
-        Err(Err::Incomplete(_)) =>
-          Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete))),
+      match g.parse(i.clone()) {
+        Err(Err::Incomplete(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete))),
         Err(e) => Err(e),
-        Ok((_, o)) => Ok((rest,o)),
+        Ok((_, o)) => Ok((rest, o)),
       }
     }
   }

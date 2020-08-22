@@ -1,7 +1,6 @@
-//! parsers recognizing bytes streams
+//! Parsers recognizing bytes streams
 
 #[macro_use]
 mod macros;
-pub mod streaming;
 pub mod complete;
-
+pub mod streaming;
