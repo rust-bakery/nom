@@ -2,17 +2,16 @@
 //!
 //! Functions recognizing specific characters.
 
-use crate::internal::{Err, IResult};
+use crate::error::ErrorKind;
 use crate::error::ParseError;
+use crate::internal::{Err, IResult};
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::traits::{AsChar, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
 use crate::traits::{Compare, CompareResult};
-use crate::error::ErrorKind;
 
 /// Recognizes one character.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -40,8 +39,7 @@ where
 
 /// Recognizes one of the provided characters.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -67,8 +65,7 @@ where
 
 /// Recognizes a character that is not in the provided characters.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -94,8 +91,7 @@ where
 
 /// Recognizes the string "\r\n".
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -113,7 +109,7 @@ where
 /// ```
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<Range<usize>> + Slice<RangeFrom<usize>>,
   T: InputIter,
   T: Compare<&'static str>,
 {
@@ -130,8 +126,7 @@ where
 //FIXME: there's still an incomplete
 /// Recognizes a string of any char except '\r' or '\n'.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -159,9 +154,7 @@ where
     let c = item.as_char();
     c == '\r' || c == '\n'
   }) {
-    None => {
-      Ok((input.slice(input.input_len()..), input))
-    }
+    None => Ok((input.slice(input.input_len()..), input)),
     Some(index) => {
       let mut it = input.slice(index..).iter_elements();
       let nth = it.next().unwrap().as_char();
@@ -185,8 +178,7 @@ where
 
 /// Recognizes an end of line (both '\n' and '\r\n').
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -223,8 +215,7 @@ where
 
 /// Matches a newline character '\n'.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -250,8 +241,7 @@ where
 
 /// Matches a tab character '\t'.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -278,8 +268,7 @@ where
 /// Matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
 ///
-/// *complete version*: Will return an error if there's not enough input data.
-///
+/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -310,9 +299,8 @@ where
 
 /// Recognizes zero or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non
+/// *Complete version*: Will return the whole input if no terminating token is found (a non
 /// alphabetic character).
-///
 /// # Example
 ///
 /// ```
@@ -338,9 +326,8 @@ where
 
 /// Recognizes one or more lowercase and uppercase ASCII alphabetic characters: a-z, A-Z
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found  (a non alphabetic character).
-///
 /// # Example
 ///
 /// ```
@@ -365,11 +352,21 @@ where
 }
 
 /// Recognizes zero or more ASCII numerical characters: 0-9
+///
+/// *Complete version*: Will return an error if there's not enough input data,
+/// or the whole input if no terminating token is found (a non digit character).
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::complete::digit0;
+/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     digit0(input)
 /// }
 ///
 /// assert_eq!(parser("21c"), Ok(("c", "21")));
+/// assert_eq!(parser("21"), Ok(("", "21")));
 /// assert_eq!(parser("a21c"), Ok(("a21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// # }
@@ -384,9 +381,8 @@ where
 
 /// Recognizes one or more ASCII numerical characters: 0-9
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non digit character).
-///
 /// # Example
 ///
 /// ```
@@ -412,8 +408,7 @@ where
 
 /// Recognizes zero or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non hexadecimal digit character).
-///
+/// *Complete version*: Will return the whole input if no terminating token is found (a non hexadecimal digit character).
 /// # Example
 ///
 /// ```
@@ -438,9 +433,8 @@ where
 }
 /// Recognizes one or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non hexadecimal digit character).
-///
 /// # Example
 ///
 /// ```
@@ -466,9 +460,8 @@ where
 
 /// Recognizes zero or more octal characters: 0-7
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non octal
+/// *Complete version*: Will return the whole input if no terminating token is found (a non octal
 /// digit character).
-///
 /// # Example
 ///
 /// ```
@@ -494,9 +487,8 @@ where
 
 /// Recognizes one or more octal characters: 0-7
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non octal digit character).
-///
 /// # Example
 ///
 /// ```
@@ -522,9 +514,8 @@ where
 
 /// Recognizes zero or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non
+/// *Complete version*: Will return the whole input if no terminating token is found (a non
 /// alphanumerical character).
-///
 /// # Example
 ///
 /// ```
@@ -550,9 +541,8 @@ where
 
 /// Recognizes one or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non alphanumerical character).
-///
 /// # Example
 ///
 /// ```
@@ -578,9 +568,8 @@ where
 
 /// Recognizes zero or more spaces and tabs.
 ///
-/// *complete version*: Will return the whole input if no terminating token is found (a non space
+/// *Complete version*: Will return the whole input if no terminating token is found (a non space
 /// character).
-///
 /// # Example
 ///
 /// ```
@@ -609,9 +598,8 @@ where
 
 /// Recognizes one or more spaces and tabs.
 ///
-/// *complete version*: Will return an error if there's not enough input data,
+/// *Complete version*: Will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non space character).
-///
 /// # Example
 ///
 /// ```
@@ -643,9 +631,8 @@ where
 
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds.
 ///
-/// *complete version*: will return the whole input if no terminating token is found (a non space
+/// *Complete version*: will return the whole input if no terminating token is found (a non space
 /// character).
-///
 /// # Example
 ///
 /// ```
@@ -674,9 +661,8 @@ where
 
 /// Recognizes one or more spaces, tabs, carriage returns and line feeds.
 ///
-/// *complete version*: will return an error if there's not enough input data,
+/// *Complete version*: will return an error if there's not enough input data,
 /// or the whole input if no terminating token is found (a non space character).
-///
 /// # Example
 ///
 /// ```
@@ -718,7 +704,6 @@ mod tests {
     };
   );
 
-
   #[test]
   fn character() {
     let empty: &[u8] = b"";
@@ -730,50 +715,35 @@ mod tests {
     let f: &[u8] = b" ;";
     //assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
     assert_parse!(alpha1(a), Ok((empty, a)));
-    assert_eq!(
-      alpha1(b),
-      Err(Err::Error((b, ErrorKind::Alpha)))
-    );
+    assert_eq!(alpha1(b), Err(Err::Error((b, ErrorKind::Alpha))));
     assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &b"a"[..])));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
     assert_eq!(
-      digit1(a),
-      Err(Err::Error((a, ErrorKind::Digit)))
+      alpha1::<_, (_, ErrorKind)>(d),
+      Ok(("é12".as_bytes(), &b"az"[..]))
     );
+    assert_eq!(digit1(a), Err(Err::Error((a, ErrorKind::Digit))));
     assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      digit1(c),
-      Err(Err::Error((c, ErrorKind::Digit)))
-    );
-    assert_eq!(
-      digit1(d),
-      Err(Err::Error((d, ErrorKind::Digit)))
-    );
+    assert_eq!(digit1(c), Err(Err::Error((c, ErrorKind::Digit))));
+    assert_eq!(digit1(d), Err(Err::Error((d, ErrorKind::Digit))));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12".as_bytes(), &b"a"[..])));
     assert_eq!(
-      hex_digit1(e),
-      Err(Err::Error((e, ErrorKind::HexDigit)))
+      hex_digit1::<_, (_, ErrorKind)>(d),
+      Ok(("zé12".as_bytes(), &b"a"[..]))
     );
-    assert_eq!(
-      oct_digit1(a),
-      Err(Err::Error((a, ErrorKind::OctDigit)))
-    );
+    assert_eq!(hex_digit1(e), Err(Err::Error((e, ErrorKind::HexDigit))));
+    assert_eq!(oct_digit1(a), Err(Err::Error((a, ErrorKind::OctDigit))));
     assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      oct_digit1(c),
-      Err(Err::Error((c, ErrorKind::OctDigit)))
-    );
-    assert_eq!(
-      oct_digit1(d),
-      Err(Err::Error((d, ErrorKind::OctDigit)))
-    );
+    assert_eq!(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
+    assert_eq!(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok(("é12".as_bytes(), &b"az"[..])));
+    assert_eq!(
+      alphanumeric1::<_, (_, ErrorKind)>(d),
+      Ok(("é12".as_bytes(), &b"az"[..]))
+    );
     assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
     assert_eq!(space1::<_, (_, ErrorKind)>(f), Ok((&b";"[..], &b" "[..])));
   }
@@ -788,46 +758,22 @@ mod tests {
     let d = "azé12";
     let e = " ";
     assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(
-      alpha1(b),
-      Err(Err::Error((b, ErrorKind::Alpha)))
-    );
+    assert_eq!(alpha1(b), Err(Err::Error((b, ErrorKind::Alpha))));
     assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
     assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12", &"az"[..])));
-    assert_eq!(
-      digit1(a),
-      Err(Err::Error((a, ErrorKind::Digit)))
-    );
+    assert_eq!(digit1(a), Err(Err::Error((a, ErrorKind::Digit))));
     assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      digit1(c),
-      Err(Err::Error((c, ErrorKind::Digit)))
-    );
-    assert_eq!(
-      digit1(d),
-      Err(Err::Error((d, ErrorKind::Digit)))
-    );
+    assert_eq!(digit1(c), Err(Err::Error((c, ErrorKind::Digit))));
+    assert_eq!(digit1(d), Err(Err::Error((d, ErrorKind::Digit))));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
-    assert_eq!(
-      hex_digit1(e),
-      Err(Err::Error((e, ErrorKind::HexDigit)))
-    );
-    assert_eq!(
-      oct_digit1(a),
-      Err(Err::Error((a, ErrorKind::OctDigit)))
-    );
+    assert_eq!(hex_digit1(e), Err(Err::Error((e, ErrorKind::HexDigit))));
+    assert_eq!(oct_digit1(a), Err(Err::Error((a, ErrorKind::OctDigit))));
     assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(
-      oct_digit1(c),
-      Err(Err::Error((c, ErrorKind::OctDigit)))
-    );
-    assert_eq!(
-      oct_digit1(d),
-      Err(Err::Error((d, ErrorKind::OctDigit)))
-    );
+    assert_eq!(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
+    assert_eq!(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
     assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
@@ -892,7 +838,10 @@ mod tests {
   #[test]
   fn is_not_line_ending_bytes() {
     let a: &[u8] = b"ab12cd\nefgh";
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(a), Ok((&b"\nefgh"[..], &b"ab12cd"[..])));
+    assert_eq!(
+      not_line_ending::<_, (_, ErrorKind)>(a),
+      Ok((&b"\nefgh"[..], &b"ab12cd"[..]))
+    );
 
     let b: &[u8] = b"ab12cd\nefgh\nijkl";
     assert_eq!(
@@ -907,12 +856,14 @@ mod tests {
     );
 
     let d: &[u8] = b"ab12cd";
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Ok((&[][..], &d[..])));
+    assert_eq!(
+      not_line_ending::<_, (_, ErrorKind)>(d),
+      Ok((&[][..], &d[..]))
+    );
   }
 
   #[test]
   fn is_not_line_ending_str() {
-
     /*
     let a: &str = "ab12cd\nefgh";
     assert_eq!(not_line_ending(a), Ok((&"\nefgh"[..], &"ab12cd"[..])));
@@ -931,10 +882,7 @@ mod tests {
     */
 
     let f = "βèƒôřè\rÂßÇáƒƭèř";
-    assert_eq!(
-      not_line_ending(f),
-      Err(Err::Error((f, ErrorKind::Tag)))
-    );
+    assert_eq!(not_line_ending(f), Err(Err::Error((f, ErrorKind::Tag))));
 
     let g2: &str = "ab12cd";
     assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g2), Ok(("", g2)));
@@ -1036,14 +984,20 @@ mod tests {
   #[test]
   fn cr_lf() {
     assert_parse!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(crlf(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
+    assert_parse!(
+      crlf(&b"\r"[..]),
+      Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf)))
+    );
     assert_parse!(
       crlf(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
     );
 
     assert_parse!(crlf("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(crlf("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
+    assert_parse!(
+      crlf("\r"),
+      Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf)))
+    );
     assert_parse!(
       crlf("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
@@ -1054,7 +1008,10 @@ mod tests {
   fn end_of_line() {
     assert_parse!(line_ending(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
     assert_parse!(line_ending(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(line_ending(&b"\r"[..]), Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf))));
+    assert_parse!(
+      line_ending(&b"\r"[..]),
+      Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf)))
+    );
     assert_parse!(
       line_ending(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
@@ -1062,7 +1019,10 @@ mod tests {
 
     assert_parse!(line_ending("\na"), Ok(("a", "\n")));
     assert_parse!(line_ending("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(line_ending("\r"), Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf))));
+    assert_parse!(
+      line_ending("\r"),
+      Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf)))
+    );
     assert_parse!(
       line_ending("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))

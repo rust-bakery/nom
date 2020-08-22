@@ -1,7 +1,7 @@
 # Making a new parser from scratch
 
 Writing a parser is a very fun, interactive process, but sometimes a daunting
-task. How do you test it? How to  see ambiguities in specifications?
+task. How do you test it? How to see ambiguities in specifications?
 
 nom is designed to abstract data manipulation (counting array offsets,
 converting to structures, etc) while providing a safe, composable API. It also
@@ -9,9 +9,11 @@ takes care of making the code easy to test and read, but it can be confusing at
 first, if you are not familiar with parser combinators, or if you are not used
 to Rust macros and generic functions.
 
-This document is here to help you in getting started with nom. If you need more
-specific help, please ping `geal` on IRC (mozilla, freenode, geeknode, oftc),
-go to `#nom` on Mozilla IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
+This document is here to help you in getting started with nom. You can also find
+[nom recipes for common short parsing tasks here](nom_recipes.md). If you need
+more specific help, please ping `geal` on IRC (mozilla, freenode, geeknode,
+oftc), go to `#nom` on Mozilla IRC, or on the 
+[Gitter chat room](https://gitter.im/Geal/nom).   
 
 # First step: the initial research
 
@@ -185,11 +187,11 @@ There are a few tools you can use to debug how code is generated.
 
 ## dbg_dmp
 
-this function wraps a parser that accepts a `&[u8]` as input and
+This function wraps a parser that accepts a `&[u8]` as input and
 prints its hexdump if the child parser encountered an error:
 
 ```rust
-use nom::{util::dbg_dmp, bytes::complete::tag};
+use nom::{dbg_dmp, bytes::complete::tag};
 
 fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
   dbg_dmp(tag("abcd"))(i)
@@ -203,7 +205,7 @@ fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
 f(a);
 ```
 
-## macros specific debugging tools
+## Macros specific debugging tools
 
 ### trace\_macros
 

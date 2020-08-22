@@ -18,7 +18,7 @@ pub enum IResult<I,O,E=u32> {
   Done(I,O),
   /// indicates the parser encountered an error. E is a custom error type you can redefine
   Error(Err<E>),
-  /// Incomplete contains a Needed, an enum than can represent a known quantity of input data, or unknown
+  /// Incomplete contains a Needed, an enum that can represent a known quantity of input data, or unknown
   Incomplete(Needed)
 }
 

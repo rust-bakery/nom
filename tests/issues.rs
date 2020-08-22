@@ -5,7 +5,12 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{character::{is_digit, streaming::space1 as space}, Err, IResult, Needed, error::ErrorKind, number::streaming::le_u64};
+use nom::{
+  character::{is_digit, streaming::space1 as space},
+  error::ErrorKind,
+  number::streaming::le_u64,
+  Err, IResult, Needed,
+};
 
 #[allow(dead_code)]
 struct Range {
@@ -68,7 +73,10 @@ fn issue_58() {
 #[cfg(feature = "std")]
 mod parse_int {
   use nom::HexDisplay;
-  use nom::{IResult, character::streaming::{digit1 as digit, space1 as space}};
+  use nom::{
+    character::streaming::{digit1 as digit, space1 as space},
+    IResult,
+  };
   use std::str;
 
   named!(parse_ints<Vec<i32>>, many0!(spaces_or_int));
@@ -77,16 +85,18 @@ mod parse_int {
     println!("{}", input.to_hex(8));
     do_parse!(
       input,
-      opt!(complete!(space)) >> res: map!(complete!(digit), |x| {
-        println!("x: {:?}", x);
-        let result = str::from_utf8(x).unwrap();
-        println!("Result: {}", result);
-        println!("int is empty?: {}", x.is_empty());
-        match result.parse() {
-          Ok(i) => i,
-          Err(e) => panic!("UH OH! NOT A DIGIT! {:?}", e),
-        }
-      }) >> (res)
+      opt!(complete!(space))
+        >> res: map!(complete!(digit), |x| {
+          println!("x: {:?}", x);
+          let result = str::from_utf8(x).unwrap();
+          println!("Result: {}", result);
+          println!("int is empty?: {}", x.is_empty());
+          match result.parse() {
+            Ok(i) => i,
+            Err(e) => panic!("UH OH! NOT A DIGIT! {:?}", e),
+          }
+        })
+        >> (res)
     )
   }
 
@@ -203,24 +213,24 @@ named!(issue_724<&str, i32>,
 
 #[test]
 fn issue_752() {
-    assert_eq!(
-        Err::Error(("ab", nom::error::ErrorKind::ParseTo)),
-        parse_to!("ab", usize).unwrap_err()
-    )
+  assert_eq!(
+    Err::Error(("ab", nom::error::ErrorKind::ParseTo)),
+    parse_to!("ab", usize).unwrap_err()
+  )
 }
 
 fn atom_specials(c: u8) -> bool {
-    c == b'q'
+  c == b'q'
 }
 
 named!(
-    capability<&str>,
-    do_parse!(tag!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
+  capability<&str>,
+  do_parse!(tag!(" ") >> _atom: map_res!(take_till1!(atom_specials), std::str::from_utf8) >> ("a"))
 );
 
 #[test]
 fn issue_759() {
-    assert_eq!(capability(b" abcqd"), Ok((&b"qd"[..], "a")));
+  assert_eq!(capability(b" abcqd"), Ok((&b"qd"[..], "a")));
 }
 
 named_args!(issue_771(count: usize)<Vec<u32>>,
@@ -237,24 +247,27 @@ mod issue_780 {
 }
 
 // issue 617
-named!(digits, take_while1!( is_digit ));
+named!(digits, take_while1!(is_digit));
 named!(multi_617<&[u8], () >, fold_many0!( digits, (), |_, _| {}));
 
 // Sad :(
 named!(multi_617_fails<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
 
 mod issue_647 {
-  use nom::{Err, number::streaming::be_f64, error::ErrorKind};
+  use nom::{error::ErrorKind, number::streaming::be_f64, Err};
   pub type Input<'a> = &'a [u8];
 
   #[derive(PartialEq, Debug, Clone)]
   struct Data {
-      c: f64,
-      v: Vec<f64>
+    c: f64,
+    v: Vec<f64>,
   }
 
-  fn list<'a,'b>(input: Input<'a>, _cs: &'b f64) -> Result<(Input<'a>,Vec<f64>), Err<(&'a [u8], ErrorKind)>> {
-      separated_list!(input, complete!(tag!(",")), complete!(be_f64))
+  fn list<'a, 'b>(
+    input: Input<'a>,
+    _cs: &'b f64,
+  ) -> Result<(Input<'a>, Vec<f64>), Err<(&'a [u8], ErrorKind)>> {
+    separated_list!(input, complete!(tag!(",")), complete!(be_f64))
   }
 
   named!(data<Input,Data>, map!(
@@ -278,7 +291,10 @@ named!(issue_775, take_till1!(|_| true));
 fn issue_848_overflow_incomplete_bits_to_bytes() {
   named!(take, take!(0x2000000000000000));
   named!(parser<&[u8], &[u8]>, bits!(bytes!(take)));
-  assert_eq!(parser(&b""[..]), Err(Err::Failure(error_position!(&b""[..], ErrorKind::TooLarge))));
+  assert_eq!(
+    parser(&b""[..]),
+    Err(Err::Failure(error_position!(&b""[..], ErrorKind::TooLarge)))
+  );
 }
 
 #[test]
@@ -293,8 +309,29 @@ fn issue_942() {
 
 #[test]
 fn issue_many_m_n_with_zeros() {
-    use nom::multi::many_m_n;
-    use nom::character::complete::char;
-    let parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
-    assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
+  use nom::character::complete::char;
+  use nom::multi::many_m_n;
+  let parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
+  assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
+}
+
+#[test]
+fn issue_1027_convert_error_panic_nonempty() {
+  use nom::character::complete::char;
+  use nom::error::{convert_error, VerboseError};
+  use nom::sequence::pair;
+
+  let input = "a";
+
+  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b'))(input);
+  let err = match result.unwrap_err() {
+    Err::Error(e) => e,
+    _ => unreachable!(),
+  };
+
+  let msg = convert_error(&input, err);
+  assert_eq!(
+    msg,
+    "0: at line 1:\na\n ^\nexpected \'b\', got end of input\n\n"
+  );
 }

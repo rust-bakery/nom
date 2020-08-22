@@ -17,7 +17,7 @@
 //! );
 //! ```
 //!
-//! But when used in other combinators, are Used
+//! But when used in other combinators, are used
 //! like this:
 //!
 //! ```ignore
@@ -45,8 +45,8 @@
 //! ```
 //!
 //! Combinators must have a specific variant for
-//! non-macro arguments. Example: passing a function
-//! to take_while! instead of another combinator.
+//! non-macro arguments. Example: Passing a function
+//! to `take_while!` instead of another combinator.
 //!
 //! ```ignore
 //! macro_rules! take_while(
@@ -67,7 +67,7 @@
 /// Makes a function from a parser combination
 ///
 /// The type can be set up if the compiler needs
-/// more information
+/// more information.
 ///
 /// Function-like declaration:
 /// ```
@@ -145,7 +145,7 @@ macro_rules! named (
 /// );
 /// ```
 ///
-/// Note: if using arguments that way gets hard to read, it is always
+/// Note: If using arguments that way gets hard to read, it is always
 /// possible to write the equivalent parser definition manually, like
 /// this:
 ///
@@ -192,7 +192,7 @@ macro_rules! named_args {
     };
 }
 
-/// Makes a function from a parser combination, with attributes
+/// Makes a function from a parser combination, with attributes.
 ///
 /// The usage of this macro is almost identical to `named!`, except that
 /// you also pass attributes to be attached to the generated function.
@@ -247,7 +247,7 @@ macro_rules! named_attr (
     );
 );
 
-/// Used to wrap common expressions and function as macros
+/// Used to wrap common expressions and function as macros.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -266,7 +266,7 @@ macro_rules! call (
 );
 
 //FIXME: error rewrite
-/// Prevents backtracking if the child parser fails
+/// Prevents backtracking if the child parser fails.
 ///
 /// This parser will do an early return instead of sending
 /// its result to the parent parser.
@@ -363,11 +363,11 @@ macro_rules! return_error (
 );
 
 //FIXME: error rewrite
-/// Add an error if the child parser fails
+/// Add an error if the child parser fails.
 ///
 /// While `return_error!` does an early return and avoids backtracking,
-/// add_return_error! backtracks normally. It just provides more context
-/// for an error
+/// `add_return_error!` backtracks normally. It just provides more context
+/// for an error.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -407,8 +407,8 @@ macro_rules! add_return_error (
   );
 );
 
-/// replaces a `Incomplete` returned by the child parser
-/// with an `Error`
+/// Replaces a `Incomplete` returned by the child parser
+/// with an `Error`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -438,7 +438,7 @@ macro_rules! complete (
 /// parsed value if the child parser returned `Ok`, and will do an early
 /// return for the `Err` side.
 ///
-/// this can provide more flexibility than `do_parse!` if needed
+/// This can provide more flexibility than `do_parse!` if needed.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -479,7 +479,7 @@ macro_rules! try_parse (
 
 /// `map!(I -> IResult<I, O>, O -> P) => I -> IResult<I, P>`
 ///
-/// maps a function on the result of a parser
+/// Maps a function on the result of a parser.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -511,7 +511,7 @@ macro_rules! map(
 );
 
 /// `map_res!(I -> IResult<I, O>, O -> Result<P>) => I -> IResult<I, P>`
-/// maps a function returning a Result on the output of a parser
+/// maps a function returning a `Result` on the output of a parser.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -552,7 +552,7 @@ macro_rules! map_res (
 );
 
 /// `map_opt!(I -> IResult<I, O>, O -> Option<P>) => I -> IResult<I, P>`
-/// maps a function returning an Option on the output of a parser
+/// maps a function returning an `Option` on the output of a parser.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -593,10 +593,10 @@ macro_rules! map_opt (
 );
 
 /// `parse_to!(O) => I -> IResult<I, O>`
-/// uses the `parse` method from `std::str::FromStr` to convert the current
-/// input to the specified type
+/// Uses the `parse` method from `std::str::FromStr` to convert the current
+/// input to the specified type.
 ///
-/// this will completely consume the input
+/// This will completely consume the input.
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -637,7 +637,7 @@ macro_rules! parse_to (
 );
 
 /// `verify!(I -> IResult<I, O>, O -> bool) => I -> IResult<I, O>`
-/// returns the result of the child parser if it satisfies a verification function
+/// returns the result of the child parser if it satisfies a verification function.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -666,7 +666,7 @@ macro_rules! verify (
 /// or `value!(T) => R -> IResult<R, T>`
 ///
 /// If the child parser was successful, return the value.
-/// If no child parser is provided, always return the value
+/// If no child parser is provided, always return the value.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -694,10 +694,10 @@ macro_rules! value (
 );
 
 /// `opt!(I -> IResult<I,O>) => I -> IResult<I, Option<O>>`
-/// make the underlying parser optional
+/// make the underlying parser optional.
 ///
-/// returns an Option of the returned type. This parser returns `Some(result)` if the child parser
-/// succeeds,`None` if it fails, and `Incomplete` if it did not have enough data to decide
+/// Returns an `Option` of the returned type. This parser returns `Some(result)` if the child parser
+/// succeeds, `None` if it fails, and `Incomplete` if it did not have enough data to decide.
 ///
 /// *Warning*: if you are using `opt` for some kind of optional ending token (like an end of line),
 /// you should combine it with `complete` to make sure it works.
@@ -731,9 +731,9 @@ macro_rules! opt(
 );
 
 /// `opt_res!(I -> IResult<I,O>) => I -> IResult<I, Result<nom::Err,O>>`
-/// make the underlying parser optional
+/// make the underlying parser optional.
 ///
-/// returns a Result, with Err containing the parsing error
+/// Returns a `Result`, with `Err` containing the parsing error.
 ///
 /// ```ignore
 /// # #[macro_use] extern crate nom;
@@ -810,9 +810,9 @@ macro_rules! cond(
 );
 
 /// `peek!(I -> IResult<I,O>) => I -> IResult<I, O>`
-/// returns a result without consuming the input
+/// returns a result without consuming the input.
 ///
-/// the embedded parser may return Err(Err::Incomplete
+/// The embedded parser may return `Err(Err::Incomplete)`.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -834,8 +834,8 @@ macro_rules! peek(
 );
 
 /// `not!(I -> IResult<I,O>) => I -> IResult<I, ()>`
-/// returns a result only if the embedded parser returns Error or Err(Err::Incomplete)
-/// does not consume the input
+/// returns a result only if the embedded parser returns `Error` or `Err(Err::Incomplete)`.
+/// Does not consume the input.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -866,7 +866,7 @@ macro_rules! not(
 );
 
 /// `tap!(name: I -> IResult<I,O> => { block }) => I -> IResult<I, O>`
-/// allows access to the parser's result without affecting it
+/// allows access to the parser's result without affecting it.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -900,10 +900,10 @@ macro_rules! tap (
   );
 );
 
-/// `eof!()` returns its input if it is at the end of input data
+/// `eof!()` returns its input if it is at the end of input data.
 ///
 /// When we're at the end of the data, this combinator
-/// will succeed
+/// will succeed.
 ///
 ///
 /// ```
@@ -934,7 +934,7 @@ macro_rules! eof (
   );
 );
 
-/// `exact!()` will fail if the child parser does not consume the whole data
+/// `exact!()` will fail if the child parser does not consume the whole data.
 ///
 /// TODO: example
 #[macro_export(local_inner_macros)]
@@ -948,7 +948,7 @@ macro_rules! exact (
 );
 
 /// `recognize!(I -> IResult<I, O> ) => I -> IResult<I, I>`
-/// if the child parser was successful, return the consumed input as produced value
+/// if the child parser was successful, return the consumed input as produced value.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
@@ -970,9 +970,9 @@ macro_rules! recognize (
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, IResult, Needed};
-  use crate::error::ParseError;
   use crate::error::ErrorKind;
+  use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::lib::std::boxed::Box;
 
@@ -989,7 +989,7 @@ mod tests {
           Ok(($i.slice(blen..), $i.slice(..blen)))
         },
         CompareResult::Incomplete => {
-          Err(Err::Incomplete(Needed::Size($tag.input_len())))
+          Err(Err::Incomplete(Needed::new($tag.input_len())))
         },
         CompareResult::Error => {
           let e:ErrorKind = ErrorKind::Tag;
@@ -1005,7 +1005,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          Err($crate::Err::Incomplete($crate::Needed::Size(cnt)))
+          Err($crate::Err::Incomplete($crate::Needed::new(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };
@@ -1060,7 +1060,7 @@ mod tests {
     let c = &b"ab"[..];
     assert_eq!(opt_abcd(a), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
     assert_eq!(opt_abcd(b), Ok((&b"bcdefg"[..], None)));
-    assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::new(4))));
   }
 
   #[test]
@@ -1078,7 +1078,7 @@ mod tests {
         Err(Err::Error(error_position!(b, ErrorKind::Tag)))
       ))
     );
-    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::new(4))));
   }
 
   use crate::lib::std::convert::From;
@@ -1100,7 +1100,6 @@ mod tests {
     }
   }
 
-
   #[test]
   #[cfg(feature = "alloc")]
   fn cond() {
@@ -1113,7 +1112,7 @@ mod tests {
     }
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(f_true(&b"xxx"[..]), Err(Err::Error(CustomError("test"))));
 
     assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
@@ -1135,7 +1134,7 @@ mod tests {
     }
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(f_true(&b"xxx"[..]), Err(Err::Error(CustomError("test"))));
 
     assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
@@ -1148,7 +1147,7 @@ mod tests {
     named!(peek_tag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
     assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
-    assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
     assert_eq!(
       peek_tag(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -1162,14 +1161,14 @@ mod tests {
       not_aaa(&b"aaa"[..]),
       Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not)))
     );
-    assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::new(3))));
     assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
   }
 
   #[test]
   fn verify() {
     named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == b'a'));
-    assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
+    assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::new(5))));
     assert_eq!(
       test(&b"bcdefg"[..]),
       Err(Err::Error(error_position!(
@@ -1186,10 +1185,7 @@ mod tests {
 
     assert_eq!(
       res,
-      Err(Err::Error(error_position!(
-        "ab",
-        ErrorKind::ParseTo
-      )))
+      Err(Err::Error(error_position!("ab", ErrorKind::ParseTo)))
     );
 
     let res: IResult<_, _, (&str, ErrorKind)> = parse_to!("42", usize);
@@ -1197,5 +1193,4 @@ mod tests {
     assert_eq!(res, Ok(("", 42)));
     //assert_eq!(ErrorKind::convert(ErrorKind::ParseTo), ErrorKind::ParseTo::<u64>);
   }
-
 }

@@ -1,6 +1,6 @@
 /// Character level parsers
 
-/// matches one of the provided characters
+/// Matches one of the provided characters.
 ///
 /// # Example
 /// ```
@@ -18,7 +18,7 @@ macro_rules! one_of (
   ($i:expr, $inp: expr) => ( $crate::character::streaming::one_of($inp)($i) );
 );
 
-/// matches anything but the provided characters
+/// Matches anything but the provided characters.
 ///
 /// # Example
 /// ```
@@ -37,7 +37,7 @@ macro_rules! none_of (
   ($i:expr, $inp: expr) => ( $crate::character::streaming::none_of($inp)($i) );
 );
 
-/// matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>
+/// Matches one character: `char!(char) => &[u8] -> IResult<&[u8], char>`.
 ///
 /// # Example
 /// ```
@@ -57,8 +57,8 @@ macro_rules! char (
 
 #[cfg(test)]
 mod tests {
-  use crate::internal::Err;
   use crate::error::ErrorKind;
+  use crate::internal::Err;
 
   #[test]
   fn one_of() {

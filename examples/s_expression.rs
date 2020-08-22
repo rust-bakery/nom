@@ -18,7 +18,7 @@ use nom::{
   error::{context, VerboseError},
   multi::many0,
   sequence::{delimited, preceded, terminated, tuple},
-  IResult,
+  IResult, Parser,
 };
 
 /// We start by defining the types that define the shape of data that we want.
@@ -103,7 +103,10 @@ fn parse_builtin<'a>(i: &'a str) -> IResult<&'a str, BuiltIn, VerboseError<&'a s
 
 /// Our boolean values are also constant, so we can do it the same way
 fn parse_bool<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
-  alt((map(tag("#t"), |_| Atom::Boolean(true)), map(tag("#f"), |_| Atom::Boolean(false))))(i)
+  alt((
+    map(tag("#t"), |_| Atom::Boolean(true)),
+    map(tag("#f"), |_| Atom::Boolean(false)),
+  ))(i)
 }
 
 /// The next easiest thing to parse are keywords.
@@ -113,16 +116,19 @@ fn parse_bool<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
 /// Put plainly: `preceded(tag(":"), cut(alpha1))` means that once we see the `:`
 /// character, we have to see one or more alphabetic chararcters or the input is invalid.
 fn parse_keyword<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
-  map(context("keyword", preceded(tag(":"), cut(alpha1))), |sym_str: &str| {
-    Atom::Keyword(sym_str.to_string())
-  })(i)
+  map(
+    context("keyword", preceded(tag(":"), cut(alpha1))),
+    |sym_str: &str| Atom::Keyword(sym_str.to_string()),
+  )(i)
 }
 
 /// Next up is number parsing. We're keeping it simple here by accepting any number (> 1)
 /// of digits but ending the program if it doesn't fit into an i32.
 fn parse_num<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
   alt((
-    map_res(digit1, |digit_str: &str| digit_str.parse::<i32>().map(Atom::Num)),
+    map_res(digit1, |digit_str: &str| {
+      digit_str.parse::<i32>().map(Atom::Num)
+    }),
     map(preceded(tag("-"), digit1), |digit_str: &str| {
       Atom::Num(-1 * digit_str.parse::<i32>().unwrap())
     }),
@@ -132,7 +138,12 @@ fn parse_num<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
 /// Now we take all these simple parsers and connect them.
 /// We can now parse half of our language!
 fn parse_atom<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
-  alt((parse_num, parse_bool, map(parse_builtin, Atom::BuiltIn), parse_keyword))(i)
+  alt((
+    parse_num,
+    parse_bool,
+    map(parse_builtin, Atom::BuiltIn),
+    parse_keyword,
+  ))(i)
 }
 
 /// We then add the Expr layer on top
@@ -147,9 +158,9 @@ fn parse_constant<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str
 ///
 /// Unlike the previous functions, this function doesn't take or consume input, instead it
 /// takes a parsing function and returns a new parsing function.
-fn s_exp<'a, O1, F>(inner: F) -> impl Fn(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>
+fn s_exp<'a, O1, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>
 where
-  F: Fn(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>,
+  F: Parser<&'a str, O1, VerboseError<&'a str>>,
 {
   delimited(
     char('('),
@@ -194,7 +205,11 @@ fn parse_if<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> {
       ),
       |(pred, true_branch, maybe_false_branch)| {
         if let Some(false_branch) = maybe_false_branch {
-          Expr::IfElse(Box::new(pred), Box::new(true_branch), Box::new(false_branch))
+          Expr::IfElse(
+            Box::new(pred),
+            Box::new(true_branch),
+            Box::new(false_branch),
+          )
         } else {
           Expr::If(Box::new(pred), Box::new(true_branch))
         }
@@ -213,15 +228,19 @@ fn parse_quote<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> 
   // this should look very straight-forward after all we've done:
   // we find the `'` (quote) character, use cut to say that we're unambiguously
   // looking for an s-expression of 0 or more expressions, and then parse them
-  map(context("quote", preceded(tag("'"), cut(s_exp(many0(parse_expr))))), |exprs| {
-    Expr::Quote(exprs)
-  })(i)
+  map(
+    context("quote", preceded(tag("'"), cut(s_exp(many0(parse_expr))))),
+    |exprs| Expr::Quote(exprs),
+  )(i)
 }
 
 /// We tie them all together again, making a top-level expression parser!
 
 fn parse_expr<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> {
-  preceded(multispace0, alt((parse_constant, parse_application, parse_if, parse_quote)))(i)
+  preceded(
+    multispace0,
+    alt((parse_constant, parse_application, parse_if, parse_quote)),
+  )(i)
 }
 
 /// And that's it!
@@ -276,7 +295,10 @@ fn eval_expression(e: Expr) -> Option<Expr> {
     }
     Expr::Application(head, tail) => {
       let reduced_head = eval_expression(*head)?;
-      let reduced_tail = tail.into_iter().map(|expr| eval_expression(expr)).collect::<Option<Vec<Expr>>>()?;
+      let reduced_tail = tail
+        .into_iter()
+        .map(|expr| eval_expression(expr))
+        .collect::<Option<Vec<Expr>>>()?;
       if let Expr::Constant(Atom::BuiltIn(bi)) = reduced_head {
         Some(Expr::Constant(match bi {
           BuiltIn::Plus => Atom::Num(
@@ -295,7 +317,12 @@ fn eval_expression(e: Expr) -> Option<Expr> {
               .into_iter()
               .product(),
           ),
-          BuiltIn::Equal => Atom::Boolean(reduced_tail.iter().zip(reduced_tail.iter().skip(1)).all(|(a, b)| a == b)),
+          BuiltIn::Equal => Atom::Boolean(
+            reduced_tail
+              .iter()
+              .zip(reduced_tail.iter().skip(1))
+              .all(|(a, b)| a == b),
+          ),
           BuiltIn::Not => {
             if reduced_tail.len() != 1 {
               return None;
@@ -347,7 +374,11 @@ fn main() {
   let expression_1 = "((if (= (+ 3 (/ 9 3))
          (* 2 3))
      *
-     /) 
+     /)
   456 123)";
-  println!("\"{}\"\nevaled gives us: {:?}", expression_1, eval_from_str(expression_1));
+  println!(
+    "\"{}\"\nevaled gives us: {:?}",
+    expression_1,
+    eval_from_str(expression_1)
+  );
 }
