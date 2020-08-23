@@ -11,8 +11,8 @@ to Rust macros and generic functions.
 
 This document is here to help you in getting started with nom. You can also find
 [nom recipes for common short parsing tasks here](nom_recipes.md). If you need
-more specific help, please ping `geal` on IRC (mozilla, freenode, geeknode,
-oftc), go to `#nom` on Mozilla IRC, or on the 
+more specific help, please ping `geal` on IRC (freenode, geeknode,
+oftc), go to `#nom-parsers` on Freenode IRC, or on the 
 [Gitter chat room](https://gitter.im/Geal/nom).   
 
 # First step: the initial research
