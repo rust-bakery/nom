@@ -241,6 +241,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [Cronenberg](https://github.com/ayrat555/cronenberg)
   * [XFS Runtime Stats](https://github.com/ChrisMacNaughton/xfs-rs)
   * [CSV](https://github.com/GuillaumeGomez/csv-parser)
+  * [FASTA](https://github.com/TianyiShi2001/nom-fasta)
   * [FASTQ](https://github.com/elij/fastq.rs)
   * [INI](https://github.com/Geal/nom/blob/master/tests/ini.rs)
   * [ISO 8601 dates](https://github.com/badboy/iso8601)
