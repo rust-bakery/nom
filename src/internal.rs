@@ -48,7 +48,7 @@ impl<I,O,E> Finish<I,O,E> for IResult<I,O,E> {
 pub enum Needed {
   /// Needs more data, but we do not know how much
   Unknown,
-  /// Contains the required data size
+  /// Contains the required data size in bytes
   Size(NonZeroUsize),
 }
 

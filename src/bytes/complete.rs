@@ -269,7 +269,7 @@ where
       Some(idx) => {
         if idx >= m {
           if idx <= n {
-            let res: IResult<_, _, Error> = if let Some(index) = input.slice_index(idx) {
+            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(idx) {
               Ok(input.take_split(index))
             } else {
               Err(Err::Error(Error::from_error_kind(
@@ -279,7 +279,7 @@ where
             };
             res
           } else {
-            let res: IResult<_, _, Error> = if let Some(index) = input.slice_index(n) {
+            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(n) {
               Ok(input.take_split(index))
             } else {
               Err(Err::Error(Error::from_error_kind(
@@ -298,8 +298,8 @@ where
         let len = input.input_len();
         if len >= n {
           match input.slice_index(n) {
-            Some(index) => Ok(input.take_split(index)),
-            None => Err(Err::Error(Error::from_error_kind(
+            Ok(index) => Ok(input.take_split(index)),
+            Err(_needed) => Err(Err::Error(Error::from_error_kind(
               input,
               ErrorKind::TakeWhileMN,
             ))),
@@ -409,8 +409,8 @@ where
 {
   let c = count.to_usize();
   move |i: Input| match i.slice_index(c) {
-    None => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Eof))),
-    Some(index) => Ok(i.take_split(index)),
+    Err(_needed) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Eof))),
+    Ok(index) => Ok(i.take_split(index)),
   }
 }
 

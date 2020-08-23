@@ -32,7 +32,7 @@ pub fn tag<T, Input, Error: ParseError<Input>>(
   tag: T,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
-  Input: InputTake + Compare<T>,
+  Input: InputTake + InputLength + Compare<T>,
   T: InputLength + Clone,
 {
   move |i: Input| {
@@ -41,7 +41,7 @@ where
 
     let res: IResult<_, _, Error> = match i.compare(t) {
       CompareResult::Ok => Ok(i.take_split(tag_len)),
-      CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(tag_len))),
+      CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(tag_len - i.input_len()))),
       CompareResult::Error => {
         let e: ErrorKind = ErrorKind::Tag;
         Err(Err::Error(Error::from_error_kind(i, e)))
@@ -75,7 +75,7 @@ pub fn tag_no_case<T, Input, Error: ParseError<Input>>(
   tag: T,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
-  Input: InputTake + Compare<T>,
+  Input: InputTake + InputLength + Compare<T>,
   T: InputLength + Clone,
 {
   move |i: Input| {
@@ -84,7 +84,7 @@ where
 
     let res: IResult<_, _, Error> = match (i).compare_no_case(t) {
       CompareResult::Ok => Ok(i.take_split(tag_len)),
-      CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(tag_len))),
+      CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(tag_len - i.input_len()))),
       CompareResult::Error => {
         let e: ErrorKind = ErrorKind::Tag;
         Err(Err::Error(Error::from_error_kind(i, e)))
@@ -279,7 +279,7 @@ where
       Some(idx) => {
         if idx >= m {
           if idx <= n {
-            let res: IResult<_, _, Error> = if let Some(index) = input.slice_index(idx) {
+            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(idx) {
               Ok(input.take_split(index))
             } else {
               Err(Err::Error(Error::from_error_kind(
@@ -289,7 +289,7 @@ where
             };
             res
           } else {
-            let res: IResult<_, _, Error> = if let Some(index) = input.slice_index(n) {
+            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(n) {
               Ok(input.take_split(index))
             } else {
               Err(Err::Error(Error::from_error_kind(
@@ -308,8 +308,8 @@ where
         let len = input.input_len();
         if len >= n {
           match input.slice_index(n) {
-            Some(index) => Ok(input.take_split(index)),
-            None => Err(Err::Error(Error::from_error_kind(
+            Ok(index) => Ok(input.take_split(index)),
+            Err(_needed) => Err(Err::Error(Error::from_error_kind(
               input,
               ErrorKind::TakeWhileMN,
             ))),
@@ -396,8 +396,13 @@ where
 /// Returns an input slice containing the first N input elements (Input[..N]).
 ///
 /// # Streaming Specific
-/// *Streaming version* will return a `Err::Incomplete(Needed::new(N))` where N is the
-/// argument if the input is less than the length provided.
+/// *Streaming version* if the input has less than N elements, `take` will
+/// return a `Err::Incomplete(Needed::new(M))` where M is the number of
+/// additional bytes the parser would need to succeed.
+/// It is well defined for `&[u8]` as the number of elements is the byte size,
+/// but for types like `&str`, we cannot know how many bytes correspond for
+/// the next few chars, so the result will be `Err::Incomplete(Needed::Unknown)`
+///
 /// # Example
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -410,20 +415,19 @@ where
 ///
 /// assert_eq!(take6("1234567"), Ok(("7", "123456")));
 /// assert_eq!(take6("things"), Ok(("", "things")));
-/// assert_eq!(take6("short"), Err(Err::Incomplete(Needed::new(6)))); //N doesn't change
-/// assert_eq!(take6(""), Err(Err::Incomplete(Needed::new(6))));
+/// assert_eq!(take6("short"), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
 pub fn take<C, Input, Error: ParseError<Input>>(
   count: C,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
-  Input: InputIter + InputTake,
+  Input: InputIter + InputTake + InputLength,
   C: ToUsize,
 {
   let c = count.to_usize();
   move |i: Input| match i.slice_index(c) {
-    None => Err(Err::Incomplete(Needed::new(c))),
-    Some(index) => Ok(i.take_split(index)),
+    Err(i) => Err(Err::Incomplete(i)),
+    Ok(index) => Ok(i.take_split(index)),
   }
 }
 
@@ -445,22 +449,21 @@ where
 /// }
 ///
 /// assert_eq!(until_eof("hello, worldeof"), Ok(("eof", "hello, world")));
-/// assert_eq!(until_eof("hello, world"), Err(Err::Incomplete(Needed::new(3))));
-/// assert_eq!(until_eof(""), Err(Err::Incomplete(Needed::new(3))));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Incomplete(Needed::Unknown)));
+/// assert_eq!(until_eof("hello, worldeo"), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
 pub fn take_until<T, Input, Error: ParseError<Input>>(
   tag: T,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
-  Input: InputTake + FindSubstring<T>,
-  T: InputLength + Clone,
+  Input: InputTake + InputLength + FindSubstring<T>,
+  T: Clone,
 {
   move |i: Input| {
-    let len = tag.input_len();
     let t = tag.clone();
 
     let res: IResult<_, _, Error> = match i.find_substring(t) {
-      None => Err(Err::Incomplete(Needed::new(len))),
+      None => Err(Err::Incomplete(Needed::Unknown)),
       Some(index) => Ok(i.take_split(index)),
     };
     res

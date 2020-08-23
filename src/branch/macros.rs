@@ -412,7 +412,7 @@ macro_rules! switch (
 ///   error_position!(&b"xyzabcdefghi"[..], ErrorKind::Permutation)))));
 ///
 /// let e = &b"efgabc"[..];
-/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 ///
@@ -449,7 +449,7 @@ macro_rules! switch (
 /// assert_eq!(perm(c), Ok(("jklm", expected)));
 ///
 /// let e = "efgabc";
-/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
+/// assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]

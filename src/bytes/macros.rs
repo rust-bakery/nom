@@ -710,21 +710,21 @@ mod tests {
     assert_eq!(res, Ok((&b"nom"[..], "omnom")));
 
     let res: IResult<_, _, (&[u8], ErrorKind)> = take_str!(&a[..], 9u32);
-    assert_eq!(res, Err(Err::Incomplete(Needed::new(9))));
+    assert_eq!(res, Err(Err::Incomplete(Needed::new(1))));
   }
 
   #[test]
   fn take_until_incomplete() {
     named!(y, take_until!("end"));
-    assert_eq!(y(&b"nd"[..]), Err(Err::Incomplete(Needed::new(3))));
-    assert_eq!(y(&b"123"[..]), Err(Err::Incomplete(Needed::new(3))));
-    assert_eq!(y(&b"123en"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(y(&b"nd"[..]), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(y(&b"123"[..]), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(y(&b"123en"[..]), Err(Err::Incomplete(Needed::Unknown)));
   }
 
   #[test]
   fn take_until_incomplete_s() {
     named!(ys<&str, &str>, take_until!("end"));
-    assert_eq!(ys("123en"), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(ys("123en"), Err(Err::Incomplete(Needed::Unknown)));
   }
 
   #[test]
@@ -886,9 +886,9 @@ mod tests {
   fn take_utf8() {
     named!(f<&str,&str>, take!(3));
 
-    assert_eq!(f(""), Err(Err::Incomplete(Needed::new(3))));
-    assert_eq!(f("ab"), Err(Err::Incomplete(Needed::new(3))));
-    assert_eq!(f("點"), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(f(""), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(f("ab"), Err(Err::Incomplete(Needed::Unknown)));
+    assert_eq!(f("點"), Err(Err::Incomplete(Needed::Unknown)));
     assert_eq!(f("ab點cd"), Ok(("cd", "ab點")));
     assert_eq!(f("a點bcd"), Ok(("cd", "a點b")));
     assert_eq!(f("a點b"), Ok(("", "a點b")));
@@ -957,7 +957,7 @@ mod tests {
     assert_eq!(test(&b"aBCdefgh"[..]), Ok((&b"efgh"[..], &b"aBCd"[..])));
     assert_eq!(test(&b"abcdefgh"[..]), Ok((&b"efgh"[..], &b"abcd"[..])));
     assert_eq!(test(&b"ABCDefgh"[..]), Ok((&b"efgh"[..], &b"ABCD"[..])));
-    assert_eq!(test(&b"ab"[..]), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(test(&b"ab"[..]), Err(Err::Incomplete(Needed::new(2))));
     assert_eq!(
       test(&b"Hello"[..]),
       Err(Err::Error(error_position!(&b"Hello"[..], ErrorKind::Tag)))
@@ -971,7 +971,7 @@ mod tests {
     assert_eq!(test2("aBCdefgh"), Ok(("efgh", "aBCd")));
     assert_eq!(test2("abcdefgh"), Ok(("efgh", "abcd")));
     assert_eq!(test2("ABCDefgh"), Ok(("efgh", "ABCD")));
-    assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::new(4))));
+    assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::new(2))));
     assert_eq!(
       test2("Hello"),
       Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag)))

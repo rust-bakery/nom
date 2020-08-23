@@ -322,7 +322,7 @@ pub trait InputIter {
   where
     P: Fn(Self::Item) -> bool;
   /// Get the byte offset from the element's position in the stream
-  fn slice_index(&self, count: usize) -> Option<usize>;
+  fn slice_index(&self, count: usize) -> Result<usize, Needed>;
 }
 
 /// Abstracts slicing operations
@@ -354,11 +354,11 @@ impl<'a> InputIter for &'a [u8] {
     self.iter().position(|b| predicate(*b))
   }
   #[inline]
-  fn slice_index(&self, count: usize) -> Option<usize> {
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
     if self.len() >= count {
-      Some(count)
+      Ok(count)
     } else {
-      None
+      Err(Needed::new(count - self.len()))
     }
   }
 }
@@ -399,18 +399,18 @@ impl<'a> InputIter for &'a str {
     None
   }
   #[inline]
-  fn slice_index(&self, count: usize) -> Option<usize> {
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
     let mut cnt = 0;
     for (index, _) in self.char_indices() {
       if cnt == count {
-        return Some(index);
+        return Ok(index);
       }
       cnt += 1;
     }
     if cnt == count {
-      return Some(self.len());
+      return Ok(self.len());
     }
-    None
+    Err(Needed::Unknown)
   }
 }
 
@@ -1043,7 +1043,7 @@ macro_rules! array_impls {
           (&self[..]).position(predicate)
         }
 
-        fn slice_index(&self, count: usize) -> Option<usize> {
+        fn slice_index(&self, count: usize) -> Result<usize, Needed> {
           (&self[..]).slice_index(count)
         }
       }

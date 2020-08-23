@@ -306,7 +306,7 @@ macro_rules! delimited(
 /// // so the parser will tell you that you need 7 bytes: one for the tag,
 /// // one for the length, then 5 bytes
 /// let b: Vec<u8>     = vec!(42, 5, 3, 4, 5);
-/// assert_eq!(tag_length_value(&b[..]), Err(Err::Incomplete(Needed::new(5))));
+/// assert_eq!(tag_length_value(&b[..]), Err(Err::Incomplete(Needed::new(2))));
 /// # }
 /// ```
 ///

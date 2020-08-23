@@ -371,7 +371,7 @@
 //!
 //! // if the input is smaller than 4 bytes, the streaming parser
 //! // will return `Incomplete` to indicate that we need more data
-//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::new(4))));
+//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::new(1))));
 //!
 //! // but the complete parser will return an error
 //! assert_eq!(take_complete(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
