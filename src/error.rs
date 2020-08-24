@@ -72,6 +72,16 @@ impl<I> ParseError<I> for Error<I> {
 
 impl<I> ContextError<I> for Error<I> {}
 
+/// The Display implementation allows the std::error::Error implementation
+impl<I: std::fmt::Display> std::fmt::Display for Error<I> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "error {:?} at: {}", self.code, self.input)
+    }
+}
+impl<I: std::fmt::Debug+std::fmt::Display> std::error::Error for Error<I> { }
+
+// for backward compatibility, keep those trait implementations
+// for the previously used error type
 impl<I> ParseError<I> for (I, ErrorKind) {
   fn from_error_kind(input: I, kind: ErrorKind) -> Self {
     (input, kind)
@@ -153,6 +163,21 @@ impl<I> ContextError<I> for VerboseError<I> {
     other.errors.push((input, VerboseErrorKind::Context(ctx)));
     other
   }
+}
+
+impl<I: std::fmt::Display> std::fmt::Display for VerboseError<I> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Parse error:\n")?;
+        for (input, error) in &self.errors {
+            match error {
+                VerboseErrorKind::Nom(e) => write!(f, "{:?} at: {}\n", e, input)?,
+                VerboseErrorKind::Char(c) => write!(f, "expected '{}' at: {}\n", c, input)?,
+                VerboseErrorKind::Context(s) => write!(f, "in section '{}', at: {}\n", s, input)?,
+            }
+        }
+
+        Ok(())
+    }
 }
 
 use crate::internal::{Err, IResult};
