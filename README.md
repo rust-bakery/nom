@@ -247,6 +247,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [ISO 8601 dates](https://github.com/badboy/iso8601)
   * [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config)
   * [Web archive](https://github.com/sbeckeriv/warc_nom_parser)
+  * [PDB](https://github.com/TianyiShi2001/nom-pdb)
   * [proto files](https://github.com/tafia/protobuf-parser)
   * [Fountain screenplay markup](https://github.com/adamchalmers/fountain-rs)
 - Programming languages:
