@@ -4,6 +4,7 @@
 //! the `error::ParseError<Input>` trait.
 
 use crate::internal::Parser;
+use crate::lib::std::fmt;
 
 /// This trait must be implemented by the error type of a nom parser.
 ///
@@ -88,12 +89,14 @@ impl<I, E> FromExternalError<I, E> for Error<I> {
 }
 
 /// The Display implementation allows the std::error::Error implementation
-impl<I: std::fmt::Display> std::fmt::Display for Error<I> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<I: fmt::Display> fmt::Display for Error<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "error {:?} at: {}", self.code, self.input)
     }
 }
-impl<I: std::fmt::Debug+std::fmt::Display> std::error::Error for Error<I> { }
+
+#[cfg(feature = "std")]
+impl<I: fmt::Debug+fmt::Display> std::error::Error for Error<I> { }
 
 // for backward compatibility, keep those trait implementations
 // for the previously used error type
@@ -190,6 +193,7 @@ impl<I> ContextError<I> for VerboseError<I> {
   }
 }
 
+#[cfg(feature = "alloc")]
 impl<I, E> FromExternalError<I, E> for VerboseError<I> {
   /// Create a new error from an input position and an external error
   fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
@@ -197,8 +201,9 @@ impl<I, E> FromExternalError<I, E> for VerboseError<I> {
   }
 }
 
-impl<I: std::fmt::Display> std::fmt::Display for VerboseError<I> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+#[cfg(feature = "alloc")]
+impl<I: fmt::Display> fmt::Display for VerboseError<I> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Parse error:\n")?;
         for (input, error) in &self.errors {
             match error {
@@ -547,27 +552,6 @@ macro_rules! error_node_position(
     $crate::error::append_error($input, $code, $next)
   });
 );
-
-/*
-
-#[cfg(feature = "std")]
-use $crate::lib::std::any::Any;
-#[cfg(feature = "std")]
-use $crate::lib::std::{error,fmt};
-#[cfg(feature = "std")]
-impl<E: fmt::Debug+Any> error::Error for Err<E> {
-  fn description(&self) -> &str {
-    self.description()
-  }
-}
-
-#[cfg(feature = "std")]
-impl<E: fmt::Debug> fmt::Display for Err<E> {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{}", self.description())
-  }
-}
-*/
 
 //FIXME: error rewrite
 /// translate parser result from IResult<I,O,u32> to IResult<I,O,E> with a custom type
