@@ -234,7 +234,8 @@ where
 
 /// Transforms a `VerboseError` into a trace with input position information
 #[cfg(feature = "alloc")]
-pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
+pub fn convert_error<I:  core::ops::Deref<Target = str>>(input: I, e: VerboseError<I>)
+  -> crate::lib::std::string::String {
   use crate::lib::std::fmt::Write;
   use crate::traits::Offset;
 
