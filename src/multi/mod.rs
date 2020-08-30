@@ -1091,6 +1091,7 @@ where
 /// assert_eq!(parser(&b"\x02abcabcabc"[..]), Ok(((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))));
 /// assert_eq!(parser(b"\x03123123123"), Err(Err::Error(Error::new(&b"123123123"[..], ErrorKind::Tag))));
 /// ```
+#[cfg(feature = "alloc")]
 pub fn length_count<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + InputLength + InputTake,
@@ -1102,7 +1103,7 @@ where
   move |i: I| {
     let (i, count) = f.parse(i)?;
     let mut input = i.clone();
-    let mut res = crate::lib::std::vec::Vec::new();
+    let mut res = Vec::new();
 
     for _ in 0..count.to_usize() {
       let input_ = input.clone();
