@@ -85,6 +85,7 @@ Parsing integers from binary formats can be done in two ways: With parser functi
 - `parse_to!`: Uses the parse method from `std::str::FromStr` to convert the current input to the specified type
 - `peek!`: Returns a result without consuming the input
 - `recognize!`: If the child parser was successful, return the consumed input as the produced value
+- `consumed()`: If the child parser was successful, return a tuple of the consumed input and the produced output.
 - `return_error!`: Prevents backtracking if the child parser fails
 - `tap!`: Allows access to the parser's result without affecting it
 - `verify!`: Returns the result of the child parser if it satisfies a verification function
