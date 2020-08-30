@@ -1075,17 +1075,21 @@ where
 /// * `g` The parser to apply repeatedly.
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::number::complete::be_u8;
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::number::complete::u8;
 /// use nom::multi::length_count;
 /// use nom::bytes::complete::tag;
+/// use nom::combinator::map;
 ///
 /// fn parser(s: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-///   length_count(be_u8, tag("abc"))(s)
+///   length_count(map(u8, |i| {
+///      println!("got number: {}", i);
+///      i
+///   }), tag("abc"))(s)
 /// }
 ///
 /// assert_eq!(parser(&b"\x02abcabcabc"[..]), Ok(((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))));
-/// assert_eq!(parser(b"\x03123123123"), Err(Err::Error((&b"123123123"[..], ErrorKind::Tag))));
+/// assert_eq!(parser(b"\x03123123123"), Err(Err::Error(Error::new(&b"123123123"[..], ErrorKind::Tag))));
 /// ```
 pub fn length_count<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
