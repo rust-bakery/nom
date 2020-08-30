@@ -428,11 +428,14 @@ pub mod lib {
   #[cfg(not(feature = "std"))]
   /// internal std exports for no_std compatibility
   pub mod std {
+    #[cfg(not(feature = "alloc"))]
+    pub use core::borrow;
+
     #[cfg(feature = "alloc")]
     #[cfg_attr(feature = "alloc", macro_use)]
-    pub use alloc::{boxed, string, vec};
+    pub use alloc::{borrow, boxed, string, vec};
 
-    pub use core::{borrow, cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
 
     /// internal reproduction of std prelude
     pub mod prelude {

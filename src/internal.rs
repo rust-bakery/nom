@@ -147,7 +147,9 @@ impl<T> Err<(T, ErrorKind)> {
   }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
+use crate::lib::std::{vec::Vec, string::String, borrow::ToOwned};
+#[cfg(feature = "alloc")]
 impl Err<(&[u8], ErrorKind)> {
   /// Obtaining ownership
   pub fn to_owned(self) -> Err<(Vec<u8>, ErrorKind)> {
@@ -155,7 +157,7 @@ impl Err<(&[u8], ErrorKind)> {
   }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl Err<(&str, ErrorKind)> {
   /// Automatically converts between errors if the underlying type supports it
   pub fn to_owned(self) -> Err<(String, ErrorKind)> {
