@@ -36,12 +36,20 @@ pub trait ParseError<I>: Sized {
 /// This trait is required by the `context` combinator to add a static string
 /// to an existing error
 pub trait ContextError<I>: Sized {
-  /// Create a new error from an input position, a static string and an existing error.
+  /// Creates a new error from an input position, a static string and an existing error.
   /// This is used mainly in the [context] combinator, to add user friendly information
   /// to errors when backtracking through a parse tree
   fn add_context(_input: I, _ctx: &'static str, other: Self) -> Self {
     other
   }
+}
+
+/// This trait is required by the [map_res] combinator to integrate
+/// error types from external functions, like [std::str::FromStr]
+pub trait FromExternalError<I, E> {
+  /// Creates a new error from an input position, an [ErrorKind] indicating the
+  /// wrapping parser, and an external error
+  fn from_external_error(input: I, kind: ErrorKind, e: E) -> Self;
 }
 
 /// default error type, only contains the error' location and code
@@ -72,6 +80,13 @@ impl<I> ParseError<I> for Error<I> {
 
 impl<I> ContextError<I> for Error<I> {}
 
+impl<I, E> FromExternalError<I, E> for Error<I> {
+  /// Create a new error from an input position and an external error
+  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
+    Error { input, code: kind }
+  }
+}
+
 /// The Display implementation allows the std::error::Error implementation
 impl<I: std::fmt::Display> std::fmt::Display for Error<I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -94,6 +109,12 @@ impl<I> ParseError<I> for (I, ErrorKind) {
 
 impl<I> ContextError<I> for (I, ErrorKind) {}
 
+impl<I, E> FromExternalError<I, E> for (I, ErrorKind) {
+  fn from_external_error(input: I, kind: ErrorKind, e: E) -> Self {
+    (input, kind)
+  }
+}
+
 impl<I> ParseError<I> for () {
   fn from_error_kind(_: I, _: ErrorKind) -> Self {}
 
@@ -101,6 +122,10 @@ impl<I> ParseError<I> for () {
 }
 
 impl<I> ContextError<I> for () {}
+
+impl<I, E> FromExternalError<I, E> for () {
+  fn from_external_error(_input: I, _kind: ErrorKind, _e: E) -> Self {}
+}
 
 /// Creates an error from the input position and an [ErrorKind]
 pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
@@ -162,6 +187,13 @@ impl<I> ContextError<I> for VerboseError<I> {
   fn add_context(input: I, ctx: &'static str, mut other: Self) -> Self {
     other.errors.push((input, VerboseErrorKind::Context(ctx)));
     other
+  }
+}
+
+impl<I, E> FromExternalError<I, E> for VerboseError<I> {
+  /// Create a new error from an input position and an external error
+  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
+    Self::from_error_kind(input, kind)
   }
 }
 

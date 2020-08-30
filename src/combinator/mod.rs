@@ -5,8 +5,7 @@
 #[cfg(feature = "alloc")]
 use crate::lib::std::boxed::Box;
 
-use crate::error::ErrorKind;
-use crate::error::ParseError;
+use crate::error::{ErrorKind, ParseError, FromExternalError};
 use crate::internal::*;
 use crate::lib::std::borrow::Borrow;
 #[cfg(feature = "std")]
@@ -112,7 +111,7 @@ where
 /// assert_eq!(parse("123456"), Err(Err::Error(("123456", ErrorKind::MapRes))));
 /// # }
 /// ```
-pub fn map_res<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(
+pub fn map_res<I: Clone, O1, O2, E: FromExternalError<I, E2>, E2, F, G>(
   mut first: F,
   second: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
@@ -125,13 +124,13 @@ where
     let (input, o1) = first.parse(input)?;
     match second(o1) {
       Ok(o2) => Ok((input, o2)),
-      Err(_) => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapRes))),
+      Err(e) => Err(Err::Error(E::from_external_error(i, ErrorKind::MapRes, e))),
     }
   }
 }
 
 #[doc(hidden)]
-pub fn map_resc<I: Clone, O1, O2, E: ParseError<I>, E2, F, G>(
+pub fn map_resc<I: Clone, O1, O2, E: FromExternalError<I, E2>, E2, F, G>(
   input: I,
   first: F,
   second: G,
