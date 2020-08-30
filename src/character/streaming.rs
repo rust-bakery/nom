@@ -39,6 +39,40 @@ where
   }
 }
 
+/// Recognizes one character and checks that it satisfies a predicate
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
+/// # use nom::character::streaming::satisfy;
+/// # fn main() {
+/// fn parser(i: &str) -> IResult<&str, char> {
+///     satisfy(|c| c == 'a' || c == 'b')(i)
+/// }
+/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
+/// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
+/// assert_eq!(parser(""), Err(Err::Incomplete(Needed::Unknown)));
+/// # }
+/// ```
+pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
+where
+  I: Slice<RangeFrom<usize>> + InputIter,
+  <I as InputIter>::Item: AsChar,
+  F: Fn(char) -> bool,
+{
+  move |i: I| match (i).iter_elements().next().map(|t| {
+    let c = t.as_char();
+    let b = cond(c);
+    (c, b)
+  }) {
+    None => Err(Err::Incomplete(Needed::Unknown)),
+    Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Satisfy))),
+    Some((c, true)) => Ok((i.slice(c.len()..), c)),
+  }
+}
+
 /// Recognizes one of the provided characters.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.

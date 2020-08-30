@@ -37,6 +37,39 @@ where
   }
 }
 
+/// Recognizes one character and checks that it satisfies a predicate
+///
+/// *Complete version*: Will return an error if there's not enough input data.
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
+/// # use nom::character::complete::satisfy;
+/// # fn main() {
+/// fn parser(i: &str) -> IResult<&str, char> {
+///     satisfy(|c| c == 'a' || c == 'b')(i)
+/// }
+/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
+/// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
+/// # }
+/// ```
+pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
+where
+  I: Slice<RangeFrom<usize>> + InputIter,
+  <I as InputIter>::Item: AsChar,
+  F: Fn(char) -> bool,
+{
+  move |i: I| match (i).iter_elements().next().map(|t| {
+    let c = t.as_char();
+    let b = cond(c);
+    (c, b)
+  }) {
+    Some((c, true)) => Ok((i.slice(c.len()..), c)),
+    _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Satisfy))),
+  }
+}
+
 /// Recognizes one of the provided characters.
 ///
 /// *Complete version*: Will return an error if there's not enough input data.
