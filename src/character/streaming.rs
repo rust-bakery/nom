@@ -26,14 +26,14 @@ use crate::error::ErrorKind;
 /// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
+  I: Slice<RangeFrom<usize>> + InputIter + InputLength,
   <I as InputIter>::Item: AsChar,
 {
   move |i: I| match (i).iter_elements().next().map(|t| {
     let b = t.as_char() == c;
     (&c, b)
   }) {
-    None => Err(Err::Incomplete(Needed::new(1))),
+    None => Err(Err::Incomplete(Needed::new(c.len() - i.input_len()))),
     Some((_, false)) => Err(Err::Error(Error::from_char(i, c))),
     Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
   }
@@ -257,7 +257,7 @@ where
 /// ```
 pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
+  I: Slice<RangeFrom<usize>> + InputIter + InputLength,
   <I as InputIter>::Item: AsChar,
 {
   char('\n')(input)
@@ -279,7 +279,7 @@ where
 /// ```
 pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
+  I: Slice<RangeFrom<usize>> + InputIter + InputLength,
   <I as InputIter>::Item: AsChar,
 {
   char('\t')(input)

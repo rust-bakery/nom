@@ -829,7 +829,7 @@ where
   T: Clone + Offset,
   T: InputIter,
   <T as InputIter>::Item: AsChar,
-  T: InputTakeAtPosition,
+  T: InputTakeAtPosition + InputLength,
   <T as InputTakeAtPosition>::Item: AsChar
 {
   recognize(
