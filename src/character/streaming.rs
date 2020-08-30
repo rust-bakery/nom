@@ -16,12 +16,15 @@ use crate::error::ErrorKind;
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
 /// # use nom::character::streaming::char;
 /// # fn main() {
-/// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b"abc"[..]), Ok((&b"bc"[..], 'a')));
-/// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b"bc"[..]), Err(Err::Error((&b"bc"[..], ErrorKind::Char))));
-/// assert_eq!(char::<_, (_, ErrorKind)>('a')(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
+/// fn parser(i: &str) -> IResult<&str, char> {
+///     char('a')(i)
+/// }
+/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
+/// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
+/// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(1))));
 /// # }
 /// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>

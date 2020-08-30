@@ -15,12 +15,15 @@ use crate::traits::{Compare, CompareResult};
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind};
+/// # use nom::{Err, error::{ErrorKind, Error}, IResult};
 /// # use nom::character::complete::char;
 /// # fn main() {
-/// assert_eq!(char::<_, (&str, ErrorKind)>('a')("abc"), Ok(("bc", 'a')));
-/// assert_eq!(char::<_, (&str, ErrorKind)>('a')("bc"), Err(Err::Error(("bc", ErrorKind::Char))));
-/// assert_eq!(char::<_, (&str, ErrorKind)>('a')(""), Err(Err::Error(("", ErrorKind::Char))));
+/// fn parser(i: &str) -> IResult<&str, char> {
+///     char('a')(i)
+/// }
+/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
+/// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
 /// # }
 /// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>

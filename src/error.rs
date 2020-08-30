@@ -110,7 +110,7 @@ impl<I> ParseError<I> for (I, ErrorKind) {
 impl<I> ContextError<I> for (I, ErrorKind) {}
 
 impl<I, E> FromExternalError<I, E> for (I, ErrorKind) {
-  fn from_external_error(input: I, kind: ErrorKind, e: E) -> Self {
+  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
     (input, kind)
   }
 }
