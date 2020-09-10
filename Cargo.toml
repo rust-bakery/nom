@@ -27,11 +27,16 @@ include = [
 ]
 
 [features]
-alloc = []
-std = ["alloc", "memchr/use_std"]
-default = ["std", "lexical"]
+alloc = ["bitvec/alloc"]
+std = ["alloc", "bitvec/std", "memchr/use_std"]
+default = ["std", "bitvec", "lexical"]
 regexp = ["regex"]
 lexical = ["lexical-core"]
+
+[dependencies.bitvec]
+version = "0.19"
+optional = true
+default-features = false
 
 [dependencies.regex]
 version = "^1.0"

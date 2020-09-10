@@ -407,6 +407,8 @@
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
 extern crate alloc;
+#[cfg(feature = "bitvec")]
+extern crate bitvec;
 #[cfg(doctest)]
 extern crate doc_comment;
 #[cfg(feature = "lexical")]
