@@ -11,7 +11,7 @@ use nom::{
   branch::alt,
   bytes::complete::{tag, take},
   character::complete::{anychar, char, multispace0, none_of},
-  combinator::{map, map_opt, map_res, value},
+  combinator::{map, map_opt, map_res, value, verify},
   error::{ErrorKind, ParseError},
   multi::{fold_many0, separated_list0},
   number::complete::{double, recognize_float},
@@ -35,6 +35,35 @@ fn boolean(input: &str) -> IResult<&str, bool> {
   alt((value(false, tag("false")), value(true, tag("true"))))(input)
 }
 
+fn u16_hex(input: &str) -> IResult<&str, u16> {
+  map_res(take(4usize), |s| u16::from_str_radix(s, 16))(input)
+}
+
+fn unicode_escape(input: &str) -> IResult<&str, char> {
+  map_opt(
+    alt((
+      // Not a surrogate
+      map(verify(u16_hex, |cp| !(0xD800..0xE000).contains(cp)), |cp| {
+        cp as u32
+      }),
+      // See https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF for details
+      map(
+        verify(
+          separated_pair(u16_hex, tag("\\u"), u16_hex),
+          |(high, low)| (0xD800..0xDC00).contains(high) && (0xDC00..0xE000).contains(low),
+        ),
+        |(high, low)| {
+          let high_ten = (high as u32) - 0xD800;
+          let low_ten = (low as u32) - 0xDC00;
+          (high_ten << 10) + low_ten + 0x10000
+        },
+      ),
+    )),
+    // Could probably be replaced with .unwrap() or _unchecked due to the verify checks
+    std::char::from_u32,
+  )(input)
+}
+
 fn character(input: &str) -> IResult<&str, char> {
   let (input, c) = none_of("\"")(input)?;
   if c == '\\' {
@@ -50,12 +79,7 @@ fn character(input: &str) -> IResult<&str, char> {
           _ => return Err(()),
         })
       }),
-      map_opt(
-        map_res(preceded(char('u'), take(4usize)), |s| {
-          u16::from_str_radix(s, 16)
-        }),
-        |c| std::char::from_u32(c as u32),
-      ),
+      preceded(char('u'), unicode_escape),
     ))(input)
   } else {
     Ok((input, c))
@@ -118,7 +142,7 @@ fn json(input: &str) -> IResult<&str, JsonValue> {
 
 fn json_bench(c: &mut Criterion) {
   let data = "  { \"a\"\t: 42,
-  \"b\": [ \"x\", \"y\", 12 ] ,
+  \"b\": [ \"x\", \"y\", 12 ,\"\\u2014\", \"\\uD83D\\uDE10\"] ,
   \"c\": { \"hello\" : \"world\"
   }
   }  ";
