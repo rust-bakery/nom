@@ -5,7 +5,7 @@ use nom::{
   branch::alt,
   bytes::complete::{tag, take},
   character::complete::{anychar, char, multispace0, none_of},
-  combinator::{map, map_opt, map_res, value},
+  combinator::{map, map_opt, map_res, value, verify},
   error::ParseError,
   multi::{fold_many0, separated_list0},
   number::complete::double,
@@ -29,6 +29,35 @@ fn boolean(input: &str) -> IResult<&str, bool> {
   alt((value(false, tag("false")), value(true, tag("true"))))(input)
 }
 
+fn u16_hex(input: &str) -> IResult<&str, u16> {
+  map_res(take(4usize), |s| u16::from_str_radix(s, 16))(input)
+}
+
+fn unicode_escape(input: &str) -> IResult<&str, char> {
+  map_opt(
+    alt((
+      // Not a surrogate
+      map(verify(u16_hex, |cp| !(0xD800..0xE000).contains(cp)), |cp| {
+        cp as u32
+      }),
+      // See https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF for details
+      map(
+        verify(
+          separated_pair(u16_hex, tag("\\u"), u16_hex),
+          |(high, low)| (0xD800..0xDC00).contains(high) && (0xDC00..0xE000).contains(low),
+        ),
+        |(high, low)| {
+          let high_ten = (high as u32) - 0xD800;
+          let low_ten = (low as u32) - 0xDC00;
+          (high_ten << 10) + low_ten + 0x10000
+        },
+      ),
+    )),
+    // Could be probably replaced with .unwrap() or _unchecked due to the verify checks
+    std::char::from_u32,
+  )(input)
+}
+
 fn character(input: &str) -> IResult<&str, char> {
   let (input, c) = none_of("\"")(input)?;
   if c == '\\' {
@@ -44,12 +73,7 @@ fn character(input: &str) -> IResult<&str, char> {
           _ => return Err(()),
         })
       }),
-      map_opt(
-        map_res(preceded(char('u'), take(4usize)), |s| {
-          u16::from_str_radix(s, 16)
-        }),
-        |c| std::char::from_u32(c as u32),
-      ),
+      preceded(char('u'), unicode_escape),
     ))(input)
   } else {
     Ok((input, c))
@@ -118,11 +142,15 @@ fn json_string() {
     string("\"abc\\\"\\\\\\/\\b\\f\\n\\r\\t\\u0001\\u2014\u{2014}def\""),
     Ok(("", "abc\"\\/\x08\x0C\n\r\t\x01——def".to_string())),
   );
+  assert_eq!(string("\"\\uD83D\\uDE10\""), Ok(("", "😐".to_string())));
 
   assert!(string("\"").is_err());
   assert!(string("\"abc").is_err());
   assert!(string("\"\\\"").is_err());
   assert!(string("\"\\u123\"").is_err());
+  assert!(string("\"\\uD800\"").is_err());
+  assert!(string("\"\\uD800\\uD800\"").is_err());
+  assert!(string("\"\\uDC00\"").is_err());
 }
 
 #[test]
