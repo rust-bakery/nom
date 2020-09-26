@@ -431,7 +431,7 @@ where
   }
 }
 
-/// Returns the longest input slice till it matches the pattern.
+/// Returns the input slice up to the first occurrence of the pattern.
 ///
 /// It doesn't consume the pattern.
 ///
@@ -451,6 +451,7 @@ where
 /// assert_eq!(until_eof("hello, worldeof"), Ok(("eof", "hello, world")));
 /// assert_eq!(until_eof("hello, world"), Err(Err::Incomplete(Needed::Unknown)));
 /// assert_eq!(until_eof("hello, worldeo"), Err(Err::Incomplete(Needed::Unknown)));
+/// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
 /// ```
 pub fn take_until<T, Input, Error: ParseError<Input>>(
   tag: T,
