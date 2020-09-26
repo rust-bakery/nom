@@ -414,7 +414,7 @@ where
   }
 }
 
-/// Returns the longest input slice till it matches the pattern.
+/// Returns the input slice up to the first occurrence of the pattern.
 ///
 /// It doesn't consume the pattern. It will return `Err(Err::Error((_, ErrorKind::TakeUntil)))`
 /// if the pattern wasn't met.
@@ -431,6 +431,7 @@ where
 /// assert_eq!(until_eof("hello, worldeof"), Ok(("eof", "hello, world")));
 /// assert_eq!(until_eof("hello, world"), Err(Err::Error(Error::new("hello, world", ErrorKind::TakeUntil))));
 /// assert_eq!(until_eof(""), Err(Err::Error(Error::new("", ErrorKind::TakeUntil))));
+/// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
 /// ```
 pub fn take_until<T, Input, Error: ParseError<Input>>(
   tag: T,
