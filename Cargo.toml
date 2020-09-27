@@ -34,7 +34,9 @@ regexp = ["regex"]
 lexical = ["lexical-core"]
 
 [dependencies.bitvec]
-version = "0.19"
+#version = "0.19"
+git = "https://github.com/myrrlyn/bitvec"
+branch = "feature/21"
 optional = true
 default-features = false
 
