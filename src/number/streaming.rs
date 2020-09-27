@@ -683,18 +683,24 @@ where
 /// use nom::number::streaming::u8;
 ///
 /// let parser = |s| {
-///   u8::<(&[u8], ErrorKind)>(s)
+///   u8::<_, (_, ErrorKind)>(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(b""), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
-pub fn u8<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], u8, E> {
-  if i.len() < 1 {
+pub fn u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 1;
+  if input.input_len() < bound {
     Err(Err::Incomplete(Needed::new(1)))
   } else {
-    Ok((&i[1..], i[0]))
+    let res = input.iter_elements().next().unwrap();
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -710,23 +716,24 @@ pub fn u8<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], u8, E> 
 /// use nom::number::streaming::u16;
 ///
 /// let be_u16 = |s| {
-///   u16::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   u16::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_u16(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0003)));
-/// assert_eq!(be_u16(b"\x01"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(be_u16(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0003)));
+/// assert_eq!(be_u16(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(1))));
 ///
 /// let le_u16 = |s| {
-///   u16::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   u16::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_u16(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0300)));
-/// assert_eq!(le_u16(b"\x01"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(le_u16(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0300)));
+/// assert_eq!(le_u16(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
-pub fn u16<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], u16, E> {
+pub fn u16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u16, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_u16,
     crate::number::Endianness::Little => le_u16,
@@ -744,23 +751,24 @@ pub fn u16<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::u24;
 ///
 /// let be_u24 = |s| {
-///   u24::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   u24::<_,(_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_u24(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x000305)));
-/// assert_eq!(be_u24(b"\x01"), Err(Err::Incomplete(Needed::new(2))));
+/// assert_eq!(be_u24(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000305)));
+/// assert_eq!(be_u24(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(2))));
 ///
 /// let le_u24 = |s| {
-///   u24::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   u24::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_u24(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x050300)));
-/// assert_eq!(le_u24(b"\x01"), Err(Err::Incomplete(Needed::new(2))));
+/// assert_eq!(le_u24(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050300)));
+/// assert_eq!(le_u24(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 #[inline]
-pub fn u24<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], u32, E> {
+pub fn u24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_u24,
     crate::number::Endianness::Little => le_u24,
@@ -778,23 +786,24 @@ pub fn u24<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::u32;
 ///
 /// let be_u32 = |s| {
-///   u32::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   u32::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_u32(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x00030507)));
-/// assert_eq!(be_u32(b"\x01"), Err(Err::Incomplete(Needed::new(3))));
+/// assert_eq!(be_u32(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00030507)));
+/// assert_eq!(be_u32(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(3))));
 ///
 /// let le_u32 = |s| {
-///   u32::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   u32::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_u32(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x07050300)));
-/// assert_eq!(le_u32(b"\x01"), Err(Err::Incomplete(Needed::new(3))));
+/// assert_eq!(le_u32(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07050300)));
+/// assert_eq!(le_u32(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
-pub fn u32<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], u32, E> {
+pub fn u32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_u32,
     crate::number::Endianness::Little => le_u32,
@@ -812,23 +821,24 @@ pub fn u32<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::u64;
 ///
 /// let be_u64 = |s| {
-///   u64::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   u64::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_u64(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0001020304050607)));
-/// assert_eq!(be_u64(b"\x01"), Err(Err::Incomplete(Needed::new(7))));
+/// assert_eq!(be_u64(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0001020304050607)));
+/// assert_eq!(be_u64(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 ///
 /// let le_u64 = |s| {
-///   u64::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   u64::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_u64(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0706050403020100)));
-/// assert_eq!(le_u64(b"\x01"), Err(Err::Incomplete(Needed::new(7))));
+/// assert_eq!(le_u64(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0706050403020100)));
+/// assert_eq!(le_u64(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
-pub fn u64<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], u64, E> {
+pub fn u64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_u64,
     crate::number::Endianness::Little => le_u64,
@@ -846,24 +856,25 @@ pub fn u64<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::u128;
 ///
 /// let be_u128 = |s| {
-///   u128::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   u128::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_u128(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
-/// assert_eq!(be_u128(b"\x01"), Err(Err::Incomplete(Needed::new(15))));
+/// assert_eq!(be_u128(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
+/// assert_eq!(be_u128(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 ///
 /// let le_u128 = |s| {
-///   u128::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   u128::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_u128(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
-/// assert_eq!(le_u128(b"\x01"), Err(Err::Incomplete(Needed::new(15))));
+/// assert_eq!(le_u128(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
+/// assert_eq!(le_u128(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn u128<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], u128, E> {
+pub fn u128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_u128,
     crate::number::Endianness::Little => le_u128,
@@ -880,14 +891,17 @@ pub fn u128<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::i8;
 ///
 /// let parser = |s| {
-///   i8::<(&[u8], ErrorKind)>(s)
+///   i8::<_, (_, ErrorKind)>(s)
 /// };
 ///
-/// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(b""), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
+/// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
-pub fn i8<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], i8, E> {
+pub fn i8<I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   map!(i, u8, |x| x as i8)
 }
 
@@ -902,23 +916,24 @@ pub fn i8<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], i8, E> 
 /// use nom::number::streaming::i16;
 ///
 /// let be_i16 = |s| {
-///   i16::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   i16::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_i16(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0003)));
-/// assert_eq!(be_i16(b"\x01"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(be_i16(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0003)));
+/// assert_eq!(be_i16(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(1))));
 ///
 /// let le_i16 = |s| {
-///   i16::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   i16::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_i16(b"\x00\x03abcefg"), Ok((&b"abcefg"[..], 0x0300)));
-/// assert_eq!(le_i16(b"\x01"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(le_i16(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0300)));
+/// assert_eq!(le_i16(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
-pub fn i16<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], i16, E> {
+pub fn i16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i16, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_i16,
     crate::number::Endianness::Little => le_i16,
@@ -936,23 +951,24 @@ pub fn i16<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::i24;
 ///
 /// let be_i24 = |s| {
-///   i24::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   i24::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_i24(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x000305)));
-/// assert_eq!(be_i24(b"\x01"), Err(Err::Incomplete(Needed::new(2))));
+/// assert_eq!(be_i24(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000305)));
+/// assert_eq!(be_i24(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(2))));
 ///
 /// let le_i24 = |s| {
-///   i24::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   i24::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_i24(b"\x00\x03\x05abcefg"), Ok((&b"abcefg"[..], 0x050300)));
-/// assert_eq!(le_i24(b"\x01"), Err(Err::Incomplete(Needed::new(2))));
+/// assert_eq!(le_i24(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050300)));
+/// assert_eq!(le_i24(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 #[inline]
-pub fn i24<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], i32, E> {
+pub fn i24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_i24,
     crate::number::Endianness::Little => le_i24,
@@ -970,23 +986,24 @@ pub fn i24<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::i32;
 ///
 /// let be_i32 = |s| {
-///   i32::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   i32::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_i32(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x00030507)));
-/// assert_eq!(be_i32(b"\x01"), Err(Err::Incomplete(Needed::new(3))));
+/// assert_eq!(be_i32(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00030507)));
+/// assert_eq!(be_i32(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(3))));
 ///
 /// let le_i32 = |s| {
-///   i32::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   i32::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_i32(b"\x00\x03\x05\x07abcefg"), Ok((&b"abcefg"[..], 0x07050300)));
-/// assert_eq!(le_i32(b"\x01"), Err(Err::Incomplete(Needed::new(3))));
+/// assert_eq!(le_i32(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07050300)));
+/// assert_eq!(le_i32(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// ```
 #[inline]
-pub fn i32<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], i32, E> {
+pub fn i32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_i32,
     crate::number::Endianness::Little => le_i32,
@@ -1004,23 +1021,24 @@ pub fn i32<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::i64;
 ///
 /// let be_i64 = |s| {
-///   i64::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   i64::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_i64(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0001020304050607)));
-/// assert_eq!(be_i64(b"\x01"), Err(Err::Incomplete(Needed::new(7))));
+/// assert_eq!(be_i64(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0001020304050607)));
+/// assert_eq!(be_i64(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 ///
 /// let le_i64 = |s| {
-///   i64::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   i64::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_i64(b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x0706050403020100)));
-/// assert_eq!(le_i64(b"\x01"), Err(Err::Incomplete(Needed::new(7))));
+/// assert_eq!(le_i64(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0706050403020100)));
+/// assert_eq!(le_i64(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(7))));
 /// ```
 #[inline]
-pub fn i64<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], i64, E> {
+pub fn i64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_i64,
     crate::number::Endianness::Little => le_i64,
@@ -1038,24 +1056,25 @@ pub fn i64<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::i128;
 ///
 /// let be_i128 = |s| {
-///   i128::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   i128::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
-/// assert_eq!(be_i128(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
-/// assert_eq!(be_i128(b"\x01"), Err(Err::Incomplete(Needed::new(15))));
+/// assert_eq!(be_i128(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
+/// assert_eq!(be_i128(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 ///
 /// let le_i128 = |s| {
-///   i128::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   i128::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
-/// assert_eq!(le_i128(b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
-/// assert_eq!(le_i128(b"\x01"), Err(Err::Incomplete(Needed::new(15))));
+/// assert_eq!(le_i128(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
+/// assert_eq!(le_i128(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(15))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn i128<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], i128, E> {
+pub fn i128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_i128,
     crate::number::Endianness::Little => le_i128,
@@ -1173,23 +1192,24 @@ where
 /// use nom::number::streaming::f32;
 ///
 /// let be_f32 = |s| {
-///   f32::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   f32::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
 /// assert_eq!(be_f32(&[0x41, 0x48, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(be_f32(b"abc"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(be_f32(&b"abc"[..]), Err(Err::Incomplete(Needed::new(1))));
 ///
 /// let le_f32 = |s| {
-///   f32::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   f32::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_f32(&[0x00, 0x00, 0x48, 0x41][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(le_f32(b"abc"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(le_f32(&b"abc"[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[inline]
-pub fn f32<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], f32, E> {
+pub fn f32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_f32,
     crate::number::Endianness::Little => le_f32,
@@ -1207,23 +1227,24 @@ pub fn f32<'a, E: ParseError<&'a [u8]>>(
 /// use nom::number::streaming::f64;
 ///
 /// let be_f64 = |s| {
-///   f64::<(&[u8], ErrorKind)>(nom::number::Endianness::Big)(s)
+///   f64::<_, (_, ErrorKind)>(nom::number::Endianness::Big)(s)
 /// };
 ///
 /// assert_eq!(be_f64(&[0x40, 0x29, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(be_f64(b"abc"), Err(Err::Incomplete(Needed::new(5))));
+/// assert_eq!(be_f64(&b"abc"[..]), Err(Err::Incomplete(Needed::new(5))));
 ///
 /// let le_f64 = |s| {
-///   f64::<(&[u8], ErrorKind)>(nom::number::Endianness::Little)(s)
+///   f64::<_, (_, ErrorKind)>(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x29, 0x40][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(le_f64(b"abc"), Err(Err::Incomplete(Needed::new(5))));
+/// assert_eq!(le_f64(&b"abc"[..]), Err(Err::Incomplete(Needed::new(5))));
 /// ```
 #[inline]
-pub fn f64<'a, E: ParseError<&'a [u8]>>(
-  endian: crate::number::Endianness,
-) -> fn(&'a [u8]) -> IResult<&'a [u8], f64, E> {
+pub fn f64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match endian {
     crate::number::Endianness::Big => be_f64,
     crate::number::Endianness::Little => le_f64,
