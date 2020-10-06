@@ -991,7 +991,7 @@ where
 pub fn length_data<I, N, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, I, E>
 where
   I: InputLength + InputTake,
-  N: Copy + ToUsize,
+  N: ToUsize,
   F: Parser<I, N, E>,
   E: ParseError<I>,
 {
@@ -1033,7 +1033,7 @@ where
 pub fn length_value<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>
 where
   I: Clone + InputLength + InputTake,
-  N: Copy + ToUsize,
+  N: ToUsize,
   F: Parser<I, N, E>,
   G: Parser<I, O, E>,
   E: ParseError<I>,
@@ -1060,7 +1060,7 @@ where
 pub fn length_valuec<I, O, N, E, F, G>(i: I, f: F, g: G) -> IResult<I, O, E>
 where
   I: Clone + InputLength + InputTake,
-  N: Copy + ToUsize,
+  N: ToUsize,
   F: Fn(I) -> IResult<I, N, E>,
   G: Fn(I) -> IResult<I, O, E>,
   E: ParseError<I>,
@@ -1095,7 +1095,7 @@ where
 pub fn length_count<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + InputLength + InputTake,
-  N: Copy + ToUsize,
+  N: ToUsize,
   F: Parser<I, N, E>,
   G: Parser<I, O, E>,
   E: ParseError<I>,
