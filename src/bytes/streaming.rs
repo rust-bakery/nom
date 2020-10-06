@@ -26,7 +26,8 @@ use crate::traits::{
 ///
 /// assert_eq!(parser("Hello, World!"), Ok((", World!", "Hello")));
 /// assert_eq!(parser("Something"), Err(Err::Error(Error::new("Something", ErrorKind::Tag))));
-/// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(5))));
+/// assert_eq!(parser("S"), Err(Err::Error(Error::new("S", ErrorKind::Tag))));
+/// assert_eq!(parser("H"), Err(Err::Incomplete(Needed::new(4))));
 /// ```
 pub fn tag<T, Input, Error: ParseError<Input>>(
   tag: T,
