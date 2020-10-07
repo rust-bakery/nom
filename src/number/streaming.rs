@@ -24,8 +24,6 @@ use crate::traits::{Offset, Slice};
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"\x01abcd"[..], 0x00)));
 /// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
-Please use nom::number::streaming::u8 instead.")]
 #[inline]
 pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
@@ -218,8 +216,6 @@ where
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"\x01abcd"[..], 0x00)));
 /// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
-Please use nom::number::streaming::i8 instead.")]
 #[inline]
 pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
@@ -347,8 +343,6 @@ where
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"\x01abcd"[..], 0x00)));
 /// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
-Please use nom::number::streaming::u8 instead.")]
 #[inline]
 pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
@@ -542,8 +536,6 @@ where
 /// assert_eq!(parser(&b"\x00\x01abcd"[..]), Ok((&b"\x01abcd"[..], 0x00)));
 /// assert_eq!(parser(&b""[..]), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
-Please use nom::number::streaming::i8 instead.")]
 #[inline]
 pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where

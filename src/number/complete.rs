@@ -26,8 +26,6 @@ use crate::traits::{Offset, Slice};
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
-#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
-Please use nom::number::complete::u8 instead.")]
 #[inline]
 pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
@@ -224,10 +222,7 @@ where
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
-#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
-Please use nom::number::complete::i8 instead.")]
 #[inline]
-#[allow(deprecated)]
 pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -371,8 +366,6 @@ where
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
-#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
-Please use nom::number::complete::u8 instead.")]
 #[inline]
 pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
@@ -569,10 +562,7 @@ where
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
 /// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
 /// ```
-#[deprecated(note = "Endianness does not apply to 1 byte numbers. \
-Please use nom::number::complete::i8 instead.")]
 #[inline]
-#[allow(deprecated)]
 pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -1523,7 +1513,6 @@ mod tests {
   }
 
   #[test]
-  #[allow(deprecated)]
   fn be_i8_tests() {
     assert_parse!(be_i8(&[0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(be_i8(&[0x7f][..]), Ok((&b""[..], 127)));
@@ -1641,7 +1630,6 @@ mod tests {
   }
 
   #[test]
-  #[allow(deprecated)]
   fn le_i8_tests() {
     assert_parse!(le_i8(&[0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(le_i8(&[0x7f][..]), Ok((&b""[..], 127)));
