@@ -70,10 +70,10 @@ where
 /// assert_eq!(parser.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
 /// # }
 /// ```
-pub fn map<I, O1, O2, E, F, G>(mut first: F, second: G) -> impl FnMut(I) -> IResult<I, O2, E>
+pub fn map<I, O1, O2, E, F, G>(mut first: F, mut second: G) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
-  G: Fn(O1) -> O2,
+  G: FnMut(O1) -> O2,
 {
   move |input: I| {
     let (input, o1) = first.parse(input)?;
@@ -113,11 +113,11 @@ where
 /// ```
 pub fn map_res<I: Clone, O1, O2, E: FromExternalError<I, E2>, E2, F, G>(
   mut first: F,
-  second: G,
+  mut second: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
-  G: Fn(O1) -> Result<O2, E2>,
+  G: FnMut(O1) -> Result<O2, E2>,
 {
   move |input: I| {
     let i = input.clone();
@@ -165,11 +165,11 @@ where
 /// ```
 pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(
   mut first: F,
-  second: G,
+  mut second: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
-  G: Fn(O1) -> Option<O2>,
+  G: FnMut(O1) -> Option<O2>,
 {
   move |input: I| {
     let i = input.clone();
@@ -778,7 +778,7 @@ where
 /// assert_eq!(bytes, Ok(("", vec![97, 98, 99, 100])));
 /// # }
 /// ```
-pub fn into<I, O1, O2, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O2, E>
+pub fn into<I, O1, O2, E, F>(parser: F) -> impl FnOnce(I) -> IResult<I, O2, E>
 where
   O1: Into<O2>,
   E: ParseError<I>,
