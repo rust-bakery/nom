@@ -778,7 +778,7 @@ where
 /// assert_eq!(bytes, Ok(("", vec![97, 98, 99, 100])));
 /// # }
 /// ```
-pub fn into<I, O1, O2, E, F>(parser: F) -> impl FnOnce(I) -> IResult<I, O2, E>
+pub fn into<I, O1, O2, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   O1: Into<O2>,
   E: ParseError<I>,
