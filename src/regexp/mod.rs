@@ -8,6 +8,8 @@ pub mod str {
   use crate::lib::regex::Regex;
   use crate::traits::{InputLength, Slice};
   use crate::{Err, IResult};
+  #[cfg(feature = "alloc")]
+  use crate::lib::std::vec::Vec;
 
   /// Compares the input with a regular expression and returns the
   /// whole input if a match is found.
@@ -55,7 +57,7 @@ pub mod str {
   /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::RegexpMatches))));
   /// # }
   /// ```
-  #[cfg(feature = "regexp")]
+  #[cfg(all(feature = "regexp", feature="alloc"))]
   pub fn re_matches<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<&'a str>, E>
   where
     E: ParseError<&'a str>,
@@ -124,7 +126,7 @@ pub mod str {
   /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::RegexpCapture))));
   /// # }
   /// ```
-  #[cfg(feature = "regexp")]
+  #[cfg(all(feature = "regexp", feature="alloc"))]
   pub fn re_capture<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<&'a str>, E>
   where
     E: ParseError<&'a str>,
@@ -164,7 +166,7 @@ pub mod str {
   /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::RegexpCapture))));
   /// # }
   /// ```
-  #[cfg(feature = "regexp")]
+  #[cfg(all(feature = "regexp", feature="alloc"))]
   pub fn re_captures<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<Vec<&'a str>>, E>
   where
     E: ParseError<&'a str>,
@@ -304,6 +306,8 @@ pub mod bytes {
   use crate::lib::regex::bytes::Regex;
   use crate::traits::{InputLength, Slice};
   use crate::{Err, IResult};
+  #[cfg(feature = "alloc")]
+  use crate::lib::std::vec::Vec;
 
   /// Compares the input with a regular expression and returns the
   /// whole input if a match is found.
@@ -351,7 +355,7 @@ pub mod bytes {
   /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::RegexpMatches))));
   /// # }
   /// ```
-  #[cfg(feature = "regexp")]
+  #[cfg(all(feature = "regexp", feature="alloc"))]
   pub fn re_matches<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<&'a [u8]>, E>
   where
     E: ParseError<&'a [u8]>,
@@ -420,7 +424,7 @@ pub mod bytes {
   /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::RegexpCapture))));
   /// # }
   /// ```
-  #[cfg(feature = "regexp")]
+  #[cfg(all(feature = "regexp", feature="alloc"))]
   pub fn re_capture<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<&'a [u8]>, E>
   where
     E: ParseError<&'a [u8]>,
@@ -460,7 +464,7 @@ pub mod bytes {
   /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::RegexpCapture))));
   /// # }
   /// ```
-  #[cfg(feature = "regexp")]
+  #[cfg(all(feature = "regexp", feature="alloc"))]
   pub fn re_captures<'a, E>(
     re: Regex,
   ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<Vec<&'a [u8]>>, E>
