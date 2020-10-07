@@ -46,7 +46,7 @@ matrix:
       before_script:
         - export PATH=$HOME/.cargo/bin:$PATH
         - cargo install cargo-update   || echo "cargo-update already installed"
-        - cargo install cargo-travis   || echo "cargo-travis already installed"
+        - cargo install cargo-travis --version 0.0.9  || echo "cargo-travis already installed"
         - cargo install-update -a
         - mkdir -p target/kcov-master
       script:
