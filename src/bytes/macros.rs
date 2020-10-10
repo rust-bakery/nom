@@ -940,13 +940,13 @@ mod tests {
     named!(x, length_data!(le_u8));
     assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));
-    assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::new(2))));
 
     named!(y, do_parse!(tag!("magic") >> b: length_data!(le_u8) >> (b)));
     assert_eq!(y(b"magic\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(y(b"magic\x02.."), Ok((&[][..], &b".."[..])));
-    assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(y(b"magic\x02"), Err(Err::Incomplete(Needed::new(2))));
   }
 

@@ -368,7 +368,7 @@ macro_rules! length_count(
 /// named!(parser, length_data!(be_u8));
 ///
 /// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], &b"abcabc"[..])));
-/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::new(6))));
+/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -399,7 +399,7 @@ macro_rules! length_data(
 /// named!(parser, length_value!(be_u8, alpha0));
 ///
 /// assert_eq!(parser(&b"\x06abcabcabc"[..]), Ok((&b"abc"[..], &b"abcabc"[..])));
-/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::new(6))));
+/// assert_eq!(parser(&b"\x06abc"[..]), Err(Err::Incomplete(Needed::new(3))));
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
@@ -896,7 +896,7 @@ mod tests {
       take(&b"6abcabcabcdef"[..]),
       Ok((&b"abcdef"[..], &b"abcabc"[..]))
     );
-    assert_eq!(take(&b"3ab"[..]), Err(Err::Incomplete(Needed::new(3))));
+    assert_eq!(take(&b"3ab"[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(
       take(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit)))
