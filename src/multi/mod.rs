@@ -9,6 +9,7 @@ use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 use crate::traits::{InputLength, InputTake, ToUsize};
+use core::num::NonZeroUsize;
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -986,7 +987,7 @@ where
 /// }
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
-/// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Needed::new(3))));
+/// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 pub fn length_data<I, N, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, I, E>
 where
@@ -1000,8 +1001,8 @@ where
 
     let length: usize = length.to_usize();
 
-    if i.input_len() < length {
-      Err(Err::Incomplete(Needed::new(length)))
+    if let Some(needed) = length.checked_sub(i.input_len()).and_then(NonZeroUsize::new) {
+      Err(Err::Incomplete(Needed::Size(needed)))
     } else {
       Ok(i.take_split(length))
     }
@@ -1028,7 +1029,7 @@ where
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
 /// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error(Error::new(&b"123"[..], ErrorKind::Tag))));
-/// assert_eq!(parser(b"\x00\x03"), Err(Err::Incomplete(Needed::new(3))));
+/// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
 /// ```
 pub fn length_value<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>
 where
@@ -1043,8 +1044,8 @@ where
 
     let length: usize = length.to_usize();
 
-    if i.input_len() < length {
-      Err(Err::Incomplete(Needed::new(length)))
+    if let Some(needed) = length.checked_sub(i.input_len()).and_then(NonZeroUsize::new) {
+      Err(Err::Incomplete(Needed::Size(needed)))
     } else {
       let (rest, i) = i.take_split(length);
       match g.parse(i.clone()) {
