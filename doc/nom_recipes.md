@@ -243,3 +243,53 @@ fn float(input: &str) -> IResult<&str, &str> {
   ))(input)
 }
 ```
+
+# implementing FromStr
+
+The [FromStr trait](https://doc.rust-lang.org/std/str/trait.FromStr.html) provides
+a common interface to parse from a string.
+
+```rust
+use nom::{
+  IResult, Finish, error::Error,
+  bytes::complete::{tag, take_while},
+};
+use std::str::FromStr;
+
+// will recognize the name in "Hello, name!"
+fn parse_name(input: &str) -> IResult<&str, &str> {
+  let (i, _) = tag("Hello, ")(input)?;
+  let (i, name) = take_while(|c:char| c.is_alphabetic())(i)?;
+  let (i, _) = tag("!")(i)?;
+
+  Ok((i, name))
+}
+
+// with FromStr, the result cannot be a reference to the input, it must be owned
+#[derive(Debug)]
+pub struct Name(pub String);
+
+impl FromStr for Name {
+  // the error must be owned as well
+  type Err = Error<String>;
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+      match parse_name(s).finish() {
+          Ok((_remaining, name)) => Ok(Name(name.to_string())),
+          Err(Error { input, code }) => Err(Error {
+              input: input.to_string(),
+              code,
+          })
+      }
+  }
+}
+
+fn main() {
+  // parsed: Ok(Name("nom"))
+  println!("parsed: {:?}", "Hello, nom!".parse::<Name>());
+
+  // parsed: Err(Error { input: "123!", code: Tag })
+  println!("parsed: {:?}", "Hello, 123!".parse::<Name>());
+}
+```
+
