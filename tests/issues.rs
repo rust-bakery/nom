@@ -22,7 +22,7 @@ pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
   if !input.is_empty() {
     Ok((&input[1..], input[0] as char))
   } else {
-    Err(Err::Incomplete(Needed::Size(1)))
+    Err(Err::Incomplete(Needed::new(1)))
   }
 }
 
@@ -140,13 +140,13 @@ fn issue_152() {
 fn take_till_issue() {
   named!(nothing, take_till!(call!(|_| true)));
 
-  assert_eq!(nothing(b""), Err(Err::Incomplete(Needed::Size(1))));
+  assert_eq!(nothing(b""), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(nothing(b"abc"), Ok((&b"abc"[..], &b""[..])));
 }
 
 named!(
   issue_498<Vec<&[u8]>>,
-  separated_nonempty_list!(opt!(space), tag!("abcd"))
+  separated_list1!(opt!(space), tag!("abcd"))
 );
 
 named!(issue_308(&str) -> bool,
@@ -194,7 +194,7 @@ fn issue_721() {
 
 #[cfg(feature = "alloc")]
 named!(issue_717<&[u8], Vec<&[u8]> >,
-  separated_list!(tag!([0x0]), is_not!([0x0u8]))
+  separated_list0!(tag!([0x0]), is_not!([0x0u8]))
 );
 
 struct NoPartialEq {
@@ -254,7 +254,7 @@ named!(multi_617<&[u8], () >, fold_many0!( digits, (), |_, _| {}));
 named!(multi_617_fails<&[u8], () >, fold_many0!( take_while1!( is_digit ), (), |_, _| {}));
 
 mod issue_647 {
-  use nom::{error::ErrorKind, number::streaming::be_f64, Err};
+  use nom::{error::Error, number::streaming::be_f64, Err};
   pub type Input<'a> = &'a [u8];
 
   #[derive(PartialEq, Debug, Clone)]
@@ -266,8 +266,8 @@ mod issue_647 {
   fn list<'a, 'b>(
     input: Input<'a>,
     _cs: &'b f64,
-  ) -> Result<(Input<'a>, Vec<f64>), Err<(&'a [u8], ErrorKind)>> {
-    separated_list!(input, complete!(tag!(",")), complete!(be_f64))
+  ) -> Result<(Input<'a>, Vec<f64>), Err<Error<&'a [u8]>>> {
+    separated_list0!(input, complete!(tag!(",")), complete!(be_f64))
   }
 
   named!(data<Input,Data>, map!(
@@ -299,8 +299,8 @@ fn issue_848_overflow_incomplete_bits_to_bytes() {
 
 #[test]
 fn issue_942() {
-  use nom::error::ParseError;
-  pub fn parser<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, usize, E> {
+  use nom::error::{ParseError, ContextError};
+  pub fn parser<'a, E: ParseError<&'a str>+ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, usize, E> {
     use nom::{character::complete::char, error::context, multi::many0_count};
     many0_count(context("char_a", char('a')))(i)
   }
@@ -311,7 +311,7 @@ fn issue_942() {
 fn issue_many_m_n_with_zeros() {
   use nom::character::complete::char;
   use nom::multi::many_m_n;
-  let parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
+  let mut parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
   assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
 }
 
@@ -329,7 +329,7 @@ fn issue_1027_convert_error_panic_nonempty() {
     _ => unreachable!(),
   };
 
-  let msg = convert_error(&input, err);
+  let msg = convert_error(input, err);
   assert_eq!(
     msg,
     "0: at line 1:\na\n ^\nexpected \'b\', got end of input\n\n"

@@ -217,7 +217,6 @@ There are a few compilation features:
 
 * `std`: (activated by default) if disabled, nom can work in `no_std` builds
 * `regexp`: Enables regular expression parsers with the `regex` crate
-* `regexp_macros`: Enables regular expression parsers with the `regex` and `regex_macros` crates. Regular expressions can be defined at compile time, but it requires a nightly version of rustc
 
 You can activate those features like this:
 
