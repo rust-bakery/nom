@@ -401,6 +401,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 #![warn(missing_doc_code_examples)]
 
@@ -499,6 +500,7 @@ pub mod bits;
 pub mod character;
 
 #[cfg(feature = "regexp")]
+#[cfg_attr(docsrs, doc(cfg(feature = "regexp")))]
 #[macro_use]
 pub mod regexp;
 

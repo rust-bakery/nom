@@ -4,6 +4,7 @@ use crate::internal::IResult;
 use std::fmt::Debug;
 
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 /// Helper trait to show a byte slice as a hex dump
 pub trait HexDisplay {
   /// Converts the value of `self` to a hex dump, returning the owned
@@ -157,6 +158,7 @@ macro_rules! dbg (
 /// f(a);
 /// ```
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub fn dbg_dmp<'a, F, O, E: Debug>(
   f: F,
   context: &'static str,
@@ -194,6 +196,7 @@ where
 /// # }
 #[macro_export(local_inner_macros)]
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 macro_rules! dbg_dmp (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {

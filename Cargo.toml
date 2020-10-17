@@ -32,6 +32,7 @@ std = ["alloc", "bitvec/std", "memchr/use_std"]
 default = ["std", "bitvec", "lexical"]
 regexp = ["regex"]
 lexical = ["lexical-core"]
+docsrs = []
 
 [dependencies.bitvec]
 version = "0.19.3"
@@ -63,7 +64,7 @@ doc-comment = "0.3"
 version_check = "0.9"
 
 [package.metadata.docs.rs]
-features = [ "alloc", "std", "regexp", "lexical"]
+features = [ "alloc", "std", "regexp", "lexical", "docsrs"]
 all-features = true
 
 [profile.bench]

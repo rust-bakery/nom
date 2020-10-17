@@ -152,6 +152,7 @@ use crate::lib::std::{vec::Vec, string::String, borrow::ToOwned};
 #[cfg(feature = "alloc")]
 impl Err<(&[u8], ErrorKind)> {
   /// Obtaining ownership
+  #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
   pub fn to_owned(self) -> Err<(Vec<u8>, ErrorKind)> {
     self.map_input(ToOwned::to_owned)
   }
@@ -160,6 +161,7 @@ impl Err<(&[u8], ErrorKind)> {
 #[cfg(feature = "alloc")]
 impl Err<(&str, ErrorKind)> {
   /// Automatically converts between errors if the underlying type supports it
+  #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
   pub fn to_owned(self) -> Err<(String, ErrorKind)> {
     self.map_input(ToOwned::to_owned)
   }

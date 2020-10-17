@@ -36,6 +36,7 @@ use core::num::NonZeroUsize;
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
@@ -64,6 +65,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn many0c<I, O, E, F>(input: I, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
@@ -100,6 +102,7 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn many1<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
@@ -138,6 +141,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn many1c<I, O, E, F>(input: I, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + Copy + PartialEq,
@@ -166,6 +170,7 @@ where
 /// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
 /// ```
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn many_till<I, O, P, E, F, G>(
   mut f: F,
   mut g: G,
@@ -206,6 +211,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn many_tillc<I, O, P, E, F, G>(i: I, f: F, g: G) -> IResult<I, (Vec<O>, P), E>
 where
   I: Clone + PartialEq,
@@ -238,6 +244,7 @@ where
 /// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
 /// ```
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn separated_list0<I, O, O2, E, F, G>(
   mut sep: G,
   mut f: F,
@@ -295,6 +302,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn separated_list0c<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
@@ -328,6 +336,7 @@ where
 /// assert_eq!(parser("def|abc"), Err(Err::Error(Error::new("def|abc", ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn separated_list1<I, O, O2, E, F, G>(
   mut sep: G,
   mut f: F,
@@ -385,6 +394,7 @@ where
 // this implementation is used for type inference issues in macros
 #[doc(hidden)]
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn separated_list1c<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
@@ -419,6 +429,7 @@ where
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn many_m_n<I, O, E, F>(m: usize, n: usize, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
