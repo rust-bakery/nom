@@ -58,6 +58,7 @@
 //! about [the design of nom macros](https://github.com/Geal/nom/blob/master/doc/how_nom_macros_work.md),
 //! [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
 //! or the [error management system](https://github.com/Geal/nom/blob/master/doc/error_management.md).
+//! You can also check out the [recipes] module that contains examples of common patterns.
 //!
 //! **Looking for a specific combinator? Read the
 //! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**
@@ -397,11 +398,13 @@
 //! // while the complete version knows that all of the data is there
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
 //! ```
-//! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/master/doc)!
+//! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/master/doc),
+//! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(external_doc))]
 #![deny(missing_docs)]
 #![warn(missing_doc_code_examples)]
 
@@ -508,3 +511,6 @@ mod str;
 
 #[macro_use]
 pub mod number;
+
+#[doc(include = "../doc/nom_recipes.md")]
+pub mod recipes{}
