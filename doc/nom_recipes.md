@@ -113,7 +113,7 @@ examples directory.
 ### Integers
 
 The following recipes all return string slices rather than integer values. How to obtain an
-integer value instead is demonstrated for hexadecimal integers. The others are sim∏ilar.
+integer value instead is demonstrated for hexadecimal integers. The others are similar.
 
 The parsers allow the grouping character `_`, which allows one to group the digits by byte, for
 example: `0xA4_3F_11_28`. If you prefer to exclude the `_` character, the lambda to convert from a
