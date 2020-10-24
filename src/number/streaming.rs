@@ -729,6 +729,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_u16,
     crate::number::Endianness::Little => le_u16,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u16,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u16,
   }
 }
 
@@ -764,6 +768,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_u24,
     crate::number::Endianness::Little => le_u24,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u24,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u24,
   }
 }
 
@@ -799,6 +807,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_u32,
     crate::number::Endianness::Little => le_u32,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u32,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u32,
   }
 }
 
@@ -834,6 +846,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_u64,
     crate::number::Endianness::Little => le_u64,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u64,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u64,
   }
 }
 
@@ -870,6 +886,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_u128,
     crate::number::Endianness::Little => le_u128,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u128,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u128,
   }
 }
 
@@ -929,6 +949,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_i16,
     crate::number::Endianness::Little => le_i16,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i16,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i16,
   }
 }
 
@@ -964,6 +988,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_i24,
     crate::number::Endianness::Little => le_i24,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i24,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i24,
   }
 }
 
@@ -999,6 +1027,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_i32,
     crate::number::Endianness::Little => le_i32,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i32,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i32,
   }
 }
 
@@ -1034,6 +1066,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_i64,
     crate::number::Endianness::Little => le_i64,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i64,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i64,
   }
 }
 
@@ -1070,6 +1106,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_i128,
     crate::number::Endianness::Little => le_i128,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i128,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i128,
   }
 }
 
@@ -1205,6 +1245,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_f32,
     crate::number::Endianness::Little => le_f32,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_f32,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_f32,
   }
 }
 
@@ -1240,6 +1284,10 @@ where
   match endian {
     crate::number::Endianness::Big => be_f64,
     crate::number::Endianness::Little => le_f64,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_f64,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_f64,
   }
 }
 

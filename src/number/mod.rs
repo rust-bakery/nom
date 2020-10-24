@@ -13,4 +13,6 @@ pub enum Endianness {
   Big,
   /// Little endian
   Little,
+  /// Will match the host's endianness
+  Native,
 }
