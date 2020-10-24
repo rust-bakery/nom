@@ -108,27 +108,25 @@ where
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
-  move |mut i: I| {
-    match f.parse(i.clone()) {
-      Err(Err::Error(err)) => Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
-      Err(e) => Err(e),
-      Ok((i1, o)) => {
-        let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
-        acc.push(o);
-        i = i1;
+  move |mut i: I| match f.parse(i.clone()) {
+    Err(Err::Error(err)) => Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
+    Err(e) => Err(e),
+    Ok((i1, o)) => {
+      let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
+      acc.push(o);
+      i = i1;
 
-        loop {
-          match f.parse(i.clone()) {
-            Err(Err::Error(_)) => return Ok((i, acc)),
-            Err(e) => return Err(e),
-            Ok((i1, o)) => {
-              if i1 == i {
-                return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
-              }
-
-              i = i1;
-              acc.push(o);
+      loop {
+        match f.parse(i.clone()) {
+          Err(Err::Error(_)) => return Ok((i, acc)),
+          Err(e) => return Err(e),
+          Ok((i1, o)) => {
+            if i1 == i {
+              return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
             }
+
+            i = i1;
+            acc.push(o);
           }
         }
       }
@@ -1007,7 +1005,10 @@ where
 
     let length: usize = length.to_usize();
 
-    if let Some(needed) = length.checked_sub(i.input_len()).and_then(NonZeroUsize::new) {
+    if let Some(needed) = length
+      .checked_sub(i.input_len())
+      .and_then(NonZeroUsize::new)
+    {
       Err(Err::Incomplete(Needed::Size(needed)))
     } else {
       Ok(i.take_split(length))
@@ -1050,7 +1051,10 @@ where
 
     let length: usize = length.to_usize();
 
-    if let Some(needed) = length.checked_sub(i.input_len()).and_then(NonZeroUsize::new) {
+    if let Some(needed) = length
+      .checked_sub(i.input_len())
+      .and_then(NonZeroUsize::new)
+    {
       Err(Err::Incomplete(Needed::Size(needed)))
     } else {
       let (rest, i) = i.take_split(length);

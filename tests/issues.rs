@@ -299,8 +299,10 @@ fn issue_848_overflow_incomplete_bits_to_bytes() {
 
 #[test]
 fn issue_942() {
-  use nom::error::{ParseError, ContextError};
-  pub fn parser<'a, E: ParseError<&'a str>+ContextError<&'a str>>(i: &'a str) -> IResult<&'a str, usize, E> {
+  use nom::error::{ContextError, ParseError};
+  pub fn parser<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+    i: &'a str,
+  ) -> IResult<&'a str, usize, E> {
     use nom::{character::complete::char, error::context, multi::many0_count};
     many0_count(context("char_a", char('a')))(i)
   }

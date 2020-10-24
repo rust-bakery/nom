@@ -5,7 +5,7 @@
 #[cfg(feature = "alloc")]
 use crate::lib::std::boxed::Box;
 
-use crate::error::{ErrorKind, ParseError, FromExternalError};
+use crate::error::{ErrorKind, FromExternalError, ParseError};
 use crate::internal::*;
 use crate::lib::std::borrow::Borrow;
 #[cfg(feature = "std")]
@@ -702,32 +702,30 @@ pub fn consumed<I, O, F, E>(mut parser: F) -> impl FnMut(I) -> IResult<I, (I, O)
 where
   I: Clone + Offset + Slice<RangeTo<usize>>,
   E: ParseError<I>,
-  F: Parser<I, O, E>
+  F: Parser<I, O, E>,
 {
   move |input: I| {
     let i = input.clone();
     match parser.parse(i) {
-      Ok((remaining, result )) => {
+      Ok((remaining, result)) => {
         let index = input.offset(&remaining);
         let consumed = input.slice(..index);
         Ok((remaining, (consumed, result)))
-      },
-      Err(e) => Err(e)
+      }
+      Err(e) => Err(e),
     }
   }
 }
 
 #[doc(hidden)]
-pub fn consumedc<I, O, E: ParseError<I>, F>(
-  input: I,
-  parser: F
-) -> IResult<I, (I, O), E>
+pub fn consumedc<I, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, (I, O), E>
 where
   I: Clone + Offset + Slice<RangeTo<usize>>,
   E: ParseError<E>,
-  F: Fn(I) -> IResult<I, O, E>
-{ consumed(parser)(input) }
-
+  F: Fn(I) -> IResult<I, O, E>,
+{
+  consumed(parser)(input)
+}
 
 /// transforms an error to failure
 ///
@@ -934,7 +932,10 @@ mod tests {
     let is_over: &[u8] = &b""[..];
 
     let res_not_over = eof(not_over);
-    assert_parse!(res_not_over, Err(Err::Error(error_position!(not_over, ErrorKind::Eof))));
+    assert_parse!(
+      res_not_over,
+      Err(Err::Error(error_position!(not_over, ErrorKind::Eof)))
+    );
 
     let res_over = eof(is_over);
     assert_parse!(res_over, Ok((is_over, is_over)));
@@ -946,7 +947,10 @@ mod tests {
     let is_over: &str = "";
 
     let res_not_over = eof(not_over);
-    assert_parse!(res_not_over, Err(Err::Error(error_position!(not_over, ErrorKind::Eof))));
+    assert_parse!(
+      res_not_over,
+      Err(Err::Error(error_position!(not_over, ErrorKind::Eof)))
+    );
 
     let res_over = eof(is_over);
     assert_parse!(res_over, Ok((is_over, is_over)));

@@ -512,6 +512,6 @@ mod str;
 #[macro_use]
 pub mod number;
 
-#[cfg(feature="docsrs")]
+#[cfg(feature = "docsrs")]
 #[cfg_attr(docsrs, doc(include = "../doc/nom_recipes.md"))]
-pub mod recipes{}
+pub mod recipes {}

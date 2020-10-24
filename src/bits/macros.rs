@@ -202,7 +202,9 @@ mod tests {
 
   named!(
     bits_bytes_bs,
-    bits!(bytes!(crate::combinator::rest::<_, crate::error::Error<&[u8]>>))
+    bits!(bytes!(
+      crate::combinator::rest::<_, crate::error::Error<&[u8]>>
+    ))
   );
   #[test]
   fn bits_bytes() {

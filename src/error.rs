@@ -54,19 +54,19 @@ pub trait FromExternalError<I, E> {
 }
 
 /// default error type, only contains the error' location and code
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Error<I> {
-    /// position of the error in the input data
-    pub input: I,
-    /// nom error code
-    pub code: ErrorKind,
+  /// position of the error in the input data
+  pub input: I,
+  /// nom error code
+  pub code: ErrorKind,
 }
 
 impl<I> Error<I> {
-    /// creates a new basic error
-    pub fn new(input: I, code: ErrorKind) -> Error<I> {
-        Error { input, code }
-    }
+  /// creates a new basic error
+  pub fn new(input: I, code: ErrorKind) -> Error<I> {
+    Error { input, code }
+  }
 }
 
 impl<I> ParseError<I> for Error<I> {
@@ -90,13 +90,13 @@ impl<I, E> FromExternalError<I, E> for Error<I> {
 
 /// The Display implementation allows the std::error::Error implementation
 impl<I: fmt::Display> fmt::Display for Error<I> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "error {:?} at: {}", self.code, self.input)
-    }
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "error {:?} at: {}", self.code, self.input)
+  }
 }
 
 #[cfg(feature = "std")]
-impl<I: fmt::Debug+fmt::Display> std::error::Error for Error<I> { }
+impl<I: fmt::Debug + fmt::Display> std::error::Error for Error<I> {}
 
 // for backward compatibility, keep those trait implementations
 // for the previously used error type
@@ -208,18 +208,18 @@ impl<I, E> FromExternalError<I, E> for VerboseError<I> {
 
 #[cfg(feature = "alloc")]
 impl<I: fmt::Display> fmt::Display for VerboseError<I> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Parse error:")?;
-        for (input, error) in &self.errors {
-            match error {
-                VerboseErrorKind::Nom(e) => writeln!(f, "{:?} at: {}", e, input)?,
-                VerboseErrorKind::Char(c) => writeln!(f, "expected '{}' at: {}", c, input)?,
-                VerboseErrorKind::Context(s) => writeln!(f, "in section '{}', at: {}", s, input)?,
-            }
-        }
-
-        Ok(())
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    writeln!(f, "Parse error:")?;
+    for (input, error) in &self.errors {
+      match error {
+        VerboseErrorKind::Nom(e) => writeln!(f, "{:?} at: {}", e, input)?,
+        VerboseErrorKind::Char(c) => writeln!(f, "expected '{}' at: {}", c, input)?,
+        VerboseErrorKind::Context(s) => writeln!(f, "in section '{}', at: {}", s, input)?,
+      }
     }
+
+    Ok(())
+  }
 }
 
 use crate::internal::{Err, IResult};
@@ -245,8 +245,10 @@ where
 /// Transforms a `VerboseError` into a trace with input position information
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn convert_error<I:  core::ops::Deref<Target = str>>(input: I, e: VerboseError<I>)
-  -> crate::lib::std::string::String {
+pub fn convert_error<I: core::ops::Deref<Target = str>>(
+  input: I,
+  e: VerboseError<I>,
+) -> crate::lib::std::string::String {
   use crate::lib::std::fmt::Write;
   use crate::traits::Offset;
 

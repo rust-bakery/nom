@@ -6,10 +6,10 @@ mod macros;
 pub mod str {
   use crate::error::{ErrorKind, ParseError};
   use crate::lib::regex::Regex;
-  use crate::traits::{InputLength, Slice};
-  use crate::{Err, IResult};
   #[cfg(feature = "alloc")]
   use crate::lib::std::vec::Vec;
+  use crate::traits::{InputLength, Slice};
+  use crate::{Err, IResult};
 
   /// Compares the input with a regular expression and returns the
   /// whole input if a match is found.
@@ -58,7 +58,7 @@ pub mod str {
   /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::RegexpMatches))));
   /// # }
   /// ```
-  #[cfg(all(feature = "regexp", feature="alloc"))]
+  #[cfg(all(feature = "regexp", feature = "alloc"))]
   #[cfg_attr(docsrs, doc(cfg(all(feature = "regexp", feature = "alloc"))))]
   pub fn re_matches<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<&'a str>, E>
   where
@@ -129,7 +129,7 @@ pub mod str {
   /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::RegexpCapture))));
   /// # }
   /// ```
-  #[cfg(all(feature = "regexp", feature="alloc"))]
+  #[cfg(all(feature = "regexp", feature = "alloc"))]
   #[cfg_attr(docsrs, doc(cfg(all(feature = "regexp", feature = "alloc"))))]
   pub fn re_capture<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<&'a str>, E>
   where
@@ -170,7 +170,7 @@ pub mod str {
   /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::RegexpCapture))));
   /// # }
   /// ```
-  #[cfg(all(feature = "regexp", feature="alloc"))]
+  #[cfg(all(feature = "regexp", feature = "alloc"))]
   #[cfg_attr(docsrs, doc(cfg(all(feature = "regexp", feature = "alloc"))))]
   pub fn re_captures<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<Vec<&'a str>>, E>
   where
@@ -309,10 +309,10 @@ pub mod str {
 pub mod bytes {
   use crate::error::{ErrorKind, ParseError};
   use crate::lib::regex::bytes::Regex;
-  use crate::traits::{InputLength, Slice};
-  use crate::{Err, IResult};
   #[cfg(feature = "alloc")]
   use crate::lib::std::vec::Vec;
+  use crate::traits::{InputLength, Slice};
+  use crate::{Err, IResult};
 
   /// Compares the input with a regular expression and returns the
   /// whole input if a match is found.
@@ -360,7 +360,7 @@ pub mod bytes {
   /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::RegexpMatches))));
   /// # }
   /// ```
-  #[cfg(all(feature = "regexp", feature="alloc"))]
+  #[cfg(all(feature = "regexp", feature = "alloc"))]
   #[cfg_attr(docsrs, doc(cfg(all(feature = "regexp", feature = "alloc"))))]
   pub fn re_matches<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<&'a [u8]>, E>
   where
@@ -430,7 +430,7 @@ pub mod bytes {
   /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::RegexpCapture))));
   /// # }
   /// ```
-  #[cfg(all(feature = "regexp", feature="alloc"))]
+  #[cfg(all(feature = "regexp", feature = "alloc"))]
   #[cfg_attr(docsrs, doc(cfg(all(feature = "regexp", feature = "alloc"))))]
   pub fn re_capture<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<&'a [u8]>, E>
   where
@@ -471,7 +471,7 @@ pub mod bytes {
   /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::RegexpCapture))));
   /// # }
   /// ```
-  #[cfg(all(feature = "regexp", feature="alloc"))]
+  #[cfg(all(feature = "regexp", feature = "alloc"))]
   #[cfg_attr(docsrs, doc(cfg(all(feature = "regexp", feature = "alloc"))))]
   pub fn re_captures<'a, E>(
     re: Regex,

@@ -226,14 +226,8 @@ fn json_whitespace() {
               .collect()
             )
           ),
-          (
-            "empty_array".to_string(),
-            Array(vec![]),
-          ),
-          (
-            "empty_object".to_string(),
-            Object(HashMap::new()),
-          ),
+          ("empty_array".to_string(), Array(vec![]),),
+          ("empty_object".to_string(), Object(HashMap::new()),),
         ]
         .into_iter()
         .collect()

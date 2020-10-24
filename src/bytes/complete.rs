@@ -305,11 +305,11 @@ where
             ))),
           }
         } else if len >= m && len <= n {
-            let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
-            res
+          let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
+          res
         } else {
-            let e = ErrorKind::TakeWhileMN;
-            Err(Err::Error(Error::from_error_kind(input, e)))
+          let e = ErrorKind::TakeWhileMN;
+          Err(Err::Error(Error::from_error_kind(input, e)))
         }
       }
     }

@@ -21,7 +21,7 @@ use nom::branch::alt;
 use nom::bytes::streaming::{is_not, take_while_m_n};
 use nom::character::streaming::{char, multispace1};
 use nom::combinator::{map, map_opt, map_res, value, verify};
-use nom::error::{ParseError, FromExternalError};
+use nom::error::{FromExternalError, ParseError};
 use nom::multi::fold_many0;
 use nom::sequence::{delimited, preceded};
 use nom::IResult;
@@ -33,8 +33,10 @@ use nom::IResult;
 /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
 /// hexadecimal numerals. We will combine this later with parse_escaped_char
 /// to parse sequences like \u{00AC}.
-fn parse_unicode<'a, E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>>(input: &'a str)
-  -> IResult<&'a str, char, E> {
+fn parse_unicode<'a, E>(input: &'a str) -> IResult<&'a str, char, E>
+where
+  E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
+{
   // `take_while_m_n` parses between `m` and `n` bytes (inclusive) that match
   // a predicate. `parse_hex` here parses between 1 and 6 hexadecimal numerals.
   let parse_hex = take_while_m_n(1, 6, |c: char| c.is_ascii_hexdigit());
@@ -62,8 +64,10 @@ fn parse_unicode<'a, E: ParseError<&'a str> + FromExternalError<&'a str, std::nu
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
-fn parse_escaped_char<'a, E: ParseError<&'a str>+ FromExternalError<&'a str, std::num::ParseIntError>>(input: &'a str) 
-  -> IResult<&'a str, char, E> {
+fn parse_escaped_char<'a, E>(input: &'a str) -> IResult<&'a str, char, E>
+where
+  E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
+{
   preceded(
     char('\\'),
     // `alt` tries each parser in sequence, returning the result of
@@ -119,9 +123,10 @@ enum StringFragment<'a> {
 
 /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
 /// into a StringFragment.
-fn parse_fragment<'a, E: ParseError<&'a str>+ FromExternalError<&'a str, std::num::ParseIntError>>(
-  input: &'a str,
-) -> IResult<&'a str, StringFragment<'a>, E> {
+fn parse_fragment<'a, E>(input: &'a str) -> IResult<&'a str, StringFragment<'a>, E>
+where
+  E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
+{
   alt((
     // The `map` combinator runs a parser, then applies a function to the output
     // of that parser.
@@ -133,7 +138,10 @@ fn parse_fragment<'a, E: ParseError<&'a str>+ FromExternalError<&'a str, std::nu
 
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
-fn parse_string<'a, E: ParseError<&'a str>+ FromExternalError<&'a str, std::num::ParseIntError>>(input: &'a str) -> IResult<&'a str, String, E> {
+fn parse_string<'a, E>(input: &'a str) -> IResult<&'a str, String, E>
+where
+  E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
+{
   // fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
   // and for each output value, calls a folding function on each output value.
   let build_string = fold_many0(
