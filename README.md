@@ -299,7 +299,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [ANT FIT](https://github.com/stadelmanma/fitparse-rs),
 [Version Numbers](https://github.com/fosskers/rs-versions),
 [Telcordia/Bellcore SR-4731 SOR OTDR files](https://github.com/JamesHarrison/otdrs),
-[MySQL binary log](https://github.com/PrivateRookie/boxercrab)
+[MySQL binary log](https://github.com/PrivateRookie/boxercrab),
+[URI](https://github.com/Skasselbard/nom-uri)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
