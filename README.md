@@ -292,6 +292,7 @@ Here is a (non exhaustive) list of known projects using nom:
   * [TLS](https://github.com/rusticata/tls-parser)
   * [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix)
   * [GTP](https://github.com/fuerstenau/gorrosion-gtp)
+  * [SIP](https://github.com/armatusmiles/sipcore/tree/master/crates/sipmsg)
 - Language specifications:
   * [BNF](https://github.com/snewt/bnf)
 - Misc formats:
