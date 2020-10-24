@@ -789,7 +789,7 @@ where
 
 /// Creates an iterator from input data and a parser.
 ///
-/// Call the iterator's [finish] method to get the remaining input if successful,
+/// Call the iterator's [ParserIterator::finish] method to get the remaining input if successful,
 /// or the error value if we encountered an error.
 ///
 /// ```rust
