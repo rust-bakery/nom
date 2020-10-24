@@ -17,7 +17,9 @@ pub trait Alt<I, O, E> {
 
 /// Tests a list of parsers one by one until one succeeds.
 ///
-/// It takes as argument a tuple of parsers.
+/// It takes as argument a tuple of parsers. There is a maximum of 21
+/// parsers. If you need more, it is possible to nest them in other `alt` calls,
+/// like this: `alt(parser_a, alt(parser_b, parser_c))`
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
