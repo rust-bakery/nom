@@ -43,9 +43,8 @@ where
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
-  move |i: I| {
+  move |mut i: I| {
     let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
-    let mut i = i.clone();
     loop {
       match f.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, acc)),
@@ -109,11 +108,10 @@ where
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
-  move |i: I| {
-    let mut i = i.clone();
+  move |mut i: I| {
     match f.parse(i.clone()) {
-      Err(Err::Error(err)) => return Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
-      Err(e) => return Err(e),
+      Err(Err::Error(err)) => Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
+      Err(e) => Err(e),
       Ok((i1, o)) => {
         let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
         acc.push(o);
@@ -181,9 +179,8 @@ where
   G: Parser<I, P, E>,
   E: ParseError<I>,
 {
-  move |i: I| {
+  move |mut i: I| {
     let mut res = crate::lib::std::vec::Vec::new();
-    let mut i = i.clone();
     loop {
       match g.parse(i.clone()) {
         Ok((i1, o)) => return Ok((i1, (res, o))),
@@ -255,9 +252,8 @@ where
   G: Parser<I, O2, E>,
   E: ParseError<I>,
 {
-  move |i: I| {
+  move |mut i: I| {
     let mut res = Vec::new();
-    let mut i = i.clone();
 
     match f.parse(i.clone()) {
       Err(Err::Error(_)) => return Ok((i, res)),
@@ -347,9 +343,8 @@ where
   G: Parser<I, O2, E>,
   E: ParseError<I>,
 {
-  move |i: I| {
+  move |mut i: I| {
     let mut res = Vec::new();
-    let mut i = i.clone();
 
     // Parse the first element
     match f.parse(i.clone()) {
@@ -515,7 +510,7 @@ where
   E: ParseError<I>,
 {
   move |i: I| {
-    let mut input = i.clone();
+    let mut input = i;
     let mut count = 0;
 
     loop {
@@ -758,7 +753,7 @@ where
 {
   move |i: I| {
     let mut res = init.clone();
-    let mut input = i.clone();
+    let mut input = i;
 
     loop {
       let i_ = input.clone();
@@ -839,7 +834,7 @@ where
     let init = init.clone();
     match f.parse(_i) {
       Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
-      Err(e) => return Err(e),
+      Err(e) => Err(e),
       Ok((i1, o1)) => {
         let mut acc = g(init, o1);
         let mut input = i1;

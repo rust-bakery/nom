@@ -96,14 +96,12 @@ pub trait Permutation<I, O, E> {
 ///   permutation((anychar, char('a')))(input)
 /// }
 ///
-/// # fn main() {
 /// // anychar parses 'b', then char('a') parses 'a'
 /// assert_eq!(parser("ba"), Ok(("", ('b', 'a'))));
 ///
 /// // anychar parses 'a', then char('a') fails on 'b',
 /// // even though char('a') followed by anychar would succeed
 /// assert_eq!(parser("ab"), Err(Err::Error(Error::new("b", ErrorKind::Char))));
-/// # }
 /// ```
 ///
 pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(

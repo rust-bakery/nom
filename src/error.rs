@@ -209,12 +209,12 @@ impl<I, E> FromExternalError<I, E> for VerboseError<I> {
 #[cfg(feature = "alloc")]
 impl<I: fmt::Display> fmt::Display for VerboseError<I> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Parse error:\n")?;
+        writeln!(f, "Parse error:")?;
         for (input, error) in &self.errors {
             match error {
-                VerboseErrorKind::Nom(e) => write!(f, "{:?} at: {}\n", e, input)?,
-                VerboseErrorKind::Char(c) => write!(f, "expected '{}' at: {}\n", c, input)?,
-                VerboseErrorKind::Context(s) => write!(f, "in section '{}', at: {}\n", s, input)?,
+                VerboseErrorKind::Nom(e) => writeln!(f, "{:?} at: {}", e, input)?,
+                VerboseErrorKind::Char(c) => writeln!(f, "expected '{}' at: {}", c, input)?,
+                VerboseErrorKind::Context(s) => writeln!(f, "in section '{}', at: {}", s, input)?,
             }
         }
 
@@ -355,7 +355,7 @@ pub fn convert_error<I:  core::ops::Deref<Target = str>>(input: I, e: VerboseErr
 }
 
 /// Indicates which parser returned an error
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[derive(Debug,PartialEq,Eq,Hash,Clone,Copy)]
 #[allow(deprecated,missing_docs)]
 pub enum ErrorKind {
@@ -414,7 +414,7 @@ pub enum ErrorKind {
   Satisfy,
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[allow(deprecated)]
 /// Converts an ErrorKind to a number
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
@@ -476,7 +476,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
 }
 
 impl ErrorKind {
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
   #[allow(deprecated)]
   /// Converts an ErrorKind to a text description
   pub fn description(&self) -> &str {

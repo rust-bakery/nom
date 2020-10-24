@@ -384,7 +384,7 @@ where
   } else {
     let mut res = 0u16;
     for (index, byte) in input.iter_indices().take(bound) {
-      res = res + ((byte as u16) << 8 * index);
+      res += (byte as u16) << (8 * index);
     }
 
     Ok((input.slice(bound..), res))
@@ -417,7 +417,7 @@ where
   } else {
     let mut res = 0u32;
     for (index, byte) in input.iter_indices().take(bound) {
-      res = res + ((byte as u32) << 8 * index);
+      res += (byte as u32) << (8 * index);
     }
 
     Ok((input.slice(bound..), res))
@@ -450,7 +450,7 @@ where
   } else {
     let mut res = 0u32;
     for (index, byte) in input.iter_indices().take(bound) {
-      res = res + ((byte as u32) << 8 * index);
+      res += (byte as u32) << (8 * index);
     }
 
     Ok((input.slice(bound..), res))
@@ -483,7 +483,7 @@ where
   } else {
     let mut res = 0u64;
     for (index, byte) in input.iter_indices().take(bound) {
-      res = res + ((byte as u64) << 8 * index);
+      res += (byte as u64) << (8 * index);
     }
 
     Ok((input.slice(bound..), res))
@@ -517,7 +517,7 @@ where
   } else {
     let mut res = 0u128;
     for (index, byte) in input.iter_indices().take(bound) {
-      res = res + ((byte as u128) << 8 * index);
+      res += (byte as u128) << (8 * index);
     }
 
     Ok((input.slice(bound..), res))
@@ -1300,7 +1300,7 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8]
 /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
 /// ```
 #[allow(unused_imports)]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,

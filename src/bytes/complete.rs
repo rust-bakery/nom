@@ -304,14 +304,12 @@ where
               ErrorKind::TakeWhileMN,
             ))),
           }
-        } else {
-          if len >= m && len <= n {
+        } else if len >= m && len <= n {
             let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
             res
-          } else {
+        } else {
             let e = ErrorKind::TakeWhileMN;
             Err(Err::Error(Error::from_error_kind(input, e)))
-          }
         }
       }
     }

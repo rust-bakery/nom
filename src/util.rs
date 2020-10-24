@@ -17,7 +17,7 @@ pub trait HexDisplay {
 }
 
 #[cfg(feature = "std")]
-static CHARS: &'static [u8] = b"0123456789abcdef";
+static CHARS: &[u8] = b"0123456789abcdef";
 
 #[cfg(feature = "std")]
 impl HexDisplay for [u8] {

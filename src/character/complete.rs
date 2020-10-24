@@ -17,14 +17,12 @@ use crate::traits::{Compare, CompareResult};
 /// ```
 /// # use nom::{Err, error::{ErrorKind, Error}, IResult};
 /// # use nom::character::complete::char;
-/// # fn main() {
 /// fn parser(i: &str) -> IResult<&str, char> {
 ///     char('a')(i)
 /// }
 /// assert_eq!(parser("abc"), Ok(("bc", 'a')));
 /// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
-/// # }
 /// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
@@ -48,14 +46,12 @@ where
 /// ```
 /// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
 /// # use nom::character::complete::satisfy;
-/// # fn main() {
 /// fn parser(i: &str) -> IResult<&str, char> {
 ///     satisfy(|c| c == 'a' || c == 'b')(i)
 /// }
 /// assert_eq!(parser("abc"), Ok(("bc", 'a')));
 /// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
-/// # }
 /// ```
 pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
 where
@@ -81,11 +77,9 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind};
 /// # use nom::character::complete::one_of;
-/// # fn main() {
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("abc")("b"), Ok(("", 'b')));
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::OneOf))));
-/// # }
 /// ```
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
@@ -107,11 +101,9 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind};
 /// # use nom::character::complete::none_of;
-/// # fn main() {
 /// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("abc")("z"), Ok(("", 'z')));
 /// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
 /// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::NoneOf))));
-/// # }
 /// ```
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
@@ -133,7 +125,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// # use nom::character::complete::crlf;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     crlf(input)
 /// }
@@ -141,7 +132,6 @@ where
 /// assert_eq!(parser("\r\nc"), Ok(("c", "\r\n")));
 /// assert_eq!(parser("ab\r\nc"), Err(Err::Error(Error::new("ab\r\nc", ErrorKind::CrLf))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::CrLf))));
-/// # }
 /// ```
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -168,7 +158,6 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::not_line_ending;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     not_line_ending(input)
 /// }
@@ -176,7 +165,6 @@ where
 /// assert_eq!(parser("ab\r\nc"), Ok(("\r\nc", "ab")));
 /// assert_eq!(parser("abc"), Ok(("", "abc")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -220,7 +208,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::line_ending;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     line_ending(input)
 /// }
@@ -228,7 +215,6 @@ where
 /// assert_eq!(parser("\r\nc"), Ok(("c", "\r\n")));
 /// assert_eq!(parser("ab\r\nc"), Err(Err::Error(Error::new("ab\r\nc", ErrorKind::CrLf))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::CrLf))));
-/// # }
 /// ```
 pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -257,7 +243,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::newline;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, char> {
 ///     newline(input)
 /// }
@@ -265,7 +250,6 @@ where
 /// assert_eq!(parser("\nc"), Ok(("c", '\n')));
 /// assert_eq!(parser("\r\nc"), Err(Err::Error(Error::new("\r\nc", ErrorKind::Char))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
-/// # }
 /// ```
 pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
@@ -283,7 +267,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::tab;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, char> {
 ///     tab(input)
 /// }
@@ -291,7 +274,6 @@ where
 /// assert_eq!(parser("\tc"), Ok(("c", '\t')));
 /// assert_eq!(parser("\r\nc"), Err(Err::Error(Error::new("\r\nc", ErrorKind::Char))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
-/// # }
 /// ```
 pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
@@ -309,14 +291,12 @@ where
 ///
 /// ```
 /// # use nom::{character::complete::anychar, Err, error::{Error, ErrorKind}, IResult};
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, char> {
 ///     anychar(input)
 /// }
 ///
 /// assert_eq!(parser("abc"), Ok(("bc",'a')));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
-/// # }
 /// ```
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
@@ -342,7 +322,6 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alpha0;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alpha0(input)
 /// }
@@ -350,7 +329,6 @@ where
 /// assert_eq!(parser("ab1c"), Ok(("1c", "ab")));
 /// assert_eq!(parser("1c"), Ok(("1c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn alpha0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -369,7 +347,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::alpha1;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alpha1(input)
 /// }
@@ -377,7 +354,6 @@ where
 /// assert_eq!(parser("aB1c"), Ok(("1c", "aB")));
 /// assert_eq!(parser("1c"), Err(Err::Error(Error::new("1c", ErrorKind::Alpha))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Alpha))));
-/// # }
 /// ```
 pub fn alpha1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -396,7 +372,6 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::digit0;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     digit0(input)
 /// }
@@ -405,7 +380,6 @@ where
 /// assert_eq!(parser("21"), Ok(("", "21")));
 /// assert_eq!(parser("a21c"), Ok(("a21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -424,7 +398,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::digit1;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     digit1(input)
 /// }
@@ -432,7 +405,6 @@ where
 /// assert_eq!(parser("21c"), Ok(("c", "21")));
 /// assert_eq!(parser("c1"), Err(Err::Error(Error::new("c1", ErrorKind::Digit))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Digit))));
-/// # }
 /// ```
 pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -450,7 +422,6 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::hex_digit0;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     hex_digit0(input)
 /// }
@@ -458,7 +429,6 @@ where
 /// assert_eq!(parser("21cZ"), Ok(("Z", "21c")));
 /// assert_eq!(parser("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn hex_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -476,7 +446,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::hex_digit1;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     hex_digit1(input)
 /// }
@@ -484,7 +453,6 @@ where
 /// assert_eq!(parser("21cZ"), Ok(("Z", "21c")));
 /// assert_eq!(parser("H2"), Err(Err::Error(Error::new("H2", ErrorKind::HexDigit))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::HexDigit))));
-/// # }
 /// ```
 pub fn hex_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -503,7 +471,6 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::oct_digit0;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     oct_digit0(input)
 /// }
@@ -511,7 +478,6 @@ where
 /// assert_eq!(parser("21cZ"), Ok(("cZ", "21")));
 /// assert_eq!(parser("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn oct_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -530,7 +496,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::oct_digit1;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     oct_digit1(input)
 /// }
@@ -538,7 +503,6 @@ where
 /// assert_eq!(parser("21cZ"), Ok(("cZ", "21")));
 /// assert_eq!(parser("H2"), Err(Err::Error(Error::new("H2", ErrorKind::OctDigit))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::OctDigit))));
-/// # }
 /// ```
 pub fn oct_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -557,7 +521,6 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alphanumeric0;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alphanumeric0(input)
 /// }
@@ -565,7 +528,6 @@ where
 /// assert_eq!(parser("21cZ%1"), Ok(("%1", "21cZ")));
 /// assert_eq!(parser("&Z21c"), Ok(("&Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn alphanumeric0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -584,7 +546,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::alphanumeric1;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     alphanumeric1(input)
 /// }
@@ -592,7 +553,6 @@ where
 /// assert_eq!(parser("21cZ%1"), Ok(("%1", "21cZ")));
 /// assert_eq!(parser("&H2"), Err(Err::Error(Error::new("&H2", ErrorKind::AlphaNumeric))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::AlphaNumeric))));
-/// # }
 /// ```
 pub fn alphanumeric1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -611,7 +571,6 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::space0;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     space0(input)
 /// }
@@ -619,7 +578,6 @@ where
 /// assert_eq!(parser(" \t21c"), Ok(("21c", " \t")));
 /// assert_eq!(parser("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn space0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -627,7 +585,7 @@ where
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   input.split_at_position_complete(|item| {
-    let c = item.clone().as_char();
+    let c = item.as_char();
     !(c == ' ' || c == '\t')
   })
 }
@@ -641,7 +599,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::space1;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     space1(input)
 /// }
@@ -649,7 +606,6 @@ where
 /// assert_eq!(parser(" \t21c"), Ok(("21c", " \t")));
 /// assert_eq!(parser("H2"), Err(Err::Error(Error::new("H2", ErrorKind::Space))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Space))));
-/// # }
 /// ```
 pub fn space1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -658,7 +614,7 @@ where
 {
   input.split_at_position1_complete(
     |item| {
-      let c = item.clone().as_char();
+      let c = item.as_char();
       !(c == ' ' || c == '\t')
     },
     ErrorKind::Space,
@@ -674,7 +630,6 @@ where
 /// ```
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::multispace0;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     multispace0(input)
 /// }
@@ -682,7 +637,6 @@ where
 /// assert_eq!(parser(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
 /// assert_eq!(parser("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn multispace0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -690,7 +644,7 @@ where
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
 {
   input.split_at_position_complete(|item| {
-    let c = item.clone().as_char();
+    let c = item.as_char();
     !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
   })
 }
@@ -704,7 +658,6 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::multispace1;
-/// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     multispace1(input)
 /// }
@@ -712,7 +665,6 @@ where
 /// assert_eq!(parser(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
 /// assert_eq!(parser("H2"), Err(Err::Error(Error::new("H2", ErrorKind::MultiSpace))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::MultiSpace))));
-/// # }
 /// ```
 pub fn multispace1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -721,7 +673,7 @@ where
 {
   input.split_at_position1_complete(
     |item| {
-      let c = item.clone().as_char();
+      let c = item.as_char();
       !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
     },
     ErrorKind::MultiSpace,

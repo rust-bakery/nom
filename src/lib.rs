@@ -401,7 +401,7 @@
 //! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/master/doc),
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(external_doc))]

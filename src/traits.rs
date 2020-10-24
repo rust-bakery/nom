@@ -8,7 +8,6 @@ use crate::lib::std::str::from_utf8;
 use crate::lib::std::str::CharIndices;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
-use memchr;
 
 #[cfg(feature = "alloc")]
 use crate::lib::std::string::String;
@@ -39,7 +38,7 @@ impl<'a> InputLength for &'a str {
   }
 }
 
-#[deprecated(since = "6.0", note = "Use `BitSlice`")]
+#[deprecated(since = "6.0.0", note = "Use `BitSlice`")]
 impl<'a> InputLength for (&'a [u8], usize) {
   #[inline]
   fn input_len(&self) -> usize {
@@ -747,7 +746,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
       None => {
-        if self.len() == 0 {
+        if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
           Ok(self.take_split(self.input_len()))
@@ -810,7 +809,7 @@ impl<'a> InputTakeAtPosition for &'a str {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
       None => {
-        if self.len() == 0 {
+        if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
           Ok(self.take_split(self.input_len()))
@@ -837,7 +836,7 @@ where
       .copied()
       .position(predicate)
       .map(|i| self.split_at(i))
-      .ok_or(Err::Incomplete(Needed::new(1)))
+      .ok_or_else(|| Err::Incomplete(Needed::new(1)))
   }
 
   fn split_at_position1<P, E: ParseError<Self>>(
@@ -866,7 +865,7 @@ where
       .iter()
       .position(|b| predicate(*b))
       .map(|i| self.split_at(i))
-      .or(Some((self, Self::default())))
+      .or_else(|| Some((self, Self::default())))
       .ok_or_else(|| unreachable!())
   }
 

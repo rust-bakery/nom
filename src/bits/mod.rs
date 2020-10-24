@@ -101,7 +101,7 @@ where
     } else {
       input.slice((offset / 8)..)
     };
-    let i = (input.clone(), offset);
+    let i = (input, offset);
     match parser(inner) {
       Ok((rest, res)) => Ok(((rest, 0), res)),
       Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),

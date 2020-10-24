@@ -547,7 +547,7 @@ mod tests {
   use util::{add_error_pattern, error_to_list, print_error};
 
   #[cfg(feature = "std")]
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
   fn error_to_string<P: Clone + PartialEq>(e: &Context<P, u32>) -> &'static str {
     let v: Vec<(P, ErrorKind<u32>)> = error_to_list(e);
     // do it this way if you can use slice patterns
@@ -582,7 +582,7 @@ mod tests {
   //}
   */
 
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
   #[allow(unused_variables)]
   #[test]
   fn add_err() {
@@ -622,7 +622,7 @@ mod tests {
     assert_eq!(res_c, Ok((&b""[..], &b"mnop"[..])));
   }
 
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
   #[test]
   fn complete() {
     named!(err_test,
@@ -873,7 +873,7 @@ mod tests {
     );
   }
 
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
   #[test]
   fn do_parse_dependency() {
     use crate::number::streaming::be_u8;
