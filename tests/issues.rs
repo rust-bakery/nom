@@ -337,3 +337,13 @@ fn issue_1027_convert_error_panic_nonempty() {
     "0: at line 1:\na\n ^\nexpected \'b\', got end of input\n\n"
   );
 }
+
+named!(issue_962<&[u8], Vec<&[u8]>>,
+    fold_many0!(
+        alt!(tag!("aaaa") | tag!("bbbb")),
+        Vec::new(), |mut acc: Vec<_>, item| {
+            acc.push(item);
+            acc
+        }
+    )
+);
