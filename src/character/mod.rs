@@ -98,3 +98,19 @@ pub fn is_alphanumeric(chr: u8) -> bool {
 pub fn is_space(chr: u8) -> bool {
   chr == b' ' || chr == b'\t'
 }
+
+/// Tests if byte is ASCII newline: \n
+///
+/// # Example
+///
+/// ```
+/// # use nom::character::is_newline;
+/// assert_eq!(is_newline(b'\n'), true);
+/// assert_eq!(is_newline(b'\r'), false);
+/// assert_eq!(is_newline(b' '), false);
+/// assert_eq!(is_newline(b'\t'), false);
+/// ```
+#[inline]
+pub fn is_newline(chr: u8) -> bool {
+  chr == b'\n'
+}
