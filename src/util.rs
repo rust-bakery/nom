@@ -106,7 +106,7 @@ macro_rules! nom_stringify (
 /// ```
 /// # #[macro_use] extern crate nom;
 /// # fn main() {
-///    named!(f, dbg!( tag!( "abcd" ) ) );
+///    named!(f, dbg_basic!( tag!( "abcd" ) ) );
 ///
 ///    let a = &b"efgh"[..];
 ///
@@ -116,7 +116,7 @@ macro_rules! nom_stringify (
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
-macro_rules! dbg (
+macro_rules! dbg_basic (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
@@ -132,7 +132,7 @@ macro_rules! dbg (
   );
 
   ($i:expr, $f:ident) => (
-      dbg!($i, call!($f));
+      dbg_basic!($i, call!($f));
   );
 );
 
