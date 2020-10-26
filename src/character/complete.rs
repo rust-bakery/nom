@@ -21,6 +21,7 @@ use crate::traits::{Compare, CompareResult};
 ///     char('a')(i)
 /// }
 /// assert_eq!(parser("abc"), Ok(("bc", 'a')));
+/// assert_eq!(parser(" abc"), Err(Err::Error(Error::new(" abc", ErrorKind::Char))));
 /// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
 /// ```
