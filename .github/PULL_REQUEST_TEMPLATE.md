@@ -1,3 +1,4 @@
+<!--
 Hello, and thank you for submitting a pull request to nom!
 
 First, please note that, for family reasons, I have limited time to work on
@@ -37,4 +38,4 @@ If the pull request include a lot of small commits used for testing, debugging,
 or correcting previous work, it might be useful to
 [squash the commits](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History)
 to make the code easier to merge.
-
+-->
