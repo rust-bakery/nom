@@ -403,8 +403,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(external_doc))]
+#![cfg_attr(feature = "docsrs", feature(doc_cfg))]
+#![cfg_attr(feature = "docsrs", feature(external_doc))]
 #![deny(missing_docs)]
 #![warn(missing_doc_code_examples)]
 
@@ -513,5 +513,5 @@ mod str;
 pub mod number;
 
 #[cfg(feature = "docsrs")]
-#[cfg_attr(docsrs, doc(include = "../doc/nom_recipes.md"))]
+#[cfg_attr(feature = "docsrs", doc(include = "../doc/nom_recipes.md"))]
 pub mod recipes {}
