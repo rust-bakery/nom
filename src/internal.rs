@@ -2,6 +2,7 @@
 
 use self::Needed::*;
 use crate::error::{self, ErrorKind};
+use crate::lib::std::fmt;
 use core::num::NonZeroUsize;
 
 /// Holds the result of parsing functions
@@ -169,10 +170,6 @@ impl Err<(&str, ErrorKind)> {
 
 impl<E: Eq> Eq for Err<E> {}
 
-#[cfg(feature = "std")]
-use std::fmt;
-
-#[cfg(feature = "std")]
 impl<E> fmt::Display for Err<E>
 where
   E: fmt::Debug,
