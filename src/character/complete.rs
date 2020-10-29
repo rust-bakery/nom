@@ -150,6 +150,30 @@ where
   }
 }
 
+/// Matches a vertical tab'.
+///
+/// *Complete version*: Will return an error if there's not enough input data.
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::character::complete::vertical_tab;
+/// fn parser(input: &str) -> IResult<&str, char> {
+///     vertical_tab(input)
+/// }
+///
+/// assert_eq!(parser("\u{000B}c"), Ok(("c", '\u{000B}')));
+/// assert_eq!(parser("a\u{000B}c"), Err(Err::Error(Error::new("a\u{000B}c", ErrorKind::Char))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
+/// ```
+pub fn vertical_tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
+where
+  I: Slice<RangeFrom<usize>> + InputIter,
+  <I as InputIter>::Item: AsChar,
+{
+  char('\u{000B}')(input)
+}
+
 //FIXME: there's still an incomplete
 /// Recognizes a string of any char except '\r' or '\n'.
 ///
