@@ -12,5 +12,5 @@ fn parse_bitstream() {
     tag(bits![1, 0, 1, 0])(bits)
   }
 
-  assert_eq!(parser(bits), Ok((&bits[..4], &bits[4..])));
+  assert_eq!(parser(bits), Ok((&bits[4..], &bits[..4])));
 }
