@@ -557,7 +557,8 @@ where
 
   #[inline]
   fn take_split(&self, count: usize) -> (Self, Self) {
-    self.split_at(count)
+    let (a, b) = self.split_at(count);
+    (b, a)
   }
 }
 
