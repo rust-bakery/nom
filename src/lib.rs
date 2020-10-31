@@ -412,7 +412,7 @@
 #[macro_use]
 extern crate alloc;
 #[cfg(feature = "bitvec")]
-extern crate bitvec;
+pub extern crate bitvec;
 #[cfg(doctest)]
 extern crate doc_comment;
 #[cfg(feature = "lexical")]
