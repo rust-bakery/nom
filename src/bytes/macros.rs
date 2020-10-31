@@ -158,7 +158,7 @@ macro_rules! escaped (
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]
 macro_rules! escaped_transform (
   ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (

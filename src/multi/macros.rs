@@ -20,7 +20,7 @@
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]
 macro_rules! separated_list0(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -61,7 +61,7 @@ macro_rules! separated_list0(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]
 macro_rules! separated_list1(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -104,7 +104,7 @@ macro_rules! separated_list1(
 /// ```
 ///
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]
 macro_rules! many0(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -136,7 +136,7 @@ macro_rules! many0(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]
 macro_rules! many1(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -173,7 +173,7 @@ macro_rules! many1(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]
 macro_rules! many_till(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
@@ -218,7 +218,7 @@ macro_rules! many_till(
 /// # }
 /// ```
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]
 macro_rules! many_m_n(
   ($i:expr, $m:expr, $n: expr, $submac:ident!( $($args:tt)* )) => (
@@ -302,7 +302,7 @@ macro_rules! many1_count {
 /// ```
 ///
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]
 macro_rules! count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $count: expr) => (
@@ -330,7 +330,7 @@ macro_rules! count(
 /// ```
 #[macro_export(local_inner_macros)]
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 macro_rules! length_count(
   ($i:expr, $submac:ident!( $($args:tt)* ), $submac2:ident!( $($args2:tt)* )) => (
     {

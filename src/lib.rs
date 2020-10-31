@@ -505,7 +505,7 @@ pub mod bits;
 pub mod character;
 
 #[cfg(feature = "regexp")]
-#[cfg_attr(docsrs, doc(cfg(feature = "regexp")))]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "regexp")))]
 #[macro_use]
 pub mod regexp;
 
