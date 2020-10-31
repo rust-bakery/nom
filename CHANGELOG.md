@@ -72,7 +72,7 @@ type that corresponds to your needs if you are building a language parser.
 
 This version also integrates with the excellent [bitvec](https://crates.io/crates/bitvec)
 crate for better bit level parsing. This part of nom was not great and a bit of a hack,
-so ths will give better options for those parsers.
+so this will give better options for those parsers.
 
 At last, documentation! There are now more code examples, functions and macros that require
 specific cargo features are now clearly indicated, and there's a new `recipes` module
