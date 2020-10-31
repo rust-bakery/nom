@@ -968,6 +968,30 @@ macro_rules! recognize (
   );
 );
 
+/// `into!(I -> IResult<I, O1, E1>) => I -> IResult<I, O2, E2>`
+/// automatically converts the child parser's result to another type
+///
+/// it will be able to convert the output value and the error value
+/// as long as the `Into` implementations are available
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
+/// # fn main() {
+///  named!(parse_to_str<&str, &str>, take!(4));
+///  named!(parse_to_vec<&str, Vec<u8>>, into!(parse_to_str));
+/// # }
+/// ```
+#[macro_export(local_inner_macros)]
+macro_rules! into (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    $crate::combinator::intoc($i, |i| $submac!(i, $($args)*))
+  );
+  ($i:expr, $f:expr) => (
+    $crate::combinator::intoc($i, $f)
+  );
+);
+
 #[cfg(test)]
 mod tests {
   use crate::error::ErrorKind;

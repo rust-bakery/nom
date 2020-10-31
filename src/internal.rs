@@ -130,7 +130,7 @@ impl<E> Err<E> {
   where
     E: From<F>,
   {
-    e.map(Into::into)
+    e.map(crate::lib::std::convert::Into::into)
   }
 }
 
@@ -260,6 +260,21 @@ pub trait Parser<I, O, E> {
   {
     Or { f: self, g }
   }
+
+  /// automatically converts the parser's output and error values to another type, as long as they
+  /// implement the `From` trait
+  fn into<O2: From<O>, E2: From<E>>(self) -> Into<Self, O, O2, E, E2>
+  where
+    Self: core::marker::Sized,
+  {
+    Into {
+      f: self,
+      phantom_out1: core::marker::PhantomData,
+      phantom_err1: core::marker::PhantomData,
+      phantom_out2: core::marker::PhantomData,
+      phantom_err2: core::marker::PhantomData,
+    }
+  }
 }
 
 impl<'a, I, O, E, F> Parser<I, O, E> for F
@@ -352,6 +367,35 @@ impl<'a, I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Par
         res => res,
       },
       res => res,
+    }
+  }
+}
+
+/// Implementation of `Parser::into`
+pub struct Into<F, O1, O2: From<O1>, E1, E2: From<E1>> {
+  f: F,
+  phantom_out1: core::marker::PhantomData<O1>,
+  phantom_err1: core::marker::PhantomData<E1>,
+  phantom_out2: core::marker::PhantomData<O2>,
+  phantom_err2: core::marker::PhantomData<E2>,
+}
+
+impl<
+    'a,
+    I: Clone,
+    O1,
+    O2: From<O1>,
+    E1,
+    E2: crate::error::ParseError<I> + From<E1>,
+    F: Parser<I, O1, E1>,
+  > Parser<I, O2, E2> for Into<F, O1, O2, E1, E2>
+{
+  fn parse(&mut self, i: I) -> IResult<I, O2, E2> {
+    match self.f.parse(i) {
+      Ok((i, o)) => Ok((i, o.into())),
+      Err(Err::Error(e)) => Err(Err::Error(e.into())),
+      Err(Err::Failure(e)) => Err(Err::Failure(e.into())),
+      Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
     }
   }
 }

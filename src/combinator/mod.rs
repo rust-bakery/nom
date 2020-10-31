@@ -8,6 +8,7 @@ use crate::lib::std::boxed::Box;
 use crate::error::{ErrorKind, FromExternalError, ParseError};
 use crate::internal::*;
 use crate::lib::std::borrow::Borrow;
+use crate::lib::std::convert::Into;
 #[cfg(feature = "std")]
 use crate::lib::std::fmt::Debug;
 use crate::lib::std::mem::transmute;
@@ -760,7 +761,10 @@ where
   cut(parser)(input)
 }
 
-/// automatically converts the child parser's output to another type
+/// automatically converts the child parser's result to another type
+///
+/// it will be able to convert the output value and the error value
+/// as long as the `Into` implementations are available
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -769,20 +773,44 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-/// let mut parser = into(alpha1);
+///  fn parser1(i: &str) -> IResult<&str, &str> {
+///    alpha1(i)
+///  }
+///
+///  let mut parser2 = into(parser1);
 ///
 /// // the parser converts the &str output of the child parser into a Vec<u8>
-/// let bytes: IResult<&str, Vec<u8>> = parser("abcd");
+/// let bytes: IResult<&str, Vec<u8>> = parser2("abcd");
 /// assert_eq!(bytes, Ok(("", vec![97, 98, 99, 100])));
 /// # }
 /// ```
-pub fn into<I, O1, O2, E, F>(parser: F) -> impl FnMut(I) -> IResult<I, O2, E>
+pub fn into<I, O1, O2, E1, E2, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, O2, E2>
 where
   O1: Into<O2>,
-  E: ParseError<I>,
-  F: Fn(I) -> IResult<I, O1, E>,
+  E1: Into<E2>,
+  E1: ParseError<I>,
+  E2: ParseError<I>,
+  F: Parser<I, O1, E1>,
 {
-  map(parser, Into::into)
+  //map(parser, Into::into)
+  move |input: I| match parser.parse(input) {
+    Ok((i, o)) => Ok((i, o.into())),
+    Err(Err::Error(e)) => Err(Err::Error(e.into())),
+    Err(Err::Failure(e)) => Err(Err::Failure(e.into())),
+    Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
+  }
+}
+
+#[doc(hidden)]
+pub fn intoc<I, O1, O2, E1, E2, F>(input: I, parser: F) -> IResult<I, O2, E2>
+where
+  O1: Into<O2>,
+  E1: Into<E2>,
+  E1: ParseError<I>,
+  E2: ParseError<I>,
+  F: Parser<I, O1, E1>,
+{
+  into(parser)(input)
 }
 
 /// Creates an iterator from input data and a parser.
@@ -1096,9 +1124,12 @@ mod tests {
   #[cfg(feature = "std")]
   fn test_into() {
     use crate::bytes::complete::take;
-    use crate::{error::ParseError, Err};
+    use crate::{
+      error::{Error, ParseError},
+      Err,
+    };
 
-    let mut parser = into(take(3u8));
+    let mut parser = into(take::<_, _, Error<_>>(3u8));
     let result: IResult<&[u8], Vec<u8>> = parser(&b"abcdefg"[..]);
 
     assert_eq!(result, Ok((&b"defg"[..], vec![97, 98, 99])));
