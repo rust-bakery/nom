@@ -23,6 +23,7 @@ include = [
   "src/*.rs",
   "src/*/*.rs",
   "tests/*.rs",
+  "doc/nom_recipes.md",
   "build.rs"
 ]
 
