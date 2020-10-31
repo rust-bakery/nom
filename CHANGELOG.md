@@ -6,12 +6,126 @@
 
 ### Changed
 
-- the minimal Rust version is now 1.36
-- stabilized the `alloc` feature
+## 6.0.0 - 2020-10-31
+
+### Thanks
+
+This release was done thanks to the hard work of (by order of appearance in the commit list):
+- @chifflier
+- @shepmaster
+- @amerelo
+- @razican
+- @Palladinium
+- @0ndorio
+- Sebastian Zivota
+- @keruspe
+- @devonhollowood
+- @parasyte
+- @nnt0
+- @AntoineCezar
+- @GuillaumeGomez
+- @eijebong
+- @stadelmanma
+- @sphynx
+- @snawaz
+- @fosskers
+- @JamesHarrison
+- @calebsander
+- @jthornber
+- @ahmedcharles
+- @rljacobson
+- @benkay86
+- @georgeclaghorn
+- @TianyiShi2001
+- @shnewto
+- @alfriadox
+- @resistor
+- @myrrlyn
+- @chipsenkbeil
+- @ruza-net
+- @fanf2
+- @jameysharp
+- @FallenWarrior2k
+- @jmg-duarte
+- @ericseppanen
+- @hbina
+- Andreas Molzer
+- @nickelc
+- @bgourlie
+
+## Notable changes
+
+This release is a more polished version of nom 5, that came with a focus on
+function parsers, by relaxing the requirements: combinators will return a
+`impl FnMut` instead of `impl Fn`, allowing closures that change their context,
+and parsers can be any type now, as long as they implement the new `Parser` trait.
+That parser trait also comes with a few helper methods.
+
+Error management was often a pain point, so a lot of work went into making it easier.
+Now it integrates with `std:error::Error`, the `IResult::finish()` method allows you
+to convert to a more usable type, the `into` combinator can convert the error type
+if there's a `From` implementation, and there are more specific error traits like
+`ContextError` for the `context` combinator, and `FromExternalError` for `map_res`.
+While the `VerboseError` type and its `convert_error` function saw some changes,
+not many features ill be added to it, instead you are encouraged to build the error
+type that corresponds to your needs if you are building a language parser.
+
+This version also integrates with the excellent [bitvec](https://crates.io/crates/bitvec)
+crate for better bit level parsing. This part of nom was not great and a bit of a hack,
+so ths will give better options for those parsers.
+
+At last, documentation! There are now more code examples, functions and macros that require
+specific cargo features are now clearly indicated, and there's a new `recipes` module
+containing example patterns.
+
+### Breaking changes
+
+- the minimal Rust version is now 1.44 (1.37 if building without the `alloc` or `std` features)
+- streaming parsers return the number of additional bytes they need, not the total. This was supposed to be the case everywhere, but some parsers were forgotten
+- removed the `regexp_macros` cargo feature
+- the `context` combinator is not linked to `ParseError` anymore, instead it come with its own `ContextError` trait
+- `Needed::Size` now contains a `NonZeroUsize`, so we can reduce the structure's size by 8 bytes. When upgrading, `Needed::Size(number)` can be replaced with `Needed::new(number)`
+- there is now a more general `Parser` trait, so parsers can be something else than a function. This trait also comes with combinator methods like `map`, `flat_map`, `or`. Since it is implemented on `Fn*` traits, it should not affect existing code too much
+- combinators that returned a `impl Fn` now return a `impl FnMut` to allow parser closures that capture some mutable value from the context
+- `separated_list` is now `separated_list0`
+- removed the deprecated `methods` module
+- removed the deprecated `whitespace` module
+- the default error type is now a struct (`nom::error::Error`) instead of a tuple
+- the `FromExternalError` allows wrapping the error returned by the function in the `map_res` combinator
+- renamed the `dbg!` macro to avoid conficts with `std::dbg!`
+- `separated_list` now allows empty elements
+
 
 ### Added
 
+- function version of regex parsers
+- `fill`: attempts to fill the output slice passed as argument
+- `success`: returns a value without consuming the input
+- `satisfy`: checks a predicate over the next character
+- `eof` function combinator
+- `consumed`: returnes the produced value and the consumed input
+- `length_count` function combinator
+- `into`: converts a parser's output and error values if `From` implementations are available
+- `IResult::finish()`: converts a parser's result to `Result<(I, O), E>` by removing the distinction between `Error` and `Failure` and panicking on `Incomplete`
+- non macro versions of `u16`, `i32`, etc, with configurable endianness
+- `is_newline` function
+- `std::error::Error` implementation for nom's error types
+- recipes section of the documentation, outlining common patterns in nom
+- custom errors example
+- bitstream parsing with the `BitSlice` type from the bitvec crate
+- native endianness parsers
+- github actions for CI
+
+### Changed
+
+- allows lexical-core 0.7
+- number parsers are now generic over the input type
+- stabilized the `alloc` feature
+- `convert_error` accepts a type that derefs to `&str`
+- the JSON example now follows the spec better
+
 ### Fixed
+- use `fold_many0c` in the `fold_many0` macro
 
 ## 5.1.1 - 2020-02-24
 
@@ -1121,7 +1235,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased](https://github.com/Geal/nom/compare/5.1.1...HEAD)
+* [unreleased](https://github.com/Geal/nom/compare/6.0.0...HEAD)
+* [6.0.0](https://github.com/Geal/nom/compare/5.1.1...6.0.0)
 * [5.1.1](https://github.com/Geal/nom/compare/5.1.0...5.1.1)
 * [5.1.0](https://github.com/Geal/nom/compare/5.0.1...5.1.0)
 * [5.0.1](https://github.com/Geal/nom/compare/5.0.0...5.0.1)
