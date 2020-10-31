@@ -46,6 +46,7 @@ impl<I, O, E> Finish<I, O, E> for IResult<I, O, E> {
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[allow(missing_doc_code_examples)]
 pub enum Needed {
   /// Needs more data, but we do not know how much
   Unknown,
@@ -92,6 +93,7 @@ impl Needed {
 /// to try other parsers, you were already in the right branch, so the data is invalid
 ///
 #[derive(Debug, Clone, PartialEq)]
+#[allow(missing_doc_code_examples)]
 pub enum Err<E> {
   /// There was not enough data
   Incomplete(Needed),
@@ -287,6 +289,7 @@ where
 }
 
 /// Implementation of `Parser:::map`
+#[allow(missing_doc_code_examples)]
 pub struct Map<F, G, O1> {
   f: F,
   g: G,
@@ -303,6 +306,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> fo
 }
 
 /// Implementation of `Parser::flat_map`
+#[allow(missing_doc_code_examples)]
 pub struct FlatMap<F, G, O1> {
   f: F,
   g: G,
@@ -319,6 +323,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>>
 }
 
 /// Implementation of `Parser::and_then`
+#[allow(missing_doc_code_examples)]
 pub struct AndThen<F, G, O1> {
   f: F,
   g: G,
@@ -336,6 +341,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, 
 }
 
 /// Implementation of `Parser::and`
+#[allow(missing_doc_code_examples)]
 pub struct And<F, G> {
   f: F,
   g: G,
@@ -352,6 +358,7 @@ impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, 
 }
 
 /// Implementation of `Parser::or`
+#[allow(missing_doc_code_examples)]
 pub struct Or<F, G> {
   f: F,
   g: G,
@@ -372,6 +379,7 @@ impl<'a, I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Par
 }
 
 /// Implementation of `Parser::into`
+#[allow(missing_doc_code_examples)]
 pub struct Into<F, O1, O2: From<O1>, E1, E2: From<E1>> {
   f: F,
   phantom_out1: core::marker::PhantomData<O1>,

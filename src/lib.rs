@@ -428,17 +428,18 @@ doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.
+#[allow(missing_doc_code_examples)]
 pub mod lib {
   /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
   /// as well as `core` or `std`
   #[cfg(not(feature = "std"))]
+  #[allow(missing_doc_code_examples)]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[cfg(not(feature = "alloc"))]
     pub use core::borrow;
 
     #[cfg(feature = "alloc")]
-    #[cfg_attr(feature = "alloc", macro_use)]
     pub use alloc::{borrow, boxed, string, vec};
 
     pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
@@ -450,6 +451,7 @@ pub mod lib {
   }
 
   #[cfg(feature = "std")]
+  #[allow(missing_doc_code_examples)]
   /// internal std exports for no_std compatibility
   pub mod std {
     pub use std::{
