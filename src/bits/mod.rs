@@ -23,9 +23,10 @@ use crate::traits::{ErrorConvert, Slice};
 /// # use nom::IResult;
 /// use nom::bits::bits;
 /// use nom::bits::complete::take;
+/// use nom::error::Error;
 ///
 /// fn take_4_bits(input: &[u8]) -> IResult<&[u8], u64> {
-///   bits(take::<_, _, _, (_, _)>(4usize))(input)
+///   bits(take::<_, _, _, Error<_>>(4usize))(input)
 /// }
 ///
 /// let input = vec![0xAB, 0xCD, 0xEF, 0x12];
