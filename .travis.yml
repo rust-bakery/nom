@@ -21,6 +21,15 @@ before_script:
 matrix:
   include:
     - rust: stable
+      env: FEATURES='--features "std lexical regexp"'
+      before_script:
+        - export PATH=$HOME/.cargo/bin:$PATH
+        - cargo install cargo-update || echo "cargo-update already installed"
+        - cargo install cargo-tarpaulin || echo "cargo tarpaulin already installed"
+        - cargo install-update -a
+      script:
+        cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
+    - rust: stable
       env: FEATURES=''
     - rust: stable
       env: FEATURES='--no-default-features'
@@ -41,15 +50,6 @@ matrix:
         - export PATH=$HOME/.cargo/bin:$PATH
       script:
         - eval cargo doc --verbose $DOC_FEATURES
-    - rust: stable
-      env: FEATURES='--features "std lexical regexp"'
-      before_script:
-        - export PATH=$HOME/.cargo/bin:$PATH
-        - cargo install cargo-update || echo "cargo-update already installed"
-        - cargo install cargo-tarpaulin || echo "cargo tarpaulin already installed"
-        - cargo install-update -a
-      script:
-        cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
 
   allow_failures:
     - rust: stable
