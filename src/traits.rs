@@ -38,7 +38,6 @@ impl<'a> InputLength for &'a str {
   }
 }
 
-#[deprecated(since = "6.0.0", note = "Use `BitSlice`")]
 impl<'a> InputLength for (&'a [u8], usize) {
   #[inline]
   fn input_len(&self) -> usize {
