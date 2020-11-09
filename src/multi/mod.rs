@@ -725,11 +725,11 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
-pub fn fold_many0<I, O, E, F, G, R>(mut f: F, init: R, g: G) -> impl FnMut(I) -> IResult<I, R, E>
+pub fn fold_many0<I, O, E, F, G, R>(mut f: F, init: R, mut g: G) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
-  G: Fn(R, O) -> R,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -765,7 +765,7 @@ pub fn fold_many0c<I, O, E, F, G, R>(i: I, f: F, init: R, g: G) -> IResult<I, R,
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -803,11 +803,11 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
 /// ```
-pub fn fold_many1<I, O, E, F, G, R>(mut f: F, init: R, g: G) -> impl FnMut(I) -> IResult<I, R, E>
+pub fn fold_many1<I, O, E, F, G, R>(mut f: F, init: R, mut g: G) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
-  G: Fn(R, O) -> R,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
@@ -850,7 +850,7 @@ pub fn fold_many1c<I, O, E, F, G, R>(i: I, f: F, init: R, g: G) -> IResult<I, R,
 where
   I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
