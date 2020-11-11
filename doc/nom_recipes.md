@@ -83,7 +83,7 @@ pub fn pinline_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a st
 
 ### `Rust-Style Identifiers`
 
-Parsing identifiers that may start with a letter (or underscore) and may c∏ontain underscores,
+Parsing identifiers that may start with a letter (or underscore) and may contain underscores,
 letters and numbers may be parsed like this:
 
 ```rust
