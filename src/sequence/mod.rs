@@ -321,7 +321,7 @@ macro_rules! tuple_trait_inner(
 tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ J, FnK K, FnL L,
   FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
 
-///Aapplies a tuple of parsers one by one and returns their results as a tuple.
+///Applies a tuple of parsers one by one and returns their results as a tuple.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind};
