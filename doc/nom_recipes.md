@@ -35,7 +35,7 @@ fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(inner: F) -> impl Fn(&'a str) -> IRe
     multispace0,
     inner,
     multispace0
-  )(i)
+  )
 }
 ```
 
