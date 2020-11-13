@@ -117,13 +117,6 @@ Parsing integers from binary formats can be done in two ways: With parser functi
 - `tag_bits!`: Matches an integer pattern to a bitstream. The number of bits of the input to compare must be specified
 - `take_bits!`: Generates a parser consuming the specified number of bits
 
-## Whitespace delimited formats parsing
-
-- `eat_separator!`: Helper macro to build a separator parser
-- `sep!`: Parser rewriting macro for whitespace separated formats
-- `wrap_sep!`: 
-- `ws!`: Consumes whitespace characters, i.e. the `\s` regex pattern
-
 ## Remaining combinators
 
 - `apply!`: Emulate function currying: `apply!(my_function, arg1, arg2, ...)` becomes `my_function(input, arg1, arg2, ...)`
