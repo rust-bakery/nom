@@ -1608,6 +1608,26 @@ impl<I> ErrorConvert<error::Error<(I, usize)>> for error::Error<I> {
   }
 }
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl<I> ErrorConvert<error::VerboseError<I>> for error::VerboseError<(I, usize)> {
+  fn convert(self) -> error::VerboseError<I> {
+    error::VerboseError {
+      errors: self.errors.into_iter().map(|(i, e)| (i.0, e)).collect(),
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl<I> ErrorConvert<error::VerboseError<(I, usize)>> for error::VerboseError<I> {
+  fn convert(self) -> error::VerboseError<(I, usize)> {
+    error::VerboseError {
+      errors: self.errors.into_iter().map(|(i, e)| ((i, 0), e)).collect(),
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
