@@ -6,6 +6,39 @@
 
 ### Changed
 
+## 6.0.1 - 2020-11-24
+
+### Thanks
+
+This release was done thanks to the hard work of (by order of appearance in the commit list):
+
+- @Leonqn
+- @nickelc
+- @toshokan
+- @juchiast
+- @shssoichiro
+- @jlkiri
+- @chifflier
+- @fkloiber
+- @Kaoet
+- @Matthew Plant
+
+### Added
+
+- `ErrorConvert` implementation for `VerboseError`
+
+### Changed
+
+- CI fixes
+- `fold_many*` now accept `FnMut` for the accumulation function
+- relaxed input bounds on `length_count`
+
+# Fixed
+
+- documentation fixes
+- the `#[deprecated]` attribute was removed from traits because it does not compile anymore on nightly
+- bits and bytes combinators from the bits modules are now converted to use `FnMut`
+
 ## 6.0.0 - 2020-10-31
 
 ### Thanks
@@ -1235,7 +1268,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased](https://github.com/Geal/nom/compare/6.0.0...HEAD)
+* [unreleased](https://github.com/Geal/nom/compare/6.0.1...HEAD)
+* [6.0.0](https://github.com/Geal/nom/compare/6.0.0...6.0.1)
 * [6.0.0](https://github.com/Geal/nom/compare/5.1.1...6.0.0)
 * [5.1.1](https://github.com/Geal/nom/compare/5.1.0...5.1.1)
 * [5.1.0](https://github.com/Geal/nom/compare/5.0.1...5.1.0)
