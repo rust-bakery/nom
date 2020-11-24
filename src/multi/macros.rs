@@ -614,7 +614,10 @@ mod tests {
     let i_err_pos = &i[3..];
     assert_eq!(
       empty_sep(i),
-      Err(Err::Error(error_position!(i_err_pos, ErrorKind::SeparatedList)))
+      Err(Err::Error(error_position!(
+        i_err_pos,
+        ErrorKind::SeparatedList
+      )))
     );
     let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
     assert_eq!(multi(e), Ok((&b",ef"[..], res4)));

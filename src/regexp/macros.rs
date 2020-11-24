@@ -55,7 +55,10 @@ macro_rules! re_bytes_find (
 ///
 /// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
-#[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+#[cfg_attr(
+  feature = "docsrs",
+  doc(cfg(all(feature = "regexp", feature = "alloc")))
+)]
 macro_rules! re_matches (
   ($i:expr, $re:expr) => ( {
       let r = $crate::lib::regex::Regex::new($re).unwrap();
@@ -68,7 +71,10 @@ macro_rules! re_matches (
 ///
 /// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
-#[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+#[cfg_attr(
+  feature = "docsrs",
+  doc(cfg(all(feature = "regexp", feature = "alloc")))
+)]
 macro_rules! re_bytes_matches (
   ($i:expr, $re:expr) => ( {
       let r = $crate::lib::regex::bytes::Regex::new($re).unwrap();
@@ -81,7 +87,10 @@ macro_rules! re_bytes_matches (
 ///
 /// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
-#[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+#[cfg_attr(
+  feature = "docsrs",
+  doc(cfg(all(feature = "regexp", feature = "alloc")))
+)]
 macro_rules! re_capture (
   ($i:expr, $re:expr) => ( {
       let r = $crate::lib::regex::Regex::new($re).unwrap();
@@ -94,7 +103,10 @@ macro_rules! re_capture (
 ///
 /// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
-#[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+#[cfg_attr(
+  feature = "docsrs",
+  doc(cfg(all(feature = "regexp", feature = "alloc")))
+)]
 macro_rules! re_bytes_capture (
   ($i:expr, $re:expr) => ( {
       let r = $crate::lib::regex::bytes::Regex::new($re).unwrap();
@@ -108,7 +120,10 @@ macro_rules! re_bytes_capture (
 ///
 /// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
-#[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+#[cfg_attr(
+  feature = "docsrs",
+  doc(cfg(all(feature = "regexp", feature = "alloc")))
+)]
 macro_rules! re_captures (
   ($i:expr, $re:expr) => ( {
       let r = $crate::lib::regex::Regex::new($re).unwrap();
@@ -121,7 +136,10 @@ macro_rules! re_captures (
 ///
 /// Requires the `regexp` feature.
 #[macro_export(local_inner_macros)]
-#[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+#[cfg_attr(
+  feature = "docsrs",
+  doc(cfg(all(feature = "regexp", feature = "alloc")))
+)]
 macro_rules! re_bytes_captures (
   ($i:expr, $re:expr) => ( {
       let r = $crate::lib::regex::bytes::Regex::new($re).unwrap();

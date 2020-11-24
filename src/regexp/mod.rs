@@ -59,7 +59,10 @@ pub mod str {
   /// # }
   /// ```
   #[cfg(all(feature = "regexp", feature = "alloc"))]
-  #[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+  #[cfg_attr(
+    feature = "docsrs",
+    doc(cfg(all(feature = "regexp", feature = "alloc")))
+  )]
   pub fn re_matches<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<&'a str>, E>
   where
     E: ParseError<&'a str>,
@@ -130,7 +133,10 @@ pub mod str {
   /// # }
   /// ```
   #[cfg(all(feature = "regexp", feature = "alloc"))]
-  #[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+  #[cfg_attr(
+    feature = "docsrs",
+    doc(cfg(all(feature = "regexp", feature = "alloc")))
+  )]
   pub fn re_capture<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<&'a str>, E>
   where
     E: ParseError<&'a str>,
@@ -171,7 +177,10 @@ pub mod str {
   /// # }
   /// ```
   #[cfg(all(feature = "regexp", feature = "alloc"))]
-  #[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+  #[cfg_attr(
+    feature = "docsrs",
+    doc(cfg(all(feature = "regexp", feature = "alloc")))
+  )]
   pub fn re_captures<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<Vec<&'a str>>, E>
   where
     E: ParseError<&'a str>,
@@ -361,7 +370,10 @@ pub mod bytes {
   /// # }
   /// ```
   #[cfg(all(feature = "regexp", feature = "alloc"))]
-  #[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+  #[cfg_attr(
+    feature = "docsrs",
+    doc(cfg(all(feature = "regexp", feature = "alloc")))
+  )]
   pub fn re_matches<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<&'a [u8]>, E>
   where
     E: ParseError<&'a [u8]>,
@@ -431,7 +443,10 @@ pub mod bytes {
   /// # }
   /// ```
   #[cfg(all(feature = "regexp", feature = "alloc"))]
-  #[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+  #[cfg_attr(
+    feature = "docsrs",
+    doc(cfg(all(feature = "regexp", feature = "alloc")))
+  )]
   pub fn re_capture<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<&'a [u8]>, E>
   where
     E: ParseError<&'a [u8]>,
@@ -472,7 +487,10 @@ pub mod bytes {
   /// # }
   /// ```
   #[cfg(all(feature = "regexp", feature = "alloc"))]
-  #[cfg_attr(feature = "docsrs", doc(cfg(all(feature = "regexp", feature = "alloc"))))]
+  #[cfg_attr(
+    feature = "docsrs",
+    doc(cfg(all(feature = "regexp", feature = "alloc")))
+  )]
   pub fn re_captures<'a, E>(
     re: Regex,
   ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<Vec<&'a [u8]>>, E>
