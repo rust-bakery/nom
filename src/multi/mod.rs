@@ -1090,7 +1090,7 @@ where
 #[cfg(feature = "alloc")]
 pub fn length_count<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + InputLength + InputTake,
+  I: Clone,
   N: ToUsize,
   F: Parser<I, N, E>,
   G: Parser<I, O, E>,
