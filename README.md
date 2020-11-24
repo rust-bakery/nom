@@ -307,3 +307,11 @@ Here is a (non exhaustive) list of known projects using nom:
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 
 Want to add your parser here? Create a pull request for it!
+
+# Contributors
+
+nom is the fruit of the work of many contributors over the years, many thanks for your help!
+
+<a href="https://github.com/geal/nom/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=geal/nom" />
+</a>
