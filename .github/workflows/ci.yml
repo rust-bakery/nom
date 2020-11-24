@@ -42,23 +42,15 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install rust (${{ matrix.rust }})
-        uses: actions-rs/toolchain@v1
+        uses: hecrj/setup-rust-action@v1
         with:
-          toolchain: ${{ matrix.rust }}
-          profile: minimal
-          override: true
+          rust-version: ${{ matrix.rust }}
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose ${{ matrix.features }}
+        run: cargo build --verbose ${{ matrix.features }}
 
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose ${{ matrix.features }}
+        run: cargo test --verbose ${{ matrix.features }}
 
   minrust:
     name: Test MSRV
@@ -69,23 +61,15 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install rust (${{ env.RUST_MINVERSION }})
-        uses: actions-rs/toolchain@v1
+        uses: hecrj/setup-rust-action@v1
         with:
-          toolchain: ${{ env.RUST_MINVERSION }}
-          profile: minimal
-          override: true
+          rust-version: ${{ env.RUST_MINVERSION }}
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose --no-default-features --features "regexp lexical"
+        run: cargo build --verbose --no-default-features --features "regexp lexical"
 
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --no-default-features --features "regexp lexical"
+        run: cargo test --verbose --no-default-features --features "regexp lexical"
 
   bench:
     name: Bench
@@ -96,23 +80,15 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install rust
-        uses: actions-rs/toolchain@v1
+        uses: hecrj/setup-rust-action@v1
         with:
-          toolchain: nightly
-          profile: minimal
-          override: true
+          rust-version: nightly
 
       - name: Compile bench
-        uses: actions-rs/cargo@v1
-        with:
-          command: bench
-          args: --verbose --no-run --features "regexp"
+        run: cargo bench --verbose --no-run --features "regexp"
 
       - name: Run bench
-        uses: actions-rs/cargo@v1
-        with:
-          command: bench
-          args: --verbose --features "regexp"
+        run: cargo bench --verbose --features "regexp"
 
   doc:
     name: Build documentation
@@ -123,17 +99,12 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install rust
-        uses: actions-rs/toolchain@v1
+        uses: hecrj/setup-rust-action@v1
         with:
-          toolchain: nightly
-          profile: minimal
-          override: true
+          rust-version: nightly
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --verbose --features "std lexical regexp"
+        run: cargo doc --verbose --features "std lexical regexp"
 
   fmt:
     name: Check formatting
@@ -144,19 +115,12 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install rust
-        uses: actions-rs/toolchain@v1
+        uses: hecrj/setup-rust-action@v1
         with:
-          toolchain: stable
           components: rustfmt
-          profile: minimal
-          override: true
 
-      - name: cargo fmt -- --check
+      - run: cargo fmt -- --check
         continue-on-error: true
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: -- --check
 
   coverage:
     name: Coverage
@@ -167,19 +131,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+        uses: hecrj/setup-rust-action@v1
 
       - name: Install cargo-tarpaulin
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
 
       - name: Run cargo tarpaulin
-        uses: actions-rs/cargo@v1
-        with:
-          command: tarpaulin
+        run: cargo tarpaulin
