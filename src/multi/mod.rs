@@ -140,7 +140,7 @@ where
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many1c<I, O, E, F>(input: I, f: F) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + Copy + PartialEq,
+  I: Clone + PartialEq,
   F: Fn(I) -> IResult<I, O, E>,
   E: ParseError<I>,
 {
