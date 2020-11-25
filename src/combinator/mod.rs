@@ -411,9 +411,10 @@ where
 /// assert_eq!(parser(""), Ok(("", "")));
 /// # }
 /// ```
-pub fn eof<I: InputLength + Copy, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
+pub fn eof<I: InputLength + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
   if input.input_len() == 0 {
-    Ok((input, input))
+    let clone = input.clone();
+    Ok((input, clone))
   } else {
     Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof)))
   }

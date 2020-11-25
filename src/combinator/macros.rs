@@ -926,7 +926,8 @@ macro_rules! eof (
 
       use $crate::InputLength;
       if ($i).input_len() == 0 {
-        Ok(($i, $i))
+        let clone = $i.clone();
+        Ok(($i, clone))
       } else {
         Err(Err::Error(error_position!($i, ErrorKind::Eof)))
       }
