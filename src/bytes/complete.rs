@@ -474,8 +474,8 @@ where
 /// }
 ///
 /// assert_eq!(until_eof("hello, worldeof"), Ok(("eof", "hello, world")));
-/// assert_eq!(until_eof("hello, world"), Err(Err::Error(("hello, world", ErrorKind::TakeUntilParserMatches))));
-/// assert_eq!(until_eof(""), Err(Err::Error(("", ErrorKind::TakeUntilParserMatches))));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Error(error_position!("hello, world", ErrorKind::TakeUntilParserMatches))));
+/// assert_eq!(until_eof(""), Err(Err::Error(error_position!("", ErrorKind::TakeUntilParserMatches))));
 /// ```
 ///
 /// # Powerful Example
@@ -566,8 +566,8 @@ where
 /// }
 ///
 /// assert_eq!(until_eof("hello, worldeof foobar"), Ok((" foobar", "hello, world")));
-/// assert_eq!(until_eof("hello, world"), Err(Err::Error(("hello, world", ErrorKind::TakeUntilParserMatches))));
-/// assert_eq!(until_eof(""), Err(Err::Error(("", ErrorKind::TakeUntilParserMatches))));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Error(error_position!("hello, world", ErrorKind::TakeUntilParserMatches))));
+/// assert_eq!(until_eof(""), Err(Err::Error(error_position!("", ErrorKind::TakeUntilParserMatches))));
 /// ```
 pub fn take_until_parser_matches_and_consume<F, Input, O, Error>(
   mut f: F,
@@ -900,7 +900,7 @@ mod tests {
       super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaa");
     assert_eq!(
       result,
-      Err(Err::Error((
+      Err(Err::Error(error_position!(
         "aaaaabbaaaabbbaaa",
         ErrorKind::TakeUntilParserMatches
       )))
@@ -913,7 +913,7 @@ mod tests {
       super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaaxy");
     assert_eq!(
       result,
-      Err(Err::Error((
+      Err(Err::Error(error_position!(
         "aaaaabbaaaabbbaaaxy",
         ErrorKind::TakeUntilParserMatches
       )))
