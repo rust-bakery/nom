@@ -482,7 +482,7 @@ where
 /// To show the power of this parser we will parse a line containing
 /// a set of flags at the end surrounded by brackets. Example:
 /// "Submit a PR [inprogress]"
-/// ```rust
+/// ```ignore
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, IResult};
 /// use nom::bytes::complete::{is_not, take_until_parser_matches, tag};
