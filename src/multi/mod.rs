@@ -407,40 +407,32 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many_m_n<I, O, E, F>(m: usize, n: usize, mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn many_m_n<I, O, E, F>(
+  min: usize,
+  max: usize,
+  mut parse: F,
+) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
-  move |i: I| {
-    let mut res = crate::lib::std::vec::Vec::with_capacity(m);
-    let mut input = i.clone();
-    let mut count: usize = 0;
+  move |mut input: I| {
+    let mut res = crate::lib::std::vec::Vec::with_capacity(min);
 
-    if n == 0 {
-      return Ok((i, vec![]));
-    }
-
-    loop {
-      let _i = input.clone();
-      match f.parse(_i) {
-        Ok((i, o)) => {
+    for count in 0..max {
+      match parse.parse(input.clone()) {
+        Ok((tail, value)) => {
           // do not allow parsers that do not consume input (causes infinite loops)
-          if i == input {
+          if tail == input {
             return Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyMN)));
           }
 
-          res.push(o);
-          input = i;
-          count += 1;
-
-          if count == n {
-            return Ok((input, res));
-          }
+          res.push(value);
+          input = tail;
         }
         Err(Err::Error(e)) => {
-          if count < m {
+          if count < min {
             return Err(Err::Error(E::append(input, ErrorKind::ManyMN, e)));
           } else {
             return Ok((input, res));
@@ -451,6 +443,8 @@ where
         }
       }
     }
+
+    Ok((input, res))
   }
 }
 
@@ -903,11 +897,11 @@ where
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
 pub fn fold_many_m_n<I, O, E, F, G, R>(
-  m: usize,
-  n: usize,
-  mut f: F,
+  min: usize,
+  max: usize,
+  mut parse: F,
   init: R,
-  g: G,
+  fold: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
@@ -916,25 +910,23 @@ where
   E: ParseError<I>,
   R: Clone,
 {
-  move |i: I| {
+  move |mut input: I| {
     let mut acc = init.clone();
-    let mut input = i.clone();
-    for count in 0..n {
-      let _input = input.clone();
-      match f.parse(_input) {
-        Ok((i, o)) => {
+    for count in 0..max {
+      match parse.parse(input.clone()) {
+        Ok((tail, value)) => {
           // do not allow parsers that do not consume input (causes infinite loops)
-          if i == input {
-            return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
+          if tail == input {
+            return Err(Err::Error(E::from_error_kind(tail, ErrorKind::ManyMN)));
           }
 
-          acc = g(acc, o);
-          input = i;
+          acc = fold(acc, value);
+          input = tail;
         }
         //FInputXMError: handle failure properly
-        Err(Err::Error(_)) => {
-          if count < m {
-            return Err(Err::Error(E::from_error_kind(i, ErrorKind::ManyMN)));
+        Err(Err::Error(err)) => {
+          if count < min {
+            return Err(Err::Error(E::append(input, ErrorKind::ManyMN, err)));
           } else {
             break;
           }
@@ -949,12 +941,12 @@ where
 
 #[doc(hidden)]
 pub fn fold_many_m_nc<I, O, E, F, G, R>(
-  i: I,
-  m: usize,
-  n: usize,
-  f: F,
+  input: I,
+  min: usize,
+  max: usize,
+  parse: F,
   init: R,
-  g: G,
+  fold: G,
 ) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
@@ -963,7 +955,7 @@ where
   E: ParseError<I>,
   R: Clone,
 {
-  fold_many_m_n(m, n, f, init, g)(i)
+  fold_many_m_n(min, max, parse, init, fold)(input)
 }
 
 /// Gets a number from the parser and returns a

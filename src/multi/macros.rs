@@ -519,7 +519,7 @@ macro_rules! fold_many1(
 ///  let b = b"abcdabcdefgh";
 ///  let c = b"abcdabcdabcdabcdabcdefgh";
 ///
-///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(&a[..], ErrorKind::ManyMN))));
+///  assert_eq!(multi(&a[..]), Err(Err::Error(error_position!(&b"efgh"[..], ErrorKind::Tag))));
 ///  let res = vec![&b"abcd"[..], &b"abcd"[..]];
 ///  assert_eq!(multi(&b[..]),Ok((&b"efgh"[..], res)));
 ///  let res2 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
@@ -1024,7 +1024,7 @@ mod tests {
 
     assert_eq!(
       multi(a),
-      Err(Err::Error(error_position!(a, ErrorKind::ManyMN)))
+      Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
     );
     let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
     assert_eq!(multi(b), Ok((&b"efgh"[..], res1)));
