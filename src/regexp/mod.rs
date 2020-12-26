@@ -6,6 +6,7 @@ mod macros;
 pub mod str {
   use crate::error::{ErrorKind, ParseError};
   use crate::lib::regex::Regex;
+  use crate::lib::std::borrow::Borrow;
   #[cfg(feature = "alloc")]
   use crate::lib::std::vec::Vec;
   use crate::traits::{InputLength, Slice};
@@ -22,7 +23,7 @@ pub mod str {
   /// # use nom::regexp::str::re_match;
   /// # fn main() {
   /// let re = regex::Regex::new(r"^\d{4}").unwrap();
-  /// let parser = re_match::<(&str, ErrorKind)>(re);
+  /// let parser = re_match::<_, (&str, ErrorKind)>(re);
   /// assert_eq!(parser("2019"), Ok(("", "2019")));
   /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::RegexpMatch))));
   /// assert_eq!(parser("2019-10"), Ok(("", "2019-10")));
@@ -30,12 +31,13 @@ pub mod str {
   /// ```
   #[cfg(feature = "regexp")]
   #[cfg_attr(feature = "docsrs", doc(cfg(feature = "regexp")))]
-  pub fn re_match<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, &'a str, E>
+  pub fn re_match<'a, R, E>(re: R) -> impl Fn(&'a str) -> IResult<&'a str, &'a str, E>
   where
+    R: Borrow<Regex>,
     E: ParseError<&'a str>,
   {
     move |i| {
-      if re.is_match(i) {
+      if re.borrow().is_match(i) {
         Ok((i.slice(i.input_len()..), i))
       } else {
         Err(Err::Error(E::from_error_kind(i, ErrorKind::RegexpMatch)))
@@ -53,7 +55,7 @@ pub mod str {
   /// # use nom::regexp::str::re_matches;
   /// # fn main() {
   /// let re = regex::Regex::new(r"a\d").unwrap();
-  /// let parser = re_matches::<(&str, ErrorKind)>(re);
+  /// let parser = re_matches::<_, (&str, ErrorKind)>(re);
   /// assert_eq!(parser("a1ba2"), Ok(("", vec!["a1", "a2"])));
   /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::RegexpMatches))));
   /// # }
@@ -63,12 +65,14 @@ pub mod str {
     feature = "docsrs",
     doc(cfg(all(feature = "regexp", feature = "alloc")))
   )]
-  pub fn re_matches<'a, E>(re: Regex) -> impl Fn(&'a str) -> IResult<&'a str, Vec<&'a str>, E>
+  pub fn re_matches<'a, R, E>(re: R) -> impl Fn(&'a str) -> IResult<&'a str, Vec<&'a str>, E>
   where
+    R: Borrow<Regex>,
     E: ParseError<&'a str>,
   {
     move |i| {
       let v: Vec<_> = re
+        .borrow()
         .find_iter(i)
         .map(|m| i.slice(m.start()..m.end()))
         .collect();
@@ -318,6 +322,7 @@ pub mod str {
 pub mod bytes {
   use crate::error::{ErrorKind, ParseError};
   use crate::lib::regex::bytes::Regex;
+  use crate::lib::std::borrow::Borrow;
   #[cfg(feature = "alloc")]
   use crate::lib::std::vec::Vec;
   use crate::traits::{InputLength, Slice};
@@ -334,19 +339,20 @@ pub mod bytes {
   /// # use nom::regexp::bytes::re_match;
   /// # fn main() {
   /// let re = regex::bytes::Regex::new(r"^\d{4}").unwrap();
-  /// let parser = re_match::<(&[u8], ErrorKind)>(re);
+  /// let parser = re_match::<_, (&[u8], ErrorKind)>(re);
   /// assert_eq!(parser(&b"2019"[..]), Ok((&b""[..], &b"2019"[..])));
   /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::RegexpMatch))));
   /// assert_eq!(parser(&b"2019-10"[..]), Ok((&b""[..], &b"2019-10"[..])));
   /// # }
   /// ```
   #[cfg(feature = "regexp")]
-  pub fn re_match<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], &'a [u8], E>
+  pub fn re_match<'a, R, E>(re: R) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], &'a [u8], E>
   where
+    R: Borrow<Regex>,
     E: ParseError<&'a [u8]>,
   {
     move |i| {
-      if re.is_match(i) {
+      if re.borrow().is_match(i) {
         Ok((i.slice(i.input_len()..), i))
       } else {
         Err(Err::Error(E::from_error_kind(i, ErrorKind::RegexpMatch)))
@@ -364,7 +370,7 @@ pub mod bytes {
   /// # use nom::regexp::bytes::re_matches;
   /// # fn main() {
   /// let re = regex::bytes::Regex::new(r"a\d").unwrap();
-  /// let parser = re_matches::<(&[u8], ErrorKind)>(re);
+  /// let parser = re_matches::<_, (&[u8], ErrorKind)>(re);
   /// assert_eq!(parser(&b"a1ba2"[..]), Ok((&b""[..], vec![&b"a1"[..], &b"a2"[..]])));
   /// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::RegexpMatches))));
   /// # }
@@ -374,12 +380,14 @@ pub mod bytes {
     feature = "docsrs",
     doc(cfg(all(feature = "regexp", feature = "alloc")))
   )]
-  pub fn re_matches<'a, E>(re: Regex) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<&'a [u8]>, E>
+  pub fn re_matches<'a, R, E>(re: R) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<&'a [u8]>, E>
   where
+    R: Borrow<Regex>,
     E: ParseError<&'a [u8]>,
   {
     move |i| {
       let v: Vec<_> = re
+        .borrow()
         .find_iter(i)
         .map(|m| i.slice(m.start()..m.end()))
         .collect();
