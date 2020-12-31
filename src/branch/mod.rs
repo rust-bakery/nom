@@ -15,6 +15,30 @@ pub trait Alt<I, O, E> {
   fn choice(&mut self, input: I) -> IResult<I, O, E>;
 }
 
+impl<'a, I: Clone, O, E: ParseError<I>, P: Parser<I, O, E>> Alt<I, O, E> for &'a mut [P] {
+  fn choice(&mut self, input: I) -> IResult<I, O, E> {
+    let mut err: Option<E> = None;
+    for p in self.iter_mut() {
+      match p.parse(input.clone()) {
+        Err(Err::Error(e)) => {
+          err = match err {
+            Some(curr) => Some(curr.or(e)),
+            None => Some(e),
+          }
+        }
+        res => return res,
+      };
+    }
+    match err {
+      Some(e) => Err(Err::Error(e)),
+      None => Err(Err::Error(E::from_error_kind(
+        input.clone(),
+        ErrorKind::Alt,
+      ))),
+    }
+  }
+}
+
 /// Tests a list of parsers one by one until one succeeds.
 ///
 /// It takes as argument a tuple of parsers. There is a maximum of 21
