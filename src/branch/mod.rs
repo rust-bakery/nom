@@ -44,6 +44,8 @@ impl<'a, I: Clone, O, E: ParseError<I>, P: Parser<I, O, E>> Alt<I, O, E> for &'a
 /// It takes as argument a tuple of parsers. There is a maximum of 21
 /// parsers. If you need more, it is possible to nest them in other `alt` calls,
 /// like this: `alt(parser_a, alt(parser_b, parser_c))`
+/// You can also try: `alt([parser_a, parser_b, parser_c].as_mut())` with limition 
+/// that parser_a, parser_b, parser_c must be the same type
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -68,6 +70,28 @@ impl<'a, I: Clone, O, E: ParseError<I>, P: Parser<I, O, E>> Alt<I, O, E> for &'a
 ///
 /// With a custom error type, it is possible to have alt return the error of the parser
 /// that went the farthest in the input data
+///
+/// A mutable slice can be used either
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err,error::ErrorKind, Needed, IResult};
+/// use nom::character::complete::{alpha1, digit1};
+/// use nom::branch::alt;
+/// # fn main() {
+/// fn parser(input: &str) -> IResult<&str, &str> {
+///   alt([alpha1, digit1].as_mut())(input) // using a mut slice
+/// };
+///
+/// // the first parser, alpha1, recognizes the input
+/// assert_eq!(parser("abc"), Ok(("", "abc")));
+///
+/// // the first parser returns an error, so alt tries the second one
+/// assert_eq!(parser("123456"), Ok(("", "123456")));
+///
+/// // both parsers failed, and with the default error type, alt will return the last error
+/// assert_eq!(parser(" "), Err(Err::Error(error_position!(" ", ErrorKind::Digit))));
+/// # }
 pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {
