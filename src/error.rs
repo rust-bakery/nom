@@ -222,6 +222,9 @@ impl<I: fmt::Display> fmt::Display for VerboseError<I> {
   }
 }
 
+#[cfg(feature = "std")]
+impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseError<I> {}
+
 use crate::internal::{Err, IResult};
 
 /// Create a new error from an input position, a static string and an existing error.
