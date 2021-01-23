@@ -408,7 +408,7 @@
 #![deny(missing_docs)]
 #![warn(missing_doc_code_examples)]
 
-#[cfg(all(not(feature = "std"), feature = "alloc"))]
+#[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
 #[cfg(feature = "bitvec")]
