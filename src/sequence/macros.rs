@@ -833,10 +833,10 @@ mod tests {
   fn do_parse() {
     fn ret_int1(i: &[u8]) -> IResult<&[u8], u8> {
       Ok((i, 1))
-    };
+    }
     fn ret_int2(i: &[u8]) -> IResult<&[u8], u8> {
       Ok((i, 2))
-    };
+    }
 
     //trace_macros!(true);
     named!(do_parser<&[u8], (u8, u8)>,
