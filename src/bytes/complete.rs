@@ -590,12 +590,13 @@ where
 ///     alt((
 ///       value("\\", tag("\\")),
 ///       value("\"", tag("\"")),
-///       value("n", tag("\n")),
+///       value("\n", tag("n")),
 ///     ))
 ///   )(input)
 /// }
 ///
 /// assert_eq!(parser("ab\\\"cd"), Ok(("", String::from("ab\"cd"))));
+/// assert_eq!(parser("ab\\ncd"), Ok(("", String::from("ab\ncd"))));
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
