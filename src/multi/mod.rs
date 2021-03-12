@@ -901,12 +901,12 @@ pub fn fold_many_m_n<I, O, E, F, G, R>(
   max: usize,
   mut parse: F,
   init: R,
-  fold: G,
+  mut fold: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
-  G: Fn(R, O) -> R,
+  G: FnMut(R, O) -> R,
   E: ParseError<I>,
   R: Clone,
 {
