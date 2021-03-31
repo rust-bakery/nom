@@ -43,7 +43,12 @@ fn term(i: &str) -> IResult<&str, i64> {
       if op == '*' {
         acc.saturating_mul(val)
       } else {
-        acc / val
+        match acc.checked_div(val) {
+            Some(v) => v,
+            // we get a division with overflow because we can get acc = i64::MIN and val = -1
+            // the division by zero is already checked earlier by verify
+            None => i64::MAX,
+        }
       }
     },
   )(i)
