@@ -79,29 +79,29 @@ where
 /// A partial byte remaining in the input will be ignored and the given parser will start parsing
 /// at the next full byte.
 ///
-/// ```ignore
-/// # #[macro_use] extern crate nom;
-/// # use nom::IResult;
-/// # use nom::combinator::rest;
-/// # use nom::sequence::tuple;
-/// use nom::bits::{bits, bytes, streaming::take_bits};
+/// ```
+/// use nom::bits::{bits, bytes, streaming::take};
+/// use nom::combinator::rest;
+/// use nom::error::Error;
+/// use nom::sequence::tuple;
+/// use nom::IResult;
 ///
 /// fn parse(input: &[u8]) -> IResult<&[u8], (u8, u8, &[u8])> {
-///   bits(tuple((
-///     take_bits(4usize),
-///     take_bits(8usize),
-///     bytes(rest)
+///   bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((
+///     take(4usize),
+///     take(8usize),
+///     bytes::<_, _, Error<&[u8]>, _, _>(rest)
 ///   )))(input)
 /// }
 ///
-/// let input = &[0xde, 0xad, 0xbe, 0xaf];
+/// let input = &[0x12, 0x34, 0xff, 0xff];
 ///
-/// assert_eq!(parse( input ), Ok(( &[][..], (0xd, 0xea, &[0xbe, 0xaf][..]) )));
+/// assert_eq!(parse( input ), Ok(( &[][..], (0x01, 0x23, &[0xff, 0xff][..]) )));
 /// ```
-pub fn bytes<I, O, E1: ParseError<I> + ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(
-  mut parser: P,
-) -> impl FnMut((I, usize)) -> IResult<(I, usize), O, E2>
+pub fn bytes<I, O, E1, E2, P>(mut parser: P) -> impl FnMut((I, usize)) -> IResult<(I, usize), O, E2>
 where
+  E1: ParseError<I> + ErrorConvert<E2>,
+  E2: ParseError<(I, usize)>,
   I: Slice<RangeFrom<usize>> + Clone,
   P: FnMut(I) -> IResult<I, O, E1>,
 {
