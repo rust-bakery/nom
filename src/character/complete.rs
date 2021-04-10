@@ -151,21 +151,24 @@ where
 }
 
 //FIXME: there's still an incomplete
-/// Recognizes a string of any char except '\r' or '\n'.
+/// Recognizes a string of any char except '\r\n' or '\n'.
 ///
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::not_line_ending;
 /// fn parser(input: &str) -> IResult<&str, &str> {
 ///     not_line_ending(input)
 /// }
 ///
 /// assert_eq!(parser("ab\r\nc"), Ok(("\r\nc", "ab")));
+/// assert_eq!(parser("ab\nc"), Ok(("\nc", "ab")));
 /// assert_eq!(parser("abc"), Ok(("", "abc")));
 /// assert_eq!(parser(""), Ok(("", "")));
+/// assert_eq!(parser("a\rb\nc"), Err(Err::Error(Error { input: "a\rb\nc", code: ErrorKind::Tag })));
+/// assert_eq!(parser("a\rbc"), Err(Err::Error(Error { input: "a\rbc", code: ErrorKind::Tag })));
 /// ```
 pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
