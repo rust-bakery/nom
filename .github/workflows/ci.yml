@@ -183,3 +183,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: tarpaulin
+          env:
+            TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+          args: --coveralls "$TOKEN"
