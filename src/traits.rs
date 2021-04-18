@@ -15,7 +15,7 @@ use crate::lib::std::string::String;
 use crate::lib::std::vec::Vec;
 
 #[cfg(feature = "bitvec")]
-use bitvec::prelude::*;
+use bitvec::{prelude::*, slice::BitValIter};
 
 /// Abstract method to calculate the input length
 pub trait InputLength {
@@ -166,7 +166,7 @@ where
 {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    self.as_slice()
+    self.as_raw_slice()
   }
 }
 
@@ -177,7 +177,7 @@ where
 {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    self.as_slice()
+    self.as_raw_slice()
   }
 }
 
@@ -203,7 +203,7 @@ macro_rules! as_bytes_array_impls {
       where O: BitOrder {
         #[inline(always)]
         fn as_bytes(&self) -> &[u8] {
-          self.as_slice()
+          self.as_raw_slice()
         }
       }
 
@@ -212,7 +212,7 @@ macro_rules! as_bytes_array_impls {
       where O: BitOrder {
         #[inline(always)]
         fn as_bytes(&self) -> &[u8] {
-          self.as_slice()
+          self.as_raw_slice()
         }
       }
     )+
@@ -513,7 +513,7 @@ where
 {
   type Item = bool;
   type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Copied<bitvec::slice::Iter<'a, O, T>>;
+  type IterElem = BitValIter<'a, O, T>;
 
   #[inline]
   fn iter_indices(&self) -> Self::Iter {
@@ -522,7 +522,7 @@ where
 
   #[inline]
   fn iter_elements(&self) -> Self::IterElem {
-    self.iter().copied()
+    self.iter().by_val()
   }
 
   #[inline]
@@ -833,7 +833,7 @@ where
   {
     self
       .iter()
-      .copied()
+      .by_val()
       .position(predicate)
       .map(|i| self.split_at(i))
       .ok_or_else(|| Err::Incomplete(Needed::new(1)))
@@ -847,7 +847,7 @@ where
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().copied().position(predicate) {
+    match self.iter().by_val().position(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok(self.split_at(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
@@ -877,7 +877,7 @@ where
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.iter().copied().position(predicate) {
+    match self.iter().by_val().position(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok(self.split_at(i)),
       None => {
@@ -1128,7 +1128,7 @@ where
   T: 'a + BitStore,
 {
   fn find_token(&self, token: bool) -> bool {
-    self.iter().copied().any(|i| i == token)
+    self.iter().by_val().any(|i| i == token)
   }
 }
 
@@ -1139,7 +1139,7 @@ where
   T: 'a + BitStore,
 {
   fn find_token(&self, token: (usize, bool)) -> bool {
-    self.iter().copied().enumerate().any(|i| i == token)
+    self.iter().by_val().enumerate().any(|i| i == token)
   }
 }
 
