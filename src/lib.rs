@@ -436,15 +436,19 @@ pub mod lib {
   #[allow(missing_doc_code_examples)]
   /// internal std exports for no_std compatibility
   pub mod std {
+    #[doc(hidden)]
     #[cfg(not(feature = "alloc"))]
     pub use core::borrow;
 
     #[cfg(feature = "alloc")]
+    #[doc(hidden)]
     pub use alloc::{borrow, boxed, string, vec};
 
+    #[doc(hidden)]
     pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
 
     /// internal reproduction of std prelude
+    #[doc(hidden)]
     pub mod prelude {
       pub use core::prelude as v1;
     }
@@ -454,12 +458,14 @@ pub mod lib {
   #[allow(missing_doc_code_examples)]
   /// internal std exports for no_std compatibility
   pub mod std {
+    #[doc(hidden)]
     pub use std::{
       alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result,
       slice, str, string, vec,
     };
 
     /// internal reproduction of std prelude
+    #[doc(hidden)]
     pub mod prelude {
       pub use std::prelude as v1;
     }
