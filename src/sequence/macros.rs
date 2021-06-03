@@ -88,7 +88,7 @@ macro_rules! tuple_parser (
 );
 
 /// `pair!(I -> IResult<I,O>, I -> IResult<I,P>) => I -> IResult<I, (O,P)>`
-/// `pair` returns a tuple of the results of its two child parsers of both succeed.
+/// `pair` returns a tuple of the results of its two child parsers if both succeed.
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
