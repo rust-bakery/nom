@@ -175,9 +175,9 @@
 //! `IResult` is an alias for the `Result` type:
 //!
 //! ```rust
-//! use nom::{Needed, error::ErrorKind};
+//! use nom::{Needed, error::Error};
 //!
-//! type IResult<I, O, E = (I,ErrorKind)> = Result<(I, O), Err<E>>;
+//! type IResult<I, O, E = Error<I>> = Result<(I, O), Err<E>>;
 //!
 //! enum Err<E> {
 //!   Incomplete(Needed),
