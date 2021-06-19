@@ -185,4 +185,4 @@ jobs:
           TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         with:
           command: tarpaulin
-          args: --coveralls "$TOKEN" --avoid-cfg-tarpaulin
+          args: --coveralls "$TOKEN"
