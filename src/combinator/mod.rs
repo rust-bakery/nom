@@ -57,7 +57,7 @@ where
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,error::ErrorKind, IResult,Parser};
+/// use nom::{Err,error::ErrorKind, IResult,Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map;
 /// # fn main() {
