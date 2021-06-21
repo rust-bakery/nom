@@ -177,7 +177,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: cargo-tarpaulin
+          args: cargo-tarpaulin --version 0.18.0-alpha3 # @TODO restore to normal (https://github.com/xd009642/tarpaulin/issues/756#issuecomment-838769320)
 
       - name: Run cargo tarpaulin
         uses: actions-rs/cargo@v1
@@ -185,4 +185,4 @@ jobs:
           TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         with:
           command: tarpaulin
-          args: --coveralls "$TOKEN"
+          args: --coveralls "$TOKEN" --avoid-cfg-tarpaulin # @TODO restore to normal (https://github.com/xd009642/tarpaulin/issues/756#issuecomment-838769320)
