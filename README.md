@@ -188,7 +188,7 @@ Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks
 
 ## Rust version requirements
 
-The 6.0 series of nom requires **Rustc version 1.44 or greater** (compatible with 1.37 if building without the `alloc` or `std` features, ie `--no-default-features --features="regex,lexical"`).
+The 6.0 series of nom requires **Rustc version 1.44 or greater** (compatible with 1.41.1 if building without the `alloc` or `std` features, ie `--no-default-features --features="regex,lexical"`).
 
 Travis CI always has a build with a pinned version of Rustc matching the oldest supported Rust release.
 The current policy is that this will only be updated in the next major nom release.
