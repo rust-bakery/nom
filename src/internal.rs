@@ -298,7 +298,7 @@ impl<'a, I, O, E> Parser<I, O, E> for Box<dyn Parser<I, O, E> + 'a> {
   }
 }
 
-/// Implementation of `Parser:::map`
+/// Implementation of `Parser::map`
 #[allow(missing_doc_code_examples)]
 pub struct Map<F, G, O1> {
   f: F,

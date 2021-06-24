@@ -57,7 +57,7 @@ where
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
-/// # use nom::{Err,error::ErrorKind, IResult,Parser};
+/// use nom::{Err,error::ErrorKind, IResult,Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map;
 /// # fn main() {
@@ -212,14 +212,13 @@ where
 /// assert_eq!(parse("123"), Err(Err::Error(("123", ErrorKind::Eof))));
 /// # }
 /// ```
-pub fn map_parser<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+pub fn map_parser<I, O1, O2, E: ParseError<I>, F, G>(
   mut first: F,
   mut second: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
   G: Parser<O1, O2, E>,
-  O1: InputLength,
 {
   move |input: I| {
     let (input, o1) = first.parse(input)?;
@@ -229,7 +228,7 @@ where
 }
 
 #[doc(hidden)]
-pub fn map_parserc<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+pub fn map_parserc<I, O1, O2, E: ParseError<I>, F, G>(
   input: I,
   first: F,
   second: G,
@@ -237,7 +236,6 @@ pub fn map_parserc<I: Clone, O1, O2, E: ParseError<I>, F, G>(
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(O1) -> IResult<O1, O2, E>,
-  O1: InputLength,
 {
   map_parser(first, second)(input)
 }

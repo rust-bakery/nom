@@ -16,6 +16,36 @@ use nom::{
 };
 
 use std::str::FromStr;
+use std::cell::RefCell;
+
+thread_local! {
+    pub static LEVEL: RefCell<u32> = RefCell::new(0);
+}
+
+fn reset() {
+    LEVEL.with(|l| {
+        *l.borrow_mut() = 0;
+    });
+}
+
+fn incr(i: &str) -> IResult<&str, ()> {
+    LEVEL.with(|l| {
+        *l.borrow_mut() += 1;
+
+        // limit the number of recursions, the fuzzer keeps running into them
+        if *l.borrow() >= 8192 {
+            return Err(nom::Err::Failure(nom::error::Error::new(i, nom::error::ErrorKind::Count)));
+        } else {
+            Ok((i, ()))
+        }
+    })
+}
+
+fn decr() {
+    LEVEL.with(|l| {
+        *l.borrow_mut() -= 1;
+    });
+}
 
 fn parens(i: &str) -> IResult<&str, i64> {
       delimited(space, delimited(tag("("), expr, tag(")")), space)(i)
@@ -31,9 +61,10 @@ fn factor(i: &str) -> IResult<&str, i64> {
 
 
 fn term(i: &str) -> IResult<&str, i64> {
-  let (i, init) = factor(i)?;
+  incr(i)?;
+  let (i, init) = factor(i).map_err(|e| { decr(); e })?;
 
-  fold_many0(
+  let res = fold_many0(
     alt((
         pair(char('*'), factor),
         pair(char('/'), verify(factor, |i| *i != 0)),
@@ -51,13 +82,17 @@ fn term(i: &str) -> IResult<&str, i64> {
         }
       }
     },
-  )(i)
+  )(i);
+
+  decr();
+  res
 }
 
 fn expr(i: &str) -> IResult<&str, i64> {
-  let (i, init) = term(i)?;
+  incr(i)?;
+  let (i, init) = term(i).map_err(|e| { decr(); e })?;
 
-  fold_many0(
+  let res = fold_many0(
     pair(alt((char('+'), char('-'))), term),
     init,
     |acc, (op, val): (char, i64)| {
@@ -67,10 +102,14 @@ fn expr(i: &str) -> IResult<&str, i64> {
         acc.saturating_sub(val)
       }
     },
-  )(i)
+  )(i);
+
+  decr();
+  res
 }
 
 fuzz_target!(|data: &[u8]| {
+    reset();
     // fuzzed code goes here
     let temp = match str::from_utf8(data) {
         Ok(v) => {

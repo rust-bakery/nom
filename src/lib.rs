@@ -175,9 +175,9 @@
 //! `IResult` is an alias for the `Result` type:
 //!
 //! ```rust
-//! use nom::{Needed, error::ErrorKind};
+//! use nom::{Needed, error::Error};
 //!
-//! type IResult<I, O, E = (I,ErrorKind)> = Result<(I, O), Err<E>>;
+//! type IResult<I, O, E = Error<I>> = Result<(I, O), Err<E>>;
 //!
 //! enum Err<E> {
 //!   Incomplete(Needed),
@@ -404,7 +404,7 @@
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
-#![cfg_attr(feature = "docsrs", feature(external_doc))]
+#![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
 #![deny(missing_docs)]
 #![warn(missing_doc_code_examples)]
 
@@ -436,15 +436,19 @@ pub mod lib {
   #[allow(missing_doc_code_examples)]
   /// internal std exports for no_std compatibility
   pub mod std {
+    #[doc(hidden)]
     #[cfg(not(feature = "alloc"))]
     pub use core::borrow;
 
     #[cfg(feature = "alloc")]
+    #[doc(hidden)]
     pub use alloc::{borrow, boxed, string, vec};
 
+    #[doc(hidden)]
     pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
 
     /// internal reproduction of std prelude
+    #[doc(hidden)]
     pub mod prelude {
       pub use core::prelude as v1;
     }
@@ -454,12 +458,14 @@ pub mod lib {
   #[allow(missing_doc_code_examples)]
   /// internal std exports for no_std compatibility
   pub mod std {
+    #[doc(hidden)]
     pub use std::{
       alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result,
       slice, str, string, vec,
     };
 
     /// internal reproduction of std prelude
+    #[doc(hidden)]
     pub mod prelude {
       pub use std::prelude as v1;
     }
@@ -515,5 +521,5 @@ mod str;
 pub mod number;
 
 #[cfg(feature = "docsrs")]
-#[cfg_attr(feature = "docsrs", doc(include = "../doc/nom_recipes.md"))]
+#[cfg_attr(feature = "docsrs", cfg_attr(feature = "docsrs", doc = include_str!("../doc/nom_recipes.md")))]
 pub mod recipes {}

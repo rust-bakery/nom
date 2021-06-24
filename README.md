@@ -158,7 +158,7 @@ software like [lex](https://en.wikipedia.org/wiki/Lex_(software)) and
 [yacc](https://en.wikipedia.org/wiki/Yacc). Instead of writing the grammar
 in a separate file and generating the corresponding code, you use very
 small functions with very specific purpose, like "take 5 bytes", or
-"recognize the word 'HTTP'", and assemble then in meaningful patterns
+"recognize the word 'HTTP'", and assemble them in meaningful patterns
 like "recognize 'HTTP', then a space, then a version".
 The resulting code is small, and looks like the grammar you would have
 written with other parser approaches.
@@ -188,7 +188,7 @@ Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks
 
 ## Rust version requirements
 
-The 6.0 series of nom requires **Rustc version 1.44 or greater** (compatible with 1.37 if building without the `alloc` or `std` features, ie `--no-default-features --features="regex,lexical"`).
+The 6.0 series of nom requires **Rustc version 1.44 or greater** (compatible with 1.41.1 if building without the `alloc` or `std` features, ie `--no-default-features --features="regex,lexical"`).
 
 Travis CI always has a build with a pinned version of Rustc matching the oldest supported Rust release.
 The current policy is that this will only be updated in the next major nom release.

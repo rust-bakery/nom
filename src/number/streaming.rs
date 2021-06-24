@@ -698,8 +698,8 @@ where
 
 /// Recognizes an unsigned 2 bytes integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian u16 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian u16 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian u16 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian u16 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
@@ -738,8 +738,8 @@ where
 
 /// Recognizes an unsigned 3 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian u24 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian u24 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian u24 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian u24 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -777,8 +777,8 @@ where
 
 /// Recognizes an unsigned 4 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian u32 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian u32 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian u32 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian u32 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -816,8 +816,8 @@ where
 
 /// Recognizes an unsigned 8 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian u64 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian u64 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian u64 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian u64 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -855,8 +855,8 @@ where
 
 /// Recognizes an unsigned 16 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian u128 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian u128 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian u128 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian u128 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -919,8 +919,8 @@ where
 
 /// Recognizes a signed 2 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian i16 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian i16 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian i16 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian i16 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -958,8 +958,8 @@ where
 
 /// Recognizes a signed 3 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian i24 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian i24 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian i24 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian i24 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -997,8 +997,8 @@ where
 
 /// Recognizes a signed 4 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian i32 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian i32 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian i32 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian i32 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -1036,8 +1036,8 @@ where
 
 /// Recognizes a signed 8 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian i64 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian i64 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian i64 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian i64 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -1075,8 +1075,8 @@ where
 
 /// Recognizes a signed 16 byte integer
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian i128 integer,
-/// otherwise if `nom::Endianness::Little` parse a little endian i128 integer.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian i128 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian i128 integer.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -1215,8 +1215,8 @@ where
 
 /// Recognizes a 4 byte floating point number
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian f32 float,
-/// otherwise if `nom::Endianness::Little` parse a little endian f32 float.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian f32 float,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian f32 float.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
@@ -1254,8 +1254,8 @@ where
 
 /// Recognizes an 8 byte floating point number
 ///
-/// If the parameter is `nom::Endianness::Big`, parse a big endian f64 float,
-/// otherwise if `nom::Endianness::Little` parse a little endian f64 float.
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian f64 float,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian f64 float.
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
