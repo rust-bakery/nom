@@ -1,7 +1,7 @@
 [package]
 
 name = "nom"
-version = "6.2.1"
+version = "7.0.0-alpha1"
 authors = [ "contact@geoffroycouprie.com" ]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
