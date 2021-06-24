@@ -19,16 +19,16 @@ use crate::traits::{InputIter, InputLength, Slice, ToUsize};
 /// }
 ///
 /// // Consumes 0 bits, returns 0
-/// assert_eq!(parser(([0x12].as_ref(), 0), 0), Ok((([0x12].as_ref(), 0), 0)));
+/// assert_eq!(parser(([0b00010010].as_ref(), 0), 0), Ok((([0b00010010].as_ref(), 0), 0)));
 ///
 /// // Consumes 4 bits, returns their values and increase offset to 4
-/// assert_eq!(parser(([0x12].as_ref(), 0), 4), Ok((([0x12].as_ref(), 4), 0x01)));
+/// assert_eq!(parser(([0b00010010].as_ref(), 0), 4), Ok((([0b00010010].as_ref(), 4), 0b00000001)));
 ///
 /// // Consumes 4 bits, offset is 4, returns their values and increase offset to 0 of next byte
-/// assert_eq!(parser(([0x12].as_ref(), 4), 4), Ok((([].as_ref(), 0), 0x02)));
+/// assert_eq!(parser(([0b00010010].as_ref(), 4), 4), Ok((([].as_ref(), 0), 0b00000010)));
 ///
 /// // Tries to consume 12 bits but only 8 are available
-/// assert_eq!(parser(([0x12].as_ref(), 0), 12), Err(nom::Err::Error(Error{input: ([0x12].as_ref(), 0), code: ErrorKind::Eof })));
+/// assert_eq!(parser(([0b00010010].as_ref(), 0), 12), Err(nom::Err::Error(Error{input: ([0b00010010].as_ref(), 0), code: ErrorKind::Eof })));
 /// ```
 pub fn take<I, O, C, E: ParseError<(I, usize)>>(
   count: C,
@@ -111,7 +111,7 @@ mod test {
 
   #[test]
   fn test_take_0() {
-    let input = [0x12].as_ref();
+    let input = [0b00010010].as_ref();
     let count = 0usize;
     assert_eq!(count, 0usize);
     let offset = 0usize;
@@ -123,7 +123,7 @@ mod test {
 
   #[test]
   fn test_take_eof() {
-    let input = [0x12].as_ref();
+    let input = [0b00010010].as_ref();
 
     let result: crate::IResult<(&[u8], usize), usize> = take(1usize)((input, 8));
 
@@ -138,10 +138,10 @@ mod test {
 
   #[test]
   fn test_take_span_over_multiple_bytes() {
-    let input = [0x12, 0x34, 0xff, 0xff].as_ref();
+    let input = [0b00010010, 0b00110100, 0b11111111, 0b11111111].as_ref();
 
     let result: crate::IResult<(&[u8], usize), usize> = take(24usize)((input, 4));
 
-    assert_eq!(result, Ok((([0xff].as_ref(), 4), 0x234fff)));
+    assert_eq!(result, Ok((([0b11111111].as_ref(), 4), 0b1000110100111111111111)));
   }
 }
