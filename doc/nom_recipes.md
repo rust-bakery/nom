@@ -2,30 +2,28 @@
 
 These are short recipes for accomplishing common tasks with nom.
 
-* [Whitespace](#whitespace)
-  + [Wrapper combinators that eat whitespace before and after a parser](#wrapper-combinators-that-eat-whitespace-before-and-after-a-parser)
-* [Comments](#comments)
-  + [`// C++/EOL-style comments`](#-ceol-style-comments)
-  + [`/* C-style comments */`](#-c-style-comments-)
-* [Identifiers](#identifiers)
-  + [`Rust-Style Identifiers`](#rust-style-identifiers)
-* [Literal Values](#literal-values)
-  + [Escaped Strings](#escaped-strings)
-  + [Integers](#integers)
+- [Whitespace](#whitespace)
+  - [Wrapper combinators that eat whitespace before and after a parser](#wrapper-combinators-that-eat-whitespace-before-and-after-a-parser)
+- [Comments](#comments)
+  - [`// C++/EOL-style comments`](#-ceol-style-comments)
+  - [`/* C-style comments */`](#-c-style-comments-)
+- [Identifiers](#identifiers)
+  - [`Rust-Style Identifiers`](#rust-style-identifiers)
+- [Literal Values](#literal-values)
+  - [Escaped Strings](#escaped-strings)
+  - [Integers](#integers)
     - [Hexadecimal](#hexadecimal)
     - [Octal](#octal)
     - [Binary](#binary)
     - [Decimal](#decimal)
-  + [Floating Point Numbers](#floating-point-numbers)
+  - [Floating Point Numbers](#floating-point-numbers)
 
 ## Whitespace
-
-
 
 ### Wrapper combinators that eat whitespace before and after a parser
 
 ```rust
-/// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and 
+/// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and
 /// trailing whitespace, returning the output of `inner`.
 fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
   where
@@ -40,8 +38,7 @@ fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> 
 ```
 
 To eat only trailing whitespace, replace `delimited(...)` with `terminated(&inner, multispace0)`.
-Likewise, the eat only leading whitespace, replace `delimited(...)` with `preceded(multispace0,
-&inner)`. You can use your own parser instead of `multispace0` if you want to skip a different set
+Likewise, the eat only leading whitespace, replace `delimited(...)` with `preceded(multispace0, &inner)`. You can use your own parser instead of `multispace0` if you want to skip a different set
 of lexemes.
 
 ## Comments
@@ -88,20 +85,32 @@ letters and numbers may be parsed like this:
 
 ```rust
 pub fn identifier(input: &str) -> IResult<&str, &str> {
-  recognize(
-    pair(
-      alt((alpha1, tag("_"))),
-      many0(alt((alphanumeric1, tag("_"))))
-    )
+  preceded(
+    peek(alt((alpha1, tag("_")))),
+    take_while1(|ch| is_alphanumeric(ch as u8) || ch == '_'),
   )(input)
 }
 ```
 
-Let's say we apply this to the identifier `hello_world123abc`. The first `alt` parser would
-recognize `h`. The `pair` combinator ensures that `ello_world123abc` will be piped to the next
-`alphanumeric0` parser, which recognizes every remaining character. However, the `pair` combinator
-returns a tuple of the results of its sub-parsers. The `recognize` parser produces a `&str` of the
-input text that was parsed, which in this case is the entire `&str` `hello_world123abc`.
+The first `preceded` combinator will allow us to ignore the `peek` and only take
+the output from `take_while`. The `peek` basically just runs the parser within
+but does not consume the input. Within that, we check if the next character is a
+letter (any case) or an underscore as you can't start an identifier with a
+number. After that, we consume the rest of the identifier within the
+`take_while` as long as the character is a letter, number, or underscore. This
+way, it will either assert that the identifier is valid, or return an error. You
+would mostly use this combinator with two parsers surrounding it such as in the
+case of a basic variable initialization parser like in the following example:
+
+```rust
+pub fn function(input: &str) -> IResult<&str, &str> {
+  delimited(pair(tag("let"), multispace1), identifier, char(';'))
+}
+// PASS let foo;
+// PASS let _asdf234;
+// FAIL let 34asdf;
+// FAIL let a\nb; (newlines)
+```
 
 ## Literal Values
 
@@ -292,4 +301,3 @@ fn main() {
   println!("parsed: {:?}", "Hello, 123!".parse::<Name>());
 }
 ```
-
