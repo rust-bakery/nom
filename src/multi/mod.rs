@@ -691,6 +691,7 @@ where
   }
 }
 
+// FIXME: the code example maybe should demonstrate a use case that could not be served by `fold_many0_once`
 /// Applies a parser until it fails and accumulates
 /// the results using a given function and initial value.
 /// # Arguments
@@ -732,28 +733,80 @@ where
   E: ParseError<I>,
   R: Clone,
 {
-  move |i: I| {
-    let mut res = init.clone();
-    let mut input = i;
+  move |input: I| fold_many_impl(&mut f, init.clone(), &mut g, input)
+}
 
-    loop {
-      let i_ = input.clone();
-      match f.parse(i_) {
-        Ok((i, o)) => {
-          // loop trip must always consume (otherwise infinite loops)
-          if i == input {
-            return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many0)));
-          }
+/// Like `fold_many0` except the accumulated type does not have to implement `Clone` and the returned
+/// closure can only be called once.
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `init` The initial value.
+/// * `g` The function that combines a result of `f` with
+///       the current accumulator.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fold_many0_once;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold_many0_once(
+///     tag("abc"),
+///     Vec::new(),
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// ```
+pub fn fold_many0_once<I, O, E, F, G, R>(
+  mut f: F,
+  init: R,
+  mut g: G,
+) -> impl FnOnce(I) -> IResult<I, R, E>
+where
+  I: Clone + PartialEq,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  E: ParseError<I>,
+{
+  move |i: I| fold_many_impl(&mut f, init, &mut g, i)
+}
 
-          res = g(res, o);
-          input = i;
+/// Helper function for common implementation details for `fold_many0`, `fold_many0_once`,
+/// `fold_many1`, `fold_many1_once`
+fn fold_many_impl<I, O, E, F, G, R>(f: &mut F, init: R, g: &mut G, mut input: I) -> IResult<I, R, E>
+where
+  I: Clone + PartialEq,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  E: ParseError<I>,
+{
+  let mut res = init;
+
+  loop {
+    let i_ = input.clone();
+    match f.parse(i_) {
+      Ok((i, o)) => {
+        // loop trip must always consume (otherwise infinite loops)
+        if i == input {
+          return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many0)));
         }
-        Err(Err::Error(_)) => {
-          return Ok((input, res));
-        }
-        Err(e) => {
-          return Err(e);
-        }
+
+        res = g(res, o);
+        input = i;
+      }
+      Err(Err::Error(_)) => {
+        return Ok((input, res));
+      }
+      Err(e) => {
+        return Err(e);
       }
     }
   }
@@ -766,9 +819,8 @@ where
   F: Fn(I) -> IResult<I, O, E>,
   G: FnMut(R, O) -> R,
   E: ParseError<I>,
-  R: Clone,
 {
-  fold_many0(f, init, g)(i)
+  fold_many0_once(f, init, g)(i)
 }
 
 /// Applies a parser until it fails and accumulates
@@ -821,28 +873,65 @@ where
       Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
       Err(e) => Err(e),
       Ok((i1, o1)) => {
+        let acc = g(init, o1);
+        let input = i1;
+
+        fold_many_impl(&mut f, acc, &mut g, input)
+      }
+    }
+  }
+}
+
+/// Like `fold_many1` except the accumulated type does not have to implement `Clone` and the returned
+/// closure can only be called once.
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `init` The initial value.
+/// * `g` The function that combines a result of `f` with
+///       the current accumulator.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::multi::fold_many1_once;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold_many1_once(
+///     tag("abc"),
+///     Vec::new(),
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
+/// ```
+pub fn fold_many1_once<I, O, E, F, G, R>(
+  mut f: F,
+  init: R,
+  mut g: G,
+) -> impl FnOnce(I) -> IResult<I, R, E>
+where
+  I: Clone + PartialEq,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  E: ParseError<I>,
+{
+  move |i: I| {
+    let _i = i.clone();
+    match f.parse(_i) {
+      Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
+      Err(e) => Err(e),
+      Ok((i1, o1)) => {
         let mut acc = g(init, o1);
         let mut input = i1;
 
-        loop {
-          let _input = input.clone();
-          match f.parse(_input) {
-            Err(Err::Error(_)) => {
-              break;
-            }
-            Err(e) => return Err(e),
-            Ok((i, o)) => {
-              if i == input {
-                return Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1)));
-              }
-
-              acc = g(acc, o);
-              input = i;
-            }
-          }
-        }
-
-        Ok((input, acc))
+        fold_many_impl(&mut f, acc, &mut g, input)
       }
     }
   }
@@ -855,9 +944,8 @@ where
   F: Fn(I) -> IResult<I, O, E>,
   G: FnMut(R, O) -> R,
   E: ParseError<I>,
-  R: Clone,
 {
-  fold_many1(f, init, g)(i)
+  fold_many1_once(f, init, g)(i)
 }
 
 /// Applies a parser `n` times or until it fails and accumulates
@@ -939,6 +1027,82 @@ where
   }
 }
 
+/// Like `fold_many_m_n` except the accumulated type does not have to implement `Clone` and the returned
+/// closure can only be called once.
+/// # Arguments
+/// * `m` The minimum number of iterations.
+/// * `n` The maximum number of iterations.
+/// * `f` The parser to apply.
+/// * `init` The initial value.
+/// * `g` The function that combines a result of `f` with
+///       the current accumulator.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fold_many_m_n_once;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold_many_m_n_once(
+///     0,
+///     2,
+///     tag("abc"),
+///     Vec::new(),
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+pub fn fold_many_m_n_once<I, O, E, F, G, R>(
+  min: usize,
+  max: usize,
+  mut parse: F,
+  init: R,
+  mut fold: G,
+) -> impl FnOnce(I) -> IResult<I, R, E>
+where
+  I: Clone + PartialEq,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  E: ParseError<I>,
+{
+  move |mut input: I| {
+    let mut acc = init;
+    for count in 0..max {
+      match parse.parse(input.clone()) {
+        Ok((tail, value)) => {
+          // do not allow parsers that do not consume input (causes infinite loops)
+          if tail == input {
+            return Err(Err::Error(E::from_error_kind(tail, ErrorKind::ManyMN)));
+          }
+
+          acc = fold(acc, value);
+          input = tail;
+        }
+        //FInputXMError: handle failure properly
+        Err(Err::Error(err)) => {
+          if count < min {
+            return Err(Err::Error(E::append(input, ErrorKind::ManyMN, err)));
+          } else {
+            break;
+          }
+        }
+        Err(e) => return Err(e),
+      }
+    }
+
+    Ok((input, acc))
+  }
+}
+
 #[doc(hidden)]
 pub fn fold_many_m_nc<I, O, E, F, G, R>(
   input: I,
@@ -953,9 +1117,8 @@ where
   F: Fn(I) -> IResult<I, O, E>,
   G: Fn(R, O) -> R,
   E: ParseError<I>,
-  R: Clone,
 {
-  fold_many_m_n(min, max, parse, init, fold)(input)
+  fold_many_m_n_once(min, max, parse, init, fold)(input)
 }
 
 /// Gets a number from the parser and returns a
