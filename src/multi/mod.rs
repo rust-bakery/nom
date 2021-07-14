@@ -109,7 +109,7 @@ where
       loop {
         let len = i.input_len();
         match f.parse(i.clone()) {
-          Err(Err::Error(_)) => return Ok((i, acc)),
+          Err(Err::Error(_)| Err::Incomplete(_)) => return Ok((i, acc)),
           Err(e) => return Err(e),
           Ok((i1, o)) => {
             // infinite loop check: the parser must always consume
