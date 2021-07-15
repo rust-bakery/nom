@@ -1066,7 +1066,7 @@ where
 
 /// Gets a number from the first parser,
 /// then applies the second parser that many times.
-/// Arguments
+/// # Arguments
 /// * `f` The parser to apply to obtain the count.
 /// * `g` The parser to apply repeatedly.
 /// ```rust
