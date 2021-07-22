@@ -150,6 +150,26 @@ impl<T> Err<(T, ErrorKind)> {
   }
 }
 
+impl<T> Err<error::Error<T>> {
+  /// Maps `Err<error::Error<T>>` to `Err<error::Error<U>>` with the given `F: T -> U`
+  pub fn map_input<U, F>(self, f: F) -> Err<error::Error<U>>
+  where
+    F: FnOnce(T) -> U,
+  {
+    match self {
+      Err::Incomplete(n) => Err::Incomplete(n),
+      Err::Failure(error::Error { input, code }) => Err::Failure(error::Error {
+        input: f(input),
+        code,
+      }),
+      Err::Error(error::Error { input, code }) => Err::Error(error::Error {
+        input: f(input),
+        code,
+      }),
+    }
+  }
+}
+
 #[cfg(feature = "alloc")]
 use crate::lib::std::{borrow::ToOwned, string::String, vec::Vec};
 #[cfg(feature = "alloc")]
@@ -163,9 +183,27 @@ impl Err<(&[u8], ErrorKind)> {
 
 #[cfg(feature = "alloc")]
 impl Err<(&str, ErrorKind)> {
-  /// Automatically converts between errors if the underlying type supports it
+  /// Obtaining ownership
   #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
   pub fn to_owned(self) -> Err<(String, ErrorKind)> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
+#[cfg(feature = "alloc")]
+impl Err<error::Error<&[u8]>> {
+  /// Obtaining ownership
+  #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+  pub fn to_owned(self) -> Err<error::Error<Vec<u8>>> {
+    self.map_input(ToOwned::to_owned)
+  }
+}
+
+#[cfg(feature = "alloc")]
+impl Err<error::Error<&str>> {
+  /// Obtaining ownership
+  #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+  pub fn to_owned(self) -> Err<error::Error<String>> {
     self.map_input(ToOwned::to_owned)
   }
 }
