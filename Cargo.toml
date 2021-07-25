@@ -30,18 +30,10 @@ include = [
 [features]
 alloc = []
 std = ["alloc", "memchr/use_std"]
-bitvec-base = ["bitvec"]
-bitvec-alloc = ["alloc", "bitvec/alloc"]
-bitvec-std = ["bitvec/std", "std"]
 default = ["std", "lexical"]
 regexp = ["regex"]
 lexical = ["lexical-core"]
 docsrs = []
-
-[dependencies.bitvec]
-version = ">= 0.22.3"
-optional = true
-default-features = false
 
 [dependencies.regex]
 version = "^1.0"
