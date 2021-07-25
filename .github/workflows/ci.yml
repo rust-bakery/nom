@@ -19,13 +19,13 @@ jobs:
           - 1.44.0
 
         features:
-          - '--features "regexp"'
+          - ''
 
         include:
           - rust: stable
             features: ''
           - rust: stable
-            features: '--features "std lexical regexp"'
+            features: '--features "std lexical"'
           - rust: stable
             features: '--no-default-features'
           - rust: stable
@@ -79,13 +79,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --verbose --no-default-features --features "regexp lexical"
+          args: --verbose --no-default-features --features "lexical"
 
       - name: Test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --verbose --no-default-features --features "regexp lexical"
+          args: --verbose --no-default-features --features "lexical"
 
   bench:
     name: Bench
@@ -106,13 +106,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --verbose --no-run --features "regexp"
+          args: --verbose --no-run --features ""
 
       - name: Run bench
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --verbose --features "regexp"
+          args: --verbose --features ""
 
   doc:
     name: Build documentation
@@ -133,7 +133,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --verbose --features "std lexical regexp"
+          args: --verbose --features "std lexical"
 
   fmt:
     name: Check formatting
