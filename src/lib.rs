@@ -416,8 +416,6 @@ extern crate doc_comment;
 #[cfg(feature = "lexical")]
 extern crate lexical_core;
 extern crate memchr;
-#[cfg(feature = "regexp")]
-pub extern crate regex;
 #[cfg(nightly)]
 extern crate test;
 
@@ -468,9 +466,6 @@ pub mod lib {
       pub use std::prelude as v1;
     }
   }
-
-  #[cfg(feature = "regexp")]
-  pub use regex;
 }
 
 pub use self::bits::*;
@@ -478,8 +473,6 @@ pub use self::internal::*;
 pub use self::traits::*;
 pub use self::util::*;
 
-#[cfg(feature = "regexp")]
-pub use self::regexp::*;
 pub use self::str::*;
 
 #[macro_use]
@@ -507,11 +500,6 @@ pub mod bits;
 
 #[macro_use]
 pub mod character;
-
-#[cfg(feature = "regexp")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "regexp")))]
-#[macro_use]
-pub mod regexp;
 
 mod str;
 

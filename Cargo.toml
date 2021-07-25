@@ -31,17 +31,8 @@ include = [
 alloc = []
 std = ["alloc", "memchr/use_std"]
 default = ["std", "lexical"]
-regexp = ["regex"]
 lexical = ["lexical-core"]
 docsrs = []
-
-[dependencies.regex]
-version = "^1.0"
-optional = true
-
-[dependencies.lazy_static]
-version = "^1.0"
-optional = true
 
 [dependencies.memchr]
 version = "2.0"
@@ -60,7 +51,7 @@ doc-comment = "0.3"
 version_check = "0.9"
 
 [package.metadata.docs.rs]
-features = [ "alloc", "std", "regexp", "lexical", "docsrs"]
+features = [ "alloc", "std", "lexical", "docsrs"]
 all-features = true
 
 [profile.bench]
