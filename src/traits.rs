@@ -14,7 +14,6 @@ use crate::lib::std::string::String;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 
-
 /// Abstract method to calculate the input length
 pub trait InputLength {
   /// Calculates the input length, as indicated by its name,
@@ -44,7 +43,6 @@ impl<'a> InputLength for (&'a [u8], usize) {
     self.0.len() * 8 - self.1
   }
 }
-
 
 /// Useful functions to calculate the offset between slices and show a hexdump of a slice
 pub trait Offset {

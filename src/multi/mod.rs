@@ -240,20 +240,22 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list0<I, O, O2, E, F, G>(
-  sep: G,
-  f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list0<I, O, O2, E, F, G>(sep: G, f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
   G: Parser<I, O2, E>,
   E: ParseError<I>,
 {
-  fold_separated0(sep, f, || vec![], |mut v, o| {
-    v.push(o);
-    v
-  })
+  fold_separated0(
+    sep,
+    f,
+    || vec![],
+    |mut v, o| {
+      v.push(o);
+      v
+    },
+  )
 }
 
 /// Alternates between two parsers to produce
@@ -286,7 +288,7 @@ pub fn fold_separated0<I, O, O2, E, F, G, H, A, R>(
   mut sep: G,
   mut f: F,
   mut init: H,
-  mut acc: A
+  mut acc: A,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
@@ -369,20 +371,22 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list1<I, O, O2, E, F, G>(
-  sep: G,
-  f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn separated_list1<I, O, O2, E, F, G>(sep: G, f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
   G: Parser<I, O2, E>,
   E: ParseError<I>,
 {
-  fold_separated1(sep, f, || vec![], |mut v, o| {
-    v.push(o);
-    v
-  })
+  fold_separated1(
+    sep,
+    f,
+    || vec![],
+    |mut v, o| {
+      v.push(o);
+      v
+    },
+  )
 }
 
 /// Alternates between two parsers to produce
@@ -416,7 +420,7 @@ pub fn fold_separated1<I, O, O2, E, F, G, H, A, R>(
   mut sep: G,
   mut f: F,
   mut init: H,
-  mut acc: A
+  mut acc: A,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
