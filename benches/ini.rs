@@ -59,13 +59,11 @@ port=143
 file=payroll.dat
 \0";
 
-  c.bench(
-    "bench ini",
-    Benchmark::new("parse", move |b| {
-      b.iter(|| categories(str.as_bytes()).unwrap());
-    })
-    .throughput(Throughput::Bytes(str.len() as u64)),
-  );
+  let mut group = c.benchmark_group("ini");
+  group.throughput(Throughput::Bytes(str.len() as u64));
+  group.bench_function(BenchmarkId::new("parse", str.len()), |b| {
+    b.iter(|| categories(str.as_bytes()).unwrap())
+  });
 }
 
 fn bench_ini_keys_and_values(c: &mut Criterion) {
@@ -78,25 +76,21 @@ file=payroll.dat
     many0(key_value)(i)
   }
 
-  c.bench(
-    "bench ini keys and values",
-    Benchmark::new("parse", move |b| {
-      b.iter(|| acc(str.as_bytes()).unwrap());
-    })
-    .throughput(Throughput::Bytes(str.len() as u64)),
-  );
+  let mut group = c.benchmark_group("ini keys and values");
+  group.throughput(Throughput::Bytes(str.len() as u64));
+  group.bench_function(BenchmarkId::new("parse", str.len()), |b| {
+    b.iter(|| acc(str.as_bytes()).unwrap())
+  });
 }
 
 fn bench_ini_key_value(c: &mut Criterion) {
   let str = "server=192.0.2.62\n";
 
-  c.bench(
-    "bench ini key value",
-    Benchmark::new("parse", move |b| {
-      b.iter(|| key_value(str.as_bytes()).unwrap());
-    })
-    .throughput(Throughput::Bytes(str.len() as u64)),
-  );
+  let mut group = c.benchmark_group("ini key value");
+  group.throughput(Throughput::Bytes(str.len() as u64));
+  group.bench_function(BenchmarkId::new("parse", str.len()), |b| {
+    b.iter(|| key_value(str.as_bytes()).unwrap())
+  });
 }
 
 criterion_group!(
