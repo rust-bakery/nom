@@ -79,13 +79,11 @@ port=143
 file=payroll.dat
 ";
 
-  c.bench(
-    "bench ini str",
-    Benchmark::new("parse", move |b| {
-      b.iter(|| categories(s).unwrap());
-    })
-    .throughput(Throughput::Bytes(s.len() as u64)),
-  );
+  let mut group = c.benchmark_group("ini str");
+  group.throughput(Throughput::Bytes(s.len() as u64));
+  group.bench_function(BenchmarkId::new("parse", s.len()), |b| {
+    b.iter(|| categories(s).unwrap())
+  });
 }
 
 criterion_group!(benches, bench_ini_str);
