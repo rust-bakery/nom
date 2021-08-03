@@ -614,6 +614,7 @@ mod tests {
   use super::*;
   use crate::error::ErrorKind;
   use crate::internal::{Err, Needed};
+  use crate::sequence::pair;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -920,10 +921,9 @@ mod tests {
 
   #[test]
   fn full_line_windows() {
-    named!(
-      take_full_line<(&[u8], &[u8])>,
-      tuple!(not_line_ending, line_ending)
-    );
+    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+      pair(not_line_ending, line_ending)(i)
+    }
     let input = b"abc\r\n";
     let output = take_full_line(input);
     assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\r\n"[..]))));
@@ -931,10 +931,9 @@ mod tests {
 
   #[test]
   fn full_line_unix() {
-    named!(
-      take_full_line<(&[u8], &[u8])>,
-      tuple!(not_line_ending, line_ending)
-    );
+    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+      pair(not_line_ending, line_ending)(i)
+    }
     let input = b"abc\n";
     let output = take_full_line(input);
     assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\n"[..]))));

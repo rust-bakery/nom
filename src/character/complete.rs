@@ -936,12 +936,10 @@ mod tests {
 
   #[test]
   fn full_line_windows() {
-    //let not_line_ending = |i:&[u8]| take_while(|c| c != b'\r' && c != b'\n')(i);
-
-    named!(
-      take_full_line<(&[u8], &[u8])>,
-      tuple!(not_line_ending, line_ending)
-    );
+    use crate::sequence::pair;
+    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+      pair(not_line_ending, line_ending)(i)
+    }
     let input = b"abc\r\n";
     let output = take_full_line(input);
     assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\r\n"[..]))));
@@ -949,11 +947,10 @@ mod tests {
 
   #[test]
   fn full_line_unix() {
-    //let not_line_ending = |i:&[u8]| take_while(|c| c != b'\n')(i);
-    named!(
-      take_full_line<(&[u8], &[u8])>,
-      tuple!(not_line_ending, line_ending)
-    );
+    use crate::sequence::pair;
+    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+      pair(not_line_ending, line_ending)(i)
+    }
     let input = b"abc\n";
     let output = take_full_line(input);
     assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\n"[..]))));
