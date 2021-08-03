@@ -441,8 +441,11 @@ mod tests {
     alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
     multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
   };
+  use crate::bytes::complete::{escaped_transform, tag};
   use crate::error::ErrorKind;
   use crate::internal::{Err, IResult, Needed};
+  use crate::branch::alt;
+  use crate::combinator::{map, value};
   #[cfg(feature = "alloc")]
   use crate::lib::std::string::String;
   #[cfg(feature = "alloc")]
@@ -580,23 +583,16 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn escape_transform() {
-    use crate::lib::std::str;
-
-    named!(
-      esc<String>,
-      map!(
-        escaped_transform!(
-          alpha,
-          '\\',
-          alt!(
-              tag!("\\")       => { |_| &b"\\"[..] }
-            | tag!("\"")       => { |_| &b"\""[..] }
-            | tag!("n")        => { |_| &b"\n"[..] }
-          )
-        ),
-        to_s
-      )
-    );
+    fn esc(i: &[u8]) -> IResult<&[u8], String> {
+        map(
+            escaped_transform(alpha, '\\',
+                          alt((
+                            value(&b"\\"[..], tag("\\")),
+                            value(&b"\""[..], tag("\"")),
+                            value(&b"\n"[..], tag("n")),
+                          ))),
+            to_s)(i)
+    }
 
     assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], String::from("abcd"))));
     assert_eq!(
@@ -624,24 +620,19 @@ mod tests {
       Err(Err::Error(error_node_position!(
         &b"AB\\A"[..],
         ErrorKind::EscapedTransform,
-        error_position!(&b"A"[..], ErrorKind::Alt)
+        error_position!(&b"A"[..], ErrorKind::Tag)
       )))
     );
 
-    named!(
-      esc2<String>,
-      map!(
-        escaped_transform!(
-          call!(alpha),
-          '&',
-          alt!(
-              tag!("egrave;") => { |_| str::as_bytes("è") }
-            | tag!("agrave;") => { |_| str::as_bytes("à") }
-          )
-        ),
-        to_s
-      )
-    );
+    fn esc2(i: &[u8]) -> IResult<&[u8], String> {
+        map(
+            escaped_transform(alpha, '&',
+                          alt((
+                            value("è".as_bytes(), tag("egrave;")),
+                            value("à".as_bytes(), tag("agrave;"))
+                          ))),
+            to_s)(i)
+    }
     assert_eq!(
       esc2(&b"ab&egrave;DEF;"[..]),
       Ok((&b";"[..], String::from("abèDEF")))
@@ -655,13 +646,14 @@ mod tests {
   #[cfg(feature = "std")]
   #[test]
   fn escape_transform_str() {
-    named!(esc<&str, String>, escaped_transform!(alpha, '\\',
-      alt!(
-          tag!("\\")       => { |_| "\\" }
-        | tag!("\"")       => { |_| "\"" }
-        | tag!("n")        => { |_| "\n" }
-      ))
-    );
+    fn esc(i: &str) -> IResult<&str, String> {
+        escaped_transform(alpha, '\\',
+                          alt((
+                            value("\\", tag("\\")),
+                            value("\"", tag("\"")),
+                            value("\n", tag("n")),
+                          )))(i)
+    }
 
     assert_eq!(esc("abcd;"), Ok((";", String::from("abcd"))));
     assert_eq!(esc("ab\\\"cd;"), Ok((";", String::from("ab\"cd"))));
@@ -680,26 +672,30 @@ mod tests {
       Err(Err::Error(error_node_position!(
         "AB\\A",
         ErrorKind::EscapedTransform,
-        error_position!("A", ErrorKind::Alt)
+        error_position!("A", ErrorKind::Tag)
       )))
     );
 
-    named!(esc2<&str, String>, escaped_transform!(alpha, '&',
-      alt!(
-          tag!("egrave;") => { |_| "è" }
-        | tag!("agrave;") => { |_| "à" }
-      ))
-    );
+    fn esc2(i: &str) -> IResult<&str, String> {
+        escaped_transform(alpha, '&',
+                          alt((
+                            value("è", tag("egrave;")),
+                            value("à", tag("agrave;"))
+                          )))(i)
+    }
     assert_eq!(esc2("ab&egrave;DEF;"), Ok((";", String::from("abèDEF"))));
     assert_eq!(
       esc2("ab&egrave;D&agrave;EF;"),
       Ok((";", String::from("abèDàEF")))
     );
 
-    named!(esc3<&str, String>, escaped_transform!(alpha, '␛',
-      alt!(
-        tag!("0") => { |_| "\0" } |
-        tag!("n") => { |_| "\n" })));
+    fn esc3(i: &str) -> IResult<&str, String> {
+        escaped_transform(alpha, '␛',
+                          alt((
+                            value("\0", tag("0")),
+                            value("\n", tag("n"))
+                          )))(i)
+    }
     assert_eq!(esc3("a␛0bc␛n"), Ok(("", String::from("a\0bc\n"))));
   }
 

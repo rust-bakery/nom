@@ -1,6 +1,13 @@
 #[cfg(test)]
 mod test {
-  use crate::{error, error::ErrorKind, Err, IResult};
+  use crate::{
+      Err, IResult,
+      error::{self, ErrorKind},
+      bytes::complete::tag,
+      branch::alt,
+      combinator::recognize,
+      multi::many1,
+  };
 
   #[test]
   fn tagtr_succeed() {
@@ -476,7 +483,10 @@ mod test {
     let a = "aabbab";
     let b = "ababcd";
 
-    named!(f <&str,&str>, recognize!(many1!(complete!(alt!( tag!("a") | tag!("b") )))));
+    fn f(i: &str) -> IResult<&str, &str> {
+        recognize(many1(alt((tag("a"), tag("b")))))(i)
+    }
+    //named!(f <&str,&str>, recognize!(many1!(complete!(alt!( tag!("a") | tag!("b") )))));
 
     assert_eq!(f(&a[..]), Ok((&a[6..], &a[..])));
     assert_eq!(f(&b[..]), Ok((&b[4..], &b[..4])));
