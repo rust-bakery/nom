@@ -203,13 +203,6 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 nom = "6"
 ```
 
-Then include it in your code like this:
-
-```rust,ignore
-#[macro_use]
-extern crate nom;
-```
-
 **NOTE: If you have existing code using nom below the 5.0 version, please take a look
 at the [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md)
 to handle the breaking changes.**

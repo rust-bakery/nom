@@ -1,7 +1,5 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
-#[macro_use]
-extern crate nom;
 extern crate criterion;
 extern crate jemallocator;
 
@@ -9,7 +7,7 @@ extern crate jemallocator;
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
-use nom::IResult;
+use nom::{IResult, bytes::complete::{tag, take_while1}, character::complete::{line_ending, char}, multi::many1};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug)]
@@ -72,60 +70,46 @@ fn is_version(c: u8) -> bool {
   c >= b'0' && c <= b'9' || c == b'.'
 }
 
-named!(line_ending, alt!(tag!("\r\n") | tag!("\n")));
-
-#[cfg_attr(rustfmt, rustfmt_skip)]
 fn request_line(input: &[u8]) -> IResult<&[u8], Request> {
-  do_parse!(input,
-    method: take_while1!(is_token)     >>
-            take_while1!(is_space)     >>
-    url:    take_while1!(is_not_space) >>
-            take_while1!(is_space)     >>
-    version: http_version              >>
-    line_ending                        >>
+  let (input, method) = take_while1(is_token)(input)?;
+  let (input, _) = take_while1(is_space)(input)?;
+  let (input, uri) = take_while1(is_not_space)(input)?;
+  let (input, _) = take_while1(is_space)(input)?;
+  let (input, version) = http_version(input)?;
+  let (input, _) = line_ending(input)?;
 
-    (Request {
-        method: method,
-        uri:    url,
-        version: version,
-    }))
+  Ok((input, Request {method, uri, version}))
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
-named!(http_version, do_parse!(
-    tag!("HTTP/")                     >>
-    version: take_while1!(is_version) >>
+fn http_version(input: &[u8]) -> IResult<&[u8], &[u8]> {
+  let (input, _) = tag("HTTP/")(input)?;
+  let (input, version) = take_while1(is_version)(input)?;
 
-    (version)));
+  Ok((input, version))
+}
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
-named!(message_header_value, do_parse!(
-          take_while1!(is_horizontal_space) >>
-    data: take_while1!(not_line_ending)     >>
-    line_ending                             >>
+fn message_header_value(input: &[u8]) -> IResult<&[u8], &[u8]> {
+  let (input, _) = take_while1(is_horizontal_space)(input)?;
+  let (input, data) = take_while1(not_line_ending)(input)?;
+  let (input, _) = line_ending(input)?;
 
-    (data)));
+  Ok((input, data))
+}
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
 fn message_header(input: &[u8]) -> IResult<&[u8], Header> {
-  do_parse!(input,
-    name:   take_while1!(is_token)       >>
-            char!(':')                   >>
-    values: many1!(message_header_value) >>
+  let (input, name) = take_while1(is_token)(input)?;
+  let (input, _) = char(':')(input)?;
+  let (input, value) = many1(message_header_value)(input)?;
 
-    (Header {
-        name: name,
-        value: values,
-    }))
+  Ok((input, Header{ name, value }))
 }
 
 fn request(input: &[u8]) -> IResult<&[u8], (Request, Vec<Header>)> {
-  do_parse!(input,
-    req: request_line           >>
-    h:   many1!(message_header) >>
-         line_ending            >>
+  let (input, req) = request_line(input)?;
+  let (input, h) = many1(message_header)(input)?;
+  let (input, _) = line_ending(input)?;
 
-    (req, h))
+  Ok((input, (req, h)))
 }
 
 
@@ -183,15 +167,16 @@ Connection: keep-alive
 
 "[..];
 
-  c.bench(
-    "http",
-    Benchmark::new(
-      "parse",
-      move |b| {
-        b.iter(|| parse(data).unwrap());
-      },
-    ).throughput(Throughput::Bytes(data.len() as u64)),
-  );
+  let mut http_group = c.benchmark_group("http");
+  http_group.throughput(Throughput::Bytes(data.len() as u64));
+  http_group.bench_with_input(
+    BenchmarkId::new("parse", data.len()),
+     data,
+      |b, data| {
+    b.iter(|| parse(data).unwrap());
+  });
+
+  http_group.finish();
 }
 
 /*
