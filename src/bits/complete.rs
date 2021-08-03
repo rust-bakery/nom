@@ -142,6 +142,9 @@ mod test {
 
     let result: crate::IResult<(&[u8], usize), usize> = take(24usize)((input, 4));
 
-    assert_eq!(result, Ok((([0b11111111].as_ref(), 4), 0b1000110100111111111111)));
+    assert_eq!(
+      result,
+      Ok((([0b11111111].as_ref(), 4), 0b1000110100111111111111))
+    );
   }
 }

@@ -406,7 +406,7 @@
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
 #![deny(missing_docs)]
-#![warn(missing_doc_code_examples)]
+#![warn(rustdoc::missing_doc_code_examples)]
 
 #[cfg(feature = "alloc")]
 #[macro_use]
@@ -424,12 +424,12 @@ doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.
-#[allow(missing_doc_code_examples)]
+#[allow(rustdoc::missing_doc_code_examples)]
 pub mod lib {
   /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
   /// as well as `core` or `std`
   #[cfg(not(feature = "std"))]
-  #[allow(missing_doc_code_examples)]
+  #[allow(rustdoc::missing_doc_code_examples)]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[doc(hidden)]
@@ -451,7 +451,7 @@ pub mod lib {
   }
 
   #[cfg(feature = "std")]
-  #[allow(missing_doc_code_examples)]
+  #[allow(rustdoc::missing_doc_code_examples)]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[doc(hidden)]
