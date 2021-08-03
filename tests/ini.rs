@@ -1,13 +1,11 @@
-#[macro_use]
-extern crate nom;
-
 use nom::{
   bytes::complete::take_while,
   character::complete::{
     alphanumeric1 as alphanumeric, char, multispace0 as multispace, space0 as space,
   },
-  combinator::map_res,
-  sequence::delimited,
+  combinator::{map, map_res, opt},
+  multi::many0,
+  sequence::{delimited, pair, separated_pair, terminated, tuple},
   IResult,
 };
 
@@ -21,56 +19,39 @@ fn category(i: &[u8]) -> IResult<&[u8], &str> {
   )(i)
 }
 
-fn complete_byte_slice_to_str<'a>(s: &'a [u8]) -> Result<&'a str, str::Utf8Error> {
-  str::from_utf8(s)
+fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
+  let (i, key) = map_res(alphanumeric, str::from_utf8)(i)?;
+  let (i, _) = tuple((opt(space), char('='), opt(space)))(i)?;
+  let (i, val) = map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8)(i)?;
+  let (i, _) = opt(pair(char(';'), take_while(|c| c != b'\n')))(i)?;
+  Ok((i, (key, val)))
 }
 
-named!(key_value    <&[u8],(&str,&str)>,
-  do_parse!(
-     key: map_res!(alphanumeric, complete_byte_slice_to_str)
-  >>      opt!(space)
-  >>      char!('=')
-  >>      opt!(space)
-  >> val: map_res!(
-           take_while!(call!(|c| c != b'\n' && c != b';')),
-           complete_byte_slice_to_str
-         )
-  >>      opt!(pair!(char!(';'), take_while!(call!(|c| c != b'\n'))))
-  >>      (key, val)
-  )
-);
+fn keys_and_values(i: &[u8]) -> IResult<&[u8], HashMap<&str, &str>> {
+  map(many0(terminated(key_value, opt(multispace))), |vec| {
+    vec.into_iter().collect()
+  })(i)
+}
 
-named!(keys_and_values<&[u8], HashMap<&str, &str> >,
-  map!(
-    many0!(terminated!(key_value, opt!(multispace))),
-    |vec: Vec<_>| vec.into_iter().collect()
-  )
-);
+fn category_and_keys(i: &[u8]) -> IResult<&[u8], (&str, HashMap<&str, &str>)> {
+  let (i, category) = terminated(category, opt(multispace))(i)?;
+  let (i, keys) = keys_and_values(i)?;
+  Ok((i, (category, keys)))
+}
 
-named!(category_and_keys<&[u8],(&str,HashMap<&str,&str>)>,
-  do_parse!(
-    category: category         >>
-              opt!(multispace) >>
-    keys: keys_and_values      >>
-    (category, keys)
-  )
-);
-
-named!(categories<&[u8], HashMap<&str, HashMap<&str,&str> > >,
-  map!(
-    many0!(
-      separated_pair!(
-        category,
-        opt!(multispace),
-        map!(
-          many0!(terminated!(key_value, opt!(multispace))),
-          |vec: Vec<_>| vec.into_iter().collect()
-        )
-      )
-    ),
-    |vec: Vec<_>| vec.into_iter().collect()
-  )
-);
+fn categories(i: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
+  map(
+    many0(separated_pair(
+      category,
+      opt(multispace),
+      map(
+        many0(terminated(key_value, opt(multispace))),
+        |vec: Vec<_>| vec.into_iter().collect(),
+      ),
+    )),
+    |vec: Vec<_>| vec.into_iter().collect(),
+  )(i)
+}
 
 #[test]
 fn parse_category_test() {

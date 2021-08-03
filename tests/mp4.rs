@@ -1,10 +1,11 @@
 #![allow(dead_code)]
 
-#[macro_use]
-extern crate nom;
-
 use nom::{
+  branch::alt,
+  bytes::streaming::{tag, take},
+  combinator::{map, map_res},
   error::ErrorKind,
+  multi::many0,
   number::streaming::{be_f32, be_u16, be_u32, be_u64},
   Err, IResult, Needed,
 };
@@ -93,109 +94,109 @@ pub struct Mvhd64 {
   track_id:      u32
 }
 
-#[allow(non_snake_case)]
-named!(mvhd32 <&[u8], MvhdBox>,
-  do_parse!(
-  version_flags: be_u32 >>
-  created_date:  be_u32 >>
-  modified_date: be_u32 >>
-  scale:         be_u32 >>
-  duration:      be_u32 >>
-  speed:         be_f32 >>
-  volume:        be_u16 >> // actually a 2 bytes decimal
-              take!(10) >>
-  scale_a:       be_f32 >>
-  rotate_b:      be_f32 >>
-  angle_u:       be_f32 >>
-  rotate_c:      be_f32 >>
-  scale_d:       be_f32 >>
-  angle_v:       be_f32 >>
-  position_x:    be_f32 >>
-  position_y:    be_f32 >>
-  scale_w:       be_f32 >>
-  preview:       be_u64 >>
-  poster:        be_u32 >>
-  selection:     be_u64 >>
-  current_time:  be_u32 >>
-  track_id:      be_u32 >>
-  (
-    MvhdBox::M32(Mvhd32 {
-      version_flags: version_flags,
-      created_date:  created_date,
-      modified_date: modified_date,
-      scale:         scale,
-      duration:      duration,
-      speed:         speed,
-      volume:        volume,
-      scaleA:        scale_a,
-      rotateB:       rotate_b,
-      angleU:        angle_u,
-      rotateC:       rotate_c,
-      scaleD:        scale_d,
-      angleV:        angle_v,
-      positionX:     position_x,
-      positionY:     position_y,
-      scaleW:        scale_w,
-      preview:       preview,
-      poster:        poster,
-      selection:     selection,
-      current_time:  current_time,
-      track_id:      track_id
-    })
-  ))
-);
+#[cfg_attr(rustfmt, rustfmt_skip)]
+fn mvhd32(i: &[u8]) -> IResult<&[u8], MvhdBox> {
+  let (i, version_flags) = be_u32(i)?;
+  let (i, created_date) =  be_u32(i)?;
+  let (i, modified_date) = be_u32(i)?;
+  let (i, scale) =         be_u32(i)?;
+  let (i, duration) =      be_u32(i)?;
+  let (i, speed) =         be_f32(i)?;
+  let (i, volume) =        be_u16(i)?; // actually a 2 bytes decimal
+  let (i, _) =             take(10_usize)(i)?;
+  let (i, scale_a) =       be_f32(i)?;
+  let (i, rotate_b) =      be_f32(i)?;
+  let (i, angle_u) =       be_f32(i)?;
+  let (i, rotate_c) =      be_f32(i)?;
+  let (i, scale_d) =       be_f32(i)?;
+  let (i, angle_v) =       be_f32(i)?;
+  let (i, position_x) =    be_f32(i)?;
+  let (i, position_y) =    be_f32(i)?;
+  let (i, scale_w) =       be_f32(i)?;
+  let (i, preview) =       be_u64(i)?;
+  let (i, poster) =        be_u32(i)?;
+  let (i, selection) =     be_u64(i)?;
+  let (i, current_time) =  be_u32(i)?;
+  let (i, track_id) =      be_u32(i)?;
 
-#[allow(non_snake_case)]
-named!(mvhd64 <&[u8], MvhdBox>,
-  do_parse!(
-  version_flags: be_u32 >>
-  created_date:  be_u64 >>
-  modified_date: be_u64 >>
-  scale:         be_u32 >>
-  duration:      be_u64 >>
-  speed:         be_f32 >>
-  volume:        be_u16 >> // actually a 2 bytes decimal
-              take!(10) >>
-  scale_a:       be_f32 >>
-  rotate_b:      be_f32 >>
-  angle_u:       be_f32 >>
-  rotate_c:      be_f32 >>
-  scale_d:       be_f32 >>
-  angle_v:       be_f32 >>
-  position_x:    be_f32 >>
-  position_y:    be_f32 >>
-  scale_w:       be_f32 >>
-  preview:       be_u64 >>
-  poster:        be_u32 >>
-  selection:     be_u64 >>
-  current_time:  be_u32 >>
-  track_id:      be_u32 >>
-  (
-    MvhdBox::M64(Mvhd64 {
-      version_flags: version_flags,
-      created_date:  created_date,
-      modified_date: modified_date,
-      scale:         scale,
-      duration:      duration,
-      speed:         speed,
-      volume:        volume,
-      scaleA:        scale_a,
-      rotateB:       rotate_b,
-      angleU:        angle_u,
-      rotateC:       rotate_c,
-      scaleD:        scale_d,
-      angleV:        angle_v,
-      positionX:     position_x,
-      positionY:     position_y,
-      scaleW:        scale_w,
-      preview:       preview,
-      poster:        poster,
-      selection:     selection,
-      current_time:  current_time,
-      track_id:      track_id
-    })
-  ))
-);
+  let mvhd_box = MvhdBox::M32(Mvhd32 {
+    version_flags,
+    created_date,
+    modified_date,
+    scale,
+    duration,
+    speed,
+    volume,
+    scaleA:    scale_a,
+    rotateB:   rotate_b,
+    angleU:    angle_u,
+    rotateC:   rotate_c,
+    scaleD:    scale_d,
+    angleV:    angle_v,
+    positionX: position_x,
+    positionY: position_y,
+    scaleW:    scale_w,
+    preview,
+    poster,
+    selection,
+    current_time,
+    track_id,
+  });
+
+  Ok((i, mvhd_box))
+}
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+fn mvhd64(i: &[u8]) -> IResult<&[u8], MvhdBox> {
+  let (i, version_flags) = be_u32(i)?;
+  let (i, created_date) =  be_u64(i)?;
+  let (i, modified_date) = be_u64(i)?;
+  let (i, scale) =         be_u32(i)?;
+  let (i, duration) =      be_u64(i)?;
+  let (i, speed) =         be_f32(i)?;
+  let (i, volume) =        be_u16(i)?; // actually a 2 bytes decimal
+  let (i, _) =             take(10_usize)(i)?;
+  let (i, scale_a) =       be_f32(i)?;
+  let (i, rotate_b) =      be_f32(i)?;
+  let (i, angle_u) =       be_f32(i)?;
+  let (i, rotate_c) =      be_f32(i)?;
+  let (i, scale_d) =       be_f32(i)?;
+  let (i, angle_v) =       be_f32(i)?;
+  let (i, position_x) =    be_f32(i)?;
+  let (i, position_y) =    be_f32(i)?;
+  let (i, scale_w) =       be_f32(i)?;
+  let (i, preview) =       be_u64(i)?;
+  let (i, poster) =        be_u32(i)?;
+  let (i, selection) =     be_u64(i)?;
+  let (i, current_time) =  be_u32(i)?;
+  let (i, track_id) =      be_u32(i)?;
+
+  let mvhd_box = MvhdBox::M64(Mvhd64 {
+    version_flags,
+    created_date,
+    modified_date,
+    scale,
+    duration,
+    speed,
+    volume,
+    scaleA:    scale_a,
+    rotateB:   rotate_b,
+    angleU:    angle_u,
+    rotateC:   rotate_c,
+    scaleD:    scale_d,
+    angleV:    angle_v,
+    positionX: position_x,
+    positionY: position_y,
+    scaleW:    scale_w,
+    preview,
+    poster,
+    selection,
+    current_time,
+    track_id,
+  });
+
+  Ok((i, mvhd_box))
+}
 
 #[derive(Debug, Clone)]
 pub enum MvhdBox {
@@ -242,16 +243,22 @@ struct MP4BoxHeader {
   tag: MP4BoxType,
 }
 
-named!(brand_name<&[u8],&str>, map_res!(take!(4), str::from_utf8));
+fn brand_name(input: &[u8]) -> IResult<&[u8], &str> {
+  map_res(take(4_usize), str::from_utf8)(input)
+}
 
-named!(filetype_parser<&[u8], FileType>,
-  do_parse!(
-    m: brand_name          >>
-    v: take!(4)            >>
-    c: many0!(brand_name)  >>
-    (FileType{ major_brand: m, major_brand_version:v, compatible_brands: c })
-  )
-);
+fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType> {
+  let (i, name) = brand_name(input)?;
+  let (i, version) = take(4_usize)(i)?;
+  let (i, brands) = many0(brand_name)(i)?;
+
+  let ft = FileType {
+    major_brand: name,
+    major_brand_version: version,
+    compatible_brands: brands,
+  };
+  Ok((i, ft))
+}
 
 fn mvhd_box(input: &[u8]) -> IResult<&[u8], MvhdBox> {
   let res = if input.len() < 100 {
@@ -261,7 +268,7 @@ fn mvhd_box(input: &[u8]) -> IResult<&[u8], MvhdBox> {
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Err(Err::Error(error_position!(input, ErrorKind::TooLarge)))
+    Err(Err::Error(nom::error_position!(input, ErrorKind::TooLarge)))
   };
   println!("res: {:?}", res);
   res
@@ -271,48 +278,43 @@ fn unknown_box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
   Ok((input, MP4BoxType::Unknown))
 }
 
-//named!(box_type<&[u8], MP4BoxType>,
 fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
-  alt!(input,
-    tag!("ftyp") => { |_| MP4BoxType::Ftyp } |
-    tag!("moov") => { |_| MP4BoxType::Moov } |
-    tag!("mdat") => { |_| MP4BoxType::Mdat } |
-    tag!("free") => { |_| MP4BoxType::Free } |
-    tag!("skip") => { |_| MP4BoxType::Skip } |
-    tag!("wide") => { |_| MP4BoxType::Wide } |
-    unknown_box_type
-  )
+  alt((
+    map(tag("ftyp"), |_| MP4BoxType::Ftyp),
+    map(tag("moov"), |_| MP4BoxType::Moov),
+    map(tag("mdat"), |_| MP4BoxType::Mdat),
+    map(tag("free"), |_| MP4BoxType::Free),
+    map(tag("skip"), |_| MP4BoxType::Skip),
+    map(tag("wide"), |_| MP4BoxType::Wide),
+    unknown_box_type,
+  ))(input)
 }
 
 // warning, an alt combinator with 9 branches containing a tag combinator
 // can make the compilation very slow. Use functions as sub parsers,
-// or split into multiple alt! parsers if it gets slow
-named!(moov_type<&[u8], MP4BoxType>,
-  alt!(
-    tag!("mdra") => { |_| MP4BoxType::Mdra } |
-    tag!("dref") => { |_| MP4BoxType::Dref } |
-    tag!("cmov") => { |_| MP4BoxType::Cmov } |
-    tag!("rmra") => { |_| MP4BoxType::Rmra } |
-    tag!("iods") => { |_| MP4BoxType::Iods } |
-    tag!("mvhd") => { |_| MP4BoxType::Mvhd } |
-    tag!("clip") => { |_| MP4BoxType::Clip } |
-    tag!("trak") => { |_| MP4BoxType::Trak } |
-    tag!("udta") => { |_| MP4BoxType::Udta }
-  )
-);
+// or split into multiple alt parsers if it gets slow
+fn moov_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
+  alt((
+    map(tag("mdra"), |_| MP4BoxType::Mdra),
+    map(tag("dref"), |_| MP4BoxType::Dref),
+    map(tag("cmov"), |_| MP4BoxType::Cmov),
+    map(tag("rmra"), |_| MP4BoxType::Rmra),
+    map(tag("iods"), |_| MP4BoxType::Iods),
+    map(tag("mvhd"), |_| MP4BoxType::Mvhd),
+    map(tag("clip"), |_| MP4BoxType::Clip),
+    map(tag("trak"), |_| MP4BoxType::Trak),
+    map(tag("udta"), |_| MP4BoxType::Udta),
+  ))(input)
+}
 
-named!(box_header<&[u8],MP4BoxHeader>,
-  do_parse!(
-    length: be_u32 >>
-    tag: box_type  >>
-    (MP4BoxHeader{ length: length, tag: tag})
-  )
-);
+fn box_header(input: &[u8]) -> IResult<&[u8], MP4BoxHeader> {
+  let (i, length) = be_u32(input)?;
+  let (i, tag) = box_type(i)?;
+  Ok((i, MP4BoxHeader { length, tag }))
+}
 
-named!(moov_header<&[u8],MP4BoxHeader>,
-  do_parse!(
-    length: be_u32 >>
-    tag: moov_type >>
-    (MP4BoxHeader{ length: length, tag: tag})
-  )
-);
+fn moov_header(input: &[u8]) -> IResult<&[u8], MP4BoxHeader> {
+  let (i, length) = be_u32(input)?;
+  let (i, tag) = moov_type(i)?;
+  Ok((i, MP4BoxHeader { length, tag }))
+}

@@ -1,34 +1,33 @@
-#[macro_use]
-extern crate nom;
-
+use nom::branch::alt;
+use nom::bytes::complete::tag;
 use nom::character::streaming::digit1 as digit;
+use nom::combinator::{map, map_res, opt, recognize};
+use nom::sequence::{delimited, pair};
+use nom::IResult;
 
 use std::str;
 use std::str::FromStr;
 
-named!(
-  unsigned_float<f32>,
-  map_res!(
-    map_res!(
-      recognize!(alt!(
-        delimited!(digit, tag!("."), opt!(digit)) | delimited!(opt!(digit), tag!("."), digit)
-      )),
-      str::from_utf8
-    ),
-    FromStr::from_str
-  )
-);
+fn unsigned_float(i: &[u8]) -> IResult<&[u8], f32> {
+  let float_bytes = recognize(alt((
+    delimited(digit, tag("."), opt(digit)),
+    delimited(opt(digit), tag("."), digit),
+  )));
+  let float_str = map_res(float_bytes, str::from_utf8);
+  map_res(float_str, FromStr::from_str)(i)
+}
 
-named!(
-  float<f32>,
-  map!(
-    pair!(opt!(alt!(tag!("+") | tag!("-"))), unsigned_float),
-    |(sign, value): (Option<&[u8]>, f32)| sign
-      .and_then(|s| if s[0] == b'-' { Some(-1f32) } else { None })
-      .unwrap_or(1f32)
-      * value
-  )
-);
+fn float(i: &[u8]) -> IResult<&[u8], f32> {
+  map(
+    pair(opt(alt((tag("+"), tag("-")))), unsigned_float),
+    |(sign, value)| {
+      sign
+        .and_then(|s| if s[0] == b'-' { Some(-1f32) } else { None })
+        .unwrap_or(1f32)
+        * value
+    },
+  )(i)
+}
 
 #[test]
 fn unsigned_float_test() {

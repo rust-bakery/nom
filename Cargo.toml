@@ -117,9 +117,6 @@ name = "overflow"
 name = "reborrow_fold"
 
 [[test]]
-name = "test1"
-
-[[test]]
 name = "fnmut"
 required-features = ["alloc"]
 
