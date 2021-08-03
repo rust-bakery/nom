@@ -141,11 +141,6 @@ path = "benches/ini.rs"
 harness = false
 
 [[bench]]
-name = "ini_complete"
-path = "benches/ini_complete.rs"
-harness = false
-
-[[bench]]
 name = "ini_str"
 path = "benches/ini_str.rs"
 harness = false
