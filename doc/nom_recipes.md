@@ -25,6 +25,14 @@ These are short recipes for accomplishing common tasks with nom.
 ### Wrapper combinators that eat whitespace before and after a parser
 
 ```rust
+use nom::{
+  IResult,
+  error::ParseError,
+  combinator::value,
+  sequence::delimited,
+  character::complete::multispace0,
+};
+
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and 
 /// trailing whitespace, returning the output of `inner`.
 fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
@@ -52,6 +60,15 @@ This version uses `%` to start a comment, does not consume the newline character
 output of `()`.
 
 ```rust
+use nom::{
+  IResult,
+  error::ParseError,
+  combinator::value,
+  sequence::pair,
+  bytes::complete::is_not,
+  character::complete::char,
+};
+
 pub fn peol_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E>
 {
   value(
@@ -67,6 +84,14 @@ Inline comments surrounded with sentinel tags `(*` and `*)`. This version return
 and does not handle nested comments.
 
 ```rust
+use nom::{
+  IResult,
+  error::ParseError,
+  combinator::value,
+  sequence::tuple,
+  bytes::complete::{tag, take_until},
+};
+
 pub fn pinline_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E> {
   value(
     (), // Output is thrown away.
@@ -87,6 +112,16 @@ Parsing identifiers that may start with a letter (or underscore) and may contain
 letters and numbers may be parsed like this:
 
 ```rust
+use nom::{
+  IResult,
+  branch::alt,
+  multi::many0,
+  combinator::recognize,
+  sequence::pair,
+  character::complete::{alpha1, alphanumeric1},
+  bytes::complete::tag,
+};
+
 pub fn identifier(input: &str) -> IResult<&str, &str> {
   recognize(
     pair(
@@ -128,6 +163,16 @@ If you wish to limit the number of digits in a valid integer literal, replace `m
 The parser outputs the string slice of the digits without the leading `0x`/`0X`.
 
 ```rust
+use nom::{
+  IResult,
+  branch::alt,
+  multi::{many0, many1},
+  combinator::recognize,
+  sequence::{preceded, terminated},
+  character::complete::{char, one_of},
+  bytes::complete::tag,
+};
+
 fn hexadecimal(input: &str) -> IResult<&str, &str> { // <'a, E: ParseError<&'a str>>
   preceded(
     alt((tag("0x"), tag("0X"))),
@@ -143,6 +188,16 @@ fn hexadecimal(input: &str) -> IResult<&str, &str> { // <'a, E: ParseError<&'a s
 If you want it to return the integer value instead, use map:
 
 ```rust
+use nom::{
+  IResult,
+  branch::alt,
+  multi::{many0, many1},
+  combinator::{map_res, recognize},
+  sequence::{preceded, terminated},
+  character::complete::{char, one_of},
+  bytes::complete::tag,
+};
+
 fn hexadecimal_value(input: &str) -> IResult<&str, i64> {
   map_res(
     preceded(
@@ -161,6 +216,16 @@ fn hexadecimal_value(input: &str) -> IResult<&str, i64> {
 #### Octal
 
 ```rust
+use nom::{
+  IResult,
+  branch::alt,
+  multi::{many0, many1},
+  combinator::recognize,
+  sequence::{preceded, terminated},
+  character::complete::{char, one_of},
+  bytes::complete::tag,
+};
+
 fn octal(input: &str) -> IResult<&str, &str> {
   preceded(
     alt((tag("0o"), tag("0O"))),
@@ -176,6 +241,16 @@ fn octal(input: &str) -> IResult<&str, &str> {
 #### Binary
 
 ```rust
+use nom::{
+  IResult,
+  branch::alt,
+  multi::{many0, many1},
+  combinator::recognize,
+  sequence::{preceded, terminated},
+  character::complete::{char, one_of},
+  bytes::complete::tag,
+};
+
 fn binary(input: &str) -> IResult<&str, &str> {
   preceded(
     alt((tag("0b"), tag("0B"))),
@@ -191,6 +266,14 @@ fn binary(input: &str) -> IResult<&str, &str> {
 #### Decimal
 
 ```rust
+use nom::{
+  IResult,
+  multi::{many0, many1},
+  combinator::recognize,
+  sequence::terminated,
+  character::complete::{char, one_of},
+};
+
 fn decimal(input: &str) -> IResult<&str, &str> {
   recognize(
     many1(
@@ -205,6 +288,15 @@ fn decimal(input: &str) -> IResult<&str, &str> {
 The following is adapted from [the Python parser by Valentin Lorentz (ProgVal)](https://github.com/ProgVal/rust-python-parser/blob/master/src/numbers.rs).
 
 ```rust
+use nom::{
+  IResult,
+  branch::alt,
+  multi::{many0, many1},
+  combinator::{opt, recognize},
+  sequence::{preceded, terminated, tuple},
+  character::complete::{char, one_of},
+};
+
 fn float(input: &str) -> IResult<&str, &str> {
   alt((
     // Case one: .42
@@ -241,6 +333,14 @@ fn float(input: &str) -> IResult<&str, &str> {
       ))
     )
   ))(input)
+}
+
+fn decimal(input: &str) -> IResult<&str, &str> {
+  recognize(
+    many1(
+      terminated(one_of("0123456789"), many0(char('_')))
+    )
+  )(input)
 }
 ```
 
