@@ -1,7 +1,7 @@
 //! Combinators applying their child parser multiple times
 
-#[macro_use]
-mod macros;
+#[cfg(test)]
+mod tests;
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;

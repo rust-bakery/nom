@@ -933,14 +933,24 @@ mod tests {
 
   #[test]
   fn length_bytes() {
-    use crate::number::streaming::le_u8;
-    named!(x, length_data!(le_u8));
+    use crate::{
+        number::streaming::le_u8,
+        bytes::streaming::tag,
+        multi::length_data
+    };
+
+    fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
+        length_data(le_u8)(i)
+    }
     assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));
     assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::new(2))));
 
-    named!(y, do_parse!(tag!("magic") >> b: length_data!(le_u8) >> (b)));
+    fn y(i: &[u8]) -> IResult<&[u8], &[u8]> {
+        let (i, _) = tag("magic")(i)?;
+        length_data(le_u8)(i)
+    }
     assert_eq!(y(b"magic\x02..>>"), Ok((&b">>"[..], &b".."[..])));
     assert_eq!(y(b"magic\x02.."), Ok((&[][..], &b".."[..])));
     assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::new(1))));
