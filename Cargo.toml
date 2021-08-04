@@ -105,9 +105,6 @@ name = "multiline"
 required-features = ["alloc"]
 
 [[test]]
-name = "named_args"
-
-[[test]]
 name = "overflow"
 
 [[test]]
