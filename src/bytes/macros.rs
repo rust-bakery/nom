@@ -436,15 +436,20 @@ macro_rules! take_until1 (
 
 #[cfg(test)]
 mod tests {
+  #[cfg(feature = "alloc")]
+  use crate::bytes::complete::escaped_transform;
+  #[cfg(feature = "alloc")]
+  use crate::bytes::complete::tag;
   use crate::character::is_alphabetic;
   use crate::character::streaming::{
     alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
     multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
   };
-  use crate::bytes::complete::{escaped_transform, tag};
   use crate::error::ErrorKind;
   use crate::internal::{Err, IResult, Needed};
+  #[cfg(feature = "alloc")]
   use crate::branch::alt;
+  #[cfg(feature = "alloc")]
   use crate::combinator::{map, value};
   #[cfg(feature = "alloc")]
   use crate::lib::std::string::String;

@@ -1,9 +1,4 @@
-use super::{
-  count, fold_many0, fold_many1, fold_many_m_n, length_count, length_data, length_value, many0,
-  many0_count, many1, many1_count, many_m_n, many_till, separated_list0, separated_list1,
-};
-#[cfg(feature = "alloc")]
-use crate::lib::std::vec::Vec;
+use super::{length_data, length_value, many0_count, many1_count};
 use crate::{
   bytes::streaming::tag,
   character::streaming::digit1 as digit,
@@ -12,6 +7,14 @@ use crate::{
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
   sequence::{pair, tuple},
+};
+#[cfg(feature = "alloc")]
+use crate::{
+  lib::std::vec::Vec,
+  multi::{
+    count, length_count, fold_many0, fold_many1, fold_many_m_n, many0, many1, many_m_n, many_till,
+    separated_list0, separated_list1,
+  },
 };
 
 #[test]
