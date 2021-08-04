@@ -1,12 +1,11 @@
 #[cfg(test)]
 mod test {
+  #[cfg(feature = "alloc")]
+  use crate::{branch::alt, bytes::complete::tag_no_case, combinator::recognize, multi::many1};
   use crate::{
-      Err, IResult,
-      error::{self, ErrorKind},
-      bytes::complete::tag,
-      branch::alt,
-      combinator::recognize,
-      multi::many1,
+    Err, IResult,
+    error::{self, ErrorKind},
+    bytes::complete::{is_a, is_not, tag, take, take_till, take_until},
   };
 
   #[test]
@@ -14,7 +13,7 @@ mod test {
     const INPUT: &str = "Hello World!";
     const TAG: &str = "Hello";
     fn test(input: &str) -> IResult<&str, &str> {
-      tag!(input, TAG)
+      tag(TAG)(input)
     }
 
     match test(INPUT) {
@@ -38,10 +37,12 @@ mod test {
 
   #[test]
   fn tagtr_incomplete() {
+    use crate::bytes::streaming::tag;
+
     const INPUT: &str = "Hello";
     const TAG: &str = "Hello World!";
 
-    let res: IResult<_, _, error::Error<_>> = tag!(INPUT, TAG);
+    let res: IResult<_, _, error::Error<_>> = tag(TAG)(INPUT);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => {
@@ -59,7 +60,7 @@ mod test {
     const INPUT: &str = "Hello World!";
     const TAG: &str = "Random"; // TAG must be closer than INPUT.
 
-    let res: IResult<_, _, error::Error<_>> = tag!(INPUT, TAG);
+    let res: IResult<_, _, error::Error<_>> = tag(TAG)(INPUT);
     match res {
       Err(Err::Error(_)) => (),
       other => {
@@ -77,7 +78,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
 
-    let res: IResult<_, _, error::Error<_>> = take!(INPUT, 9);
+    let res: IResult<_, _, error::Error<_>> = take(9_usize)(INPUT);
     match res {
       Ok((extra, output)) => {
         assert!(
@@ -107,7 +108,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřè";
     const LEFTOVER: &str = "ÂßÇ∂áƒƭèř";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (_, ErrorKind)> = take_until(FIND)(INPUT);
     match res {
       Ok((extra, output)) => {
         assert!(
@@ -134,9 +135,11 @@ mod test {
 
   #[test]
   fn take_s_incomplete() {
+    use crate::bytes::streaming::take;
+
     const INPUT: &str = "βèƒôřèÂßÇá";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take!(INPUT, 13);
+    let res: IResult<_, _, (_, ErrorKind)> = take(13_usize)(INPUT);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
@@ -155,7 +158,11 @@ mod test {
 
   #[test]
   fn take_while() {
-    named!(f<&str,&str>, take_while!(is_alphabetic));
+    use crate::bytes::streaming::take_while;
+
+    fn f(i: &str) -> IResult<&str, &str> {
+      take_while(is_alphabetic)(i)
+    }
     let a = "";
     let b = "abcd";
     let c = "abcd123";
@@ -169,7 +176,11 @@ mod test {
 
   #[test]
   fn take_while1() {
-    named!(f<&str,&str>, take_while1!(is_alphabetic));
+    use crate::bytes::streaming::take_while1;
+
+    fn f(i: &str) -> IResult<&str, &str> {
+      take_while1(is_alphabetic)(i)
+    }
     let a = "";
     let b = "abcd";
     let c = "abcd123";
@@ -193,7 +204,7 @@ mod test {
       c == 'á'
     }
     fn test(input: &str) -> IResult<&str, &str> {
-      take_till!(input, till_s)
+      take_till(till_s)(input)
     }
     match test(INPUT) {
       Ok((extra, output)) => {
@@ -219,6 +230,8 @@ mod test {
 
   #[test]
   fn take_while_succeed_none() {
+    use crate::bytes::complete::take_while;
+
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const CONSUMED: &str = "";
     const LEFTOVER: &str = "βèƒôřèÂßÇáƒƭèř";
@@ -226,7 +239,7 @@ mod test {
       c == '9'
     }
     fn test(input: &str) -> IResult<&str, &str> {
-      take_while!(input, while_s)
+      take_while(while_s)(input)
     }
     match test(INPUT) {
       Ok((extra, output)) => {
@@ -257,7 +270,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
     fn test(input: &str) -> IResult<&str, &str> {
-      is_not!(input, AVOID)
+      is_not(AVOID)(input)
     }
     match test(INPUT) {
       Ok((extra, output)) => {
@@ -283,6 +296,8 @@ mod test {
 
   #[test]
   fn take_while_succeed_some() {
+    use crate::bytes::complete::take_while;
+
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
@@ -298,7 +313,7 @@ mod test {
         || c == 'Ç'
     }
     fn test(input: &str) -> IResult<&str, &str> {
-      take_while!(input, while_s)
+      take_while(while_s)(input)
     }
     match test(INPUT) {
       Ok((extra, output)) => {
@@ -327,7 +342,7 @@ mod test {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const AVOID: &str = "βúçƙ¥";
     fn test(input: &str) -> IResult<&str, &str> {
-      is_not!(input, AVOID)
+      is_not(AVOID)(input)
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
@@ -340,6 +355,8 @@ mod test {
 
   #[test]
   fn take_while1_succeed() {
+    use crate::bytes::complete::take_while1;
+
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
@@ -355,7 +372,7 @@ mod test {
         || c == 'Ç'
     }
     fn test(input: &str) -> IResult<&str, &str> {
-      take_while1!(input, while1_s)
+      take_while1(while1_s)(input)
     }
     match test(INPUT) {
       Ok((extra, output)) => {
@@ -381,10 +398,12 @@ mod test {
 
   #[test]
   fn take_until_incomplete() {
+    use crate::bytes::streaming::take_until;
+
     const INPUT: &str = "βèƒôřè";
     const FIND: &str = "βèƒôřèÂßÇ";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (_, ErrorKind)> = take_until(FIND)(INPUT);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
@@ -402,7 +421,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
     fn test(input: &str) -> IResult<&str, &str> {
-      is_a!(input, MATCH)
+      is_a(MATCH)(input)
     }
     match test(INPUT) {
       Ok((extra, output)) => {
@@ -428,12 +447,14 @@ mod test {
 
   #[test]
   fn take_while1_fail() {
+    use crate::bytes::complete::take_while1;
+
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     fn while1_s(c: char) -> bool {
       c == '9'
     }
     fn test(input: &str) -> IResult<&str, &str> {
-      take_while1!(input, while1_s)
+      take_while1(while1_s)(input)
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
@@ -450,7 +471,7 @@ mod test {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const MATCH: &str = "Ûñℓúçƙ¥";
     fn test(input: &str) -> IResult<&str, &str> {
-      is_a!(input, MATCH)
+      is_a(MATCH)(input)
     }
     match test(INPUT) {
       Err(Err::Error(_)) => (),
@@ -463,10 +484,12 @@ mod test {
 
   #[test]
   fn take_until_error() {
+    use crate::bytes::streaming::take_until;
+
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const FIND: &str = "Ráñδô₥";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take_until!(INPUT, FIND);
+    let res: IResult<_, _, (_, ErrorKind)> = take_until(FIND)(INPUT);
     match res {
       Err(Err::Incomplete(_)) => (),
       other => panic!(
@@ -486,7 +509,6 @@ mod test {
     fn f(i: &str) -> IResult<&str, &str> {
         recognize(many1(alt((tag("a"), tag("b")))))(i)
     }
-    //named!(f <&str,&str>, recognize!(many1!(complete!(alt!( tag!("a") | tag!("b") )))));
 
     assert_eq!(f(&a[..]), Ok((&a[6..], &a[..])));
     assert_eq!(f(&b[..]), Ok((&b[4..], &b[..4])));
@@ -494,9 +516,9 @@ mod test {
 
   #[test]
   fn utf8_indexing() {
-    named!(dot(&str) -> &str,
-      tag!(".")
-    );
+    fn dot(i: &str) -> IResult<&str, &str> {
+      tag(".")(i)
+    }
 
     let _ = dot("點");
   }
@@ -504,14 +526,11 @@ mod test {
   #[cfg(feature = "alloc")]
   #[test]
   fn case_insensitive() {
-    named!(test<&str,&str>, tag_no_case!("ABcd"));
+    fn test(i: &str) -> IResult<&str, &str> {
+      tag_no_case("ABcd")(i)
+    }
     assert_eq!(test("aBCdefgh"), Ok(("efgh", "aBCd")));
     assert_eq!(test("abcdefgh"), Ok(("efgh", "abcd")));
     assert_eq!(test("ABCDefgh"), Ok(("efgh", "ABCD")));
-
-    named!(test2<&str,&str>, tag_no_case!("ABcd"));
-    assert_eq!(test2("aBCdefgh"), Ok(("efgh", "aBCd")));
-    assert_eq!(test2("abcdefgh"), Ok(("efgh", "abcd")));
-    assert_eq!(test2("ABCDefgh"), Ok(("efgh", "ABCD")));
   }
 }
