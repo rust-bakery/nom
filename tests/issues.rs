@@ -23,29 +23,31 @@ mod parse_int {
   use nom::HexDisplay;
   use nom::{
     character::streaming::{digit1 as digit, space1 as space},
+    combinator::{complete, map, opt},
+    multi::many0,
     IResult,
   };
   use std::str;
 
-  named!(parse_ints<Vec<i32>>, many0!(spaces_or_int));
+  fn parse_ints(input: &[u8]) -> IResult<&[u8], Vec<i32>> {
+    many0(spaces_or_int)(input)
+  }
 
   fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32> {
     println!("{}", input.to_hex(8));
-    do_parse!(
-      input,
-      opt!(complete!(space))
-        >> res: map!(complete!(digit), |x| {
-          println!("x: {:?}", x);
-          let result = str::from_utf8(x).unwrap();
-          println!("Result: {}", result);
-          println!("int is empty?: {}", x.is_empty());
-          match result.parse() {
-            Ok(i) => i,
-            Err(e) => panic!("UH OH! NOT A DIGIT! {:?}", e),
-          }
-        })
-        >> (res)
-    )
+    let (i, _) = opt(complete(space))(input)?;
+    let (i, res) = map(complete(digit), |x| {
+      println!("x: {:?}", x);
+      let result = str::from_utf8(x).unwrap();
+      println!("Result: {}", result);
+      println!("int is empty?: {}", x.is_empty());
+      match result.parse() {
+        Ok(i) => i,
+        Err(e) => panic!("UH OH! NOT A DIGIT! {:?}", e),
+      }
+    })(i)?;
+
+    Ok((i, res))
   }
 
   #[test]
@@ -62,31 +64,18 @@ mod parse_int {
 
 #[test]
 fn usize_length_bytes_issue() {
+  use nom::multi::length_data;
   use nom::number::streaming::be_u16;
-  let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_data!(b"012346", be_u16);
+  let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_data(be_u16)(b"012346");
 }
-
-/*
- DOES NOT COMPILE
-#[test]
-fn issue_152() {
-  named!(take4, take!(4));
-  named!(xyz, tag!("XYZ"));
-  named!(abc, tag!("abc"));
-
-
-  named!(sw,
-    switch!(take4,
-      b"abcd" => xyz |
-      b"efgh" => abc
-    )
-  );
-}
-*/
 
 #[test]
 fn take_till_issue() {
-  named!(nothing, take_till!(call!(|_| true)));
+  use nom::bytes::streaming::take_till;
+
+  fn nothing(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    take_till(|_| true)(i)
+  }
 
   assert_eq!(nothing(b""), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(nothing(b"abc"), Ok((&b"abc"[..], &b""[..])));
@@ -95,15 +84,14 @@ fn take_till_issue() {
 #[test]
 fn issue_655() {
   use nom::character::streaming::{line_ending, not_line_ending};
-  named!(twolines(&str) -> (&str, &str),
-    do_parse!(
-      l1 : not_line_ending >>
-           line_ending >>
-      l2 : not_line_ending >>
-           line_ending >>
-      ((l1, l2))
-    )
-  );
+  fn twolines(i: &str) -> IResult<&str, (&str, &str)> {
+    let (i, l1) = not_line_ending(i)?;
+    let (i, _) = line_ending(i)?;
+    let (i, l2) = not_line_ending(i)?;
+    let (i, _) = line_ending(i)?;
+
+    Ok((i, (l1, l2)))
+  }
 
   assert_eq!(twolines("foo\nbar\n"), Ok(("", ("foo", "bar"))));
   assert_eq!(twolines("féo\nbar\n"), Ok(("", ("féo", "bar"))));
@@ -112,12 +100,18 @@ fn issue_655() {
 }
 
 #[cfg(feature = "alloc")]
-named!(issue_717<&[u8], Vec<&[u8]> >,
-  separated_list0!(tag!([0x0]), is_not!([0x0u8]))
-);
+fn issue_717(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  use nom::bytes::complete::{is_not, tag};
+  use nom::multi::separated_list0;
+
+  separated_list0(tag([0x0]), is_not([0x0u8]))(i)
+}
 
 mod issue_647 {
-  use nom::{error::Error, number::streaming::be_f64, Err};
+  use nom::bytes::streaming::tag;
+  use nom::combinator::complete;
+  use nom::multi::separated_list0;
+  use nom::{error::Error, number::streaming::be_f64, Err, IResult};
   pub type Input<'a> = &'a [u8];
 
   #[derive(PartialEq, Debug, Clone)]
@@ -130,31 +124,31 @@ mod issue_647 {
     input: Input<'a>,
     _cs: &'b f64,
   ) -> Result<(Input<'a>, Vec<f64>), Err<Error<&'a [u8]>>> {
-    separated_list0!(input, complete!(tag!(",")), complete!(be_f64))
+    separated_list0(complete(tag(",")), complete(be_f64))(input)
   }
 
-  named!(data<Input,Data>, map!(
-      do_parse!(
-          c: be_f64 >>
-          tag!("\n") >>
-          v: call!(list,&c) >>
-          (c,v)
-      ), |(c,v)| {
-          Data {
-              c: c,
-              v: v
-          }
-      }
-  ));
+  fn data(input: Input<'_>) -> IResult<Input<'_>, Data> {
+    let (i, c) = be_f64(input)?;
+    let (i, _) = tag("\n")(i)?;
+    let (i, v) = list(i, &c)?;
+    Ok((i, Data { c, v }))
+  }
 }
 
 #[test]
 fn issue_848_overflow_incomplete_bits_to_bytes() {
-  named!(take, take!(0x2000000000000000));
-  named!(parser<&[u8], &[u8]>, bits!(bytes!(take)));
+  fn take(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    use nom::bytes::streaming::take;
+    take(0x2000000000000000_usize)(i)
+  }
+  fn parser(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    use nom::bits::{bits, bytes};
+
+    bits(bytes(take))(i)
+  }
   assert_eq!(
     parser(&b""[..]),
-    Err(Err::Failure(error_position!(&b""[..], ErrorKind::TooLarge)))
+    Err(Err::Failure(nom::error_position!(&b""[..], ErrorKind::TooLarge)))
   );
 }
 
