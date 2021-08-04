@@ -82,9 +82,6 @@ name = "custom_errors"
 name = "float"
 
 [[test]]
-name = "inference"
-
-[[test]]
 name = "ini"
 required-features = ["alloc"]
 
