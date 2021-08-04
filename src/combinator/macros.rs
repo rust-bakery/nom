@@ -131,67 +131,6 @@ macro_rules! named (
     );
 );
 
-/// Makes a function from a parser combination with arguments.
-///
-/// ```ignore
-/// //takes [`&[u8]`] as input
-/// named_args!(tagged(open_tag: &[u8], close_tag: &[u8])<&str>,
-///   delimited!(tag!(open_tag), map_res!(take!(4), str::from_utf8), tag!(close_tag))
-/// );
-
-/// //takes `&str` as input
-/// named_args!(tagged(open_tag: &str, close_tag: &str)<&str, &str>,
-///   delimited!(tag!(open_tag), take!(4), tag!(close_tag))
-/// );
-/// ```
-///
-/// Note: If using arguments that way gets hard to read, it is always
-/// possible to write the equivalent parser definition manually, like
-/// this:
-///
-/// ```ignore
-/// fn tagged(input: &[u8], open_tag: &[u8], close_tag: &[u8]) -> IResult<&[u8], &str> {
-///   // the first combinator in the tree gets the input as argument. It is then
-///   // passed from one combinator to the next through macro rewriting
-///   delimited!(input,
-///     tag!(open_tag), take!(4), tag!(close_tag)
-///   )
-/// );
-/// ```
-///
-#[macro_export(local_inner_macros)]
-macro_rules! named_args {
-    ($vis:vis $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        $vis fn $func_name(input: &[u8], $( $arg : $typ ),*) -> $crate::IResult<&[u8], $return_type> {
-            $submac!(input, $($args)*)
-        }
-    };
-
-    ($vis:vis $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        $vis fn $func_name<'this_is_probably_unique_i_hope_please, 'a>(
-          input: &'this_is_probably_unique_i_hope_please [u8], $( $arg : $typ ),*) ->
-          $crate::IResult<&'this_is_probably_unique_i_hope_please [u8], $return_type>
-        {
-          $submac!(input, $($args)*)
-        }
-    };
-
-    ($vis:vis $func_name:ident ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        $vis fn $func_name(input: $input_type, $( $arg : $typ ),*) -> $crate::IResult<$input_type, $return_type> {
-            $submac!(input, $($args)*)
-        }
-    };
-
-    ($vis:vis $func_name:ident < 'a > ( $( $arg:ident : $typ:ty ),* ) < $input_type:ty, $return_type:ty > , $submac:ident!( $($args:tt)* ) ) => {
-        $vis fn $func_name<'a>(
-          input: $input_type, $( $arg : $typ ),*)
-          -> $crate::IResult<$input_type, $return_type>
-        {
-            $submac!(input, $($args)*)
-        }
-    };
-}
-
 /// Makes a function from a parser combination, with attributes.
 ///
 /// The usage of this macro is almost identical to `named!`, except that
