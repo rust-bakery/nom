@@ -133,30 +133,6 @@ macro_rules! escaped (
 /// * The third argument matches the escaped characters and transforms them
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character).
-/// # Example
-/// ```rust
-/// # #[macro_use] extern crate nom;
-/// # use nom::character::complete::alpha1;
-/// # use nom::lib::std::str::from_utf8;
-/// # fn main() {
-/// fn to_s(i:Vec<u8>) -> String {
-///   String::from_utf8_lossy(&i).into_owned()
-/// }
-///
-///  named!(transform < String >,
-///    map!(
-///      escaped_transform!(call!(alpha1), '\\',
-///        alt!(
-///            tag!("\\")       => { |_| &b"\\"[..] }
-///          | tag!("\"")       => { |_| &b"\""[..] }
-///          | tag!("n")        => { |_| &b"\n"[..] }
-///        )
-///      ), to_s
-///    )
-///  );
-///  assert_eq!(transform(&b"ab\\\"cd"[..]), Ok((&b""[..], String::from("ab\"cd"))));
-/// # }
-/// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[macro_export(local_inner_macros)]

@@ -221,38 +221,6 @@ macro_rules! call (
 /// Additionally, the error chain contains number identifiers
 /// that can be matched to provide useful error messages.
 ///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::Err;
-/// # use nom::error::ErrorKind;
-/// # fn main() {
-///     named!(err_test<&[u8], &[u8]>, alt!(
-///       tag!("abcd") |
-///       preceded!(tag!("efgh"), return_error!(ErrorKind::Eof,
-///           do_parse!(
-///                  tag!("ijkl")                                        >>
-///             res: return_error!(ErrorKind::Tag, tag!("mnop")) >>
-///             (res)
-///           )
-///         )
-///       )
-///     ));
-///     let a = &b"efghblah"[..];
-///     let b = &b"efghijklblah"[..];
-///     let c = &b"efghijklmnop"[..];
-///
-///     let blah = &b"blah"[..];
-///
-///     let res_a = err_test(a);
-///     let res_b = err_test(b);
-///     let res_c = err_test(c);
-///     assert_eq!(res_a, Err(Err::Failure(error_node_position!(blah, ErrorKind::Eof, error_position!(blah, ErrorKind::Tag)))));
-///     assert_eq!(res_b, Err(Err::Failure(error_node_position!(&b"ijklblah"[..], ErrorKind::Eof,
-///       error_node_position!(blah, ErrorKind::Tag, error_position!(blah, ErrorKind::Tag))))
-///     ));
-/// # }
-/// ```
-///
 #[macro_export(local_inner_macros)]
 macro_rules! return_error (
   ($i:expr, $code:expr, $submac:ident!( $($args:tt)* )) => (
