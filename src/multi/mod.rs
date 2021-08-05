@@ -61,18 +61,6 @@ where
     }
   }
 }
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many0c<I, O, E, F>(input: I, f: F) -> IResult<I, Vec<O>, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  E: ParseError<I>,
-{
-  many0(f)(input)
-}
 
 /// Runs the embedded parser until it fails and
 /// returns the results in a `Vec`. Fails if
@@ -134,19 +122,6 @@ where
   }
 }
 
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many1c<I, O, E, F>(input: I, f: F) -> IResult<I, Vec<O>, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  E: ParseError<I>,
-{
-  many1(f)(input)
-}
-
 /// Applies the parser `f` until the parser `g` produces
 /// a result. Returns a pair consisting of the results of
 /// `f` in a `Vec` and the result of `g`.
@@ -201,20 +176,6 @@ where
       }
     }
   }
-}
-
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many_tillc<I, O, P, E, F, G>(i: I, f: F, g: G) -> IResult<I, (Vec<O>, P), E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, P, E>,
-  E: ParseError<I>,
-{
-  many_till(f, g)(i)
 }
 
 /// Alternates between two parsers to produce
@@ -283,20 +244,6 @@ where
       }
     }
   }
-}
-
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list0c<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-  E: ParseError<I>,
-{
-  separated_list0(sep, f)(i)
 }
 
 /// Alternates between two parsers to produce
@@ -368,20 +315,6 @@ where
   }
 }
 
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list1c<I, O, O2, E, F, G>(i: I, sep: G, f: F) -> IResult<I, Vec<O>, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-  E: ParseError<I>,
-{
-  separated_list1(sep, f)(i)
-}
-
 /// Repeats the embedded parser `n` times or until it fails
 /// and returns the results in a `Vec`. Fails if the
 /// embedded parser does not succeed at least `m` times.
@@ -448,18 +381,6 @@ where
   }
 }
 
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-#[cfg(feature = "alloc")]
-pub fn many_m_nc<I, O, E, F>(i: I, m: usize, n: usize, f: F) -> IResult<I, Vec<O>, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  E: ParseError<I>,
-{
-  many_m_n(m, n, f)(i)
-}
-
 /// Repeats the embedded parser until it fails
 /// and returns the number of successful iterations.
 /// # Arguments
@@ -508,16 +429,6 @@ where
       }
     }
   }
-}
-
-#[doc(hidden)]
-pub fn many0_countc<I, O, E, F>(i: I, f: F) -> IResult<I, usize, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  E: ParseError<I>,
-{
-  many0_count(f)(i)
 }
 
 /// Repeats the embedded parser until it fails
@@ -574,16 +485,6 @@ where
       }
     }
   }
-}
-
-#[doc(hidden)]
-pub fn many1_countc<I, O, E, F>(i: I, f: F) -> IResult<I, usize, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  E: ParseError<I>,
-{
-  many1_count(f)(i)
 }
 
 /// Runs the embedded parser a specified number
@@ -759,18 +660,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn fold_many0c<I, O, E, F, G, R>(i: I, f: F, init: R, g: G) -> IResult<I, R, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: FnMut(R, O) -> R,
-  E: ParseError<I>,
-  R: Clone,
-{
-  fold_many0(f, init, g)(i)
-}
-
 /// Applies a parser until it fails and accumulates
 /// the results using a given function and initial value.
 /// Fails if the embedded parser does not succeed at least
@@ -846,18 +735,6 @@ where
       }
     }
   }
-}
-
-#[doc(hidden)]
-pub fn fold_many1c<I, O, E, F, G, R>(i: I, f: F, init: R, g: G) -> IResult<I, R, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: FnMut(R, O) -> R,
-  E: ParseError<I>,
-  R: Clone,
-{
-  fold_many1(f, init, g)(i)
 }
 
 /// Applies a parser `n` times or until it fails and accumulates
@@ -937,25 +814,6 @@ where
 
     Ok((input, acc))
   }
-}
-
-#[doc(hidden)]
-pub fn fold_many_m_nc<I, O, E, F, G, R>(
-  input: I,
-  min: usize,
-  max: usize,
-  parse: F,
-  init: R,
-  fold: G,
-) -> IResult<I, R, E>
-where
-  I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E>,
-  G: Fn(R, O) -> R,
-  E: ParseError<I>,
-  R: Clone,
-{
-  fold_many_m_n(min, max, parse, init, fold)(input)
 }
 
 /// Gets a number from the parser and returns a
@@ -1050,18 +908,6 @@ where
       }
     }
   }
-}
-
-#[doc(hidden)]
-pub fn length_valuec<I, O, N, E, F, G>(i: I, f: F, g: G) -> IResult<I, O, E>
-where
-  I: Clone + InputLength + InputTake,
-  N: ToUsize,
-  F: Fn(I) -> IResult<I, N, E>,
-  G: Fn(I) -> IResult<I, O, E>,
-  E: ParseError<I>,
-{
-  length_value(f, g)(i)
 }
 
 /// Gets a number from the first parser,

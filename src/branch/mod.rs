@@ -1,10 +1,5 @@
 //! Choice combinators
 
-//#[macro_use]
-//mod macros;
-
-#[doc(hidden)]
-#[macro_export(local_inner_macros)]
 macro_rules! succ (
   (0, $submac:ident ! ($($rest:tt)*)) => ($submac!(1, $($rest)*));
   (1, $submac:ident ! ($($rest:tt)*)) => ($submac!(2, $($rest)*));

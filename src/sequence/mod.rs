@@ -39,20 +39,6 @@ where
   }
 }
 
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-pub fn pairc<I, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, (O1, O2), E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-{
-  pair(first, second)(input)
-}
-
 /// Matches an object from the first parser and discards it,
 /// then gets an object from the second parser.
 ///
@@ -86,20 +72,6 @@ where
   }
 }
 
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-pub fn precededc<I, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, O2, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-{
-  preceded(first, second)(input)
-}
-
 /// Gets an object from the first parser,
 /// then matches an object from the second parser and discards it.
 ///
@@ -131,20 +103,6 @@ where
     let (input, o1) = first.parse(input)?;
     second.parse(input).map(|(i, _)| (i, o1))
   }
-}
-
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-pub fn terminatedc<I, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, O1, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-{
-  terminated(first, second)(input)
 }
 
 /// Gets an object from the first parser,
@@ -185,22 +143,6 @@ where
   }
 }
 
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-pub fn separated_pairc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
-  input: I,
-  first: F,
-  sep: G,
-  second: H,
-) -> IResult<I, (O1, O3), E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-  H: Fn(I) -> IResult<I, O3, E>,
-{
-  separated_pair(first, sep, second)(input)
-}
-
 /// Matches an object from the first parser and discards it,
 /// then gets an object from the second parser,
 /// and finally matches an object from the third parser and discards it.
@@ -237,22 +179,6 @@ where
     let (input, o2) = second.parse(input)?;
     third.parse(input).map(|(i, _)| (i, o2))
   }
-}
-
-// this implementation is used for type inference issues in macros
-#[doc(hidden)]
-pub fn delimitedc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
-  input: I,
-  first: F,
-  second: G,
-  third: H,
-) -> IResult<I, O2, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-  H: Fn(I) -> IResult<I, O3, E>,
-{
-  delimited(first, second, third)(input)
 }
 
 /// Helper trait for the tuple combinator.

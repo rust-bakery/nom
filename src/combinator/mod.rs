@@ -82,15 +82,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn mapc<I, O1, O2, E, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(O1) -> O2,
-{
-  map(first, second).parse(input)
-}
-
 /// Applies a function returning a `Result` over the result of a parser.
 ///
 /// ```rust
@@ -128,19 +119,6 @@ where
       Err(e) => Err(Err::Error(E::from_external_error(i, ErrorKind::MapRes, e))),
     }
   }
-}
-
-#[doc(hidden)]
-pub fn map_resc<I: Clone, O1, O2, E: FromExternalError<I, E2>, E2, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, O2, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(O1) -> Result<O2, E2>,
-{
-  map_res(first, second)(input)
 }
 
 /// Applies a function returning an `Option` over the result of a parser.
@@ -182,19 +160,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn map_optc<I: Clone, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, O2, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(O1) -> Option<O2>,
-{
-  map_opt(first, second)(input)
-}
-
 /// Applies a parser over the result of another one.
 ///
 /// ```rust
@@ -225,19 +190,6 @@ where
     let (_, o2) = second.parse(o1)?;
     Ok((input, o2))
   }
-}
-
-#[doc(hidden)]
-pub fn map_parserc<I, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, O2, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(O1) -> IResult<O1, O2, E>,
-{
-  map_parser(first, second)(input)
 }
 
 /// Creates a new parser from the output of the first parser, then apply that parser over the rest of the input.
@@ -302,14 +254,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn optc<I: Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, Option<O>, E>
-where
-  F: Fn(I) -> IResult<I, O, E>,
-{
-  opt(f)(input)
-}
-
 /// Calls the parser if the condition is met.
 ///
 /// ```rust
@@ -348,14 +292,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn condc<I, O, E: ParseError<I>, F>(input: I, b: bool, f: F) -> IResult<I, Option<O>, E>
-where
-  F: Fn(I) -> IResult<I, O, E>,
-{
-  cond(b, f)(input)
-}
-
 /// Tries to apply its parser without consuming the input.
 ///
 /// ```rust
@@ -382,14 +318,6 @@ where
       Err(e) => Err(e),
     }
   }
-}
-
-#[doc(hidden)]
-pub fn peekc<I: Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, O, E>
-where
-  F: Fn(I) -> IResult<I, O, E>,
-{
-  peek(f)(input)
 }
 
 /// returns its input if it is at the end of input data
@@ -444,14 +372,6 @@ where
       rest => rest,
     }
   }
-}
-
-#[doc(hidden)]
-pub fn completec<I: Clone, O, E: ParseError<I>, F>(input: I, f: F) -> IResult<I, O, E>
-where
-  F: Fn(I) -> IResult<I, O, E>,
-{
-  complete(f)(input)
 }
 
 /// Succeeds if all the input has been consumed by its child parser.
@@ -526,21 +446,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn verifyc<I: Clone, O1, O2, E: ParseError<I>, F, G>(
-  input: I,
-  first: F,
-  second: G,
-) -> IResult<I, O1, E>
-where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(&O2) -> bool,
-  O1: Borrow<O2>,
-  O2: ?Sized,
-{
-  verify(first, second)(input)
-}
-
 /// Returns the provided value if the child parser succeeds.
 ///
 /// ```rust
@@ -564,18 +469,6 @@ where
   F: Parser<I, O2, E>,
 {
   move |input: I| parser.parse(input).map(|(i, _)| (i, val.clone()))
-}
-
-#[doc(hidden)]
-pub fn valuec<I, O1: Clone, O2, E: ParseError<I>, F>(
-  input: I,
-  val: O1,
-  parser: F,
-) -> IResult<I, O1, E>
-where
-  F: Fn(I) -> IResult<I, O2, E>,
-{
-  value(val, parser)(input)
 }
 
 /// Succeeds if the child parser returns an error.
@@ -605,14 +498,6 @@ where
       Err(e) => Err(e),
     }
   }
-}
-
-#[doc(hidden)]
-pub fn notc<I: Clone, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, (), E>
-where
-  F: Fn(I) -> IResult<I, O, E>,
-{
-  not(parser)(input)
 }
 
 /// If the child parser was successful, return the consumed input as produced value.
@@ -647,17 +532,6 @@ where
       Err(e) => Err(e),
     }
   }
-}
-
-#[doc(hidden)]
-pub fn recognizec<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(
-  input: I,
-  parser: F,
-) -> IResult<I, I, E>
-where
-  F: Fn(I) -> IResult<I, O, E>,
-{
-  recognize(parser)(input)
 }
 
 /// if the child parser was successful, return the consumed input with the output
@@ -717,16 +591,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn consumedc<I, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, (I, O), E>
-where
-  I: Clone + Offset + Slice<RangeTo<usize>>,
-  E: ParseError<E>,
-  F: Fn(I) -> IResult<I, O, E>,
-{
-  consumed(parser)(input)
-}
-
 /// transforms an error to failure
 ///
 /// ```rust
@@ -750,14 +614,6 @@ where
     Err(Err::Error(e)) => Err(Err::Failure(e)),
     rest => rest,
   }
-}
-
-#[doc(hidden)]
-pub fn cutc<I, O, E: ParseError<I>, F>(input: I, parser: F) -> IResult<I, O, E>
-where
-  F: Fn(I) -> IResult<I, O, E>,
-{
-  cut(parser)(input)
 }
 
 /// automatically converts the child parser's result to another type
@@ -798,18 +654,6 @@ where
     Err(Err::Failure(e)) => Err(Err::Failure(e.into())),
     Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
   }
-}
-
-#[doc(hidden)]
-pub fn intoc<I, O1, O2, E1, E2, F>(input: I, parser: F) -> IResult<I, O2, E2>
-where
-  O1: Into<O2>,
-  E1: Into<E2>,
-  E1: ParseError<I>,
-  E2: ParseError<I>,
-  F: Parser<I, O1, E1>,
-{
-  into(parser)(input)
 }
 
 /// Creates an iterator from input data and a parser.

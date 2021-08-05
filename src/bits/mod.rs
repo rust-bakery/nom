@@ -58,18 +58,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn bitsc<I, O, E1: ParseError<(I, usize)> + ErrorConvert<E2>, E2: ParseError<I>, P>(
-  input: I,
-  parser: P,
-) -> IResult<I, O, E2>
-where
-  I: Slice<RangeFrom<usize>>,
-  P: FnMut((I, usize)) -> IResult<(I, usize), O, E1>,
-{
-  bits(parser)(input)
-}
-
 /// Counterpart to `bits`, `bytes` transforms its bit stream input into a byte slice for the underlying
 /// parser, allowing byte-slice parsers to work on bit streams.
 ///
@@ -120,18 +108,6 @@ where
       Err(Err::Failure(e)) => Err(Err::Failure(e.convert())),
     }
   }
-}
-
-#[doc(hidden)]
-pub fn bytesc<I, O, E1: ParseError<I> + ErrorConvert<E2>, E2: ParseError<(I, usize)>, P>(
-  input: (I, usize),
-  parser: P,
-) -> IResult<(I, usize), O, E2>
-where
-  I: Slice<RangeFrom<usize>> + Clone,
-  P: FnMut(I) -> IResult<I, O, E1>,
-{
-  bytes(parser)(input)
 }
 
 #[cfg(test)]

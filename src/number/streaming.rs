@@ -14,13 +14,13 @@ use crate::traits::{Offset, Slice};
 macro_rules! map(
   // Internal parser, do not use directly
   (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    $crate::combinator::mapc($i, move |i| {$submac!(i, $($args)*)}, $g)
+    $crate::combinator::map(move |i| {$submac!(i, $($args)*)}, $g).parse($i)
   );
   ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map!(__impl $i, $submac!($($args)*), $g);
+    map!(__impl $i, $submac!($($args)*), $g)
   );
   ($i:expr, $f:expr, $g:expr) => (
-    map!(__impl $i, call!($f), $g);
+    map!(__impl $i, call!($f), $g)
   );
 );
 

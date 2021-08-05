@@ -558,29 +558,6 @@ where
   }
 }
 
-#[doc(hidden)]
-pub fn escapedc<Input, Error, F, G, O1, O2>(
-  i: Input,
-  normal: F,
-  control_char: char,
-  escapable: G,
-) -> IResult<Input, Input, Error>
-where
-  Input: Clone
-    + crate::traits::Offset
-    + InputLength
-    + InputTake
-    + InputTakeAtPosition
-    + Slice<RangeFrom<usize>>
-    + InputIter,
-  <Input as InputIter>::Item: crate::traits::AsChar,
-  F: Fn(Input) -> IResult<Input, O1, Error>,
-  G: Fn(Input) -> IResult<Input, O2, Error>,
-  Error: ParseError<Input>,
-{
-  escaped(normal, control_char, escapable)(i)
-}
-
 /// Matches a byte string with escaped characters.
 ///
 /// * The first argument matches the normal characters (it must not match the control character)
@@ -684,32 +661,4 @@ where
     }
     Err(Err::Incomplete(Needed::Unknown))
   }
-}
-
-#[doc(hidden)]
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn escaped_transformc<Input, Error, F, G, O1, O2, ExtendItem, Output>(
-  i: Input,
-  normal: F,
-  control_char: char,
-  transform: G,
-) -> IResult<Input, Output, Error>
-where
-  Input: Clone
-    + crate::traits::Offset
-    + InputLength
-    + InputTake
-    + InputTakeAtPosition
-    + Slice<RangeFrom<usize>>
-    + InputIter,
-  Input: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <Input as InputIter>::Item: crate::traits::AsChar,
-  F: Fn(Input) -> IResult<Input, O1, Error>,
-  G: Fn(Input) -> IResult<Input, O2, Error>,
-  Error: ParseError<Input>,
-{
-  escaped_transform(normal, control_char, transform)(i)
 }
