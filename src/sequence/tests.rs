@@ -1,8 +1,8 @@
 use super::*;
+use crate::bytes::streaming::{tag, take};
 use crate::error::ErrorKind;
 use crate::internal::{Err, IResult, Needed};
 use crate::number::streaming::be_u16;
-use crate::bytes::streaming::{tag, take};
 
 #[test]
 fn single_element_tuples() {
@@ -87,7 +87,7 @@ fn complete() {
 #[test]
 fn pair_test() {
   fn pair_abc_def(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-      pair(tag("abc"), tag("def"))(i)
+    pair(tag("abc"), tag("def"))(i)
   }
 
   assert_eq!(
@@ -119,7 +119,7 @@ fn pair_test() {
 #[test]
 fn separated_pair_test() {
   fn sep_pair_abc_def(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-      separated_pair(tag("abc"), tag(","), tag("def"))(i)
+    separated_pair(tag("abc"), tag(","), tag("def"))(i)
   }
 
   assert_eq!(
@@ -151,7 +151,7 @@ fn separated_pair_test() {
 #[test]
 fn preceded_test() {
   fn preceded_abcd_efgh(i: &[u8]) -> IResult<&[u8], &[u8]> {
-      preceded(tag("abcd"), tag("efgh"))(i)
+    preceded(tag("abcd"), tag("efgh"))(i)
   }
 
   assert_eq!(
@@ -183,7 +183,7 @@ fn preceded_test() {
 #[test]
 fn terminated_test() {
   fn terminated_abcd_efgh(i: &[u8]) -> IResult<&[u8], &[u8]> {
-      terminated(tag("abcd"), tag("efgh"))(i)
+    terminated(tag("abcd"), tag("efgh"))(i)
   }
 
   assert_eq!(
@@ -215,7 +215,7 @@ fn terminated_test() {
 #[test]
 fn delimited_test() {
   fn delimited_abc_def_ghi(i: &[u8]) -> IResult<&[u8], &[u8]> {
-      delimited(tag("abc"), tag("def"), tag("ghi"))(i)
+    delimited(tag("abc"), tag("def"), tag("ghi"))(i)
   }
 
   assert_eq!(
@@ -258,7 +258,7 @@ fn delimited_test() {
 #[test]
 fn tuple_test() {
   fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8], &[u8])> {
-      tuple((be_u16, take(3u8), tag("fg")))(i)
+    tuple((be_u16, take(3u8), tag("fg")))(i)
   }
 
   assert_eq!(

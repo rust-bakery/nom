@@ -74,4 +74,3 @@ impl HexDisplay for str {
     self.as_bytes().to_hex_from(chunk_size, from)
   }
 }
-

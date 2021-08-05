@@ -12,7 +12,7 @@ use crate::{
 use crate::{
   lib::std::vec::Vec,
   multi::{
-    count, length_count, fold_many0, fold_many1, fold_many_m_n, many0, many1, many_m_n, many_till,
+    count, fold_many0, fold_many1, fold_many_m_n, length_count, many0, many1, many_m_n, many_till,
     separated_list0, separated_list1,
   },
 };
@@ -330,15 +330,9 @@ impl<I> ParseError<I> for NilError {
 }
 
 fn number(i: &[u8]) -> IResult<&[u8], u32> {
-    use crate::combinator::map_res;
+  use crate::combinator::map_res;
 
-    map_res(
-        map_res(
-            digit,
-            str::from_utf8
-        ),
-        FromStr::from_str
-    )(i)
+  map_res(map_res(digit, str::from_utf8), FromStr::from_str)(i)
 }
 
 #[test]

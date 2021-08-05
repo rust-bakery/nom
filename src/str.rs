@@ -3,9 +3,9 @@ mod test {
   #[cfg(feature = "alloc")]
   use crate::{branch::alt, bytes::complete::tag_no_case, combinator::recognize, multi::many1};
   use crate::{
-    Err, IResult,
-    error::{self, ErrorKind},
     bytes::complete::{is_a, is_not, tag, take, take_till, take_until},
+    error::{self, ErrorKind},
+    Err, IResult,
   };
 
   #[test]
@@ -507,7 +507,7 @@ mod test {
     let b = "ababcd";
 
     fn f(i: &str) -> IResult<&str, &str> {
-        recognize(many1(alt((tag("a"), tag("b")))))(i)
+      recognize(many1(alt((tag("a"), tag("b")))))(i)
     }
 
     assert_eq!(f(&a[..]), Ok((&a[6..], &a[..])));

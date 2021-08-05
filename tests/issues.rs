@@ -148,7 +148,10 @@ fn issue_848_overflow_incomplete_bits_to_bytes() {
   }
   assert_eq!(
     parser(&b""[..]),
-    Err(Err::Failure(nom::error_position!(&b""[..], ErrorKind::TooLarge)))
+    Err(Err::Failure(nom::error_position!(
+      &b""[..],
+      ErrorKind::TooLarge
+    )))
   );
 }
 

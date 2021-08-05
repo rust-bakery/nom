@@ -561,7 +561,6 @@ macro_rules! error_node_position(
   });
 );
 
-
 #[cfg(test)]
 #[cfg(feature = "alloc")]
 mod tests {
