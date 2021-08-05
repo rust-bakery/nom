@@ -91,16 +91,6 @@ macro_rules! is_a (
 /// * The first argument matches the normal characters (it must not accept the control character)
 /// * The second argument is the control character (like `\` in most languages)
 /// * The third argument matches the escaped characters
-/// # Example
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::character::complete::digit1;
-/// # fn main() {
-///  named!(esc, escaped!(call!(digit1), '\\', one_of!("\"n\\")));
-///  assert_eq!(esc(&b"123;"[..]), Ok((&b";"[..], &b"123"[..])));
-///  assert_eq!(esc(&b"12\\\"34;"[..]), Ok((&b";"[..], &b"12\\\"34"[..])));
-/// # }
-/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! escaped (
   ($i:expr, $submac1:ident!( $($args:tt)* ), $control_char: expr, $submac2:ident!( $($args2:tt)*) ) => (

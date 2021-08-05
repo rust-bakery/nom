@@ -2,8 +2,8 @@
 //!
 //! Functions recognizing specific characters
 
-#[macro_use]
-mod macros;
+#[cfg(test)]
+mod tests;
 
 pub mod complete;
 pub mod streaming;
