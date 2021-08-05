@@ -414,8 +414,6 @@ macro_rules! take_until1 (
 mod tests {
   #[cfg(feature = "alloc")]
   use crate::bytes::complete::escaped_transform;
-  #[cfg(feature = "alloc")]
-  use crate::bytes::complete::tag;
   use crate::character::is_alphabetic;
   use crate::character::streaming::{
     alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
@@ -423,6 +421,11 @@ mod tests {
   };
   use crate::error::ErrorKind;
   use crate::internal::{Err, IResult, Needed};
+  use crate::{
+      combinator::recognize,
+      sequence::delimited,
+      bytes::streaming::{tag, take}
+  };
   #[cfg(feature = "alloc")]
   use crate::branch::alt;
   #[cfg(feature = "alloc")]
@@ -706,11 +709,11 @@ mod tests {
   }
 
   #[test]
-  fn recognize() {
-    named!(
-      x,
-      recognize!(delimited!(tag!("<!--"), take!(5usize), tag!("-->")))
-    );
+  fn recognize_test() {
+    fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
+        recognize(delimited(tag("<!--"), take(5usize), tag("-->")))(i)
+    }
+
     let r = x(&b"<!-- abc --> aaa"[..]);
     assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..])));
 

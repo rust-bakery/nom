@@ -1,7 +1,7 @@
 //! Combinators applying parsers in sequence
 
-#[macro_use]
-mod macros;
+#[cfg(test)]
+mod tests;
 
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
@@ -336,22 +336,4 @@ pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.parse(i)
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn single_element_tuples() {
-    use crate::character::complete::alpha1;
-    use crate::{error::ErrorKind, Err};
-
-    let mut parser = tuple((alpha1,));
-    assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));
-    assert_eq!(
-      parser("123def"),
-      Err(Err::Error(("123def", ErrorKind::Alpha)))
-    );
-  }
 }

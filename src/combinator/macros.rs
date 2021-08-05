@@ -575,18 +575,6 @@ macro_rules! verify (
 /// If the child parser was successful, return the value.
 /// If no child parser is provided, always return the value.
 ///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # fn main() {
-///  named!(x<u8>, value!(42, delimited!(tag!("<!--"), take!(5), tag!("-->"))));
-///  named!(y<u8>, delimited!(tag!("<!--"), value!(42), tag!("-->")));
-///  let r = x(&b"<!-- abc --> aaa"[..]);
-///  assert_eq!(r, Ok((&b" aaa"[..], 42)));
-///
-///  let r2 = y(&b"<!----> aaa"[..]);
-///  assert_eq!(r2, Ok((&b" aaa"[..], 42)));
-/// # }
-/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! value (
   ($i:expr, $res:expr, $submac:ident!( $($args:tt)* )) => (
@@ -743,25 +731,6 @@ macro_rules! peek(
 /// `not!(I -> IResult<I,O>) => I -> IResult<I, ()>`
 /// returns a result only if the embedded parser returns `Error` or `Err(Err::Incomplete)`.
 /// Does not consume the input.
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::Err;
-/// # use nom::error::ErrorKind;
-/// # fn main() {
-/// named!(not_e, do_parse!(
-///     res: tag!("abc")      >>
-///          not!(char!('e')) >>
-///     (res)
-/// ));
-///
-/// let r = not_e(&b"abcd"[..]);
-/// assert_eq!(r, Ok((&b"d"[..], &b"abc"[..])));
-///
-/// let r2 = not_e(&b"abce"[..]);
-/// assert_eq!(r2, Err(Err::Error(error_position!(&b"e"[..], ErrorKind::Not))));
-/// # }
-/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! not(
   ($i:expr, $submac:ident!( $($args:tt)* )) => (
@@ -857,15 +826,6 @@ macro_rules! exact (
 
 /// `recognize!(I -> IResult<I, O> ) => I -> IResult<I, I>`
 /// if the child parser was successful, return the consumed input as produced value.
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # fn main() {
-///  named!(x, recognize!(delimited!(tag!("<!--"), take!(5), tag!("-->"))));
-///  let r = x(&b"<!-- abc --> aaa"[..]);
-///  assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..])));
-/// # }
-/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! recognize (
   ($i:expr, $submac:ident!( $($args:tt)* )) => (

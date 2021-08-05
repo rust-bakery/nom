@@ -49,22 +49,6 @@ macro_rules! bits (
 /// A partial byte remaining in the input will be ignored and the given parser will start parsing
 /// at the next full byte.
 ///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # use nom::combinator::rest;
-/// # use nom::error::{Error, ErrorKind};
-/// # fn main() {
-///
-/// named!( parse<(u8, u8, &[u8])>,  bits!( tuple!(
-///    take_bits!(4u8),
-///    take_bits!(8u8),
-///    bytes!(rest::<_, Error<_>>)
-/// )));
-///
-///  let input = &[0xde, 0xad, 0xbe, 0xaf];
-///
-///  assert_eq!(parse( input ), Ok(( &[][..], (0xd, 0xea, &[0xbe, 0xaf][..]) )));
-/// # }
 #[macro_export(local_inner_macros)]
 macro_rules! bytes (
   ($i:expr, $submac:ident!( $($args:tt)* )) => ({
@@ -79,20 +63,6 @@ macro_rules! bytes (
 ///
 /// Signature:
 /// `take_bits!(type, count) => ( (&[T], usize), U, usize) -> IResult<(&[T], usize), U>`
-///
-/// ```
-/// # #[macro_use] extern crate nom;
-/// # fn main() {
-/// named!(bits_pair<(&[u8], usize), (u8, u8)>, pair!( take_bits!(4u8), take_bits!(4u8) ) );
-/// named!( take_pair<(u8, u8)>, bits!( bits_pair ) );
-///
-/// let input = vec![0xAB, 0xCD, 0xEF];
-/// let sl    = &input[..];
-///
-/// assert_eq!(take_pair( sl ),       Ok((&sl[1..], (0xA, 0xB))) );
-/// assert_eq!(take_pair( &sl[1..] ), Ok((&sl[2..], (0xC, 0xD))) );
-/// # }
-/// ```
 #[macro_export(local_inner_macros)]
 macro_rules! take_bits (
   ($i:expr, $count:expr) => (
@@ -170,14 +140,15 @@ mod tests {
     assert_eq!(tag_bits!((sl, 0), 4u8, 0b1010), Ok(((&sl[0..], 4), 10)));
   }
 
-  named!(ch<(&[u8],usize),(u8,u8)>,
-    do_parse!(
-      tag_bits!(3u8, 0b101) >>
-      x: take_bits!(4u8)    >>
-      y: take_bits!(5u8)    >>
-      (x,y)
-    )
-  );
+  fn ch(i: (&[u8],usize)) -> IResult<(&[u8],usize), (u8, u8)> {
+      use crate::bits::streaming::{tag, take};
+
+      let (i, _) = tag(0b101, 3u8)(i)?;
+      let (i, x) = take(4u8)(i)?;
+      let (i, y) = take(5u8)(i)?;
+
+      Ok((i, (x, y)))
+  }
 
   #[test]
   fn chain_bits() {
