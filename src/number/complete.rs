@@ -11,6 +11,26 @@ use crate::sequence::{pair, tuple};
 use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
 use crate::traits::{Offset, Slice};
 
+#[doc(hidden)]
+macro_rules! map(
+  // Internal parser, do not use directly
+  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    $crate::combinator::mapc($i, move |i| {$submac!(i, $($args)*)}, $g)
+  );
+  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
+    map!(__impl $i, $submac!($($args)*), $g);
+  );
+  ($i:expr, $f:expr, $g:expr) => (
+    map!(__impl $i, call!($f), $g);
+  );
+);
+
+#[doc(hidden)]
+macro_rules! call (
+  ($i:expr, $fun:expr) => ( $fun( $i ) );
+  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
+);
+
 /// Recognizes an unsigned 1 byte integer.
 ///
 /// *Complete version*: Returns an error if there is not enough input data.

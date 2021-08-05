@@ -329,13 +329,17 @@ impl<I> ParseError<I> for NilError {
   }
 }
 
-named!(pub number<u32>, map_res!(
-  map_res!(
-    digit,
-    str::from_utf8
-  ),
-  FromStr::from_str
-));
+fn number(i: &[u8]) -> IResult<&[u8], u32> {
+    use crate::combinator::map_res;
+
+    map_res(
+        map_res(
+            digit,
+            str::from_utf8
+        ),
+        FromStr::from_str
+    )(i)
+}
 
 #[test]
 #[cfg(feature = "alloc")]

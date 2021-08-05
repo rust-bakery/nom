@@ -6,8 +6,6 @@
 //! ## Example
 //!
 //! ```rust
-//! extern crate nom;
-//!
 //! use nom::{
 //!   IResult,
 //!   bytes::complete::{tag, take_while_m_n},
@@ -55,8 +53,7 @@
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!
 //! There are a few [guides](https://github.com/Geal/nom/tree/master/doc) with more details
-//! about [the design of nom macros](https://github.com/Geal/nom/blob/master/doc/how_nom_macros_work.md),
-//! [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
+//! about [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
 //! or the [error management system](https://github.com/Geal/nom/blob/master/doc/error_management.md).
 //! You can also check out the [recipes] module that contains examples of common patterns.
 //!
@@ -111,9 +108,6 @@
 //! Here is another parser, written without using nom's combinators this time:
 //!
 //! ```rust
-//! #[macro_use]
-//! extern crate nom;
-//!
 //! use nom::{IResult, Err, Needed};
 //!
 //! # fn main() {
@@ -130,7 +124,7 @@
 //! This function takes a byte array as input, and tries to consume 4 bytes.
 //! Writing all the parsers manually, like this, is dangerous, despite Rust's
 //! safety features. There are still a lot of mistakes one can make. That's why
-//! nom provides a list of function and macros to help in developing parsers.
+//! nom provides a list of functions to help in developing parsers.
 //!
 //! With functions, you would write it like this:
 //!
@@ -140,24 +134,6 @@
 //!   take(4u8)(input)
 //! }
 //! ```
-//!
-//! With macros, you would write it like this:
-//!
-//! ```rust
-//! #[macro_use]
-//! extern crate nom;
-//!
-//! # fn main() {
-//! named!(take4, take!(4));
-//! # }
-//! ```
-//!
-//! nom has used macros for combinators from versions 1 to 4, and from version
-//! 5, it proposes new combinators as functions, but still allows the macros style
-//! (macros have been rewritten to use the functions under the hood).
-//! For new parsers, we recommend using the functions instead of macros, since
-//! rustc messages will be much easier to understand.
-//!
 //!
 //! A parser in nom is a function which, for an input type `I`, an output type `O`
 //! and an optional error type `E`, will have the following signature:
@@ -253,7 +229,6 @@
 //! **`many0`** applies a parser 0 or more times, and returns a vector of the aggregated results:
 //!
 //! ```rust
-//! # #[macro_use] extern crate nom;
 //! # #[cfg(feature = "alloc")]
 //! # fn main() {
 //! use nom::{IResult, multi::many0, bytes::complete::tag};
@@ -274,7 +249,7 @@
 //! # fn main() {}
 //! ```
 //!
-//! Here are some basic combining macros available:
+//! Here are some basic combinators available:
 //!
 //! - **`opt`**: Will make the parser optional (if it returns the `O` type, the new parser returns `Option<O>`)
 //! - **`many0`**: Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
@@ -286,7 +261,6 @@
 //! Example with `tuple`:
 //!
 //! ```rust
-//! # #[macro_use] extern crate nom;
 //! # fn main() {
 //! use nom::{error::ErrorKind, Needed,
 //! number::streaming::be_u16,
@@ -312,7 +286,6 @@
 //! thanks to the `?` operator:
 //!
 //! ```rust
-//! # #[macro_use] extern crate nom;
 //! # fn main() {
 //! use nom::{IResult, bytes::complete::tag};
 //!
