@@ -1983,4 +1983,87 @@ mod tests {
       Err(Err::Incomplete(Needed::new(1)))
     );
   }
+
+  #[test]
+  fn configurable_endianness() {
+    use crate::number::Endianness;
+
+    fn be_tst16(i: &[u8]) -> IResult<&[u8], u16> {
+      u16(Endianness::Big)(i)
+    }
+    fn le_tst16(i: &[u8]) -> IResult<&[u8], u16> {
+      u16(Endianness::Little)(i)
+    }
+    assert_eq!(be_tst16(&[0x80, 0x00]), Ok((&b""[..], 32_768_u16)));
+    assert_eq!(le_tst16(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
+
+    fn be_tst32(i: &[u8]) -> IResult<&[u8], u32> {
+      u32(Endianness::Big)(i)
+    }
+    fn le_tst32(i: &[u8]) -> IResult<&[u8], u32> {
+      u32(Endianness::Little)(i)
+    }
+    assert_eq!(
+      be_tst32(&[0x12, 0x00, 0x60, 0x00]),
+      Ok((&b""[..], 302_014_464_u32))
+    );
+    assert_eq!(
+      le_tst32(&[0x12, 0x00, 0x60, 0x00]),
+      Ok((&b""[..], 6_291_474_u32))
+    );
+
+    fn be_tst64(i: &[u8]) -> IResult<&[u8], u64> {
+      u64(Endianness::Big)(i)
+    }
+    fn le_tst64(i: &[u8]) -> IResult<&[u8], u64> {
+      u64(Endianness::Little)(i)
+    }
+    assert_eq!(
+      be_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 1_297_142_246_100_992_000_u64))
+    );
+    assert_eq!(
+      le_tst64(&[0x12, 0x00, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 36_028_874_334_666_770_u64))
+    );
+
+    fn be_tsti16(i: &[u8]) -> IResult<&[u8], i16> {
+      i16(Endianness::Big)(i)
+    }
+    fn le_tsti16(i: &[u8]) -> IResult<&[u8], i16> {
+      i16(Endianness::Little)(i)
+    }
+    assert_eq!(be_tsti16(&[0x00, 0x80]), Ok((&b""[..], 128_i16)));
+    assert_eq!(le_tsti16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
+
+    fn be_tsti32(i: &[u8]) -> IResult<&[u8], i32> {
+      i32(Endianness::Big)(i)
+    }
+    fn le_tsti32(i: &[u8]) -> IResult<&[u8], i32> {
+      i32(Endianness::Little)(i)
+    }
+    assert_eq!(
+      be_tsti32(&[0x00, 0x12, 0x60, 0x00]),
+      Ok((&b""[..], 1_204_224_i32))
+    );
+    assert_eq!(
+      le_tsti32(&[0x00, 0x12, 0x60, 0x00]),
+      Ok((&b""[..], 6_296_064_i32))
+    );
+
+    fn be_tsti64(i: &[u8]) -> IResult<&[u8], i64> {
+      i64(Endianness::Big)(i)
+    }
+    fn le_tsti64(i: &[u8]) -> IResult<&[u8], i64> {
+      i64(Endianness::Little)(i)
+    }
+    assert_eq!(
+      be_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 71_881_672_479_506_432_i64))
+    );
+    assert_eq!(
+      le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
+      Ok((&b""[..], 36_028_874_334_732_032_i64))
+    );
+  }
 }
