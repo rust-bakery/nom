@@ -81,12 +81,6 @@ jobs:
           command: build
           args: --verbose --no-default-features --features "lexical"
 
-      - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose --no-default-features --features "lexical"
-
   bench:
     name: Bench
     runs-on: ubuntu-latest
