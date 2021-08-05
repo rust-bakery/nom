@@ -411,7 +411,6 @@ pub enum ErrorKind {
   Verify,
   TakeTill1,
   TakeWhileMN,
-  ParseTo,
   TooLarge,
   Many0Count,
   Many1Count,
@@ -471,12 +470,11 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Verify                    => 66,
     ErrorKind::TakeTill1                 => 67,
     ErrorKind::TakeWhileMN               => 69,
-    ErrorKind::ParseTo                   => 70,
-    ErrorKind::TooLarge                  => 71,
-    ErrorKind::Many0Count                => 72,
-    ErrorKind::Many1Count                => 73,
-    ErrorKind::Float                     => 74,
-    ErrorKind::Satisfy                   => 75,
+    ErrorKind::TooLarge                  => 70,
+    ErrorKind::Many0Count                => 71,
+    ErrorKind::Many1Count                => 72,
+    ErrorKind::Float                     => 73,
+    ErrorKind::Satisfy                   => 74,
   }
 }
 
@@ -533,7 +531,6 @@ impl ErrorKind {
       ErrorKind::Verify                    => "predicate verification",
       ErrorKind::TakeTill1                 => "TakeTill1",
       ErrorKind::TakeWhileMN               => "TakeWhileMN",
-      ErrorKind::ParseTo                   => "Parse string to the specified type",
       ErrorKind::TooLarge                  => "Needed data size is too large",
       ErrorKind::Many0Count                => "Count occurrence of >=0 patterns",
       ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
