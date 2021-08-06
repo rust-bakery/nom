@@ -1,5 +1,4 @@
 #![cfg(feature = "alloc")]
-extern crate nom;
 
 use nom::{
   branch::alt,

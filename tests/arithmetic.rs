@@ -1,5 +1,3 @@
-extern crate nom;
-
 use nom::{
   branch::alt,
   bytes::complete::tag,

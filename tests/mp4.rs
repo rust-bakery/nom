@@ -247,7 +247,7 @@ fn brand_name(input: &[u8]) -> IResult<&[u8], &str> {
   map_res(take(4_usize), str::from_utf8)(input)
 }
 
-fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType> {
+fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType<'_>> {
   let (i, name) = brand_name(input)?;
   let (i, version) = take(4_usize)(i)?;
   let (i, brands) = many0(brand_name)(i)?;

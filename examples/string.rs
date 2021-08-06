@@ -11,9 +11,6 @@
 
 #![cfg(feature = "alloc")]
 
-extern crate jemallocator;
-extern crate nom;
-
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
