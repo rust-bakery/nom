@@ -1,22 +1,18 @@
-#[cfg(feature = "alloc")]
-use crate::branch::alt;
-#[cfg(feature = "alloc")]
-use crate::bytes::complete::tag;
-#[cfg(feature = "alloc")]
-use crate::bytes::complete::{escaped, escaped_transform};
 use crate::character::is_alphabetic;
 use crate::character::streaming::{
   alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
   multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
 };
-#[cfg(feature = "alloc")]
-use crate::combinator::{map, value};
 use crate::error::ErrorKind;
 use crate::internal::{Err, IResult, Needed};
 #[cfg(feature = "alloc")]
-use crate::lib::std::string::String;
-#[cfg(feature = "alloc")]
-use crate::lib::std::vec::Vec;
+use crate::{
+  branch::alt,
+  bytes::complete::{escaped, escaped_transform, tag},
+  combinator::{map, value},
+  lib::std::string::String,
+  lib::std::vec::Vec,
+};
 
 #[test]
 fn is_a() {
