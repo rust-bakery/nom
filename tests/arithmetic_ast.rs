@@ -1,5 +1,3 @@
-extern crate nom;
-
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 
@@ -33,7 +31,7 @@ pub enum Oper {
 }
 
 impl Display for Expr {
-  fn fmt(&self, format: &mut Formatter) -> fmt::Result {
+  fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
     use self::Expr::*;
     match *self {
       Value(val) => write!(format, "{}", val),
@@ -47,7 +45,7 @@ impl Display for Expr {
 }
 
 impl Debug for Expr {
-  fn fmt(&self, format: &mut Formatter) -> fmt::Result {
+  fn fmt(&self, format: &mut Formatter<'_>) -> fmt::Result {
     use self::Expr::*;
     match *self {
       Value(val) => write!(format, "{}", val),

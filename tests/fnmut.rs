@@ -1,5 +1,3 @@
-extern crate nom;
-
 use nom::{
   bytes::complete::tag,
   multi::{many0, many0_count},

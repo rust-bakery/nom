@@ -1,7 +1,5 @@
-extern crate nom;
 #[macro_use]
 extern crate criterion;
-extern crate jemallocator;
 
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;

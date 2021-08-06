@@ -1,5 +1,3 @@
-extern crate nom;
-
 use nom::{
   character::complete::{alphanumeric1 as alphanumeric, line_ending as eol},
   multi::many0,

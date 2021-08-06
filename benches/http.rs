@@ -1,8 +1,5 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
-extern crate criterion;
-extern crate jemallocator;
-
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
@@ -70,7 +67,7 @@ fn is_version(c: u8) -> bool {
   c >= b'0' && c <= b'9' || c == b'.'
 }
 
-fn request_line(input: &[u8]) -> IResult<&[u8], Request> {
+fn request_line(input: &[u8]) -> IResult<&[u8], Request<'_>> {
   let (input, method) = take_while1(is_token)(input)?;
   let (input, _) = take_while1(is_space)(input)?;
   let (input, uri) = take_while1(is_not_space)(input)?;
@@ -96,7 +93,7 @@ fn message_header_value(input: &[u8]) -> IResult<&[u8], &[u8]> {
   Ok((input, data))
 }
 
-fn message_header(input: &[u8]) -> IResult<&[u8], Header> {
+fn message_header(input: &[u8]) -> IResult<&[u8], Header<'_>> {
   let (input, name) = take_while1(is_token)(input)?;
   let (input, _) = char(':')(input)?;
   let (input, value) = many1(message_header_value)(input)?;
@@ -104,7 +101,7 @@ fn message_header(input: &[u8]) -> IResult<&[u8], Header> {
   Ok((input, Header{ name, value }))
 }
 
-fn request(input: &[u8]) -> IResult<&[u8], (Request, Vec<Header>)> {
+fn request(input: &[u8]) -> IResult<&[u8], (Request<'_>, Vec<Header<'_>>)> {
   let (input, req) = request_line(input)?;
   let (input, h) = many1(message_header)(input)?;
   let (input, _) = line_ending(input)?;
@@ -113,7 +110,7 @@ fn request(input: &[u8]) -> IResult<&[u8], (Request, Vec<Header>)> {
 }
 
 
-fn parse(data: &[u8]) -> Option<Vec<(Request, Vec<Header>)>> {
+fn parse(data: &[u8]) -> Option<Vec<(Request<'_>, Vec<Header<'_>>)>> {
   let mut buf = &data[..];
   let mut v = Vec::new();
   loop {

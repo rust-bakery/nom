@@ -386,9 +386,7 @@
 extern crate alloc;
 #[cfg(doctest)]
 extern crate doc_comment;
-#[cfg(feature = "lexical")]
-extern crate lexical_core;
-extern crate memchr;
+
 #[cfg(nightly)]
 extern crate test;
 

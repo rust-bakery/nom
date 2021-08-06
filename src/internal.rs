@@ -176,7 +176,7 @@ impl<E> fmt::Display for Err<E>
 where
   E: fmt::Debug,
 {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       Err::Incomplete(Needed::Size(u)) => write!(f, "Parsing requires {} bytes/chars", u),
       Err::Incomplete(Needed::Unknown) => write!(f, "Parsing requires more data"),
