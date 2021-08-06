@@ -127,7 +127,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --verbose --features "std lexical"
+          args: --verbose --features "std lexical docsrs"
 
   fmt:
     name: Check formatting
