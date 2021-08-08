@@ -23,7 +23,7 @@ fn atom<'a>(_tomb: &'a mut ()) -> impl FnMut(&'a [u8]) -> IResult<&'a [u8], Stri
 fn list<'a>(i: &'a [u8], tomb: &'a mut ()) -> IResult<&'a [u8], String> {
   delimited(
     char('('),
-    fold_many0(atom(tomb), String::new(), |acc: String, next: String| {
+    fold_many0(atom(tomb), String::new, |acc: String, next: String| {
       acc + next.as_str()
     }),
     char(')'),

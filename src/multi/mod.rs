@@ -596,7 +596,7 @@ where
 /// the results using a given function and initial value.
 /// # Arguments
 /// * `f` The parser to apply.
-/// * `init` The initial value.
+/// * `init` A function returning the initial value.
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 /// ```rust
@@ -608,7 +608,7 @@ where
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
 ///   fold_many0(
 ///     tag("abc"),
-///     Vec::new(),
+///     Vec::new,
 ///     |mut acc: Vec<_>, item| {
 ///       acc.push(item);
 ///       acc
@@ -621,20 +621,20 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
-pub fn fold_many0<I, O, E, F, G, R>(
+pub fn fold_many0<I, O, E, F, G, H, R>(
   mut f: F,
-  init: R,
+  mut init: H,
   mut g: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
   G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
   E: ParseError<I>,
-  R: Clone,
 {
   move |i: I| {
-    let mut res = init.clone();
+    let mut res = init();
     let mut input = i;
 
     loop {
@@ -666,7 +666,7 @@ where
 /// once.
 /// # Arguments
 /// * `f` The parser to apply.
-/// * `init` The initial value.
+/// * `init` A function returning the initial value.
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 /// ```rust
@@ -678,7 +678,7 @@ where
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
 ///   fold_many1(
 ///     tag("abc"),
-///     Vec::new(),
+///     Vec::new,
 ///     |mut acc: Vec<_>, item| {
 ///       acc.push(item);
 ///       acc
@@ -691,21 +691,21 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
 /// ```
-pub fn fold_many1<I, O, E, F, G, R>(
+pub fn fold_many1<I, O, E, F, G, H, R>(
   mut f: F,
-  init: R,
+  mut init: H,
   mut g: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
   G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
   E: ParseError<I>,
-  R: Clone,
 {
   move |i: I| {
     let _i = i.clone();
-    let init = init.clone();
+    let init = init();
     match f.parse(_i) {
       Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
       Err(e) => Err(e),
@@ -745,7 +745,7 @@ where
 /// * `m` The minimum number of iterations.
 /// * `n` The maximum number of iterations.
 /// * `f` The parser to apply.
-/// * `init` The initial value.
+/// * `init` A function returning the initial value.
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 /// ```rust
@@ -759,7 +759,7 @@ where
 ///     0,
 ///     2,
 ///     tag("abc"),
-///     Vec::new(),
+///     Vec::new,
 ///     |mut acc: Vec<_>, item| {
 ///       acc.push(item);
 ///       acc
@@ -773,22 +773,22 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold_many_m_n<I, O, E, F, G, R>(
+pub fn fold_many_m_n<I, O, E, F, G, H, R>(
   min: usize,
   max: usize,
   mut parse: F,
-  init: R,
+  mut init: H,
   mut fold: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + PartialEq,
   F: Parser<I, O, E>,
   G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
   E: ParseError<I>,
-  R: Clone,
 {
   move |mut input: I| {
-    let mut acc = init.clone();
+    let mut acc = init();
     for count in 0..max {
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {

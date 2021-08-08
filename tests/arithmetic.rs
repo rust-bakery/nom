@@ -37,7 +37,7 @@ fn term(i: &str) -> IResult<&str, i64> {
 
   fold_many0(
     pair(alt((char('*'), char('/'))), factor),
-    init,
+    move || init,
     |acc, (op, val): (char, i64)| {
       if op == '*' {
         acc * val
@@ -53,7 +53,7 @@ fn expr(i: &str) -> IResult<&str, i64> {
 
   fold_many0(
     pair(alt((char('+'), char('-'))), term),
-    init,
+    move || init,
     |acc, (op, val): (char, i64)| {
       if op == '+' {
         acc + val

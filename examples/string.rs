@@ -145,7 +145,7 @@ where
     // Our parser function– parses a single string fragment
     parse_fragment,
     // Our init value, an empty string
-    String::new(),
+    String::new,
     // Our folding function. For each fragment, append the fragment to the
     // string.
     |mut string, fragment| {
