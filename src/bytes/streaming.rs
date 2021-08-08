@@ -472,6 +472,51 @@ where
   }
 }
 
+/// Returns the non empty input slice up to the first occurrence of the pattern.
+///
+/// It doesn't consume the pattern.
+///
+/// # Streaming Specific
+/// *Streaming version* will return a `Err::Incomplete(Needed::new(N))` if the input doesn't
+/// contain the pattern or if the input is smaller than the pattern.
+/// # Example
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::bytes::streaming::take_until1;
+///
+/// fn until_eof(s: &str) -> IResult<&str, &str> {
+///   take_until1("eof")(s)
+/// }
+///
+/// assert_eq!(until_eof("hello, worldeof"), Ok(("eof", "hello, world")));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Incomplete(Needed::Unknown)));
+/// assert_eq!(until_eof("hello, worldeo"), Err(Err::Incomplete(Needed::Unknown)));
+/// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
+/// assert_eq!(until_eof("eof"),  Err(Err::Error(Error::new("eof", ErrorKind::TakeUntil))));
+/// ```
+pub fn take_until1<T, Input, Error: ParseError<Input>>(
+  tag: T,
+) -> impl Fn(Input) -> IResult<Input, Input, Error>
+where
+  Input: InputTake + InputLength + FindSubstring<T>,
+  T: Clone,
+{
+  move |i: Input| {
+    let t = tag.clone();
+
+    let res: IResult<_, _, Error> = match i.find_substring(t) {
+      None => Err(Err::Incomplete(Needed::Unknown)),
+      Some(0) => Err(Err::Error(Error::from_error_kind(
+          i,
+          ErrorKind::TakeUntil,
+      ))),
+      Some(index) => Ok(i.take_split(index)),
+    };
+    res
+  }
+}
+
 /// Matches a byte string with escaped characters.
 ///
 /// * The first argument matches the normal characters (it must not accept the control character)
