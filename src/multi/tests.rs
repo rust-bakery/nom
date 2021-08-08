@@ -422,10 +422,10 @@ fn fold_many0_test() {
     acc
   }
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold_many0(tag("abcd"), Vec::new(), fold_into_vec)(i)
+    fold_many0(tag("abcd"), Vec::new, fold_into_vec)(i)
   }
   fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold_many0(tag(""), Vec::new(), fold_into_vec)(i)
+    fold_many0(tag(""), Vec::new, fold_into_vec)(i)
   }
 
   assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
@@ -454,7 +454,7 @@ fn fold_many1_test() {
     acc
   }
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold_many1(tag("abcd"), Vec::new(), fold_into_vec)(i)
+    fold_many1(tag("abcd"), Vec::new, fold_into_vec)(i)
   }
 
   let a = &b"abcdef"[..];
@@ -481,7 +481,7 @@ fn fold_many_m_n_test() {
     acc
   }
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold_many_m_n(2, 4, tag("Abcd"), Vec::new(), fold_into_vec)(i)
+    fold_many_m_n(2, 4, tag("Abcd"), Vec::new, fold_into_vec)(i)
   }
 
   let a = &b"Abcdef"[..];

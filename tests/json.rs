@@ -83,7 +83,7 @@ fn character(input: &str) -> IResult<&str, char> {
 fn string(input: &str) -> IResult<&str, String> {
   delimited(
     char('"'),
-    fold_many0(character, String::new(), |mut string, c| {
+    fold_many0(character, String::new, |mut string, c| {
       string.push(c);
       string
     }),
