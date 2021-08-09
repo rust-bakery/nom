@@ -562,10 +562,15 @@ where
     let mut i = input.clone();
 
     while i.input_len() > 0 {
+      let current_len = i.input_len();
+
       match normal.parse(i.clone()) {
         Ok((i2, _)) => {
           if i2.input_len() == 0 {
             return Err(Err::Incomplete(Needed::Unknown));
+          } else if i2.input_len() == current_len {
+            let index = input.offset(&i2);
+            return Ok(input.take_split(index));
           } else {
             i = i2;
           }
@@ -666,12 +671,15 @@ where
     let i = input.clone();
 
     while index < i.input_len() {
+      let current_len = i.input_len();
       let remainder = i.slice(index..);
       match normal.parse(remainder.clone()) {
         Ok((i2, o)) => {
           o.extend_into(&mut res);
           if i2.input_len() == 0 {
             return Err(Err::Incomplete(Needed::Unknown));
+          } else if i2.input_len() == current_len {
+            return Ok((remainder, res));
           } else {
             index = input.offset(&i2);
           }
