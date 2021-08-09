@@ -39,18 +39,20 @@ use core::num::NonZeroUsize;
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
   move |mut i: I| {
     let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
     loop {
+      let len = i.input_len();
       match f.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, acc)),
         Err(e) => return Err(e),
         Ok((i1, o)) => {
-          if i1 == i {
+          // infinite loop check: the parser must always consume
+          if i1.input_len() == len {
             return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
           }
 
@@ -92,7 +94,7 @@ where
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many1<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
@@ -105,11 +107,13 @@ where
       i = i1;
 
       loop {
+        let len = i.input_len();
         match f.parse(i.clone()) {
           Err(Err::Error(_)) => return Ok((i, acc)),
           Err(e) => return Err(e),
           Ok((i1, o)) => {
-            if i1 == i {
+            // infinite loop check: the parser must always consume
+            if i1.input_len() == len {
               return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
             }
 
@@ -147,7 +151,7 @@ pub fn many_till<I, O, P, E, F, G>(
   mut g: G,
 ) -> impl FnMut(I) -> IResult<I, (Vec<O>, P), E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   G: Parser<I, P, E>,
   E: ParseError<I>,
@@ -155,6 +159,7 @@ where
   move |mut i: I| {
     let mut res = crate::lib::std::vec::Vec::new();
     loop {
+      let len = i.input_len();
       match g.parse(i.clone()) {
         Ok((i1, o)) => return Ok((i1, (res, o))),
         Err(Err::Error(_)) => {
@@ -162,8 +167,8 @@ where
             Err(Err::Error(err)) => return Err(Err::Error(E::append(i, ErrorKind::ManyTill, err))),
             Err(e) => return Err(e),
             Ok((i1, o)) => {
-              // loop trip must always consume (otherwise infinite loops)
-              if i1 == i {
+              // infinite loop check: the parser must always consume
+              if i1.input_len() == len {
                 return Err(Err::Error(E::from_error_kind(i1, ErrorKind::ManyTill)));
               }
 
@@ -206,7 +211,7 @@ pub fn separated_list0<I, O, O2, E, F, G>(
   mut f: F,
 ) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   G: Parser<I, O2, E>,
   E: ParseError<I>,
@@ -224,11 +229,13 @@ where
     }
 
     loop {
+      let len = i.input_len();
       match sep.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, res)),
         Err(e) => return Err(e),
         Ok((i1, _)) => {
-          if i1 == i {
+          // infinite loop check: the parser must always consume
+          if i1.input_len() == len {
             return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
           }
 
@@ -275,7 +282,7 @@ pub fn separated_list1<I, O, O2, E, F, G>(
   mut f: F,
 ) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   G: Parser<I, O2, E>,
   E: ParseError<I>,
@@ -293,11 +300,13 @@ where
     }
 
     loop {
+      let len = i.input_len();
       match sep.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, res)),
         Err(e) => return Err(e),
         Ok((i1, _)) => {
-          if i1 == i {
+          // infinite loop check: the parser must always consume
+          if i1.input_len() == len {
             return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
           }
 
@@ -346,7 +355,7 @@ pub fn many_m_n<I, O, E, F>(
   mut parse: F,
 ) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
@@ -357,10 +366,11 @@ where
 
     let mut res = crate::lib::std::vec::Vec::with_capacity(min);
     for count in 0..max {
+      let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
-          // do not allow parsers that do not consume input (causes infinite loops)
-          if tail == input {
+          // infinite loop check: the parser must always consume
+          if tail.input_len() == len {
             return Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyMN)));
           }
 
@@ -405,7 +415,7 @@ where
 /// ```
 pub fn many0_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
@@ -415,10 +425,11 @@ where
 
     loop {
       let input_ = input.clone();
+      let len = input.input_len();
       match f.parse(input_) {
         Ok((i, _)) => {
-          //  loop trip must always consume (otherwise infinite loops)
-          if i == input {
+          // infinite loop check: the parser must always consume
+          if i.input_len() == len {
             return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many0Count)));
           }
 
@@ -457,7 +468,7 @@ where
 /// ```
 pub fn many1_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
 {
@@ -471,12 +482,14 @@ where
         let mut input = i1;
 
         loop {
+          let len = input.input_len();
           let input_ = input.clone();
           match f.parse(input_) {
             Err(Err::Error(_)) => return Ok((input, count)),
             Err(e) => return Err(e),
             Ok((i, _)) => {
-              if i == input {
+              // infinite loop check: the parser must always consume
+              if i.input_len() == len {
                 return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1Count)));
               }
 
@@ -630,7 +643,7 @@ pub fn fold_many0<I, O, E, F, G, H, R>(
   mut g: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   G: FnMut(R, O) -> R,
   H: FnMut() -> R,
@@ -642,10 +655,11 @@ where
 
     loop {
       let i_ = input.clone();
+      let len = input.input_len();
       match f.parse(i_) {
         Ok((i, o)) => {
-          // loop trip must always consume (otherwise infinite loops)
-          if i == input {
+          // infinite loop check: the parser must always consume
+          if i.input_len() == len {
             return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many0)));
           }
 
@@ -700,7 +714,7 @@ pub fn fold_many1<I, O, E, F, G, H, R>(
   mut g: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   G: FnMut(R, O) -> R,
   H: FnMut() -> R,
@@ -718,13 +732,15 @@ where
 
         loop {
           let _input = input.clone();
+          let len = input.input_len();
           match f.parse(_input) {
             Err(Err::Error(_)) => {
               break;
             }
             Err(e) => return Err(e),
             Ok((i, o)) => {
-              if i == input {
+              // infinite loop check: the parser must always consume
+              if i.input_len() == len {
                 return Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1)));
               }
 
@@ -784,7 +800,7 @@ pub fn fold_many_m_n<I, O, E, F, G, H, R>(
   mut fold: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
-  I: Clone + PartialEq,
+  I: Clone + InputLength,
   F: Parser<I, O, E>,
   G: FnMut(R, O) -> R,
   H: FnMut() -> R,
@@ -793,10 +809,11 @@ where
   move |mut input: I| {
     let mut acc = init();
     for count in 0..max {
+      let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
-          // do not allow parsers that do not consume input (causes infinite loops)
-          if tail == input {
+          // infinite loop check: the parser must always consume
+          if tail.input_len() == len {
             return Err(Err::Error(E::from_error_kind(tail, ErrorKind::ManyMN)));
           }
 
