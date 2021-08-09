@@ -422,7 +422,8 @@ impl<'a> InputTake for &'a str {
   // return byte index
   #[inline]
   fn take_split(&self, count: usize) -> (Self, Self) {
-    (&self[count..], &self[..count])
+    let (prefix, suffix) = self.split_at(count);
+    (suffix, prefix)
   }
 }
 
@@ -566,7 +567,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
     P: Fn(Self::Item) -> bool,
   {
     match (0..self.len()).find(|b| predicate(self[*b])) {
-      Some(i) => Ok((&self[i..], &self[..i])),
+      Some(i) => Ok(self.take_split(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -581,7 +582,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some(i) => Ok((&self[i..], &self[..i])),
+      Some(i) => Ok(self.take_split(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -594,7 +595,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
     P: Fn(Self::Item) -> bool,
   {
     match (0..self.len()).find(|b| predicate(self[*b])) {
-      Some(i) => Ok((&self[i..], &self[..i])),
+      Some(i) => Ok(self.take_split(i)),
       None => Ok(self.take_split(self.input_len())),
     }
   }
@@ -609,7 +610,7 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
   {
     match (0..self.len()).find(|b| predicate(self[*b])) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some(i) => Ok((&self[i..], &self[..i])),
+      Some(i) => Ok(self.take_split(i)),
       None => {
         if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
@@ -629,7 +630,7 @@ impl<'a> InputTakeAtPosition for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(i) => Ok((&self[i..], &self[..i])),
+      Some(i) => Ok(self.take_split(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -644,7 +645,7 @@ impl<'a> InputTakeAtPosition for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some(i) => Ok((&self[i..], &self[..i])),
+      Some(i) => Ok(self.take_split(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -657,7 +658,7 @@ impl<'a> InputTakeAtPosition for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(i) => Ok((&self[i..], &self[..i])),
+      Some(i) => Ok(self.take_split(i)),
       None => Ok(self.take_split(self.input_len())),
     }
   }
@@ -672,7 +673,7 @@ impl<'a> InputTakeAtPosition for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some(i) => Ok((&self[i..], &self[..i])),
+      Some(i) => Ok(self.take_split(i)),
       None => {
         if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
