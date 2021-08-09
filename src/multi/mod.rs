@@ -351,8 +351,11 @@ where
   E: ParseError<I>,
 {
   move |mut input: I| {
-    let mut res = crate::lib::std::vec::Vec::with_capacity(min);
+    if min > max {
+        return Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyMN)));
+    }
 
+    let mut res = crate::lib::std::vec::Vec::with_capacity(min);
     for count in 0..max {
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
