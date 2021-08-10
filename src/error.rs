@@ -28,7 +28,7 @@ pub trait ParseError<I>: Sized {
   }
 
   /// Combines two existing errors. This function is used to compare errors
-  /// generated in various branches of [alt]
+  /// generated in various branches of `alt`.
   fn or(self, other: Self) -> Self {
     other
   }
@@ -45,7 +45,7 @@ pub trait ContextError<I>: Sized {
   }
 }
 
-/// This trait is required by the [map_res] combinator to integrate
+/// This trait is required by the `map_res` combinator to integrate
 /// error types from external functions, like [std::str::FromStr]
 pub trait FromExternalError<I, E> {
   /// Creates a new error from an input position, an [ErrorKind] indicating the
