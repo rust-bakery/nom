@@ -361,7 +361,7 @@ where
 {
   move |mut input: I| {
     if min > max {
-        return Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyMN)));
+        return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
     }
 
     let mut res = crate::lib::std::vec::Vec::with_capacity(min);
