@@ -442,12 +442,9 @@ pub mod lib {
 pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
-pub use self::util::*;
 
 pub use self::str::*;
 
-#[macro_use]
-mod util;
 
 #[macro_use]
 pub mod error;
