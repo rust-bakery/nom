@@ -71,14 +71,14 @@ where
 /// assert_eq!(parser.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
 /// # }
 /// ```
-pub fn map<I, O1, O2, E, F, G>(mut first: F, mut second: G) -> impl FnMut(I) -> IResult<I, O2, E>
+pub fn map<I, O1, O2, E, F, G>(mut parser: F, mut f: G) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
   G: FnMut(O1) -> O2,
 {
   move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    Ok((input, second(o1)))
+    let (input, o1) = parser.parse(input)?;
+    Ok((input, f(o1)))
   }
 }
 
@@ -104,8 +104,8 @@ where
 /// # }
 /// ```
 pub fn map_res<I: Clone, O1, O2, E: FromExternalError<I, E2>, E2, F, G>(
-  mut first: F,
-  mut second: G,
+  mut parser: F,
+  mut f: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
@@ -113,8 +113,8 @@ where
 {
   move |input: I| {
     let i = input.clone();
-    let (input, o1) = first.parse(input)?;
-    match second(o1) {
+    let (input, o1) = parser.parse(input)?;
+    match f(o1) {
       Ok(o2) => Ok((input, o2)),
       Err(e) => Err(Err::Error(E::from_external_error(i, ErrorKind::MapRes, e))),
     }
@@ -143,8 +143,8 @@ where
 /// # }
 /// ```
 pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(
-  mut first: F,
-  mut second: G,
+  mut parser: F,
+  mut f: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
@@ -152,8 +152,8 @@ where
 {
   move |input: I| {
     let i = input.clone();
-    let (input, o1) = first.parse(input)?;
-    match second(o1) {
+    let (input, o1) = parser.parse(input)?;
+    match f(o1) {
       Some(o2) => Ok((input, o2)),
       None => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapOpt))),
     }
@@ -178,16 +178,16 @@ where
 /// # }
 /// ```
 pub fn map_parser<I, O1, O2, E: ParseError<I>, F, G>(
-  mut first: F,
-  mut second: G,
+  mut parser: F,
+  mut applied_parser: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
   G: Parser<O1, O2, E>,
 {
   move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    let (_, o2) = second.parse(o1)?;
+    let (input, o1) = parser.parse(input)?;
+    let (_, o2) = applied_parser.parse(o1)?;
     Ok((input, o2))
   }
 }
@@ -209,8 +209,8 @@ where
 /// # }
 /// ```
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(
-  mut first: F,
-  second: G,
+  mut parser: F,
+  applied_parser: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
@@ -218,8 +218,8 @@ where
   H: Parser<I, O2, E>,
 {
   move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    second(o1).parse(input)
+    let (input, o1) = parser.parse(input)?;
+    applied_parser(o1).parse(input)
   }
 }
 
