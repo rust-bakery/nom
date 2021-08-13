@@ -16,7 +16,7 @@ jobs:
           - stable
           - beta
           - nightly
-          - 1.44.0
+          - 1.46.0
 
         features:
           - ''
