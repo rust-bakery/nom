@@ -984,15 +984,6 @@ macro_rules! impl_fn_slice {
 }
 
 macro_rules! slice_range_impl {
-  ( BitSlice, $ty:ty ) => {
-    impl<'a, O, T> Slice<$ty> for &'a BitSlice<O, T>
-    where
-      O: BitOrder,
-      T: BitStore,
-    {
-      impl_fn_slice!($ty);
-    }
-  };
   ( [ $for_type:ident ], $ty:ty ) => {
     impl<'a, $for_type> Slice<$ty> for &'a [$for_type] {
       impl_fn_slice!($ty);
@@ -1006,12 +997,6 @@ macro_rules! slice_range_impl {
 }
 
 macro_rules! slice_ranges_impl {
-  ( BitSlice ) => {
-    slice_range_impl! {BitSlice, Range<usize>}
-    slice_range_impl! {BitSlice, RangeTo<usize>}
-    slice_range_impl! {BitSlice, RangeFrom<usize>}
-    slice_range_impl! {BitSlice, RangeFull}
-  };
   ( [ $for_type:ident ] ) => {
     slice_range_impl! {[$for_type], Range<usize>}
     slice_range_impl! {[$for_type], RangeTo<usize>}
