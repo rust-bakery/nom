@@ -630,7 +630,8 @@ impl<'a> InputTakeAtPosition for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(i) => Ok(self.take_split(i)),
+      // find() returns a byte index that is already in the slice at a char boundary
+      Some(i) => unsafe {Ok((self.get_unchecked(i..), self.get_unchecked(..i)))},
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -645,7 +646,8 @@ impl<'a> InputTakeAtPosition for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some(i) => Ok(self.take_split(i)),
+      // find() returns a byte index that is already in the slice at a char boundary
+      Some(i) => unsafe {Ok((self.get_unchecked(i..), self.get_unchecked(..i)))},
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -658,8 +660,10 @@ impl<'a> InputTakeAtPosition for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(i) => Ok(self.take_split(i)),
-      None => Ok(self.take_split(self.input_len())),
+      // find() returns a byte index that is already in the slice at a char boundary
+      Some(i) => unsafe {Ok((self.get_unchecked(i..), self.get_unchecked(..i)))},
+      // the end of slice is a char boundary
+      None => unsafe {Ok((self.get_unchecked(self.len()..), self.get_unchecked(..self.len())))},
     }
   }
 
@@ -673,12 +677,14 @@ impl<'a> InputTakeAtPosition for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some(i) => Ok(self.take_split(i)),
+      // find() returns a byte index that is already in the slice at a char boundary
+      Some(i) => unsafe {Ok((self.get_unchecked(i..), self.get_unchecked(..i)))},
       None => {
         if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
-          Ok(self.take_split(self.input_len()))
+          // the end of slice is a char boundary
+          unsafe {Ok((self.get_unchecked(self.len()..), self.get_unchecked(..self.len())))}
         }
       }
     }
