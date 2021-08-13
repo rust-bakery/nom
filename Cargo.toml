@@ -31,7 +31,7 @@ include = [
 alloc = []
 std = ["alloc", "memchr/use_std"]
 default = ["std", "lexical"]
-lexical = ["lexical-core", "bitflags"]
+lexical = ["lexical-core"]
 docsrs = []
 
 [dependencies.memchr]
@@ -40,10 +40,6 @@ default-features = false
 
 [dependencies.lexical-core]
 version = "^0.7.5"
-optional = true
-
-[dependencies.bitflags]
-version = "=1.2"
 optional = true
 
 [dev-dependencies]
