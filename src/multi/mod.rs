@@ -807,6 +807,10 @@ where
   E: ParseError<I>,
 {
   move |mut input: I| {
+    if min > max {
+        return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
+    }
+
     let mut acc = init();
     for count in 0..max {
       let len = input.input_len();
