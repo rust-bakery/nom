@@ -469,6 +469,8 @@ pub mod bits;
 #[macro_use]
 pub mod character;
 
+pub mod precedence;
+
 mod str;
 
 #[macro_use]
