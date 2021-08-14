@@ -890,6 +890,7 @@ where
 /// `length_value` will return an error.
 /// # Arguments
 /// * `f` The parser to apply.
+/// * `g` The parser to apply on the subslice.
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
