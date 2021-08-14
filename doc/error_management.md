@@ -75,7 +75,7 @@ The `Err<E>` enum expresses 3 conditions for a parser error:
 
 ## Common error types
 
-### the default error type: nom::error::Error<I>
+### the default error type: nom::error::Error
 
 ```rust
 #[derive(Debug, PartialEq)]
@@ -120,7 +120,7 @@ println!(
 );
 ```
 
-### getting more information: nom::error::VerboseError<I>
+### getting more information: nom::error::VerboseError
 
 The  `VerboseError<I>` type accumulates more information about the chain of
 parsers that encountered an error:
