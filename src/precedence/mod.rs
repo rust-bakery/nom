@@ -106,18 +106,21 @@ where
 /// 
 /// The prefix and postfix parsers are called repedeatly until they fail.
 /// 
-/// It will return `Err(Err:Error((_, ErrorKind::Precedence)))` if the input does not match the format:
+/// Expressions are folded as soon as possible. The result will be reused as another operand.
+/// After the expression has been read completely any remaining operations are folded and the
+/// resulting, single operand is returned as the result.
 /// 
-/// `prefix* operand postfix* (binary prefix* operand postfix*)*`
-/// 
-/// or if the `fold` function returns an `Err`.
+/// It will return `Err(Err:Error((_, ErrorKind::Precedence)))` if:
+/// * the `fold` function returns an `Err`.
+/// * more than one operand remains after the expression has been read completely.
+/// * the input does not match the regex: `prefix* operand postfix* (binary prefix* operand postfix*)*`
 /// 
 /// # Arguments
 /// * `prefix` Parser to parse prefix unary operators.
 /// * `postfix` Parser to parse postfix unary operators.
 /// * `binary` Parser to parse binary operators.
 /// * `operand` Parser to parse operands.
-/// * `fold` Function that performs a single evaluation step and returns a single result.
+/// * `fold` Function that performs a single evaluation step and returns a result.
 /// 
 /// # Pitfalls
 /// It is possible to specify operator precedences that allow inputs which are impossible to satisfy. This
@@ -126,16 +129,16 @@ where
 /// 
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
-/// # use nom::precedence::{precedence, unary_op, binary_op, Operation, Assoc};
+/// # use nom::precedence::{precedence, unary_op, binary_op, Operation, Assoc, fail};
 /// # use nom::character::complete::digit1;
-/// # use nom::combinator::{map, success, not};
+/// # use nom::combinator::{map, verify};
 /// # use nom::sequence::delimited;
 /// # use nom::bytes::complete::tag;
 /// # use nom::branch::alt;
 /// fn parser(i: &str) -> IResult<&str, i64> {
 ///   precedence(
 ///     unary_op(tag("-"), 1),
-///     unary_op(tag("s"), 2),
+///     unary_op(verify(tag(""), |s: &str| false), 2), //TODO, replace with a "fail" parser?
 ///     alt((
 ///       binary_op(tag("*"), 3, Assoc::Left),
 ///       binary_op(tag("/"), 3, Assoc::Left),
