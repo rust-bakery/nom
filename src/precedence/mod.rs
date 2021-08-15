@@ -100,12 +100,17 @@ where
 		}
 	}
 }
-//P: opaque operator token
-//O: opaque operand value
+
 /// Parses expression with operator precedence. Supports prefix, postfix and binary operators.
 /// Operators are applied in ascending precedence.
 /// 
 /// The prefix and postfix parsers are called repedeatly until they fail.
+/// 
+/// It will return `Err(Err:Error((_, ErrorKind::Precedence)))` if the input does not match the format:
+/// 
+/// `prefix* operand postfix* (binary prefix* operand postfix*)*`
+/// 
+/// or if the `fold` function returns an `Err`.
 /// 
 /// # Arguments
 /// * `prefix` Parser to parse prefix unary operators.
@@ -113,19 +118,24 @@ where
 /// * `binary` Parser to parse binary operators.
 /// * `operand` Parser to parse operands.
 /// * `fold` Function that performs a single evaluation step and returns a single result.
+/// 
+/// # Pitfalls
+/// It is possible to specify operator precedences that allow inputs which are impossible to satisfy. This
+/// parser does not guard against such cases and will parse the input successfully for as long as its
+/// in the form of the above regex.
+/// 
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// # use nom::precedence::{precedence, unary_op, binary_op, Operation, Assoc};
 /// # use nom::character::complete::digit1;
-/// # use nom::combinator::map;
+/// # use nom::combinator::{map, success, not};
 /// # use nom::sequence::delimited;
 /// # use nom::bytes::complete::tag;
 /// # use nom::branch::alt;
-/// 
 /// fn parser(i: &str) -> IResult<&str, i64> {
 ///   precedence(
 ///     unary_op(tag("-"), 1),
-///     unary_op(tag("s"), 2), //TODO
+///     unary_op(tag("s"), 2),
 ///     alt((
 ///       binary_op(tag("*"), 3, Assoc::Left),
 ///       binary_op(tag("/"), 3, Assoc::Left),
@@ -207,7 +217,7 @@ where
 						}
 						
 						while operators.last()
-							.map(|op| /*op.is_unary() && */op.precedence() <= o.precedence) //TODO. is_unary check, be here or not? "3**3(3)" can parse to (3**3)(3) without this check. Could this be desired?
+							.map(|op| op.precedence() <= o.precedence)
 							.unwrap_or(false)
 						{
 							let value = operands.pop().unwrap();
@@ -241,6 +251,7 @@ where
 					.map(|op| op.precedence() < o.precedence ||
 						(o.assoc == Assoc::Left && op.precedence() == o.precedence) ||
 						(op.is_postfix())) //TODO cut out here to fix above behaviour f "3**3()"?
+						//TODO do a precedence check here to error on "impossible precedence?"
 					.unwrap_or(false) {
 						let value = operands.pop().unwrap();
 							let operation = match operators.pop().unwrap() {
