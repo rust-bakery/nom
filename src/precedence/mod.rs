@@ -1,5 +1,8 @@
 //! Combinators to parse expression with operator precedence.
 
+#[cfg(test)]
+mod tests;
+
 use crate::{IResult, Parser, Err};
 use crate::error::{ErrorKind, ParseError, FromExternalError};
 #[cfg(feature = "alloc")]
@@ -140,7 +143,7 @@ where
 /// fn parser(i: &str) -> IResult<&str, i64> {
 ///   precedence(
 ///     unary_op(tag("-"), 1),
-///     unary_op(verify(tag(""), |s: &str| false), 2), //TODO, replace with a "fail" parser?
+///     unary_op(verify(tag(""), |_: &str| false), 2), //TODO, replace with a "fail" parser?
 ///     alt((
 ///       binary_op(tag("*"), 3, Assoc::Left),
 ///       binary_op(tag("/"), 3, Assoc::Left),
