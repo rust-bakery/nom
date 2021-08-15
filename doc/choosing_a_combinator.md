@@ -95,6 +95,7 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 
 - [`escaped`](https://docs.rs/nom/latest/nom/bytes/complete/fn.escaped.html): Matches a byte string with escaped characters
 - [`escaped_transform`](https://docs.rs/nom/latest/nom/bytes/complete/fn.escaped_transform.html): Matches a byte string with escaped characters, and returns a new string with the escaped characters replaced
+- [`precedence`](https://docs.rs/nom/latest/nom/precedence/fn.precedence.html): Parses an expression with regards to operator precedence
 
 ## Binary format parsing
 
