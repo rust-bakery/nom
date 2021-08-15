@@ -8,6 +8,19 @@ use crate::error::{ErrorKind, FromExternalError, ParseError};
 use crate::lib::std::vec::Vec;
 use crate::{Err, IResult, Parser};
 
+/// An unary operator.
+pub struct Unary<V, Q: Ord + Copy> {
+  value: V,
+  precedence: Q,
+}
+
+/// A binary operator.
+pub struct Binary<V, Q: Ord + Copy> {
+  value: V,
+  precedence: Q,
+  assoc: Assoc,
+}
+
 /// A single evaluation step.
 pub enum Operation<P, O> {
   /// A prefix operation.
@@ -34,17 +47,24 @@ enum Operator<P, Q: Ord + Copy> {
   Binary(P, Q, Assoc),
 }
 
-/// An unary operator.
-pub struct Unary<V, Q: Ord + Copy> {
-  value: V,
-  precedence: Q,
-}
+impl<P, O> Operator<P, O>
+where
+  O: Ord + Copy,
+{
+  fn precedence(&self) -> O {
+    match self {
+      Operator::Prefix(_, p) => *p,
+      Operator::Postfix(_, p) => *p,
+      Operator::Binary(_, p, _) => *p,
+    }
+  }
 
-/// A binary operator.
-pub struct Binary<V, Q: Ord + Copy> {
-  value: V,
-  precedence: Q,
-  assoc: Assoc,
+  fn is_postfix(&self) -> bool {
+    match self {
+      Operator::Postfix(_, _) => true,
+      _ => false,
+    }
+  }
 }
 
 /// Runs the inner parser and transforms the result into an unary operator with the given precedence.
@@ -62,10 +82,10 @@ where
   Q: Ord + Copy,
 {
   move |input| match parser.parse(input) {
-    Ok((i, out)) => Ok((
+    Ok((i, value)) => Ok((
       i,
       Unary {
-        value: out,
+        value,
         precedence,
       },
     )),
@@ -90,35 +110,15 @@ where
   Q: Ord + Copy,
 {
   move |input| match parser.parse(input) {
-    Ok((i, out)) => Ok((
+    Ok((i, value)) => Ok((
       i,
       Binary {
-        value: out,
+        value,
         precedence,
         assoc,
       },
     )),
     Err(e) => Err(e),
-  }
-}
-
-impl<P, O> Operator<P, O>
-where
-  O: Ord + Copy,
-{
-  fn precedence(&self) -> O {
-    match self {
-      Operator::Prefix(_, p) => *p,
-      Operator::Postfix(_, p) => *p,
-      Operator::Binary(_, p, _) => *p,
-    }
-  }
-
-  fn is_postfix(&self) -> bool {
-    match self {
-      Operator::Postfix(_, _) => true,
-      _ => false,
-    }
   }
 }
 
@@ -282,9 +282,8 @@ where
             .map(|op| {
               op.precedence() < o.precedence
                 || (o.assoc == Assoc::Left && op.precedence() == o.precedence)
-                || (op.is_postfix())
-            }) //TODO cut out here to fix above behaviour f "3**3()"?
-            //TODO do a precedence check here to error on "impossible precedence?"
+                || (op.is_postfix()) //TODO do a precedence check here to error on "impossible precedence?"
+            })
             .unwrap_or(false)
           {
             let value = operands.pop().unwrap();
