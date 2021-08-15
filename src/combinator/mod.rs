@@ -772,3 +772,16 @@ enum State<E> {
 pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E> {
   move |input: I| Ok((input, val.clone()))
 }
+
+/// A parser which always fails.
+/// 
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, IResult};
+/// use nom::combinator::fail;
+/// 
+/// let s = "string";
+/// assert_eq!(fail::<_, &str, _>(s), Err(Err::Error((s, ErrorKind::Fail))));
+/// ```
+pub fn fail<I, O, E: ParseError<I>>(i: I) -> IResult<I, O, E> {
+  Err(Err::Error(E::from_error_kind(i, ErrorKind::Fail)))
+}

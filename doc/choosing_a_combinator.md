@@ -109,6 +109,7 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 ## Remaining combinators
 
 - [`success`](https://docs.rs/nom/latest/nom/combinator/fn.success.html): Returns a value without consuming any input, always succeeds
+- [`fail`](https://docs.rs/nom/latest/nom/combinator/fn.fail.html): Inversion of `success`. Always fails.
 
 ## Character test functions
 
