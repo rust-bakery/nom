@@ -14,13 +14,13 @@ use crate::precedence::precedence;
 #[cfg(feature = "alloc")]
 fn parser(i: &str) -> IResult<&str, i64> {
   precedence(
-    unary_op(tag("-"), 1),
-    unary_op(verify(tag(""), |_: &str| false), 2), //TODO, fail parser
+    unary_op(1, tag("-")),
+    unary_op(2, verify(tag(""), |_: &str| false)), //TODO, fail parser
     alt((
-      binary_op(tag("*"), 3, Assoc::Left),
-      binary_op(tag("/"), 3, Assoc::Left),
-      binary_op(tag("+"), 4, Assoc::Left),
-      binary_op(tag("-"), 4, Assoc::Left),
+      binary_op(3, Assoc::Left, tag("*")),
+      binary_op(3, Assoc::Left, tag("/")),
+      binary_op(4, Assoc::Left, tag("+")),
+      binary_op(4, Assoc::Left, tag("-")),
     )),
     alt((
       map(digit1, |s: &str| s.parse::<i64>().unwrap()),

@@ -71,11 +71,11 @@ where
 ///
 /// Intended for use with [precedence].
 /// # Arguments
-/// * `parser` The parser to apply.
 /// * `precedence` The precedence of the operator.
+/// * `parser` The parser to apply.
 pub fn unary_op<I, O, E, P, Q>(
-  mut parser: P,
   precedence: Q,
+  mut parser: P,
 ) -> impl FnMut(I) -> IResult<I, Unary<O, Q>, E>
 where
   P: Parser<I, O, E>,
@@ -97,13 +97,13 @@ where
 ///
 /// Intended for use with [precedence].
 /// # Arguments
-/// * `parser` The parser to apply.
 /// * `precedence` The precedence of the operator.
 /// * `assoc` The associativity of the operator.
+/// * `parser` The parser to apply.
 pub fn binary_op<I, O, E, P, Q>(
-  mut parser: P,
   precedence: Q,
   assoc: Assoc,
+  mut parser: P,
 ) -> impl FnMut(I) -> IResult<I, Binary<O, Q>, E>
 where
   P: Parser<I, O, E>,
@@ -159,13 +159,13 @@ where
 /// 
 /// fn parser(i: &str) -> IResult<&str, i64> {
 ///   precedence(
-///     unary_op(tag("-"), 1),
-///     unary_op(verify(tag(""), |_: &str| false), 2), //TODO, replace with a "fail" parser?
+///     unary_op(1, tag("-")),
+///     unary_op(2, verify(tag(""), |_: &str| false)), //TODO, replace with a "fail" parser?
 ///     alt((
-///       binary_op(tag("*"), 3, Assoc::Left),
-///       binary_op(tag("/"), 3, Assoc::Left),
-///       binary_op(tag("+"), 4, Assoc::Left),
-///       binary_op(tag("-"), 4, Assoc::Left),
+///       binary_op(3, Assoc::Left, tag("*")),
+///       binary_op(3, Assoc::Left, tag("/")),
+///       binary_op(4, Assoc::Left, tag("+")),
+///       binary_op(4, Assoc::Left, tag("-")),
 ///     )),
 ///     alt((
 ///       map(digit1, |s: &str| s.parse::<i64>().unwrap()),
