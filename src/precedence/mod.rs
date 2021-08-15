@@ -1,4 +1,4 @@
-//! Combinators to parse expression with operator precedence.
+//! Combinators to parse expressions with operator precedence.
 
 #[cfg(test)]
 mod tests;
@@ -133,7 +133,7 @@ where
 ///
 /// It will return `Err(Err:Error((_, ErrorKind::Precedence)))` if:
 /// * the `fold` function returns an `Err`.
-/// * more than one operand remains after the expression has been read completely.
+/// * more than one operand remains after the expression has been evaluated completely.
 /// * the input does not match the regex: `prefix* operand postfix* (binary prefix* operand postfix*)*`
 ///
 /// # Arguments
@@ -150,12 +150,13 @@ where
 ///
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
-/// # use nom::precedence::{precedence, unary_op, binary_op, Operation, Assoc};
-/// # use nom::character::complete::digit1;
-/// # use nom::combinator::{map, verify};
-/// # use nom::sequence::delimited;
-/// # use nom::bytes::complete::tag;
-/// # use nom::branch::alt;
+/// use nom::precedence::{precedence, unary_op, binary_op, Assoc, Operation};
+/// use nom::character::complete::digit1;
+/// use nom::combinator::{map, verify};
+/// use nom::sequence::delimited;
+/// use nom::bytes::complete::tag;
+/// use nom::branch::alt;
+/// 
 /// fn parser(i: &str) -> IResult<&str, i64> {
 ///   precedence(
 ///     unary_op(tag("-"), 1),
