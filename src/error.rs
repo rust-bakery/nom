@@ -416,6 +416,7 @@ pub enum ErrorKind {
   Many1Count,
   Float,
   Satisfy,
+  Fail,
 }
 
 #[rustfmt::skip]
@@ -475,6 +476,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Many1Count                => 72,
     ErrorKind::Float                     => 73,
     ErrorKind::Satisfy                   => 74,
+    ErrorKind::Fail                      => 75,
   }
 }
 
@@ -536,6 +538,7 @@ impl ErrorKind {
       ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
       ErrorKind::Float                     => "Float",
       ErrorKind::Satisfy                   => "Satisfy",
+      ErrorKind::Fail                      => "Fail",
     }
   }
 }

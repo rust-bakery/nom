@@ -264,3 +264,12 @@ fn verify_test() {
   );
   assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
 }
+
+#[test]
+fn fail_test() {
+  let a = "string";
+  let b = "another string";
+  
+  assert_eq!(fail::<_, &str, _>(a), Err(Err::Error((a, ErrorKind::Fail))));
+  assert_eq!(fail::<_, &str, _>(b), Err(Err::Error((b, ErrorKind::Fail))));
+}
