@@ -2,6 +2,8 @@
 
 use crate::{IResult, Parser, Err};
 use crate::error::{ErrorKind, ParseError, FromExternalError};
+#[cfg(feature = "alloc")]
+use crate::lib::std::vec::Vec;
 
 /// A single evaluation step.
 pub enum Operation<P, O> {
@@ -129,7 +131,7 @@ where
 /// 
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
-/// # use nom::precedence::{precedence, unary_op, binary_op, Operation, Assoc, fail};
+/// # use nom::precedence::{precedence, unary_op, binary_op, Operation, Assoc};
 /// # use nom::character::complete::digit1;
 /// # use nom::combinator::{map, verify};
 /// # use nom::sequence::delimited;
@@ -166,6 +168,8 @@ where
 /// assert_eq!(parser("8-2*2"), Ok(("", 4)));
 /// assert_eq!(parser("4-(2+2)"), Ok(("", 0)));
 /// ```
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn precedence<I, O, E, E2, F, G, H1, H3, H2, P, Q> (
 	mut prefix: H1,
 	mut postfix: H2,
