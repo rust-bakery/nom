@@ -73,7 +73,7 @@ where
   }
 }
 
-/// Runs the inner parser and transforms the result into a bianry operator with the given precedence and associativity.
+/// Runs the inner parser and transforms the result into a binary operator with the given precedence and associativity.
 ///
 /// Intended for use with [precedence].
 /// # Arguments
