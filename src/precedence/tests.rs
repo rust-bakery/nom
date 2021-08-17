@@ -17,10 +17,10 @@ fn parser(i: &str) -> IResult<&str, i64> {
     unary_op(1, tag("-")),
     fail,
     alt((
-      binary_op(3, Assoc::Left, tag("*")),
-      binary_op(3, Assoc::Left, tag("/")),
-      binary_op(4, Assoc::Left, tag("+")),
-      binary_op(4, Assoc::Left, tag("-")),
+      binary_op(2, Assoc::Left, tag("*")),
+      binary_op(2, Assoc::Left, tag("/")),
+      binary_op(3, Assoc::Left, tag("+")),
+      binary_op(3, Assoc::Left, tag("-")),
     )),
     alt((
       map(digit1, |s: &str| s.parse::<i64>().unwrap()),

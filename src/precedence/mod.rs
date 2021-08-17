@@ -158,10 +158,10 @@ where
 ///     unary_op(1, tag("-")),
 ///     fail,
 ///     alt((
-///       binary_op(3, Assoc::Left, tag("*")),
-///       binary_op(3, Assoc::Left, tag("/")),
-///       binary_op(4, Assoc::Left, tag("+")),
-///       binary_op(4, Assoc::Left, tag("-")),
+///       binary_op(2, Assoc::Left, tag("*")),
+///       binary_op(2, Assoc::Left, tag("/")),
+///       binary_op(3, Assoc::Left, tag("+")),
+///       binary_op(3, Assoc::Left, tag("-")),
 ///     )),
 ///     alt((
 ///       map(digit1, |s: &str| s.parse::<i64>().unwrap()),
@@ -183,6 +183,7 @@ where
 ///
 /// assert_eq!(parser("8-2*2"), Ok(("", 4)));
 /// assert_eq!(parser("4-(2+2)"), Ok(("", 0)));
+/// assert_eq!(parser("3-(2*3)+7+2*2-(2*(2+4))"), Ok(("", -4)));
 /// ```
 /// 
 /// # Evaluation order
