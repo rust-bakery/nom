@@ -34,9 +34,6 @@ default = ["std", "lexical"]
 lexical = ["lexical-core"]
 docsrs = []
 
-[dependencies]
-proptest = "1.0.0"
-
 [dependencies.memchr]
 version = "2.0"
 default-features = false
@@ -49,6 +46,7 @@ optional = true
 criterion = "0.3"
 jemallocator = "^0.3"
 doc-comment = "0.3"
+proptest = "1.0.0"
 
 [build-dependencies]
 version_check = "0.9"
