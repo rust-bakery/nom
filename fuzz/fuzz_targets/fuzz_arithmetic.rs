@@ -69,7 +69,7 @@ fn term(i: &str) -> IResult<&str, i64> {
         pair(char('*'), factor),
         pair(char('/'), verify(factor, |i| *i != 0)),
     )),
-    init,
+    || init,
     |acc, (op, val): (char, i64)| {
       if op == '*' {
         acc.saturating_mul(val)
@@ -94,7 +94,7 @@ fn expr(i: &str) -> IResult<&str, i64> {
 
   let res = fold_many0(
     pair(alt((char('+'), char('-'))), term),
-    init,
+    || init,
     |acc, (op, val): (char, i64)| {
       if op == '+' {
         acc.saturating_add(val)
