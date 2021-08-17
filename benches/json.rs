@@ -191,12 +191,35 @@ fn float_str(c: &mut Criterion) {
   });
 }
 
+use nom::ParseTo;
+use nom::Err;
+fn std_float(input: &[u8]) -> IResult<&[u8], f64, (&[u8], ErrorKind)> {
+    match recognize_float(input) {
+        Err(e) => Err(e),
+        Ok((i, s)) => match s.parse_to() {
+            Some(n) => Ok((i, n)),
+            None => Err(Err::Error((i, ErrorKind::Float))),
+        },
+    }
+}
+
+fn std_float_bytes(c: &mut Criterion) {
+  println!(
+    "std_float_bytes result: {:?}",
+    std_float(&b"-1.234E-12"[..])
+  );
+  c.bench_function("std_float bytes", |b| {
+    b.iter(|| std_float(&b"-1.234E-12"[..]));
+  });
+}
+
 criterion_group!(
   benches,
   json_bench,
   recognize_float_bytes,
   recognize_float_str,
   float_bytes,
+  std_float_bytes,
   float_str
 );
 criterion_main!(benches);

@@ -25,7 +25,7 @@ jobs:
           - rust: stable
             features: ''
           - rust: stable
-            features: '--features "std lexical"'
+            features: '--features "std"'
           - rust: stable
             features: '--no-default-features'
           - rust: stable
@@ -127,7 +127,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --verbose --features "std lexical docsrs"
+          args: --verbose --features "std docsrs"
 
   fmt:
     name: Check formatting

@@ -1,15 +1,15 @@
 //! Parsers recognizing numbers, complete input version
 
 use crate::branch::alt;
-use crate::character::complete::{char, digit1};
+use crate::character::complete::{char, digit0, digit1};
+use crate::bytes::complete::take_while;
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
 use crate::internal::*;
 use crate::lib::std::ops::{RangeFrom, RangeTo};
 use crate::sequence::{pair, tuple};
-use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use crate::traits::{Offset, Slice};
+use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, AsBytes, Offset, Slice};
 
 #[doc(hidden)]
 macro_rules! map(
@@ -1398,7 +1398,6 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8]
 /// assert_eq!(parser("123K-01"), Ok(("K-01", "123")));
 /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
 /// ```
-#[allow(unused_imports)]
 #[rustfmt::skip]
 pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -1425,7 +1424,90 @@ where
   )(input)
 }
 
-/// Recognizes floating point number in a byte string and returns a f32.
+/// Recognizes a floating point number in text format and returns the integer, fraction and exponent parts of the input data
+///
+/// *Complete version*: Can parse until the end of input.
+///
+pub fn recognize_float_parts<T, E:ParseError<T>>(input: T) -> IResult<T, (bool, T, T, i32), E>
+where
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Clone + Offset,
+  T: InputIter + crate::traits::ParseTo<i32>,
+  <T as InputIter>::Item: AsChar,
+  T: InputTakeAtPosition + InputLength,
+  <T as InputTakeAtPosition>::Item: AsChar
+{
+    let (i, opt_sign) = opt(alt((char('+'), char('-'))))(input.clone())?;
+    let sign = match opt_sign {
+        Some('+') => true,
+        Some('-') => false,
+        _ => true,
+    };
+
+    let (i, mut integer) = digit0(i)?;
+
+    if integer.input_len() >= 2 {
+      // left trim zeroes for faster parsing in minimal-lexical
+      let (_, int2) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(integer.clone())?;
+      // if it's all zeroes, keep one of them
+      integer = if int2.input_len() == integer.input_len() {
+        integer.slice(integer.input_len()-1..)
+      } else {
+        integer.slice(int2.input_len()..)
+      };
+    }
+
+    let (i, opt_dot) = opt(char('.'))(i)?;
+    let (i, fraction) = if opt_dot.is_none() {
+      let i2 = i.clone();
+      (i2, i.slice(..0))
+    } else {
+      // match number, trim right zeroes
+      let mut zero_count = 0usize;
+      let mut position = None;
+      for (pos, c) in i.iter_indices() {
+        let c = c.as_char();
+
+        if c.is_ascii_digit() {
+          if c == '0' {
+            zero_count += 1;
+          } else {
+            zero_count = 0;
+          }
+        } else {
+          position = Some(pos);
+          break;
+        }
+      }
+
+      let position = position.unwrap_or(i.input_len());
+
+      let index = if zero_count == 0 {
+        position
+      } else if zero_count == position {
+        position - zero_count + 1
+      } else {
+        position - zero_count
+      };
+
+      (i.slice(position..), i.slice(..index))
+    };
+
+    if integer.input_len() == 0 && fraction.input_len() == 0 {
+      return Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+    }
+
+    let (i, e) = opt(alt((char('e'), char('E'))))(i)?;
+    let (i, exp) = if e.is_some() {
+        cut(crate::character::complete::i32)(i)?
+    } else {
+        (i, 0)
+    };
+
+    Ok((i, (sign, integer, fraction, exp)))
+}
+
+/// Recognizes floating point number in text format and returns a f32.
 ///
 /// *Complete version*: Can parse until the end of input.
 /// ```rust
@@ -1440,33 +1522,36 @@ where
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
 /// ```
-#[cfg(not(feature = "lexical"))]
-pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
+pub fn float<'a, T: 'a, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + crate::traits::ParseTo<f32>,
+  T: InputIter + InputLength + crate::traits::ParseTo<i32>,
   <T as InputIter>::Item: AsChar,
+  <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
+  T: AsBytes,
 {
-  match recognize_float(input) {
-    Err(e) => Err(e),
-    Ok((i, s)) => match s.parse_to() {
-      Some(n) => Ok((i, n)),
-      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::Float))),
-    },
-  }
+    let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
+
+    let mut float: f32 =
+        minimal_lexical::parse_float(
+            integer.as_bytes().iter(),
+            fraction.as_bytes().iter(),
+            exponent);
+    if !sign {
+        float = -float;
+    }
+
+    Ok((i, float))
 }
 
-/// Recognizes floating point number in a byte string and returns a f32.
+/// Recognizes floating point number in text format and returns a f32.
 ///
 /// *Complete version*: Can parse until the end of input.
-///
-/// This function uses the `lexical-core` crate for float parsing by default, you
-/// can deactivate it by removing the "lexical" feature.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -1476,87 +1561,34 @@ where
 ///   float(s)
 /// };
 ///
-/// assert_eq!(parser("1.1"), Ok(("", 1.1)));
-/// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
-/// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
-/// ```
-#[cfg(feature = "lexical")]
-pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
-where
-  T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
-{
-  match ::lexical_core::parse_partial(input.as_bytes()) {
-    Ok((value, processed)) => Ok((input.slice(processed..), value)),
-    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
-  }
-}
-
-/// Recognizes floating point number in a byte string and returns a f64.
-///
-/// *Complete version*: Can parse until the end of input.
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
-/// use nom::number::complete::double;
-///
-/// let parser = |s| {
-///   double(s)
-/// };
-///
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
+/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
 /// ```
-#[cfg(not(feature = "lexical"))]
-pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
+pub fn double<'a, T: 'a, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + crate::traits::ParseTo<f64>,
+  T: InputIter + InputLength + crate::traits::ParseTo<i32>,
   <T as InputIter>::Item: AsChar,
+  <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
+  T: AsBytes,
 {
-  match recognize_float(input) {
-    Err(e) => Err(e),
-    Ok((i, s)) => match s.parse_to() {
-      Some(n) => Ok((i, n)),
-      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::Float))),
-    },
-  }
-}
+    let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
 
-/// Recognizes floating point number in a byte string and returns a f64.
-///
-/// *Complete version*: Can parse until the end of input.
-///
-/// This function uses the `lexical-core` crate for float parsing by default, you
-/// can deactivate it by removing the "lexical" feature.
-/// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
-/// use nom::number::complete::double;
-///
-/// let parser = |s| {
-///   double(s)
-/// };
-///
-/// assert_eq!(parser("1.1"), Ok(("", 1.1)));
-/// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
-/// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
-/// ```
-#[cfg(feature = "lexical")]
-pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
-where
-  T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
-{
-  match ::lexical_core::parse_partial(input.as_bytes()) {
-    Ok((value, processed)) => Ok((input.slice(processed..), value)),
-    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
-  }
+    let mut float: f64 =
+        minimal_lexical::parse_float(
+            integer.as_bytes().iter(),
+            fraction.as_bytes().iter(),
+            exponent);
+    if !sign {
+        float = -float;
+    }
+
+    Ok((i, float))
 }
 
 #[cfg(test)]
@@ -1564,6 +1596,8 @@ mod tests {
   use super::*;
   use crate::error::ErrorKind;
   use crate::internal::Err;
+  use crate::traits::ParseTo;
+  use proptest::prelude::*;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -2002,5 +2036,30 @@ mod tests {
       le_tsti64(&[0x00, 0xFF, 0x60, 0x00, 0x12, 0x00, 0x80, 0x00]),
       Ok((&b""[..], 36_028_874_334_732_032_i64))
     );
+  }
+
+  fn parse_f64(i:&str) -> IResult<&str, f64, ()> {
+    match recognize_float(i) {
+      Err(e) => Err(e),
+      Ok((i, s)) => {
+        if s.is_empty() {
+          return Err(Err::Error(()));
+        }
+        match s.parse_to() {
+          Some(n) => Ok((i, n)),
+          None => Err(Err::Error(())),
+        }
+      },
+    }
+  }
+
+  proptest! {
+    #[test]
+    fn floats(s in "\\PC*") {
+        println!("testing {}", s);
+        let res1 = parse_f64(&s);
+        let res2 = double::<_, ()>(s.as_str());
+        assert_eq!(res1, res2);
+    }
   }
 }
