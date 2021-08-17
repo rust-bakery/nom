@@ -9,9 +9,9 @@ use nom::{
   bytes::complete::tag,
   character::complete::char,
   character::complete::{digit1 as digit, space0 as space},
-  combinator::{map_res, verify},
+  combinator::{map, map_res, verify},
   multi::fold_many0,
-  sequence::{delimited, pair},
+  sequence::{delimited, pair, terminated},
   IResult,
 };
 
@@ -48,7 +48,11 @@ fn decr() {
 }
 
 fn parens(i: &str) -> IResult<&str, i64> {
-      delimited(space, delimited(tag("("), expr, tag(")")), space)(i)
+      delimited(space, delimited(
+              terminated(tag("("), incr),
+              expr,
+              map(tag(")"),  |_| decr())
+      ), space)(i)
 }
 
 
