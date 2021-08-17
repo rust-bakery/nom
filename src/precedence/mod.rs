@@ -122,14 +122,16 @@ where
   }
 }
 
-/// Parses expression with operator precedence. Supports prefix, postfix and binary operators.
+/// Parses an expression with operator precedence. Supports prefix, postfix and binary operators.
 /// Operators are applied in ascending precedence.
 ///
-/// The prefix and postfix parsers are called repedeatly until they fail.
+/// The parser will track its current position inside the expression and call the respective
+/// operand/operator parsers as necessary. The prefix and postfix parsers are called repedeatly and must
+/// fail before execution moves on to the operand or binary parser.
 ///
-/// Expressions are folded as soon as possible. The result will be reused as another operand.
-/// After the expression has been read completely any remaining operations are folded and the
-/// resulting, single operand is returned as the result.
+/// Expressions are folded as soon as possible. The result will be reused as another operand. After the
+/// expression has been read completely any remaining operations are folded and the resulting, single
+/// operand is returned as the result.
 ///
 /// It will return `Err(Err:Error((_, ErrorKind::Precedence)))` if:
 /// * the `fold` function returns an `Err`.
@@ -200,9 +202,10 @@ where
 /// 
 /// The expression can be parsed in two ways: `-((a++)**b)` or `((-a)++)**b`. This parser will always
 /// parse it as the latter because of how it evaluates expressions:
-/// * It reads, left-to-right, the first two operators as `-a++`.
+/// * It reads, left-to-right, the first two operators `-a++`.
 /// * Because the minus takes precedence over the increment it is evaluated immediately `(-a)++`.
-/// * It then reads the remaining input and evaluates the increment first in order to preserve its position in the expression \
+/// * It then reads the remaining input and evaluates the increment next in order to preserve its
+/// position in the expression \
 /// `((-a)++)**b`.
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
