@@ -134,7 +134,7 @@ where
 /// It will return `Err(Err:Error((_, ErrorKind::Precedence)))` if:
 /// * the `fold` function returns an `Err`.
 /// * more than one operand remains after the expression has been evaluated completely.
-/// * the input does not match the regex: `prefix* operand postfix* (binary prefix* operand postfix*)*`
+/// * the input does not match the pattern: `prefix* operand postfix* (binary prefix* operand postfix*)*`
 ///
 /// # Arguments
 /// * `prefix` Parser to parse prefix unary operators.
@@ -142,12 +142,8 @@ where
 /// * `binary` Parser to parse binary operators.
 /// * `operand` Parser to parse operands.
 /// * `fold` Function that performs a single evaluation step and returns a result.
-///
-/// # Pitfalls
-/// It is possible to specify operator precedences that allow inputs which are impossible to satisfy. This
-/// parser does not guard against such cases and will parse the input successfully for as long as its
-/// in the form of the above regex.
-///
+/// 
+/// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::precedence::{precedence, unary_op, binary_op, Assoc, Operation};
@@ -188,6 +184,25 @@ where
 /// assert_eq!(parser("8-2*2"), Ok(("", 4)));
 /// assert_eq!(parser("4-(2+2)"), Ok(("", 0)));
 /// ```
+/// 
+/// # Evaluation order
+/// This parser reads expressions from left to right and folds operations as soon as possible. This
+/// behaviour is only important when using an operator grammar that allows for ambigious expressions.
+/// 
+/// For example, the expression `-a++**b` is ambigious with the following precedence.
+/// 
+/// | Operator | Position | Precedence | Associativity |
+/// |----------|----------|------------|---------------|
+/// | **       | Binary   | 1          | Right         |
+/// | -        | Prefix   | 2          | N/A           |
+/// | +        | Postfix  | 3          | N/A           |
+/// 
+/// The expression can be parsed in two ways: `-((a++)**b)` or `((-a)++)**b`. This parser will always
+/// parse it as the latter because of how it evaluates expressions:
+/// * It reads, left-to-right, the first two operators as `-a++`.
+/// * Because the minus takes precedence over the increment it is evaluated immediately `(-a)++`.
+/// * It then reads the remaining input and evaluates the increment first in order to preserve its position in the expression \
+/// `((-a)++)**b`.
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn precedence<I, O, E, E2, F, G, H1, H3, H2, P, Q>(
