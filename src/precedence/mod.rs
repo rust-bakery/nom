@@ -122,12 +122,13 @@ where
   }
 }
 
-/// Parses an expression with operator precedence. Supports prefix, postfix and binary operators.
-/// Operators are applied in ascending precedence.
+/// Parses an expression with operator precedence.
+/// 
+/// Supports prefix, postfix and binary operators. Operators are applied in ascending precedence.
 ///
 /// The parser will track its current position inside the expression and call the respective
-/// operand/operator parsers as necessary. The prefix and postfix parsers are called repedeatly and must
-/// fail before execution moves on to the operand or binary parser.
+/// operand/operator parsers. The prefix and postfix parsers are called repeatedly until they fail before
+/// execution moves on to the operand or binary parser.
 ///
 /// Expressions are folded as soon as possible. The result will be reused as another operand. After the
 /// expression has been read completely any remaining operations are folded and the resulting, single
@@ -147,7 +148,7 @@ where
 /// 
 /// # Example
 /// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// use nom::precedence::{precedence, unary_op, binary_op, Assoc, Operation};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::{map, fail};
@@ -198,7 +199,7 @@ where
 /// |----------|----------|------------|---------------|
 /// | **       | Binary   | 1          | Right         |
 /// | -        | Prefix   | 2          | N/A           |
-/// | +        | Postfix  | 3          | N/A           |
+/// | ++       | Postfix  | 3          | N/A           |
 /// 
 /// The expression can be parsed in two ways: `-((a++)**b)` or `((-a)++)**b`. This parser will always
 /// parse it as the latter because of how it evaluates expressions:
