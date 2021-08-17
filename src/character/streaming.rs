@@ -1105,10 +1105,28 @@ mod tests {
     );
   }
 
-  fn digit_to_i16(i: &str) -> IResult<&str, i16> {
-      let (i, s) = digit1(i)?;
+  fn digit_to_i16(input: &str) -> IResult<&str, i16> {
+    let i = input;
+      let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
+      let sign = match opt_sign {
+          Some('+') => true,
+          Some('-') => false,
+          _ => true,
+      };
+      
+      let (i, s) = match digit1::<_, crate::error::Error<_>>(i) {
+        Ok((i, s)) => (i, s),
+        Err(Err::Incomplete(i)) => return Err(Err::Incomplete(i)),
+        Err(_) => return Err(Err::Error(crate::error::Error::from_error_kind(input, ErrorKind::Digit))),
+      };
       match s.parse_to() {
-          Some(n) => Ok((i, n)),
+          Some(n) => {
+            if sign {
+              Ok((i, n))
+            } else {
+              Ok((i, -n))
+            }
+          },
           None => Err(Err::Error(crate::error::Error::from_error_kind(i, ErrorKind::Digit))),
       }
   }
@@ -1124,15 +1142,15 @@ mod tests {
   proptest! {
     #[test]
     fn ints(s in "\\PC*") {
-        let res1 = digit_to_u32(&s);
-        let res2 = u32(s.as_str());
+        let res1 = digit_to_i16(&s);
+        let res2 = i16(s.as_str());
         assert_eq!(res1, res2);
     }
 
     #[test]
     fn uints(s in "\\PC*") {
-        let res1 = digit_to_i16(&s);
-        let res2 = i16(s.as_str());
+        let res1 = digit_to_u32(&s);
+        let res2 = u32(s.as_str());
         assert_eq!(res1, res2);
     }
   }
