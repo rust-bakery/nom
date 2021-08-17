@@ -1,10 +1,10 @@
 //! Combinators to parse expressions with operator precedence.
+#![cfg(feature="alloc")]
 
 #[cfg(test)]
 mod tests;
 
 use crate::error::{ErrorKind, FromExternalError, ParseError};
-#[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 use crate::{Err, IResult, Parser};
 
