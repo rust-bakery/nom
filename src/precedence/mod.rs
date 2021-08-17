@@ -133,15 +133,15 @@ where
 ///
 /// It will return `Err(Err:Error((_, ErrorKind::Precedence)))` if:
 /// * the `fold` function returns an `Err`.
-/// * more than one operand remains after the expression has been evaluated completely.
+/// * more than one or no operands remain after the expression has been evaluated completely.
 /// * the input does not match the pattern: `prefix* operand postfix* (binary prefix* operand postfix*)*`
 ///
 /// # Arguments
-/// * `prefix` Parser to parse prefix unary operators.
-/// * `postfix` Parser to parse postfix unary operators.
-/// * `binary` Parser to parse binary operators.
-/// * `operand` Parser to parse operands.
-/// * `fold` Function that performs a single evaluation step and returns a result.
+/// * `prefix` Parser for prefix unary operators.
+/// * `postfix` Parser for postfix unary operators.
+/// * `binary` Parser for binary operators.
+/// * `operand` Parser for operands.
+/// * `fold` Function that evaluates a single operation and returns the result.
 /// 
 /// # Example
 /// ```rust
@@ -298,7 +298,7 @@ where
             .map(|op| {
               op.precedence() < o.precedence
                 || (o.assoc == Assoc::Left && op.precedence() == o.precedence)
-                || (op.is_postfix()) //TODO do a precedence check here to error on "impossible precedence?"
+                || (op.is_postfix())
             })
             .unwrap_or(false)
           {
