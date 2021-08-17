@@ -3,7 +3,7 @@ use crate::{
   branch::alt,
   bytes::complete::tag,
   character::complete::digit1,
-  combinator::{map, verify},
+  combinator::{map, fail},
   internal::IResult,
   sequence::delimited,
 };
@@ -15,7 +15,7 @@ use crate::precedence::precedence;
 fn parser(i: &str) -> IResult<&str, i64> {
   precedence(
     unary_op(1, tag("-")),
-    unary_op(2, verify(tag(""), |_: &str| false)), //TODO, fail parser
+    fail,
     alt((
       binary_op(3, Assoc::Left, tag("*")),
       binary_op(3, Assoc::Left, tag("/")),

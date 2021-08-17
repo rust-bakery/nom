@@ -152,7 +152,7 @@ where
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::precedence::{precedence, unary_op, binary_op, Assoc, Operation};
 /// use nom::character::complete::digit1;
-/// use nom::combinator::{map, verify};
+/// use nom::combinator::{map, fail};
 /// use nom::sequence::delimited;
 /// use nom::bytes::complete::tag;
 /// use nom::branch::alt;
@@ -160,7 +160,7 @@ where
 /// fn parser(i: &str) -> IResult<&str, i64> {
 ///   precedence(
 ///     unary_op(1, tag("-")),
-///     unary_op(2, verify(tag(""), |_: &str| false)), //TODO, replace with a "fail" parser?
+///     fail,
 ///     alt((
 ///       binary_op(3, Assoc::Left, tag("*")),
 ///       binary_op(3, Assoc::Left, tag("/")),
