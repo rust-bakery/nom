@@ -2,14 +2,16 @@
 //!
 //! Functions recognizing specific characters.
 
+use crate::branch::alt;
+use crate::combinator::opt;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult};
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
-use crate::traits::{AsChar, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice, InputTake};
+use crate::traits::{
+  AsChar, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice,
+};
 use crate::traits::{Compare, CompareResult};
-use crate::combinator::opt;
-use crate::branch::alt;
 
 /// Recognizes one character.
 ///
@@ -688,16 +690,19 @@ where
 
 pub(crate) fn sign<T, E: ParseError<T>>(input: T) -> IResult<T, bool, E>
 where
-T: Clone + InputTake,
-T: for <'a> Compare<&'a[u8]>,
+  T: Clone + InputTake,
+  T: for<'a> Compare<&'a [u8]>,
 {
-    use crate::combinator::value;
-    use crate::bytes::complete::tag;
+  use crate::bytes::complete::tag;
+  use crate::combinator::value;
 
-    let (i, opt_sign) = opt(alt((value(false, tag(&b"-"[..])), value(true, tag(&b"+"[..])))))(input)?;
-    let sign = opt_sign.unwrap_or(true);
+  let (i, opt_sign) = opt(alt((
+    value(false, tag(&b"-"[..])),
+    value(true, tag(&b"+"[..])),
+  )))(input)?;
+  let sign = opt_sign.unwrap_or(true);
 
-    Ok((i, sign))
+  Ok((i, sign))
 }
 
 #[doc(hidden)]
@@ -1142,37 +1147,48 @@ mod tests {
   }
 
   fn digit_to_i16(input: &str) -> IResult<&str, i16> {
-      let i = input;
-      let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
-      let sign = match opt_sign {
-          Some('+') => true,
-          Some('-') => false,
-          _ => true,
-      };
-      
-      let (i, s) = match digit1::<_, crate::error::Error<_>>(i) {
-        Ok((i, s)) => (i, s),
-        Err(_) => return Err(Err::Error(crate::error::Error::from_error_kind(input, ErrorKind::Digit))),
-      };
+    let i = input;
+    let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
+    let sign = match opt_sign {
+      Some('+') => true,
+      Some('-') => false,
+      _ => true,
+    };
 
-      match s.parse_to() {
-          Some(n) => {
-            if sign {
-              Ok((i, n))
-            } else {
-              Ok((i, -n))
-            }
-          },
-          None => Err(Err::Error(crate::error::Error::from_error_kind(i, ErrorKind::Digit))),
+    let (i, s) = match digit1::<_, crate::error::Error<_>>(i) {
+      Ok((i, s)) => (i, s),
+      Err(_) => {
+        return Err(Err::Error(crate::error::Error::from_error_kind(
+          input,
+          ErrorKind::Digit,
+        )))
       }
+    };
+
+    match s.parse_to() {
+      Some(n) => {
+        if sign {
+          Ok((i, n))
+        } else {
+          Ok((i, -n))
+        }
+      }
+      None => Err(Err::Error(crate::error::Error::from_error_kind(
+        i,
+        ErrorKind::Digit,
+      ))),
+    }
   }
 
   fn digit_to_u32(i: &str) -> IResult<&str, u32> {
-      let (i, s) = digit1(i)?;
-      match s.parse_to() {
-          Some(n) => Ok((i, n)),
-          None => Err(Err::Error(crate::error::Error::from_error_kind(i, ErrorKind::Digit))),
-      }
+    let (i, s) = digit1(i)?;
+    match s.parse_to() {
+      Some(n) => Ok((i, n)),
+      None => Err(Err::Error(crate::error::Error::from_error_kind(
+        i,
+        ErrorKind::Digit,
+      ))),
+    }
   }
 
   proptest! {

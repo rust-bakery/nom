@@ -774,11 +774,11 @@ pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I
 }
 
 /// A parser which always fails.
-/// 
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, IResult};
 /// use nom::combinator::fail;
-/// 
+///
 /// let s = "string";
 /// assert_eq!(fail::<_, &str, _>(s), Err(Err::Error((s, ErrorKind::Fail))));
 /// ```

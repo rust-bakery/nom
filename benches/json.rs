@@ -191,16 +191,16 @@ fn float_str(c: &mut Criterion) {
   });
 }
 
-use nom::ParseTo;
 use nom::Err;
+use nom::ParseTo;
 fn std_float(input: &[u8]) -> IResult<&[u8], f64, (&[u8], ErrorKind)> {
-    match recognize_float(input) {
-        Err(e) => Err(e),
-        Ok((i, s)) => match s.parse_to() {
-            Some(n) => Ok((i, n)),
-            None => Err(Err::Error((i, ErrorKind::Float))),
-        },
-    }
+  match recognize_float(input) {
+    Err(e) => Err(e),
+    Ok((i, s)) => match s.parse_to() {
+      Some(n) => Ok((i, n)),
+      None => Err(Err::Error((i, ErrorKind::Float))),
+    },
+  }
 }
 
 fn std_float_bytes(c: &mut Criterion) {

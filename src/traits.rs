@@ -631,7 +631,7 @@ impl<'a> InputTakeAtPosition for &'a str {
   {
     match self.find(predicate) {
       // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe {Ok((self.get_unchecked(i..), self.get_unchecked(..i)))},
+      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -647,7 +647,7 @@ impl<'a> InputTakeAtPosition for &'a str {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe {Ok((self.get_unchecked(i..), self.get_unchecked(..i)))},
+      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -661,9 +661,14 @@ impl<'a> InputTakeAtPosition for &'a str {
   {
     match self.find(predicate) {
       // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe {Ok((self.get_unchecked(i..), self.get_unchecked(..i)))},
+      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
       // the end of slice is a char boundary
-      None => unsafe {Ok((self.get_unchecked(self.len()..), self.get_unchecked(..self.len())))},
+      None => unsafe {
+        Ok((
+          self.get_unchecked(self.len()..),
+          self.get_unchecked(..self.len()),
+        ))
+      },
     }
   }
 
@@ -678,13 +683,18 @@ impl<'a> InputTakeAtPosition for &'a str {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe {Ok((self.get_unchecked(i..), self.get_unchecked(..i)))},
+      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
       None => {
         if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
           // the end of slice is a char boundary
-          unsafe {Ok((self.get_unchecked(self.len()..), self.get_unchecked(..self.len())))}
+          unsafe {
+            Ok((
+              self.get_unchecked(self.len()..),
+              self.get_unchecked(..self.len()),
+            ))
+          }
         }
       }
     }
@@ -1384,7 +1394,6 @@ impl HexDisplay for str {
     self.as_bytes().to_hex_from(chunk_size, from)
   }
 }
-
 
 #[cfg(test)]
 mod tests {

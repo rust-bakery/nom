@@ -1,14 +1,16 @@
 //! Parsers recognizing numbers, streaming version
 
 use crate::branch::alt;
-use crate::character::streaming::{char, digit0, digit1, sign};
 use crate::bytes::streaming::{tag, tag_no_case, take_while};
+use crate::character::streaming::{char, digit0, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::*;
 use crate::lib::std::ops::{RangeFrom, RangeTo};
 use crate::sequence::{pair, tuple};
-use crate::traits::{AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice, AsBytes};
+use crate::traits::{
+  AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
+};
 
 #[doc(hidden)]
 macro_rules! map(
@@ -1397,7 +1399,7 @@ where
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
-pub fn recognize_float_parts<T, E:ParseError<T>>(input: T) -> IResult<T, (bool, T, T, i32), E>
+pub fn recognize_float_parts<T, E: ParseError<T>>(input: T) -> IResult<T, (bool, T, T, i32), E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
@@ -1405,71 +1407,71 @@ where
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition + InputTake + InputLength,
   <T as InputTakeAtPosition>::Item: AsChar,
-  T: for <'a> Compare<&'a[u8]>,
+  T: for<'a> Compare<&'a [u8]>,
 {
-    let (i, sign) = sign(input.clone())?;
+  let (i, sign) = sign(input.clone())?;
 
-    let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
-    let (i, mut integer) = digit0(i)?;
+  let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
+  let (i, mut integer) = digit0(i)?;
 
-    if integer.input_len() == 0 && zeroes.input_len() > 0 {
-        // keep the last zero if integer is empty
-        integer = zeroes.slice(zeroes.input_len() - 1..);
-    }
+  if integer.input_len() == 0 && zeroes.input_len() > 0 {
+    // keep the last zero if integer is empty
+    integer = zeroes.slice(zeroes.input_len() - 1..);
+  }
 
-    let (i, opt_dot) = opt(tag(&b"."[..]))(i)?;
-    let (i, fraction) = if opt_dot.is_none() {
-      let i2 = i.clone();
-      (i2, i.slice(..0))
-    } else {
-      // match number, trim right zeroes
-      let mut zero_count = 0usize;
-      let mut position = None;
-      for (pos, c) in i.iter_indices() {
-        let c = c.as_char();
-
-        if c.is_ascii_digit() {
-          if c == '0' {
-            zero_count += 1;
-          } else {
-            zero_count = 0;
-          }
-        } else {
-          position = Some(pos);
-          break;
-        }
-      }
-
-      let position = match position {
-          Some(p) => p,
-          None => return Err(Err::Incomplete(Needed::new(1))),
-      };
-
-      let index = if zero_count == 0 {
-        position
-      } else if zero_count == position {
-        position - zero_count + 1
-      } else {
-        position - zero_count
-      };
-
-      (i.slice(position..), i.slice(..index))
-    };
-
-    if integer.input_len() == 0 && fraction.input_len() == 0 {
-      return Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
-    }
-
+  let (i, opt_dot) = opt(tag(&b"."[..]))(i)?;
+  let (i, fraction) = if opt_dot.is_none() {
     let i2 = i.clone();
-    let (i, e) = opt(tag_no_case(&b"e"[..]))(i)?;
+    (i2, i.slice(..0))
+  } else {
+    // match number, trim right zeroes
+    let mut zero_count = 0usize;
+    let mut position = None;
+    for (pos, c) in i.iter_indices() {
+      let c = c.as_char();
 
-    let (i, exp ) = if e.is_some() {
-        cut(crate::character::streaming::i32)(i)?
-    } else {
-        (i2, 0)
+      if c.is_ascii_digit() {
+        if c == '0' {
+          zero_count += 1;
+        } else {
+          zero_count = 0;
+        }
+      } else {
+        position = Some(pos);
+        break;
+      }
+    }
+
+    let position = match position {
+      Some(p) => p,
+      None => return Err(Err::Incomplete(Needed::new(1))),
     };
 
-    Ok((i, (sign, integer, fraction, exp)))
+    let index = if zero_count == 0 {
+      position
+    } else if zero_count == position {
+      position - zero_count + 1
+    } else {
+      position - zero_count
+    };
+
+    (i.slice(position..), i.slice(..index))
+  };
+
+  if integer.input_len() == 0 && fraction.input_len() == 0 {
+    return Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)));
+  }
+
+  let i2 = i.clone();
+  let (i, e) = opt(tag_no_case(&b"e"[..]))(i)?;
+
+  let (i, exp) = if e.is_some() {
+    cut(crate::character::streaming::i32)(i)?
+  } else {
+    (i2, 0)
+  };
+
+  Ok((i, (sign, integer, fraction, exp)))
 }
 
 /// Recognizes floating point number in text format and returns a f32.
@@ -1500,20 +1502,20 @@ where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: AsBytes,
-  T: for <'a> Compare<&'a[u8]>,
+  T: for<'a> Compare<&'a [u8]>,
 {
-    let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
+  let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
 
-    let mut float: f32 =
-        minimal_lexical::parse_float(
-            integer.as_bytes().iter(),
-            fraction.as_bytes().iter(),
-            exponent);
-    if !sign {
-        float = -float;
-    }
+  let mut float: f32 = minimal_lexical::parse_float(
+    integer.as_bytes().iter(),
+    fraction.as_bytes().iter(),
+    exponent,
+  );
+  if !sign {
+    float = -float;
+  }
 
-    Ok((i, float))
+  Ok((i, float))
 }
 
 /// Recognizes floating point number in text format and returns a f32.
@@ -1544,20 +1546,20 @@ where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: AsBytes,
-  T: for <'a> Compare<&'a[u8]>,
+  T: for<'a> Compare<&'a [u8]>,
 {
-    let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
+  let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
 
-    let mut float: f64 =
-        minimal_lexical::parse_float(
-            integer.as_bytes().iter(),
-            fraction.as_bytes().iter(),
-            exponent);
-    if !sign {
-        float = -float;
-    }
+  let mut float: f64 = minimal_lexical::parse_float(
+    integer.as_bytes().iter(),
+    fraction.as_bytes().iter(),
+    exponent,
+  );
+  if !sign {
+    float = -float;
+  }
 
-    Ok((i, float))
+  Ok((i, float))
 }
 
 #[cfg(test)]
@@ -2113,7 +2115,7 @@ mod tests {
     );
   }
 
-  fn parse_f64(i:&str) -> IResult<&str, f64, ()> {
+  fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
     match recognize_float(i) {
       Err(e) => Err(e),
       Ok((i, s)) => {
@@ -2124,7 +2126,7 @@ mod tests {
           Some(n) => Ok((i, n)),
           None => Err(Err::Error(())),
         }
-      },
+      }
     }
   }
 

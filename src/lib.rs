@@ -380,7 +380,6 @@
 #![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
 #![deny(missing_docs)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
-
 #[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
@@ -444,7 +443,6 @@ pub use self::internal::*;
 pub use self::traits::*;
 
 pub use self::str::*;
-
 
 #[macro_use]
 pub mod error;

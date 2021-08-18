@@ -507,10 +507,7 @@ where
 
     let res: IResult<_, _, Error> = match i.find_substring(t) {
       None => Err(Err::Incomplete(Needed::Unknown)),
-      Some(0) => Err(Err::Error(Error::from_error_kind(
-          i,
-          ErrorKind::TakeUntil,
-      ))),
+      Some(0) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntil))),
       Some(index) => Ok(i.take_split(index)),
     };
     res
