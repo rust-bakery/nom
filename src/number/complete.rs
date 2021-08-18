@@ -2055,6 +2055,7 @@ mod tests {
 
   proptest! {
     #[test]
+    #[cfg(feature = "std")]
     fn floats(s in "\\PC*") {
         println!("testing {}", s);
         let res1 = parse_f64(&s);
