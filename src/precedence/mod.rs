@@ -151,7 +151,7 @@ where
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// use nom::precedence::{precedence, unary_op, binary_op, Assoc, Operation};
 /// use nom::character::complete::digit1;
-/// use nom::combinator::{map, fail};
+/// use nom::combinator::{map_res, fail};
 /// use nom::sequence::delimited;
 /// use nom::bytes::complete::tag;
 /// use nom::branch::alt;
@@ -167,7 +167,7 @@ where
 ///       binary_op(3, Assoc::Left, tag("-")),
 ///     )),
 ///     alt((
-///       map(digit1, |s: &str| s.parse::<i64>().unwrap()),
+///       map_res(digit1, |s: &str| s.parse::<i64>()),
 ///       delimited(tag("("), parser, tag(")")),
 ///     )),
 ///     |op: Operation<&str, i64>| {

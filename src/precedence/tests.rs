@@ -3,7 +3,7 @@ use crate::{
   branch::alt,
   bytes::complete::tag,
   character::complete::digit1,
-  combinator::{map, fail},
+  combinator::{map_res, fail},
   internal::IResult,
   sequence::delimited,
 };
@@ -23,7 +23,7 @@ fn parser(i: &str) -> IResult<&str, i64> {
       binary_op(3, Assoc::Left, tag("-")),
     )),
     alt((
-      map(digit1, |s: &str| s.parse::<i64>().unwrap()),
+      map_res(digit1, |s: &str| s.parse::<i64>()),
       delimited(tag("("), parser, tag(")")),
     )),
     |op: Operation<&str, i64>| {
