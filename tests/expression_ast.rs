@@ -25,7 +25,7 @@ pub enum Expr {
   Call(Box<Expr>, Vec<Expr>),
 }
 
-// We need to be able to encode different types of operators. So we make the operator parser output one of the Operator enums.
+// We need to be able to encode different types of operators. So we make the operator parsers output one of the Operator variants.
 enum Operator<'a> {
   // A "raw" operator. This encodes operators that have no additional information beyond their own representation (e.g. "+", "*", "-").
   Raw(&'a str),
@@ -34,7 +34,7 @@ enum Operator<'a> {
   Call(Vec<Expr>),
 }
 
-// Convenience parser for operators without additional info.
+// Convenience parser for raw operators.
 fn token<'a>(t: &'a str) -> impl FnMut(&'a str) -> IResult<&'a str, Operator<'a>>
 {
   move |input: &'a str| {
@@ -47,7 +47,7 @@ fn function_call(i: &str) -> IResult<&str, Operator> {
   map(
     delimited(
       tag("("),
-      // subexpressions are evaluated by recursing back into the expression parser.
+      // Subexpressions are evaluated by recursing back into the expression parser.
       separated_list0(tag(","), expression),
       tag(")")
     ),
@@ -59,7 +59,7 @@ fn function_call(i: &str) -> IResult<&str, Operator> {
 fn expression(i: &str) -> IResult<&str, Expr> {
   precedence(
     unary_op(2, token("-")),
-    // function calls are implemented as postfix unary operators.
+    // Function calls are implemented as postfix unary operators.
     unary_op(1, function_call),
     alt((
       binary_op(3, Assoc::Left, alt((
