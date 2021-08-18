@@ -1,15 +1,15 @@
 //! Parsers recognizing numbers, complete input version
 
 use crate::branch::alt;
-use crate::character::complete::{char, digit0, digit1};
-use crate::bytes::complete::take_while;
+use crate::character::complete::{char, digit0, digit1, sign};
+use crate::bytes::complete::{tag, tag_no_case, take_while};
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
 use crate::internal::*;
-use crate::lib::std::ops::{RangeFrom, RangeTo};
+use crate::lib::std::ops::{RangeFrom, RangeTo, Range};
 use crate::sequence::{pair, tuple};
-use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, AsBytes, Offset, Slice};
+use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, AsBytes, Offset, Slice, Compare, InputTake};
 
 #[doc(hidden)]
 macro_rules! map(
@@ -1430,34 +1430,25 @@ where
 ///
 pub fn recognize_float_parts<T, E:ParseError<T>>(input: T) -> IResult<T, (bool, T, T, i32), E>
 where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset,
-  T: InputIter + crate::traits::ParseTo<i32>,
-  <T as InputIter>::Item: AsChar,
+  T: InputIter + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
   T: InputTakeAtPosition + InputLength,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
+  T: for <'a> Compare<&'a[u8]>,
 {
-    let (i, opt_sign) = opt(alt((char('+'), char('-'))))(input.clone())?;
-    let sign = match opt_sign {
-        Some('+') => true,
-        Some('-') => false,
-        _ => true,
-    };
+    let (i, sign) = sign(input.clone())?;
 
+    let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
     let (i, mut integer) = digit0(i)?;
 
-    if integer.input_len() >= 2 {
-      // left trim zeroes for faster parsing in minimal-lexical
-      let (_, int2) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(integer.clone())?;
-      // if it's all zeroes, keep one of them
-      integer = if int2.input_len() == integer.input_len() {
-        integer.slice(integer.input_len()-1..)
-      } else {
-        integer.slice(int2.input_len()..)
-      };
+    if integer.input_len() == 0 && zeroes.input_len() > 0 {
+        // keep the last zero if integer is empty
+        integer = zeroes.slice(zeroes.input_len() - 1..);
     }
 
-    let (i, opt_dot) = opt(char('.'))(i)?;
+    let (i, opt_dot) = opt(tag(&b"."[..]))(i)?;
     let (i, fraction) = if opt_dot.is_none() {
       let i2 = i.clone();
       (i2, i.slice(..0))
@@ -1497,11 +1488,13 @@ where
       return Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
     }
 
-    let (i, e) = opt(alt((char('e'), char('E'))))(i)?;
-    let (i, exp) = if e.is_some() {
+    let i2 = i.clone();
+    let (i, e) = opt(tag_no_case(&b"e"[..]))(i)?;
+
+    let (i, exp ) = if e.is_some() {
         cut(crate::character::complete::i32)(i)?
     } else {
-        (i, 0)
+        (i2, 0)
     };
 
     Ok((i, (sign, integer, fraction, exp)))
@@ -1524,16 +1517,17 @@ where
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
 /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
 /// ```
-pub fn float<'a, T: 'a, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
+pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + crate::traits::ParseTo<i32>,
-  <T as InputIter>::Item: AsChar,
+  T: InputIter + InputLength + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
   <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: AsBytes,
+  T: for <'a> Compare<&'a[u8]>,
 {
     let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
 
@@ -1566,16 +1560,17 @@ where
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
 /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
 /// ```
-pub fn double<'a, T: 'a, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
+pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + crate::traits::ParseTo<i32>,
-  <T as InputIter>::Item: AsChar,
+  T: InputIter + InputLength + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
   <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: AsBytes,
+  T: for <'a> Compare<&'a[u8]>,
 {
     let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
 

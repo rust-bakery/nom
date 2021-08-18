@@ -851,6 +851,17 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   }
 }
 
+impl<'a, 'b> Compare<&'b [u8]> for &'a str {
+  #[inline(always)]
+  fn compare(&self, t: &'b [u8]) -> CompareResult {
+    AsBytes::as_bytes(self).compare(t)
+  }
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
+    AsBytes::as_bytes(self).compare_no_case(t)
+  }
+}
+
 /// Look for a token in self
 pub trait FindToken<T> {
   /// Returns true if self contains the token

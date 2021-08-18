@@ -5,7 +5,7 @@
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
-use crate::traits::{AsChar, FindToken, InputIter, InputLength, InputTakeAtPosition, Slice};
+use crate::traits::{AsChar, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice};
 use crate::traits::{Compare, CompareResult};
 use crate::combinator::opt;
 use crate::branch::alt;
@@ -610,6 +610,20 @@ where
   )
 }
 
+pub(crate) fn sign<T, E: ParseError<T>>(input: T) -> IResult<T, bool, E>
+where
+T: Clone + InputTake + InputLength,
+T: for <'a> Compare<&'a[u8]>,
+{
+    use crate::combinator::value;
+    use crate::bytes::streaming::tag;
+
+    let (i, opt_sign) = opt(alt((value(false, tag(&b"-"[..])), value(true, tag(&b"+"[..])))))(input)?;
+    let sign = opt_sign.unwrap_or(true);
+
+    Ok((i, sign))
+}
+
 #[doc(hidden)]
 macro_rules! ints {
     ($($t:tt)+) => {
@@ -619,16 +633,11 @@ macro_rules! ints {
         /// *Complete version*: can parse until the end of input.
         pub fn $t<T, E: ParseError<T>>(input: T) -> IResult<T, $t, E>
             where
-            T: InputIter + Slice<RangeFrom<usize>> + InputLength + Clone,
+            T: InputIter + Slice<RangeFrom<usize>> + InputLength + InputTake + Clone,
             <T as InputIter>::Item: AsChar,
+            T: for <'a> Compare<&'a[u8]>,
             {
-                let i = input.clone();
-                let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
-                let sign = match opt_sign {
-                    Some('+') => true,
-                    Some('-') => false,
-                    _ => true,
-                };
+              let (i, sign) = sign(input.clone())?;
 
                 if i.input_len() == 0 {
                     return Err(Err::Incomplete(Needed::new(1)));
