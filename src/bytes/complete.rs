@@ -412,6 +412,27 @@ where
   }
 }
 
+/// Returns one byte from input
+///
+/// # Streaming Specific
+/// *Streaming version* will return `Err::Incomplete(Needed::new(1))` if the input is empty
+///
+/// # Example
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}};
+/// use nom::bytes::streaming::take_one;
+///
+///
+/// assert_eq!(take_one::<(_, ErrorKind)>(&[1, 2, 3]), Ok((&[2u8, 3][..], 1u8)));
+/// assert_eq!(take_one::<(_, ErrorKind)>(&[]), Err(Err::Error(Error::new(&[], ErrorKind::Eof))));
+/// ```
+pub fn take_one<'a, Error: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8], u8, Error> {
+  match input.split_first() {
+    None => Err(Err::Error(Error::from_error_kind(input, ErrorKind::Eof))),
+    Some((&b, tail)) => Ok((tail, b)),
+  }
+}
+
 /// Returns the input slice up to the first occurrence of the pattern.
 ///
 /// It doesn't consume the pattern. It will return `Err(Err::Error((_, ErrorKind::TakeUntil)))`
