@@ -109,6 +109,69 @@ where
       loop {
         let len = i.input_len();
         match f.parse(i.clone()) {
+          Err(Err::Error(_)) => return Ok((i, acc)),
+          Err(e) => return Err(e),
+          Ok((i1, o)) => {
+            // infinite loop check: the parser must always consume
+            if i1.input_len() == len {
+              return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
+            }
+
+            i = i1;
+            acc.push(o);
+          }
+        }
+      }
+    }
+  }
+}
+
+/// Runs the embedded parser until it fails and
+/// returns the results in a `Vec`. Unlike `many_1`
+/// it does fail in case of `Incomplete` error if
+/// at least one match has been captured so far.
+///
+/// # Arguments
+/// * `f` The parser to apply.
+///
+/// *Note*: If the parser passed to `lazy_many1` accepts empty inputs
+/// (like `alpha0` or `digit0`), `lazy_many1` will return an error,
+/// to prevent going into an infinite loop.
+///
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::multi::lazy_many1;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   lazy_many1(tag("abc"))(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abcab"), Ok(("ab", vec!["abc"]))); // returns first match
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// ```
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+pub fn lazy_many1<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+  where
+      I: Clone + InputLength,
+      F: Parser<I, O, E>,
+      E: ParseError<I>,
+{
+  move |mut i: I| match f.parse(i.clone()) {
+    Err(Err::Error(err)) => Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
+    Err(e) => Err(e),
+    Ok((i1, o)) => {
+      let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
+      acc.push(o);
+      i = i1;
+
+      loop {
+        let len = i.input_len();
+        match f.parse(i.clone()) {
           Err(Err::Error(_)| Err::Incomplete(_)) => return Ok((i, acc)),
           Err(e) => return Err(e),
           Ok((i1, o)) => {

@@ -63,6 +63,22 @@ fn overflow_incomplete_many1() {
 
   // Trigger an overflow in many1
   assert_eq!(
+    multi(&b"\x00\x00\x00\x00\x00\x00\x00\x01\xaa\xff\xff\xff\xff\xff\xff\xff\xef"[..]),
+    Err(Err::Incomplete(Needed::new(18446744073709551599)))
+  );
+}
+
+#[test]
+#[cfg(feature = "alloc")]
+fn overflow_incomplete_lazy_many1() {
+  use nom::multi::lazy_many1;
+
+  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    lazy_many1(length_data(be_u64))(i)
+  }
+
+  // Trigger an overflow in lazy_many1
+  assert_eq!(
     multi(&b"\xaa\xff\xff\xff\xff\xff\xff\xff\xef\x00\x00\x00\x00\x00\x00\x00\x01"[..]),
     Err(Err::Incomplete(Needed::new(12321848580485677046)))
   );
