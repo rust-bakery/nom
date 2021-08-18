@@ -27,7 +27,7 @@ pub enum Expr {
 
 // We need to be able to encode different types of operators. So we make the operator parser output one of the Operator enums.
 enum Operator<'a> {
-  // A "raw" operator. This encodes operators that have no additional information beyond their own representation (e.g. "+", "*", "-")
+  // A "raw" operator. This encodes operators that have no additional information beyond their own representation (e.g. "+", "*", "-").
   Raw(&'a str),
   // The function call operator. In addition to its own representation "()" it carries additional information that we need to keep here.
   // Specifically the vector of expressions that make up the parameters.
@@ -47,6 +47,7 @@ fn function_call(i: &str) -> IResult<&str, Operator> {
   map(
     delimited(
       tag("("),
+      // subexpressions are evaluated by recursing back into the expression parser.
       separated_list0(tag(","), expression),
       tag(")")
     ),
@@ -59,7 +60,6 @@ fn expression(i: &str) -> IResult<&str, Expr> {
   precedence(
     unary_op(2, token("-")),
     // function calls are implemented as postfix unary operators.
-    // The contained expressions are evaluated via recursion by having the function_call parser call expression.
     unary_op(1, function_call),
     alt((
       binary_op(3, Assoc::Left, alt((
@@ -85,9 +85,11 @@ fn expression(i: &str) -> IResult<&str, Expr> {
       use nom::precedence::Operation::*;
       use Operator::*;
       match op {
-        // Unary minus gets evaluated to the same representation as a multiplication with -1
+        // Unary minus gets evaluated to the same representation as a multiplication with -1.
         Prefix(Raw("-"), e) => Ok(Expr::Mul(Expr::Number(-1).into(), e.into())),
+        // The list of parameters are taken from the operator and placed into the ast.
         Postfix(e, Call(p)) => Ok(Expr::Call(e.into(), p)),
+        // Raw operators get turned into their respective ast nodes.
         Binary(lhs, Raw("*"), rhs) => Ok(Expr::Mul(lhs.into(), rhs.into())),
         Binary(lhs, Raw("/"), rhs) => Ok(Expr::Div(lhs.into(), rhs.into())),
         Binary(lhs, Raw("+"), rhs) => Ok(Expr::Add(lhs.into(), rhs.into())),
@@ -100,9 +102,8 @@ fn expression(i: &str) -> IResult<&str, Expr> {
 
 #[test]
 fn expression_test() {
-  let res = expression("-2*max(2,3)-2");
   assert_eq!(
-    res.map(|(i, x)| (i, format!("{:?}", x))),
+    expression("-2*max(2,3)-2").map(|(i, x)| (i, format!("{:?}", x))),
     Ok(("", String::from("Sub(Mul(Mul(Number(-1), Number(2)), Call(Identifier(\"max\"), [Number(2), Number(3)])), Number(2))")))
   );
 }
