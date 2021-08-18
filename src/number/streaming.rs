@@ -1440,7 +1440,10 @@ where
         }
       }
 
-      let position = position.unwrap_or(i.input_len());
+      let position = match position {
+          Some(p) => p,
+          None => return Err(Err::Incomplete(Needed::new(1))),
+      };
 
       let index = if zero_count == 0 {
         position
