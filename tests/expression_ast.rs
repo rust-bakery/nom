@@ -86,12 +86,12 @@ fn expression(i: &str) -> IResult<&str, Expr> {
       use Operator::*;
       match op {
         // Unary minus gets evaluated to the same representation as a multiplication with -1
-        Prefix(Raw("-"), e) => Ok(Expr::Mul(Box::new(Expr::Number(-1)), Box::new(e))),
-        Postfix(e, Call(p)) => Ok(Expr::Call(Box::new(e), p)),
-        Binary(lhs, Raw("*"), rhs) => Ok(Expr::Mul(Box::new(lhs), Box::new(rhs))),
-        Binary(lhs, Raw("/"), rhs) => Ok(Expr::Div(Box::new(lhs), Box::new(rhs))),
-        Binary(lhs, Raw("+"), rhs) => Ok(Expr::Add(Box::new(lhs), Box::new(rhs))),
-        Binary(lhs, Raw("-"), rhs) => Ok(Expr::Sub(Box::new(lhs), Box::new(rhs))),
+        Prefix(Raw("-"), e) => Ok(Expr::Mul(Expr::Number(-1).into(), e.into())),
+        Postfix(e, Call(p)) => Ok(Expr::Call(e.into(), p)),
+        Binary(lhs, Raw("*"), rhs) => Ok(Expr::Mul(lhs.into(), rhs.into())),
+        Binary(lhs, Raw("/"), rhs) => Ok(Expr::Div(lhs.into(), rhs.into())),
+        Binary(lhs, Raw("+"), rhs) => Ok(Expr::Add(lhs.into(), rhs.into())),
+        Binary(lhs, Raw("-"), rhs) => Ok(Expr::Sub(lhs.into(), rhs.into())),
         _ => Err("Invalid op combo."),
       }
     }
