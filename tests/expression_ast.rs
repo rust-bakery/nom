@@ -30,7 +30,7 @@ enum Operator<'a> {
   // A "raw" operator. This encodes operators that have no additional information beyond their own representation (e.g. "+", "*", "-")
   Raw(&'a str),
   // The function call operator. In addition to its own representation "()" it carries additional information that we need to keep here.
-  // Specifically the vector of expressions that make up the paramters.
+  // Specifically the vector of expressions that make up the parameters.
   Call(Vec<Expr>),
 }
 
