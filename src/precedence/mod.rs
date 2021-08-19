@@ -1,5 +1,6 @@
 //! Combinators to parse expressions with operator precedence.
 #![cfg(feature="alloc")]
+#![cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 
 #[cfg(test)]
 mod tests;
@@ -208,7 +209,6 @@ where
 /// * It then reads the remaining input and evaluates the increment next in order to preserve its
 /// position in the expression \
 /// `((-a)++)**b`.
-#[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn precedence<I, O, E, E2, F, G, H1, H3, H2, P, Q>(
   mut prefix: H1,
