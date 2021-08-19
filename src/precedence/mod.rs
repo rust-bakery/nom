@@ -258,6 +258,8 @@ where
 
       'postfix: loop {
         match postfix.parse(i1.clone()) {
+          Err(Err::Error(_)) => break 'postfix,
+          Err(e) => return Err(e),
           Ok((i2, o)) => {
             // infinite loop check: the parser must always consume
             if i2 == i1 {
@@ -293,11 +295,12 @@ where
             i1 = i2;
             operators.push(Operator::Postfix(o.value, o.precedence));
           }
-          Err(_) => break 'postfix,
         }
       }
 
       match binary.parse(i1.clone()) {
+        Err(Err::Error(_)) => break 'main,
+        Err(e) => return Err(e),
         Ok((i2, o)) => {
           while operators
             .last()
@@ -332,7 +335,6 @@ where
           operators.push(Operator::Binary(o.value, o.precedence, o.assoc));
           i1 = i2;
         }
-        Err(_) => break 'main,
       }
 
       // infinite loop check: either operand or operator must consume input
