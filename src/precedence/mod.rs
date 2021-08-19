@@ -250,6 +250,7 @@ where
 
       let (i2, o) = match operand.parse(i1.clone()) {
         Ok((i, o)) => (i, o),
+        Err(Err::Error(e)) => return Err(Err::Error(E::append(i, ErrorKind::Precedence, e))),
         Err(e) => return Err(e),
       };
       i1 = i2;
