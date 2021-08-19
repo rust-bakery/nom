@@ -13,9 +13,9 @@ use nom::{
 #[derive(Debug)]
 pub enum Expr {
   // A number literal.
-  Number(i64),
+  Num(i64),
   // An identifier.
-  Identifier(String),
+  Iden(String),
   // Arithmetic operations. Each have a left hand side (lhs) and a right hand side (rhs).
   Add(Box<Expr>, Box<Expr>),
   Sub(Box<Expr>, Box<Expr>),
@@ -24,7 +24,7 @@ pub enum Expr {
   // The function call operation. Left is the expression the function is called on, right is the list of parameters.
   Call(Box<Expr>, Vec<Expr>),
   // The ternary operator, the expressions from left to right are: The condition, the true case, the false case.
-  Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
+  Tern(Box<Expr>, Box<Expr>, Box<Expr>),
 }
 
 // We need to be able to encode different types of operators. So we make the operator parsers output one of the Operator variants.
@@ -62,10 +62,10 @@ fn function_call(i: &str) -> IResult<&str, Operator> {
 // handled similarly to the function call operator except its in a binary position and can only contain
 // a single expression.
 // 
-// For example the expression `a<b ? a : b` is handled similarly to the function call operator, the
-// ? is treated like an opening bracket and the : is treated like a closing bracket.
+// For example the expression "a<b ? a : b" is handled similarly to the function call operator, the
+// "?" is treated like an opening bracket and the ":" is treated like a closing bracket.
 //
-// For the outer expression the result looks like `a<b ?: b`. Where `?:` is a single operator. The
+// For the outer expression the result looks like "a<b ?: b". Where "?:" is a single operator. The
 // subexpression is contained within the operator in the same way that the function call operator
 // contains subexpressions.
 fn ternary_operator(i: &str) -> IResult<&str, Operator> {
@@ -100,11 +100,11 @@ fn expression(i: &str) -> IResult<&str, Expr> {
     alt((
       map_res(digit,
         |s: &str| match s.parse::<i64>() {
-          Ok(s) => Ok(Expr::Number(s)),
+          Ok(s) => Ok(Expr::Num(s)),
           Err(e) => Err(e),
         }
       ),
-      map(alphanumeric, |s: &str| Expr::Identifier(s.to_string())),
+      map(alphanumeric, |s: &str| Expr::Iden(s.to_string())),
       delimited(tag("("), expression, tag(")")),
     )),
     |op: Operation<Operator, Expr>| {
@@ -112,14 +112,14 @@ fn expression(i: &str) -> IResult<&str, Expr> {
       use Operator::*;
       match op {
         // Unary minus gets evaluated to the same representation as a multiplication with -1.
-        Prefix(Raw("-"), e) => Ok(Expr::Mul(Expr::Number(-1).into(), e.into())),
+        Prefix(Raw("-"), e) => Ok(Expr::Mul(Expr::Num(-1).into(), e.into())),
         
         // The list of parameters are taken from the operator and placed into the ast.
         Postfix(e, Call(p)) => Ok(Expr::Call(e.into(), p)),
         
         // Meaning is assigned to the expressions of the ternary operator during evaluation.
         // The lhs becomes the condition, the contained expression is the true case, rhs the false case.
-        Binary(lhs, Ternary(e), rhs) => Ok(Expr::Ternary(lhs.into(), e.into(), rhs.into())),
+        Binary(lhs, Ternary(e), rhs) => Ok(Expr::Tern(lhs.into(), e.into(), rhs.into())),
         
         // Raw operators get turned into their respective ast nodes.
         Binary(lhs, Raw("*"), rhs) => Ok(Expr::Mul(lhs.into(), rhs.into())),
@@ -137,11 +137,11 @@ fn expression(i: &str) -> IResult<&str, Expr> {
 fn expression_test() {
   assert_eq!(
     expression("-2*max(2,3)-2").map(|(i, x)| (i, format!("{:?}", x))),
-    Ok(("", String::from("Sub(Mul(Mul(Number(-1), Number(2)), Call(Identifier(\"max\"), [Number(2), Number(3)])), Number(2))")))
+    Ok(("", String::from("Sub(Mul(Mul(Num(-1), Num(2)), Call(Iden(\"max\"), [Num(2), Num(3)])), Num(2))")))
   );
   
  assert_eq!(
    expression("a?2+c:-2*2").map(|(i, x)| (i, format!("{:?}", x))),
-   Ok(("", String::from("Ternary(Identifier(\"a\"), Add(Number(2), Identifier(\"c\")), Mul(Mul(Number(-1), Number(2)), Number(2)))")))
+   Ok(("", String::from("Tern(Iden(\"a\"), Add(Num(2), Iden(\"c\")), Mul(Mul(Num(-1), Num(2)), Num(2)))")))
  );
 }
