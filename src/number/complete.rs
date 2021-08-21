@@ -1445,13 +1445,17 @@ where
 
   //let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
   let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0' as u8) {
-      Some(index) => i.take_split(index),
-      None => i.take_split(i.input_len()),
+    Some(index) => i.take_split(index),
+    None => i.take_split(i.input_len()),
   };
   //let (i, mut integer) = digit0(i)?;
-  let (i, mut integer) = match i.as_bytes().iter().position(|c| !(*c >= b'0' as u8 && *c <= b'9' as u8)) {
-      Some(index) => i.take_split(index),
-      None => i.take_split(i.input_len()),
+  let (i, mut integer) = match i
+    .as_bytes()
+    .iter()
+    .position(|c| !(*c >= b'0' as u8 && *c <= b'9' as u8))
+  {
+    Some(index) => i.take_split(index),
+    None => i.take_split(i.input_len()),
   };
 
   if integer.input_len() == 0 && zeroes.input_len() > 0 {
@@ -1499,9 +1503,9 @@ where
 
   let i2 = i.clone();
   let (i, e) = match i.as_bytes().iter().next() {
-      Some(b'e') => (i.slice(1..), true),
-      Some(b'E') => (i.slice(1..), true),
-      _ => (i, false),
+    Some(b'e') => (i.slice(1..), true),
+    Some(b'E') => (i.slice(1..), true),
+    _ => (i, false),
   };
 
   let (i, exp) = if e {

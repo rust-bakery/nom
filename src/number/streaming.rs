@@ -1419,7 +1419,11 @@ where
   };
 
   //let (i, mut integer) = digit0(i)?;
-  let (i, mut integer) = match i.as_bytes().iter().position(|c| !(*c >= b'0' as u8 && *c <= b'9' as u8)) {
+  let (i, mut integer) = match i
+    .as_bytes()
+    .iter()
+    .position(|c| !(*c >= b'0' as u8 && *c <= b'9' as u8))
+  {
     Some(index) => i.take_split(index),
     None => i.take_split(i.input_len()),
   };
@@ -1438,8 +1442,8 @@ where
     let mut zero_count = 0usize;
     let mut position = None;
     for (pos, c) in i.as_bytes().iter().enumerate() {
-        if *c >= b'0' as u8 && *c <= b'9' as u8 {
-            if *c == b'0' as u8 {
+      if *c >= b'0' as u8 && *c <= b'9' as u8 {
+        if *c == b'0' as u8 {
           zero_count += 1;
         } else {
           zero_count = 0;
@@ -1472,9 +1476,9 @@ where
 
   let i2 = i.clone();
   let (i, e) = match i.as_bytes().iter().next() {
-      Some(b'e') => (i.slice(1..), true),
-      Some(b'E') => (i.slice(1..), true),
-      _ => (i, false),
+    Some(b'e') => (i.slice(1..), true),
+    Some(b'E') => (i.slice(1..), true),
+    _ => (i, false),
   };
 
   let (i, exp) = if e {
