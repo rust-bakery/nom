@@ -5,7 +5,7 @@
 [![Build Status](https://travis-ci.org/Geal/nom.svg?branch=master)](https://travis-ci.org/Geal/nom)
 [![Coverage Status](https://coveralls.io/repos/Geal/nom/badge.svg?branch=master)](https://coveralls.io/r/Geal/nom?branch=master)
 [![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.46.0+-lightgray.svg)](#rust-version-requirements)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.48.0+-lightgray.svg)](#rust-version-requirements)
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools
 to build safe parsers without compromising the speed or memory consumption. To
@@ -77,7 +77,7 @@ fn parse_color() {
 - [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc)
 - [List of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
 
-If you need any help developing your parsers, please ping `geal` on IRC (freenode, geeknode, oftc), go to `#nom-parsers` on Freenode IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
+If you need any help developing your parsers, please ping `geal` on IRC (libera, geeknode, oftc), go to `#nom-parsers` on Libera IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
 ## Why use nom
 
@@ -188,8 +188,7 @@ Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks
 
 ## Rust version requirements
 
-The 7.0 series of nom requires **Rustc version 1.46 or greater**, but it can change for some feature combinations:
-- compatible with 1.41.1 if building without the `lexical` feature, ie `--no-default-features --features std`
+The 7.0 series of nom supports **Rustc version 1.48 or greater**. It is known to work properly on Rust 1.41.1 but there is no guarantee it will stay the case through this major release.
 
 The current policy is that this will only be updated in the next major nom release.
 
@@ -199,24 +198,21 @@ nom is available on [crates.io](https://crates.io/crates/nom) and can be include
 
 ```toml
 [dependencies]
-nom = "6"
+nom = "7"
 ```
-
-**NOTE: If you have existing code using nom below the 5.0 version, please take a look
-at the [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md)
-to handle the breaking changes.**
 
 There are a few compilation features:
 
-* `std`: (activated by default) if disabled, nom can work in `no_std` builds
-* `regexp`: Enables regular expression parsers with the `regex` crate
+* `alloc`: (activated by default) if disabled, nom can work in `no_std` builds without memory allocators. If enabled, combinators that allocate (like `many0`) will be available
+* `std`: (activated by default, activates `alloc` too) if disabled, nom can work in `no_std` builds
 
-You can activate those features like this:
+You can configure those features like this:
 
 ```toml
 [dependencies.nom]
-version = "6"
-features = ["regexp"]
+version = "7"
+default-features = false
+features = ["alloc"]
 ```
 
 # Related projects
