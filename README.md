@@ -203,7 +203,7 @@ nom = "7"
 
 There are a few compilation features:
 
-* `alloc`: (activated by default) if disabled, nom can work in `no_std` builds without memory allocators. If enabled, combinators that allocate (like `many0`) will be available
+* `alloc`: (activated by default) if disabled, nom can work in `no_std` builds without memory allocators. If enabled, combinators that allocate (like `many0`) will be unavailable
 * `std`: (activated by default, activates `alloc` too) if disabled, nom can work in `no_std` builds
 
 You can configure those features like this:
