@@ -7,13 +7,13 @@ nom is designed to abstract data manipulation (counting array offsets,
 converting to structures, etc) while providing a safe, composable API. It also
 takes care of making the code easy to test and read, but it can be confusing at
 first, if you are not familiar with parser combinators, or if you are not used
-to Rust macros and generic functions.
+to Rust generic functions.
 
 This document is here to help you in getting started with nom. You can also find
 [nom recipes for common short parsing tasks here](nom_recipes.md). If you need
-more specific help, please ping `geal` on IRC (freenode, geeknode,
-oftc), go to `#nom-parsers` on Freenode IRC, or on the 
-[Gitter chat room](https://gitter.im/Geal/nom).   
+more specific help, please ping `geal` on IRC (libera, geeknode,
+oftc), go to `#nom-parsers` on Libera IRC, or on the
+[Gitter chat room](https://gitter.im/Geal/nom).
 
 # First step: the initial research
 
@@ -42,8 +42,6 @@ Usually, you can separate the parsing functions in their own module, so you
 could have a `src/lib.rs` file containing this:
 
 ```rust
-#[macro_use]
-extern crate nom;
 pub mod parser;
 ```
 
@@ -205,56 +203,3 @@ fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
 f(a);
 ```
 
-## Macros specific debugging tools
-
-### trace\_macros
-
-The `trace_macros` feature show how macros are applied. To use it, add `#![feature(trace_macros)]` at the top of your file (you need Rust nightly for this), then apply it like this:
-
-```rust
-trace_macros!(true);
-named!(manytag< Vec<&[u8]> >, many0!(take!(5)));
-trace_macros!(false);
-```
-
-It will result in the following output during compilation:
-
-```rust
-named! { manytag , many0 ! ( take ! ( 5 ) ) }
-many0! { i , take ! ( 5 ) }
-take! { input , 5 }
-```
-
-### Pretty printing
-
-rustc can show how code is expanded with the option `--pretty=expanded`. If you want to use it with cargo, use the following command line: `cargo rustc <cargo options> -- -Z unstable-options --pretty=expanded`
-
-It will print the `manytag` function like this:
-
-```rust
-fn manytag(i: &[u8]) -> ::nom::IResult<&[u8], Vec<&[u8]>> {
-    let mut res = Vec::new();
-    let mut input = i;
-    while let Ok((i, o)) =
-              {
-                  let cnt = 5 as usize;
-                  let res: ::nom::IResult<&[u8], &[u8]> =
-                      if input.len() < cnt {
-                          Err(::nom::Err::Incomplete(::nom::Needed::Size(cnt)))
-                      } else {
-                          Ok( (&input[cnt..], &input[0..cnt]))
-                      };
-                  res
-              } {
-        if i.len() == input.len() { break ; }
-        res.push(o);
-        input = i;
-    }
-    Ok((input, res))
-}
-```
-
-### nom-trace
-
-The [nom-trace crate](https://github.com/rust-bakery/nom-trace) extends
-the principle of `dbg_dmp!` to give more context to a parse tree.

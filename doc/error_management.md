@@ -416,7 +416,7 @@ through 2 recursive map parsers:
 While you are writing your parsers, you will sometimes need to follow
 which part of the parser sees which part of the input.
 
-To that end, nom provides the `dbg_dmp` function and macro, that will observe
+To that end, nom provides the `dbg_dmp` function that will observe
 a parser's input and output, and print a hexdump of the input if there was an
 error. Here is what it could return:
 
