@@ -16,7 +16,7 @@ jobs:
           - stable
           - beta
           - nightly
-          - 1.46.0
+          - 1.48.0
 
         features:
           - ''
@@ -61,7 +61,7 @@ jobs:
           args: --verbose ${{ matrix.features }}
 
   minrust:
-    name: Test MSRV
+    name: Test minimal rust version
     runs-on: ubuntu-latest
 
     steps:
