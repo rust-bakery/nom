@@ -1,8 +1,8 @@
 //! Parsers recognizing numbers, complete input version
 
 use crate::branch::alt;
-use crate::bytes::complete::{tag, tag_no_case, take_while};
-use crate::character::complete::{char, digit0, digit1, sign};
+use crate::bytes::complete::tag;
+use crate::character::complete::{char, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
@@ -1439,11 +1439,20 @@ where
   T: InputTakeAtPosition + InputLength,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: for<'a> Compare<&'a [u8]>,
+  T: AsBytes,
 {
   let (i, sign) = sign(input.clone())?;
 
-  let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
-  let (i, mut integer) = digit0(i)?;
+  //let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
+  let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0' as u8) {
+      Some(index) => i.take_split(index),
+      None => i.take_split(i.input_len()),
+  };
+  //let (i, mut integer) = digit0(i)?;
+  let (i, mut integer) = match i.as_bytes().iter().position(|c| !(*c >= b'0' as u8 && *c <= b'9' as u8)) {
+      Some(index) => i.take_split(index),
+      None => i.take_split(i.input_len()),
+  };
 
   if integer.input_len() == 0 && zeroes.input_len() > 0 {
     // keep the last zero if integer is empty
@@ -1458,11 +1467,9 @@ where
     // match number, trim right zeroes
     let mut zero_count = 0usize;
     let mut position = None;
-    for (pos, c) in i.iter_indices() {
-      let c = c.as_char();
-
-      if c.is_ascii_digit() {
-        if c == '0' {
+    for (pos, c) in i.as_bytes().iter().enumerate() {
+      if *c >= b'0' as u8 && *c <= b'9' as u8 {
+        if *c == b'0' as u8 {
           zero_count += 1;
         } else {
           zero_count = 0;
@@ -1491,9 +1498,13 @@ where
   }
 
   let i2 = i.clone();
-  let (i, e) = opt(tag_no_case(&b"e"[..]))(i)?;
+  let (i, e) = match i.as_bytes().iter().next() {
+      Some(b'e') => (i.slice(1..), true),
+      Some(b'E') => (i.slice(1..), true),
+      _ => (i, false),
+  };
 
-  let (i, exp) = if e.is_some() {
+  let (i, exp) = if e {
     cut(crate::character::complete::i32)(i)?
   } else {
     (i2, 0)
