@@ -18,7 +18,6 @@ include = [
   "LICENSE",
   "README.md",
   ".gitignore",
-  ".travis.yml",
   "Cargo.toml",
   "src/*.rs",
   "src/*/*.rs",
@@ -50,7 +49,7 @@ proptest = "1.0.0"
 version_check = "0.9"
 
 [package.metadata.docs.rs]
-features = [ "alloc", "std", "lexical", "docsrs"]
+features = ["alloc", "std", "docsrs"]
 all-features = true
 
 [profile.bench]
