@@ -63,8 +63,6 @@
 //! If you are upgrading to nom 5.0, please read the
 //! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md).
 //!
-//! See also the [FAQ](https://github.com/Geal/nom/blob/master/doc/FAQ.md).
-//!
 //! ## Parser combinators
 //!
 //! Parser combinators are an approach to parsers that is very different from
