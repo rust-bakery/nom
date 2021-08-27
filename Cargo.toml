@@ -69,9 +69,6 @@ name = "arithmetic_ast"
 required-features = ["alloc"]
 
 [[test]]
-name = "blockbuf-arithmetic"
-
-[[test]]
 name = "css"
 
 [[test]]
