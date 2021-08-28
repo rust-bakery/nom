@@ -1534,17 +1534,17 @@ where
   Ok((i, float))
 }
 
-/// Recognizes floating point number in text format and returns a f32.
+/// Recognizes floating point number in text format and returns a f64.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
-/// use nom::number::complete::float;
+/// use nom::number::complete::double;
 ///
 /// let parser = |s| {
-///   float(s)
+///   double(s)
 /// };
 ///
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
