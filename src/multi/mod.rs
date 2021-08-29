@@ -206,24 +206,72 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list0<I, O, O2, E, F, G>(
+pub fn separated_list0<I, O, O2, E, F, G>(sep: G, f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+where
+  I: Clone + PartialEq,
+  F: Parser<I, O, E>,
+  G: Parser<I, O2, E>,
+  E: ParseError<I>,
+{
+  fold_separated0(
+    sep,
+    f,
+    || vec![],
+    |mut v, o| {
+      v.push(o);
+      v
+    },
+  )
+}
+
+/// Alternates between two parsers to produce
+/// a list of elements, building the output by
+/// passing the list to an accumulation
+/// function.
+/// # Arguments
+/// * `sep` Parses the separator between list elements.
+/// * `f` Parses the elements of the list.
+/// * `init` Returns the initial element of the accumulation
+/// * `acc` Accumulates another element to the result
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fold_separated0;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, usize> {
+///   fold_separated0(tag("|"), tag("abc"),
+///     || 0,
+///     |l, o: &str| l + o.len())(s)
+/// }
+///
+/// assert_eq!(parser("abc|abc|abc"), Ok(("", 9)));
+/// assert_eq!(parser("abc123abc"), Ok(("123abc", 3)));
+/// assert_eq!(parser("abc|def"), Ok(("|def", 3)));
+/// assert_eq!(parser(""), Ok(("", 0)));
+/// assert_eq!(parser("def|abc"), Ok(("def|abc", 0)));
+/// ```
+pub fn fold_separated0<I, O, O2, E, F, G, H, A, R>(
   mut sep: G,
   mut f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+  mut init: H,
+  mut acc: A,
+) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + InputLength,
   F: Parser<I, O, E>,
   G: Parser<I, O2, E>,
   E: ParseError<I>,
+  H: FnMut() -> R,
+  A: FnMut(R, O) -> R,
 {
   move |mut i: I| {
-    let mut res = Vec::new();
+    let mut res = init();
 
     match f.parse(i.clone()) {
       Err(Err::Error(_)) => return Ok((i, res)),
       Err(e) => return Err(e),
       Ok((i1, o)) => {
-        res.push(o);
+        res = acc(res, o);
         i = i1;
       }
     }
@@ -243,7 +291,7 @@ where
             Err(Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i2, o)) => {
-              res.push(o);
+              res = acc(res, o);
               i = i2;
             }
           }
@@ -277,24 +325,73 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list1<I, O, O2, E, F, G>(
+pub fn separated_list1<I, O, O2, E, F, G>(sep: G, f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+where
+  I: Clone + PartialEq,
+  F: Parser<I, O, E>,
+  G: Parser<I, O2, E>,
+  E: ParseError<I>,
+{
+  fold_separated1(
+    sep,
+    f,
+    || vec![],
+    |mut v, o| {
+      v.push(o);
+      v
+    },
+  )
+}
+
+/// Alternates between two parsers to produce
+/// a list of elements, building the output by
+/// passing the list to an accumulation
+/// function. Fails if the list did not contain
+/// at least one element.
+/// # Arguments
+/// * `sep` Parses the separator between list elements.
+/// * `f` Parses the elements of the list.
+/// * `init` Returns the initial element of the accumulation
+/// * `acc` Accumulates another element to the result
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::multi::fold_separated1;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, usize> {
+///   fold_separated1(tag("|"), tag("abc"),
+///     || 0,
+///     |l, o: &str| l + o.len())(s)
+/// }
+///
+/// assert_eq!(parser("abc|abc|abc"), Ok(("", 9)));
+/// assert_eq!(parser("abc123abc"), Ok(("123abc", 3)));
+/// assert_eq!(parser("abc|def"), Ok(("|def", 3)));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// assert_eq!(parser("def|abc"), Err(Err::Error(Error::new("def|abc", ErrorKind::Tag))));
+/// ```
+pub fn fold_separated1<I, O, O2, E, F, G, H, A, R>(
   mut sep: G,
   mut f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+  mut init: H,
+  mut acc: A,
+) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + InputLength,
   F: Parser<I, O, E>,
   G: Parser<I, O2, E>,
   E: ParseError<I>,
+  H: FnMut() -> R,
+  A: FnMut(R, O) -> R,
 {
   move |mut i: I| {
-    let mut res = Vec::new();
+    let mut res = init();
 
     // Parse the first element
     match f.parse(i.clone()) {
       Err(e) => return Err(e),
       Ok((i1, o)) => {
-        res.push(o);
+        res = acc(res, o);
         i = i1;
       }
     }
@@ -314,7 +411,7 @@ where
             Err(Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i2, o)) => {
-              res.push(o);
+              res = acc(res, o);
               i = i2;
             }
           }
