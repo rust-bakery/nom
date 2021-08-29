@@ -29,8 +29,12 @@ include = [
 [features]
 alloc = []
 std = ["alloc", "memchr/use_std", "minimal-lexical/std"]
-default = ["std"]
+default = ["std", "num_enum"]
 docsrs = []
+
+[dependencies.num_enum]
+version = "0.5.4"
+optional = true
 
 [dependencies.minimal-lexical]
 version = "0.1.2"

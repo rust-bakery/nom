@@ -364,6 +364,11 @@ pub fn convert_error<I: core::ops::Deref<Target = str>>(
 #[derive(
   Debug, PartialEq, Eq, Hash, Clone, Copy,
 )]
+#[cfg_attr(feature = "num_enum", derive(
+  num_enum::IntoPrimitive,
+  num_enum::TryFromPrimitive,
+  num_enum::UnsafeFromPrimitive,
+))]
 #[allow(deprecated, missing_docs)]
 #[repr(u8)]
 pub enum ErrorKind {
