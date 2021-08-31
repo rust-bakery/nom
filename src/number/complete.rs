@@ -211,7 +211,6 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-#[cfg(stable_i128)]
 pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -365,7 +364,6 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-#[cfg(stable_i128)]
 pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -551,7 +549,6 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-#[cfg(stable_i128)]
 pub fn le_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -705,7 +702,6 @@ where
 /// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-#[cfg(stable_i128)]
 pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -926,7 +922,6 @@ where
 /// assert_eq!(le_u128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-#[cfg(stable_i128)]
 pub fn u128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -1146,7 +1141,6 @@ where
 /// assert_eq!(le_i128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-#[cfg(stable_i128)]
 pub fn i128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
@@ -1755,7 +1749,6 @@ mod tests {
   }
 
   #[test]
-  #[cfg(stable_i128)]
   fn be_i128_tests() {
     assert_parse!(
       be_i128(
@@ -1872,7 +1865,6 @@ mod tests {
   }
 
   #[test]
-  #[cfg(stable_i128)]
   fn le_i128_tests() {
     assert_parse!(
       le_i128(
