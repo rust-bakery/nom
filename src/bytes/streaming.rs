@@ -629,7 +629,7 @@ where
 ///     alt((
 ///       value("\\", tag("\\")),
 ///       value("\"", tag("\"")),
-///       value("n", tag("\n")),
+///       value("\n", tag("n")),
 ///     ))
 ///   )(input)
 /// }
