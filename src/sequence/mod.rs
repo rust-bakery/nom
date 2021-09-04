@@ -12,6 +12,7 @@ use crate::internal::{IResult, Parser};
 /// # Arguments
 /// * `first` The first parser to apply.
 /// * `second` The second parser to apply.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -45,6 +46,7 @@ where
 /// # Arguments
 /// * `first` The opening parser.
 /// * `second` The second parser to get object.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -78,6 +80,7 @@ where
 /// # Arguments
 /// * `first` The first parser to apply.
 /// * `second` The second parser to match an object.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -113,6 +116,7 @@ where
 /// * `first` The first parser to apply.
 /// * `sep` The separator parser to apply.
 /// * `second` The second parser to apply.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -151,6 +155,7 @@ where
 /// * `first` The first parser to apply and discard.
 /// * `second` The second parser to apply.
 /// * `third` The third parser to apply and discard.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
