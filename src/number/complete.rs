@@ -1608,7 +1608,6 @@ mod tests {
   use super::*;
   use crate::error::ErrorKind;
   use crate::internal::Err;
-  use crate::traits::ParseTo;
   use proptest::prelude::*;
 
   macro_rules! assert_parse(
@@ -2050,7 +2049,9 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "std")]
   fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
+    use crate::traits::ParseTo;
     match recognize_float(i) {
       Err(e) => Err(e),
       Ok((i, s)) => {
