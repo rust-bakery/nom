@@ -24,7 +24,7 @@ where
       if input.input_len() * 8 < count + bit_offset {
         Err(Err::Incomplete(Needed::new(count as usize)))
       } else {
-        let mut acc: O = (0 as u8).into();
+        let mut acc: O = 0_u8.into();
         let mut offset: usize = bit_offset;
         let mut remaining: usize = count;
         let mut end_offset: usize = 0;

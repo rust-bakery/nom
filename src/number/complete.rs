@@ -1444,7 +1444,7 @@ where
   let (i, sign) = sign(input.clone())?;
 
   //let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
-  let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0' as u8) {
+  let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0') {
     Some(index) => i.take_split(index),
     None => i.take_split(i.input_len()),
   };
@@ -1452,7 +1452,7 @@ where
   let (i, mut integer) = match i
     .as_bytes()
     .iter()
-    .position(|c| !(*c >= b'0' as u8 && *c <= b'9' as u8))
+    .position(|c| !(*c >= b'0' && *c <= b'9'))
   {
     Some(index) => i.take_split(index),
     None => i.take_split(i.input_len()),
@@ -1472,8 +1472,8 @@ where
     let mut zero_count = 0usize;
     let mut position = None;
     for (pos, c) in i.as_bytes().iter().enumerate() {
-      if *c >= b'0' as u8 && *c <= b'9' as u8 {
-        if *c == b'0' as u8 {
+      if *c >= b'0' && *c <= b'9' {
+        if *c == b'0' {
           zero_count += 1;
         } else {
           zero_count = 0;
