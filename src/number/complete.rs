@@ -1,5 +1,6 @@
 //! Parsers recognizing numbers, complete input version
 
+use core::{f32, f64};
 use crate::branch::alt;
 use crate::bytes::complete::tag;
 use crate::character::complete::{char, digit1, sign};
@@ -1426,6 +1427,8 @@ where
   )(input)
 }
 
+///
+
 /// Recognizes a floating point number in text format and returns the integer, fraction and exponent parts of the input data
 ///
 /// *Complete version*: Can parse until the end of input.
@@ -1442,7 +1445,6 @@ where
   T: AsBytes,
 {
   let (i, sign) = sign(input.clone())?;
-
   //let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
   let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0' as u8) {
     Some(index) => i.take_split(index),
@@ -1517,6 +1519,85 @@ where
   Ok((i, (sign, integer, fraction, exp)))
 }
 
+macro_rules! float_finite {
+  ($input:ident, $t:ty) => {{
+    let (i, (sign, integer, fraction, exponent)) = recognize_float_parts($input)?;
+
+    let mut float: $t = minimal_lexical::parse_float(
+      integer.as_bytes().iter(),
+      fraction.as_bytes().iter(),
+      exponent,
+    );
+    if !sign {
+      float = -float;
+    }
+
+    Ok((i, float))
+  }};
+}
+
+macro_rules! float_nonfinite {
+  ($input:ident, $t:ident) => {{
+    let (input, sign) = sign($input.clone())?;
+    let b = input.as_bytes();
+    let (mut float, count) = if b.len() >= 3 {
+      if crate::number::case_insensitive_cmp(b, b"nan") {
+        ($t::NAN, 3)
+      } else if b.len() >= 8 && crate::number::case_insensitive_cmp(b, b"infinity") {
+        ($t::INFINITY, 8)
+      } else if crate::number::case_insensitive_cmp(b, b"inf") {
+        ($t::INFINITY, 3)
+      } else {
+        return Err(Err::Error(E::from_error_kind($input, ErrorKind::Float)));
+      }
+    } else {
+      return Err(Err::Error(E::from_error_kind($input, ErrorKind::Float)));
+    };
+    if !sign {
+      float = -float;
+    }
+
+    Ok((input.slice(count..), float))
+  }};
+}
+
+/// Recognizes floating point number in text format and returns a f32.
+///
+/// *Complete version*: Can parse until the end of input. This only handles
+/// finite (non-special floats).
+/// ```
+fn float_finite<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
+where
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
+  <T as InputIter>::IterElem: Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
+  T: AsBytes,
+  T: for<'a> Compare<&'a [u8]>,
+{
+  float_finite!(input, f32)
+}
+
+/// Recognizes floating point number in text format and returns a f32.
+/// This only handles non-finite (special) values.
+fn float_nonfinite<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
+where
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
+  <T as InputIter>::IterElem: Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
+  T: AsBytes,
+  T: for<'a> Compare<&'a [u8]>,
+{
+  float_nonfinite!(input, f32)
+}
+
 /// Recognizes floating point number in text format and returns a f32.
 ///
 /// *Complete version*: Can parse until the end of input.
@@ -1546,30 +1627,56 @@ where
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
 {
-  let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
-
-  let mut float: f32 = minimal_lexical::parse_float(
-    integer.as_bytes().iter(),
-    fraction.as_bytes().iter(),
-    exponent,
-  );
-  if !sign {
-    float = -float;
-  }
-
-  Ok((i, float))
+  let res = float_finite::<T, E>(input.clone());
+  res.or_else(|_| float_nonfinite::<T, E>(input))
 }
 
-/// Recognizes floating point number in text format and returns a f32.
+/// Recognizes floating point number in text format and returns a f64.
+///
+/// *Complete version*: Can parse until the end of input. This only handles
+/// finite (non-special floats).
+fn double_finite<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
+where
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
+  <T as InputIter>::IterElem: Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
+  T: AsBytes,
+  T: for<'a> Compare<&'a [u8]>,
+{
+  float_finite!(input, f64)
+}
+
+/// Recognizes floating point number in text format and returns a f64.
+/// This only handles non-finite (special) values.
+fn double_nonfinite<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
+where
+  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
+  T: Clone + Offset,
+  T: InputIter + InputLength + InputTake,
+  <T as InputIter>::Item: AsChar + Copy,
+  <T as InputIter>::IterElem: Clone,
+  T: InputTakeAtPosition,
+  <T as InputTakeAtPosition>::Item: AsChar,
+  T: AsBytes,
+  T: for<'a> Compare<&'a [u8]>,
+{
+  float_nonfinite!(input, f64)
+}
+
+/// Recognizes floating point number in text format and returns a f64.
 ///
 /// *Complete version*: Can parse until the end of input.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
-/// use nom::number::complete::float;
+/// use nom::number::complete::double;
 ///
 /// let parser = |s| {
-///   float(s)
+///   double(s)
 /// };
 ///
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
@@ -1589,18 +1696,8 @@ where
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
 {
-  let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
-
-  let mut float: f64 = minimal_lexical::parse_float(
-    integer.as_bytes().iter(),
-    fraction.as_bytes().iter(),
-    exponent,
-  );
-  if !sign {
-    float = -float;
-  }
-
-  Ok((i, float))
+  let res = double_finite::<T, E>(input.clone());
+  res.or_else(|_| double_nonfinite::<T, E>(input))
 }
 
 #[cfg(test)]
@@ -1617,6 +1714,23 @@ mod tests {
       assert_eq!(res, $right);
     };
   );
+
+  // Need more complex logic, since NaN != NaN.
+  macro_rules! assert_float_eq {
+    ($left: expr, $right: expr) => {
+      let left: $crate::IResult<_, _, (_, ErrorKind)> = $left;
+      let right: $crate::IResult<_, _, (_, ErrorKind)> = $right;
+      if let Ok((_, float)) = right {
+        if float.is_nan() {
+          assert!(left.unwrap().1.is_nan());
+        } else {
+          assert_eq!(left, right);
+        }
+      }else {
+        assert_eq!(left, right);
+      }
+    };
+  }
 
   #[test]
   fn i8_tests() {
@@ -1942,6 +2056,8 @@ mod tests {
       "12.34",
       "-1.234E-12",
       "-1.234e-12",
+      "NaN",
+      "inf",
     ];
 
     for test in test_cases.drain(..) {
@@ -1951,14 +2067,23 @@ mod tests {
       println!("now parsing: {} -> {}", test, expected32);
 
       let larger = format!("{}", test);
-      assert_parse!(recognize_float(&larger[..]), Ok(("", test)));
+      if expected32.is_finite() {
+        assert_parse!(recognize_float(&larger[..]), Ok(("", test)));
+      }
 
-      assert_parse!(float(larger.as_bytes()), Ok((&b""[..], expected32)));
-      assert_parse!(float(&larger[..]), Ok(("", expected32)));
+      assert_float_eq!(float(larger.as_bytes()), Ok((&b""[..], expected32)));
+      assert_float_eq!(float(&larger[..]), Ok(("", expected32)));
 
-      assert_parse!(double(larger.as_bytes()), Ok((&b""[..], expected64)));
-      assert_parse!(double(&larger[..]), Ok(("", expected64)));
+      assert_float_eq!(double(larger.as_bytes()), Ok((&b""[..], expected64)));
+      assert_float_eq!(double(&larger[..]), Ok(("", expected64)));
     }
+
+    // b"infinity" and case-insensitive floats don't work until recent
+    // rustc versions, so just test they work here.
+    assert_float_eq!(float("nan".as_bytes()), Ok((&b""[..], f32::NAN)));
+    assert_float_eq!(float("infinity".as_bytes()), Ok((&b""[..], f32::INFINITY)));
+    assert_float_eq!(double("nan".as_bytes()), Ok((&b""[..], f64::NAN)));
+    assert_float_eq!(double("infinity".as_bytes()), Ok((&b""[..], f64::INFINITY)));
 
     let remaining_exponent = "-1.234E-";
     assert_parse!(
@@ -2051,8 +2176,8 @@ mod tests {
   }
 
   fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
-    match recognize_float(i) {
-      Err(e) => Err(e),
+    match recognize_float::<_, ()>(i) {
+      Err(_) => Err(Err::Error(())),
       Ok((i, s)) => {
         if s.is_empty() {
           return Err(Err::Error(()));
