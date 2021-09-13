@@ -56,7 +56,6 @@ where
 /// Maps a function on the result of a parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// use nom::{Err,error::ErrorKind, IResult,Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map;
@@ -85,7 +84,6 @@ where
 /// Applies a function returning a `Result` over the result of a parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map_res;
@@ -124,7 +122,6 @@ where
 /// Applies a function returning an `Option` over the result of a parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map_opt;
@@ -163,7 +160,6 @@ where
 /// Applies a parser over the result of another one.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::bytes::complete::take;
@@ -195,7 +191,6 @@ where
 /// Creates a new parser from the output of the first parser, then apply that parser over the rest of the input.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::bytes::complete::take;
 /// use nom::number::complete::u8;
@@ -226,7 +221,6 @@ where
 /// Optional parser: Will return `None` if not successful.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::opt;
 /// use nom::character::complete::alpha1;
@@ -257,7 +251,6 @@ where
 /// Calls the parser if the condition is met.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// use nom::combinator::cond;
 /// use nom::character::complete::alpha1;
@@ -295,7 +288,6 @@ where
 /// Tries to apply its parser without consuming the input.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::peek;
 /// use nom::character::complete::alpha1;
@@ -326,7 +318,6 @@ where
 /// will succeed
 ///
 /// ```
-/// # #[macro_use] extern crate nom;
 /// # use std::str;
 /// # use nom::{Err, error::ErrorKind, IResult};
 /// # use nom::combinator::eof;
@@ -349,7 +340,6 @@ pub fn eof<I: InputLength + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, 
 /// Transforms Incomplete into `Error`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::bytes::streaming::take;
 /// use nom::combinator::complete;
@@ -377,7 +367,6 @@ where
 /// Succeeds if all the input has been consumed by its child parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::all_consuming;
 /// use nom::character::complete::alpha1;
@@ -411,7 +400,6 @@ where
 /// parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::verify;
 /// use nom::character::complete::alpha1;
@@ -449,7 +437,6 @@ where
 /// Returns the provided value if the child parser succeeds.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::value;
 /// use nom::character::complete::alpha1;
@@ -474,7 +461,6 @@ where
 /// Succeeds if the child parser returns an error.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::not;
 /// use nom::character::complete::alpha1;
@@ -503,7 +489,6 @@ where
 /// If the child parser was successful, return the consumed input as produced value.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::recognize;
 /// use nom::character::complete::{char, alpha1};
@@ -544,7 +529,6 @@ where
 /// Returned tuple is of the format `(consumed input, produced output)`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::{consumed, value, recognize, map};
 /// use nom::character::complete::{char, alpha1};
@@ -594,7 +578,6 @@ where
 /// transforms an error to failure
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::cut;
 /// use nom::character::complete::alpha1;
@@ -622,7 +605,6 @@ where
 /// as long as the `Into` implementations are available
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// use nom::combinator::into;
 /// use nom::character::complete::alpha1;
@@ -753,7 +735,6 @@ enum State<E> {
 /// specify the default case.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::branch::alt;
 /// use nom::combinator::{success, value};
