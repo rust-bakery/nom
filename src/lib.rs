@@ -445,29 +445,21 @@ pub use self::str::*;
 #[macro_use]
 pub mod error;
 
-#[macro_use]
 mod internal;
 mod traits;
-#[macro_use]
 pub mod combinator;
 #[macro_use]
 pub mod branch;
-#[macro_use]
 pub mod sequence;
-#[macro_use]
 pub mod multi;
 
-#[macro_use]
 pub mod bytes;
-#[macro_use]
 pub mod bits;
 
-#[macro_use]
 pub mod character;
 
 mod str;
 
-#[macro_use]
 pub mod number;
 
 #[cfg(feature = "docsrs")]

@@ -46,7 +46,7 @@ pub trait Alt<I, O, E> {
 /// like this: `alt(parser_a, alt(parser_b, parser_c))`
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
+/// # use nom::error_position;
 /// # use nom::{Err,error::ErrorKind, Needed, IResult};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::alt;
@@ -89,7 +89,6 @@ pub trait Permutation<I, O, E> {
 /// tuple of the parser results.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::permutation;
