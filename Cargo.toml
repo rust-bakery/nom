@@ -148,8 +148,8 @@ name = "json"
 required-features = ["alloc"]
 path = "examples/json.rs"
 
-#[[example]]
-#name = "iterator"
+[[example]]
+name = "iterator"
 
 [[example]]
 name = "s_expression"
