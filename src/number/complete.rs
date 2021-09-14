@@ -1355,31 +1355,32 @@ where
 ///   hex_u32(s)
 /// };
 ///
-/// assert_eq!(parser(&b"01AE"[..]), Ok((&b""[..], 0x01AE)));
-/// assert_eq!(parser(&b"abc"[..]), Ok((&b""[..], 0x0ABC)));
-/// assert_eq!(parser(&b"ggg"[..]), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
+/// assert_eq!(parser("01AE"), Ok(("", 0x01AE)));
+/// assert_eq!(parser("abc"), Ok(("", 0x0ABC)));
+/// assert_eq!(parser("ggg"), Err(Err::Error(("ggg", ErrorKind::HexDigit))));
+/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::HexDigit))));
 /// ```
 #[inline]
-pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8], u32, E> {
-  let (i, o) = crate::bytes::complete::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
+pub fn hex_u32<'a, I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+where
+  I: InputIter,
+  I: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  <I as InputIter>::Item: AsChar,
+{
   // Do not parse more than 8 characters for a u32
-  let (parsed, remaining) = if o.len() <= 8 {
-    (o, i)
+  let mut chars = input
+    .iter_elements()
+    .take(8)
+    // Can replace map-take_while-flatten with `.map_while` once stabilized
+    .map(|c| c.as_char().to_digit(16))
+    .take_while(|digit| digit.is_some())
+    .flatten();
+  if let Some(first) = chars.next() {
+    let (num, len) = chars.fold((first, 1), |(acc, len), item| (16 * acc + item, len + 1));
+    Ok((input.slice(len..), num))
   } else {
-    (&input[..8], &input[8..])
-  };
-
-  let res = parsed
-    .iter()
-    .rev()
-    .enumerate()
-    .map(|(k, &v)| {
-      let digit = v as char;
-      digit.to_digit(16).unwrap_or(0) << (k * 4)
-    })
-    .sum();
-
-  Ok((remaining, res))
+    Err(Err::Error(E::from_error_kind(input, ErrorKind::HexDigit)))
+  }
 }
 
 /// Recognizes floating point number in a byte string and returns the corresponding slice.
@@ -1906,7 +1907,11 @@ mod tests {
   fn hex_u32_tests() {
     assert_parse!(
       hex_u32(&b";"[..]),
-      Err(Err::Error(error_position!(&b";"[..], ErrorKind::IsA)))
+      Err(Err::Error(error_position!(&b";"[..], ErrorKind::HexDigit)))
+    );
+    assert_parse!(
+      hex_u32(&b""[..]),
+      Err(Err::Error(error_position!(&b""[..], ErrorKind::HexDigit)))
     );
     assert_parse!(hex_u32(&b"ff;"[..]), Ok((&b";"[..], 255)));
     assert_parse!(hex_u32(&b"1be2;"[..]), Ok((&b";"[..], 7138)));
@@ -1920,6 +1925,8 @@ mod tests {
     assert_parse!(hex_u32(&b"ffffffff;"[..]), Ok((&b";"[..], 4_294_967_295)));
     assert_parse!(hex_u32(&b"0x1be2;"[..]), Ok((&b"x1be2;"[..], 0)));
     assert_parse!(hex_u32(&b"12af"[..]), Ok((&b""[..], 0x12af)));
+
+    assert_parse!(hex_u32("12af"), Ok(("", 0x12af)));
   }
 
   #[test]
