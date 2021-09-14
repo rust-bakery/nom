@@ -182,6 +182,15 @@ macro_rules! alt_trait_inner(
 
 alt_trait!(A B C D E F G H I J K L M N O P Q R S T U);
 
+// Manually implement Alt for (A,), the 1-tuple type
+impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output, Error>>
+  Alt<Input, Output, Error> for (A,)
+{
+  fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
+    self.0.parse(input)
+  }
+}
+
 macro_rules! permutation_trait(
   (
     $name1:ident $ty1:ident $item1:ident
