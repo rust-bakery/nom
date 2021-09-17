@@ -991,3 +991,151 @@ where
     Ok((input, res))
   }
 }
+
+/// Range many
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::many;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   many(0..=2, tag("abc"))(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+pub fn many<I, O, E, F, G>(
+  range: G,
+  mut parse: F,
+) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  E: ParseError<I>,
+  G: NomRange,
+{
+  move |mut input: I| {
+    let start = range.lower_bound();
+    let end = match range.upper_bound() {
+      Some(e) => e,
+      None => UpperBound::Inclusive(usize::MAX),
+    };
+    
+    if let Some(start) = start {
+      if !end.contains(start) {
+        return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
+      }
+    }
+
+    let mut res = crate::lib::std::vec::Vec::with_capacity(start.unwrap_or(0));
+    let mut count = 0;
+    
+    loop {
+      count += 1;
+      if !end.contains(count) {
+        break
+      }
+      let len = input.input_len();
+      match parse.parse(input.clone()) {
+        Ok((tail, value)) => {
+          // infinite loop check: the parser must always consume
+          if tail.input_len() == len {
+            return Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyMN)));
+          }
+
+          res.push(value);
+          input = tail;
+        }
+        Err(Err::Error(e)) => {
+          if count < start.unwrap_or(0) {
+            return Err(Err::Error(E::append(input, ErrorKind::ManyMN, e)));
+          } else {
+            return Ok((input, res));
+          }
+        }
+        Err(e) => {
+          return Err(e);
+        }
+      }
+    }
+
+    Ok((input, res))
+  }
+}
+
+///
+pub enum UpperBound {
+  ///
+  Inclusive(usize),
+  ///
+  Exclusive(usize),
+}
+
+impl UpperBound {
+  ///
+  fn contains(&self, number: usize) -> bool {
+    match self {
+      UpperBound::Exclusive(bound) => number < *bound,
+      UpperBound::Inclusive(bound) => number <= *bound,
+    }
+  }
+}
+
+///
+pub trait NomRange {
+  ///
+  fn lower_bound(&self) -> Option<usize>;
+  ///
+  fn upper_bound(&self) -> Option<UpperBound>;
+  ///
+  fn contains(&self, number: usize) -> bool;
+}
+
+impl NomRange for usize {
+  fn lower_bound(&self) -> Option<usize> {Some(*self)}
+  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Inclusive(*self))}
+  fn contains(&self, number: usize) -> bool {*self == number}
+}
+
+impl NomRange for core::ops::Range<usize> {
+  fn lower_bound(&self) -> Option<usize> {Some(self.start)}
+  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Exclusive(self.end))}
+  fn contains(&self, number: usize) -> bool {self.start <= number && number < self.end}
+}
+
+impl NomRange for core::ops::RangeFrom<usize> {
+  fn lower_bound(&self) -> Option<usize> {Some(self.start)}
+  fn upper_bound(&self) -> Option<UpperBound> {None}
+  fn contains(&self, number: usize) -> bool {self.start <= number}
+}
+
+impl NomRange for core::ops::RangeTo<usize> {
+  fn lower_bound(&self) -> Option<usize> {None}
+  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Exclusive(self.end))}
+  fn contains(&self, number: usize) -> bool {number < self.end}
+}
+
+impl NomRange for core::ops::RangeFull {
+  fn lower_bound(&self) -> Option<usize> {None}
+  fn upper_bound(&self) -> Option<UpperBound> {None}
+  fn contains(&self, _number: usize) -> bool {true}
+}
+
+impl NomRange for core::ops::RangeInclusive<usize> {
+  fn lower_bound(&self) -> Option<usize> {Some(*self.start())}
+  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Inclusive(*self.end()))}
+  fn contains(&self, number: usize) -> bool {*self.start() <= number && number <= *self.end()}
+}
+
+impl NomRange for core::ops::RangeToInclusive<usize> {
+  fn lower_bound(&self) -> Option<usize> {None}
+  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Inclusive(self.end))}
+  fn contains(&self, number: usize) -> bool {number <= self.end}
+}
