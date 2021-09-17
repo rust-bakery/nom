@@ -1025,7 +1025,7 @@ where
     let start = range.lower_bound();
     let end = match range.upper_bound() {
       Some(e) => e,
-      None => UpperBound::Inclusive(usize::MAX),
+      None => UpperBound::Inclusive(usize::MAX), //TODO instead always fail with upper unbounded?
     };
     
     if let Some(start) = start {
@@ -1067,6 +1067,91 @@ where
     }
 
     Ok((input, res))
+  }
+}
+
+/// Range fold
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fold_many;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold_many(
+///     0..=2,
+///     tag("abc"),
+///     Vec::new,
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+pub fn fold_many<I, O, E, F, G, H, J, R>(
+  range: J,
+  mut parse: F,
+  mut init: H,
+  mut fold: G,
+) -> impl FnMut(I) -> IResult<I, R, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
+  E: ParseError<I>,
+  J: NomRange,
+{
+  move |mut input: I| {
+    match (range.lower_bound(), range.upper_bound()) {
+      (Some(start), Some(end)) => {
+        if !end.contains(start) {
+          return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
+        }
+      },
+      _ => {},
+    }
+
+    let mut acc = init();
+    let mut count: usize = 0;
+    loop {
+      count = count.saturating_add(1);
+      if let Some(end) = range.upper_bound() {
+        if !end.contains(count) {
+          break;
+        }
+      }
+      let len = input.input_len();
+      match parse.parse(input.clone()) {
+        Ok((tail, value)) => {
+          // infinite loop check: the parser must always consume
+          if tail.input_len() == len {
+            return Err(Err::Error(E::from_error_kind(tail, ErrorKind::ManyMN)));
+          }
+
+          acc = fold(acc, value);
+          input = tail;
+        }
+        //FInputXMError: handle failure properly
+        Err(Err::Error(err)) => {
+          if !range.contains(count) {
+            return Err(Err::Error(E::append(input, ErrorKind::ManyMN, err)));
+          } else {
+            break;
+          }
+        }
+        Err(e) => return Err(e),
+      }
+    }
+
+    Ok((input, acc))
   }
 }
 
