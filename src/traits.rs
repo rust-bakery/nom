@@ -9,6 +9,8 @@ use crate::lib::std::str::CharIndices;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
 
+use core::ops::RangeBounds;
+
 #[cfg(feature = "alloc")]
 use crate::lib::std::string::String;
 #[cfg(feature = "alloc")]
@@ -1393,6 +1395,26 @@ impl HexDisplay for str {
   fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
     self.as_bytes().to_hex_from(chunk_size, from)
   }
+}
+
+/// Allows conversion of a type into a RangeBound.
+pub trait IntoRangeBounds<T>
+where
+  T: RangeBounds<usize>
+{
+  /// Convert to a RangeBound
+  fn convert(self) -> T;
+}
+
+impl<T> IntoRangeBounds<T> for T
+where
+  T: RangeBounds<usize>
+{
+  fn convert(self) -> T {self}
+}
+
+impl IntoRangeBounds<std::ops::RangeInclusive<usize>> for usize {
+  fn convert(self) -> std::ops::RangeInclusive<usize> {self..=self}
 }
 
 #[cfg(test)]

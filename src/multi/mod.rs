@@ -8,7 +8,7 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::traits::{InputLength, InputTake, ToUsize};
+use crate::traits::{InputLength, InputTake, ToUsize, IntoRangeBounds};
 use core::num::NonZeroUsize;
 use core::ops::{RangeBounds, Bound};
 
@@ -1179,24 +1179,4 @@ where
 
     Ok((input, acc))
   }
-}
-
-/// Allows conversion of a type into a RangeBound.
-pub trait IntoRangeBounds<T>
-where
-  T: RangeBounds<usize>
-{
-  /// Convert to a RangeBound
-  fn convert(self) -> T;
-}
-
-impl<T> IntoRangeBounds<T> for T
-where
-  T: RangeBounds<usize>
-{
-  fn convert(self) -> T {self}
-}
-
-impl IntoRangeBounds<std::ops::RangeInclusive<usize>> for usize {
-  fn convert(self) -> std::ops::RangeInclusive<usize> {self..=self}
 }
