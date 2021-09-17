@@ -1026,7 +1026,7 @@ where
   F: Parser<I, O, E>,
   E: ParseError<I>,
   G: IntoRangeBounds<H>,
-  H: RangeBounds<usize>
+  H: RangeBounds<usize>,
 {
   let range = range.convert();
   move |mut input: I| {
