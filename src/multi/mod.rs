@@ -38,6 +38,7 @@ use core::ops::{RangeBounds, Bound};
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+#[deprecated = "Replaced with `many`"]
 pub fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + InputLength,
@@ -93,6 +94,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+#[deprecated = "Replaced with `many`"]
 pub fn many1<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + InputLength,
@@ -350,6 +352,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+#[deprecated = "Replaced with `many`"]
 pub fn many_m_n<I, O, E, F>(
   min: usize,
   max: usize,
@@ -638,6 +641,7 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
+#[deprecated = "Replaced with `fold`"]
 pub fn fold_many0<I, O, E, F, G, H, R>(
   mut f: F,
   mut init: H,
@@ -709,6 +713,7 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
 /// ```
+#[deprecated = "Replaced with `fold`"]
 pub fn fold_many1<I, O, E, F, G, H, R>(
   mut f: F,
   mut init: H,
@@ -793,6 +798,7 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
+#[deprecated = "Replaced with `fold`"]
 pub fn fold_many_m_n<I, O, E, F, G, H, R>(
   min: usize,
   max: usize,
