@@ -1125,7 +1125,7 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold_many<I, O, E, F, G, H, J, K, R>(
+pub fn fold<I, O, E, F, G, H, J, K, R>(
   range: J,
   mut parse: F,
   mut init: H,
