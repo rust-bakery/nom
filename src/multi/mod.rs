@@ -1019,29 +1019,36 @@ where
   I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
-  G: NomRange,
+  G: core::ops::RangeBounds<usize>,
 {
   move |mut input: I| {
-    let start = range.lower_bound();
-    let end = match range.upper_bound() {
-      Some(e) => e,
-      None => UpperBound::Inclusive(usize::MAX), //TODO instead always fail with upper unbounded?
+    use std::ops::Bound;
+    let start = match range.start_bound() {
+      Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
+      Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
+      Bound::Included(start) => Some(*start),
+      Bound::Excluded(start) => Some(*start + 1),
+      _ => None,
     };
     
-    if let Some(start) = start {
-      if !end.contains(start) {
-        return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
-      }
+    if let Bound::Unbounded = range.end_bound() {
+      return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
     }
+    
 
     let mut res = crate::lib::std::vec::Vec::with_capacity(start.unwrap_or(0));
     let mut count = 0;
     
     loop {
       count += 1;
-      if !end.contains(count) {
-        break
+      if match range.end_bound() {
+        Bound::Included(end) => count > *end,
+        Bound::Excluded(end) => count >= *end,
+        _ => false,
+      } {
+        break;
       }
+      
       let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
@@ -1107,15 +1114,13 @@ where
   G: FnMut(R, O) -> R,
   H: FnMut() -> R,
   E: ParseError<I>,
-  J: NomRange,
+  J: core::ops::RangeBounds<usize>,
 {
   move |mut input: I| {
-    match (range.lower_bound(), range.upper_bound()) {
-      (Some(start), Some(end)) => {
-        if !end.contains(start) {
-          return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
-        }
-      },
+    use std::ops::Bound;
+    match range.start_bound() {
+      Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
+      Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
       _ => {},
     }
 
@@ -1123,11 +1128,14 @@ where
     let mut count: usize = 0;
     loop {
       count = count.saturating_add(1);
-      if let Some(end) = range.upper_bound() {
-        if !end.contains(count) {
-          break;
-        }
+      if match range.end_bound() {
+        Bound::Included(end) => count > *end,
+        Bound::Excluded(end) => count >= *end,
+        _ => false,
+      } {
+        break;
       }
+      
       let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
@@ -1141,7 +1149,7 @@ where
         }
         //FInputXMError: handle failure properly
         Err(Err::Error(err)) => {
-          if !range.contains(count) {
+          if !range.contains(&count) {
             return Err(Err::Error(E::append(input, ErrorKind::ManyMN, err)));
           } else {
             break;
@@ -1153,74 +1161,4 @@ where
 
     Ok((input, acc))
   }
-}
-
-///
-pub enum UpperBound {
-  ///
-  Inclusive(usize),
-  ///
-  Exclusive(usize),
-}
-
-impl UpperBound {
-  ///
-  fn contains(&self, number: usize) -> bool {
-    match self {
-      UpperBound::Exclusive(bound) => number < *bound,
-      UpperBound::Inclusive(bound) => number <= *bound,
-    }
-  }
-}
-
-///
-pub trait NomRange {
-  ///
-  fn lower_bound(&self) -> Option<usize>;
-  ///
-  fn upper_bound(&self) -> Option<UpperBound>;
-  ///
-  fn contains(&self, number: usize) -> bool;
-}
-
-impl NomRange for usize {
-  fn lower_bound(&self) -> Option<usize> {Some(*self)}
-  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Inclusive(*self))}
-  fn contains(&self, number: usize) -> bool {*self == number}
-}
-
-impl NomRange for core::ops::Range<usize> {
-  fn lower_bound(&self) -> Option<usize> {Some(self.start)}
-  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Exclusive(self.end))}
-  fn contains(&self, number: usize) -> bool {self.start <= number && number < self.end}
-}
-
-impl NomRange for core::ops::RangeFrom<usize> {
-  fn lower_bound(&self) -> Option<usize> {Some(self.start)}
-  fn upper_bound(&self) -> Option<UpperBound> {None}
-  fn contains(&self, number: usize) -> bool {self.start <= number}
-}
-
-impl NomRange for core::ops::RangeTo<usize> {
-  fn lower_bound(&self) -> Option<usize> {None}
-  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Exclusive(self.end))}
-  fn contains(&self, number: usize) -> bool {number < self.end}
-}
-
-impl NomRange for core::ops::RangeFull {
-  fn lower_bound(&self) -> Option<usize> {None}
-  fn upper_bound(&self) -> Option<UpperBound> {None}
-  fn contains(&self, _number: usize) -> bool {true}
-}
-
-impl NomRange for core::ops::RangeInclusive<usize> {
-  fn lower_bound(&self) -> Option<usize> {Some(*self.start())}
-  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Inclusive(*self.end()))}
-  fn contains(&self, number: usize) -> bool {*self.start() <= number && number <= *self.end()}
-}
-
-impl NomRange for core::ops::RangeToInclusive<usize> {
-  fn lower_bound(&self) -> Option<usize> {None}
-  fn upper_bound(&self) -> Option<UpperBound> {Some(UpperBound::Inclusive(self.end))}
-  fn contains(&self, number: usize) -> bool {number <= self.end}
 }
