@@ -10,6 +10,7 @@ use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::vec::Vec;
 use crate::traits::{InputLength, InputTake, ToUsize};
 use core::num::NonZeroUsize;
+use core::ops::{RangeBounds, Bound};
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -1011,7 +1012,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many<I, O, E, F, G>(
+pub fn many<I, O, E, F, G, H>(
   range: G,
   mut parse: F,
 ) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
@@ -1019,10 +1020,11 @@ where
   I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
-  G: core::ops::RangeBounds<usize>,
+  G: IntoRangeBounds<H>,
+  H: RangeBounds<usize>
 {
+  let range = range.convert();
   move |mut input: I| {
-    use std::ops::Bound;
     let start = match range.start_bound() {
       Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
       Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
@@ -1102,7 +1104,7 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold_many<I, O, E, F, G, H, J, R>(
+pub fn fold_many<I, O, E, F, G, H, J, K, R>(
   range: J,
   mut parse: F,
   mut init: H,
@@ -1114,10 +1116,11 @@ where
   G: FnMut(R, O) -> R,
   H: FnMut() -> R,
   E: ParseError<I>,
-  J: core::ops::RangeBounds<usize>,
+  J: IntoRangeBounds<K>,
+  K: RangeBounds<usize>,
 {
+  let range = range.convert();
   move |mut input: I| {
-    use std::ops::Bound;
     match range.start_bound() {
       Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
       Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
@@ -1161,4 +1164,24 @@ where
 
     Ok((input, acc))
   }
+}
+
+///
+pub trait IntoRangeBounds<T>
+where
+  T: RangeBounds<usize>
+{
+  ///
+  fn convert(self) -> T;
+}
+
+impl<T> IntoRangeBounds<T> for T
+where
+  T: RangeBounds<usize>
+{
+  fn convert(self) -> T {self}
+}
+
+impl IntoRangeBounds<std::ops::RangeInclusive<usize>> for usize {
+  fn convert(self) -> std::ops::RangeInclusive<usize> {self..=self}
 }
