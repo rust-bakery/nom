@@ -993,7 +993,12 @@ where
   }
 }
 
-/// Range many
+/// Repeats the embedded parser and returns the results in a `Vec`.
+/// Fails if the amount of time the embedded parser is run is not
+/// within the specified range.
+/// # Arguments
+/// * `range` The amount of times to apply the parser.
+/// * `parse` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -1079,7 +1084,17 @@ where
   }
 }
 
-/// Range fold
+/// Applies a parser and accumulates the results using a given
+/// function and initial value.
+/// Fails if the amount of time the embedded parser is run is not
+/// within the specified range.
+/// 
+/// # Arguments
+/// * `range` The amount of times to apply the parser.
+/// * `parse` The parser to apply.
+/// * `init` A function returning the initial value.
+/// * `fold` The function that combines a result of `f` with
+///       the current accumulator.
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -1166,12 +1181,12 @@ where
   }
 }
 
-///
+/// Allows conversion of a type into a RangeBound.
 pub trait IntoRangeBounds<T>
 where
   T: RangeBounds<usize>
 {
-  ///
+  /// Convert to a RangeBound
   fn convert(self) -> T;
 }
 
