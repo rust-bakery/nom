@@ -1496,7 +1496,7 @@ impl Iterator for BoundedIterator {
           }
         }
       },
-      (count, Bound::Unbounded)=> {
+      (_, Bound::Unbounded)=> {
         if old_count == usize::MAX {
           if !self.exhausted {
             self.exhausted = true;

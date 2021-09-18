@@ -757,4 +757,15 @@ fn fold_test() {
   let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(multi_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
   assert_eq!(multi_fixed(d), Err(Err::Incomplete(Needed::new(2))));
+  
+  fn multi_exclusive(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(0..2, tag("Abcd"), Vec::new, fold_into_vec)(i)
+  }
+  
+  let a = &b"AbcdAbcdAbcd"[..];
+  let b = &b"AAA"[..];
+  let res1 = vec![&b"Abcd"[..]];
+  assert_eq!(multi_exclusive(a), Ok((&b"AbcdAbcd"[..], res1)));
+  let res2 = vec![];
+  assert_eq!(multi_exclusive(b), Ok((&b"AAA"[..], res2)));
 }
