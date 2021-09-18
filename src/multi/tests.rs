@@ -195,7 +195,6 @@ fn many_till_test() {
 #[allow(deprecated)]
 fn infinite_many() {
   fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    println!("input: {:?}", input);
     Err(Err::Error(error_position!(input, ErrorKind::Tag)))
   }
 
@@ -600,7 +599,6 @@ fn many_test() {
   
   
   fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    println!("input: {:?}", input);
     Err(Err::Error(error_position!(input, ErrorKind::Tag)))
   }
 
