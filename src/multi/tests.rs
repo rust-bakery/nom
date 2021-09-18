@@ -634,6 +634,27 @@ fn many_test() {
   let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(multi_m_n(d), Ok((&b"Abcdefgh"[..], res3)));
   assert_eq!(multi_m_n(e), Err(Err::Incomplete(Needed::new(2))));
+  
+  
+  fn multi_fixed(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(2, tag("Abcd"))(i)
+  }
+  
+  let a = &b"Abcdef"[..];
+  let b = &b"AbcdAbcdefgh"[..];
+  let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
+  let d = &b"AbcdAb"[..];
+  
+  assert_eq!(
+    multi_fixed(a),
+    Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
+  );
+  
+  let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_fixed(b), Ok((&b"efgh"[..], res1)));
+  let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
+  assert_eq!(multi_fixed(d), Err(Err::Incomplete(Needed::new(2))));
 }
 
 #[test]
@@ -708,4 +729,24 @@ fn fold_test() {
   let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(multi_m_n(d), Ok((&b"Abcdefgh"[..], res3)));
   assert_eq!(multi_m_n(e), Err(Err::Incomplete(Needed::new(2))));
+  
+  fn multi_fixed(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(2, tag("Abcd"), Vec::new, fold_into_vec)(i)
+  }
+  
+  let a = &b"Abcdef"[..];
+  let b = &b"AbcdAbcdefgh"[..];
+  let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
+  let d = &b"AbcdAb"[..];
+  
+  assert_eq!(
+    multi_fixed(a),
+    Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
+  );
+  
+  let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_fixed(b), Ok((&b"efgh"[..], res1)));
+  let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
+  assert_eq!(multi_fixed(d), Err(Err::Incomplete(Needed::new(2))));
 }

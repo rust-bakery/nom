@@ -1003,7 +1003,8 @@ where
 /// Fails if the amount of time the embedded parser is run is not
 /// within the specified range.
 /// # Arguments
-/// * `range` The amount of times to apply the parser.
+/// * `range` The amount of times to apply the parser. A range without
+/// an upper bound is the same as `(lower..=usize::MAX)`.
 /// * `parse` The parser to apply.
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -1119,7 +1120,8 @@ where
 /// within the specified range.
 /// 
 /// # Arguments
-/// * `range` The amount of times to apply the parser.
+/// * `range` The amount of times to apply the parser. A range without
+/// an upper bound means the parser can run infinitely.
 /// * `parse` The parser to apply.
 /// * `init` A function returning the initial value.
 /// * `fold` The function that combines a result of `f` with
