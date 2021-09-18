@@ -1413,8 +1413,8 @@ where
   fn convert(self) -> T {self}
 }
 
-impl IntoRangeBounds<std::ops::RangeInclusive<usize>> for usize {
-  fn convert(self) -> std::ops::RangeInclusive<usize> {self..=self}
+impl IntoRangeBounds<core::ops::RangeInclusive<usize>> for usize {
+  fn convert(self) -> core::ops::RangeInclusive<usize> {self..=self}
 }
 
 /// Allows iteration over ranges. All iterators start at 0 and
@@ -1484,7 +1484,7 @@ impl Iterator for BoundedIterator {
         if count > end {
           None
         } else {
-          if (old_count == usize::MAX) && !self.exhausted {
+          if (old_count == core::usize::MAX) && !self.exhausted {
             if !self.exhausted {
               self.exhausted = true;
               Some(old_count)
@@ -1497,7 +1497,7 @@ impl Iterator for BoundedIterator {
         }
       },
       (_, Bound::Unbounded)=> {
-        if old_count == usize::MAX {
+        if old_count == core::usize::MAX {
           if !self.exhausted {
             self.exhausted = true;
             Some(old_count)
@@ -1535,7 +1535,7 @@ impl Iterator for SaturatingIterator {
         if count > end {
           None
         } else {
-          if (old_count == usize::MAX) && !self.exhausted {
+          if (old_count == core::usize::MAX) && !self.exhausted {
             if !self.exhausted {
               self.exhausted = true;
               Some(old_count)
