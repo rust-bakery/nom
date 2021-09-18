@@ -1484,7 +1484,7 @@ impl Iterator for BoundedIterator {
         if count > end {
           None
         } else {
-          if (count == usize::MAX) && !self.exhausted {
+          if (old_count == usize::MAX) && !self.exhausted {
             if !self.exhausted {
               self.exhausted = true;
               Some(old_count)
@@ -1497,7 +1497,7 @@ impl Iterator for BoundedIterator {
         }
       },
       (count, Bound::Unbounded)=> {
-        if count == usize::MAX {
+        if old_count == usize::MAX {
           if !self.exhausted {
             self.exhausted = true;
             Some(old_count)
@@ -1535,7 +1535,7 @@ impl Iterator for SaturatingIterator {
         if count > end {
           None
         } else {
-          if (count == usize::MAX) && !self.exhausted {
+          if (old_count == usize::MAX) && !self.exhausted {
             if !self.exhausted {
               self.exhausted = true;
               Some(old_count)
