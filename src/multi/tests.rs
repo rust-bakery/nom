@@ -552,7 +552,7 @@ fn many1_count_test() {
 }
 
 #[test]
-#[cfg(feature= "alloc")]
+#[cfg(feature = "alloc")]
 fn many_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(0.., tag("abcd"))(i)
@@ -666,6 +666,7 @@ fn many_test() {
 }
 
 #[test]
+#[cfg(feature = "alloc")]
 fn fold_test() {
   fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
     acc.push(item);
