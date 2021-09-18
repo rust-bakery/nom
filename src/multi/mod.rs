@@ -8,7 +8,7 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::traits::{InputLength, InputTake, ToUsize, IntoRangeBounds};
+use crate::traits::{InputLength, InputTake, ToUsize, IntoRangeBounds, RangeIterator};
 use core::num::NonZeroUsize;
 use core::ops::{RangeBounds, Bound};
 
@@ -1047,44 +1047,8 @@ where
     
 
     let mut res = crate::lib::std::vec::Vec::with_capacity(start.unwrap_or(0));
-    let mut count: usize = 0;
-    let mut exhausted = false;
     
-    loop {
-      if match (count.saturating_add(1), range.end_bound()) {
-        (count, Bound::Included(end)) => {
-          if count > *end {
-            true
-          } else {
-            if (count == usize::MAX) && !exhausted {
-              if !exhausted {
-                exhausted = true;
-                false
-              } else {
-              true
-              }
-            } else {
-              false
-            }
-          }
-        },
-        (count, Bound::Excluded(end)) => count >= *end,
-        (count, Bound::Unbounded)=> {
-          if count == usize::MAX {
-            if !exhausted {
-              exhausted = true;
-              false
-            } else {
-              true
-            }
-          } else {
-            false
-          }
-        }
-      } {
-        break;
-      }
-      
+    for count in range.saturating_iter() {
       let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
@@ -1095,7 +1059,6 @@ where
 
           res.push(value);
           input = tail;
-          count = count.saturating_add(1);
         }
         Err(Err::Error(e)) => {
           if !range.contains(&count) {
@@ -1174,32 +1137,8 @@ where
     }
 
     let mut acc = init();
-    let mut count: usize = 0;
-    let mut exhausted = false;
-    loop {
-      if match (count.saturating_add(1), range.end_bound()) {
-        (count, Bound::Included(end)) => {
-          if count > *end {
-            true
-          } else {
-            if (count == usize::MAX) && !exhausted {
-              if !exhausted {
-                exhausted = true;
-                false
-              } else {
-              true
-              }
-            } else {
-              false
-            }
-          }
-        },
-        (count, Bound::Excluded(end)) => count >= *end,
-        _ => false,
-      } {
-        break;
-      }
-      
+    
+    for count in range.unbounded_iter() {
       let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
@@ -1210,7 +1149,6 @@ where
 
           acc = fold(acc, value);
           input = tail;
-          count = count.saturating_add(1);
         }
         //FInputXMError: handle failure properly
         Err(Err::Error(err)) => {

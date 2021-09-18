@@ -9,7 +9,7 @@ use crate::lib::std::str::CharIndices;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
 
-use core::ops::RangeBounds;
+use core::ops::{RangeBounds, Bound};
 
 #[cfg(feature = "alloc")]
 use crate::lib::std::string::String;
@@ -1415,6 +1415,128 @@ where
 
 impl IntoRangeBounds<std::ops::RangeInclusive<usize>> for usize {
   fn convert(self) -> std::ops::RangeInclusive<usize> {self..=self}
+}
+
+///
+pub trait RangeIterator {
+  ///
+  fn saturating_iter(&self) -> SaturatingIterator;
+  ///
+  fn unbounded_iter(&self) -> UnboundedIterator;
+}
+
+impl<T> RangeIterator for T
+where
+  T: RangeBounds<usize>
+{
+  fn saturating_iter(&self) -> SaturatingIterator {
+      SaturatingIterator{
+        end: match self.end_bound() {
+          Bound::Included(e) => Bound::Included(*e),
+          Bound::Excluded(e) => Bound::Excluded(*e),
+          Bound::Unbounded => Bound::Unbounded,
+        },
+        count: 0,
+        exhausted: false,
+      }
+  }
+  
+  fn unbounded_iter(&self) -> UnboundedIterator {
+    UnboundedIterator{
+      end: match self.end_bound() {
+        Bound::Included(e) => Bound::Included(*e),
+        Bound::Excluded(e) => Bound::Excluded(*e),
+        Bound::Unbounded => Bound::Unbounded,
+      },
+      count: 0,
+      exhausted: false,
+    }
+  }
+}
+
+///
+pub struct SaturatingIterator {
+  end: Bound<usize>,
+  count: usize,
+  exhausted: bool,
+}
+
+impl Iterator for SaturatingIterator {
+  type Item = usize;
+  
+  fn next(&mut self) -> Option<usize> {
+    let old_count = self.count;
+    self.count = self.count.saturating_add(1);
+    match (self.count, self.end) {
+      (count, Bound::Included(end)) => {
+        if count > end {
+          None
+        } else {
+          if (count == usize::MAX) && !self.exhausted {
+            if !self.exhausted {
+              self.exhausted = true;
+              Some(old_count)
+            } else {
+              None
+            }
+          } else {
+            Some(old_count)
+          }
+        }
+      },
+      (count, Bound::Unbounded)=> {
+        if count == usize::MAX {
+          if !self.exhausted {
+            self.exhausted = true;
+            Some(old_count)
+          } else {
+            None
+          }
+        } else {
+          Some(old_count)
+        }
+      }
+      (count, Bound::Excluded(end)) if count >= end => None,
+      (_, Bound::Excluded(_)) => Some(old_count),
+    }
+  }
+}
+
+///
+pub struct UnboundedIterator {
+  end: Bound<usize>,
+  count: usize,
+  exhausted: bool,
+}
+
+impl Iterator for UnboundedIterator {
+  type Item = usize;
+  
+  fn next(&mut self) -> Option<usize> {
+    let old_count = self.count;
+    self.count = self.count.saturating_add(1);
+    match (self.count, self.end) {
+      (count, Bound::Included(end)) => {
+        if count > end {
+          None
+        } else {
+          if (count == usize::MAX) && !self.exhausted {
+            if !self.exhausted {
+              self.exhausted = true;
+              Some(old_count)
+            } else {
+              None
+            }
+          } else {
+            Some(old_count)
+          }
+        }
+      },
+      (_, Bound::Unbounded) => Some(old_count),
+      (count, Bound::Excluded(end)) if count >= end => None,
+      (_, Bound::Excluded(_)) => Some(old_count),
+    }
+  }
 }
 
 #[cfg(test)]
