@@ -9,6 +9,7 @@ use crate::{
   sequence::{pair, tuple},
 };
 #[cfg(feature = "alloc")]
+#[allow(deprecated)]
 use crate::{
   lib::std::vec::Vec,
   multi::{
@@ -103,6 +104,7 @@ fn separated_list1_test() {
 
 #[test]
 #[cfg(feature = "alloc")]
+#[allow(deprecated)]
 fn many0_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many0(tag("abcd"))(i)
@@ -141,6 +143,7 @@ fn many0_bench(b: &mut Bencher) {
 
 #[test]
 #[cfg(feature = "alloc")]
+#[allow(deprecated)]
 fn many1_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many1(tag("abcd"))(i)
@@ -189,6 +192,7 @@ fn many_till_test() {
 
 #[test]
 #[cfg(feature = "std")]
+#[allow(deprecated)]
 fn infinite_many() {
   fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
     println!("input: {:?}", input);
@@ -214,6 +218,7 @@ fn infinite_many() {
 
 #[test]
 #[cfg(feature = "alloc")]
+#[allow(deprecated)]
 fn many_m_n_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many_m_n(2, 4, tag("Abcd"))(i)
@@ -416,6 +421,7 @@ fn length_value_test() {
 
 #[test]
 #[cfg(feature = "alloc")]
+#[allow(deprecated)]
 fn fold_many0_test() {
   fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
     acc.push(item);
@@ -448,6 +454,7 @@ fn fold_many0_test() {
 
 #[test]
 #[cfg(feature = "alloc")]
+#[allow(deprecated)]
 fn fold_many1_test() {
   fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
     acc.push(item);
@@ -475,6 +482,7 @@ fn fold_many1_test() {
 
 #[test]
 #[cfg(feature = "alloc")]
+#[allow(deprecated)]
 fn fold_many_m_n_test() {
   fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
     acc.push(item);

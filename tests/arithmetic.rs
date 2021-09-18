@@ -4,7 +4,7 @@ use nom::{
   character::complete::char,
   character::complete::{digit1 as digit, space0 as space},
   combinator::map_res,
-  multi::fold_many0,
+  multi::fold,
   sequence::{delimited, pair},
   IResult,
 };
@@ -35,7 +35,8 @@ fn factor(i: &str) -> IResult<&str, i64> {
 fn term(i: &str) -> IResult<&str, i64> {
   let (i, init) = factor(i)?;
 
-  fold_many0(
+  fold(
+    0..,
     pair(alt((char('*'), char('/'))), factor),
     move || init,
     |acc, (op, val): (char, i64)| {
@@ -51,7 +52,8 @@ fn term(i: &str) -> IResult<&str, i64> {
 fn expr(i: &str) -> IResult<&str, i64> {
   let (i, init) = term(i)?;
 
-  fold_many0(
+  fold(
+    0..,
     pair(alt((char('+'), char('-'))), term),
     move || init,
     |acc, (op, val): (char, i64)| {

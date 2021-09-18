@@ -1,6 +1,6 @@
 use nom::{
   character::complete::{alphanumeric1 as alphanumeric, line_ending as eol},
-  multi::many0,
+  multi::many,
   sequence::terminated,
   IResult,
 };
@@ -18,7 +18,7 @@ pub fn read_line(input: &str) -> IResult<&str, &str> {
 }
 
 pub fn read_lines(input: &str) -> IResult<&str, Vec<&str>> {
-  many0(read_line)(input)
+  many(0.., read_line)(input)
 }
 
 #[cfg(feature = "alloc")]

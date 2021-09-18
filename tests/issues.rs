@@ -24,13 +24,13 @@ mod parse_int {
   use nom::{
     character::streaming::{digit1 as digit, space1 as space},
     combinator::{complete, map, opt},
-    multi::many0,
+    multi::many,
     IResult,
   };
   use std::str;
 
   fn parse_ints(input: &[u8]) -> IResult<&[u8], Vec<i32>> {
-    many0(spaces_or_int)(input)
+    many(0.., spaces_or_int)(input)
   }
 
   fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32> {
@@ -170,8 +170,8 @@ fn issue_942() {
 #[test]
 fn issue_many_m_n_with_zeros() {
   use nom::character::complete::char;
-  use nom::multi::many_m_n;
-  let mut parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
+  use nom::multi::many;
+  let mut parser = many::<_, _, (), _, _, _>(0..=0, char('a'));
   assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
 }
 

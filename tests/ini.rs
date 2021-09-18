@@ -4,7 +4,7 @@ use nom::{
     alphanumeric1 as alphanumeric, char, multispace0 as multispace, space0 as space,
   },
   combinator::{map, map_res, opt},
-  multi::many0,
+  multi::many,
   sequence::{delimited, pair, separated_pair, terminated, tuple},
   IResult,
 };
@@ -28,7 +28,7 @@ fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
 }
 
 fn keys_and_values(i: &[u8]) -> IResult<&[u8], HashMap<&str, &str>> {
-  map(many0(terminated(key_value, opt(multispace))), |vec| {
+  map(many(0.., terminated(key_value, opt(multispace))), |vec| {
     vec.into_iter().collect()
   })(i)
 }
@@ -41,11 +41,11 @@ fn category_and_keys(i: &[u8]) -> IResult<&[u8], (&str, HashMap<&str, &str>)> {
 
 fn categories(i: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
   map(
-    many0(separated_pair(
+    many(0.., separated_pair(
       category,
       opt(multispace),
       map(
-        many0(terminated(key_value, opt(multispace))),
+        many(0.., terminated(key_value, opt(multispace))),
         |vec: Vec<_>| vec.into_iter().collect(),
       ),
     )),
