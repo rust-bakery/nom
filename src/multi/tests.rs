@@ -13,7 +13,7 @@ use crate::{
   lib::std::vec::Vec,
   multi::{
     count, fold_many0, fold_many1, fold_many_m_n, length_count, many0, many1, many_m_n, many_till,
-    separated_list0, separated_list1,
+    separated_list0, separated_list1, many, fold,
   },
 };
 
@@ -541,4 +541,171 @@ fn many1_count_test() {
       ErrorKind::Many1Count
     )))
   );
+}
+
+#[test]
+#[cfg(feature= "alloc")]
+fn many_test() {
+  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(0.., tag("abcd"))(i)
+  }
+  fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(0.., tag(""))(i)
+  }
+
+  assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
+  assert_eq!(
+    multi(&b"abcdabcdefgh"[..]),
+    Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]))
+  );
+  assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
+  assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
+  assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
+  assert_eq!(
+    multi_empty(&b"abcdef"[..]),
+    Err(Err::Error(error_position!(
+      &b"abcdef"[..],
+      ErrorKind::Many
+    )))
+  );
+  
+  
+  fn multi1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(1.., tag("abcd"))(i)
+  }
+
+  let a = &b"abcdef"[..];
+  let b = &b"abcdabcdefgh"[..];
+  let c = &b"azerty"[..];
+  let d = &b"abcdab"[..];
+
+  let res1 = vec![&b"abcd"[..]];
+  assert_eq!(multi1(a), Ok((&b"ef"[..], res1)));
+  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi1(b), Ok((&b"efgh"[..], res2)));
+  assert_eq!(
+    multi1(c),
+    Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+  );
+  assert_eq!(multi1(d), Err(Err::Incomplete(Needed::new(2))));
+  
+  
+  fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
+    println!("input: {:?}", input);
+    Err(Err::Error(error_position!(input, ErrorKind::Tag)))
+  }
+
+  // should not go into an infinite loop
+  fn multi0(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(0.., tst)(i)
+  }
+  let a = &b"abcdef"[..];
+  assert_eq!(multi0(a), Ok((a, Vec::new())));
+
+  fn multi1_2(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(1.., tst)(i)
+  }
+  let a = &b"abcdef"[..];
+  assert_eq!(
+    multi1_2(a),
+    Err(Err::Error(error_position!(a, ErrorKind::Tag)))
+  );
+  
+  
+  fn multi_m_n(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(2..=4, tag("Abcd"))(i)
+  }
+
+  let a = &b"Abcdef"[..];
+  let b = &b"AbcdAbcdefgh"[..];
+  let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
+  let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
+  let e = &b"AbcdAb"[..];
+
+  assert_eq!(
+    multi_m_n(a),
+    Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
+  );
+  let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_m_n(b), Ok((&b"efgh"[..], res1)));
+  let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_m_n(c), Ok((&b"efgh"[..], res2)));
+  let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_m_n(d), Ok((&b"Abcdefgh"[..], res3)));
+  assert_eq!(multi_m_n(e), Err(Err::Incomplete(Needed::new(2))));
+}
+
+#[test]
+fn fold_test() {
+  fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
+    acc.push(item);
+    acc
+  }
+  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(0.., tag("abcd"), Vec::new, fold_into_vec)(i)
+  }
+  fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(0.., tag(""), Vec::new, fold_into_vec)(i)
+  }
+
+  assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
+  assert_eq!(
+    multi(&b"abcdabcdefgh"[..]),
+    Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]))
+  );
+  assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
+  assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
+  assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
+  assert_eq!(
+    multi_empty(&b"abcdef"[..]),
+    Err(Err::Error(error_position!(
+      &b"abcdef"[..],
+      ErrorKind::Fold
+    )))
+  );
+  
+  
+  fn multi1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(1.., tag("abcd"), Vec::new, fold_into_vec)(i)
+  }
+
+  let a = &b"abcdef"[..];
+  let b = &b"abcdabcdefgh"[..];
+  let c = &b"azerty"[..];
+  let d = &b"abcdab"[..];
+
+  let res1 = vec![&b"abcd"[..]];
+  assert_eq!(multi1(a), Ok((&b"ef"[..], res1)));
+  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi1(b), Ok((&b"efgh"[..], res2)));
+  assert_eq!(
+    multi1(c),
+    Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+  );
+  assert_eq!(multi1(d), Err(Err::Incomplete(Needed::new(2))));
+  
+  
+  fn multi_m_n(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(2..=4, tag("Abcd"), Vec::new, fold_into_vec)(i)
+  }
+
+  let a = &b"Abcdef"[..];
+  let b = &b"AbcdAbcdefgh"[..];
+  let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
+  let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
+  let e = &b"AbcdAb"[..];
+
+  assert_eq!(
+    multi_m_n(a),
+    Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
+  );
+  let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_m_n(b), Ok((&b"efgh"[..], res1)));
+  let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_m_n(c), Ok((&b"efgh"[..], res2)));
+  let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
+  assert_eq!(multi_m_n(d), Ok((&b"Abcdefgh"[..], res3)));
+  assert_eq!(multi_m_n(e), Err(Err::Incomplete(Needed::new(2))));
 }

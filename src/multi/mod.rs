@@ -1037,27 +1037,49 @@ where
   let range = range.convert();
   move |mut input: I| {
     let start = match range.start_bound() {
-      Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
-      Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
+      Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many))),
+      Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many))),
       Bound::Included(start) => Some(*start),
       Bound::Excluded(start) => Some(*start + 1),
       _ => None,
     };
     
-    if let Bound::Unbounded = range.end_bound() {
-      return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
-    }
-    
 
     let mut res = crate::lib::std::vec::Vec::with_capacity(start.unwrap_or(0));
-    let mut count = 0;
+    let mut count: usize = 0;
+    let mut exhausted = false;
     
     loop {
-      count += 1;
-      if match range.end_bound() {
-        Bound::Included(end) => count > *end,
-        Bound::Excluded(end) => count >= *end,
-        _ => false,
+      if match (count.saturating_add(1), range.end_bound()) {
+        (count, Bound::Included(end)) => {
+          if count > *end {
+            true
+          } else {
+            if (count == usize::MAX) && !exhausted {
+              if !exhausted {
+                exhausted = true;
+                false
+              } else {
+              true
+              }
+            } else {
+              false
+            }
+          }
+        },
+        (count, Bound::Excluded(end)) => count >= *end,
+        (count, Bound::Unbounded)=> {
+          if count == usize::MAX {
+            if !exhausted {
+              exhausted = true;
+              false
+            } else {
+              true
+            }
+          } else {
+            false
+          }
+        }
       } {
         break;
       }
@@ -1067,15 +1089,16 @@ where
         Ok((tail, value)) => {
           // infinite loop check: the parser must always consume
           if tail.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyMN)));
+            return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many)));
           }
 
           res.push(value);
           input = tail;
+          count = count.saturating_add(1);
         }
         Err(Err::Error(e)) => {
-          if count < start.unwrap_or(0) {
-            return Err(Err::Error(E::append(input, ErrorKind::ManyMN, e)));
+          if !range.contains(&count) {
+            return Err(Err::Error(E::append(input, ErrorKind::Many, e)));
           } else {
             return Ok((input, res));
           }
@@ -1104,11 +1127,11 @@ where
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
-/// use nom::multi::fold_many;
+/// use nom::multi::fold;
 /// use nom::bytes::complete::tag;
 ///
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   fold_many(
+///   fold(
 ///     0..=2,
 ///     tag("abc"),
 ///     Vec::new,
@@ -1143,18 +1166,33 @@ where
   let range = range.convert();
   move |mut input: I| {
     match range.start_bound() {
-      Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
-      Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN))),
+      Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold))),
+      Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold))),
       _ => {},
     }
 
     let mut acc = init();
     let mut count: usize = 0;
+    let mut exhausted = false;
     loop {
-      count = count.saturating_add(1);
-      if match range.end_bound() {
-        Bound::Included(end) => count > *end,
-        Bound::Excluded(end) => count >= *end,
+      if match (count.saturating_add(1), range.end_bound()) {
+        (count, Bound::Included(end)) => {
+          if count > *end {
+            true
+          } else {
+            if (count == usize::MAX) && !exhausted {
+              if !exhausted {
+                exhausted = true;
+                false
+              } else {
+              true
+              }
+            } else {
+              false
+            }
+          }
+        },
+        (count, Bound::Excluded(end)) => count >= *end,
         _ => false,
       } {
         break;
@@ -1165,16 +1203,17 @@ where
         Ok((tail, value)) => {
           // infinite loop check: the parser must always consume
           if tail.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(tail, ErrorKind::ManyMN)));
+            return Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
           }
 
           acc = fold(acc, value);
           input = tail;
+          count = count.saturating_add(1);
         }
         //FInputXMError: handle failure properly
         Err(Err::Error(err)) => {
           if !range.contains(&count) {
-            return Err(Err::Error(E::append(input, ErrorKind::ManyMN, err)));
+            return Err(Err::Error(E::append(input, ErrorKind::Fold, err)));
           } else {
             break;
           }
