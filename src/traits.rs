@@ -1417,20 +1417,29 @@ impl IntoRangeBounds<std::ops::RangeInclusive<usize>> for usize {
   fn convert(self) -> std::ops::RangeInclusive<usize> {self..=self}
 }
 
-///
+/// Allows iteration over ranges. All iterators start at 0 and
+/// count towards the end of the range. Handling of ranges with
+/// an unbounded upper limit is dependent on the specific iterator.
 pub trait RangeIterator {
-  ///
+  
+  /// A bounded iterator.
+  /// Iterating an unbounded range is equivalent to iterating over a
+  /// range of `value..=usize::MAX`.
+  fn bounded_iter(&self) -> BoundedIterator;
+
+  /// A saturating iterator.
+  /// If the iterator is unbounded and the end of the representable size
+  /// of `usize` has been reached, this iterator will return usize::MAX
+  /// infinitely.
   fn saturating_iter(&self) -> SaturatingIterator;
-  ///
-  fn unbounded_iter(&self) -> UnboundedIterator;
 }
 
 impl<T> RangeIterator for T
 where
   T: RangeBounds<usize>
 {
-  fn saturating_iter(&self) -> SaturatingIterator {
-      SaturatingIterator{
+  fn bounded_iter(&self) -> BoundedIterator {
+      BoundedIterator{
         end: match self.end_bound() {
           Bound::Included(e) => Bound::Included(*e),
           Bound::Excluded(e) => Bound::Excluded(*e),
@@ -1441,8 +1450,8 @@ where
       }
   }
   
-  fn unbounded_iter(&self) -> UnboundedIterator {
-    UnboundedIterator{
+  fn saturating_iter(&self) -> SaturatingIterator {
+    SaturatingIterator{
       end: match self.end_bound() {
         Bound::Included(e) => Bound::Included(*e),
         Bound::Excluded(e) => Bound::Excluded(*e),
@@ -1454,14 +1463,17 @@ where
   }
 }
 
-///
-pub struct SaturatingIterator {
+/// A bounded iterator.
+/// Iterates until the end of a `usize` range is reached.
+/// If the upper limit is unbounded, this iterator will end when
+/// the next element would be greater than `usize::MAX`.
+pub struct BoundedIterator {
   end: Bound<usize>,
   count: usize,
   exhausted: bool,
 }
 
-impl Iterator for SaturatingIterator {
+impl Iterator for BoundedIterator {
   type Item = usize;
   
   fn next(&mut self) -> Option<usize> {
@@ -1502,14 +1514,17 @@ impl Iterator for SaturatingIterator {
   }
 }
 
-///
-pub struct UnboundedIterator {
+/// A saturating iterator.
+/// Iterates until the end of a `usize` range is reached.
+/// If upper limit is unbounded, this iterator saturates at
+/// `usize::MAX`.
+pub struct SaturatingIterator {
   end: Bound<usize>,
   count: usize,
   exhausted: bool,
 }
 
-impl Iterator for UnboundedIterator {
+impl Iterator for SaturatingIterator {
   type Item = usize;
   
   fn next(&mut self) -> Option<usize> {

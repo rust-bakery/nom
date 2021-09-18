@@ -1048,7 +1048,7 @@ where
 
     let mut res = crate::lib::std::vec::Vec::with_capacity(start.unwrap_or(0));
     
-    for count in range.saturating_iter() {
+    for count in range.bounded_iter() {
       let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
@@ -1138,7 +1138,7 @@ where
 
     let mut acc = init();
     
-    for count in range.unbounded_iter() {
+    for count in range.saturating_iter() {
       let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
