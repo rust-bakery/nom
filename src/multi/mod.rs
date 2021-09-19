@@ -1047,32 +1047,56 @@ where
       _ => None,
     };
     
-
     let mut res = crate::lib::std::vec::Vec::with_capacity(start.unwrap_or(0));
     
-    for count in range.bounded_iter() {
+    let mut parser = |count: usize| -> Option<Result<I, Err<E>>> {
       let len = input.input_len();
-      match parse.parse(input.clone()) {
-        Ok((tail, value)) => {
-          // infinite loop check: the parser must always consume
-          if tail.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many)));
-          }
+        match parse.parse(input.clone()) {
+          Ok((tail, value)) => {
+            // infinite loop check: the parser must always consume
+            if tail.input_len() == len {
+              return Some(Err(Err::Error(E::from_error_kind(input.clone(), ErrorKind::Many))));
+            }
 
-          res.push(value);
-          input = tail;
-        }
-        Err(Err::Error(e)) => {
-          if !range.contains(&count) {
-            return Err(Err::Error(E::append(input, ErrorKind::Many, e)));
-          } else {
-            return Ok((input, res));
+            res.push(value);
+            input = tail;
+            None
+          }
+          Err(Err::Error(e)) => {
+            if !range.contains(&count) {
+              return Some(Err(Err::Error(E::append(input.clone(), ErrorKind::Many, e))));
+            } else {
+              return Some(Ok(input.clone()));
+            }
+          }
+          Err(e) => {
+            return Some(Err(e));
           }
         }
-        Err(e) => {
-          return Err(e);
+    };
+    
+    match range.end_bound() {
+      Bound::Unbounded => for count in (1..=core::usize::MAX).map(|x| x - 1) {
+        match parser(count) {
+          Some(Ok(input)) => return Ok((input, res)),
+          Some(Err(e)) => return Err(e),
+          _ => {},
         }
-      }
+      },
+      Bound::Included(x) => for count in (1..=*x).map(|x| x - 1) {
+        match parser(count) {
+          Some(Ok(input)) => return Ok((input, res)),
+          Some(Err(e)) => return Err(e),
+          _ => {},
+        }
+      },
+      Bound::Excluded(x) => for count in (1..*x).map(|x| x - 1) {
+        match parser(count) {
+          Some(Ok(input)) => return Ok((input, res)),
+          Some(Err(e)) => return Err(e),
+          _ => {},
+        }
+      },
     }
 
     Ok((input, res))

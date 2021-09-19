@@ -661,6 +661,16 @@ fn many_test() {
   let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(multi_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
   assert_eq!(multi_fixed(d), Err(Err::Incomplete(Needed::new(2))));
+  
+  fn multi_test(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(0..=0, tag("A"))(i)
+  }
+  
+  let a = &b"AA"[..];
+  let b = &b"B"[..];
+  
+  assert_eq!(multi_test(a), Ok((&b"AA"[..], Vec::new())));
+  assert_eq!(multi_test(b), Ok((&b"B"[..], Vec::new())));
 }
 
 #[test]
