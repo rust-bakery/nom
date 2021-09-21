@@ -662,15 +662,15 @@ fn many_test() {
   assert_eq!(multi_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
   assert_eq!(multi_fixed(d), Err(Err::Incomplete(Needed::new(2))));
   
-  fn multi_test(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi_never(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(0..=0, tag("A"))(i)
   }
   
   let a = &b"AA"[..];
   let b = &b"B"[..];
   
-  assert_eq!(multi_test(a), Ok((&b"AA"[..], Vec::new())));
-  assert_eq!(multi_test(b), Ok((&b"B"[..], Vec::new())));
+  assert_eq!(multi_never(a), Ok((&b"AA"[..], Vec::new())));
+  assert_eq!(multi_never(b), Ok((&b"B"[..], Vec::new())));
 }
 
 #[test]
@@ -777,4 +777,14 @@ fn fold_test() {
   assert_eq!(multi_exclusive(a), Ok((&b"AbcdAbcd"[..], res1)));
   let res2 = vec![];
   assert_eq!(multi_exclusive(b), Ok((&b"AAA"[..], res2)));
+  
+  fn fold_never(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(0..=0, tag("A"), Vec::new, fold_into_vec)(i)
+  }
+  
+  let a = &b"AAA"[..];
+  let b = &b"B"[..];
+  
+  assert_eq!(fold_never(a), Ok((&b"AA"[..], Vec::new())));
+  assert_eq!(fold_never(b), Ok((&b"B"[..], Vec::new())));
 }

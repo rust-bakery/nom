@@ -2,7 +2,7 @@
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::iter::{Copied, Enumerate};
-use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo, RangeInclusive, RangeToInclusive};
 use crate::lib::std::slice::Iter;
 use crate::lib::std::str::from_utf8;
 use crate::lib::std::str::CharIndices;
@@ -1394,6 +1394,175 @@ impl HexDisplay for str {
   #[allow(unused_variables)]
   fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
     self.as_bytes().to_hex_from(chunk_size, from)
+  }
+}
+
+///
+pub struct SaturatingIter2 {
+  count: usize,
+}
+
+impl Iterator for SaturatingIter2 {
+  type Item = usize;
+  
+  fn next(&mut self) -> Option<Self::Item> {
+    let old_count = self.count;
+    self.count = self.count.saturating_add(1);
+    Some(old_count)
+  }
+}
+
+/// trait description
+pub trait NomRange<Idx> {
+  ///
+  type Iter1: Iterator<Item=Idx>;
+  ///
+  type Iter2: Iterator<Item=Idx>;
+  
+  ///
+  fn bounds(&self) -> (Bound<Idx>, Bound<Idx>);
+  
+  ///
+  fn contains(&self, item: &Idx) -> bool;
+  ///
+  fn is_inverted(&self) -> bool;
+
+  ///
+  fn saturating_iter(&self) -> Self::Iter1;
+  ///
+  fn bounded_iter(&self) -> Self::Iter2;
+}
+
+impl NomRange<usize> for Range<usize> {
+  type Iter1 = Range<usize>;
+  type Iter2 = Range<usize>;
+  
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Included(self.start), Bound::Excluded(self.end))}
+  
+  fn contains(&self, item: &usize) -> bool {RangeBounds::contains(self, item)}
+  
+  fn is_inverted(&self) -> bool {Range::is_empty(self)}
+  
+  fn saturating_iter(&self) -> Self::Iter1 {
+    0..self.end.saturating_sub(1)
+  }
+  
+  fn bounded_iter(&self) -> Self::Iter2 {
+    0..self.end.saturating_sub(1)
+  }
+}
+
+impl NomRange<usize> for RangeInclusive<usize> {
+  type Iter1 = RangeInclusive<usize>;
+  type Iter2 = RangeInclusive<usize>;
+  
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Included(*self.start()), Bound::Included(*self.end()))}
+  
+  fn contains(&self, item: &usize) -> bool {RangeBounds::contains(self, item)}
+  
+  fn is_inverted(&self) -> bool {RangeInclusive::is_empty(self)}
+  
+  fn saturating_iter(&self) -> Self::Iter1 {
+      0..=self.end().saturating_sub(1)
+  }
+  
+  fn bounded_iter(&self) -> Self::Iter2 {
+      0..=self.end().saturating_sub(1)
+  }
+}
+
+impl NomRange<usize> for RangeFrom<usize> {
+  type Iter1 = SaturatingIter2;
+  type Iter2 = RangeInclusive<usize>;
+  
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Included(self.start), Bound::Unbounded)}
+  
+  fn contains(&self, item: &usize) -> bool {RangeBounds::contains(self, item)}
+  
+  fn is_inverted(&self) -> bool {false}
+  
+  fn saturating_iter(&self) -> Self::Iter1 {
+      SaturatingIter2 {count: 0}
+  }
+  
+  fn bounded_iter(&self) -> Self::Iter2 {
+      0..=usize::MAX-1
+  }
+}
+
+impl NomRange<usize> for RangeTo<usize> {
+  type Iter1 = Range<usize>;
+  type Iter2 = Range<usize>;
+  
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Unbounded, Bound::Excluded(self.end))}
+  
+  fn contains(&self, item: &usize) -> bool {RangeBounds::contains(self, item)}
+  
+  fn is_inverted(&self) -> bool {false}
+  
+  fn saturating_iter(&self) -> Self::Iter1 {
+      0..self.end.saturating_sub(1)
+  }
+  
+  fn bounded_iter(&self) -> Self::Iter2 {
+      0..self.end.saturating_sub(1)
+  }
+}
+
+impl NomRange<usize> for RangeToInclusive<usize> {
+  type Iter1 = RangeInclusive<usize>;
+  type Iter2 = RangeInclusive<usize>;
+  
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Unbounded, Bound::Included(self.end))}
+  
+  fn contains(&self, item: &usize) -> bool {RangeBounds::contains(self, item)}
+  
+  fn is_inverted(&self) -> bool {false}
+  
+  fn saturating_iter(&self) -> Self::Iter1 {
+      0..=self.end.saturating_sub(1)
+  }
+  
+  fn bounded_iter(&self) -> Self::Iter2 {
+      0..=self.end.saturating_sub(1)
+  }
+}
+
+impl NomRange<usize> for RangeFull {
+  type Iter1 = SaturatingIter2;
+  type Iter2 = RangeInclusive<usize>;
+  
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Unbounded, Bound::Unbounded)}
+  
+  fn contains(&self, item: &usize) -> bool {RangeBounds::contains(self, item)}
+  
+  fn is_inverted(&self) -> bool {false}
+  
+  fn saturating_iter(&self) -> Self::Iter1 {
+      SaturatingIter2{count: 0}
+  }
+  
+  fn bounded_iter(&self) -> Self::Iter2 {
+      0..=usize::MAX-1
+  }
+}
+
+impl NomRange<usize> for usize {
+  type Iter1 = RangeInclusive<usize>;
+  type Iter2 = RangeInclusive<usize>;
+  
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Included(*self), Bound::Included(*self))}
+  
+  fn contains(&self, item: &usize) -> bool {self == item}
+  
+  fn is_inverted(&self) -> bool {false}
+  
+  fn saturating_iter(&self) -> Self::Iter1 {
+      0..=self.saturating_sub(1)
+  }
+  
+  fn bounded_iter(&self) -> Self::Iter2 {
+      0..=self.saturating_sub(1)
   }
 }
 

@@ -8,7 +8,7 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::traits::{InputLength, InputTake, ToUsize, IntoRangeBounds, RangeIterator};
+use crate::{NomRange, traits::{InputLength, InputTake, ToUsize, IntoRangeBounds}};
 use core::num::NonZeroUsize;
 use core::ops::{RangeBounds, Bound};
 
@@ -1141,7 +1141,7 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold<I, O, E, F, G, H, J, K, R>(
+pub fn fold<I, O, E, F, G, H, J, R>(
   range: J,
   mut parse: F,
   mut init: H,
@@ -1153,15 +1153,11 @@ where
   G: FnMut(R, O) -> R,
   H: FnMut() -> R,
   E: ParseError<I>,
-  J: IntoRangeBounds<K>,
-  K: RangeBounds<usize>,
+  J: NomRange<usize>,
 {
-  let range = range.convert();
   move |mut input: I| {
-    match range.start_bound() {
-      Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold))),
-      Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold))),
-      _ => {},
+    if range.is_inverted() {
+      return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)));
     }
 
     let mut acc = init();
