@@ -1493,7 +1493,7 @@ impl NomRange<usize> for RangeFrom<usize> {
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-      1..=usize::MAX
+      1..=core::usize::MAX
   }
 }
 
@@ -1550,7 +1550,7 @@ impl NomRange<usize> for RangeFull {
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-      1..=usize::MAX
+      1..=core::usize::MAX
   }
 }
 
