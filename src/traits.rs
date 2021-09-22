@@ -1398,11 +1398,11 @@ impl HexDisplay for str {
 }
 
 /// A saturating iterator for usize.
-pub struct SaturatingIter {
+pub struct SaturatingIterator {
   count: usize,
 }
 
-impl Iterator for SaturatingIter {
+impl Iterator for SaturatingIterator {
   type Item = usize;
   
   fn next(&mut self) -> Option<Self::Item> {
@@ -1433,6 +1433,7 @@ pub trait NomRange<Idx> {
   /// If the upper bound is infinite the iterator saturates at the largest representable value of its type and
   /// returns it for all further elements.
   fn saturating_iter(&self) -> Self::Iter1;
+  
   /// Creates a bounded iterator.
   /// A bounded iterator counts the number of iterations starting from 1 up to the upper bound of this range.
   /// If the upper bounds is infinite the iterator counts up to the largest representable value of its type and
@@ -1479,7 +1480,7 @@ impl NomRange<usize> for RangeInclusive<usize> {
 }
 
 impl NomRange<usize> for RangeFrom<usize> {
-  type Iter1 = SaturatingIter;
+  type Iter1 = SaturatingIterator;
   type Iter2 = RangeInclusive<usize>;
   
   fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Included(self.start), Bound::Unbounded)}
@@ -1489,7 +1490,7 @@ impl NomRange<usize> for RangeFrom<usize> {
   fn is_inverted(&self) -> bool {false}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-      SaturatingIter {count: 1}
+      SaturatingIterator {count: 1}
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
@@ -1536,7 +1537,7 @@ impl NomRange<usize> for RangeToInclusive<usize> {
 }
 
 impl NomRange<usize> for RangeFull {
-  type Iter1 = SaturatingIter;
+  type Iter1 = SaturatingIterator;
   type Iter2 = RangeInclusive<usize>;
   
   fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Unbounded, Bound::Unbounded)}
@@ -1546,7 +1547,7 @@ impl NomRange<usize> for RangeFull {
   fn is_inverted(&self) -> bool {false}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-      SaturatingIter{count: 1}
+      SaturatingIterator{count: 1}
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
@@ -1570,163 +1571,6 @@ impl NomRange<usize> for usize {
   
   fn bounded_iter(&self) -> Self::Iter2 {
       1..=*self
-  }
-}
-
-/// Allows conversion of a type into a RangeBound.
-pub trait IntoRangeBounds<T>
-where
-  T: RangeBounds<usize>
-{
-  /// Convert to a RangeBound
-  fn convert(self) -> T;
-}
-
-impl<T> IntoRangeBounds<T> for T
-where
-  T: RangeBounds<usize>
-{
-  fn convert(self) -> T {self}
-}
-
-impl IntoRangeBounds<core::ops::RangeInclusive<usize>> for usize {
-  fn convert(self) -> core::ops::RangeInclusive<usize> {self..=self}
-}
-
-/// Allows iteration over ranges. All iterators start at 0 and
-/// count towards the end of the range. Handling of ranges with
-/// an unbounded upper limit is dependent on the specific iterator.
-pub trait RangeIterator {
-  
-  /// A bounded iterator.
-  /// Iterating an unbounded range is equivalent to iterating over a
-  /// range of `value..=usize::MAX`.
-  fn bounded_iter(&self) -> BoundedIterator;
-
-  /// A saturating iterator.
-  /// If the iterator is unbounded and the end of the representable size
-  /// of `usize` has been reached, this iterator will return usize::MAX
-  /// infinitely.
-  fn saturating_iter(&self) -> SaturatingIterator;
-}
-
-impl<T> RangeIterator for T
-where
-  T: RangeBounds<usize>
-{
-  fn bounded_iter(&self) -> BoundedIterator {
-      BoundedIterator{
-        end: match self.end_bound() {
-          Bound::Included(e) => Bound::Included(*e),
-          Bound::Excluded(e) => Bound::Excluded(*e),
-          Bound::Unbounded => Bound::Unbounded,
-        },
-        count: 0,
-        exhausted: false,
-      }
-  }
-  
-  fn saturating_iter(&self) -> SaturatingIterator {
-    SaturatingIterator{
-      end: match self.end_bound() {
-        Bound::Included(e) => Bound::Included(*e),
-        Bound::Excluded(e) => Bound::Excluded(*e),
-        Bound::Unbounded => Bound::Unbounded,
-      },
-      count: 0,
-      exhausted: false,
-    }
-  }
-}
-
-/// A bounded iterator.
-/// Iterates until the end of a `usize` range is reached.
-/// If the upper limit is unbounded, this iterator will end when
-/// the next element would be greater than `usize::MAX`.
-pub struct BoundedIterator {
-  end: Bound<usize>,
-  count: usize,
-  exhausted: bool,
-}
-
-impl Iterator for BoundedIterator {
-  type Item = usize;
-  
-  fn next(&mut self) -> Option<usize> {
-    let old_count = self.count;
-    self.count = self.count.saturating_add(1);
-    match (self.count, self.end) {
-      (count, Bound::Included(end)) => {
-        if count > end {
-          None
-        } else {
-          if (old_count == core::usize::MAX) && !self.exhausted {
-            if !self.exhausted {
-              self.exhausted = true;
-              Some(old_count)
-            } else {
-              None
-            }
-          } else {
-            Some(old_count)
-          }
-        }
-      },
-      (_, Bound::Unbounded)=> {
-        if old_count == core::usize::MAX {
-          if !self.exhausted {
-            self.exhausted = true;
-            Some(old_count)
-          } else {
-            None
-          }
-        } else {
-          Some(old_count)
-        }
-      }
-      (count, Bound::Excluded(end)) if count >= end => None,
-      (_, Bound::Excluded(_)) => Some(old_count),
-    }
-  }
-}
-
-/// A saturating iterator.
-/// Iterates until the end of a `usize` range is reached.
-/// If upper limit is unbounded, this iterator saturates at
-/// `usize::MAX`.
-pub struct SaturatingIterator {
-  end: Bound<usize>,
-  count: usize,
-  exhausted: bool,
-}
-
-impl Iterator for SaturatingIterator {
-  type Item = usize;
-  
-  fn next(&mut self) -> Option<usize> {
-    let old_count = self.count;
-    self.count = self.count.saturating_add(1);
-    match (self.count, self.end) {
-      (count, Bound::Included(end)) => {
-        if count > end {
-          None
-        } else {
-          if (old_count == core::usize::MAX) && !self.exhausted {
-            if !self.exhausted {
-              self.exhausted = true;
-              Some(old_count)
-            } else {
-              None
-            }
-          } else {
-            Some(old_count)
-          }
-        }
-      },
-      (_, Bound::Unbounded) => Some(old_count),
-      (count, Bound::Excluded(end)) if count >= end => None,
-      (_, Bound::Excluded(_)) => Some(old_count),
-    }
   }
 }
 

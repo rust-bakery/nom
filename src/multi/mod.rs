@@ -8,9 +8,9 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::{NomRange, traits::{InputLength, InputTake, ToUsize, IntoRangeBounds}};
+use crate::{NomRange, traits::{InputLength, InputTake, ToUsize}};
 use core::num::NonZeroUsize;
-use core::ops::{RangeBounds, Bound};
+use core::ops::Bound;
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -1026,7 +1026,7 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many<I, O, E, F, G, H>(
+pub fn many<I, O, E, F, G>(
   range: G,
   mut parse: F,
 ) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
@@ -1034,69 +1034,43 @@ where
   I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
-  G: IntoRangeBounds<H>,
-  H: RangeBounds<usize>,
+  G: NomRange<usize>,
 {
-  let range = range.convert();
   move |mut input: I| {
-    let start = match range.start_bound() {
-      Bound::Included(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many))),
-      Bound::Excluded(start) if !range.contains(start) => return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many))),
-      Bound::Included(start) => Some(*start),
-      Bound::Excluded(start) => Some(*start + 1),
+    if range.is_inverted() {
+      return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many)))
+    }
+    
+    let capacity = match range.bounds() {
+      (Bound::Included(start), _) => Some(start),
+      (Bound::Excluded(start), _) => Some(start + 1),
       _ => None,
     };
     
-    let mut res = crate::lib::std::vec::Vec::with_capacity(start.unwrap_or(0));
-    
-    let mut parser = |count: usize| -> Option<Result<I, Err<E>>> {
+    let mut res = crate::lib::std::vec::Vec::with_capacity(capacity.unwrap_or(0));
+    for count in range.bounded_iter().map(|x| x - 1) {
       let len = input.input_len();
-        match parse.parse(input.clone()) {
-          Ok((tail, value)) => {
-            // infinite loop check: the parser must always consume
-            if tail.input_len() == len {
-              return Some(Err(Err::Error(E::from_error_kind(input.clone(), ErrorKind::Many))));
-            }
+      match parse.parse(input.clone()) {
+        Ok((tail, value)) => {
+          // infinite loop check: the parser must always consume
+          if tail.input_len() == len {
+            return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many)));
+          }
 
-            res.push(value);
-            input = tail;
-            None
-          }
-          Err(Err::Error(e)) => {
-            if !range.contains(&count) {
-              return Some(Err(Err::Error(E::append(input.clone(), ErrorKind::Many, e))));
-            } else {
-              return Some(Ok(input.clone()));
-            }
-          }
-          Err(e) => {
-            return Some(Err(e));
+          res.push(value);
+          input = tail;
+        }
+        Err(Err::Error(e)) => {
+          if !range.contains(&count) {
+            return Err(Err::Error(E::append(input, ErrorKind::Many, e)));
+          } else {
+            return Ok((input, res));
           }
         }
-    };
-    
-    match range.end_bound() {
-      Bound::Unbounded => for count in (1..=core::usize::MAX).map(|x| x - 1) {
-        match parser(count) {
-          Some(Ok(input)) => return Ok((input, res)),
-          Some(Err(e)) => return Err(e),
-          _ => {},
+        Err(e) => {
+          return Err(e);
         }
-      },
-      Bound::Included(x) => for count in (1..=*x).map(|x| x - 1) {
-        match parser(count) {
-          Some(Ok(input)) => return Ok((input, res)),
-          Some(Err(e)) => return Err(e),
-          _ => {},
-        }
-      },
-      Bound::Excluded(x) => for count in (1..*x).map(|x| x - 1) {
-        match parser(count) {
-          Some(Ok(input)) => return Ok((input, res)),
-          Some(Err(e)) => return Err(e),
-          _ => {},
-        }
-      },
+      }
     }
 
     Ok((input, res))
