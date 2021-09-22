@@ -316,7 +316,7 @@ struct DebugError {
 
 Now let's implement `ParseError` and `ContextError` on it:
 
-```
+```rust
 impl ParseError<&str> for DebugError {
     // on one line, we show the error code and the input that caused it
     fn from_error_kind(input: &str, kind: ErrorKind) -> Self {
