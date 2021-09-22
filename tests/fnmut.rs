@@ -8,7 +8,7 @@ fn parse() {
   let mut counter = 0;
 
   let res = {
-    let mut parser = many::<_, _, (), _, _, _>(0.., |i| {
+    let mut parser = many::<_, _, (), _, _>(0.., |i| {
       counter += 1;
       tag("abc")(i)
     });
