@@ -1397,12 +1397,12 @@ impl HexDisplay for str {
   }
 }
 
-///
-pub struct SaturatingIter2 {
+/// A saturating iterator for usize.
+pub struct SaturatingIter {
   count: usize,
 }
 
-impl Iterator for SaturatingIter2 {
+impl Iterator for SaturatingIter {
   type Item = usize;
   
   fn next(&mut self) -> Option<Self::Item> {
@@ -1412,24 +1412,31 @@ impl Iterator for SaturatingIter2 {
   }
 }
 
-/// trait description
+/// Abstractions for range-like types.
 pub trait NomRange<Idx> {
-  ///
+  /// The saturating iterator type.
   type Iter1: Iterator<Item=Idx>;
-  ///
+  /// The bounded iterator type.
   type Iter2: Iterator<Item=Idx>;
   
-  ///
+  /// `true` if `item` is contained in the range.
+  fn contains(&self, item: &Idx) -> bool;
+  
+  /// Returns the bounds of this range.
   fn bounds(&self) -> (Bound<Idx>, Bound<Idx>);
   
-  ///
-  fn contains(&self, item: &Idx) -> bool;
-  ///
+  /// `true` if the range is inverted.
   fn is_inverted(&self) -> bool;
 
-  ///
+  /// Creates a saturating iterator.
+  /// A saturating iterator counts the number of iterations starting from 1 up to the upper bound of this range.
+  /// If the upper bound is infinite the iterator saturates at the largest representable value of its type and
+  /// returns it for all further elements.
   fn saturating_iter(&self) -> Self::Iter1;
-  ///
+  /// Creates a bounded iterator.
+  /// A bounded iterator counts the number of iterations starting from 1 up to the upper bound of this range.
+  /// If the upper bounds is infinite the iterator counts up to the largest representable value of its type and
+  /// returns `None` for all further elements.
   fn bounded_iter(&self) -> Self::Iter2;
 }
 
@@ -1444,11 +1451,11 @@ impl NomRange<usize> for Range<usize> {
   fn is_inverted(&self) -> bool {Range::is_empty(self)}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-    0..self.end.saturating_sub(1)
+    1..self.end
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-    0..self.end.saturating_sub(1)
+    1..self.end
   }
 }
 
@@ -1463,16 +1470,16 @@ impl NomRange<usize> for RangeInclusive<usize> {
   fn is_inverted(&self) -> bool {RangeInclusive::is_empty(self)}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-      0..=self.end().saturating_sub(1)
+      1..=*self.end()
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-      0..=self.end().saturating_sub(1)
+      1..=*self.end()
   }
 }
 
 impl NomRange<usize> for RangeFrom<usize> {
-  type Iter1 = SaturatingIter2;
+  type Iter1 = SaturatingIter;
   type Iter2 = RangeInclusive<usize>;
   
   fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Included(self.start), Bound::Unbounded)}
@@ -1482,11 +1489,11 @@ impl NomRange<usize> for RangeFrom<usize> {
   fn is_inverted(&self) -> bool {false}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-      SaturatingIter2 {count: 0}
+      SaturatingIter {count: 1}
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-      0..=usize::MAX-1
+      1..=usize::MAX
   }
 }
 
@@ -1501,11 +1508,11 @@ impl NomRange<usize> for RangeTo<usize> {
   fn is_inverted(&self) -> bool {false}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-      0..self.end.saturating_sub(1)
+      1..self.end
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-      0..self.end.saturating_sub(1)
+      1..self.end
   }
 }
 
@@ -1520,16 +1527,16 @@ impl NomRange<usize> for RangeToInclusive<usize> {
   fn is_inverted(&self) -> bool {false}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-      0..=self.end.saturating_sub(1)
+      1..=self.end
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-      0..=self.end.saturating_sub(1)
+      1..=self.end
   }
 }
 
 impl NomRange<usize> for RangeFull {
-  type Iter1 = SaturatingIter2;
+  type Iter1 = SaturatingIter;
   type Iter2 = RangeInclusive<usize>;
   
   fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Unbounded, Bound::Unbounded)}
@@ -1539,11 +1546,11 @@ impl NomRange<usize> for RangeFull {
   fn is_inverted(&self) -> bool {false}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-      SaturatingIter2{count: 0}
+      SaturatingIter{count: 1}
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-      0..=usize::MAX-1
+      1..=usize::MAX
   }
 }
 
@@ -1558,11 +1565,11 @@ impl NomRange<usize> for usize {
   fn is_inverted(&self) -> bool {false}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-      0..=self.saturating_sub(1)
+      1..=*self
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-      0..=self.saturating_sub(1)
+      1..=*self
   }
 }
 

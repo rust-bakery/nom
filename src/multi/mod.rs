@@ -1162,7 +1162,7 @@ where
 
     let mut acc = init();
     
-    for count in range.saturating_iter() {
+    for count in range.saturating_iter().map(|x| x - 1) {
       let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {

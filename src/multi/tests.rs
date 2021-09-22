@@ -785,6 +785,6 @@ fn fold_test() {
   let a = &b"AAA"[..];
   let b = &b"B"[..];
   
-  assert_eq!(fold_never(a), Ok((&b"AA"[..], Vec::new())));
+  assert_eq!(fold_never(a), Ok((&b"AAA"[..], Vec::new())));
   assert_eq!(fold_never(b), Ok((&b"B"[..], Vec::new())));
 }
