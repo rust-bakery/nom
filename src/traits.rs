@@ -1469,8 +1469,8 @@ impl NomRange<usize> for Range<usize> {
 }
 
 impl NomRange<usize> for RangeInclusive<usize> {
-  type Iter1 = RangeInclusive<usize>;
-  type Iter2 = RangeInclusive<usize>;
+  type Iter1 = Range<usize>;
+  type Iter2 = Range<usize>;
   
   fn bounds(&self) -> (Bound<usize>, Bound<usize>) {(Bound::Included(*self.start()), Bound::Included(*self.end()))}
   
@@ -1479,19 +1479,11 @@ impl NomRange<usize> for RangeInclusive<usize> {
   fn is_inverted(&self) -> bool {<RangeInclusive<usize>>::is_empty(self)}
   
   fn saturating_iter(&self) -> Self::Iter1 {
-    if *self.end() == 0 {
-      1..=0
-    } else {
-      0..=self.end()-1
-    }
+    0..*self.end()
   }
   
   fn bounded_iter(&self) -> Self::Iter2 {
-    if *self.end() == 0 {
-      1..=0
-    } else {
-      0..=self.end()-1
-    }
+    0..*self.end()
   }
 }
 
