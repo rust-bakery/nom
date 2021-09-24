@@ -553,32 +553,78 @@ fn many1_count_test() {
 #[test]
 #[cfg(feature = "alloc")]
 fn many_test() {
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(0.., tag("abcd"))(i)
+  // should not go into an infinite loop
+  fn many_error_0(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
+      Err(Err::Error(error_position!(input, ErrorKind::Tag)))
+    }
+    many(0.., tst)(i)
   }
-  fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  
+  let a = &b"abcdef"[..];
+  assert_eq!(many_error_0(a), Ok((a, Vec::new())));
+  
+  
+  fn many_error_1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
+      Err(Err::Error(error_position!(input, ErrorKind::Tag)))
+    }
+    many(1.., tst)(i)
+  }
+  
+  let a = &b"abcdef"[..];
+  assert_eq!(
+    many_error_1(a),
+    Err(Err::Error(error_position!(a, ErrorKind::Tag)))
+  );
+  
+  
+  fn many_error(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(0.., tag(""))(i)
   }
-
-  assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
+  
+  let a = &b"abcdef"[..];
   assert_eq!(
-    multi(&b"abcdabcdefgh"[..]),
-    Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]))
-  );
-  assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
-  assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(2))));
-  assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
-  assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
-  assert_eq!(
-    multi_empty(&b"abcdef"[..]),
+    many_error(a),
     Err(Err::Error(error_position!(
-      &b"abcdef"[..],
+      a,
       ErrorKind::Many
     )))
   );
   
   
-  fn multi1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn many_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(2..=1, tag("a"))(i)
+  }
+  
+  let a = &b"a"[..];
+  let b = &b"b"[..];
+  assert_eq!(many_invalid(a), Err(Err::Failure(error_position!(a, ErrorKind::Many))));
+  assert_eq!(many_invalid(b), Err(Err::Failure(error_position!(b, ErrorKind::Many))));
+  
+  
+  fn many_any(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(0.., tag("abcd"))(i)
+  }
+  
+  let a = &b"abcdef"[..];
+  let b = &b"abcdabcdefgh"[..];
+  let c = &b"azerty"[..];
+  let d = &b"abcdab"[..];
+  let e = &b"abcd"[..];
+  let f = &b""[..];
+  assert_eq!(many_any(a), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
+  assert_eq!(
+    many_any(b),
+    Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]))
+  );
+  assert_eq!(many_any(c), Ok((&b"azerty"[..], Vec::new())));
+  assert_eq!(many_any(d), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(many_any(e), Err(Err::Incomplete(Needed::new(4))));
+  assert_eq!(many_any(f), Err(Err::Incomplete(Needed::new(4))));
+  
+  
+  fn many_1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(1.., tag("abcd"))(i)
   }
 
@@ -586,40 +632,18 @@ fn many_test() {
   let b = &b"abcdabcdefgh"[..];
   let c = &b"azerty"[..];
   let d = &b"abcdab"[..];
-
   let res1 = vec![&b"abcd"[..]];
-  assert_eq!(multi1(a), Ok((&b"ef"[..], res1)));
+  assert_eq!(many_1(a), Ok((&b"ef"[..], res1)));
   let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
-  assert_eq!(multi1(b), Ok((&b"efgh"[..], res2)));
+  assert_eq!(many_1(b), Ok((&b"efgh"[..], res2)));
   assert_eq!(
-    multi1(c),
+    many_1(c),
     Err(Err::Error(error_position!(c, ErrorKind::Tag)))
   );
-  assert_eq!(multi1(d), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(many_1(d), Err(Err::Incomplete(Needed::new(2))));
   
   
-  fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    Err(Err::Error(error_position!(input, ErrorKind::Tag)))
-  }
-
-  // should not go into an infinite loop
-  fn multi0(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(0.., tst)(i)
-  }
-  let a = &b"abcdef"[..];
-  assert_eq!(multi0(a), Ok((a, Vec::new())));
-
-  fn multi1_2(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(1.., tst)(i)
-  }
-  let a = &b"abcdef"[..];
-  assert_eq!(
-    multi1_2(a),
-    Err(Err::Error(error_position!(a, ErrorKind::Tag)))
-  );
-  
-  
-  fn multi_m_n(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn many_m_n(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(2..=4, tag("Abcd"))(i)
   }
 
@@ -628,21 +652,20 @@ fn many_test() {
   let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
   let d = &b"AbcdAbcdAbcdAbcdAbcdefgh"[..];
   let e = &b"AbcdAb"[..];
-
   assert_eq!(
-    multi_m_n(a),
+    many_m_n(a),
     Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
   );
   let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
-  assert_eq!(multi_m_n(b), Ok((&b"efgh"[..], res1)));
+  assert_eq!(many_m_n(b), Ok((&b"efgh"[..], res1)));
   let res2 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
-  assert_eq!(multi_m_n(c), Ok((&b"efgh"[..], res2)));
+  assert_eq!(many_m_n(c), Ok((&b"efgh"[..], res2)));
   let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
-  assert_eq!(multi_m_n(d), Ok((&b"Abcdefgh"[..], res3)));
-  assert_eq!(multi_m_n(e), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(many_m_n(d), Ok((&b"Abcdefgh"[..], res3)));
+  assert_eq!(many_m_n(e), Err(Err::Incomplete(Needed::new(2))));
   
   
-  fn multi_fixed(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn many_fixed(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(2, tag("Abcd"))(i)
   }
   
@@ -650,27 +673,25 @@ fn many_test() {
   let b = &b"AbcdAbcdefgh"[..];
   let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
   let d = &b"AbcdAb"[..];
-  
   assert_eq!(
-    multi_fixed(a),
+    many_fixed(a),
     Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
   );
-  
   let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
-  assert_eq!(multi_fixed(b), Ok((&b"efgh"[..], res1)));
+  assert_eq!(many_fixed(b), Ok((&b"efgh"[..], res1)));
   let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
-  assert_eq!(multi_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
-  assert_eq!(multi_fixed(d), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(many_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
+  assert_eq!(many_fixed(d), Err(Err::Incomplete(Needed::new(2))));
   
-  fn multi_never(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  
+  fn many_never(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(0..=0, tag("A"))(i)
   }
   
   let a = &b"AA"[..];
   let b = &b"B"[..];
-  
-  assert_eq!(multi_never(a), Ok((&b"AA"[..], Vec::new())));
-  assert_eq!(multi_never(b), Ok((&b"B"[..], Vec::new())));
+  assert_eq!(many_never(a), Ok((&b"AA"[..], Vec::new())));
+  assert_eq!(many_never(b), Ok((&b"B"[..], Vec::new())));
 }
 
 #[test]
