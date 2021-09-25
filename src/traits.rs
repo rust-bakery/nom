@@ -1449,7 +1449,7 @@ impl NomRange<usize> for Range<usize> {
   
   fn contains(&self, item: &usize) -> bool {RangeBounds::contains(self, item)}
   
-  fn is_inverted(&self) -> bool {<Range<usize>>::is_empty(self)}
+  fn is_inverted(&self) -> bool {!(self.start < self.end)}
   
   fn saturating_iter(&self) -> Self::Iter1 {
     if self.end == 0 {
@@ -1476,7 +1476,7 @@ impl NomRange<usize> for RangeInclusive<usize> {
   
   fn contains(&self, item: &usize) -> bool {RangeBounds::contains(self, item)}
   
-  fn is_inverted(&self) -> bool {<RangeInclusive<usize>>::is_empty(self)}
+  fn is_inverted(&self) -> bool {!RangeInclusive::contains(self, self.start())}
   
   fn saturating_iter(&self) -> Self::Iter1 {
     0..*self.end()
