@@ -1436,8 +1436,8 @@ pub trait NomRange<Idx> {
   
   /// Creates a bounded iterator.
   /// A bounded iterator counts the number of iterations starting from 0 up to the upper bound of this range.
-  /// If the upper bounds is infinite the iterator counts up to the largest representable value of its type and
-  /// returns `None` for all further elements.
+  /// If the upper bounds is infinite the iterator counts up until the amount of iterations has reached the 
+  /// largest representable value of its type and then returns `None` for all further elements.
   fn bounded_iter(&self) -> Self::Iter2;
 }
 
