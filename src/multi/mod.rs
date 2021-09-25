@@ -1003,9 +1003,9 @@ where
 /// Fails if the amount of time the embedded parser is run is not
 /// within the specified range.
 /// # Arguments
-/// * `range` The amount of times to apply the parser.
-///   * A range with an upper bound `a..=b` limits the parser to run at most `b` times.
+/// * `range` Constrains the number of iterations.
 ///   * A range without an upper bound `a..` is equivalent to a range of `a..=usize::MAX`.
+///   * A single `usize` value is equivalent to `value..=value`.
 ///   * An empty range is invalid.
 /// * `parse` The parser to apply.
 /// ```rust
@@ -1042,12 +1042,12 @@ where
     }
     
     let capacity = match range.bounds() {
-      (Bound::Included(start), _) => Some(start),
-      (Bound::Excluded(start), _) => Some(start + 1),
-      _ => None,
+      (Bound::Included(start), _) => start,
+      (Bound::Excluded(start), _) => start + 1,
+      _ => 4,
     };
     
-    let mut res = crate::lib::std::vec::Vec::with_capacity(capacity.unwrap_or(0));
+    let mut res = crate::lib::std::vec::Vec::with_capacity(capacity);
     for count in range.bounded_iter() {
       let len = input.input_len();
       match parse.parse(input.clone()) {
@@ -1083,9 +1083,9 @@ where
 /// within the specified range.
 /// 
 /// # Arguments
-/// * `range` The amount of times to apply the parser.
-///   * A range with an upper bound `a..=b` limits the parser to run at most `b` times.
+/// * `range` Constrains the number of iterations.
 ///   * A range without an upper bound `a..` allows the parser to run until it fails.
+///   * A single `usize` value is equivalent to `value..=value`.
 ///   * An empty range is invalid.
 /// * `parse` The parser to apply.
 /// * `init` A function returning the initial value.
