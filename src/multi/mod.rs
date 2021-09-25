@@ -10,6 +10,7 @@ use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::vec::Vec;
 use crate::{NomRange, traits::{InputLength, InputTake, ToUsize}};
 use core::num::NonZeroUsize;
+#[cfg(feature="alloc")]
 use core::ops::Bound;
 
 /// Repeats the embedded parser until it fails
