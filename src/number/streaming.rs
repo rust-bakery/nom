@@ -1413,7 +1413,7 @@ where
   let (i, sign) = sign(input.clone())?;
 
   //let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
-  let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0' as u8) {
+  let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0') {
     Some(index) => i.take_split(index),
     None => i.take_split(i.input_len()),
   };
@@ -1422,7 +1422,7 @@ where
   let (i, mut integer) = match i
     .as_bytes()
     .iter()
-    .position(|c| !(*c >= b'0' as u8 && *c <= b'9' as u8))
+    .position(|c| !(*c >= b'0' && *c <= b'9'))
   {
     Some(index) => i.take_split(index),
     None => i.take_split(i.input_len()),
@@ -1442,8 +1442,8 @@ where
     let mut zero_count = 0usize;
     let mut position = None;
     for (pos, c) in i.as_bytes().iter().enumerate() {
-      if *c >= b'0' as u8 && *c <= b'9' as u8 {
-        if *c == b'0' as u8 {
+      if *c >= b'0' && *c <= b'9' {
+        if *c == b'0' {
           zero_count += 1;
         } else {
           zero_count = 0;
@@ -1534,17 +1534,17 @@ where
   Ok((i, float))
 }
 
-/// Recognizes floating point number in text format and returns a f32.
+/// Recognizes floating point number in text format and returns a f64.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
-/// use nom::number::complete::float;
+/// use nom::number::complete::double;
 ///
 /// let parser = |s| {
-///   float(s)
+///   double(s)
 /// };
 ///
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
@@ -1583,7 +1583,6 @@ mod tests {
   use super::*;
   use crate::error::ErrorKind;
   use crate::internal::{Err, Needed};
-  use crate::traits::ParseTo;
   use proptest::prelude::*;
 
   macro_rules! assert_parse(
@@ -2131,7 +2130,9 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "std")]
   fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
+    use crate::traits::ParseTo;
     match recognize_float(i) {
       Err(e) => Err(e),
       Ok((i, s)) => {
