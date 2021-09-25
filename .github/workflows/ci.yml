@@ -4,6 +4,8 @@ on: [push, pull_request]
 
 env:
   RUST_MINVERSION: 1.41.1
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
 
 jobs:
   test:
@@ -48,6 +50,9 @@ jobs:
           profile: minimal
           override: true
 
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:
@@ -75,6 +80,9 @@ jobs:
           profile: minimal
           override: true
 
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:
@@ -95,6 +103,9 @@ jobs:
           toolchain: nightly
           profile: minimal
           override: true
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
 
       - name: Compile bench
         uses: actions-rs/cargo@v1
@@ -166,6 +177,9 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
 
       - name: Install cargo-tarpaulin
         uses: actions-rs/cargo@v1
