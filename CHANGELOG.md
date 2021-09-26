@@ -84,7 +84,7 @@ This release was done thanks to the hard work of (by order of appearance in the 
 
 - lots of documentation fixes
 - relax trait bounds
-- workarounds for depenency issues with bitvec and memchr
+- workarounds for dependency issues with bitvec and memchr
 
 ## 6.1.2 - 2021-02-15
 
@@ -245,7 +245,7 @@ containing example patterns.
 - removed the deprecated `whitespace` module
 - the default error type is now a struct (`nom::error::Error`) instead of a tuple
 - the `FromExternalError` allows wrapping the error returned by the function in the `map_res` combinator
-- renamed the `dbg!` macro to avoid conficts with `std::dbg!`
+- renamed the `dbg!` macro to avoid conflicts with `std::dbg!`
 - `separated_list` now allows empty elements
 
 
@@ -256,7 +256,7 @@ containing example patterns.
 - `success`: returns a value without consuming the input
 - `satisfy`: checks a predicate over the next character
 - `eof` function combinator
-- `consumed`: returnes the produced value and the consumed input
+- `consumed`: returns the produced value and the consumed input
 - `length_count` function combinator
 - `into`: converts a parser's output and error values if `From` implementations are available
 - `IResult::finish()`: converts a parser's result to `Result<(I, O), E>` by removing the distinction between `Error` and `Failure` and panicking on `Incomplete`
@@ -1124,7 +1124,7 @@ Considering the number of changes since the last release, this version can conta
 ## 0.3.11 - 2015-08-04
 
 ### Thanks
-- @bluss for remarking that the crate included random junk lying non commited in my local repository
+- @bluss for remarking that the crate included random junk lying non committed in my local repository
 
 ### Fixed
 - cleanup of my local repository will ship less files in the crates, resulting in a smaller download
@@ -1187,7 +1187,7 @@ Considering the number of changes since the last release, this version can conta
 ### Added
 - documentation for a few functions
 - the consumer trait now requires the `failed(&self, error_code)` method in case of parsing error
-- `named!` now handles thge alternative `named!(pub fun_name<OutputType>, ...)`
+- `named!` now handles the alternative `named!(pub fun_name<OutputType>, ...)`
 
 ### Fixed
 - `filter!` now returns the whole input if the filter function never returned false

@@ -21,7 +21,7 @@ pub enum Err<E> {
 
 The result is either an `Ok((I, O))` containing the remaining input and the
 parsed value, or an `Err(nom::Err<E>)` with `E` the error type.
-`nom::Err<E>` is an enum because combinators can have diferent behaviours
+`nom::Err<E>` is an enum because combinators can have different behaviours
 depending on the value:
 - `Error` is a normal parser error. If a child parser of the `alt` combinator returns `Error`, it will try another child parser
 - `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`. This is used when we know we were in the right branch of `alt` and do not need to try other branches
@@ -36,7 +36,7 @@ let parser_result: IResult<I, O, E> = parser(input);
 let result: Result<(I, O), E> = parser_result.finish();
 ```
 
-If we used a borrowed type as input, like `&[u8]` ot `&str`, we might want to
+If we used a borrowed type as input, like `&[u8]` or `&str`, we might want to
 convert it to an owned type to transmit it somewhere, with the `to_owned()`
 method:
 

@@ -701,7 +701,7 @@ impl<'a> InputTakeAtPosition for &'a str {
   }
 }
 
-/// Indicates wether a comparison was successful, an error, or
+/// Indicates whether a comparison was successful, an error, or
 /// if more data was needed
 #[derive(Debug, PartialEq)]
 pub enum CompareResult {
