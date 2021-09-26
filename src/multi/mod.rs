@@ -10,6 +10,7 @@ use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::vec::Vec;
 use crate::traits::{InputLength, InputTake, ToUsize};
 use core::num::NonZeroUsize;
+use core::ops::{Bound, RangeBounds};
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -978,4 +979,340 @@ where
 
     Ok((input, res))
   }
+}
+
+/// Applies a parser and accumulates the results using a given
+/// function and initial value.
+/// Fails if the amount of time the embedded parser is run is not
+/// within the specified range.
+///
+/// # Arguments
+/// * `range` Constrains the number of iterations.
+///   * A range without an upper bound `a..` allows the parser to run until it fails.
+///   * A single `usize` value is equivalent to `value..=value`.
+///   * An empty range is invalid.
+/// * `parse` The parser to apply.
+/// * `init` A function returning the initial value.
+/// * `fold` The function that combines a result of `f` with
+///       the current accumulator.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fold;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold(
+///     ..2,
+///     tag("abc"),
+///     Vec::new,
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+pub fn fold<I, O, E, F, G, H, J, R>(
+  range: J,
+  mut parse: F,
+  mut init: H,
+  mut fold: G,
+) -> impl FnMut(I) -> IResult<I, R, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
+  E: ParseError<I>,
+  J: RangeBounds<usize>,
+{
+  move |input: I| match (range.start_bound(), range.end_bound()) {
+    (Bound::Included(&min), Bound::Included(&max)) => {
+      if min > max {
+        Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)))
+      } else {
+        fold_min(
+          |count| count < min,
+          0..=max,
+          input,
+          &mut parse,
+          &mut init,
+          &mut fold,
+        )
+      }
+    }
+    (Bound::Included(&min), Bound::Excluded(&max)) => {
+      if min > max {
+        Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)))
+      } else {
+        fold_min(
+          |count| count < min,
+          0..max,
+          input,
+          &mut parse,
+          &mut init,
+          &mut fold,
+        )
+      }
+    }
+    (Bound::Included(&min), Bound::Unbounded) => {
+      let (input, acc) = fold_exact(0..min, input, &mut parse, &mut init, &mut fold)?;
+      fold_infinite(input, &mut parse, acc, &mut fold)
+    }
+    (Bound::Excluded(&min), Bound::Included(&max)) => {
+      // can't handle min == usize::MAX
+      if min > max || min == usize::MAX {
+        Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)))
+      } else {
+        fold_min(
+          |count| count <= min,
+          0..=max,
+          input,
+          &mut parse,
+          &mut init,
+          &mut fold,
+        )
+      }
+    }
+    (Bound::Excluded(&min), Bound::Excluded(&max)) => {
+      // both excluded so can't be equal, can't handle min == usize::MAX
+      if min >= max || min == usize::MAX {
+        Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)))
+      } else {
+        fold_min(
+          |count| count <= min,
+          0..max,
+          input,
+          &mut parse,
+          &mut init,
+          &mut fold,
+        )
+      }
+    }
+    (Bound::Excluded(&min), Bound::Unbounded) => {
+      let (input, acc) = fold_exact(0..=min, input, &mut parse, &mut init, &mut fold)?;
+      fold_infinite(input, &mut parse, acc, &mut fold)
+    }
+    (Bound::Unbounded, Bound::Included(&max)) => {
+      fold_no_min(0..=max, input, &mut parse, &mut init, &mut fold)
+    }
+    (Bound::Unbounded, Bound::Excluded(&max)) => {
+      fold_no_min(0..max, input, &mut parse, &mut init, &mut fold)
+    }
+    (Bound::Unbounded, Bound::Unbounded) => fold_infinite(input, &mut parse, init(), &mut fold),
+  }
+}
+
+fn fold_exact<I, O, E, F, G, H, R, Iter>(
+  iter: Iter,
+  mut input: I,
+  parse: &mut F,
+  init: &mut H,
+  fold: &mut G,
+) -> IResult<I, R, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
+  E: ParseError<I>,
+  Iter: Iterator<Item = usize>,
+{
+  let mut acc = init();
+
+  for _ in iter {
+    let len = input.input_len();
+    match parse.parse(input.clone()) {
+      Ok((tail, value)) => {
+        // infinite loop check: the parser must always consume
+        if tail.input_len() == len {
+          return Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+        }
+
+        acc = fold(acc, value);
+        input = tail;
+      }
+      Err(e) => return Err(e),
+    }
+  }
+
+  Ok((input, acc))
+}
+
+fn fold_no_min<I, O, E, F, G, H, R, Iter>(
+  iter: Iter,
+  mut input: I,
+  parse: &mut F,
+  init: &mut H,
+  fold: &mut G,
+) -> IResult<I, R, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
+  E: ParseError<I>,
+  Iter: Iterator<Item = usize>,
+{
+  let mut acc = init();
+
+  for _ in iter {
+    let len = input.input_len();
+    match parse.parse(input.clone()) {
+      Ok((tail, value)) => {
+        // infinite loop check: the parser must always consume
+        if tail.input_len() == len {
+          return Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+        }
+
+        acc = fold(acc, value);
+        input = tail;
+      }
+      //FInputXMError: handle failure properly
+      Err(Err::Error(_)) => {
+        break;
+      }
+      Err(e) => return Err(e),
+    }
+  }
+
+  Ok((input, acc))
+}
+
+fn fold_min<I, O, E, F, G, H, R, C, Iter>(
+  check_min: C,
+  iter: Iter,
+  mut input: I,
+  parse: &mut F,
+  init: &mut H,
+  fold: &mut G,
+) -> IResult<I, R, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
+  E: ParseError<I>,
+  C: Fn(usize) -> bool,
+  Iter: Iterator<Item = usize>,
+{
+  let mut acc = init();
+
+  for count in iter {
+    let len = input.input_len();
+    match parse.parse(input.clone()) {
+      Ok((tail, value)) => {
+        // infinite loop check: the parser must always consume
+        if tail.input_len() == len {
+          return Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+        }
+
+        acc = fold(acc, value);
+        input = tail;
+      }
+      //FInputXMError: handle failure properly
+      Err(Err::Error(err)) => {
+        if check_min(count) {
+          return Err(Err::Error(E::append(input, ErrorKind::Fold, err)));
+        } else {
+          break;
+        }
+      }
+      Err(e) => return Err(e),
+    }
+  }
+
+  Ok((input, acc))
+}
+
+fn fold_infinite<I, O, E, F, G, R>(
+  mut input: I,
+  parse: &mut F,
+  mut acc: R,
+  fold: &mut G,
+) -> IResult<I, R, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  E: ParseError<I>,
+{
+  loop {
+    let len = input.input_len();
+    match parse.parse(input.clone()) {
+      Ok((tail, value)) => {
+        // infinite loop check: the parser must always consume
+        if tail.input_len() == len {
+          break Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+        }
+
+        acc = fold(acc, value);
+        input = tail;
+      }
+      //FInputXMError: handle failure properly
+      Err(Err::Error(_)) => {
+        break Ok((input, acc));
+      }
+      Err(e) => break Err(e),
+    }
+  }
+}
+
+/// Repeats the embedded parser and returns the results in a `Vec`.
+/// Fails if the amount of time the embedded parser is run is not
+/// within the specified range.
+/// # Arguments
+/// * `range` Constrains the number of iterations.
+///   * A range without an upper bound `a..` is equivalent to a range of `a..=usize::MAX`.
+///   * A single `usize` value is equivalent to `value..=value`.
+///   * An empty range is invalid.
+/// * `parse` The parser to apply.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::many;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   many(..2, tag("abc"))(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+pub fn many<I, O, E, F, G>(range: G, parse: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  E: ParseError<I>,
+  G: RangeBounds<usize>,
+{
+  // let min = range.start_bound().cloned();
+  fold(
+    range,
+    parse, /* || {
+             match min {
+               Bound::Included(min) => Vec::with_capacity(min + 1),
+               Bound::Excluded(min) => Vec::with_capacity(min),
+               _ => Vec::new(),
+             }
+           } */
+    Vec::new,
+    |mut acc, i| {
+      acc.push(i);
+      acc
+    },
+  )
 }
