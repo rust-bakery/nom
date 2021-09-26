@@ -35,7 +35,7 @@ where
   // a predicate. `parse_hex` here parses between 1 and 6 hexadecimal numerals.
   let parse_hex = take_while_m_n(1, 6, |c: char| c.is_ascii_hexdigit());
 
-  // `preceeded` takes a prefix parser, and if it succeeds, returns the result
+  // `preceded` takes a prefix parser, and if it succeeds, returns the result
   // of the body parser. In this case, it parses u{XXXX}.
   let parse_delimited_hex = preceded(
     char('u'),

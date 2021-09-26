@@ -113,7 +113,7 @@ list, we have functions that take other functions as arguments, and return
 functions.
 
 This technique has a lot of advantages over macros:
-- No type inference issues, you can explicitely describe the error type in
+- No type inference issues, you can explicitly describe the error type in
 function definitions
 - Nicer compilation errors: rustc can show you exactly what is missing when calling
 a combinator, if you need to import new traits, etc.

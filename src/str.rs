@@ -88,7 +88,7 @@ mod test {
         );
         assert!(
           output == CONSUMED,
-          "Parser `take_s` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+          "Parser `take_s` doesn't return the string it consumed on success. Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
@@ -120,7 +120,7 @@ mod test {
         assert!(
           output == CONSUMED,
           "Parser `take_until`\
-           doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+           doesn't return the string it consumed on success. Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
@@ -281,7 +281,7 @@ mod test {
         );
         assert!(
           output == CONSUMED,
-          "Parser `is_not` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+          "Parser `is_not` doesn't return the string it consumed on success. Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
@@ -432,7 +432,7 @@ mod test {
         );
         assert!(
           output == CONSUMED,
-          "Parser `is_a` doens't return the string it consumed on success. Expected `{}`, got `{}`.",
+          "Parser `is_a` doesn't return the string it consumed on success. Expected `{}`, got `{}`.",
           CONSUMED,
           output
         );
