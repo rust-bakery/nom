@@ -1,4 +1,8 @@
 //! Traits input types have to implement to work with nom combinators
+
+mod nom_bounds;
+pub use nom_bounds::*;
+
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::iter::{Copied, Enumerate};

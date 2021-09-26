@@ -376,6 +376,7 @@
 #![cfg_attr(nightly, feature(test))]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
+#![cfg_attr(feature = "nightly", feature(try_trait_v2))]
 #![deny(missing_docs)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 #[cfg(feature = "alloc")]
@@ -445,16 +446,16 @@ pub use self::str::*;
 #[macro_use]
 pub mod error;
 
+pub mod combinator;
 mod internal;
 mod traits;
-pub mod combinator;
 #[macro_use]
 pub mod branch;
-pub mod sequence;
 pub mod multi;
+pub mod sequence;
 
-pub mod bytes;
 pub mod bits;
+pub mod bytes;
 
 pub mod character;
 

@@ -1,7 +1,12 @@
 //! Combinators applying their child parser multiple times
 
+mod fold;
 #[cfg(test)]
 mod tests;
+mod try_fold;
+
+pub use fold::fold;
+pub use try_fold::try_fold;
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;
@@ -9,6 +14,8 @@ use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 use crate::traits::{InputLength, InputTake, ToUsize};
+#[cfg(feature = "alloc")]
+use crate::traits::{IntoNomBounds, NomBounds};
 use core::num::NonZeroUsize;
 
 /// Repeats the embedded parser until it fails
@@ -978,4 +985,50 @@ where
 
     Ok((input, res))
   }
+}
+
+/// Repeats the embedded parser and returns the results in a `Vec`.
+/// Fails if the amount of time the embedded parser is run is not
+/// within the specified range.
+/// # Arguments
+/// * `range` Constrains the number of iterations.
+///   * A range without an upper bound `a..` is equivalent to a range of `a..=usize::MAX`.
+///   * A single `usize` value is equivalent to `value..=value`.
+///   * An empty range is invalid.
+/// * `parse` The parser to apply.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::many;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   many(..2, tag("abc"))(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+pub fn many<Bounds, IntoBounds, Input, Output, Error, P, Acc>(
+  bounds: IntoBounds,
+  parse: P,
+) -> impl FnMut(Input) -> IResult<Input, Acc, Error>
+where
+  Bounds: NomBounds,
+  for<'a> &'a IntoBounds: IntoNomBounds<NomBounds = Bounds>,
+  Input: Clone + InputLength,
+  Error: ParseError<Input>,
+  P: Parser<Input, Output, Error>,
+  Acc: Extend<Output> + Default,
+{
+  fold(bounds, parse, Acc::default, |mut acc, i| {
+    // TODO acc.extend_one(i); when https://github.com/rust-lang/rust/issues/72631 is stable
+    acc.extend(Some(i));
+    acc
+  })
 }

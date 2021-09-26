@@ -7,3 +7,4 @@ realworld/
 src/generator.rs
 .DS_Store
 private-docs/
+.vscode
