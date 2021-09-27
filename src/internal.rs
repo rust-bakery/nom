@@ -326,6 +326,34 @@ where
   }
 }
 
+impl<'a, I, E> Parser<I, char, E> for char
+where
+  I: crate::traits::Slice<crate::lib::std::ops::RangeFrom<usize>>
+    + crate::traits::InputIter
+    + crate::traits::InputLength,
+  <I as crate::traits::InputIter>::Item: crate::traits::AsChar,
+  E: crate::error::ParseError<I>,
+{
+  /// Recognizes one character.
+  ///
+  /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+  /// # Example
+  ///
+  /// ```
+  /// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
+  /// # use nom::Parser;
+  /// fn parser(i: &str) -> IResult<&str, char> {
+  ///     'a'.parse(i)
+  /// }
+  /// assert_eq!(parser("abc"), Ok(("bc", 'a')));
+  /// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
+  /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(1))));
+  /// ```
+  fn parse(&mut self, i: I) -> IResult<I, char, E> {
+    crate::character::streaming::char(*self)(i)
+  }
+}
+
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 
