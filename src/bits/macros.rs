@@ -97,7 +97,7 @@ macro_rules! bytes (
 macro_rules! take_bits (
   ($i:expr, $count:expr) => (
     {
-      let res: $crate::IResult<_, _> = $crate::bits::streaming::take($count)($i);
+      let res: $crate::IResult<_, _, _> = $crate::bits::streaming::take($count)($i);
       res
     }
   );
@@ -113,20 +113,23 @@ macro_rules! take_bits (
 ///
 /// ```
 /// # #[macro_use] extern crate nom;
+/// # use nom::IResult;
 /// # fn main() {
-///  named!( take_a<u8>, bits!( tag_bits!(4usize, 0xA) ) );
+///  fn take_a(i: &[u8]) -> IResult<&[u8], u8> {
+///      bits!(i, tag_bits!(4usize, 0xA))
+///  }
 ///
 ///  let input = vec![0xAB, 0xCD, 0xEF];
 ///  let sl    = &input[..];
 ///
-///  assert_eq!(take_a( sl ),       Ok((&sl[1..], 0xA)) );
+///  assert_eq!(take_a(sl), Ok((&sl[1..], 0xA)) );
 /// # }
 /// ```
 #[macro_export(local_inner_macros)]
 macro_rules! tag_bits (
   ($i:expr, $count:expr, $p: expr) => (
     {
-      let res: $crate::IResult<_, _> = $crate::bits::streaming::tag($p, $count)($i);
+      let res: $crate::IResult<_, _, _> = $crate::bits::streaming::tag($p, $count)($i);
       res
     }
   )
@@ -138,26 +141,36 @@ mod tests {
   use crate::internal::{Err, Needed, IResult};
   use crate::error::ErrorKind;
 
+  // take_bits! with default error type
+  macro_rules! take_bits_errorkind (
+      ($i:expr, $count:expr) => (
+        {
+          let res: $crate::IResult<_, _> = take_bits!($i, $count);
+          res
+        }
+      )
+  );
+
   #[test]
   fn take_bits() {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(take_bits!((sl, 0), 0u8), Ok(((sl, 0), 0)));
-    assert_eq!(take_bits!((sl, 0), 8u8), Ok(((&sl[1..], 0), 170)));
-    assert_eq!(take_bits!((sl, 0), 3u8), Ok(((&sl[0..], 3), 5)));
-    assert_eq!(take_bits!((sl, 0), 6u8), Ok(((&sl[0..], 6), 42)));
-    assert_eq!(take_bits!((sl, 1), 1u8), Ok(((&sl[0..], 2), 0)));
-    assert_eq!(take_bits!((sl, 1), 2u8), Ok(((&sl[0..], 3), 1)));
-    assert_eq!(take_bits!((sl, 1), 3u8), Ok(((&sl[0..], 4), 2)));
-    assert_eq!(take_bits!((sl, 6), 3u8), Ok(((&sl[1..], 1), 5)));
-    assert_eq!(take_bits!((sl, 0), 10u8), Ok(((&sl[1..], 2), 683)));
-    assert_eq!(take_bits!((sl, 0), 8u8), Ok(((&sl[1..], 0), 170)));
-    assert_eq!(take_bits!((sl, 6), 10u8), Ok(((&sl[2..], 0), 752)));
-    assert_eq!(take_bits!((sl, 6), 11u8), Ok(((&sl[2..], 1), 1504)));
-    assert_eq!(take_bits!((sl, 0), 20u8), Ok(((&sl[2..], 4), 700_163)));
-    assert_eq!(take_bits!((sl, 4), 20u8), Ok(((&sl[3..], 0), 716_851)));
-    let r: IResult<_,u32> = take_bits!((sl, 4), 22u8);
+    assert_eq!(take_bits_errorkind!((sl, 0), 0u8), Ok(((sl, 0), 0)));
+    assert_eq!(take_bits_errorkind!((sl, 0), 8u8), Ok(((&sl[1..], 0), 170)));
+    assert_eq!(take_bits_errorkind!((sl, 0), 3u8), Ok(((&sl[0..], 3), 5)));
+    assert_eq!(take_bits_errorkind!((sl, 0), 6u8), Ok(((&sl[0..], 6), 42)));
+    assert_eq!(take_bits_errorkind!((sl, 1), 1u8), Ok(((&sl[0..], 2), 0)));
+    assert_eq!(take_bits_errorkind!((sl, 1), 2u8), Ok(((&sl[0..], 3), 1)));
+    assert_eq!(take_bits_errorkind!((sl, 1), 3u8), Ok(((&sl[0..], 4), 2)));
+    assert_eq!(take_bits_errorkind!((sl, 6), 3u8), Ok(((&sl[1..], 1), 5)));
+    assert_eq!(take_bits_errorkind!((sl, 0), 10u8), Ok(((&sl[1..], 2), 683)));
+    assert_eq!(take_bits_errorkind!((sl, 0), 8u8), Ok(((&sl[1..], 0), 170)));
+    assert_eq!(take_bits_errorkind!((sl, 6), 10u8), Ok(((&sl[2..], 0), 752)));
+    assert_eq!(take_bits_errorkind!((sl, 6), 11u8), Ok(((&sl[2..], 1), 1504)));
+    assert_eq!(take_bits_errorkind!((sl, 0), 20u8), Ok(((&sl[2..], 4), 700_163)));
+    assert_eq!(take_bits_errorkind!((sl, 4), 20u8), Ok(((&sl[3..], 0), 716_851)));
+    let r: IResult<_,u32> = take_bits_errorkind!((sl, 4), 22u8);
     assert_eq!(
       r,
       Err(Err::Incomplete(Needed::Size(22)))
@@ -169,8 +182,10 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
-    assert_eq!(tag_bits!((sl, 0), 3u8, 0b101), Ok(((&sl[0..], 3), 5)));
-    assert_eq!(tag_bits!((sl, 0), 4u8, 0b1010), Ok(((&sl[0..], 4), 10)));
+    let r: IResult<_, _> = tag_bits!((sl, 0), 3u8, 0b101);
+    assert_eq!(r, Ok(((&sl[0..], 3), 5)));
+    let r: IResult<_, _> = tag_bits!((sl, 0), 4u8, 0b1010);
+    assert_eq!(r, Ok(((&sl[0..], 4), 10)));
   }
 
   named!(ch<(&[u8],usize),(u8,u8)>,
@@ -246,12 +261,14 @@ mod tests {
     let input = [0b10_10_10_10, 0b11_11_00_00, 0b00_11_00_11];
     let sl = &input[..];
 
+    let r1: IResult<_, _> = take_bits!((sl, 0), 20u8);
     assert_eq!(
-      take_bits!((sl, 0), 20u8),
+      r1,
       Ok(((&sl[2..], 4), FakeUint(700_163)))
     );
+    let r2: IResult<_, _> = take_bits!((sl, 4), 20u8);
     assert_eq!(
-      take_bits!((sl, 4), 20u8),
+      r2,
       Ok(((&sl[3..], 0), FakeUint(716_851)))
     );
     let r3: IResult<_, FakeUint> = take_bits!((sl, 4), 22u8);
