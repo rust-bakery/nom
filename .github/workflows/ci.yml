@@ -135,10 +135,9 @@ jobs:
           override: true
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --verbose --features "std docsrs"
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --no-deps --document-private-items --workspace --verbose --features "std docsrs"
 
   fmt:
     name: Check formatting
