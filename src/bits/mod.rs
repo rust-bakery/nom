@@ -43,6 +43,16 @@ impl<E> BitsParseError<E> {
     }
 }
 
+impl<I, E: ParseError<I>> ParseError<I> for BitsParseError<E> {
+    fn from_error_kind(i: I, e: ErrorKind) -> Self {
+        E::from_error_kind(i, e).into()
+    }
+
+    fn append(_: I, _: ErrorKind, e: Self) -> Self {
+        e
+    }
+}
+
 /// Converts a byte-level input to a bit-level input, for consumption by a parser that uses bits.
 ///
 /// Afterwards, the input is converted back to a byte-level parser, with any remaining bits thrown
