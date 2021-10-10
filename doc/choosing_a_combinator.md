@@ -76,8 +76,10 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 ## Modifiers
 
 - [`cond`](https://docs.rs/nom/latest/nom/combinator/fn.cond.html): Conditional combinator. Wraps another parser and calls it if the condition is met
-- [`flat_map`](https://docs.rs/nom/latest/nom/combinator/fn.flat_map.html): Creates a new parser from the output of the first parser, then apply that parser over the rest of the input
-- [`map`](https://docs.rs/nom/latest/nom/combinator/fn.map.html): Maps a function on the result of a parser
+- [`Parser::flat_map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.flat_map): method to map a new parser from the output of the first parser, then apply that parser over the rest of the input
+- [`flat_map`](https://docs.rs/nom/latest/nom/combinator/fn.flat_map.html): function variant of `Parser::flat_map`
+- [`Parser::map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.map): method to map a function on the result of a parser
+- [`map`](https://docs.rs/nom/latest/nom/combinator/fn.map.html): function variant of `Parser::map`
 - [`map_opt`](https://docs.rs/nom/latest/nom/combinator/fn.map_opt.html): Maps a function returning an `Option` on the output of a parser
 - [`map_res`](https://docs.rs/nom/latest/nom/combinator/fn.map_res.html): Maps a function returning a `Result` on the output of a parser
 - [`not`](https://docs.rs/nom/latest/nom/combinator/fn.not.html): Returns a result only if the embedded parser returns `Error` or `Incomplete`. Does not consume the input
