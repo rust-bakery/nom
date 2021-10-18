@@ -183,71 +183,34 @@ where
 
 /// Helper trait for the tuple combinator.
 ///
-/// This trait is implemented for tuples of parsers of up to 21 elements.
-pub trait Tuple<I, O, E> {
-  /// Parses the input and returns a tuple of results of each parser.
-  fn parse(&mut self, input: I) -> IResult<I, O, E>;
+/// This trait is implemented for tuples of up to 21 elements.
+pub trait Tuple {}
+
+macro_rules! impl_trait_for_tuple {
+  ($($id:ident),+) => (
+    impl<$($id),+> Tuple for ($($id),+,) {}
+  )
 }
 
-impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output, Error>>
-  Tuple<Input, (Output,), Error> for (F,)
-{
-  fn parse(&mut self, input: Input) -> IResult<Input, (Output,), Error> {
-    self.0.parse(input).map(|(i, o)| (i, (o,)))
-  }
-}
-
-macro_rules! tuple_trait(
-  ($name1:ident $ty1:ident, $name2: ident $ty2:ident, $($name:ident $ty:ident),*) => (
-    tuple_trait!(__impl $name1 $ty1, $name2 $ty2; $($name $ty),*);
-  );
-  (__impl $($name:ident $ty: ident),+; $name1:ident $ty1:ident, $($name2:ident $ty2:ident),*) => (
-    tuple_trait_impl!($($name $ty),+);
-    tuple_trait!(__impl $($name $ty),+ , $name1 $ty1; $($name2 $ty2),*);
-  );
-  (__impl $($name:ident $ty: ident),+; $name1:ident $ty1:ident) => (
-    tuple_trait_impl!($($name $ty),+);
-    tuple_trait_impl!($($name $ty),+, $name1 $ty1);
-  );
-);
-
-macro_rules! tuple_trait_impl(
-  ($($name:ident $ty: ident),+) => (
-    impl<
-      Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Parser<Input, $ty, Error>),+
-    > Tuple<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
-
-      fn parse(&mut self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
-        tuple_trait_inner!(0, self, input, (), $($name)+)
-
-      }
+macro_rules! impl_trait_for_tuples {
+    ($id1:ident, $($id:ident),+) => {
+        impl_trait_for_tuples!(__impl $id1; $($id),*);
+    };
+    (__impl $($id:ident),+; $id1:ident $(,$id2:ident)*) => {
+        impl_trait_for_tuple!($($id),+);
+        impl_trait_for_tuples!(__impl $($id),+, $id1; $($id2),*);
+    };
+    (__impl $($id:ident),+;) => {
+        impl_trait_for_tuple!($($id),+);
     }
-  );
-);
+}
 
-macro_rules! tuple_trait_inner(
-  ($it:tt, $self:expr, $input:expr, (), $head:ident $($id:ident)+) => ({
-    let (i, o) = $self.$it.parse($input.clone())?;
+impl_trait_for_tuples!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P100, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21);
 
-    succ!($it, tuple_trait_inner!($self, i, ( o ), $($id)+))
-  });
-  ($it:tt, $self:expr, $input:expr, ($($parsed:tt)*), $head:ident $($id:ident)+) => ({
-    let (i, o) = $self.$it.parse($input.clone())?;
-
-    succ!($it, tuple_trait_inner!($self, i, ($($parsed)* , o), $($id)+))
-  });
-  ($it:tt, $self:expr, $input:expr, ($($parsed:tt)*), $head:ident) => ({
-    let (i, o) = $self.$it.parse($input.clone())?;
-
-    Ok((i, ($($parsed)* , o)))
-  });
-);
-
-tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ J, FnK K, FnL L,
-  FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
-
-///Applies a tuple of parsers one by one and returns their results as a tuple.
+/// Applies a tuple of parsers one by one and returns their results as a tuple.
+///
+/// When doing parser composition, you can compose tuples without using this function, because
+/// tuples already implement the [trait@Parser] trait.
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind};
@@ -258,7 +221,7 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 /// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
 /// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
 /// ```
-pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
+pub fn tuple<I, O, E: ParseError<I>, List: Tuple + Parser<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.parse(i)
