@@ -203,3 +203,7 @@ fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
 f(a);
 ```
 
+## nom_tracable
+
+It's a tool that very usefull to debug tour parser, you can find it on [crates.io](https://crates.io/crates/nom-tracable).
+![nom tracable output](https://user-images.githubusercontent.com/4331004/78225158-b8dc8480-7504-11ea-83ec-3111026313ba.png)
