@@ -24,7 +24,10 @@ pub trait NomRangeBounds<T: ?Sized> {
 
   /// Shortcut for calling both start_bound and end_bound
   fn bounds(&self) -> (Bound<&T>, Bound<&T>) {
-    (NomRangeBounds::start_bound(self), NomRangeBounds::end_bound(self))
+    (
+      NomRangeBounds::start_bound(self),
+      NomRangeBounds::end_bound(self),
+    )
   }
 }
 

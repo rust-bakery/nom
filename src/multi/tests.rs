@@ -706,3 +706,29 @@ fn fold_test() {
   let res1 = vec![&b"A"[..], &b"A"[..]];
   assert_eq!(fold_usize(a), Ok((&b"A"[..], res1)));
 }
+
+#[test]
+fn try_fold_test() {
+  use super::try_fold;
+  use crate::{character::complete::anychar, error::Error};
+
+  let input = "it's my life";
+  let result = try_fold(
+    ..,
+    anychar,
+    || vec![42],
+    |_, _| {
+      Err(Err::Error(Error::from_error_kind(
+        input,
+        ErrorKind::TryFold,
+      )))
+    },
+  )(input);
+  assert_eq!(
+    result,
+    Err(Err::Error(Error::from_error_kind(
+      input,
+      ErrorKind::TryFold,
+    )))
+  );
+}
