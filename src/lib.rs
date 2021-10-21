@@ -9,8 +9,7 @@
 //! use nom::{
 //!   IResult,
 //!   bytes::complete::{tag, take_while_m_n},
-//!   combinator::map_res,
-//!   sequence::tuple};
+//!   combinator::{map_res, parse}};
 //!
 //! #[derive(Debug,PartialEq)]
 //! pub struct Color {
@@ -36,7 +35,7 @@
 //!
 //! fn hex_color(input: &str) -> IResult<&str, Color> {
 //!   let (input, _) = tag("#")(input)?;
-//!   let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+//!   let (input, (red, green, blue)) = parse((hex_primary, hex_primary, hex_primary))(input)?;
 //!
 //!   Ok((input, Color { red, green, blue }))
 //! }
@@ -253,19 +252,19 @@
 //! - **`many0`**: Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
 //! - **`many1`**: Will apply the parser 1 or more times
 //!
-//! There are more complex (and more useful) parsers like `tuple!`, which is
+//! There are more complex (and more useful) parsers like tuples, which are
 //! used to apply a series of parsers then assemble their results.
 //!
-//! Example with `tuple`:
+//! Example with a tuple of parsers:
 //!
 //! ```rust
 //! # fn main() {
 //! use nom::{error::ErrorKind, Needed,
 //! number::streaming::be_u16,
-//! bytes::streaming::{tag, take},
-//! sequence::tuple};
+//! combinator::parse,
+//! bytes::streaming::{tag, take}};
 //!
-//! let mut tpl = tuple((be_u16, take(3u8), tag("fg")));
+//! let mut tpl = parse((be_u16, take(3u8), tag("fg")));
 //!
 //! assert_eq!(
 //!   tpl(&b"abcdefgh"[..]),

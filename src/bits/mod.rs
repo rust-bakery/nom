@@ -5,7 +5,7 @@ pub mod complete;
 pub mod streaming;
 
 use crate::error::{ErrorKind, ParseError};
-use crate::internal::{Err, IResult, Needed};
+use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::ops::RangeFrom;
 use crate::traits::{ErrorConvert, Slice};
 
@@ -18,11 +18,10 @@ use crate::traits::{ErrorConvert, Slice};
 /// ```
 /// use nom::bits::{bits, streaming::take};
 /// use nom::error::Error;
-/// use nom::sequence::tuple;
 /// use nom::IResult;
 ///
 /// fn parse(input: &[u8]) -> IResult<&[u8], (u8, u8)> {
-///     bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((take(4usize), take(8usize))))(input)
+///     bits::<_, _, Error<(&[u8], usize)>, _, _>((take(4usize), take(8usize)))(input)
 /// }
 ///
 /// let input = &[0x12, 0x34, 0xff, 0xff];
@@ -42,9 +41,9 @@ where
   E1: ParseError<(I, usize)> + ErrorConvert<E2>,
   E2: ParseError<I>,
   I: Slice<RangeFrom<usize>>,
-  P: FnMut((I, usize)) -> IResult<(I, usize), O, E1>,
+  P: Parser<(I, usize), O, E1>
 {
-  move |input: I| match parser((input, 0)) {
+  move |input: I| match parser.parse((input, 0)) {
     Ok(((rest, offset), result)) => {
       // If the next byte has been partially read, it will be sliced away as well.
       // The parser functions might already slice away all fully read bytes.
@@ -68,15 +67,14 @@ where
 /// use nom::bits::{bits, bytes, streaming::take};
 /// use nom::combinator::rest;
 /// use nom::error::Error;
-/// use nom::sequence::tuple;
 /// use nom::IResult;
 ///
 /// fn parse(input: &[u8]) -> IResult<&[u8], (u8, u8, &[u8])> {
-///   bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((
+///   bits::<_, _, Error<(&[u8], usize)>, _, _>((
 ///     take(4usize),
 ///     take(8usize),
 ///     bytes::<_, _, Error<&[u8]>, _, _>(rest)
-///   )))(input)
+///   ))(input)
 /// }
 ///
 /// let input = &[0x12, 0x34, 0xff, 0xff];
@@ -115,7 +113,6 @@ mod test {
   use super::*;
   use crate::bits::streaming::take;
   use crate::error::Error;
-  use crate::sequence::tuple;
 
   #[test]
   /// Take the `bits` function and assert that remaining bytes are correctly returned, if the
@@ -125,7 +122,7 @@ mod test {
 
     // Take 3 bit slices with sizes [4, 8, 4].
     let result: IResult<&[u8], (u8, u8, u8)> =
-      bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((take(4usize), take(8usize), take(4usize))))(
+      bits::<_, _, Error<(&[u8], usize)>, _, _>((take(4usize), take(8usize), take(4usize)))(
         input,
       );
 
@@ -150,7 +147,7 @@ mod test {
 
     // Take bit slices with sizes [4, 8].
     let result: IResult<&[u8], (u8, u8)> =
-      bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((take(4usize), take(8usize))))(input);
+      bits::<_, _, Error<(&[u8], usize)>, _, _>((take(4usize), take(8usize)))(input);
 
     let output = result.expect("We take 1.5 bytes and the input is longer than 2 bytes");
 
@@ -170,7 +167,7 @@ mod test {
 
     // Take bit slices with sizes [4, 8].
     let result: IResult<&[u8], (u8, u8)> =
-      bits::<_, _, Error<(&[u8], usize)>, _, _>(tuple((take(4usize), take(8usize))))(input);
+      bits::<_, _, Error<(&[u8], usize)>, _, _>((take(4usize), take(8usize)))(input);
 
     assert!(result.is_err());
     let error = result.err().unwrap();

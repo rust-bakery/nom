@@ -88,18 +88,17 @@ use nom::{
   IResult,
   error::ParseError,
   combinator::value,
-  sequence::tuple,
   bytes::complete::{tag, take_until},
 };
 
 pub fn pinline_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E> {
   value(
     (), // Output is thrown away.
-    tuple((
+    (
       tag("(*"),
       take_until("*)"),
       tag("*)")
-    ))
+    )
   )(i)
 }
 ```
@@ -293,7 +292,7 @@ use nom::{
   branch::alt,
   multi::{many0, many1},
   combinator::{opt, recognize},
-  sequence::{preceded, terminated, tuple},
+  sequence::{preceded, terminated},
   character::complete::{char, one_of},
 };
 
@@ -301,19 +300,19 @@ fn float(input: &str) -> IResult<&str, &str> {
   alt((
     // Case one: .42
     recognize(
-      tuple((
+      (
         char('.'),
         decimal,
-        opt(tuple((
+        opt((
           one_of("eE"),
           opt(one_of("+-")),
           decimal
-        )))
-      ))
+        ))
+      )
     )
     , // Case two: 42e42 and 42.42e42
     recognize(
-      tuple((
+      (
         decimal,
         opt(preceded(
           char('.'),
@@ -322,15 +321,15 @@ fn float(input: &str) -> IResult<&str, &str> {
         one_of("eE"),
         opt(one_of("+-")),
         decimal
-      ))
+      )
     )
     , // Case three: 42. and 42.42
     recognize(
-      tuple((
+      (
         decimal,
         char('.'),
         opt(decimal)
-      ))
+      )
     )
   ))(input)
 }

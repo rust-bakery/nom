@@ -181,48 +181,4 @@ where
   }
 }
 
-/// Helper trait for the tuple combinator.
-///
-/// This trait is implemented for tuples of up to 21 elements.
-pub trait Tuple {}
 
-macro_rules! impl_trait_for_tuple {
-  ($($id:ident),+) => (
-    impl<$($id),+> Tuple for ($($id),+,) {}
-  )
-}
-
-macro_rules! impl_trait_for_tuples {
-    ($id1:ident, $($id:ident),+) => {
-        impl_trait_for_tuples!(__impl $id1; $($id),*);
-    };
-    (__impl $($id:ident),+; $id1:ident $(,$id2:ident)*) => {
-        impl_trait_for_tuple!($($id),+);
-        impl_trait_for_tuples!(__impl $($id),+, $id1; $($id2),*);
-    };
-    (__impl $($id:ident),+;) => {
-        impl_trait_for_tuple!($($id),+);
-    }
-}
-
-impl_trait_for_tuples!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P100, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21);
-
-/// Applies a tuple of parsers one by one and returns their results as a tuple.
-///
-/// When doing parser composition, you can compose tuples without using this function, because
-/// tuples already implement the [trait@Parser] trait.
-///
-/// ```rust
-/// # use nom::{Err, error::ErrorKind};
-/// use nom::sequence::tuple;
-/// use nom::character::complete::{alpha1, digit1};
-/// let mut parser = tuple((alpha1, digit1, alpha1));
-///
-/// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
-/// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
-/// ```
-pub fn tuple<I, O, E: ParseError<I>, List: Tuple + Parser<I, O, E>>(
-  mut l: List,
-) -> impl FnMut(I) -> IResult<I, O, E> {
-  move |i: I| l.parse(i)
-}

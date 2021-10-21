@@ -3,13 +3,14 @@ use crate::bytes::streaming::{tag, take};
 use crate::error::ErrorKind;
 use crate::internal::{Err, IResult, Needed};
 use crate::number::streaming::be_u16;
+use crate::combinator::parse;
 
 #[test]
 fn single_element_tuples() {
   use crate::character::complete::alpha1;
   use crate::{error::ErrorKind, Err};
 
-  let mut parser = tuple((alpha1,));
+  let mut parser = parse((alpha1,));
   assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));
   assert_eq!(
     parser("123def"),
@@ -258,7 +259,7 @@ fn delimited_test() {
 #[test]
 fn tuple_test() {
   fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8], &[u8])> {
-    tuple((be_u16, take(3u8), tag("fg")))(i)
+    parse((be_u16, take(3u8), tag("fg")))(i)
   }
 
   assert_eq!(
