@@ -4,8 +4,8 @@ use crate::branch::alt;
 use crate::bytes::complete::tag;
 use crate::character::complete::{char, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
-use crate::error::ParseError;
-use crate::error::{make_error, ErrorKind};
+use crate::error::ParseContext;
+use crate::error::{make_error, ParserKind};
 use crate::internal::*;
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::sequence::{pair, tuple};
@@ -37,7 +37,7 @@ macro_rules! call (
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u8;
 ///
@@ -46,16 +46,16 @@ macro_rules! call (
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b""[..]), Err(Outcome::Failure((&[][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+pub fn be_u8<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 1;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let res = input.iter_elements().next().unwrap();
 
@@ -67,7 +67,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u16;
 ///
@@ -76,16 +76,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0003)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
+pub fn be_u16<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 2;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u16;
     for byte in input.iter_elements().take(bound) {
@@ -100,7 +100,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u24;
 ///
@@ -109,16 +109,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000305)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+pub fn be_u24<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 3;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u32;
     for byte in input.iter_elements().take(bound) {
@@ -133,7 +133,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u32;
 ///
@@ -142,16 +142,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00030507)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+pub fn be_u32<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 4;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u32;
     for byte in input.iter_elements().take(bound) {
@@ -166,7 +166,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u64;
 ///
@@ -175,16 +175,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0001020304050607)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
+pub fn be_u64<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 8;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u64;
     for byte in input.iter_elements().take(bound) {
@@ -199,7 +199,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_u128;
 ///
@@ -208,17 +208,17 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
+pub fn be_u128<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 16;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u128;
     for byte in input.iter_elements().take(bound) {
@@ -233,7 +233,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i8;
 ///
@@ -242,10 +242,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b""[..]), Err(Outcome::Failure((&[][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
+pub fn be_i8<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -256,7 +256,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i16;
 ///
@@ -265,10 +265,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0003)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
+pub fn be_i16<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -279,7 +279,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i24;
 ///
@@ -288,10 +288,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000305)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+pub fn be_i24<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -307,7 +307,7 @@ where
 ///
 /// *Complete version*: Teturns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i32;
 ///
@@ -316,10 +316,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00030507)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+pub fn be_i32<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -330,7 +330,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i64;
 ///
@@ -339,10 +339,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0001020304050607)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
+pub fn be_i64<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -353,7 +353,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_i128;
 ///
@@ -362,11 +362,11 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
+pub fn be_i128<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -377,7 +377,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u8;
 ///
@@ -386,16 +386,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b""[..]), Err(Outcome::Failure((&[][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+pub fn le_u8<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 1;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let res = input.iter_elements().next().unwrap();
 
@@ -407,7 +407,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u16;
 ///
@@ -416,16 +416,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0300)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
+pub fn le_u16<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 2;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u16;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -440,7 +440,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u24;
 ///
@@ -449,16 +449,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050300)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+pub fn le_u24<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 3;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u32;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -473,7 +473,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u32;
 ///
@@ -482,16 +482,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07050300)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+pub fn le_u32<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 4;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u32;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -506,7 +506,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u64;
 ///
@@ -515,16 +515,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0706050403020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
+pub fn le_u64<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 8;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u64;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -539,7 +539,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_u128;
 ///
@@ -548,17 +548,17 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn le_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
+pub fn le_u128<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 16;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let mut res = 0u128;
     for (index, byte) in input.iter_indices().take(bound) {
@@ -573,7 +573,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i8;
 ///
@@ -582,10 +582,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b""[..]), Err(Outcome::Failure((&[][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
+pub fn le_i8<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -596,7 +596,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i16;
 ///
@@ -605,10 +605,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0300)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
+pub fn le_i16<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -619,7 +619,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i24;
 ///
@@ -628,10 +628,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050300)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+pub fn le_i24<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -647,7 +647,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i32;
 ///
@@ -656,10 +656,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07050300)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+pub fn le_i32<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -670,7 +670,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i64;
 ///
@@ -679,10 +679,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0706050403020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
+pub fn le_i64<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -693,7 +693,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_i128;
 ///
@@ -702,11 +702,11 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
-/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
+pub fn le_i128<I, E: ParseContext<I>>(input: I) -> ParseResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -718,7 +718,7 @@ where
 /// Note that endianness does not apply to 1 byte numbers.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::u8;
 ///
@@ -727,16 +727,16 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b""[..]), Err(Outcome::Failure((&[][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+pub fn u8<I, E: ParseContext<I>>(input: I) -> ParseResult<I, u8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let bound: usize = 1;
   if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+    Err(Outcome::Failure(make_error(input, ParserKind::Eof)))
   } else {
     let res = input.iter_elements().next().unwrap();
 
@@ -751,7 +751,7 @@ where
 /// *complete version*: returns an error if there is not enough input data
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::u16;
 ///
@@ -760,17 +760,19 @@ where
 /// };
 ///
 /// assert_eq!(be_u16(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0003)));
-/// assert_eq!(be_u16(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_u16(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_u16 = |s| {
 ///   u16(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_u16(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0300)));
-/// assert_eq!(le_u16(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_u16(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn u16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u16, E>
+pub fn u16<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, u16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -790,7 +792,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian u24 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::u24;
 ///
@@ -799,17 +801,19 @@ where
 /// };
 ///
 /// assert_eq!(be_u24(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000305)));
-/// assert_eq!(be_u24(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_u24(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_u24 = |s| {
 ///   u24(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_u24(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050300)));
-/// assert_eq!(le_u24(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_u24(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn u24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
+pub fn u24<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -829,7 +833,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian u32 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::u32;
 ///
@@ -838,17 +842,19 @@ where
 /// };
 ///
 /// assert_eq!(be_u32(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00030507)));
-/// assert_eq!(be_u32(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_u32(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_u32 = |s| {
 ///   u32(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_u32(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07050300)));
-/// assert_eq!(le_u32(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_u32(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn u32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
+pub fn u32<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -868,7 +874,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian u64 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::u64;
 ///
@@ -877,17 +883,19 @@ where
 /// };
 ///
 /// assert_eq!(be_u64(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0001020304050607)));
-/// assert_eq!(be_u64(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_u64(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_u64 = |s| {
 ///   u64(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_u64(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0706050403020100)));
-/// assert_eq!(le_u64(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_u64(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn u64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u64, E>
+pub fn u64<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, u64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -907,7 +915,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian u128 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::u128;
 ///
@@ -916,18 +924,20 @@ where
 /// };
 ///
 /// assert_eq!(be_u128(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
-/// assert_eq!(be_u128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_u128(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_u128 = |s| {
 ///   u128(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_u128(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
-/// assert_eq!(le_u128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_u128(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn u128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u128, E>
+pub fn u128<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -946,7 +956,7 @@ where
 /// Note that endianness does not apply to 1 byte numbers.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::i8;
 ///
@@ -955,10 +965,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&b"\x00\x03abcefg"[..]), Ok((&b"\x03abcefg"[..], 0x00)));
-/// assert_eq!(parser(&b""[..]), Err(Err::Error((&[][..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b""[..]), Err(Outcome::Failure((&[][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn i8<I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
+pub fn i8<I, E: ParseContext<I>>(i: I) -> ParseResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -971,7 +981,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian i16 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::i16;
 ///
@@ -980,17 +990,19 @@ where
 /// };
 ///
 /// assert_eq!(be_i16(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0003)));
-/// assert_eq!(be_i16(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_i16(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_i16 = |s| {
 ///   i16(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_i16(&b"\x00\x03abcefg"[..]), Ok((&b"abcefg"[..], 0x0300)));
-/// assert_eq!(le_i16(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_i16(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn i16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i16, E>
+pub fn i16<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, i16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1010,7 +1022,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian i24 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::i24;
 ///
@@ -1019,17 +1031,19 @@ where
 /// };
 ///
 /// assert_eq!(be_i24(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000305)));
-/// assert_eq!(be_i24(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_i24(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_i24 = |s| {
 ///   i24(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_i24(&b"\x00\x03\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050300)));
-/// assert_eq!(le_i24(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_i24(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn i24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
+pub fn i24<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1049,7 +1063,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian i32 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::i32;
 ///
@@ -1058,17 +1072,19 @@ where
 /// };
 ///
 /// assert_eq!(be_i32(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00030507)));
-/// assert_eq!(be_i32(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_i32(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_i32 = |s| {
 ///   i32(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_i32(&b"\x00\x03\x05\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07050300)));
-/// assert_eq!(le_i32(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_i32(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn i32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
+pub fn i32<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1088,7 +1104,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian i64 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::i64;
 ///
@@ -1097,17 +1113,19 @@ where
 /// };
 ///
 /// assert_eq!(be_i64(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0001020304050607)));
-/// assert_eq!(be_i64(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_i64(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_i64 = |s| {
 ///   i64(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_i64(&b"\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x0706050403020100)));
-/// assert_eq!(le_i64(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_i64(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn i64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i64, E>
+pub fn i64<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, i64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1127,7 +1145,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian i128 integer.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::i128;
 ///
@@ -1136,18 +1154,20 @@ where
 /// };
 ///
 /// assert_eq!(be_i128(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x00010203040506070001020304050607)));
-/// assert_eq!(be_i128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(be_i128(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 ///
 /// let le_i128 = |s| {
 ///   i128(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_i128(&b"\x00\x01\x02\x03\x04\x05\x06\x07\x00\x01\x02\x03\x04\x05\x06\x07abcefg"[..]), Ok((&b"abcefg"[..], 0x07060504030201000706050403020100)));
-/// assert_eq!(le_i128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
+/// assert_eq!(le_i128(&b"\x01"[..]), Err(Outcome::Failure((&[0x01][..], ParserKind::Eof))));
 /// ```
 #[inline]
 #[cfg(stable_i128)]
-pub fn i128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i128, E>
+pub fn i128<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1165,7 +1185,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_f32;
 ///
@@ -1174,10 +1194,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&[0x41, 0x48, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"abc"[..]), Err(Outcome::Failure((&b"abc"[..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
+pub fn be_f32<I, E: ParseContext<I>>(input: I) -> ParseResult<I, f32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1191,7 +1211,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::be_f64;
 ///
@@ -1200,10 +1220,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&[0x40, 0x29, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"abc"[..]), Err(Outcome::Failure((&b"abc"[..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn be_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
+pub fn be_f64<I, E: ParseContext<I>>(input: I) -> ParseResult<I, f64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1217,7 +1237,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_f32;
 ///
@@ -1226,10 +1246,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&[0x00, 0x00, 0x48, 0x41][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"abc"[..]), Err(Outcome::Failure((&b"abc"[..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
+pub fn le_f32<I, E: ParseContext<I>>(input: I) -> ParseResult<I, f32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1243,7 +1263,7 @@ where
 ///
 /// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::le_f64;
 ///
@@ -1252,10 +1272,10 @@ where
 /// };
 ///
 /// assert_eq!(parser(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x29, 0x40][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(parser(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(parser(&b"abc"[..]), Err(Outcome::Failure((&b"abc"[..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn le_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
+pub fn le_f64<I, E: ParseContext<I>>(input: I) -> ParseResult<I, f64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1271,7 +1291,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian f32 float.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::f32;
 ///
@@ -1280,17 +1300,19 @@ where
 /// };
 ///
 /// assert_eq!(be_f32(&[0x41, 0x48, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(be_f32(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(be_f32(&b"abc"[..]), Err(Outcome::Failure((&b"abc"[..], ParserKind::Eof))));
 ///
 /// let le_f32 = |s| {
 ///   f32(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_f32(&[0x00, 0x00, 0x48, 0x41][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(le_f32(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(le_f32(&b"abc"[..]), Err(Outcome::Failure((&b"abc"[..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn f32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f32, E>
+pub fn f32<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, f32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1310,7 +1332,7 @@ where
 /// otherwise if `nom::number::Endianness::Little` parse a little endian f64 float.
 /// *complete version*: returns an error if there is not enough input data
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::f64;
 ///
@@ -1319,17 +1341,19 @@ where
 /// };
 ///
 /// assert_eq!(be_f64(&[0x40, 0x29, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(be_f64(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(be_f64(&b"abc"[..]), Err(Outcome::Failure((&b"abc"[..], ParserKind::Eof))));
 ///
 /// let le_f64 = |s| {
 ///   f64(nom::number::Endianness::Little)(s)
 /// };
 ///
 /// assert_eq!(le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x29, 0x40][..]), Ok((&b""[..], 12.5)));
-/// assert_eq!(le_f64(&b"abc"[..]), Err(Err::Error((&b"abc"[..], ErrorKind::Eof))));
+/// assert_eq!(le_f64(&b"abc"[..]), Err(Outcome::Failure((&b"abc"[..], ParserKind::Eof))));
 /// ```
 #[inline]
-pub fn f64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f64, E>
+pub fn f64<I, E: ParseContext<I>>(
+  endian: crate::number::Endianness,
+) -> fn(I) -> ParseResult<I, f64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
@@ -1347,7 +1371,7 @@ where
 ///
 /// *Complete version*: Will parse until the end of input if it has less than 8 bytes.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::hex_u32;
 ///
@@ -1357,10 +1381,10 @@ where
 ///
 /// assert_eq!(parser(&b"01AE"[..]), Ok((&b""[..], 0x01AE)));
 /// assert_eq!(parser(&b"abc"[..]), Ok((&b""[..], 0x0ABC)));
-/// assert_eq!(parser(&b"ggg"[..]), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
+/// assert_eq!(parser(&b"ggg"[..]), Err(Outcome::Failure((&b"ggg"[..], ParserKind::IsA))));
 /// ```
 #[inline]
-pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8], u32, E> {
+pub fn hex_u32<'a, E: ParseContext<&'a [u8]>>(input: &'a [u8]) -> ParseResult<&'a [u8], u32, E> {
   let (i, o) = crate::bytes::complete::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
   // Do not parse more than 8 characters for a u32
   let (parsed, remaining) = if o.len() <= 8 {
@@ -1387,7 +1411,7 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8]
 /// *Complete version*: Can parse until the end of input.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::recognize_float;
 ///
@@ -1398,10 +1422,10 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8]
 /// assert_eq!(parser("11e-1"), Ok(("", "11e-1")));
 /// assert_eq!(parser("123E-02"), Ok(("", "123E-02")));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", "123")));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Char))));
+/// assert_eq!(parser("abc"), Err(Outcome::Failure(("abc", ParserKind::Char))));
 /// ```
 #[rustfmt::skip]
-pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn recognize_float<T, E:ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
@@ -1430,7 +1454,9 @@ where
 ///
 /// *Complete version*: Can parse until the end of input.
 ///
-pub fn recognize_float_parts<T, E: ParseError<T>>(input: T) -> IResult<T, (bool, T, T, i32), E>
+pub fn recognize_float_parts<T, E: ParseContext<T>>(
+  input: T,
+) -> ParseResult<T, (bool, T, T, i32), E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset,
@@ -1498,7 +1524,10 @@ where
   };
 
   if integer.input_len() == 0 && fraction.input_len() == 0 {
-    return Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)));
+    return Err(Outcome::Failure(E::from_parser_kind(
+      input,
+      ParserKind::Float,
+    )));
   }
 
   let i2 = i.clone();
@@ -1521,7 +1550,7 @@ where
 ///
 /// *Complete version*: Can parse until the end of input.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::float;
 ///
@@ -1532,9 +1561,9 @@ where
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
+/// assert_eq!(parser("abc"), Err(Outcome::Failure(("abc", ParserKind::Float))));
 /// ```
-pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
+pub fn float<T, E: ParseContext<T>>(input: T) -> ParseResult<T, f32, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset,
@@ -1564,7 +1593,7 @@ where
 ///
 /// *Complete version*: Can parse until the end of input.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::number::complete::double;
 ///
@@ -1575,9 +1604,9 @@ where
 /// assert_eq!(parser("11e-1"), Ok(("", 1.1)));
 /// assert_eq!(parser("123E-02"), Ok(("", 1.23)));
 /// assert_eq!(parser("123K-01"), Ok(("K-01", 123.0)));
-/// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Float))));
+/// assert_eq!(parser("abc"), Err(Outcome::Failure(("abc", ParserKind::Float))));
 /// ```
-pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
+pub fn double<T, E: ParseContext<T>>(input: T) -> ParseResult<T, f64, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset,
@@ -1606,13 +1635,13 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::error::ErrorKind;
-  use crate::internal::Err;
+  use crate::error::ParserKind;
+  use crate::internal::Outcome;
   use proptest::prelude::*;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
-      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
+      let res: $crate::ParseResult<_, _, (_, ParserKind)> = $left;
       assert_eq!(res, $right);
     };
   );
@@ -1905,7 +1934,10 @@ mod tests {
   fn hex_u32_tests() {
     assert_parse!(
       hex_u32(&b";"[..]),
-      Err(Err::Error(error_position!(&b";"[..], ErrorKind::IsA)))
+      Err(Outcome::Failure(error_position!(
+        &b";"[..],
+        ParserKind::IsA
+      )))
     );
     assert_parse!(hex_u32(&b"ff;"[..]), Ok((&b";"[..], 255)));
     assert_parse!(hex_u32(&b"1be2;"[..]), Ok((&b";"[..], 7138)));
@@ -1962,7 +1994,7 @@ mod tests {
     let remaining_exponent = "-1.234E-";
     assert_parse!(
       recognize_float(remaining_exponent),
-      Err(Err::Failure(("", ErrorKind::Digit)))
+      Err(Outcome::Invalid(("", ParserKind::Digit)))
     );
   }
 
@@ -1970,19 +2002,19 @@ mod tests {
   fn configurable_endianness() {
     use crate::number::Endianness;
 
-    fn be_tst16(i: &[u8]) -> IResult<&[u8], u16> {
+    fn be_tst16(i: &[u8]) -> ParseResult<&[u8], u16> {
       u16(Endianness::Big)(i)
     }
-    fn le_tst16(i: &[u8]) -> IResult<&[u8], u16> {
+    fn le_tst16(i: &[u8]) -> ParseResult<&[u8], u16> {
       u16(Endianness::Little)(i)
     }
     assert_eq!(be_tst16(&[0x80, 0x00]), Ok((&b""[..], 32_768_u16)));
     assert_eq!(le_tst16(&[0x80, 0x00]), Ok((&b""[..], 128_u16)));
 
-    fn be_tst32(i: &[u8]) -> IResult<&[u8], u32> {
+    fn be_tst32(i: &[u8]) -> ParseResult<&[u8], u32> {
       u32(Endianness::Big)(i)
     }
-    fn le_tst32(i: &[u8]) -> IResult<&[u8], u32> {
+    fn le_tst32(i: &[u8]) -> ParseResult<&[u8], u32> {
       u32(Endianness::Little)(i)
     }
     assert_eq!(
@@ -1994,10 +2026,10 @@ mod tests {
       Ok((&b""[..], 6_291_474_u32))
     );
 
-    fn be_tst64(i: &[u8]) -> IResult<&[u8], u64> {
+    fn be_tst64(i: &[u8]) -> ParseResult<&[u8], u64> {
       u64(Endianness::Big)(i)
     }
-    fn le_tst64(i: &[u8]) -> IResult<&[u8], u64> {
+    fn le_tst64(i: &[u8]) -> ParseResult<&[u8], u64> {
       u64(Endianness::Little)(i)
     }
     assert_eq!(
@@ -2009,19 +2041,19 @@ mod tests {
       Ok((&b""[..], 36_028_874_334_666_770_u64))
     );
 
-    fn be_tsti16(i: &[u8]) -> IResult<&[u8], i16> {
+    fn be_tsti16(i: &[u8]) -> ParseResult<&[u8], i16> {
       i16(Endianness::Big)(i)
     }
-    fn le_tsti16(i: &[u8]) -> IResult<&[u8], i16> {
+    fn le_tsti16(i: &[u8]) -> ParseResult<&[u8], i16> {
       i16(Endianness::Little)(i)
     }
     assert_eq!(be_tsti16(&[0x00, 0x80]), Ok((&b""[..], 128_i16)));
     assert_eq!(le_tsti16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
 
-    fn be_tsti32(i: &[u8]) -> IResult<&[u8], i32> {
+    fn be_tsti32(i: &[u8]) -> ParseResult<&[u8], i32> {
       i32(Endianness::Big)(i)
     }
-    fn le_tsti32(i: &[u8]) -> IResult<&[u8], i32> {
+    fn le_tsti32(i: &[u8]) -> ParseResult<&[u8], i32> {
       i32(Endianness::Little)(i)
     }
     assert_eq!(
@@ -2033,10 +2065,10 @@ mod tests {
       Ok((&b""[..], 6_296_064_i32))
     );
 
-    fn be_tsti64(i: &[u8]) -> IResult<&[u8], i64> {
+    fn be_tsti64(i: &[u8]) -> ParseResult<&[u8], i64> {
       i64(Endianness::Big)(i)
     }
-    fn le_tsti64(i: &[u8]) -> IResult<&[u8], i64> {
+    fn le_tsti64(i: &[u8]) -> ParseResult<&[u8], i64> {
       i64(Endianness::Little)(i)
     }
     assert_eq!(
@@ -2050,17 +2082,17 @@ mod tests {
   }
 
   #[cfg(feature = "std")]
-  fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
+  fn parse_f64(i: &str) -> ParseResult<&str, f64, ()> {
     use crate::traits::ParseTo;
     match recognize_float(i) {
       Err(e) => Err(e),
       Ok((i, s)) => {
         if s.is_empty() {
-          return Err(Err::Error(()));
+          return Err(Outcome::Failure(()));
         }
         match s.parse_to() {
           Some(n) => Ok((i, n)),
-          None => Err(Err::Error(())),
+          None => Err(Outcome::Failure(())),
         }
       }
     }

@@ -7,7 +7,7 @@
 //!
 //! ```rust
 //! use nom::{
-//!   IResult,
+//!   ParseResult,
 //!   bytes::complete::{tag, take_while_m_n},
 //!   combinator::map_res,
 //!   sequence::tuple};
@@ -27,14 +27,14 @@
 //!   c.is_digit(16)
 //! }
 //!
-//! fn hex_primary(input: &str) -> IResult<&str, u8> {
+//! fn hex_primary(input: &str) -> ParseResult<&str, u8> {
 //!   map_res(
 //!     take_while_m_n(2, 2, is_hex_digit),
 //!     from_hex
 //!   )(input)
 //! }
 //!
-//! fn hex_color(input: &str) -> IResult<&str, Color> {
+//! fn hex_color(input: &str) -> ParseResult<&str, Color> {
 //!   let (input, _) = tag("#")(input)?;
 //!   let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
 //!
@@ -87,14 +87,14 @@
 //!
 //! ```rust
 //! use nom::{
-//!   IResult,
+//!   ParseResult,
 //!   sequence::delimited,
 //!   // see the "streaming/complete" paragraph lower for an explanation of these submodules
 //!   character::complete::char,
 //!   bytes::complete::is_not
 //! };
 //!
-//! fn parens(input: &str) -> IResult<&str, &str> {
+//! fn parens(input: &str) -> ParseResult<&str, &str> {
 //!   delimited(char('('), is_not(")"), char(')'))(input)
 //! }
 //! ```
@@ -106,12 +106,12 @@
 //! Here is another parser, written without using nom's combinators this time:
 //!
 //! ```rust
-//! use nom::{IResult, Err, Needed};
+//! use nom::{ParseResult, Outcome, Needed};
 //!
 //! # fn main() {
-//! fn take4(i: &[u8]) -> IResult<&[u8], &[u8]>{
+//! fn take4(i: &[u8]) -> ParseResult<&[u8], &[u8]>{
 //!   if i.len() < 4 {
-//!     Err(Err::Incomplete(Needed::new(4)))
+//!     Err(Outcome::Incomplete(Needed::new(4)))
 //!   } else {
 //!     Ok((&i[4..], &i[0..4]))
 //!   }
@@ -127,8 +127,8 @@
 //! With functions, you would write it like this:
 //!
 //! ```rust
-//! use nom::{IResult, bytes::streaming::take};
-//! fn take4(input: &str) -> IResult<&str, &str> {
+//! use nom::{ParseResult, bytes::streaming::take};
+//! fn take4(input: &str) -> ParseResult<&str, &str> {
 //!   take(4u8)(input)
 //! }
 //! ```
@@ -137,35 +137,35 @@
 //! and an optional error type `E`, will have the following signature:
 //!
 //! ```rust,ignore
-//! fn parser(input: I) -> IResult<I, O, E>;
+//! fn parser(input: I) -> ParseResult<I, O, E>;
 //! ```
 //!
-//! Or like this, if you don't want to specify a custom error type (it will be `(I, ErrorKind)` by default):
+//! Or like this, if you don't want to specify a custom error type (it will be `(I, ParserKind)` by default):
 //!
 //! ```rust,ignore
-//! fn parser(input: I) -> IResult<I, O>;
+//! fn parser(input: I) -> ParseResult<I, O>;
 //! ```
 //!
-//! `IResult` is an alias for the `Result` type:
+//! `ParseResult` is an alias for the `Result` type:
 //!
 //! ```rust
-//! use nom::{Needed, error::Error};
+//! use nom::{Needed, error::Context};
 //!
-//! type IResult<I, O, E = Error<I>> = Result<(I, O), Err<E>>;
+//! type ParseResult<I, O, C = Context<I>> = Result<(I, O), Outcome<C>>;
 //!
-//! enum Err<E> {
+//! enum Outcome<C> {
 //!   Incomplete(Needed),
-//!   Error(E),
-//!   Failure(E),
+//!   Failure(C),
+//!   Invalid(C),
 //! }
 //! ```
 //!
 //! It can have the following values:
 //!
 //! - A correct result `Ok((I,O))` with the first element being the remaining of the input (not parsed yet), and the second the output value;
-//! - An error `Err(Err::Error(c))` with `c` an error that can be built from the input position and a parser specific error
-//! - An error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
-//! - An error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: We cannot backtrack and test another parser
+//! - An error `Err(Outcome::Failure(c))` with `c` an error that can be built from the input position and a parser specific error
+//! - An error `Err(Outcome::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
+//! - An error `Err(Outcome::Invalid(c))`. It works like the `Error` case, except it indicates an unrecoverable error: We cannot backtrack and test another parser
 //!
 //! Please refer to the ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
 //! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/master/doc).
@@ -173,7 +173,7 @@
 //! ## Making new parsers with function combinators
 //!
 //! nom is based on functions that generate parsers, with a signature like
-//! this: `(arguments) -> impl Fn(Input) -> IResult<Input, Output, Error>`.
+//! this: `(arguments) -> impl Fn(Input) -> ParseResult<Input, Output, Context>`.
 //! The arguments of a combinator can be direct values (like `take` which uses
 //! a number of bytes or character as argument) or even other parsers (like
 //! `delimited` which takes as argument 3 parsers, and returns the result of
@@ -182,13 +182,13 @@
 //! Here are some examples:
 //!
 //! ```rust
-//! use nom::IResult;
+//! use nom::ParseResult;
 //! use nom::bytes::complete::{tag, take};
-//! fn abcd_parser(i: &str) -> IResult<&str, &str> {
+//! fn abcd_parser(i: &str) -> ParseResult<&str, &str> {
 //!   tag("abcd")(i) // will consume bytes if the input begins with "abcd"
 //! }
 //!
-//! fn take_10(i: &[u8]) -> IResult<&[u8], &[u8]> {
+//! fn take_10(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
 //!   take(10u8)(i) // will consume and return 10 bytes of input
 //! }
 //! ```
@@ -200,7 +200,7 @@
 //! the next, and returns the result of the first parser that succeeds:
 //!
 //! ```rust
-//! use nom::IResult;
+//! use nom::ParseResult;
 //! use nom::branch::alt;
 //! use nom::bytes::complete::tag;
 //!
@@ -208,15 +208,15 @@
 //!
 //! assert_eq!(alt_tags(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
 //! assert_eq!(alt_tags(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
-//! assert_eq!(alt_tags(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
+//! assert_eq!(alt_tags(&b"ijklxxx"[..]), Err(nom::Outcome::Failure((&b"ijklxxx"[..], nom::error::ParserKind::Tag))));
 //! ```
 //!
 //! The **`opt`** combinator makes a parser optional. If the child parser returns
 //! an error, **`opt`** will still succeed and return None:
 //!
 //! ```rust
-//! use nom::{IResult, combinator::opt, bytes::complete::tag};
-//! fn abcd_opt(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
+//! use nom::{ParseResult, combinator::opt, bytes::complete::tag};
+//! fn abcd_opt(i: &[u8]) -> ParseResult<&[u8], Option<&[u8]>> {
 //!   opt(tag("abcd"))(i)
 //! }
 //!
@@ -229,10 +229,10 @@
 //! ```rust
 //! # #[cfg(feature = "alloc")]
 //! # fn main() {
-//! use nom::{IResult, multi::many0, bytes::complete::tag};
+//! use nom::{ParseResult, multi::many0, bytes::complete::tag};
 //! use std::str;
 //!
-//! fn multi(i: &str) -> IResult<&str, Vec<&str>> {
+//! fn multi(i: &str) -> ParseResult<&str, Vec<&str>> {
 //!   many0(tag("abcd"))(i)
 //! }
 //!
@@ -260,7 +260,7 @@
 //!
 //! ```rust
 //! # fn main() {
-//! use nom::{error::ErrorKind, Needed,
+//! use nom::{error::ParserKind, Needed,
 //! number::streaming::be_u16,
 //! bytes::streaming::{tag, take},
 //! sequence::tuple};
@@ -274,9 +274,9 @@
 //!     (0x6162u16, &b"cde"[..], &b"fg"[..])
 //!   ))
 //! );
-//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
+//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Outcome::Incomplete(Needed::new(2))));
 //! let input = &b"abcdejk"[..];
-//! assert_eq!(tpl(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
+//! assert_eq!(tpl(input), Err(nom::Outcome::Failure((&input[5..], ParserKind::Tag))));
 //! # }
 //! ```
 //!
@@ -285,7 +285,7 @@
 //!
 //! ```rust
 //! # fn main() {
-//! use nom::{IResult, bytes::complete::tag};
+//! use nom::{ParseResult, bytes::complete::tag};
 //!
 //! #[derive(Debug, PartialEq)]
 //! struct A {
@@ -293,10 +293,10 @@
 //!   b: u8
 //! }
 //!
-//! fn ret_int1(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,1)) }
-//! fn ret_int2(i:&[u8]) -> IResult<&[u8], u8> { Ok((i,2)) }
+//! fn ret_int1(i:&[u8]) -> ParseResult<&[u8], u8> { Ok((i,1)) }
+//! fn ret_int2(i:&[u8]) -> ParseResult<&[u8], u8> { Ok((i,2)) }
 //!
-//! fn f(i: &[u8]) -> IResult<&[u8], A> {
+//! fn f(i: &[u8]) -> ParseResult<&[u8], A> {
 //!   // if successful, the parser returns `Ok((remaining_input, output_value))` that we can destructure
 //!   let (i, _) = tag("abcd")(i)?;
 //!   let (i, a) = ret_int1(i)?;
@@ -327,13 +327,13 @@
 //! Here is how it works in practice:
 //!
 //! ```rust
-//! use nom::{IResult, Err, Needed, error::{Error, ErrorKind}, bytes, character};
+//! use nom::{ParseResult, Outcome, Needed, error::{Context, ParserKind}, bytes, character};
 //!
-//! fn take_streaming(i: &[u8]) -> IResult<&[u8], &[u8]> {
+//! fn take_streaming(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
 //!   bytes::streaming::take(4u8)(i)
 //! }
 //!
-//! fn take_complete(i: &[u8]) -> IResult<&[u8], &[u8]> {
+//! fn take_complete(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
 //!   bytes::complete::take(4u8)(i)
 //! }
 //!
@@ -343,17 +343,17 @@
 //!
 //! // if the input is smaller than 4 bytes, the streaming parser
 //! // will return `Incomplete` to indicate that we need more data
-//! assert_eq!(take_streaming(&b"abc"[..]), Err(Err::Incomplete(Needed::new(1))));
+//! assert_eq!(take_streaming(&b"abc"[..]), Err(Outcome::Incomplete(Needed::new(1))));
 //!
 //! // but the complete parser will return an error
-//! assert_eq!(take_complete(&b"abc"[..]), Err(Err::Error(Error::new(&b"abc"[..], ErrorKind::Eof))));
+//! assert_eq!(take_complete(&b"abc"[..]), Err(Outcome::Failure(Context::new(&b"abc"[..], ParserKind::Eof))));
 //!
 //! // the alpha0 function recognizes 0 or more alphabetic characters
-//! fn alpha0_streaming(i: &str) -> IResult<&str, &str> {
+//! fn alpha0_streaming(i: &str) -> ParseResult<&str, &str> {
 //!   character::streaming::alpha0(i)
 //! }
 //!
-//! fn alpha0_complete(i: &str) -> IResult<&str, &str> {
+//! fn alpha0_complete(i: &str) -> ParseResult<&str, &str> {
 //!   character::complete::alpha0(i)
 //! }
 //!
@@ -364,7 +364,7 @@
 //! // but when there's no limit, the streaming version returns `Incomplete`, because it cannot
 //! // know if more input data should be recognized. The whole input could be "abcd;", or
 //! // "abcde;"
-//! assert_eq!(alpha0_streaming("abcd"), Err(Err::Incomplete(Needed::new(1))));
+//! assert_eq!(alpha0_streaming("abcd"), Err(Outcome::Incomplete(Needed::new(1))));
 //!
 //! // while the complete version knows that all of the data is there
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));

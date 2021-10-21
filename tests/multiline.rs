@@ -2,10 +2,10 @@ use nom::{
   character::complete::{alphanumeric1 as alphanumeric, line_ending as eol},
   multi::many0,
   sequence::terminated,
-  IResult,
+  ParseResult,
 };
 
-pub fn end_of_line(input: &str) -> IResult<&str, &str> {
+pub fn end_of_line(input: &str) -> ParseResult<&str, &str> {
   if input.is_empty() {
     Ok((input, input))
   } else {
@@ -13,11 +13,11 @@ pub fn end_of_line(input: &str) -> IResult<&str, &str> {
   }
 }
 
-pub fn read_line(input: &str) -> IResult<&str, &str> {
+pub fn read_line(input: &str) -> ParseResult<&str, &str> {
   terminated(alphanumeric, end_of_line)(input)
 }
 
-pub fn read_lines(input: &str) -> IResult<&str, Vec<&str>> {
+pub fn read_lines(input: &str) -> ParseResult<&str, Vec<&str>> {
   many0(read_line)(input)
 }
 

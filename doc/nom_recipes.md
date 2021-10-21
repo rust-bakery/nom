@@ -26,8 +26,8 @@ These are short recipes for accomplishing common tasks with nom.
 
 ```rust
 use nom::{
-  IResult,
-  error::ParseError,
+  ParseResult,
+  error::ParseContext,
   combinator::value,
   sequence::delimited,
   character::complete::multispace0,
@@ -35,9 +35,9 @@ use nom::{
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and 
 /// trailing whitespace, returning the output of `inner`.
-fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
+fn ws<'a, F: 'a, O, E: ParseContext<&'a str>>(inner: F) -> impl FnMut(&'a str) -> ParseResult<&'a str, O, E>
   where
-  F: Fn(&'a str) -> IResult<&'a str, O, E>,
+  F: Fn(&'a str) -> ParseResult<&'a str, O, E>,
 {
   delimited(
     multispace0,
@@ -61,15 +61,15 @@ output of `()`.
 
 ```rust
 use nom::{
-  IResult,
-  error::ParseError,
+  ParseResult,
+  error::ParseContext,
   combinator::value,
   sequence::pair,
   bytes::complete::is_not,
   character::complete::char,
 };
 
-pub fn peol_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E>
+pub fn peol_comment<'a, E: ParseContext<&'a str>>(i: &'a str) -> ParseResult<&'a str, (), E>
 {
   value(
     (), // Output is thrown away.
@@ -85,14 +85,14 @@ and does not handle nested comments.
 
 ```rust
 use nom::{
-  IResult,
-  error::ParseError,
+  ParseResult,
+  error::ParseContext,
   combinator::value,
   sequence::tuple,
   bytes::complete::{tag, take_until},
 };
 
-pub fn pinline_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E> {
+pub fn pinline_comment<'a, E: ParseContext<&'a str>>(i: &'a str) -> ParseResult<&'a str, (), E> {
   value(
     (), // Output is thrown away.
     tuple((
@@ -113,7 +113,7 @@ letters and numbers may be parsed like this:
 
 ```rust
 use nom::{
-  IResult,
+  ParseResult,
   branch::alt,
   multi::many0,
   combinator::recognize,
@@ -122,7 +122,7 @@ use nom::{
   bytes::complete::tag,
 };
 
-pub fn identifier(input: &str) -> IResult<&str, &str> {
+pub fn identifier(input: &str) -> ParseResult<&str, &str> {
   recognize(
     pair(
       alt((alpha1, tag("_"))),
@@ -164,7 +164,7 @@ The parser outputs the string slice of the digits without the leading `0x`/`0X`.
 
 ```rust
 use nom::{
-  IResult,
+  ParseResult,
   branch::alt,
   multi::{many0, many1},
   combinator::recognize,
@@ -173,7 +173,7 @@ use nom::{
   bytes::complete::tag,
 };
 
-fn hexadecimal(input: &str) -> IResult<&str, &str> { // <'a, E: ParseError<&'a str>>
+fn hexadecimal(input: &str) -> ParseResult<&str, &str> { // <'a, E: ParseContext<&'a str>>
   preceded(
     alt((tag("0x"), tag("0X"))),
     recognize(
@@ -189,7 +189,7 @@ If you want it to return the integer value instead, use map:
 
 ```rust
 use nom::{
-  IResult,
+  ParseResult,
   branch::alt,
   multi::{many0, many1},
   combinator::{map_res, recognize},
@@ -198,7 +198,7 @@ use nom::{
   bytes::complete::tag,
 };
 
-fn hexadecimal_value(input: &str) -> IResult<&str, i64> {
+fn hexadecimal_value(input: &str) -> ParseResult<&str, i64> {
   map_res(
     preceded(
       alt((tag("0x"), tag("0X"))),
@@ -217,7 +217,7 @@ fn hexadecimal_value(input: &str) -> IResult<&str, i64> {
 
 ```rust
 use nom::{
-  IResult,
+  ParseResult,
   branch::alt,
   multi::{many0, many1},
   combinator::recognize,
@@ -226,7 +226,7 @@ use nom::{
   bytes::complete::tag,
 };
 
-fn octal(input: &str) -> IResult<&str, &str> {
+fn octal(input: &str) -> ParseResult<&str, &str> {
   preceded(
     alt((tag("0o"), tag("0O"))),
     recognize(
@@ -242,7 +242,7 @@ fn octal(input: &str) -> IResult<&str, &str> {
 
 ```rust
 use nom::{
-  IResult,
+  ParseResult,
   branch::alt,
   multi::{many0, many1},
   combinator::recognize,
@@ -251,7 +251,7 @@ use nom::{
   bytes::complete::tag,
 };
 
-fn binary(input: &str) -> IResult<&str, &str> {
+fn binary(input: &str) -> ParseResult<&str, &str> {
   preceded(
     alt((tag("0b"), tag("0B"))),
     recognize(
@@ -267,14 +267,14 @@ fn binary(input: &str) -> IResult<&str, &str> {
 
 ```rust
 use nom::{
-  IResult,
+  ParseResult,
   multi::{many0, many1},
   combinator::recognize,
   sequence::terminated,
   character::complete::{char, one_of},
 };
 
-fn decimal(input: &str) -> IResult<&str, &str> {
+fn decimal(input: &str) -> ParseResult<&str, &str> {
   recognize(
     many1(
       terminated(one_of("0123456789"), many0(char('_')))
@@ -289,7 +289,7 @@ The following is adapted from [the Python parser by Valentin Lorentz (ProgVal)](
 
 ```rust
 use nom::{
-  IResult,
+  ParseResult,
   branch::alt,
   multi::{many0, many1},
   combinator::{opt, recognize},
@@ -297,7 +297,7 @@ use nom::{
   character::complete::{char, one_of},
 };
 
-fn float(input: &str) -> IResult<&str, &str> {
+fn float(input: &str) -> ParseResult<&str, &str> {
   alt((
     // Case one: .42
     recognize(
@@ -335,7 +335,7 @@ fn float(input: &str) -> IResult<&str, &str> {
   ))(input)
 }
 
-fn decimal(input: &str) -> IResult<&str, &str> {
+fn decimal(input: &str) -> ParseResult<&str, &str> {
   recognize(
     many1(
       terminated(one_of("0123456789"), many0(char('_')))
@@ -351,13 +351,13 @@ a common interface to parse from a string.
 
 ```rust
 use nom::{
-  IResult, Finish, error::Error,
+  ParseResult, Finish, error::Context,
   bytes::complete::{tag, take_while},
 };
 use std::str::FromStr;
 
 // will recognize the name in "Hello, name!"
-fn parse_name(input: &str) -> IResult<&str, &str> {
+fn parse_name(input: &str) -> ParseResult<&str, &str> {
   let (i, _) = tag("Hello, ")(input)?;
   let (i, name) = take_while(|c:char| c.is_alphabetic())(i)?;
   let (i, _) = tag("!")(i)?;
@@ -376,7 +376,7 @@ impl FromStr for Name {
   fn from_str(s: &str) -> Result<Self, Self::Err> {
       match parse_name(s).finish() {
           Ok((_remaining, name)) => Ok(Name(name.to_string())),
-          Err(Error { input, code }) => Err(Error {
+          Err(Context { input, code }) => Err(Context {
               input: input.to_string(),
               code,
           })
@@ -388,7 +388,7 @@ fn main() {
   // parsed: Ok(Name("nom"))
   println!("parsed: {:?}", "Hello, nom!".parse::<Name>());
 
-  // parsed: Err(Error { input: "123!", code: Tag })
+  // parsed: Err(Context { input: "123!", code: Tag })
   println!("parsed: {:?}", "Hello, 123!".parse::<Name>());
 }
 ```

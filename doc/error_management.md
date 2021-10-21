@@ -10,7 +10,7 @@ To match these requirements, nom parsers have to return the following result
 type:
 
 ```rust
-pub type IResult<I, O, E=nom::error::Error<I>> = Result<(I, O), nom::Err<E>>;
+pub type ParseResult<I, O, E=nom::error::Context<I>> = Result<(I, O), nom::Err<E>>;
 
 pub enum Err<E> {
     Incomplete(Needed),
@@ -25,14 +25,14 @@ parsed value, or an `Err(nom::Err<E>)` with `E` the error type.
 depending on the value:
 - `Error` is a normal parser error. If a child parser of the `alt` combinator returns `Error`, it will try another child parser
 - `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`. This is used when we know we were in the right branch of `alt` and do not need to try other branches
-- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`. When a parser returns `Incomplete`, we should accumulate more data in the buffer (example: reading from a socket) and call the parser again
+- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Outcome::Error`. When a parser returns `Incomplete`, we should accumulate more data in the buffer (example: reading from a socket) and call the parser again
 
-If we are running a parser and know it will not return `Err::Incomplete`, we can
-directly extract the error type from `Err::Error` or `Err::Failure` with the
+If we are running a parser and know it will not return `Outcome::Incomplete`, we can
+directly extract the error type from `Outcome::Error` or `Outcome::Failure` with the
 `finish()` method:
 
 ```rust
-let parser_result: IResult<I, O, E> = parser(input);
+let parser_result: ParseResult<I, O, E> = parser(input);
 let result: Result<(I, O), E> = parser_result.finish();
 ```
 
@@ -49,11 +49,11 @@ nom provides a powerful error system that can adapt to your needs: you can
 get reduced error information if you want to improve performance, or you can
 get a precise trace of parser application, with fine grained position information.
 
-This is done through the third type parameter of `IResult`, nom's parser result
+This is done through the third type parameter of `ParseResult`, nom's parser result
 type:
 
 ```rust
-pub type IResult<I, O, E=nom::error::Error<I>> = Result<(I, O), Err<E>>;
+pub type ParseResult<I, O, E=nom::error::Context<I>> = Result<(I, O), Err<E>>;
 
 pub enum Err<E> {
     Incomplete(Needed),
@@ -69,13 +69,13 @@ See [the JSON parser](https://github.com/Geal/nom/blob/5405e1173f1052f7e006dcb0b
 for an example of choosing different error types at the call site.
 
 The `Err<E>` enum expresses 3 conditions for a parser error:
-- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules to indicate that we should buffer more data from a file or socket. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`
+- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules to indicate that we should buffer more data from a file or socket. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Outcome::Error`
 - `Error` is a normal parser error. If a child parser of the `alt` combinator returns `Error`, it will try another child parser
-- `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`. If we know we were in the right branch (example: we found a correct prefix character but input after that was wrong), we can transform a `Err::Error` into a `Err::Failure` with the `cut()` combinator
+- `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`. If we know we were in the right branch (example: we found a correct prefix character but input after that was wrong), we can transform a `Outcome::Error` into a `Outcome::Failure` with the `cut()` combinator
 
 ## Common error types
 
-### the default error type: nom::error::Error
+### the default error type: nom::error::Context
 
 ```rust
 #[derive(Debug, PartialEq)]
@@ -83,12 +83,12 @@ pub struct Error<I> {
   /// position of the error in the input data
   pub input: I,
   /// nom error code
-  pub code: ErrorKind,
+  pub code: ParserKind,
 }
 ```
 
-This structure contains a `nom::error::ErrorKind` indicating which kind of
-parser encountered an error (example: `ErrorKind::Tag` for the `tag()`
+This structure contains a `nom::error::ParserKind` indicating which kind of
+parser encountered an error (example: `ParserKind::Tag` for the `tag()`
 combinator), and the input position of the error.
 
 This error type is fast and has very low overhead, so it is suitable for
@@ -108,7 +108,7 @@ let data = "  { \"a\"\t: 42,
 // will print:
 // Err(
 //   Failure(
-//       Error {
+//       Context {
 //           input: "1\"hello\" : \"world\"\n  }\n  } ",
 //           code: Char,
 //       },
@@ -120,28 +120,28 @@ println!(
 );
 ```
 
-### getting more information: nom::error::VerboseError
+### getting more information: nom::error::VerboseContext
 
-The  `VerboseError<I>` type accumulates more information about the chain of
+The  `VerboseContext<I>` type accumulates more information about the chain of
 parsers that encountered an error:
 
 ```rust
 #[derive(Clone, Debug, PartialEq)]
-pub struct VerboseError<I> {
-  /// List of errors accumulated by `VerboseError`, containing the affected
+pub struct VerboseContext<I> {
+  /// List of errors accumulated by `VerboseContext`, containing the affected
   /// part of input data, and some context
-  pub errors: crate::lib::std::vec::Vec<(I, VerboseErrorKind)>,
+  pub errors: crate::lib::std::vec::Vec<(I, VerboseParserKind)>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-/// Error context for `VerboseError`
-pub enum VerboseErrorKind {
+/// Error context for `VerboseContext`
+pub enum VerboseParserKind {
   /// Static string added by the `context` function
   Context(&'static str),
   /// Indicates which character was expected by the `char` function
   Char(char),
   /// Error kind given by various nom parsers
-  Nom(ErrorKind),
+  Nom(ParserKind),
 }
 ```
 
@@ -164,7 +164,7 @@ It is not very usable if printed directly:
 ```rust
 // parsed verbose: Err(
 //   Failure(
-//       VerboseError {
+//       VerboseContext {
 //           errors: [
 //               (
 //                   "1\"hello\" : \"world\"\n  }\n  } ",
@@ -188,7 +188,7 @@ It is not very usable if printed directly:
 //       },
 //   ),
 // )
-println!("parsed verbose: {:#?}", json::<VerboseError<&str>>(data));
+println!("parsed verbose: {:#?}", json::<VerboseContext<&str>>(data));
 ```
 
 But by looking at the original input and the chain of errors, we can build
@@ -196,12 +196,12 @@ a more user friendly error message. The `nom::error::convert_error` function
 can build such a message.
 
 ```rust
-let e = json::<VerboseError<&str>>(data).finish().err().unwrap();
-// here we use the `convert_error` function, to transform a `VerboseError<&str>`
+let e = json::<VerboseContext<&str>>(data).finish().err().unwrap();
+// here we use the `convert_error` function, to transform a `VerboseContext<&str>`
 // into a printable trace.
 //
 // This will print:
-// verbose errors - `json::<VerboseError<&str>>(data)`:
+// verbose errors - `json::<VerboseContext<&str>>(data)`:
 // 0: at line 2:
 //   "c": { 1"hello" : "world"
 //          ^
@@ -215,12 +215,12 @@ let e = json::<VerboseError<&str>>(data).finish().err().unwrap();
 //   { "a" : 42,
 //   ^
 println!(
-  "verbose errors - `json::<VerboseError<&str>>(data)`:\n{}",
+  "verbose errors - `json::<VerboseContext<&str>>(data)`:\n{}",
   convert_error(data, e)
 );
 ```
 
-Note that `VerboseError` and `convert_error` are meant as a starting point for
+Note that `VerboseContext` and `convert_error` are meant as a starting point for
 language errors, but that they cannot cover all use cases. So a custom
 `convert_error` function should probably be written.
 
@@ -238,32 +238,32 @@ information, like line and column.
 #### nom-supreme
 
 [nom-supreme](https://docs.rs/nom-supreme/) provides the `ErrorTree<I>` error
-type, that provides the same chain of parser errors as `VerboseError`, but also
+type, that provides the same chain of parser errors as `VerboseContext`, but also
 accumulates errors from the various branches tried by `alt`.
 
 With this error type, you can explore everything that has been tried by the
 parser.
 
-## The `ParseError` trait
+## The `ParseContext` trait
 
 If those error types are not enough, we can define our own, by implementing
-the `ParseError<I>` trait. All nom combinators are generic over that trait
+the `ParseContext<I>` trait. All nom combinators are generic over that trait
 for their errors, so we only need to define it in the parser result type,
 and it will be used everywhere.
 
 ```rust
-pub trait ParseError<I>: Sized {
-    /// Creates an error from the input position and an [ErrorKind]
-    fn from_error_kind(input: I, kind: ErrorKind) -> Self;
+pub trait ParseContext<I>: Sized {
+    /// Creates an error from the input position and an [ParserKind]
+    fn from_parser_kind(input: I, kind: ParserKind) -> Self;
 
     /// Combines an existing error with a new one created from the input
-    /// position and an [ErrorKind]. This is useful when backtracking
+    /// position and an [ParserKind]. This is useful when backtracking
     /// through a parse tree, accumulating error context on the way
-    fn append(input: I, kind: ErrorKind, other: Self) -> Self;
+    fn append(input: I, kind: ParserKind, other: Self) -> Self;
 
     /// Creates an error from an input position and an expected character
     fn from_char(input: I, _: char) -> Self {
-        Self::from_error_kind(input, ErrorKind::Char)
+        Self::from_parser_kind(input, ParserKind::Char)
     }
 
     /// Combines two existing errors. This function is used to compare errors
@@ -276,13 +276,13 @@ pub trait ParseError<I>: Sized {
 
 Any error type has to implement that trait, that requires ways to build an
 error:
-- `from_error_kind`: From the input position and the `ErrorKind` enum that indicates in which parser we got an error
+- `from_parser_kind`: From the input position and the `ParserKind` enum that indicates in which parser we got an error
 - `append`: Allows the creation of a chain of errors as we backtrack through the parser tree (various combinators will add more context)
 - `from_char`: Creates an error that indicates which character we were expecting
 - `or`: In combinators like `alt`, allows choosing between errors from various branches (or accumulating them)
 
 We can also implement the `ContextError` trait to support the `context()`
-combinator used by `VerboseError<I>`:
+combinator used by `VerboseContext<I>`:
 
 ```rust
 pub trait ContextError<I>: Sized {
@@ -297,7 +297,7 @@ errors returned by other functions:
 
 ```rust
 pub trait FromExternalError<I, ExternalError> {
-  fn from_external_error(input: I, kind: ErrorKind, e: ExternalError) -> Self;
+  fn from_external_error(input: I, kind: ParserKind, e: ExternalError) -> Self;
 }
 ```
 
@@ -314,19 +314,19 @@ struct DebugError {
 }
 ```
 
-Now let's implement `ParseError` and `ContextError` on it:
+Now let's implement `ParseContext` and `ContextError` on it:
 
 ```rust
-impl ParseError<&str> for DebugError {
+impl ParseContext<&str> for DebugError {
     // on one line, we show the error code and the input that caused it
-    fn from_error_kind(input: &str, kind: ErrorKind) -> Self {
+    fn from_parser_kind(input: &str, kind: ParserKind) -> Self {
         let message = format!("{:?}:\t{:?}\n", kind, input);
         println!("{}", message);
         DebugError { message }
     }
 
     // if combining multiple errors, we show them one after the other
-    fn append(input: &str, kind: ErrorKind, other: Self) -> Self {
+    fn append(input: &str, kind: ParserKind, other: Self) -> Self {
         let message = format!("{}{:?}:\t{:?}\n", other.message, kind, input);
         println!("{}", message);
         DebugError { message }
@@ -421,14 +421,14 @@ a parser's input and output, and print a hexdump of the input if there was an
 error. Here is what it could return:
 
 ```rust
-fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+fn f(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     dbg_dmp(tag("abcd"), "tag")(i)
 }
 
 let a = &b"efghijkl"[..];
 
 // Will print the following message:
-// tag: Error(Error(Error { input: [101, 102, 103, 104, 105, 106, 107, 108], code: Tag })) at:
+// tag: Error(Error(Context { input: [101, 102, 103, 104, 105, 106, 107, 108], code: Tag })) at:
 // 00000000        65 66 67 68 69 6a 6b 6c         efghijkl
 f(a);
 ```

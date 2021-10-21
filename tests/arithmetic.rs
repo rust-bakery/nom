@@ -6,7 +6,7 @@ use nom::{
   combinator::map_res,
   multi::fold_many0,
   sequence::{delimited, pair},
-  IResult,
+  ParseResult,
 };
 
 // Parser definition
@@ -14,7 +14,7 @@ use nom::{
 use std::str::FromStr;
 
 // We parse any expr surrounded by parens, ignoring all whitespaces around those
-fn parens(i: &str) -> IResult<&str, i64> {
+fn parens(i: &str) -> ParseResult<&str, i64> {
   delimited(space, delimited(tag("("), expr, tag(")")), space)(i)
 }
 
@@ -22,7 +22,7 @@ fn parens(i: &str) -> IResult<&str, i64> {
 // We look for a digit suite, and try to convert it.
 // If either str::from_utf8 or FromStr::from_str fail,
 // we fallback to the parens parser defined above
-fn factor(i: &str) -> IResult<&str, i64> {
+fn factor(i: &str) -> ParseResult<&str, i64> {
   alt((
     map_res(delimited(space, digit, space), FromStr::from_str),
     parens,
@@ -32,7 +32,7 @@ fn factor(i: &str) -> IResult<&str, i64> {
 // We read an initial factor and for each time we find
 // a * or / operator followed by another factor, we do
 // the math by folding everything
-fn term(i: &str) -> IResult<&str, i64> {
+fn term(i: &str) -> ParseResult<&str, i64> {
   let (i, init) = factor(i)?;
 
   fold_many0(
@@ -48,7 +48,7 @@ fn term(i: &str) -> IResult<&str, i64> {
   )(i)
 }
 
-fn expr(i: &str) -> IResult<&str, i64> {
+fn expr(i: &str) -> ParseResult<&str, i64> {
   let (i, init) = term(i)?;
 
   fold_many0(

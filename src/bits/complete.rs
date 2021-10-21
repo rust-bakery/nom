@@ -1,8 +1,8 @@
 //! Bit level parsers
 //!
 
-use crate::error::{ErrorKind, ParseError};
-use crate::internal::{Err, IResult};
+use crate::error::{ParseContext, ParserKind};
+use crate::internal::{Outcome, ParseResult};
 use crate::lib::std::ops::{AddAssign, Div, RangeFrom, Shl, Shr};
 use crate::traits::{InputIter, InputLength, Slice, ToUsize};
 
@@ -11,10 +11,10 @@ use crate::traits::{InputIter, InputLength, Slice, ToUsize};
 /// # Example
 /// ```rust
 /// # use nom::bits::complete::take;
-/// # use nom::IResult;
-/// # use nom::error::{Error, ErrorKind};
+/// # use nom::ParseResult;
+/// # use nom::error::{Context, ParserKind};
 /// // Input is a tuple of (input: I, bit_offset: usize)
-/// fn parser(input: (&[u8], usize), count: usize)-> IResult<(&[u8], usize), u8> {
+/// fn parser(input: (&[u8], usize), count: usize)-> ParseResult<(&[u8], usize), u8> {
 ///  take(count)(input)
 /// }
 ///
@@ -28,11 +28,11 @@ use crate::traits::{InputIter, InputLength, Slice, ToUsize};
 /// assert_eq!(parser(([0b00010010].as_ref(), 4), 4), Ok((([].as_ref(), 0), 0b00000010)));
 ///
 /// // Tries to consume 12 bits but only 8 are available
-/// assert_eq!(parser(([0b00010010].as_ref(), 0), 12), Err(nom::Err::Error(Error{input: ([0b00010010].as_ref(), 0), code: ErrorKind::Eof })));
+/// assert_eq!(parser(([0b00010010].as_ref(), 0), 12), Err(nom::Outcome::Failure(Context {input: ([0b00010010].as_ref(), 0), code: ParserKind::Eof })));
 /// ```
-pub fn take<I, O, C, E: ParseError<(I, usize)>>(
+pub fn take<I, O, C, E: ParseContext<(I, usize)>>(
   count: C,
-) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
+) -> impl Fn((I, usize)) -> ParseResult<(I, usize), O, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
   C: ToUsize,
@@ -45,9 +45,9 @@ where
     } else {
       let cnt = (count + bit_offset).div(8);
       if input.input_len() * 8 < count + bit_offset {
-        Err(Err::Error(E::from_error_kind(
+        Err(Outcome::Failure(E::from_parser_kind(
           (input, bit_offset),
-          ErrorKind::Eof,
+          ParserKind::Eof,
         )))
       } else {
         let mut acc: O = 0_u8.into();
@@ -82,10 +82,10 @@ where
 }
 
 /// Generates a parser taking `count` bits and comparing them to `pattern`
-pub fn tag<I, O, C, E: ParseError<(I, usize)>>(
+pub fn tag<I, O, C, E: ParseContext<(I, usize)>>(
   pattern: O,
   count: C,
-) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
+) -> impl Fn((I, usize)) -> ParseResult<(I, usize), O, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength + Clone,
   C: ToUsize,
@@ -99,7 +99,7 @@ where
       if pattern == o {
         Ok((i, o))
       } else {
-        Err(Err::Error(error_position!(inp, ErrorKind::TagBits)))
+        Err(Outcome::Failure(error_position!(inp, ParserKind::TagBits)))
       }
     })
   }
@@ -116,7 +116,7 @@ mod test {
     assert_eq!(count, 0usize);
     let offset = 0usize;
 
-    let result: crate::IResult<(&[u8], usize), usize> = take(count)((input, offset));
+    let result: crate::ParseResult<(&[u8], usize), usize> = take(count)((input, offset));
 
     assert_eq!(result, Ok(((input, offset), 0)));
   }
@@ -125,13 +125,13 @@ mod test {
   fn test_take_eof() {
     let input = [0b00010010].as_ref();
 
-    let result: crate::IResult<(&[u8], usize), usize> = take(1usize)((input, 8));
+    let result: crate::ParseResult<(&[u8], usize), usize> = take(1usize)((input, 8));
 
     assert_eq!(
       result,
-      Err(crate::Err::Error(crate::error::Error {
+      Err(crate::Outcome::Failure(crate::error::Context {
         input: (input, 8),
-        code: ErrorKind::Eof
+        code: ParserKind::Eof
       }))
     )
   }
@@ -140,7 +140,7 @@ mod test {
   fn test_take_span_over_multiple_bytes() {
     let input = [0b00010010, 0b00110100, 0b11111111, 0b11111111].as_ref();
 
-    let result: crate::IResult<(&[u8], usize), usize> = take(24usize)((input, 4));
+    let result: crate::ParseResult<(&[u8], usize), usize> = take(24usize)((input, 4));
 
     assert_eq!(
       result,

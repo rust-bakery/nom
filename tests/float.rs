@@ -3,12 +3,12 @@ use nom::bytes::complete::tag;
 use nom::character::streaming::digit1 as digit;
 use nom::combinator::{map, map_res, opt, recognize};
 use nom::sequence::{delimited, pair};
-use nom::IResult;
+use nom::ParseResult;
 
 use std::str;
 use std::str::FromStr;
 
-fn unsigned_float(i: &[u8]) -> IResult<&[u8], f32> {
+fn unsigned_float(i: &[u8]) -> ParseResult<&[u8], f32> {
   let float_bytes = recognize(alt((
     delimited(digit, tag("."), opt(digit)),
     delimited(opt(digit), tag("."), digit),
@@ -17,7 +17,7 @@ fn unsigned_float(i: &[u8]) -> IResult<&[u8], f32> {
   map_res(float_str, FromStr::from_str)(i)
 }
 
-fn float(i: &[u8]) -> IResult<&[u8], f32> {
+fn float(i: &[u8]) -> ParseResult<&[u8], f32> {
   map(
     pair(opt(alt((tag("+"), tag("-")))), unsigned_float),
     |(sign, value)| {

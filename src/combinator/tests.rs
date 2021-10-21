@@ -1,16 +1,16 @@
 use super::*;
 use crate::bytes::complete::take;
 use crate::bytes::streaming::tag;
-use crate::error::ErrorKind;
-use crate::error::ParseError;
-use crate::internal::{Err, IResult, Needed};
+use crate::error::ParseContext;
+use crate::error::ParserKind;
+use crate::internal::{Needed, Outcome, ParseResult};
 #[cfg(feature = "alloc")]
 use crate::lib::std::boxed::Box;
 use crate::number::complete::u8;
 
 macro_rules! assert_parse(
   ($left: expr, $right: expr) => {
-    let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
+    let res: $crate::ParseResult<_, _, (_, ParserKind)> = $left;
     assert_eq!(res, $right);
   };
 );
@@ -32,7 +32,7 @@ fn eof_on_slices() {
   let res_not_over = eof(not_over);
   assert_parse!(
     res_not_over,
-    Err(Err::Error(error_position!(not_over, ErrorKind::Eof)))
+    Err(Outcome::Failure(error_position!(not_over, ParserKind::Eof)))
   );
 
   let res_over = eof(is_over);
@@ -47,7 +47,7 @@ fn eof_on_strs() {
   let res_not_over = eof(not_over);
   assert_parse!(
     res_not_over,
-    Err(Err::Error(error_position!(not_over, ErrorKind::Eof)))
+    Err(Outcome::Failure(error_position!(not_over, ParserKind::Eof)))
   );
 
   let res_over = eof(is_over);
@@ -62,7 +62,7 @@ fn end_of_input() {
     named!(eof_test, eof!());
 
     let res_not_over = eof_test(not_over);
-    assert_eq!(res_not_over, Err(Err::Error(error_position!(not_over, ErrorKind::Eof))));
+    assert_eq!(res_not_over, Err(Outcome::Failure(error_position!(not_over, ParserKind::Eof))));
 
     let res_over = eof_test(is_over);
     assert_eq!(res_over, Ok((is_over, is_over)));
@@ -96,19 +96,19 @@ impl From<u32> for CustomError {
   }
 }
 
-impl<I> ParseError<I> for CustomError {
-  fn from_error_kind(_: I, _: ErrorKind) -> Self {
+impl<I> ParseContext<I> for CustomError {
+  fn from_parser_kind(_: I, _: ParserKind) -> Self {
     CustomError
   }
 
-  fn append(_: I, _: ErrorKind, _: CustomError) -> Self {
+  fn append(_: I, _: ParserKind, _: CustomError) -> Self {
     CustomError
   }
 }
 
 struct CustomError;
 #[allow(dead_code)]
-fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], CustomError> {
+fn custom_error(input: &[u8]) -> ParseResult<&[u8], &[u8], CustomError> {
   //fix_error!(input, CustomError, alphanumeric)
   crate::character::streaming::alphanumeric1(input)
 }
@@ -127,7 +127,7 @@ fn test_map_opt() {
   let input: &[u8] = &[50][..];
   assert_parse!(
     map_opt(u8, |u| if u < 20 { Some(u) } else { None })(input),
-    Err(Err::Error((&[50][..], ErrorKind::MapOpt)))
+    Err(Outcome::Failure((&[50][..], ParserKind::MapOpt)))
   );
   assert_parse!(
     map_opt(u8, |u| if u > 20 { Some(u) } else { None })(input),
@@ -149,7 +149,7 @@ fn test_all_consuming() {
   let input: &[u8] = &[100, 101, 102][..];
   assert_parse!(
     all_consuming(take(2usize))(input),
-    Err(Err::Error((&[102][..], ErrorKind::Eof)))
+    Err(Outcome::Failure((&[102][..], ParserKind::Eof)))
   );
   assert_parse!(
     all_consuming(take(3usize))(input),
@@ -167,10 +167,10 @@ fn test_verify_ref() {
   assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], &b"abc"[..])));
   assert_eq!(
     parser1(&b"defg"[..]),
-    Err(Err::Error((&b"defg"[..], ErrorKind::Verify)))
+    Err(Outcome::Failure((&b"defg"[..], ParserKind::Verify)))
   );
 
-  fn parser2(i: &[u8]) -> IResult<&[u8], u32> {
+  fn parser2(i: &[u8]) -> ParseResult<&[u8], u32> {
     verify(crate::number::streaming::be_u32, |val: &u32| *val < 3)(i)
   }
 }
@@ -186,7 +186,7 @@ fn test_verify_alloc() {
   assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], (&b"abc").to_vec())));
   assert_eq!(
     parser1(&b"defg"[..]),
-    Err(Err::Error((&b"defg"[..], ErrorKind::Verify)))
+    Err(Outcome::Failure((&b"defg"[..], ParserKind::Verify)))
   );
 }
 
@@ -195,19 +195,19 @@ fn test_verify_alloc() {
 fn test_into() {
   use crate::bytes::complete::take;
   use crate::{
-    error::{Error, ParseError},
-    Err,
+    error::{Context, ParseContext},
+    Outcome,
   };
 
-  let mut parser = into(take::<_, _, Error<_>>(3u8));
-  let result: IResult<&[u8], Vec<u8>> = parser(&b"abcdefg"[..]);
+  let mut parser = into(take::<_, _, Context<_>>(3u8));
+  let result: ParseResult<&[u8], Vec<u8>> = parser(&b"abcdefg"[..]);
 
   assert_eq!(result, Ok((&b"defg"[..], vec![97, 98, 99])));
 }
 
 #[test]
 fn opt_test() {
-  fn opt_abcd(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
+  fn opt_abcd(i: &[u8]) -> ParseResult<&[u8], Option<&[u8]>> {
     opt(tag("abcd"))(i)
   }
 
@@ -216,34 +216,46 @@ fn opt_test() {
   let c = &b"ab"[..];
   assert_eq!(opt_abcd(a), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
   assert_eq!(opt_abcd(b), Ok((&b"bcdefg"[..], None)));
-  assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(opt_abcd(c), Err(Outcome::Incomplete(Needed::new(2))));
 }
 
 #[test]
 fn peek_test() {
-  fn peek_tag(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn peek_tag(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     peek(tag("abcd"))(i)
   }
 
   assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
-  assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(
+    peek_tag(&b"ab"[..]),
+    Err(Outcome::Incomplete(Needed::new(2)))
+  );
   assert_eq!(
     peek_tag(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
 #[test]
 fn not_test() {
-  fn not_aaa(i: &[u8]) -> IResult<&[u8], ()> {
+  fn not_aaa(i: &[u8]) -> ParseResult<&[u8], ()> {
     not(tag("aaa"))(i)
   }
 
   assert_eq!(
     not_aaa(&b"aaa"[..]),
-    Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not)))
+    Err(Outcome::Failure(error_position!(
+      &b"aaa"[..],
+      ParserKind::Not
+    )))
   );
-  assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(
+    not_aaa(&b"aa"[..]),
+    Err(Outcome::Incomplete(Needed::new(1)))
+  );
   assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
 }
 
@@ -251,15 +263,15 @@ fn not_test() {
 fn verify_test() {
   use crate::bytes::streaming::take;
 
-  fn test(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn test(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     verify(take(5u8), |slice: &[u8]| slice[0] == b'a')(i)
   }
-  assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(test(&b"bcd"[..]), Err(Outcome::Incomplete(Needed::new(2))));
   assert_eq!(
     test(&b"bcdefg"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"bcdefg"[..],
-      ErrorKind::Verify
+      ParserKind::Verify
     )))
   );
   assert_eq!(test(&b"abcdefg"[..]), Ok((&b"fg"[..], &b"abcde"[..])));
@@ -270,6 +282,12 @@ fn fail_test() {
   let a = "string";
   let b = "another string";
 
-  assert_eq!(fail::<_, &str, _>(a), Err(Err::Error((a, ErrorKind::Fail))));
-  assert_eq!(fail::<_, &str, _>(b), Err(Err::Error((b, ErrorKind::Fail))));
+  assert_eq!(
+    fail::<_, &str, _>(a),
+    Err(Outcome::Failure((a, ParserKind::Fail)))
+  );
+  assert_eq!(
+    fail::<_, &str, _>(b),
+    Err(Outcome::Failure((b, ParserKind::Fail)))
+  );
 }

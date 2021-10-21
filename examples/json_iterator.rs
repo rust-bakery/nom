@@ -11,12 +11,12 @@ use nom::{
   bytes::complete::{escaped, tag, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
   combinator::{map, opt, cut},
-  error::{context, ErrorKind, ParseError},
-  error::{VerboseError, VerboseErrorKind},
+  error::{context, ParserKind, ParseContext},
+  error::{VerboseContext, VerboseParserKind},
   multi::separated_list,
   number::complete::double,
   sequence::{delimited, preceded, separated_pair, terminated},
-  Err, IResult, Offset,
+  Outcome, ParseResult, Offset,
 };
 use std::collections::HashMap;
 
@@ -230,17 +230,17 @@ impl<'a, 'b:'a> JsonValue<'a, 'b> {
   }
 }
 
-fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+fn sp<'a, E: ParseContext<&'a str>>(i: &'a str) -> ParseResult<&'a str, &'a str, E> {
   let chars = " \t\r\n";
 
   take_while(move |c| chars.contains(c))(i)
 }
 
-fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+fn parse_str<'a, E: ParseContext<&'a str>>(i: &'a str) -> ParseResult<&'a str, &'a str, E> {
   escaped(alphanumeric, '\\', one_of("\"n\\"))(i)
 }
 
-fn string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
+fn string<'a>(i: &'a str) -> ParseResult<&'a str, &'a str> {
   context("string",
     preceded(
       char('\"'),
@@ -250,14 +250,14 @@ fn string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
   ))))(i)
 }
 
-fn boolean<'a>(input: &'a str) -> IResult<&'a str, bool> {
+fn boolean<'a>(input: &'a str) -> ParseResult<&'a str, bool> {
   alt((
       map(tag("false"), |_| false),
       map(tag("true"), |_| true)
   ))(input)
 }
 
-fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn array<'a>(i: &'a str) -> ParseResult<&'a str, ()> {
   context(
     "array",
     preceded(char('['),
@@ -267,11 +267,11 @@ fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {
   ))(i)
 }
 
-fn key_value<'a>(i: &'a str) -> IResult<&'a str, (&'a str, ())> {
+fn key_value<'a>(i: &'a str) -> ParseResult<&'a str, (&'a str, ())> {
 separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value)(i)
 }
 
-fn hash<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn hash<'a>(i: &'a str) -> ParseResult<&'a str, ()> {
   context(
     "map",
     preceded(char('{'),
@@ -284,7 +284,7 @@ fn hash<'a>(i: &'a str) -> IResult<&'a str, ()> {
   ))(i)
 }
 
-fn value<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn value<'a>(i: &'a str) -> ParseResult<&'a str, ()> {
   preceded(
     sp,
     alt((

@@ -11,7 +11,7 @@ use nom::{
   combinator::map_res,
   multi::fold_many0,
   sequence::{delimited, pair},
-  IResult,
+  ParseResult,
 };
 
 // Parser definition
@@ -19,7 +19,7 @@ use nom::{
 // We transform an integer string into a i64, ignoring surrounding whitespaces
 // We look for a digit suite, and try to convert it.
 // If there are no digits, we look for a parenthesized expression.
-fn factor(input: &[u8]) -> IResult<&[u8], i64> {
+fn factor(input: &[u8]) -> ParseResult<&[u8], i64> {
   delimited(
     space0,
     alt((
@@ -35,7 +35,7 @@ fn factor(input: &[u8]) -> IResult<&[u8], i64> {
 // We read an initial factor and for each time we find
 // a * or / operator followed by another factor, we do
 // the math by folding everything
-fn term(input: &[u8]) -> IResult<&[u8], i64> {
+fn term(input: &[u8]) -> ParseResult<&[u8], i64> {
   let (input, init) = factor(input)?;
   fold_many0(
     pair(one_of("*/"), factor),
@@ -50,7 +50,7 @@ fn term(input: &[u8]) -> IResult<&[u8], i64> {
   )(input)
 }
 
-fn expr(input: &[u8]) -> IResult<&[u8], i64> {
+fn expr(input: &[u8]) -> ParseResult<&[u8], i64> {
   let (input, init) = term(input)?;
   fold_many0(
     pair(one_of("+-"), term),

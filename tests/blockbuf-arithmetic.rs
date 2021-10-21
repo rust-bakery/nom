@@ -216,12 +216,12 @@ macro_rules! block_eat_separator (
 #[macro_export]
 macro_rules! block_named (
   ($name:ident, $submac:ident!( $($args:tt)* )) => (
-    fn $name<'a>( i: BlockSlice<'a> ) -> nom::IResult<BlockSlice<'a>, BlockSlice<'a>, u32> {
+    fn $name<'a>( i: BlockSlice<'a> ) -> nom::ParseResult<BlockSlice<'a>, BlockSlice<'a>, u32> {
       $submac!(i, $($args)*)
     }
   );
   ($name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-    fn $name<'a>( i: BlockSlice<'a> ) -> nom::IResult<BlockSlice<'a>, $o, u32> {
+    fn $name<'a>( i: BlockSlice<'a> ) -> nom::ParseResult<BlockSlice<'a>, $o, u32> {
       $submac!(i, $($args)*)
     }
   );

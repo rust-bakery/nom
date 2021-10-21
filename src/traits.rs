@@ -1,6 +1,6 @@
 //! Traits input types have to implement to work with nom combinators
-use crate::error::{ErrorKind, ParseError};
-use crate::internal::{Err, IResult, Needed};
+use crate::error::{ParseContext, ParserKind};
+use crate::internal::{Needed, Outcome, ParseResult};
 use crate::lib::std::iter::{Copied, Enumerate};
 use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use crate::lib::std::slice::Iter;
@@ -451,7 +451,7 @@ pub trait InputTakeAtPosition: Sized {
   /// and returns the input up to this position.
   ///
   /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  fn split_at_position<P, E: ParseContext<Self>>(&self, predicate: P) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
 
@@ -461,11 +461,11 @@ pub trait InputTakeAtPosition: Sized {
   /// Fails if the produced slice is empty.
   ///
   /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
-  fn split_at_position1<P, E: ParseError<Self>>(
+  fn split_at_position1<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+    e: ParserKind,
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
 
@@ -473,10 +473,10 @@ pub trait InputTakeAtPosition: Sized {
   /// and returns the input up to this position.
   ///
   /// *complete version*: If no element is found matching the condition, this will return the whole input
-  fn split_at_position_complete<P, E: ParseError<Self>>(
+  fn split_at_position_complete<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-  ) -> IResult<Self, Self, E>
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
 
@@ -486,11 +486,11 @@ pub trait InputTakeAtPosition: Sized {
   /// Fails if the produced slice is empty.
   ///
   /// *complete version*: If no element is found matching the condition, this will return the whole input
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
+  fn split_at_position1_complete<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+    e: ParserKind,
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
 }
@@ -500,56 +500,56 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
 {
   type Item = <T as InputIter>::Item;
 
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  fn split_at_position<P, E: ParseContext<Self>>(&self, predicate: P) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.position(predicate) {
       Some(n) => Ok(self.take_split(n)),
-      None => Err(Err::Incomplete(Needed::new(1))),
+      None => Err(Outcome::Incomplete(Needed::new(1))),
     }
   }
 
-  fn split_at_position1<P, E: ParseError<Self>>(
+  fn split_at_position1<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+    e: ParserKind,
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.position(predicate) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
+      Some(0) => Err(Outcome::Failure(E::from_parser_kind(self.clone(), e))),
       Some(n) => Ok(self.take_split(n)),
-      None => Err(Err::Incomplete(Needed::new(1))),
+      None => Err(Outcome::Incomplete(Needed::new(1))),
     }
   }
 
-  fn split_at_position_complete<P, E: ParseError<Self>>(
+  fn split_at_position_complete<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-  ) -> IResult<Self, Self, E>
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.split_at_position(predicate) {
-      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      Err(Outcome::Incomplete(_)) => Ok(self.take_split(self.input_len())),
       res => res,
     }
   }
 
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
+  fn split_at_position1_complete<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+    e: ParserKind,
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(_)) => {
+      Err(Outcome::Incomplete(_)) => {
         if self.input_len() == 0 {
-          Err(Err::Error(E::from_error_kind(self.clone(), e)))
+          Err(Outcome::Failure(E::from_parser_kind(self.clone(), e)))
         } else {
           Ok(self.take_split(self.input_len()))
         }
@@ -562,35 +562,35 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
 impl<'a> InputTakeAtPosition for &'a [u8] {
   type Item = u8;
 
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  fn split_at_position<P, E: ParseContext<Self>>(&self, predicate: P) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.iter().position(|c| predicate(*c)) {
       Some(i) => Ok(self.take_split(i)),
-      None => Err(Err::Incomplete(Needed::new(1))),
+      None => Err(Outcome::Incomplete(Needed::new(1))),
     }
   }
 
-  fn split_at_position1<P, E: ParseError<Self>>(
+  fn split_at_position1<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+    e: ParserKind,
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.iter().position(|c| predicate(*c)) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(0) => Err(Outcome::Failure(E::from_parser_kind(self, e))),
       Some(i) => Ok(self.take_split(i)),
-      None => Err(Err::Incomplete(Needed::new(1))),
+      None => Err(Outcome::Incomplete(Needed::new(1))),
     }
   }
 
-  fn split_at_position_complete<P, E: ParseError<Self>>(
+  fn split_at_position_complete<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-  ) -> IResult<Self, Self, E>
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -600,20 +600,20 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
     }
   }
 
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
+  fn split_at_position1_complete<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+    e: ParserKind,
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.iter().position(|c| predicate(*c)) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(0) => Err(Outcome::Failure(E::from_parser_kind(self, e))),
       Some(i) => Ok(self.take_split(i)),
       None => {
         if self.is_empty() {
-          Err(Err::Error(E::from_error_kind(self, e)))
+          Err(Outcome::Failure(E::from_parser_kind(self, e)))
         } else {
           Ok(self.take_split(self.input_len()))
         }
@@ -625,37 +625,37 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
 impl<'a> InputTakeAtPosition for &'a str {
   type Item = char;
 
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  fn split_at_position<P, E: ParseContext<Self>>(&self, predicate: P) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
       // find() returns a byte index that is already in the slice at a char boundary
       Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      None => Err(Err::Incomplete(Needed::new(1))),
+      None => Err(Outcome::Incomplete(Needed::new(1))),
     }
   }
 
-  fn split_at_position1<P, E: ParseError<Self>>(
+  fn split_at_position1<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+    e: ParserKind,
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(0) => Err(Outcome::Failure(E::from_parser_kind(self, e))),
       // find() returns a byte index that is already in the slice at a char boundary
       Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      None => Err(Err::Incomplete(Needed::new(1))),
+      None => Err(Outcome::Incomplete(Needed::new(1))),
     }
   }
 
-  fn split_at_position_complete<P, E: ParseError<Self>>(
+  fn split_at_position_complete<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-  ) -> IResult<Self, Self, E>
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -672,21 +672,21 @@ impl<'a> InputTakeAtPosition for &'a str {
     }
   }
 
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
+  fn split_at_position1_complete<P, E: ParseContext<Self>>(
     &self,
     predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+    e: ParserKind,
+  ) -> ParseResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(0) => Err(Outcome::Failure(E::from_parser_kind(self, e))),
       // find() returns a byte index that is already in the slice at a char boundary
       Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
       None => {
         if self.is_empty() {
-          Err(Err::Error(E::from_error_kind(self, e)))
+          Err(Outcome::Failure(E::from_parser_kind(self, e)))
         } else {
           // the end of slice is a char boundary
           unsafe {
@@ -1267,31 +1267,31 @@ pub trait ErrorConvert<E> {
   fn convert(self) -> E;
 }
 
-impl<I> ErrorConvert<(I, ErrorKind)> for ((I, usize), ErrorKind) {
-  fn convert(self) -> (I, ErrorKind) {
+impl<I> ErrorConvert<(I, ParserKind)> for ((I, usize), ParserKind) {
+  fn convert(self) -> (I, ParserKind) {
     ((self.0).0, self.1)
   }
 }
 
-impl<I> ErrorConvert<((I, usize), ErrorKind)> for (I, ErrorKind) {
-  fn convert(self) -> ((I, usize), ErrorKind) {
+impl<I> ErrorConvert<((I, usize), ParserKind)> for (I, ParserKind) {
+  fn convert(self) -> ((I, usize), ParserKind) {
     ((self.0, 0), self.1)
   }
 }
 
 use crate::error;
-impl<I> ErrorConvert<error::Error<I>> for error::Error<(I, usize)> {
-  fn convert(self) -> error::Error<I> {
-    error::Error {
+impl<I> ErrorConvert<error::Context<I>> for error::Context<(I, usize)> {
+  fn convert(self) -> error::Context<I> {
+    error::Context {
       input: self.input.0,
       code: self.code,
     }
   }
 }
 
-impl<I> ErrorConvert<error::Error<(I, usize)>> for error::Error<I> {
-  fn convert(self) -> error::Error<(I, usize)> {
-    error::Error {
+impl<I> ErrorConvert<error::Context<(I, usize)>> for error::Context<I> {
+  fn convert(self) -> error::Context<(I, usize)> {
+    error::Context {
       input: (self.input, 0),
       code: self.code,
     }
@@ -1300,9 +1300,9 @@ impl<I> ErrorConvert<error::Error<(I, usize)>> for error::Error<I> {
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl<I> ErrorConvert<error::VerboseError<I>> for error::VerboseError<(I, usize)> {
-  fn convert(self) -> error::VerboseError<I> {
-    error::VerboseError {
+impl<I> ErrorConvert<error::VerboseContext<I>> for error::VerboseContext<(I, usize)> {
+  fn convert(self) -> error::VerboseContext<I> {
+    error::VerboseContext {
       errors: self.errors.into_iter().map(|(i, e)| (i.0, e)).collect(),
     }
   }
@@ -1310,9 +1310,9 @@ impl<I> ErrorConvert<error::VerboseError<I>> for error::VerboseError<(I, usize)>
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl<I> ErrorConvert<error::VerboseError<(I, usize)>> for error::VerboseError<I> {
-  fn convert(self) -> error::VerboseError<(I, usize)> {
-    error::VerboseError {
+impl<I> ErrorConvert<error::VerboseContext<(I, usize)>> for error::VerboseContext<I> {
+  fn convert(self) -> error::VerboseContext<(I, usize)> {
+    error::VerboseContext {
       errors: self.errors.into_iter().map(|(i, e)| ((i, 0), e)).collect(),
     }
   }

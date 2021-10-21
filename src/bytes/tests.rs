@@ -3,8 +3,8 @@ use crate::character::streaming::{
   alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
   multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
 };
-use crate::error::ErrorKind;
-use crate::internal::{Err, IResult, Needed};
+use crate::error::ParserKind;
+use crate::internal::{Needed, Outcome, ParseResult};
 #[cfg(feature = "alloc")]
 use crate::{
   branch::alt,
@@ -18,7 +18,7 @@ use crate::{
 fn is_a() {
   use crate::bytes::streaming::is_a;
 
-  fn a_or_b(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn a_or_b(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     is_a("ab")(i)
   }
 
@@ -31,7 +31,7 @@ fn is_a() {
   let c = &b"cdef"[..];
   assert_eq!(
     a_or_b(c),
-    Err(Err::Error(error_position!(c, ErrorKind::IsA)))
+    Err(Outcome::Failure(error_position!(c, ParserKind::IsA)))
   );
 
   let d = &b"bacdef"[..];
@@ -42,7 +42,7 @@ fn is_a() {
 fn is_not() {
   use crate::bytes::streaming::is_not;
 
-  fn a_or_b(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn a_or_b(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     is_not("ab")(i)
   }
 
@@ -55,14 +55,14 @@ fn is_not() {
   let c = &b"abab"[..];
   assert_eq!(
     a_or_b(c),
-    Err(Err::Error(error_position!(c, ErrorKind::IsNot)))
+    Err(Outcome::Failure(error_position!(c, ParserKind::IsNot)))
   );
 
   let d = &b"cdefba"[..];
   assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
 
   let e = &b"e"[..];
-  assert_eq!(a_or_b(e), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(a_or_b(e), Err(Outcome::Incomplete(Needed::new(1))));
 }
 
 #[cfg(feature = "alloc")]
@@ -71,7 +71,7 @@ fn is_not() {
 fn escaping() {
   use crate::character::streaming::one_of;
 
-  fn esc(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn esc(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     escaped(alpha, '\\', one_of("\"n\\"))(i)
   }
   assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], &b"abcd"[..])));
@@ -81,21 +81,21 @@ fn escaping() {
   assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
   assert_eq!(
     esc(&b"AB\\"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"AB\\"[..],
-      ErrorKind::Escaped
+      ParserKind::Escaped
     )))
   );
   assert_eq!(
     esc(&b"AB\\A"[..]),
-    Err(Err::Error(error_node_position!(
+    Err(Outcome::Failure(error_node_position!(
       &b"AB\\A"[..],
-      ErrorKind::Escaped,
-      error_position!(&b"A"[..], ErrorKind::OneOf)
+      ParserKind::Escaped,
+      error_position!(&b"A"[..], ParserKind::OneOf)
     )))
   );
 
-  fn esc2(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn esc2(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     escaped(digit, '\\', one_of("\"n\\"))(i)
   }
   assert_eq!(esc2(&b"12\\nnn34"[..]), Ok((&b"nn34"[..], &b"12\\n"[..])));
@@ -106,7 +106,7 @@ fn escaping() {
 fn escaping_str() {
   use crate::character::streaming::one_of;
 
-  fn esc(i: &str) -> IResult<&str, &str> {
+  fn esc(i: &str) -> ParseResult<&str, &str> {
     escaped(alpha, '\\', one_of("\"n\\"))(i)
   }
   assert_eq!(esc("abcd;"), Ok((";", "abcd")));
@@ -116,23 +116,26 @@ fn escaping_str() {
   assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
   assert_eq!(
     esc("AB\\"),
-    Err(Err::Error(error_position!("AB\\", ErrorKind::Escaped)))
+    Err(Outcome::Failure(error_position!(
+      "AB\\",
+      ParserKind::Escaped
+    )))
   );
   assert_eq!(
     esc("AB\\A"),
-    Err(Err::Error(error_node_position!(
+    Err(Outcome::Failure(error_node_position!(
       "AB\\A",
-      ErrorKind::Escaped,
-      error_position!("A", ErrorKind::OneOf)
+      ParserKind::Escaped,
+      error_position!("A", ParserKind::OneOf)
     )))
   );
 
-  fn esc2(i: &str) -> IResult<&str, &str> {
+  fn esc2(i: &str) -> ParseResult<&str, &str> {
     escaped(digit, '\\', one_of("\"n\\"))(i)
   }
   assert_eq!(esc2("12\\nnn34"), Ok(("nn34", "12\\n")));
 
-  fn esc3(i: &str) -> IResult<&str, &str> {
+  fn esc3(i: &str) -> ParseResult<&str, &str> {
     escaped(alpha, '\u{241b}', one_of("\"n"))(i)
   }
   assert_eq!(esc3("ab␛ncd;"), Ok((";", "ab␛ncd")));
@@ -146,7 +149,7 @@ fn to_s(i: Vec<u8>) -> String {
 #[cfg(feature = "alloc")]
 #[test]
 fn escape_transform() {
-  fn esc(i: &[u8]) -> IResult<&[u8], String> {
+  fn esc(i: &[u8]) -> ParseResult<&[u8], String> {
     map(
       escaped_transform(
         alpha,
@@ -177,21 +180,21 @@ fn escape_transform() {
   );
   assert_eq!(
     esc(&b"AB\\"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"\\"[..],
-      ErrorKind::EscapedTransform
+      ParserKind::EscapedTransform
     )))
   );
   assert_eq!(
     esc(&b"AB\\A"[..]),
-    Err(Err::Error(error_node_position!(
+    Err(Outcome::Failure(error_node_position!(
       &b"AB\\A"[..],
-      ErrorKind::EscapedTransform,
-      error_position!(&b"A"[..], ErrorKind::Tag)
+      ParserKind::EscapedTransform,
+      error_position!(&b"A"[..], ParserKind::Tag)
     )))
   );
 
-  fn esc2(i: &[u8]) -> IResult<&[u8], String> {
+  fn esc2(i: &[u8]) -> ParseResult<&[u8], String> {
     map(
       escaped_transform(
         alpha,
@@ -217,7 +220,7 @@ fn escape_transform() {
 #[cfg(feature = "std")]
 #[test]
 fn escape_transform_str() {
-  fn esc(i: &str) -> IResult<&str, String> {
+  fn esc(i: &str) -> ParseResult<&str, String> {
     escaped_transform(
       alpha,
       '\\',
@@ -236,21 +239,21 @@ fn escape_transform_str() {
   assert_eq!(esc("ab\\\"12"), Ok(("12", String::from("ab\""))));
   assert_eq!(
     esc("AB\\"),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       "\\",
-      ErrorKind::EscapedTransform
+      ParserKind::EscapedTransform
     )))
   );
   assert_eq!(
     esc("AB\\A"),
-    Err(Err::Error(error_node_position!(
+    Err(Outcome::Failure(error_node_position!(
       "AB\\A",
-      ErrorKind::EscapedTransform,
-      error_position!("A", ErrorKind::Tag)
+      ParserKind::EscapedTransform,
+      error_position!("A", ParserKind::Tag)
     )))
   );
 
-  fn esc2(i: &str) -> IResult<&str, String> {
+  fn esc2(i: &str) -> ParseResult<&str, String> {
     escaped_transform(
       alpha,
       '&',
@@ -263,7 +266,7 @@ fn escape_transform_str() {
     Ok((";", String::from("abèDàEF")))
   );
 
-  fn esc3(i: &str) -> IResult<&str, String> {
+  fn esc3(i: &str) -> ParseResult<&str, String> {
     escaped_transform(
       alpha,
       '␛',
@@ -276,21 +279,21 @@ fn escape_transform_str() {
 #[test]
 fn take_until_incomplete() {
   use crate::bytes::streaming::take_until;
-  fn y(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn y(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     take_until("end")(i)
   }
-  assert_eq!(y(&b"nd"[..]), Err(Err::Incomplete(Needed::Unknown)));
-  assert_eq!(y(&b"123"[..]), Err(Err::Incomplete(Needed::Unknown)));
-  assert_eq!(y(&b"123en"[..]), Err(Err::Incomplete(Needed::Unknown)));
+  assert_eq!(y(&b"nd"[..]), Err(Outcome::Incomplete(Needed::Unknown)));
+  assert_eq!(y(&b"123"[..]), Err(Outcome::Incomplete(Needed::Unknown)));
+  assert_eq!(y(&b"123en"[..]), Err(Outcome::Incomplete(Needed::Unknown)));
 }
 
 #[test]
 fn take_until_incomplete_s() {
   use crate::bytes::streaming::take_until;
-  fn ys(i: &str) -> IResult<&str, &str> {
+  fn ys(i: &str) -> ParseResult<&str, &str> {
     take_until("end")(i)
   }
-  assert_eq!(ys("123en"), Err(Err::Incomplete(Needed::Unknown)));
+  assert_eq!(ys("123en"), Err(Outcome::Incomplete(Needed::Unknown)));
 }
 
 #[test]
@@ -299,7 +302,7 @@ fn recognize() {
   use crate::combinator::recognize;
   use crate::sequence::delimited;
 
-  fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn x(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(delimited(tag("<!--"), take(5_usize), tag("-->")))(i)
   }
   let r = x(&b"<!-- abc --> aaa"[..]);
@@ -307,43 +310,43 @@ fn recognize() {
 
   let semicolon = &b";"[..];
 
-  fn ya(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn ya(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(alpha)(i)
   }
   let ra = ya(&b"abc;"[..]);
   assert_eq!(ra, Ok((semicolon, &b"abc"[..])));
 
-  fn yd(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn yd(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(digit)(i)
   }
   let rd = yd(&b"123;"[..]);
   assert_eq!(rd, Ok((semicolon, &b"123"[..])));
 
-  fn yhd(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn yhd(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(hex_digit)(i)
   }
   let rhd = yhd(&b"123abcDEF;"[..]);
   assert_eq!(rhd, Ok((semicolon, &b"123abcDEF"[..])));
 
-  fn yod(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn yod(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(oct_digit)(i)
   }
   let rod = yod(&b"1234567;"[..]);
   assert_eq!(rod, Ok((semicolon, &b"1234567"[..])));
 
-  fn yan(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn yan(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(alphanumeric)(i)
   }
   let ran = yan(&b"123abc;"[..]);
   assert_eq!(ran, Ok((semicolon, &b"123abc"[..])));
 
-  fn ys(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn ys(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(space)(i)
   }
   let rs = ys(&b" \t;"[..]);
   assert_eq!(rs, Ok((semicolon, &b" \t"[..])));
 
-  fn yms(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn yms(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(multispace)(i)
   }
   let rms = yms(&b" \t\r\n;"[..]);
@@ -354,7 +357,7 @@ fn recognize() {
 fn take_while() {
   use crate::bytes::streaming::take_while;
 
-  fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn f(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     take_while(is_alphabetic)(i)
   }
   let a = b"";
@@ -362,8 +365,8 @@ fn take_while() {
   let c = b"abcd123";
   let d = b"123";
 
-  assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(f(&a[..]), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(f(&b[..]), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(f(&c[..]), Ok((&d[..], &b[..])));
   assert_eq!(f(&d[..]), Ok((&d[..], &a[..])));
 }
@@ -372,7 +375,7 @@ fn take_while() {
 fn take_while1() {
   use crate::bytes::streaming::take_while1;
 
-  fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn f(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     take_while1(is_alphabetic)(i)
   }
   let a = b"";
@@ -380,12 +383,15 @@ fn take_while1() {
   let c = b"abcd123";
   let d = b"123";
 
-  assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(f(&a[..]), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(f(&b[..]), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(f(&c[..]), Ok((&b"123"[..], &b[..])));
   assert_eq!(
     f(&d[..]),
-    Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1)))
+    Err(Outcome::Failure(error_position!(
+      &d[..],
+      ParserKind::TakeWhile1
+    )))
   );
 }
 
@@ -393,7 +399,7 @@ fn take_while1() {
 fn take_while_m_n() {
   use crate::bytes::streaming::take_while_m_n;
 
-  fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn x(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     take_while_m_n(2, 4, is_alphabetic)(i)
   }
   let a = b"";
@@ -403,14 +409,17 @@ fn take_while_m_n() {
   let e = b"abcde";
   let f = b"123";
 
-  assert_eq!(x(&a[..]), Err(Err::Incomplete(Needed::new(2))));
-  assert_eq!(x(&b[..]), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(x(&a[..]), Err(Outcome::Incomplete(Needed::new(2))));
+  assert_eq!(x(&b[..]), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(x(&c[..]), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(x(&d[..]), Ok((&b"123"[..], &c[..])));
   assert_eq!(x(&e[..]), Ok((&b"e"[..], &b"abcd"[..])));
   assert_eq!(
     x(&f[..]),
-    Err(Err::Error(error_position!(&f[..], ErrorKind::TakeWhileMN)))
+    Err(Outcome::Failure(error_position!(
+      &f[..],
+      ParserKind::TakeWhileMN
+    )))
   );
 }
 
@@ -418,7 +427,7 @@ fn take_while_m_n() {
 fn take_till() {
   use crate::bytes::streaming::take_till;
 
-  fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn f(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     take_till(is_alphabetic)(i)
   }
   let a = b"";
@@ -426,17 +435,17 @@ fn take_till() {
   let c = b"123abcd";
   let d = b"123";
 
-  assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(f(&a[..]), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(f(&b[..]), Ok((&b"abcd"[..], &b""[..])));
   assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
-  assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(f(&d[..]), Err(Outcome::Incomplete(Needed::new(1))));
 }
 
 #[test]
 fn take_till1() {
   use crate::bytes::streaming::take_till1;
 
-  fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn f(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     take_till1(is_alphabetic)(i)
   }
   let a = b"";
@@ -444,33 +453,36 @@ fn take_till1() {
   let c = b"123abcd";
   let d = b"123";
 
-  assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(f(&a[..]), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(
     f(&b[..]),
-    Err(Err::Error(error_position!(&b[..], ErrorKind::TakeTill1)))
+    Err(Outcome::Failure(error_position!(
+      &b[..],
+      ParserKind::TakeTill1
+    )))
   );
   assert_eq!(f(&c[..]), Ok((&b"abcd"[..], &b"123"[..])));
-  assert_eq!(f(&d[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(f(&d[..]), Err(Outcome::Incomplete(Needed::new(1))));
 }
 
 #[test]
 fn take_while_utf8() {
   use crate::bytes::streaming::take_while;
 
-  fn f(i: &str) -> IResult<&str, &str> {
+  fn f(i: &str) -> ParseResult<&str, &str> {
     take_while(|c| c != '點')(i)
   }
 
-  assert_eq!(f(""), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(f(""), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(f("abcd"), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(f("abcd點"), Ok(("點", "abcd")));
   assert_eq!(f("abcd點a"), Ok(("點a", "abcd")));
 
-  fn g(i: &str) -> IResult<&str, &str> {
+  fn g(i: &str) -> ParseResult<&str, &str> {
     take_while(|c| c == '點')(i)
   }
 
-  assert_eq!(g(""), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(g(""), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(g("點abcd"), Ok(("abcd", "點")));
   assert_eq!(g("點點點a"), Ok(("a", "點點點")));
 }
@@ -479,20 +491,20 @@ fn take_while_utf8() {
 fn take_till_utf8() {
   use crate::bytes::streaming::take_till;
 
-  fn f(i: &str) -> IResult<&str, &str> {
+  fn f(i: &str) -> ParseResult<&str, &str> {
     take_till(|c| c == '點')(i)
   }
 
-  assert_eq!(f(""), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(f("abcd"), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(f(""), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(f("abcd"), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(f("abcd點"), Ok(("點", "abcd")));
   assert_eq!(f("abcd點a"), Ok(("點a", "abcd")));
 
-  fn g(i: &str) -> IResult<&str, &str> {
+  fn g(i: &str) -> ParseResult<&str, &str> {
     take_till(|c| c != '點')(i)
   }
 
-  assert_eq!(g(""), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(g(""), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(g("點abcd"), Ok(("abcd", "點")));
   assert_eq!(g("點點點a"), Ok(("a", "點點點")));
 }
@@ -501,22 +513,22 @@ fn take_till_utf8() {
 fn take_utf8() {
   use crate::bytes::streaming::{take, take_while};
 
-  fn f(i: &str) -> IResult<&str, &str> {
+  fn f(i: &str) -> ParseResult<&str, &str> {
     take(3_usize)(i)
   }
 
-  assert_eq!(f(""), Err(Err::Incomplete(Needed::Unknown)));
-  assert_eq!(f("ab"), Err(Err::Incomplete(Needed::Unknown)));
-  assert_eq!(f("點"), Err(Err::Incomplete(Needed::Unknown)));
+  assert_eq!(f(""), Err(Outcome::Incomplete(Needed::Unknown)));
+  assert_eq!(f("ab"), Err(Outcome::Incomplete(Needed::Unknown)));
+  assert_eq!(f("點"), Err(Outcome::Incomplete(Needed::Unknown)));
   assert_eq!(f("ab點cd"), Ok(("cd", "ab點")));
   assert_eq!(f("a點bcd"), Ok(("cd", "a點b")));
   assert_eq!(f("a點b"), Ok(("", "a點b")));
 
-  fn g(i: &str) -> IResult<&str, &str> {
+  fn g(i: &str) -> ParseResult<&str, &str> {
     take_while(|c| c == '點')(i)
   }
 
-  assert_eq!(g(""), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(g(""), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(g("點abcd"), Ok(("abcd", "點")));
   assert_eq!(g("點點點a"), Ok(("a", "點點點")));
 }
@@ -525,7 +537,7 @@ fn take_utf8() {
 fn take_while_m_n_utf8() {
   use crate::bytes::streaming::take_while_m_n;
 
-  fn parser(i: &str) -> IResult<&str, &str> {
+  fn parser(i: &str) -> ParseResult<&str, &str> {
     take_while_m_n(1, 1, |c| c == 'A' || c == '😃')(i)
   }
   assert_eq!(parser("A!"), Ok(("!", "A")));
@@ -536,7 +548,7 @@ fn take_while_m_n_utf8() {
 fn take_while_m_n_utf8_full_match() {
   use crate::bytes::streaming::take_while_m_n;
 
-  fn parser(i: &str) -> IResult<&str, &str> {
+  fn parser(i: &str) -> ParseResult<&str, &str> {
     take_while_m_n(1, 1, |c: char| c.is_alphabetic())(i)
   }
   assert_eq!(parser("øn"), Ok(("n", "ø")));
@@ -549,10 +561,10 @@ fn recognize_take_while() {
   use crate::character::is_alphanumeric;
   use crate::combinator::recognize;
 
-  fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn x(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     take_while(is_alphanumeric)(i)
   }
-  fn y(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn y(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     recognize(x)(i)
   }
   assert_eq!(x(&b"ab."[..]), Ok((&b"."[..], &b"ab"[..])));
@@ -564,22 +576,22 @@ fn recognize_take_while() {
 fn length_bytes() {
   use crate::{bytes::streaming::tag, multi::length_data, number::streaming::le_u8};
 
-  fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn x(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     length_data(le_u8)(i)
   }
   assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
   assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));
-  assert_eq!(x(b"\x02."), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(x(b"\x02"), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(x(b"\x02."), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(x(b"\x02"), Err(Outcome::Incomplete(Needed::new(2))));
 
-  fn y(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn y(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     let (i, _) = tag("magic")(i)?;
     length_data(le_u8)(i)
   }
   assert_eq!(y(b"magic\x02..>>"), Ok((&b">>"[..], &b".."[..])));
   assert_eq!(y(b"magic\x02.."), Ok((&[][..], &b".."[..])));
-  assert_eq!(y(b"magic\x02."), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(y(b"magic\x02"), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(y(b"magic\x02."), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(y(b"magic\x02"), Err(Outcome::Incomplete(Needed::new(2))));
 }
 
 #[cfg(feature = "alloc")]
@@ -587,36 +599,48 @@ fn length_bytes() {
 fn case_insensitive() {
   use crate::bytes::streaming::tag_no_case;
 
-  fn test(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn test(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     tag_no_case("ABcd")(i)
   }
   assert_eq!(test(&b"aBCdefgh"[..]), Ok((&b"efgh"[..], &b"aBCd"[..])));
   assert_eq!(test(&b"abcdefgh"[..]), Ok((&b"efgh"[..], &b"abcd"[..])));
   assert_eq!(test(&b"ABCDefgh"[..]), Ok((&b"efgh"[..], &b"ABCD"[..])));
-  assert_eq!(test(&b"ab"[..]), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(test(&b"ab"[..]), Err(Outcome::Incomplete(Needed::new(2))));
   assert_eq!(
     test(&b"Hello"[..]),
-    Err(Err::Error(error_position!(&b"Hello"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"Hello"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     test(&b"Hel"[..]),
-    Err(Err::Error(error_position!(&b"Hel"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"Hel"[..],
+      ParserKind::Tag
+    )))
   );
 
-  fn test2(i: &str) -> IResult<&str, &str> {
+  fn test2(i: &str) -> ParseResult<&str, &str> {
     tag_no_case("ABcd")(i)
   }
   assert_eq!(test2("aBCdefgh"), Ok(("efgh", "aBCd")));
   assert_eq!(test2("abcdefgh"), Ok(("efgh", "abcd")));
   assert_eq!(test2("ABCDefgh"), Ok(("efgh", "ABCD")));
-  assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(test2("ab"), Err(Outcome::Incomplete(Needed::new(2))));
   assert_eq!(
     test2("Hello"),
-    Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &"Hello"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     test2("Hel"),
-    Err(Err::Error(error_position!(&"Hel"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &"Hel"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
@@ -624,10 +648,10 @@ fn case_insensitive() {
 fn tag_fixed_size_array() {
   use crate::bytes::streaming::tag;
 
-  fn test(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn test(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     tag([0x42])(i)
   }
-  fn test2(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn test2(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     tag(&[0x42])(i)
   }
   let input = [0x42, 0x00];

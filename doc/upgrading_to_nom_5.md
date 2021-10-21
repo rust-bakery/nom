@@ -125,10 +125,10 @@ everywhere)
 they gain the performance benefit immediately
 
 In practice, nom parsers will have the following signature:
-`Input -> IResult<Input, Output, Error>`
+`Input -> IResult<Input, Output, Context>`
 
 A function combinator will then have this signature:
-`<args> -> impl Fn(Input) -> IResult<Input, Output, Error>`
+`<args> -> impl Fn(Input) -> IResult<Input, Output, Context>`
 
 Here is an example with a simplified `take` combinator:
 

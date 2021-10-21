@@ -10,7 +10,7 @@ use nom::{
   combinator::{map, map_res},
   multi::many0,
   sequence::{delimited, preceded},
-  IResult,
+  ParseResult,
 };
 
 pub enum Expr {
@@ -58,7 +58,7 @@ impl Debug for Expr {
   }
 }
 
-fn parens(i: &str) -> IResult<&str, Expr> {
+fn parens(i: &str) -> ParseResult<&str, Expr> {
   delimited(
     multispace,
     delimited(tag("("), map(expr, |e| Expr::Paren(Box::new(e))), tag(")")),
@@ -66,7 +66,7 @@ fn parens(i: &str) -> IResult<&str, Expr> {
   )(i)
 }
 
-fn factor(i: &str) -> IResult<&str, Expr> {
+fn factor(i: &str) -> ParseResult<&str, Expr> {
   alt((
     map(
       map_res(delimited(multispace, digit, multispace), FromStr::from_str),
@@ -88,7 +88,7 @@ fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
   })
 }
 
-fn term(i: &str) -> IResult<&str, Expr> {
+fn term(i: &str) -> ParseResult<&str, Expr> {
   let (i, initial) = factor(i)?;
   let (i, remainder) = many0(alt((
     |i| {
@@ -104,7 +104,7 @@ fn term(i: &str) -> IResult<&str, Expr> {
   Ok((i, fold_exprs(initial, remainder)))
 }
 
-fn expr(i: &str) -> IResult<&str, Expr> {
+fn expr(i: &str) -> ParseResult<&str, Expr> {
   let (i, initial) = term(i)?;
   let (i, remainder) = many0(alt((
     |i| {

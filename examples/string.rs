@@ -18,10 +18,10 @@ use nom::branch::alt;
 use nom::bytes::streaming::{is_not, take_while_m_n};
 use nom::character::streaming::{char, multispace1};
 use nom::combinator::{map, map_opt, map_res, value, verify};
-use nom::error::{FromExternalError, ParseError};
+use nom::error::{FromExternalError, ParseContext};
 use nom::multi::fold_many0;
 use nom::sequence::{delimited, preceded};
-use nom::IResult;
+use nom::ParseResult;
 
 // parser combinators are constructed from the bottom up:
 // first we write parsers for the smallest elements (escaped characters),
@@ -30,9 +30,9 @@ use nom::IResult;
 /// Parse a unicode sequence, of the form u{XXXX}, where XXXX is 1 to 6
 /// hexadecimal numerals. We will combine this later with parse_escaped_char
 /// to parse sequences like \u{00AC}.
-fn parse_unicode<'a, E>(input: &'a str) -> IResult<&'a str, char, E>
+fn parse_unicode<'a, E>(input: &'a str) -> ParseResult<&'a str, char, E>
 where
-  E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
+  E: ParseContext<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
 {
   // `take_while_m_n` parses between `m` and `n` bytes (inclusive) that match
   // a predicate. `parse_hex` here parses between 1 and 6 hexadecimal numerals.
@@ -61,9 +61,9 @@ where
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
-fn parse_escaped_char<'a, E>(input: &'a str) -> IResult<&'a str, char, E>
+fn parse_escaped_char<'a, E>(input: &'a str) -> ParseResult<&'a str, char, E>
 where
-  E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
+  E: ParseContext<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
 {
   preceded(
     char('\\'),
@@ -89,14 +89,14 @@ where
 
 /// Parse a backslash, followed by any amount of whitespace. This is used later
 /// to discard any escaped whitespace.
-fn parse_escaped_whitespace<'a, E: ParseError<&'a str>>(
+fn parse_escaped_whitespace<'a, E: ParseContext<&'a str>>(
   input: &'a str,
-) -> IResult<&'a str, &'a str, E> {
+) -> ParseResult<&'a str, &'a str, E> {
   preceded(char('\\'), multispace1)(input)
 }
 
 /// Parse a non-empty block of text that doesn't include \ or "
-fn parse_literal<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, &'a str, E> {
+fn parse_literal<'a, E: ParseContext<&'a str>>(input: &'a str) -> ParseResult<&'a str, &'a str, E> {
   // `is_not` parses a string of 0 or more characters that aren't one of the
   // given characters.
   let not_quote_slash = is_not("\"\\");
@@ -120,9 +120,9 @@ enum StringFragment<'a> {
 
 /// Combine parse_literal, parse_escaped_whitespace, and parse_escaped_char
 /// into a StringFragment.
-fn parse_fragment<'a, E>(input: &'a str) -> IResult<&'a str, StringFragment<'a>, E>
+fn parse_fragment<'a, E>(input: &'a str) -> ParseResult<&'a str, StringFragment<'a>, E>
 where
-  E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
+  E: ParseContext<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
 {
   alt((
     // The `map` combinator runs a parser, then applies a function to the output
@@ -135,9 +135,9 @@ where
 
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments
 /// into an output string.
-fn parse_string<'a, E>(input: &'a str) -> IResult<&'a str, String, E>
+fn parse_string<'a, E>(input: &'a str) -> ParseResult<&'a str, String, E>
 where
-  E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
+  E: ParseContext<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
 {
   // fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
   // and for each output value, calls a folding function on each output value.

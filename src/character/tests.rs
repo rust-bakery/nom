@@ -1,10 +1,10 @@
 use super::streaming::*;
-use crate::error::ErrorKind;
-use crate::internal::{Err, IResult};
+use crate::error::ParserKind;
+use crate::internal::{Outcome, ParseResult};
 
 #[test]
 fn one_of_test() {
-  fn f(i: &[u8]) -> IResult<&[u8], char> {
+  fn f(i: &[u8]) -> ParseResult<&[u8], char> {
     one_of("ab")(i)
   }
 
@@ -12,9 +12,12 @@ fn one_of_test() {
   assert_eq!(f(a), Ok((&b"bcd"[..], 'a')));
 
   let b = &b"cde"[..];
-  assert_eq!(f(b), Err(Err::Error(error_position!(b, ErrorKind::OneOf))));
+  assert_eq!(
+    f(b),
+    Err(Outcome::Failure(error_position!(b, ParserKind::OneOf)))
+  );
 
-  fn utf8(i: &str) -> IResult<&str, char> {
+  fn utf8(i: &str) -> ParseResult<&str, char> {
     one_of("+\u{FF0B}")(i)
   }
 
@@ -24,12 +27,15 @@ fn one_of_test() {
 
 #[test]
 fn none_of_test() {
-  fn f(i: &[u8]) -> IResult<&[u8], char> {
+  fn f(i: &[u8]) -> ParseResult<&[u8], char> {
     none_of("ab")(i)
   }
 
   let a = &b"abcd"[..];
-  assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::NoneOf))));
+  assert_eq!(
+    f(a),
+    Err(Outcome::Failure(error_position!(a, ParserKind::NoneOf)))
+  );
 
   let b = &b"cde"[..];
   assert_eq!(f(b), Ok((&b"de"[..], 'c')));
@@ -37,12 +43,15 @@ fn none_of_test() {
 
 #[test]
 fn char_byteslice() {
-  fn f(i: &[u8]) -> IResult<&[u8], char> {
+  fn f(i: &[u8]) -> ParseResult<&[u8], char> {
     char('c')(i)
   }
 
   let a = &b"abcd"[..];
-  assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
+  assert_eq!(
+    f(a),
+    Err(Outcome::Failure(error_position!(a, ParserKind::Char)))
+  );
 
   let b = &b"cde"[..];
   assert_eq!(f(b), Ok((&b"de"[..], 'c')));
@@ -50,12 +59,15 @@ fn char_byteslice() {
 
 #[test]
 fn char_str() {
-  fn f(i: &str) -> IResult<&str, char> {
+  fn f(i: &str) -> ParseResult<&str, char> {
     char('c')(i)
   }
 
   let a = &"abcd"[..];
-  assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
+  assert_eq!(
+    f(a),
+    Err(Outcome::Failure(error_position!(a, ParserKind::Char)))
+  );
 
   let b = &"cde"[..];
   assert_eq!(f(b), Ok((&"de"[..], 'c')));

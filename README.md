@@ -24,7 +24,7 @@ error prone plumbing.
 ```rust
 extern crate nom;
 use nom::{
-  IResult,
+  ParseResult,
   bytes::complete::{tag, take_while_m_n},
   combinator::map_res,
   sequence::tuple
@@ -45,14 +45,14 @@ fn is_hex_digit(c: char) -> bool {
   c.is_digit(16)
 }
 
-fn hex_primary(input: &str) -> IResult<&str, u8> {
+fn hex_primary(input: &str) -> ParseResult<&str, u8> {
   map_res(
     take_while_m_n(2, 2, is_hex_digit),
     from_hex
   )(input)
 }
 
-fn hex_color(input: &str) -> IResult<&str, Color> {
+fn hex_color(input: &str) -> ParseResult<&str, Color> {
   let (input, _) = tag("#")(input)?;
   let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
 

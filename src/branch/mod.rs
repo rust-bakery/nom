@@ -27,16 +27,16 @@ macro_rules! succ (
 #[cfg(test)]
 mod tests;
 
-use crate::error::ErrorKind;
-use crate::error::ParseError;
-use crate::internal::{Err, IResult, Parser};
+use crate::error::ParseContext;
+use crate::error::ParserKind;
+use crate::internal::{Outcome, ParseResult, Parser};
 
 /// Helper trait for the [alt()] combinator.
 ///
 /// This trait is implemented for tuples of up to 21 elements
 pub trait Alt<I, O, E> {
   /// Tests each parser in the tuple and returns the result of the first one that succeeds
-  fn choice(&mut self, input: I) -> IResult<I, O, E>;
+  fn choice(&mut self, input: I) -> ParseResult<I, O, E>;
 }
 
 /// Tests a list of parsers one by one until one succeeds.
@@ -47,11 +47,11 @@ pub trait Alt<I, O, E> {
 ///
 /// ```rust
 /// # use nom::error_position;
-/// # use nom::{Err,error::ErrorKind, Needed, IResult};
+/// # use nom::{Outcome,error::ParserKind, Needed, ParseResult};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::alt;
 /// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///   alt((alpha1, digit1))(input)
 /// };
 ///
@@ -62,15 +62,15 @@ pub trait Alt<I, O, E> {
 /// assert_eq!(parser("123456"), Ok(("", "123456")));
 ///
 /// // both parsers failed, and with the default error type, alt will return the last error
-/// assert_eq!(parser(" "), Err(Err::Error(error_position!(" ", ErrorKind::Digit))));
+/// assert_eq!(parser(" "), Err(Outcome::Failure(error_position!(" ", ParserKind::Digit))));
 /// # }
 /// ```
 ///
 /// With a custom error type, it is possible to have alt return the error of the parser
 /// that went the farthest in the input data
-pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
+pub fn alt<I: Clone, O, E: ParseContext<I>, List: Alt<I, O, E>>(
   mut l: List,
-) -> impl FnMut(I) -> IResult<I, O, E> {
+) -> impl FnMut(I) -> ParseResult<I, O, E> {
   move |i: I| l.choice(i)
 }
 
@@ -79,7 +79,7 @@ pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
 /// This trait is implemented for tuples of up to 21 elements
 pub trait Permutation<I, O, E> {
   /// Tries to apply all parsers in the tuple in various orders until all of them succeed
-  fn permutation(&mut self, input: I) -> IResult<I, O, E>;
+  fn permutation(&mut self, input: I) -> ParseResult<I, O, E>;
 }
 
 /// Applies a list of parsers in any order.
@@ -89,11 +89,11 @@ pub trait Permutation<I, O, E> {
 /// tuple of the parser results.
 ///
 /// ```rust
-/// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult};
+/// # use nom::{Outcome,error::{Context, ParserKind}, Needed, ParseResult};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::permutation;
 /// # fn main() {
-/// fn parser(input: &str) -> IResult<&str, (&str, &str)> {
+/// fn parser(input: &str) -> ParseResult<&str, (&str, &str)> {
 ///   permutation((alpha1, digit1))(input)
 /// }
 ///
@@ -104,18 +104,18 @@ pub trait Permutation<I, O, E> {
 /// assert_eq!(parser("123abc"), Ok(("", ("abc", "123"))));
 ///
 /// // it will fail if one of the parsers failed
-/// assert_eq!(parser("abc;"), Err(Err::Error(Error::new(";", ErrorKind::Digit))));
+/// assert_eq!(parser("abc;"), Err(Outcome::Failure(Context::new(";", ParserKind::Digit))));
 /// # }
 /// ```
 ///
 /// The parsers are applied greedily: if there are multiple unapplied parsers
 /// that could parse the next slice of input, the first one is used.
 /// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult};
 /// use nom::branch::permutation;
 /// use nom::character::complete::{anychar, char};
 ///
-/// fn parser(input: &str) -> IResult<&str, (char, char)> {
+/// fn parser(input: &str) -> ParseResult<&str, (char, char)> {
 ///   permutation((anychar, char('a')))(input)
 /// }
 ///
@@ -124,12 +124,12 @@ pub trait Permutation<I, O, E> {
 ///
 /// // anychar parses 'a', then char('a') fails on 'b',
 /// // even though char('a') followed by anychar would succeed
-/// assert_eq!(parser("ab"), Err(Err::Error(Error::new("b", ErrorKind::Char))));
+/// assert_eq!(parser("ab"), Err(Outcome::Failure(Context::new("b", ParserKind::Char))));
 /// ```
 ///
-pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(
+pub fn permutation<I: Clone, O, E: ParseContext<I>, List: Permutation<I, O, E>>(
   mut l: List,
-) -> impl FnMut(I) -> IResult<I, O, E> {
+) -> impl FnMut(I) -> ParseResult<I, O, E> {
   move |i: I| l.permutation(i)
 }
 
@@ -151,13 +151,13 @@ macro_rules! alt_trait(
 macro_rules! alt_trait_impl(
   ($($id:ident)+) => (
     impl<
-      Input: Clone, Output, Error: ParseError<Input>,
-      $($id: Parser<Input, Output, Error>),+
-    > Alt<Input, Output, Error> for ( $($id),+ ) {
+      Input: Clone, Output, Context: ParseContext<Input>,
+      $($id: Parser<Input, Output, Context>),+
+    > Alt<Input, Output, Context> for ( $($id),+ ) {
 
-      fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
+      fn choice(&mut self, input: Input) -> ParseResult<Input, Output, Context> {
         match self.0.parse(input.clone()) {
-          Err(Err::Error(e)) => alt_trait_inner!(1, self, input, e, $($id)+),
+          Err(Outcome::Failure(e)) => alt_trait_inner!(1, self, input, e, $($id)+),
           res => res,
         }
       }
@@ -168,7 +168,7 @@ macro_rules! alt_trait_impl(
 macro_rules! alt_trait_inner(
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident $($id:ident)+) => (
     match $self.$it.parse($input.clone()) {
-      Err(Err::Error(e)) => {
+      Err(Outcome::Failure(e)) => {
         let err = $err.or(e);
         succ!($it, alt_trait_inner!($self, $input, err, $($id)+))
       }
@@ -176,17 +176,17 @@ macro_rules! alt_trait_inner(
     }
   );
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident) => (
-    Err(Err::Error(Error::append($input, ErrorKind::Alt, $err)))
+    Err(Outcome::Failure(Context::append($input, ParserKind::Alt, $err)))
   );
 );
 
 alt_trait!(A B C D E F G H I J K L M N O P Q R S T U);
 
 // Manually implement Alt for (A,), the 1-tuple type
-impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output, Error>>
-  Alt<Input, Output, Error> for (A,)
+impl<Input, Output, Context: ParseContext<Input>, A: Parser<Input, Output, Context>>
+  Alt<Input, Output, Context> for (A,)
 {
-  fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
+  fn choice(&mut self, input: Input) -> ParseResult<Input, Output, Context> {
     self.0.parse(input)
   }
 }
@@ -214,22 +214,22 @@ macro_rules! permutation_trait(
 macro_rules! permutation_trait_impl(
   ($($name:ident $ty:ident $item:ident),+) => (
     impl<
-      Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Parser<Input, $ty, Error>),+
-    > Permutation<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
+      Input: Clone, $($ty),+ , Context: ParseContext<Input>,
+      $($name: Parser<Input, $ty, Context>),+
+    > Permutation<Input, ( $($ty),+ ), Context> for ( $($name),+ ) {
 
-      fn permutation(&mut self, mut input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
+      fn permutation(&mut self, mut input: Input) -> ParseResult<Input, ( $($ty),+ ), Context> {
         let mut res = ($(Option::<$ty>::None),+);
 
         loop {
-          let mut err: Option<Error> = None;
+          let mut err: Option<Context> = None;
           permutation_trait_inner!(0, self, input, res, err, $($name)+);
 
           // If we reach here, every iterator has either been applied before,
           // or errored on the remaining input
           if let Some(err) = err {
             // There are remaining parsers, and all errored on the remaining input
-            return Err(Err::Error(Error::append(input, ErrorKind::Permutation, err)));
+            return Err(Outcome::Failure(Context::append(input, ParserKind::Permutation, err)));
           }
 
           // All parsers were applied
@@ -252,7 +252,7 @@ macro_rules! permutation_trait_inner(
           $res.$it = Some(o);
           continue;
         }
-        Err(Err::Error(e)) => {
+        Err(Outcome::Failure(e)) => {
           $err = Some(match $err {
             Some(err) => err.or(e),
             None => e,

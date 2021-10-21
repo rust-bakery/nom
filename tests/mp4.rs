@@ -4,22 +4,22 @@ use nom::{
   branch::alt,
   bytes::streaming::{tag, take},
   combinator::{map, map_res},
-  error::ErrorKind,
+  error::ParserKind,
   multi::many0,
   number::streaming::{be_f32, be_u16, be_u32, be_u64},
-  Err, IResult, Needed,
+  Needed, Outcome, ParseResult,
 };
 
 use std::str;
 
-fn mp4_box(input: &[u8]) -> IResult<&[u8], &[u8]> {
+fn mp4_box(input: &[u8]) -> ParseResult<&[u8], &[u8]> {
   match be_u32(input) {
     Ok((i, offset)) => {
       let sz: usize = offset as usize;
       if i.len() >= sz - 4 {
         Ok((&i[(sz - 4)..], &i[0..(sz - 4)]))
       } else {
-        Err(Err::Incomplete(Needed::new(offset as usize + 4)))
+        Err(Outcome::Incomplete(Needed::new(offset as usize + 4)))
       }
     }
     Err(e) => Err(e),
@@ -95,7 +95,7 @@ pub struct Mvhd64 {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-fn mvhd32(i: &[u8]) -> IResult<&[u8], MvhdBox> {
+fn mvhd32(i: &[u8]) -> ParseResult<&[u8], MvhdBox> {
   let (i, version_flags) = be_u32(i)?;
   let (i, created_date) =  be_u32(i)?;
   let (i, modified_date) = be_u32(i)?;
@@ -147,7 +147,7 @@ fn mvhd32(i: &[u8]) -> IResult<&[u8], MvhdBox> {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-fn mvhd64(i: &[u8]) -> IResult<&[u8], MvhdBox> {
+fn mvhd64(i: &[u8]) -> ParseResult<&[u8], MvhdBox> {
   let (i, version_flags) = be_u32(i)?;
   let (i, created_date) =  be_u64(i)?;
   let (i, modified_date) = be_u64(i)?;
@@ -243,11 +243,11 @@ struct MP4BoxHeader {
   tag: MP4BoxType,
 }
 
-fn brand_name(input: &[u8]) -> IResult<&[u8], &str> {
+fn brand_name(input: &[u8]) -> ParseResult<&[u8], &str> {
   map_res(take(4_usize), str::from_utf8)(input)
 }
 
-fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType<'_>> {
+fn filetype_parser(input: &[u8]) -> ParseResult<&[u8], FileType<'_>> {
   let (i, name) = brand_name(input)?;
   let (i, version) = take(4_usize)(i)?;
   let (i, brands) = many0(brand_name)(i)?;
@@ -260,25 +260,28 @@ fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType<'_>> {
   Ok((i, ft))
 }
 
-fn mvhd_box(input: &[u8]) -> IResult<&[u8], MvhdBox> {
+fn mvhd_box(input: &[u8]) -> ParseResult<&[u8], MvhdBox> {
   let res = if input.len() < 100 {
-    Err(Err::Incomplete(Needed::new(100)))
+    Err(Outcome::Incomplete(Needed::new(100)))
   } else if input.len() == 100 {
     mvhd32(input)
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Err(Err::Error(nom::error_position!(input, ErrorKind::TooLarge)))
+    Err(Outcome::Failure(nom::error_position!(
+      input,
+      ParserKind::TooLarge
+    )))
   };
   println!("res: {:?}", res);
   res
 }
 
-fn unknown_box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
+fn unknown_box_type(input: &[u8]) -> ParseResult<&[u8], MP4BoxType> {
   Ok((input, MP4BoxType::Unknown))
 }
 
-fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
+fn box_type(input: &[u8]) -> ParseResult<&[u8], MP4BoxType> {
   alt((
     map(tag("ftyp"), |_| MP4BoxType::Ftyp),
     map(tag("moov"), |_| MP4BoxType::Moov),
@@ -293,7 +296,7 @@ fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
 // warning, an alt combinator with 9 branches containing a tag combinator
 // can make the compilation very slow. Use functions as sub parsers,
 // or split into multiple alt parsers if it gets slow
-fn moov_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
+fn moov_type(input: &[u8]) -> ParseResult<&[u8], MP4BoxType> {
   alt((
     map(tag("mdra"), |_| MP4BoxType::Mdra),
     map(tag("dref"), |_| MP4BoxType::Dref),
@@ -307,13 +310,13 @@ fn moov_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
   ))(input)
 }
 
-fn box_header(input: &[u8]) -> IResult<&[u8], MP4BoxHeader> {
+fn box_header(input: &[u8]) -> ParseResult<&[u8], MP4BoxHeader> {
   let (i, length) = be_u32(input)?;
   let (i, tag) = box_type(i)?;
   Ok((i, MP4BoxHeader { length, tag }))
 }
 
-fn moov_header(input: &[u8]) -> IResult<&[u8], MP4BoxHeader> {
+fn moov_header(input: &[u8]) -> ParseResult<&[u8], MP4BoxHeader> {
   let (i, length) = be_u32(input)?;
   let (i, tag) = moov_type(i)?;
   Ok((i, MP4BoxHeader { length, tag }))

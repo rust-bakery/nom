@@ -12,10 +12,10 @@ use nom::{
   bytes::complete::tag,
   character::complete::{alpha1, char, digit1, multispace0, multispace1, one_of},
   combinator::{cut, map, map_res, opt},
-  error::{context, VerboseError},
+  error::{context, VerboseContext},
   multi::many0,
   sequence::{delimited, preceded, terminated, tuple},
-  IResult, Parser,
+  ParseResult, Parser,
 };
 
 /// We start by defining the types that define the shape of data that we want.
@@ -68,7 +68,7 @@ pub enum Expr {
 
 /// Continuing the trend of starting from the simplest piece and building up,
 /// we start by creating a parser for the built-in operator functions.
-fn parse_builtin_op<'a>(i: &'a str) -> IResult<&'a str, BuiltIn, VerboseError<&'a str>> {
+fn parse_builtin_op<'a>(i: &'a str) -> ParseResult<&'a str, BuiltIn, VerboseContext<&'a str>> {
   // one_of matches one of the characters we give it
   let (i, t) = one_of("+-*/=")(i)?;
 
@@ -87,7 +87,7 @@ fn parse_builtin_op<'a>(i: &'a str) -> IResult<&'a str, BuiltIn, VerboseError<&'
   ))
 }
 
-fn parse_builtin<'a>(i: &'a str) -> IResult<&'a str, BuiltIn, VerboseError<&'a str>> {
+fn parse_builtin<'a>(i: &'a str) -> ParseResult<&'a str, BuiltIn, VerboseContext<&'a str>> {
   // alt gives us the result of first parser that succeeds, of the series of
   // parsers we give it
   alt((
@@ -99,7 +99,7 @@ fn parse_builtin<'a>(i: &'a str) -> IResult<&'a str, BuiltIn, VerboseError<&'a s
 }
 
 /// Our boolean values are also constant, so we can do it the same way
-fn parse_bool<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
+fn parse_bool<'a>(i: &'a str) -> ParseResult<&'a str, Atom, VerboseContext<&'a str>> {
   alt((
     map(tag("#t"), |_| Atom::Boolean(true)),
     map(tag("#f"), |_| Atom::Boolean(false)),
@@ -112,7 +112,7 @@ fn parse_bool<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
 ///
 /// Put plainly: `preceded(tag(":"), cut(alpha1))` means that once we see the `:`
 /// character, we have to see one or more alphabetic chararcters or the input is invalid.
-fn parse_keyword<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
+fn parse_keyword<'a>(i: &'a str) -> ParseResult<&'a str, Atom, VerboseContext<&'a str>> {
   map(
     context("keyword", preceded(tag(":"), cut(alpha1))),
     |sym_str: &str| Atom::Keyword(sym_str.to_string()),
@@ -121,7 +121,7 @@ fn parse_keyword<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>
 
 /// Next up is number parsing. We're keeping it simple here by accepting any number (> 1)
 /// of digits but ending the program if it doesn't fit into an i32.
-fn parse_num<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
+fn parse_num<'a>(i: &'a str) -> ParseResult<&'a str, Atom, VerboseContext<&'a str>> {
   alt((
     map_res(digit1, |digit_str: &str| {
       digit_str.parse::<i32>().map(Atom::Num)
@@ -134,7 +134,7 @@ fn parse_num<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
 
 /// Now we take all these simple parsers and connect them.
 /// We can now parse half of our language!
-fn parse_atom<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
+fn parse_atom<'a>(i: &'a str) -> ParseResult<&'a str, Atom, VerboseContext<&'a str>> {
   alt((
     parse_num,
     parse_bool,
@@ -144,7 +144,7 @@ fn parse_atom<'a>(i: &'a str) -> IResult<&'a str, Atom, VerboseError<&'a str>> {
 }
 
 /// We then add the Expr layer on top
-fn parse_constant<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> {
+fn parse_constant<'a>(i: &'a str) -> ParseResult<&'a str, Expr, VerboseContext<&'a str>> {
   map(parse_atom, |atom| Expr::Constant(atom))(i)
 }
 
@@ -155,9 +155,11 @@ fn parse_constant<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str
 ///
 /// Unlike the previous functions, this function doesn't take or consume input, instead it
 /// takes a parsing function and returns a new parsing function.
-fn s_exp<'a, O1, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>
+fn s_exp<'a, O1, F>(
+  inner: F,
+) -> impl FnMut(&'a str) -> ParseResult<&'a str, O1, VerboseContext<&'a str>>
 where
-  F: Parser<&'a str, O1, VerboseError<&'a str>>,
+  F: Parser<&'a str, O1, VerboseContext<&'a str>>,
 {
   delimited(
     char('('),
@@ -175,7 +177,7 @@ where
 ///
 /// `tuple` is used to sequence parsers together, so we can translate this directly
 /// and then map over it to transform the output into an `Expr::Application`
-fn parse_application<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> {
+fn parse_application<'a>(i: &'a str) -> ParseResult<&'a str, Expr, VerboseContext<&'a str>> {
   let application_inner = map(tuple((parse_expr, many0(parse_expr))), |(head, tail)| {
     Expr::Application(Box::new(head), tail)
   });
@@ -189,7 +191,7 @@ fn parse_application<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a 
 ///
 /// In fact, we define our parser as if `Expr::If` was defined with an Option in it,
 /// we have the `opt` combinator which fits very nicely here.
-fn parse_if<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> {
+fn parse_if<'a>(i: &'a str) -> ParseResult<&'a str, Expr, VerboseContext<&'a str>> {
   let if_inner = context(
     "if expression",
     map(
@@ -221,7 +223,7 @@ fn parse_if<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> {
 /// This example doesn't have the symbol atom, but by adding variables and changing
 /// the definition of quote to not always be around an S-expression, we'd get them
 /// naturally.
-fn parse_quote<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> {
+fn parse_quote<'a>(i: &'a str) -> ParseResult<&'a str, Expr, VerboseContext<&'a str>> {
   // this should look very straight-forward after all we've done:
   // we find the `'` (quote) character, use cut to say that we're unambiguously
   // looking for an s-expression of 0 or more expressions, and then parse them
@@ -233,7 +235,7 @@ fn parse_quote<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> 
 
 /// We tie them all together again, making a top-level expression parser!
 
-fn parse_expr<'a>(i: &'a str) -> IResult<&'a str, Expr, VerboseError<&'a str>> {
+fn parse_expr<'a>(i: &'a str) -> ParseResult<&'a str, Expr, VerboseContext<&'a str>> {
   preceded(
     multispace0,
     alt((parse_constant, parse_application, parse_if, parse_quote)),
@@ -363,7 +365,7 @@ fn eval_expression(e: Expr) -> Option<Expr> {
 /// us call eval on a string directly
 fn eval_from_str(src: &str) -> Result<Expr, String> {
   parse_expr(src)
-    .map_err(|e: nom::Err<VerboseError<&str>>| format!("{:#?}", e))
+    .map_err(|e: nom::Outcome<VerboseContext<&str>>| format!("{:#?}", e))
     .and_then(|(_, exp)| eval_expression(exp).ok_or("Eval failed".to_string()))
 }
 

@@ -6,20 +6,20 @@ use nom::{
   combinator::{map, map_res, opt},
   multi::many0,
   sequence::{delimited, pair, separated_pair, terminated, tuple},
-  IResult,
+  ParseResult,
 };
 
 use std::collections::HashMap;
 use std::str;
 
-fn category(i: &[u8]) -> IResult<&[u8], &str> {
+fn category(i: &[u8]) -> ParseResult<&[u8], &str> {
   map_res(
     delimited(char('['), take_while(|c| c != b']'), char(']')),
     str::from_utf8,
   )(i)
 }
 
-fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
+fn key_value(i: &[u8]) -> ParseResult<&[u8], (&str, &str)> {
   let (i, key) = map_res(alphanumeric, str::from_utf8)(i)?;
   let (i, _) = tuple((opt(space), char('='), opt(space)))(i)?;
   let (i, val) = map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8)(i)?;
@@ -27,19 +27,19 @@ fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
   Ok((i, (key, val)))
 }
 
-fn keys_and_values(i: &[u8]) -> IResult<&[u8], HashMap<&str, &str>> {
+fn keys_and_values(i: &[u8]) -> ParseResult<&[u8], HashMap<&str, &str>> {
   map(many0(terminated(key_value, opt(multispace))), |vec| {
     vec.into_iter().collect()
   })(i)
 }
 
-fn category_and_keys(i: &[u8]) -> IResult<&[u8], (&str, HashMap<&str, &str>)> {
+fn category_and_keys(i: &[u8]) -> ParseResult<&[u8], (&str, HashMap<&str, &str>)> {
   let (i, category) = terminated(category, opt(multispace))(i)?;
   let (i, keys) = keys_and_values(i)?;
   Ok((i, (category, keys)))
 }
 
-fn categories(i: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
+fn categories(i: &[u8]) -> ParseResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
   map(
     many0(separated_pair(
       category,

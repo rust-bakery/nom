@@ -4,9 +4,9 @@
 
 use crate::branch::alt;
 use crate::combinator::opt;
-use crate::error::ErrorKind;
-use crate::error::ParseError;
-use crate::internal::{Err, IResult};
+use crate::error::ParseContext;
+use crate::error::ParserKind;
+use crate::internal::{Outcome, ParseResult};
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::traits::{
   AsChar, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice,
@@ -19,17 +19,17 @@ use crate::traits::{Compare, CompareResult};
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{ErrorKind, Error}, IResult};
+/// # use nom::{Outcome, error::{ParserKind, Context}, ParseResult};
 /// # use nom::character::complete::char;
-/// fn parser(i: &str) -> IResult<&str, char> {
+/// fn parser(i: &str) -> ParseResult<&str, char> {
 ///     char('a')(i)
 /// }
 /// assert_eq!(parser("abc"), Ok(("bc", 'a')));
-/// assert_eq!(parser(" abc"), Err(Err::Error(Error::new(" abc", ErrorKind::Char))));
-/// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
+/// assert_eq!(parser(" abc"), Err(Outcome::Failure(Context::new(" abc", ParserKind::Char))));
+/// assert_eq!(parser("bc"), Err(Outcome::Failure(Context::new("bc", ParserKind::Char))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::Char))));
 /// ```
-pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn char<I, Context: ParseContext<I>>(c: char) -> impl Fn(I) -> ParseResult<I, char, Context>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar,
@@ -39,7 +39,7 @@ where
     (&c, b)
   }) {
     Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
-    _ => Err(Err::Error(Error::from_char(i, c))),
+    _ => Err(Outcome::Failure(Context::from_char(i, c))),
   }
 }
 
@@ -49,16 +49,18 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
+/// # use nom::{Outcome, error::{ParserKind, Context}, Needed, ParseResult};
 /// # use nom::character::complete::satisfy;
-/// fn parser(i: &str) -> IResult<&str, char> {
+/// fn parser(i: &str) -> ParseResult<&str, char> {
 ///     satisfy(|c| c == 'a' || c == 'b')(i)
 /// }
 /// assert_eq!(parser("abc"), Ok(("bc", 'a')));
-/// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
+/// assert_eq!(parser("cd"), Err(Outcome::Failure(Context::new("cd", ParserKind::Satisfy))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::Satisfy))));
 /// ```
-pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn satisfy<F, I, Context: ParseContext<I>>(
+  cond: F,
+) -> impl Fn(I) -> ParseResult<I, char, Context>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar,
@@ -70,7 +72,10 @@ where
     (c, b)
   }) {
     Some((c, true)) => Ok((i.slice(c.len()..), c)),
-    _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Satisfy))),
+    _ => Err(Outcome::Failure(Context::from_parser_kind(
+      i,
+      ParserKind::Satisfy,
+    ))),
   }
 }
 
@@ -80,13 +85,15 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind};
+/// # use nom::{Outcome, error::ParserKind};
 /// # use nom::character::complete::one_of;
-/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("abc")("b"), Ok(("", 'b')));
-/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
-/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::OneOf))));
+/// assert_eq!(one_of::<_, _, (&str, ParserKind)>("abc")("b"), Ok(("", 'b')));
+/// assert_eq!(one_of::<_, _, (&str, ParserKind)>("a")("bc"), Err(Outcome::Failure(("bc", ParserKind::OneOf))));
+/// assert_eq!(one_of::<_, _, (&str, ParserKind)>("a")(""), Err(Outcome::Failure(("", ParserKind::OneOf))));
 /// ```
-pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn one_of<I, T, Context: ParseContext<I>>(
+  list: T,
+) -> impl Fn(I) -> ParseResult<I, char, Context>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar + Copy,
@@ -94,7 +101,10 @@ where
 {
   move |i: I| match (i).iter_elements().next().map(|c| (c, list.find_token(c))) {
     Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
-    _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::OneOf))),
+    _ => Err(Outcome::Failure(Context::from_parser_kind(
+      i,
+      ParserKind::OneOf,
+    ))),
   }
 }
 
@@ -104,13 +114,15 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind};
+/// # use nom::{Outcome, error::ParserKind};
 /// # use nom::character::complete::none_of;
-/// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("abc")("z"), Ok(("", 'z')));
-/// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
-/// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::NoneOf))));
+/// assert_eq!(none_of::<_, _, (&str, ParserKind)>("abc")("z"), Ok(("", 'z')));
+/// assert_eq!(none_of::<_, _, (&str, ParserKind)>("ab")("a"), Err(Outcome::Failure(("a", ParserKind::NoneOf))));
+/// assert_eq!(none_of::<_, _, (&str, ParserKind)>("a")(""), Err(Outcome::Failure(("", ParserKind::NoneOf))));
 /// ```
-pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn none_of<I, T, Context: ParseContext<I>>(
+  list: T,
+) -> impl Fn(I) -> ParseResult<I, char, Context>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar + Copy,
@@ -118,7 +130,10 @@ where
 {
   move |i: I| match (i).iter_elements().next().map(|c| (c, !list.find_token(c))) {
     Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
-    _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::NoneOf))),
+    _ => Err(Outcome::Failure(Context::from_parser_kind(
+      i,
+      ParserKind::NoneOf,
+    ))),
   }
 }
 
@@ -128,17 +143,17 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult};
 /// # use nom::character::complete::crlf;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     crlf(input)
 /// }
 ///
 /// assert_eq!(parser("\r\nc"), Ok(("c", "\r\n")));
-/// assert_eq!(parser("ab\r\nc"), Err(Err::Error(Error::new("ab\r\nc", ErrorKind::CrLf))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::CrLf))));
+/// assert_eq!(parser("ab\r\nc"), Err(Outcome::Failure(Context::new("ab\r\nc", ParserKind::CrLf))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::CrLf))));
 /// ```
-pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn crlf<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>>,
   T: InputIter,
@@ -148,8 +163,8 @@ where
     //FIXME: is this the right index?
     CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
     _ => {
-      let e: ErrorKind = ErrorKind::CrLf;
-      Err(Err::Error(E::from_error_kind(input, e)))
+      let e: ParserKind = ParserKind::CrLf;
+      Err(Outcome::Failure(E::from_parser_kind(input, e)))
     }
   }
 }
@@ -161,9 +176,9 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::not_line_ending;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     not_line_ending(input)
 /// }
 ///
@@ -171,10 +186,10 @@ where
 /// assert_eq!(parser("ab\nc"), Ok(("\nc", "ab")));
 /// assert_eq!(parser("abc"), Ok(("", "abc")));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// assert_eq!(parser("a\rb\nc"), Err(Err::Error(Error { input: "a\rb\nc", code: ErrorKind::Tag })));
-/// assert_eq!(parser("a\rbc"), Err(Err::Error(Error { input: "a\rbc", code: ErrorKind::Tag })));
+/// assert_eq!(parser("a\rb\nc"), Err(Outcome::Failure(Context { input: "a\rb\nc", code: ParserKind::Tag })));
+/// assert_eq!(parser("a\rbc"), Err(Outcome::Failure(Context { input: "a\rbc", code: ParserKind::Tag })));
 /// ```
-pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn not_line_ending<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputIter + InputLength,
@@ -197,8 +212,8 @@ where
           //FIXME: calculate the right index
           CompareResult::Ok => Ok((input.slice(index..), input.slice(..index))),
           _ => {
-            let e: ErrorKind = ErrorKind::Tag;
-            Err(Err::Error(E::from_error_kind(input, e)))
+            let e: ParserKind = ParserKind::Tag;
+            Err(Outcome::Failure(E::from_parser_kind(input, e)))
           }
         }
       } else {
@@ -214,17 +229,17 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::line_ending;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     line_ending(input)
 /// }
 ///
 /// assert_eq!(parser("\r\nc"), Ok(("c", "\r\n")));
-/// assert_eq!(parser("ab\r\nc"), Err(Err::Error(Error::new("ab\r\nc", ErrorKind::CrLf))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::CrLf))));
+/// assert_eq!(parser("ab\r\nc"), Err(Outcome::Failure(Context::new("ab\r\nc", ParserKind::CrLf))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::CrLf))));
 /// ```
-pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn line_ending<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: InputIter + InputLength,
@@ -232,12 +247,18 @@ where
 {
   match input.compare("\n") {
     CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
-    CompareResult::Incomplete => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
+    CompareResult::Incomplete => Err(Outcome::Failure(E::from_parser_kind(
+      input,
+      ParserKind::CrLf,
+    ))),
     CompareResult::Error => {
       match input.compare("\r\n") {
         //FIXME: is this the right index?
         CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-        _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
+        _ => Err(Outcome::Failure(E::from_parser_kind(
+          input,
+          ParserKind::CrLf,
+        ))),
       }
     }
   }
@@ -249,17 +270,17 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::newline;
-/// fn parser(input: &str) -> IResult<&str, char> {
+/// fn parser(input: &str) -> ParseResult<&str, char> {
 ///     newline(input)
 /// }
 ///
 /// assert_eq!(parser("\nc"), Ok(("c", '\n')));
-/// assert_eq!(parser("\r\nc"), Err(Err::Error(Error::new("\r\nc", ErrorKind::Char))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
+/// assert_eq!(parser("\r\nc"), Err(Outcome::Failure(Context::new("\r\nc", ParserKind::Char))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::Char))));
 /// ```
-pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
+pub fn newline<I, Context: ParseContext<I>>(input: I) -> ParseResult<I, char, Context>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar,
@@ -273,17 +294,17 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::tab;
-/// fn parser(input: &str) -> IResult<&str, char> {
+/// fn parser(input: &str) -> ParseResult<&str, char> {
 ///     tab(input)
 /// }
 ///
 /// assert_eq!(parser("\tc"), Ok(("c", '\t')));
-/// assert_eq!(parser("\r\nc"), Err(Err::Error(Error::new("\r\nc", ErrorKind::Char))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
+/// assert_eq!(parser("\r\nc"), Err(Outcome::Failure(Context::new("\r\nc", ParserKind::Char))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::Char))));
 /// ```
-pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
+pub fn tab<I, Context: ParseContext<I>>(input: I) -> ParseResult<I, char, Context>
 where
   I: Slice<RangeFrom<usize>> + InputIter,
   <I as InputIter>::Item: AsChar,
@@ -298,22 +319,25 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{character::complete::anychar, Err, error::{Error, ErrorKind}, IResult};
-/// fn parser(input: &str) -> IResult<&str, char> {
+/// # use nom::{character::complete::anychar, Outcome, error::{Context, ParserKind}, ParseResult};
+/// fn parser(input: &str) -> ParseResult<&str, char> {
 ///     anychar(input)
 /// }
 ///
 /// assert_eq!(parser("abc"), Ok(("bc",'a')));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::Eof))));
 /// ```
-pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
+pub fn anychar<T, E: ParseContext<T>>(input: T) -> ParseResult<T, char, E>
 where
   T: InputIter + InputLength + Slice<RangeFrom<usize>>,
   <T as InputIter>::Item: AsChar,
 {
   let mut it = input.iter_indices();
   match it.next() {
-    None => Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof))),
+    None => Err(Outcome::Failure(E::from_parser_kind(
+      input,
+      ParserKind::Eof,
+    ))),
     Some((_, c)) => match it.next() {
       None => Ok((input.slice(input.input_len()..), c.as_char())),
       Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
@@ -328,9 +352,9 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::{Outcome, error::ParserKind, ParseResult, Needed};
 /// # use nom::character::complete::alpha0;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     alpha0(input)
 /// }
 ///
@@ -338,7 +362,7 @@ where
 /// assert_eq!(parser("1c"), Ok(("1c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// ```
-pub fn alpha0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn alpha0<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -353,22 +377,22 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::alpha1;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     alpha1(input)
 /// }
 ///
 /// assert_eq!(parser("aB1c"), Ok(("1c", "aB")));
-/// assert_eq!(parser("1c"), Err(Err::Error(Error::new("1c", ErrorKind::Alpha))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Alpha))));
+/// assert_eq!(parser("1c"), Err(Outcome::Failure(Context::new("1c", ParserKind::Alpha))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::Alpha))));
 /// ```
-pub fn alpha1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn alpha1<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
 {
-  input.split_at_position1_complete(|item| !item.is_alpha(), ErrorKind::Alpha)
+  input.split_at_position1_complete(|item| !item.is_alpha(), ParserKind::Alpha)
 }
 
 /// Recognizes zero or more ASCII numerical characters: 0-9
@@ -378,9 +402,9 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::{Outcome, error::ParserKind, ParseResult, Needed};
 /// # use nom::character::complete::digit0;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     digit0(input)
 /// }
 ///
@@ -389,7 +413,7 @@ where
 /// assert_eq!(parser("a21c"), Ok(("a21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// ```
-pub fn digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn digit0<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -404,22 +428,22 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::digit1;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     digit1(input)
 /// }
 ///
 /// assert_eq!(parser("21c"), Ok(("c", "21")));
-/// assert_eq!(parser("c1"), Err(Err::Error(Error::new("c1", ErrorKind::Digit))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Digit))));
+/// assert_eq!(parser("c1"), Err(Outcome::Failure(Context::new("c1", ParserKind::Digit))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::Digit))));
 /// ```
-pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn digit1<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
 {
-  input.split_at_position1_complete(|item| !item.is_dec_digit(), ErrorKind::Digit)
+  input.split_at_position1_complete(|item| !item.is_dec_digit(), ParserKind::Digit)
 }
 
 /// Recognizes zero or more ASCII hexadecimal numerical characters: 0-9, A-F, a-f
@@ -428,9 +452,9 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::{Outcome, error::ParserKind, ParseResult, Needed};
 /// # use nom::character::complete::hex_digit0;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     hex_digit0(input)
 /// }
 ///
@@ -438,7 +462,7 @@ where
 /// assert_eq!(parser("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// ```
-pub fn hex_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn hex_digit0<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -452,22 +476,22 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::hex_digit1;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     hex_digit1(input)
 /// }
 ///
 /// assert_eq!(parser("21cZ"), Ok(("Z", "21c")));
-/// assert_eq!(parser("H2"), Err(Err::Error(Error::new("H2", ErrorKind::HexDigit))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::HexDigit))));
+/// assert_eq!(parser("H2"), Err(Outcome::Failure(Context::new("H2", ParserKind::HexDigit))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::HexDigit))));
 /// ```
-pub fn hex_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn hex_digit1<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
 {
-  input.split_at_position1_complete(|item| !item.is_hex_digit(), ErrorKind::HexDigit)
+  input.split_at_position1_complete(|item| !item.is_hex_digit(), ParserKind::HexDigit)
 }
 
 /// Recognizes zero or more octal characters: 0-7
@@ -477,9 +501,9 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::{Outcome, error::ParserKind, ParseResult, Needed};
 /// # use nom::character::complete::oct_digit0;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     oct_digit0(input)
 /// }
 ///
@@ -487,7 +511,7 @@ where
 /// assert_eq!(parser("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// ```
-pub fn oct_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn oct_digit0<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -502,22 +526,22 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::oct_digit1;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     oct_digit1(input)
 /// }
 ///
 /// assert_eq!(parser("21cZ"), Ok(("cZ", "21")));
-/// assert_eq!(parser("H2"), Err(Err::Error(Error::new("H2", ErrorKind::OctDigit))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::OctDigit))));
+/// assert_eq!(parser("H2"), Err(Outcome::Failure(Context::new("H2", ParserKind::OctDigit))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::OctDigit))));
 /// ```
-pub fn oct_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn oct_digit1<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
 {
-  input.split_at_position1_complete(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
+  input.split_at_position1_complete(|item| !item.is_oct_digit(), ParserKind::OctDigit)
 }
 
 /// Recognizes zero or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
@@ -527,9 +551,9 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::{Outcome, error::ParserKind, ParseResult, Needed};
 /// # use nom::character::complete::alphanumeric0;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     alphanumeric0(input)
 /// }
 ///
@@ -537,7 +561,7 @@ where
 /// assert_eq!(parser("&Z21c"), Ok(("&Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// ```
-pub fn alphanumeric0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn alphanumeric0<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -552,22 +576,22 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::alphanumeric1;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     alphanumeric1(input)
 /// }
 ///
 /// assert_eq!(parser("21cZ%1"), Ok(("%1", "21cZ")));
-/// assert_eq!(parser("&H2"), Err(Err::Error(Error::new("&H2", ErrorKind::AlphaNumeric))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::AlphaNumeric))));
+/// assert_eq!(parser("&H2"), Err(Outcome::Failure(Context::new("&H2", ParserKind::AlphaNumeric))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::AlphaNumeric))));
 /// ```
-pub fn alphanumeric1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn alphanumeric1<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
 {
-  input.split_at_position1_complete(|item| !item.is_alphanum(), ErrorKind::AlphaNumeric)
+  input.split_at_position1_complete(|item| !item.is_alphanum(), ParserKind::AlphaNumeric)
 }
 
 /// Recognizes zero or more spaces and tabs.
@@ -577,9 +601,9 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::{Outcome, error::ParserKind, ParseResult, Needed};
 /// # use nom::character::complete::space0;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     space0(input)
 /// }
 ///
@@ -587,7 +611,7 @@ where
 /// assert_eq!(parser("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// ```
-pub fn space0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn space0<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -605,17 +629,17 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::space1;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     space1(input)
 /// }
 ///
 /// assert_eq!(parser(" \t21c"), Ok(("21c", " \t")));
-/// assert_eq!(parser("H2"), Err(Err::Error(Error::new("H2", ErrorKind::Space))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Space))));
+/// assert_eq!(parser("H2"), Err(Outcome::Failure(Context::new("H2", ParserKind::Space))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::Space))));
 /// ```
-pub fn space1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn space1<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -625,7 +649,7 @@ where
       let c = item.as_char();
       !(c == ' ' || c == '\t')
     },
-    ErrorKind::Space,
+    ParserKind::Space,
   )
 }
 
@@ -636,9 +660,9 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::{Outcome, error::ParserKind, ParseResult, Needed};
 /// # use nom::character::complete::multispace0;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     multispace0(input)
 /// }
 ///
@@ -646,7 +670,7 @@ where
 /// assert_eq!(parser("Z21c"), Ok(("Z21c", "")));
 /// assert_eq!(parser(""), Ok(("", "")));
 /// ```
-pub fn multispace0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn multispace0<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -664,17 +688,17 @@ where
 /// # Example
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Outcome, error::{Context, ParserKind}, ParseResult, Needed};
 /// # use nom::character::complete::multispace1;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> ParseResult<&str, &str> {
 ///     multispace1(input)
 /// }
 ///
 /// assert_eq!(parser(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
-/// assert_eq!(parser("H2"), Err(Err::Error(Error::new("H2", ErrorKind::MultiSpace))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::MultiSpace))));
+/// assert_eq!(parser("H2"), Err(Outcome::Failure(Context::new("H2", ParserKind::MultiSpace))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(Context::new("", ParserKind::MultiSpace))));
 /// ```
-pub fn multispace1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn multispace1<T, E: ParseContext<T>>(input: T) -> ParseResult<T, T, E>
 where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar + Clone,
@@ -684,11 +708,11 @@ where
       let c = item.as_char();
       !(c == ' ' || c == '\t' || c == '\r' || c == '\n')
     },
-    ErrorKind::MultiSpace,
+    ParserKind::MultiSpace,
   )
 }
 
-pub(crate) fn sign<T, E: ParseError<T>>(input: T) -> IResult<T, bool, E>
+pub(crate) fn sign<T, E: ParseContext<T>>(input: T) -> ParseResult<T, bool, E>
 where
   T: Clone + InputTake,
   T: for<'a> Compare<&'a [u8]>,
@@ -712,7 +736,7 @@ macro_rules! ints {
         /// will parse a number in text form to a number
         ///
         /// *Complete version*: can parse until the end of input.
-        pub fn $t<T, E: ParseError<T>>(input: T) -> IResult<T, $t, E>
+        pub fn $t<T, E: ParseContext<T>>(input: T) -> ParseResult<T, $t, E>
             where
             T: InputIter + Slice<RangeFrom<usize>> + InputLength + InputTake + Clone,
             <T as InputIter>::Item: AsChar,
@@ -721,7 +745,7 @@ macro_rules! ints {
                 let (i, sign) = sign(input.clone())?;
 
                 if i.input_len() == 0 {
-                    return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit)));
+                    return Err(Outcome::Failure(E::from_parser_kind(input, ParserKind::Digit)));
                 }
 
                 let mut value: $t = 0;
@@ -730,13 +754,13 @@ macro_rules! ints {
                         match c.as_char().to_digit(10) {
                             None => {
                                 if pos == 0 {
-                                    return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit)));
+                                    return Err(Outcome::Failure(E::from_parser_kind(input, ParserKind::Digit)));
                                 } else {
                                     return Ok((i.slice(pos..), value));
                                 }
                             },
                             Some(d) => match value.checked_mul(10).and_then(|v| v.checked_add(d as $t)) {
-                                None => return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit))),
+                                None => return Err(Outcome::Failure(E::from_parser_kind(input, ParserKind::Digit))),
                                 Some(v) => value = v,
                             }
                         }
@@ -746,13 +770,13 @@ macro_rules! ints {
                         match c.as_char().to_digit(10) {
                             None => {
                                 if pos == 0 {
-                                    return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit)));
+                                    return Err(Outcome::Failure(E::from_parser_kind(input, ParserKind::Digit)));
                                 } else {
                                     return Ok((i.slice(pos..), value));
                                 }
                             },
                             Some(d) => match value.checked_mul(10).and_then(|v| v.checked_sub(d as $t)) {
-                                None => return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit))),
+                                None => return Err(Outcome::Failure(E::from_parser_kind(input, ParserKind::Digit))),
                                 Some(v) => value = v,
                             }
                         }
@@ -774,7 +798,7 @@ macro_rules! uints {
         /// will parse a number in text form to a number
         ///
         /// *Complete version*: can parse until the end of input.
-        pub fn $t<T, E: ParseError<T>>(input: T) -> IResult<T, $t, E>
+        pub fn $t<T, E: ParseContext<T>>(input: T) -> ParseResult<T, $t, E>
             where
             T: InputIter + Slice<RangeFrom<usize>> + InputLength,
             <T as InputIter>::Item: AsChar,
@@ -782,7 +806,7 @@ macro_rules! uints {
                 let i = input;
 
                 if i.input_len() == 0 {
-                    return Err(Err::Error(E::from_error_kind(i, ErrorKind::Digit)));
+                    return Err(Outcome::Failure(E::from_parser_kind(i, ParserKind::Digit)));
                 }
 
                 let mut value: $t = 0;
@@ -790,13 +814,13 @@ macro_rules! uints {
                     match c.as_char().to_digit(10) {
                         None => {
                             if pos == 0 {
-                                return Err(Err::Error(E::from_error_kind(i, ErrorKind::Digit)));
+                                return Err(Outcome::Failure(E::from_parser_kind(i, ParserKind::Digit)));
                             } else {
                                 return Ok((i.slice(pos..), value));
                             }
                         },
                         Some(d) => match value.checked_mul(10).and_then(|v| v.checked_add(d as $t)) {
-                            None => return Err(Err::Error(E::from_error_kind(i, ErrorKind::Digit))),
+                            None => return Err(Outcome::Failure(E::from_parser_kind(i, ParserKind::Digit))),
                             Some(v) => value = v,
                         }
                     }
@@ -813,13 +837,13 @@ uints! { u8 u16 u32 u64 u128 }
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::internal::Err;
+  use crate::internal::Outcome;
   use crate::traits::ParseTo;
   use proptest::prelude::*;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
-      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
+      let res: $crate::ParseResult<_, _, (_, ParserKind)> = $left;
       assert_eq!(res, $right);
     };
   );
@@ -833,39 +857,51 @@ mod tests {
     let d: &[u8] = "azé12".as_bytes();
     let e: &[u8] = b" ";
     let f: &[u8] = b" ;";
-    //assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Err(Err::Incomplete(Needed::Size(1))));
+    //assert_eq!(alpha1::<_, (_, ParserKind)>(a), Err(Outcome::Incomplete(Needed::Size(1))));
     assert_parse!(alpha1(a), Ok((empty, a)));
-    assert_eq!(alpha1(b), Err(Err::Error((b, ErrorKind::Alpha))));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &b"a"[..])));
+    assert_eq!(alpha1(b), Err(Outcome::Failure((b, ParserKind::Alpha))));
+    assert_eq!(alpha1::<_, (_, ParserKind)>(c), Ok((&c[1..], &b"a"[..])));
     assert_eq!(
-      alpha1::<_, (_, ErrorKind)>(d),
+      alpha1::<_, (_, ParserKind)>(d),
       Ok(("é12".as_bytes(), &b"az"[..]))
     );
-    assert_eq!(digit1(a), Err(Err::Error((a, ErrorKind::Digit))));
-    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(digit1(c), Err(Err::Error((c, ErrorKind::Digit))));
-    assert_eq!(digit1(d), Err(Err::Error((d, ErrorKind::Digit))));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
+    assert_eq!(digit1(a), Err(Outcome::Failure((a, ParserKind::Digit))));
+    assert_eq!(digit1::<_, (_, ParserKind)>(b), Ok((empty, b)));
+    assert_eq!(digit1(c), Err(Outcome::Failure((c, ParserKind::Digit))));
+    assert_eq!(digit1(d), Err(Outcome::Failure((d, ParserKind::Digit))));
+    assert_eq!(hex_digit1::<_, (_, ParserKind)>(a), Ok((empty, a)));
+    assert_eq!(hex_digit1::<_, (_, ParserKind)>(b), Ok((empty, b)));
+    assert_eq!(hex_digit1::<_, (_, ParserKind)>(c), Ok((empty, c)));
     assert_eq!(
-      hex_digit1::<_, (_, ErrorKind)>(d),
+      hex_digit1::<_, (_, ParserKind)>(d),
       Ok(("zé12".as_bytes(), &b"a"[..]))
     );
-    assert_eq!(hex_digit1(e), Err(Err::Error((e, ErrorKind::HexDigit))));
-    assert_eq!(oct_digit1(a), Err(Err::Error((a, ErrorKind::OctDigit))));
-    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
-    assert_eq!(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
     assert_eq!(
-      alphanumeric1::<_, (_, ErrorKind)>(d),
+      hex_digit1(e),
+      Err(Outcome::Failure((e, ParserKind::HexDigit)))
+    );
+    assert_eq!(
+      oct_digit1(a),
+      Err(Outcome::Failure((a, ParserKind::OctDigit)))
+    );
+    assert_eq!(oct_digit1::<_, (_, ParserKind)>(b), Ok((empty, b)));
+    assert_eq!(
+      oct_digit1(c),
+      Err(Outcome::Failure((c, ParserKind::OctDigit)))
+    );
+    assert_eq!(
+      oct_digit1(d),
+      Err(Outcome::Failure((d, ParserKind::OctDigit)))
+    );
+    assert_eq!(alphanumeric1::<_, (_, ParserKind)>(a), Ok((empty, a)));
+    //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
+    assert_eq!(alphanumeric1::<_, (_, ParserKind)>(c), Ok((empty, c)));
+    assert_eq!(
+      alphanumeric1::<_, (_, ParserKind)>(d),
       Ok(("é12".as_bytes(), &b"az"[..]))
     );
-    assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
-    assert_eq!(space1::<_, (_, ErrorKind)>(f), Ok((&b";"[..], &b" "[..])));
+    assert_eq!(space1::<_, (_, ParserKind)>(e), Ok((empty, e)));
+    assert_eq!(space1::<_, (_, ParserKind)>(f), Ok((&b";"[..], &b" "[..])));
   }
 
   #[cfg(feature = "alloc")]
@@ -877,28 +913,40 @@ mod tests {
     let c = "a123";
     let d = "azé12";
     let e = " ";
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(alpha1(b), Err(Err::Error((b, ErrorKind::Alpha))));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12", &"az"[..])));
-    assert_eq!(digit1(a), Err(Err::Error((a, ErrorKind::Digit))));
-    assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(digit1(c), Err(Err::Error((c, ErrorKind::Digit))));
-    assert_eq!(digit1(d), Err(Err::Error((d, ErrorKind::Digit))));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
-    assert_eq!(hex_digit1(e), Err(Err::Error((e, ErrorKind::HexDigit))));
-    assert_eq!(oct_digit1(a), Err(Err::Error((a, ErrorKind::OctDigit))));
-    assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
-    assert_eq!(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
-    assert_eq!(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
+    assert_eq!(alpha1::<_, (_, ParserKind)>(a), Ok((empty, a)));
+    assert_eq!(alpha1(b), Err(Outcome::Failure((b, ParserKind::Alpha))));
+    assert_eq!(alpha1::<_, (_, ParserKind)>(c), Ok((&c[1..], &"a"[..])));
+    assert_eq!(alpha1::<_, (_, ParserKind)>(d), Ok(("é12", &"az"[..])));
+    assert_eq!(digit1(a), Err(Outcome::Failure((a, ParserKind::Digit))));
+    assert_eq!(digit1::<_, (_, ParserKind)>(b), Ok((empty, b)));
+    assert_eq!(digit1(c), Err(Outcome::Failure((c, ParserKind::Digit))));
+    assert_eq!(digit1(d), Err(Outcome::Failure((d, ParserKind::Digit))));
+    assert_eq!(hex_digit1::<_, (_, ParserKind)>(a), Ok((empty, a)));
+    assert_eq!(hex_digit1::<_, (_, ParserKind)>(b), Ok((empty, b)));
+    assert_eq!(hex_digit1::<_, (_, ParserKind)>(c), Ok((empty, c)));
+    assert_eq!(hex_digit1::<_, (_, ParserKind)>(d), Ok(("zé12", &"a"[..])));
+    assert_eq!(
+      hex_digit1(e),
+      Err(Outcome::Failure((e, ParserKind::HexDigit)))
+    );
+    assert_eq!(
+      oct_digit1(a),
+      Err(Outcome::Failure((a, ParserKind::OctDigit)))
+    );
+    assert_eq!(oct_digit1::<_, (_, ParserKind)>(b), Ok((empty, b)));
+    assert_eq!(
+      oct_digit1(c),
+      Err(Outcome::Failure((c, ParserKind::OctDigit)))
+    );
+    assert_eq!(
+      oct_digit1(d),
+      Err(Outcome::Failure((d, ParserKind::OctDigit)))
+    );
+    assert_eq!(alphanumeric1::<_, (_, ParserKind)>(a), Ok((empty, a)));
     //assert_eq!(fix_error!(b,(), alphanumeric), Ok((empty, b)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(alphanumeric1::<_, (_, ErrorKind)>(d), Ok(("é12", "az")));
-    assert_eq!(space1::<_, (_, ErrorKind)>(e), Ok((empty, e)));
+    assert_eq!(alphanumeric1::<_, (_, ParserKind)>(c), Ok((empty, c)));
+    assert_eq!(alphanumeric1::<_, (_, ParserKind)>(d), Ok(("é12", "az")));
+    assert_eq!(space1::<_, (_, ParserKind)>(e), Ok((empty, e)));
   }
 
   use crate::traits::Offset;
@@ -911,43 +959,43 @@ mod tests {
     let e = &b" \t\r\n;"[..];
     let f = &b"123abcDEF;"[..];
 
-    match alpha1::<_, (_, ErrorKind)>(a) {
+    match alpha1::<_, (_, ParserKind)>(a) {
       Ok((i, _)) => {
         assert_eq!(a.offset(i) + i.len(), a.len());
       }
       _ => panic!("wrong return type in offset test for alpha"),
     }
-    match digit1::<_, (_, ErrorKind)>(b) {
+    match digit1::<_, (_, ParserKind)>(b) {
       Ok((i, _)) => {
         assert_eq!(b.offset(i) + i.len(), b.len());
       }
       _ => panic!("wrong return type in offset test for digit"),
     }
-    match alphanumeric1::<_, (_, ErrorKind)>(c) {
+    match alphanumeric1::<_, (_, ParserKind)>(c) {
       Ok((i, _)) => {
         assert_eq!(c.offset(i) + i.len(), c.len());
       }
       _ => panic!("wrong return type in offset test for alphanumeric"),
     }
-    match space1::<_, (_, ErrorKind)>(d) {
+    match space1::<_, (_, ParserKind)>(d) {
       Ok((i, _)) => {
         assert_eq!(d.offset(i) + i.len(), d.len());
       }
       _ => panic!("wrong return type in offset test for space"),
     }
-    match multispace1::<_, (_, ErrorKind)>(e) {
+    match multispace1::<_, (_, ParserKind)>(e) {
       Ok((i, _)) => {
         assert_eq!(e.offset(i) + i.len(), e.len());
       }
       _ => panic!("wrong return type in offset test for multispace"),
     }
-    match hex_digit1::<_, (_, ErrorKind)>(f) {
+    match hex_digit1::<_, (_, ParserKind)>(f) {
       Ok((i, _)) => {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
       _ => panic!("wrong return type in offset test for hex_digit"),
     }
-    match oct_digit1::<_, (_, ErrorKind)>(f) {
+    match oct_digit1::<_, (_, ParserKind)>(f) {
       Ok((i, _)) => {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
@@ -959,25 +1007,25 @@ mod tests {
   fn is_not_line_ending_bytes() {
     let a: &[u8] = b"ab12cd\nefgh";
     assert_eq!(
-      not_line_ending::<_, (_, ErrorKind)>(a),
+      not_line_ending::<_, (_, ParserKind)>(a),
       Ok((&b"\nefgh"[..], &b"ab12cd"[..]))
     );
 
     let b: &[u8] = b"ab12cd\nefgh\nijkl";
     assert_eq!(
-      not_line_ending::<_, (_, ErrorKind)>(b),
+      not_line_ending::<_, (_, ParserKind)>(b),
       Ok((&b"\nefgh\nijkl"[..], &b"ab12cd"[..]))
     );
 
     let c: &[u8] = b"ab12cd\r\nefgh\nijkl";
     assert_eq!(
-      not_line_ending::<_, (_, ErrorKind)>(c),
+      not_line_ending::<_, (_, ParserKind)>(c),
       Ok((&b"\r\nefgh\nijkl"[..], &b"ab12cd"[..]))
     );
 
     let d: &[u8] = b"ab12cd";
     assert_eq!(
-      not_line_ending::<_, (_, ErrorKind)>(d),
+      not_line_ending::<_, (_, ParserKind)>(d),
       Ok((&[][..], &d[..]))
     );
   }
@@ -1002,10 +1050,13 @@ mod tests {
     */
 
     let f = "βèƒôřè\rÂßÇáƒƭèř";
-    assert_eq!(not_line_ending(f), Err(Err::Error((f, ErrorKind::Tag))));
+    assert_eq!(
+      not_line_ending(f),
+      Err(Outcome::Failure((f, ParserKind::Tag)))
+    );
 
     let g2: &str = "ab12cd";
-    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(g2), Ok(("", g2)));
+    assert_eq!(not_line_ending::<_, (_, ParserKind)>(g2), Ok(("", g2)));
   }
 
   #[test]
@@ -1016,13 +1067,13 @@ mod tests {
     let i = &b"g"[..];
     assert_parse!(
       hex_digit1(i),
-      Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
+      Err(Outcome::Failure(error_position!(i, ParserKind::HexDigit)))
     );
 
     let i = &b"G"[..];
     assert_parse!(
       hex_digit1(i),
-      Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
+      Err(Outcome::Failure(error_position!(i, ParserKind::HexDigit)))
     );
 
     assert!(crate::character::is_hex_digit(b'0'));
@@ -1047,7 +1098,7 @@ mod tests {
     let i = &b"8"[..];
     assert_parse!(
       oct_digit1(i),
-      Err(Err::Error(error_position!(i, ErrorKind::OctDigit)))
+      Err(Outcome::Failure(error_position!(i, ParserKind::OctDigit)))
     );
 
     assert!(crate::character::is_oct_digit(b'0'));
@@ -1065,7 +1116,7 @@ mod tests {
   #[test]
   fn full_line_windows() {
     use crate::sequence::pair;
-    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+    fn take_full_line(i: &[u8]) -> ParseResult<&[u8], (&[u8], &[u8])> {
       pair(not_line_ending, line_ending)(i)
     }
     let input = b"abc\r\n";
@@ -1076,7 +1127,7 @@ mod tests {
   #[test]
   fn full_line_unix() {
     use crate::sequence::pair;
-    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+    fn take_full_line(i: &[u8]) -> ParseResult<&[u8], (&[u8], &[u8])> {
       pair(not_line_ending, line_ending)(i)
     }
     let input = b"abc\n";
@@ -1103,21 +1154,30 @@ mod tests {
     assert_parse!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
     assert_parse!(
       crlf(&b"\r"[..]),
-      Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf)))
+      Err(Outcome::Failure(error_position!(
+        &b"\r"[..],
+        ParserKind::CrLf
+      )))
     );
     assert_parse!(
       crlf(&b"\ra"[..]),
-      Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
+      Err(Outcome::Failure(error_position!(
+        &b"\ra"[..],
+        ParserKind::CrLf
+      )))
     );
 
     assert_parse!(crlf("\r\na"), Ok(("a", "\r\n")));
     assert_parse!(
       crlf("\r"),
-      Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf)))
+      Err(Outcome::Failure(error_position!(
+        &"\r"[..],
+        ParserKind::CrLf
+      )))
     );
     assert_parse!(
       crlf("\ra"),
-      Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
+      Err(Outcome::Failure(error_position!("\ra", ParserKind::CrLf)))
     );
   }
 
@@ -1127,26 +1187,35 @@ mod tests {
     assert_parse!(line_ending(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
     assert_parse!(
       line_ending(&b"\r"[..]),
-      Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf)))
+      Err(Outcome::Failure(error_position!(
+        &b"\r"[..],
+        ParserKind::CrLf
+      )))
     );
     assert_parse!(
       line_ending(&b"\ra"[..]),
-      Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
+      Err(Outcome::Failure(error_position!(
+        &b"\ra"[..],
+        ParserKind::CrLf
+      )))
     );
 
     assert_parse!(line_ending("\na"), Ok(("a", "\n")));
     assert_parse!(line_ending("\r\na"), Ok(("a", "\r\n")));
     assert_parse!(
       line_ending("\r"),
-      Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf)))
+      Err(Outcome::Failure(error_position!(
+        &"\r"[..],
+        ParserKind::CrLf
+      )))
     );
     assert_parse!(
       line_ending("\ra"),
-      Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
+      Err(Outcome::Failure(error_position!("\ra", ParserKind::CrLf)))
     );
   }
 
-  fn digit_to_i16(input: &str) -> IResult<&str, i16> {
+  fn digit_to_i16(input: &str) -> ParseResult<&str, i16> {
     let i = input;
     let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
     let sign = match opt_sign {
@@ -1155,12 +1224,12 @@ mod tests {
       _ => true,
     };
 
-    let (i, s) = match digit1::<_, crate::error::Error<_>>(i) {
+    let (i, s) = match digit1::<_, crate::error::Context<_>>(i) {
       Ok((i, s)) => (i, s),
       Err(_) => {
-        return Err(Err::Error(crate::error::Error::from_error_kind(
+        return Err(Outcome::Failure(crate::error::Context::from_parser_kind(
           input,
-          ErrorKind::Digit,
+          ParserKind::Digit,
         )))
       }
     };
@@ -1173,20 +1242,20 @@ mod tests {
           Ok((i, -n))
         }
       }
-      None => Err(Err::Error(crate::error::Error::from_error_kind(
+      None => Err(Outcome::Failure(crate::error::Context::from_parser_kind(
         i,
-        ErrorKind::Digit,
+        ParserKind::Digit,
       ))),
     }
   }
 
-  fn digit_to_u32(i: &str) -> IResult<&str, u32> {
+  fn digit_to_u32(i: &str) -> ParseResult<&str, u32> {
     let (i, s) = digit1(i)?;
     match s.parse_to() {
       Some(n) => Ok((i, n)),
-      None => Err(Err::Error(crate::error::Error::from_error_kind(
+      None => Err(Outcome::Failure(crate::error::Context::from_parser_kind(
         i,
-        ErrorKind::Digit,
+        ParserKind::Digit,
       ))),
     }
   }

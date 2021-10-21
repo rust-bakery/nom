@@ -7,7 +7,7 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 use criterion::Criterion;
 use nom::number::complete;
 
-fn parser(i: &[u8]) -> nom::IResult<&[u8], u64> {
+fn parser(i: &[u8]) -> nom::ParseResult<&[u8], u64> {
   complete::be_u64(i)
 }
 

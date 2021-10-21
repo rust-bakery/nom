@@ -48,11 +48,11 @@ pub mod parser;
 And the `src/parser.rs` file:
 
 ```rust
-use nom::IResult;
+use nom::ParseResult;
 use nom::number::complete::be_u16;
 use nom::bytes::complete::take;
 
-pub fn length_value(input: &[u8]) -> IResult<&[u8],&[u8]> {
+pub fn length_value(input: &[u8]) -> ParseResult<&[u8],&[u8]> {
     let (input, length) = be_u16(input)?;
     take(length)(input)
 }
@@ -61,17 +61,17 @@ pub fn length_value(input: &[u8]) -> IResult<&[u8],&[u8]> {
 # Writing a first parser
 
 Let's parse a simple expression like `(12345)`. nom parsers are functions that
-use the `nom::IResult` type everywhere. As an example, a parser taking a byte
+use the `nom::ParseResult` type everywhere. As an example, a parser taking a byte
 slice `&[u8]` and returning a 32 bits unsigned integer `u32` would have this
-signature: `fn parse_u32(input: &[u8]) -> IResult<&[u8], u32>`.
+signature: `fn parse_u32(input: &[u8]) -> ParseResult<&[u8], u32>`.
 
-The `IResult` type depends on the input and output types, and an optional custom
+The `ParseResult` type depends on the input and output types, and an optional custom
 error type. This enum can either be `Ok((i,o))` containing the remaining input
 and the output value, or, on the `Err` side, an error or an indication that more
 data is needed.
 
 ```rust
-pub type IResult<I, O, E=(I,ErrorKind)> = Result<(I, O), Err<E>>;
+pub type ParseResult<I, O, E=(I,ParserKind)> = Result<(I, O), Err<E>>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Needed {
@@ -114,7 +114,7 @@ let line_ending = tag("\r\n");
 let http_version = preceded(http, version);
 
 // combine all previous parsers in one function
-fn request_line(i: &[u8]) -> IResult<&[u8], Request> {
+fn request_line(i: &[u8]) -> ParseResult<&[u8], Request> {
 
   // tuple takes as argument a tuple of parsers and will return
   // a tuple of their results
@@ -191,7 +191,7 @@ prints its hexdump if the child parser encountered an error:
 ```rust
 use nom::{dbg_dmp, bytes::complete::tag};
 
-fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+fn f(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
   dbg_dmp(tag("abcd"))(i)
 }
 

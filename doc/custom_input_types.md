@@ -11,10 +11,10 @@ that can carry line and column information, or to parse
 ## Implementing a custom type
 
 Let's assume we have an input type we'll call `MyInput`. `MyInput` is a sequence of `MyItem` type.
-The goal is to define nom parsers with this signature: `MyInput -> IResult<MyInput, Output>`.
+The goal is to define nom parsers with this signature: `MyInput -> ParseResult<MyInput, Output>`.
 
 ```rust
-fn parser(i: MyInput) -> IResult<MyInput, Output> {
+fn parser(i: MyInput) -> ParseResult<MyInput, Output> {
     tag("test")(i)
 }
 ```

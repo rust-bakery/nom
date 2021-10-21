@@ -5,12 +5,12 @@ use nom::bytes::complete::tag;
 use nom::character::complete::alphanumeric1;
 use nom::combinator::iterator;
 use nom::sequence::{separated_pair, terminated};
-use nom::IResult;
+use nom::ParseResult;
 
 fn main() {
   let mut data = "abcabcabcabc";
 
-  fn parser(i: &str) -> IResult<&str, &str> {
+  fn parser(i: &str) -> ParseResult<&str, &str> {
     tag("abc")(i)
   }
 
@@ -74,7 +74,7 @@ fn main() {
     .map(|(k, v)| (k.to_uppercase(), v))
     .collect::<HashMap<_, _>>();
 
-  let parser_result: IResult<_, _> = nom_it.finish();
+  let parser_result: ParseResult<_, _> = nom_it.finish();
   let (remaining_input, ()) = parser_result.unwrap();
 
   // will print "iterator returned {"key1": "value1", "key3": "value3", "key2": "value2"}, remaining input is ';'"

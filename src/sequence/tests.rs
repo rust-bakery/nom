@@ -1,19 +1,19 @@
 use super::*;
 use crate::bytes::streaming::{tag, take};
-use crate::error::ErrorKind;
-use crate::internal::{Err, IResult, Needed};
+use crate::error::ParserKind;
+use crate::internal::{Needed, Outcome, ParseResult};
 use crate::number::streaming::be_u16;
 
 #[test]
 fn single_element_tuples() {
   use crate::character::complete::alpha1;
-  use crate::{error::ErrorKind, Err};
+  use crate::{error::ParserKind, Outcome};
 
   let mut parser = tuple((alpha1,));
   assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));
   assert_eq!(
     parser("123def"),
-    Err(Err::Error(("123def", ErrorKind::Alpha)))
+    Err(Outcome::Failure(("123def", ParserKind::Alpha)))
   );
 }
 
@@ -35,18 +35,18 @@ use util::{add_error_pattern, error_to_list, print_error};
 #[cfg(feature = "std")]
 #[rustfmt::skip]
 fn error_to_string<P: Clone + PartialEq>(e: &Context<P, u32>) -> &'static str {
-  let v: Vec<(P, ErrorKind<u32>)> = error_to_list(e);
+  let v: Vec<(P, ParserKind<u32>)> = error_to_list(e);
   // do it this way if you can use slice patterns
   //match &v[..] {
-  //  [ErrorKind::Custom(42), ErrorKind::Tag]                         => "missing `ijkl` tag",
-  //  [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag] => "missing `mnop` tag after `ijkl`",
+  //  [ParserKind::Custom(42), ParserKind::Tag]                         => "missing `ijkl` tag",
+  //  [ParserKind::Custom(42), ParserKind::Custom(128), ParserKind::Tag] => "missing `mnop` tag after `ijkl`",
   //  _            => "unrecognized error"
   //}
 
-  let collected: Vec<ErrorKind<u32>> = v.iter().map(|&(_, ref e)| e.clone()).collect();
-  if &collected[..] == [ErrorKind::Custom(42), ErrorKind::Tag] {
+  let collected: Vec<ParserKind<u32>> = v.iter().map(|&(_, ref e)| e.clone()).collect();
+  if &collected[..] == [ParserKind::Custom(42), ParserKind::Tag] {
     "missing `ijkl` tag"
-  } else if &collected[..] == [ErrorKind::Custom(42), ErrorKind::Custom(128), ErrorKind::Tag] {
+  } else if &collected[..] == [ParserKind::Custom(42), ParserKind::Custom(128), ParserKind::Tag] {
     "missing `mnop` tag after `ijkl`"
   } else {
     "unrecognized error"
@@ -57,10 +57,10 @@ fn error_to_string<P: Clone + PartialEq>(e: &Context<P, u32>) -> &'static str {
 //use $crate::lib::std::str;
 //fn error_to_string(e:Err) -> String
 //  match e {
-//    NodePosition(ErrorKind::Custom(42), i1, box Position(ErrorKind::Tag, i2)) => {
+//    NodePosition(ParserKind::Custom(42), i1, box Position(ParserKind::Tag, i2)) => {
 //      format!("missing `ijkl` tag, found '{}' instead", str::from_utf8(i2).unwrap())
 //    },
-//    NodePosition(ErrorKind::Custom(42), i1, box NodePosition(ErrorKind::Custom(128), i2,  box Position(ErrorKind::Tag, i3))) => {
+//    NodePosition(ParserKind::Custom(42), i1, box NodePosition(ParserKind::Custom(128), i2,  box Position(ParserKind::Tag, i3))) => {
 //      format!("missing `mnop` tag after `ijkl`, found '{}' instead", str::from_utf8(i3).unwrap())
 //    },
 //    _ => "unrecognized error".to_string()
@@ -71,7 +71,7 @@ fn error_to_string<P: Clone + PartialEq>(e: &Context<P, u32>) -> &'static str {
 #[test]
 fn complete() {
   use crate::bytes::complete::tag;
-  fn err_test(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn err_test(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     let (i, _) = tag("ijkl")(i)?;
     tag("mnop")(i)
   }
@@ -80,13 +80,16 @@ fn complete() {
   let res_a = err_test(a);
   assert_eq!(
     res_a,
-    Err(Err::Error(error_position!(&b"mn"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"mn"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
 #[test]
 fn pair_test() {
-  fn pair_abc_def(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+  fn pair_abc_def(i: &[u8]) -> ParseResult<&[u8], (&[u8], &[u8])> {
     pair(tag("abc"), tag("def"))(i)
   }
 
@@ -96,29 +99,38 @@ fn pair_test() {
   );
   assert_eq!(
     pair_abc_def(&b"ab"[..]),
-    Err(Err::Incomplete(Needed::new(1)))
+    Err(Outcome::Incomplete(Needed::new(1)))
   );
   assert_eq!(
     pair_abc_def(&b"abcd"[..]),
-    Err(Err::Incomplete(Needed::new(2)))
+    Err(Outcome::Incomplete(Needed::new(2)))
   );
   assert_eq!(
     pair_abc_def(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     pair_abc_def(&b"xxxdef"[..]),
-    Err(Err::Error(error_position!(&b"xxxdef"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxxdef"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     pair_abc_def(&b"abcxxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
 #[test]
 fn separated_pair_test() {
-  fn sep_pair_abc_def(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+  fn sep_pair_abc_def(i: &[u8]) -> ParseResult<&[u8], (&[u8], &[u8])> {
     separated_pair(tag("abc"), tag(","), tag("def"))(i)
   }
 
@@ -128,29 +140,38 @@ fn separated_pair_test() {
   );
   assert_eq!(
     sep_pair_abc_def(&b"ab"[..]),
-    Err(Err::Incomplete(Needed::new(1)))
+    Err(Outcome::Incomplete(Needed::new(1)))
   );
   assert_eq!(
     sep_pair_abc_def(&b"abc,d"[..]),
-    Err(Err::Incomplete(Needed::new(2)))
+    Err(Outcome::Incomplete(Needed::new(2)))
   );
   assert_eq!(
     sep_pair_abc_def(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     sep_pair_abc_def(&b"xxx,def"[..]),
-    Err(Err::Error(error_position!(&b"xxx,def"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx,def"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     sep_pair_abc_def(&b"abc,xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
 #[test]
 fn preceded_test() {
-  fn preceded_abcd_efgh(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn preceded_abcd_efgh(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     preceded(tag("abcd"), tag("efgh"))(i)
   }
 
@@ -160,29 +181,38 @@ fn preceded_test() {
   );
   assert_eq!(
     preceded_abcd_efgh(&b"ab"[..]),
-    Err(Err::Incomplete(Needed::new(2)))
+    Err(Outcome::Incomplete(Needed::new(2)))
   );
   assert_eq!(
     preceded_abcd_efgh(&b"abcde"[..]),
-    Err(Err::Incomplete(Needed::new(3)))
+    Err(Outcome::Incomplete(Needed::new(3)))
   );
   assert_eq!(
     preceded_abcd_efgh(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     preceded_abcd_efgh(&b"xxxxdef"[..]),
-    Err(Err::Error(error_position!(&b"xxxxdef"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxxxdef"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     preceded_abcd_efgh(&b"abcdxxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
 #[test]
 fn terminated_test() {
-  fn terminated_abcd_efgh(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn terminated_abcd_efgh(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     terminated(tag("abcd"), tag("efgh"))(i)
   }
 
@@ -192,29 +222,38 @@ fn terminated_test() {
   );
   assert_eq!(
     terminated_abcd_efgh(&b"ab"[..]),
-    Err(Err::Incomplete(Needed::new(2)))
+    Err(Outcome::Incomplete(Needed::new(2)))
   );
   assert_eq!(
     terminated_abcd_efgh(&b"abcde"[..]),
-    Err(Err::Incomplete(Needed::new(3)))
+    Err(Outcome::Incomplete(Needed::new(3)))
   );
   assert_eq!(
     terminated_abcd_efgh(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     terminated_abcd_efgh(&b"xxxxdef"[..]),
-    Err(Err::Error(error_position!(&b"xxxxdef"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxxxdef"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     terminated_abcd_efgh(&b"abcdxxxx"[..]),
-    Err(Err::Error(error_position!(&b"xxxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxxx"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
 #[test]
 fn delimited_test() {
-  fn delimited_abc_def_ghi(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn delimited_abc_def_ghi(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     delimited(tag("abc"), tag("def"), tag("ghi"))(i)
   }
 
@@ -224,40 +263,49 @@ fn delimited_test() {
   );
   assert_eq!(
     delimited_abc_def_ghi(&b"ab"[..]),
-    Err(Err::Incomplete(Needed::new(1)))
+    Err(Outcome::Incomplete(Needed::new(1)))
   );
   assert_eq!(
     delimited_abc_def_ghi(&b"abcde"[..]),
-    Err(Err::Incomplete(Needed::new(1)))
+    Err(Outcome::Incomplete(Needed::new(1)))
   );
   assert_eq!(
     delimited_abc_def_ghi(&b"abcdefgh"[..]),
-    Err(Err::Incomplete(Needed::new(1)))
+    Err(Outcome::Incomplete(Needed::new(1)))
   );
   assert_eq!(
     delimited_abc_def_ghi(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     delimited_abc_def_ghi(&b"xxxdefghi"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"xxxdefghi"[..],
-      ErrorKind::Tag
+      ParserKind::Tag
     ),))
   );
   assert_eq!(
     delimited_abc_def_ghi(&b"abcxxxghi"[..]),
-    Err(Err::Error(error_position!(&b"xxxghi"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxxghi"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     delimited_abc_def_ghi(&b"abcdefxxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
 #[test]
 fn tuple_test() {
-  fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8], &[u8])> {
+  fn tuple_3(i: &[u8]) -> ParseResult<&[u8], (u16, &[u8], &[u8])> {
     tuple((be_u16, take(3u8), tag("fg")))(i)
   }
 
@@ -265,10 +313,19 @@ fn tuple_test() {
     tuple_3(&b"abcdefgh"[..]),
     Ok((&b"h"[..], (0x6162u16, &b"cde"[..], &b"fg"[..])))
   );
-  assert_eq!(tuple_3(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(tuple_3(&b"abcde"[..]), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(
+    tuple_3(&b"abcd"[..]),
+    Err(Outcome::Incomplete(Needed::new(1)))
+  );
+  assert_eq!(
+    tuple_3(&b"abcde"[..]),
+    Err(Outcome::Incomplete(Needed::new(2)))
+  );
   assert_eq!(
     tuple_3(&b"abcdejk"[..]),
-    Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"jk"[..],
+      ParserKind::Tag
+    )))
   );
 }

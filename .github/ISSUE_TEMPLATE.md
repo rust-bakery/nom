@@ -34,7 +34,7 @@ let a = b"abcdabcd";
 
 fn main() {
   let res = vec![&b"abcd"[..], &b"abcd"[..]];
-  assert_eq!(multi(&a[..]),Ok((&b""[..], res))); // returns Err::Incomplete(Unknown))
+  assert_eq!(multi(&a[..]),Ok((&b""[..], res))); // returns Outcome::Incomplete(Unknown))
 }
 ```
 

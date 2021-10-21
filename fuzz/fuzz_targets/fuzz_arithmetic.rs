@@ -12,7 +12,7 @@ use nom::{
   combinator::{map, map_res, verify},
   multi::fold_many0,
   sequence::{delimited, pair, terminated},
-  IResult,
+  ParseResult,
 };
 
 use std::str::FromStr;
@@ -28,13 +28,13 @@ fn reset() {
     });
 }
 
-fn incr(i: &str) -> IResult<&str, ()> {
+fn incr(i: &str) -> ParseResult<&str, ()> {
     LEVEL.with(|l| {
         *l.borrow_mut() += 1;
 
         // limit the number of recursions, the fuzzer keeps running into them
         if *l.borrow() >= 8192 {
-            return Err(nom::Err::Failure(nom::error::Error::new(i, nom::error::ErrorKind::Count)));
+            return Err(nom::Outcome::Failure(nom::error::Context::new(i, nom::error::ParserKind::Count)));
         } else {
             Ok((i, ()))
         }
@@ -47,7 +47,7 @@ fn decr() {
     });
 }
 
-fn parens(i: &str) -> IResult<&str, i64> {
+fn parens(i: &str) -> ParseResult<&str, i64> {
       delimited(space, delimited(
               terminated(tag("("), incr),
               expr,
@@ -56,7 +56,7 @@ fn parens(i: &str) -> IResult<&str, i64> {
 }
 
 
-fn factor(i: &str) -> IResult<&str, i64> {
+fn factor(i: &str) -> ParseResult<&str, i64> {
   alt((
     map_res(delimited(space, digit, space), FromStr::from_str),
     parens,
@@ -64,7 +64,7 @@ fn factor(i: &str) -> IResult<&str, i64> {
 }
 
 
-fn term(i: &str) -> IResult<&str, i64> {
+fn term(i: &str) -> ParseResult<&str, i64> {
   incr(i)?;
   let (i, init) = factor(i).map_err(|e| { decr(); e })?;
 
@@ -92,7 +92,7 @@ fn term(i: &str) -> IResult<&str, i64> {
   res
 }
 
-fn expr(i: &str) -> IResult<&str, i64> {
+fn expr(i: &str) -> ParseResult<&str, i64> {
   incr(i)?;
   let (i, init) = term(i).map_err(|e| { decr(); e })?;
 

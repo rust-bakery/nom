@@ -2,8 +2,8 @@ use super::{length_data, length_value, many0_count, many1_count};
 use crate::{
   bytes::streaming::tag,
   character::streaming::digit1 as digit,
-  error::{ErrorKind, ParseError},
-  internal::{Err, IResult, Needed},
+  error::{ParseContext, ParserKind},
+  internal::{Needed, Outcome, ParseResult},
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
   sequence::{pair, tuple},
@@ -20,16 +20,16 @@ use crate::{
 #[test]
 #[cfg(feature = "alloc")]
 fn separated_list0_test() {
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(","), tag("abcd"))(i)
   }
-  fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi_empty(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(","), tag(""))(i)
   }
-  fn empty_sep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn empty_sep(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(""), tag("abc"))(i)
   }
-  fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi_longsep(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(".."), tag("abcd"))(i)
   }
 
@@ -53,26 +53,26 @@ fn separated_list0_test() {
   let i_err_pos = &i[3..];
   assert_eq!(
     empty_sep(i),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       i_err_pos,
-      ErrorKind::SeparatedList
+      ParserKind::SeparatedList
     )))
   );
   let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
   assert_eq!(multi(e), Ok((&b",ef"[..], res4)));
 
-  assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(multi(f), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(multi_longsep(g), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(multi(h), Err(Outcome::Incomplete(Needed::new(1))));
 }
 
 #[test]
 #[cfg(feature = "alloc")]
 fn separated_list1_test() {
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     separated_list1(tag(","), tag("abcd"))(i)
   }
-  fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi_longsep(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     separated_list1(tag(".."), tag("abcd"))(i)
   }
 
@@ -91,23 +91,23 @@ fn separated_list1_test() {
   assert_eq!(multi(b), Ok((&b"ef"[..], res2)));
   assert_eq!(
     multi(c),
-    Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(c, ParserKind::Tag)))
   );
   let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
   assert_eq!(multi(d), Ok((&b",ef"[..], res3)));
 
-  assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(multi(f), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(multi_longsep(g), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(multi(h), Err(Outcome::Incomplete(Needed::new(1))));
 }
 
 #[test]
 #[cfg(feature = "alloc")]
 fn many0_test() {
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     many0(tag("abcd"))(i)
   }
-  fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi_empty(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     many0(tag(""))(i)
   }
 
@@ -117,14 +117,20 @@ fn many0_test() {
     Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]))
   );
   assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
-  assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(2))));
-  assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
-  assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
+  assert_eq!(
+    multi(&b"abcdab"[..]),
+    Err(Outcome::Incomplete(Needed::new(2)))
+  );
+  assert_eq!(
+    multi(&b"abcd"[..]),
+    Err(Outcome::Incomplete(Needed::new(4)))
+  );
+  assert_eq!(multi(&b""[..]), Err(Outcome::Incomplete(Needed::new(4))));
   assert_eq!(
     multi_empty(&b"abcdef"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"abcdef"[..],
-      ErrorKind::Many0
+      ParserKind::Many0
     )))
   );
 }
@@ -142,7 +148,7 @@ fn many0_bench(b: &mut Bencher) {
 #[test]
 #[cfg(feature = "alloc")]
 fn many1_test() {
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     many1(tag("abcd"))(i)
   }
 
@@ -157,15 +163,15 @@ fn many1_test() {
   assert_eq!(multi(b), Ok((&b"efgh"[..], res2)));
   assert_eq!(
     multi(c),
-    Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(c, ParserKind::Tag)))
   );
-  assert_eq!(multi(d), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(multi(d), Err(Outcome::Incomplete(Needed::new(2))));
 }
 
 #[test]
 #[cfg(feature = "alloc")]
 fn many_till_test() {
-  fn multi(i: &[u8]) -> IResult<&[u8], (Vec<&[u8]>, &[u8])> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], (Vec<&[u8]>, &[u8])> {
     many_till(tag("abcd"), tag("efgh"))(i)
   }
 
@@ -179,10 +185,10 @@ fn many_till_test() {
   assert_eq!(multi(&b[..]), Ok((&b"abcd"[..], res_b)));
   assert_eq!(
     multi(&c[..]),
-    Err(Err::Error(error_node_position!(
+    Err(Outcome::Failure(error_node_position!(
       &c[..],
-      ErrorKind::ManyTill,
-      error_position!(&c[..], ErrorKind::Tag)
+      ParserKind::ManyTill,
+      error_position!(&c[..], ParserKind::Tag)
     )))
   );
 }
@@ -190,32 +196,32 @@ fn many_till_test() {
 #[test]
 #[cfg(feature = "std")]
 fn infinite_many() {
-  fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn tst(input: &[u8]) -> ParseResult<&[u8], &[u8]> {
     println!("input: {:?}", input);
-    Err(Err::Error(error_position!(input, ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(input, ParserKind::Tag)))
   }
 
   // should not go into an infinite loop
-  fn multi0(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi0(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     many0(tst)(i)
   }
   let a = &b"abcdef"[..];
   assert_eq!(multi0(a), Ok((a, Vec::new())));
 
-  fn multi1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi1(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     many1(tst)(i)
   }
   let a = &b"abcdef"[..];
   assert_eq!(
     multi1(a),
-    Err(Err::Error(error_position!(a, ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(a, ParserKind::Tag)))
   );
 }
 
 #[test]
 #[cfg(feature = "alloc")]
 fn many_m_n_test() {
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     many_m_n(2, 4, tag("Abcd"))(i)
   }
 
@@ -227,7 +233,10 @@ fn many_m_n_test() {
 
   assert_eq!(
     multi(a),
-    Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"ef"[..],
+      ParserKind::Tag
+    )))
   );
   let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(multi(b), Ok((&b"efgh"[..], res1)));
@@ -235,14 +244,14 @@ fn many_m_n_test() {
   assert_eq!(multi(c), Ok((&b"efgh"[..], res2)));
   let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(multi(d), Ok((&b"Abcdefgh"[..], res3)));
-  assert_eq!(multi(e), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(multi(e), Err(Outcome::Incomplete(Needed::new(2))));
 }
 
 #[test]
 #[cfg(feature = "alloc")]
 fn count_test() {
   const TIMES: usize = 2;
-  fn cnt_2(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn cnt_2(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     count(tag("abc"), TIMES)(i)
   }
 
@@ -250,24 +259,30 @@ fn count_test() {
     cnt_2(&b"abcabcabcdef"[..]),
     Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]))
   );
-  assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(cnt_2(&b"ab"[..]), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(
+    cnt_2(&b"abcab"[..]),
+    Err(Outcome::Incomplete(Needed::new(1)))
+  );
   assert_eq!(
     cnt_2(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
   assert_eq!(
     cnt_2(&b"xxxabcabcdef"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"xxxabcabcdef"[..],
-      ErrorKind::Tag
+      ParserKind::Tag
     )))
   );
   assert_eq!(
     cnt_2(&b"abcxxxabcdef"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"xxxabcdef"[..],
-      ErrorKind::Tag
+      ParserKind::Tag
     )))
   );
 }
@@ -276,7 +291,7 @@ fn count_test() {
 #[cfg(feature = "alloc")]
 fn count_zero() {
   const TIMES: usize = 0;
-  fn counter_2(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn counter_2(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     count(tag("abc"), TIMES)(i)
   }
 
@@ -314,22 +329,22 @@ fn count_zero() {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NilError;
 
-impl<I> From<(I, ErrorKind)> for NilError {
-  fn from(_: (I, ErrorKind)) -> Self {
+impl<I> From<(I, ParserKind)> for NilError {
+  fn from(_: (I, ParserKind)) -> Self {
     NilError
   }
 }
 
-impl<I> ParseError<I> for NilError {
-  fn from_error_kind(_: I, _: ErrorKind) -> NilError {
+impl<I> ParseContext<I> for NilError {
+  fn from_parser_kind(_: I, _: ParserKind) -> NilError {
     NilError
   }
-  fn append(_: I, _: ErrorKind, _: NilError) -> NilError {
+  fn append(_: I, _: ParserKind, _: NilError) -> NilError {
     NilError
   }
 }
 
-fn number(i: &[u8]) -> IResult<&[u8], u32> {
+fn number(i: &[u8]) -> ParseResult<&[u8], u32> {
   use crate::combinator::map_res;
 
   map_res(map_res(digit, str::from_utf8), FromStr::from_str)(i)
@@ -338,7 +353,7 @@ fn number(i: &[u8]) -> IResult<&[u8], u32> {
 #[test]
 #[cfg(feature = "alloc")]
 fn length_count_test() {
-  fn cnt(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn cnt(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     length_count(number, tag("abc"))(i)
   }
 
@@ -346,21 +361,30 @@ fn length_count_test() {
     cnt(&b"2abcabcabcdef"[..]),
     Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]))
   );
-  assert_eq!(cnt(&b"2ab"[..]), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(cnt(&b"3abcab"[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(cnt(&b"2ab"[..]), Err(Outcome::Incomplete(Needed::new(1))));
+  assert_eq!(
+    cnt(&b"3abcab"[..]),
+    Err(Outcome::Incomplete(Needed::new(1)))
+  );
   assert_eq!(
     cnt(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Digit
+    )))
   );
   assert_eq!(
     cnt(&b"2abcxxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Tag
+    )))
   );
 }
 
 #[test]
 fn length_data_test() {
-  fn take(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn take(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     length_data(number)(i)
   }
 
@@ -368,41 +392,56 @@ fn length_data_test() {
     take(&b"6abcabcabcdef"[..]),
     Ok((&b"abcdef"[..], &b"abcabc"[..]))
   );
-  assert_eq!(take(&b"3ab"[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(take(&b"3ab"[..]), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(
     take(&b"xxx"[..]),
-    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Digit)))
+    Err(Outcome::Failure(error_position!(
+      &b"xxx"[..],
+      ParserKind::Digit
+    )))
   );
   assert_eq!(take(&b"2abcxxx"[..]), Ok((&b"cxxx"[..], &b"ab"[..])));
 }
 
 #[test]
 fn length_value_test() {
-  fn length_value_1(i: &[u8]) -> IResult<&[u8], u16> {
+  fn length_value_1(i: &[u8]) -> ParseResult<&[u8], u16> {
     length_value(be_u8, be_u16)(i)
   }
-  fn length_value_2(i: &[u8]) -> IResult<&[u8], (u8, u8)> {
+  fn length_value_2(i: &[u8]) -> ParseResult<&[u8], (u8, u8)> {
     length_value(be_u8, tuple((be_u8, be_u8)))(i)
   }
 
   let i1 = [0, 5, 6];
   assert_eq!(
     length_value_1(&i1),
-    Err(Err::Error(error_position!(&b""[..], ErrorKind::Complete)))
+    Err(Outcome::Failure(error_position!(
+      &b""[..],
+      ParserKind::Complete
+    )))
   );
   assert_eq!(
     length_value_2(&i1),
-    Err(Err::Error(error_position!(&b""[..], ErrorKind::Complete)))
+    Err(Outcome::Failure(error_position!(
+      &b""[..],
+      ParserKind::Complete
+    )))
   );
 
   let i2 = [1, 5, 6, 3];
   assert_eq!(
     length_value_1(&i2),
-    Err(Err::Error(error_position!(&i2[1..2], ErrorKind::Complete)))
+    Err(Outcome::Failure(error_position!(
+      &i2[1..2],
+      ParserKind::Complete
+    )))
   );
   assert_eq!(
     length_value_2(&i2),
-    Err(Err::Error(error_position!(&i2[1..2], ErrorKind::Complete)))
+    Err(Outcome::Failure(error_position!(
+      &i2[1..2],
+      ParserKind::Complete
+    )))
   );
 
   let i3 = [2, 5, 6, 3, 4, 5, 7];
@@ -421,10 +460,10 @@ fn fold_many0_test() {
     acc.push(item);
     acc
   }
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     fold_many0(tag("abcd"), Vec::new, fold_into_vec)(i)
   }
-  fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi_empty(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     fold_many0(tag(""), Vec::new, fold_into_vec)(i)
   }
 
@@ -434,14 +473,20 @@ fn fold_many0_test() {
     Ok((&b"efgh"[..], vec![&b"abcd"[..], &b"abcd"[..]]))
   );
   assert_eq!(multi(&b"azerty"[..]), Ok((&b"azerty"[..], Vec::new())));
-  assert_eq!(multi(&b"abcdab"[..]), Err(Err::Incomplete(Needed::new(2))));
-  assert_eq!(multi(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(4))));
-  assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
+  assert_eq!(
+    multi(&b"abcdab"[..]),
+    Err(Outcome::Incomplete(Needed::new(2)))
+  );
+  assert_eq!(
+    multi(&b"abcd"[..]),
+    Err(Outcome::Incomplete(Needed::new(4)))
+  );
+  assert_eq!(multi(&b""[..]), Err(Outcome::Incomplete(Needed::new(4))));
   assert_eq!(
     multi_empty(&b"abcdef"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"abcdef"[..],
-      ErrorKind::Many0
+      ParserKind::Many0
     )))
   );
 }
@@ -453,7 +498,7 @@ fn fold_many1_test() {
     acc.push(item);
     acc
   }
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     fold_many1(tag("abcd"), Vec::new, fold_into_vec)(i)
   }
 
@@ -468,9 +513,9 @@ fn fold_many1_test() {
   assert_eq!(multi(b), Ok((&b"efgh"[..], res2)));
   assert_eq!(
     multi(c),
-    Err(Err::Error(error_position!(c, ErrorKind::Many1)))
+    Err(Outcome::Failure(error_position!(c, ParserKind::Many1)))
   );
-  assert_eq!(multi(d), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(multi(d), Err(Outcome::Incomplete(Needed::new(2))));
 }
 
 #[test]
@@ -480,7 +525,7 @@ fn fold_many_m_n_test() {
     acc.push(item);
     acc
   }
-  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn multi(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
     fold_many_m_n(2, 4, tag("Abcd"), Vec::new, fold_into_vec)(i)
   }
 
@@ -492,7 +537,10 @@ fn fold_many_m_n_test() {
 
   assert_eq!(
     multi(a),
-    Err(Err::Error(error_position!(&b"ef"[..], ErrorKind::Tag)))
+    Err(Outcome::Failure(error_position!(
+      &b"ef"[..],
+      ParserKind::Tag
+    )))
   );
   let res1 = vec![&b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(multi(b), Ok((&b"efgh"[..], res1)));
@@ -500,12 +548,12 @@ fn fold_many_m_n_test() {
   assert_eq!(multi(c), Ok((&b"efgh"[..], res2)));
   let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(multi(d), Ok((&b"Abcdefgh"[..], res3)));
-  assert_eq!(multi(e), Err(Err::Incomplete(Needed::new(2))));
+  assert_eq!(multi(e), Err(Outcome::Incomplete(Needed::new(2))));
 }
 
 #[test]
 fn many0_count_test() {
-  fn count0_nums(i: &[u8]) -> IResult<&[u8], usize> {
+  fn count0_nums(i: &[u8]) -> ParseResult<&[u8], usize> {
     many0_count(pair(digit, tag(",")))(i)
   }
 
@@ -523,7 +571,7 @@ fn many0_count_test() {
 
 #[test]
 fn many1_count_test() {
-  fn count1_nums(i: &[u8]) -> IResult<&[u8], usize> {
+  fn count1_nums(i: &[u8]) -> ParseResult<&[u8], usize> {
     many1_count(pair(digit, tag(",")))(i)
   }
 
@@ -536,9 +584,9 @@ fn many1_count_test() {
 
   assert_eq!(
     count1_nums(&b"hello"[..]),
-    Err(Err::Error(error_position!(
+    Err(Outcome::Failure(error_position!(
       &b"hello"[..],
-      ErrorKind::Many1Count
+      ParserKind::Many1Count
     )))
   );
 }

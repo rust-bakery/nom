@@ -1,15 +1,15 @@
 //! Bit level parsers
 //!
 
-use crate::error::{ErrorKind, ParseError};
-use crate::internal::{Err, IResult, Needed};
+use crate::error::{ParseContext, ParserKind};
+use crate::internal::{Needed, Outcome, ParseResult};
 use crate::lib::std::ops::{AddAssign, Div, RangeFrom, Shl, Shr};
 use crate::traits::{InputIter, InputLength, Slice, ToUsize};
 
 /// Generates a parser taking `count` bits
-pub fn take<I, O, C, E: ParseError<(I, usize)>>(
+pub fn take<I, O, C, E: ParseContext<(I, usize)>>(
   count: C,
-) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
+) -> impl Fn((I, usize)) -> ParseResult<(I, usize), O, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
   C: ToUsize,
@@ -22,7 +22,7 @@ where
     } else {
       let cnt = (count + bit_offset).div(8);
       if input.input_len() * 8 < count + bit_offset {
-        Err(Err::Incomplete(Needed::new(count as usize)))
+        Err(Outcome::Incomplete(Needed::new(count as usize)))
       } else {
         let mut acc: O = 0_u8.into();
         let mut offset: usize = bit_offset;
@@ -56,10 +56,10 @@ where
 }
 
 /// Generates a parser taking `count` bits and comparing them to `pattern`
-pub fn tag<I, O, C, E: ParseError<(I, usize)>>(
+pub fn tag<I, O, C, E: ParseContext<(I, usize)>>(
   pattern: O,
   count: C,
-) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
+) -> impl Fn((I, usize)) -> ParseResult<(I, usize), O, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength + Clone,
   C: ToUsize,
@@ -73,7 +73,7 @@ where
       if pattern == o {
         Ok((i, o))
       } else {
-        Err(Err::Error(error_position!(inp, ErrorKind::TagBits)))
+        Err(Outcome::Failure(error_position!(inp, ParserKind::TagBits)))
       }
     })
   }

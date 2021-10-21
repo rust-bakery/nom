@@ -3,8 +3,8 @@
 #[cfg(test)]
 mod tests;
 
-use crate::error::ParseError;
-use crate::internal::{IResult, Parser};
+use crate::error::ParseContext;
+use crate::internal::{ParseResult, Parser};
 
 /// Gets an object from the first parser,
 /// then gets another object from the second parser.
@@ -13,7 +13,7 @@ use crate::internal::{IResult, Parser};
 /// * `first` The first parser to apply.
 /// * `second` The second parser to apply.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::pair;
 /// use nom::bytes::complete::tag;
@@ -22,13 +22,13 @@ use crate::internal::{IResult, Parser};
 ///
 /// assert_eq!(parser("abcefg"), Ok(("", ("abc", "efg"))));
 /// assert_eq!(parser("abcefghij"), Ok(("hij", ("abc", "efg"))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(("", ParserKind::Tag))));
+/// assert_eq!(parser("123"), Err(Outcome::Failure(("123", ParserKind::Tag))));
 /// ```
-pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
+pub fn pair<I, O1, O2, E: ParseContext<I>, F, G>(
   mut first: F,
   mut second: G,
-) -> impl FnMut(I) -> IResult<I, (O1, O2), E>
+) -> impl FnMut(I) -> ParseResult<I, (O1, O2), E>
 where
   F: Parser<I, O1, E>,
   G: Parser<I, O2, E>,
@@ -46,7 +46,7 @@ where
 /// * `first` The opening parser.
 /// * `second` The second parser to get object.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::preceded;
 /// use nom::bytes::complete::tag;
@@ -55,13 +55,13 @@ where
 ///
 /// assert_eq!(parser("abcefg"), Ok(("", "efg")));
 /// assert_eq!(parser("abcefghij"), Ok(("hij", "efg")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(("", ParserKind::Tag))));
+/// assert_eq!(parser("123"), Err(Outcome::Failure(("123", ParserKind::Tag))));
 /// ```
-pub fn preceded<I, O1, O2, E: ParseError<I>, F, G>(
+pub fn preceded<I, O1, O2, E: ParseContext<I>, F, G>(
   mut first: F,
   mut second: G,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(I) -> ParseResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
   G: Parser<I, O2, E>,
@@ -79,7 +79,7 @@ where
 /// * `first` The first parser to apply.
 /// * `second` The second parser to match an object.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::terminated;
 /// use nom::bytes::complete::tag;
@@ -88,13 +88,13 @@ where
 ///
 /// assert_eq!(parser("abcefg"), Ok(("", "abc")));
 /// assert_eq!(parser("abcefghij"), Ok(("hij", "abc")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(("", ParserKind::Tag))));
+/// assert_eq!(parser("123"), Err(Outcome::Failure(("123", ParserKind::Tag))));
 /// ```
-pub fn terminated<I, O1, O2, E: ParseError<I>, F, G>(
+pub fn terminated<I, O1, O2, E: ParseContext<I>, F, G>(
   mut first: F,
   mut second: G,
-) -> impl FnMut(I) -> IResult<I, O1, E>
+) -> impl FnMut(I) -> ParseResult<I, O1, E>
 where
   F: Parser<I, O1, E>,
   G: Parser<I, O2, E>,
@@ -114,7 +114,7 @@ where
 /// * `sep` The separator parser to apply.
 /// * `second` The second parser to apply.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::separated_pair;
 /// use nom::bytes::complete::tag;
@@ -123,14 +123,14 @@ where
 ///
 /// assert_eq!(parser("abc|efg"), Ok(("", ("abc", "efg"))));
 /// assert_eq!(parser("abc|efghij"), Ok(("hij", ("abc", "efg"))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(("", ParserKind::Tag))));
+/// assert_eq!(parser("123"), Err(Outcome::Failure(("123", ParserKind::Tag))));
 /// ```
-pub fn separated_pair<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+pub fn separated_pair<I, O1, O2, O3, E: ParseContext<I>, F, G, H>(
   mut first: F,
   mut sep: G,
   mut second: H,
-) -> impl FnMut(I) -> IResult<I, (O1, O3), E>
+) -> impl FnMut(I) -> ParseResult<I, (O1, O3), E>
 where
   F: Parser<I, O1, E>,
   G: Parser<I, O2, E>,
@@ -152,7 +152,7 @@ where
 /// * `second` The second parser to apply.
 /// * `third` The third parser to apply and discard.
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Outcome, error::ParserKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::delimited;
 /// use nom::bytes::complete::tag;
@@ -161,14 +161,14 @@ where
 ///
 /// assert_eq!(parser("(abc)"), Ok(("", "abc")));
 /// assert_eq!(parser("(abc)def"), Ok(("def", "abc")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Outcome::Failure(("", ParserKind::Tag))));
+/// assert_eq!(parser("123"), Err(Outcome::Failure(("123", ParserKind::Tag))));
 /// ```
-pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+pub fn delimited<I, O1, O2, O3, E: ParseContext<I>, F, G, H>(
   mut first: F,
   mut second: G,
   mut third: H,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(I) -> ParseResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
   G: Parser<I, O2, E>,
@@ -186,13 +186,13 @@ where
 /// This trait is implemented for tuples of parsers of up to 21 elements.
 pub trait Tuple<I, O, E> {
   /// Parses the input and returns a tuple of results of each parser.
-  fn parse(&mut self, input: I) -> IResult<I, O, E>;
+  fn parse(&mut self, input: I) -> ParseResult<I, O, E>;
 }
 
-impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output, Error>>
-  Tuple<Input, (Output,), Error> for (F,)
+impl<Input, Output, Context: ParseContext<Input>, F: Parser<Input, Output, Context>>
+  Tuple<Input, (Output,), Context> for (F,)
 {
-  fn parse(&mut self, input: Input) -> IResult<Input, (Output,), Error> {
+  fn parse(&mut self, input: Input) -> ParseResult<Input, (Output,), Context> {
     self.0.parse(input).map(|(i, o)| (i, (o,)))
   }
 }
@@ -214,11 +214,11 @@ macro_rules! tuple_trait(
 macro_rules! tuple_trait_impl(
   ($($name:ident $ty: ident),+) => (
     impl<
-      Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Parser<Input, $ty, Error>),+
-    > Tuple<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
+      Input: Clone, $($ty),+ , Context: ParseContext<Input>,
+      $($name: Parser<Input, $ty, Context>),+
+    > Tuple<Input, ( $($ty),+ ), Context> for ( $($name),+ ) {
 
-      fn parse(&mut self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
+      fn parse(&mut self, input: Input) -> ParseResult<Input, ( $($ty),+ ), Context> {
         tuple_trait_inner!(0, self, input, (), $($name)+)
 
       }
@@ -250,16 +250,16 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 ///Applies a tuple of parsers one by one and returns their results as a tuple.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind};
+/// # use nom::{Outcome, error::ParserKind};
 /// use nom::sequence::tuple;
 /// use nom::character::complete::{alpha1, digit1};
 /// let mut parser = tuple((alpha1, digit1, alpha1));
 ///
 /// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
-/// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
+/// assert_eq!(parser("123def"), Err(Outcome::Failure(("123def", ParserKind::Alpha))));
 /// ```
-pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
+pub fn tuple<I, O, E: ParseContext<I>, List: Tuple<I, O, E>>(
   mut l: List,
-) -> impl FnMut(I) -> IResult<I, O, E> {
+) -> impl FnMut(I) -> ParseResult<I, O, E> {
   move |i: I| l.parse(i)
 }

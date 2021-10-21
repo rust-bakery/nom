@@ -8,11 +8,11 @@ use nom::{
   bytes::complete::{escaped, tag, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, one_of},
   combinator::{cut, map, opt, value},
-  error::{context, convert_error, ContextError, ErrorKind, ParseError, VerboseError},
+  error::{context, convert_error, ContextError, ParseContext, ParserKind, VerboseContext},
   multi::separated_list0,
   number::complete::double,
   sequence::{delimited, preceded, separated_pair, terminated},
-  Err, IResult,
+  Outcome, ParseResult,
 };
 use std::collections::HashMap;
 use std::str;
@@ -29,7 +29,7 @@ pub enum JsonValue {
 /// parser combinators are constructed from the bottom up:
 /// first we write parsers for the smallest elements (here a space character),
 /// then we'll combine them in larger parsers
-fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+fn sp<'a, E: ParseContext<&'a str>>(i: &'a str) -> ParseResult<&'a str, &'a str, E> {
   let chars = " \t\r\n";
 
   // nom combinators like `take_while` return a function. That function is the
@@ -38,8 +38,8 @@ fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
 }
 
 /// A nom parser has the following signature:
-/// `Input -> IResult<Input, Output, Error>`, with `IResult` defined as:
-/// `type IResult<I, O, E = (I, ErrorKind)> = Result<(I, O), Err<E>>;`
+/// `Input -> ParseResult<Input, Output, Context>`, with `ParseResult` defined as:
+/// `type ParseResult<I, O, E = (I, ParserKind)> = Result<(I, O), Err<E>>;`
 ///
 /// most of the times you can ignore the error type and use the default (but this
 /// examples shows custom error types later on!)
@@ -52,7 +52,7 @@ fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
 /// with the same lifetime tag. This means that the produced value is a subslice
 /// of the input data. and there is no allocation needed. This is the main idea
 /// behind nom's performance.
-fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+fn parse_str<'a, E: ParseContext<&'a str>>(i: &'a str) -> ParseResult<&'a str, &'a str, E> {
   escaped(alphanumeric, '\\', one_of("\"n\\"))(i)
 }
 
@@ -64,7 +64,7 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
 ///
 /// `alt` is another combinator that tries multiple parsers one by one, until
 /// one of them succeeds
-fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool, E> {
+fn boolean<'a, E: ParseContext<&'a str>>(input: &'a str) -> ParseResult<&'a str, bool, E> {
   // This is a parser that returns `true` if it sees the string "true", and
   // an error otherwise
   let parse_true = value(true, tag("true"));
@@ -83,15 +83,15 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool,
 /// before the string (using `preceded`) and after the string (using `terminated`).
 ///
 /// `context` and `cut` are related to error management:
-/// - `cut` transforms an `Err::Error(e)` in `Err::Failure(e)`, signaling to
+/// - `cut` transforms an `Outcome::Failure(e)` in `Outcome::Failure(e)`, signaling to
 /// combinators like  `alt` that they should not try other parsers. We were in the
 /// right branch (since we found the `"` character) but encountered an error when
 /// parsing the string
 /// - `context` lets you add a static string to provide more information in the
 /// error chain (to indicate which parser had an error)
-fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+fn string<'a, E: ParseContext<&'a str> + ContextError<&'a str>>(
   i: &'a str,
-) -> IResult<&'a str, &'a str, E> {
+) -> ParseResult<&'a str, &'a str, E> {
   context(
     "string",
     preceded(char('\"'), cut(terminated(parse_str, char('\"')))),
@@ -102,9 +102,9 @@ fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 /// accumulating results in a `Vec`, until it encounters an error.
 /// If you want more control on the parser application, check out the `iterator`
 /// combinator (cf `examples/iterator.rs`)
-fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+fn array<'a, E: ParseContext<&'a str> + ContextError<&'a str>>(
   i: &'a str,
-) -> IResult<&'a str, Vec<JsonValue>, E> {
+) -> ParseResult<&'a str, Vec<JsonValue>, E> {
   context(
     "array",
     preceded(
@@ -117,9 +117,9 @@ fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   )(i)
 }
 
-fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+fn key_value<'a, E: ParseContext<&'a str> + ContextError<&'a str>>(
   i: &'a str,
-) -> IResult<&'a str, (&'a str, JsonValue), E> {
+) -> ParseResult<&'a str, (&'a str, JsonValue), E> {
   separated_pair(
     preceded(sp, string),
     cut(preceded(sp, char(':'))),
@@ -127,9 +127,9 @@ fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   )(i)
 }
 
-fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+fn hash<'a, E: ParseContext<&'a str> + ContextError<&'a str>>(
   i: &'a str,
-) -> IResult<&'a str, HashMap<String, JsonValue>, E> {
+) -> ParseResult<&'a str, HashMap<String, JsonValue>, E> {
   context(
     "map",
     preceded(
@@ -151,9 +151,9 @@ fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 }
 
 /// here, we apply the space parser before trying to parse a value
-fn json_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+fn json_value<'a, E: ParseContext<&'a str> + ContextError<&'a str>>(
   i: &'a str,
-) -> IResult<&'a str, JsonValue, E> {
+) -> ParseResult<&'a str, JsonValue, E> {
   preceded(
     sp,
     alt((
@@ -167,9 +167,9 @@ fn json_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 }
 
 /// the root element of a JSON parser is either an object or an array
-fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+fn root<'a, E: ParseContext<&'a str> + ContextError<&'a str>>(
   i: &'a str,
-) -> IResult<&'a str, JsonValue, E> {
+) -> ParseResult<&'a str, JsonValue, E> {
   delimited(
     sp,
     alt((map(hash, JsonValue::Object), map(array, JsonValue::Array))),
@@ -224,7 +224,7 @@ fn main() {
   // )
   println!(
     "parsing a valid file:\n{:#?}\n",
-    root::<(&str, ErrorKind)>(data)
+    root::<(&str, ParserKind)>(data)
   );
 
   let data = "  { \"a\"\t: 42,
@@ -238,13 +238,13 @@ fn main() {
     data
   );
 
-  // here we use `(Input, ErrorKind)` as error type, which is used by default
+  // here we use `(Input, ParserKind)` as error type, which is used by default
   // if you don't specify it. It contains the position of the error and some
   // info on which parser encountered it.
   // It is fast and small, but does not provide much context.
   //
   // This will print:
-  // basic errors - `root::<(&str, ErrorKind)>(data)`:
+  // basic errors - `root::<(&str, ParserKind)>(data)`:
   // Err(
   //   Failure(
   //       (
@@ -254,11 +254,11 @@ fn main() {
   //   ),
   // )
   println!(
-    "basic errors - `root::<(&str, ErrorKind)>(data)`:\n{:#?}\n",
-    root::<(&str, ErrorKind)>(data)
+    "basic errors - `root::<(&str, ParserKind)>(data)`:\n{:#?}\n",
+    root::<(&str, ParserKind)>(data)
   );
 
-  // nom also provides `the `VerboseError<Input>` type, which will generate a sort
+  // nom also provides `the `VerboseContext<Input>` type, which will generate a sort
   // of backtrace of the path through the parser, accumulating info on input positions
   // and affected parsers.
   //
@@ -266,7 +266,7 @@ fn main() {
   //
   // parsed verbose: Err(
   //   Failure(
-  //       VerboseError {
+  //       VerboseContext {
   //           errors: [
   //               (
   //                   "1\"hello\" : \"world\"\n  }\n  } ",
@@ -290,15 +290,15 @@ fn main() {
   //       },
   //   ),
   // )
-  println!("parsed verbose: {:#?}", root::<VerboseError<&str>>(data));
+  println!("parsed verbose: {:#?}", root::<VerboseContext<&str>>(data));
 
-  match root::<VerboseError<&str>>(data) {
-    Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-      // here we use the `convert_error` function, to transform a `VerboseError<&str>`
+  match root::<VerboseContext<&str>>(data) {
+    Err(Outcome::Failure(e)) | Err(Outcome::Invalid(e)) => {
+      // here we use the `convert_error` function, to transform a `VerboseContext<&str>`
       // into a printable trace.
       //
       // This will print:
-      // verbose errors - `root::<VerboseError>(data)`:
+      // verbose errors - `root::<VerboseContext>(data)`:
       // 0: at line 2:
       //   "c": { 1"hello" : "world"
       //          ^
@@ -312,7 +312,7 @@ fn main() {
       //   { "a" : 42,
       //   ^
       println!(
-        "verbose errors - `root::<VerboseError>(data)`:\n{}",
+        "verbose errors - `root::<VerboseContext>(data)`:\n{}",
         convert_error(data, e)
       );
     }

@@ -10,11 +10,11 @@ use nom::{
   bytes::complete::{tag, take},
   character::complete::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
-  error::{ErrorKind, ParseError},
+  error::{ParseContext, ParserKind},
   multi::{fold_many0, separated_list0},
   number::complete::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
-  IResult, Parser,
+  ParseResult, Parser,
 };
 
 use std::collections::HashMap;
@@ -29,15 +29,15 @@ pub enum JsonValue {
   Object(HashMap<String, JsonValue>),
 }
 
-fn boolean(input: &str) -> IResult<&str, bool> {
+fn boolean(input: &str) -> ParseResult<&str, bool> {
   alt((value(false, tag("false")), value(true, tag("true"))))(input)
 }
 
-fn u16_hex(input: &str) -> IResult<&str, u16> {
+fn u16_hex(input: &str) -> ParseResult<&str, u16> {
   map_res(take(4usize), |s| u16::from_str_radix(s, 16))(input)
 }
 
-fn unicode_escape(input: &str) -> IResult<&str, char> {
+fn unicode_escape(input: &str) -> ParseResult<&str, char> {
   map_opt(
     alt((
       // Not a surrogate
@@ -62,7 +62,7 @@ fn unicode_escape(input: &str) -> IResult<&str, char> {
   )(input)
 }
 
-fn character(input: &str) -> IResult<&str, char> {
+fn character(input: &str) -> ParseResult<&str, char> {
   let (input, c) = none_of("\"")(input)?;
   if c == '\\' {
     alt((
@@ -84,7 +84,7 @@ fn character(input: &str) -> IResult<&str, char> {
   }
 }
 
-fn string(input: &str) -> IResult<&str, String> {
+fn string(input: &str) -> ParseResult<&str, String> {
   delimited(
     char('"'),
     fold_many0(character, String::new, |mut string, c| {
@@ -95,11 +95,13 @@ fn string(input: &str) -> IResult<&str, String> {
   )(input)
 }
 
-fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, O, E>>(f: F) -> impl Parser<&'a str, O, E> {
+fn ws<'a, O, E: ParseContext<&'a str>, F: Parser<&'a str, O, E>>(
+  f: F,
+) -> impl Parser<&'a str, O, E> {
   delimited(multispace0, f, multispace0)
 }
 
-fn array(input: &str) -> IResult<&str, Vec<JsonValue>> {
+fn array(input: &str) -> ParseResult<&str, Vec<JsonValue>> {
   delimited(
     char('['),
     ws(separated_list0(ws(char(',')), json_value)),
@@ -107,7 +109,7 @@ fn array(input: &str) -> IResult<&str, Vec<JsonValue>> {
   )(input)
 }
 
-fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
+fn object(input: &str) -> ParseResult<&str, HashMap<String, JsonValue>> {
   map(
     delimited(
       char('{'),
@@ -121,7 +123,7 @@ fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
   )(input)
 }
 
-fn json_value(input: &str) -> IResult<&str, JsonValue> {
+fn json_value(input: &str) -> ParseResult<&str, JsonValue> {
   use JsonValue::*;
 
   alt((
@@ -134,7 +136,7 @@ fn json_value(input: &str) -> IResult<&str, JsonValue> {
   ))(input)
 }
 
-fn json(input: &str) -> IResult<&str, JsonValue> {
+fn json(input: &str) -> ParseResult<&str, JsonValue> {
   ws(json_value).parse(input)
 }
 
@@ -154,51 +156,51 @@ fn json_bench(c: &mut Criterion) {
 fn recognize_float_bytes(c: &mut Criterion) {
   println!(
     "recognize_float_bytes result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+    recognize_float::<_, (_, ParserKind)>(&b"-1.234E-12"[..])
   );
   c.bench_function("recognize float bytes", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| recognize_float::<_, (_, ParserKind)>(&b"-1.234E-12"[..]));
   });
 }
 
 fn recognize_float_str(c: &mut Criterion) {
   println!(
     "recognize_float_str result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>("-1.234E-12")
+    recognize_float::<_, (_, ParserKind)>("-1.234E-12")
   );
   c.bench_function("recognize float str", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>("-1.234E-12"));
+    b.iter(|| recognize_float::<_, (_, ParserKind)>("-1.234E-12"));
   });
 }
 
 fn float_bytes(c: &mut Criterion) {
   println!(
     "float_bytes result: {:?}",
-    double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+    double::<_, (_, ParserKind)>(&b"-1.234E-12"[..])
   );
   c.bench_function("float bytes", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| double::<_, (_, ParserKind)>(&b"-1.234E-12"[..]));
   });
 }
 
 fn float_str(c: &mut Criterion) {
   println!(
     "float_str result: {:?}",
-    double::<_, (_, ErrorKind)>("-1.234E-12")
+    double::<_, (_, ParserKind)>("-1.234E-12")
   );
   c.bench_function("float str", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>("-1.234E-12"));
+    b.iter(|| double::<_, (_, ParserKind)>("-1.234E-12"));
   });
 }
 
-use nom::Err;
+use nom::Outcome;
 use nom::ParseTo;
-fn std_float(input: &[u8]) -> IResult<&[u8], f64, (&[u8], ErrorKind)> {
+fn std_float(input: &[u8]) -> ParseResult<&[u8], f64, (&[u8], ParserKind)> {
   match recognize_float(input) {
     Err(e) => Err(e),
     Ok((i, s)) => match s.parse_to() {
       Some(n) => Ok((i, n)),
-      None => Err(Err::Error((i, ErrorKind::Float))),
+      None => Err(Outcome::Failure((i, ParserKind::Float))),
     },
   }
 }

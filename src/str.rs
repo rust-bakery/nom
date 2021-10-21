@@ -4,15 +4,15 @@ mod test {
   use crate::{branch::alt, bytes::complete::tag_no_case, combinator::recognize, multi::many1};
   use crate::{
     bytes::complete::{is_a, is_not, tag, take, take_till, take_until},
-    error::{self, ErrorKind},
-    Err, IResult,
+    error::{self, ParserKind},
+    Outcome, ParseResult,
   };
 
   #[test]
   fn tagtr_succeed() {
     const INPUT: &str = "Hello World!";
     const TAG: &str = "Hello";
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       tag(TAG)(input)
     }
 
@@ -42,9 +42,9 @@ mod test {
     const INPUT: &str = "Hello";
     const TAG: &str = "Hello World!";
 
-    let res: IResult<_, _, error::Error<_>> = tag(TAG)(INPUT);
+    let res: ParseResult<_, _, error::Context<_>> = tag(TAG)(INPUT);
     match res {
-      Err(Err::Incomplete(_)) => (),
+      Err(Outcome::Incomplete(_)) => (),
       other => {
         panic!(
           "Parser `tag` didn't require more input when it should have. \
@@ -60,9 +60,9 @@ mod test {
     const INPUT: &str = "Hello World!";
     const TAG: &str = "Random"; // TAG must be closer than INPUT.
 
-    let res: IResult<_, _, error::Error<_>> = tag(TAG)(INPUT);
+    let res: ParseResult<_, _, error::Context<_>> = tag(TAG)(INPUT);
     match res {
-      Err(Err::Error(_)) => (),
+      Err(Outcome::Failure(_)) => (),
       other => {
         panic!(
           "Parser `tag` didn't fail when it should have. Got `{:?}`.`",
@@ -78,7 +78,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
 
-    let res: IResult<_, _, error::Error<_>> = take(9_usize)(INPUT);
+    let res: ParseResult<_, _, error::Context<_>> = take(9_usize)(INPUT);
     match res {
       Ok((extra, output)) => {
         assert!(
@@ -108,7 +108,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřè";
     const LEFTOVER: &str = "ÂßÇ∂áƒƭèř";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take_until(FIND)(INPUT);
+    let res: ParseResult<_, _, (_, ParserKind)> = take_until(FIND)(INPUT);
     match res {
       Ok((extra, output)) => {
         assert!(
@@ -139,9 +139,9 @@ mod test {
 
     const INPUT: &str = "βèƒôřèÂßÇá";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take(13_usize)(INPUT);
+    let res: ParseResult<_, _, (_, ParserKind)> = take(13_usize)(INPUT);
     match res {
-      Err(Err::Incomplete(_)) => (),
+      Err(Outcome::Incomplete(_)) => (),
       other => panic!(
         "Parser `take` didn't require more input when it should have. \
          Got `{:?}`.",
@@ -160,7 +160,7 @@ mod test {
   fn take_while() {
     use crate::bytes::streaming::take_while;
 
-    fn f(i: &str) -> IResult<&str, &str> {
+    fn f(i: &str) -> ParseResult<&str, &str> {
       take_while(is_alphabetic)(i)
     }
     let a = "";
@@ -168,8 +168,8 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
-    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f(&a[..]), Err(Outcome::Incomplete(Needed::new(1))));
+    assert_eq!(f(&b[..]), Err(Outcome::Incomplete(Needed::new(1))));
     assert_eq!(f(&c[..]), Ok((&d[..], &b[..])));
     assert_eq!(f(&d[..]), Ok((&d[..], &a[..])));
   }
@@ -178,7 +178,7 @@ mod test {
   fn take_while1() {
     use crate::bytes::streaming::take_while1;
 
-    fn f(i: &str) -> IResult<&str, &str> {
+    fn f(i: &str) -> ParseResult<&str, &str> {
       take_while1(is_alphabetic)(i)
     }
     let a = "";
@@ -186,12 +186,15 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
-    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f(&a[..]), Err(Outcome::Incomplete(Needed::new(1))));
+    assert_eq!(f(&b[..]), Err(Outcome::Incomplete(Needed::new(1))));
     assert_eq!(f(&c[..]), Ok((&"123"[..], &b[..])));
     assert_eq!(
       f(&d[..]),
-      Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1)))
+      Err(Outcome::Failure(error_position!(
+        &d[..],
+        ParserKind::TakeWhile1
+      )))
     );
   }
 
@@ -203,7 +206,7 @@ mod test {
     fn till_s(c: char) -> bool {
       c == 'á'
     }
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       take_till(till_s)(input)
     }
     match test(INPUT) {
@@ -238,7 +241,7 @@ mod test {
     fn while_s(c: char) -> bool {
       c == '9'
     }
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       take_while(while_s)(input)
     }
     match test(INPUT) {
@@ -269,7 +272,7 @@ mod test {
     const AVOID: &str = "£úçƙ¥á";
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       is_not(AVOID)(input)
     }
     match test(INPUT) {
@@ -312,7 +315,7 @@ mod test {
         || c == 'ß'
         || c == 'Ç'
     }
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       take_while(while_s)(input)
     }
     match test(INPUT) {
@@ -341,11 +344,11 @@ mod test {
   fn is_not_fail() {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const AVOID: &str = "βúçƙ¥";
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       is_not(AVOID)(input)
     }
     match test(INPUT) {
-      Err(Err::Error(_)) => (),
+      Err(Outcome::Failure(_)) => (),
       other => panic!(
         "Parser `is_not` didn't fail when it should have. Got `{:?}`.",
         other
@@ -371,7 +374,7 @@ mod test {
         || c == 'ß'
         || c == 'Ç'
     }
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       take_while1(while1_s)(input)
     }
     match test(INPUT) {
@@ -403,9 +406,9 @@ mod test {
     const INPUT: &str = "βèƒôřè";
     const FIND: &str = "βèƒôřèÂßÇ";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take_until(FIND)(INPUT);
+    let res: ParseResult<_, _, (_, ParserKind)> = take_until(FIND)(INPUT);
     match res {
-      Err(Err::Incomplete(_)) => (),
+      Err(Outcome::Incomplete(_)) => (),
       other => panic!(
         "Parser `take_until` didn't require more input when it should have. \
          Got `{:?}`.",
@@ -420,7 +423,7 @@ mod test {
     const MATCH: &str = "βèƒôřèÂßÇ";
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       is_a(MATCH)(input)
     }
     match test(INPUT) {
@@ -453,11 +456,11 @@ mod test {
     fn while1_s(c: char) -> bool {
       c == '9'
     }
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       take_while1(while1_s)(input)
     }
     match test(INPUT) {
-      Err(Err::Error(_)) => (),
+      Err(Outcome::Failure(_)) => (),
       other => panic!(
         "Parser `take_while1` didn't fail when it should have. \
          Got `{:?}`.",
@@ -470,11 +473,11 @@ mod test {
   fn is_a_fail() {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const MATCH: &str = "Ûñℓúçƙ¥";
-    fn test(input: &str) -> IResult<&str, &str> {
+    fn test(input: &str) -> ParseResult<&str, &str> {
       is_a(MATCH)(input)
     }
     match test(INPUT) {
-      Err(Err::Error(_)) => (),
+      Err(Outcome::Failure(_)) => (),
       other => panic!(
         "Parser `is_a` didn't fail when it should have. Got `{:?}`.",
         other
@@ -489,9 +492,9 @@ mod test {
     const INPUT: &str = "βèƒôřèÂßÇáƒƭèř";
     const FIND: &str = "Ráñδô₥";
 
-    let res: IResult<_, _, (_, ErrorKind)> = take_until(FIND)(INPUT);
+    let res: ParseResult<_, _, (_, ParserKind)> = take_until(FIND)(INPUT);
     match res {
-      Err(Err::Incomplete(_)) => (),
+      Err(Outcome::Incomplete(_)) => (),
       other => panic!(
         "Parser `take_until` didn't fail when it should have. \
          Got `{:?}`.",
@@ -506,7 +509,7 @@ mod test {
     let a = "aabbab";
     let b = "ababcd";
 
-    fn f(i: &str) -> IResult<&str, &str> {
+    fn f(i: &str) -> ParseResult<&str, &str> {
       recognize(many1(alt((tag("a"), tag("b")))))(i)
     }
 
@@ -516,7 +519,7 @@ mod test {
 
   #[test]
   fn utf8_indexing() {
-    fn dot(i: &str) -> IResult<&str, &str> {
+    fn dot(i: &str) -> ParseResult<&str, &str> {
       tag(".")(i)
     }
 
@@ -526,7 +529,7 @@ mod test {
   #[cfg(feature = "alloc")]
   #[test]
   fn case_insensitive() {
-    fn test(i: &str) -> IResult<&str, &str> {
+    fn test(i: &str) -> ParseResult<&str, &str> {
       tag_no_case("ABcd")(i)
     }
     assert_eq!(test("aBCdefgh"), Ok(("efgh", "aBCd")));

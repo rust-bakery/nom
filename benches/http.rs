@@ -4,7 +4,7 @@
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
-use nom::{IResult, bytes::complete::{tag, take_while1}, character::complete::{line_ending, char}, multi::many1};
+use nom::{ParseResult, bytes::complete::{tag, take_while1}, character::complete::{line_ending, char}, multi::many1};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug)]
@@ -67,7 +67,7 @@ fn is_version(c: u8) -> bool {
   c >= b'0' && c <= b'9' || c == b'.'
 }
 
-fn request_line(input: &[u8]) -> IResult<&[u8], Request<'_>> {
+fn request_line(input: &[u8]) -> ParseResult<&[u8], Request<'_>> {
   let (input, method) = take_while1(is_token)(input)?;
   let (input, _) = take_while1(is_space)(input)?;
   let (input, uri) = take_while1(is_not_space)(input)?;
@@ -78,14 +78,14 @@ fn request_line(input: &[u8]) -> IResult<&[u8], Request<'_>> {
   Ok((input, Request {method, uri, version}))
 }
 
-fn http_version(input: &[u8]) -> IResult<&[u8], &[u8]> {
+fn http_version(input: &[u8]) -> ParseResult<&[u8], &[u8]> {
   let (input, _) = tag("HTTP/")(input)?;
   let (input, version) = take_while1(is_version)(input)?;
 
   Ok((input, version))
 }
 
-fn message_header_value(input: &[u8]) -> IResult<&[u8], &[u8]> {
+fn message_header_value(input: &[u8]) -> ParseResult<&[u8], &[u8]> {
   let (input, _) = take_while1(is_horizontal_space)(input)?;
   let (input, data) = take_while1(not_line_ending)(input)?;
   let (input, _) = line_ending(input)?;
@@ -93,7 +93,7 @@ fn message_header_value(input: &[u8]) -> IResult<&[u8], &[u8]> {
   Ok((input, data))
 }
 
-fn message_header(input: &[u8]) -> IResult<&[u8], Header<'_>> {
+fn message_header(input: &[u8]) -> ParseResult<&[u8], Header<'_>> {
   let (input, name) = take_while1(is_token)(input)?;
   let (input, _) = char(':')(input)?;
   let (input, value) = many1(message_header_value)(input)?;
@@ -101,7 +101,7 @@ fn message_header(input: &[u8]) -> IResult<&[u8], Header<'_>> {
   Ok((input, Header{ name, value }))
 }
 
-fn request(input: &[u8]) -> IResult<&[u8], (Request<'_>, Vec<Header<'_>>)> {
+fn request(input: &[u8]) -> ParseResult<&[u8], (Request<'_>, Vec<Header<'_>>)> {
   let (input, req) = request_line(input)?;
   let (input, h) = many1(message_header)(input)?;
   let (input, _) = line_ending(input)?;

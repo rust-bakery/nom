@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![cfg_attr(feature = "cargo-clippy", allow(redundant_closure))]
 
-use nom::{error::ErrorKind, Err, IResult, Needed};
+use nom::{error::ParserKind, Needed, Outcome, ParseResult};
 
 #[allow(dead_code)]
 struct Range {
@@ -10,11 +10,11 @@ struct Range {
   end: char,
 }
 
-pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
+pub fn take_char(input: &[u8]) -> ParseResult<&[u8], char> {
   if !input.is_empty() {
     Ok((&input[1..], input[0] as char))
   } else {
-    Err(Err::Incomplete(Needed::new(1)))
+    Err(Outcome::Incomplete(Needed::new(1)))
   }
 }
 
@@ -25,15 +25,15 @@ mod parse_int {
     character::streaming::{digit1 as digit, space1 as space},
     combinator::{complete, map, opt},
     multi::many0,
-    IResult,
+    ParseResult,
   };
   use std::str;
 
-  fn parse_ints(input: &[u8]) -> IResult<&[u8], Vec<i32>> {
+  fn parse_ints(input: &[u8]) -> ParseResult<&[u8], Vec<i32>> {
     many0(spaces_or_int)(input)
   }
 
-  fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32> {
+  fn spaces_or_int(input: &[u8]) -> ParseResult<&[u8], i32> {
     println!("{}", input.to_hex(8));
     let (i, _) = opt(complete(space))(input)?;
     let (i, res) = map(complete(digit), |x| {
@@ -66,25 +66,25 @@ mod parse_int {
 fn usize_length_bytes_issue() {
   use nom::multi::length_data;
   use nom::number::streaming::be_u16;
-  let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_data(be_u16)(b"012346");
+  let _: ParseResult<&[u8], &[u8], (&[u8], ParserKind)> = length_data(be_u16)(b"012346");
 }
 
 #[test]
 fn take_till_issue() {
   use nom::bytes::streaming::take_till;
 
-  fn nothing(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn nothing(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     take_till(|_| true)(i)
   }
 
-  assert_eq!(nothing(b""), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(nothing(b""), Err(Outcome::Incomplete(Needed::new(1))));
   assert_eq!(nothing(b"abc"), Ok((&b"abc"[..], &b""[..])));
 }
 
 #[test]
 fn issue_655() {
   use nom::character::streaming::{line_ending, not_line_ending};
-  fn twolines(i: &str) -> IResult<&str, (&str, &str)> {
+  fn twolines(i: &str) -> ParseResult<&str, (&str, &str)> {
     let (i, l1) = not_line_ending(i)?;
     let (i, _) = line_ending(i)?;
     let (i, l2) = not_line_ending(i)?;
@@ -100,7 +100,7 @@ fn issue_655() {
 }
 
 #[cfg(feature = "alloc")]
-fn issue_717(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+fn issue_717(i: &[u8]) -> ParseResult<&[u8], Vec<&[u8]>> {
   use nom::bytes::complete::{is_not, tag};
   use nom::multi::separated_list0;
 
@@ -111,7 +111,7 @@ mod issue_647 {
   use nom::bytes::streaming::tag;
   use nom::combinator::complete;
   use nom::multi::separated_list0;
-  use nom::{error::Error, number::streaming::be_f64, Err, IResult};
+  use nom::{error::Context, number::streaming::be_f64, Outcome, ParseResult};
   pub type Input<'a> = &'a [u8];
 
   #[derive(PartialEq, Debug, Clone)]
@@ -123,11 +123,11 @@ mod issue_647 {
   fn list<'a, 'b>(
     input: Input<'a>,
     _cs: &'b f64,
-  ) -> Result<(Input<'a>, Vec<f64>), Err<Error<&'a [u8]>>> {
+  ) -> Result<(Input<'a>, Vec<f64>), Outcome<Context<&'a [u8]>>> {
     separated_list0(complete(tag(",")), complete(be_f64))(input)
   }
 
-  fn data(input: Input<'_>) -> IResult<Input<'_>, Data> {
+  fn data(input: Input<'_>) -> ParseResult<Input<'_>, Data> {
     let (i, c) = be_f64(input)?;
     let (i, _) = tag("\n")(i)?;
     let (i, v) = list(i, &c)?;
@@ -137,30 +137,30 @@ mod issue_647 {
 
 #[test]
 fn issue_848_overflow_incomplete_bits_to_bytes() {
-  fn take(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn take(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     use nom::bytes::streaming::take;
     take(0x2000000000000000_usize)(i)
   }
-  fn parser(i: &[u8]) -> IResult<&[u8], &[u8]> {
+  fn parser(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
     use nom::bits::{bits, bytes};
 
     bits(bytes(take))(i)
   }
   assert_eq!(
     parser(&b""[..]),
-    Err(Err::Failure(nom::error_position!(
+    Err(Outcome::Invalid(nom::error_position!(
       &b""[..],
-      ErrorKind::TooLarge
+      ParserKind::TooLarge
     )))
   );
 }
 
 #[test]
 fn issue_942() {
-  use nom::error::{ContextError, ParseError};
-  pub fn parser<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
+  use nom::error::{ContextError, ParseContext};
+  pub fn parser<'a, E: ParseContext<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-  ) -> IResult<&'a str, usize, E> {
+  ) -> ParseResult<&'a str, usize, E> {
     use nom::{character::complete::char, error::context, multi::many0_count};
     many0_count(context("char_a", char('a')))(i)
   }
@@ -178,14 +178,14 @@ fn issue_many_m_n_with_zeros() {
 #[test]
 fn issue_1027_convert_error_panic_nonempty() {
   use nom::character::complete::char;
-  use nom::error::{convert_error, VerboseError};
+  use nom::error::{convert_error, VerboseContext};
   use nom::sequence::pair;
 
   let input = "a";
 
-  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b'))(input);
+  let result: ParseResult<_, _, VerboseContext<&str>> = pair(char('a'), char('b'))(input);
   let err = match result.unwrap_err() {
-    Err::Error(e) => e,
+    Outcome::Failure(e) => e,
     _ => unreachable!(),
   };
 
@@ -199,10 +199,10 @@ fn issue_1027_convert_error_panic_nonempty() {
 #[test]
 fn issue_1231_bits_expect_fn_closure() {
   use nom::bits::{bits, complete::take};
-  use nom::error::Error;
+  use nom::error::Context;
   use nom::sequence::tuple;
-  pub fn example(input: &[u8]) -> IResult<&[u8], (u8, u8)> {
-    bits::<_, _, Error<_>, _, _>(tuple((take(1usize), take(1usize))))(input)
+  pub fn example(input: &[u8]) -> ParseResult<&[u8], (u8, u8)> {
+    bits::<_, _, Context<_>, _, _>(tuple((take(1usize), take(1usize))))(input)
   }
   assert_eq!(example(&[0xff]), Ok((&b""[..], (1, 1))));
 }

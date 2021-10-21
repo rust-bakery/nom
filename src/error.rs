@@ -1,30 +1,30 @@
 //! Error management
 //!
 //! Parsers are generic over their error type, requiring that it implements
-//! the `error::ParseError<Input>` trait.
+//! the `error::ParseContext<Input>` trait.
 
 use crate::internal::Parser;
 use crate::lib::std::fmt;
 
 /// This trait must be implemented by the error type of a nom parser.
 ///
-/// There are already implementations of it for `(Input, ErrorKind)`
-/// and `VerboseError<Input>`.
+/// There are already implementations of it for `(Input, ParserKind)`
+/// and `VerboseContext<Input>`.
 ///
 /// It provides methods to create an error from some combinators,
 /// and combine existing errors in combinators like `alt`.
-pub trait ParseError<I>: Sized {
-  /// Creates an error from the input position and an [ErrorKind]
-  fn from_error_kind(input: I, kind: ErrorKind) -> Self;
+pub trait ParseContext<I>: Sized {
+  /// Creates an error from the input position and an [ParserKind]
+  fn from_parser_kind(input: I, kind: ParserKind) -> Self;
 
   /// Combines an existing error with a new one created from the input
-  /// position and an [ErrorKind]. This is useful when backtracking
+  /// position and an [ParserKind]. This is useful when backtracking
   /// through a parse tree, accumulating error context on the way
-  fn append(input: I, kind: ErrorKind, other: Self) -> Self;
+  fn append(input: I, kind: ParserKind, other: Self) -> Self;
 
   /// Creates an error from an input position and an expected character
   fn from_char(input: I, _: char) -> Self {
-    Self::from_error_kind(input, ErrorKind::Char)
+    Self::from_parser_kind(input, ParserKind::Char)
   }
 
   /// Combines two existing errors. This function is used to compare errors
@@ -48,97 +48,97 @@ pub trait ContextError<I>: Sized {
 /// This trait is required by the `map_res` combinator to integrate
 /// error types from external functions, like [std::str::FromStr]
 pub trait FromExternalError<I, E> {
-  /// Creates a new error from an input position, an [ErrorKind] indicating the
+  /// Creates a new error from an input position, an [ParserKind] indicating the
   /// wrapping parser, and an external error
-  fn from_external_error(input: I, kind: ErrorKind, e: E) -> Self;
+  fn from_external_error(input: I, kind: ParserKind, e: E) -> Self;
 }
 
 /// default error type, only contains the error' location and code
 #[derive(Debug, PartialEq)]
-pub struct Error<I> {
+pub struct Context<I> {
   /// position of the error in the input data
   pub input: I,
   /// nom error code
-  pub code: ErrorKind,
+  pub code: ParserKind,
 }
 
-impl<I> Error<I> {
+impl<I> Context<I> {
   /// creates a new basic error
-  pub fn new(input: I, code: ErrorKind) -> Error<I> {
-    Error { input, code }
+  pub fn new(input: I, code: ParserKind) -> Context<I> {
+    Context { input, code }
   }
 }
 
-impl<I> ParseError<I> for Error<I> {
-  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
-    Error { input, code: kind }
+impl<I> ParseContext<I> for Context<I> {
+  fn from_parser_kind(input: I, kind: ParserKind) -> Self {
+    Context { input, code: kind }
   }
 
-  fn append(_: I, _: ErrorKind, other: Self) -> Self {
+  fn append(_: I, _: ParserKind, other: Self) -> Self {
     other
   }
 }
 
-impl<I> ContextError<I> for Error<I> {}
+impl<I> ContextError<I> for Context<I> {}
 
-impl<I, E> FromExternalError<I, E> for Error<I> {
+impl<I, E> FromExternalError<I, E> for Context<I> {
   /// Create a new error from an input position and an external error
-  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
-    Error { input, code: kind }
+  fn from_external_error(input: I, kind: ParserKind, _e: E) -> Self {
+    Context { input, code: kind }
   }
 }
 
 /// The Display implementation allows the std::error::Error implementation
-impl<I: fmt::Display> fmt::Display for Error<I> {
+impl<I: fmt::Display> fmt::Display for Context<I> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "error {:?} at: {}", self.code, self.input)
   }
 }
 
 #[cfg(feature = "std")]
-impl<I: fmt::Debug + fmt::Display> std::error::Error for Error<I> {}
+impl<I: fmt::Debug + fmt::Display> std::error::Error for Context<I> {}
 
 // for backward compatibility, keep those trait implementations
 // for the previously used error type
-impl<I> ParseError<I> for (I, ErrorKind) {
-  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+impl<I> ParseContext<I> for (I, ParserKind) {
+  fn from_parser_kind(input: I, kind: ParserKind) -> Self {
     (input, kind)
   }
 
-  fn append(_: I, _: ErrorKind, other: Self) -> Self {
+  fn append(_: I, _: ParserKind, other: Self) -> Self {
     other
   }
 }
 
-impl<I> ContextError<I> for (I, ErrorKind) {}
+impl<I> ContextError<I> for (I, ParserKind) {}
 
-impl<I, E> FromExternalError<I, E> for (I, ErrorKind) {
-  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
+impl<I, E> FromExternalError<I, E> for (I, ParserKind) {
+  fn from_external_error(input: I, kind: ParserKind, _e: E) -> Self {
     (input, kind)
   }
 }
 
-impl<I> ParseError<I> for () {
-  fn from_error_kind(_: I, _: ErrorKind) -> Self {}
+impl<I> ParseContext<I> for () {
+  fn from_parser_kind(_: I, _: ParserKind) -> Self {}
 
-  fn append(_: I, _: ErrorKind, _: Self) -> Self {}
+  fn append(_: I, _: ParserKind, _: Self) -> Self {}
 }
 
 impl<I> ContextError<I> for () {}
 
 impl<I, E> FromExternalError<I, E> for () {
-  fn from_external_error(_input: I, _kind: ErrorKind, _e: E) -> Self {}
+  fn from_external_error(_input: I, _kind: ParserKind, _e: E) -> Self {}
 }
 
-/// Creates an error from the input position and an [ErrorKind]
-pub fn make_error<I, E: ParseError<I>>(input: I, kind: ErrorKind) -> E {
-  E::from_error_kind(input, kind)
+/// Creates an error from the input position and an [ParserKind]
+pub fn make_error<I, E: ParseContext<I>>(input: I, kind: ParserKind) -> E {
+  E::from_parser_kind(input, kind)
 }
 
 /// Combines an existing error with a new one created from the input
-/// position and an [ErrorKind]. This is useful when backtracking
+/// position and an [ParserKind]. This is useful when backtracking
 /// through a parse tree, accumulating error context on the way
-pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) -> E {
+pub fn append_error<I, E: ParseContext<I>>(input: I, kind: ParserKind, other: E) -> E {
   E::append(input, kind, other)
 }
 
@@ -148,73 +148,73 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[derive(Clone, Debug, PartialEq)]
-pub struct VerboseError<I> {
-  /// List of errors accumulated by `VerboseError`, containing the affected
+pub struct VerboseContext<I> {
+  /// List of errors accumulated by `VerboseContext`, containing the affected
   /// part of input data, and some context
-  pub errors: crate::lib::std::vec::Vec<(I, VerboseErrorKind)>,
+  pub errors: crate::lib::std::vec::Vec<(I, VerboseParserKind)>,
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[derive(Clone, Debug, PartialEq)]
-/// Error context for `VerboseError`
-pub enum VerboseErrorKind {
+/// Error context for `VerboseContext`
+pub enum VerboseParserKind {
   /// Static string added by the `context` function
   Context(&'static str),
   /// Indicates which character was expected by the `char` function
   Char(char),
   /// Error kind given by various nom parsers
-  Nom(ErrorKind),
+  Nom(ParserKind),
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl<I> ParseError<I> for VerboseError<I> {
-  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
-    VerboseError {
-      errors: vec![(input, VerboseErrorKind::Nom(kind))],
+impl<I> ParseContext<I> for VerboseContext<I> {
+  fn from_parser_kind(input: I, kind: ParserKind) -> Self {
+    VerboseContext {
+      errors: vec![(input, VerboseParserKind::Nom(kind))],
     }
   }
 
-  fn append(input: I, kind: ErrorKind, mut other: Self) -> Self {
-    other.errors.push((input, VerboseErrorKind::Nom(kind)));
+  fn append(input: I, kind: ParserKind, mut other: Self) -> Self {
+    other.errors.push((input, VerboseParserKind::Nom(kind)));
     other
   }
 
   fn from_char(input: I, c: char) -> Self {
-    VerboseError {
-      errors: vec![(input, VerboseErrorKind::Char(c))],
+    VerboseContext {
+      errors: vec![(input, VerboseParserKind::Char(c))],
     }
   }
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl<I> ContextError<I> for VerboseError<I> {
+impl<I> ContextError<I> for VerboseContext<I> {
   fn add_context(input: I, ctx: &'static str, mut other: Self) -> Self {
-    other.errors.push((input, VerboseErrorKind::Context(ctx)));
+    other.errors.push((input, VerboseParserKind::Context(ctx)));
     other
   }
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl<I, E> FromExternalError<I, E> for VerboseError<I> {
+impl<I, E> FromExternalError<I, E> for VerboseContext<I> {
   /// Create a new error from an input position and an external error
-  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
-    Self::from_error_kind(input, kind)
+  fn from_external_error(input: I, kind: ParserKind, _e: E) -> Self {
+    Self::from_parser_kind(input, kind)
   }
 }
 
 #[cfg(feature = "alloc")]
-impl<I: fmt::Display> fmt::Display for VerboseError<I> {
+impl<I: fmt::Display> fmt::Display for VerboseContext<I> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     writeln!(f, "Parse error:")?;
     for (input, error) in &self.errors {
       match error {
-        VerboseErrorKind::Nom(e) => writeln!(f, "{:?} at: {}", e, input)?,
-        VerboseErrorKind::Char(c) => writeln!(f, "expected '{}' at: {}", c, input)?,
-        VerboseErrorKind::Context(s) => writeln!(f, "in section '{}', at: {}", s, input)?,
+        VerboseParserKind::Nom(e) => writeln!(f, "{:?} at: {}", e, input)?,
+        VerboseParserKind::Char(c) => writeln!(f, "expected '{}' at: {}", c, input)?,
+        VerboseParserKind::Context(s) => writeln!(f, "in section '{}', at: {}", s, input)?,
       }
     }
 
@@ -223,9 +223,9 @@ impl<I: fmt::Display> fmt::Display for VerboseError<I> {
 }
 
 #[cfg(feature = "std")]
-impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseError<I> {}
+impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseContext<I> {}
 
-use crate::internal::{Err, IResult};
+use crate::internal::{Outcome, ParseResult};
 
 /// Create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
@@ -233,24 +233,24 @@ use crate::internal::{Err, IResult};
 pub fn context<I: Clone, E: ContextError<I>, F, O>(
   context: &'static str,
   mut f: F,
-) -> impl FnMut(I) -> IResult<I, O, E>
+) -> impl FnMut(I) -> ParseResult<I, O, E>
 where
   F: Parser<I, O, E>,
 {
   move |i: I| match f.parse(i.clone()) {
     Ok(o) => Ok(o),
-    Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-    Err(Err::Error(e)) => Err(Err::Error(E::add_context(i, context, e))),
-    Err(Err::Failure(e)) => Err(Err::Failure(E::add_context(i, context, e))),
+    Err(Outcome::Incomplete(i)) => Err(Outcome::Incomplete(i)),
+    Err(Outcome::Failure(e)) => Err(Outcome::Failure(E::add_context(i, context, e))),
+    Err(Outcome::Invalid(e)) => Err(Outcome::Invalid(E::add_context(i, context, e))),
   }
 }
 
-/// Transforms a `VerboseError` into a trace with input position information
+/// Transforms a `VerboseContext` into a trace with input position information
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn convert_error<I: core::ops::Deref<Target = str>>(
   input: I,
-  e: VerboseError<I>,
+  e: VerboseContext<I>,
 ) -> crate::lib::std::string::String {
   use crate::lib::std::fmt::Write;
   use crate::traits::Offset;
@@ -262,11 +262,13 @@ pub fn convert_error<I: core::ops::Deref<Target = str>>(
 
     if input.is_empty() {
       match kind {
-        VerboseErrorKind::Char(c) => {
+        VerboseParserKind::Char(c) => {
           write!(&mut result, "{}: expected '{}', got empty input\n\n", i, c)
         }
-        VerboseErrorKind::Context(s) => write!(&mut result, "{}: in {}, got empty input\n\n", i, s),
-        VerboseErrorKind::Nom(e) => write!(&mut result, "{}: in {:?}, got empty input\n\n", i, e),
+        VerboseParserKind::Context(s) => {
+          write!(&mut result, "{}: in {}, got empty input\n\n", i, s)
+        }
+        VerboseParserKind::Nom(e) => write!(&mut result, "{}: in {:?}, got empty input\n\n", i, e),
       }
     } else {
       let prefix = &input.as_bytes()[..offset];
@@ -294,7 +296,7 @@ pub fn convert_error<I: core::ops::Deref<Target = str>>(
       let column_number = line.offset(substring) + 1;
 
       match kind {
-        VerboseErrorKind::Char(c) => {
+        VerboseParserKind::Char(c) => {
           if let Some(actual) = substring.chars().next() {
             write!(
               &mut result,
@@ -326,7 +328,7 @@ pub fn convert_error<I: core::ops::Deref<Target = str>>(
             )
           }
         }
-        VerboseErrorKind::Context(s) => write!(
+        VerboseParserKind::Context(s) => write!(
           &mut result,
           "{i}: at line {line_number}, in {context}:\n\
              {line}\n\
@@ -338,7 +340,7 @@ pub fn convert_error<I: core::ops::Deref<Target = str>>(
           caret = '^',
           column = column_number,
         ),
-        VerboseErrorKind::Nom(e) => write!(
+        VerboseParserKind::Nom(e) => write!(
           &mut result,
           "{i}: at line {line_number}, in {nom_err:?}:\n\
              {line}\n\
@@ -363,7 +365,7 @@ pub fn convert_error<I: core::ops::Deref<Target = str>>(
 #[rustfmt::skip]
 #[derive(Debug,PartialEq,Eq,Hash,Clone,Copy)]
 #[allow(deprecated,missing_docs)]
-pub enum ErrorKind {
+pub enum ParserKind {
   Tag,
   MapRes,
   MapOpt,
@@ -421,129 +423,129 @@ pub enum ErrorKind {
 
 #[rustfmt::skip]
 #[allow(deprecated)]
-/// Converts an ErrorKind to a number
-pub fn error_to_u32(e: &ErrorKind) -> u32 {
+/// Converts an ParserKind to a number
+pub fn error_to_u32(e: &ParserKind) -> u32 {
   match *e {
-    ErrorKind::Tag                       => 1,
-    ErrorKind::MapRes                    => 2,
-    ErrorKind::MapOpt                    => 3,
-    ErrorKind::Alt                       => 4,
-    ErrorKind::IsNot                     => 5,
-    ErrorKind::IsA                       => 6,
-    ErrorKind::SeparatedList             => 7,
-    ErrorKind::SeparatedNonEmptyList     => 8,
-    ErrorKind::Many1                     => 9,
-    ErrorKind::Count                     => 10,
-    ErrorKind::TakeUntil                 => 12,
-    ErrorKind::LengthValue               => 15,
-    ErrorKind::TagClosure                => 16,
-    ErrorKind::Alpha                     => 17,
-    ErrorKind::Digit                     => 18,
-    ErrorKind::AlphaNumeric              => 19,
-    ErrorKind::Space                     => 20,
-    ErrorKind::MultiSpace                => 21,
-    ErrorKind::LengthValueFn             => 22,
-    ErrorKind::Eof                       => 23,
-    ErrorKind::Switch                    => 27,
-    ErrorKind::TagBits                   => 28,
-    ErrorKind::OneOf                     => 29,
-    ErrorKind::NoneOf                    => 30,
-    ErrorKind::Char                      => 40,
-    ErrorKind::CrLf                      => 41,
-    ErrorKind::RegexpMatch               => 42,
-    ErrorKind::RegexpMatches             => 43,
-    ErrorKind::RegexpFind                => 44,
-    ErrorKind::RegexpCapture             => 45,
-    ErrorKind::RegexpCaptures            => 46,
-    ErrorKind::TakeWhile1                => 47,
-    ErrorKind::Complete                  => 48,
-    ErrorKind::Fix                       => 49,
-    ErrorKind::Escaped                   => 50,
-    ErrorKind::EscapedTransform          => 51,
-    ErrorKind::NonEmpty                  => 56,
-    ErrorKind::ManyMN                    => 57,
-    ErrorKind::HexDigit                  => 59,
-    ErrorKind::OctDigit                  => 61,
-    ErrorKind::Many0                     => 62,
-    ErrorKind::Not                       => 63,
-    ErrorKind::Permutation               => 64,
-    ErrorKind::ManyTill                  => 65,
-    ErrorKind::Verify                    => 66,
-    ErrorKind::TakeTill1                 => 67,
-    ErrorKind::TakeWhileMN               => 69,
-    ErrorKind::TooLarge                  => 70,
-    ErrorKind::Many0Count                => 71,
-    ErrorKind::Many1Count                => 72,
-    ErrorKind::Float                     => 73,
-    ErrorKind::Satisfy                   => 74,
-    ErrorKind::Fail                      => 75,
+    ParserKind::Tag                       => 1,
+    ParserKind::MapRes                    => 2,
+    ParserKind::MapOpt                    => 3,
+    ParserKind::Alt                       => 4,
+    ParserKind::IsNot                     => 5,
+    ParserKind::IsA                       => 6,
+    ParserKind::SeparatedList             => 7,
+    ParserKind::SeparatedNonEmptyList     => 8,
+    ParserKind::Many1                     => 9,
+    ParserKind::Count                     => 10,
+    ParserKind::TakeUntil                 => 12,
+    ParserKind::LengthValue               => 15,
+    ParserKind::TagClosure                => 16,
+    ParserKind::Alpha                     => 17,
+    ParserKind::Digit                     => 18,
+    ParserKind::AlphaNumeric              => 19,
+    ParserKind::Space                     => 20,
+    ParserKind::MultiSpace                => 21,
+    ParserKind::LengthValueFn             => 22,
+    ParserKind::Eof                       => 23,
+    ParserKind::Switch                    => 27,
+    ParserKind::TagBits                   => 28,
+    ParserKind::OneOf                     => 29,
+    ParserKind::NoneOf                    => 30,
+    ParserKind::Char                      => 40,
+    ParserKind::CrLf                      => 41,
+    ParserKind::RegexpMatch               => 42,
+    ParserKind::RegexpMatches             => 43,
+    ParserKind::RegexpFind                => 44,
+    ParserKind::RegexpCapture             => 45,
+    ParserKind::RegexpCaptures            => 46,
+    ParserKind::TakeWhile1                => 47,
+    ParserKind::Complete                  => 48,
+    ParserKind::Fix                       => 49,
+    ParserKind::Escaped                   => 50,
+    ParserKind::EscapedTransform          => 51,
+    ParserKind::NonEmpty                  => 56,
+    ParserKind::ManyMN                    => 57,
+    ParserKind::HexDigit                  => 59,
+    ParserKind::OctDigit                  => 61,
+    ParserKind::Many0                     => 62,
+    ParserKind::Not                       => 63,
+    ParserKind::Permutation               => 64,
+    ParserKind::ManyTill                  => 65,
+    ParserKind::Verify                    => 66,
+    ParserKind::TakeTill1                 => 67,
+    ParserKind::TakeWhileMN               => 69,
+    ParserKind::TooLarge                  => 70,
+    ParserKind::Many0Count                => 71,
+    ParserKind::Many1Count                => 72,
+    ParserKind::Float                     => 73,
+    ParserKind::Satisfy                   => 74,
+    ParserKind::Fail                      => 75,
   }
 }
 
-impl ErrorKind {
+impl ParserKind {
   #[rustfmt::skip]
   #[allow(deprecated)]
-  /// Converts an ErrorKind to a text description
+  /// Converts an ParserKind to a text description
   pub fn description(&self) -> &str {
     match *self {
-      ErrorKind::Tag                       => "Tag",
-      ErrorKind::MapRes                    => "Map on Result",
-      ErrorKind::MapOpt                    => "Map on Option",
-      ErrorKind::Alt                       => "Alternative",
-      ErrorKind::IsNot                     => "IsNot",
-      ErrorKind::IsA                       => "IsA",
-      ErrorKind::SeparatedList             => "Separated list",
-      ErrorKind::SeparatedNonEmptyList     => "Separated non empty list",
-      ErrorKind::Many0                     => "Many0",
-      ErrorKind::Many1                     => "Many1",
-      ErrorKind::Count                     => "Count",
-      ErrorKind::TakeUntil                 => "Take until",
-      ErrorKind::LengthValue               => "Length followed by value",
-      ErrorKind::TagClosure                => "Tag closure",
-      ErrorKind::Alpha                     => "Alphabetic",
-      ErrorKind::Digit                     => "Digit",
-      ErrorKind::AlphaNumeric              => "AlphaNumeric",
-      ErrorKind::Space                     => "Space",
-      ErrorKind::MultiSpace                => "Multiple spaces",
-      ErrorKind::LengthValueFn             => "LengthValueFn",
-      ErrorKind::Eof                       => "End of file",
-      ErrorKind::Switch                    => "Switch",
-      ErrorKind::TagBits                   => "Tag on bitstream",
-      ErrorKind::OneOf                     => "OneOf",
-      ErrorKind::NoneOf                    => "NoneOf",
-      ErrorKind::Char                      => "Char",
-      ErrorKind::CrLf                      => "CrLf",
-      ErrorKind::RegexpMatch               => "RegexpMatch",
-      ErrorKind::RegexpMatches             => "RegexpMatches",
-      ErrorKind::RegexpFind                => "RegexpFind",
-      ErrorKind::RegexpCapture             => "RegexpCapture",
-      ErrorKind::RegexpCaptures            => "RegexpCaptures",
-      ErrorKind::TakeWhile1                => "TakeWhile1",
-      ErrorKind::Complete                  => "Complete",
-      ErrorKind::Fix                       => "Fix",
-      ErrorKind::Escaped                   => "Escaped",
-      ErrorKind::EscapedTransform          => "EscapedTransform",
-      ErrorKind::NonEmpty                  => "NonEmpty",
-      ErrorKind::ManyMN                    => "Many(m, n)",
-      ErrorKind::HexDigit                  => "Hexadecimal Digit",
-      ErrorKind::OctDigit                  => "Octal digit",
-      ErrorKind::Not                       => "Negation",
-      ErrorKind::Permutation               => "Permutation",
-      ErrorKind::ManyTill                  => "ManyTill",
-      ErrorKind::Verify                    => "predicate verification",
-      ErrorKind::TakeTill1                 => "TakeTill1",
-      ErrorKind::TakeWhileMN               => "TakeWhileMN",
-      ErrorKind::TooLarge                  => "Needed data size is too large",
-      ErrorKind::Many0Count                => "Count occurrence of >=0 patterns",
-      ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
-      ErrorKind::Float                     => "Float",
-      ErrorKind::Satisfy                   => "Satisfy",
-      ErrorKind::Fail                      => "Fail",
+      ParserKind::Tag                       => "Tag",
+      ParserKind::MapRes                    => "Map on Result",
+      ParserKind::MapOpt                    => "Map on Option",
+      ParserKind::Alt                       => "Alternative",
+      ParserKind::IsNot                     => "IsNot",
+      ParserKind::IsA                       => "IsA",
+      ParserKind::SeparatedList             => "Separated list",
+      ParserKind::SeparatedNonEmptyList     => "Separated non empty list",
+      ParserKind::Many0                     => "Many0",
+      ParserKind::Many1                     => "Many1",
+      ParserKind::Count                     => "Count",
+      ParserKind::TakeUntil                 => "Take until",
+      ParserKind::LengthValue               => "Length followed by value",
+      ParserKind::TagClosure                => "Tag closure",
+      ParserKind::Alpha                     => "Alphabetic",
+      ParserKind::Digit                     => "Digit",
+      ParserKind::AlphaNumeric              => "AlphaNumeric",
+      ParserKind::Space                     => "Space",
+      ParserKind::MultiSpace                => "Multiple spaces",
+      ParserKind::LengthValueFn             => "LengthValueFn",
+      ParserKind::Eof                       => "End of file",
+      ParserKind::Switch                    => "Switch",
+      ParserKind::TagBits                   => "Tag on bitstream",
+      ParserKind::OneOf                     => "OneOf",
+      ParserKind::NoneOf                    => "NoneOf",
+      ParserKind::Char                      => "Char",
+      ParserKind::CrLf                      => "CrLf",
+      ParserKind::RegexpMatch               => "RegexpMatch",
+      ParserKind::RegexpMatches             => "RegexpMatches",
+      ParserKind::RegexpFind                => "RegexpFind",
+      ParserKind::RegexpCapture             => "RegexpCapture",
+      ParserKind::RegexpCaptures            => "RegexpCaptures",
+      ParserKind::TakeWhile1                => "TakeWhile1",
+      ParserKind::Complete                  => "Complete",
+      ParserKind::Fix                       => "Fix",
+      ParserKind::Escaped                   => "Escaped",
+      ParserKind::EscapedTransform          => "EscapedTransform",
+      ParserKind::NonEmpty                  => "NonEmpty",
+      ParserKind::ManyMN                    => "Many(m, n)",
+      ParserKind::HexDigit                  => "Hexadecimal Digit",
+      ParserKind::OctDigit                  => "Octal digit",
+      ParserKind::Not                       => "Negation",
+      ParserKind::Permutation               => "Permutation",
+      ParserKind::ManyTill                  => "ManyTill",
+      ParserKind::Verify                    => "predicate verification",
+      ParserKind::TakeTill1                 => "TakeTill1",
+      ParserKind::TakeWhileMN               => "TakeWhileMN",
+      ParserKind::TooLarge                  => "Needed data size is too large",
+      ParserKind::Many0Count                => "Count occurrence of >=0 patterns",
+      ParserKind::Many1Count                => "Count occurrence of >=1 patterns",
+      ParserKind::Float                     => "Float",
+      ParserKind::Satisfy                   => "Satisfy",
+      ParserKind::Fail                      => "Fail",
     }
   }
 }
 
-/// Creates a parse error from a `nom::ErrorKind`
+/// Creates a parse error from a `nom::ParserKind`
 /// and the position in the input
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
@@ -553,7 +555,7 @@ macro_rules! error_position(
   });
 );
 
-/// Creates a parse error from a `nom::ErrorKind`,
+/// Creates a parse error from a `nom::ParserKind`,
 /// the position in the input and the next error in
 /// the parsing tree
 #[allow(unused_variables)]
@@ -572,9 +574,9 @@ macro_rules! error_node_position(
 /// It also displays the input in hexdump format
 ///
 /// ```rust
-/// use nom::{IResult, error::dbg_dmp, bytes::complete::tag};
+/// use nom::{ParseResult, error::dbg_dmp, bytes::complete::tag};
 ///
-/// fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
+/// fn f(i: &[u8]) -> ParseResult<&[u8], &[u8]> {
 ///   dbg_dmp(tag("abcd"), "tag")(i)
 /// }
 ///
@@ -590,9 +592,9 @@ macro_rules! error_node_position(
 pub fn dbg_dmp<'a, F, O, E: std::fmt::Debug>(
   f: F,
   context: &'static str,
-) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
+) -> impl Fn(&'a [u8]) -> ParseResult<&'a [u8], O, E>
 where
-  F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E>,
+  F: Fn(&'a [u8]) -> ParseResult<&'a [u8], O, E>,
 {
   use crate::HexDisplay;
   move |i: &'a [u8]| match f(i) {
@@ -614,7 +616,7 @@ mod tests {
   fn convert_error_panic() {
     let input = "";
 
-    let _result: IResult<_, _, VerboseError<&str>> = char('x')(input);
+    let _result: ParseResult<_, _, VerboseContext<&str>> = char('x')(input);
   }
 }
 
@@ -627,8 +629,8 @@ use lib::std::hash::Hash;
 
 #[cfg(feature = "std")]
 pub fn add_error_pattern<'a, I: Clone + Hash + Eq, O, E: Clone + Hash + Eq>(
-  h: &mut HashMap<VerboseError<I>, &'a str>,
-  e: VerboseError<I>,
+  h: &mut HashMap<VerboseContext<I>, &'a str>,
+  e: VerboseContext<I>,
   message: &'a str,
 ) -> bool {
   h.insert(e, message);
@@ -643,8 +645,8 @@ pub fn slice_to_offsets(input: &[u8], s: &[u8]) -> (usize, usize) {
 }
 
 #[cfg(feature = "std")]
-pub fn prepare_errors<O, E: Clone>(input: &[u8], e: VerboseError<&[u8]>) -> Option<Vec<(ErrorKind, usize, usize)>> {
-  let mut v: Vec<(ErrorKind, usize, usize)> = Vec::new();
+pub fn prepare_errors<O, E: Clone>(input: &[u8], e: VerboseContext<&[u8]>) -> Option<Vec<(ParserKind, usize, usize)>> {
+  let mut v: Vec<(ParserKind, usize, usize)> = Vec::new();
 
   for (p, kind) in e.errors.drain(..) {
     let (o1, o2) = slice_to_offsets(input, p);
@@ -656,7 +658,7 @@ pub fn prepare_errors<O, E: Clone>(input: &[u8], e: VerboseError<&[u8]>) -> Opti
 }
 
 #[cfg(feature = "std")]
-pub fn print_error<O, E: Clone>(input: &[u8], res: VerboseError<&[u8]>) {
+pub fn print_error<O, E: Clone>(input: &[u8], res: VerboseContext<&[u8]>) {
   if let Some(v) = prepare_errors(input, res) {
     let colors = generate_colors(&v);
     println!("parser codes: {}", print_codes(&colors, &HashMap::new()));
@@ -667,7 +669,7 @@ pub fn print_error<O, E: Clone>(input: &[u8], res: VerboseError<&[u8]>) {
 }
 
 #[cfg(feature = "std")]
-pub fn generate_colors<E>(v: &[(ErrorKind, usize, usize)]) -> HashMap<u32, u8> {
+pub fn generate_colors<E>(v: &[(ParserKind, usize, usize)]) -> HashMap<u32, u8> {
   let mut h: HashMap<u32, u8> = HashMap::new();
   let mut color = 0;
 
@@ -679,7 +681,7 @@ pub fn generate_colors<E>(v: &[(ErrorKind, usize, usize)]) -> HashMap<u32, u8> {
   h
 }
 
-pub fn code_from_offset(v: &[(ErrorKind, usize, usize)], offset: usize) -> Option<u32> {
+pub fn code_from_offset(v: &[(ParserKind, usize, usize)], offset: usize) -> Option<u32> {
   let mut acc: Option<(u32, usize, usize)> = None;
   for &(ref ek, s, e) in v.iter() {
     let c = error_to_u32(ek);
@@ -744,7 +746,7 @@ pub fn print_codes(colors: &HashMap<u32, u8>, names: &HashMap<u32, &str>) -> Str
 }
 
 #[cfg(feature = "std")]
-pub fn print_offsets(input: &[u8], from: usize, offsets: &[(ErrorKind, usize, usize)]) -> String {
+pub fn print_offsets(input: &[u8], from: usize, offsets: &[(ParserKind, usize, usize)]) -> String {
   let mut v = Vec::with_capacity(input.len() * 3);
   let mut i = from;
   let chunk_size = 8;
