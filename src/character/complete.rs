@@ -8,6 +8,7 @@ use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult};
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::sequence::pair;
 use crate::traits::{
   AsChar, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice,
 };
@@ -216,31 +217,21 @@ where
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::line_ending;
-/// fn parser(input: &str) -> IResult<&str, &str> {
+/// fn parser(input: &str) -> IResult<&str, (Option<char>, char)> {
 ///     line_ending(input)
 /// }
 ///
-/// assert_eq!(parser("\r\nc"), Ok(("c", "\r\n")));
-/// assert_eq!(parser("ab\r\nc"), Err(Err::Error(Error::new("ab\r\nc", ErrorKind::CrLf))));
-/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::CrLf))));
+/// assert_eq!(parser("\r\nc"), Ok(("c", (Some('\r'), '\n'))));
+/// assert_eq!(parser("ab\r\nc"), Err(Err::Error(Error::new("ab\r\nc", ErrorKind::Char))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
 /// ```
-pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+pub fn line_ending<I, E>(input: I) -> IResult<I, (Option<char>, char), E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength,
-  T: Compare<&'static str>,
+  I: InputIter + Slice<RangeFrom<usize>> + Clone,
+  <I as InputIter>::Item: AsChar,
+  E: ParseError<I>,
 {
-  match input.compare("\n") {
-    CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
-    CompareResult::Incomplete => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
-    CompareResult::Error => {
-      match input.compare("\r\n") {
-        //FIXME: is this the right index?
-        CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-        _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
-      }
-    }
-  }
+  pair(opt(char('\r')), char('\n'))(input)
 }
 
 /// Matches a newline character '\n'.
@@ -1065,37 +1056,37 @@ mod tests {
   #[test]
   fn full_line_windows() {
     use crate::sequence::pair;
-    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], (Option<char>, char))> {
       pair(not_line_ending, line_ending)(i)
     }
     let input = b"abc\r\n";
     let output = take_full_line(input);
-    assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\r\n"[..]))));
+    assert_eq!(output, Ok((&b""[..], (&b"abc"[..], (Some('\r'), '\n')))));
   }
 
   #[test]
   fn full_line_unix() {
     use crate::sequence::pair;
-    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
+    fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], (Option<char>, char))> {
       pair(not_line_ending, line_ending)(i)
     }
     let input = b"abc\n";
     let output = take_full_line(input);
-    assert_eq!(output, Ok((&b""[..], (&b"abc"[..], &b"\n"[..]))));
+    assert_eq!(output, Ok((&b""[..], (&b"abc"[..], (None, '\n')))));
   }
 
   #[test]
   fn check_windows_lineending() {
     let input = b"\r\n";
     let output = line_ending(&input[..]);
-    assert_parse!(output, Ok((&b""[..], &b"\r\n"[..])));
+    assert_parse!(output, Ok((&b""[..], (Some('\r'), '\n'))));
   }
 
   #[test]
   fn check_unix_lineending() {
     let input = b"\n";
     let output = line_ending(&input[..]);
-    assert_parse!(output, Ok((&b""[..], &b"\n"[..])));
+    assert_parse!(output, Ok((&b""[..], (None, '\n'))));
   }
 
   #[test]
@@ -1123,26 +1114,29 @@ mod tests {
 
   #[test]
   fn end_of_line() {
-    assert_parse!(line_ending(&b"\na"[..]), Ok((&b"a"[..], &b"\n"[..])));
-    assert_parse!(line_ending(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
+    assert_parse!(line_ending(&b"\na"[..]), Ok((&b"a"[..], (None, '\n'))));
+    assert_parse!(
+      line_ending(&b"\r\na"[..]),
+      Ok((&b"a"[..], (Some('\r'), '\n')))
+    );
     assert_parse!(
       line_ending(&b"\r"[..]),
-      Err(Err::Error(error_position!(&b"\r"[..], ErrorKind::CrLf)))
+      Err(Err::Error(error_position!(&b""[..], ErrorKind::Char)))
     );
     assert_parse!(
       line_ending(&b"\ra"[..]),
-      Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
+      Err(Err::Error(error_position!(&b"a"[..], ErrorKind::Char)))
     );
 
-    assert_parse!(line_ending("\na"), Ok(("a", "\n")));
-    assert_parse!(line_ending("\r\na"), Ok(("a", "\r\n")));
+    assert_parse!(line_ending("\na"), Ok(("a", (None, '\n'))));
+    assert_parse!(line_ending("\r\na"), Ok(("a", (Some('\r'), '\n'))));
     assert_parse!(
       line_ending("\r"),
-      Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf)))
+      Err(Err::Error(error_position!(&""[..], ErrorKind::Char)))
     );
     assert_parse!(
       line_ending("\ra"),
-      Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))
+      Err(Err::Error(error_position!("a", ErrorKind::Char)))
     );
   }
 

@@ -1,5 +1,6 @@
 use nom::{
   character::complete::{alphanumeric1 as alphanumeric, line_ending as eol},
+  combinator::recognize,
   multi::many0,
   sequence::terminated,
   IResult,
@@ -9,7 +10,7 @@ pub fn end_of_line(input: &str) -> IResult<&str, &str> {
   if input.is_empty() {
     Ok((input, input))
   } else {
-    eol(input)
+    recognize(eol)(input)
   }
 }
 
