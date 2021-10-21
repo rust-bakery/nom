@@ -697,4 +697,12 @@ fn fold_test() {
   let res1 = vec![&b"A"[..]];
   assert_eq!(fold_never(a), Ok((&b"AA"[..], res1)));
   assert_eq!(fold_never(b), Ok((&b"B"[..], Vec::new())));
+
+  fn fold_usize(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(1, tag("A"), Vec::new, fold_into_vec)(i)
+  }
+
+  let a = &b"AAA"[..];
+  let res1 = vec![&b"A"[..], &b"A"[..]];
+  assert_eq!(fold_usize(a), Ok((&b"A"[..], res1)));
 }

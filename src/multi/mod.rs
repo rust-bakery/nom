@@ -8,9 +8,9 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::traits::{InputLength, InputTake, ToUsize};
+use crate::traits::{InputLength, InputTake, NomRangeBounds, ToUsize};
 use core::num::NonZeroUsize;
-use core::ops::{Bound, RangeBounds};
+use core::ops::Bound;
 
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
@@ -1026,7 +1026,7 @@ pub fn fold<Range, Input, Output, Error, P, Acc, Init, F>(
   mut fold: F,
 ) -> impl FnMut(Input) -> IResult<Input, Acc, Error>
 where
-  Range: RangeBounds<usize>,
+  Range: NomRangeBounds<usize>,
   Input: Clone + InputLength,
   Error: ParseError<Input>,
   P: Parser<Input, Output, Error>,
@@ -1297,7 +1297,7 @@ pub fn many<Range, Input, Output, Error, P, Acc>(
   parse: P,
 ) -> impl FnMut(Input) -> IResult<Input, Acc, Error>
 where
-  Range: RangeBounds<usize>,
+  Range: NomRangeBounds<usize>,
   Input: Clone + InputLength,
   Error: ParseError<Input>,
   P: Parser<Input, Output, Error>,
