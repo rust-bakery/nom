@@ -1019,30 +1019,30 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold<I, O, E, F, G, H, J, R>(
-  range: J,
-  mut parse: F,
-  mut init: H,
-  mut fold: G,
-) -> impl FnMut(I) -> IResult<I, R, E>
+pub fn fold<Range, Input, Output, Error, P, Acc, Init, F>(
+  range: Range,
+  mut parser: P,
+  mut init: Init,
+  mut fold: F,
+) -> impl FnMut(Input) -> IResult<Input, Acc, Error>
 where
-  I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
-  H: FnMut() -> R,
-  E: ParseError<I>,
-  J: RangeBounds<usize>,
+  Range: RangeBounds<usize>,
+  Input: Clone + InputLength,
+  Error: ParseError<Input>,
+  P: Parser<Input, Output, Error>,
+  Init: FnMut() -> Acc,
+  F: FnMut(Acc, Output) -> Acc,
 {
-  move |input: I| match (range.start_bound(), range.end_bound()) {
+  move |input: Input| match (range.start_bound(), range.end_bound()) {
     (Bound::Included(&min), Bound::Included(&max)) => {
       if min > max {
-        Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)))
+        Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)))
       } else {
         fold_min(
           |count| count < min,
           0..=max,
           input,
-          &mut parse,
+          &mut parser,
           &mut init,
           &mut fold,
         )
@@ -1050,32 +1050,32 @@ where
     }
     (Bound::Included(&min), Bound::Excluded(&max)) => {
       if min > max {
-        Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)))
+        Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)))
       } else {
         fold_min(
           |count| count < min,
           0..max,
           input,
-          &mut parse,
+          &mut parser,
           &mut init,
           &mut fold,
         )
       }
     }
     (Bound::Included(&min), Bound::Unbounded) => {
-      let (input, acc) = fold_exact(0..min, input, &mut parse, &mut init, &mut fold)?;
-      fold_infinite(input, &mut parse, acc, &mut fold)
+      let (input, acc) = fold_exact(0..min, input, &mut parser, &mut init, &mut fold)?;
+      fold_infinite(input, &mut parser, acc, &mut fold)
     }
     (Bound::Excluded(&min), Bound::Included(&max)) => {
       // can't handle min == usize::MAX
       if min > max || min == usize::MAX {
-        Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)))
+        Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)))
       } else {
         fold_min(
           |count| count <= min,
           0..=max,
           input,
-          &mut parse,
+          &mut parser,
           &mut init,
           &mut fold,
         )
@@ -1084,56 +1084,56 @@ where
     (Bound::Excluded(&min), Bound::Excluded(&max)) => {
       // both excluded so can't be equal, can't handle min == usize::MAX
       if min >= max || min == usize::MAX {
-        Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)))
+        Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)))
       } else {
         fold_min(
           |count| count <= min,
           0..max,
           input,
-          &mut parse,
+          &mut parser,
           &mut init,
           &mut fold,
         )
       }
     }
     (Bound::Excluded(&min), Bound::Unbounded) => {
-      let (input, acc) = fold_exact(0..=min, input, &mut parse, &mut init, &mut fold)?;
-      fold_infinite(input, &mut parse, acc, &mut fold)
+      let (input, acc) = fold_exact(0..=min, input, &mut parser, &mut init, &mut fold)?;
+      fold_infinite(input, &mut parser, acc, &mut fold)
     }
     (Bound::Unbounded, Bound::Included(&max)) => {
-      fold_no_min(0..=max, input, &mut parse, &mut init, &mut fold)
+      fold_no_min(0..=max, input, &mut parser, &mut init, &mut fold)
     }
     (Bound::Unbounded, Bound::Excluded(&max)) => {
-      fold_no_min(0..max, input, &mut parse, &mut init, &mut fold)
+      fold_no_min(0..max, input, &mut parser, &mut init, &mut fold)
     }
-    (Bound::Unbounded, Bound::Unbounded) => fold_infinite(input, &mut parse, init(), &mut fold),
+    (Bound::Unbounded, Bound::Unbounded) => fold_infinite(input, &mut parser, init(), &mut fold),
   }
 }
 
-fn fold_exact<I, O, E, F, G, H, R, Iter>(
+fn fold_exact<Iter, Input, Output, Error, P, Acc, Init, F>(
   iter: Iter,
-  mut input: I,
-  parse: &mut F,
-  init: &mut H,
-  fold: &mut G,
-) -> IResult<I, R, E>
+  mut input: Input,
+  parser: &mut P,
+  init: &mut Init,
+  fold: &mut F,
+) -> IResult<Input, Acc, Error>
 where
-  I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
-  H: FnMut() -> R,
-  E: ParseError<I>,
   Iter: Iterator<Item = usize>,
+  Input: Clone + InputLength,
+  Error: ParseError<Input>,
+  P: Parser<Input, Output, Error>,
+  Init: FnMut() -> Acc,
+  F: FnMut(Acc, Output) -> Acc,
 {
   let mut acc = init();
 
   for _ in iter {
     let len = input.input_len();
-    match parse.parse(input.clone()) {
+    match parser.parse(input.clone()) {
       Ok((tail, value)) => {
         // infinite loop check: the parser must always consume
         if tail.input_len() == len {
-          return Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+          return Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
         }
 
         acc = fold(acc, value);
@@ -1146,30 +1146,30 @@ where
   Ok((input, acc))
 }
 
-fn fold_no_min<I, O, E, F, G, H, R, Iter>(
+fn fold_no_min<Iter, Input, Output, Error, P, Acc, Init, F>(
   iter: Iter,
-  mut input: I,
-  parse: &mut F,
-  init: &mut H,
-  fold: &mut G,
-) -> IResult<I, R, E>
+  mut input: Input,
+  parser: &mut P,
+  init: &mut Init,
+  fold: &mut F,
+) -> IResult<Input, Acc, Error>
 where
-  I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
-  H: FnMut() -> R,
-  E: ParseError<I>,
   Iter: Iterator<Item = usize>,
+  Input: Clone + InputLength,
+  Error: ParseError<Input>,
+  P: Parser<Input, Output, Error>,
+  Init: FnMut() -> Acc,
+  F: FnMut(Acc, Output) -> Acc,
 {
   let mut acc = init();
 
   for _ in iter {
     let len = input.input_len();
-    match parse.parse(input.clone()) {
+    match parser.parse(input.clone()) {
       Ok((tail, value)) => {
         // infinite loop check: the parser must always consume
         if tail.input_len() == len {
-          return Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+          return Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
         }
 
         acc = fold(acc, value);
@@ -1186,32 +1186,32 @@ where
   Ok((input, acc))
 }
 
-fn fold_min<I, O, E, F, G, H, R, C, Iter>(
-  check_min: C,
+fn fold_min<V, Iter, Input, Output, Error, P, Acc, Init, F>(
+  verify: V,
   iter: Iter,
-  mut input: I,
-  parse: &mut F,
-  init: &mut H,
-  fold: &mut G,
-) -> IResult<I, R, E>
+  mut input: Input,
+  parser: &mut P,
+  init: &mut Init,
+  fold: &mut F,
+) -> IResult<Input, Acc, Error>
 where
-  I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
-  H: FnMut() -> R,
-  E: ParseError<I>,
-  C: Fn(usize) -> bool,
+  V: Fn(usize) -> bool,
   Iter: Iterator<Item = usize>,
+  Input: Clone + InputLength,
+  Error: ParseError<Input>,
+  P: Parser<Input, Output, Error>,
+  Init: FnMut() -> Acc,
+  F: FnMut(Acc, Output) -> Acc,
 {
   let mut acc = init();
 
   for count in iter {
     let len = input.input_len();
-    match parse.parse(input.clone()) {
+    match parser.parse(input.clone()) {
       Ok((tail, value)) => {
         // infinite loop check: the parser must always consume
         if tail.input_len() == len {
-          return Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+          return Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
         }
 
         acc = fold(acc, value);
@@ -1219,8 +1219,8 @@ where
       }
       //FInputXMError: handle failure properly
       Err(Err::Error(err)) => {
-        if check_min(count) {
-          return Err(Err::Error(E::append(input, ErrorKind::Fold, err)));
+        if verify(count) {
+          return Err(Err::Error(Error::append(input, ErrorKind::Fold, err)));
         } else {
           break;
         }
@@ -1232,25 +1232,25 @@ where
   Ok((input, acc))
 }
 
-fn fold_infinite<I, O, E, F, G, R>(
-  mut input: I,
-  parse: &mut F,
-  mut acc: R,
-  fold: &mut G,
-) -> IResult<I, R, E>
+fn fold_infinite<Input, Output, Error, P, Acc, F>(
+  mut input: Input,
+  parser: &mut P,
+  mut acc: Acc,
+  fold: &mut F,
+) -> IResult<Input, Acc, Error>
 where
-  I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
-  E: ParseError<I>,
+  Input: Clone + InputLength,
+  Error: ParseError<Input>,
+  P: Parser<Input, Output, Error>,
+  F: FnMut(Acc, Output) -> Acc,
 {
   loop {
     let len = input.input_len();
-    match parse.parse(input.clone()) {
+    match parser.parse(input.clone()) {
       Ok((tail, value)) => {
         // infinite loop check: the parser must always consume
         if tail.input_len() == len {
-          break Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+          break Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
         }
 
         acc = fold(acc, value);
@@ -1292,27 +1292,20 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many<I, O, E, F, G>(range: G, parse: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn many<Range, Input, Output, Error, P, Acc>(
+  range: Range,
+  parse: P,
+) -> impl FnMut(Input) -> IResult<Input, Acc, Error>
 where
-  I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  E: ParseError<I>,
-  G: RangeBounds<usize>,
+  Range: RangeBounds<usize>,
+  Input: Clone + InputLength,
+  Error: ParseError<Input>,
+  P: Parser<Input, Output, Error>,
+  Acc: Extend<Output> + Default,
 {
-  // let min = range.start_bound().cloned();
-  fold(
-    range,
-    parse, /* || {
-             match min {
-               Bound::Included(min) => Vec::with_capacity(min + 1),
-               Bound::Excluded(min) => Vec::with_capacity(min),
-               _ => Vec::new(),
-             }
-           } */
-    Vec::new,
-    |mut acc, i| {
-      acc.push(i);
-      acc
-    },
-  )
+  fold(range, parse, Acc::default, |mut acc, i| {
+    // TODO acc.extend_one(i); when https://github.com/rust-lang/rust/issues/72631 is stable
+    acc.extend(Some(i));
+    acc
+  })
 }
