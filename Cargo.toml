@@ -42,9 +42,11 @@ default-features = false
 
 [dev-dependencies]
 criterion = "0.3"
-jemallocator = "^0.3"
 doc-comment = "0.3"
 proptest = "1.0.0"
+
+[target.'cfg(not(all(target_os = "windows", target_env = "msvc")))'.dev-dependencies]
+jemallocator = "^0.3"
 
 [build-dependencies]
 version_check = "0.9"

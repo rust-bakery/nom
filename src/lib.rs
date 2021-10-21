@@ -445,16 +445,16 @@ pub use self::str::*;
 #[macro_use]
 pub mod error;
 
+pub mod combinator;
 mod internal;
 mod traits;
-pub mod combinator;
 #[macro_use]
 pub mod branch;
-pub mod sequence;
 pub mod multi;
+pub mod sequence;
 
-pub mod bytes;
 pub mod bits;
+pub mod bytes;
 
 pub mod character;
 
