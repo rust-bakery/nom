@@ -4,9 +4,6 @@
 
 #![cfg(feature = "alloc")]
 
-#[global_allocator]
-static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
-
 use nom::{
   branch::alt,
   bytes::complete::tag,
