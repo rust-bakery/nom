@@ -147,7 +147,7 @@ where
   match input.compare("\r\n") {
     //FIXME: is this the right index?
     CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-    CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(2))),
+    CompareResult::Incomplete(n) => Err(Err::Incomplete(n)),
     CompareResult::Error => {
       let e: ErrorKind = ErrorKind::CrLf;
       Err(Err::Error(E::from_error_kind(input, e)))
@@ -190,7 +190,7 @@ where
         let comp = sliced.compare("\r\n");
         match comp {
           //FIXME: calculate the right index
-          CompareResult::Incomplete => Err(Err::Incomplete(Needed::Unknown)),
+          CompareResult::Incomplete(n) => Err(Err::Incomplete(n)),
           CompareResult::Error => {
             let e: ErrorKind = ErrorKind::Tag;
             Err(Err::Error(E::from_error_kind(input, e)))
@@ -1073,14 +1073,14 @@ mod tests {
   #[test]
   fn cr_lf() {
     assert_parse!(crlf(&b"\r\na"[..]), Ok((&b"a"[..], &b"\r\n"[..])));
-    assert_parse!(crlf(&b"\r"[..]), Err(Err::Incomplete(Needed::new(2))));
+    assert_parse!(crlf(&b"\r"[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_parse!(
       crlf(&b"\ra"[..]),
       Err(Err::Error(error_position!(&b"\ra"[..], ErrorKind::CrLf)))
     );
 
     assert_parse!(crlf("\r\na"), Ok(("a", "\r\n")));
-    assert_parse!(crlf("\r"), Err(Err::Incomplete(Needed::new(2))));
+    assert_parse!(crlf("\r"), Err(Err::Incomplete(Needed::new(1))));
     assert_parse!(
       crlf("\ra"),
       Err(Err::Error(error_position!("\ra", ErrorKind::CrLf)))

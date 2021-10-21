@@ -708,7 +708,7 @@ pub enum CompareResult {
   /// Comparison was successful
   Ok,
   /// We need more data to be sure
-  Incomplete,
+  Incomplete(Needed),
   /// Comparison failed
   Error,
 }
@@ -745,7 +745,7 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
         if self.len() >= t.len() {
           CompareResult::Ok
         } else {
-          CompareResult::Incomplete
+          CompareResult::Incomplete(Needed::new(t.len() - self.len()))
         }
       }
     }
@@ -776,7 +776,7 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     {
       CompareResult::Error
     } else if self.len() < t.len() {
-      CompareResult::Incomplete
+      CompareResult::Incomplete(Needed::new(t.len() - self.len()))
     } else {
       CompareResult::Ok
     }
@@ -801,7 +801,7 @@ impl<
         if self.input_len() >= t.input_len() {
           CompareResult::Ok
         } else {
-          CompareResult::Incomplete
+          CompareResult::Incomplete(Needed::new(t.input_len() - self.input_len()))
         }
       }
     }
@@ -816,7 +816,7 @@ impl<
     {
       CompareResult::Error
     } else if self.input_len() < t.input_len() {
-      CompareResult::Incomplete
+      CompareResult::Incomplete(Needed::new(t.input_len() - self.input_len()))
     } else {
       CompareResult::Ok
     }
@@ -854,7 +854,7 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
         if self.len() >= t.len() {
           CompareResult::Ok
         } else {
-          CompareResult::Incomplete
+          CompareResult::Incomplete(Needed::new(t.len() - self.len()))
         }
       }
     }
