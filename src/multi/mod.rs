@@ -13,7 +13,7 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::traits::{InputLength, InputTake, NomRangeBounds, ToUsize};
+use crate::traits::{InputLength, InputTake, IntoNomBounds, NomBounds, ToUsize};
 use core::num::NonZeroUsize;
 
 /// Repeats the embedded parser until it fails
@@ -1013,11 +1013,11 @@ where
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many<Range, Input, Output, Error, P, Acc>(
-  range: Range,
+  range: impl IntoNomBounds<NomBounds = Range>,
   parse: P,
 ) -> impl FnMut(Input) -> IResult<Input, Acc, Error>
 where
-  Range: NomRangeBounds<usize>,
+  Range: NomBounds + Clone,
   Input: Clone + InputLength,
   Error: ParseError<Input>,
   P: Parser<Input, Output, Error>,

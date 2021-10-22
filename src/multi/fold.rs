@@ -1,9 +1,10 @@
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Parser};
-use crate::traits::{InputLength, NomRangeBounds};
-
-use core::ops::Bound;
+use crate::traits::InputLength;
+use crate::Break;
+use crate::IntoNomBounds;
+use crate::NomBounds;
 
 /// Applies a parser and accumulates the results using a given
 /// function and initial value.
@@ -43,248 +44,86 @@ use core::ops::Bound;
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold<Range, Input, Output, Error, P, Acc, Init, F>(
-  range: Range,
+pub fn fold<IntoBounds, Bounds, Input, Output, Error, P, Acc, Init, F>(
+  bounds: IntoBounds,
   mut parser: P,
   mut init: Init,
   mut fold: F,
 ) -> impl FnMut(Input) -> IResult<Input, Acc, Error>
 where
-  Range: NomRangeBounds<usize>,
+  IntoBounds: IntoNomBounds<NomBounds = Bounds>,
+  Bounds: NomBounds + Clone,
   Input: Clone + InputLength,
   Error: ParseError<Input>,
   P: Parser<Input, Output, Error>,
   Init: FnMut() -> Acc,
   F: FnMut(Acc, Output) -> Acc,
 {
-  move |input: Input| match (range.start_bound(), range.end_bound()) {
-    (Bound::Included(&min), Bound::Included(&max)) => {
-      if min > max {
-        Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)))
-      } else {
-        fold_min(
-          |count| count < min,
-          0..=max,
-          input,
-          &mut parser,
-          &mut init,
-          &mut fold,
-        )
-      }
-    }
-    (Bound::Included(&min), Bound::Excluded(&max)) => {
-      if min > max {
-        Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)))
-      } else {
-        fold_min(
-          |count| count < min,
-          0..max,
-          input,
-          &mut parser,
-          &mut init,
-          &mut fold,
-        )
-      }
-    }
-    (Bound::Included(&min), Bound::Unbounded) => {
-      let (input, acc) = fold_exact(0..min, input, &mut parser, &mut init, &mut fold)?;
-      fold_infinite(input, &mut parser, acc, &mut fold)
-    }
-    (Bound::Excluded(&min), Bound::Included(&max)) => {
-      // can't handle min == usize::MAX
-      if min > max || min == usize::MAX {
-        Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)))
-      } else {
-        fold_min(
-          |count| count <= min,
-          0..=max,
-          input,
-          &mut parser,
-          &mut init,
-          &mut fold,
-        )
-      }
-    }
-    (Bound::Excluded(&min), Bound::Excluded(&max)) => {
-      // both excluded so can't be equal, can't handle min == usize::MAX
-      if min >= max || min == usize::MAX {
-        Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)))
-      } else {
-        fold_min(
-          |count| count <= min,
-          0..max,
-          input,
-          &mut parser,
-          &mut init,
-          &mut fold,
-        )
-      }
-    }
-    (Bound::Excluded(&min), Bound::Unbounded) => {
-      let (input, acc) = fold_exact(0..=min, input, &mut parser, &mut init, &mut fold)?;
-      fold_infinite(input, &mut parser, acc, &mut fold)
-    }
-    (Bound::Unbounded, Bound::Included(&max)) => {
-      fold_no_min(0..=max, input, &mut parser, &mut init, &mut fold)
-    }
-    (Bound::Unbounded, Bound::Excluded(&max)) => {
-      fold_no_min(0..max, input, &mut parser, &mut init, &mut fold)
-    }
-    (Bound::Unbounded, Bound::Unbounded) => fold_infinite(input, &mut parser, init(), &mut fold),
-  }
-}
+  let bounds = bounds.into_nom_bounds();
 
-fn fold_exact<Iter, Input, Output, Error, P, Acc, Init, F>(
-  iter: Iter,
-  mut input: Input,
-  parser: &mut P,
-  init: &mut Init,
-  fold: &mut F,
-) -> IResult<Input, Acc, Error>
-where
-  Iter: Iterator<Item = usize>,
-  Input: Clone + InputLength,
-  Error: ParseError<Input>,
-  P: Parser<Input, Output, Error>,
-  Init: FnMut() -> Acc,
-  F: FnMut(Acc, Output) -> Acc,
-{
-  let mut acc = init();
+  move |mut input: Input| {
+    if bounds.is_broken() {
+      return Err(Err::Failure(Error::from_error_kind(input, ErrorKind::Fold)));
+    }
 
-  for _ in iter {
-    let len = input.input_len();
-    match parser.parse(input.clone()) {
-      Ok((tail, value)) => {
-        // infinite loop check: the parser must always consume
-        if tail.input_len() == len {
-          return Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
+    let mut bounds = bounds.clone();
+    let mut acc = init();
+
+    loop {
+      match bounds.next() {
+        std::ops::ControlFlow::Continue(_) => {
+          let len = input.input_len();
+          match parser.parse(input.clone()) {
+            Ok((tail, value)) => {
+              // infinite loop check: the parser must always consume
+              if tail.input_len() == len {
+                break Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
+              }
+
+              acc = fold(acc, value);
+              input = tail;
+            }
+            Err(Err::Error(e)) => {
+              break if bounds.is_min_reach() {
+                Ok((input, acc))
+              } else {
+                Err(Err::Error(e))
+              }
+            }
+            Err(e) => break Err(e),
+          }
+
+          bounds.advance();
         }
+        std::ops::ControlFlow::Break(Break::Infinite) => {
+          break loop {
+            let len = input.input_len();
+            match parser.parse(input.clone()) {
+              Ok((tail, value)) => {
+                // infinite loop check: the parser must always consume
+                if tail.input_len() == len {
+                  break Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
+                }
 
-        acc = fold(acc, value);
-        input = tail;
-      }
-      Err(e) => return Err(e),
-    }
-  }
-
-  Ok((input, acc))
-}
-
-fn fold_no_min<Iter, Input, Output, Error, P, Acc, Init, F>(
-  iter: Iter,
-  mut input: Input,
-  parser: &mut P,
-  init: &mut Init,
-  fold: &mut F,
-) -> IResult<Input, Acc, Error>
-where
-  Iter: Iterator<Item = usize>,
-  Input: Clone + InputLength,
-  Error: ParseError<Input>,
-  P: Parser<Input, Output, Error>,
-  Init: FnMut() -> Acc,
-  F: FnMut(Acc, Output) -> Acc,
-{
-  let mut acc = init();
-
-  for _ in iter {
-    let len = input.input_len();
-    match parser.parse(input.clone()) {
-      Ok((tail, value)) => {
-        // infinite loop check: the parser must always consume
-        if tail.input_len() == len {
-          return Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
+                acc = fold(acc, value);
+                input = tail;
+              }
+              //FInputXMError: handle failure properly
+              Err(Err::Error(_)) => {
+                break Ok((input, acc));
+              }
+              Err(e) => break Err(e),
+            }
+          };
         }
-
-        acc = fold(acc, value);
-        input = tail;
-      }
-      //FInputXMError: handle failure properly
-      Err(Err::Error(_)) => {
-        break;
-      }
-      Err(e) => return Err(e),
-    }
-  }
-
-  Ok((input, acc))
-}
-
-fn fold_min<V, Iter, Input, Output, Error, P, Acc, Init, F>(
-  verify: V,
-  iter: Iter,
-  mut input: Input,
-  parser: &mut P,
-  init: &mut Init,
-  fold: &mut F,
-) -> IResult<Input, Acc, Error>
-where
-  V: Fn(usize) -> bool,
-  Iter: Iterator<Item = usize>,
-  Input: Clone + InputLength,
-  Error: ParseError<Input>,
-  P: Parser<Input, Output, Error>,
-  Init: FnMut() -> Acc,
-  F: FnMut(Acc, Output) -> Acc,
-{
-  let mut acc = init();
-
-  for count in iter {
-    let len = input.input_len();
-    match parser.parse(input.clone()) {
-      Ok((tail, value)) => {
-        // infinite loop check: the parser must always consume
-        if tail.input_len() == len {
-          return Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
-        }
-
-        acc = fold(acc, value);
-        input = tail;
-      }
-      //FInputXMError: handle failure properly
-      Err(Err::Error(err)) => {
-        if verify(count) {
-          return Err(Err::Error(Error::append(input, ErrorKind::Fold, err)));
-        } else {
-          break;
+        std::ops::ControlFlow::Break(Break::Finish) => {
+          break if bounds.is_min_reach() {
+            Ok((input, acc))
+          } else {
+            Err(Err::Error(Error::from_error_kind(input, ErrorKind::Fold)))
+          }
         }
       }
-      Err(e) => return Err(e),
-    }
-  }
-
-  Ok((input, acc))
-}
-
-fn fold_infinite<Input, Output, Error, P, Acc, F>(
-  mut input: Input,
-  parser: &mut P,
-  mut acc: Acc,
-  fold: &mut F,
-) -> IResult<Input, Acc, Error>
-where
-  Input: Clone + InputLength,
-  Error: ParseError<Input>,
-  P: Parser<Input, Output, Error>,
-  F: FnMut(Acc, Output) -> Acc,
-{
-  loop {
-    let len = input.input_len();
-    match parser.parse(input.clone()) {
-      Ok((tail, value)) => {
-        // infinite loop check: the parser must always consume
-        if tail.input_len() == len {
-          break Err(Err::Error(Error::from_error_kind(tail, ErrorKind::Fold)));
-        }
-
-        acc = fold(acc, value);
-        input = tail;
-      }
-      //FInputXMError: handle failure properly
-      Err(Err::Error(_)) => {
-        break Ok((input, acc));
-      }
-      Err(e) => break Err(e),
     }
   }
 }
@@ -333,7 +172,7 @@ fn fold_test() {
   );
 
   fn fold_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(2..=1, tag("a"), Vec::new, fold_into_vec)(i)
+    fold(3..=1, tag("a"), Vec::new, fold_into_vec)(i)
   }
 
   let a = &b"a"[..];
