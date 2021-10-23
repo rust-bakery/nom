@@ -1,7 +1,9 @@
 //! Bit level parsers
 //!
 
+#[cfg(feature = "complete")]
 pub mod complete;
+#[cfg(feature = "streaming")]
 pub mod streaming;
 
 use crate::error::{ErrorKind, ParseError};
@@ -16,6 +18,8 @@ use crate::traits::{ErrorConvert, Slice};
 ///
 /// # Example
 /// ```
+/// # #[cfg(feature = "streaming")]
+/// # {
 /// use nom::bits::{bits, streaming::take};
 /// use nom::error::Error;
 /// use nom::sequence::tuple;
@@ -36,6 +40,7 @@ use crate::traits::{ErrorConvert, Slice};
 /// let parsed = output.1;
 /// assert_eq!(parsed.0, 0x01);
 /// assert_eq!(parsed.1, 0x23);
+/// # }
 /// ```
 pub fn bits<I, O, E1, E2, P>(mut parser: P) -> impl FnMut(I) -> IResult<I, O, E2>
 where
@@ -65,6 +70,8 @@ where
 /// at the next full byte.
 ///
 /// ```
+/// # #[cfg(feature = "streaming")]
+/// # {
 /// use nom::bits::{bits, bytes, streaming::take};
 /// use nom::combinator::rest;
 /// use nom::error::Error;
@@ -82,6 +89,7 @@ where
 /// let input = &[0x12, 0x34, 0xff, 0xff];
 ///
 /// assert_eq!(parse( input ), Ok(( &[][..], (0x01, 0x23, &[0xff, 0xff][..]) )));
+/// # }
 /// ```
 pub fn bytes<I, O, E1, E2, P>(mut parser: P) -> impl FnMut((I, usize)) -> IResult<(I, usize), O, E2>
 where
@@ -111,8 +119,12 @@ where
 }
 
 #[cfg(test)]
+#[cfg(any(feature = "streaming", feature = "complete"))]
 mod test {
   use super::*;
+  #[cfg(not(feature = "streaming"))]
+  use crate::bits::complete::take;
+  #[cfg(feature = "streaming")]
   use crate::bits::streaming::take;
   use crate::error::Error;
   use crate::sequence::tuple;

@@ -695,6 +695,18 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::character::complete::{alpha0, alpha1, char, digit1, none_of, one_of};
+  use crate::combinator::opt;
+  use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult};
+  use crate::sequence::delimited;
+  use crate::{
+    branch::alt,
+    bytes::complete::{escaped, is_a as _is_a, is_not as _is_not, tag},
+    combinator::{map, value},
+  };
+  #[cfg(feature = "alloc")]
+  use crate::{bytes::complete::escaped_transform, lib::std::string::String, lib::std::vec::Vec};
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
@@ -712,7 +724,6 @@ mod tests {
 
   // issue #1336 "escaped hangs if normal parser accepts empty"
   fn escaped_string(input: &str) -> IResult<&str, &str> {
-    use crate::character::complete::{alpha0, one_of};
     escaped(alpha0, '\\', one_of("n"))(input)
   }
 
@@ -725,11 +736,6 @@ mod tests {
 
   // issue ##1118 escaped does not work with empty string
   fn unquote<'a>(input: &'a str) -> IResult<&'a str, &'a str> {
-    use crate::bytes::complete::*;
-    use crate::character::complete::*;
-    use crate::combinator::opt;
-    use crate::sequence::delimited;
-
     delimited(
       char('"'),
       escaped(opt(none_of(r#"\""#)), '\\', one_of(r#"\"rnt"#)),
@@ -740,5 +746,253 @@ mod tests {
   #[test]
   fn escaped_hang_1118() {
     assert_eq!(unquote(r#""""#), Ok(("", "")));
+  }
+
+  #[test]
+  fn is_a() {
+    fn a_or_b(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      _is_a("ab")(i)
+    }
+
+    let a = &b"abcd"[..];
+    assert_eq!(a_or_b(a), Ok((&b"cd"[..], &b"ab"[..])));
+
+    let b = &b"bcde"[..];
+    assert_eq!(a_or_b(b), Ok((&b"cde"[..], &b"b"[..])));
+
+    let c = &b"cdef"[..];
+    assert_eq!(
+      a_or_b(c),
+      Err(Err::Error(error_position!(c, ErrorKind::IsA)))
+    );
+
+    let d = &b"bacdef"[..];
+    assert_eq!(a_or_b(d), Ok((&b"cdef"[..], &b"ba"[..])));
+  }
+
+  #[test]
+  fn is_not() {
+    fn a_or_b(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      _is_not("ab")(i)
+    }
+
+    let a = &b"cdab"[..];
+    assert_eq!(a_or_b(a), Ok((&b"ab"[..], &b"cd"[..])));
+
+    let b = &b"cbde"[..];
+    assert_eq!(a_or_b(b), Ok((&b"bde"[..], &b"c"[..])));
+
+    let c = &b"abab"[..];
+    assert_eq!(
+      a_or_b(c),
+      Err(Err::Error(error_position!(c, ErrorKind::IsNot)))
+    );
+
+    let d = &b"cdefba"[..];
+    assert_eq!(a_or_b(d), Ok((&b"ba"[..], &b"cdef"[..])));
+  }
+
+  #[cfg(feature = "alloc")]
+  #[allow(unused_variables)]
+  #[test]
+  fn escaping() {
+    fn esc(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      escaped(alpha1, '\\', one_of("\"n\\"))(i)
+    }
+    assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], &b"abcd"[..])));
+    assert_eq!(esc(&b"ab\\\"cd;"[..]), Ok((&b";"[..], &b"ab\\\"cd"[..])));
+    assert_eq!(esc(&b"\\\"abcd;"[..]), Ok((&b";"[..], &b"\\\"abcd"[..])));
+    assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], &b"\\n"[..])));
+    assert_eq!(esc(&b"ab\\\"12"[..]), Ok((&b"12"[..], &b"ab\\\""[..])));
+    assert_eq!(
+      esc(&b"AB\\"[..]),
+      Err(Err::Error(error_position!(
+        &b"AB\\"[..],
+        ErrorKind::Escaped
+      )))
+    );
+    assert_eq!(
+      esc(&b"AB\\A"[..]),
+      Err(Err::Error(error_node_position!(
+        &b"AB\\A"[..],
+        ErrorKind::Escaped,
+        error_position!(&b"A"[..], ErrorKind::OneOf)
+      )))
+    );
+
+    fn esc2(i: &[u8]) -> IResult<&[u8], &[u8]> {
+      escaped(digit1, '\\', one_of("\"n\\"))(i)
+    }
+    assert_eq!(esc2(&b"12\\nnn34"[..]), Ok((&b"nn34"[..], &b"12\\n"[..])));
+  }
+
+  #[cfg(feature = "alloc")]
+  #[test]
+  fn escaping_str() {
+    fn esc(i: &str) -> IResult<&str, &str> {
+      escaped(alpha1, '\\', one_of("\"n\\"))(i)
+    }
+    assert_eq!(esc("abcd;"), Ok((";", "abcd")));
+    assert_eq!(esc("ab\\\"cd;"), Ok((";", "ab\\\"cd")));
+    assert_eq!(esc("\\\"abcd;"), Ok((";", "\\\"abcd")));
+    assert_eq!(esc("\\n;"), Ok((";", "\\n")));
+    assert_eq!(esc("ab\\\"12"), Ok(("12", "ab\\\"")));
+    assert_eq!(
+      esc("AB\\"),
+      Err(Err::Error(error_position!("AB\\", ErrorKind::Escaped)))
+    );
+    assert_eq!(
+      esc("AB\\A"),
+      Err(Err::Error(error_node_position!(
+        "AB\\A",
+        ErrorKind::Escaped,
+        error_position!("A", ErrorKind::OneOf)
+      )))
+    );
+
+    fn esc2(i: &str) -> IResult<&str, &str> {
+      escaped(digit1, '\\', one_of("\"n\\"))(i)
+    }
+    assert_eq!(esc2("12\\nnn34"), Ok(("nn34", "12\\n")));
+
+    fn esc3(i: &str) -> IResult<&str, &str> {
+      escaped(alpha1, '\u{241b}', one_of("\"n"))(i)
+    }
+    assert_eq!(esc3("ab␛ncd;"), Ok((";", "ab␛ncd")));
+  }
+
+  #[cfg(feature = "alloc")]
+  fn to_s(i: Vec<u8>) -> String {
+    String::from_utf8_lossy(&i).into_owned()
+  }
+
+  #[cfg(feature = "alloc")]
+  #[test]
+  fn escape_transform() {
+    fn esc(i: &[u8]) -> IResult<&[u8], String> {
+      map(
+        escaped_transform(
+          alpha1,
+          '\\',
+          alt((
+            value(&b"\\"[..], tag("\\")),
+            value(&b"\""[..], tag("\"")),
+            value(&b"\n"[..], tag("n")),
+          )),
+        ),
+        to_s,
+      )(i)
+    }
+
+    assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], String::from("abcd"))));
+    assert_eq!(
+      esc(&b"ab\\\"cd;"[..]),
+      Ok((&b";"[..], String::from("ab\"cd")))
+    );
+    assert_eq!(
+      esc(&b"\\\"abcd;"[..]),
+      Ok((&b";"[..], String::from("\"abcd")))
+    );
+    assert_eq!(esc(&b"\\n;"[..]), Ok((&b";"[..], String::from("\n"))));
+    assert_eq!(
+      esc(&b"ab\\\"12"[..]),
+      Ok((&b"12"[..], String::from("ab\"")))
+    );
+    assert_eq!(
+      esc(&b"AB\\"[..]),
+      Err(Err::Error(error_position!(
+        &b"\\"[..],
+        ErrorKind::EscapedTransform
+      )))
+    );
+    assert_eq!(
+      esc(&b"AB\\A"[..]),
+      Err(Err::Error(error_node_position!(
+        &b"AB\\A"[..],
+        ErrorKind::EscapedTransform,
+        error_position!(&b"A"[..], ErrorKind::Tag)
+      )))
+    );
+
+    fn esc2(i: &[u8]) -> IResult<&[u8], String> {
+      map(
+        escaped_transform(
+          alpha1,
+          '&',
+          alt((
+            value("è".as_bytes(), tag("egrave;")),
+            value("à".as_bytes(), tag("agrave;")),
+          )),
+        ),
+        to_s,
+      )(i)
+    }
+    assert_eq!(
+      esc2(&b"ab&egrave;DEF;"[..]),
+      Ok((&b";"[..], String::from("abèDEF")))
+    );
+    assert_eq!(
+      esc2(&b"ab&egrave;D&agrave;EF;"[..]),
+      Ok((&b";"[..], String::from("abèDàEF")))
+    );
+  }
+
+  #[cfg(feature = "std")]
+  #[test]
+  fn escape_transform_str() {
+    fn esc(i: &str) -> IResult<&str, String> {
+      escaped_transform(
+        alpha1,
+        '\\',
+        alt((
+          value("\\", tag("\\")),
+          value("\"", tag("\"")),
+          value("\n", tag("n")),
+        )),
+      )(i)
+    }
+
+    assert_eq!(esc("abcd;"), Ok((";", String::from("abcd"))));
+    assert_eq!(esc("ab\\\"cd;"), Ok((";", String::from("ab\"cd"))));
+    assert_eq!(esc("\\\"abcd;"), Ok((";", String::from("\"abcd"))));
+    assert_eq!(esc("\\n;"), Ok((";", String::from("\n"))));
+    assert_eq!(esc("ab\\\"12"), Ok(("12", String::from("ab\""))));
+    assert_eq!(
+      esc("AB\\"),
+      Err(Err::Error(error_position!(
+        "\\",
+        ErrorKind::EscapedTransform
+      )))
+    );
+    assert_eq!(
+      esc("AB\\A"),
+      Err(Err::Error(error_node_position!(
+        "AB\\A",
+        ErrorKind::EscapedTransform,
+        error_position!("A", ErrorKind::Tag)
+      )))
+    );
+
+    fn esc2(i: &str) -> IResult<&str, String> {
+      escaped_transform(
+        alpha1,
+        '&',
+        alt((value("è", tag("egrave;")), value("à", tag("agrave;")))),
+      )(i)
+    }
+    assert_eq!(esc2("ab&egrave;DEF;"), Ok((";", String::from("abèDEF"))));
+    assert_eq!(
+      esc2("ab&egrave;D&agrave;EF;"),
+      Ok((";", String::from("abèDàEF")))
+    );
+
+    fn esc3(i: &str) -> IResult<&str, String> {
+      escaped_transform(
+        alpha1,
+        '␛',
+        alt((value("\0", tag("0")), value("\n", tag("n")))),
+      )(i)
+    }
+    assert_eq!(esc3("a␛0bc␛n"), Ok(("", String::from("a\0bc\n"))));
   }
 }

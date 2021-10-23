@@ -2,10 +2,9 @@
 //!
 //! Functions recognizing specific characters
 
-#[cfg(test)]
-mod tests;
-
+#[cfg(feature = "complete")]
 pub mod complete;
+#[cfg(feature = "streaming")]
 pub mod streaming;
 
 /// Tests if byte is ASCII alphabetic: A-Z, a-z

@@ -22,10 +22,13 @@ mod tests;
 /// Return the remaining input.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::error::ErrorKind;
 /// use nom::combinator::rest;
 /// assert_eq!(rest::<_,(_, ErrorKind)>("abc"), Ok(("", "abc")));
 /// assert_eq!(rest::<_,(_, ErrorKind)>(""), Ok(("", "")));
+/// # }
 /// ```
 #[inline]
 pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
@@ -39,10 +42,13 @@ where
 /// Return the length of the remaining input.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::error::ErrorKind;
 /// use nom::combinator::rest_len;
 /// assert_eq!(rest_len::<_,(_, ErrorKind)>("abc"), Ok(("abc", 3)));
 /// assert_eq!(rest_len::<_,(_, ErrorKind)>(""), Ok(("", 0)));
+/// # }
 /// ```
 #[inline]
 pub fn rest_len<T, E: ParseError<T>>(input: T) -> IResult<T, usize, E>
@@ -56,6 +62,8 @@ where
 /// Maps a function on the result of a parser.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// use nom::{Err,error::ErrorKind, IResult,Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map;
@@ -68,6 +76,7 @@ where
 ///
 /// // this will fail if digit1 fails
 /// assert_eq!(parser.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
+/// # }
 /// # }
 /// ```
 pub fn map<I, O1, O2, E, F, G>(mut parser: F, mut f: G) -> impl FnMut(I) -> IResult<I, O2, E>
@@ -84,10 +93,11 @@ where
 /// Applies a function returning a `Result` over the result of a parser.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map_res;
-/// # fn main() {
 ///
 /// let mut parse = map_res(digit1, |s: &str| s.parse::<u8>());
 ///
@@ -122,10 +132,11 @@ where
 /// Applies a function returning an `Option` over the result of a parser.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map_opt;
-/// # fn main() {
 ///
 /// let mut parse = map_opt(digit1, |s: &str| s.parse::<u8>().ok());
 ///
@@ -160,11 +171,12 @@ where
 /// Applies a parser over the result of another one.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::bytes::complete::take;
 /// use nom::combinator::map_parser;
-/// # fn main() {
 ///
 /// let mut parse = map_parser(take(5u8), digit1);
 ///
@@ -191,11 +203,12 @@ where
 /// Creates a new parser from the output of the first parser, then apply that parser over the rest of the input.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::bytes::complete::take;
 /// use nom::number::complete::u8;
 /// use nom::combinator::flat_map;
-/// # fn main() {
 ///
 /// let mut parse = flat_map(u8, take);
 ///
@@ -221,10 +234,11 @@ where
 /// Optional parser: Will return `None` if not successful.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::opt;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 /// fn parser(i: &str) -> IResult<&str, Option<&str>> {
 ///   opt(alpha1)(i)
@@ -251,10 +265,11 @@ where
 /// Calls the parser if the condition is met.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// use nom::combinator::cond;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 /// fn parser(b: bool, i: &str) -> IResult<&str, Option<&str>> {
 ///   cond(b, alpha1)(i)
@@ -288,10 +303,11 @@ where
 /// Tries to apply its parser without consuming the input.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::peek;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 /// let mut parser = peek(alpha1);
 ///
@@ -322,11 +338,9 @@ where
 /// # use nom::{Err, error::ErrorKind, IResult};
 /// # use nom::combinator::eof;
 ///
-/// # fn main() {
 /// let parser = eof;
 /// assert_eq!(parser("abc"), Err(Err::Error(("abc", ErrorKind::Eof))));
 /// assert_eq!(parser(""), Ok(("", "")));
-/// # }
 /// ```
 pub fn eof<I: InputLength + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
   if input.input_len() == 0 {
@@ -340,10 +354,11 @@ pub fn eof<I: InputLength + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, 
 /// Transforms Incomplete into `Error`.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::bytes::streaming::take;
 /// use nom::combinator::complete;
-/// # fn main() {
 ///
 /// let mut parser = complete(take(5u8));
 ///
@@ -367,10 +382,11 @@ where
 /// Succeeds if all the input has been consumed by its child parser.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::all_consuming;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 /// let mut parser = all_consuming(alpha1);
 ///
@@ -400,10 +416,11 @@ where
 /// parser.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::verify;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 /// let mut parser = verify(alpha1, |s: &str| s.len() == 4);
 ///
@@ -437,10 +454,11 @@ where
 /// Returns the provided value if the child parser succeeds.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::value;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 /// let mut parser = value(1234, alpha1);
 ///
@@ -461,10 +479,11 @@ where
 /// Succeeds if the child parser returns an error.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::not;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 /// let mut parser = not(alpha1);
 ///
@@ -489,11 +508,12 @@ where
 /// If the child parser was successful, return the consumed input as produced value.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::recognize;
 /// use nom::character::complete::{char, alpha1};
 /// use nom::sequence::separated_pair;
-/// # fn main() {
 ///
 /// let mut parser = recognize(separated_pair(alpha1, char(','), alpha1));
 ///
@@ -529,6 +549,8 @@ where
 /// Returned tuple is of the format `(consumed input, produced output)`.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::{consumed, value, recognize, map};
 /// use nom::character::complete::{char, alpha1};
@@ -539,7 +561,6 @@ where
 ///     value(true, tag("1234"))(input)
 /// }
 ///
-/// # fn main() {
 ///
 /// let mut consumed_parser = consumed(value(true, separated_pair(alpha1, char(','), alpha1)));
 ///
@@ -578,10 +599,11 @@ where
 /// transforms an error to failure
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::cut;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 /// let mut parser = cut(alpha1);
 ///
@@ -605,10 +627,11 @@ where
 /// as long as the `Into` implementations are available
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::IResult;
 /// use nom::combinator::into;
 /// use nom::character::complete::alpha1;
-/// # fn main() {
 ///
 ///  fn parser1(i: &str) -> IResult<&str, &str> {
 ///    alpha1(i)
@@ -644,6 +667,8 @@ where
 /// or the error value if we encountered an error.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// use nom::{combinator::iterator, IResult, bytes::complete::tag, character::complete::alpha1, sequence::terminated};
 /// use std::collections::HashMap;
 ///
@@ -655,6 +680,7 @@ where
 ///
 /// assert_eq!(parsed, [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)].iter().cloned().collect());
 /// assert_eq!(res, Ok(("123", ())));
+/// # }
 /// ```
 pub fn iterator<Input, Output, Error, F>(input: Input, f: F) -> ParserIterator<Input, Error, F>
 where
@@ -735,11 +761,12 @@ enum State<E> {
 /// specify the default case.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::branch::alt;
 /// use nom::combinator::{success, value};
 /// use nom::character::complete::char;
-/// # fn main() {
 ///
 /// let mut parser = success::<_,_,(_,ErrorKind)>(10);
 /// assert_eq!(parser("xyz"), Ok(("xyz", 10)));

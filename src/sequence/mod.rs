@@ -14,6 +14,8 @@ use crate::internal::{IResult, Parser};
 /// * `second` The second parser to apply.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::pair;
@@ -25,6 +27,7 @@ use crate::internal::{IResult, Parser};
 /// assert_eq!(parser("abcefghij"), Ok(("hij", ("abc", "efg"))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// # }
 /// ```
 pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
   mut first: F,
@@ -48,6 +51,8 @@ where
 /// * `second` The second parser to get object.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::preceded;
@@ -59,6 +64,7 @@ where
 /// assert_eq!(parser("abcefghij"), Ok(("hij", "efg")));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// # }
 /// ```
 pub fn preceded<I, O1, O2, E: ParseError<I>, F, G>(
   mut first: F,
@@ -82,6 +88,8 @@ where
 /// * `second` The second parser to match an object.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::terminated;
@@ -93,6 +101,7 @@ where
 /// assert_eq!(parser("abcefghij"), Ok(("hij", "abc")));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// # }
 /// ```
 pub fn terminated<I, O1, O2, E: ParseError<I>, F, G>(
   mut first: F,
@@ -118,6 +127,8 @@ where
 /// * `second` The second parser to apply.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::separated_pair;
@@ -129,6 +140,7 @@ where
 /// assert_eq!(parser("abc|efghij"), Ok(("hij", ("abc", "efg"))));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// # }
 /// ```
 pub fn separated_pair<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
   mut first: F,
@@ -157,6 +169,8 @@ where
 /// * `third` The third parser to apply and discard.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
 /// use nom::sequence::delimited;
@@ -168,6 +182,7 @@ where
 /// assert_eq!(parser("(abc)def"), Ok(("def", "abc")));
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// # }
 /// ```
 pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
   mut first: F,
@@ -255,6 +270,8 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 ///Applies a tuple of parsers one by one and returns their results as a tuple.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind};
 /// use nom::sequence::tuple;
 /// use nom::character::complete::{alpha1, digit1};
@@ -262,6 +279,7 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 ///
 /// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
 /// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
+/// # }
 /// ```
 pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,

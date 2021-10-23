@@ -22,6 +22,8 @@ use core::num::NonZeroUsize;
 /// to prevent going into an infinite loop
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many0;
 /// use nom::bytes::complete::tag;
@@ -34,6 +36,7 @@ use core::num::NonZeroUsize;
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
+/// # }
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -77,6 +80,8 @@ where
 /// to prevent going into an infinite loop.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::many1;
 /// use nom::bytes::complete::tag;
@@ -89,6 +94,7 @@ where
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// # }
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -130,6 +136,8 @@ where
 /// a result. Returns a pair consisting of the results of
 /// `f` in a `Vec` and the result of `g`.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::many_till;
 /// use nom::bytes::complete::tag;
@@ -143,6 +151,7 @@ where
 /// assert_eq!(parser("123123end"), Err(Err::Error(Error::new("123123end", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcendefg"), Ok(("efg", (vec!["abc"], "end"))));
+/// # }
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -190,6 +199,8 @@ where
 /// * `f` Parses the elements of the list.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::separated_list0;
 /// use nom::bytes::complete::tag;
@@ -203,6 +214,7 @@ where
 /// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("def|abc"), Ok(("def|abc", vec![])));
+/// # }
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -260,6 +272,8 @@ where
 /// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
@@ -273,6 +287,7 @@ where
 /// assert_eq!(parser("abc|def"), Ok(("|def", vec!["abc"])));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("def|abc"), Err(Err::Error(Error::new("def|abc", ErrorKind::Tag))));
+/// # }
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -331,6 +346,8 @@ where
 /// * `n` The maximum number of iterations.
 /// * `f` The parser to apply.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many_m_n;
 /// use nom::bytes::complete::tag;
@@ -344,6 +361,7 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// # }
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -397,6 +415,8 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many0_count;
 /// use nom::bytes::complete::tag;
@@ -409,6 +429,7 @@ where
 /// assert_eq!(parser("abc123"), Ok(("123", 1)));
 /// assert_eq!(parser("123123"), Ok(("123123", 0)));
 /// assert_eq!(parser(""), Ok(("", 0)));
+/// # }
 /// ```
 pub fn many0_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
@@ -449,6 +470,8 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::many1_count;
 /// use nom::bytes::complete::tag;
@@ -461,6 +484,7 @@ where
 /// assert_eq!(parser("abc123"), Ok(("123", 1)));
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1Count))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1Count))));
+/// # }
 /// ```
 pub fn many1_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
@@ -505,6 +529,8 @@ where
 /// * `f` The parser to apply.
 /// * `count` How often to apply the parser.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::count;
 /// use nom::bytes::complete::tag;
@@ -518,6 +544,7 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// # }
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
@@ -557,6 +584,8 @@ where
 /// * `f` The parser to apply.
 /// * `buf` The slice to fill
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::fill;
 /// use nom::bytes::complete::tag;
@@ -572,6 +601,7 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
+/// # }
 /// ```
 pub fn fill<'a, I, O, E, F>(f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
 where
@@ -610,6 +640,8 @@ where
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::fold_many0;
 /// use nom::bytes::complete::tag;
@@ -629,6 +661,7 @@ where
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
+/// # }
 /// ```
 pub fn fold_many0<I, O, E, F, G, H, R>(
   mut f: F,
@@ -680,6 +713,8 @@ where
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::fold_many1;
 /// use nom::bytes::complete::tag;
@@ -699,6 +734,7 @@ where
 /// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
+/// # }
 /// ```
 pub fn fold_many1<I, O, E, F, G, H, R>(
   mut f: F,
@@ -760,6 +796,8 @@ where
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::fold_many_m_n;
 /// use nom::bytes::complete::tag;
@@ -782,6 +820,7 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// # }
 /// ```
 pub fn fold_many_m_n<I, O, E, F, G, H, R>(
   min: usize,
@@ -838,6 +877,8 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_data;
@@ -849,6 +890,7 @@ where
 ///
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
 /// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
+/// # }
 /// ```
 pub fn length_data<I, N, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, I, E>
 where
@@ -882,6 +924,8 @@ where
 /// * `f` The parser to apply.
 /// * `g` The parser to apply on the subslice.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_value;
@@ -894,6 +938,7 @@ where
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
 /// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error(Error::new(&b"123"[..], ErrorKind::Tag))));
 /// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
+/// # }
 /// ```
 pub fn length_value<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>
 where
@@ -930,6 +975,8 @@ where
 /// * `f` The parser to apply to obtain the count.
 /// * `g` The parser to apply repeatedly.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::number::complete::u8;
 /// use nom::multi::length_count;
@@ -945,6 +992,7 @@ where
 ///
 /// assert_eq!(parser(&b"\x02abcabcabc"[..]), Ok(((&b"abc"[..], vec![&b"abc"[..], &b"abc"[..]]))));
 /// assert_eq!(parser(b"\x03123123123"), Err(Err::Error(Error::new(&b"123123123"[..], ErrorKind::Tag))));
+/// # }
 /// ```
 #[cfg(feature = "alloc")]
 pub fn length_count<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, Vec<O>, E>

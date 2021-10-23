@@ -29,8 +29,10 @@ include = [
 [features]
 alloc = []
 std = ["alloc", "memchr/std", "minimal-lexical/std"]
-default = ["std"]
+default = ["std", "streaming", "complete"]
 docsrs = []
+streaming = []
+complete = []
 
 [dependencies.minimal-lexical]
 version = "0.2.0"
@@ -58,6 +60,7 @@ codegen-units = 1
 
 [[test]]
 name = "arithmetic"
+required-features = ["complete"]
 
 [[test]]
 name = "arithmetic_ast"
@@ -65,12 +68,15 @@ required-features = ["alloc"]
 
 [[test]]
 name = "css"
+required-features = ["complete"]
 
 [[test]]
 name = "custom_errors"
+required-features = ["complete", "streaming"]
 
 [[test]]
 name = "float"
+required-features = ["complete", "streaming"]
 
 [[test]]
 name = "ini"
@@ -97,13 +103,19 @@ required-features = ["alloc"]
 
 [[test]]
 name = "overflow"
+required-features = ["streaming"]
 
 [[test]]
 name = "reborrow_fold"
+required-features = ["complete"]
 
 [[test]]
 name = "fnmut"
 required-features = ["alloc"]
+
+[[test]]
+name = "escaped"
+required-features = ["complete"]
 
 [[example]]
 name = "json"
@@ -112,6 +124,7 @@ path = "examples/json.rs"
 
 [[example]]
 name = "iterator"
+required-features = ["complete"]
 
 [[example]]
 name = "s_expression"

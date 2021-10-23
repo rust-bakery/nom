@@ -46,6 +46,8 @@ pub trait Alt<I, O, E> {
 /// like this: `alt(parser_a, alt(parser_b, parser_c))`
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::error_position;
 /// # use nom::{Err,error::ErrorKind, Needed, IResult};
 /// use nom::character::complete::{alpha1, digit1};
@@ -63,6 +65,7 @@ pub trait Alt<I, O, E> {
 ///
 /// // both parsers failed, and with the default error type, alt will return the last error
 /// assert_eq!(parser(" "), Err(Err::Error(error_position!(" ", ErrorKind::Digit))));
+/// # }
 /// # }
 /// ```
 ///
@@ -89,6 +92,8 @@ pub trait Permutation<I, O, E> {
 /// tuple of the parser results.
 ///
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::permutation;
@@ -106,11 +111,14 @@ pub trait Permutation<I, O, E> {
 /// // it will fail if one of the parsers failed
 /// assert_eq!(parser("abc;"), Err(Err::Error(Error::new(";", ErrorKind::Digit))));
 /// # }
+/// # }
 /// ```
 ///
 /// The parsers are applied greedily: if there are multiple unapplied parsers
 /// that could parse the next slice of input, the first one is used.
 /// ```rust
+/// # #[cfg(feature = "complete")]
+/// # {
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// use nom::branch::permutation;
 /// use nom::character::complete::{anychar, char};
@@ -125,6 +133,7 @@ pub trait Permutation<I, O, E> {
 /// // anychar parses 'a', then char('a') fails on 'b',
 /// // even though char('a') followed by anychar would succeed
 /// assert_eq!(parser("ab"), Err(Err::Error(Error::new("b", ErrorKind::Char))));
+/// # }
 /// ```
 ///
 pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(

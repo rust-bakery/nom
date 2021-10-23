@@ -605,7 +605,7 @@ where
 }
 
 #[cfg(test)]
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", feature = "complete"))]
 mod tests {
   use super::*;
   use crate::character::complete::char;

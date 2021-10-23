@@ -1,6 +1,8 @@
 //! Parsers recognizing numbers
 
+#[cfg(feature = "complete")]
 pub mod complete;
+#[cfg(feature = "streaming")]
 pub mod streaming;
 
 /// Configurable endianness
