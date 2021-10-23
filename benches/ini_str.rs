@@ -7,7 +7,7 @@ use nom::{
   bytes::complete::{is_a, tag, take_till, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, not_line_ending, space0 as space},
   combinator::opt,
-  multi::many,
+  multi::fold,
   sequence::{delimited, pair, terminated, tuple},
   IResult,
 };
@@ -40,7 +40,10 @@ fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
 }
 
 fn keys_and_values_aggregator(i: &str) -> IResult<&str, Vec<(&str, &str)>> {
-  many(.., key_value)(i)
+  fold(.., key_value, Vec::new, |mut acc, i| {
+    acc.push(i);
+    acc
+  })(i)
 }
 
 fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
@@ -55,7 +58,10 @@ fn category_and_keys(i: &str) -> IResult<&str, (&str, HashMap<&str, &str>)> {
 }
 
 fn categories_aggregator(i: &str) -> IResult<&str, Vec<(&str, HashMap<&str, &str>)>> {
-  many(.., category_and_keys)(i)
+  fold(.., category_and_keys, Vec::new, |mut acc, i| {
+    acc.push(i);
+    acc
+  })(i)
 }
 
 fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str>>> {

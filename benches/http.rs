@@ -4,7 +4,7 @@
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
-use nom::{IResult, bytes::complete::{tag, take_while1}, character::complete::{line_ending, char}, multi::many};
+use nom::{IResult, bytes::complete::{tag, take_while1}, character::complete::{line_ending, char}, multi::fold};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug)]
@@ -96,14 +96,14 @@ fn message_header_value(input: &[u8]) -> IResult<&[u8], &[u8]> {
 fn message_header(input: &[u8]) -> IResult<&[u8], Header<'_>> {
   let (input, name) = take_while1(is_token)(input)?;
   let (input, _) = char(':')(input)?;
-  let (input, value) = many(1.., message_header_value)(input)?;
+  let (input, value) = fold(1.., message_header_value, Vec::new, |mut acc, i| {acc.push(i); acc})(input)?;
 
   Ok((input, Header{ name, value }))
 }
 
 fn request(input: &[u8]) -> IResult<&[u8], (Request<'_>, Vec<Header<'_>>)> {
   let (input, req) = request_line(input)?;
-  let (input, h) = many(1.., message_header)(input)?;
+  let (input, h) = fold(1.., message_header,Vec::new, |mut acc, i| {acc.push(i); acc})(input)?;
   let (input, _) = line_ending(input)?;
 
   Ok((input, (req, h)))

@@ -9,7 +9,7 @@ use nom::{
     alphanumeric1 as alphanumeric, char, multispace1 as multispace, space1 as space,
   },
   combinator::{map, map_res, opt},
-  multi::many,
+  multi::fold,
   sequence::{delimited, pair, separated_pair, terminated, tuple},
   IResult,
 };
@@ -33,16 +33,29 @@ fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
 
 fn categories(i: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
   map(
-    many(
+    fold(
       ..,
       separated_pair(
         category,
         opt(multispace),
         map(
-          many(.., terminated(key_value, opt(multispace))),
+          fold(
+            ..,
+            terminated(key_value, opt(multispace)),
+            Vec::new,
+            |mut acc, i| {
+              acc.push(i);
+              acc
+            },
+          ),
           |vec: Vec<_>| vec.into_iter().collect(),
         ),
       ),
+      Vec::new,
+      |mut acc, i| {
+        acc.push(i);
+        acc
+      },
     ),
     |vec: Vec<_>| vec.into_iter().collect(),
   )(i)
@@ -73,7 +86,10 @@ file=payroll.dat
 \0";
 
   fn acc(i: &[u8]) -> IResult<&[u8], Vec<(&str, &str)>> {
-    many(.., key_value)(i)
+    fold(.., key_value, Vec::new, |mut acc, i| {
+      acc.push(i);
+      acc
+    })(i)
   }
 
   let mut group = c.benchmark_group("ini keys and values");
