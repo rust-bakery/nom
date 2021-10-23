@@ -1,0 +1,44 @@
+[package]
+name = "benchmarks"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+criterion = "0.3.5"
+jemallocator = "0.3.2"
+nom = { path = "../" }
+
+[lib]
+bench = false
+
+[[bench]]
+name = "arithmetic"
+path = "benches/arithmetic.rs"
+harness = false
+
+[[bench]]
+name = "number"
+path = "benches/number.rs"
+harness = false
+
+[[bench]]
+name = "http"
+path = "benches/http.rs"
+harness = false
+
+[[bench]]
+name = "ini"
+path = "benches/ini.rs"
+harness = false
+
+[[bench]]
+name = "ini_str"
+path = "benches/ini_str.rs"
+harness = false
+
+[[bench]]
+name = "json"
+path = "benches/json.rs"
+harness = false
