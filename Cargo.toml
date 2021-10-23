@@ -41,12 +41,8 @@ version = "2.3"
 default-features = false
 
 [dev-dependencies]
-criterion = "0.3"
 doc-comment = "0.3"
 proptest = "1.0.0"
-
-[target.'cfg(not(all(target_os = "windows", target_env = "msvc")))'.dev-dependencies]
-jemallocator = "^0.3"
 
 [build-dependencies]
 version_check = "0.9"
@@ -59,9 +55,6 @@ all-features = true
 debug = true
 lto = true
 codegen-units = 1
-
-[lib]
-bench = false
 
 [[test]]
 name = "arithmetic"
@@ -115,36 +108,6 @@ name = "reborrow_fold"
 name = "fnmut"
 required-features = ["alloc"]
 
-[[bench]]
-name = "arithmetic"
-path = "benches/arithmetic.rs"
-harness = false
-
-[[bench]]
-name = "number"
-path = "benches/number.rs"
-harness = false
-
-[[bench]]
-name = "http"
-path = "benches/http.rs"
-harness = false
-
-[[bench]]
-name = "ini"
-path = "benches/ini.rs"
-harness = false
-
-[[bench]]
-name = "ini_str"
-path = "benches/ini_str.rs"
-harness = false
-
-[[bench]]
-name = "json"
-path = "benches/json.rs"
-harness = false
-
 [[example]]
 name = "json"
 required-features = ["alloc"]
@@ -167,3 +130,6 @@ path = "examples/string.rs"
 travis-ci = { repository = "Geal/nom" }
 coveralls = { repository = "Geal/nom", branch = "master", service = "github" }
 maintenance = { status = "actively-developed" }
+
+[workspace]
+members = [".", "benchmarks/"]
