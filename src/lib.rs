@@ -136,13 +136,13 @@
 //! A parser in nom is a function which, for an input type `I`, an output type `O`
 //! and an optional error type `E`, will have the following signature:
 //!
-//! ```rust,ignore
+//! ```rust,compile_fail
 //! fn parser(input: I) -> IResult<I, O, E>;
 //! ```
 //!
 //! Or like this, if you don't want to specify a custom error type (it will be `(I, ErrorKind)` by default):
 //!
-//! ```rust,ignore
+//! ```rust,compile_fail
 //! fn parser(input: I) -> IResult<I, O>;
 //! ```
 //!
