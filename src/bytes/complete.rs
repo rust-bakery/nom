@@ -474,6 +474,165 @@ where
   }
 }
 
+/// Returns the shortest input slice till it matches the parser.
+///
+/// It doesn't consume the input to the parser. It will return `Err(Err::Error((_, ErrorKind::TakeUntilParserMatches)))`
+/// if the pattern wasn't met
+///
+/// The performance of this parser depends HEAVILY on the inner parser
+/// failing early. For each step on the input, this will run the inner
+/// parser against the remaining input, so if the inner parser does
+/// not fail fast then you will end up re-parsing the remaining input
+/// repeatedly.
+///
+/// If you are looking to match until a string
+/// (`take_until_parser_matches(tag("foo"))`) it would be faster to
+/// use `take_until("foo")`.
+///
+/// # Simple Example
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, IResult};
+/// use nom::bytes::complete::{take_until_parser_matches, tag};
+///
+/// fn until_eof(s: &str) -> IResult<&str, &str> {
+///   take_until_parser_matches(tag("eof"))(s)
+/// }
+///
+/// assert_eq!(until_eof("hello, worldeof"), Ok(("eof", "hello, world")));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Error(error_position!("hello, world", ErrorKind::TakeUntilParserMatches))));
+/// assert_eq!(until_eof(""), Err(Err::Error(error_position!("", ErrorKind::TakeUntilParserMatches))));
+/// ```
+///
+/// # Powerful Example
+/// To show the power of this parser we will parse a line containing
+/// a set of flags at the end surrounded by brackets. Example:
+/// "Submit a PR [inprogress]"
+/// ```ignore
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, IResult};
+/// use nom::bytes::complete::{is_not, take_until_parser_matches, tag};
+/// use nom::sequence::{delimited, tuple};
+/// use nom::multi::separated_list1;
+///
+/// fn flag(i: &str) -> IResult<&str, &str> {
+///   delimited(tag("["), is_not("]\r\n"), tag("]"))(i)
+/// }
+///
+/// fn line_ending_with_flags(i: &str) -> IResult<&str, (&str, std::vec::Vec<&str>)> {
+///   tuple((
+///     take_until_parser_matches(flag),
+///     separated_list1(tag(" "), flag),
+///   ))(i)
+/// }
+///
+/// assert_eq!(line_ending_with_flags("Parsing Seminar [important] [presentation]"), Ok(("", ("Parsing Seminar ", vec!["important", "presentation"]))));
+/// ```
+pub fn take_until_parser_matches<F, Input, O, Error>(
+  mut f: F,
+) -> impl FnMut(Input) -> IResult<Input, Input, Error>
+where
+  Input: InputTake + InputIter + InputLength + Clone,
+  F: Parser<Input, O, Error>,
+  Error: ParseError<Input>,
+{
+  move |input: Input| {
+    let i = input.clone();
+    for (ind, _) in i.iter_indices() {
+      let (remaining, _taken) = i.take_split(ind);
+      match f.parse(remaining) {
+        Err(_) => (),
+        Ok(_) => {
+          let res: IResult<Input, Input, Error> = Ok(i.take_split(ind));
+          return res;
+        }
+      }
+    }
+    // Attempt to match one last time past the end of the input. This
+    // allows for 0-length combinators to be used (for example, an eof
+    // combinator).
+    let (remaining, _taken) = i.take_split(i.input_len());
+    match f.parse(remaining) {
+      Err(_) => (),
+      Ok(_) => {
+        let res: IResult<Input, Input, Error> = Ok(i.take_split(i.input_len()));
+        return res;
+      }
+    }
+    Err(Err::Error(Error::from_error_kind(
+      i,
+      ErrorKind::TakeUntilParserMatches,
+    )))
+  }
+}
+
+/// Returns the shortest input slice till it matches the parser, additionally consuming the result of that parser.
+///
+/// It will return `Err(Err::Error((_, ErrorKind::TakeUntilParserMatches)))`
+/// if the pattern wasn't met
+///
+/// The performance of this parser depends HEAVILY on the inner parser
+/// failing early. For each step on the input, this will run the inner
+/// parser against the remaining input, so if the inner parser does
+/// not fail fast then you will end up re-parsing the remaining input
+/// repeatedly.
+///
+/// If you are looking to match until a string
+/// (`take_until_parser_matches_and_consume(tag("foo"))`) it would be faster to
+/// use `terminated(take_until("foo"), tag("foo"))`.
+///
+/// # Example
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, IResult};
+/// use nom::bytes::complete::{take_until_parser_matches_and_consume, tag};
+///
+/// fn until_eof(s: &str) -> IResult<&str, &str> {
+///   take_until_parser_matches_and_consume(tag("eof"))(s)
+/// }
+///
+/// assert_eq!(until_eof("hello, worldeof foobar"), Ok((" foobar", "hello, world")));
+/// assert_eq!(until_eof("hello, world"), Err(Err::Error(error_position!("hello, world", ErrorKind::TakeUntilParserMatches))));
+/// assert_eq!(until_eof(""), Err(Err::Error(error_position!("", ErrorKind::TakeUntilParserMatches))));
+/// ```
+pub fn take_until_parser_matches_and_consume<F, Input, O, Error>(
+  mut f: F,
+) -> impl FnMut(Input) -> IResult<Input, Input, Error>
+where
+  Input: InputTake + InputIter + InputLength + Clone,
+  F: Parser<Input, O, Error>,
+  Error: ParseError<Input>,
+{
+  move |input: Input| {
+    let i = input.clone();
+    for (ind, _) in i.iter_indices() {
+      let (remaining, taken) = i.take_split(ind);
+      match f.parse(remaining) {
+        Err(_) => (),
+        Ok((inner_remaining, _parser_result)) => {
+          let res: IResult<Input, Input, Error> = Ok((inner_remaining, taken));
+          return res;
+        }
+      }
+    }
+    // Attempt to match one last time past the end of the input. This
+    // allows for 0-length combinators to be used (for example, an eof
+    // combinator).
+    let (remaining, taken) = i.take_split(i.input_len());
+    match f.parse(remaining) {
+      Err(_) => (),
+      Ok((inner_remaining, _parser_result)) => {
+        let res: IResult<Input, Input, Error> = Ok((inner_remaining, taken));
+        return res;
+      }
+    }
+    Err(Err::Error(Error::from_error_kind(
+      i,
+      ErrorKind::TakeUntilParserMatches,
+    )))
+  }
+}
+
 /// Matches a byte string with escaped characters.
 ///
 /// * The first argument matches the normal characters (it must not accept the control character)
@@ -695,6 +854,8 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::character::complete::multispace0;
+  use crate::combinator::all_consuming;
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
@@ -740,5 +901,67 @@ mod tests {
   #[test]
   fn escaped_hang_1118() {
     assert_eq!(unquote(r#""""#), Ok(("", "")));
+  }
+
+  #[test]
+  fn take_until_parser_matches_success() {
+    let result: IResult<&str, &str> =
+      super::take_until_parser_matches(tag("bbb"))("aaaaabbaaaabbbaaa");
+    assert_eq!(result, Ok(("bbbaaa", "aaaaabbaaaa")));
+  }
+
+  #[test]
+  fn take_until_parser_matches_failure() {
+    let result: IResult<&str, &str> =
+      super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaa");
+    assert_eq!(
+      result,
+      Err(Err::Error(error_position!(
+        "aaaaabbaaaabbbaaa",
+        ErrorKind::TakeUntilParserMatches
+      )))
+    );
+  }
+
+  #[test]
+  fn take_until_parser_matches_incomplete() {
+    let result: IResult<&str, &str> =
+      super::take_until_parser_matches(tag("xyz"))("aaaaabbaaaabbbaaaxy");
+    assert_eq!(
+      result,
+      Err(Err::Error(error_position!(
+        "aaaaabbaaaabbbaaaxy",
+        ErrorKind::TakeUntilParserMatches
+      )))
+    );
+  }
+
+  #[test]
+  fn take_until_parser_matches_past_end_of_input() {
+    //! Ensure take_until_parser_matches will continue to attempt to match past the last character of the input
+    assert_eq!(
+      Ok(("\n", "foo bar baz")),
+      take_until_parser_matches::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))(
+        "foo bar baz\n"
+      )
+    );
+    assert_eq!(
+      Ok(("", "foo bar baz")),
+      take_until_parser_matches::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))(
+        "foo bar baz"
+      )
+    );
+    assert_eq!(
+      Ok(("", "foo bar baz")),
+      take_until_parser_matches_and_consume::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))(
+        "foo bar baz\n"
+      )
+    );
+    assert_eq!(
+      Ok(("", "foo bar baz")),
+      take_until_parser_matches_and_consume::<_, _, _, (_, ErrorKind)>(all_consuming(multispace0))(
+        "foo bar baz"
+      )
+    );
   }
 }
