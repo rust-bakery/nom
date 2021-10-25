@@ -116,10 +116,12 @@ let http_version = preceded(http, version);
 // combine all previous parsers in one function
 fn request_line(i: &[u8]) -> IResult<&[u8], Request> {
 
-  // tuple takes as argument a tuple of parsers and will return
-  // a tuple of their results
+  // Tuples of parsers are a parser themselves,
+  // parsing with each of them sequentially and returning a tuple of their results.
+  // Unlike most other parsers, parser tuples are not `FnMut`, they must be wrapped
+  // in the `parse` function to be able to be used in the same way as the others. 
   let (input, (method, _, url, _, version, _)) =
-    tuple((method, space, url, space, http_version, line_ending))(i)?;
+    parse((method, space, url, space, http_version, line_ending))(i)?;
 
   Ok((input, Request { method, url, version }))
 }

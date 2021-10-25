@@ -38,7 +38,6 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | [terminated](https://docs.rs/nom/latest/nom/sequence/fn.terminated.html) | `terminated(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", "ab"))` ||
 | [pair](https://docs.rs/nom/latest/nom/sequence/fn.pair.html) | `pair(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", ("ab", "XY")))` ||
 | [separated_pair](https://docs.rs/nom/latest/nom/sequence/fn.separated_pair.html) | `separated_pair(tag("hello"), char(','), tag("world"))` | `"hello,world!"` | `Ok(("!", ("hello", "world")))` ||
-| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `tuple(tag("ab"), tag("XY"), take(1))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` |Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
 
 ## Applying a parser multiple times
 
@@ -84,6 +83,7 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 - [`map_res`](https://docs.rs/nom/latest/nom/combinator/fn.map_res.html): Maps a function returning a `Result` on the output of a parser
 - [`not`](https://docs.rs/nom/latest/nom/combinator/fn.not.html): Returns a result only if the embedded parser returns `Error` or `Incomplete`. Does not consume the input
 - [`opt`](https://docs.rs/nom/latest/nom/combinator/fn.opt.html): Make the underlying parser optional
+- [`parse`](https://docs.rs/nom/latest/nom/combinator/fn.parse.html): Make the underlying parser a `FnMut`, so callable in the imperative style.
 - [`peek`](https://docs.rs/nom/latest/nom/combinator/fn.peek.html): Returns a result without consuming the input
 - [`recognize`](https://docs.rs/nom/latest/nom/combinator/fn.recognize.html): If the child parser was successful, return the consumed input as the produced value
 - [`consumed`](https://docs.rs/nom/latest/nom/combinator/fn.consumed.html): If the child parser was successful, return a tuple of the consumed input and the produced output.
