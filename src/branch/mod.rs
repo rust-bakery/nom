@@ -82,6 +82,14 @@ pub trait Permutation<I, O, E> {
   fn permutation(&mut self, input: I) -> IResult<I, O, E>;
 }
 
+/// Helper trait for the [permutation_opt()] combinator.
+///
+/// This trait is implemented for tuples of up to 21 elements
+pub trait PermutationOpt<I, O, E> {
+  /// Tries to apply all parsers in the tuple in various orders until all of them succeed or no one succeed anymore
+  fn permutation_opt(&mut self, input: I) -> IResult<I, O, E>;
+}
+
 /// Applies a list of parsers in any order.
 ///
 /// Permutation will succeed if all of the child parsers succeeded.
@@ -131,6 +139,60 @@ pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {
   move |i: I| l.permutation(i)
+}
+
+/// Applies a list of parsers in any order.
+///
+/// Permutation Optional will always succeed unless a parser return an unrecoverable error
+/// It takes as argument a tuple of parsers, and returns a
+/// tuple of the parser optional results.
+///
+/// ```rust
+/// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::character::complete::{alpha1, digit1};
+/// use nom::branch::permutation_opt;
+/// # fn main() {
+/// fn parser(input: &str) -> IResult<&str, (Option<&str>, Option<&str>)> {
+///   permutation_opt((alpha1, digit1))(input)
+/// }
+///
+/// // permutation recognizes alphabetic characters then digit
+/// assert_eq!(parser("abc123"), Ok(("", (Some("abc"), Some("123")))));
+///
+/// // but also in inverse order
+/// assert_eq!(parser("123abc"), Ok(("", (Some("abc"), Some("123")))));
+///
+/// // it will not fail if one of the parsers failed
+/// assert_eq!(parser("abc;"), Ok((";", (Some("abc"), None))));
+///
+/// // in any order
+/// assert_eq!(parser("123;"), Ok((";", (None, Some("123")))));
+/// # }
+/// ```
+///
+/// The parsers are applied greedily: if there are multiple unapplied parsers
+/// that could parse the next slice of input, the first one is used.
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
+/// use nom::branch::permutation_opt;
+/// use nom::character::complete::{anychar, char};
+///
+/// fn parser(input: &str) -> IResult<&str, (Option<char>, Option<char>)> {
+///   permutation_opt((anychar, char('a')))(input)
+/// }
+///
+/// // anychar parses 'b', then char('a') parses 'a'
+/// assert_eq!(parser("ba"), Ok(("", (Some('b'), Some('a')))));
+///
+/// // anychar parses 'a', then char('a') fails on 'b',
+/// // even though char('a') followed by anychar would succeed
+/// assert_eq!(parser("ab"), Ok(("b", (Some('a'), None))));
+/// ```
+///
+pub fn permutation_opt<I: Clone, O, E: ParseError<I>, List: PermutationOpt<I, O, E>>(
+  mut l: List,
+) -> impl FnMut(I) -> IResult<I, O, E> {
+  move |i: I| l.permutation_opt(i)
 }
 
 macro_rules! alt_trait(
@@ -240,7 +302,42 @@ macro_rules! permutation_trait_impl(
         }
       }
     }
+
+    impl<
+      Input: Clone, $($ty),+ , Error: ParseError<Input>,
+      $($name: Parser<Input, $ty, Error>),+
+    > PermutationOpt<Input, ( $(Option<$ty>),+ ), Error> for ( $($name),+ ) {
+
+      fn permutation_opt(&mut self, mut input: Input) -> IResult<Input, ( $(Option<$ty>),+ ), Error> {
+        let mut res = ($(Option::<$ty>::None),+);
+
+        loop {
+          permutation_trait_opt_inner!(0, self, input, res, err, $($name)+);
+
+          // All parsers were applied or failed
+          break Ok((input, res));
+        }
+      }
+    }
   );
+);
+
+macro_rules! permutation_trait_opt_inner(
+  ($it:tt, $self:expr, $input:ident, $res:expr, $err:expr, $head:ident $($id:ident)*) => (
+    if $res.$it.is_none() {
+      match $self.$it.parse($input.clone()) {
+        Ok((i, o)) => {
+          $input = i;
+          $res.$it = Some(o);
+          continue;
+        }
+        Err(Err::Error(_)) => {}
+        Err(e) => return Err(e),
+      };
+    }
+    succ!($it, permutation_trait_opt_inner!($self, $input, $res, $err, $($id)*));
+  );
+  ($it:tt, $self:expr, $input:ident, $res:expr, $err:expr,) => ();
 );
 
 macro_rules! permutation_trait_inner(
