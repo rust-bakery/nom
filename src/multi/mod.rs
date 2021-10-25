@@ -229,20 +229,18 @@ where
     }
 
     loop {
-      let len = i.input_len();
       match sep.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, res)),
         Err(e) => return Err(e),
         Ok((i1, _)) => {
-          // infinite loop check: the parser must always consume
-          if i1.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
-          }
-
           match f.parse(i1.clone()) {
             Err(Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i2, o)) => {
+              // infinite loop check: the parser must always consume
+              if i2.input_len() == i.input_len() {
+                return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
+              }
               res.push(o);
               i = i2;
             }
@@ -299,20 +297,18 @@ where
     }
 
     loop {
-      let len = i.input_len();
       match sep.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, res)),
         Err(e) => return Err(e),
         Ok((i1, _)) => {
-          // infinite loop check: the parser must always consume
-          if i1.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
-          }
-
           match f.parse(i1.clone()) {
             Err(Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i2, o)) => {
+              // infinite loop check: the parser must always consume
+              if i2.input_len() == i.input_len() {
+                return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
+              }
               res.push(o);
               i = i2;
             }

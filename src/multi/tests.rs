@@ -26,44 +26,57 @@ fn separated_list0_test() {
   fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(","), tag(""))(i)
   }
-  fn empty_sep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+  fn sep_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(""), tag("abc"))(i)
+  }
+  fn all_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list0(tag(""), tag(""))(i)
   }
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(".."), tag("abcd"))(i)
   }
 
-  let a = &b"abcdef"[..];
-  let b = &b"abcd,abcdef"[..];
-  let c = &b"azerty"[..];
-  let d = &b",,abc"[..];
-  let e = &b"abcd,abcd,ef"[..];
-  let f = &b"abc"[..];
-  let g = &b"abcd."[..];
-  let h = &b"abcd,abc"[..];
-  let i = &b"abcabc"[..];
+  let input = &b"abcdef"[..];
+  let output = vec![&b"abcd"[..]];
+  assert_eq!(multi(input), Ok((&b"ef"[..], output)));
 
-  let res1 = vec![&b"abcd"[..]];
-  assert_eq!(multi(a), Ok((&b"ef"[..], res1)));
-  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
-  assert_eq!(multi(b), Ok((&b"ef"[..], res2)));
-  assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
-  let res3 = vec![&b""[..], &b""[..], &b""[..]];
-  assert_eq!(multi_empty(d), Ok((&b"abc"[..], res3)));
-  let i_err_pos = &i[3..];
+  let input = &b"abcd,abcdef"[..];
+  let output = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi(input), Ok((&b"ef"[..], output)));
+
+  let input = &b"azerty"[..];
+  let output = vec![];
+  assert_eq!(multi(input), Ok((&b"azerty"[..], output)));
+
+  let input = &b"abcd,abcd,ef"[..];
+  let output = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi(input), Ok((&b",ef"[..], output)));
+
+  let input = &b",,abc"[..];
+  let output = vec![&b""[..], &b""[..], &b""[..]];
+  assert_eq!(multi_empty(input), Ok((&b"abc"[..], output)));
+
+  let input = &b"abcabcf"[..];
+  let output = vec![&b"abc"[..], &b"abc"[..]];
+  assert_eq!(sep_empty(input), Ok((&b"f"[..], output)));
+
+  let input = &b"abcabc"[..];
   assert_eq!(
-    empty_sep(i),
+    all_empty(input),
     Err(Err::Error(error_position!(
-      i_err_pos,
+      &input[0..],
       ErrorKind::SeparatedList
     )))
   );
-  let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
-  assert_eq!(multi(e), Ok((&b",ef"[..], res4)));
 
-  assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(1))));
+  let input = &b"abc"[..];
+  assert_eq!(multi(input), Err(Err::Incomplete(Needed::new(1))));
+
+  let input = &b"abcd."[..];
+  assert_eq!(multi_longsep(input), Err(Err::Incomplete(Needed::new(1))));
+
+  let input = &b"abcd,abc"[..];
+  assert_eq!(multi(input), Err(Err::Incomplete(Needed::new(1))));
 }
 
 #[test]
@@ -72,33 +85,62 @@ fn separated_list1_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list1(tag(","), tag("abcd"))(i)
   }
+  fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list1(tag(","), tag(""))(i)
+  }
+  fn sep_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list1(tag(""), tag("abc"))(i)
+  }
+  fn all_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list1(tag(""), tag(""))(i)
+  }
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list1(tag(".."), tag("abcd"))(i)
   }
 
-  let a = &b"abcdef"[..];
-  let b = &b"abcd,abcdef"[..];
-  let c = &b"azerty"[..];
-  let d = &b"abcd,abcd,ef"[..];
+  let input = &b"abcdef"[..];
+  let output = vec![&b"abcd"[..]];
+  assert_eq!(multi(input), Ok((&b"ef"[..], output)));
 
-  let f = &b"abc"[..];
-  let g = &b"abcd."[..];
-  let h = &b"abcd,abc"[..];
+  let input = &b"abcd,abcdef"[..];
+  let output = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi(input), Ok((&b"ef"[..], output)));
 
-  let res1 = vec![&b"abcd"[..]];
-  assert_eq!(multi(a), Ok((&b"ef"[..], res1)));
-  let res2 = vec![&b"abcd"[..], &b"abcd"[..]];
-  assert_eq!(multi(b), Ok((&b"ef"[..], res2)));
+  let input = &b"azerty"[..];
   assert_eq!(
-    multi(c),
-    Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+    multi(input),
+    Err(Err::Error(error_position!(&input[0..], ErrorKind::Tag)))
   );
-  let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
-  assert_eq!(multi(d), Ok((&b",ef"[..], res3)));
 
-  assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(1))));
+  let input = &b"abcd,abcd,ef"[..];
+  let output = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi(input), Ok((&b",ef"[..], output)));
+
+  let input = &b",,abc"[..];
+  let output = vec![&b""[..], &b""[..], &b""[..]];
+  assert_eq!(multi_empty(input), Ok((&b"abc"[..], output)));
+
+  let input = &b"abcabcf"[..];
+  let output = vec![&b"abc"[..], &b"abc"[..]];
+  assert_eq!(sep_empty(input), Ok((&b"f"[..], output)));
+
+  let input = &b"abcabc"[..];
+  assert_eq!(
+    all_empty(input),
+    Err(Err::Error(error_position!(
+      &input[0..],
+      ErrorKind::SeparatedList
+    )))
+  );
+
+  let input = &b"abc"[..];
+  assert_eq!(multi(input), Err(Err::Incomplete(Needed::new(1))));
+
+  let input = &b"abcd."[..];
+  assert_eq!(multi_longsep(input), Err(Err::Incomplete(Needed::new(1))));
+
+  let input = &b"abcd,abc"[..];
+  assert_eq!(multi(input), Err(Err::Incomplete(Needed::new(1))));
 }
 
 #[test]
