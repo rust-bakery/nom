@@ -17,8 +17,8 @@ use core::num::NonZeroUsize;
 /// # Arguments
 /// * `f` The parser to apply.
 ///
-/// *Note*: if the parser passed to `many0` accepts empty inputs
-/// (like `alpha0` or `digit0`), `many0` will return an error,
+/// *Note*: In debug build if the parser passed to `many0` accepts empty inputs
+/// (like `alpha0` or `digit0`), `many0` will return a failure,
 /// to prevent going into an infinite loop
 ///
 /// ```rust
@@ -46,14 +46,14 @@ where
   move |mut i: I| {
     let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
     loop {
-      let len = i.input_len();
       match f.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, acc)),
         Err(e) => return Err(e),
         Ok((i1, o)) => {
           // infinite loop check: the parser must always consume
-          if i1.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+          #[cfg(debug_assertions)]
+          if i1.input_len() == i.input_len() {
+            return Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many0)));
           }
 
           i = i1;
@@ -72,8 +72,8 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 ///
-/// *Note*: If the parser passed to `many1` accepts empty inputs
-/// (like `alpha0` or `digit0`), `many1` will return an error,
+/// *Note*: In debug build if the parser passed to `many1` accepts empty inputs
+/// (like `alpha0` or `digit0`), `many1` will return a failure,
 /// to prevent going into an infinite loop.
 ///
 /// ```rust
@@ -107,14 +107,14 @@ where
       i = i1;
 
       loop {
-        let len = i.input_len();
         match f.parse(i.clone()) {
           Err(Err::Error(_)) => return Ok((i, acc)),
           Err(e) => return Err(e),
           Ok((i1, o)) => {
             // infinite loop check: the parser must always consume
-            if i1.input_len() == len {
-              return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
+            #[cfg(debug_assertions)]
+            if i1.input_len() == i.input_len() {
+              return Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1)));
             }
 
             i = i1;
@@ -159,7 +159,6 @@ where
   move |mut i: I| {
     let mut res = crate::lib::std::vec::Vec::new();
     loop {
-      let len = i.input_len();
       match g.parse(i.clone()) {
         Ok((i1, o)) => return Ok((i1, (res, o))),
         Err(Err::Error(_)) => {
@@ -168,8 +167,9 @@ where
             Err(e) => return Err(e),
             Ok((i1, o)) => {
               // infinite loop check: the parser must always consume
-              if i1.input_len() == len {
-                return Err(Err::Error(E::from_error_kind(i1, ErrorKind::ManyTill)));
+              #[cfg(debug_assertions)]
+              if i1.input_len() == i.input_len() {
+                return Err(Err::Failure(E::from_error_kind(i1, ErrorKind::ManyTill)));
               }
 
               res.push(o);
@@ -229,14 +229,17 @@ where
     }
 
     loop {
-      let len = i.input_len();
       match sep.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, res)),
         Err(e) => return Err(e),
         Ok((i1, _)) => {
           // infinite loop check: the parser must always consume
-          if i1.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
+          #[cfg(debug_assertions)]
+          if i1.input_len() == i.input_len() {
+            return Err(Err::Failure(E::from_error_kind(
+              i1,
+              ErrorKind::SeparatedList,
+            )));
           }
 
           match f.parse(i1.clone()) {
@@ -299,14 +302,17 @@ where
     }
 
     loop {
-      let len = i.input_len();
       match sep.parse(i.clone()) {
         Err(Err::Error(_)) => return Ok((i, res)),
         Err(e) => return Err(e),
         Ok((i1, _)) => {
           // infinite loop check: the parser must always consume
-          if i1.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
+          #[cfg(debug_assertions)]
+          if i1.input_len() == i.input_len() {
+            return Err(Err::Failure(E::from_error_kind(
+              i1,
+              ErrorKind::SeparatedList,
+            )));
           }
 
           match f.parse(i1.clone()) {
@@ -364,12 +370,12 @@ where
 
     let mut res = crate::lib::std::vec::Vec::with_capacity(min);
     for count in 0..max {
-      let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
           // infinite loop check: the parser must always consume
-          if tail.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(input, ErrorKind::ManyMN)));
+          #[cfg(debug_assertions)]
+          if tail.input_len() == input.input_len() {
+            return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
           }
 
           res.push(value);
@@ -422,12 +428,15 @@ where
 
     loop {
       let input_ = input.clone();
-      let len = input.input_len();
       match f.parse(input_) {
         Ok((i, _)) => {
           // infinite loop check: the parser must always consume
-          if i.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many0Count)));
+          #[cfg(debug_assertions)]
+          if i.input_len() == input.input_len() {
+            return Err(Err::Failure(E::from_error_kind(
+              input,
+              ErrorKind::Many0Count,
+            )));
           }
 
           input = i;
@@ -478,15 +487,15 @@ where
         let mut input = i1;
 
         loop {
-          let len = input.input_len();
           let input_ = input.clone();
           match f.parse(input_) {
             Err(Err::Error(_)) => return Ok((input, count)),
             Err(e) => return Err(e),
             Ok((i, _)) => {
               // infinite loop check: the parser must always consume
-              if i.input_len() == len {
-                return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1Count)));
+              #[cfg(debug_assertions)]
+              if i.input_len() == input.input_len() {
+                return Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1Count)));
               }
 
               count += 1;
@@ -648,12 +657,12 @@ where
 
     loop {
       let i_ = input.clone();
-      let len = input.input_len();
       match f.parse(i_) {
         Ok((i, o)) => {
           // infinite loop check: the parser must always consume
-          if i.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many0)));
+          #[cfg(debug_assertions)]
+          if i.input_len() == input.input_len() {
+            return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many0)));
           }
 
           res = g(res, o);
@@ -724,7 +733,6 @@ where
 
         loop {
           let _input = input.clone();
-          let len = input.input_len();
           match f.parse(_input) {
             Err(Err::Error(_)) => {
               break;
@@ -732,7 +740,8 @@ where
             Err(e) => return Err(e),
             Ok((i, o)) => {
               // infinite loop check: the parser must always consume
-              if i.input_len() == len {
+              #[cfg(debug_assertions)]
+              if i.input_len() == input.input_len() {
                 return Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1)));
               }
 
@@ -804,11 +813,11 @@ where
 
     let mut acc = init();
     for count in 0..max {
-      let len = input.input_len();
       match parse.parse(input.clone()) {
         Ok((tail, value)) => {
           // infinite loop check: the parser must always consume
-          if tail.input_len() == len {
+          #[cfg(debug_assertions)]
+          if tail.input_len() == input.input_len() {
             return Err(Err::Error(E::from_error_kind(tail, ErrorKind::ManyMN)));
           }
 
