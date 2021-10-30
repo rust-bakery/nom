@@ -11,7 +11,7 @@ use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::traits::{
   AsChar, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice,
 };
-use crate::traits::{Compare, CompareResult};
+use crate::traits::{Compare, CompareResult, InputSplit};
 
 /// Recognizes one character.
 ///
@@ -308,16 +308,13 @@ where
 /// ```
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
-  T: InputIter + InputLength + Slice<RangeFrom<usize>>,
-  <T as InputIter>::Item: AsChar,
+  T: InputSplit,
+  <T as InputSplit>::Item: AsChar,
 {
-  let mut it = input.iter_indices();
-  match it.next() {
-    None => Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof))),
-    Some((_, c)) => match it.next() {
-      None => Ok((input.slice(input.input_len()..), c.as_char())),
-      Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
-    },
+  if let Some((first, tail)) = input.split_first() {
+    Ok((tail, first.as_char()))
+  } else {
+    Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof)))
   }
 }
 
