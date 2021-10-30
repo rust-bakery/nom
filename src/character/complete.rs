@@ -311,10 +311,9 @@ where
   T: InputSplit,
   <T as InputSplit>::Item: AsChar,
 {
-  if let Some((first, tail)) = input.split_first() {
-    Ok((tail, first.as_char()))
-  } else {
-    Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof)))
+  match input.split_first() {
+    Ok((first, tail)) => Ok((tail, first.as_char())),
+    Err(input) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof))),
   }
 }
 

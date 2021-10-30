@@ -291,7 +291,7 @@ where
   T: InputSplit,
   <T as InputSplit>::Item: AsChar,
 {
-  if let Some((first, tail)) = input.split_first() {
+  if let Ok((first, tail)) = input.split_first() {
     Ok((tail, first.as_char()))
   } else {
     Err(Err::Incomplete(Needed::new(1)))

@@ -10,64 +10,72 @@ pub trait InputSplit: Sized {
   /// Divides one input into two at an index.
   ///
   /// Return the head first then the tail `Ok((head, tail))`
-  fn split_at(&self, mid: usize) -> Result<(Self, Self), Needed>;
+  fn split_at(self, mid: usize) -> Result<(Self, Self), (Self, Needed)>;
 
   /// Returns the first and all the rest of the elements of the slice, or None if it is empty.
-  fn split_first(&self) -> Option<(Self::Item, Self)>;
+  fn split_first(self) -> Result<(Self::Item, Self), Self>;
 
   /// Returns the last and all the rest of the elements of the slice, or None if it is empty.
-  /// 
+  ///
   /// The return order of the tuple is the opposite of split_first.
   /// It's reduce potencial mistake and match slice pattern matching
-  fn split_last(&self) -> Option<(Self, Self::Item)>;
+  fn split_last(self) -> Result<(Self, Self::Item), Self>;
 }
 
 impl<'a> InputSplit for &'a str {
   type Item = char;
 
-  fn split_at(&self, mid: usize) -> Result<(Self, Self), Needed> {
+  fn split_at(self, mid: usize) -> Result<(Self, Self), (Self, Needed)> {
     if mid <= self.len() {
       Ok(str::split_at(self, mid))
     } else {
-      Err(Needed::new(mid - self.len()))
+      Err((self, Needed::new(mid - self.len())))
     }
   }
 
-  fn split_first(&self) -> Option<(Self::Item, Self)> {
+  fn split_first(self) -> Result<(Self::Item, Self), Self> {
     let mut chars = self.chars();
-    chars.next().map(|c| (c, chars.as_str()))
+    if let Some(c) = chars.next_back() {
+      Ok((c, chars.as_str()))
+    } else {
+      Err(self)
+    }
   }
 
-  fn split_last(&self) -> Option<(Self, Self::Item)> {
+  fn split_last(self) -> Result<(Self, Self::Item), Self> {
     let mut chars = self.chars();
-    chars.next_back().map(|c| (chars.as_str(), c))
+    if let Some(c) = chars.next_back() {
+      Ok((chars.as_str(), c))
+    } else {
+      Err(self)
+    }
   }
 }
 
 impl<'a> InputSplit for &'a [u8] {
   type Item = u8;
 
-  fn split_at(&self, mid: usize) -> Result<(Self, Self), Needed> {
+  fn split_at(self, mid: usize) -> Result<(Self, Self), (Self, Needed)> {
     if mid <= self.len() {
       Ok(<[u8]>::split_at(self, mid))
     } else {
-      Err(Needed::new(mid - self.len()))
+      Err((self, Needed::new(mid - self.len())))
     }
   }
 
-  fn split_first(&self) -> Option<(Self::Item, Self)> {
-    if let [first, tail @ ..] = *self {
-      Some((*first, tail))
+  fn split_first(self) -> Result<(Self::Item, Self), Self> {
+    if let [first, tail @ ..] = self {
+      Ok((*first, tail))
     } else {
-      None
+      Err(self)
     }
   }
 
-  fn split_last(&self) -> Option<(Self, Self::Item)> {
-    if let [tail @ .., last] = *self {
-      Some((tail, *last))
+  fn split_last(self) -> Result<(Self, Self::Item), Self> {
+    if let [tail @ .., last] = self {
+      Ok((tail, *last))
     } else {
-      None
+      Err(self)
     }
   }
 }
