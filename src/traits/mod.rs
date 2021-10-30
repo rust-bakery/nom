@@ -1,4 +1,9 @@
 //! Traits input types have to implement to work with nom combinators
+
+mod input_split;
+
+pub use input_split::InputSplit;
+
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::iter::{Copied, Enumerate};
@@ -369,7 +374,7 @@ impl<'a> InputTake for &'a [u8] {
   }
   #[inline]
   fn take_split(&self, count: usize) -> (Self, Self) {
-    let (prefix, suffix) = self.split_at(count);
+    let (prefix, suffix) = <[u8]>::split_at(self, count);
     (suffix, prefix)
   }
 }
@@ -422,7 +427,7 @@ impl<'a> InputTake for &'a str {
   // return byte index
   #[inline]
   fn take_split(&self, count: usize) -> (Self, Self) {
-    let (prefix, suffix) = self.split_at(count);
+    let (prefix, suffix) = str::split_at(self, count);
     (suffix, prefix)
   }
 }
