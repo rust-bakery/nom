@@ -18,7 +18,7 @@ pub mod streaming;
 /// assert_eq!(is_alphabetic(b'a'), true);
 /// ```
 #[inline]
-pub fn is_alphabetic(chr: u8) -> bool {
+pub const fn is_alphabetic(chr: u8) -> bool {
   (chr >= 0x41 && chr <= 0x5A) || (chr >= 0x61 && chr <= 0x7A)
 }
 
@@ -32,7 +32,7 @@ pub fn is_alphabetic(chr: u8) -> bool {
 /// assert_eq!(is_digit(b'9'), true);
 /// ```
 #[inline]
-pub fn is_digit(chr: u8) -> bool {
+pub const fn is_digit(chr: u8) -> bool {
   chr >= 0x30 && chr <= 0x39
 }
 
@@ -48,7 +48,7 @@ pub fn is_digit(chr: u8) -> bool {
 /// assert_eq!(is_hex_digit(b'x'), false);
 /// ```
 #[inline]
-pub fn is_hex_digit(chr: u8) -> bool {
+pub const fn is_hex_digit(chr: u8) -> bool {
   (chr >= 0x30 && chr <= 0x39) || (chr >= 0x41 && chr <= 0x46) || (chr >= 0x61 && chr <= 0x66)
 }
 
@@ -63,7 +63,7 @@ pub fn is_hex_digit(chr: u8) -> bool {
 /// assert_eq!(is_oct_digit(b'6'), true);
 /// ```
 #[inline]
-pub fn is_oct_digit(chr: u8) -> bool {
+pub const fn is_oct_digit(chr: u8) -> bool {
   chr >= 0x30 && chr <= 0x37
 }
 
@@ -79,7 +79,7 @@ pub fn is_oct_digit(chr: u8) -> bool {
 /// assert_eq!(is_alphanumeric(b'A'), true);
 /// ```
 #[inline]
-pub fn is_alphanumeric(chr: u8) -> bool {
+pub const fn is_alphanumeric(chr: u8) -> bool {
   is_alphabetic(chr) || is_digit(chr)
 }
 
@@ -95,7 +95,7 @@ pub fn is_alphanumeric(chr: u8) -> bool {
 /// assert_eq!(is_space(b'\t'), true);
 /// ```
 #[inline]
-pub fn is_space(chr: u8) -> bool {
+pub const fn is_space(chr: u8) -> bool {
   chr == b' ' || chr == b'\t'
 }
 
@@ -111,6 +111,6 @@ pub fn is_space(chr: u8) -> bool {
 /// assert_eq!(is_newline(b'\t'), false);
 /// ```
 #[inline]
-pub fn is_newline(chr: u8) -> bool {
+pub const fn is_newline(chr: u8) -> bool {
   chr == b'\n'
 }

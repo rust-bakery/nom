@@ -56,7 +56,7 @@ pub enum Needed {
 
 impl Needed {
   /// Creates `Needed` instance, returns `Needed::Unknown` if the argument is zero
-  pub fn new(s: usize) -> Self {
+  pub const fn new(s: usize) -> Self {
     match NonZeroUsize::new(s) {
       Some(sz) => Needed::Size(sz),
       None => Needed::Unknown,
@@ -64,8 +64,12 @@ impl Needed {
   }
 
   /// Indicates if we know how many bytes we need
-  pub fn is_known(&self) -> bool {
-    *self != Unknown
+  pub const fn is_known(&self) -> bool {
+    if let Size(_) = self {
+      true
+    } else {
+      false
+    }
   }
 
   /// Maps a `Needed` to `Needed` by applying a function to a contained `Size` value.
@@ -107,7 +111,7 @@ pub enum Err<E> {
 
 impl<E> Err<E> {
   /// Tests if the result is Incomplete
-  pub fn is_incomplete(&self) -> bool {
+  pub const fn is_incomplete(&self) -> bool {
     if let Err::Incomplete(_) = self {
       true
     } else {

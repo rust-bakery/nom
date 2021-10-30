@@ -64,7 +64,7 @@ pub struct Error<I> {
 
 impl<I> Error<I> {
   /// creates a new basic error
-  pub fn new(input: I, code: ErrorKind) -> Error<I> {
+  pub const fn new(input: I, code: ErrorKind) -> Error<I> {
     Error { input, code }
   }
 }

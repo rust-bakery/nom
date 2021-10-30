@@ -152,7 +152,7 @@ mod test {
 
   use crate::internal::Needed;
 
-  fn is_alphabetic(c: char) -> bool {
+  const fn is_alphabetic(c: char) -> bool {
     (c as u8 >= 0x41 && c as u8 <= 0x5A) || (c as u8 >= 0x61 && c as u8 <= 0x7A)
   }
 
