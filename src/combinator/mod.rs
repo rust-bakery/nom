@@ -205,11 +205,11 @@ where
 /// ```
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(
   mut parser: F,
-  applied_parser: G,
+  mut applied_parser: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
-  G: Fn(O1) -> H,
+  G: FnMut(O1) -> H,
   H: Parser<I, O2, E>,
 {
   move |input: I| {
