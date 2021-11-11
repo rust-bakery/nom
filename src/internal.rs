@@ -259,7 +259,7 @@ pub trait Parser<I, O, E> {
   /// Creates a second parser from the output of the first one, then apply over the rest of the input
   fn flat_map<G, H, O2>(self, g: G) -> FlatMap<Self, G, O>
   where
-    G: Fn(O) -> H,
+    G: FnMut(O) -> H,
     H: Parser<I, O2, E>,
     Self: core::marker::Sized,
   {

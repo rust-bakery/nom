@@ -6,6 +6,38 @@
 
 ### Changed
 
+## 7.1.0 - 2021-11-04
+
+### Thanks
+
+- @nickelc
+- @Stargateur
+- @NilsIrl
+- @clonejo
+- @Strytyp
+- @schubart
+- @jihchi
+- @nipunn1313
+- @Gungy2
+- @Drumato
+- @Alexhuszagh
+- @Aehmlo
+- @homersimpsons
+- @dne
+- @epage
+- @saiintbrisson
+- @pymongo
+
+### Changed
+
+- documentation fixes
+- Ci fixes
+- the move to minimal-lexical for float parsing introduced bugs that cannot be resolved right now, so this version moves back to using the standard lib' parser. *This is a performance regression**. If you have specific requirements around float parsing, you are strongly encouraged to use [recognize_float](https://docs.rs/nom/latest/nom/number/complete/fn.recognize_float.html) and another library to convert to a f32 or f64
+
+### Added
+
+- alt now works with 1 elment tuples
+
 ## 7.0.0 - 2021-08-21
 
 This release fixes dependency compilation issues and strengthen the minimum supported Rust version (MSRV) policy. This is also the first release without the macros that were used since nom's beginning.
