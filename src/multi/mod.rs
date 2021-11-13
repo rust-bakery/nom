@@ -958,7 +958,7 @@ where
   move |i: I| {
     let (i, count) = f.parse(i)?;
     let mut input = i.clone();
-    let mut res = Vec::new();
+    let mut res = Vec::with_capacity(count.to_usize());
 
     for _ in 0..count.to_usize() {
       let input_ = input.clone();
