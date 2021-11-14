@@ -914,6 +914,18 @@ impl<'a> FindToken<char> for &'a str {
   }
 }
 
+impl<'a> FindToken<char> for &'a [char] {
+  fn find_token(&self, token: char) -> bool {
+    self.iter().any(|i| *i == token)
+  }
+}
+
+impl<'a, 'b> FindToken<&'a char> for &'b [char] {
+  fn find_token(&self, token: &char) -> bool {
+    self.find_token(*token)
+  }
+}
+
 /// Look for a substring in self
 pub trait FindSubstring<T> {
   /// Returns the byte position of the substring if it is found
