@@ -388,6 +388,18 @@ where
 /// assert_eq!(take6("short"), Err(Err::Error(Error::new("short", ErrorKind::Eof))));
 /// assert_eq!(take6(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
 /// ```
+///
+/// The units that are taken will depend on the input type. For example, for a
+/// `&str` it will take a number of `char`'s, whereas for a `&[u8]` it will
+/// take that many `u8`'s:
+///
+/// ```rust
+/// use nom::error::Error;
+/// use nom::bytes::complete::take;
+///
+/// assert_eq!(take::<_, _, Error<_>>(1usize)("💙"), Ok(("", "💙")));
+/// assert_eq!(take::<_, _, Error<_>>(1usize)("💙".as_bytes()), Ok((b"\x9F\x92\x99".as_ref(), b"\xF0".as_ref())));
+/// ```
 pub fn take<C, Input, Error: ParseError<Input>>(
   count: C,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
