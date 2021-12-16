@@ -373,7 +373,6 @@
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
-#![cfg_attr(nightly, feature(test))]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
 #![deny(missing_docs)]
@@ -383,9 +382,6 @@
 extern crate alloc;
 #[cfg(doctest)]
 extern crate doc_comment;
-
-#[cfg(nightly)]
-extern crate test;
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");

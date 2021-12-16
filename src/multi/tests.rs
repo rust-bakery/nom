@@ -129,16 +129,6 @@ fn many0_test() {
   );
 }
 
-#[cfg(nightly)]
-use test::Bencher;
-
-#[cfg(nightly)]
-#[bench]
-fn many0_bench(b: &mut Bencher) {
-  named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
-  b.iter(|| multi(&b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..]));
-}
-
 #[test]
 #[cfg(feature = "alloc")]
 fn many1_test() {
