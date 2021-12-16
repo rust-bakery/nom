@@ -246,7 +246,7 @@ pub trait Parser<I, O, E> {
   /// Maps a function over the result of a parser
   fn map<G, O2>(self, g: G) -> Map<Self, G, O>
   where
-    G: Fn(O) -> O2,
+    G: FnMut(O) -> O2,
     Self: core::marker::Sized,
   {
     Map {
@@ -344,7 +344,7 @@ pub struct Map<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
+impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
     match self.f.parse(i) {
       Err(e) => Err(e),
@@ -361,7 +361,7 @@ pub struct FlatMap<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
+impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
   for FlatMap<F, G, O1>
 {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
