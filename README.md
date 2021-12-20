@@ -3,7 +3,7 @@
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Join the chat at https://gitter.im/Geal/nom](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Geal/nom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://github.com/Geal/nom/actions/workflows/ci.yml/badge.svg)](https://github.com/Geal/nom/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/Geal/nom/badge.svg?branch=master)](https://coveralls.io/github/Geal/nom?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/Geal/nom/badge.svg?branch=main)](https://coveralls.io/github/Geal/nom?branch=main)
 [![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
 [![Minimum rustc version](https://img.shields.io/badge/rustc-1.48.0+-lightgray.svg)](#rust-version-requirements)
 
@@ -13,7 +13,7 @@ that end, it uses extensively Rust's *strong typing* and *memory safety* to prod
 fast and correct parsers, and provides functions, macros and traits to abstract most of the
 error prone plumbing.
 
-![nom logo in CC0 license, by Ange Albertini](https://raw.githubusercontent.com/Geal/nom/master/assets/nom.png)
+![nom logo in CC0 license, by Ange Albertini](https://raw.githubusercontent.com/Geal/nom/main/assets/nom.png)
 
 *nom will happily take a byte out of your files :)*
 
@@ -74,8 +74,8 @@ fn parse_color() {
 ## Documentation
 
 - [Reference documentation](https://docs.rs/nom)
-- [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc)
-- [List of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
+- [Various design documents and tutorials](https://github.com/Geal/nom/tree/main/doc)
+- [List of combinators and their behaviour](https://github.com/Geal/nom/blob/main/doc/choosing_a_combinator.md)
 
 If you need any help developing your parsers, please ping `geal` on IRC (libera, geeknode, oftc), go to `#nom-parsers` on Libera IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
@@ -230,7 +230,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [CSV](https://github.com/GuillaumeGomez/csv-parser),
 [FASTA](https://github.com/TianyiShi2001/nom-fasta),
 [FASTQ](https://github.com/elij/fastq.rs),
-[INI](https://github.com/Geal/nom/blob/master/tests/ini.rs),
+[INI](https://github.com/Geal/nom/blob/main/tests/ini.rs),
 [ISO 8601 dates](https://github.com/badboy/iso8601),
 [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config),
 [Web archive](https://github.com/sbeckeriv/warc_nom_parser),

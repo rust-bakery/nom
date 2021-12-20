@@ -126,7 +126,7 @@ path = "examples/string.rs"
 
 [badges]
 travis-ci = { repository = "Geal/nom" }
-coveralls = { repository = "Geal/nom", branch = "master", service = "github" }
+coveralls = { repository = "Geal/nom", branch = "main", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [workspace]

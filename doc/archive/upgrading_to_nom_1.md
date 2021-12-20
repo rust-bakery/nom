@@ -51,7 +51,7 @@ fn parse_status(i: &[u8]) -> IResult<&[u8], Status>
 
 # Producers and consumers
 
-The old implementation was not flexible, and a bit slow (because of allocations). The new implementation can be driven more precisely outside of the consumer, step by step if needed, can return a result, has custom error types, and can combine consumers. You can see [an example in the repository](https://github.com/Geal/nom/blob/master/tests/omnom.rs#).
+The old implementation was not flexible, and a bit slow (because of allocations). The new implementation can be driven more precisely outside of the consumer, step by step if needed, can return a result, has custom error types, and can combine consumers. You can see [an example in the repository](https://github.com/Geal/nom/blob/main/tests/omnom.rs#).
 
 # Changes around `Incomplete`
 
