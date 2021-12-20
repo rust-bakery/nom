@@ -12,7 +12,7 @@ If you got the following error when compiling your nom parser:
 error[E0425]: cannot find value `INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ` in this scope
    --> src/lib.rs:111:7
     |
-111 |         INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/master/doc/FAQ.md#using-nightly-to-get-better-error-messages
+111 |         INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/main/doc/FAQ.md#using-nightly-to-get-better-error-messages
     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
 ```
 
