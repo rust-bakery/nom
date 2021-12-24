@@ -206,3 +206,42 @@ fn issue_1231_bits_expect_fn_closure() {
   }
   assert_eq!(example(&[0xff]), Ok((&b""[..], (1, 1))));
 }
+
+#[test]
+fn non_byte_slices_can_be_parsed() {
+  use nom::branch::alt;
+  use nom::bytes::complete::tag;
+  use nom::combinator::map;
+  use nom::sequence::tuple;
+
+  #[derive(Debug, PartialEq, Eq)]
+  enum Token {
+    Open, Close, Comma, Num(u8),
+  }
+
+  fn magnitude(input: &[Token]) -> IResult<&[Token], u8> {
+    // An element can be either a pair of elements, or a number literal.
+    alt((magnitude_of_pair, parse_number_from_token))(input)
+  }
+  fn magnitude_of_pair(input: &[Token]) -> IResult<&[Token], u8> {
+    let eat = |t| tag(std::slice::from_ref(t));
+    // [0,1]; or, recursively, two nested pairs.
+    let parser = tuple((eat(&Token::Open), magnitude, eat(&Token::Comma), magnitude, eat(&Token::Close)));
+    let mut discard_delimiter_parser = map(parser, |(_, l, _, r, _)| 3 * l + 2 * r);
+    discard_delimiter_parser(input)
+  }
+  fn parse_number_from_token(input: &[Token]) -> IResult<&[Token], u8> {
+    use nom::Err;
+    match input.get(0) {
+        None => Err(Err::Incomplete(Needed::new(1))),
+        Some(Token::Num(n)) => Ok((&input[1..], *n)),
+        Some(_) => Err(Err::Error(nom::error::Error { input, code: nom::error::ErrorKind::Tag })),
+    }
+  }
+
+  // [4,3]
+  let tokenstream = vec![Token::Open, Token::Num(4), Token::Comma, Token::Num(3), Token::Close];
+  let (remaining, magnitude) = magnitude_of_pair(&tokenstream).unwrap();
+  assert_eq!(remaining, &[]);
+  assert_eq!(magnitude, 18);
+}

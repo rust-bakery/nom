@@ -332,10 +332,13 @@ pub trait InputTake: Sized {
   fn take_split(&self, count: usize) -> (Self, Self);
 }
 
-impl<'a> InputIter for &'a [u8] {
-  type Item = u8;
+impl<'a, T> InputIter for &'a [T]
+where
+  T: Copy,
+{
+  type Item = T;
   type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Copied<Iter<'a, u8>>;
+  type IterElem = Copied<Iter<'a, T>>;
 
   #[inline]
   fn iter_indices(&self) -> Self::Iter {
@@ -362,7 +365,7 @@ impl<'a> InputIter for &'a [u8] {
   }
 }
 
-impl<'a> InputTake for &'a [u8] {
+impl<'a, T> InputTake for &'a [T] {
   #[inline]
   fn take(&self, count: usize) -> Self {
     &self[0..count]
@@ -738,9 +741,12 @@ fn lowercase_byte(c: u8) -> u8 {
   }
 }
 
-impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
+impl<'a, 'b, T> Compare<&'b [T]> for &'a [T]
+where
+  T: Eq,
+{
   #[inline(always)]
-  fn compare(&self, t: &'b [u8]) -> CompareResult {
+  fn compare(&self, t: &'b [T]) -> CompareResult {
     let pos = self.iter().zip(t.iter()).position(|(a, b)| a != b);
 
     match pos {
@@ -790,8 +796,8 @@ impl<'a, 'b> CompareIgnoreCase<&'b [u8]> for &'a [u8] {
 }
 
 impl<
-    T: InputLength + InputIter<Item = u8> + InputTake + UnspecializedInput,
-    O: InputLength + InputIter<Item = u8> + InputTake,
+    T: Eq + InputLength + InputIter<Item = T> + InputTake + UnspecializedInput,
+    O: InputLength + InputIter<Item = T> + InputTake,
   > Compare<O> for T
 {
   #[inline(always)]
