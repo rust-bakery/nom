@@ -717,6 +717,10 @@ pub enum CompareResult {
 pub trait Compare<T> {
   /// Compares self to another value for equality
   fn compare(&self, t: T) -> CompareResult;
+}
+
+/// Abstracts case-insensitive comparison operations
+pub trait CompareIgnoreCase<T> {
   /// Compares self to another value for equality
   /// independently of the case.
   ///
@@ -766,7 +770,9 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     }
     */
   }
+}
 
+impl<'a, 'b> CompareIgnoreCase<&'b [u8]> for &'a [u8] {
   #[inline(always)]
   fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
     if self
@@ -806,7 +812,13 @@ impl<
       }
     }
   }
+}
 
+impl<
+    T: InputLength + InputIter<Item = u8> + InputTake + UnspecializedInput,
+    O: InputLength + InputIter<Item = u8> + InputTake,
+  > CompareIgnoreCase<O> for T
+{
   #[inline(always)]
   fn compare_no_case(&self, t: O) -> CompareResult {
     if self
@@ -828,6 +840,9 @@ impl<'a, 'b> Compare<&'b str> for &'a [u8] {
   fn compare(&self, t: &'b str) -> CompareResult {
     self.compare(AsBytes::as_bytes(t))
   }
+}
+
+impl<'a, 'b> CompareIgnoreCase<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
     self.compare_no_case(AsBytes::as_bytes(t))
@@ -839,7 +854,9 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   fn compare(&self, t: &'b str) -> CompareResult {
     self.as_bytes().compare(t.as_bytes())
   }
+}
 
+impl<'a, 'b> CompareIgnoreCase<&'b str> for &'a str {
   //FIXME: this version is too simple and does not use the current locale
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
@@ -866,6 +883,8 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a str {
   fn compare(&self, t: &'b [u8]) -> CompareResult {
     AsBytes::as_bytes(self).compare(t)
   }
+}
+impl<'a, 'b> CompareIgnoreCase<&'b [u8]> for &'a str {
   #[inline(always)]
   fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
     AsBytes::as_bytes(self).compare_no_case(t)
@@ -1080,7 +1099,9 @@ macro_rules! array_impls {
         fn compare(&self, t: [u8; $N]) -> CompareResult {
           self.compare(&t[..])
         }
+      }
 
+      impl<'a> CompareIgnoreCase<[u8; $N]> for &'a [u8] {
         #[inline(always)]
         fn compare_no_case(&self, t: [u8;$N]) -> CompareResult {
           self.compare_no_case(&t[..])
@@ -1092,7 +1113,9 @@ macro_rules! array_impls {
         fn compare(&self, t: &'b [u8; $N]) -> CompareResult {
           self.compare(&t[..])
         }
+      }
 
+      impl<'a,'b> CompareIgnoreCase<&'b [u8; $N]> for &'a [u8] {
         #[inline(always)]
         fn compare_no_case(&self, t: &'b [u8;$N]) -> CompareResult {
           self.compare_no_case(&t[..])

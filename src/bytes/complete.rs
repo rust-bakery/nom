@@ -9,6 +9,7 @@ use crate::traits::{
   Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake,
   InputTakeAtPosition, Slice, ToUsize,
 };
+use crate::CompareIgnoreCase;
 
 /// Recognizes a pattern
 ///
@@ -75,7 +76,7 @@ pub fn tag_no_case<T, Input, Error: ParseError<Input>>(
   tag: T,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
 where
-  Input: InputTake + Compare<T>,
+  Input: InputTake + CompareIgnoreCase<T>,
   T: InputLength + Clone,
 {
   move |i: Input| {

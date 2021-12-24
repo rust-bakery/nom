@@ -6,12 +6,12 @@ use crate::character::complete::{char, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
-use crate::internal::*;
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::sequence::{pair, tuple};
 use crate::traits::{
   AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
 };
+use crate::{internal::*, CompareIgnoreCase};
 
 #[doc(hidden)]
 macro_rules! map(
@@ -1432,7 +1432,7 @@ pub fn recognize_float_or_exceptions<T, E: ParseError<T>>(input: T) -> IResult<T
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputTake + Compare<&'static str>,
+  T: InputIter + InputTake + CompareIgnoreCase<&'static str>,
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -1573,14 +1573,14 @@ use crate::traits::ParseTo;
 pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
-  T: Clone + Offset + ParseTo<f32> + Compare<&'static str>,
+  T: Clone + Offset + ParseTo<f32> + CompareIgnoreCase<&'static str>,
   T: InputIter + InputLength + InputTake,
   <T as InputIter>::Item: AsChar + Copy,
   <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: AsBytes,
-  T: for<'a> Compare<&'a [u8]>,
+  T: for<'a> CompareIgnoreCase<&'a [u8]>,
 {
   /*
   let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;
@@ -1626,14 +1626,14 @@ where
 pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
-  T: Clone + Offset + ParseTo<f64> + Compare<&'static str>,
+  T: Clone + Offset + ParseTo<f64> + CompareIgnoreCase<&'static str>,
   T: InputIter + InputLength + InputTake,
   <T as InputIter>::Item: AsChar + Copy,
   <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: AsBytes,
-  T: for<'a> Compare<&'a [u8]>,
+  T: for<'a> CompareIgnoreCase<&'a [u8]>,
 {
   /*
   let (i, (sign, integer, fraction, exponent)) = recognize_float_parts(input)?;

@@ -5,12 +5,12 @@ use crate::bytes::streaming::tag;
 use crate::character::streaming::{char, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::{ErrorKind, ParseError};
-use crate::internal::*;
 use crate::lib::std::ops::{RangeFrom, RangeTo};
 use crate::sequence::{pair, tuple};
 use crate::traits::{
   AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
 };
+use crate::{internal::*, CompareIgnoreCase};
 
 #[doc(hidden)]
 macro_rules! map(
@@ -1401,7 +1401,7 @@ pub fn recognize_float_or_exceptions<T, E: ParseError<T>>(input: T) -> IResult<T
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputTake + InputLength + Compare<&'static str>,
+  T: InputIter + InputTake + InputLength + CompareIgnoreCase<&'static str>,
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
@@ -1546,7 +1546,11 @@ pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + InputTake + crate::traits::ParseTo<f32> + Compare<&'static str>,
+  T: InputIter
+    + InputLength
+    + InputTake
+    + crate::traits::ParseTo<f32>
+    + CompareIgnoreCase<&'static str>,
   <T as InputIter>::Item: AsChar,
   <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
@@ -1600,7 +1604,11 @@ pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputLength + InputTake + crate::traits::ParseTo<f64> + Compare<&'static str>,
+  T: InputIter
+    + InputLength
+    + InputTake
+    + crate::traits::ParseTo<f64>
+    + CompareIgnoreCase<&'static str>,
   <T as InputIter>::Item: AsChar,
   <T as InputIter>::IterElem: Clone,
   T: InputTakeAtPosition,
