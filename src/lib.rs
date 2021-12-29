@@ -253,7 +253,7 @@
 //! - **`many0`**: Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
 //! - **`many1`**: Will apply the parser 1 or more times
 //!
-//! There are more complex (and more useful) parsers like `tuple!`, which is
+//! There are more complex (and more useful) parsers like `tuple`, which is
 //! used to apply a series of parsers then assemble their results.
 //!
 //! Example with `tuple`:
