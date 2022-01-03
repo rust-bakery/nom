@@ -125,7 +125,7 @@ Use these functions with a combinator like `take_while`:
 - [`is_space`](https://docs.rs/nom/latest/nom/character/fn.is_space.html): Tests if byte is ASCII space or tab: `[ \t]`
 - [`is_newline`](https://docs.rs/nom/latest/nom/character/fn.is_newline.html): Tests if byte is ASCII newline: `[\n]`
 
-Alternatively there are ready to use function:
+Alternatively there are ready to use functions:
 
 - [`alpha0`](https://docs.rs/nom/latest/nom/character/complete/fn.alpha0.html): Recognizes zero or more lowercase and uppercase alphabetic characters: `[a-zA-Z]`. [`alpha1`](https://docs.rs/nom/latest/nom/character/complete/fn.alpha1.html) does the same but returns at least one character
 - [`alphanumeric0`](https://docs.rs/nom/latest/nom/character/complete/fn.alphanumeric0.html): Recognizes zero or more numerical and alphabetic characters: `[0-9a-zA-Z]`. [`alphanumeric1`](https://docs.rs/nom/latest/nom/character/complete/fn.alphanumeric1.html) does the same but returns at least one character
