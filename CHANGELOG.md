@@ -4,6 +4,10 @@
 
 ### Thanks
 
+### Removed
+
+- `nom::bits::*` is no longer re-exported at the crate root. This export caused frequent confusion, since e.g. `nom::complete::tag` referred to `nom::bits::complete::tag` instead of the much more commonly used `nom::bytes::complete::tag`. To migrate, change any imports of `nom::{complete::*, streaming::*, bits, bytes}` to `nom::bits::[...]`.
+
 ### Changed
 
 ## 7.1.0 - 2021-11-04
