@@ -113,7 +113,7 @@ formats such as JSON, nom can manage it, and provides you with useful tools:
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http/parser)
 - [TOML parser](https://github.com/joelself/tomllib)
 
 ### Programming language parsers
@@ -148,7 +148,7 @@ It allows you to build powerful, deterministic state machines for your protocols
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http/parser)
 - [Using nom with generators](https://github.com/Geal/generator_nom)
 
 ## Parser combinators
