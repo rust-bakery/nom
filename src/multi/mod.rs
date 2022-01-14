@@ -5,9 +5,9 @@ mod tests;
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
+use crate::parser::{Err, IResult, Needed, Parser};
 use crate::traits::{InputLength, InputTake, ToUsize};
 use core::num::NonZeroUsize;
 

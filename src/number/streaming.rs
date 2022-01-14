@@ -5,8 +5,8 @@ use crate::bytes::streaming::tag;
 use crate::character::streaming::{char, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::{ErrorKind, ParseError};
-use crate::internal::*;
 use crate::lib::std::ops::{RangeFrom, RangeTo};
+use crate::parser::*;
 use crate::sequence::{pair, tuple};
 use crate::traits::{
   AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
@@ -1636,7 +1636,7 @@ where
 mod tests {
   use super::*;
   use crate::error::ErrorKind;
-  use crate::internal::{Err, Needed};
+  use crate::parser::{Err, Needed};
   use proptest::prelude::*;
 
   macro_rules! assert_parse(

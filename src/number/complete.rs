@@ -6,8 +6,8 @@ use crate::character::complete::{char, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
 use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
-use crate::internal::*;
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::parser::*;
 use crate::sequence::{pair, tuple};
 use crate::traits::{
   AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
@@ -1663,7 +1663,7 @@ where
 mod tests {
   use super::*;
   use crate::error::ErrorKind;
-  use crate::internal::Err;
+  use crate::parser::Err;
   use proptest::prelude::*;
 
   macro_rules! assert_parse(

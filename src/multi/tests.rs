@@ -3,9 +3,9 @@ use crate::{
   bytes::streaming::tag,
   character::streaming::digit1 as digit,
   error::{ErrorKind, ParseError},
-  internal::{Err, IResult, Needed},
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
+  parser::{Err, IResult, Needed},
   sequence::{pair, tuple},
 };
 #[cfg(feature = "alloc")]

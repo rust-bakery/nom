@@ -6,8 +6,8 @@ use crate::branch::alt;
 use crate::combinator::opt;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::parser::{Err, IResult, Needed};
 use crate::traits::{
   AsChar, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice,
 };
@@ -738,7 +738,7 @@ uints! { u8 u16 u32 u64 u128 }
 mod tests {
   use super::*;
   use crate::error::ErrorKind;
-  use crate::internal::{Err, Needed};
+  use crate::parser::{Err, Needed};
   use crate::sequence::pair;
   use crate::traits::ParseTo;
   use proptest::prelude::*;

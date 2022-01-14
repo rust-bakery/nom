@@ -1,6 +1,6 @@
 use super::streaming::*;
 use crate::error::ErrorKind;
-use crate::internal::{Err, IResult};
+use crate::parser::{Err, IResult};
 
 #[test]
 fn one_of_test() {

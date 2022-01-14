@@ -4,7 +4,7 @@ use crate::character::streaming::{
   multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
 };
 use crate::error::ErrorKind;
-use crate::internal::{Err, IResult, Needed};
+use crate::parser::{Err, IResult, Needed};
 #[cfg(feature = "alloc")]
 use crate::{
   branch::alt,

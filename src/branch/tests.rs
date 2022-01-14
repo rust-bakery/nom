@@ -1,7 +1,7 @@
 use crate::branch::{alt, permutation};
 use crate::bytes::streaming::tag;
 use crate::error::ErrorKind;
-use crate::internal::{Err, IResult, Needed};
+use crate::parser::{Err, IResult, Needed};
 #[cfg(feature = "alloc")]
 use crate::{
   error::ParseError,

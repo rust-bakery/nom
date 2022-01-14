@@ -1,8 +1,8 @@
 use super::*;
 use crate::bytes::streaming::{tag, take};
 use crate::error::ErrorKind;
-use crate::internal::{Err, IResult, Needed};
 use crate::number::streaming::be_u16;
+use crate::parser::{Err, IResult, Needed};
 
 #[test]
 fn single_element_tuples() {

@@ -6,13 +6,13 @@
 use crate::lib::std::boxed::Box;
 
 use crate::error::{ErrorKind, FromExternalError, ParseError};
-use crate::internal::*;
 use crate::lib::std::borrow::Borrow;
 use crate::lib::std::convert::Into;
 #[cfg(feature = "std")]
 use crate::lib::std::fmt::Debug;
 use crate::lib::std::mem::transmute;
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::parser::*;
 use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition, ParseTo};
 use crate::traits::{Compare, CompareResult, Offset, Slice};
 
