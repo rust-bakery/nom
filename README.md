@@ -148,7 +148,7 @@ It allows you to build powerful, deterministic state machines for your protocols
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http/parser)
 - [Using nom with generators](https://github.com/Geal/generator_nom)
 
 ## Parser combinators
@@ -268,7 +268,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [Bencode](https://github.com/jbaum98/bencode.rs),
 [D-Bus](https://github.com/toshokan/misato),
 [DHCP](https://github.com/rusticata/dhcp-parser),
-[HTTP](https://github.com/sozu-proxy/sozu/tree/master/lib/src/protocol/http),
+[HTTP](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http),
 [URI](https://github.com/santifa/rrp/blob/master/src/uri.rs),
 [IMAP](https://github.com/djc/tokio-imap),
 [IRC](https://github.com/Detegr/RBot-parser),
