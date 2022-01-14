@@ -13,6 +13,9 @@ categories = ["parsing"]
 edition = "2018"
 autoexamples = false
 
+# also update in README.md (badge and "Rust version requirements" section)
+rust-version = "1.48"
+
 include = [
   "CHANGELOG.md",
   "LICENSE",
