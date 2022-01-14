@@ -5,7 +5,7 @@
 [![Build Status](https://github.com/Geal/nom/actions/workflows/ci.yml/badge.svg)](https://github.com/Geal/nom/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/Geal/nom/badge.svg?branch=main)](https://coveralls.io/github/Geal/nom?branch=main)
 [![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.48.0+-lightgray.svg)](#rust-version-requirements)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.48.0+-lightgray.svg)](#rust-version-requirements-msrv)
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools
 to build safe parsers without compromising the speed or memory consumption. To
@@ -186,7 +186,7 @@ nom parsers are for:
 
 Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
 
-## Rust version requirements
+## Rust version requirements (MSRV)
 
 The 7.0 series of nom supports **Rustc version 1.48 or greater**. It is known to work properly on Rust 1.41.1 but there is no guarantee it will stay the case through this major release.
 
