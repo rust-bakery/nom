@@ -1,7 +1,9 @@
 use super::{length_data, length_value, many0_count, many1_count};
 use crate::{
+  bytes::complete::tag as c_tag,
   bytes::streaming::tag,
   character::streaming::digit1 as digit,
+  combinator::opt,
   error::{ErrorKind, ParseError},
   internal::{Err, IResult, Needed},
   lib::std::str::{self, FromStr},
@@ -27,10 +29,13 @@ fn separated_list0_test() {
     separated_list0(tag(","), tag(""))(i)
   }
   fn empty_sep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_list0(tag(""), tag("abc"))(i)
+    separated_list0(c_tag(""), c_tag("abc"))(i)
   }
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(".."), tag("abcd"))(i)
+  }
+  fn optional_sep_may_loop(i: &[u8]) -> IResult<&[u8], Vec<Option<&[u8]>>> {
+    separated_list0(opt(c_tag(",,")), opt(c_tag("abcd")))(i)
   }
 
   let a = &b"abcdef"[..];
@@ -50,20 +55,18 @@ fn separated_list0_test() {
   assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
   let res3 = vec![&b""[..], &b""[..], &b""[..]];
   assert_eq!(multi_empty(d), Ok((&b"abc"[..], res3)));
-  let i_err_pos = &i[3..];
-  assert_eq!(
-    empty_sep(i),
-    Err(Err::Error(error_position!(
-      i_err_pos,
-      ErrorKind::SeparatedList
-    )))
-  );
+  let res4 = vec![&b"abc"[..], &b"abc"[..]];
+  assert_eq!(empty_sep(i), Ok((&b""[..], res4)));
   let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
   assert_eq!(multi(e), Ok((&b",ef"[..], res4)));
 
   assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(
+    optional_sep_may_loop(f),
+    Err(Err::Error(error_position!(f, ErrorKind::SeparatedList)))
+  );
 }
 
 #[test]
@@ -75,6 +78,12 @@ fn separated_list1_test() {
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list1(tag(".."), tag("abcd"))(i)
   }
+  fn optional_sep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list1(opt(c_tag(",,")), c_tag("abcd"))(i)
+  }
+  fn optional_sep_may_loop(i: &[u8]) -> IResult<&[u8], Vec<Option<&[u8]>>> {
+    separated_list1(opt(c_tag(",,")), opt(c_tag("abcd")))(i)
+  }
 
   let a = &b"abcdef"[..];
   let b = &b"abcd,abcdef"[..];
@@ -84,6 +93,7 @@ fn separated_list1_test() {
   let f = &b"abc"[..];
   let g = &b"abcd."[..];
   let h = &b"abcd,abc"[..];
+  let i = &b"abcdabcdabcd"[..];
 
   let res1 = vec![&b"abcd"[..]];
   assert_eq!(multi(a), Ok((&b"ef"[..], res1)));
@@ -95,10 +105,16 @@ fn separated_list1_test() {
   );
   let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
   assert_eq!(multi(d), Ok((&b",ef"[..], res3)));
+  let res4 = vec![&b"abcd"[..], &b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(optional_sep(i), Ok((&b""[..], res4)));
 
   assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(
+    optional_sep_may_loop(f),
+    Err(Err::Error(error_position!(f, ErrorKind::SeparatedList)))
+  );
 }
 
 #[test]
