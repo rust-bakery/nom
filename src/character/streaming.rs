@@ -689,7 +689,7 @@ macro_rules! ints {
     }
 }
 
-ints! { i8 i16 i32 i64 i128 }
+ints! { i8 i16 i32 i64 i128 isize }
 
 #[doc(hidden)]
 macro_rules! uints {
@@ -732,7 +732,7 @@ macro_rules! uints {
     }
 }
 
-uints! { u8 u16 u32 u64 u128 }
+uints! { u8 u16 u32 u64 u128 usize }
 
 #[cfg(test)]
 mod tests {
