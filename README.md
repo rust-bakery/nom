@@ -263,6 +263,7 @@ Here is a (non exhaustive) list of known projects using nom:
 - Document formats:
 [TAR](https://github.com/Keruspe/tar-parser.rs),
 [GZ](https://github.com/nharward/nom-gzip)
+[GDSII](https://github.com/erihsu/gds2-io)
 - Cryptographic formats:
 [X.509](https://github.com/rusticata/x509-parser)
 - Network protocol formats:
