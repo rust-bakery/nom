@@ -1460,7 +1460,10 @@ where
   ))(input)
 }
 
-/// Recognizes a floating point number in text format and returns the integer, fraction and exponent parts of the input data
+/// Recognizes a floating point number in text format
+///
+/// It returns a tuple of (`sign`, `integer part`, `fraction part` and `exponent`) of the input
+/// data.
 ///
 /// *Complete version*: Can parse until the end of input.
 ///

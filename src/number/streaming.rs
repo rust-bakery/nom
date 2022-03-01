@@ -1429,7 +1429,10 @@ where
   ))(input)
 }
 
-/// Recognizes a floating point number in text format and returns the integer, fraction and exponent parts of the input data
+/// Recognizes a floating point number in text format
+///
+/// It returns a tuple of (`sign`, `integer part`, `fraction part` and `exponent`) of the input
+/// data.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
 ///
