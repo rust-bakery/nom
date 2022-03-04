@@ -27,26 +27,31 @@ pub enum Expr {
   Tern(Box<Expr>, Box<Expr>, Box<Expr>),
 }
 
-// We need to be able to encode different types of operators. So we make the operator parsers output one of the Operator variants.
-enum Operator<'a> {
-  // A "raw" operator. This encodes operators that have no additional information beyond their own representation (e.g. "+", "*", "-").
-  Raw(&'a str),
-  // The function call operator. In addition to its own representation "()" it carries additional information that we need to keep here.
-  // Specifically the vector of expressions that make up the parameters.
-  Call(Vec<Expr>),
-  // The ternary operator can contain a single expression.
-  Ternary(Expr),
+// Prefix operators.
+enum PrefixOp {
+  Identity,           // +
+  Negate,             // -
 }
 
-// Convenience parser for raw operators.
-fn token<'a>(t: &'a str) -> impl FnMut(&'a str) -> IResult<&'a str, Operator<'a>> {
-  move |input: &'a str| {
-    map(tag(t), |s: &str| Operator::Raw(s))(input)
-  }
+// Postfix operators.
+enum PostfixOp {
+  // The function call operator. In addition to its own representation "()" it carries additional information that we need to keep here.
+  // Specifically the vector of expressions that make up the parameters.
+  Call(Vec<Expr>),    // ()
+}
+
+// Binary operators.
+enum BinaryOp {
+  Addition,           // +
+  Subtraction,        // -
+  Multiplication,     // *
+  Division,           // /
+  // The ternary operator can contain a single expression.
+  Ternary(Expr),      // ?:
 }
 
 // Parser for function calls.
-fn function_call(i: &str) -> IResult<&str, Operator> {
+fn function_call(i: &str) -> IResult<&str, PostfixOp> {
   map(
     delimited(
       tag("("),
@@ -54,7 +59,7 @@ fn function_call(i: &str) -> IResult<&str, Operator> {
       separated_list0(tag(","), expression),
       tag(")")
     ),
-    |v: Vec<Expr>| Operator::Call(v)
+    |v: Vec<Expr>| PostfixOp::Call(v)
   )(i)
 }
 
@@ -68,31 +73,34 @@ fn function_call(i: &str) -> IResult<&str, Operator> {
 // For the outer expression the result looks like "a<b ?: b". Where "?:" is a single operator. The
 // subexpression is contained within the operator in the same way that the function call operator
 // contains subexpressions.
-fn ternary_operator(i: &str) -> IResult<&str, Operator> {
+fn ternary_operator(i: &str) -> IResult<&str, BinaryOp> {
   map(
     delimited(
       tag("?"), 
       expression, 
       tag(":")
     ),
-    |e: Expr| Operator::Ternary(e)
+    |e: Expr| BinaryOp::Ternary(e)
   )(i)
 }
 
 // The actual expression parser .
 fn expression(i: &str) -> IResult<&str, Expr> {
   precedence(
-    unary_op(2, token("-")),
+    alt((
+      unary_op(2, map(tag("+"), |_| PrefixOp::Identity)),
+      unary_op(2, map(tag("-"), |_| PrefixOp::Negate)),
+    )),
     // Function calls are implemented as postfix unary operators.
     unary_op(1, function_call),
     alt((
       binary_op(3, Assoc::Left, alt((
-        token("*"),
-        token("/"),
+        map(tag("*"), |_| BinaryOp::Multiplication),
+        map(tag("/"), |_| BinaryOp::Division),
       ))),
       binary_op(4, Assoc::Left, alt((
-        token("+"),
-        token("-"),
+        map(tag("+"), |_| BinaryOp::Addition),
+        map(tag("-"), |_| BinaryOp::Subtraction),
       ))),
       // Ternary operators are just binary operators with a subexpression.
       binary_op(5, Assoc::Right, ternary_operator),
@@ -107,12 +115,17 @@ fn expression(i: &str) -> IResult<&str, Expr> {
       map(alphanumeric, |s: &str| Expr::Iden(s.to_string())),
       delimited(tag("("), expression, tag(")")),
     )),
-    |op: Operation<Operator, Expr>| {
+    |op: Operation<PrefixOp, PostfixOp, BinaryOp, Expr>| -> Result<Expr, ()> {
       use nom::precedence::Operation::*;
-      use Operator::*;
+      use PrefixOp::*;
+      use PostfixOp::*;
+      use BinaryOp::*;
       match op {
+        // The identity operator (prefix +) is ignored.
+        Prefix(Identity, e) => Ok(e),
+        
         // Unary minus gets evaluated to the same representation as a multiplication with -1.
-        Prefix(Raw("-"), e) => Ok(Expr::Mul(Expr::Num(-1).into(), e.into())),
+        Prefix(Negate, e) => Ok(Expr::Mul(Expr::Num(-1).into(), e.into())),
         
         // The list of parameters are taken from the operator and placed into the ast.
         Postfix(e, Call(p)) => Ok(Expr::Call(e.into(), p)),
@@ -122,12 +135,10 @@ fn expression(i: &str) -> IResult<&str, Expr> {
         Binary(lhs, Ternary(e), rhs) => Ok(Expr::Tern(lhs.into(), e.into(), rhs.into())),
         
         // Raw operators get turned into their respective ast nodes.
-        Binary(lhs, Raw("*"), rhs) => Ok(Expr::Mul(lhs.into(), rhs.into())),
-        Binary(lhs, Raw("/"), rhs) => Ok(Expr::Div(lhs.into(), rhs.into())),
-        Binary(lhs, Raw("+"), rhs) => Ok(Expr::Add(lhs.into(), rhs.into())),
-        Binary(lhs, Raw("-"), rhs) => Ok(Expr::Sub(lhs.into(), rhs.into())),
-        
-        _ => Err("Invalid op combo."),
+        Binary(lhs, Multiplication, rhs) => Ok(Expr::Mul(lhs.into(), rhs.into())),
+        Binary(lhs, Division, rhs) => Ok(Expr::Div(lhs.into(), rhs.into())),
+        Binary(lhs, Addition, rhs) => Ok(Expr::Add(lhs.into(), rhs.into())),
+        Binary(lhs, Subtraction, rhs) => Ok(Expr::Sub(lhs.into(), rhs.into())),
       }
     }
   )(i)

@@ -27,7 +27,7 @@ fn parser(i: &str) -> IResult<&str, i64> {
       map_res(digit1, |s: &str| s.parse::<i64>()),
       delimited(tag("("), parser, tag(")")),
     )),
-    |op: Operation<&str, i64>| {
+    |op: Operation<&str, (), &str, i64>| {
       use crate::precedence::Operation::*;
       match op {
         Prefix("-", o) => Ok(-o),

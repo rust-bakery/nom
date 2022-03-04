@@ -23,13 +23,13 @@ pub struct Binary<V, Q: Ord + Copy> {
 }
 
 /// A single evaluation step.
-pub enum Operation<P, O> {
+pub enum Operation<P1, P2, P3, O> {
   /// A prefix operation.
-  Prefix(P, O),
+  Prefix(P1, O),
   /// A postfix operation.
-  Postfix(O, P),
+  Postfix(O, P2),
   /// A binary operation.
-  Binary(O, P, O),
+  Binary(O, P3, O),
 }
 
 /// Associativity for binary operators.
@@ -42,17 +42,17 @@ pub enum Assoc {
 }
 
 /// Element for operator stack.
-enum Operator<P, Q: Ord + Copy> {
-  Prefix(P, Q),
-  Postfix(P, Q),
-  Binary(P, Q, Assoc),
+enum Operator<P1, P2, P3, Q: Ord + Copy> {
+  Prefix(P1, Q),
+  Postfix(P2, Q),
+  Binary(P3, Q, Assoc),
 }
 
-impl<P, O> Operator<P, O>
+impl<P1, P2, P3, Q> Operator<P1, P2, P3, Q>
 where
-  O: Ord + Copy,
+  Q: Ord + Copy,
 {
-  fn precedence(&self) -> O {
+  fn precedence(&self) -> Q {
     match self {
       Operator::Prefix(_, p) => *p,
       Operator::Postfix(_, p) => *p,
@@ -171,7 +171,7 @@ where
 ///       map_res(digit1, |s: &str| s.parse::<i64>()),
 ///       delimited(tag("("), parser, tag(")")),
 ///     )),
-///     |op: Operation<&str, i64>| {
+///     |op: Operation<&str, &str, &str, i64>| {
 ///       use nom::precedence::Operation::*;
 ///       match op {
 ///         Prefix("-", o) => Ok(-o),
@@ -210,7 +210,7 @@ where
 /// position in the expression \
 /// `((-a)++)**b`.
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn precedence<I, O, E, E2, F, G, H1, H3, H2, P, Q>(
+pub fn precedence<I, O, E, E2, F, G, H1, H3, H2, P1, P2, P3, Q>(
   mut prefix: H1,
   mut postfix: H2,
   mut binary: H3,
@@ -221,10 +221,10 @@ where
   I: Clone + PartialEq,
   E: ParseError<I> + FromExternalError<I, E2>,
   F: Parser<I, O, E>,
-  G: FnMut(Operation<P, O>) -> Result<O, E2>,
-  H1: Parser<I, Unary<P, Q>, E>,
-  H2: Parser<I, Unary<P, Q>, E>,
-  H3: Parser<I, Binary<P, Q>, E>,
+  G: FnMut(Operation<P1, P2, P3, O>) -> Result<O, E2>,
+  H1: Parser<I, Unary<P1, Q>, E>,
+  H2: Parser<I, Unary<P2, Q>, E>,
+  H3: Parser<I, Binary<P3, Q>, E>,
   Q: Ord + Copy,
 {
   move |mut i| {
