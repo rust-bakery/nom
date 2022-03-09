@@ -22,6 +22,26 @@ macro_rules! succ (
   (18, $submac:ident ! ($($rest:tt)*)) => ($submac!(19, $($rest)*));
   (19, $submac:ident ! ($($rest:tt)*)) => ($submac!(20, $($rest)*));
   (20, $submac:ident ! ($($rest:tt)*)) => ($submac!(21, $($rest)*));
+  (21, $submac:ident ! ($($rest:tt)*)) => ($submac!(22, $($rest)*));
+  (22, $submac:ident ! ($($rest:tt)*)) => ($submac!(23, $($rest)*));
+  (23, $submac:ident ! ($($rest:tt)*)) => ($submac!(24, $($rest)*));
+  (24, $submac:ident ! ($($rest:tt)*)) => ($submac!(25, $($rest)*));
+  (25, $submac:ident ! ($($rest:tt)*)) => ($submac!(26, $($rest)*));
+  (26, $submac:ident ! ($($rest:tt)*)) => ($submac!(27, $($rest)*));
+  (27, $submac:ident ! ($($rest:tt)*)) => ($submac!(28, $($rest)*));
+  (28, $submac:ident ! ($($rest:tt)*)) => ($submac!(29, $($rest)*));
+  (29, $submac:ident ! ($($rest:tt)*)) => ($submac!(30, $($rest)*));
+  (30, $submac:ident ! ($($rest:tt)*)) => ($submac!(31, $($rest)*));
+  (31, $submac:ident ! ($($rest:tt)*)) => ($submac!(32, $($rest)*));
+  (32, $submac:ident ! ($($rest:tt)*)) => ($submac!(33, $($rest)*));
+  (33, $submac:ident ! ($($rest:tt)*)) => ($submac!(34, $($rest)*));
+  (34, $submac:ident ! ($($rest:tt)*)) => ($submac!(35, $($rest)*));
+  (35, $submac:ident ! ($($rest:tt)*)) => ($submac!(36, $($rest)*));
+  (36, $submac:ident ! ($($rest:tt)*)) => ($submac!(37, $($rest)*));
+  (37, $submac:ident ! ($($rest:tt)*)) => ($submac!(38, $($rest)*));
+  (38, $submac:ident ! ($($rest:tt)*)) => ($submac!(39, $($rest)*));
+  (39, $submac:ident ! ($($rest:tt)*)) => ($submac!(40, $($rest)*));
+  (40, $submac:ident ! ($($rest:tt)*)) => ($submac!(41, $($rest)*));
 );
 
 #[cfg(test)]
@@ -76,7 +96,7 @@ pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
 
 /// Helper trait for the [permutation()] combinator.
 ///
-/// This trait is implemented for tuples of up to 21 elements
+/// This trait is implemented for tuples of up to 41 elements
 pub trait Permutation<I, O, E> {
   /// Tries to apply all parsers in the tuple in various orders until all of them succeed
   fn permutation(&mut self, input: I) -> IResult<I, O, E>;
@@ -288,4 +308,24 @@ permutation_trait!(
   FnS S s
   FnT T t
   FnU U u
+  FnV V v
+  FnW W w
+  FnX X x
+  FnY Y y
+  FnZ Z z
+  FnAA AA aa
+  FnAB AB ab
+  FnAC AC ac
+  FnAD AD ad
+  FnAE AE ae
+  FnAF AF af
+  FnAG AG ag
+  FnAH AH ah
+  FnAI AI ai
+  FnAJ AJ aj
+  FnAK AK ak
+  FnAL AL al
+  FnAM AM am
+  FnAN AN an
+  FnAO AO ao
 );
