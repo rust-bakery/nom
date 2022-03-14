@@ -332,10 +332,13 @@ pub trait InputTake: Sized {
   fn take_split(&self, count: usize) -> (Self, Self);
 }
 
-impl<'a> InputIter for &'a [u8] {
-  type Item = u8;
+impl<'a, T> InputIter for &'a [T]
+where
+  T: Copy,
+{
+  type Item = T;
   type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Copied<Iter<'a, u8>>;
+  type IterElem = Copied<Iter<'a, T>>;
 
   #[inline]
   fn iter_indices(&self) -> Self::Iter {
@@ -362,7 +365,7 @@ impl<'a> InputIter for &'a [u8] {
   }
 }
 
-impl<'a> InputTake for &'a [u8] {
+impl<'a, T> InputTake for &'a [T] {
   #[inline]
   fn take(&self, count: usize) -> Self {
     &self[0..count]
@@ -717,6 +720,10 @@ pub enum CompareResult {
 pub trait Compare<T> {
   /// Compares self to another value for equality
   fn compare(&self, t: T) -> CompareResult;
+}
+
+/// Abstracts case-insensitive comparison operations
+pub trait CompareIgnoreCase<T> {
   /// Compares self to another value for equality
   /// independently of the case.
   ///
@@ -734,9 +741,12 @@ fn lowercase_byte(c: u8) -> u8 {
   }
 }
 
-impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
+impl<'a, 'b, T> Compare<&'b [T]> for &'a [T]
+where
+  T: Eq,
+{
   #[inline(always)]
-  fn compare(&self, t: &'b [u8]) -> CompareResult {
+  fn compare(&self, t: &'b [T]) -> CompareResult {
     let pos = self.iter().zip(t.iter()).position(|(a, b)| a != b);
 
     match pos {
@@ -766,7 +776,9 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     }
     */
   }
+}
 
+impl<'a, 'b> CompareIgnoreCase<&'b [u8]> for &'a [u8] {
   #[inline(always)]
   fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
     if self
@@ -784,8 +796,8 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
 }
 
 impl<
-    T: InputLength + InputIter<Item = u8> + InputTake + UnspecializedInput,
-    O: InputLength + InputIter<Item = u8> + InputTake,
+    T: Eq + InputLength + InputIter<Item = T> + InputTake + UnspecializedInput,
+    O: InputLength + InputIter<Item = T> + InputTake,
   > Compare<O> for T
 {
   #[inline(always)]
@@ -806,7 +818,13 @@ impl<
       }
     }
   }
+}
 
+impl<
+    T: InputLength + InputIter<Item = u8> + InputTake + UnspecializedInput,
+    O: InputLength + InputIter<Item = u8> + InputTake,
+  > CompareIgnoreCase<O> for T
+{
   #[inline(always)]
   fn compare_no_case(&self, t: O) -> CompareResult {
     if self
@@ -828,6 +846,9 @@ impl<'a, 'b> Compare<&'b str> for &'a [u8] {
   fn compare(&self, t: &'b str) -> CompareResult {
     self.compare(AsBytes::as_bytes(t))
   }
+}
+
+impl<'a, 'b> CompareIgnoreCase<&'b str> for &'a [u8] {
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
     self.compare_no_case(AsBytes::as_bytes(t))
@@ -839,7 +860,9 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   fn compare(&self, t: &'b str) -> CompareResult {
     self.as_bytes().compare(t.as_bytes())
   }
+}
 
+impl<'a, 'b> CompareIgnoreCase<&'b str> for &'a str {
   //FIXME: this version is too simple and does not use the current locale
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
@@ -866,6 +889,8 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a str {
   fn compare(&self, t: &'b [u8]) -> CompareResult {
     AsBytes::as_bytes(self).compare(t)
   }
+}
+impl<'a, 'b> CompareIgnoreCase<&'b [u8]> for &'a str {
   #[inline(always)]
   fn compare_no_case(&self, t: &'b [u8]) -> CompareResult {
     AsBytes::as_bytes(self).compare_no_case(t)
@@ -1080,7 +1105,9 @@ macro_rules! array_impls {
         fn compare(&self, t: [u8; $N]) -> CompareResult {
           self.compare(&t[..])
         }
+      }
 
+      impl<'a> CompareIgnoreCase<[u8; $N]> for &'a [u8] {
         #[inline(always)]
         fn compare_no_case(&self, t: [u8;$N]) -> CompareResult {
           self.compare_no_case(&t[..])
@@ -1092,7 +1119,9 @@ macro_rules! array_impls {
         fn compare(&self, t: &'b [u8; $N]) -> CompareResult {
           self.compare(&t[..])
         }
+      }
 
+      impl<'a,'b> CompareIgnoreCase<&'b [u8; $N]> for &'a [u8] {
         #[inline(always)]
         fn compare_no_case(&self, t: &'b [u8;$N]) -> CompareResult {
           self.compare_no_case(&t[..])
