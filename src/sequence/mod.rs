@@ -253,8 +253,7 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
   FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
 
 ///Applies a tuple of parsers one by one and returns their results as a tuple.
-///There is a maximum of 21 parsers. If you need more, it is possible to nest them in other `tuple` calls,
-/// like this: `tuple(parser_a, tuple(parser_b, parser_c))`
+///There is a maximum of 21 parsers
 /// ```rust
 /// # use nom::{Err, error::ErrorKind};
 /// use nom::sequence::tuple;
