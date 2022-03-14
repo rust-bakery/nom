@@ -52,16 +52,16 @@
 //!
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!
-//! There are a few [guides](https://github.com/Geal/nom/tree/master/doc) with more details
-//! about [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
-//! or the [error management system](https://github.com/Geal/nom/blob/master/doc/error_management.md).
+//! There are a few [guides](https://github.com/Geal/nom/tree/main/doc) with more details
+//! about [how to write parsers](https://github.com/Geal/nom/blob/main/doc/making_a_new_parser_from_scratch.md),
+//! or the [error management system](https://github.com/Geal/nom/blob/main/doc/error_management.md).
 //! You can also check out the [recipes] module that contains examples of common patterns.
 //!
 //! **Looking for a specific combinator? Read the
-//! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**
+//! ["choose a combinator" guide](https://github.com/Geal/nom/blob/main/doc/choosing_a_combinator.md)**
 //!
 //! If you are upgrading to nom 5.0, please read the
-//! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md).
+//! [migration document](https://github.com/Geal/nom/blob/main/doc/upgrading_to_nom_5.md).
 //!
 //! ## Parser combinators
 //!
@@ -167,8 +167,8 @@
 //! - An error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
 //! - An error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: We cannot backtrack and test another parser
 //!
-//! Please refer to the ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
-//! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/master/doc).
+//! Please refer to the ["choose a combinator" guide](https://github.com/Geal/nom/blob/main/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
+//! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/main/doc).
 //!
 //! ## Making new parsers with function combinators
 //!
@@ -369,7 +369,7 @@
 //! // while the complete version knows that all of the data is there
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
 //! ```
-//! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/master/doc),
+//! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/main/doc),
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
