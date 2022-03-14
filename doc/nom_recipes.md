@@ -115,7 +115,7 @@ letters and numbers may be parsed like this:
 use nom::{
   IResult,
   branch::alt,
-  multi::many0,
+  multi::many0_count,
   combinator::recognize,
   sequence::pair,
   character::complete::{alpha1, alphanumeric1},
@@ -126,7 +126,7 @@ pub fn identifier(input: &str) -> IResult<&str, &str> {
   recognize(
     pair(
       alt((alpha1, tag("_"))),
-      many0(alt((alphanumeric1, tag("_"))))
+      many0_count(alt((alphanumeric1, tag("_"))))
     )
   )(input)
 }
