@@ -17,6 +17,25 @@ error prone plumbing.
 
 *nom will happily take a byte out of your files :)*
 
+<!-- toc -->
+
+- [Example](#example)
+- [Documentation](#documentation)
+- [Why use nom?](#why-use-nom)
+    - [Binary format parsers](#binary-format-parsers)
+    - [Text format parsers](#text-format-parsers)
+    - [Programming language parsers](#programming-language-parsers)
+    - [Streaming formats](#streaming-formats)
+- [Parser combinators](#parser-combinators)
+- [Technical features](#technical-features)
+- [Rust version requirements](#rust-version-requirements-msrv)
+- [Installation](#installation)
+- [Related projects](#related-projects)
+- [Parsers written with nom](#parsers-written-with-nom)
+- [Contributors](#contributors)
+
+<!-- tocstop -->
+
 ## Example
 
 [Hexadecimal color](https://developer.mozilla.org/en-US/docs/Web/CSS/color) parser:
