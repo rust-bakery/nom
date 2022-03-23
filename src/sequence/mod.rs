@@ -4,7 +4,7 @@
 mod tests;
 
 use crate::error::ParseError;
-use crate::internal::{IResult, Parser};
+use crate::parser::{IResult, Parser};
 
 /// Gets an object from the first parser,
 /// then gets another object from the second parser.

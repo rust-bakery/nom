@@ -3,10 +3,10 @@ use crate::bytes::complete::take;
 use crate::bytes::streaming::tag;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Needed};
 #[cfg(feature = "alloc")]
 use crate::lib::std::boxed::Box;
 use crate::number::complete::u8;
+use crate::parser::{Err, IResult, Needed};
 
 macro_rules! assert_parse(
   ($left: expr, $right: expr) => {

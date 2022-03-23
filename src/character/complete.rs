@@ -6,8 +6,8 @@ use crate::branch::alt;
 use crate::combinator::opt;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult};
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::parser::{Err, IResult};
 use crate::traits::{
   AsChar, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice,
 };
@@ -414,10 +414,10 @@ where
 /// assert_eq!(parser("c1"), Err(Err::Error(Error::new("c1", ErrorKind::Digit))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Digit))));
 /// ```
-/// 
+///
 /// ## Parsing an integer
 /// You can use `digit1` in combination with [`map_res`] to parse an integer:
-/// 
+///
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::combinator::map_res;
@@ -425,12 +425,12 @@ where
 /// fn parser(input: &str) -> IResult<&str, u32> {
 ///   map_res(digit1, str::parse)(input)
 /// }
-/// 
+///
 /// assert_eq!(parser("416"), Ok(("", 416)));
 /// assert_eq!(parser("12b"), Ok(("b", 12)));
 /// assert!(parser("b").is_err());
 /// ```
-/// 
+///
 /// [`map_res`]: crate::combinator::map_res
 pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
@@ -831,7 +831,7 @@ uints! { u8 u16 u32 u64 u128 }
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::internal::Err;
+  use crate::parser::Err;
   use crate::traits::ParseTo;
   use proptest::prelude::*;
 

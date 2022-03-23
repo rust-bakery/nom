@@ -1,6 +1,5 @@
 //! Traits input types have to implement to work with nom combinators
 use crate::error::{ErrorKind, ParseError};
-use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::iter::{Copied, Enumerate};
 use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use crate::lib::std::slice::Iter;
@@ -8,6 +7,7 @@ use crate::lib::std::str::from_utf8;
 use crate::lib::std::str::CharIndices;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
+use crate::parser::{Err, IResult, Needed};
 
 #[cfg(feature = "alloc")]
 use crate::lib::std::string::String;

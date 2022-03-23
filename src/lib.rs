@@ -433,7 +433,7 @@ pub mod lib {
 }
 
 pub use self::bits::*;
-pub use self::internal::*;
+pub use self::parser::*;
 pub use self::traits::*;
 
 pub use self::str::*;
@@ -442,7 +442,7 @@ pub use self::str::*;
 pub mod error;
 
 pub mod combinator;
-mod internal;
+mod parser;
 mod traits;
 #[macro_use]
 pub mod branch;

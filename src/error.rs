@@ -3,8 +3,8 @@
 //! Parsers are generic over their error type, requiring that it implements
 //! the `error::ParseError<Input>` trait.
 
-use crate::internal::Parser;
 use crate::lib::std::fmt;
+use crate::parser::Parser;
 
 /// This trait must be implemented by the error type of a nom parser.
 ///
@@ -225,7 +225,7 @@ impl<I: fmt::Display> fmt::Display for VerboseError<I> {
 #[cfg(feature = "std")]
 impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseError<I> {}
 
-use crate::internal::{Err, IResult};
+use crate::parser::{Err, IResult};
 
 /// Create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information

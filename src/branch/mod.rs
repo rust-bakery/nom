@@ -29,7 +29,7 @@ mod tests;
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Parser};
+use crate::parser::{Err, IResult, Parser};
 
 /// Helper trait for the [alt()] combinator.
 ///
