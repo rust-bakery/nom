@@ -573,10 +573,10 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
 /// ```
-pub fn fill<'a, I, O, E, F>(f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
+pub fn fill<'a, I, O, E, F>(mut f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E> + 'a,
+  F: Parser<I, O, E> + 'a,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -584,7 +584,7 @@ where
 
     for elem in buf.iter_mut() {
       let input_ = input.clone();
-      match f(input_) {
+      match f.parse(input_) {
         Ok((i, o)) => {
           *elem = o;
           input = i;
