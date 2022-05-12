@@ -1,6 +1,6 @@
 use super::*;
 use crate::bytes::streaming::{tag, take};
-use crate::error::ErrorKind;
+use crate::error::{ErrorKind, Error};
 use crate::internal::{Err, IResult, Needed};
 use crate::number::streaming::be_u16;
 
@@ -271,4 +271,11 @@ fn tuple_test() {
     tuple_3(&b"abcdejk"[..]),
     Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag)))
   );
+}
+
+#[test]
+fn unit_type() {
+  assert_eq!(tuple::<&'static str, (), Error<&'static str>, ()>(())("abxsbsh"), Ok(("abxsbsh", ())));
+  assert_eq!(tuple::<&'static str, (), Error<&'static str>, ()>(())("sdfjakdsas"), Ok(("sdfjakdsas", ())));
+  assert_eq!(tuple::<&'static str, (), Error<&'static str>, ()>(())(""), Ok(("", ())));
 }
