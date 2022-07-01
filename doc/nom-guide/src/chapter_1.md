@@ -29,7 +29,7 @@ For simplicity, however, in the next chapters we will leave these unexplored.
 ```
 
 
-To represent this model of the world, nom uses the `IResult<(I, O)>` type.
+To represent this model of the world, nom uses the `IResult<I, O>` type.
 The `Ok` variant has a tuple of `(remaining_input: I, output: O)`;
 whereas the `Err` variant stores an error.
 
