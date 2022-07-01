@@ -1,37 +1,50 @@
 # Chapter 2: Tags and Character Classes
 
-The simplest _useful_ regex you can write is one which
+The simplest _useful_ parser you can write is one which
 has no special characters, it just matches a string.
-
-Imagine, for example, the regex `/abc/`. It simply matches when the string
-`"abc"` occurs.
 
 In `nom`, we call a simple collection of bytes a tag. Because
 these are so common, there already exists a function called `tag()`.
 This function returns a parser for a given string.
 
-<div class="example-wrap" style="display:inline-block"><pre class="compile_fail" style="white-space:normal;font:inherit;">
  **Warning**: `nom` has multiple different definitions of `tag`, make sure you use this one for the
  moment!
-</pre></div>
 
-```rust
+```rust,ignore
 # extern crate nom;
 pub use nom::bytes::complete::tag;
 ```
 
-For example, the regex `/abc/` (really, the regex `/^abc/`)
-could be represented as `tag("abc")`.
+For example, code to parse the string `"abc"` could be represented as `tag("abc")`.
 
-Note, that the function `tag` will return
-another function, namely, a parser for the tag you requested.
+If you have not programmed in a language where functions are values, the type signature of them
+tag function might be a surprise:
 
-Below, we see a function using this:
+```rust,ignore
+pub fn tag<T, Input, Error: ParseError<Input>>(
+    tag: T
+) -> impl Fn(Input) -> IResult<Input, Input, Error> where
+    Input: InputTake + Compare<T>,
+    T: InputLength + Clone, 
+```
+
+Or, for the case where `Input` and `T` are both `&str`, and simplifying slightly:
+
+```rust,ignore
+fn tag(tag: &str) -> (impl Fn(&str) -> IResult<&str, Error>)
+```
+
+In other words, this function `tag` *returns a function*. The function it returns is a
+parser, taking a `&str` and returning an `IResult`. Functions creating parsers and 
+returning them is a common pattern in Nom, so it is useful to call out.
+
+Below, we have implemented a function that uses `tag`.
 
 ```rust
 # extern crate nom;
 # pub use nom::bytes::complete::tag;
 # pub use nom::IResult;
+# use std::error::Error;
 
 fn parse_input(input: &str) -> IResult<&str, &str> {
     //  note that this is really creating a function, the parser for abc
@@ -41,25 +54,18 @@ fn parse_input(input: &str) -> IResult<&str, &str> {
     tag("abc")(input)
 }
 
-    let ok_input = "abcWorld";
+fn main() -> Result<(), Box<dyn Error>> {
+    let (leftover_input, output) = parse_input("abcWorld")?;
+    assert_eq!(leftover_input, "World");
+    assert_eq!(output, "abc");
 
-    match parse_input(ok_input) {
-        Ok((leftover_input, output)) => {
-            assert_eq!(leftover_input, "World");
-            assert_eq!(output, "abc");
-        },
-        Err(_) => unreachable!()
-    }
-
-    let err_input = "defWorld";
-    match parse_input(err_input) {
-        Ok((leftover_input, output)) => unreachable!(),
-        Err(_) => assert!(true),
-    }
+    assert!(parse_input("defWorld").is_err());
+#   Ok(())
+}
 ```
 
-If you'd like to, you can also check case insensitive `/tag/i`
-with the `tag_case_insensitive`.
+If you'd like to, you can also check tags without case-sensitivity
+with the [`tag_no_case`](https://docs.rs/nom/latest/nom/bytes/complete/fn.tag_no_case.html) function.
 
 ## Character Classes
 
@@ -83,23 +89,23 @@ We can use these in
 ```rust
 # extern crate nom;
 # pub use nom::IResult;
+# use std::error::Error;
 pub use nom::character::complete::alpha0;
 fn parser(input: &str) -> IResult<&str, &str> {
     alpha0(input)
 }
 
-    let ok_input = "abc123";
-    match parser(ok_input) {
-        Ok((remaining, letters)) => {
-            assert_eq!(remaining, "123");
-            assert_eq!(letters, "abc");
-        },
-        Err(_) => unreachable!()
-    }
-
+fn main() -> Result<(), Box<dyn Error>> {
+    let (remaining, letters) = parser("abc123")?;
+    assert_eq!(remaining, "123");
+    assert_eq!(letters, "abc");
+    
+#   Ok(())
+}
 ```
 
 One important note is that, due to the type signature of these functions,
 it is generally best to use them within a function that returns an `IResult`.
 
-*TODO* : Better explaination of why.
+If you don't, some of the information around the type of the `tag` function must be
+manually specified, which can lead to verbose code or confusing errors.

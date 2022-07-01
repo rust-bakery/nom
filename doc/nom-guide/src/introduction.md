@@ -1,12 +1,11 @@
-# The Nom Guide
+# The Nominomicon
 
-Welcome to The Nom Guide (or, the nominomicon); a guide to using the Nom parser for great good.
-This guide is written to take you from an understanding of Regular Expressions, to an understanding
-of Nom.
+Welcome to Nominomicon; a guide to using the Nom parser for great good.
+This guide will give you an introduction to the theory and practice of 
+using Nom.
 
-This guide assumes that you are:
+This guide assumes only that you are:
  - Wanting to learn Nom,
- - Already familiar with regular expressions (at least, somewhat), and
  - Already familiar with Rust.
 
 Nom is a parser-combinator library. In other words, it gives you tools to define:
@@ -23,9 +22,5 @@ Before we set off, it's important to list some caveats:
     - Documentation older than 21st August, 2021
     - Use of the `named!` macro
     - Use of `CompleteStr` or `CompleteByteArray`.
- - Nom can parse (almost) anything; but this guide will focus entirely on parsing
+ - Nom can parse (almost) anything; but this guide will focus almost entirely on parsing
    complete `&str` into things.
-
-And finally, some nomenclature:
- - In this guide, regexes will be denoted inside slashes (for example `/abc/`)
-   to distinguish them from regular strings.
