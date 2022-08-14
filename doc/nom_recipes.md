@@ -4,6 +4,7 @@ These are short recipes for accomplishing common tasks with nom.
 
 * [Whitespace](#whitespace)
   + [Wrapper combinators that eat whitespace before and after a parser](#wrapper-combinators-that-eat-whitespace-before-and-after-a-parser)
+  + [Ignore empty lines](#ignore-empty-lines)
 * [Comments](#comments)
   + [`// C++/EOL-style comments`](#-ceol-style-comments)
   + [`/* C-style comments */`](#-c-style-comments-)
@@ -51,6 +52,35 @@ To eat only trailing whitespace, replace `delimited(...)` with `terminated(&inne
 Likewise, the eat only leading whitespace, replace `delimited(...)` with `preceded(multispace0,
 &inner)`. You can use your own parser instead of `multispace0` if you want to skip a different set
 of lexemes.
+
+### Ignore empty lines
+```rust
+use nom::{
+    branch::alt,
+    combinator::map,
+    multi::{separated_list1, many1},
+    IResult,
+    InputLength,
+};
+
+pub fn separated_lines_ignore<I: Clone + InputLength, O, O2, O3>(
+    sep: impl FnMut(I) -> IResult<I, O2>,
+    f: impl FnMut(I) -> IResult<I, O>,
+    ignore: impl FnMut(I) -> IResult<I, O3>,
+) -> impl FnMut(I) -> IResult<I, Vec<O>>
+{
+    map(
+        separated_list1(
+            many1(sep),
+            alt((
+                    map(f, |l| Some(l)),
+                    map(ignore, |_| None)
+                ))
+            ),
+        |ls| ls.into_iter().flatten().collect(),
+    )
+}
+```
 
 ## Comments
 
