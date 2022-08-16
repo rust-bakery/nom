@@ -1567,7 +1567,7 @@ where
   */
   let (i, s) = recognize_float_or_exceptions(input)?;
   match s.parse_to() {
-    Some(f) => (Ok((i, f))),
+    Some(f) => Ok((i, f)),
     None => Err(crate::Err::Error(E::from_error_kind(
       i,
       crate::error::ErrorKind::Float,
@@ -1621,7 +1621,7 @@ where
   */
   let (i, s) = recognize_float_or_exceptions(input)?;
   match s.parse_to() {
-    Some(f) => (Ok((i, f))),
+    Some(f) => Ok((i, f)),
     None => Err(crate::Err::Error(E::from_error_kind(
       i,
       crate::error::ErrorKind::Float,
