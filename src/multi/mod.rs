@@ -11,6 +11,17 @@ use crate::lib::std::vec::Vec;
 use crate::traits::{InputLength, InputTake, ToUsize};
 use core::num::NonZeroUsize;
 
+/// Don't pre-allocate more than 64KiB when calling `Vec::with_capacity`.
+///
+/// Pre-allocating memory is a nice optimization but count fields can't
+/// always be trusted. We should clamp initial capacities to some reasonable
+/// amount. This reduces the risk of a bogus count value triggering a panic
+/// due to an OOM error.
+///
+/// This does not affect correctness. Nom will always read the full number
+/// of elements regardless of the capacity cap.
+const MAX_INITIAL_CAPACITY: usize = 65536;
+
 /// Repeats the embedded parser until it fails
 /// and returns the results in a `Vec`.
 ///
@@ -362,7 +373,7 @@ where
       return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
     }
 
-    let mut res = crate::lib::std::vec::Vec::with_capacity(min);
+    let mut res = crate::lib::std::vec::Vec::with_capacity(min.clamp(0, MAX_INITIAL_CAPACITY));
     for count in 0..max {
       let len = input.input_len();
       match parse.parse(input.clone()) {
@@ -529,7 +540,7 @@ where
 {
   move |i: I| {
     let mut input = i.clone();
-    let mut res = crate::lib::std::vec::Vec::with_capacity(count);
+    let mut res = crate::lib::std::vec::Vec::with_capacity(count.clamp(0, MAX_INITIAL_CAPACITY));
 
     for _ in 0..count {
       let input_ = input.clone();

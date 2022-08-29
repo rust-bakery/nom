@@ -214,3 +214,18 @@ fn issue_1282_findtoken_char() {
   let parser = one_of::<_, _, Error<_>>(&['a', 'b', 'c'][..]);
   assert_eq!(parser("aaa"), Ok(("aa", 'a')));
 }
+
+#[test]
+fn issue_1459_clamp_capacity() {
+  use nom::character::complete::char;
+
+  // shouldn't panic
+  use nom::multi::many_m_n;
+  let mut parser = many_m_n::<_, _, (), _>(usize::MAX, usize::MAX, char('a'));
+  assert_eq!(parser("a"), Err(nom::Err::Error(())));
+
+  // shouldn't panic
+  use nom::multi::count;
+  let mut parser = count::<_, _, (), _>(char('a'), usize::MAX);
+  assert_eq!(parser("a"), Err(nom::Err::Error(())));
+}
