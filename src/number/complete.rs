@@ -1414,7 +1414,7 @@ where
       opt(tuple((
         alt((char('e'), char('E'))),
         opt(alt((char('+'), char('-')))),
-        cut(digit1)
+        digit1
       )))
     ))
   )(input)
@@ -2012,10 +2012,7 @@ mod tests {
     }
 
     let remaining_exponent = "-1.234E-";
-    assert_parse!(
-      recognize_float(remaining_exponent),
-      Err(Err::Failure(("", ErrorKind::Digit)))
-    );
+    assert_parse!(recognize_float(remaining_exponent), Ok(("E-", "-1.234")));
 
     let (_i, nan) = float::<_, ()>("NaN").unwrap();
     assert!(nan.is_nan());
