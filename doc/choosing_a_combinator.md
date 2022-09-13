@@ -14,7 +14,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | [is_a](https://docs.rs/nom/latest/nom/bytes/complete/fn.is_a.html) | ` is_a("ab")` |  `"ababc"` | `Ok(("c", "abab"))` |Matches a sequence of any of the characters passed as arguments|
 | [is_not](https://docs.rs/nom/latest/nom/bytes/complete/fn.is_not.html) | `is_not("cd")` |  `"ababc"` | `Ok(("c", "abab"))` |Matches a sequence of none of the characters passed as arguments|
 | [one_of](https://docs.rs/nom/latest/nom/character/complete/fn.one_of.html) | `one_of("abc")` |  `"abc"` | `Ok(("bc", 'a'))` |Matches one of the provided characters (works with non ASCII characters too)|
-| [none_of](https://docs.rs/nom/latest/nom/character/complete/fn.none_of.html) | `none_of("abc")` |  `"xyab"` | `Ok(("yab", 'x'))` |Matches anything but the provided characters|
+| [none_of](https://docs.rs/nom/latest/nom/character/complete/fn.none_of.html) | `none_of("abc")` |  `"xyab"` | `Ok(("ab", 'xy'))` |Matches anything but the provided characters|
 | [tag](https://docs.rs/nom/latest/nom/bytes/complete/fn.tag.html) | `tag("hello")` |  `"hello world"` | `Ok((" world", "hello"))` |Recognizes a specific suite of characters or bytes|
 | [tag_no_case](https://docs.rs/nom/latest/nom/bytes/complete/fn.tag_no_case.html) | `tag_no_case("hello")` |  `"HeLLo World"` | `Ok((" World", "HeLLo"))` |Case insensitive comparison. Note that case insensitive comparison is not well defined for unicode, and that you might have bad surprises|
 | [take](https://docs.rs/nom/latest/nom/bytes/complete/fn.take.html) | `take(4)` |  `"hello"` | `Ok(("o", "hell"))` |Takes a specific number of bytes or characters|
