@@ -139,7 +139,7 @@ where
   // fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
   // and for each output value, calls a folding function on each output value.
   let build_string = fold_many0(
-    // Our parser function– parses a single string fragment
+    // Our parser function – parses a single string fragment
     parse_fragment,
     // Our init value, an empty string
     String::new,
