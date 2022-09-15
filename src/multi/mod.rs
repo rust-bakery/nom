@@ -613,6 +613,74 @@ where
   }
 }
 
+/// Runs the embedded parser a specified number of times and accumulates
+/// the results using a given function and initial value.
+/// # Arguments
+/// * `count` How often to apply the parser.
+/// * `f` The parser to apply.
+/// * `init` A function returning the initial value.
+/// * `fold` The function that combines a result of `f` with
+///          the current accumulator.
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::multi::fold_count;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold_count(
+///     2,
+///     tag("abc"),
+///     Vec::new,
+///     |mut acc, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Err(Err::Error(Error::new("123", ErrorKind::Tag))));
+/// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Tag))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+pub fn fold_count<I, O, E, F, G, H, R>(
+  count: usize,
+  mut f: F,
+  mut init: H,
+  mut fold: G,
+) -> impl FnMut(I) -> IResult<I, R, E>
+where
+  I: Clone,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
+  E: ParseError<I>,
+{
+  move |i: I| {
+    let mut input = i.clone();
+    let mut acc = init();
+
+    for _ in 0..count {
+      let input_ = input.clone();
+      match f.parse(input_) {
+        Ok((i, o)) => {
+          acc = fold(acc, o);
+          input = i;
+        }
+        Err(Err::Error(e)) => {
+          return Err(Err::Error(E::append(i, ErrorKind::Count, e)));
+        }
+        Err(e) => {
+          return Err(e);
+        }
+      }
+    }
+
+    Ok((input, acc))
+  }
+}
+
 /// Applies a parser until it fails and accumulates
 /// the results using a given function and initial value.
 /// # Arguments

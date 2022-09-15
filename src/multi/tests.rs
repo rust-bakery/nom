@@ -12,8 +12,8 @@ use crate::{
 use crate::{
   lib::std::vec::Vec,
   multi::{
-    count, fold_many0, fold_many1, fold_many_m_n, length_count, many0, many1, many_m_n, many_till,
-    separated_list0, separated_list1,
+    count, fold_count, fold_many0, fold_many1, fold_many_m_n, length_count, many0, many1, many_m_n,
+    many_till, separated_list0, separated_list1,
   },
 };
 
@@ -402,6 +402,42 @@ fn length_value_test() {
   let i4 = [3, 5, 6, 3, 4, 5];
   assert_eq!(length_value_1(&i4), Ok((&i4[4..], 1286)));
   assert_eq!(length_value_2(&i4), Ok((&i4[4..], (5, 6))));
+}
+
+#[test]
+#[cfg(feature = "alloc")]
+fn fold_count_test() {
+  fn fold_into_vec<T>(mut acc: Vec<T>, item: T) -> Vec<T> {
+    acc.push(item);
+    acc
+  }
+  fn cnt_2(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold_count(2, tag("abc"), Vec::new, fold_into_vec)(i)
+  }
+  assert_eq!(
+    cnt_2(&b"abcabcabcdef"[..]),
+    Ok((&b"abcdef"[..], vec![&b"abc"[..], &b"abc"[..]]))
+  );
+  assert_eq!(cnt_2(&b"ab"[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(cnt_2(&b"abcab"[..]), Err(Err::Incomplete(Needed::new(1))));
+  assert_eq!(
+    cnt_2(&b"xxx"[..]),
+    Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
+  );
+  assert_eq!(
+    cnt_2(&b"xxxabcabcdef"[..]),
+    Err(Err::Error(error_position!(
+      &b"xxxabcabcdef"[..],
+      ErrorKind::Tag
+    )))
+  );
+  assert_eq!(
+    cnt_2(&b"abcxxxabcdef"[..]),
+    Err(Err::Error(error_position!(
+      &b"xxxabcdef"[..],
+      ErrorKind::Tag
+    )))
+  );
 }
 
 #[test]
