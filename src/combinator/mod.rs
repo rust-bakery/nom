@@ -285,6 +285,39 @@ where
   }
 }
 
+/// Calls the parser contained in an [`Option`], if any.
+///
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
+/// use nom::combinator::cond_opt;
+/// use nom::character::complete::alpha1;
+/// # fn main() {
+///
+/// fn parser<'a>(opt: Option<fn (&'a str) -> IResult<&'a str, &'a str, Error<&'a str>>>, i: &'a str) -> IResult<&'a str, Option<&'a str>> {
+///   cond_opt(opt)(i)
+/// };
+///
+/// assert_eq!(parser(Some(alpha1), "abcd;"), Ok((";", Some("abcd"))));
+/// assert_eq!(parser(None, "abcd;"), Ok(("abcd;", None)));
+/// assert_eq!(parser(Some(alpha1), "123;"), Err(Err::Error(Error::new("123;", ErrorKind::Alpha))));
+/// assert_eq!(parser(None, "123;"), Ok(("123;", None)));
+/// # }
+/// ```
+pub fn cond_opt<I, O, E: ParseError<I>, F>(
+  mut opt: Option<F>,
+) -> impl FnMut(I) -> IResult<I, Option<O>, E>
+where
+  F: Parser<I, O, E>,
+{
+  move |input: I| match &mut opt {
+    Some(f) => match f.parse(input) {
+      Ok((i, o)) => Ok((i, Some(o))),
+      Err(e) => Err(e),
+    },
+    None => Ok((input, None)),
+  }
+}
+
 /// Tries to apply its parser without consuming the input.
 ///
 /// ```rust
