@@ -41,9 +41,9 @@ pub trait Alt<I, O, E> {
 
 /// Tests a list of parsers one by one until one succeeds.
 ///
-/// It takes as argument a tuple of parsers. There is a maximum of 21
-/// parsers. If you need more, it is possible to nest them in other `alt` calls,
-/// like this: `alt(parser_a, alt(parser_b, parser_c))`
+/// It takes as argument either a tuple or an array of parsers. If using a
+/// tuple, there is a maximum of 21 parsers. If you need more, it is possible to
+/// use an array.
 ///
 /// ```rust
 /// # use nom::error_position;
@@ -188,6 +188,31 @@ impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output, Error>>
 {
   fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
     self.0.parse(input)
+  }
+}
+
+impl<
+    const N: usize,
+    Input: Clone,
+    Output,
+    Error: ParseError<Input>,
+    A: Parser<Input, Output, Error>,
+  > Alt<Input, Output, Error> for [A; N]
+{
+  fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
+    let mut error = None;
+
+    for branch in self {
+      match branch.parse(input.clone()) {
+        Err(Err::Error(e)) => error = Some(e),
+        res => return res,
+      }
+    }
+
+    match error {
+      Some(e) => Err(Err::Error(Error::append(input, ErrorKind::Alt, e))),
+      None => Err(Err::Error(Error::from_error_kind(input, ErrorKind::Alt))),
+    }
   }
 }
 
