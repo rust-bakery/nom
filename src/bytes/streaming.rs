@@ -174,10 +174,10 @@ where
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::bytes::streaming::take_while;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while(is_alphabetic)(s)
+///   take_while(AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
@@ -209,10 +209,10 @@ where
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::take_while1;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while1(is_alphabetic)(s)
+///   take_while1(AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
@@ -245,10 +245,10 @@ where
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::take_while_m_n;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn short_alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while_m_n(3, 6, is_alphabetic)(s)
+///   take_while_m_n(3, 6, AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(short_alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));

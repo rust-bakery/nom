@@ -1009,18 +1009,18 @@ mod tests {
       Err(Err::Error(error_position!(i, ErrorKind::HexDigit)))
     );
 
-    assert!(crate::character::is_hex_digit(b'0'));
-    assert!(crate::character::is_hex_digit(b'9'));
-    assert!(crate::character::is_hex_digit(b'a'));
-    assert!(crate::character::is_hex_digit(b'f'));
-    assert!(crate::character::is_hex_digit(b'A'));
-    assert!(crate::character::is_hex_digit(b'F'));
-    assert!(!crate::character::is_hex_digit(b'g'));
-    assert!(!crate::character::is_hex_digit(b'G'));
-    assert!(!crate::character::is_hex_digit(b'/'));
-    assert!(!crate::character::is_hex_digit(b':'));
-    assert!(!crate::character::is_hex_digit(b'@'));
-    assert!(!crate::character::is_hex_digit(b'\x60'));
+    assert!(AsChar::is_hex_digit(b'0'));
+    assert!(AsChar::is_hex_digit(b'9'));
+    assert!(AsChar::is_hex_digit(b'a'));
+    assert!(AsChar::is_hex_digit(b'f'));
+    assert!(AsChar::is_hex_digit(b'A'));
+    assert!(AsChar::is_hex_digit(b'F'));
+    assert!(!AsChar::is_hex_digit(b'g'));
+    assert!(!AsChar::is_hex_digit(b'G'));
+    assert!(!AsChar::is_hex_digit(b'/'));
+    assert!(!AsChar::is_hex_digit(b':'));
+    assert!(!AsChar::is_hex_digit(b'@'));
+    assert!(!AsChar::is_hex_digit(b'\x60'));
   }
 
   #[test]
@@ -1034,16 +1034,16 @@ mod tests {
       Err(Err::Error(error_position!(i, ErrorKind::OctDigit)))
     );
 
-    assert!(crate::character::is_oct_digit(b'0'));
-    assert!(crate::character::is_oct_digit(b'7'));
-    assert!(!crate::character::is_oct_digit(b'8'));
-    assert!(!crate::character::is_oct_digit(b'9'));
-    assert!(!crate::character::is_oct_digit(b'a'));
-    assert!(!crate::character::is_oct_digit(b'A'));
-    assert!(!crate::character::is_oct_digit(b'/'));
-    assert!(!crate::character::is_oct_digit(b':'));
-    assert!(!crate::character::is_oct_digit(b'@'));
-    assert!(!crate::character::is_oct_digit(b'\x60'));
+    assert!(AsChar::is_oct_digit(b'0'));
+    assert!(AsChar::is_oct_digit(b'7'));
+    assert!(!AsChar::is_oct_digit(b'8'));
+    assert!(!AsChar::is_oct_digit(b'9'));
+    assert!(!AsChar::is_oct_digit(b'a'));
+    assert!(!AsChar::is_oct_digit(b'A'));
+    assert!(!AsChar::is_oct_digit(b'/'));
+    assert!(!AsChar::is_oct_digit(b':'));
+    assert!(!AsChar::is_oct_digit(b'@'));
+    assert!(!AsChar::is_oct_digit(b'\x60'));
   }
 
   #[test]

@@ -1,10 +1,10 @@
-use crate::character::is_alphabetic;
 use crate::character::streaming::{
   alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
   multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
 };
 use crate::error::ErrorKind;
 use crate::internal::{Err, IResult, Needed};
+use crate::AsChar;
 #[cfg(feature = "alloc")]
 use crate::{
   branch::alt,
@@ -355,7 +355,7 @@ fn take_while() {
   use crate::bytes::streaming::take_while;
 
   fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    take_while(is_alphabetic)(i)
+    take_while(AsChar::is_alpha)(i)
   }
   let a = b"";
   let b = b"abcd";
@@ -373,7 +373,7 @@ fn take_while1() {
   use crate::bytes::streaming::take_while1;
 
   fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    take_while1(is_alphabetic)(i)
+    take_while1(AsChar::is_alpha)(i)
   }
   let a = b"";
   let b = b"abcd";
@@ -394,7 +394,7 @@ fn take_while_m_n() {
   use crate::bytes::streaming::take_while_m_n;
 
   fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    take_while_m_n(2, 4, is_alphabetic)(i)
+    take_while_m_n(2, 4, AsChar::is_alpha)(i)
   }
   let a = b"";
   let b = b"a";
@@ -419,7 +419,7 @@ fn take_till() {
   use crate::bytes::streaming::take_till;
 
   fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    take_till(is_alphabetic)(i)
+    take_till(AsChar::is_alpha)(i)
   }
   let a = b"";
   let b = b"abcd";
@@ -437,7 +437,7 @@ fn take_till1() {
   use crate::bytes::streaming::take_till1;
 
   fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    take_till1(is_alphabetic)(i)
+    take_till1(AsChar::is_alpha)(i)
   }
   let a = b"";
   let b = b"abcd";
@@ -546,11 +546,10 @@ fn take_while_m_n_utf8_full_match() {
 #[cfg(feature = "std")]
 fn recognize_take_while() {
   use crate::bytes::streaming::take_while;
-  use crate::character::is_alphanumeric;
   use crate::combinator::recognize;
 
   fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    take_while(is_alphanumeric)(i)
+    take_while(AsChar::is_alphanum)(i)
   }
   fn y(i: &[u8]) -> IResult<&[u8], &[u8]> {
     recognize(x)(i)
