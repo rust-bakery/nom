@@ -42,7 +42,7 @@ method:
 
 ```rust
 let result: Result<(&[u8], Value), Err<Vec<u8>>> =
-  parser(data).map_err(|e: E<&[u8]>| -> e.to_owned());
+  parser(data).map_err(|e: E<&[u8]>| e.to_owned());
 ```
 
 nom provides a powerful error system that can adapt to your needs: you can
