@@ -27,7 +27,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [alt](https://docs.rs/nom/latest/nom/branch/fn.alt.html) | `alt((tag("ab"), tag("cd")))` |  `"cdef"` | `Ok(("ef", "cd"))` |Try a list of parsers and return the result of the first successful one|
-| [permutation](https://docs.rs/nom/latest/nom/branch/fn.permutation.html) | `permutation(tag("ab"), tag("cd"), tag("12"))` | `"cd12abc"` | `Ok(("c", ("ab", "cd", "12"))` |Succeeds when all its child parser have succeeded, whatever the order|
+| [permutation](https://docs.rs/nom/latest/nom/branch/fn.permutation.html) | `permutation((tag("ab"), tag("cd"), tag("12")))` | `"cd12abc"` | `Ok(("c", ("ab", "cd", "12"))` |Succeeds when all its child parser have succeeded, whatever the order|
 
 ## Sequence combinators
 
