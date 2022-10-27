@@ -403,6 +403,43 @@ where
   }
 }
 
+/// Skip a slice of N input elements (Input[N..]).
+///
+/// # Streaming Specific
+/// *Streaming version* if the input has less than N elements, `take_from` will
+/// return a `Err::Incomplete(Needed::new(M))` where M is the number of
+/// additional bytes the parser would need to succeed.
+/// It is well defined for `&[u8]` as the number of elements is the byte size,
+/// but for types like `&str`, we cannot know how many bytes correspond for
+/// the next few chars, so the result will be `Err::Incomplete(Needed::Unknown)`
+///
+/// # Example
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::bytes::streaming::take_from;
+///
+/// fn take_from6(s: &str) -> IResult<&str, ()> {
+///   take_from(6usize)(s)
+/// }
+///
+/// assert_eq!(take_from6("1234567"), Ok(("7", ())));
+/// assert_eq!(take_from6("things"), Ok(("", ())));
+/// assert_eq!(take_from6("short"), Err(Err::Incomplete(Needed::Unknown)));
+/// ```
+pub fn take_from<C, I, Error: ParseError<I>>(
+  count: C,
+) -> impl Fn(I) -> IResult<I, (), Error>
+where
+  I: Input,
+  C: ToUsize,
+{
+  let c = count.to_usize();
+  move |i: I| match i.slice_index(c) {
+    Err(i) => Err(Err::Incomplete(i)),
+    Ok(index) => Ok((i.take_from(index), ())),
+  }
+}
+
 /// Returns the input slice up to the first occurrence of the pattern.
 ///
 /// It doesn't consume the pattern.

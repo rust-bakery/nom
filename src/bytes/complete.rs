@@ -395,6 +395,37 @@ where
   }
 }
 
+/// Skip a slice of N input elements (Input[N..]).
+///
+/// It will return `Err(Err::Error((_, ErrorKind::Eof)))` if the input is shorter than the argument.
+/// # Example
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::bytes::complete::take_from;
+///
+/// fn take_from6(s: &str) -> IResult<&str, ()> {
+///   take_from(6usize)(s)
+/// }
+///
+/// assert_eq!(take_from6("1234567"), Ok(("7", ())));
+/// assert_eq!(take_from6("things"), Ok(("", ())));
+/// assert_eq!(take_from6("short"), Err(Err::Error(Error::new("short", ErrorKind::Eof))));
+/// assert_eq!(take_from6(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
+/// ```
+pub fn take_from<C, I, Error: ParseError<I>>(
+  count: C,
+) -> impl Fn(I) -> IResult<I, (), Error>
+where
+  I: Input,
+  C: ToUsize,
+{
+  let c = count.to_usize();
+  move |i: I| match i.slice_index(c) {
+    Err(_needed) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Eof))),
+    Ok(index) => Ok((i.take_from(index), ())),
+  }
+}
+
 /// Returns the input slice up to the first occurrence of the pattern.
 ///
 /// It doesn't consume the pattern. It will return `Err(Err::Error((_, ErrorKind::TakeUntil)))`
