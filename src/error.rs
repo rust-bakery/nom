@@ -152,7 +152,7 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 pub struct VerboseError<I> {
   /// List of errors accumulated by `VerboseError`, containing the affected
   /// part of input data, and some context
-  pub errors: Vec<(I, VerboseErrorKind)>,
+  pub errors: crate::lib::std::vec::Vec<(I, VerboseErrorKind)>,
 }
 
 #[cfg(feature = "alloc")]
