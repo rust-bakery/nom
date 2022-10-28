@@ -54,6 +54,7 @@ pub trait FromExternalError<I, E> {
 }
 
 /// default error type, only contains the error' location and code
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, PartialEq)]
 pub struct Error<I> {
   /// position of the error in the input data
@@ -151,11 +152,12 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 pub struct VerboseError<I> {
   /// List of errors accumulated by `VerboseError`, containing the affected
   /// part of input data, and some context
-  pub errors: crate::lib::std::vec::Vec<(I, VerboseErrorKind)>,
+  pub errors: Vec<(I, VerboseErrorKind)>,
 }
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, Debug, PartialEq)]
 /// Error context for `VerboseError`
 pub enum VerboseErrorKind {

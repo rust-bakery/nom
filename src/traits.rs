@@ -148,24 +148,31 @@ as_bytes_array_impls! {
 }
 
 /// Transforms common types to a char for basic token parsing
+#[allow(clippy::len_without_is_empty)]
 pub trait AsChar {
   /// makes a char from self
+  #[allow(clippy::wrong_self_convention)]
   fn as_char(self) -> char;
 
   /// Tests that self is an alphabetic character
   ///
   /// Warning: for `&str` it recognizes alphabetic
   /// characters outside of the 52 ASCII letters
+  #[allow(clippy::wrong_self_convention)]
   fn is_alpha(self) -> bool;
 
   /// Tests that self is an alphabetic character
   /// or a decimal digit
+  #[allow(clippy::wrong_self_convention)]
   fn is_alphanum(self) -> bool;
   /// Tests that self is a decimal digit
+  #[allow(clippy::wrong_self_convention)]
   fn is_dec_digit(self) -> bool;
   /// Tests that self is an hex digit
+  #[allow(clippy::wrong_self_convention)]
   fn is_hex_digit(self) -> bool;
   /// Tests that self is an octal digit
+  #[allow(clippy::wrong_self_convention)]
   fn is_oct_digit(self) -> bool;
   /// Gets the len in bytes for self
   fn len(self) -> usize;
@@ -178,7 +185,7 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    (self >= 0x41 && self <= 0x5A) || (self >= 0x61 && self <= 0x7A)
+    (0x41..=0x5A).contains(&self) || (0x61..=0x7A).contains(&self)
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -186,17 +193,15 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    self >= 0x30 && self <= 0x39
+    (0x30..=0x39).contains(&self)
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    (self >= 0x30 && self <= 0x39)
-      || (self >= 0x41 && self <= 0x46)
-      || (self >= 0x61 && self <= 0x66)
+    (0x30..=0x39).contains(&self) || (0x41..=0x46).contains(&self) || (0x61..=0x66).contains(&self)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
-    self >= 0x30 && self <= 0x37
+    (0x30..=0x37).contains(&self)
   }
   #[inline]
   fn len(self) -> usize {
@@ -703,6 +708,7 @@ impl<'a> InputTakeAtPosition for &'a str {
 
 /// Indicates whether a comparison was successful, an error, or
 /// if more data was needed
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, PartialEq)]
 pub enum CompareResult {
   /// Comparison was successful
@@ -1381,7 +1387,7 @@ impl HexDisplay for [u8] {
       v.push(b'\t');
 
       for &byte in chunk {
-        if (byte >= 32 && byte <= 126) || byte >= 128 {
+        if (32..=126).contains(&byte) || byte >= 128 {
           v.push(byte);
         } else {
           v.push(b'.');

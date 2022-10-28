@@ -19,7 +19,7 @@ pub mod streaming;
 /// ```
 #[inline]
 pub fn is_alphabetic(chr: u8) -> bool {
-  (chr >= 0x41 && chr <= 0x5A) || (chr >= 0x61 && chr <= 0x7A)
+  (0x41..=0x5A).contains(&chr) || (0x61..=0x7A).contains(&chr)
 }
 
 /// Tests if byte is ASCII digit: 0-9
@@ -33,7 +33,7 @@ pub fn is_alphabetic(chr: u8) -> bool {
 /// ```
 #[inline]
 pub fn is_digit(chr: u8) -> bool {
-  chr >= 0x30 && chr <= 0x39
+  (0x30..=0x39).contains(&chr)
 }
 
 /// Tests if byte is ASCII hex digit: 0-9, A-F, a-f
@@ -49,7 +49,7 @@ pub fn is_digit(chr: u8) -> bool {
 /// ```
 #[inline]
 pub fn is_hex_digit(chr: u8) -> bool {
-  (chr >= 0x30 && chr <= 0x39) || (chr >= 0x41 && chr <= 0x46) || (chr >= 0x61 && chr <= 0x66)
+  (0x30..=0x39).contains(&chr) || (0x41..=0x46).contains(&chr) || (0x61..=0x66).contains(&chr)
 }
 
 /// Tests if byte is ASCII octal digit: 0-7
@@ -64,7 +64,7 @@ pub fn is_hex_digit(chr: u8) -> bool {
 /// ```
 #[inline]
 pub fn is_oct_digit(chr: u8) -> bool {
-  chr >= 0x30 && chr <= 0x37
+  (0x30..=0x37).contains(&chr)
 }
 
 /// Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9

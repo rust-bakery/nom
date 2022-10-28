@@ -108,11 +108,7 @@ pub enum Err<E> {
 impl<E> Err<E> {
   /// Tests if the result is Incomplete
   pub fn is_incomplete(&self) -> bool {
-    if let Err::Incomplete(_) = self {
-      true
-    } else {
-      false
-    }
+    matches!(self, Err::Incomplete(_))
   }
 
   /// Applies the given function to the inner error
@@ -344,7 +340,7 @@ pub struct Map<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
     match self.f.parse(i) {
       Err(e) => Err(e),
@@ -361,7 +357,7 @@ pub struct FlatMap<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
   for FlatMap<F, G, O1>
 {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
@@ -378,7 +374,7 @@ pub struct AndThen<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
   for AndThen<F, G, O1>
 {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
@@ -395,9 +391,7 @@ pub struct And<F, G> {
   g: G,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, O2), E>
-  for And<F, G>
-{
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, O2), E> for And<F, G> {
   fn parse(&mut self, i: I) -> IResult<I, (O1, O2), E> {
     let (i, o1) = self.f.parse(i)?;
     let (i, o2) = self.g.parse(i)?;
@@ -412,8 +406,8 @@ pub struct Or<F, G> {
   g: G,
 }
 
-impl<'a, I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Parser<I, O, E>>
-  Parser<I, O, E> for Or<F, G>
+impl<I: Clone, O, E: error::ParseError<I>, F: Parser<I, O, E>, G: Parser<I, O, E>> Parser<I, O, E>
+  for Or<F, G>
 {
   fn parse(&mut self, i: I) -> IResult<I, O, E> {
     match self.f.parse(i.clone()) {
@@ -436,15 +430,8 @@ pub struct Into<F, O1, O2: From<O1>, E1, E2: From<E1>> {
   phantom_err2: core::marker::PhantomData<E2>,
 }
 
-impl<
-    'a,
-    I: Clone,
-    O1,
-    O2: From<O1>,
-    E1,
-    E2: crate::error::ParseError<I> + From<E1>,
-    F: Parser<I, O1, E1>,
-  > Parser<I, O2, E2> for Into<F, O1, O2, E1, E2>
+impl<I: Clone, O1, O2: From<O1>, E1, E2: error::ParseError<I> + From<E1>, F: Parser<I, O1, E1>>
+  Parser<I, O2, E2> for Into<F, O1, O2, E1, E2>
 {
   fn parse(&mut self, i: I) -> IResult<I, O2, E2> {
     match self.f.parse(i) {

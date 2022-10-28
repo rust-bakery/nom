@@ -1515,7 +1515,7 @@ where
       }
     }
 
-    let position = position.unwrap_or(i.input_len());
+    let position = position.unwrap_or_else(|| i.input_len());
 
     let index = if zero_count == 0 {
       position
