@@ -28,11 +28,14 @@ impl<'a, T> InputLength for &'a [T] {
   }
 }
 
-impl<'a> InputLength for &'a str {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
+impl<T> InputLength for T
+where
+    T: AsRef<str>,
+{
+    #[inline]
+    fn input_len(&self) -> usize {
+        self.as_ref().len()
+    }
 }
 
 impl<'a> InputLength for (&'a [u8], usize) {
