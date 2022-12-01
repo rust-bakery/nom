@@ -613,6 +613,56 @@ where
   }
 }
 
+/// Helper function
+///
+/// Applies the supplied parser `f` repeatedly, combining it with an initial result by merging it
+/// using `g`. If anything fails, `error_kind` is returned. This fu
+///
+/// This function does not take ownership of either the parser or the accumulator function so it can
+/// be used from FnMut parser functions without consuming their embedded parsers.
+///
+/// # Arguments
+/// - `input` input to work on
+/// - `acc` accumulator value to work on
+/// - `f` embedded parser to apply until error
+/// - `g` accumulator function to add newly parsed data to the existing data
+/// - `error_kind` error kind to return on failure
+fn fold_many_helper<I, O, E, F, G, R>(
+  mut input: I,
+  mut acc: R,
+  f: &mut F,
+  g: &mut G,
+  error_kind: ErrorKind,
+) -> IResult<I, R, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  E: ParseError<I>,
+{
+  loop {
+    let _input = input.clone();
+    let len = input.input_len();
+    match f.parse(_input) {
+      Err(Err::Error(_)) => {
+        break;
+      }
+      Err(e) => return Err(e),
+      Ok((i, o)) => {
+        // infinite loop check: the parser must always consume
+        if i.input_len() == len {
+          return Err(Err::Failure(E::from_error_kind(i, error_kind)));
+        }
+
+        acc = g(acc, o);
+        input = i;
+      }
+    }
+  }
+
+  Ok((input, acc))
+}
+
 /// Applies a parser until it fails and accumulates
 /// the results using a given function and initial value.
 /// # Arguments
@@ -653,32 +703,7 @@ where
   H: FnMut() -> R,
   E: ParseError<I>,
 {
-  move |i: I| {
-    let mut res = init();
-    let mut input = i;
-
-    loop {
-      let i_ = input.clone();
-      let len = input.input_len();
-      match f.parse(i_) {
-        Ok((i, o)) => {
-          // infinite loop check: the parser must always consume
-          if i.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many0)));
-          }
-
-          res = g(res, o);
-          input = i;
-        }
-        Err(Err::Error(_)) => {
-          return Ok((input, res));
-        }
-        Err(e) => {
-          return Err(e);
-        }
-      }
-    }
-  }
+  move |i: I| fold_many_helper(i, init(), &mut f, &mut g, ErrorKind::Many0)
 }
 
 /// Applies a parser until it fails and accumulates
@@ -729,32 +754,7 @@ where
     match f.parse(_i) {
       Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1))),
       Err(e) => Err(e),
-      Ok((i1, o1)) => {
-        let mut acc = g(init, o1);
-        let mut input = i1;
-
-        loop {
-          let _input = input.clone();
-          let len = input.input_len();
-          match f.parse(_input) {
-            Err(Err::Error(_)) => {
-              break;
-            }
-            Err(e) => return Err(e),
-            Ok((i, o)) => {
-              // infinite loop check: the parser must always consume
-              if i.input_len() == len {
-                return Err(Err::Failure(E::from_error_kind(i, ErrorKind::Many1)));
-              }
-
-              acc = g(acc, o);
-              input = i;
-            }
-          }
-        }
-
-        Ok((input, acc))
-      }
+      Ok((i1, o1)) => fold_many_helper(i1, g(init, o1), &mut f, &mut g, ErrorKind::Many1),
     }
   }
 }

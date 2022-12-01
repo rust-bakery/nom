@@ -429,7 +429,7 @@ fn fold_many0_test() {
   assert_eq!(multi(&b""[..]), Err(Err::Incomplete(Needed::new(4))));
   assert_eq!(
     multi_empty(&b"abcdef"[..]),
-    Err(Err::Error(error_position!(
+    Err(Err::Failure(error_position!(
       &b"abcdef"[..],
       ErrorKind::Many0
     )))
