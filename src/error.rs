@@ -417,6 +417,7 @@ pub enum ErrorKind {
   Float,
   Satisfy,
   Fail,
+  Reduce,
 }
 
 #[rustfmt::skip]
@@ -477,6 +478,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Float                     => 73,
     ErrorKind::Satisfy                   => 74,
     ErrorKind::Fail                      => 75,
+    ErrorKind::Reduce                    => 76,
   }
 }
 
@@ -539,6 +541,7 @@ impl ErrorKind {
       ErrorKind::Float                     => "Float",
       ErrorKind::Satisfy                   => "Satisfy",
       ErrorKind::Fail                      => "Fail",
+      ErrorKind::Reduce                    => "Reduce",
     }
   }
 }
