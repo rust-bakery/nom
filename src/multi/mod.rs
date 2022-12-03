@@ -990,3 +990,44 @@ where
     Ok((input, res))
   }
 }
+
+/// Applies a parser until it fails and accumulates the results into a single value. Fails if the
+/// embedded parser does not succeed at least once.
+///
+/// This function is related to [`fold_many1`] in the same way [`Iterator::reduce`] is related to
+/// [`Iterator::fold`].
+///
+/// # Arguments
+/// * `f` The parser to apply.
+/// * `g` The function that combines a result of `f` with the current accumulator.
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::multi::reduce;
+/// use nom::bytes::complete::tag;
+/// use nom::sequence::terminated;
+///
+/// fn parser(s: &[u8]) -> IResult<&[u8], i32> {
+///   reduce(
+///     terminated(nom::character::complete::i32, nom::character::complete::newline),
+///     Ord::max
+///   )(s)
+/// }
+///
+/// assert_eq!(parser(b"123\n456\n789\n"), Ok((&b""[..], 789)));
+/// assert_eq!(parser(b"123\nfoo\nbar\n"), Ok((&b"foo\nbar\n"[..], 123)));
+/// assert_eq!(parser(b"foo"), Err(Err::Error(Error::new(&b"foo"[..], ErrorKind::Reduce))));
+/// assert_eq!(parser(b""), Err(Err::Error(Error::new(&b""[..], ErrorKind::Reduce))));
+/// ```
+pub fn reduce<I, O, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>
+where
+  I: Clone + InputLength + InputTake,
+  F: Parser<I, O, E>,
+  G: FnMut(O, O) -> O,
+  E: ParseError<I>,
+{
+  move |i: I| match f.parse(i.clone()) {
+    Err(Err::Error(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Reduce))),
+    Err(e) => Err(e),
+    Ok((i1, o1)) => fold_many_helper(i1, o1, &mut f, &mut g, ErrorKind::Reduce),
+  }
+}

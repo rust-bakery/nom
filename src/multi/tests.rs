@@ -1,4 +1,4 @@
-use super::{length_data, length_value, many0_count, many1_count};
+use super::{length_data, length_value, many0_count, many1_count, reduce};
 use crate::{
   bytes::streaming::tag,
   character::streaming::digit1 as digit,
@@ -6,7 +6,7 @@ use crate::{
   internal::{Err, IResult, Needed},
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
-  sequence::{pair, tuple},
+  sequence::{pair, terminated, tuple},
 };
 #[cfg(feature = "alloc")]
 use crate::{
@@ -531,4 +531,23 @@ fn many1_count_test() {
       ErrorKind::Many1Count
     )))
   );
+}
+
+#[test]
+fn reduce_test() {
+  fn max_num(i: &[u8]) -> IResult<&[u8], i32> {
+    reduce(
+      terminated(crate::character::complete::i32, tag(",")),
+      Ord::max,
+    )(i)
+  }
+
+  assert_eq!(max_num(&b"3,1,4,1,junk"[..]), Ok((&b"junk"[..], 4)));
+
+  assert_eq!(max_num(&b"42,"[..]), Ok((&b""[..], 42)));
+
+  assert_eq!(
+    max_num(&b"junk"[..]),
+    Err(Err::Error(error_position!(&b"junk"[..], ErrorKind::Reduce)))
+  )
 }
