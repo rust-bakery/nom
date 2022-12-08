@@ -1318,22 +1318,37 @@ where
 ///   hex_u32(s)
 /// };
 ///
-/// assert_eq!(parser(b"01AE;"), Ok((&b";"[..], 0x01AE)));
-/// assert_eq!(parser(b"abc"), Err(Err::Incomplete(Needed::new(1))));
-/// assert_eq!(parser(b"ggg"), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
+/// assert_eq!(parser(&b"01AE;"[..]), Ok((&b";"[..], 0x01AE)));
+/// assert_eq!(parser(&b"abc"[..]), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(parser(&b"ggg"[..]), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
 /// ```
 #[inline]
-pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8], u32, E> {
-  let (i, o) = crate::bytes::streaming::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
+pub fn hex_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+where
+  I: InputTakeAtPosition,
+  I: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  <I as InputTakeAtPosition>::Item: AsChar,
+  I: AsBytes,
+  I: InputLength,
+{
+  let e: ErrorKind = ErrorKind::IsA;
+  let (i, o) = input.split_at_position1_streaming(
+    |c| {
+      let c = c.as_char();
+      !"0123456789abcdefABCDEF".contains(c)
+    },
+    e,
+  )?;
 
   // Do not parse more than 8 characters for a u32
-  let (parsed, remaining) = if o.len() <= 8 {
+  let (parsed, remaining) = if o.input_len() <= 8 {
     (o, i)
   } else {
-    (&input[..8], &input[8..])
+    (input.slice(..8), input.slice(8..))
   };
 
   let res = parsed
+    .as_bytes()
     .iter()
     .rev()
     .enumerate()
