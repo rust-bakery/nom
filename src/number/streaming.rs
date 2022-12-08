@@ -1434,7 +1434,7 @@ pub fn recognize_float_parts<T, E: ParseError<T>>(input: T) -> IResult<T, (bool,
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + crate::traits::ParseTo<i32>,
+  T: InputIter,
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition + InputTake + InputLength,
   <T as InputTakeAtPosition>::Item: AsChar,
