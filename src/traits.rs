@@ -1330,6 +1330,10 @@ impl<I> ErrorConvert<error::VerboseError<(I, usize)>> for error::VerboseError<I>
   }
 }
 
+impl ErrorConvert<()> for () {
+  fn convert(self) {}
+}
+
 #[cfg(feature = "std")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
 /// Helper trait to show a byte slice as a hex dump
