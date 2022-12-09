@@ -658,7 +658,8 @@ where
 /// ```
 pub fn iterator<Input, Output, Error, F>(input: Input, f: F) -> ParserIterator<Input, Error, F>
 where
-  F: Parser<Input, Output, Error>,
+  Input: Clone,
+  F: FnMut(Input) -> IResult<Input, Output, Error>,
   Error: ParseError<Input>,
 {
   ParserIterator {
