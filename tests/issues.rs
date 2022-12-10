@@ -229,3 +229,22 @@ fn issue_1459_clamp_capacity() {
   let mut parser = count::<_, _, (), _>(char('a'), usize::MAX);
   assert_eq!(parser("a"), Err(nom::Err::Error(())));
 }
+
+#[test]
+fn issue_1586_parser_iterator_impl() {
+  use nom::{
+    character::complete::{digit1, newline},
+    combinator::{iterator, opt},
+    sequence::terminated,
+    IResult,
+  };
+  fn parse_line(i: &str) -> IResult<&str, &str> {
+    terminated(digit1, opt(newline))(i)
+  }
+
+  fn parse_input(i: &str) -> impl Iterator<Item = i32> + '_ {
+    iterator(i, parse_line).map(|x| x.parse::<i32>().unwrap())
+  }
+
+  assert_eq!(parse_input("123\n456").collect::<Vec<_>>(), vec![123, 456]);
+}
