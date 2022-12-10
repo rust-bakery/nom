@@ -1,6 +1,6 @@
 //#![feature(trace_macros)]
 #![allow(dead_code)]
-#![cfg_attr(feature = "cargo-clippy", allow(redundant_closure))]
+#![allow(clippy::redundant_closure)]
 
 use nom::{error::ErrorKind, Err, IResult, Needed};
 
@@ -120,6 +120,7 @@ mod issue_647 {
     v: Vec<f64>,
   }
 
+  #[allow(clippy::type_complexity)]
   fn list<'a, 'b>(
     input: Input<'a>,
     _cs: &'b f64,

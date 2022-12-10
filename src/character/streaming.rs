@@ -836,8 +836,8 @@ mod tests {
       Err(Err::Incomplete(Needed::new(1)))
     );
     assert_eq!(alpha1(b), Err(Err::Error((b, ErrorKind::Alpha))));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12", &"az"[..])));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], "a")));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12", "az")));
     assert_eq!(digit1(a), Err(Err::Error((a, ErrorKind::Digit))));
     assert_eq!(
       digit1::<_, (_, ErrorKind)>(b),
@@ -857,7 +857,7 @@ mod tests {
       hex_digit1::<_, (_, ErrorKind)>(c),
       Err(Err::Incomplete(Needed::new(1)))
     );
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", "a")));
     assert_eq!(hex_digit1(e), Err(Err::Error((e, ErrorKind::HexDigit))));
     assert_eq!(oct_digit1(a), Err(Err::Error((a, ErrorKind::OctDigit))));
     assert_eq!(
