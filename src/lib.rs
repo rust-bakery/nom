@@ -372,9 +372,9 @@
 //! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/main/doc),
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
+#![allow(clippy::doc_markdown)]
 #![deny(missing_docs)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 #[cfg(feature = "alloc")]

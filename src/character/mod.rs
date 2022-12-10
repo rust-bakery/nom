@@ -19,7 +19,7 @@ pub mod streaming;
 /// ```
 #[inline]
 pub fn is_alphabetic(chr: u8) -> bool {
-  (chr >= 0x41 && chr <= 0x5A) || (chr >= 0x61 && chr <= 0x7A)
+  matches!(chr, 0x41..=0x5A | 0x61..=0x7A)
 }
 
 /// Tests if byte is ASCII digit: 0-9
@@ -33,7 +33,7 @@ pub fn is_alphabetic(chr: u8) -> bool {
 /// ```
 #[inline]
 pub fn is_digit(chr: u8) -> bool {
-  chr >= 0x30 && chr <= 0x39
+  matches!(chr, 0x30..=0x39)
 }
 
 /// Tests if byte is ASCII hex digit: 0-9, A-F, a-f
@@ -49,7 +49,7 @@ pub fn is_digit(chr: u8) -> bool {
 /// ```
 #[inline]
 pub fn is_hex_digit(chr: u8) -> bool {
-  (chr >= 0x30 && chr <= 0x39) || (chr >= 0x41 && chr <= 0x46) || (chr >= 0x61 && chr <= 0x66)
+  matches!(chr, 0x30..=0x39 | 0x41..=0x46 | 0x61..=0x66)
 }
 
 /// Tests if byte is ASCII octal digit: 0-7
@@ -64,7 +64,7 @@ pub fn is_hex_digit(chr: u8) -> bool {
 /// ```
 #[inline]
 pub fn is_oct_digit(chr: u8) -> bool {
-  chr >= 0x30 && chr <= 0x37
+  matches!(chr, 0x30..=0x37)
 }
 
 /// Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9
