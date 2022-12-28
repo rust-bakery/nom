@@ -20,6 +20,7 @@ use core::num::NonZeroUsize;
 ///
 /// This does not affect correctness. Nom will always read the full number
 /// of elements regardless of the capacity cap.
+#[cfg(feature = "alloc")]
 const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 
 /// Repeats the embedded parser until it fails
