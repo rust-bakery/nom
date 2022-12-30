@@ -99,29 +99,83 @@ As an example, here is how we could build a (non spec compliant) HTTP request
 line parser:
 
 ```rust
+use nom::{
+    bytes::complete::{tag, take_while1},
+    character::{is_alphabetic, is_space},
+    sequence::{preceded, tuple},
+    IResult,
+};
+use std::str;
+
+#[derive(Debug, PartialEq)]
+pub struct Request<'a> {
+    pub method: &'a [u8],
+    pub url: &'a [u8],
+    pub version: &'a [u8],
+}
+
+fn is_not_space(c: u8) -> bool {
+    !is_space(c)
+}
+
+fn is_version(c: u8) -> bool {
+    c >= b'0' && c <= b'9' || c == b'.'
+}
+
 // first implement the basic parsers
-let method = take_while1(is_alpha);
-let space = take_while1(|c| c == ' ');
-let url = take_while1(|c| c!= ' ');
-let is_version = |c| c >= b'0' && c <= b'9' || c == b'.';
-let http = tag("HTTP/");
-let version = take_while1(is_version);
-let line_ending = tag("\r\n");
+fn method(s: &[u8]) -> IResult<&[u8], &[u8]> {
+    take_while1(is_alphabetic)(s)
+}
 
-// combine http and version to extract the version string
-// preceded will return the result of the second parser
-// if both succeed
-let http_version = preceded(http, version);
+fn space(s: &[u8]) -> IResult<&[u8], &[u8]> {
+    take_while1(is_space)(s)
+}
 
-// combine all previous parsers in one function
-fn request_line(i: &[u8]) -> IResult<&[u8], Request> {
+fn url(s: &[u8]) -> IResult<&[u8], &[u8]> {
+    take_while1(is_not_space)(s)
+}
 
-  // tuple takes as argument a tuple of parsers and will return
-  // a tuple of their results
-  let (input, (method, _, url, _, version, _)) =
-    tuple((method, space, url, space, http_version, line_ending))(i)?;
+fn http(s: &[u8]) -> IResult<&[u8], &[u8]> {
+    tag("HTTP/")(s)
+}
+fn version(s: &[u8]) -> IResult<&[u8], &[u8]> {
+    take_while1(is_version)(s)
+}
+fn line_ending(s: &[u8]) -> IResult<&[u8], &[u8]> {
+    tag("\r\n")(s)
+}
 
-  Ok((input, Request { method, url, version }))
+fn http_version(s: &[u8]) -> IResult<&[u8], &[u8]> {
+    preceded(http, version)(s)
+}
+
+fn main() {
+    // combine all previous parsers in one function
+    fn request_line(i: &[u8]) -> IResult<&[u8], Request> {
+        // tuple takes as argument a tuple of parsers and will return
+        // a tuple of their results
+        let (input, (method, _, url, _, version, _)) =
+            tuple((method, space, url, space, http_version, line_ending))(i)?;
+
+        println!("{:#?}", str::from_utf8(method));
+        println!("{:#?}", str::from_utf8(url));
+        println!("{:#?}", str::from_utf8(version));
+
+        Ok((
+            input,
+            Request {
+                method,
+                url,
+                version,
+            },
+        ))
+    }
+
+    // combine http and version to extract the version string
+    // preceded will return the result of the second parser
+    // if both succeed
+    let s = "GET documents HTTP/1.1\r\n".as_bytes();
+    request_line(s);
 }
 ```
 
