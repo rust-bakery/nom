@@ -25,7 +25,7 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 
 /// Repeats the embedded parser, gathering the results in a `Vec`.
 ///
-/// This stops on [`Err::Error`].  To instead chain an error up, see
+/// This stops on [`Err::Error`] and returns the results that were accumulated. To instead chain an error up, see
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -79,7 +79,7 @@ where
 
 /// Runs the embedded parser, gathering the results in a `Vec`.
 ///
-/// This stops on [`Err::Error`] if there is at least one result.  To instead chain an error up,
+/// This stops on [`Err::Error`] if there is at least one result,  and returns the results that were accumulated. To instead chain an error up,
 /// see [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -201,7 +201,7 @@ where
 
 /// Alternates between two parsers to produce a list of elements.
 ///
-/// This stops when either parser returns [`Err::Error`].  To instead chain an error up, see
+/// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -276,7 +276,7 @@ where
 ///
 /// Fails if the element parser does not produce at least one element.$
 ///
-/// This stops when either parser returns [`Err::Error`].  To instead chain an error up, see
+/// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -348,7 +348,7 @@ where
 
 /// Repeats the embedded parser `m..=n` times
 ///
-/// This stops before `n` when the parser returns [`Err::Error`].  To instead chain an error up, see
+/// This stops before `n` when the parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -425,7 +425,7 @@ where
 
 /// Repeats the embedded parser, counting the results
 ///
-/// This stops on [`Err::Error`].  To instead chain an error up, see
+/// This stops on [`Err::Error`]. To instead chain an error up, see
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -482,7 +482,7 @@ where
 
 /// Runs the embedded parser, counting the results.
 ///
-/// This stops on [`Err::Error`] if there is at least one result.  To instead chain an error up,
+/// This stops on [`Err::Error`] if there is at least one result. To instead chain an error up,
 /// see [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -651,7 +651,7 @@ where
 
 /// Repeats the embedded parser, calling `g` to gather the results.
 ///
-/// This stops on [`Err::Error`].  To instead chain an error up, see
+/// This stops on [`Err::Error`]. To instead chain an error up, see
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -726,7 +726,7 @@ where
 
 /// Repeats the embedded parser, calling `g` to gather the results.
 ///
-/// This stops on [`Err::Error`] if there is at least one result.  To instead chain an error up,
+/// This stops on [`Err::Error`] if there is at least one result. To instead chain an error up,
 /// see [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
@@ -810,7 +810,7 @@ where
 
 /// Repeats the embedded parser `m..=n` times, calling `g` to gather the results
 ///
-/// This stops before `n` when the parser returns [`Err::Error`].  To instead chain an error up, see
+/// This stops before `n` when the parser returns [`Err::Error`]. To instead chain an error up, see
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments

@@ -682,7 +682,7 @@ where
 /// Call the iterator's [ParserIterator::finish] method to get the remaining input if successful,
 /// or the error value if we encountered an error.
 ///
-/// On [`Err::Error`], iteration will stop.  To instead chain an error up, see [`cut`].
+/// On [`Err::Error`], iteration will stop. To instead chain an error up, see [`cut`].
 ///
 /// ```rust
 /// use nom::{combinator::iterator, IResult, bytes::complete::tag, character::complete::alpha1, sequence::terminated};
