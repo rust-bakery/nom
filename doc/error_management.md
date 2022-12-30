@@ -23,7 +23,7 @@ The result is either an `Ok((I, O))` containing the remaining input and the
 parsed value, or an `Err(nom::Err<E>)` with `E` the error type.
 `nom::Err<E>` is an enum because combinators can have different behaviours
 depending on the value. The `Err<E>` enum expresses 3 conditions for a parser error:
-- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules to indicate that we should buffer more data from a file or socket. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`
+- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules to indicate that we should buffer more data from a file or socket. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`. When a parser returns `Incomplete`, we should accumulate more data in the buffer (example: reading from a socket) and call the parser again
 - `Error` is a normal parser error. If a child parser of the `alt` combinator returns `Error`, it will try another child parser
 - `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`. If we know we were in the right branch (example: we found a correct prefix character but input after that was wrong), we can transform a `Err::Error` into a `Err::Failure` with the `cut()` combinator
 
