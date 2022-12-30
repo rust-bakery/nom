@@ -105,9 +105,19 @@ name = "fnmut"
 required-features = ["alloc"]
 
 [[example]]
+name = "custom_error"
+required-features = ["alloc"]
+path = "examples/custom_error.rs"
+
+[[example]]
 name = "json"
 required-features = ["alloc"]
 path = "examples/json.rs"
+
+[[example]]
+name = "json_iterator"
+required-features = ["alloc"]
+path = "examples/json_iterator.rs"
 
 [[example]]
 name = "iterator"

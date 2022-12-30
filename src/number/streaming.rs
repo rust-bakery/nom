@@ -12,26 +12,6 @@ use crate::traits::{
   AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
 };
 
-#[doc(hidden)]
-macro_rules! map(
-  // Internal parser, do not use directly
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    $crate::combinator::map(move |i| {$submac!(i, $($args)*)}, $g).parse($i)
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map!(__impl $i, $submac!($($args)*), $g)
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map!(__impl $i, call!($f), $g)
-  );
-);
-
-#[doc(hidden)]
-macro_rules! call (
-  ($i:expr, $fun:expr) => ( $fun( $i ) );
-  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
-);
-
 /// Recognizes an unsigned 1 byte integer.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
@@ -242,7 +222,7 @@ pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u8, |x| x as i8)
+  be_u8.map(|x| x as i8).parse(input)
 }
 
 /// Recognizes a big endian signed 2 bytes integer.
@@ -262,7 +242,7 @@ pub fn be_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u16, |x| x as i16)
+  be_u16.map(|x| x as i16).parse(input)
 }
 
 /// Recognizes a big endian signed 3 bytes integer.
@@ -283,11 +263,15 @@ where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   // Same as the unsigned version but we need to sign-extend manually here
-  map!(input, be_u24, |x| if x & 0x80_00_00 != 0 {
-    (x | 0xff_00_00_00) as i32
-  } else {
-    x as i32
-  })
+  be_u24
+    .map(|x| {
+      if x & 0x80_00_00 != 0 {
+        (x | 0xff_00_00_00) as i32
+      } else {
+        x as i32
+      }
+    })
+    .parse(input)
 }
 
 /// Recognizes a big endian signed 4 bytes integer.
@@ -307,7 +291,7 @@ pub fn be_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u32, |x| x as i32)
+  be_u32.map(|x| x as i32).parse(input)
 }
 
 /// Recognizes a big endian signed 8 bytes integer.
@@ -328,7 +312,7 @@ pub fn be_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u64, |x| x as i64)
+  be_u64.map(|x| x as i64).parse(input)
 }
 
 /// Recognizes a big endian signed 16 bytes integer.
@@ -348,7 +332,7 @@ pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u128, |x| x as i128)
+  be_u128.map(|x| x as i128).parse(input)
 }
 
 /// Recognizes an unsigned 1 byte integer.
@@ -560,7 +544,7 @@ pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u8, |x| x as i8)
+  le_u8.map(|x| x as i8).parse(input)
 }
 
 /// Recognizes a little endian signed 2 bytes integer.
@@ -583,7 +567,7 @@ pub fn le_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u16, |x| x as i16)
+  le_u16.map(|x| x as i16).parse(input)
 }
 
 /// Recognizes a little endian signed 3 bytes integer.
@@ -607,11 +591,15 @@ where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   // Same as the unsigned version but we need to sign-extend manually here
-  map!(input, le_u24, |x| if x & 0x80_00_00 != 0 {
-    (x | 0xff_00_00_00) as i32
-  } else {
-    x as i32
-  })
+  le_u24
+    .map(|x| {
+      if x & 0x80_00_00 != 0 {
+        (x | 0xff_00_00_00) as i32
+      } else {
+        x as i32
+      }
+    })
+    .parse(input)
 }
 
 /// Recognizes a little endian signed 4 bytes integer.
@@ -634,7 +622,7 @@ pub fn le_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u32, |x| x as i32)
+  le_u32.map(|x| x as i32).parse(input)
 }
 
 /// Recognizes a little endian signed 8 bytes integer.
@@ -657,7 +645,7 @@ pub fn le_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u64, |x| x as i64)
+  le_u64.map(|x| x as i64).parse(input)
 }
 
 /// Recognizes a little endian signed 16 bytes integer.
@@ -680,7 +668,7 @@ pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u128, |x| x as i128)
+  le_u128.map(|x| x as i128).parse(input)
 }
 
 /// Recognizes an unsigned 1 byte integer
@@ -931,7 +919,7 @@ pub fn i8<I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(i, u8, |x| x as i8)
+  u8.map(|x| x as i8).parse(i)
 }
 
 /// Recognizes a signed 2 byte integer
@@ -2191,7 +2179,7 @@ mod tests {
   #[cfg(feature = "std")]
   fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
     use crate::traits::ParseTo;
-    match recognize_float(i) {
+    match recognize_float_or_exceptions(i) {
       Err(e) => Err(e),
       Ok((i, s)) => {
         if s.is_empty() {
