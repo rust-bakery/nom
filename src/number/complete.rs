@@ -2111,7 +2111,7 @@ mod tests {
 
   #[cfg(feature = "std")]
   fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
-    match recognize_float(i) {
+    match recognize_float_or_exceptions(i) {
       Err(e) => Err(e),
       Ok((i, s)) => {
         if s.is_empty() {
