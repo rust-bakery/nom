@@ -439,15 +439,16 @@ pub use self::traits::*;
 pub use self::str::*;
 
 #[macro_use]
+mod macros;
+#[macro_use]
 pub mod error;
 
+pub mod branch;
 pub mod combinator;
 mod internal;
-mod traits;
-#[macro_use]
-pub mod branch;
 pub mod multi;
 pub mod sequence;
+mod traits;
 
 pub mod bits;
 pub mod bytes;
