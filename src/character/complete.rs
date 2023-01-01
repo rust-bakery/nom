@@ -414,10 +414,10 @@ where
 /// assert_eq!(parser("c1"), Err(Err::Error(Error::new("c1", ErrorKind::Digit))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Digit))));
 /// ```
-/// 
+///
 /// ## Parsing an integer
 /// You can use `digit1` in combination with [`map_res`] to parse an integer:
-/// 
+///
 /// ```
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::combinator::map_res;
@@ -425,12 +425,12 @@ where
 /// fn parser(input: &str) -> IResult<&str, u32> {
 ///   map_res(digit1, str::parse)(input)
 /// }
-/// 
+///
 /// assert_eq!(parser("416"), Ok(("", 416)));
 /// assert_eq!(parser("12b"), Ok(("b", 12)));
 /// assert!(parser("b").is_err());
 /// ```
-/// 
+///
 /// [`map_res`]: crate::combinator::map_res
 pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
