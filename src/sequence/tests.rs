@@ -257,6 +257,7 @@ fn delimited_test() {
 
 #[test]
 fn tuple_test() {
+  #[allow(clippy::type_complexity)]
   fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8], &[u8])> {
     tuple((be_u16, take(3u8), tag("fg")))(i)
   }

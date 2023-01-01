@@ -3,7 +3,7 @@ use nom::combinator::map_res;
 use nom::sequence::tuple;
 use nom::IResult;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Color {
   pub red: u8,
   pub green: u8,
@@ -15,7 +15,7 @@ fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
 }
 
 fn is_hex_digit(c: char) -> bool {
-  c.is_digit(16)
+  c.is_ascii_hexdigit()
 }
 
 fn hex_primary(input: &str) -> IResult<&str, u8> {

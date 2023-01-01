@@ -327,6 +327,7 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Ok(("", "")));
 /// ```
+#[allow(clippy::redundant_closure)]
 pub fn take_till<F, Input, Error: ParseError<Input>>(
   cond: F,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -358,6 +359,7 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Err(Err::Error(Error::new("", ErrorKind::TakeTill1))));
 /// ```
+#[allow(clippy::redundant_closure)]
 pub fn take_till1<F, Input, Error: ParseError<Input>>(
   cond: F,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -736,7 +738,7 @@ mod tests {
   }
 
   // issue ##1118 escaped does not work with empty string
-  fn unquote<'a>(input: &'a str) -> IResult<&'a str, &'a str> {
+  fn unquote(input: &str) -> IResult<&str, &str> {
     use crate::bytes::complete::*;
     use crate::character::complete::*;
     use crate::combinator::opt;
