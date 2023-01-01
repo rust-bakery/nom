@@ -108,11 +108,7 @@ pub enum Err<E> {
 impl<E> Err<E> {
   /// Tests if the result is Incomplete
   pub fn is_incomplete(&self) -> bool {
-    if let Err::Incomplete(_) = self {
-      true
-    } else {
-      false
-    }
+    matches!(self, Err::Incomplete(..))
   }
 
   /// Applies the given function to the inner error
@@ -317,9 +313,9 @@ pub trait Parser<I, O, E> {
   }
 }
 
-impl<'a, I, O, E, F> Parser<I, O, E> for F
+impl<I, O, E, F> Parser<I, O, E> for F
 where
-  F: FnMut(I) -> IResult<I, O, E> + 'a,
+  F: FnMut(I) -> IResult<I, O, E>,
 {
   fn parse(&mut self, i: I) -> IResult<I, O, E> {
     self(i)
@@ -330,7 +326,7 @@ where
 use alloc::boxed::Box;
 
 #[cfg(feature = "alloc")]
-impl<'a, I, O, E> Parser<I, O, E> for Box<dyn Parser<I, O, E> + 'a> {
+impl<I, O, E> Parser<I, O, E> for Box<dyn Parser<I, O, E>> {
   fn parse(&mut self, input: I) -> IResult<I, O, E> {
     (**self).parse(input)
   }
@@ -344,7 +340,7 @@ pub struct Map<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
     match self.f.parse(i) {
       Err(e) => Err(e),
@@ -361,7 +357,7 @@ pub struct FlatMap<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
   for FlatMap<F, G, O1>
 {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
@@ -378,7 +374,7 @@ pub struct AndThen<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
   for AndThen<F, G, O1>
 {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
@@ -395,9 +391,7 @@ pub struct And<F, G> {
   g: G,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, O2), E>
-  for And<F, G>
-{
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, O2), E> for And<F, G> {
   fn parse(&mut self, i: I) -> IResult<I, (O1, O2), E> {
     let (i, o1) = self.f.parse(i)?;
     let (i, o2) = self.g.parse(i)?;
@@ -412,7 +406,7 @@ pub struct Or<F, G> {
   g: G,
 }
 
-impl<'a, I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Parser<I, O, E>>
+impl<I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Parser<I, O, E>>
   Parser<I, O, E> for Or<F, G>
 {
   fn parse(&mut self, i: I) -> IResult<I, O, E> {
@@ -437,7 +431,6 @@ pub struct Into<F, O1, O2: From<O1>, E1, E2: From<E1>> {
 }
 
 impl<
-    'a,
     I: Clone,
     O1,
     O2: From<O1>,
@@ -465,7 +458,7 @@ mod tests {
   #[macro_export]
   macro_rules! assert_size (
     ($t:ty, $sz:expr) => (
-      assert_eq!(crate::lib::std::mem::size_of::<$t>(), $sz);
+      assert_eq!($crate::lib::std::mem::size_of::<$t>(), $sz);
     );
   );
 
@@ -473,7 +466,9 @@ mod tests {
   #[cfg(target_pointer_width = "64")]
   fn size_test() {
     assert_size!(IResult<&[u8], &[u8], (&[u8], u32)>, 40);
-    assert_size!(IResult<&str, &str, u32>, 40);
+    //FIXME: since rust 1.65, this is now 32 bytes, likely thanks to https://github.com/rust-lang/rust/pull/94075
+    // deactivating that test for now because it'll have different values depending on the rust version
+    // assert_size!(IResult<&str, &str, u32>, 40);
     assert_size!(Needed, 8);
     assert_size!(Err<u32>, 16);
     assert_size!(ErrorKind, 1);

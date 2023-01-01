@@ -1,6 +1,6 @@
 //#![feature(trace_macros)]
 #![allow(dead_code)]
-#![cfg_attr(feature = "cargo-clippy", allow(redundant_closure))]
+#![allow(clippy::redundant_closure)]
 
 use nom::{error::ErrorKind, Err, IResult, Needed};
 
@@ -120,6 +120,7 @@ mod issue_647 {
     v: Vec<f64>,
   }
 
+  #[allow(clippy::type_complexity)]
   fn list<'a, 'b>(
     input: Input<'a>,
     _cs: &'b f64,
@@ -240,4 +241,18 @@ fn issue_x_looser_fill_bounds() {
     fill_pair(b"123,,"),
     Err(Err::Error(error_position!(&b","[..], ErrorKind::Digit)))
   );
+}
+
+fn issue_1459_clamp_capacity() {
+  use nom::character::complete::char;
+
+  // shouldn't panic
+  use nom::multi::many_m_n;
+  let mut parser = many_m_n::<_, _, (), _>(usize::MAX, usize::MAX, char('a'));
+  assert_eq!(parser("a"), Err(nom::Err::Error(())));
+
+  // shouldn't panic
+  use nom::multi::count;
+  let mut parser = count::<_, _, (), _>(char('a'), usize::MAX);
+  assert_eq!(parser("a"), Err(nom::Err::Error(())));
 }

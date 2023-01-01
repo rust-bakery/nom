@@ -5,7 +5,7 @@ pub mod complete;
 pub mod streaming;
 
 use crate::error::{ErrorKind, ParseError};
-use crate::internal::{Err, IResult, Needed};
+use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::ops::RangeFrom;
 use crate::traits::{ErrorConvert, Slice};
 
@@ -42,9 +42,9 @@ where
   E1: ParseError<(I, usize)> + ErrorConvert<E2>,
   E2: ParseError<I>,
   I: Slice<RangeFrom<usize>>,
-  P: FnMut((I, usize)) -> IResult<(I, usize), O, E1>,
+  P: Parser<(I, usize), O, E1>,
 {
-  move |input: I| match parser((input, 0)) {
+  move |input: I| match parser.parse((input, 0)) {
     Ok(((rest, offset), result)) => {
       // If the next byte has been partially read, it will be sliced away as well.
       // The parser functions might already slice away all fully read bytes.
@@ -88,7 +88,7 @@ where
   E1: ParseError<I> + ErrorConvert<E2>,
   E2: ParseError<(I, usize)>,
   I: Slice<RangeFrom<usize>> + Clone,
-  P: FnMut(I) -> IResult<I, O, E1>,
+  P: Parser<I, O, E1>,
 {
   move |(input, offset): (I, usize)| {
     let inner = if offset % 8 != 0 {
@@ -97,7 +97,7 @@ where
       input.slice((offset / 8)..)
     };
     let i = (input, offset);
-    match parser(inner) {
+    match parser.parse(inner) {
       Ok((rest, res)) => Ok(((rest, 0), res)),
       Err(Err::Incomplete(Needed::Unknown)) => Err(Err::Incomplete(Needed::Unknown)),
       Err(Err::Incomplete(Needed::Size(sz))) => Err(match sz.get().checked_mul(8) {
