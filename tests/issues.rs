@@ -217,6 +217,32 @@ fn issue_1282_findtoken_char() {
 }
 
 #[test]
+fn issue_x_looser_fill_bounds() {
+  use nom::{
+    bytes::streaming::tag, character::streaming::digit1, error_position, multi::fill,
+    sequence::terminated,
+  };
+
+  fn fill_pair(i: &[u8]) -> IResult<&[u8], [&[u8]; 2]> {
+    let mut buf = [&[][..], &[][..]];
+    let (i, _) = fill(terminated(digit1, tag(",")), &mut buf)(i)?;
+    Ok((i, buf))
+  }
+
+  assert_eq!(
+    fill_pair(b"123,456,"),
+    Ok((&b""[..], [&b"123"[..], &b"456"[..]]))
+  );
+  assert_eq!(
+    fill_pair(b"123,456,789"),
+    Ok((&b"789"[..], [&b"123"[..], &b"456"[..]]))
+  );
+  assert_eq!(
+    fill_pair(b"123,,"),
+    Err(Err::Error(error_position!(&b","[..], ErrorKind::Digit)))
+  );
+}
+
 fn issue_1459_clamp_capacity() {
   use nom::character::complete::char;
 
