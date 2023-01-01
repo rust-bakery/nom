@@ -612,11 +612,11 @@ fn case_insensitive() {
   assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::new(2))));
   assert_eq!(
     test2("Hello"),
-    Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag)))
+    Err(Err::Error(error_position!("Hello", ErrorKind::Tag)))
   );
   assert_eq!(
     test2("Hel"),
-    Err(Err::Error(error_position!(&"Hel"[..], ErrorKind::Tag)))
+    Err(Err::Error(error_position!("Hel", ErrorKind::Tag)))
   );
 }
 

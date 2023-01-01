@@ -1503,6 +1503,7 @@ where
       }
     }
 
+    #[allow(clippy::or_fun_call)]
     let position = position.unwrap_or(i.input_len());
 
     let index = if zero_count == 0 {
@@ -1989,14 +1990,13 @@ mod tests {
 
       println!("now parsing: {} -> {}", test, expected32);
 
-      let larger = format!("{}", test);
-      assert_parse!(recognize_float(&larger[..]), Ok(("", test)));
+      assert_parse!(recognize_float(test), Ok(("", test)));
 
-      assert_parse!(float(larger.as_bytes()), Ok((&b""[..], expected32)));
-      assert_parse!(float(&larger[..]), Ok(("", expected32)));
+      assert_parse!(float(test.as_bytes()), Ok((&b""[..], expected32)));
+      assert_parse!(float(test), Ok(("", expected32)));
 
-      assert_parse!(double(larger.as_bytes()), Ok((&b""[..], expected64)));
-      assert_parse!(double(&larger[..]), Ok(("", expected64)));
+      assert_parse!(double(test.as_bytes()), Ok((&b""[..], expected64)));
+      assert_parse!(double(test), Ok(("", expected64)));
     }
 
     let remaining_exponent = "-1.234E-";
