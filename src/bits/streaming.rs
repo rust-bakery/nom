@@ -95,8 +95,8 @@ where
 /// assert_eq!(parse(([0b10000000].as_ref(), 1)), Ok((([0b10000000].as_ref(), 2), false)));
 /// ```
 pub fn bool<I, E: ParseError<(I, usize)>>(input: (I, usize)) -> IResult<(I, usize), bool, E>
-  where
-      I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   let (res, bit): (_, u32) = take(1usize)(input)?;
   Ok((res, bit != 0))
@@ -165,9 +165,6 @@ mod test {
 
     let result: crate::IResult<(&[u8], usize), bool> = bool((input, 8));
 
-    assert_eq!(
-      result,
-      Err(crate::Err::Incomplete(Needed::new(1)))
-    );
+    assert_eq!(result, Err(crate::Err::Incomplete(Needed::new(1))));
   }
 }
