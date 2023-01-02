@@ -13,15 +13,28 @@ use core::num::NonZeroUsize;
 #[cfg(feature="alloc")]
 use core::ops::Bound;
 
-/// Repeats the embedded parser until it fails
-/// and returns the results in a `Vec`.
+/// Don't pre-allocate more than 64KiB when calling `Vec::with_capacity`.
+///
+/// Pre-allocating memory is a nice optimization but count fields can't
+/// always be trusted. We should clamp initial capacities to some reasonable
+/// amount. This reduces the risk of a bogus count value triggering a panic
+/// due to an OOM error.
+///
+/// This does not affect correctness. Nom will always read the full number
+/// of elements regardless of the capacity cap.
+#[cfg(feature = "alloc")]
+const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
+
+/// Repeats the embedded parser, gathering the results in a `Vec`.
+///
+/// This stops on [`Err::Error`] and returns the results that were accumulated. To instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
 /// * `f` The parser to apply.
 ///
-/// *Note*: if the parser passed to `many0` accepts empty inputs
-/// (like `alpha0` or `digit0`), `many0` will return an error,
-/// to prevent going into an infinite loop
+/// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
+/// return an error, to prevent going into an infinite loop
 ///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -66,10 +79,10 @@ where
   }
 }
 
-/// Runs the embedded parser until it fails and
-/// returns the results in a `Vec`. Fails if
-/// the embedded parser does not produce at least
-/// one result.
+/// Runs the embedded parser, gathering the results in a `Vec`.
+///
+/// This stops on [`Err::Error`] if there is at least one result,  and returns the results that were accumulated. To instead chain an error up,
+/// see [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
 /// * `f` The parser to apply.
@@ -128,9 +141,12 @@ where
   }
 }
 
-/// Applies the parser `f` until the parser `g` produces
-/// a result. Returns a pair consisting of the results of
-/// `f` in a `Vec` and the result of `g`.
+/// Applies the parser `f` until the parser `g` produces a result.
+///
+/// Returns a tuple of the results of `f` in a `Vec` and the result of `g`.
+///
+/// `f` keeps going so long as `g` produces [`Err::Error`]. To instead chain an error up, see [`cut`][crate::combinator::cut].
+///
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::many_till;
@@ -185,8 +201,11 @@ where
   }
 }
 
-/// Alternates between two parsers to produce
-/// a list of elements.
+/// Alternates between two parsers to produce a list of elements.
+///
+/// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
+///
 /// # Arguments
 /// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
@@ -255,14 +274,17 @@ where
   }
 }
 
-/// Alternates between two parsers to produce
-/// a list of elements. Fails if the element
-/// parser does not produce at least one element.
+/// Alternates between two parsers to produce a list of elements until [`Err::Error`].
+///
+/// Fails if the element parser does not produce at least one element.$
+///
+/// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
+///
 /// # Arguments
 /// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
@@ -326,15 +348,21 @@ where
   }
 }
 
-/// Repeats the embedded parser `n` times or until it fails
-/// and returns the results in a `Vec`. Fails if the
-/// embedded parser does not succeed at least `m` times.
+/// Repeats the embedded parser `m..=n` times
+///
+/// This stops before `n` when the parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
+///
 /// # Arguments
 /// * `m` The minimum number of iterations.
 /// * `n` The maximum number of iterations.
 /// * `f` The parser to apply.
+///
+/// *Note*: If the parser passed to `many1` accepts empty inputs
+/// (like `alpha0` or `digit0`), `many1` will return an error,
+/// to prevent going into an infinite loop.
+///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many_m_n;
 /// use nom::bytes::complete::tag;
@@ -366,7 +394,8 @@ where
       return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
     }
 
-    let mut res = crate::lib::std::vec::Vec::with_capacity(min);
+    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>();
+    let mut res = crate::lib::std::vec::Vec::with_capacity(min.min(max_initial_capacity));
     for count in 0..max {
       let len = input.input_len();
       match parse.parse(input.clone()) {
@@ -396,12 +425,18 @@ where
   }
 }
 
-/// Repeats the embedded parser until it fails
-/// and returns the number of successful iterations.
+/// Repeats the embedded parser, counting the results
+///
+/// This stops on [`Err::Error`]. To instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
+///
 /// # Arguments
 /// * `f` The parser to apply.
+///
+/// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
+/// return an error, to prevent going into an infinite loop
+///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many0_count;
 /// use nom::bytes::complete::tag;
@@ -447,14 +482,19 @@ where
   }
 }
 
-/// Repeats the embedded parser until it fails
-/// and returns the number of successful iterations.
-/// Fails if the embedded parser does not succeed
-/// at least once.
+/// Runs the embedded parser, counting the results.
+///
+/// This stops on [`Err::Error`] if there is at least one result. To instead chain an error up,
+/// see [`cut`][crate::combinator::cut].
+///
 /// # Arguments
 /// * `f` The parser to apply.
+///
+/// *Note*: If the parser passed to `many1` accepts empty inputs
+/// (like `alpha0` or `digit0`), `many1` will return an error,
+/// to prevent going into an infinite loop.
+///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::many1_count;
 /// use nom::bytes::complete::tag;
@@ -505,13 +545,12 @@ where
   }
 }
 
-/// Runs the embedded parser a specified number
-/// of times. Returns the results in a `Vec`.
+/// Runs the embedded parser `count` times, gathering the results in a `Vec`
+///
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `count` How often to apply the parser.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::count;
 /// use nom::bytes::complete::tag;
@@ -536,7 +575,8 @@ where
 {
   move |i: I| {
     let mut input = i.clone();
-    let mut res = crate::lib::std::vec::Vec::with_capacity(count);
+    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>();
+    let mut res = crate::lib::std::vec::Vec::with_capacity(count.min(max_initial_capacity));
 
     for _ in 0..count {
       let input_ = input.clone();
@@ -558,13 +598,14 @@ where
   }
 }
 
-/// Runs the embedded parser repeatedly, filling the given slice with results. This parser fails if
-/// the input runs out before the given slice is full.
+/// Runs the embedded parser repeatedly, filling the given slice with results.
+///
+/// This parser fails if the input runs out before the given slice is full.
+///
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `buf` The slice to fill
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::fill;
 /// use nom::bytes::complete::tag;
@@ -581,10 +622,10 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
 /// ```
-pub fn fill<'a, I, O, E, F>(f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
+pub fn fill<'a, I, O, E, F>(mut f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
 where
   I: Clone + PartialEq,
-  F: Fn(I) -> IResult<I, O, E> + 'a,
+  F: Parser<I, O, E> + 'a,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -592,7 +633,7 @@ where
 
     for elem in buf.iter_mut() {
       let input_ = input.clone();
-      match f(input_) {
+      match f.parse(input_) {
         Ok((i, o)) => {
           *elem = o;
           input = i;
@@ -610,15 +651,21 @@ where
   }
 }
 
-/// Applies a parser until it fails and accumulates
-/// the results using a given function and initial value.
+/// Repeats the embedded parser, calling `g` to gather the results.
+///
+/// This stops on [`Err::Error`]. To instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
+///
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `init` A function returning the initial value.
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
+///
+/// *Note*: if the parser passed in accepts empty inputs (like `alpha0` or `digit0`), `many0` will
+/// return an error, to prevent going into an infinite loop
+///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::fold_many0;
 /// use nom::bytes::complete::tag;
@@ -679,17 +726,22 @@ where
   }
 }
 
-/// Applies a parser until it fails and accumulates
-/// the results using a given function and initial value.
-/// Fails if the embedded parser does not succeed at least
-/// once.
+/// Repeats the embedded parser, calling `g` to gather the results.
+///
+/// This stops on [`Err::Error`] if there is at least one result. To instead chain an error up,
+/// see [`cut`][crate::combinator::cut].
+///
 /// # Arguments
 /// * `f` The parser to apply.
 /// * `init` A function returning the initial value.
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
+///
+/// *Note*: If the parser passed to `many1` accepts empty inputs
+/// (like `alpha0` or `digit0`), `many1` will return an error,
+/// to prevent going into an infinite loop.
+///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::multi::fold_many1;
 /// use nom::bytes::complete::tag;
@@ -758,10 +810,11 @@ where
   }
 }
 
-/// Applies a parser `n` times or until it fails and accumulates
-/// the results using a given function and initial value.
-/// Fails if the embedded parser does not succeed at least `m`
-/// times.
+/// Repeats the embedded parser `m..=n` times, calling `g` to gather the results
+///
+/// This stops before `n` when the parser returns [`Err::Error`]. To instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
+///
 /// # Arguments
 /// * `m` The minimum number of iterations.
 /// * `n` The maximum number of iterations.
@@ -769,8 +822,12 @@ where
 /// * `init` A function returning the initial value.
 /// * `g` The function that combines a result of `f` with
 ///       the current accumulator.
+///
+/// *Note*: If the parser passed to `many1` accepts empty inputs
+/// (like `alpha0` or `digit0`), `many1` will return an error,
+/// to prevent going into an infinite loop.
+///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::fold_many_m_n;
 /// use nom::bytes::complete::tag;
@@ -849,7 +906,6 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_data;
@@ -894,7 +950,6 @@ where
 /// * `f` The parser to apply.
 /// * `g` The parser to apply on the subslice.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_value;
@@ -943,7 +998,6 @@ where
 /// * `f` The parser to apply to obtain the count.
 /// * `g` The parser to apply repeatedly.
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::number::complete::u8;
 /// use nom::multi::length_count;

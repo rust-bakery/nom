@@ -56,7 +56,6 @@ where
 /// Maps a function on the result of a parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// use nom::{Err,error::ErrorKind, IResult,Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map;
@@ -85,7 +84,6 @@ where
 /// Applies a function returning a `Result` over the result of a parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map_res;
@@ -124,7 +122,6 @@ where
 /// Applies a function returning an `Option` over the result of a parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map_opt;
@@ -163,7 +160,6 @@ where
 /// Applies a parser over the result of another one.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::character::complete::digit1;
 /// use nom::bytes::complete::take;
@@ -195,7 +191,6 @@ where
 /// Creates a new parser from the output of the first parser, then apply that parser over the rest of the input.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::bytes::complete::take;
 /// use nom::number::complete::u8;
@@ -210,11 +205,11 @@ where
 /// ```
 pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(
   mut parser: F,
-  applied_parser: G,
+  mut applied_parser: G,
 ) -> impl FnMut(I) -> IResult<I, O2, E>
 where
   F: Parser<I, O1, E>,
-  G: Fn(O1) -> H,
+  G: FnMut(O1) -> H,
   H: Parser<I, O2, E>,
 {
   move |input: I| {
@@ -223,10 +218,11 @@ where
   }
 }
 
-/// Optional parser: Will return `None` if not successful.
+/// Optional parser, will return `None` on [`Err::Error`].
+///
+/// To chain an error up, see [`cut`].
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::opt;
 /// use nom::character::complete::alpha1;
@@ -257,7 +253,6 @@ where
 /// Calls the parser if the condition is met.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// use nom::combinator::cond;
 /// use nom::character::complete::alpha1;
@@ -295,7 +290,6 @@ where
 /// Tries to apply its parser without consuming the input.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::peek;
 /// use nom::character::complete::alpha1;
@@ -326,7 +320,6 @@ where
 /// will succeed
 ///
 /// ```
-/// # #[macro_use] extern crate nom;
 /// # use std::str;
 /// # use nom::{Err, error::ErrorKind, IResult};
 /// # use nom::combinator::eof;
@@ -349,7 +342,6 @@ pub fn eof<I: InputLength + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, 
 /// Transforms Incomplete into `Error`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::bytes::streaming::take;
 /// use nom::combinator::complete;
@@ -377,7 +369,6 @@ where
 /// Succeeds if all the input has been consumed by its child parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::all_consuming;
 /// use nom::character::complete::alpha1;
@@ -411,7 +402,6 @@ where
 /// parser.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::verify;
 /// use nom::character::complete::alpha1;
@@ -449,7 +439,6 @@ where
 /// Returns the provided value if the child parser succeeds.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::value;
 /// use nom::character::complete::alpha1;
@@ -474,7 +463,6 @@ where
 /// Succeeds if the child parser returns an error.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::not;
 /// use nom::character::complete::alpha1;
@@ -503,7 +491,6 @@ where
 /// If the child parser was successful, return the consumed input as produced value.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::recognize;
 /// use nom::character::complete::{char, alpha1};
@@ -544,7 +531,6 @@ where
 /// Returned tuple is of the format `(consumed input, produced output)`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::combinator::{consumed, value, recognize, map};
 /// use nom::character::complete::{char, alpha1};
@@ -591,19 +577,55 @@ where
   }
 }
 
-/// transforms an error to failure
+/// Transforms an [`Err::Error`] (recoverable) to [`Err::Failure`] (unrecoverable)
 ///
+/// This commits the parse result, preventing alternative branch paths like with
+/// [`nom::branch::alt`][crate::branch::alt].
+///
+/// # Example
+///
+/// Without `cut`:
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
-/// use nom::combinator::cut;
-/// use nom::character::complete::alpha1;
+/// # use nom::character::complete::{one_of, digit1};
+/// # use nom::combinator::rest;
+/// # use nom::branch::alt;
+/// # use nom::sequence::preceded;
 /// # fn main() {
 ///
-/// let mut parser = cut(alpha1);
+/// fn parser(input: &str) -> IResult<&str, &str> {
+///   alt((
+///     preceded(one_of("+-"), digit1),
+///     rest
+///   ))(input)
+/// }
 ///
-/// assert_eq!(parser("abcd;"), Ok((";", "abcd")));
-/// assert_eq!(parser("123;"), Err(Err::Failure(("123;", ErrorKind::Alpha))));
+/// assert_eq!(parser("+10 ab"), Ok((" ab", "10")));
+/// assert_eq!(parser("ab"), Ok(("", "ab")));
+/// assert_eq!(parser("+"), Ok(("", "+")));
+/// # }
+/// ```
+///
+/// With `cut`:
+/// ```rust
+/// # use nom::{Err,error::ErrorKind, IResult, error::Error};
+/// # use nom::character::complete::{one_of, digit1};
+/// # use nom::combinator::rest;
+/// # use nom::branch::alt;
+/// # use nom::sequence::preceded;
+/// use nom::combinator::cut;
+/// # fn main() {
+///
+/// fn parser(input: &str) -> IResult<&str, &str> {
+///   alt((
+///     preceded(one_of("+-"), cut(digit1)),
+///     rest
+///   ))(input)
+/// }
+///
+/// assert_eq!(parser("+10 ab"), Ok((" ab", "10")));
+/// assert_eq!(parser("ab"), Ok(("", "ab")));
+/// assert_eq!(parser("+"), Err(Err::Failure(Error { input: "", code: ErrorKind::Digit })));
 /// # }
 /// ```
 pub fn cut<I, O, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, O, E>
@@ -622,7 +644,6 @@ where
 /// as long as the `Into` implementations are available
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::IResult;
 /// use nom::combinator::into;
 /// use nom::character::complete::alpha1;
@@ -660,6 +681,8 @@ where
 ///
 /// Call the iterator's [ParserIterator::finish] method to get the remaining input if successful,
 /// or the error value if we encountered an error.
+///
+/// On [`Err::Error`], iteration will stop. To instead chain an error up, see [`cut`].
 ///
 /// ```rust
 /// use nom::{combinator::iterator, IResult, bytes::complete::tag, character::complete::alpha1, sequence::terminated};
@@ -753,7 +776,6 @@ enum State<E> {
 /// specify the default case.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::ErrorKind, IResult};
 /// use nom::branch::alt;
 /// use nom::combinator::{success, value};

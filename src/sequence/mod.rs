@@ -12,6 +12,7 @@ use crate::internal::{IResult, Parser};
 /// # Arguments
 /// * `first` The first parser to apply.
 /// * `second` The second parser to apply.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -45,6 +46,7 @@ where
 /// # Arguments
 /// * `first` The opening parser.
 /// * `second` The second parser to get object.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -78,6 +80,7 @@ where
 /// # Arguments
 /// * `first` The first parser to apply.
 /// * `second` The second parser to match an object.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -113,6 +116,7 @@ where
 /// * `first` The first parser to apply.
 /// * `sep` The separator parser to apply.
 /// * `second` The second parser to apply.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -151,6 +155,7 @@ where
 /// * `first` The first parser to apply and discard.
 /// * `second` The second parser to apply.
 /// * `third` The third parser to apply and discard.
+///
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -184,11 +189,14 @@ where
 /// Helper trait for the tuple combinator.
 ///
 /// This trait is implemented for tuples of parsers of up to 21 elements.
+#[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
+#[allow(deprecated)]
 pub trait Tuple<I, O, E> {
   /// Parses the input and returns a tuple of results of each parser.
   fn parse(&mut self, input: I) -> IResult<I, O, E>;
 }
 
+#[allow(deprecated)]
 impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output, Error>>
   Tuple<Input, (Output,), Error> for (F,)
 {
@@ -213,6 +221,7 @@ macro_rules! tuple_trait(
 
 macro_rules! tuple_trait_impl(
   ($($name:ident $ty: ident),+) => (
+    #[allow(deprecated)]
     impl<
       Input: Clone, $($ty),+ , Error: ParseError<Input>,
       $($name: Parser<Input, $ty, Error>),+
@@ -247,8 +256,18 @@ macro_rules! tuple_trait_inner(
 tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ J, FnK K, FnL L,
   FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
 
+// Special case: implement `Tuple` for `()`, the unit type.
+// This can come up in macros which accept a variable number of arguments.
+// Literally, `()` is an empty tuple, so it should simply parse nothing.
+#[allow(deprecated)]
+impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
+  fn parse(&mut self, input: I) -> IResult<I, (), E> {
+    Ok((input, ()))
+  }
+}
+
 ///Applies a tuple of parsers one by one and returns their results as a tuple.
-///
+///There is a maximum of 21 parsers
 /// ```rust
 /// # use nom::{Err, error::ErrorKind};
 /// use nom::sequence::tuple;
@@ -258,6 +277,8 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 /// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
 /// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
 /// ```
+#[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
+#[allow(deprecated)]
 pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {

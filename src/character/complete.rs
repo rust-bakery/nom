@@ -414,6 +414,24 @@ where
 /// assert_eq!(parser("c1"), Err(Err::Error(Error::new("c1", ErrorKind::Digit))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Digit))));
 /// ```
+///
+/// ## Parsing an integer
+/// You can use `digit1` in combination with [`map_res`] to parse an integer:
+///
+/// ```
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::combinator::map_res;
+/// # use nom::character::complete::digit1;
+/// fn parser(input: &str) -> IResult<&str, u32> {
+///   map_res(digit1, str::parse)(input)
+/// }
+///
+/// assert_eq!(parser("416"), Ok(("", 416)));
+/// assert_eq!(parser("12b"), Ok(("b", 12)));
+/// assert!(parser("b").is_err());
+/// ```
+///
+/// [`map_res`]: crate::combinator::map_res
 pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: InputTakeAtPosition,
@@ -879,8 +897,8 @@ mod tests {
     let e = " ";
     assert_eq!(alpha1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     assert_eq!(alpha1(b), Err(Err::Error((b, ErrorKind::Alpha))));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], &"a"[..])));
-    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12", &"az"[..])));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(c), Ok((&c[1..], "a")));
+    assert_eq!(alpha1::<_, (_, ErrorKind)>(d), Ok(("é12", "az")));
     assert_eq!(digit1(a), Err(Err::Error((a, ErrorKind::Digit))));
     assert_eq!(digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(digit1(c), Err(Err::Error((c, ErrorKind::Digit))));
@@ -888,7 +906,7 @@ mod tests {
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(a), Ok((empty, a)));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
     assert_eq!(hex_digit1::<_, (_, ErrorKind)>(c), Ok((empty, c)));
-    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", &"a"[..])));
+    assert_eq!(hex_digit1::<_, (_, ErrorKind)>(d), Ok(("zé12", "a")));
     assert_eq!(hex_digit1(e), Err(Err::Error((e, ErrorKind::HexDigit))));
     assert_eq!(oct_digit1(a), Err(Err::Error((a, ErrorKind::OctDigit))));
     assert_eq!(oct_digit1::<_, (_, ErrorKind)>(b), Ok((empty, b)));
@@ -976,10 +994,7 @@ mod tests {
     );
 
     let d: &[u8] = b"ab12cd";
-    assert_eq!(
-      not_line_ending::<_, (_, ErrorKind)>(d),
-      Ok((&[][..], &d[..]))
-    );
+    assert_eq!(not_line_ending::<_, (_, ErrorKind)>(d), Ok((&[][..], d)));
   }
 
   #[test]
@@ -1113,7 +1128,7 @@ mod tests {
     assert_parse!(crlf("\r\na"), Ok(("a", "\r\n")));
     assert_parse!(
       crlf("\r"),
-      Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf)))
+      Err(Err::Error(error_position!("\r", ErrorKind::CrLf)))
     );
     assert_parse!(
       crlf("\ra"),
@@ -1138,7 +1153,7 @@ mod tests {
     assert_parse!(line_ending("\r\na"), Ok(("a", "\r\n")));
     assert_parse!(
       line_ending("\r"),
-      Err(Err::Error(error_position!(&"\r"[..], ErrorKind::CrLf)))
+      Err(Err::Error(error_position!("\r", ErrorKind::CrLf)))
     );
     assert_parse!(
       line_ending("\ra"),

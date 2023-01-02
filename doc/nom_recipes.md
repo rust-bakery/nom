@@ -35,9 +35,9 @@ use nom::{
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and 
 /// trailing whitespace, returning the output of `inner`.
-fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
+fn ws<'a, F, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
   where
-  F: Fn(&'a str) -> IResult<&'a str, O, E>,
+  F: FnMut(&'a str) -> IResult<&'a str, O, E>,
 {
   delimited(
     multispace0,
@@ -88,18 +88,17 @@ use nom::{
   IResult,
   error::ParseError,
   combinator::value,
-  sequence::tuple,
   bytes::complete::{tag, take_until},
 };
 
 pub fn pinline_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E> {
   value(
     (), // Output is thrown away.
-    tuple((
+    (
       tag("(*"),
       take_until("*)"),
       tag("*)")
-    ))
+    )
   )(i)
 }
 ```
@@ -115,7 +114,7 @@ letters and numbers may be parsed like this:
 use nom::{
   IResult,
   branch::alt,
-  multi::many0,
+  multi::many0_count,
   combinator::recognize,
   sequence::pair,
   character::complete::{alpha1, alphanumeric1},
@@ -126,7 +125,7 @@ pub fn identifier(input: &str) -> IResult<&str, &str> {
   recognize(
     pair(
       alt((alpha1, tag("_"))),
-      many0(alt((alphanumeric1, tag("_"))))
+      many0_count(alt((alphanumeric1, tag("_"))))
     )
   )(input)
 }
@@ -142,7 +141,7 @@ input text that was parsed, which in this case is the entire `&str` `hello_world
 
 ### Escaped Strings
 
-This is [one of the examples](https://github.com/Geal/nom/blob/master/examples/string.rs) in the
+This is [one of the examples](https://github.com/Geal/nom/blob/main/examples/string.rs) in the
 examples directory.
 
 ### Integers
@@ -293,7 +292,7 @@ use nom::{
   branch::alt,
   multi::{many0, many1},
   combinator::{opt, recognize},
-  sequence::{preceded, terminated, tuple},
+  sequence::{preceded, terminated},
   character::complete::{char, one_of},
 };
 
@@ -301,19 +300,19 @@ fn float(input: &str) -> IResult<&str, &str> {
   alt((
     // Case one: .42
     recognize(
-      tuple((
+      (
         char('.'),
         decimal,
-        opt(tuple((
+        opt((
           one_of("eE"),
           opt(one_of("+-")),
           decimal
-        )))
-      ))
+        ))
+      )
     )
     , // Case two: 42e42 and 42.42e42
     recognize(
-      tuple((
+      (
         decimal,
         opt(preceded(
           char('.'),
@@ -322,15 +321,15 @@ fn float(input: &str) -> IResult<&str, &str> {
         one_of("eE"),
         opt(one_of("+-")),
         decimal
-      ))
+      )
     )
     , // Case three: 42. and 42.42
     recognize(
-      tuple((
+      (
         decimal,
         char('.'),
         opt(decimal)
-      ))
+      )
     )
   ))(input)
 }

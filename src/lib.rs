@@ -8,9 +8,10 @@
 //! ```rust
 //! use nom::{
 //!   IResult,
+//!   Parser,
 //!   bytes::complete::{tag, take_while_m_n},
-//!   combinator::map_res,
-//!   sequence::tuple};
+//!   combinator::map_res
+//! };
 //!
 //! #[derive(Debug,PartialEq)]
 //! pub struct Color {
@@ -36,7 +37,7 @@
 //!
 //! fn hex_color(input: &str) -> IResult<&str, Color> {
 //!   let (input, _) = tag("#")(input)?;
-//!   let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+//!   let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
 //!
 //!   Ok((input, Color { red, green, blue }))
 //! }
@@ -52,16 +53,16 @@
 //!
 //! The code is available on [Github](https://github.com/Geal/nom)
 //!
-//! There are a few [guides](https://github.com/Geal/nom/tree/master/doc) with more details
-//! about [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
-//! or the [error management system](https://github.com/Geal/nom/blob/master/doc/error_management.md).
+//! There are a few [guides](https://github.com/Geal/nom/tree/main/doc) with more details
+//! about [how to write parsers](https://github.com/Geal/nom/blob/main/doc/making_a_new_parser_from_scratch.md),
+//! or the [error management system](https://github.com/Geal/nom/blob/main/doc/error_management.md).
 //! You can also check out the [recipes] module that contains examples of common patterns.
 //!
 //! **Looking for a specific combinator? Read the
-//! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**
+//! ["choose a combinator" guide](https://github.com/Geal/nom/blob/main/doc/choosing_a_combinator.md)**
 //!
 //! If you are upgrading to nom 5.0, please read the
-//! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md).
+//! [migration document](https://github.com/Geal/nom/blob/main/doc/upgrading_to_nom_5.md).
 //!
 //! ## Parser combinators
 //!
@@ -136,13 +137,13 @@
 //! A parser in nom is a function which, for an input type `I`, an output type `O`
 //! and an optional error type `E`, will have the following signature:
 //!
-//! ```rust,ignore
+//! ```rust,compile_fail
 //! fn parser(input: I) -> IResult<I, O, E>;
 //! ```
 //!
 //! Or like this, if you don't want to specify a custom error type (it will be `(I, ErrorKind)` by default):
 //!
-//! ```rust,ignore
+//! ```rust,compile_fail
 //! fn parser(input: I) -> IResult<I, O>;
 //! ```
 //!
@@ -167,8 +168,8 @@
 //! - An error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
 //! - An error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: We cannot backtrack and test another parser
 //!
-//! Please refer to the ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
-//! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/master/doc).
+//! Please refer to the ["choose a combinator" guide](https://github.com/Geal/nom/blob/main/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
+//! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/main/doc).
 //!
 //! ## Making new parsers with function combinators
 //!
@@ -253,30 +254,32 @@
 //! - **`many0`**: Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
 //! - **`many1`**: Will apply the parser 1 or more times
 //!
-//! There are more complex (and more useful) parsers like `tuple!`, which is
+//! There are more complex (and more useful) parsers like tuples, which are
 //! used to apply a series of parsers then assemble their results.
 //!
-//! Example with `tuple`:
+//! Example with a tuple of parsers:
 //!
 //! ```rust
 //! # fn main() {
-//! use nom::{error::ErrorKind, Needed,
-//! number::streaming::be_u16,
-//! bytes::streaming::{tag, take},
-//! sequence::tuple};
+//! use nom::{
+//!   error::ErrorKind,
+//!   Needed,
+//!   Parser,
+//!   number::streaming::be_u16,
+//!   bytes::streaming::{tag, take}};
 //!
-//! let mut tpl = tuple((be_u16, take(3u8), tag("fg")));
+//! let mut tpl = (be_u16, take(3u8), tag("fg"));
 //!
 //! assert_eq!(
-//!   tpl(&b"abcdefgh"[..]),
+//!   tpl.parse(&b"abcdefgh"[..]),
 //!   Ok((
 //!     &b"h"[..],
 //!     (0x6162u16, &b"cde"[..], &b"fg"[..])
 //!   ))
 //! );
-//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
+//! assert_eq!(tpl.parse(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
 //! let input = &b"abcdejk"[..];
-//! assert_eq!(tpl(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
+//! assert_eq!(tpl.parse(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
 //! # }
 //! ```
 //!
@@ -369,13 +372,12 @@
 //! // while the complete version knows that all of the data is there
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
 //! ```
-//! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/master/doc),
+//! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/main/doc),
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
-#![cfg_attr(nightly, feature(test))]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
+#![allow(clippy::doc_markdown)]
 #![deny(missing_docs)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 #[cfg(feature = "alloc")]
@@ -383,9 +385,6 @@
 extern crate alloc;
 #[cfg(doctest)]
 extern crate doc_comment;
-
-#[cfg(nightly)]
-extern crate test;
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
@@ -443,31 +442,24 @@ pub use self::traits::*;
 pub use self::str::*;
 
 #[macro_use]
+mod macros;
+#[macro_use]
 pub mod error;
 
-#[macro_use]
-mod internal;
-mod traits;
-#[macro_use]
-pub mod combinator;
-#[macro_use]
 pub mod branch;
-#[macro_use]
-pub mod sequence;
-#[macro_use]
+pub mod combinator;
+mod internal;
 pub mod multi;
+pub mod sequence;
+mod traits;
 
-#[macro_use]
-pub mod bytes;
-#[macro_use]
 pub mod bits;
+pub mod bytes;
 
-#[macro_use]
 pub mod character;
 
 mod str;
 
-#[macro_use]
 pub mod number;
 
 #[cfg(feature = "docsrs")]

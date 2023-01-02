@@ -1,7 +1,7 @@
 //! Basic types to build the parsers
 
 use self::Needed::*;
-use crate::error::{self, ErrorKind};
+use crate::error::{self, ErrorKind, FromExternalError, ParseError};
 use crate::lib::std::fmt;
 use core::num::NonZeroUsize;
 
@@ -108,11 +108,7 @@ pub enum Err<E> {
 impl<E> Err<E> {
   /// Tests if the result is Incomplete
   pub fn is_incomplete(&self) -> bool {
-    if let Err::Incomplete(_) = self {
-      true
-    } else {
-      false
-    }
+    matches!(self, Err::Incomplete(..))
   }
 
   /// Applies the given function to the inner error
@@ -246,7 +242,7 @@ pub trait Parser<I, O, E> {
   /// Maps a function over the result of a parser
   fn map<G, O2>(self, g: G) -> Map<Self, G, O>
   where
-    G: Fn(O) -> O2,
+    G: FnMut(O) -> O2,
     Self: core::marker::Sized,
   {
     Map {
@@ -256,10 +252,37 @@ pub trait Parser<I, O, E> {
     }
   }
 
+  /// Applies a function returning a `Result` over the result of a parser.
+  fn map_res<G, O2, E2>(self, g: G) -> MapRes<Self, G, O>
+  where
+    G: Fn(O) -> Result<O2, E2>,
+    E: FromExternalError<I, E2>,
+    Self: core::marker::Sized,
+  {
+    MapRes {
+      f: self,
+      g,
+      phantom: core::marker::PhantomData,
+    }
+  }
+
+  /// Applies a function returning an `Option` over the result of a parser.
+  fn map_opt<G, O2>(self, g: G) -> MapOpt<Self, G, O>
+  where
+    G: Fn(O) -> Option<O2>,
+    Self: core::marker::Sized,
+  {
+    MapOpt {
+      f: self,
+      g,
+      phantom: core::marker::PhantomData,
+    }
+  }
+
   /// Creates a second parser from the output of the first one, then apply over the rest of the input
   fn flat_map<G, H, O2>(self, g: G) -> FlatMap<Self, G, O>
   where
-    G: Fn(O) -> H,
+    G: FnMut(O) -> H,
     H: Parser<I, O2, E>,
     Self: core::marker::Sized,
   {
@@ -317,20 +340,53 @@ pub trait Parser<I, O, E> {
   }
 }
 
-impl<'a, I, O, E, F> Parser<I, O, E> for F
+impl<I, O, E, F> Parser<I, O, E> for F
 where
-  F: FnMut(I) -> IResult<I, O, E> + 'a,
+  F: FnMut(I) -> IResult<I, O, E>,
 {
   fn parse(&mut self, i: I) -> IResult<I, O, E> {
     self(i)
   }
 }
 
+macro_rules! impl_parser_for_tuple {
+  ($($parser:ident $output:ident),+) => (
+    #[allow(non_snake_case)]
+    impl<I, $($output),+, E: ParseError<I>, $($parser),+> Parser<I, ($($output),+,), E> for ($($parser),+,)
+    where
+      $($parser: Parser<I, $output, E>),+
+    {
+      fn parse(&mut self, i: I) -> IResult<I, ($($output),+,), E> {
+        let ($(ref mut $parser),+,) = *self;
+
+        $(let(i, $output) = $parser.parse(i)?;)+
+
+        Ok((i, ($($output),+,)))
+      }
+    }
+  )
+}
+
+macro_rules! impl_parser_for_tuples {
+    ($parser1:ident $output1:ident, $($parser:ident $output:ident),+) => {
+        impl_parser_for_tuples!(__impl $parser1 $output1; $($parser $output),+);
+    };
+    (__impl $($parser:ident $output:ident),+; $parser1:ident $output1:ident $(,$parser2:ident $output2:ident)*) => {
+        impl_parser_for_tuple!($($parser $output),+);
+        impl_parser_for_tuples!(__impl $($parser $output),+, $parser1 $output1; $($parser2 $output2),*);
+    };
+    (__impl $($parser:ident $output:ident),+;) => {
+        impl_parser_for_tuple!($($parser $output),+);
+    }
+}
+
+impl_parser_for_tuples!(P1 O1, P2 O2, P3 O3, P4 O4, P5 O5, P6 O6, P7 O7, P8 O8, P9 O9, P10 O10, P11 O11, P12 O12, P13 O13, P14 O14, P15 O15, P16 O16, P17 O17, P18 O18, P19 O19, P20 O20, P21 O21);
+
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 
 #[cfg(feature = "alloc")]
-impl<'a, I, O, E> Parser<I, O, E> for Box<dyn Parser<I, O, E> + 'a> {
+impl<I, O, E> Parser<I, O, E> for Box<dyn Parser<I, O, E>> {
   fn parse(&mut self, input: I) -> IResult<I, O, E> {
     (**self).parse(input)
   }
@@ -344,11 +400,59 @@ pub struct Map<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
     match self.f.parse(i) {
       Err(e) => Err(e),
       Ok((i, o)) => Ok((i, (self.g)(o))),
+    }
+  }
+}
+
+/// Implementation of `Parser::map_res`
+pub struct MapRes<F, G, O> {
+  f: F,
+  g: G,
+  phantom: core::marker::PhantomData<O>,
+}
+
+impl<I, O, O2, E, E2, F, G> Parser<I, O2, E> for MapRes<F, G, O>
+where
+  I: Clone,
+  E: FromExternalError<I, E2>,
+  F: Parser<I, O, E>,
+  G: Fn(O) -> Result<O2, E2>,
+{
+  fn parse(&mut self, input: I) -> IResult<I, O2, E> {
+    let i = input.clone();
+    let (input, o1) = self.f.parse(input)?;
+    match (self.g)(o1) {
+      Ok(o2) => Ok((input, o2)),
+      Err(e) => Err(Err::Error(E::from_external_error(i, ErrorKind::MapRes, e))),
+    }
+  }
+}
+
+/// Implementation of `Parser::map_opt`
+pub struct MapOpt<F, G, O> {
+  f: F,
+  g: G,
+  phantom: core::marker::PhantomData<O>,
+}
+
+impl<I, O, O2, E, F, G> Parser<I, O2, E> for MapOpt<F, G, O>
+where
+  I: Clone,
+  E: ParseError<I>,
+  F: Parser<I, O, E>,
+  G: Fn(O) -> Option<O2>,
+{
+  fn parse(&mut self, input: I) -> IResult<I, O2, E> {
+    let i = input.clone();
+    let (input, o1) = self.f.parse(input)?;
+    match (self.g)(o1) {
+      Some(o2) => Ok((input, o2)),
+      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapOpt))),
     }
   }
 }
@@ -361,7 +465,7 @@ pub struct FlatMap<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Fn(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
   for FlatMap<F, G, O1>
 {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
@@ -378,7 +482,7 @@ pub struct AndThen<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
   for AndThen<F, G, O1>
 {
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
@@ -395,9 +499,7 @@ pub struct And<F, G> {
   g: G,
 }
 
-impl<'a, I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, O2), E>
-  for And<F, G>
-{
+impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, O2), E> for And<F, G> {
   fn parse(&mut self, i: I) -> IResult<I, (O1, O2), E> {
     let (i, o1) = self.f.parse(i)?;
     let (i, o2) = self.g.parse(i)?;
@@ -412,7 +514,7 @@ pub struct Or<F, G> {
   g: G,
 }
 
-impl<'a, I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Parser<I, O, E>>
+impl<I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Parser<I, O, E>>
   Parser<I, O, E> for Or<F, G>
 {
   fn parse(&mut self, i: I) -> IResult<I, O, E> {
@@ -437,7 +539,6 @@ pub struct Into<F, O1, O2: From<O1>, E1, E2: From<E1>> {
 }
 
 impl<
-    'a,
     I: Clone,
     O1,
     O2: From<O1>,
@@ -461,11 +562,15 @@ mod tests {
   use super::*;
   use crate::error::ErrorKind;
 
+  use crate::bytes::streaming::{tag, take};
+  use crate::number::streaming::be_u16;
+  use crate::sequence::terminated;
+
   #[doc(hidden)]
   #[macro_export]
   macro_rules! assert_size (
     ($t:ty, $sz:expr) => (
-      assert_eq!(crate::lib::std::mem::size_of::<$t>(), $sz);
+      assert_eq!($crate::lib::std::mem::size_of::<$t>(), $sz);
     );
   );
 
@@ -473,7 +578,9 @@ mod tests {
   #[cfg(target_pointer_width = "64")]
   fn size_test() {
     assert_size!(IResult<&[u8], &[u8], (&[u8], u32)>, 40);
-    assert_size!(IResult<&str, &str, u32>, 40);
+    //FIXME: since rust 1.65, this is now 32 bytes, likely thanks to https://github.com/rust-lang/rust/pull/94075
+    // deactivating that test for now because it'll have different values depending on the rust version
+    // assert_size!(IResult<&str, &str, u32>, 40);
     assert_size!(Needed, 8);
     assert_size!(Err<u32>, 16);
     assert_size!(ErrorKind, 1);
@@ -483,5 +590,23 @@ mod tests {
   fn err_map_test() {
     let e = Err::Error(1);
     assert_eq!(e.map(|v| v + 1), Err::Error(2));
+  }
+
+  #[test]
+  fn native_tuple_test() {
+    fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8])> {
+      terminated((be_u16, take(3u8)), tag("fg"))(i)
+    }
+
+    assert_eq!(
+      tuple_3(&b"abcdefgh"[..]),
+      Ok((&b"h"[..], (0x6162u16, &b"cde"[..])))
+    );
+    assert_eq!(tuple_3(&b"abcd"[..]), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(tuple_3(&b"abcde"[..]), Err(Err::Incomplete(Needed::new(2))));
+    assert_eq!(
+      tuple_3(&b"abcdejk"[..]),
+      Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag)))
+    );
   }
 }

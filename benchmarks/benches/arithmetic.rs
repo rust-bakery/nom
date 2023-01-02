@@ -65,6 +65,7 @@ fn expr(input: &[u8]) -> IResult<&[u8], i64> {
   )(input)
 }
 
+#[allow(clippy::eq_op, clippy::erasing_op)]
 fn arithmetic(c: &mut Criterion) {
   let data = b"  2*2 / ( 5 - 1) + 3 / 4 * (2 - 7 + 567 *12 /2) + 3*(1+2*( 45 /2));";
 

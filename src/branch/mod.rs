@@ -1,29 +1,5 @@
 //! Choice combinators
 
-macro_rules! succ (
-  (0, $submac:ident ! ($($rest:tt)*)) => ($submac!(1, $($rest)*));
-  (1, $submac:ident ! ($($rest:tt)*)) => ($submac!(2, $($rest)*));
-  (2, $submac:ident ! ($($rest:tt)*)) => ($submac!(3, $($rest)*));
-  (3, $submac:ident ! ($($rest:tt)*)) => ($submac!(4, $($rest)*));
-  (4, $submac:ident ! ($($rest:tt)*)) => ($submac!(5, $($rest)*));
-  (5, $submac:ident ! ($($rest:tt)*)) => ($submac!(6, $($rest)*));
-  (6, $submac:ident ! ($($rest:tt)*)) => ($submac!(7, $($rest)*));
-  (7, $submac:ident ! ($($rest:tt)*)) => ($submac!(8, $($rest)*));
-  (8, $submac:ident ! ($($rest:tt)*)) => ($submac!(9, $($rest)*));
-  (9, $submac:ident ! ($($rest:tt)*)) => ($submac!(10, $($rest)*));
-  (10, $submac:ident ! ($($rest:tt)*)) => ($submac!(11, $($rest)*));
-  (11, $submac:ident ! ($($rest:tt)*)) => ($submac!(12, $($rest)*));
-  (12, $submac:ident ! ($($rest:tt)*)) => ($submac!(13, $($rest)*));
-  (13, $submac:ident ! ($($rest:tt)*)) => ($submac!(14, $($rest)*));
-  (14, $submac:ident ! ($($rest:tt)*)) => ($submac!(15, $($rest)*));
-  (15, $submac:ident ! ($($rest:tt)*)) => ($submac!(16, $($rest)*));
-  (16, $submac:ident ! ($($rest:tt)*)) => ($submac!(17, $($rest)*));
-  (17, $submac:ident ! ($($rest:tt)*)) => ($submac!(18, $($rest)*));
-  (18, $submac:ident ! ($($rest:tt)*)) => ($submac!(19, $($rest)*));
-  (19, $submac:ident ! ($($rest:tt)*)) => ($submac!(20, $($rest)*));
-  (20, $submac:ident ! ($($rest:tt)*)) => ($submac!(21, $($rest)*));
-);
-
 #[cfg(test)]
 mod tests;
 
@@ -46,7 +22,7 @@ pub trait Alt<I, O, E> {
 /// like this: `alt(parser_a, alt(parser_b, parser_c))`
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
+/// # use nom::error_position;
 /// # use nom::{Err,error::ErrorKind, Needed, IResult};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::alt;
@@ -89,7 +65,6 @@ pub trait Permutation<I, O, E> {
 /// tuple of the parser results.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::permutation;
@@ -182,6 +157,15 @@ macro_rules! alt_trait_inner(
 );
 
 alt_trait!(A B C D E F G H I J K L M N O P Q R S T U);
+
+// Manually implement Alt for (A,), the 1-tuple type
+impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output, Error>>
+  Alt<Input, Output, Error> for (A,)
+{
+  fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
+    self.0.parse(input)
+  }
+}
 
 macro_rules! permutation_trait(
   (

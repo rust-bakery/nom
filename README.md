@@ -3,9 +3,9 @@
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Join the chat at https://gitter.im/Geal/nom](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Geal/nom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://github.com/Geal/nom/actions/workflows/ci.yml/badge.svg)](https://github.com/Geal/nom/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/Geal/nom/badge.svg?branch=master)](https://coveralls.io/r/Geal/nom?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/Geal/nom/badge.svg?branch=main)](https://coveralls.io/github/Geal/nom?branch=main)
 [![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.48.0+-lightgray.svg)](#rust-version-requirements)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.56.0+-lightgray.svg)](#rust-version-requirements-msrv)
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools
 to build safe parsers without compromising the speed or memory consumption. To
@@ -13,9 +13,28 @@ that end, it uses extensively Rust's *strong typing* and *memory safety* to prod
 fast and correct parsers, and provides functions, macros and traits to abstract most of the
 error prone plumbing.
 
-![nom logo in CC0 license, by Ange Albertini](https://raw.githubusercontent.com/Geal/nom/master/assets/nom.png)
+![nom logo in CC0 license, by Ange Albertini](https://raw.githubusercontent.com/Geal/nom/main/assets/nom.png)
 
 *nom will happily take a byte out of your files :)*
+
+<!-- toc -->
+
+- [Example](#example)
+- [Documentation](#documentation)
+- [Why use nom?](#why-use-nom)
+    - [Binary format parsers](#binary-format-parsers)
+    - [Text format parsers](#text-format-parsers)
+    - [Programming language parsers](#programming-language-parsers)
+    - [Streaming formats](#streaming-formats)
+- [Parser combinators](#parser-combinators)
+- [Technical features](#technical-features)
+- [Rust version requirements](#rust-version-requirements-msrv)
+- [Installation](#installation)
+- [Related projects](#related-projects)
+- [Parsers written with nom](#parsers-written-with-nom)
+- [Contributors](#contributors)
+
+<!-- tocstop -->
 
 ## Example
 
@@ -27,7 +46,7 @@ use nom::{
   IResult,
   bytes::complete::{tag, take_while_m_n},
   combinator::map_res,
-  sequence::tuple
+  Parser,
 };
 
 #[derive(Debug,PartialEq)]
@@ -54,7 +73,7 @@ fn hex_primary(input: &str) -> IResult<&str, u8> {
 
 fn hex_color(input: &str) -> IResult<&str, Color> {
   let (input, _) = tag("#")(input)?;
-  let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+  let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
 
   Ok((input, Color { red, green, blue }))
 }
@@ -74,8 +93,8 @@ fn parse_color() {
 ## Documentation
 
 - [Reference documentation](https://docs.rs/nom)
-- [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc)
-- [List of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
+- [Various design documents and tutorials](https://github.com/Geal/nom/tree/main/doc)
+- [List of combinators and their behaviour](https://github.com/Geal/nom/blob/main/doc/choosing_a_combinator.md)
 
 If you need any help developing your parsers, please ping `geal` on IRC (libera, geeknode, oftc), go to `#nom-parsers` on Libera IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
@@ -113,7 +132,7 @@ formats such as JSON, nom can manage it, and provides you with useful tools:
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http/parser)
 - [TOML parser](https://github.com/joelself/tomllib)
 
 ### Programming language parsers
@@ -148,7 +167,7 @@ It allows you to build powerful, deterministic state machines for your protocols
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http/parser)
 - [Using nom with generators](https://github.com/Geal/generator_nom)
 
 ## Parser combinators
@@ -186,9 +205,9 @@ nom parsers are for:
 
 Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
 
-## Rust version requirements
+## Rust version requirements (MSRV)
 
-The 7.0 series of nom supports **Rustc version 1.48 or greater**. It is known to work properly on Rust 1.41.1 but there is no guarantee it will stay the case through this major release.
+The 7.0 series of nom supports **Rustc version 1.56 or greater**.
 
 The current policy is that this will only be updated in the next major nom release.
 
@@ -230,7 +249,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [CSV](https://github.com/GuillaumeGomez/csv-parser),
 [FASTA](https://github.com/TianyiShi2001/nom-fasta),
 [FASTQ](https://github.com/elij/fastq.rs),
-[INI](https://github.com/Geal/nom/blob/master/tests/ini.rs),
+[INI](https://github.com/Geal/nom/blob/main/tests/ini.rs),
 [ISO 8601 dates](https://github.com/badboy/iso8601),
 [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config),
 [Web archive](https://github.com/sbeckeriv/warc_nom_parser),
@@ -248,7 +267,10 @@ Here is a (non exhaustive) list of known projects using nom:
 [Elm](https://github.com/cout970/Elm-interpreter),
 [SystemVerilog](https://github.com/dalance/sv-parser),
 [Turtle](https://github.com/vandenoever/rome/tree/master/src/io/turtle),
-[CSML](https://github.com/CSML-by-Clevy/csml-interpreter)
+[CSML](https://github.com/CSML-by-Clevy/csml-interpreter),
+[Wasm](https://github.com/Strytyp/wasm-nom),
+[Pseudocode](https://github.com/Gungy2/pseudocode)
+[Filter for MeiliSearch](https://github.com/meilisearch/meilisearch)
 - Interface definition formats: [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
 [GIF](https://github.com/Geal/gif.rs),
@@ -259,14 +281,15 @@ Here is a (non exhaustive) list of known projects using nom:
 [Matroska (MKV)](https://github.com/rust-av/matroska)
 - Document formats:
 [TAR](https://github.com/Keruspe/tar-parser.rs),
-[GZ](https://github.com/nharward/nom-gzip)
+[GZ](https://github.com/nharward/nom-gzip),
+[GDSII](https://github.com/erihsu/gds2-io)
 - Cryptographic formats:
 [X.509](https://github.com/rusticata/x509-parser)
 - Network protocol formats:
 [Bencode](https://github.com/jbaum98/bencode.rs),
 [D-Bus](https://github.com/toshokan/misato),
 [DHCP](https://github.com/rusticata/dhcp-parser),
-[HTTP](https://github.com/sozu-proxy/sozu/tree/master/lib/src/protocol/http),
+[HTTP](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http),
 [URI](https://github.com/santifa/rrp/blob/master/src/uri.rs),
 [IMAP](https://github.com/djc/tokio-imap),
 [IRC](https://github.com/Detegr/RBot-parser),
@@ -292,7 +315,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [Telcordia/Bellcore SR-4731 SOR OTDR files](https://github.com/JamesHarrison/otdrs),
 [MySQL binary log](https://github.com/PrivateRookie/boxercrab),
 [URI](https://github.com/Skasselbard/nom-uri),
-[Furigana](https://github.com/sachaarbonel/furigana.rs)
+[Furigana](https://github.com/sachaarbonel/furigana.rs),
+[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 

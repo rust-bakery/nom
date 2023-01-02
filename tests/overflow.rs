@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
+#![allow(clippy::unreadable_literal)]
 #![cfg(target_pointer_width = "64")]
 
 use nom::bytes::streaming::take;
@@ -6,14 +6,13 @@ use nom::bytes::streaming::take;
 use nom::multi::{length_data, many};
 #[cfg(feature = "alloc")]
 use nom::number::streaming::be_u64;
-use nom::sequence::tuple;
-use nom::{Err, IResult, Needed};
+use nom::{Err, IResult, Needed, Parser};
 
 // Parser definition
 
 // We request a length that would trigger an overflow if computing consumed + requested
 fn parser02(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-  tuple((take(1_usize), take(18446744073709551615_usize)))(i)
+  (take(1_usize), take(18446744073709551615_usize)).parse(i)
 }
 
 #[test]
@@ -71,6 +70,7 @@ fn overflow_incomplete_many1() {
 fn overflow_incomplete_many_till() {
   use nom::{bytes::complete::tag, multi::many_till};
 
+  #[allow(clippy::type_complexity)]
   fn multi(i: &[u8]) -> IResult<&[u8], (Vec<&[u8]>, &[u8])> {
     many_till(length_data(be_u64), tag("abc"))(i)
   }
