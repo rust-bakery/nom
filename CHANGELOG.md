@@ -6,6 +6,61 @@
 
 ### Changed
 
+## 7.1.2 - 2023-01-01
+
+### Thanks
+
+- @joubs
+- @Fyko
+- @LoganDark
+- @darnuria
+- @jkugelman
+- @barower
+- @puzzlewolf
+- @epage
+- @cky
+- @wolthom
+- @w1ll-i-code
+
+### Changed
+
+- documentation fixes
+- tests fixes
+- limit the initial capacity of the result vector of `many_m_n` to 64kiB
+- bits parser now accept `Parser` implementors instead of only functions
+
+### Added
+
+- implement `Tuple` parsing for the unit type as a special case
+- implement `ErrorConvert` on the unit type to make it usable as error type for bits parsers
+- bool parser for bits input
+
+## 7.1.1 - 2022-03-14
+
+### Thanks
+
+- @ThomasdenH
+- @@SphinxKnight
+- @irevoire
+- @doehyunbaek
+- @pxeger
+- @punkeel
+- @max-sixty
+- @Xiretza
+- @5c077m4n
+- @erihsu
+- @TheNeikos
+- @LoganDark
+- @nickelc
+- @chotchki
+- @ctrlcctrlv
+
+
+### Changed
+
+- documentation fixes
+- more examples
+
 ## 7.1.0 - 2021-11-04
 
 ### Thanks
@@ -851,7 +906,7 @@ Bugfix release
 
 The 2.0 release is one of the biggest yet. It was a good opportunity to clean up some badly named combinators and fix invalid behaviours.
 
-Since this version introduces a few breaking changes, an [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md) is available, detailing the steps to fix the most common migration issues. After testing on a set of 30 crates, most of them will build directly, a large part will just need to activate the "verbose-errors" compilation feature. The remaining fixes are documented.
+Since this version introduces a few breaking changes, an [upgrade documentation](https://github.com/Geal/nom/blob/main/doc/upgrading_to_nom_2.md) is available, detailing the steps to fix the most common migration issues. After testing on a set of 30 crates, most of them will build directly, a large part will just need to activate the "verbose-errors" compilation feature. The remaining fixes are documented.
 
 This version also adds a lot of interesting features, like the permutation combinator or whitespace separated formats support.
 
@@ -1420,7 +1475,10 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased](https://github.com/Geal/nom/compare/7.0.0...HEAD)
+* [unreleased](https://github.com/Geal/nom/compare/7.1.2...HEAD)
+* [7.1.2](https://github.com/Geal/nom/compare/7.1.1...7.1.2)
+* [7.1.1](https://github.com/Geal/nom/compare/7.1.0...7.1.1)
+* [7.1.0](https://github.com/Geal/nom/compare/7.0.0...7.1.0)
 * [7.0.0](https://github.com/Geal/nom/compare/6.2.1...7.0.0)
 * [6.2.1](https://github.com/Geal/nom/compare/6.2.0...6.2.1)
 * [6.2.0](https://github.com/Geal/nom/compare/6.1.2...6.2.0)

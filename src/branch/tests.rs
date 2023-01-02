@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[cfg(feature = "alloc")]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ErrorStr(String);
 
 #[cfg(feature = "alloc")]
@@ -114,6 +114,7 @@ fn alt_incomplete() {
 
 #[test]
 fn permutation_test() {
+  #[allow(clippy::type_complexity)]
   fn perm(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8], &[u8])> {
     permutation((tag("abcd"), tag("efg"), tag("hi")))(i)
   }

@@ -129,16 +129,6 @@ fn many0_test() {
   );
 }
 
-#[cfg(nightly)]
-use test::Bencher;
-
-#[cfg(nightly)]
-#[bench]
-fn many0_bench(b: &mut Bencher) {
-  named!(multi<&[u8],Vec<&[u8]> >, many0!(tag!("abcd")));
-  b.iter(|| multi(&b"abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"[..]));
-}
-
 #[test]
 #[cfg(feature = "alloc")]
 fn many1_test() {
@@ -165,6 +155,7 @@ fn many1_test() {
 #[test]
 #[cfg(feature = "alloc")]
 fn many_till_test() {
+  #[allow(clippy::type_complexity)]
   fn multi(i: &[u8]) -> IResult<&[u8], (Vec<&[u8]>, &[u8])> {
     many_till(tag("abcd"), tag("efgh"))(i)
   }
@@ -311,7 +302,7 @@ fn count_zero() {
   assert_eq!(counter_2(error_2), Ok((error_2_remain, parsed_err_2)));
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct NilError;
 
 impl<I> From<(I, ErrorKind)> for NilError {
