@@ -19,27 +19,6 @@ use crate::traits::{Compare, CompareResult, Offset, Slice};
 #[cfg(test)]
 mod tests;
 
-/// Transforms a general `Parser` to a `FnMut` parser.
-///
-/// The purpose of this combinator is to allow calling
-/// a `Parser` which is not an `FnMut` in the imperative style. 
-///
-/// ```rust
-/// # use nom::character::complete::digit1;
-/// # use nom::bytes::complete::tag;
-/// # use nom::IResult;
-/// # use nom::combinator::parse;
-/// fn id_number_parser(input: &str) -> IResult<&str, &str> {
-///   let (input, (_, id_number)) = parse((tag("id"), digit1))(input)?;
-///   Ok((input, id_number))
-/// }
-/// ```
-pub fn parse<I, O, E: ParseError<I>, P: Parser<I, O, E>>(
-  mut l: P,
-) -> impl FnMut(I) -> IResult<I, O, E> {
-  move |i: I| l.parse(i)
-}
-
 /// Return the remaining input.
 ///
 /// ```rust

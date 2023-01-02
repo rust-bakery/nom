@@ -88,7 +88,6 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 - [`map_res`](https://docs.rs/nom/latest/nom/combinator/fn.map_res.html): Maps a function returning a `Result` on the output of a parser
 - [`not`](https://docs.rs/nom/latest/nom/combinator/fn.not.html): Returns a result only if the embedded parser returns `Error` or `Incomplete`. Does not consume the input
 - [`opt`](https://docs.rs/nom/latest/nom/combinator/fn.opt.html): Make the underlying parser optional
-- [`parse`](https://docs.rs/nom/latest/nom/combinator/fn.parse.html): Make the underlying parser a `FnMut`, so callable in the imperative style.
 - [`peek`](https://docs.rs/nom/latest/nom/combinator/fn.peek.html): Returns a result without consuming the input
 - [`recognize`](https://docs.rs/nom/latest/nom/combinator/fn.recognize.html): If the child parser was successful, return the consumed input as the produced value
 - [`consumed`](https://docs.rs/nom/latest/nom/combinator/fn.consumed.html): If the child parser was successful, return a tuple of the consumed input and the produced output.

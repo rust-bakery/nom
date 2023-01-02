@@ -119,9 +119,9 @@ fn request_line(i: &[u8]) -> IResult<&[u8], Request> {
   // Tuples of parsers are a parser themselves,
   // parsing with each of them sequentially and returning a tuple of their results.
   // Unlike most other parsers, parser tuples are not `FnMut`, they must be wrapped
-  // in the `parse` function to be able to be used in the same way as the others. 
+  // in the `parse` function to be able to be used in the same way as the others.
   let (input, (method, _, url, _, version, _)) =
-    parse((method, space, url, space, http_version, line_ending))(i)?;
+    (method, space, url, space, http_version, line_ending).parse(i)?;
 
   Ok((input, Request { method, url, version }))
 }

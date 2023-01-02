@@ -8,8 +8,10 @@
 //! ```rust
 //! use nom::{
 //!   IResult,
+//!   Parser,
 //!   bytes::complete::{tag, take_while_m_n},
-//!   combinator::{map_res, parse}};
+//!   combinator::map_res
+//! };
 //!
 //! #[derive(Debug,PartialEq)]
 //! pub struct Color {
@@ -35,7 +37,7 @@
 //!
 //! fn hex_color(input: &str) -> IResult<&str, Color> {
 //!   let (input, _) = tag("#")(input)?;
-//!   let (input, (red, green, blue)) = parse((hex_primary, hex_primary, hex_primary))(input)?;
+//!   let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
 //!
 //!   Ok((input, Color { red, green, blue }))
 //! }
@@ -259,23 +261,25 @@
 //!
 //! ```rust
 //! # fn main() {
-//! use nom::{error::ErrorKind, Needed,
-//! number::streaming::be_u16,
-//! combinator::parse,
-//! bytes::streaming::{tag, take}};
+//! use nom::{
+//!   error::ErrorKind,
+//!   Needed,
+//!   Parser,
+//!   number::streaming::be_u16,
+//!   bytes::streaming::{tag, take}};
 //!
-//! let mut tpl = parse((be_u16, take(3u8), tag("fg")));
+//! let mut tpl = (be_u16, take(3u8), tag("fg"));
 //!
 //! assert_eq!(
-//!   tpl(&b"abcdefgh"[..]),
+//!   tpl.parse(&b"abcdefgh"[..]),
 //!   Ok((
 //!     &b"h"[..],
 //!     (0x6162u16, &b"cde"[..], &b"fg"[..])
 //!   ))
 //! );
-//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
+//! assert_eq!(tpl.parse(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
 //! let input = &b"abcdejk"[..];
-//! assert_eq!(tpl(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
+//! assert_eq!(tpl.parse(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
 //! # }
 //! ```
 //!

@@ -189,11 +189,14 @@ where
 /// Helper trait for the tuple combinator.
 ///
 /// This trait is implemented for tuples of parsers of up to 21 elements.
+#[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
+#[allow(deprecated)]
 pub trait Tuple<I, O, E> {
   /// Parses the input and returns a tuple of results of each parser.
   fn parse(&mut self, input: I) -> IResult<I, O, E>;
 }
 
+#[allow(deprecated)]
 impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output, Error>>
   Tuple<Input, (Output,), Error> for (F,)
 {
@@ -218,6 +221,7 @@ macro_rules! tuple_trait(
 
 macro_rules! tuple_trait_impl(
   ($($name:ident $ty: ident),+) => (
+    #[allow(deprecated)]
     impl<
       Input: Clone, $($ty),+ , Error: ParseError<Input>,
       $($name: Parser<Input, $ty, Error>),+
@@ -255,6 +259,7 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 // Special case: implement `Tuple` for `()`, the unit type.
 // This can come up in macros which accept a variable number of arguments.
 // Literally, `()` is an empty tuple, so it should simply parse nothing.
+#[allow(deprecated)]
 impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
   fn parse(&mut self, input: I) -> IResult<I, (), E> {
     Ok((input, ()))
@@ -273,6 +278,7 @@ impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
 /// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
 /// ```
 #[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
+#[allow(deprecated)]
 pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {

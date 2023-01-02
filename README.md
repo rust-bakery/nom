@@ -45,7 +45,8 @@ extern crate nom;
 use nom::{
   IResult,
   bytes::complete::{tag, take_while_m_n},
-  combinator::{map_res, parse},
+  combinator::map_res,
+  Parser,
 };
 
 #[derive(Debug,PartialEq)]
@@ -72,7 +73,7 @@ fn hex_primary(input: &str) -> IResult<&str, u8> {
 
 fn hex_color(input: &str) -> IResult<&str, Color> {
   let (input, _) = tag("#")(input)?;
-  let (input, (red, green, blue)) = parse((hex_primary, hex_primary, hex_primary))(input)?;
+  let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
 
   Ok((input, Color { red, green, blue }))
 }
