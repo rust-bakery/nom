@@ -6,15 +6,15 @@ mod tests;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
+use crate::lib::std::num::NonZeroUsize;
+#[cfg(feature = "alloc")]
+use crate::lib::std::ops::Bound;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 use crate::{
   traits::{InputLength, InputTake, ToUsize},
   NomRange,
 };
-use core::num::NonZeroUsize;
-#[cfg(feature = "alloc")]
-use core::ops::Bound;
 
 /// Don't pre-allocate more than 64KiB when calling `Vec::with_capacity`.
 ///
