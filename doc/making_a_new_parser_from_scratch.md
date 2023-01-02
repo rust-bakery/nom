@@ -189,10 +189,10 @@ This function wraps a parser that accepts a `&[u8]` as input and
 prints its hexdump if the child parser encountered an error:
 
 ```rust
-use nom::{dbg_dmp, bytes::complete::tag};
+use nom::{IResult, error::dbg_dmp, bytes::complete::tag};
 
 fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
-  dbg_dmp(tag("abcd"))(i)
+  dbg_dmp(tag("abcd"), "tag")(i)
 }
 
   let a = &b"efghijkl"[..];

@@ -7,31 +7,11 @@ use crate::combinator::{cut, map, opt, recognize};
 use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
 use crate::internal::*;
-use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
+use crate::lib::std::ops::{Add, Range, RangeFrom, RangeTo, Shl};
 use crate::sequence::{pair, tuple};
 use crate::traits::{
   AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
 };
-
-#[doc(hidden)]
-macro_rules! map(
-  // Internal parser, do not use directly
-  (__impl $i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    $crate::combinator::map(move |i| {$submac!(i, $($args)*)}, $g).parse($i)
-  );
-  ($i:expr, $submac:ident!( $($args:tt)* ), $g:expr) => (
-    map!(__impl $i, $submac!($($args)*), $g)
-  );
-  ($i:expr, $f:expr, $g:expr) => (
-    map!(__impl $i, call!($f), $g)
-  );
-);
-
-#[doc(hidden)]
-macro_rules! call (
-  ($i:expr, $fun:expr) => ( $fun( $i ) );
-  ($i:expr, $fun:expr, $($args:expr),* ) => ( $fun( $i, $($args),* ) );
-);
 
 /// Recognizes an unsigned 1 byte integer.
 ///
@@ -53,14 +33,7 @@ pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 1;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let res = input.iter_elements().next().unwrap();
-
-    Ok((input.slice(bound..), res))
-  }
+  be_uint(input, 1)
 }
 
 /// Recognizes a big endian unsigned 2 bytes integer.
@@ -83,17 +56,7 @@ pub fn be_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 2;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = 0u16;
-    for byte in input.iter_elements().take(bound) {
-      res = (res << 8) + byte as u16;
-    }
-
-    Ok((input.slice(bound..), res))
-  }
+  be_uint(input, 2)
 }
 
 /// Recognizes a big endian unsigned 3 byte integer.
@@ -116,17 +79,7 @@ pub fn be_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 3;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = 0u32;
-    for byte in input.iter_elements().take(bound) {
-      res = (res << 8) + byte as u32;
-    }
-
-    Ok((input.slice(bound..), res))
-  }
+  be_uint(input, 3)
 }
 
 /// Recognizes a big endian unsigned 4 bytes integer.
@@ -149,17 +102,7 @@ pub fn be_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 4;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = 0u32;
-    for byte in input.iter_elements().take(bound) {
-      res = (res << 8) + byte as u32;
-    }
-
-    Ok((input.slice(bound..), res))
-  }
+  be_uint(input, 4)
 }
 
 /// Recognizes a big endian unsigned 8 bytes integer.
@@ -182,17 +125,7 @@ pub fn be_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 8;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = 0u64;
-    for byte in input.iter_elements().take(bound) {
-      res = (res << 8) + byte as u64;
-    }
-
-    Ok((input.slice(bound..), res))
-  }
+  be_uint(input, 8)
 }
 
 /// Recognizes a big endian unsigned 16 bytes integer.
@@ -215,13 +148,29 @@ pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 16;
+  be_uint(input, 16)
+}
+
+#[inline]
+fn be_uint<I, Uint, E: ParseError<I>>(input: I, bound: usize) -> IResult<I, Uint, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
+{
   if input.input_len() < bound {
     Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let mut res = 0u128;
-    for byte in input.iter_elements().take(bound) {
-      res = (res << 8) + byte as u128;
+    let mut res = Uint::default();
+
+    // special case to avoid shift a byte with overflow
+    if bound > 1 {
+      for byte in input.iter_elements().take(bound) {
+        res = (res << 8) + byte.into();
+      }
+    } else {
+      for byte in input.iter_elements().take(bound) {
+        res = byte.into();
+      }
     }
 
     Ok((input.slice(bound..), res))
@@ -248,7 +197,7 @@ pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u8, |x| x as i8)
+  be_u8.map(|x| x as i8).parse(input)
 }
 
 /// Recognizes a big endian signed 2 bytes integer.
@@ -271,7 +220,7 @@ pub fn be_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u16, |x| x as i16)
+  be_u16.map(|x| x as i16).parse(input)
 }
 
 /// Recognizes a big endian signed 3 bytes integer.
@@ -295,16 +244,20 @@ where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   // Same as the unsigned version but we need to sign-extend manually here
-  map!(input, be_u24, |x| if x & 0x80_00_00 != 0 {
-    (x | 0xff_00_00_00) as i32
-  } else {
-    x as i32
-  })
+  be_u24
+    .map(|x| {
+      if x & 0x80_00_00 != 0 {
+        (x | 0xff_00_00_00) as i32
+      } else {
+        x as i32
+      }
+    })
+    .parse(input)
 }
 
 /// Recognizes a big endian signed 4 bytes integer.
 ///
-/// *Complete version*: Teturns an error if there is not enough input data.
+/// *Complete version*: Returns an error if there is not enough input data.
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::Needed::Size;
@@ -322,7 +275,7 @@ pub fn be_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u32, |x| x as i32)
+  be_u32.map(|x| x as i32).parse(input)
 }
 
 /// Recognizes a big endian signed 8 bytes integer.
@@ -345,7 +298,7 @@ pub fn be_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u64, |x| x as i64)
+  be_u64.map(|x| x as i64).parse(input)
 }
 
 /// Recognizes a big endian signed 16 bytes integer.
@@ -368,7 +321,7 @@ pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u128, |x| x as i128)
+  be_u128.map(|x| x as i128).parse(input)
 }
 
 /// Recognizes an unsigned 1 byte integer.
@@ -391,14 +344,7 @@ pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 1;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let res = input.iter_elements().next().unwrap();
-
-    Ok((input.slice(bound..), res))
-  }
+  le_uint(input, 1)
 }
 
 /// Recognizes a little endian unsigned 2 bytes integer.
@@ -421,17 +367,7 @@ pub fn le_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 2;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = 0u16;
-    for (index, byte) in input.iter_indices().take(bound) {
-      res += (byte as u16) << (8 * index);
-    }
-
-    Ok((input.slice(bound..), res))
-  }
+  le_uint(input, 2)
 }
 
 /// Recognizes a little endian unsigned 3 byte integer.
@@ -454,17 +390,7 @@ pub fn le_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 3;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = 0u32;
-    for (index, byte) in input.iter_indices().take(bound) {
-      res += (byte as u32) << (8 * index);
-    }
-
-    Ok((input.slice(bound..), res))
-  }
+  le_uint(input, 3)
 }
 
 /// Recognizes a little endian unsigned 4 bytes integer.
@@ -487,17 +413,7 @@ pub fn le_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 4;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = 0u32;
-    for (index, byte) in input.iter_indices().take(bound) {
-      res += (byte as u32) << (8 * index);
-    }
-
-    Ok((input.slice(bound..), res))
-  }
+  le_uint(input, 4)
 }
 
 /// Recognizes a little endian unsigned 8 bytes integer.
@@ -520,17 +436,7 @@ pub fn le_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 8;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = 0u64;
-    for (index, byte) in input.iter_indices().take(bound) {
-      res += (byte as u64) << (8 * index);
-    }
-
-    Ok((input.slice(bound..), res))
-  }
+  le_uint(input, 8)
 }
 
 /// Recognizes a little endian unsigned 16 bytes integer.
@@ -553,13 +459,21 @@ pub fn le_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  let bound: usize = 16;
+  le_uint(input, 16)
+}
+
+#[inline]
+fn le_uint<I, Uint, E: ParseError<I>>(input: I, bound: usize) -> IResult<I, Uint, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
+{
   if input.input_len() < bound {
     Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let mut res = 0u128;
+    let mut res = Uint::default();
     for (index, byte) in input.iter_indices().take(bound) {
-      res += (byte as u128) << (8 * index);
+      res = res + (Uint::from(byte) << (8 * index as u8));
     }
 
     Ok((input.slice(bound..), res))
@@ -586,7 +500,7 @@ pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, be_u8, |x| x as i8)
+  be_u8.map(|x| x as i8).parse(input)
 }
 
 /// Recognizes a little endian signed 2 bytes integer.
@@ -609,7 +523,7 @@ pub fn le_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u16, |x| x as i16)
+  le_u16.map(|x| x as i16).parse(input)
 }
 
 /// Recognizes a little endian signed 3 bytes integer.
@@ -633,11 +547,15 @@ where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
   // Same as the unsigned version but we need to sign-extend manually here
-  map!(input, le_u24, |x| if x & 0x80_00_00 != 0 {
-    (x | 0xff_00_00_00) as i32
-  } else {
-    x as i32
-  })
+  le_u24
+    .map(|x| {
+      if x & 0x80_00_00 != 0 {
+        (x | 0xff_00_00_00) as i32
+      } else {
+        x as i32
+      }
+    })
+    .parse(input)
 }
 
 /// Recognizes a little endian signed 4 bytes integer.
@@ -660,7 +578,7 @@ pub fn le_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u32, |x| x as i32)
+  le_u32.map(|x| x as i32).parse(input)
 }
 
 /// Recognizes a little endian signed 8 bytes integer.
@@ -683,7 +601,7 @@ pub fn le_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u64, |x| x as i64)
+  le_u64.map(|x| x as i64).parse(input)
 }
 
 /// Recognizes a little endian signed 16 bytes integer.
@@ -706,7 +624,7 @@ pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(input, le_u128, |x| x as i128)
+  le_u128.map(|x| x as i128).parse(input)
 }
 
 /// Recognizes an unsigned 1 byte integer
@@ -957,7 +875,7 @@ pub fn i8<I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
 where
   I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
 {
-  map!(i, u8, |x| x as i8)
+  u8.map(|x| x as i8).parse(i)
 }
 
 /// Recognizes a signed 2 byte integer
@@ -1354,16 +1272,32 @@ where
 /// assert_eq!(parser(&b"ggg"[..]), Err(Err::Error((&b"ggg"[..], ErrorKind::IsA))));
 /// ```
 #[inline]
-pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8], u32, E> {
-  let (i, o) = crate::bytes::complete::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
+pub fn hex_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+where
+  I: InputTakeAtPosition,
+  I: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+  <I as InputTakeAtPosition>::Item: AsChar,
+  I: AsBytes,
+  I: InputLength,
+{
+  let e: ErrorKind = ErrorKind::IsA;
+  let (i, o) = input.split_at_position1_complete(
+    |c| {
+      let c = c.as_char();
+      !"0123456789abcdefABCDEF".contains(c)
+    },
+    e,
+  )?;
+
   // Do not parse more than 8 characters for a u32
-  let (parsed, remaining) = if o.len() <= 8 {
+  let (parsed, remaining) = if o.input_len() <= 8 {
     (o, i)
   } else {
-    (&input[..8], &input[8..])
+    (input.slice(..8), input.slice(8..))
   };
 
   let res = parsed
+    .as_bytes()
     .iter()
     .rev()
     .enumerate()
@@ -1515,6 +1449,7 @@ where
       }
     }
 
+    #[allow(clippy::or_fun_call)]
     let position = position.unwrap_or(i.input_len());
 
     let index = if zero_count == 0 {
@@ -2001,14 +1936,13 @@ mod tests {
 
       println!("now parsing: {} -> {}", test, expected32);
 
-      let larger = format!("{}", test);
-      assert_parse!(recognize_float(&larger[..]), Ok(("", test)));
+      assert_parse!(recognize_float(test), Ok(("", test)));
 
-      assert_parse!(float(larger.as_bytes()), Ok((&b""[..], expected32)));
-      assert_parse!(float(&larger[..]), Ok(("", expected32)));
+      assert_parse!(float(test.as_bytes()), Ok((&b""[..], expected32)));
+      assert_parse!(float(test), Ok(("", expected32)));
 
-      assert_parse!(double(larger.as_bytes()), Ok((&b""[..], expected64)));
-      assert_parse!(double(&larger[..]), Ok(("", expected64)));
+      assert_parse!(double(test.as_bytes()), Ok((&b""[..], expected64)));
+      assert_parse!(double(test), Ok(("", expected64)));
     }
 
     let remaining_exponent = "-1.234E-";
@@ -2111,7 +2045,7 @@ mod tests {
 
   #[cfg(feature = "std")]
   fn parse_f64(i: &str) -> IResult<&str, f64, ()> {
-    match recognize_float(i) {
+    match recognize_float_or_exceptions(i) {
       Err(e) => Err(e),
       Ok((i, s)) => {
         if s.is_empty() {
