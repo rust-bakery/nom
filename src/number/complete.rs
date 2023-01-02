@@ -8,7 +8,7 @@ use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
 use crate::internal::*;
 use crate::lib::std::ops::{Add, Range, RangeFrom, RangeTo, Shl};
-use crate::sequence::{pair, tuple};
+use crate::sequence::pair;
 use crate::traits::{
   AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
 };
@@ -1338,20 +1338,18 @@ where
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
 {
-  recognize(
-    tuple((
-      opt(alt((char('+'), char('-')))),
+  recognize((
+    opt(alt((char('+'), char('-')))),
       alt((
-        map(tuple((digit1, opt(pair(char('.'), opt(digit1))))), |_| ()),
-        map(tuple((char('.'), digit1)), |_| ())
+        map((digit1, opt(pair(char('.'), opt(digit1)))), |_| ()),
+        map((char('.'), digit1), |_| ())
       )),
-      opt(tuple((
+      opt((
         alt((char('e'), char('E'))),
         opt(alt((char('+'), char('-')))),
         cut(digit1)
-      )))
-    ))
-  )(input)
+      ))
+  ))(input)
 }
 
 // workaround until issues with minimal-lexical are fixed

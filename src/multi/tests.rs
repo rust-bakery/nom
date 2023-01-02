@@ -6,7 +6,7 @@ use crate::{
   internal::{Err, IResult, Needed},
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
-  sequence::{pair, tuple},
+  sequence::pair,
 };
 #[cfg(feature = "alloc")]
 use crate::{
@@ -373,7 +373,7 @@ fn length_value_test() {
     length_value(be_u8, be_u16)(i)
   }
   fn length_value_2(i: &[u8]) -> IResult<&[u8], (u8, u8)> {
-    length_value(be_u8, tuple((be_u8, be_u8)))(i)
+    length_value(be_u8, (be_u8, be_u8))(i)
   }
 
   let i1 = [0, 5, 6];

@@ -201,9 +201,8 @@ fn issue_1027_convert_error_panic_nonempty() {
 fn issue_1231_bits_expect_fn_closure() {
   use nom::bits::{bits, complete::take};
   use nom::error::Error;
-  use nom::sequence::tuple;
   pub fn example(input: &[u8]) -> IResult<&[u8], (u8, u8)> {
-    bits::<_, _, Error<_>, _, _>(tuple((take(1usize), take(1usize))))(input)
+    bits::<_, _, Error<_>, _, _>((take(1usize), take(1usize)))(input)
   }
   assert_eq!(example(&[0xff]), Ok((&b""[..], (1, 1))));
 }

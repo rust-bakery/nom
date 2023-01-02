@@ -9,10 +9,13 @@ fn single_element_tuples() {
   use crate::character::complete::alpha1;
   use crate::{error::ErrorKind, Err};
 
-  let mut parser = tuple((alpha1,));
-  assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));
+  let mut parser = (alpha1,);
   assert_eq!(
-    parser("123def"),
+    crate::Parser::parse(&mut parser, "abc123def"),
+    Ok(("123def", ("abc",)))
+  );
+  assert_eq!(
+    crate::Parser::parse(&mut parser, "123def"),
     Err(Err::Error(("123def", ErrorKind::Alpha)))
   );
 }
@@ -259,7 +262,7 @@ fn delimited_test() {
 fn tuple_test() {
   #[allow(clippy::type_complexity)]
   fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8], &[u8])> {
-    tuple((be_u16, take(3u8), tag("fg")))(i)
+    crate::Parser::parse(&mut (be_u16, take(3u8), tag("fg")), i)
   }
 
   assert_eq!(
@@ -275,6 +278,7 @@ fn tuple_test() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn unit_type() {
   assert_eq!(
     tuple::<&'static str, (), Error<&'static str>, ()>(())("abxsbsh"),
