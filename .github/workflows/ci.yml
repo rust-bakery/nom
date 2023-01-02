@@ -3,7 +3,7 @@ name: CI
 on: [push, pull_request]
 
 env:
-  RUST_MINVERSION: 1.41.1
+  RUST_MINVERSION: 1.56.0
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
 
@@ -18,7 +18,7 @@ jobs:
           - stable
           - beta
           - nightly
-          - 1.48.0
+          - 1.56.0
 
         features:
           - ''
@@ -135,10 +135,9 @@ jobs:
           override: true
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --verbose --features "std docsrs"
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --no-deps --document-private-items --workspace --verbose --features "std docsrs"
 
   fmt:
     name: Check formatting
@@ -185,12 +184,15 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: cargo-tarpaulin --version 0.18.0-alpha3 # @TODO restore to normal (https://github.com/xd009642/tarpaulin/issues/756#issuecomment-838769320)
+          args: cargo-tarpaulin
 
       - name: Run cargo tarpaulin
         uses: actions-rs/cargo@v1
-        env:
-          TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         with:
           command: tarpaulin
-          args: --coveralls "$TOKEN" --avoid-cfg-tarpaulin # @TODO restore to normal (https://github.com/xd009642/tarpaulin/issues/756#issuecomment-838769320)
+          args: --output-dir coverage --out Lcov
+      
+      - name: Publish to Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -109,7 +109,7 @@ impl AsBytes for str {
 impl<'a> AsBytes for &'a [u8] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    *self
+    self
   }
 }
 
@@ -148,7 +148,8 @@ as_bytes_array_impls! {
 }
 
 /// Transforms common types to a char for basic token parsing
-pub trait AsChar {
+#[allow(clippy::len_without_is_empty)]
+pub trait AsChar: Copy {
   /// makes a char from self
   fn as_char(self) -> char;
 
@@ -178,7 +179,7 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    (self >= 0x41 && self <= 0x5A) || (self >= 0x61 && self <= 0x7A)
+    matches!(self, 0x41..=0x5A | 0x61..=0x7A)
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -186,17 +187,15 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    self >= 0x30 && self <= 0x39
+    matches!(self, 0x30..=0x39)
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    (self >= 0x30 && self <= 0x39)
-      || (self >= 0x41 && self <= 0x46)
-      || (self >= 0x61 && self <= 0x66)
+    matches!(self, 0x30..=0x39 | 0x41..=0x46 | 0x61..=0x66)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
-    self >= 0x30 && self <= 0x37
+    matches!(self, 0x30..=0x37)
   }
   #[inline]
   fn len(self) -> usize {
@@ -210,7 +209,7 @@ impl<'a> AsChar for &'a u8 {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    (*self >= 0x41 && *self <= 0x5A) || (*self >= 0x61 && *self <= 0x7A)
+    matches!(*self, 0x41..=0x5A | 0x61..=0x7A)
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -218,17 +217,15 @@ impl<'a> AsChar for &'a u8 {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    *self >= 0x30 && *self <= 0x39
+    matches!(*self, 0x30..=0x39)
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    (*self >= 0x30 && *self <= 0x39)
-      || (*self >= 0x41 && *self <= 0x46)
-      || (*self >= 0x61 && *self <= 0x66)
+    matches!(*self, 0x30..=0x39 | 0x41..=0x46 | 0x61..=0x66)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
-    *self >= 0x30 && *self <= 0x37
+    matches!(*self, 0x30..=0x37)
   }
   #[inline]
   fn len(self) -> usize {
@@ -701,9 +698,9 @@ impl<'a> InputTakeAtPosition for &'a str {
   }
 }
 
-/// Indicates wether a comparison was successful, an error, or
+/// Indicates whether a comparison was successful, an error, or
 /// if more data was needed
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum CompareResult {
   /// Comparison was successful
   Ok,
@@ -911,6 +908,18 @@ impl<'a> FindToken<char> for &'a [u8] {
 impl<'a> FindToken<char> for &'a str {
   fn find_token(&self, token: char) -> bool {
     self.chars().any(|i| i == token)
+  }
+}
+
+impl<'a> FindToken<char> for &'a [char] {
+  fn find_token(&self, token: char) -> bool {
+    self.iter().any(|i| *i == token)
+  }
+}
+
+impl<'a, 'b> FindToken<&'a char> for &'b [char] {
+  fn find_token(&self, token: &char) -> bool {
+    self.find_token(*token)
   }
 }
 
@@ -1318,6 +1327,10 @@ impl<I> ErrorConvert<error::VerboseError<(I, usize)>> for error::VerboseError<I>
   }
 }
 
+impl ErrorConvert<()> for () {
+  fn convert(self) {}
+}
+
 #[cfg(feature = "std")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
 /// Helper trait to show a byte slice as a hex dump
@@ -1369,7 +1382,7 @@ impl HexDisplay for [u8] {
       v.push(b'\t');
 
       for &byte in chunk {
-        if (byte >= 32 && byte <= 126) || byte >= 128 {
+        if matches!(byte, 32..=126 | 128..=255) {
           v.push(byte);
         } else {
           v.push(b'.');
@@ -1413,8 +1426,7 @@ mod tests {
 
   #[test]
   fn test_offset_str() {
-    let s = "abcřèÂßÇd123";
-    let a = &s[..];
+    let a = "abcřèÂßÇd123";
     let b = &a[7..];
     let c = &a[..5];
     let d = &a[5..9];

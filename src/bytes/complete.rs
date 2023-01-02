@@ -327,6 +327,7 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Ok(("", "")));
 /// ```
+#[allow(clippy::redundant_closure)]
 pub fn take_till<F, Input, Error: ParseError<Input>>(
   cond: F,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -358,6 +359,7 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Err(Err::Error(Error::new("", ErrorKind::TakeTill1))));
 /// ```
+#[allow(clippy::redundant_closure)]
 pub fn take_till1<F, Input, Error: ParseError<Input>>(
   cond: F,
 ) -> impl Fn(Input) -> IResult<Input, Input, Error>
@@ -387,6 +389,18 @@ where
 /// assert_eq!(take6("things"), Ok(("", "things")));
 /// assert_eq!(take6("short"), Err(Err::Error(Error::new("short", ErrorKind::Eof))));
 /// assert_eq!(take6(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
+/// ```
+///
+/// The units that are taken will depend on the input type. For example, for a
+/// `&str` it will take a number of `char`'s, whereas for a `&[u8]` it will
+/// take that many `u8`'s:
+///
+/// ```rust
+/// use nom::error::Error;
+/// use nom::bytes::complete::take;
+///
+/// assert_eq!(take::<_, _, Error<_>>(1usize)("💙"), Ok(("", "💙")));
+/// assert_eq!(take::<_, _, Error<_>>(1usize)("💙".as_bytes()), Ok((b"\x9F\x92\x99".as_ref(), b"\xF0".as_ref())));
 /// ```
 pub fn take<C, Input, Error: ParseError<Input>>(
   count: C,
@@ -724,7 +738,7 @@ mod tests {
   }
 
   // issue ##1118 escaped does not work with empty string
-  fn unquote<'a>(input: &'a str) -> IResult<&'a str, &'a str> {
+  fn unquote(input: &str) -> IResult<&str, &str> {
     use crate::bytes::complete::*;
     use crate::character::complete::*;
     use crate::combinator::opt;

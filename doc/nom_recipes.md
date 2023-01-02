@@ -35,9 +35,9 @@ use nom::{
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and 
 /// trailing whitespace, returning the output of `inner`.
-fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
+fn ws<'a, F, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
   where
-  F: Fn(&'a str) -> IResult<&'a str, O, E>,
+  F: FnMut(&'a str) -> IResult<&'a str, O, E>,
 {
   delimited(
     multispace0,
@@ -114,7 +114,7 @@ letters and numbers may be parsed like this:
 use nom::{
   IResult,
   branch::alt,
-  multi::many0,
+  multi::many0_count,
   combinator::recognize,
   sequence::pair,
   character::complete::{alpha1, alphanumeric1},
@@ -125,7 +125,7 @@ pub fn identifier(input: &str) -> IResult<&str, &str> {
   recognize(
     pair(
       alt((alpha1, tag("_"))),
-      many0(alt((alphanumeric1, tag("_"))))
+      many0_count(alt((alphanumeric1, tag("_"))))
     )
   )(input)
 }
@@ -141,7 +141,7 @@ input text that was parsed, which in this case is the entire `&str` `hello_world
 
 ### Escaped Strings
 
-This is [one of the examples](https://github.com/Geal/nom/blob/master/examples/string.rs) in the
+This is [one of the examples](https://github.com/Geal/nom/blob/main/examples/string.rs) in the
 examples directory.
 
 ### Integers

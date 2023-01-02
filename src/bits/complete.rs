@@ -105,6 +105,29 @@ where
   }
 }
 
+/// Parses one specific bit as a bool.
+///
+/// # Example
+/// ```rust
+/// # use nom::bits::complete::bool;
+/// # use nom::IResult;
+/// # use nom::error::{Error, ErrorKind};
+///
+/// fn parse(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
+///     bool(input)
+/// }
+///
+/// assert_eq!(parse(([0b10000000].as_ref(), 0)), Ok((([0b10000000].as_ref(), 1), true)));
+/// assert_eq!(parse(([0b10000000].as_ref(), 1)), Ok((([0b10000000].as_ref(), 2), false)));
+/// ```
+pub fn bool<I, E: ParseError<(I, usize)>>(input: (I, usize)) -> IResult<(I, usize), bool, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let (res, bit): (_, u32) = take(1usize)(input)?;
+  Ok((res, bit != 0))
+}
+
 #[cfg(test)]
 mod test {
   use super::*;
@@ -145,6 +168,30 @@ mod test {
     assert_eq!(
       result,
       Ok((([0b11111111].as_ref(), 4), 0b1000110100111111111111))
+    );
+  }
+
+  #[test]
+  fn test_bool_0() {
+    let input = [0b10000000].as_ref();
+
+    let result: crate::IResult<(&[u8], usize), bool> = bool((input, 0));
+
+    assert_eq!(result, Ok(((input, 1), true)));
+  }
+
+  #[test]
+  fn test_bool_eof() {
+    let input = [0b10000000].as_ref();
+
+    let result: crate::IResult<(&[u8], usize), bool> = bool((input, 8));
+
+    assert_eq!(
+      result,
+      Err(crate::Err::Error(crate::error::Error {
+        input: (input, 8),
+        code: ErrorKind::Eof
+      }))
     );
   }
 }

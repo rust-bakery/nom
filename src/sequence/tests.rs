@@ -1,6 +1,6 @@
 use super::*;
 use crate::bytes::streaming::{tag, take};
-use crate::error::ErrorKind;
+use crate::error::{Error, ErrorKind};
 use crate::internal::{Err, IResult, Needed};
 use crate::number::streaming::be_u16;
 use crate::combinator::parse;
@@ -258,6 +258,7 @@ fn delimited_test() {
 
 #[test]
 fn tuple_test() {
+  #[allow(clippy::type_complexity)]
   fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8], &[u8])> {
     parse((be_u16, take(3u8), tag("fg")))(i)
   }
@@ -271,5 +272,21 @@ fn tuple_test() {
   assert_eq!(
     tuple_3(&b"abcdejk"[..]),
     Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag)))
+  );
+}
+
+#[test]
+fn unit_type() {
+  assert_eq!(
+    tuple::<&'static str, (), Error<&'static str>, ()>(())("abxsbsh"),
+    Ok(("abxsbsh", ()))
+  );
+  assert_eq!(
+    tuple::<&'static str, (), Error<&'static str>, ()>(())("sdfjakdsas"),
+    Ok(("sdfjakdsas", ()))
+  );
+  assert_eq!(
+    tuple::<&'static str, (), Error<&'static str>, ()>(())(""),
+    Ok(("", ()))
   );
 }

@@ -11,9 +11,6 @@
 
 #![cfg(feature = "alloc")]
 
-#[global_allocator]
-static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
-
 use nom::branch::alt;
 use nom::bytes::streaming::{is_not, take_while_m_n};
 use nom::character::streaming::{char, multispace1};
@@ -38,7 +35,7 @@ where
   // a predicate. `parse_hex` here parses between 1 and 6 hexadecimal numerals.
   let parse_hex = take_while_m_n(1, 6, |c: char| c.is_ascii_hexdigit());
 
-  // `preceeded` takes a prefix parser, and if it succeeds, returns the result
+  // `preceded` takes a prefix parser, and if it succeeds, returns the result
   // of the body parser. In this case, it parses u{XXXX}.
   let parse_delimited_hex = preceded(
     char('u'),
@@ -57,7 +54,7 @@ where
   // the function returns None, map_opt returns an error. In this case, because
   // not all u32 values are valid unicode code points, we have to fallibly
   // convert to char with from_u32.
-  map_opt(parse_u32, |value| std::char::from_u32(value))(input)
+  map_opt(parse_u32, std::char::from_u32)(input)
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.

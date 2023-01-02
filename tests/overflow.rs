@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "cargo-clippy", allow(unreadable_literal))]
+#![allow(clippy::unreadable_literal)]
 #![cfg(target_pointer_width = "64")]
 
 use nom::bytes::streaming::take;
@@ -73,6 +73,7 @@ fn overflow_incomplete_many1() {
 fn overflow_incomplete_many_till() {
   use nom::{bytes::complete::tag, multi::many_till};
 
+  #[allow(clippy::type_complexity)]
   fn multi(i: &[u8]) -> IResult<&[u8], (Vec<&[u8]>, &[u8])> {
     many_till(length_data(be_u64), tag("abc"))(i)
   }
