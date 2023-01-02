@@ -8,9 +8,12 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::{NomRange, traits::{InputLength, InputTake, ToUsize}};
+use crate::{
+  traits::{InputLength, InputTake, ToUsize},
+  NomRange,
+};
 use core::num::NonZeroUsize;
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 use core::ops::Bound;
 
 /// Don't pre-allocate more than 64KiB when calling `Vec::with_capacity`.
@@ -883,7 +886,6 @@ where
           acc = fold(acc, value);
           input = tail;
         }
-        //FInputXMError: handle failure properly
         Err(Err::Error(err)) => {
           if count < min {
             return Err(Err::Error(E::append(input, ErrorKind::ManyMN, err)));
@@ -1075,28 +1077,27 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many<I, O, E, F, G>(
-  range: G,
-  mut parse: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn many<I, O, E, F, G>(range: G, mut parse: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
   I: Clone + InputLength,
   F: Parser<I, O, E>,
   E: ParseError<I>,
   G: NomRange<usize>,
 {
+  let capacity = match range.bounds() {
+    (Bound::Included(start), _) => start,
+    (Bound::Excluded(start), _) => start + 1,
+    _ => 4,
+  };
+
   move |mut input: I| {
     if range.is_inverted() {
-      return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many)))
+      return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many)));
     }
-    
-    let capacity = match range.bounds() {
-      (Bound::Included(start), _) => start,
-      (Bound::Excluded(start), _) => start + 1,
-      _ => 4,
-    };
-    
-    let mut res = crate::lib::std::vec::Vec::with_capacity(capacity);
+
+    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>();
+    let mut res = crate::lib::std::vec::Vec::with_capacity(capacity.min(max_initial_capacity));
+
     for count in range.bounded_iter() {
       let len = input.input_len();
       match parse.parse(input.clone()) {
@@ -1130,7 +1131,7 @@ where
 /// function and initial value.
 /// Fails if the amount of time the embedded parser is run is not
 /// within the specified range.
-/// 
+///
 /// # Arguments
 /// * `range` Constrains the number of iterations.
 ///   * A range without an upper bound `a..` allows the parser to run until it fails.
@@ -1184,7 +1185,7 @@ where
     }
 
     let mut acc = init();
-    
+
     for count in range.saturating_iter() {
       let len = input.input_len();
       match parse.parse(input.clone()) {
@@ -1197,7 +1198,6 @@ where
           acc = fold(acc, value);
           input = tail;
         }
-        //FInputXMError: handle failure properly
         Err(Err::Error(err)) => {
           if !range.contains(&count) {
             return Err(Err::Error(E::append(input, ErrorKind::Fold, err)));

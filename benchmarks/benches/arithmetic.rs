@@ -37,7 +37,8 @@ fn factor(input: &[u8]) -> IResult<&[u8], i64> {
 // the math by folding everything
 fn term(input: &[u8]) -> IResult<&[u8], i64> {
   let (input, init) = factor(input)?;
-  fold(0..,
+  fold(
+    0..,
     pair(one_of("*/"), factor),
     move || init,
     |acc, (op, val)| {
@@ -52,7 +53,8 @@ fn term(input: &[u8]) -> IResult<&[u8], i64> {
 
 fn expr(input: &[u8]) -> IResult<&[u8], i64> {
   let (input, init) = term(input)?;
-  fold(0..,
+  fold(
+    0..,
     pair(one_of("+-"), term),
     move || init,
     |acc, (op, val)| {
