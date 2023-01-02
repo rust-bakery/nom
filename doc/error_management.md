@@ -22,10 +22,10 @@ pub enum Err<E> {
 The result is either an `Ok((I, O))` containing the remaining input and the
 parsed value, or an `Err(nom::Err<E>)` with `E` the error type.
 `nom::Err<E>` is an enum because combinators can have different behaviours
-depending on the value:
+depending on the value. The `Err<E>` enum expresses 3 conditions for a parser error:
+- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules to indicate that we should buffer more data from a file or socket. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`. When a parser returns `Incomplete`, we should accumulate more data in the buffer (example: reading from a socket) and call the parser again
 - `Error` is a normal parser error. If a child parser of the `alt` combinator returns `Error`, it will try another child parser
-- `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`. This is used when we know we were in the right branch of `alt` and do not need to try other branches
-- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`. When a parser returns `Incomplete`, we should accumulate more data in the buffer (example: reading from a socket) and call the parser again
+- `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`. If we know we were in the right branch (example: we found a correct prefix character but input after that was wrong), we can transform a `Err::Error` into a `Err::Failure` with the `cut()` combinator
 
 If we are running a parser and know it will not return `Err::Incomplete`, we can
 directly extract the error type from `Err::Error` or `Err::Failure` with the
@@ -42,7 +42,7 @@ method:
 
 ```rust
 let result: Result<(&[u8], Value), Err<Vec<u8>>> =
-  parser(data).map_err(|e: E<&[u8]>| -> e.to_owned());
+  parser(data).map_err(|e: E<&[u8]>| e.to_owned());
 ```
 
 nom provides a powerful error system that can adapt to your needs: you can
@@ -67,11 +67,6 @@ exactly which error type you want to use when you define your parsers, or
 directly at the call site.
 See [the JSON parser](https://github.com/Geal/nom/blob/5405e1173f1052f7e006dcb0b9cfda2b06557b65/examples/json.rs#L209-L286)
 for an example of choosing different error types at the call site.
-
-The `Err<E>` enum expresses 3 conditions for a parser error:
-- `Incomplete` indicates that a parser did not have enough data to decide. This can be returned by parsers found in `streaming` submodules to indicate that we should buffer more data from a file or socket. Parsers in the `complete` submodules assume that they have the entire input data, so if it was not sufficient, they will instead return a `Err::Error`
-- `Error` is a normal parser error. If a child parser of the `alt` combinator returns `Error`, it will try another child parser
-- `Failure` is an error from which we cannot recover: The `alt` combinator will not try other branches if a child parser returns `Failure`. If we know we were in the right branch (example: we found a correct prefix character but input after that was wrong), we can transform a `Err::Error` into a `Err::Failure` with the `cut()` combinator
 
 ## Common error types
 

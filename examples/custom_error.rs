@@ -21,9 +21,11 @@ impl<I> ParseError<I> for CustomError<I> {
   }
 }
 
-fn parse(input: &str) -> IResult<&str, &str, CustomError<&str>> {
+pub fn parse(_input: &str) -> IResult<&str, &str, CustomError<&str>> {
   Err(Error(CustomError::MyError))
 }
+
+fn main() {}
 
 #[cfg(test)]
 mod tests {

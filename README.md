@@ -17,6 +17,25 @@ error prone plumbing.
 
 *nom will happily take a byte out of your files :)*
 
+<!-- toc -->
+
+- [Example](#example)
+- [Documentation](#documentation)
+- [Why use nom?](#why-use-nom)
+    - [Binary format parsers](#binary-format-parsers)
+    - [Text format parsers](#text-format-parsers)
+    - [Programming language parsers](#programming-language-parsers)
+    - [Streaming formats](#streaming-formats)
+- [Parser combinators](#parser-combinators)
+- [Technical features](#technical-features)
+- [Rust version requirements](#rust-version-requirements-msrv)
+- [Installation](#installation)
+- [Related projects](#related-projects)
+- [Parsers written with nom](#parsers-written-with-nom)
+- [Contributors](#contributors)
+
+<!-- tocstop -->
+
 ## Example
 
 [Hexadecimal color](https://developer.mozilla.org/en-US/docs/Web/CSS/color) parser:
@@ -296,7 +315,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [Telcordia/Bellcore SR-4731 SOR OTDR files](https://github.com/JamesHarrison/otdrs),
 [MySQL binary log](https://github.com/PrivateRookie/boxercrab),
 [URI](https://github.com/Skasselbard/nom-uri),
-[Furigana](https://github.com/sachaarbonel/furigana.rs)
+[Furigana](https://github.com/sachaarbonel/furigana.rs),
+[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
 

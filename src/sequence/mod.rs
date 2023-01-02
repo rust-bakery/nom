@@ -252,6 +252,15 @@ macro_rules! tuple_trait_inner(
 tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ J, FnK K, FnL L,
   FnM M, FnN N, FnO O, FnP P, FnQ Q, FnR R, FnS S, FnT T, FnU U);
 
+// Special case: implement `Tuple` for `()`, the unit type.
+// This can come up in macros which accept a variable number of arguments.
+// Literally, `()` is an empty tuple, so it should simply parse nothing.
+impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
+  fn parse(&mut self, input: I) -> IResult<I, (), E> {
+    Ok((input, ()))
+  }
+}
+
 ///Applies a tuple of parsers one by one and returns their results as a tuple.
 ///There is a maximum of 21 parsers
 /// ```rust
