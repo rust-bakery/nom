@@ -6,10 +6,15 @@ mod tests;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
+use crate::lib::std::num::NonZeroUsize;
+#[cfg(feature = "alloc")]
+use crate::lib::std::ops::Bound;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
-use crate::traits::{InputLength, InputTake, ToUsize};
-use core::num::NonZeroUsize;
+use crate::{
+  traits::{InputLength, InputTake, ToUsize},
+  NomRange,
+};
 
 /// Don't pre-allocate more than 64KiB when calling `Vec::with_capacity`.
 ///
@@ -881,7 +886,6 @@ where
           acc = fold(acc, value);
           input = tail;
         }
-        //FInputXMError: handle failure properly
         Err(Err::Error(err)) => {
           if count < min {
             return Err(Err::Error(E::append(input, ErrorKind::ManyMN, err)));
@@ -1043,5 +1047,168 @@ where
     }
 
     Ok((input, res))
+  }
+}
+
+/// Repeats the embedded parser and returns the results in a `Vec`.
+/// Fails if the amount of time the embedded parser is run is not
+/// within the specified range.
+/// # Arguments
+/// * `range` Constrains the number of iterations.
+///   * A range without an upper bound `a..` is equivalent to a range of `a..=usize::MAX`.
+///   * A single `usize` value is equivalent to `value..=value`.
+///   * An empty range is invalid.
+/// * `parse` The parser to apply.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::many;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   many(0..=2, tag("abc"))(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+pub fn many<I, O, E, F, G>(range: G, mut parse: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  E: ParseError<I>,
+  G: NomRange<usize>,
+{
+  let capacity = match range.bounds() {
+    (Bound::Included(start), _) => start,
+    (Bound::Excluded(start), _) => start + 1,
+    _ => 4,
+  };
+
+  move |mut input: I| {
+    if range.is_inverted() {
+      return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many)));
+    }
+
+    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>();
+    let mut res = crate::lib::std::vec::Vec::with_capacity(capacity.min(max_initial_capacity));
+
+    for count in range.bounded_iter() {
+      let len = input.input_len();
+      match parse.parse(input.clone()) {
+        Ok((tail, value)) => {
+          // infinite loop check: the parser must always consume
+          if tail.input_len() == len {
+            return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many)));
+          }
+
+          res.push(value);
+          input = tail;
+        }
+        Err(Err::Error(e)) => {
+          if !range.contains(&count) {
+            return Err(Err::Error(E::append(input, ErrorKind::Many, e)));
+          } else {
+            return Ok((input, res));
+          }
+        }
+        Err(e) => {
+          return Err(e);
+        }
+      }
+    }
+
+    Ok((input, res))
+  }
+}
+
+/// Applies a parser and accumulates the results using a given
+/// function and initial value.
+/// Fails if the amount of time the embedded parser is run is not
+/// within the specified range.
+///
+/// # Arguments
+/// * `range` Constrains the number of iterations.
+///   * A range without an upper bound `a..` allows the parser to run until it fails.
+///   * A single `usize` value is equivalent to `value..=value`.
+///   * An empty range is invalid.
+/// * `parse` The parser to apply.
+/// * `init` A function returning the initial value.
+/// * `fold` The function that combines a result of `f` with
+///       the current accumulator.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fold;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold(
+///     0..=2,
+///     tag("abc"),
+///     Vec::new,
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+/// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc123"), Ok(("123", vec!["abc"])));
+/// assert_eq!(parser("123123"), Ok(("123123", vec![])));
+/// assert_eq!(parser(""), Ok(("", vec![])));
+/// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+pub fn fold<I, O, E, F, G, H, J, R>(
+  range: J,
+  mut parse: F,
+  mut init: H,
+  mut fold: G,
+) -> impl FnMut(I) -> IResult<I, R, E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, O, E>,
+  G: FnMut(R, O) -> R,
+  H: FnMut() -> R,
+  E: ParseError<I>,
+  J: NomRange<usize>,
+{
+  move |mut input: I| {
+    if range.is_inverted() {
+      return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Fold)));
+    }
+
+    let mut acc = init();
+
+    for count in range.saturating_iter() {
+      let len = input.input_len();
+      match parse.parse(input.clone()) {
+        Ok((tail, value)) => {
+          // infinite loop check: the parser must always consume
+          if tail.input_len() == len {
+            return Err(Err::Error(E::from_error_kind(tail, ErrorKind::Fold)));
+          }
+
+          acc = fold(acc, value);
+          input = tail;
+        }
+        Err(Err::Error(err)) => {
+          if !range.contains(&count) {
+            return Err(Err::Error(E::append(input, ErrorKind::Fold, err)));
+          } else {
+            break;
+          }
+        }
+        Err(e) => return Err(e),
+      }
+    }
+
+    Ok((input, acc))
   }
 }

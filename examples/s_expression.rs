@@ -10,7 +10,7 @@ use nom::{
   character::complete::{alpha1, char, digit1, multispace0, multispace1, one_of},
   combinator::{cut, map, map_res, opt},
   error::{context, VerboseError},
-  multi::many0,
+  multi::many,
   sequence::{delimited, preceded, terminated},
   IResult, Parser,
 };
@@ -174,7 +174,7 @@ where
 /// parser returning a tuple containing the result of each parser in the same order,
 /// and then map over it to transform the output into an `Expr::Application`
 fn parse_application(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
-  let application_inner = map((parse_expr, many0(parse_expr)), |(head, tail)| {
+  let application_inner = map((parse_expr, many(0.., parse_expr)), |(head, tail)| {
     Expr::Application(Box::new(head), tail)
   });
   // finally, we wrap it in an s-expression
@@ -224,7 +224,10 @@ fn parse_quote(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
   // we find the `'` (quote) character, use cut to say that we're unambiguously
   // looking for an s-expression of 0 or more expressions, and then parse them
   map(
-    context("quote", preceded(tag("'"), cut(s_exp(many0(parse_expr))))),
+    context(
+      "quote",
+      preceded(tag("'"), cut(s_exp(many(0.., parse_expr)))),
+    ),
     Expr::Quote,
   )(i)
 }

@@ -5,7 +5,7 @@ use nom::{
   bytes::streaming::{tag, take},
   combinator::{map, map_res},
   error::ErrorKind,
-  multi::many0,
+  multi::many,
   number::streaming::{be_f32, be_u16, be_u32, be_u64},
   Err, IResult, Needed,
 };
@@ -250,7 +250,7 @@ fn brand_name(input: &[u8]) -> IResult<&[u8], &str> {
 fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType<'_>> {
   let (i, name) = brand_name(input)?;
   let (i, version) = take(4_usize)(i)?;
-  let (i, brands) = many0(brand_name)(i)?;
+  let (i, brands) = many(0.., brand_name)(i)?;
 
   let ft = FileType {
     major_brand: name,

@@ -3,7 +3,7 @@
 
 use nom::bytes::streaming::take;
 #[cfg(feature = "alloc")]
-use nom::multi::{length_data, many0};
+use nom::multi::{length_data, many};
 #[cfg(feature = "alloc")]
 use nom::number::streaming::be_u64;
 use nom::{Err, IResult, Needed, Parser};
@@ -27,7 +27,7 @@ fn overflow_incomplete_tuple() {
 #[cfg(feature = "alloc")]
 fn overflow_incomplete_length_bytes() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many0(length_data(be_u64))(i)
+    many(0.., length_data(be_u64))(i)
   }
 
   // Trigger an overflow in length_data
@@ -41,7 +41,7 @@ fn overflow_incomplete_length_bytes() {
 #[cfg(feature = "alloc")]
 fn overflow_incomplete_many0() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many0(length_data(be_u64))(i)
+    many(0.., length_data(be_u64))(i)
   }
 
   // Trigger an overflow in many0
@@ -54,10 +54,8 @@ fn overflow_incomplete_many0() {
 #[test]
 #[cfg(feature = "alloc")]
 fn overflow_incomplete_many1() {
-  use nom::multi::many1;
-
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many1(length_data(be_u64))(i)
+    many(1.., length_data(be_u64))(i)
   }
 
   // Trigger an overflow in many1
@@ -87,10 +85,8 @@ fn overflow_incomplete_many_till() {
 #[test]
 #[cfg(feature = "alloc")]
 fn overflow_incomplete_many_m_n() {
-  use nom::multi::many_m_n;
-
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many_m_n(2, 4, length_data(be_u64))(i)
+    many(2..=4, length_data(be_u64))(i)
   }
 
   // Trigger an overflow in many_m_n
@@ -135,7 +131,7 @@ fn overflow_incomplete_length_count() {
 #[cfg(feature = "alloc")]
 fn overflow_incomplete_length_data() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many0(length_data(be_u64))(i)
+    many(0.., length_data(be_u64))(i)
   }
 
   assert_eq!(

@@ -6,7 +6,7 @@ use std::str;
 use nom::bytes::complete::is_not;
 use nom::character::complete::char;
 use nom::combinator::{map, map_res};
-use nom::multi::fold_many0;
+use nom::multi::fold;
 use nom::sequence::delimited;
 use nom::IResult;
 
@@ -23,7 +23,7 @@ fn atom(_tomb: &mut ()) -> impl for<'a> FnMut(&'a [u8]) -> IResult<&'a [u8], Str
 fn list<'a>(i: &'a [u8], tomb: &mut ()) -> IResult<&'a [u8], String> {
   delimited(
     char('('),
-    fold_many0(atom(tomb), String::new, |acc: String, next: String| {
+    fold(0.., atom(tomb), String::new, |acc: String, next: String| {
       acc + next.as_str()
     }),
     char(')'),
