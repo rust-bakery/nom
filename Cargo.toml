@@ -10,11 +10,11 @@ readme = "README.md"
 documentation = "https://docs.rs/nom"
 keywords = ["parser", "parser-combinators", "parsing", "streaming", "bit"]
 categories = ["parsing"]
-edition = "2018"
+edition = "2021"
 autoexamples = false
 
 # also update in README.md (badge and "Rust version requirements" section)
-rust-version = "1.48"
+rust-version = "1.56"
 
 include = [
   "CHANGELOG.md",
