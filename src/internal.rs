@@ -1,7 +1,7 @@
 //! Basic types to build the parsers
 
 use self::Needed::*;
-use crate::error::{self, ErrorKind};
+use crate::error::{self, ErrorKind, FromExternalError, ParseError};
 use crate::lib::std::fmt;
 use core::num::NonZeroUsize;
 
@@ -252,6 +252,33 @@ pub trait Parser<I, O, E> {
     }
   }
 
+  /// Applies a function returning a `Result` over the result of a parser.
+  fn map_res<G, O2, E2>(self, g: G) -> MapRes<Self, G, O>
+  where
+    G: Fn(O) -> Result<O2, E2>,
+    E: FromExternalError<I, E2>,
+    Self: core::marker::Sized,
+  {
+    MapRes {
+      f: self,
+      g,
+      phantom: core::marker::PhantomData,
+    }
+  }
+
+  /// Applies a function returning an `Option` over the result of a parser.
+  fn map_opt<G, O2>(self, g: G) -> MapOpt<Self, G, O>
+  where
+    G: Fn(O) -> Option<O2>,
+    Self: core::marker::Sized,
+  {
+    MapOpt {
+      f: self,
+      g,
+      phantom: core::marker::PhantomData,
+    }
+  }
+
   /// Creates a second parser from the output of the first one, then apply over the rest of the input
   fn flat_map<G, H, O2>(self, g: G) -> FlatMap<Self, G, O>
   where
@@ -345,6 +372,54 @@ impl<I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> O2> Parser<I, O2, E> for
     match self.f.parse(i) {
       Err(e) => Err(e),
       Ok((i, o)) => Ok((i, (self.g)(o))),
+    }
+  }
+}
+
+/// Implementation of `Parser::map_res`
+pub struct MapRes<F, G, O> {
+  f: F,
+  g: G,
+  phantom: core::marker::PhantomData<O>,
+}
+
+impl<I, O, O2, E, E2, F, G> Parser<I, O2, E> for MapRes<F, G, O>
+where
+  I: Clone,
+  E: FromExternalError<I, E2>,
+  F: Parser<I, O, E>,
+  G: Fn(O) -> Result<O2, E2>,
+{
+  fn parse(&mut self, input: I) -> IResult<I, O2, E> {
+    let i = input.clone();
+    let (input, o1) = self.f.parse(input)?;
+    match (self.g)(o1) {
+      Ok(o2) => Ok((input, o2)),
+      Err(e) => Err(Err::Error(E::from_external_error(i, ErrorKind::MapRes, e))),
+    }
+  }
+}
+
+/// Implementation of `Parser::map_opt`
+pub struct MapOpt<F, G, O> {
+  f: F,
+  g: G,
+  phantom: core::marker::PhantomData<O>,
+}
+
+impl<I, O, O2, E, F, G> Parser<I, O2, E> for MapOpt<F, G, O>
+where
+  I: Clone,
+  E: ParseError<I>,
+  F: Parser<I, O, E>,
+  G: Fn(O) -> Option<O2>,
+{
+  fn parse(&mut self, input: I) -> IResult<I, O2, E> {
+    let i = input.clone();
+    let (input, o1) = self.f.parse(input)?;
+    match (self.g)(o1) {
+      Some(o2) => Ok((input, o2)),
+      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapOpt))),
     }
   }
 }
