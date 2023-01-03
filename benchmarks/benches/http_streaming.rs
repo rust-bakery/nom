@@ -4,7 +4,7 @@
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
-use nom::{IResult, bytes::complete::{tag, take_while1}, character::streaming::{line_ending, char}, multi::many};
+use nom::{IResult, bytes::streaming::{tag, take_while1}, character::streaming::{line_ending, char}, multi::many};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug)]
