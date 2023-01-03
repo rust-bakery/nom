@@ -440,65 +440,21 @@ pub trait UnspecializedInput {}
 /// Methods to take as much input as possible until the provided function returns true for the current element.
 ///
 /// A large part of nom's basic parsers are built using this trait.
-pub trait InputTakeAtPosition: Sized {
+pub trait InputTakeAtPosition: Clone + InputTake + InputLength + Sized {
   /// The current input type is a sequence of that `Item` type.
   ///
   /// Example: `u8` for `&[u8]` or `char` for `&str`
   type Item;
 
-  /// Looks for the first element of the input type for which the condition returns true,
-  /// and returns the input up to this position.
-  ///
-  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-
-  /// Looks for the first element of the input type for which the condition returns true
-  /// and returns the input up to this position.
-  ///
-  /// Fails if the produced slice is empty.
-  ///
-  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
-  fn split_at_position1<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+  /// Returns the position of the first element satisfying the predicate
+  fn position<P>(&self, predicate: P) -> Option<usize>
   where
     P: Fn(Self::Item) -> bool;
 
   /// Looks for the first element of the input type for which the condition returns true,
   /// and returns the input up to this position.
   ///
-  /// *complete version*: If no element is found matching the condition, this will return the whole input
-  fn split_at_position_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-
-  /// Looks for the first element of the input type for which the condition returns true
-  /// and returns the input up to this position.
-  ///
-  /// Fails if the produced slice is empty.
-  ///
-  /// *complete version*: If no element is found matching the condition, this will return the whole input
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-}
-
-impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputTakeAtPosition
-  for T
-{
-  type Item = <T as InputIter>::Item;
-
+  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
@@ -509,6 +465,12 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
     }
   }
 
+  /// Looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position.
+  ///
+  /// Fails if the produced slice is empty.
+  ///
+  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
   fn split_at_position1<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -524,6 +486,10 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
     }
   }
 
+  /// Looks for the first element of the input type for which the condition returns true,
+  /// and returns the input up to this position.
+  ///
+  /// *complete version*: If no element is found matching the condition, this will return the whole input
   fn split_at_position_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -537,6 +503,12 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
     }
   }
 
+  /// Looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position.
+  ///
+  /// Fails if the produced slice is empty.
+  ///
+  /// *complete version*: If no element is found matching the condition, this will return the whole input
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -558,8 +530,28 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
   }
 }
 
+impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputTakeAtPosition
+  for T
+{
+  type Item = <T as InputIter>::Item;
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    InputIter::position(self, predicate)
+  }
+}
+
 impl<'a> InputTakeAtPosition for &'a [u8] {
   type Item = u8;
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.iter().position(|c| predicate(*c))
+  }
 
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
@@ -623,6 +615,13 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
 
 impl<'a> InputTakeAtPosition for &'a str {
   type Item = char;
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.find(predicate)
+  }
 
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
@@ -748,22 +747,6 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
         }
       }
     }
-
-    /*
-    let len = self.len();
-    let blen = t.len();
-    let m = if len < blen { len } else { blen };
-    let reduced = &self[..m];
-    let b = &t[..m];
-
-    if reduced != b {
-      CompareResult::Error
-    } else if m < blen {
-      CompareResult::Incomplete
-    } else {
-      CompareResult::Ok
-    }
-    */
   }
 
   #[inline(always)]
@@ -1078,7 +1061,7 @@ macro_rules! array_impls {
 
         fn position<P>(&self, predicate: P) -> Option<usize>
           where P: Fn(Self::Item) -> bool {
-          (&self[..]).position(predicate)
+          InputIter::position(&&self[..], predicate)
         }
 
         fn slice_index(&self, count: usize) -> Result<usize, Needed> {
