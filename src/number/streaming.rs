@@ -449,7 +449,7 @@ where
     Err(Err::Incomplete(Needed::new(bound - input.input_len())))
   } else {
     let mut res = Uint::default();
-    for (index, byte) in input.iter_indices().take(bound) {
+    for (index, byte) in input.iter_elements().take(bound).enumerate() {
       res = res + (Uint::from(byte) << (8 * index as u8));
     }
 
@@ -1476,7 +1476,7 @@ where
   T: Clone + Offset,
   T: InputIter + InputLength + InputTake + crate::traits::ParseTo<f32> + Compare<&'static str>,
   <T as InputIter>::Item: AsChar,
-  <T as InputIter>::IterElem: Clone,
+  <T as InputIter>::Iter: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: AsBytes,
@@ -1530,7 +1530,7 @@ where
   T: Clone + Offset,
   T: InputIter + InputLength + InputTake + crate::traits::ParseTo<f64> + Compare<&'static str>,
   <T as InputIter>::Item: AsChar,
-  <T as InputIter>::IterElem: Clone,
+  <T as InputIter>::Iter: Clone,
   T: InputTakeAtPosition,
   <T as InputTakeAtPosition>::Item: AsChar,
   T: AsBytes,

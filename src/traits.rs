@@ -1,13 +1,12 @@
 //! Traits input types have to implement to work with nom combinators
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::iter::{Copied, Enumerate};
+use crate::lib::std::iter::Copied;
 use crate::lib::std::ops::{
   Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
 use crate::lib::std::slice::Iter;
 use crate::lib::std::str::from_utf8;
-use crate::lib::std::str::CharIndices;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
 
@@ -290,18 +289,12 @@ pub trait InputIter {
   ///
   /// Example: `u8` for `&[u8]` or `char` for `&str`
   type Item;
-  /// An iterator over the input type, producing the item and its position
-  /// for use with [Slice]. If we're iterating over `&str`, the position
-  /// corresponds to the byte index of the character
-  type Iter: Iterator<Item = (usize, Self::Item)>;
 
   /// An iterator over the input type, producing the item
-  type IterElem: Iterator<Item = Self::Item>;
+  type Iter: Iterator<Item = Self::Item>;
 
-  /// Returns an iterator over the elements and their byte offsets
-  fn iter_indices(&self) -> Self::Iter;
   /// Returns an iterator over the elements
-  fn iter_elements(&self) -> Self::IterElem;
+  fn iter_elements(&self) -> Self::Iter;
   /// Finds the byte position of the element
   fn position<P>(&self, predicate: P) -> Option<usize>
   where
@@ -320,15 +313,10 @@ pub trait InputTake: Sized {
 
 impl<'a> InputIter for &'a [u8] {
   type Item = u8;
-  type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Copied<Iter<'a, u8>>;
+  type Iter = Copied<Iter<'a, u8>>;
 
   #[inline]
-  fn iter_indices(&self) -> Self::Iter {
-    self.iter_elements().enumerate()
-  }
-  #[inline]
-  fn iter_elements(&self) -> Self::IterElem {
+  fn iter_elements(&self) -> Self::Iter {
     self.iter().copied()
   }
   #[inline]
@@ -362,14 +350,10 @@ impl<'a> InputTake for &'a [u8] {
 
 impl<'a> InputIter for &'a str {
   type Item = char;
-  type Iter = CharIndices<'a>;
-  type IterElem = Chars<'a>;
+  type Iter = Chars<'a>;
+
   #[inline]
-  fn iter_indices(&self) -> Self::Iter {
-    self.char_indices()
-  }
-  #[inline]
-  fn iter_elements(&self) -> Self::IterElem {
+  fn iter_elements(&self) -> Self::Iter {
     self.chars()
   }
   fn position<P>(&self, predicate: P) -> Option<usize>
@@ -1032,14 +1016,9 @@ impl<'a, const N: usize> InputLength for &'a [u8; N] {
 
 impl<'a, const N: usize> InputIter for &'a [u8; N] {
   type Item = u8;
-  type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Copied<Iter<'a, u8>>;
+  type Iter = Copied<Iter<'a, u8>>;
 
-  fn iter_indices(&self) -> Self::Iter {
-    (&self[..]).iter_indices()
-  }
-
-  fn iter_elements(&self) -> Self::IterElem {
+  fn iter_elements(&self) -> Self::Iter {
     (&self[..]).iter_elements()
   }
 
