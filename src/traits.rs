@@ -15,6 +15,208 @@ use crate::lib::std::string::String;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 
+/// Parser input types must implement this trait
+pub trait Input: Clone + Sized {
+  /// The current input type is a sequence of that `Item` type.
+  ///
+  /// Example: `u8` for `&[u8]` or `char` for `&str`
+  type Item;
+
+  /// An iterator over the input type, producing the item
+  type Iter: Iterator<Item = Self::Item>;
+
+  /// Calculates the input length, as indicated by its name,
+  /// and the name of the trait itself
+  fn input_len(&self) -> usize;
+
+  /// Returns a slice of `count` bytes. panics if count > length
+  fn take(&self, count: usize) -> Self;
+  /// Split the stream at the `count` byte offset. panics if count > length
+  fn take_split(&self, count: usize) -> (Self, Self);
+
+  /// Returns the byte position of the first element satisfying the predicate
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool;
+
+  /// Returns an iterator over the elements
+  fn iter_elements(&self) -> Self::Iter;
+  /// Get the byte offset from the element's position in the stream
+  fn slice_index(&self, count: usize) -> Result<usize, Needed>;
+
+  /// Looks for the first element of the input type for which the condition returns true,
+  /// and returns the input up to this position.
+  ///
+  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(n) => Ok(self.take_split(n)),
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  /// Looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position.
+  ///
+  /// Fails if the produced slice is empty.
+  ///
+  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
+  fn split_at_position1<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
+      Some(n) => Ok(self.take_split(n)),
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  /// Looks for the first element of the input type for which the condition returns true,
+  /// and returns the input up to this position.
+  ///
+  /// *complete version*: If no element is found matching the condition, this will return the whole input
+  fn split_at_position_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      res => res,
+    }
+  }
+
+  /// Looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position.
+  ///
+  /// Fails if the produced slice is empty.
+  ///
+  /// *complete version*: If no element is found matching the condition, this will return the whole input
+  fn split_at_position1_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(_)) => {
+        if self.input_len() == 0 {
+          Err(Err::Error(E::from_error_kind(self.clone(), e)))
+        } else {
+          Ok(self.take_split(self.input_len()))
+        }
+      }
+      res => res,
+    }
+  }
+}
+
+impl<'a> Input for &'a [u8] {
+  type Item = u8;
+  type Iter = Copied<Iter<'a, u8>>;
+
+  fn input_len(&self) -> usize {
+    self.len()
+  }
+
+  #[inline]
+  fn take(&self, count: usize) -> Self {
+    &self[0..count]
+  }
+  #[inline]
+  fn take_split(&self, count: usize) -> (Self, Self) {
+    let (prefix, suffix) = self.split_at(count);
+    (suffix, prefix)
+  }
+
+  #[inline]
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.iter().position(|b| predicate(*b))
+  }
+
+  #[inline]
+  fn iter_elements(&self) -> Self::Iter {
+    self.iter().copied()
+  }
+
+  #[inline]
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
+    if self.len() >= count {
+      Ok(count)
+    } else {
+      Err(Needed::new(count - self.len()))
+    }
+  }
+}
+
+impl<'a> Input for &'a str {
+  type Item = char;
+  type Iter = Chars<'a>;
+
+  fn input_len(&self) -> usize {
+    self.len()
+  }
+
+  #[inline]
+  fn take(&self, count: usize) -> Self {
+    &self[..count]
+  }
+
+  // return byte index
+  #[inline]
+  fn take_split(&self, count: usize) -> (Self, Self) {
+    let (prefix, suffix) = self.split_at(count);
+    (suffix, prefix)
+  }
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    for (o, c) in self.char_indices() {
+      if predicate(c) {
+        return Some(o);
+      }
+    }
+    None
+  }
+
+  #[inline]
+  fn iter_elements(&self) -> Self::Iter {
+    self.chars()
+  }
+
+  #[inline]
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
+    let mut cnt = 0;
+    for (index, _) in self.char_indices() {
+      if cnt == count {
+        return Ok(index);
+      }
+      cnt += 1;
+    }
+    if cnt == count {
+      return Ok(self.len());
+    }
+    Err(Needed::Unknown)
+  }
+}
+
 /// Abstract method to calculate the input length
 pub trait InputLength {
   /// Calculates the input length, as indicated by its name,
