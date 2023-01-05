@@ -1,17 +1,19 @@
 //! Bit level parsers
 //!
 
+use core::ops::RangeFrom;
+
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::ops::{AddAssign, Div, RangeFrom, Shl, Shr};
-use crate::traits::{InputIter, InputLength, Slice, ToUsize};
+use crate::lib::std::ops::{AddAssign, Div, Shl, Shr};
+use crate::traits::{Input, Slice, ToUsize};
 
 /// Generates a parser taking `count` bits
 pub fn take<I, O, C, E: ParseError<(I, usize)>>(
   count: C,
 ) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8> + Slice<RangeFrom<usize>>,
   C: ToUsize,
   O: From<u8> + AddAssign + Shl<usize, Output = O> + Shr<usize, Output = O>,
 {
@@ -61,7 +63,7 @@ pub fn tag<I, O, C, E: ParseError<(I, usize)>>(
   count: C,
 ) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength + Clone,
+  I: Input<Item = u8> + Clone + Slice<RangeFrom<usize>>,
   C: ToUsize,
   O: From<u8> + AddAssign + Shl<usize, Output = O> + Shr<usize, Output = O> + PartialEq,
 {
@@ -96,7 +98,7 @@ where
 /// ```
 pub fn bool<I, E: ParseError<(I, usize)>>(input: (I, usize)) -> IResult<(I, usize), bool, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8> + Slice<RangeFrom<usize>>,
 {
   let (res, bit): (_, u32) = take(1usize)(input)?;
   Ok((res, bit != 0))

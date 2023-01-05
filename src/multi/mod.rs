@@ -11,8 +11,9 @@ use crate::lib::std::num::NonZeroUsize;
 use crate::lib::std::ops::Bound;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
+use crate::Input;
 use crate::{
-  traits::{InputLength, InputTake, ToUsize},
+  traits::{InputLength, ToUsize},
   NomRange,
 };
 
@@ -922,7 +923,7 @@ where
 /// ```
 pub fn length_data<I, N, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, I, E>
 where
-  I: InputLength + InputTake,
+  I: Input,
   N: ToUsize,
   F: Parser<I, N, E>,
   E: ParseError<I>,
@@ -967,7 +968,7 @@ where
 /// ```
 pub fn length_value<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  I: Clone + InputLength + InputTake,
+  I: Clone + Input,
   N: ToUsize,
   F: Parser<I, N, E>,
   G: Parser<I, O, E>,
