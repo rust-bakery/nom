@@ -1,13 +1,12 @@
 //! Traits input types have to implement to work with nom combinators
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::iter::{Copied, Enumerate};
+use crate::lib::std::iter::Copied;
 use crate::lib::std::ops::{
   Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
 use crate::lib::std::slice::Iter;
 use crate::lib::std::str::from_utf8;
-use crate::lib::std::str::CharIndices;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
 
@@ -122,31 +121,18 @@ impl AsBytes for [u8] {
   }
 }
 
-macro_rules! as_bytes_array_impls {
-  ($($N:expr)+) => {
-    $(
-      impl<'a> AsBytes for &'a [u8; $N] {
-        #[inline(always)]
-        fn as_bytes(&self) -> &[u8] {
-          *self
-        }
-      }
-
-      impl AsBytes for [u8; $N] {
-        #[inline(always)]
-        fn as_bytes(&self) -> &[u8] {
-          self
-        }
-      }
-    )+
-  };
+impl<'a, const N: usize> AsBytes for &'a [u8; N] {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    *self
+  }
 }
 
-as_bytes_array_impls! {
-     0  1  2  3  4  5  6  7  8  9
-    10 11 12 13 14 15 16 17 18 19
-    20 21 22 23 24 25 26 27 28 29
-    30 31 32
+impl<const N: usize> AsBytes for [u8; N] {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    self
+  }
 }
 
 /// Transforms common types to a char for basic token parsing
@@ -303,18 +289,12 @@ pub trait InputIter {
   ///
   /// Example: `u8` for `&[u8]` or `char` for `&str`
   type Item;
-  /// An iterator over the input type, producing the item and its position
-  /// for use with [Slice]. If we're iterating over `&str`, the position
-  /// corresponds to the byte index of the character
-  type Iter: Iterator<Item = (usize, Self::Item)>;
 
   /// An iterator over the input type, producing the item
-  type IterElem: Iterator<Item = Self::Item>;
+  type Iter: Iterator<Item = Self::Item>;
 
-  /// Returns an iterator over the elements and their byte offsets
-  fn iter_indices(&self) -> Self::Iter;
   /// Returns an iterator over the elements
-  fn iter_elements(&self) -> Self::IterElem;
+  fn iter_elements(&self) -> Self::Iter;
   /// Finds the byte position of the element
   fn position<P>(&self, predicate: P) -> Option<usize>
   where
@@ -333,15 +313,10 @@ pub trait InputTake: Sized {
 
 impl<'a> InputIter for &'a [u8] {
   type Item = u8;
-  type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Copied<Iter<'a, u8>>;
+  type Iter = Copied<Iter<'a, u8>>;
 
   #[inline]
-  fn iter_indices(&self) -> Self::Iter {
-    self.iter_elements().enumerate()
-  }
-  #[inline]
-  fn iter_elements(&self) -> Self::IterElem {
+  fn iter_elements(&self) -> Self::Iter {
     self.iter().copied()
   }
   #[inline]
@@ -375,14 +350,10 @@ impl<'a> InputTake for &'a [u8] {
 
 impl<'a> InputIter for &'a str {
   type Item = char;
-  type Iter = CharIndices<'a>;
-  type IterElem = Chars<'a>;
+  type Iter = Chars<'a>;
+
   #[inline]
-  fn iter_indices(&self) -> Self::Iter {
-    self.char_indices()
-  }
-  #[inline]
-  fn iter_elements(&self) -> Self::IterElem {
+  fn iter_elements(&self) -> Self::Iter {
     self.chars()
   }
   fn position<P>(&self, predicate: P) -> Option<usize>
@@ -440,65 +411,21 @@ pub trait UnspecializedInput {}
 /// Methods to take as much input as possible until the provided function returns true for the current element.
 ///
 /// A large part of nom's basic parsers are built using this trait.
-pub trait InputTakeAtPosition: Sized {
+pub trait InputTakeAtPosition: Clone + InputTake + InputLength + Sized {
   /// The current input type is a sequence of that `Item` type.
   ///
   /// Example: `u8` for `&[u8]` or `char` for `&str`
   type Item;
 
-  /// Looks for the first element of the input type for which the condition returns true,
-  /// and returns the input up to this position.
-  ///
-  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-
-  /// Looks for the first element of the input type for which the condition returns true
-  /// and returns the input up to this position.
-  ///
-  /// Fails if the produced slice is empty.
-  ///
-  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
-  fn split_at_position1<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
+  /// Returns the position of the first element satisfying the predicate
+  fn position<P>(&self, predicate: P) -> Option<usize>
   where
     P: Fn(Self::Item) -> bool;
 
   /// Looks for the first element of the input type for which the condition returns true,
   /// and returns the input up to this position.
   ///
-  /// *complete version*: If no element is found matching the condition, this will return the whole input
-  fn split_at_position_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-
-  /// Looks for the first element of the input type for which the condition returns true
-  /// and returns the input up to this position.
-  ///
-  /// Fails if the produced slice is empty.
-  ///
-  /// *complete version*: If no element is found matching the condition, this will return the whole input
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-}
-
-impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputTakeAtPosition
-  for T
-{
-  type Item = <T as InputIter>::Item;
-
+  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
@@ -509,6 +436,12 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
     }
   }
 
+  /// Looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position.
+  ///
+  /// Fails if the produced slice is empty.
+  ///
+  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
   fn split_at_position1<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -524,6 +457,10 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
     }
   }
 
+  /// Looks for the first element of the input type for which the condition returns true,
+  /// and returns the input up to this position.
+  ///
+  /// *complete version*: If no element is found matching the condition, this will return the whole input
   fn split_at_position_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -537,6 +474,12 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
     }
   }
 
+  /// Looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position.
+  ///
+  /// Fails if the produced slice is empty.
+  ///
+  /// *complete version*: If no element is found matching the condition, this will return the whole input
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -558,8 +501,28 @@ impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputT
   }
 }
 
+impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputTakeAtPosition
+  for T
+{
+  type Item = <T as InputIter>::Item;
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    InputIter::position(self, predicate)
+  }
+}
+
 impl<'a> InputTakeAtPosition for &'a [u8] {
   type Item = u8;
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.iter().position(|c| predicate(*c))
+  }
 
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
@@ -623,6 +586,13 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
 
 impl<'a> InputTakeAtPosition for &'a str {
   type Item = char;
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.find(predicate)
+  }
 
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
@@ -748,22 +718,6 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
         }
       }
     }
-
-    /*
-    let len = self.len();
-    let blen = t.len();
-    let m = if len < blen { len } else { blen };
-    let reduced = &self[..m];
-    let b = &t[..m];
-
-    if reduced != b {
-      CompareResult::Error
-    } else if m < blen {
-      CompareResult::Incomplete
-    } else {
-      CompareResult::Ok
-    }
-    */
   }
 
   #[inline(always)]
@@ -1046,90 +1000,74 @@ macro_rules! slice_ranges_impl {
 slice_ranges_impl! {str}
 slice_ranges_impl! {[T]}
 
-macro_rules! array_impls {
-  ($($N:expr)+) => {
-    $(
-      impl InputLength for [u8; $N] {
-        #[inline]
-        fn input_len(&self) -> usize {
-          self.len()
-        }
-      }
-
-      impl<'a> InputLength for &'a [u8; $N] {
-        #[inline]
-        fn input_len(&self) -> usize {
-          self.len()
-        }
-      }
-
-      impl<'a> InputIter for &'a [u8; $N] {
-        type Item = u8;
-        type Iter = Enumerate<Self::IterElem>;
-        type IterElem = Copied<Iter<'a, u8>>;
-
-        fn iter_indices(&self) -> Self::Iter {
-          (&self[..]).iter_indices()
-        }
-
-        fn iter_elements(&self) -> Self::IterElem {
-          (&self[..]).iter_elements()
-        }
-
-        fn position<P>(&self, predicate: P) -> Option<usize>
-          where P: Fn(Self::Item) -> bool {
-          (&self[..]).position(predicate)
-        }
-
-        fn slice_index(&self, count: usize) -> Result<usize, Needed> {
-          (&self[..]).slice_index(count)
-        }
-      }
-
-      impl<'a> Compare<[u8; $N]> for &'a [u8] {
-        #[inline(always)]
-        fn compare(&self, t: [u8; $N]) -> CompareResult {
-          self.compare(&t[..])
-        }
-
-        #[inline(always)]
-        fn compare_no_case(&self, t: [u8;$N]) -> CompareResult {
-          self.compare_no_case(&t[..])
-        }
-      }
-
-      impl<'a,'b> Compare<&'b [u8; $N]> for &'a [u8] {
-        #[inline(always)]
-        fn compare(&self, t: &'b [u8; $N]) -> CompareResult {
-          self.compare(&t[..])
-        }
-
-        #[inline(always)]
-        fn compare_no_case(&self, t: &'b [u8;$N]) -> CompareResult {
-          self.compare_no_case(&t[..])
-        }
-      }
-
-      impl FindToken<u8> for [u8; $N] {
-        fn find_token(&self, token: u8) -> bool {
-          memchr::memchr(token, &self[..]).is_some()
-        }
-      }
-
-      impl<'a> FindToken<&'a u8> for [u8; $N] {
-        fn find_token(&self, token: &u8) -> bool {
-          self.find_token(*token)
-        }
-      }
-    )+
-  };
+impl<const N: usize> InputLength for [u8; N] {
+  #[inline]
+  fn input_len(&self) -> usize {
+    self.len()
+  }
 }
 
-array_impls! {
-     0  1  2  3  4  5  6  7  8  9
-    10 11 12 13 14 15 16 17 18 19
-    20 21 22 23 24 25 26 27 28 29
-    30 31 32
+impl<'a, const N: usize> InputLength for &'a [u8; N] {
+  #[inline]
+  fn input_len(&self) -> usize {
+    self.len()
+  }
+}
+
+impl<'a, const N: usize> InputIter for &'a [u8; N] {
+  type Item = u8;
+  type Iter = Copied<Iter<'a, u8>>;
+
+  fn iter_elements(&self) -> Self::Iter {
+    (&self[..]).iter_elements()
+  }
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    InputIter::position(&&self[..], predicate)
+  }
+
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
+    (&self[..]).slice_index(count)
+  }
+}
+
+impl<'a, const N: usize> Compare<[u8; N]> for &'a [u8] {
+  #[inline(always)]
+  fn compare(&self, t: [u8; N]) -> CompareResult {
+    self.compare(&t[..])
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: [u8; N]) -> CompareResult {
+    self.compare_no_case(&t[..])
+  }
+}
+
+impl<'a, 'b, const N: usize> Compare<&'b [u8; N]> for &'a [u8] {
+  #[inline(always)]
+  fn compare(&self, t: &'b [u8; N]) -> CompareResult {
+    self.compare(&t[..])
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b [u8; N]) -> CompareResult {
+    self.compare_no_case(&t[..])
+  }
+}
+
+impl<const N: usize> FindToken<u8> for [u8; N] {
+  fn find_token(&self, token: u8) -> bool {
+    memchr::memchr(token, &self[..]).is_some()
+  }
+}
+
+impl<'a, const N: usize> FindToken<&'a u8> for [u8; N] {
+  fn find_token(&self, token: &u8) -> bool {
+    self.find_token(*token)
+  }
 }
 
 /// Abstracts something which can extend an `Extend`.

@@ -311,13 +311,10 @@ where
   T: InputIter + InputLength + Slice<RangeFrom<usize>>,
   <T as InputIter>::Item: AsChar,
 {
-  let mut it = input.iter_indices();
+  let mut it = input.iter_elements();
   match it.next() {
     None => Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof))),
-    Some((_, c)) => match it.next() {
-      None => Ok((input.slice(input.input_len()..), c.as_char())),
-      Some((idx, _)) => Ok((input.slice(idx..), c.as_char())),
-    },
+    Some(c) => Ok((input.slice(c.len()..), c.as_char())),
   }
 }
 
@@ -744,7 +741,8 @@ macro_rules! ints {
 
                 let mut value: $t = 0;
                 if sign {
-                    for (pos, c) in i.iter_indices() {
+                    let mut pos = 0;
+                    for c in i.iter_elements() {
                         match c.as_char().to_digit(10) {
                             None => {
                                 if pos == 0 {
@@ -755,12 +753,16 @@ macro_rules! ints {
                             },
                             Some(d) => match value.checked_mul(10).and_then(|v| v.checked_add(d as $t)) {
                                 None => return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit))),
-                                Some(v) => value = v,
+                                Some(v) => {
+                                  pos += c.len();
+                                  value = v;
+                                },
                             }
                         }
                     }
                 } else {
-                    for (pos, c) in i.iter_indices() {
+                  let mut pos = 0;
+                    for c in i.iter_elements() {
                         match c.as_char().to_digit(10) {
                             None => {
                                 if pos == 0 {
@@ -771,7 +773,10 @@ macro_rules! ints {
                             },
                             Some(d) => match value.checked_mul(10).and_then(|v| v.checked_sub(d as $t)) {
                                 None => return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit))),
-                                Some(v) => value = v,
+                                Some(v) => {
+                                  pos += c.len();
+                                  value = v;
+                                },
                             }
                         }
                     }
@@ -804,7 +809,8 @@ macro_rules! uints {
                 }
 
                 let mut value: $t = 0;
-                for (pos, c) in i.iter_indices() {
+                let mut pos = 0;
+                for c in i.iter_elements() {
                     match c.as_char().to_digit(10) {
                         None => {
                             if pos == 0 {
@@ -815,7 +821,10 @@ macro_rules! uints {
                         },
                         Some(d) => match value.checked_mul(10).and_then(|v| v.checked_add(d as $t)) {
                             None => return Err(Err::Error(E::from_error_kind(i, ErrorKind::Digit))),
-                            Some(v) => value = v,
+                            Some(v) => {
+                              pos += c.len();
+                              value = v;
+                            },
                         }
                     }
                 }
