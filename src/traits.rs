@@ -29,10 +29,12 @@ pub trait Input: Clone + Sized {
   /// and the name of the trait itself
   fn input_len(&self) -> usize;
 
-  /// Returns a slice of `count` bytes. panics if count > length
-  fn take(&self, count: usize) -> Self;
-  /// Split the stream at the `count` byte offset. panics if count > length
-  fn take_split(&self, count: usize) -> (Self, Self);
+  /// Returns a slice of `index` bytes. panics if index > length
+  fn take(&self, index: usize) -> Self;
+  /// Returns a slice starting at `index` bytes. panics if index > length
+  fn take_from(&self, index: usize) -> Self;
+  /// Split the stream at the `index` byte offset. panics if index > length
+  fn take_split(&self, index: usize) -> (Self, Self);
 
   /// Returns the byte position of the first element satisfying the predicate
   fn position<P>(&self, predicate: P) -> Option<usize>
@@ -132,12 +134,16 @@ impl<'a> Input for &'a [u8] {
   }
 
   #[inline]
-  fn take(&self, count: usize) -> Self {
-    &self[0..count]
+  fn take(&self, index: usize) -> Self {
+    &self[0..index]
+  }
+
+  fn take_from(&self, index: usize) -> Self {
+    &self[index..]
   }
   #[inline]
-  fn take_split(&self, count: usize) -> (Self, Self) {
-    let (prefix, suffix) = self.split_at(count);
+  fn take_split(&self, index: usize) -> (Self, Self) {
+    let (prefix, suffix) = self.split_at(index);
     (suffix, prefix)
   }
 
@@ -232,14 +238,19 @@ impl<'a> Input for &'a str {
   }
 
   #[inline]
-  fn take(&self, count: usize) -> Self {
-    &self[..count]
+  fn take(&self, index: usize) -> Self {
+    &self[..index]
+  }
+
+  #[inline]
+  fn take_from(&self, index: usize) -> Self {
+    &self[index..]
   }
 
   // return byte index
   #[inline]
-  fn take_split(&self, count: usize) -> (Self, Self) {
-    let (prefix, suffix) = self.split_at(count);
+  fn take_split(&self, index: usize) -> (Self, Self) {
+    let (prefix, suffix) = self.split_at(index);
     (suffix, prefix)
   }
 
