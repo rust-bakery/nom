@@ -6,8 +6,8 @@ pub mod streaming;
 
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed, Parser};
-use crate::lib::std::ops::RangeFrom;
-use crate::traits::{ErrorConvert, Slice};
+use crate::traits::ErrorConvert;
+use crate::Input;
 
 /// Converts a byte-level input to a bit-level input, for consumption by a parser that uses bits.
 ///
@@ -40,7 +40,7 @@ pub fn bits<I, O, E1, E2, P>(mut parser: P) -> impl FnMut(I) -> IResult<I, O, E2
 where
   E1: ParseError<(I, usize)> + ErrorConvert<E2>,
   E2: ParseError<I>,
-  I: Slice<RangeFrom<usize>>,
+  I: Input,
   P: Parser<(I, usize), O, E1>,
 {
   move |input: I| match parser.parse((input, 0)) {
@@ -49,7 +49,7 @@ where
       // The parser functions might already slice away all fully read bytes.
       // That's why `offset / 8` isn't necessarily needed at all times.
       let remaining_bytes_index = offset / 8 + if offset % 8 == 0 { 0 } else { 1 };
-      Ok((rest.slice(remaining_bytes_index..), result))
+      Ok((rest.take_from(remaining_bytes_index), result))
     }
     Err(Err::Incomplete(n)) => Err(Err::Incomplete(n.map(|u| u.get() / 8 + 1))),
     Err(Err::Error(e)) => Err(Err::Error(e.convert())),
@@ -85,14 +85,14 @@ pub fn bytes<I, O, E1, E2, P>(mut parser: P) -> impl FnMut((I, usize)) -> IResul
 where
   E1: ParseError<I> + ErrorConvert<E2>,
   E2: ParseError<(I, usize)>,
-  I: Slice<RangeFrom<usize>> + Clone,
+  I: Input + Clone,
   P: Parser<I, O, E1>,
 {
   move |(input, offset): (I, usize)| {
     let inner = if offset % 8 != 0 {
-      input.slice((1 + offset / 8)..)
+      input.take_from(1 + offset / 8)
     } else {
-      input.slice((offset / 8)..)
+      input.take_from(offset / 8)
     };
     let i = (input, offset);
     match parser.parse(inner) {

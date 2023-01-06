@@ -866,55 +866,6 @@ impl<'a, R: FromStr> ParseTo<R> for &'a str {
   }
 }
 
-/// Slicing operations using ranges.
-///
-/// This trait is loosely based on
-/// `Index`, but can actually return
-/// something else than a `&[T]` or `&str`
-pub trait Slice<R> {
-  /// Slices self according to the range argument
-  fn slice(&self, range: R) -> Self;
-}
-
-macro_rules! impl_fn_slice {
-  ( $ty:ty ) => {
-    fn slice(&self, range: $ty) -> Self {
-      &self[range]
-    }
-  };
-}
-
-macro_rules! slice_range_impl {
-  ( [ $for_type:ident ], $ty:ty ) => {
-    impl<'a, $for_type> Slice<$ty> for &'a [$for_type] {
-      impl_fn_slice!($ty);
-    }
-  };
-  ( $for_type:ty, $ty:ty ) => {
-    impl<'a> Slice<$ty> for &'a $for_type {
-      impl_fn_slice!($ty);
-    }
-  };
-}
-
-macro_rules! slice_ranges_impl {
-  ( [ $for_type:ident ] ) => {
-    slice_range_impl! {[$for_type], Range<usize>}
-    slice_range_impl! {[$for_type], RangeTo<usize>}
-    slice_range_impl! {[$for_type], RangeFrom<usize>}
-    slice_range_impl! {[$for_type], RangeFull}
-  };
-  ( $for_type:ty ) => {
-    slice_range_impl! {$for_type, Range<usize>}
-    slice_range_impl! {$for_type, RangeTo<usize>}
-    slice_range_impl! {$for_type, RangeFrom<usize>}
-    slice_range_impl! {$for_type, RangeFull}
-  };
-}
-
-slice_ranges_impl! {str}
-slice_ranges_impl! {[T]}
-
 impl<const N: usize> InputLength for [u8; N] {
   #[inline]
   fn input_len(&self) -> usize {

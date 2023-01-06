@@ -3,11 +3,8 @@
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Parser};
-use crate::lib::std::ops::RangeFrom;
 use crate::lib::std::result::Result::*;
-use crate::traits::{
-  Compare, CompareResult, FindSubstring, FindToken, InputLength, Slice, ToUsize,
-};
+use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputLength, ToUsize};
 use crate::Input;
 
 /// Recognizes a pattern
@@ -240,7 +237,7 @@ pub fn take_while_m_n<F, I, Error: ParseError<I>>(
   cond: F,
 ) -> impl Fn(I) -> IResult<I, I, Error>
 where
-  I: Input + Slice<RangeFrom<usize>>,
+  I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
   move |i: I| {
@@ -286,7 +283,7 @@ where
             ))),
           }
         } else if len >= m && len <= n {
-          let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
+          let res: IResult<_, _, Error> = Ok((input.take_from(len), input));
           res
         } else {
           let e = ErrorKind::TakeWhileMN;
@@ -492,7 +489,7 @@ pub fn escaped<'a, I: 'a, Error, F, G, O1, O2>(
   mut escapable: G,
 ) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  I: Clone + crate::traits::Offset + Input + Slice<RangeFrom<usize>>,
+  I: Clone + crate::traits::Offset + Input,
   <I as Input>::Item: crate::traits::AsChar,
   F: Parser<I, O1, Error>,
   G: Parser<I, O2, Error>,
@@ -511,7 +508,7 @@ where
           // return if we consumed everything or if the normal parser
           // does not consume anything
           if i2.input_len() == 0 {
-            return Ok((input.slice(input.input_len()..), input));
+            return Ok(input.take_split(input.input_len()));
           } else if i2.input_len() == current_len {
             let index = input.offset(&i2);
             return Ok(input.take_split(index));
@@ -529,10 +526,10 @@ where
                 ErrorKind::Escaped,
               )));
             } else {
-              match escapable.parse(i.slice(next..)) {
+              match escapable.parse(i.take_from(next)) {
                 Ok((i2, _)) => {
                   if i2.input_len() == 0 {
-                    return Ok((input.slice(input.input_len()..), input));
+                    return Ok(input.take_split(input.input_len()));
                   } else {
                     i = i2;
                   }
@@ -557,7 +554,7 @@ where
       }
     }
 
-    Ok((input.slice(input.input_len()..), input))
+    Ok(input.take_split(input.input_len()))
   }
 }
 
@@ -600,7 +597,7 @@ pub fn escaped_transform<I, Error, F, G, O1, O2, ExtendItem, Output>(
   mut transform: G,
 ) -> impl FnMut(I) -> IResult<I, Output, Error>
 where
-  I: Clone + crate::traits::Offset + Input + Slice<RangeFrom<usize>>,
+  I: Clone + crate::traits::Offset + Input,
   I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
@@ -619,12 +616,12 @@ where
 
     while index < i.input_len() {
       let current_len = i.input_len();
-      let remainder = i.slice(index..);
+      let remainder = i.take_from(index);
       match normal.parse(remainder.clone()) {
         Ok((i2, o)) => {
           o.extend_into(&mut res);
           if i2.input_len() == 0 {
-            return Ok((i.slice(i.input_len()..), res));
+            return Ok((i.take_from(i.input_len()), res));
           } else if i2.input_len() == current_len {
             return Ok((remainder, res));
           } else {
@@ -643,11 +640,11 @@ where
                 ErrorKind::EscapedTransform,
               )));
             } else {
-              match transform.parse(i.slice(next..)) {
+              match transform.parse(i.take_from(next)) {
                 Ok((i2, o)) => {
                   o.extend_into(&mut res);
                   if i2.input_len() == 0 {
-                    return Ok((i.slice(i.input_len()..), res));
+                    return Ok((i.take_from(i.input_len()), res));
                   } else {
                     index = input.offset(&i2);
                   }
@@ -668,7 +665,7 @@ where
         Err(e) => return Err(e),
       }
     }
-    Ok((input.slice(index..), res))
+    Ok((input.take_from(index), res))
   }
 }
 

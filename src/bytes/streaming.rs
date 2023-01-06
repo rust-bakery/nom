@@ -3,11 +3,8 @@
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
-use crate::lib::std::ops::RangeFrom;
 use crate::lib::std::result::Result::*;
-use crate::traits::{
-  Compare, CompareResult, FindSubstring, FindToken, InputLength, Slice, ToUsize,
-};
+use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputLength, ToUsize};
 use crate::Input;
 
 /// Recognizes a pattern.
@@ -508,7 +505,7 @@ pub fn escaped<I, Error, F, G, O1, O2>(
   mut escapable: G,
 ) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  I: Input + Clone + crate::traits::Offset + Slice<RangeFrom<usize>>,
+  I: Input + Clone + crate::traits::Offset,
   <I as Input>::Item: crate::traits::AsChar,
   F: Parser<I, O1, Error>,
   G: Parser<I, O2, Error>,
@@ -540,7 +537,7 @@ where
             if next >= i.input_len() {
               return Err(Err::Incomplete(Needed::new(1)));
             } else {
-              match escapable.parse(i.slice(next..)) {
+              match escapable.parse(i.take_from(next)) {
                 Ok((i2, _)) => {
                   if i2.input_len() == 0 {
                     return Err(Err::Incomplete(Needed::Unknown));
@@ -604,7 +601,7 @@ pub fn escaped_transform<I, Error, F, G, O1, O2, ExtendItem, Output>(
   mut transform: G,
 ) -> impl FnMut(I) -> IResult<I, Output, Error>
 where
-  I: Clone + crate::traits::Offset + Input + Slice<RangeFrom<usize>>,
+  I: Clone + crate::traits::Offset + Input,
   I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
@@ -623,7 +620,7 @@ where
 
     while index < i.input_len() {
       let current_len = i.input_len();
-      let remainder = i.slice(index..);
+      let remainder = i.take_from(index);
       match normal.parse(remainder.clone()) {
         Ok((i2, o)) => {
           o.extend_into(&mut res);
@@ -644,7 +641,7 @@ where
             if next >= input_len {
               return Err(Err::Incomplete(Needed::Unknown));
             } else {
-              match transform.parse(i.slice(next..)) {
+              match transform.parse(i.take_from(next)) {
                 Ok((i2, o)) => {
                   o.extend_into(&mut res);
                   if i2.input_len() == 0 {

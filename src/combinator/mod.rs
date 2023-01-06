@@ -14,7 +14,7 @@ use crate::lib::std::fmt::Debug;
 use crate::lib::std::mem::transmute;
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
 use crate::traits::{AsChar, Input, InputLength, ParseTo};
-use crate::traits::{Compare, CompareResult, Offset, Slice};
+use crate::traits::{Compare, CompareResult, Offset};
 
 #[cfg(test)]
 mod tests;
@@ -30,10 +30,9 @@ mod tests;
 #[inline]
 pub fn rest<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<RangeFrom<usize>>,
-  T: InputLength,
+  T: Input,
 {
-  Ok((input.slice(input.input_len()..), input))
+  Ok(input.take_split(input.input_len()))
 }
 
 /// Return the length of the remaining input.
@@ -503,7 +502,7 @@ where
 /// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
 /// # }
 /// ```
-pub fn recognize<I: Clone + Offset + Slice<RangeTo<usize>>, O, E: ParseError<I>, F>(
+pub fn recognize<I: Clone + Offset + Input, O, E: ParseError<I>, F>(
   mut parser: F,
 ) -> impl FnMut(I) -> IResult<I, I, E>
 where
@@ -514,7 +513,7 @@ where
     match parser.parse(i) {
       Ok((i, _)) => {
         let index = input.offset(&i);
-        Ok((i, input.slice(..index)))
+        Ok((i, input.take(index)))
       }
       Err(e) => Err(e),
     }
@@ -560,7 +559,7 @@ where
 /// ```
 pub fn consumed<I, O, F, E>(mut parser: F) -> impl FnMut(I) -> IResult<I, (I, O), E>
 where
-  I: Clone + Offset + Slice<RangeTo<usize>>,
+  I: Clone + Offset + Input,
   E: ParseError<I>,
   F: Parser<I, O, E>,
 {
@@ -569,7 +568,7 @@ where
     match parser.parse(i) {
       Ok((remaining, result)) => {
         let index = input.offset(&remaining);
-        let consumed = input.slice(..index);
+        let consumed = input.take(index);
         Ok((remaining, (consumed, result)))
       }
       Err(e) => Err(e),

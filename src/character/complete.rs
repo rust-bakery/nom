@@ -7,8 +7,7 @@ use crate::combinator::opt;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult};
-use crate::lib::std::ops::{Range, RangeFrom};
-use crate::traits::{AsChar, FindToken, Input, InputLength, Slice};
+use crate::traits::{AsChar, FindToken, Input, InputLength};
 use crate::traits::{Compare, CompareResult};
 
 /// Recognizes one character.
@@ -29,14 +28,14 @@ use crate::traits::{Compare, CompareResult};
 /// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + Input,
+  I: Input,
   <I as Input>::Item: AsChar,
 {
   move |i: I| match (i).iter_elements().next().map(|t| {
     let b = t.as_char() == c;
     (&c, b)
   }) {
-    Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
+    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
     _ => Err(Err::Error(Error::from_char(i, c))),
   }
 }
@@ -58,7 +57,7 @@ where
 /// ```
 pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + Input,
+  I: Input,
   <I as Input>::Item: AsChar,
   F: Fn(char) -> bool,
 {
@@ -67,7 +66,7 @@ where
     let b = cond(c);
     (c, b)
   }) {
-    Some((c, true)) => Ok((i.slice(c.len()..), c)),
+    Some((c, true)) => Ok((i.take_from(c.len()), c)),
     _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Satisfy))),
   }
 }
@@ -86,12 +85,12 @@ where
 /// ```
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + Input,
+  I: Input,
   <I as Input>::Item: AsChar,
   T: FindToken<<I as Input>::Item>,
 {
   move |i: I| match (i).iter_elements().next().map(|c| (c, list.find_token(c))) {
-    Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
+    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
     _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::OneOf))),
   }
 }
@@ -110,12 +109,12 @@ where
 /// ```
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + Input,
+  I: Input,
   <I as Input>::Item: AsChar,
   T: FindToken<<I as Input>::Item>,
 {
   move |i: I| match (i).iter_elements().next().map(|c| (c, !list.find_token(c))) {
-    Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
+    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
     _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::NoneOf))),
   }
 }
@@ -138,7 +137,6 @@ where
 /// ```
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>>,
   T: Input,
   T: Compare<&'static str>,
 {
@@ -173,7 +171,6 @@ where
 /// ```
 pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<RangeFrom<usize>>,
   T: Input,
   T: Compare<&'static str>,
   <T as Input>::Item: AsChar,
@@ -184,10 +181,10 @@ where
   }) {
     None => Ok(input.take_split(input.input_len())),
     Some(index) => {
-      let mut it = input.slice(index..).iter_elements();
+      let mut it = input.take_from(index).iter_elements();
       let nth = it.next().unwrap().as_char();
       if nth == '\r' {
-        let sliced = input.slice(index..);
+        let sliced = input.take_from(index);
         let comp = sliced.compare("\r\n");
         match comp {
           //FIXME: calculate the right index
@@ -253,7 +250,7 @@ where
 /// ```
 pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
-  I: Input + Slice<RangeFrom<usize>>,
+  I: Input,
   <I as Input>::Item: AsChar,
 {
   char('\n')(input)
@@ -277,7 +274,7 @@ where
 /// ```
 pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
-  I: Input + Slice<RangeFrom<usize>>,
+  I: Input,
   <I as Input>::Item: AsChar,
 {
   char('\t')(input)
@@ -300,13 +297,13 @@ where
 /// ```
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
-  T: Input + Slice<RangeFrom<usize>>,
+  T: Input,
   <T as Input>::Item: AsChar,
 {
   let mut it = input.iter_elements();
   match it.next() {
     None => Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof))),
-    Some(c) => Ok((input.slice(c.len()..), c.as_char())),
+    Some(c) => Ok((input.take_from(c.len()), c.as_char())),
   }
 }
 
@@ -721,7 +718,7 @@ macro_rules! ints {
         /// *Complete version*: can parse until the end of input.
         pub fn $t<T, E: ParseError<T>>(input: T) -> IResult<T, $t, E>
             where
-            T: Input + Slice<RangeFrom<usize>> + Clone,
+            T: Input  + Clone,
             <T as Input>::Item: AsChar,
             T: for <'a> Compare<&'a[u8]>,
             {
@@ -740,7 +737,7 @@ macro_rules! ints {
                                 if pos == 0 {
                                     return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit)));
                                 } else {
-                                    return Ok((i.slice(pos..), value));
+                                    return Ok((i.take_from(pos), value));
                                 }
                             },
                             Some(d) => match value.checked_mul(10).and_then(|v| v.checked_add(d as $t)) {
@@ -760,7 +757,7 @@ macro_rules! ints {
                                 if pos == 0 {
                                     return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit)));
                                 } else {
-                                    return Ok((i.slice(pos..), value));
+                                    return Ok((i.take_from(pos), value));
                                 }
                             },
                             Some(d) => match value.checked_mul(10).and_then(|v| v.checked_sub(d as $t)) {
@@ -774,7 +771,7 @@ macro_rules! ints {
                     }
                 }
 
-                Ok((i.slice(i.input_len()..), value))
+                Ok((i.take_from(i.input_len()), value))
             }
         )+
     }
@@ -791,7 +788,7 @@ macro_rules! uints {
         /// *Complete version*: can parse until the end of input.
         pub fn $t<T, E: ParseError<T>>(input: T) -> IResult<T, $t, E>
             where
-            T: Input + Slice<RangeFrom<usize>>,
+            T: Input ,
             <T as Input>::Item: AsChar,
             {
                 let i = input;
@@ -808,7 +805,7 @@ macro_rules! uints {
                             if pos == 0 {
                                 return Err(Err::Error(E::from_error_kind(i, ErrorKind::Digit)));
                             } else {
-                                return Ok((i.slice(pos..), value));
+                                return Ok((i.take_from(pos), value));
                             }
                         },
                         Some(d) => match value.checked_mul(10).and_then(|v| v.checked_add(d as $t)) {
@@ -821,7 +818,7 @@ macro_rules! uints {
                     }
                 }
 
-                Ok((i.slice(i.input_len()..), value))
+                Ok((i.take_from(i.input_len()), value))
             }
         )+
     }
