@@ -1080,7 +1080,7 @@ where
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many<I, O, E, F, G>(range: G, mut parse: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, O, E>,
   E: ParseError<I>,
   G: NomRange<usize>,

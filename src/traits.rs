@@ -1,6 +1,8 @@
 //! Traits input types have to implement to work with nom combinators
+
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
+use crate::lib::std::fmt::Debug;
 use crate::lib::std::iter::Copied;
 use crate::lib::std::ops::{
   Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
@@ -28,6 +30,10 @@ pub trait Input: Clone + Sized {
   /// Calculates the input length, as indicated by its name,
   /// and the name of the trait itself
   fn input_len(&self) -> usize;
+
+  /// Indicates if the input type is streaming, ie if we can expect
+  /// more data to come later.
+  fn is_streaming() -> bool;
 
   /// Returns a slice of `index` bytes. panics if index > length
   fn take(&self, index: usize) -> Self;
@@ -131,6 +137,10 @@ impl<'a> Input for &'a [u8] {
 
   fn input_len(&self) -> usize {
     self.len()
+  }
+
+  fn is_streaming() -> bool {
+    false
   }
 
   #[inline]
@@ -237,6 +247,9 @@ impl<'a> Input for &'a str {
     self.len()
   }
 
+  fn is_streaming() -> bool {
+    false
+  }
   #[inline]
   fn take(&self, index: usize) -> Self {
     &self[..index]
@@ -354,6 +367,153 @@ impl<'a> Input for &'a str {
         }
       }
     }
+  }
+}
+
+/// Streaming input type
+pub struct Streaming<T> {
+  inner: T,
+}
+
+impl<T> Streaming<T> {
+  /// creates a wrapped streaming type
+  pub fn new(inner: T) -> Self {
+    Streaming { inner }
+  }
+
+  /// converts to inner type
+  pub fn into_inner(self) -> T {
+    self.inner
+  }
+}
+
+impl<T: Input + Clone> Input for Streaming<T> {
+  type Item = <T as Input>::Item;
+
+  type Iter = <T as Input>::Iter;
+
+  fn input_len(&self) -> usize {
+    self.inner.input_len()
+  }
+
+  fn is_streaming() -> bool {
+    true
+  }
+
+  fn take(&self, index: usize) -> Self {
+    Streaming {
+      inner: self.inner.take(index),
+    }
+  }
+
+  fn take_from(&self, index: usize) -> Self {
+    Streaming {
+      inner: self.inner.take_from(index),
+    }
+  }
+
+  fn take_split(&self, index: usize) -> (Self, Self) {
+    let (i, o) = self.inner.take_split(index);
+    (Streaming { inner: i }, Streaming { inner: o })
+  }
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.inner.position(predicate)
+  }
+
+  fn iter_elements(&self) -> Self::Iter {
+    self.inner.iter_elements()
+  }
+
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
+    self.inner.slice_index(count)
+  }
+
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(n) => Ok(self.take_split(n)),
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  fn split_at_position1<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
+      Some(n) => Ok(self.take_split(n)),
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      res => res,
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(_)) => {
+        if self.input_len() == 0 {
+          Err(Err::Error(E::from_error_kind(self.clone(), e)))
+        } else {
+          Ok(self.take_split(self.input_len()))
+        }
+      }
+      res => res,
+    }
+  }
+}
+
+impl<T: Clone> Clone for Streaming<T> {
+  fn clone(&self) -> Self {
+    Self {
+      inner: self.inner.clone(),
+    }
+  }
+}
+
+impl<T: Debug> Debug for Streaming<T> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    f.debug_struct("Streaming")
+      .field("inner", &self.inner)
+      .finish()
+  }
+}
+
+impl<T: Compare<Compared>, Compared> Compare<Compared> for Streaming<T> {
+  fn compare(&self, t: Compared) -> CompareResult {
+    self.inner.compare(t)
+  }
+
+  fn compare_no_case(&self, t: Compared) -> CompareResult {
+    self.inner.compare_no_case(t)
   }
 }
 

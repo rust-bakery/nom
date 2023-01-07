@@ -2,6 +2,11 @@
 //!
 //! Functions recognizing specific characters
 
+use crate::{
+  error::{ErrorKind, ParseError},
+  AsChar, Compare, CompareResult, Err, IResult, Input, Needed,
+};
+
 #[cfg(test)]
 mod tests;
 
@@ -113,4 +118,83 @@ pub fn is_space(chr: u8) -> bool {
 #[inline]
 pub fn is_newline(chr: u8) -> bool {
   chr == b'\n'
+}
+
+/// Recognizes one character.
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
+/// # use nom::character::streaming::char;
+/// fn parser(i: &str) -> IResult<&str, char> {
+///     char('a')(i)
+/// }
+/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
+/// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
+/// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```
+pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
+where
+  I: Input,
+  <I as Input>::Item: AsChar,
+{
+  move |i: I| match (i).iter_elements().next().map(|t| {
+    let b = t.as_char() == c;
+    (&c, b)
+  }) {
+    None => {
+      if I::is_streaming() {
+        Err(Err::Incomplete(Needed::new(c.len() - i.input_len())))
+      } else {
+        Err(Err::Error(Error::from_char(i, c)))
+      }
+    }
+    Some((_, false)) => Err(Err::Error(Error::from_char(i, c))),
+    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
+  }
+}
+
+/// Recognizes an end of line (both '\n' and '\r\n').
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::line_ending;
+/// assert_eq!(line_ending::<_, (_, ErrorKind)>("\r\nc"), Ok(("c", "\r\n")));
+/// assert_eq!(line_ending::<_, (_, ErrorKind)>("ab\r\nc"), Err(Err::Error(("ab\r\nc", ErrorKind::CrLf))));
+/// assert_eq!(line_ending::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```
+pub fn line_ending<I, E: ParseError<I>>(input: I) -> IResult<I, I, E>
+where
+  I: Input,
+  I: Compare<&'static str>,
+{
+  match input.compare("\n") {
+    CompareResult::Ok => Ok(input.take_split(1)),
+    CompareResult::Incomplete => {
+      if I::is_streaming() {
+        Err(Err::Incomplete(Needed::new(1)))
+      } else {
+        Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf)))
+      }
+    }
+    CompareResult::Error => {
+      match input.compare("\r\n") {
+        //FIXME: is this the right index?
+        CompareResult::Ok => Ok(input.take_split(2)),
+        CompareResult::Incomplete => {
+          if I::is_streaming() {
+            Err(Err::Incomplete(Needed::new(2)))
+          } else {
+            Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf)))
+          }
+        }
+        CompareResult::Error => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
+      }
+    }
+  }
 }
