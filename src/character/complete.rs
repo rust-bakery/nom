@@ -7,10 +7,7 @@ use crate::combinator::opt;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult};
-use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
-use crate::traits::{
-  AsChar, FindToken, InputIter, InputLength, InputTake, InputTakeAtPosition, Slice,
-};
+use crate::traits::{AsChar, FindToken, Input, InputLength};
 use crate::traits::{Compare, CompareResult};
 
 /// Recognizes one character.
@@ -31,14 +28,14 @@ use crate::traits::{Compare, CompareResult};
 /// ```
 pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
-  <I as InputIter>::Item: AsChar,
+  I: Input,
+  <I as Input>::Item: AsChar,
 {
   move |i: I| match (i).iter_elements().next().map(|t| {
     let b = t.as_char() == c;
     (&c, b)
   }) {
-    Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
+    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
     _ => Err(Err::Error(Error::from_char(i, c))),
   }
 }
@@ -60,8 +57,8 @@ where
 /// ```
 pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
-  <I as InputIter>::Item: AsChar,
+  I: Input,
+  <I as Input>::Item: AsChar,
   F: Fn(char) -> bool,
 {
   move |i: I| match (i).iter_elements().next().map(|t| {
@@ -69,7 +66,7 @@ where
     let b = cond(c);
     (c, b)
   }) {
-    Some((c, true)) => Ok((i.slice(c.len()..), c)),
+    Some((c, true)) => Ok((i.take_from(c.len()), c)),
     _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Satisfy))),
   }
 }
@@ -88,12 +85,12 @@ where
 /// ```
 pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
-  <I as InputIter>::Item: AsChar + Copy,
-  T: FindToken<<I as InputIter>::Item>,
+  I: Input,
+  <I as Input>::Item: AsChar,
+  T: FindToken<<I as Input>::Item>,
 {
   move |i: I| match (i).iter_elements().next().map(|c| (c, list.find_token(c))) {
-    Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
+    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
     _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::OneOf))),
   }
 }
@@ -112,12 +109,12 @@ where
 /// ```
 pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
-  <I as InputIter>::Item: AsChar + Copy,
-  T: FindToken<<I as InputIter>::Item>,
+  I: Input,
+  <I as Input>::Item: AsChar,
+  T: FindToken<<I as Input>::Item>,
 {
   move |i: I| match (i).iter_elements().next().map(|c| (c, !list.find_token(c))) {
-    Some((c, true)) => Ok((i.slice(c.len()..), c.as_char())),
+    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
     _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::NoneOf))),
   }
 }
@@ -140,13 +137,11 @@ where
 /// ```
 pub fn crlf<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>>,
-  T: InputIter,
+  T: Input,
   T: Compare<&'static str>,
 {
   match input.compare("\r\n") {
-    //FIXME: is this the right index?
-    CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
+    CompareResult::Ok => Ok(input.take_split(2)),
     _ => {
       let e: ErrorKind = ErrorKind::CrLf;
       Err(Err::Error(E::from_error_kind(input, e)))
@@ -176,33 +171,31 @@ where
 /// ```
 pub fn not_line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength,
+  T: Input,
   T: Compare<&'static str>,
-  <T as InputIter>::Item: AsChar,
-  <T as InputIter>::Item: AsChar,
+  <T as Input>::Item: AsChar,
 {
   match input.position(|item| {
     let c = item.as_char();
     c == '\r' || c == '\n'
   }) {
-    None => Ok((input.slice(input.input_len()..), input)),
+    None => Ok(input.take_split(input.input_len())),
     Some(index) => {
-      let mut it = input.slice(index..).iter_elements();
+      let mut it = input.take_from(index).iter_elements();
       let nth = it.next().unwrap().as_char();
       if nth == '\r' {
-        let sliced = input.slice(index..);
+        let sliced = input.take_from(index);
         let comp = sliced.compare("\r\n");
         match comp {
           //FIXME: calculate the right index
-          CompareResult::Ok => Ok((input.slice(index..), input.slice(..index))),
+          CompareResult::Ok => Ok(input.take_split(index)),
           _ => {
             let e: ErrorKind = ErrorKind::Tag;
             Err(Err::Error(E::from_error_kind(input, e)))
           }
         }
       } else {
-        Ok((input.slice(index..), input.slice(..index)))
+        Ok(input.take_split(index))
       }
     }
   }
@@ -226,20 +219,16 @@ where
 /// ```
 pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  T: InputIter + InputLength,
+  T: Input + InputLength,
   T: Compare<&'static str>,
 {
   match input.compare("\n") {
-    CompareResult::Ok => Ok((input.slice(1..), input.slice(0..1))),
+    CompareResult::Ok => Ok(input.take_split(1)),
     CompareResult::Incomplete => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
-    CompareResult::Error => {
-      match input.compare("\r\n") {
-        //FIXME: is this the right index?
-        CompareResult::Ok => Ok((input.slice(2..), input.slice(0..2))),
-        _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
-      }
-    }
+    CompareResult::Error => match input.compare("\r\n") {
+      CompareResult::Ok => Ok(input.take_split(2)),
+      _ => Err(Err::Error(E::from_error_kind(input, ErrorKind::CrLf))),
+    },
   }
 }
 
@@ -261,8 +250,8 @@ where
 /// ```
 pub fn newline<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
-  <I as InputIter>::Item: AsChar,
+  I: Input,
+  <I as Input>::Item: AsChar,
 {
   char('\n')(input)
 }
@@ -285,8 +274,8 @@ where
 /// ```
 pub fn tab<I, Error: ParseError<I>>(input: I) -> IResult<I, char, Error>
 where
-  I: Slice<RangeFrom<usize>> + InputIter,
-  <I as InputIter>::Item: AsChar,
+  I: Input,
+  <I as Input>::Item: AsChar,
 {
   char('\t')(input)
 }
@@ -308,13 +297,13 @@ where
 /// ```
 pub fn anychar<T, E: ParseError<T>>(input: T) -> IResult<T, char, E>
 where
-  T: InputIter + InputLength + Slice<RangeFrom<usize>>,
-  <T as InputIter>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   let mut it = input.iter_elements();
   match it.next() {
     None => Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof))),
-    Some(c) => Ok((input.slice(c.len()..), c.as_char())),
+    Some(c) => Ok((input.take_from(c.len()), c.as_char())),
   }
 }
 
@@ -337,8 +326,8 @@ where
 /// ```
 pub fn alpha0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position_complete(|item| !item.is_alpha())
 }
@@ -362,8 +351,8 @@ where
 /// ```
 pub fn alpha1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position1_complete(|item| !item.is_alpha(), ErrorKind::Alpha)
 }
@@ -388,8 +377,8 @@ where
 /// ```
 pub fn digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position_complete(|item| !item.is_dec_digit())
 }
@@ -431,8 +420,8 @@ where
 /// [`map_res`]: crate::combinator::map_res
 pub fn digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position1_complete(|item| !item.is_dec_digit(), ErrorKind::Digit)
 }
@@ -455,8 +444,8 @@ where
 /// ```
 pub fn hex_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position_complete(|item| !item.is_hex_digit())
 }
@@ -479,8 +468,8 @@ where
 /// ```
 pub fn hex_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position1_complete(|item| !item.is_hex_digit(), ErrorKind::HexDigit)
 }
@@ -504,8 +493,8 @@ where
 /// ```
 pub fn oct_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position_complete(|item| !item.is_oct_digit())
 }
@@ -529,8 +518,8 @@ where
 /// ```
 pub fn oct_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position1_complete(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
@@ -554,8 +543,8 @@ where
 /// ```
 pub fn alphanumeric0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position_complete(|item| !item.is_alphanum())
 }
@@ -579,8 +568,8 @@ where
 /// ```
 pub fn alphanumeric1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position1_complete(|item| !item.is_alphanum(), ErrorKind::AlphaNumeric)
 }
@@ -604,8 +593,8 @@ where
 /// ```
 pub fn space0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar + Clone,
+  T: Input,
+  <T as Input>::Item: AsChar + Clone,
 {
   input.split_at_position_complete(|item| {
     let c = item.as_char();
@@ -632,8 +621,8 @@ where
 /// ```
 pub fn space1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar + Clone,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position1_complete(
     |item| {
@@ -663,8 +652,8 @@ where
 /// ```
 pub fn multispace0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar + Clone,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position_complete(|item| {
     let c = item.as_char();
@@ -691,8 +680,8 @@ where
 /// ```
 pub fn multispace1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar + Clone,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   input.split_at_position1_complete(
     |item| {
@@ -705,7 +694,7 @@ where
 
 pub(crate) fn sign<T, E: ParseError<T>>(input: T) -> IResult<T, bool, E>
 where
-  T: Clone + InputTake,
+  T: Clone + Input,
   T: for<'a> Compare<&'a [u8]>,
 {
   use crate::bytes::complete::tag;
@@ -729,8 +718,8 @@ macro_rules! ints {
         /// *Complete version*: can parse until the end of input.
         pub fn $t<T, E: ParseError<T>>(input: T) -> IResult<T, $t, E>
             where
-            T: InputIter + Slice<RangeFrom<usize>> + InputLength + InputTake + Clone,
-            <T as InputIter>::Item: AsChar,
+            T: Input  + Clone,
+            <T as Input>::Item: AsChar,
             T: for <'a> Compare<&'a[u8]>,
             {
                 let (i, sign) = sign(input.clone())?;
@@ -748,7 +737,7 @@ macro_rules! ints {
                                 if pos == 0 {
                                     return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit)));
                                 } else {
-                                    return Ok((i.slice(pos..), value));
+                                    return Ok((i.take_from(pos), value));
                                 }
                             },
                             Some(d) => match value.checked_mul(10).and_then(|v| v.checked_add(d as $t)) {
@@ -768,7 +757,7 @@ macro_rules! ints {
                                 if pos == 0 {
                                     return Err(Err::Error(E::from_error_kind(input, ErrorKind::Digit)));
                                 } else {
-                                    return Ok((i.slice(pos..), value));
+                                    return Ok((i.take_from(pos), value));
                                 }
                             },
                             Some(d) => match value.checked_mul(10).and_then(|v| v.checked_sub(d as $t)) {
@@ -782,7 +771,7 @@ macro_rules! ints {
                     }
                 }
 
-                Ok((i.slice(i.input_len()..), value))
+                Ok((i.take_from(i.input_len()), value))
             }
         )+
     }
@@ -799,8 +788,8 @@ macro_rules! uints {
         /// *Complete version*: can parse until the end of input.
         pub fn $t<T, E: ParseError<T>>(input: T) -> IResult<T, $t, E>
             where
-            T: InputIter + Slice<RangeFrom<usize>> + InputLength,
-            <T as InputIter>::Item: AsChar,
+            T: Input ,
+            <T as Input>::Item: AsChar,
             {
                 let i = input;
 
@@ -816,7 +805,7 @@ macro_rules! uints {
                             if pos == 0 {
                                 return Err(Err::Error(E::from_error_kind(i, ErrorKind::Digit)));
                             } else {
-                                return Ok((i.slice(pos..), value));
+                                return Ok((i.take_from(pos), value));
                             }
                         },
                         Some(d) => match value.checked_mul(10).and_then(|v| v.checked_add(d as $t)) {
@@ -829,7 +818,7 @@ macro_rules! uints {
                     }
                 }
 
-                Ok((i.slice(i.input_len()..), value))
+                Ok((i.take_from(i.input_len()), value))
             }
         )+
     }

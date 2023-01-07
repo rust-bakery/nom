@@ -7,11 +7,9 @@ use crate::combinator::{cut, map, opt, recognize};
 use crate::error::ParseError;
 use crate::error::{make_error, ErrorKind};
 use crate::internal::*;
-use crate::lib::std::ops::{Add, Range, RangeFrom, RangeTo, Shl};
+use crate::lib::std::ops::{Add, Shl};
 use crate::sequence::pair;
-use crate::traits::{
-  AsBytes, AsChar, Compare, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, Slice,
-};
+use crate::traits::{AsBytes, AsChar, Compare, Input, Offset};
 
 /// Recognizes an unsigned 1 byte integer.
 ///
@@ -31,7 +29,7 @@ use crate::traits::{
 #[inline]
 pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_uint(input, 1)
 }
@@ -54,7 +52,7 @@ where
 #[inline]
 pub fn be_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_uint(input, 2)
 }
@@ -77,7 +75,7 @@ where
 #[inline]
 pub fn be_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_uint(input, 3)
 }
@@ -100,7 +98,7 @@ where
 #[inline]
 pub fn be_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_uint(input, 4)
 }
@@ -123,7 +121,7 @@ where
 #[inline]
 pub fn be_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_uint(input, 8)
 }
@@ -146,7 +144,7 @@ where
 #[inline]
 pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_uint(input, 16)
 }
@@ -154,7 +152,7 @@ where
 #[inline]
 fn be_uint<I, Uint, E: ParseError<I>>(input: I, bound: usize) -> IResult<I, Uint, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
   Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
 {
   if input.input_len() < bound {
@@ -173,7 +171,7 @@ where
       }
     }
 
-    Ok((input.slice(bound..), res))
+    Ok((input.take_from(bound), res))
   }
 }
 
@@ -195,7 +193,7 @@ where
 #[inline]
 pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_u8.map(|x| x as i8).parse(input)
 }
@@ -218,7 +216,7 @@ where
 #[inline]
 pub fn be_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_u16.map(|x| x as i16).parse(input)
 }
@@ -241,7 +239,7 @@ where
 #[inline]
 pub fn be_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   // Same as the unsigned version but we need to sign-extend manually here
   be_u24
@@ -273,7 +271,7 @@ where
 #[inline]
 pub fn be_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_u32.map(|x| x as i32).parse(input)
 }
@@ -296,7 +294,7 @@ where
 #[inline]
 pub fn be_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_u64.map(|x| x as i64).parse(input)
 }
@@ -319,7 +317,7 @@ where
 #[inline]
 pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_u128.map(|x| x as i128).parse(input)
 }
@@ -342,7 +340,7 @@ where
 #[inline]
 pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_uint(input, 1)
 }
@@ -365,7 +363,7 @@ where
 #[inline]
 pub fn le_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_uint(input, 2)
 }
@@ -388,7 +386,7 @@ where
 #[inline]
 pub fn le_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_uint(input, 3)
 }
@@ -411,7 +409,7 @@ where
 #[inline]
 pub fn le_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_uint(input, 4)
 }
@@ -434,7 +432,7 @@ where
 #[inline]
 pub fn le_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_uint(input, 8)
 }
@@ -457,7 +455,7 @@ where
 #[inline]
 pub fn le_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_uint(input, 16)
 }
@@ -465,7 +463,7 @@ where
 #[inline]
 fn le_uint<I, Uint, E: ParseError<I>>(input: I, bound: usize) -> IResult<I, Uint, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
   Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
 {
   if input.input_len() < bound {
@@ -476,7 +474,7 @@ where
       res = res + (Uint::from(byte) << (8 * index as u8));
     }
 
-    Ok((input.slice(bound..), res))
+    Ok((input.take_from(bound), res))
   }
 }
 
@@ -498,7 +496,7 @@ where
 #[inline]
 pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   be_u8.map(|x| x as i8).parse(input)
 }
@@ -521,7 +519,7 @@ where
 #[inline]
 pub fn le_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_u16.map(|x| x as i16).parse(input)
 }
@@ -544,7 +542,7 @@ where
 #[inline]
 pub fn le_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   // Same as the unsigned version but we need to sign-extend manually here
   le_u24
@@ -576,7 +574,7 @@ where
 #[inline]
 pub fn le_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_u32.map(|x| x as i32).parse(input)
 }
@@ -599,7 +597,7 @@ where
 #[inline]
 pub fn le_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_u64.map(|x| x as i64).parse(input)
 }
@@ -622,7 +620,7 @@ where
 #[inline]
 pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   le_u128.map(|x| x as i128).parse(input)
 }
@@ -646,7 +644,7 @@ where
 #[inline]
 pub fn u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   let bound: usize = 1;
   if input.input_len() < bound {
@@ -654,7 +652,7 @@ where
   } else {
     let res = input.iter_elements().next().unwrap();
 
-    Ok((input.slice(bound..), res))
+    Ok((input.take_from(bound), res))
   }
 }
 
@@ -686,7 +684,7 @@ where
 #[inline]
 pub fn u16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u16, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_u16,
@@ -725,7 +723,7 @@ where
 #[inline]
 pub fn u24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_u24,
@@ -764,7 +762,7 @@ where
 #[inline]
 pub fn u32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_u32,
@@ -803,7 +801,7 @@ where
 #[inline]
 pub fn u64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_u64,
@@ -842,7 +840,7 @@ where
 #[inline]
 pub fn u128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u128, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_u128,
@@ -873,7 +871,7 @@ where
 #[inline]
 pub fn i8<I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   u8.map(|x| x as i8).parse(i)
 }
@@ -905,7 +903,7 @@ where
 #[inline]
 pub fn i16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i16, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_i16,
@@ -944,7 +942,7 @@ where
 #[inline]
 pub fn i24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_i24,
@@ -983,7 +981,7 @@ where
 #[inline]
 pub fn i32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_i32,
@@ -1022,7 +1020,7 @@ where
 #[inline]
 pub fn i64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_i64,
@@ -1061,7 +1059,7 @@ where
 #[inline]
 pub fn i128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i128, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_i128,
@@ -1091,7 +1089,7 @@ where
 #[inline]
 pub fn be_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match be_u32(input) {
     Err(e) => Err(e),
@@ -1117,7 +1115,7 @@ where
 #[inline]
 pub fn be_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match be_u64(input) {
     Err(e) => Err(e),
@@ -1143,7 +1141,7 @@ where
 #[inline]
 pub fn le_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match le_u32(input) {
     Err(e) => Err(e),
@@ -1169,7 +1167,7 @@ where
 #[inline]
 pub fn le_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match le_u64(input) {
     Err(e) => Err(e),
@@ -1204,7 +1202,7 @@ where
 #[inline]
 pub fn f32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f32, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_f32,
@@ -1243,7 +1241,7 @@ where
 #[inline]
 pub fn f64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f64, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
 {
   match endian {
     crate::number::Endianness::Big => be_f64,
@@ -1274,11 +1272,9 @@ where
 #[inline]
 pub fn hex_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
 where
-  I: InputTakeAtPosition,
-  I: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-  <I as InputTakeAtPosition>::Item: AsChar,
+  I: Input,
+  <I as Input>::Item: AsChar,
   I: AsBytes,
-  I: InputLength,
 {
   let e: ErrorKind = ErrorKind::IsA;
   let (i, o) = input.split_at_position1_complete(
@@ -1290,10 +1286,10 @@ where
   )?;
 
   // Do not parse more than 8 characters for a u32
-  let (parsed, remaining) = if o.input_len() <= 8 {
-    (o, i)
+  let (remaining, parsed) = if o.input_len() <= 8 {
+    (i, o)
   } else {
-    (input.slice(..8), input.slice(8..))
+    input.take_split(8)
   };
 
   let res = parsed
@@ -1331,12 +1327,9 @@ where
 #[rustfmt::skip]
 pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter,
-  <T as InputIter>::Item: AsChar,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
 {
   recognize((
     opt(alt((char('+'), char('-')))),
@@ -1356,12 +1349,9 @@ where
 #[doc(hidden)]
 pub fn recognize_float_or_exceptions<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputTake + Compare<&'static str>,
-  <T as InputIter>::Item: AsChar,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input + Compare<&'static str>,
+  <T as Input>::Item: AsChar,
 {
   alt((
     |i: T| {
@@ -1395,18 +1385,15 @@ where
 ///
 pub fn recognize_float_parts<T, E: ParseError<T>>(input: T) -> IResult<T, (bool, T, T, i32), E>
 where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset,
-  T: InputIter + InputTake,
-  <T as InputIter>::Item: AsChar + Copy,
-  T: InputTakeAtPosition + InputLength,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
   T: for<'a> Compare<&'a [u8]>,
   T: AsBytes,
 {
   let (i, sign) = sign(input.clone())?;
 
-  //let (i, zeroes) = take_while(|c: <T as InputTakeAtPosition>::Item| c.as_char() == '0')(i)?;
+  //let (i, zeroes) = take_while(|c: <T as Input>::Item| c.as_char() == '0')(i)?;
   let (i, zeroes) = match i.as_bytes().iter().position(|c| *c != b'0') {
     Some(index) => i.take_split(index),
     None => i.take_split(i.input_len()),
@@ -1423,13 +1410,13 @@ where
 
   if integer.input_len() == 0 && zeroes.input_len() > 0 {
     // keep the last zero if integer is empty
-    integer = zeroes.slice(zeroes.input_len() - 1..);
+    integer = zeroes.take_from(zeroes.input_len() - 1);
   }
 
   let (i, opt_dot) = opt(tag(&b"."[..]))(i)?;
   let (i, fraction) = if opt_dot.is_none() {
     let i2 = i.clone();
-    (i2, i.slice(..0))
+    (i2, i.take(0))
   } else {
     // match number, trim right zeroes
     let mut zero_count = 0usize;
@@ -1458,7 +1445,7 @@ where
       position - zero_count
     };
 
-    (i.slice(position..), i.slice(..index))
+    (i.take_from(position), i.take(index))
   };
 
   if integer.input_len() == 0 && fraction.input_len() == 0 {
@@ -1467,8 +1454,8 @@ where
 
   let i2 = i.clone();
   let (i, e) = match i.as_bytes().iter().next() {
-    Some(b'e') => (i.slice(1..), true),
-    Some(b'E') => (i.slice(1..), true),
+    Some(b'e') => (i.take_from(1), true),
+    Some(b'E') => (i.take_from(1), true),
     _ => (i, false),
   };
 
@@ -1502,13 +1489,10 @@ use crate::traits::ParseTo;
 /// ```
 pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset + ParseTo<f32> + Compare<&'static str>,
-  T: InputIter + InputLength + InputTake,
-  <T as InputIter>::Item: AsChar + Copy,
-  <T as InputIter>::Iter: Clone,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
+  <T as Input>::Iter: Clone,
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
 {
@@ -1555,13 +1539,10 @@ where
 /// ```
 pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
-  T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Slice<Range<usize>>,
   T: Clone + Offset + ParseTo<f64> + Compare<&'static str>,
-  T: InputIter + InputLength + InputTake,
-  <T as InputIter>::Item: AsChar + Copy,
-  <T as InputIter>::Iter: Clone,
-  T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar,
+  T: Input,
+  <T as Input>::Item: AsChar,
+  <T as Input>::Iter: Clone,
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
 {
