@@ -259,11 +259,11 @@ fn issue_1459_clamp_capacity() {
 
 #[test]
 fn issue_1617_count_parser_returning_zero_size() {
-    use nom::{combinator::map, bytes::complete::tag, error::Error, multi::count};
+  use nom::{bytes::complete::tag, combinator::map, error::Error, multi::count};
 
-    // previously, `count()` panicked if the parser had type `O = ()`
-    let parser = map(tag::<_, _, Error<&str>>("abc"), |_| ());
-    // shouldn't panic
-    let result = count(parser, 3)("abcabcabcdef").expect("parsing should succeed");
-    assert_eq!(result, ("def", vec![(), (), ()]));
+  // previously, `count()` panicked if the parser had type `O = ()`
+  let parser = map(tag::<_, _, Error<&str>>("abc"), |_| ());
+  // shouldn't panic
+  let result = count(parser, 3)("abcabcabcdef").expect("parsing should succeed");
+  assert_eq!(result, ("def", vec![(), (), ()]));
 }
