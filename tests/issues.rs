@@ -242,6 +242,7 @@ fn issue_x_looser_fill_bounds() {
   );
 }
 
+#[test]
 fn issue_1459_clamp_capacity() {
   use nom::character::complete::char;
 
@@ -254,4 +255,15 @@ fn issue_1459_clamp_capacity() {
   use nom::multi::count;
   let mut parser = count::<_, _, (), _>(char('a'), usize::MAX);
   assert_eq!(parser("a"), Err(nom::Err::Error(())));
+}
+
+#[test]
+fn issue_1617_count_parser_returning_zero_size() {
+    use nom::{combinator::map, bytes::complete::tag, error::Error, multi::count};
+
+    // previously, `count()` panicked if the parser had type `O = ()`
+    let parser = map(tag::<_, _, Error<&str>>("abc"), |_| ());
+    // shouldn't panic
+    let result = count(parser, 3)("abcabcabcdef").expect("parsing should succeed");
+    assert_eq!(result, ("def", vec![(), (), ()]));
 }
