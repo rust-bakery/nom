@@ -484,19 +484,19 @@ mod test {
     };
   }
 
-  /*#[test]
+  #[test]
   #[cfg(feature = "alloc")]
   fn recognize_is_a() {
     let a = "aabbab";
     let b = "ababcd";
 
     fn f(i: &str) -> IResult<&str, &str> {
-      recognize(many(1.., alt((tag("a"), tag("b")))))(i)
+      recognize::<_, Vec<&str>, _, _>(many(1.., alt((tag("a"), tag("b")))))(i)
     }
 
     assert_eq!(f(a), Ok((&a[6..], a)));
     assert_eq!(f(b), Ok((&b[4..], &b[..4])));
-  }*/
+  }
 
   #[test]
   fn utf8_indexing() {
