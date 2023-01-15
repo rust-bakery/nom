@@ -1051,7 +1051,7 @@ where
   }
 }
 
-/// Repeats the embedded parser and returns the results in a `Vec`.
+/// Repeats the embedded parser and collects the results in a type implementing `Extend + Default`.
 /// Fails if the amount of time the embedded parser is run is not
 /// within the specified range.
 /// # Arguments
@@ -1075,6 +1075,32 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
+/// ```
+///
+/// This is not limited to `Vec`:
+///
+/// /// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::many;
+/// use nom::bytes::complete::{tag, take_while};
+/// use nom::sequence::{separated, terminated};
+/// use nom::character::is_alphabetic;
+///
+/// use std::collectins::HashMap;
+///
+/// fn key_value(s: &str) -> IResult<&str, HashMap<&str, &str>> {
+///   many(0.., terminated(
+///     separated(
+///       take_while(is_alphabetic),
+///       tag("="),
+///       take_while(is_alphabetic)
+///     ),
+///     tag(";")
+///   ))(s)
+/// }
+///
+/// assert_eq!(parser("a=b;c=d;"), Ok(("", HashMap::from([("a", "b"), ("c", "d")])));
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
