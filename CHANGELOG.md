@@ -6,6 +6,16 @@
 
 ### Changed
 
+## 7.1.3 - 2023-01-15
+
+### Thanks
+
+- @Shadow53
+
+### Fixed
+
+- panic in `many` and `count` combinators when the output type is zero sized
+
 ## 7.1.2 - 2023-01-01
 
 ### Thanks
@@ -1475,7 +1485,8 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased](https://github.com/Geal/nom/compare/7.1.2...HEAD)
+* [unreleased](https://github.com/Geal/nom/compare/7.1.3...HEAD)
+* [7.1.2](https://github.com/Geal/nom/compare/7.1.2...7.1.3)
 * [7.1.2](https://github.com/Geal/nom/compare/7.1.1...7.1.2)
 * [7.1.1](https://github.com/Geal/nom/compare/7.1.0...7.1.1)
 * [7.1.0](https://github.com/Geal/nom/compare/7.0.0...7.1.0)
