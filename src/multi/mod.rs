@@ -8,8 +8,6 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::num::NonZeroUsize;
 #[cfg(feature = "alloc")]
-use crate::lib::std::ops::Bound;
-#[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 use crate::Input;
 use crate::{
@@ -1091,19 +1089,12 @@ where
   E: ParseError<I>,
   G: NomRange<usize>,
 {
-  /*let capacity = match range.bounds() {
-    (Bound::Included(start), _) => start,
-    (Bound::Excluded(start), _) => start + 1,
-    _ => 4,
-  };*/
-
   move |mut input: I| {
     if range.is_inverted() {
       return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many)));
     }
 
-    //let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>();
-    let mut res = Collection::default(); //crate::lib::std::vec::Vec::with_capacity(capacity.min(max_initial_capacity));
+    let mut res = Collection::default();
 
     for count in range.bounded_iter() {
       let len = input.input_len();
