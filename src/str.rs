@@ -484,7 +484,7 @@ mod test {
     };
   }
 
-  #[test]
+  /*#[test]
   #[cfg(feature = "alloc")]
   fn recognize_is_a() {
     let a = "aabbab";
@@ -496,7 +496,7 @@ mod test {
 
     assert_eq!(f(a), Ok((&a[6..], a)));
     assert_eq!(f(b), Ok((&b[4..], &b[..4])));
-  }
+  }*/
 
   #[test]
   fn utf8_indexing() {

@@ -1078,26 +1078,30 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many<I, O, E, F, G>(range: G, mut parse: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn many<I, O, E, Collection, F, G>(
+  range: G,
+  mut parse: F,
+) -> impl FnMut(I) -> IResult<I, Collection, E>
 where
   I: Clone + InputLength,
   F: Parser<I, O, E>,
+  Collection: Extend<O> + Default,
   E: ParseError<I>,
   G: NomRange<usize>,
 {
-  let capacity = match range.bounds() {
+  /*let capacity = match range.bounds() {
     (Bound::Included(start), _) => start,
     (Bound::Excluded(start), _) => start + 1,
     _ => 4,
-  };
+  };*/
 
   move |mut input: I| {
     if range.is_inverted() {
       return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many)));
     }
 
-    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>();
-    let mut res = crate::lib::std::vec::Vec::with_capacity(capacity.min(max_initial_capacity));
+    //let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>();
+    let mut res = Collection::default(); //crate::lib::std::vec::Vec::with_capacity(capacity.min(max_initial_capacity));
 
     for count in range.bounded_iter() {
       let len = input.input_len();
@@ -1108,7 +1112,7 @@ where
             return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many)));
           }
 
-          res.push(value);
+          res.extend(Some(value));
           input = tail;
         }
         Err(Err::Error(e)) => {
