@@ -1060,6 +1060,7 @@ where
 ///   * A single `usize` value is equivalent to `value..=value`.
 ///   * An empty range is invalid.
 /// * `parse` The parser to apply.
+///
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -1077,7 +1078,8 @@ where
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
 ///
-/// This is not limited to `Vec`:
+/// This is not limited to `Vec`, other collections like `HashMap`
+/// can be used:
 ///
 /// ```rust
 /// # #[macro_use] extern crate nom;
@@ -1085,7 +1087,6 @@ where
 /// use nom::multi::many;
 /// use nom::bytes::complete::{tag, take_while};
 /// use nom::sequence::{separated_pair, terminated};
-/// use nom::character::is_alphabetic;
 /// use nom::AsChar;
 ///
 /// use std::collections::HashMap;
@@ -1105,6 +1106,33 @@ where
 ///   key_value("a=b;c=d;"),
 ///   Ok(("", HashMap::from([("a", "b"), ("c", "d")])))
 /// );
+/// ```
+///
+/// If more control is needed on the default value, [fold] can
+/// be used instead:
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fold;
+/// use nom::bytes::complete::tag;
+///
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold(
+///     0..=4,
+///     tag("abc"),
+///     // preallocates a vector of the max size
+///     || Vec::with_capacity(4),
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+///
+/// assert_eq!(parser("abcabcabcabc"), Ok(("", vec!["abc", "abc", "abc", "abc"])));
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
