@@ -1079,28 +1079,32 @@ where
 ///
 /// This is not limited to `Vec`:
 ///
-/// /// ```rust
+/// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::multi::many;
 /// use nom::bytes::complete::{tag, take_while};
-/// use nom::sequence::{separated, terminated};
+/// use nom::sequence::{separated_pair, terminated};
 /// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
-/// use std::collectins::HashMap;
+/// use std::collections::HashMap;
 ///
 /// fn key_value(s: &str) -> IResult<&str, HashMap<&str, &str>> {
 ///   many(0.., terminated(
-///     separated(
-///       take_while(is_alphabetic),
+///     separated_pair(
+///       take_while(AsChar::is_alpha),
 ///       tag("="),
-///       take_while(is_alphabetic)
+///       take_while(AsChar::is_alpha)
 ///     ),
 ///     tag(";")
 ///   ))(s)
 /// }
 ///
-/// assert_eq!(parser("a=b;c=d;"), Ok(("", HashMap::from([("a", "b"), ("c", "d")])));
+/// assert_eq!(
+///   key_value("a=b;c=d;"),
+///   Ok(("", HashMap::from([("a", "b"), ("c", "d")])))
+/// );
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
