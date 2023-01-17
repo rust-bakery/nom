@@ -39,30 +39,16 @@ fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
   Ok((i, (key, val)))
 }
 
-fn keys_and_values_aggregator(i: &str) -> IResult<&str, Vec<(&str, &str)>> {
-  many(0.., key_value)(i)
-}
-
 fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
-  match keys_and_values_aggregator(input) {
-    Ok((i, tuple_vec)) => Ok((i, tuple_vec.into_iter().collect())),
-    Err(e) => Err(e),
-  }
+  many(0.., key_value)(input)
 }
 
 fn category_and_keys(i: &str) -> IResult<&str, (&str, HashMap<&str, &str>)> {
   pair(category, keys_and_values)(i)
 }
 
-fn categories_aggregator(i: &str) -> IResult<&str, Vec<(&str, HashMap<&str, &str>)>> {
-  many(0.., category_and_keys)(i)
-}
-
 fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str>>> {
-  match categories_aggregator(input) {
-    Ok((i, tuple_vec)) => Ok((i, tuple_vec.into_iter().collect())),
-    Err(e) => Err(e),
-  }
+  many(0.., category_and_keys)(input)
 }
 
 fn bench_ini_str(c: &mut Criterion) {

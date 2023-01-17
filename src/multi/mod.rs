@@ -8,8 +8,6 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::num::NonZeroUsize;
 #[cfg(feature = "alloc")]
-use crate::lib::std::ops::Bound;
-#[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
 use crate::Input;
 use crate::{
@@ -1053,7 +1051,7 @@ where
   }
 }
 
-/// Repeats the embedded parser and returns the results in a `Vec`.
+/// Repeats the embedded parser and collects the results in a type implementing `Extend + Default`.
 /// Fails if the amount of time the embedded parser is run is not
 /// within the specified range.
 /// # Arguments
@@ -1062,6 +1060,7 @@ where
 ///   * A single `usize` value is equivalent to `value..=value`.
 ///   * An empty range is invalid.
 /// * `parse` The parser to apply.
+///
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
@@ -1078,29 +1077,82 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
+///
+/// This is not limited to `Vec`, other collections like `HashMap`
+/// can be used:
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::many;
+/// use nom::bytes::complete::{tag, take_while};
+/// use nom::sequence::{separated_pair, terminated};
+/// use nom::AsChar;
+///
+/// use std::collections::HashMap;
+///
+/// fn key_value(s: &str) -> IResult<&str, HashMap<&str, &str>> {
+///   many(0.., terminated(
+///     separated_pair(
+///       take_while(AsChar::is_alpha),
+///       tag("="),
+///       take_while(AsChar::is_alpha)
+///     ),
+///     tag(";")
+///   ))(s)
+/// }
+///
+/// assert_eq!(
+///   key_value("a=b;c=d;"),
+///   Ok(("", HashMap::from([("a", "b"), ("c", "d")])))
+/// );
+/// ```
+///
+/// If more control is needed on the default value, [fold] can
+/// be used instead:
+///
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// use nom::multi::fold;
+/// use nom::bytes::complete::tag;
+///
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   fold(
+///     0..=4,
+///     tag("abc"),
+///     // preallocates a vector of the max size
+///     || Vec::with_capacity(4),
+///     |mut acc: Vec<_>, item| {
+///       acc.push(item);
+///       acc
+///     }
+///   )(s)
+/// }
+///
+///
+/// assert_eq!(parser("abcabcabcabc"), Ok(("", vec!["abc", "abc", "abc", "abc"])));
+/// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many<I, O, E, F, G>(range: G, mut parse: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn many<I, O, E, Collection, F, G>(
+  range: G,
+  mut parse: F,
+) -> impl FnMut(I) -> IResult<I, Collection, E>
 where
   I: Clone + InputLength,
   F: Parser<I, O, E>,
+  Collection: Extend<O> + Default,
   E: ParseError<I>,
   G: NomRange<usize>,
 {
-  let capacity = match range.bounds() {
-    (Bound::Included(start), _) => start,
-    (Bound::Excluded(start), _) => start + 1,
-    _ => 4,
-  };
-
   move |mut input: I| {
     if range.is_inverted() {
       return Err(Err::Failure(E::from_error_kind(input, ErrorKind::Many)));
     }
 
-    let max_initial_capacity =
-      MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>().max(1);
-    let mut res = crate::lib::std::vec::Vec::with_capacity(capacity.min(max_initial_capacity));
+    let mut res = Collection::default();
 
     for count in range.bounded_iter() {
       let len = input.input_len();
@@ -1111,7 +1163,7 @@ where
             return Err(Err::Error(E::from_error_kind(input, ErrorKind::Many)));
           }
 
-          res.push(value);
+          res.extend(Some(value));
           input = tail;
         }
         Err(Err::Error(e)) => {

@@ -487,11 +487,13 @@ mod test {
   #[test]
   #[cfg(feature = "alloc")]
   fn recognize_is_a() {
+    use crate::lib::std::vec::Vec;
+
     let a = "aabbab";
     let b = "ababcd";
 
     fn f(i: &str) -> IResult<&str, &str> {
-      recognize(many(1.., alt((tag("a"), tag("b")))))(i)
+      recognize::<_, Vec<&str>, _, _>(many(1.., alt((tag("a"), tag("b")))))(i)
     }
 
     assert_eq!(f(a), Ok((&a[6..], a)));

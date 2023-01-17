@@ -172,7 +172,7 @@ fn issue_942() {
 fn issue_many_m_n_with_zeros() {
   use nom::character::complete::char;
   use nom::multi::many;
-  let mut parser = many::<_, _, (), _, _>(0..=0, char('a'));
+  let mut parser = many::<_, _, (), Vec<char>, _, _>(0..=0, char('a'));
   assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
 }
 

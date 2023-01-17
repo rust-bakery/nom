@@ -32,19 +32,16 @@ fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
 }
 
 fn categories(i: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
-  map(
-    many(
-      0..,
-      separated_pair(
-        category,
-        opt(multispace),
-        map(
-          many(0.., terminated(key_value, opt(multispace))),
-          |vec: Vec<_>| vec.into_iter().collect(),
-        ),
+  many(
+    0..,
+    separated_pair(
+      category,
+      opt(multispace),
+      map(
+        many(0.., terminated(key_value, opt(multispace))),
+        |vec: Vec<_>| vec.into_iter().collect(),
       ),
     ),
-    |vec: Vec<_>| vec.into_iter().collect(),
   )(i)
 }
 
