@@ -487,6 +487,8 @@ mod test {
   #[test]
   #[cfg(feature = "alloc")]
   fn recognize_is_a() {
+    use crate::lib::std::vec::Vec;
+
     let a = "aabbab";
     let b = "ababcd";
 
