@@ -1141,7 +1141,7 @@ pub fn many<I, O, E, Collection, F, G>(
   mut parse: F,
 ) -> impl FnMut(I) -> IResult<I, Collection, E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, O, E>,
   Collection: Extend<O> + Default,
   E: ParseError<I>,
