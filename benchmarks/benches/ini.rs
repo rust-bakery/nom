@@ -8,7 +8,7 @@ use nom::{
   character::complete::{
     alphanumeric1 as alphanumeric, char, multispace1 as multispace, space1 as space,
   },
-  combinator::{map, map_res, opt},
+  combinator::{map_res, opt},
   multi::many,
   sequence::{delimited, pair, separated_pair, terminated, tuple},
   IResult,
@@ -37,10 +37,7 @@ fn categories(i: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
     separated_pair(
       category,
       opt(multispace),
-      map(
-        many(0.., terminated(key_value, opt(multispace))),
-        |vec: Vec<_>| vec.into_iter().collect(),
-      ),
+      many(0.., terminated(key_value, opt(multispace))),
     ),
   )(i)
 }
