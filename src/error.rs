@@ -235,7 +235,7 @@ pub fn context<I: Clone, E: ContextError<I>, F, O>(
   mut f: F,
 ) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Output = O, Error = E>,
 {
   move |i: I| match f.parse(i.clone()) {
     Ok(o) => Ok(o),

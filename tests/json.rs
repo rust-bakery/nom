@@ -90,7 +90,9 @@ fn string(input: &str) -> IResult<&str, String> {
   )(input)
 }
 
-fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, O, E>>(f: F) -> impl Parser<&'a str, O, E> {
+fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
+  f: F,
+) -> impl Parser<&'a str, Output = O, Error = E> {
   delimited(multispace0, f, multispace0)
 }
 

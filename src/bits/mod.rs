@@ -41,7 +41,7 @@ where
   E1: ParseError<(I, usize)> + ErrorConvert<E2>,
   E2: ParseError<I>,
   I: Input,
-  P: Parser<(I, usize), O, E1>,
+  P: Parser<(I, usize), Output = O, Error = E1>,
 {
   move |input: I| match parser.parse((input, 0)) {
     Ok(((rest, offset), result)) => {
@@ -86,7 +86,7 @@ where
   E1: ParseError<I> + ErrorConvert<E2>,
   E2: ParseError<(I, usize)>,
   I: Input + Clone,
-  P: Parser<I, O, E1>,
+  P: Parser<I, Output = O, Error = E1>,
 {
   move |(input, offset): (I, usize)| {
     let inner = if offset % 8 != 0 {

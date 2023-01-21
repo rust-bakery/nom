@@ -499,7 +499,7 @@ where
 /// assert_eq!(esc("12\\\"34;"), Ok((";", "12\\\"34")));
 /// ```
 ///
-pub fn escaped<I, Error, F, G, O1, O2>(
+pub fn escaped<I, Error, F, G>(
   mut normal: F,
   control_char: char,
   mut escapable: G,
@@ -507,8 +507,8 @@ pub fn escaped<I, Error, F, G, O1, O2>(
 where
   I: Input + Clone + crate::traits::Offset,
   <I as Input>::Item: crate::traits::AsChar,
-  F: Parser<I, O1, Error>,
-  G: Parser<I, O2, Error>,
+  F: Parser<I, Error = Error>,
+  G: Parser<I, Error = Error>,
   Error: ParseError<I>,
 {
   use crate::traits::AsChar;
@@ -606,8 +606,8 @@ where
   O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   <I as Input>::Item: crate::traits::AsChar,
-  F: Parser<I, O1, Error>,
-  G: Parser<I, O2, Error>,
+  F: Parser<I, Output = O1, Error = Error>,
+  G: Parser<I, Output = O2, Error = Error>,
   Error: ParseError<I>,
 {
   use crate::traits::AsChar;

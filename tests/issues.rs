@@ -172,7 +172,7 @@ fn issue_942() {
 fn issue_many_m_n_with_zeros() {
   use nom::character::complete::char;
   use nom::multi::many;
-  let mut parser = many::<_, _, (), Vec<char>, _, _>(0..=0, char('a'));
+  let mut parser = many::<_, (), Vec<char>, _, _>(0..=0, char('a'));
   assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
 }
 
@@ -248,12 +248,12 @@ fn issue_1459_clamp_capacity() {
 
   // shouldn't panic
   use nom::multi::many_m_n;
-  let mut parser = many_m_n::<_, _, (), _>(usize::MAX, usize::MAX, char('a'));
+  let mut parser = many_m_n::<_, (), _>(usize::MAX, usize::MAX, char('a'));
   assert_eq!(parser("a"), Err(nom::Err::Error(())));
 
   // shouldn't panic
   use nom::multi::count;
-  let mut parser = count::<_, _, (), _>(char('a'), usize::MAX);
+  let mut parser = count::<_, (), _>(char('a'), usize::MAX);
   assert_eq!(parser("a"), Err(nom::Err::Error(())));
 }
 

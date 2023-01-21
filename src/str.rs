@@ -493,7 +493,10 @@ mod test {
     let b = "ababcd";
 
     fn f(i: &str) -> IResult<&str, &str> {
-      recognize::<_, Vec<&str>, _, _>(many(1.., alt((tag("a"), tag("b")))))(i)
+      recognize(many::<_, _, Vec<&str>, _, _>(
+        1..,
+        alt((tag("a"), tag("b"))),
+      ))(i)
     }
 
     assert_eq!(f(a), Ok((&a[6..], a)));
