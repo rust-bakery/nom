@@ -234,15 +234,20 @@ where
 }
 
 /// All nom parsers implement this trait
-pub trait Parser<I, O, E> {
+pub trait Parser<Input> {
+  /// Type of the produced value
+  type Output;
+  /// Error type of this parser
+  type Error: ParseError<Input>;
+
   /// A parser takes in input type, and returns a `Result` containing
   /// either the remaining input and the output value, or an error
-  fn parse(&mut self, input: I) -> IResult<I, O, E>;
+  fn parse(&mut self, input: Input) -> IResult<Input, Self::Output, Self::Error>;
 
   /// Maps a function over the result of a parser
-  fn map<G, O2>(self, g: G) -> Map<Self, G, O>
+  fn map<G, O2>(self, g: G) -> Map<Self, G, Self::Output>
   where
-    G: FnMut(O) -> O2,
+    G: FnMut(Self::Output) -> O2,
     Self: core::marker::Sized,
   {
     Map {
@@ -253,63 +258,47 @@ pub trait Parser<I, O, E> {
   }
 
   /// Applies a function returning a `Result` over the result of a parser.
-  fn map_res<G, O2, E2>(self, g: G) -> MapRes<Self, G, O>
+  fn map_res<G, O2, E2>(self, g: G) -> MapRes<Self, G>
   where
-    G: Fn(O) -> Result<O2, E2>,
-    E: FromExternalError<I, E2>,
+    G: Fn(Self::Output) -> Result<O2, E2>,
+    Self::Error: FromExternalError<Input, E2>,
     Self: core::marker::Sized,
   {
-    MapRes {
-      f: self,
-      g,
-      phantom: core::marker::PhantomData,
-    }
+    MapRes { f: self, g }
   }
 
   /// Applies a function returning an `Option` over the result of a parser.
-  fn map_opt<G, O2>(self, g: G) -> MapOpt<Self, G, O>
+  fn map_opt<G, O2>(self, g: G) -> MapOpt<Self, G>
   where
-    G: Fn(O) -> Option<O2>,
+    G: Fn(Self::Output) -> Option<O2>,
     Self: core::marker::Sized,
   {
-    MapOpt {
-      f: self,
-      g,
-      phantom: core::marker::PhantomData,
-    }
+    MapOpt { f: self, g }
   }
 
   /// Creates a second parser from the output of the first one, then apply over the rest of the input
-  fn flat_map<G, H, O2>(self, g: G) -> FlatMap<Self, G, O>
+  fn flat_map<G, H>(self, g: G) -> FlatMap<Self, G>
   where
-    G: FnMut(O) -> H,
-    H: Parser<I, O2, E>,
+    G: FnMut(Self::Output) -> H,
+    H: Parser<Input, Error = Self::Error>,
     Self: core::marker::Sized,
   {
-    FlatMap {
-      f: self,
-      g,
-      phantom: core::marker::PhantomData,
-    }
+    FlatMap { f: self, g }
   }
 
   /// Applies a second parser over the output of the first one
-  fn and_then<G, O2>(self, g: G) -> AndThen<Self, G, O>
+  fn and_then<G>(self, g: G) -> AndThen<Self, G>
   where
-    G: Parser<O, O2, E>,
+    G: Parser<Self::Output, Error = Self::Error>,
     Self: core::marker::Sized,
   {
-    AndThen {
-      f: self,
-      g,
-      phantom: core::marker::PhantomData,
-    }
+    AndThen { f: self, g }
   }
 
   /// Applies a second parser after the first one, return their results as a tuple
   fn and<G, O2>(self, g: G) -> And<Self, G>
   where
-    G: Parser<I, O2, E>,
+    G: Parser<Input, Output = O2, Error = Self::Error>,
     Self: core::marker::Sized,
   {
     And { f: self, g }
@@ -318,7 +307,7 @@ pub trait Parser<I, O, E> {
   /// Applies a second parser over the input if the first one failed
   fn or<G>(self, g: G) -> Or<Self, G>
   where
-    G: Parser<I, O, E>,
+    G: Parser<Input, Output = Self::Output, Error = Self::Error>,
     Self: core::marker::Sized,
   {
     Or { f: self, g }
@@ -326,7 +315,9 @@ pub trait Parser<I, O, E> {
 
   /// automatically converts the parser's output and error values to another type, as long as they
   /// implement the `From` trait
-  fn into<O2: From<O>, E2: From<E>>(self) -> Into<Self, O, O2, E, E2>
+  fn into<O2: From<Self::Output>, E2: From<Self::Error>>(
+    self,
+  ) -> Into<Self, Self::Output, O2, Self::Error, E2>
   where
     Self: core::marker::Sized,
   {
@@ -340,10 +331,12 @@ pub trait Parser<I, O, E> {
   }
 }
 
-impl<I, O, E, F> Parser<I, O, E> for F
+impl<I, O, E: ParseError<I>, F> Parser<I> for F
 where
   F: FnMut(I) -> IResult<I, O, E>,
 {
+  type Output = O;
+  type Error = E;
   fn parse(&mut self, i: I) -> IResult<I, O, E> {
     self(i)
   }
@@ -352,10 +345,12 @@ where
 macro_rules! impl_parser_for_tuple {
   ($($parser:ident $output:ident),+) => (
     #[allow(non_snake_case)]
-    impl<I, $($output),+, E: ParseError<I>, $($parser),+> Parser<I, ($($output),+,), E> for ($($parser),+,)
+    impl<I, $($output),+, E: ParseError<I>, $($parser),+> Parser<I> for ($($parser),+,)
     where
-      $($parser: Parser<I, $output, E>),+
+      $($parser: Parser<I, Output = $output, Error = E>),+
     {
+      type Output = ($($output),+,);
+      type Error = E;
       fn parse(&mut self, i: I) -> IResult<I, ($($output),+,), E> {
         let ($(ref mut $parser),+,) = *self;
 
@@ -386,7 +381,9 @@ impl_parser_for_tuples!(P1 O1, P2 O2, P3 O3, P4 O4, P5 O5, P6 O6, P7 O7, P8 O8, 
 use alloc::boxed::Box;
 
 #[cfg(feature = "alloc")]
-impl<I, O, E> Parser<I, O, E> for Box<dyn Parser<I, O, E>> {
+impl<I, O, E: ParseError<I>> Parser<I> for Box<dyn Parser<I, Output = O, Error = E>> {
+  type Output = O;
+  type Error = E;
   fn parse(&mut self, input: I) -> IResult<I, O, E> {
     (**self).parse(input)
   }
@@ -400,7 +397,12 @@ pub struct Map<F, G, O1> {
   phantom: core::marker::PhantomData<O1>,
 }
 
-impl<I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> O2> Parser<I, O2, E> for Map<F, G, O1> {
+impl<I, O1, O2, E: ParseError<I>, F: Parser<I, Output = O1, Error = E>, G: FnMut(O1) -> O2>
+  Parser<I> for Map<F, G, O1>
+{
+  type Output = O2;
+  type Error = E;
+
   fn parse(&mut self, i: I) -> IResult<I, O2, E> {
     match self.f.parse(i) {
       Err(e) => Err(e),
@@ -410,65 +412,81 @@ impl<I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> O2> Parser<I, O2, E> for
 }
 
 /// Implementation of `Parser::map_res`
-pub struct MapRes<F, G, O> {
+pub struct MapRes<F, G> {
   f: F,
   g: G,
-  phantom: core::marker::PhantomData<O>,
 }
 
-impl<I, O, O2, E, E2, F, G> Parser<I, O2, E> for MapRes<F, G, O>
+impl<I, O2, E2, F, G> Parser<I> for MapRes<F, G>
 where
   I: Clone,
-  E: FromExternalError<I, E2>,
-  F: Parser<I, O, E>,
-  G: Fn(O) -> Result<O2, E2>,
+  <F as Parser<I>>::Error: FromExternalError<I, E2>,
+  F: Parser<I>,
+  G: Fn(<F as Parser<I>>::Output) -> Result<O2, E2>,
 {
-  fn parse(&mut self, input: I) -> IResult<I, O2, E> {
+  type Output = O2;
+  type Error = <F as Parser<I>>::Error;
+  fn parse(&mut self, input: I) -> IResult<I, O2, <F as Parser<I>>::Error> {
     let i = input.clone();
     let (input, o1) = self.f.parse(input)?;
     match (self.g)(o1) {
       Ok(o2) => Ok((input, o2)),
-      Err(e) => Err(Err::Error(E::from_external_error(i, ErrorKind::MapRes, e))),
+      Err(e) => Err(Err::Error(<F as Parser<I>>::Error::from_external_error(
+        i,
+        ErrorKind::MapRes,
+        e,
+      ))),
     }
   }
 }
 
 /// Implementation of `Parser::map_opt`
-pub struct MapOpt<F, G, O> {
+pub struct MapOpt<F, G> {
   f: F,
   g: G,
-  phantom: core::marker::PhantomData<O>,
 }
 
-impl<I, O, O2, E, F, G> Parser<I, O2, E> for MapOpt<F, G, O>
+impl<I, O2, F, G> Parser<I> for MapOpt<F, G>
 where
   I: Clone,
-  E: ParseError<I>,
-  F: Parser<I, O, E>,
-  G: Fn(O) -> Option<O2>,
+  F: Parser<I>,
+  G: Fn(<F as Parser<I>>::Output) -> Option<O2>,
 {
-  fn parse(&mut self, input: I) -> IResult<I, O2, E> {
+  type Output = O2;
+  type Error = <F as Parser<I>>::Error;
+
+  fn parse(&mut self, input: I) -> IResult<I, O2, <F as Parser<I>>::Error> {
     let i = input.clone();
     let (input, o1) = self.f.parse(input)?;
     match (self.g)(o1) {
       Some(o2) => Ok((input, o2)),
-      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::MapOpt))),
+      None => Err(Err::Error(<F as Parser<I>>::Error::from_error_kind(
+        i,
+        ErrorKind::MapOpt,
+      ))),
     }
   }
 }
 
 /// Implementation of `Parser::flat_map`
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
-pub struct FlatMap<F, G, O1> {
+pub struct FlatMap<F, G> {
   f: F,
   g: G,
-  phantom: core::marker::PhantomData<O1>,
 }
 
-impl<I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> H, H: Parser<I, O2, E>> Parser<I, O2, E>
-  for FlatMap<F, G, O1>
+impl<
+    I,
+    E: ParseError<I>,
+    F: Parser<I, Error = E>,
+    G: FnMut(<F as Parser<I>>::Output) -> H,
+    H: Parser<I, Error = E>,
+  > Parser<I> for FlatMap<F, G>
 {
-  fn parse(&mut self, i: I) -> IResult<I, O2, E> {
+  type Output = <H as Parser<I>>::Output;
+  type Error = E;
+
+  fn parse(&mut self, i: I) -> IResult<I, Self::Output, E> {
     let (i, o1) = self.f.parse(i)?;
     (self.g)(o1).parse(i)
   }
@@ -476,16 +494,18 @@ impl<I, O1, O2, E, F: Parser<I, O1, E>, G: FnMut(O1) -> H, H: Parser<I, O2, E>> 
 
 /// Implementation of `Parser::and_then`
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
-pub struct AndThen<F, G, O1> {
+pub struct AndThen<F, G> {
   f: F,
   g: G,
-  phantom: core::marker::PhantomData<O1>,
 }
 
-impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<O1, O2, E>> Parser<I, O2, E>
-  for AndThen<F, G, O1>
+impl<I, F: Parser<I>, G: Parser<<F as Parser<I>>::Output, Error = <F as Parser<I>>::Error>>
+  Parser<I> for AndThen<F, G>
 {
-  fn parse(&mut self, i: I) -> IResult<I, O2, E> {
+  type Output = <G as Parser<<F as Parser<I>>::Output>>::Output;
+  type Error = <F as Parser<I>>::Error;
+
+  fn parse(&mut self, i: I) -> IResult<I, Self::Output, Self::Error> {
     let (i, o1) = self.f.parse(i)?;
     let (_, o2) = self.g.parse(o1)?;
     Ok((i, o2))
@@ -499,8 +519,13 @@ pub struct And<F, G> {
   g: G,
 }
 
-impl<I, O1, O2, E, F: Parser<I, O1, E>, G: Parser<I, O2, E>> Parser<I, (O1, O2), E> for And<F, G> {
-  fn parse(&mut self, i: I) -> IResult<I, (O1, O2), E> {
+impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Parser<I>
+  for And<F, G>
+{
+  type Output = (<F as Parser<I>>::Output, <G as Parser<I>>::Output);
+  type Error = E;
+
+  fn parse(&mut self, i: I) -> IResult<I, Self::Output, Self::Error> {
     let (i, o1) = self.f.parse(i)?;
     let (i, o2) = self.g.parse(i)?;
     Ok((i, (o1, o2)))
@@ -514,10 +539,18 @@ pub struct Or<F, G> {
   g: G,
 }
 
-impl<I: Clone, O, E: crate::error::ParseError<I>, F: Parser<I, O, E>, G: Parser<I, O, E>>
-  Parser<I, O, E> for Or<F, G>
+impl<
+    I: Clone,
+    O,
+    E: ParseError<I>,
+    F: Parser<I, Output = O, Error = E>,
+    G: Parser<I, Output = O, Error = E>,
+  > Parser<I> for Or<F, G>
 {
-  fn parse(&mut self, i: I) -> IResult<I, O, E> {
+  type Output = <F as Parser<I>>::Output;
+  type Error = <F as Parser<I>>::Error;
+
+  fn parse(&mut self, i: I) -> IResult<I, Self::Output, Self::Error> {
     match self.f.parse(i.clone()) {
       Err(Err::Error(e1)) => match self.g.parse(i) {
         Err(Err::Error(e2)) => Err(Err::Error(e1.or(e2))),
@@ -541,13 +574,16 @@ pub struct Into<F, O1, O2: From<O1>, E1, E2: From<E1>> {
 impl<
     I: Clone,
     O1,
-    O2: From<O1>,
+    O2: From<<F as Parser<I>>::Output>,
     E1,
-    E2: crate::error::ParseError<I> + From<E1>,
-    F: Parser<I, O1, E1>,
-  > Parser<I, O2, E2> for Into<F, O1, O2, E1, E2>
+    E2: crate::error::ParseError<I> + From<<F as Parser<I>>::Error>,
+    F: Parser<I, Output = O1, Error = E1>,
+  > Parser<I> for Into<F, O1, O2, E1, E2>
 {
-  fn parse(&mut self, i: I) -> IResult<I, O2, E2> {
+  type Output = O2;
+  type Error = E2;
+
+  fn parse(&mut self, i: I) -> IResult<I, Self::Output, Self::Error> {
     match self.f.parse(i) {
       Ok((i, o)) => Ok((i, o.into())),
       Err(Err::Error(e)) => Err(Err::Error(e.into())),
