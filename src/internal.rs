@@ -245,16 +245,12 @@ pub trait Parser<Input> {
   fn parse(&mut self, input: Input) -> IResult<Input, Self::Output, Self::Error>;
 
   /// Maps a function over the result of a parser
-  fn map<G, O2>(self, g: G) -> Map<Self, G, Self::Output>
+  fn map<G, O2>(self, g: G) -> Map<Self, G>
   where
     G: FnMut(Self::Output) -> O2,
     Self: core::marker::Sized,
   {
-    Map {
-      f: self,
-      g,
-      phantom: core::marker::PhantomData,
-    }
+    Map { f: self, g }
   }
 
   /// Applies a function returning a `Result` over the result of a parser.
@@ -315,16 +311,12 @@ pub trait Parser<Input> {
 
   /// automatically converts the parser's output and error values to another type, as long as they
   /// implement the `From` trait
-  fn into<O2: From<Self::Output>, E2: From<Self::Error>>(
-    self,
-  ) -> Into<Self, Self::Output, O2, Self::Error, E2>
+  fn into<O2: From<Self::Output>, E2: From<Self::Error>>(self) -> Into<Self, O2, E2>
   where
     Self: core::marker::Sized,
   {
     Into {
       f: self,
-      phantom_out1: core::marker::PhantomData,
-      phantom_err1: core::marker::PhantomData,
       phantom_out2: core::marker::PhantomData,
       phantom_err2: core::marker::PhantomData,
     }
@@ -391,14 +383,13 @@ impl<I, O, E: ParseError<I>> Parser<I> for Box<dyn Parser<I, Output = O, Error =
 
 /// Implementation of `Parser::map`
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
-pub struct Map<F, G, O1> {
+pub struct Map<F, G> {
   f: F,
   g: G,
-  phantom: core::marker::PhantomData<O1>,
 }
 
-impl<I, O1, O2, E: ParseError<I>, F: Parser<I, Output = O1, Error = E>, G: FnMut(O1) -> O2>
-  Parser<I> for Map<F, G, O1>
+impl<I, O2, E: ParseError<I>, F: Parser<I, Error = E>, G: FnMut(<F as Parser<I>>::Output) -> O2>
+  Parser<I> for Map<F, G>
 {
   type Output = O2;
   type Error = E;
@@ -563,22 +554,18 @@ impl<
 
 /// Implementation of `Parser::into`
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
-pub struct Into<F, O1, O2: From<O1>, E1, E2: From<E1>> {
+pub struct Into<F, O2, E2> {
   f: F,
-  phantom_out1: core::marker::PhantomData<O1>,
-  phantom_err1: core::marker::PhantomData<E1>,
   phantom_out2: core::marker::PhantomData<O2>,
   phantom_err2: core::marker::PhantomData<E2>,
 }
 
 impl<
     I: Clone,
-    O1,
     O2: From<<F as Parser<I>>::Output>,
-    E1,
     E2: crate::error::ParseError<I> + From<<F as Parser<I>>::Error>,
-    F: Parser<I, Output = O1, Error = E1>,
-  > Parser<I> for Into<F, O1, O2, E1, E2>
+    F: Parser<I>,
+  > Parser<I> for Into<F, O2, E2>
 {
   type Output = O2;
   type Error = E2;
