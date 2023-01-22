@@ -8,7 +8,7 @@ fn parse() {
   let mut counter = 0;
 
   let res = {
-    let mut parser = many::<_, _, (), Vec<&str>, _, _>(0.., |i| {
+    let mut parser = many::<_, (), Vec<&str>, _, _>(0.., |i| {
       counter += 1;
       tag("abc")(i)
     });
@@ -25,7 +25,7 @@ fn accumulate() {
   let mut v = Vec::new();
 
   let (_, count) = {
-    let mut parser = many0_count::<_, _, (), _>(|i| {
+    let mut parser = many0_count::<_, (), _>(|i| {
       let (i, o) = tag("abc")(i)?;
       v.push(o);
       Ok((i, ()))

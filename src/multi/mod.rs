@@ -54,11 +54,12 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many0<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn many0<I, F>(
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, Vec<<F as Parser<I>>::Output>, <F as Parser<I>>::Error>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  E: ParseError<I>,
+  F: Parser<I>,
 {
   move |mut i: I| {
     let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
@@ -70,7 +71,10 @@ where
         Ok((i1, o)) => {
           // infinite loop check: the parser must always consume
           if i1.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many0)));
+            return Err(Err::Error(<F as Parser<I>>::Error::from_error_kind(
+              i,
+              ErrorKind::Many0,
+            )));
           }
 
           i = i1;
@@ -109,14 +113,19 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many1<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn many1<I, F>(
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, Vec<<F as Parser<I>>::Output>, <F as Parser<I>>::Error>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  E: ParseError<I>,
+  F: Parser<I>,
 {
   move |mut i: I| match f.parse(i.clone()) {
-    Err(Err::Error(err)) => Err(Err::Error(E::append(i, ErrorKind::Many1, err))),
+    Err(Err::Error(err)) => Err(Err::Error(<F as Parser<I>>::Error::append(
+      i,
+      ErrorKind::Many1,
+      err,
+    ))),
     Err(e) => Err(e),
     Ok((i1, o)) => {
       let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
@@ -131,7 +140,10 @@ where
           Ok((i1, o)) => {
             // infinite loop check: the parser must always consume
             if i1.input_len() == len {
-              return Err(Err::Error(E::from_error_kind(i, ErrorKind::Many1)));
+              return Err(Err::Error(<F as Parser<I>>::Error::from_error_kind(
+                i,
+                ErrorKind::Many1,
+              )));
             }
 
             i = i1;
@@ -166,14 +178,14 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many_till<I, O, P, E, F, G>(
+pub fn many_till<I, E, F, G>(
   mut f: F,
   mut g: G,
-) -> impl FnMut(I) -> IResult<I, (Vec<O>, P), E>
+) -> impl FnMut(I) -> IResult<I, (Vec<<F as Parser<I>>::Output>, <G as Parser<I>>::Output), E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: Parser<I, P, E>,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |mut i: I| {
@@ -229,14 +241,14 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list0<I, O, O2, E, F, G>(
+pub fn separated_list0<I, E, F, G>(
   mut sep: G,
   mut f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+) -> impl FnMut(I) -> IResult<I, Vec<<F as Parser<I>>::Output>, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: Parser<I, O2, E>,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |mut i: I| {
@@ -303,14 +315,14 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn separated_list1<I, O, O2, E, F, G>(
+pub fn separated_list1<I, E, F, G>(
   mut sep: G,
   mut f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+) -> impl FnMut(I) -> IResult<I, Vec<<F as Parser<I>>::Output>, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: Parser<I, O2, E>,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |mut i: I| {
@@ -381,14 +393,14 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many_m_n<I, O, E, F>(
+pub fn many_m_n<I, E, F>(
   min: usize,
   max: usize,
   mut parse: F,
-) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+) -> impl FnMut(I) -> IResult<I, Vec<<F as Parser<I>>::Output>, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |mut input: I| {
@@ -396,8 +408,8 @@ where
       return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
     }
 
-    let max_initial_capacity =
-      MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>().max(1);
+    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES
+      / crate::lib::std::mem::size_of::<<F as Parser<I>>::Output>().max(1);
     let mut res = crate::lib::std::vec::Vec::with_capacity(min.min(max_initial_capacity));
     for count in 0..max {
       let len = input.input_len();
@@ -453,10 +465,10 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", 0)));
 /// assert_eq!(parser(""), Ok(("", 0)));
 /// ```
-pub fn many0_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
+pub fn many0_count<I, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -511,10 +523,10 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1Count))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1Count))));
 /// ```
-pub fn many1_count<I, O, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
+pub fn many1_count<I, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, usize, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -570,16 +582,19 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn count<I, O, E, F>(mut f: F, count: usize) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn count<I, E, F>(
+  mut f: F,
+  count: usize,
+) -> impl FnMut(I) -> IResult<I, Vec<<F as Parser<I>>::Output>, E>
 where
   I: Clone + PartialEq,
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |i: I| {
     let mut input = i.clone();
-    let max_initial_capacity =
-      MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>().max(1);
+    let max_initial_capacity = MAX_INITIAL_CAPACITY_BYTES
+      / crate::lib::std::mem::size_of::<<F as Parser<I>>::Output>().max(1);
     let mut res = crate::lib::std::vec::Vec::with_capacity(count.min(max_initial_capacity));
 
     for _ in 0..count {
@@ -626,10 +641,13 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", ["abc", "abc"])));
 /// ```
-pub fn fill<'a, I, O, E, F>(mut f: F, buf: &'a mut [O]) -> impl FnMut(I) -> IResult<I, (), E> + 'a
+pub fn fill<'a, I, E, F>(
+  mut f: F,
+  buf: &'a mut [<F as Parser<I>>::Output],
+) -> impl FnMut(I) -> IResult<I, (), E> + 'a
 where
   I: Clone + PartialEq,
-  F: Parser<I, O, E> + 'a,
+  F: Parser<I, Error = E> + 'a,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -690,15 +708,15 @@ where
 /// assert_eq!(parser("123123"), Ok(("123123", vec![])));
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// ```
-pub fn fold_many0<I, O, E, F, G, H, R>(
+pub fn fold_many0<I, E, F, G, H, R>(
   mut f: F,
   mut init: H,
   mut g: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
+  F: Parser<I, Error = E>,
+  G: FnMut(R, <F as Parser<I>>::Output) -> R,
   H: FnMut() -> R,
   E: ParseError<I>,
 {
@@ -766,15 +784,15 @@ where
 /// assert_eq!(parser("123123"), Err(Err::Error(Error::new("123123", ErrorKind::Many1))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Many1))));
 /// ```
-pub fn fold_many1<I, O, E, F, G, H, R>(
+pub fn fold_many1<I, E, F, G, H, R>(
   mut f: F,
   mut init: H,
   mut g: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
+  F: Parser<I, Error = E>,
+  G: FnMut(R, <F as Parser<I>>::Output) -> R,
   H: FnMut() -> R,
   E: ParseError<I>,
 {
@@ -855,7 +873,7 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold_many_m_n<I, O, E, F, G, H, R>(
+pub fn fold_many_m_n<I, E, F, G, H, R>(
   min: usize,
   max: usize,
   mut parse: F,
@@ -864,8 +882,8 @@ pub fn fold_many_m_n<I, O, E, F, G, H, R>(
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
+  F: Parser<I, Error = E>,
+  G: FnMut(R, <F as Parser<I>>::Output) -> R,
   H: FnMut() -> R,
   E: ParseError<I>,
 {
@@ -921,11 +939,11 @@ where
 /// assert_eq!(parser(b"\x00\x03abcefg"), Ok((&b"efg"[..], &b"abc"[..])));
 /// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
 /// ```
-pub fn length_data<I, N, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, I, E>
+pub fn length_data<I, E, F>(mut f: F) -> impl FnMut(I) -> IResult<I, I, E>
 where
   I: Input,
-  N: ToUsize,
-  F: Parser<I, N, E>,
+  <F as Parser<I>>::Output: ToUsize,
+  F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -966,12 +984,15 @@ where
 /// assert_eq!(parser(b"\x00\x03123123"), Err(Err::Error(Error::new(&b"123"[..], ErrorKind::Tag))));
 /// assert_eq!(parser(b"\x00\x03a"), Err(Err::Incomplete(Needed::new(2))));
 /// ```
-pub fn length_value<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, O, E>
+pub fn length_value<I, E, F, G>(
+  mut f: F,
+  mut g: G,
+) -> impl FnMut(I) -> IResult<I, <G as Parser<I>>::Output, E>
 where
   I: Clone + Input,
-  N: ToUsize,
-  F: Parser<I, N, E>,
-  G: Parser<I, O, E>,
+  <F as Parser<I>>::Output: ToUsize,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -1018,12 +1039,15 @@ where
 /// assert_eq!(parser(b"\x03123123123"), Err(Err::Error(Error::new(&b"123123123"[..], ErrorKind::Tag))));
 /// ```
 #[cfg(feature = "alloc")]
-pub fn length_count<I, O, N, E, F, G>(mut f: F, mut g: G) -> impl FnMut(I) -> IResult<I, Vec<O>, E>
+pub fn length_count<I, E, F, G>(
+  mut f: F,
+  mut g: G,
+) -> impl FnMut(I) -> IResult<I, Vec<<G as Parser<I>>::Output>, E>
 where
   I: Clone,
-  N: ToUsize,
-  F: Parser<I, N, E>,
-  G: Parser<I, O, E>,
+  <F as Parser<I>>::Output: ToUsize,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
   E: ParseError<I>,
 {
   move |i: I| {
@@ -1136,14 +1160,14 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn many<I, O, E, Collection, F, G>(
+pub fn many<I, E, Collection, F, G>(
   range: G,
   mut parse: F,
 ) -> impl FnMut(I) -> IResult<I, Collection, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  Collection: Extend<O> + Default,
+  F: Parser<I, Error = E>,
+  Collection: Extend<<F as Parser<I>>::Output> + Default,
   E: ParseError<I>,
   G: NomRange<usize>,
 {
@@ -1221,7 +1245,7 @@ where
 /// assert_eq!(parser(""), Ok(("", vec![])));
 /// assert_eq!(parser("abcabcabc"), Ok(("abc", vec!["abc", "abc"])));
 /// ```
-pub fn fold<I, O, E, F, G, H, J, R>(
+pub fn fold<I, E, F, G, H, J, R>(
   range: J,
   mut parse: F,
   mut init: H,
@@ -1229,8 +1253,8 @@ pub fn fold<I, O, E, F, G, H, J, R>(
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
   I: Clone + InputLength,
-  F: Parser<I, O, E>,
-  G: FnMut(R, O) -> R,
+  F: Parser<I, Error = E>,
+  G: FnMut(R, <F as Parser<I>>::Output) -> R,
   H: FnMut() -> R,
   E: ParseError<I>,
   J: NomRange<usize>,

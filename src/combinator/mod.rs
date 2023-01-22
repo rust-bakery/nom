@@ -69,10 +69,10 @@ where
 /// assert_eq!(parser.parse("abc"), Err(Err::Error(("abc", ErrorKind::Digit))));
 /// # }
 /// ```
-pub fn map<I, O1, O2, E, F, G>(mut parser: F, mut f: G) -> impl FnMut(I) -> IResult<I, O2, E>
+pub fn map<I, O, E, F, G>(mut parser: F, mut f: G) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O1, E>,
-  G: FnMut(O1) -> O2,
+  F: Parser<I, Error = E>,
+  G: FnMut(<F as Parser<I>>::Output) -> O,
 {
   move |input: I| {
     let (input, o1) = parser.parse(input)?;
@@ -100,13 +100,13 @@ where
 /// assert_eq!(parse("123456"), Err(Err::Error(("123456", ErrorKind::MapRes))));
 /// # }
 /// ```
-pub fn map_res<I: Clone, O1, O2, E: FromExternalError<I, E2>, E2, F, G>(
+pub fn map_res<I: Clone, O, E: FromExternalError<I, E2>, E2, F, G>(
   mut parser: F,
   mut f: G,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O1, E>,
-  G: FnMut(O1) -> Result<O2, E2>,
+  F: Parser<I, Error = E>,
+  G: FnMut(<F as Parser<I>>::Output) -> Result<O, E2>,
 {
   move |input: I| {
     let i = input.clone();
@@ -138,13 +138,13 @@ where
 /// assert_eq!(parse("123456"), Err(Err::Error(("123456", ErrorKind::MapOpt))));
 /// # }
 /// ```
-pub fn map_opt<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+pub fn map_opt<I: Clone, O, E: ParseError<I>, F, G>(
   mut parser: F,
   mut f: G,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O1, E>,
-  G: FnMut(O1) -> Option<O2>,
+  F: Parser<I, Error = E>,
+  G: FnMut(<F as Parser<I>>::Output) -> Option<O>,
 {
   move |input: I| {
     let i = input.clone();
@@ -172,13 +172,13 @@ where
 /// assert_eq!(parse("123"), Err(Err::Error(("123", ErrorKind::Eof))));
 /// # }
 /// ```
-pub fn map_parser<I, O1, O2, E: ParseError<I>, F, G>(
+pub fn map_parser<I, O, E: ParseError<I>, F, G>(
   mut parser: F,
   mut applied_parser: G,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<O1, O2, E>,
+  F: Parser<I, Error = E>,
+  G: Parser<<F as Parser<I>>::Output, Output = O, Error = E>,
 {
   move |input: I| {
     let (input, o1) = parser.parse(input)?;
@@ -202,14 +202,14 @@ where
 /// assert_eq!(parse(&[4, 0, 1, 2][..]), Err(Err::Error((&[0, 1, 2][..], ErrorKind::Eof))));
 /// # }
 /// ```
-pub fn flat_map<I, O1, O2, E: ParseError<I>, F, G, H>(
+pub fn flat_map<I, O, E: ParseError<I>, F, G, H>(
   mut parser: F,
   mut applied_parser: G,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O1, E>,
-  G: FnMut(O1) -> H,
-  H: Parser<I, O2, E>,
+  F: Parser<I, Error = E>,
+  G: FnMut(<F as Parser<I>>::Output) -> H,
+  H: Parser<I, Output = O, Error = E>,
 {
   move |input: I| {
     let (input, o1) = parser.parse(input)?;
@@ -235,9 +235,11 @@ where
 /// assert_eq!(parser("123;"), Ok(("123;", None)));
 /// # }
 /// ```
-pub fn opt<I: Clone, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Option<O>, E>
+pub fn opt<I: Clone, E: ParseError<I>, F>(
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, Option<<F as Parser<I>>::Output>, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| {
     let i = input.clone();
@@ -267,12 +269,12 @@ where
 /// assert_eq!(parser(false, "123;"), Ok(("123;", None)));
 /// # }
 /// ```
-pub fn cond<I, O, E: ParseError<I>, F>(
+pub fn cond<I, E: ParseError<I>, F>(
   b: bool,
   mut f: F,
-) -> impl FnMut(I) -> IResult<I, Option<O>, E>
+) -> impl FnMut(I) -> IResult<I, Option<<F as Parser<I>>::Output>, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| {
     if b {
@@ -300,9 +302,11 @@ where
 /// assert_eq!(parser("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn peek<I: Clone, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
+pub fn peek<I: Clone, E: ParseError<I>, F>(
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, <F as Parser<I>>::Output, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| {
     let i = input.clone();
@@ -354,7 +358,7 @@ pub fn eof<I: InputLength + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, 
 /// ```
 pub fn complete<I: Clone, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Output = O, Error = E>,
 {
   move |input: I| {
     let i = input.clone();
@@ -380,10 +384,12 @@ where
 /// assert_eq!(parser("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn all_consuming<I, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
+pub fn all_consuming<I, E: ParseError<I>, F>(
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, <F as Parser<I>>::Output, E>
 where
   I: InputLength,
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| {
     let (input, res) = f.parse(input)?;
@@ -413,14 +419,14 @@ where
 /// assert_eq!(parser("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn verify<I: Clone, O1, O2, E: ParseError<I>, F, G>(
+pub fn verify<I: Clone, O2, E: ParseError<I>, F, G>(
   mut first: F,
   second: G,
-) -> impl FnMut(I) -> IResult<I, O1, E>
+) -> impl FnMut(I) -> IResult<I, <F as Parser<I>>::Output, E>
 where
-  F: Parser<I, O1, E>,
+  F: Parser<I, Error = E>,
   G: Fn(&O2) -> bool,
-  O1: Borrow<O2>,
+  <F as Parser<I>>::Output: Borrow<O2>,
   O2: ?Sized,
 {
   move |input: I| {
@@ -449,12 +455,12 @@ where
 /// assert_eq!(parser("123abcd;"), Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn value<I, O1: Clone, O2, E: ParseError<I>, F>(
+pub fn value<I, O1: Clone, E: ParseError<I>, F>(
   val: O1,
   mut parser: F,
 ) -> impl FnMut(I) -> IResult<I, O1, E>
 where
-  F: Parser<I, O2, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| parser.parse(input).map(|(i, _)| (i, val.clone()))
 }
@@ -473,9 +479,9 @@ where
 /// assert_eq!(parser("abcd"), Err(Err::Error(("abcd", ErrorKind::Not))));
 /// # }
 /// ```
-pub fn not<I: Clone, O, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, (), E>
+pub fn not<I: Clone, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, (), E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| {
     let i = input.clone();
@@ -502,11 +508,11 @@ where
 /// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
 /// # }
 /// ```
-pub fn recognize<I: Clone + Offset + Input, O, E: ParseError<I>, F>(
+pub fn recognize<I: Clone + Offset + Input, E: ParseError<I>, F>(
   mut parser: F,
 ) -> impl FnMut(I) -> IResult<I, I, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| {
     let i = input.clone();
@@ -557,11 +563,13 @@ where
 /// assert_eq!(recognize_parser("abcd"), consumed_parser("abcd"));
 /// # }
 /// ```
-pub fn consumed<I, O, F, E>(mut parser: F) -> impl FnMut(I) -> IResult<I, (I, O), E>
+pub fn consumed<I, F, E>(
+  mut parser: F,
+) -> impl FnMut(I) -> IResult<I, (I, <F as Parser<I>>::Output), E>
 where
   I: Clone + Offset + Input,
   E: ParseError<I>,
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| {
     let i = input.clone();
@@ -627,9 +635,11 @@ where
 /// assert_eq!(parser("+"), Err(Err::Failure(Error { input: "", code: ErrorKind::Digit })));
 /// # }
 /// ```
-pub fn cut<I, O, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, O, E>
+pub fn cut<I, E: ParseError<I>, F>(
+  mut parser: F,
+) -> impl FnMut(I) -> IResult<I, <F as Parser<I>>::Output, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Error = E>,
 {
   move |input: I| match parser.parse(input) {
     Err(Err::Error(e)) => Err(Err::Failure(e)),
@@ -665,7 +675,7 @@ where
   E1: Into<E2>,
   E1: ParseError<I>,
   E2: ParseError<I>,
-  F: Parser<I, O1, E1>,
+  F: Parser<I, Output = O1, Error = E1>,
 {
   //map(parser, Into::into)
   move |input: I| match parser.parse(input) {
@@ -696,9 +706,9 @@ where
 /// assert_eq!(parsed, [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)].iter().cloned().collect());
 /// assert_eq!(res, Ok(("123", ())));
 /// ```
-pub fn iterator<Input, Output, Error, F>(input: Input, f: F) -> ParserIterator<Input, Error, F>
+pub fn iterator<Input, Error, F>(input: Input, f: F) -> ParserIterator<Input, Error, F>
 where
-  F: Parser<Input, Output, Error>,
+  F: Parser<Input>,
   Error: ParseError<Input>,
 {
   ParserIterator {
