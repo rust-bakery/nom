@@ -3,6 +3,7 @@
 use self::Needed::*;
 use crate::error::{self, ErrorKind, FromExternalError, ParseError};
 use crate::lib::std::fmt;
+use core::marker::PhantomData;
 use core::num::NonZeroUsize;
 
 /// Holds the result of parsing functions
@@ -94,15 +95,15 @@ impl Needed {
 ///
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
-pub enum Err<E> {
+pub enum Err<Failure, Error = Failure> {
   /// There was not enough data
   Incomplete(Needed),
   /// The parser had an error (recoverable)
-  Error(E),
+  Error(Error),
   /// The parser had an unrecoverable error: we got to the right
   /// branch and we know other branches won't work, so backtrack
   /// as fast as possible
-  Failure(E),
+  Failure(Failure),
 }
 
 impl<E> Err<E> {
@@ -233,6 +234,123 @@ where
   }
 }
 
+/// TODO
+pub trait Mode {
+  /// TODO
+  type Output<T>;
+
+  /// TODO
+  fn bind<T, F: FnOnce() -> T>(f: F) -> Self::Output<T>;
+  /// TODO
+  fn map<T, U, F: FnOnce(T) -> U>(x: Self::Output<T>, f: F) -> Self::Output<U>;
+
+  /// TODO
+  fn combine<T, U, V, F: FnOnce(T, U) -> V>(
+    x: Self::Output<T>,
+    y: Self::Output<U>,
+    f: F,
+  ) -> Self::Output<V>;
+}
+
+/// TODO
+pub struct Emit;
+impl Mode for Emit {
+  type Output<T> = T;
+  fn bind<T, F: FnOnce() -> T>(f: F) -> Self::Output<T> {
+    f()
+  }
+  fn map<T, U, F: FnOnce(T) -> U>(x: Self::Output<T>, f: F) -> Self::Output<U> {
+    f(x)
+  }
+
+  fn combine<T, U, V, F: FnOnce(T, U) -> V>(
+    x: Self::Output<T>,
+    y: Self::Output<U>,
+    f: F,
+  ) -> Self::Output<V> {
+    f(x, y)
+  }
+}
+
+/// TODO
+pub struct Check;
+impl Mode for Check {
+  type Output<T> = ();
+  fn bind<T, F: FnOnce() -> T>(_: F) -> Self::Output<T> {
+    ()
+  }
+
+  fn map<T, U, F: FnOnce(T) -> U>(_: Self::Output<T>, _: F) -> Self::Output<U> {
+    ()
+  }
+
+  fn combine<T, U, V, F: FnOnce(T, U) -> V>(
+    _: Self::Output<T>,
+    _: Self::Output<U>,
+    _: F,
+  ) -> Self::Output<V> {
+  }
+}
+
+/// TODO
+pub type PResult<OM, I, O, E> = Result<
+  (I, <<OM as OutputMode>::Output as Mode>::Output<O>),
+  Err<E, <<OM as OutputMode>::Error as Mode>::Output<E>>,
+>;
+
+/// TODO
+pub trait OutputMode {
+  /// TODO
+  type Output: Mode;
+  /// TODO
+  type Error: Mode;
+  /// TODO
+  type Incomplete: IsStreaming;
+}
+
+/// TODO
+pub trait IsStreaming {
+  /// TODO
+  fn incomplete<E, F: FnOnce() -> E>(needed: Needed, err_f: F) -> Err<E>;
+  /// TODO
+  fn is_streaming() -> bool;
+}
+
+struct Streaming;
+
+impl IsStreaming for Streaming {
+  fn incomplete<E, F: FnOnce() -> E>(needed: Needed, _err_f: F) -> Err<E> {
+    Err::Incomplete(needed)
+  }
+
+  fn is_streaming() -> bool {
+    true
+  }
+}
+
+struct Complete;
+
+impl IsStreaming for Complete {
+  fn incomplete<E, F: FnOnce() -> E>(_needed: Needed, err_f: F) -> Err<E> {
+    Err::Error(err_f())
+  }
+
+  fn is_streaming() -> bool {
+    false
+  }
+}
+
+struct OutputM<M: Mode, EM: Mode, S: IsStreaming> {
+  m: PhantomData<M>,
+  em: PhantomData<EM>,
+  s: PhantomData<S>,
+}
+
+impl<M: Mode, EM: Mode, S: IsStreaming> OutputMode for OutputM<M, EM, S> {
+  type Output = M;
+  type Error = EM;
+  type Incomplete = S;
+}
 /// All nom parsers implement this trait
 pub trait Parser<Input> {
   /// Type of the produced value
