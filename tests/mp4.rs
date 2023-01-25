@@ -7,7 +7,7 @@ use nom::{
   error::ErrorKind,
   multi::many,
   number::streaming::{be_f32, be_u16, be_u32, be_u64},
-  Err, IResult, Needed,
+  Err, IResult, Needed, Parser,
 };
 
 use std::str;
@@ -244,7 +244,7 @@ struct MP4BoxHeader {
 }
 
 fn brand_name(input: &[u8]) -> IResult<&[u8], &str> {
-  map_res(take(4_usize), str::from_utf8)(input)
+  map_res(take(4_usize), str::from_utf8).parse(input)
 }
 
 fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType<'_>> {

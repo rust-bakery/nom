@@ -146,6 +146,8 @@ fn to_s(i: Vec<u8>) -> String {
 #[cfg(feature = "alloc")]
 #[test]
 fn escape_transform() {
+  use crate::Parser;
+
   fn esc(i: &[u8]) -> IResult<&[u8], String> {
     map(
       escaped_transform(
@@ -158,7 +160,8 @@ fn escape_transform() {
         )),
       ),
       to_s,
-    )(i)
+    )
+    .parse(i)
   }
 
   assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], String::from("abcd"))));
@@ -202,7 +205,8 @@ fn escape_transform() {
         )),
       ),
       to_s,
-    )(i)
+    )
+    .parse(i)
   }
   assert_eq!(
     esc2(&b"ab&egrave;DEF;"[..]),

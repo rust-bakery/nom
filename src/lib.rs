@@ -32,7 +32,7 @@
 //!   map_res(
 //!     take_while_m_n(2, 2, is_hex_digit),
 //!     from_hex
-//!   )(input)
+//!   ).parse(input)
 //! }
 //!
 //! fn hex_color(input: &str) -> IResult<&str, Color> {

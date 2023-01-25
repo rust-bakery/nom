@@ -117,7 +117,7 @@ fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], CustomError> {
 fn test_flat_map() {
   let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
   assert_parse!(
-    flat_map(u8, take)(input),
+    flat_map(u8, take).parse(input),
     Ok((&[103, 104][..], &[100, 101, 102][..]))
   );
 }
@@ -126,11 +126,11 @@ fn test_flat_map() {
 fn test_map_opt() {
   let input: &[u8] = &[50][..];
   assert_parse!(
-    map_opt(u8, |u| if u < 20 { Some(u) } else { None })(input),
+    map_opt(u8, |u| if u < 20 { Some(u) } else { None }).parse(input),
     Err(Err::Error((&[50][..], ErrorKind::MapOpt)))
   );
   assert_parse!(
-    map_opt(u8, |u| if u > 20 { Some(u) } else { None })(input),
+    map_opt(u8, |u| if u > 20 { Some(u) } else { None }).parse(input),
     Ok((&[][..], 50))
   );
 }
@@ -139,7 +139,7 @@ fn test_map_opt() {
 fn test_map_parser() {
   let input: &[u8] = &[100, 101, 102, 103, 104][..];
   assert_parse!(
-    map_parser(take(4usize), take(2usize))(input),
+    map_parser(take(4usize), take(2usize)).parse(input),
     Ok((&[104][..], &[100, 101][..]))
   );
 }
@@ -200,7 +200,7 @@ fn test_into() {
   };
 
   let mut parser = into(take::<_, _, Error<_>>(3u8));
-  let result: IResult<&[u8], Vec<u8>> = parser(&b"abcdefg"[..]);
+  let result: IResult<&[u8], Vec<u8>> = parser.parse(&b"abcdefg"[..]);
 
   assert_eq!(result, Ok((&b"defg"[..], vec![97, 98, 99])));
 }

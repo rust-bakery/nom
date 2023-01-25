@@ -20,13 +20,13 @@ pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
 
 #[cfg(feature = "std")]
 mod parse_int {
-  use nom::HexDisplay;
   use nom::{
     character::streaming::{digit1 as digit, space1 as space},
     combinator::{complete, map, opt},
     multi::many,
     IResult,
   };
+  use nom::{HexDisplay, Parser};
   use std::str;
 
   fn parse_ints(input: &[u8]) -> IResult<&[u8], Vec<i32>> {
@@ -45,7 +45,8 @@ mod parse_int {
         Ok(i) => i,
         Err(e) => panic!("UH OH! NOT A DIGIT! {:?}", e),
       }
-    })(i)?;
+    })
+    .parse(i)?;
 
     Ok((i, res))
   }

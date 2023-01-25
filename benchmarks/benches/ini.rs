@@ -11,7 +11,7 @@ use nom::{
   combinator::{map_res, opt},
   multi::many,
   sequence::{delimited, pair, separated_pair, terminated, tuple},
-  IResult,
+  IResult, Parser,
 };
 use std::collections::HashMap;
 use std::str;
@@ -20,14 +20,15 @@ fn category(i: &[u8]) -> IResult<&[u8], &str> {
   map_res(
     delimited(char('['), take_while(|c| c != b']'), char(']')),
     str::from_utf8,
-  )(i)
+  )
+  .parse(i)
 }
 
 fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
-  let (i, key) = map_res(alphanumeric, str::from_utf8)(i)?;
-  let (i, _) = tuple((opt(space), char('='), opt(space)))(i)?;
-  let (i, val) = map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8)(i)?;
-  let (i, _) = opt(pair(char(';'), take_while(|c| c != b'\n')))(i)?;
+  let (i, key) = map_res(alphanumeric, str::from_utf8).parse(i)?;
+  let (i, _) = tuple((opt(space), char('='), opt(space))).parse(i)?;
+  let (i, val) = map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8).parse(i)?;
+  let (i, _) = opt(pair(char(';'), take_while(|c| c != b'\n'))).parse(i)?;
   Ok((i, (key, val)))
 }
 

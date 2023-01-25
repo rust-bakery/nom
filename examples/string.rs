@@ -18,7 +18,7 @@ use nom::combinator::{map, map_opt, map_res, value, verify};
 use nom::error::{FromExternalError, ParseError};
 use nom::multi::fold;
 use nom::sequence::{delimited, preceded};
-use nom::IResult;
+use nom::{IResult, Parser};
 
 // parser combinators are constructed from the bottom up:
 // first we write parsers for the smallest elements (escaped characters),
@@ -54,7 +54,7 @@ where
   // the function returns None, map_opt returns an error. In this case, because
   // not all u32 values are valid unicode code points, we have to fallibly
   // convert to char with from_u32.
-  map_opt(parse_u32, std::char::from_u32)(input)
+  map_opt(parse_u32, std::char::from_u32).parse(input)
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.

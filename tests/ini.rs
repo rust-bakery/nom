@@ -16,14 +16,15 @@ fn category(i: &[u8]) -> IResult<&[u8], &str> {
   map_res(
     delimited(char('['), take_while(|c| c != b']'), char(']')),
     str::from_utf8,
-  )(i)
+  )
+  .parse(i)
 }
 
 fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
-  let (i, key) = map_res(alphanumeric, str::from_utf8)(i)?;
+  let (i, key) = map_res(alphanumeric, str::from_utf8).parse(i)?;
   let (i, _) = (opt(space), char('='), opt(space)).parse(i)?;
-  let (i, val) = map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8)(i)?;
-  let (i, _) = opt(pair(char(';'), take_while(|c| c != b'\n')))(i)?;
+  let (i, val) = map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8).parse(i)?;
+  let (i, _) = opt(pair(char(';'), take_while(|c| c != b'\n'))).parse(i)?;
   Ok((i, (key, val)))
 }
 
@@ -51,7 +52,8 @@ fn categories(i: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
       ),
     ),
     |vec: Vec<_>| vec.into_iter().collect(),
-  )(i)
+  )
+  .parse(i)
 }
 
 #[test]

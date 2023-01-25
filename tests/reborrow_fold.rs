@@ -8,14 +8,15 @@ use nom::character::complete::char;
 use nom::combinator::{map, map_res};
 use nom::multi::fold;
 use nom::sequence::delimited;
-use nom::IResult;
+use nom::{IResult, Parser};
 
 fn atom(_tomb: &mut ()) -> impl for<'a> FnMut(&'a [u8]) -> IResult<&'a [u8], String> {
   move |input| {
     map(
       map_res(is_not(" \t\r\n"), str::from_utf8),
       ToString::to_string,
-    )(input)
+    )
+    .parse(input)
   }
 }
 

@@ -405,11 +405,11 @@ where
 /// You can use `digit1` in combination with [`map_res`] to parse an integer:
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed, Parser};
 /// # use nom::combinator::map_res;
 /// # use nom::character::complete::digit1;
 /// fn parser(input: &str) -> IResult<&str, u32> {
-///   map_res(digit1, str::parse)(input)
+///   map_res(digit1, str::parse).parse(input)
 /// }
 ///
 /// assert_eq!(parser("416"), Ok(("", 416)));

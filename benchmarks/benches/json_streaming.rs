@@ -34,7 +34,7 @@ fn boolean(input: &str) -> IResult<&str, bool> {
 }
 
 fn u16_hex(input: &str) -> IResult<&str, u16> {
-  map_res(take(4usize), |s| u16::from_str_radix(s, 16))(input)
+  map_res(take(4usize), |s| u16::from_str_radix(s, 16)).parse(input)
 }
 
 fn unicode_escape(input: &str) -> IResult<&str, char> {
@@ -59,7 +59,8 @@ fn unicode_escape(input: &str) -> IResult<&str, char> {
     )),
     // Could probably be replaced with .unwrap() or _unchecked due to the verify checks
     std::char::from_u32,
-  )(input)
+  )
+  .parse(input)
 }
 
 fn character(input: &str) -> IResult<&str, char> {
@@ -120,7 +121,8 @@ fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
       char('}'),
     ),
     |key_values| key_values.into_iter().collect(),
-  )(input)
+  )
+  .parse(input)
 }
 
 fn json_value(input: &str) -> IResult<&str, JsonValue> {

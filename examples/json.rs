@@ -9,7 +9,7 @@ use nom::{
   multi::separated_list0,
   number::complete::double,
   sequence::{delimited, preceded, separated_pair, terminated},
-  Err, IResult,
+  Err, IResult, Parser,
 };
 use std::collections::HashMap;
 use std::str;
@@ -77,7 +77,7 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool,
 }
 
 fn null<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, (), E> {
-  value((), tag("null"))(input)
+  value((), tag("null")).parse(input)
 }
 
 /// this parser combines the previous `parse_str` parser, that recognizes the

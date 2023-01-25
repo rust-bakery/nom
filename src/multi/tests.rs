@@ -7,13 +7,14 @@ use crate::{
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
   sequence::pair,
+  Parser,
 };
 #[cfg(feature = "alloc")]
 use crate::{
   lib::std::vec::Vec,
   multi::{
-    count, fold_many0, fold_many1, fold_many_m_n, length_count, many0, many1, many_m_n, many_till,
-    separated_list0, separated_list1, many, fold,
+    count, fold, fold_many0, fold_many1, fold_many_m_n, length_count, many, many0, many1, many_m_n,
+    many_till, separated_list0, separated_list1,
   },
 };
 
@@ -322,7 +323,7 @@ impl<I> ParseError<I> for NilError {
 fn number(i: &[u8]) -> IResult<&[u8], u32> {
   use crate::combinator::map_res;
 
-  map_res(map_res(digit, str::from_utf8), FromStr::from_str)(i)
+  map_res(map_res(digit, str::from_utf8), FromStr::from_str).parse(i)
 }
 
 #[test]
@@ -543,53 +544,52 @@ fn many_test() {
     }
     many(0.., tst)(i)
   }
-  
+
   let a = &b"abcdef"[..];
   assert_eq!(many_error_0(a), Ok((a, Vec::new())));
-  
-  
+
   fn many_error_1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     }
     many(1.., tst)(i)
   }
-  
+
   let a = &b"abcdef"[..];
   assert_eq!(
     many_error_1(a),
     Err(Err::Error(error_position!(a, ErrorKind::Tag)))
   );
-  
-  
+
   fn many_error(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(0.., tag(""))(i)
   }
-  
+
   let a = &b"abcdef"[..];
   assert_eq!(
     many_error(a),
-    Err(Err::Error(error_position!(
-      a,
-      ErrorKind::Many
-    )))
+    Err(Err::Error(error_position!(a, ErrorKind::Many)))
   );
-  
-  
+
   fn many_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(2..=1, tag("a"))(i)
   }
-  
+
   let a = &b"a"[..];
   let b = &b"b"[..];
-  assert_eq!(many_invalid(a), Err(Err::Failure(error_position!(a, ErrorKind::Many))));
-  assert_eq!(many_invalid(b), Err(Err::Failure(error_position!(b, ErrorKind::Many))));
-  
-  
+  assert_eq!(
+    many_invalid(a),
+    Err(Err::Failure(error_position!(a, ErrorKind::Many)))
+  );
+  assert_eq!(
+    many_invalid(b),
+    Err(Err::Failure(error_position!(b, ErrorKind::Many)))
+  );
+
   fn many_any(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(0.., tag("abcd"))(i)
   }
-  
+
   let a = &b"abcdef"[..];
   let b = &b"abcdabcdefgh"[..];
   let c = &b"azerty"[..];
@@ -605,8 +605,7 @@ fn many_test() {
   assert_eq!(many_any(d), Err(Err::Incomplete(Needed::new(2))));
   assert_eq!(many_any(e), Err(Err::Incomplete(Needed::new(4))));
   assert_eq!(many_any(f), Err(Err::Incomplete(Needed::new(4))));
-  
-  
+
   fn many_1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(1.., tag("abcd"))(i)
   }
@@ -624,8 +623,7 @@ fn many_test() {
     Err(Err::Error(error_position!(c, ErrorKind::Tag)))
   );
   assert_eq!(many_1(d), Err(Err::Incomplete(Needed::new(2))));
-  
-  
+
   fn many_m_n(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(2..=4, tag("Abcd"))(i)
   }
@@ -646,12 +644,11 @@ fn many_test() {
   let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(many_m_n(d), Ok((&b"Abcdefgh"[..], res3)));
   assert_eq!(many_m_n(e), Err(Err::Incomplete(Needed::new(2))));
-  
-  
+
   fn many_fixed(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(2, tag("Abcd"))(i)
   }
-  
+
   let a = &b"Abcdef"[..];
   let b = &b"AbcdAbcdefgh"[..];
   let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
@@ -665,24 +662,22 @@ fn many_test() {
   let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(many_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
   assert_eq!(many_fixed(d), Err(Err::Incomplete(Needed::new(2))));
-  
-  
+
   fn multi_exclusive(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(0..2, tag("Abcd"))(i)
   }
-  
+
   let a = &b"AbcdAbcdAbcd"[..];
   let b = &b"AAA"[..];
   let res1 = vec![&b"Abcd"[..]];
   assert_eq!(multi_exclusive(a), Ok((&b"AbcdAbcd"[..], res1)));
   let res2 = vec![];
   assert_eq!(multi_exclusive(b), Ok((&b"AAA"[..], res2)));
-  
-  
+
   fn many_never(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(0..=0, tag("A"))(i)
   }
-  
+
   let a = &b"AA"[..];
   let b = &b"B"[..];
   assert_eq!(many_never(a), Ok((&b"AA"[..], Vec::new())));
@@ -696,7 +691,7 @@ fn fold_test() {
     acc.push(item);
     acc
   }
-  
+
   // should not go into an infinite loop
   fn fold_error_0(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
@@ -704,53 +699,52 @@ fn fold_test() {
     }
     fold(0.., tst, Vec::new, fold_into_vec)(i)
   }
-  
+
   let a = &b"abcdef"[..];
   assert_eq!(fold_error_0(a), Ok((a, Vec::new())));
-  
-  
+
   fn fold_error_1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     }
     fold(1.., tst, Vec::new, fold_into_vec)(i)
   }
-  
+
   let a = &b"abcdef"[..];
   assert_eq!(
     fold_error_1(a),
     Err(Err::Error(error_position!(a, ErrorKind::Tag)))
   );
-  
-  
+
   fn fold_error(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(0.., tag(""), Vec::new, fold_into_vec)(i)
   }
-  
+
   let a = &b"abcdef"[..];
   assert_eq!(
     fold_error(a),
-    Err(Err::Error(error_position!(
-      a,
-      ErrorKind::Fold
-    )))
+    Err(Err::Error(error_position!(a, ErrorKind::Fold)))
   );
-  
-  
+
   fn fold_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(2..=1, tag("a"), Vec::new, fold_into_vec)(i)
   }
-  
+
   let a = &b"a"[..];
   let b = &b"b"[..];
-  assert_eq!(fold_invalid(a), Err(Err::Failure(error_position!(a, ErrorKind::Fold))));
-  assert_eq!(fold_invalid(b), Err(Err::Failure(error_position!(b, ErrorKind::Fold))));
-  
-  
+  assert_eq!(
+    fold_invalid(a),
+    Err(Err::Failure(error_position!(a, ErrorKind::Fold)))
+  );
+  assert_eq!(
+    fold_invalid(b),
+    Err(Err::Failure(error_position!(b, ErrorKind::Fold)))
+  );
+
   fn fold_any(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(0.., tag("abcd"), Vec::new, fold_into_vec)(i)
   }
-  
+
   let a = &b"abcdef"[..];
   let b = &b"abcdabcdefgh"[..];
   let c = &b"azerty"[..];
@@ -766,8 +760,7 @@ fn fold_test() {
   assert_eq!(fold_any(d), Err(Err::Incomplete(Needed::new(2))));
   assert_eq!(fold_any(e), Err(Err::Incomplete(Needed::new(4))));
   assert_eq!(fold_any(f), Err(Err::Incomplete(Needed::new(4))));
-  
-  
+
   fn fold_1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(1.., tag("abcd"), Vec::new, fold_into_vec)(i)
   }
@@ -785,8 +778,7 @@ fn fold_test() {
     Err(Err::Error(error_position!(c, ErrorKind::Tag)))
   );
   assert_eq!(fold_1(d), Err(Err::Incomplete(Needed::new(2))));
-  
-  
+
   fn fold_m_n(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(2..=4, tag("Abcd"), Vec::new, fold_into_vec)(i)
   }
@@ -807,12 +799,11 @@ fn fold_test() {
   let res3 = vec![&b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(fold_m_n(d), Ok((&b"Abcdefgh"[..], res3)));
   assert_eq!(fold_m_n(e), Err(Err::Incomplete(Needed::new(2))));
-  
-  
+
   fn fold_fixed(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(2, tag("Abcd"), Vec::new, fold_into_vec)(i)
   }
-  
+
   let a = &b"Abcdef"[..];
   let b = &b"AbcdAbcdefgh"[..];
   let c = &b"AbcdAbcdAbcdAbcdefgh"[..];
@@ -826,24 +817,22 @@ fn fold_test() {
   let res2 = vec![&b"Abcd"[..], &b"Abcd"[..]];
   assert_eq!(fold_fixed(c), Ok((&b"AbcdAbcdefgh"[..], res2)));
   assert_eq!(fold_fixed(d), Err(Err::Incomplete(Needed::new(2))));
-  
-  
+
   fn fold_exclusive(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(0..2, tag("Abcd"), Vec::new, fold_into_vec)(i)
   }
-  
+
   let a = &b"AbcdAbcdAbcd"[..];
   let b = &b"AAA"[..];
   let res1 = vec![&b"Abcd"[..]];
   assert_eq!(fold_exclusive(a), Ok((&b"AbcdAbcd"[..], res1)));
   let res2 = vec![];
   assert_eq!(fold_exclusive(b), Ok((&b"AAA"[..], res2)));
-  
-  
+
   fn fold_never(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(0..=0, tag("A"), Vec::new, fold_into_vec)(i)
   }
-  
+
   let a = &b"AAA"[..];
   let b = &b"B"[..];
   assert_eq!(fold_never(a), Ok((&b"AAA"[..], Vec::new())));
