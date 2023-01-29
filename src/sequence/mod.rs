@@ -15,17 +15,17 @@ use crate::{Check, OutputM, OutputMode, PResult};
 /// * `second` The second parser to apply.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::pair;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = pair(tag("abc"), tag("efg"));
 ///
-/// assert_eq!(parser("abcefg"), Ok(("", ("abc", "efg"))));
-/// assert_eq!(parser("abcefghij"), Ok(("hij", ("abc", "efg"))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("abcefg"), Ok(("", ("abc", "efg"))));
+/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", ("abc", "efg"))));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
   first: F,
@@ -46,17 +46,17 @@ where
 /// * `second` The second parser to get object.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::preceded;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = preceded(tag("abc"), tag("efg"));
 ///
-/// assert_eq!(parser("abcefg"), Ok(("", "efg")));
-/// assert_eq!(parser("abcefghij"), Ok(("hij", "efg")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("abcefg"), Ok(("", "efg")));
+/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", "efg")));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn preceded<I, O, E: ParseError<I>, F, G>(
   first: F,
@@ -102,17 +102,17 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 /// * `second` The second parser to match an object.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::terminated;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = terminated(tag("abc"), tag("efg"));
 ///
-/// assert_eq!(parser("abcefg"), Ok(("", "abc")));
-/// assert_eq!(parser("abcefghij"), Ok(("hij", "abc")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("abcefg"), Ok(("", "abc")));
+/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", "abc")));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn terminated<I, O, E: ParseError<I>, F, G>(
   first: F,
@@ -160,17 +160,17 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 /// * `second` The second parser to apply.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::separated_pair;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = separated_pair(tag("abc"), tag("|"), tag("efg"));
 ///
-/// assert_eq!(parser("abc|efg"), Ok(("", ("abc", "efg"))));
-/// assert_eq!(parser("abc|efghij"), Ok(("hij", ("abc", "efg"))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("abc|efg"), Ok(("", ("abc", "efg"))));
+/// assert_eq!(parser.parse("abc|efghij"), Ok(("hij", ("abc", "efg"))));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn separated_pair<I, O1, O2, E: ParseError<I>, F, G, H>(
   first: F,
@@ -195,17 +195,17 @@ where
 /// * `third` The third parser to apply and discard.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::delimited;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = delimited(tag("("), tag("abc"), tag(")"));
 ///
-/// assert_eq!(parser("(abc)"), Ok(("", "abc")));
-/// assert_eq!(parser("(abc)def"), Ok(("def", "abc")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("(abc)"), Ok(("", "abc")));
+/// assert_eq!(parser.parse("(abc)def"), Ok(("def", "abc")));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn delimited<I, O, E: ParseError<I>, F, G, H>(
   first: F,

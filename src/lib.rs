@@ -89,6 +89,7 @@
 //! ```rust
 //! use nom::{
 //!   IResult,
+//!   Parser,
 //!   sequence::delimited,
 //!   // see the "streaming/complete" paragraph lower for an explanation of these submodules
 //!   character::complete::char,
@@ -96,7 +97,7 @@
 //! };
 //!
 //! fn parens(input: &str) -> IResult<&str, &str> {
-//!   delimited(char('('), is_not(")"), char(')'))(input)
+//!   delimited(char('('), is_not(")"), char(')')).parse(input)
 //! }
 //! ```
 //!
