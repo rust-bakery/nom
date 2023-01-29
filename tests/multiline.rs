@@ -2,7 +2,7 @@ use nom::{
   character::complete::{alphanumeric1 as alphanumeric, line_ending as eol},
   multi::many,
   sequence::terminated,
-  IResult,
+  IResult, Parser,
 };
 
 pub fn end_of_line(input: &str) -> IResult<&str, &str> {
@@ -14,7 +14,7 @@ pub fn end_of_line(input: &str) -> IResult<&str, &str> {
 }
 
 pub fn read_line(input: &str) -> IResult<&str, &str> {
-  terminated(alphanumeric, end_of_line)(input)
+  terminated(alphanumeric, end_of_line).parse(input)
 }
 
 pub fn read_lines(input: &str) -> IResult<&str, Vec<&str>> {

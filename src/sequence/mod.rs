@@ -5,6 +5,7 @@ mod tests;
 
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
+use crate::{Check, OutputM, OutputMode, PResult};
 
 /// Gets an object from the first parser,
 /// then gets another object from the second parser.
@@ -27,17 +28,14 @@ use crate::internal::{IResult, Parser};
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
-  mut first: F,
-  mut second: G,
-) -> impl FnMut(I) -> IResult<I, (O1, O2), E>
+  first: F,
+  second: G,
+) -> impl Parser<I, Output = (O1, O2), Error = E>
 where
   F: Parser<I, Output = O1, Error = E>,
   G: Parser<I, Output = O2, Error = E>,
 {
-  move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    second.parse(input).map(|(i, o2)| (i, (o1, o2)))
-  }
+  first.and(second)
 }
 
 /// Matches an object from the first parser and discards it,
@@ -61,16 +59,38 @@ where
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn preceded<I, O, E: ParseError<I>, F, G>(
-  mut first: F,
-  mut second: G,
-) -> impl FnMut(I) -> IResult<I, O, E>
+  first: F,
+  second: G,
+) -> impl Parser<I, Output = O, Error = E>
 where
   F: Parser<I, Error = E>,
   G: Parser<I, Output = O, Error = E>,
 {
-  move |input: I| {
-    let (input, _) = first.parse(input)?;
-    second.parse(input)
+  Preceded {
+    f: first,
+    g: second,
+  }
+}
+
+/// a
+pub struct Preceded<F, G> {
+  f: F,
+  g: G,
+}
+
+impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Parser<I>
+  for Preceded<F, G>
+{
+  type Output = <G as Parser<I>>::Output;
+  type Error = E;
+
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (i, _) = self
+      .f
+      .process::<OutputM<Check, OM::Error, OM::Incomplete>>(i)?;
+    let (i, o2) = self.g.process::<OM>(i)?;
+
+    Ok((i, o2))
   }
 }
 
@@ -95,16 +115,38 @@ where
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn terminated<I, O, E: ParseError<I>, F, G>(
-  mut first: F,
-  mut second: G,
-) -> impl FnMut(I) -> IResult<I, O, E>
+  first: F,
+  second: G,
+) -> impl Parser<I, Output = O, Error = E>
 where
   F: Parser<I, Output = O, Error = E>,
   G: Parser<I, Error = E>,
 {
-  move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    second.parse(input).map(|(i, _)| (i, o1))
+  Terminated {
+    f: first,
+    g: second,
+  }
+}
+
+/// a
+pub struct Terminated<F, G> {
+  f: F,
+  g: G,
+}
+
+impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Parser<I>
+  for Terminated<F, G>
+{
+  type Output = <F as Parser<I>>::Output;
+  type Error = E;
+
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (i, o1) = self.f.process::<OM>(i)?;
+    let (i, _) = self
+      .g
+      .process::<OutputM<Check, OM::Error, OM::Incomplete>>(i)?;
+
+    Ok((i, o1))
   }
 }
 
@@ -131,20 +173,16 @@ where
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn separated_pair<I, O1, O2, E: ParseError<I>, F, G, H>(
-  mut first: F,
-  mut sep: G,
-  mut second: H,
-) -> impl FnMut(I) -> IResult<I, (O1, O2), E>
+  first: F,
+  sep: G,
+  second: H,
+) -> impl Parser<I, Output = (O1, O2), Error = E>
 where
   F: Parser<I, Output = O1, Error = E>,
   G: Parser<I, Error = E>,
   H: Parser<I, Output = O2, Error = E>,
 {
-  move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    let (input, _) = sep.parse(input)?;
-    second.parse(input).map(|(i, o2)| (i, (o1, o2)))
-  }
+  first.and(preceded(sep, second))
 }
 
 /// Matches an object from the first parser and discards it,
@@ -170,20 +208,16 @@ where
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn delimited<I, O, E: ParseError<I>, F, G, H>(
-  mut first: F,
-  mut second: G,
-  mut third: H,
-) -> impl FnMut(I) -> IResult<I, O, E>
+  first: F,
+  second: G,
+  third: H,
+) -> impl Parser<I, Output = O, Error = E>
 where
   F: Parser<I, Error = E>,
   G: Parser<I, Output = O, Error = E>,
   H: Parser<I, Error = E>,
 {
-  move |input: I| {
-    let (input, _) = first.parse(input)?;
-    let (input, o2) = second.parse(input)?;
-    third.parse(input).map(|(i, _)| (i, o2))
-  }
+  preceded(first, terminated(second, third))
 }
 
 /// Helper trait for the tuple combinator.

@@ -711,7 +711,8 @@ mod tests {
       char('"'),
       escaped(opt(none_of(r#"\""#)), '\\', one_of(r#"\"rnt"#)),
       char('"'),
-    )(input)
+    )
+    .parse(input)
   }
 
   #[test]

@@ -340,7 +340,8 @@ impl IsStreaming for Complete {
   }
 }
 
-struct OutputM<M: Mode, EM: Mode, S: IsStreaming> {
+/// a
+pub struct OutputM<M: Mode, EM: Mode, S: IsStreaming> {
   m: PhantomData<M>,
   em: PhantomData<EM>,
   s: PhantomData<S>,
@@ -765,7 +766,7 @@ mod tests {
   #[test]
   fn native_tuple_test() {
     fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8])> {
-      terminated((be_u16, take(3u8)), tag("fg"))(i)
+      terminated((be_u16, take(3u8)), tag("fg")).parse(i)
     }
 
     assert_eq!(

@@ -81,7 +81,8 @@ where
       value('/', char('/')),
       value('"', char('"')),
     )),
-  )(input)
+  )
+  .parse(input)
 }
 
 /// Parse a backslash, followed by any amount of whitespace. This is used later
@@ -89,7 +90,7 @@ where
 fn parse_escaped_whitespace<'a, E: ParseError<&'a str>>(
   input: &'a str,
 ) -> IResult<&'a str, &'a str, E> {
-  preceded(char('\\'), multispace1)(input)
+  preceded(char('\\'), multispace1).parse(input)
 }
 
 /// Parse a non-empty block of text that doesn't include \ or "
@@ -160,7 +161,7 @@ where
   // " character, the closing delimiter " would never match. When using
   // `delimited` with a looping parser (like fold), be sure that the
   // loop won't accidentally match your closing delimiter!
-  delimited(char('"'), build_string, char('"'))(input)
+  delimited(char('"'), build_string, char('"')).parse(input)
 }
 
 fn main() {

@@ -25,7 +25,8 @@ fn category(i: &str) -> IResult<&str, &str> {
   terminated(
     delimited(char('['), take_while(|c| c != ']'), char(']')),
     opt(is_a(" \r\n")),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
@@ -51,7 +52,7 @@ fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
 }
 
 fn category_and_keys(i: &str) -> IResult<&str, (&str, HashMap<&str, &str>)> {
-  pair(category, keys_and_values)(i)
+  pair(category, keys_and_values).parse(i)
 }
 
 #[allow(clippy::type_complexity)]

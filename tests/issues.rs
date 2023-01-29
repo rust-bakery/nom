@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![allow(clippy::redundant_closure)]
 
-use nom::{error::ErrorKind, Err, IResult, Needed};
+use nom::{error::ErrorKind, Err, IResult, Needed, Parser};
 
 #[allow(dead_code)]
 struct Range {
@@ -185,7 +185,7 @@ fn issue_1027_convert_error_panic_nonempty() {
 
   let input = "a";
 
-  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b'))(input);
+  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b')).parse(input);
   let err = match result.unwrap_err() {
     Err::Error(e) => e,
     _ => unreachable!(),

@@ -11,7 +11,7 @@ use nom::{
   combinator::map_res,
   multi::fold,
   sequence::{delimited, pair},
-  IResult,
+  IResult, Parser,
 };
 
 // Parser definition
@@ -29,7 +29,8 @@ fn factor(input: &[u8]) -> IResult<&[u8], i64> {
       delimited(char('('), expr, char(')')),
     )),
     space0,
-  )(input)
+  )
+  .parse(input)
 }
 
 // We read an initial factor and for each time we find

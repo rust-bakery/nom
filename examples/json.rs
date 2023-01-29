@@ -126,7 +126,8 @@ fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     preceded(sp, string),
     cut(preceded(sp, char(':'))),
     json_value,
-  )(i)
+  )
+  .parse(i)
 }
 
 fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -166,7 +167,8 @@ fn json_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
       map(boolean, JsonValue::Boolean),
       map(null, |_| JsonValue::Null),
     )),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// the root element of a JSON parser is either an object or an array
@@ -181,7 +183,8 @@ fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
       map(null, |_| JsonValue::Null),
     )),
     opt(sp),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn main() {

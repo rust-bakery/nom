@@ -153,7 +153,7 @@ fn parse_constant(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
 ///
 /// Unlike the previous functions, this function doesn't take or consume input, instead it
 /// takes a parsing function and returns a new parsing function.
-fn s_exp<'a, O1, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>
+fn s_exp<'a, O1, F>(inner: F) -> impl Parser<&'a str, Output = O1, Error = VerboseError<&'a str>>
 where
   F: Parser<&'a str, Output = O1, Error = VerboseError<&'a str>>,
 {
@@ -179,7 +179,7 @@ fn parse_application(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
     Expr::Application(Box::new(head), tail)
   });
   // finally, we wrap it in an s-expression
-  s_exp(application_inner)(i)
+  s_exp(application_inner).parse(i)
 }
 
 /// Because `Expr::If` and `Expr::IfElse` are so similar (we easily could have
@@ -212,7 +212,7 @@ fn parse_if(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
       },
     ),
   );
-  s_exp(if_inner)(i)
+  s_exp(if_inner).parse(i)
 }
 
 /// A quoted S-expression is list data structure.
@@ -240,7 +240,8 @@ fn parse_expr(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
   preceded(
     multispace0,
     alt((parse_constant, parse_application, parse_if, parse_quote)),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// And that's it!

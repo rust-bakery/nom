@@ -33,7 +33,7 @@ fn keys_and_values(i: &[u8]) -> IResult<&[u8], HashMap<&str, &str>> {
 }
 
 fn category_and_keys(i: &[u8]) -> IResult<&[u8], (&str, HashMap<&str, &str>)> {
-  let (i, category) = terminated(category, opt(multispace))(i)?;
+  let (i, category) = terminated(category, opt(multispace)).parse(i)?;
   let (i, keys) = keys_and_values(i)?;
   Ok((i, (category, keys)))
 }
