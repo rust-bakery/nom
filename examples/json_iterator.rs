@@ -233,7 +233,7 @@ fn string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
 }
 
 fn boolean<'a>(input: &'a str) -> IResult<&'a str, bool> {
-  alt((map(tag("false"), |_| false), map(tag("true"), |_| true)))(input)
+  alt((map(tag("false"), |_| false), map(tag("true"), |_| true))).parse(input)
 }
 
 fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {

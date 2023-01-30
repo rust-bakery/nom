@@ -1373,7 +1373,8 @@ where
       crate::bytes::complete::tag_no_case::<_, _, E>("infinity")(i.clone())
         .map_err(|_| crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)))
     },
-  ))(input)
+  ))
+  .parse(input)
 }
 
 /// Recognizes a floating point number in text format

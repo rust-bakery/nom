@@ -10,7 +10,7 @@ use nom::{
   bytes::complete::{tag, take},
   character::complete::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
-  error::{ErrorKind, ParseError},
+  error::{Error, ErrorKind, ParseError},
   multi::{fold, separated_list0},
   number::complete::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
@@ -29,25 +29,26 @@ pub enum JsonValue {
   Object(HashMap<String, JsonValue>),
 }
 
-fn boolean(input: &str) -> IResult<&str, bool> {
-  alt((value(false, tag("false")), value(true, tag("true"))))(input)
+fn boolean<'a>() -> impl Parser<&'a str, Output = bool, Error = Error<&'a str>> {
+  alt((value(false, tag("false")), value(true, tag("true"))))
 }
 
-fn u16_hex(input: &str) -> IResult<&str, u16> {
-  map_res(take(4usize), |s| u16::from_str_radix(s, 16)).parse(input)
+fn u16_hex<'a>() -> impl Parser<&'a str, Output = u16, Error = Error<&'a str>> {
+  map_res(take(4usize), |s| u16::from_str_radix(s, 16))
 }
 
-fn unicode_escape(input: &str) -> IResult<&str, char> {
+fn unicode_escape<'a>() -> impl Parser<&'a str, Output = char, Error = Error<&'a str>> {
   map_opt(
     alt((
       // Not a surrogate
-      map(verify(u16_hex, |cp| !(0xD800..0xE000).contains(cp)), |cp| {
-        cp as u32
-      }),
+      map(
+        verify(u16_hex(), |cp| !(0xD800..0xE000).contains(cp)),
+        |cp| cp as u32,
+      ),
       // See https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF for details
       map(
         verify(
-          separated_pair(u16_hex, tag("\\u"), u16_hex),
+          separated_pair(u16_hex(), tag("\\u"), u16_hex()),
           |(high, low)| (0xD800..0xDC00).contains(high) && (0xDC00..0xE000).contains(low),
         ),
         |(high, low)| {
@@ -60,7 +61,6 @@ fn unicode_escape(input: &str) -> IResult<&str, char> {
     // Could probably be replaced with .unwrap() or _unchecked due to the verify checks
     std::char::from_u32,
   )
-  .parse(input)
 }
 
 fn character(input: &str) -> IResult<&str, char> {
@@ -78,14 +78,15 @@ fn character(input: &str) -> IResult<&str, char> {
           _ => return Err(()),
         })
       }),
-      preceded(char('u'), unicode_escape),
-    ))(input)
+      preceded(char('u'), unicode_escape()),
+    ))
+    .parse(input)
   } else {
     Ok((input, c))
   }
 }
 
-fn string(input: &str) -> IResult<&str, String> {
+fn string<'a>() -> impl Parser<&'a str, Output = String, Error = Error<&'a str>> {
   delimited(
     char('"'),
     fold(0.., character, String::new, |mut string, c| {
@@ -94,7 +95,6 @@ fn string(input: &str) -> IResult<&str, String> {
     }),
     char('"'),
   )
-  .parse(input)
 }
 
 fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
@@ -103,28 +103,27 @@ fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
   delimited(multispace0, f, multispace0)
 }
 
-fn array(input: &str) -> IResult<&str, Vec<JsonValue>> {
+fn array<'a>() -> impl Parser<&'a str, Output = Vec<JsonValue>, Error = Error<&'a str>> {
   delimited(
     char('['),
     ws(separated_list0(ws(char(',')), json_value)),
     char(']'),
   )
-  .parse(input)
 }
 
-fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
+fn object<'a>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Error = Error<&'a str>>
+{
   map(
     delimited(
       char('{'),
       ws(separated_list0(
         ws(char(',')),
-        separated_pair(string, ws(char(':')), json_value),
+        separated_pair(string(), ws(char(':')), json_value),
       )),
       char('}'),
     ),
     |key_values| key_values.into_iter().collect(),
   )
-  .parse(input)
 }
 
 fn json_value(input: &str) -> IResult<&str, JsonValue> {
@@ -132,12 +131,13 @@ fn json_value(input: &str) -> IResult<&str, JsonValue> {
 
   alt((
     value(Null, tag("null")),
-    map(boolean, Bool),
-    map(string, Str),
+    map(boolean(), Bool),
+    map(string(), Str),
     map(double, Num),
-    map(array, Array),
-    map(object, Object),
-  ))(input)
+    map(array(), Array),
+    map(object(), Object),
+  ))
+  .parse(input)
 }
 
 fn json(input: &str) -> IResult<&str, JsonValue> {

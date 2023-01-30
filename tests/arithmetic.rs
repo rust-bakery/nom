@@ -26,7 +26,8 @@ fn factor(i: &str) -> IResult<&str, i64> {
   alt((
     map_res(delimited(space, digit, space), FromStr::from_str),
     parens,
-  ))(i)
+  ))
+  .parse(i)
 }
 
 // We read an initial factor and for each time we find

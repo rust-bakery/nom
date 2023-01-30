@@ -569,7 +569,7 @@ where
 ///
 /// Without `cut`:
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// # use nom::character::complete::{one_of, digit1};
 /// # use nom::combinator::rest;
 /// # use nom::branch::alt;
@@ -580,7 +580,7 @@ where
 ///   alt((
 ///     preceded(one_of("+-"), digit1),
 ///     rest
-///   ))(input)
+///   )).parse(input)
 /// }
 ///
 /// assert_eq!(parser("+10 ab"), Ok((" ab", "10")));
@@ -591,7 +591,7 @@ where
 ///
 /// With `cut`:
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult, error::Error};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser, error::Error};
 /// # use nom::character::complete::{one_of, digit1};
 /// # use nom::combinator::rest;
 /// # use nom::branch::alt;
@@ -603,7 +603,7 @@ where
 ///   alt((
 ///     preceded(one_of("+-"), cut(digit1)),
 ///     rest
-///   ))(input)
+///   )).parse(input)
 /// }
 ///
 /// assert_eq!(parser("+10 ab"), Ok((" ab", "10")));
@@ -755,7 +755,7 @@ enum State<E> {
 /// specify the default case.
 ///
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::branch::alt;
 /// use nom::combinator::{success, value};
 /// use nom::character::complete::char;
@@ -765,9 +765,9 @@ enum State<E> {
 /// assert_eq!(parser("xyz"), Ok(("xyz", 10)));
 ///
 /// let mut sign = alt((value(-1, char('-')), value(1, char('+')), success::<_,_,(_,ErrorKind)>(1)));
-/// assert_eq!(sign("+10"), Ok(("10", 1)));
-/// assert_eq!(sign("-10"), Ok(("10", -1)));
-/// assert_eq!(sign("10"), Ok(("10", 1)));
+/// assert_eq!(sign.parse("+10"), Ok(("10", 1)));
+/// assert_eq!(sign.parse("-10"), Ok(("10", -1)));
+/// assert_eq!(sign.parse("10"), Ok(("10", 1)));
 /// # }
 /// ```
 pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E> {

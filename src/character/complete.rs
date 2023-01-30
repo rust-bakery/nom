@@ -9,6 +9,7 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult};
 use crate::traits::{AsChar, FindToken, Input, InputLength};
 use crate::traits::{Compare, CompareResult};
+use crate::Parser;
 
 /// Recognizes one character.
 ///
@@ -703,7 +704,8 @@ where
   let (i, opt_sign) = opt(alt((
     value(false, tag(&b"-"[..])),
     value(true, tag(&b"+"[..])),
-  )))(input)?;
+  )))
+  .parse(input)?;
   let sign = opt_sign.unwrap_or(true);
 
   Ok((i, sign))

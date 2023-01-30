@@ -128,7 +128,8 @@ where
     map(parse_literal, StringFragment::Literal),
     map(parse_escaped_char, StringFragment::EscapedChar),
     value(StringFragment::EscapedWS, parse_escaped_whitespace),
-  ))(input)
+  ))
+  .parse(input)
 }
 
 /// Parse a string. Use a loop of parse_fragment and push all of the fragments

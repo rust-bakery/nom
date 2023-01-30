@@ -7,14 +7,6 @@ use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Parser};
 
-/// Helper trait for the [alt()] combinator.
-///
-/// This trait is implemented for tuples of up to 21 elements
-pub trait Alt<I, O, E> {
-  /// Tests each parser in the tuple and returns the result of the first one that succeeds
-  fn choice(&mut self, input: I) -> IResult<I, O, E>;
-}
-
 /// Tests a list of parsers one by one until one succeeds.
 ///
 /// It takes as argument a tuple of parsers. There is a maximum of 21
@@ -23,12 +15,12 @@ pub trait Alt<I, O, E> {
 ///
 /// ```rust
 /// # use nom::error_position;
-/// # use nom::{Err,error::ErrorKind, Needed, IResult};
+/// # use nom::{Err,error::ErrorKind, Needed, IResult, Parser};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::alt;
 /// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, &str> {
-///   alt((alpha1, digit1))(input)
+///   alt((alpha1, digit1)).parse(input)
 /// };
 ///
 /// // the first parser, alpha1, recognizes the input
@@ -44,10 +36,8 @@ pub trait Alt<I, O, E> {
 ///
 /// With a custom error type, it is possible to have alt return the error of the parser
 /// that went the farthest in the input data
-pub fn alt<I: Clone, O, E: ParseError<I>, List: Alt<I, O, E>>(
-  mut l: List,
-) -> impl FnMut(I) -> IResult<I, O, E> {
-  move |i: I| l.choice(i)
+pub fn alt<List>(l: List) -> Choice<List> {
+  Choice { parser: l }
 }
 
 /// Helper trait for the [permutation()] combinator.
@@ -124,15 +114,25 @@ macro_rules! alt_trait(
   );
 );
 
+/// Wrapping structure for the [alt()] combinator implementation
+pub struct Choice<T> {
+  parser: T,
+}
+
 macro_rules! alt_trait_impl(
   ($($id:ident)+) => (
     impl<
       Input: Clone, Output, Error: ParseError<Input>,
       $($id: Parser<Input, Output = Output, Error = Error>),+
-    > Alt<Input, Output, Error> for ( $($id),+ ) {
+    > Parser<Input> for Choice< ( $($id),+ )> {
+      type Output = Output;
+      type Error = Error;
 
-      fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
-        match self.0.parse(input.clone()) {
+      fn process<OM: crate::OutputMode>(
+        &mut self,
+        input: Input,
+      ) -> crate::PResult<OM, Input, Self::Output, Self::Error> {
+        match self.parser.0.process::<OM>(input.clone()) {
           Err(Err::Error(e)) => alt_trait_inner!(1, self, input, e, $($id)+),
           res => res,
         }
@@ -143,16 +143,16 @@ macro_rules! alt_trait_impl(
 
 macro_rules! alt_trait_inner(
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident $($id:ident)+) => (
-    match $self.$it.parse($input.clone()) {
+    match $self.parser.$it.process::<OM>($input.clone()) {
       Err(Err::Error(e)) => {
-        let err = $err.or(e);
+        let err = <OM::Error as crate::Mode>::combine($err, e, |e1, e2| e1.or(e2));
         succ!($it, alt_trait_inner!($self, $input, err, $($id)+))
       }
       res => res,
     }
   );
   ($it:tt, $self:expr, $input:expr, $err:expr, $head:ident) => (
-    Err(Err::Error(Error::append($input, ErrorKind::Alt, $err)))
+    Err(Err::Error(<OM::Error as crate::Mode>::map($err, |err| Error::append($input, ErrorKind::Alt, err))))
   );
 );
 
@@ -160,10 +160,16 @@ alt_trait!(A B C D E F G H I J K L M N O P Q R S T U);
 
 // Manually implement Alt for (A,), the 1-tuple type
 impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output = Output, Error = Error>>
-  Alt<Input, Output, Error> for (A,)
+  Parser<Input> for Choice<(A,)>
 {
-  fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
-    self.0.parse(input)
+  type Output = Output;
+  type Error = Error;
+
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    input: Input,
+  ) -> crate::PResult<OM, Input, Self::Output, Self::Error> {
+    self.parser.0.process::<OM>(input)
   }
 }
 

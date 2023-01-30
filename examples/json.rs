@@ -73,7 +73,7 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool,
 
   // `alt` combines the two parsers. It returns the result of the first
   // successful parser, or an error
-  alt((parse_true, parse_false))(input)
+  alt((parse_true, parse_false)).parse(input)
 }
 
 fn null<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, (), E> {

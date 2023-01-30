@@ -92,7 +92,8 @@ fn parse_builtin(i: &str) -> IResult<&str, BuiltIn, VerboseError<&str>> {
     // map lets us process the parsed output, in this case we know what we parsed,
     // so we ignore the input and return the BuiltIn directly
     map(tag("not"), |_| BuiltIn::Not),
-  ))(i)
+  ))
+  .parse(i)
 }
 
 /// Our boolean values are also constant, so we can do it the same way
@@ -100,7 +101,8 @@ fn parse_bool(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
   alt((
     map(tag("#t"), |_| Atom::Boolean(true)),
     map(tag("#f"), |_| Atom::Boolean(false)),
-  ))(i)
+  ))
+  .parse(i)
 }
 
 /// The next easiest thing to parse are keywords.
@@ -127,7 +129,8 @@ fn parse_num(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
     map(preceded(tag("-"), digit1), |digit_str: &str| {
       Atom::Num(-digit_str.parse::<i32>().unwrap())
     }),
-  ))(i)
+  ))
+  .parse(i)
 }
 
 /// Now we take all these simple parsers and connect them.
@@ -138,7 +141,8 @@ fn parse_atom(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
     parse_bool,
     map(parse_builtin, Atom::BuiltIn),
     parse_keyword,
-  ))(i)
+  ))
+  .parse(i)
 }
 
 /// We then add the Expr layer on top

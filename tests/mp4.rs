@@ -287,7 +287,8 @@ fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
     map(tag("skip"), |_| MP4BoxType::Skip),
     map(tag("wide"), |_| MP4BoxType::Wide),
     unknown_box_type,
-  ))(input)
+  ))
+  .parse(input)
 }
 
 // warning, an alt combinator with 9 branches containing a tag combinator
@@ -304,7 +305,8 @@ fn moov_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
     map(tag("clip"), |_| MP4BoxType::Clip),
     map(tag("trak"), |_| MP4BoxType::Trak),
     map(tag("udta"), |_| MP4BoxType::Udta),
-  ))(input)
+  ))
+  .parse(input)
 }
 
 fn box_header(input: &[u8]) -> IResult<&[u8], MP4BoxHeader> {

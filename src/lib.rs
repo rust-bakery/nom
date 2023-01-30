@@ -202,15 +202,15 @@
 //! the next, and returns the result of the first parser that succeeds:
 //!
 //! ```rust
-//! use nom::IResult;
+//! use nom::{IResult, Parser};
 //! use nom::branch::alt;
 //! use nom::bytes::complete::tag;
 //!
 //! let mut alt_tags = alt((tag("abcd"), tag("efgh")));
 //!
-//! assert_eq!(alt_tags(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
-//! assert_eq!(alt_tags(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
-//! assert_eq!(alt_tags(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
+//! assert_eq!(alt_tags.parse(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
+//! assert_eq!(alt_tags.parse(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
+//! assert_eq!(alt_tags.parse(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
 //! ```
 //!
 //! The **`opt`** combinator makes a parser optional. If the child parser returns

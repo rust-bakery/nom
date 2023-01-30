@@ -75,7 +75,8 @@ fn factor(i: &str) -> IResult<&str, Expr> {
       Expr::Value,
     ),
     parens,
-  ))(i)
+  ))
+  .parse(i)
 }
 
 fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {

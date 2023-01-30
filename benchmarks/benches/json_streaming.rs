@@ -30,7 +30,7 @@ pub enum JsonValue {
 }
 
 fn boolean(input: &str) -> IResult<&str, bool> {
-  alt((value(false, tag("false")), value(true, tag("true"))))(input)
+  alt((value(false, tag("false")), value(true, tag("true")))).parse(input)
 }
 
 fn u16_hex(input: &str) -> IResult<&str, u16> {
@@ -79,7 +79,8 @@ fn character(input: &str) -> IResult<&str, char> {
         })
       }),
       preceded(char('u'), unicode_escape),
-    ))(input)
+    ))
+    .parse(input)
   } else {
     Ok((input, c))
   }
@@ -137,7 +138,8 @@ fn json_value(input: &str) -> IResult<&str, JsonValue> {
     map(double, Num),
     map(array, Array),
     map(object, Object),
-  ))(input)
+  ))
+  .parse(input)
 }
 
 fn json(input: &str) -> IResult<&str, JsonValue> {
