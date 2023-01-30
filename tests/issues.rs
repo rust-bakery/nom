@@ -105,13 +105,14 @@ fn issue_717(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
   use nom::bytes::complete::{is_not, tag};
   use nom::multi::separated_list0;
 
-  separated_list0(tag([0x0]), is_not([0x0u8]))(i)
+  separated_list0(tag([0x0]), is_not([0x0u8])).parse(i)
 }
 
 mod issue_647 {
   use nom::bytes::streaming::tag;
   use nom::combinator::complete;
   use nom::multi::separated_list0;
+  use nom::Parser;
   use nom::{error::Error, number::streaming::be_f64, Err, IResult};
   pub type Input<'a> = &'a [u8];
 
@@ -126,7 +127,7 @@ mod issue_647 {
     input: Input<'a>,
     _cs: &'b f64,
   ) -> Result<(Input<'a>, Vec<f64>), Err<Error<&'a [u8]>>> {
-    separated_list0(complete(tag(",")), complete(be_f64))(input)
+    separated_list0(complete(tag(",")), complete(be_f64)).parse(input)
   }
 
   fn data(input: Input<'_>) -> IResult<Input<'_>, Data> {

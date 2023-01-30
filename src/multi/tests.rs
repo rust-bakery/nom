@@ -22,16 +22,16 @@ use crate::{
 #[cfg(feature = "alloc")]
 fn separated_list0_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_list0(tag(","), tag("abcd"))(i)
+    separated_list0(tag(","), tag("abcd")).parse(i)
   }
   fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_list0(tag(","), tag(""))(i)
+    separated_list0(tag(","), tag("")).parse(i)
   }
   fn empty_sep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_list0(tag(""), tag("abc"))(i)
+    separated_list0(tag(""), tag("abc")).parse(i)
   }
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_list0(tag(".."), tag("abcd"))(i)
+    separated_list0(tag(".."), tag("abcd")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -106,10 +106,10 @@ fn separated_list1_test() {
 #[cfg(feature = "alloc")]
 fn many0_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many0(tag("abcd"))(i)
+    many0(tag("abcd")).parse(i)
   }
   fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many0(tag(""))(i)
+    many0(tag("")).parse(i)
   }
 
   assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
@@ -188,7 +188,7 @@ fn infinite_many() {
 
   // should not go into an infinite loop
   fn multi0(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many0(tst)(i)
+    many0(tst).parse(i)
   }
   let a = &b"abcdef"[..];
   assert_eq!(multi0(a), Ok((a, Vec::new())));

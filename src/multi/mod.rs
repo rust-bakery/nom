@@ -9,7 +9,11 @@ use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::num::NonZeroUsize;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
+use crate::Check;
 use crate::Input;
+use crate::Mode;
+use crate::OutputM;
+use crate::OutputMode;
 use crate::{
   traits::{InputLength, ToUsize},
   NomRange,
@@ -39,12 +43,12 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 /// return an error, to prevent going into an infinite loop
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many0;
 /// use nom::bytes::complete::tag;
 ///
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   many0(tag("abc"))(s)
+///   many0(tag("abc")).parse(s)
 /// }
 ///
 /// assert_eq!(parser("abcabc"), Ok(("", vec!["abc", "abc"])));
@@ -55,36 +59,61 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many0<I, F>(
-  mut f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<<F as Parser<I>>::Output>, <F as Parser<I>>::Error>
+  f: F,
+) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = <F as Parser<I>>::Error>
 where
   I: Clone + InputLength,
   F: Parser<I>,
 {
-  move |mut i: I| {
-    let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
+  Many0 { parser: f }
+}
+
+/// Prser implementation for the [many0] combinator
+pub struct Many0<F> {
+  parser: F,
+}
+
+impl<I, F> Parser<I> for Many0<F>
+where
+  I: Clone + InputLength,
+  F: Parser<I>,
+{
+  type Output = Vec<<F as Parser<I>>::Output>;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    mut i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut acc = OM::Output::bind(|| Vec::with_capacity(4));
     loop {
       let len = i.input_len();
-      match f.parse(i.clone()) {
+      match self
+        .parser
+        .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
+      {
         Err(Err::Error(_)) => return Ok((i, acc)),
-        Err(e) => return Err(e),
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
         Ok((i1, o)) => {
           // infinite loop check: the parser must always consume
           if i1.input_len() == len {
-            return Err(Err::Error(<F as Parser<I>>::Error::from_error_kind(
-              i,
-              ErrorKind::Many0,
-            )));
+            return Err(Err::Error(OM::Error::bind(|| {
+              <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::Many0)
+            })));
           }
 
           i = i1;
-          acc.push(o);
+
+          acc = OM::Output::combine(acc, o, |mut acc, o| {
+            acc.push(o);
+            acc
+          })
         }
       }
     }
   }
 }
-
 /// Runs the embedded parser, gathering the results in a `Vec`.
 ///
 /// This stops on [`Err::Error`] if there is at least one result,  and returns the results that were accumulated. To instead chain an error up,
@@ -225,12 +254,12 @@ where
 /// * `f` Parses the elements of the list.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::separated_list0;
 /// use nom::bytes::complete::tag;
 ///
 /// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
-///   separated_list0(tag("|"), tag("abc"))(s)
+///   separated_list0(tag("|"), tag("abc")).parse(s)
 /// }
 ///
 /// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
@@ -242,43 +271,87 @@ where
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn separated_list0<I, E, F, G>(
-  mut sep: G,
-  mut f: F,
-) -> impl FnMut(I) -> IResult<I, Vec<<F as Parser<I>>::Output>, E>
+  sep: G,
+  f: F,
+) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
 where
   I: Clone + InputLength,
   F: Parser<I, Error = E>,
   G: Parser<I, Error = E>,
   E: ParseError<I>,
 {
-  move |mut i: I| {
-    let mut res = Vec::new();
+  SeparatedList0 {
+    parser: f,
+    separator: sep,
+  }
+}
 
-    match f.parse(i.clone()) {
+/// Parser implementation for the [separated_list0()] combinator
+pub struct SeparatedList0<F, G> {
+  parser: F,
+  separator: G,
+}
+
+impl<I, E: ParseError<I>, F, G> Parser<I> for SeparatedList0<F, G>
+where
+  I: Clone + InputLength,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
+{
+  type Output = Vec<<F as Parser<I>>::Output>;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    mut i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut res = OM::Output::bind(|| Vec::new());
+
+    match self
+      .parser
+      .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
+    {
       Err(Err::Error(_)) => return Ok((i, res)),
-      Err(e) => return Err(e),
+      Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+      Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
       Ok((i1, o)) => {
-        res.push(o);
+        res = OM::Output::combine(res, o, |mut res, o| {
+          res.push(o);
+          res
+        });
         i = i1;
       }
     }
 
     loop {
       let len = i.input_len();
-      match sep.parse(i.clone()) {
+      match self
+        .separator
+        .process::<OutputM<Check, Check, OM::Incomplete>>(i.clone())
+      {
         Err(Err::Error(_)) => return Ok((i, res)),
-        Err(e) => return Err(e),
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
         Ok((i1, _)) => {
           // infinite loop check: the parser must always consume
           if i1.input_len() == len {
-            return Err(Err::Error(E::from_error_kind(i1, ErrorKind::SeparatedList)));
+            return Err(Err::Error(OM::Error::bind(|| {
+              <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+            })));
           }
 
-          match f.parse(i1.clone()) {
+          match self
+            .parser
+            .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i1.clone())
+          {
             Err(Err::Error(_)) => return Ok((i, res)),
-            Err(e) => return Err(e),
+            Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+            Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
             Ok((i2, o)) => {
-              res.push(o);
+              res = OM::Output::combine(res, o, |mut res, o| {
+                res.push(o);
+                res
+              });
               i = i2;
             }
           }
@@ -287,7 +360,6 @@ where
     }
   }
 }
-
 /// Alternates between two parsers to produce a list of elements until [`Err::Error`].
 ///
 /// Fails if the element parser does not produce at least one element.$

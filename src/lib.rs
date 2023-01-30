@@ -231,11 +231,11 @@
 //! ```rust
 //! # #[cfg(feature = "alloc")]
 //! # fn main() {
-//! use nom::{IResult, multi::many0, bytes::complete::tag};
+//! use nom::{IResult, Parser, multi::many0, bytes::complete::tag};
 //! use std::str;
 //!
 //! fn multi(i: &str) -> IResult<&str, Vec<&str>> {
-//!   many0(tag("abcd"))(i)
+//!   many0(tag("abcd")).parse(i)
 //! }
 //!
 //! let a = "abcdef";
