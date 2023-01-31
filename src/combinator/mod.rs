@@ -736,18 +736,18 @@ impl<I: Clone, E, F> ParserIterator<I, E, F> {
   }
 }
 
-impl<'a, Input, Output, Error, F> core::iter::Iterator for &'a mut ParserIterator<Input, Error, F>
+impl<'a, Input, F> core::iter::Iterator for &'a mut ParserIterator<Input, F::Error, F>
 where
-  F: FnMut(Input) -> IResult<Input, Output, Error>,
+  F: Parser<Input>,
   Input: Clone,
 {
-  type Item = Output;
+  type Item = F::Output;
 
   fn next(&mut self) -> Option<Self::Item> {
     if let State::Running = self.state.take().unwrap() {
       let input = self.input.clone();
 
-      match (self.iterator)(input) {
+      match self.iterator.parse(input) {
         Ok((i, o)) => {
           self.input = i;
           self.state = Some(State::Running);
