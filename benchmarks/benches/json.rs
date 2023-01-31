@@ -106,7 +106,7 @@ fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
 fn array<'a>() -> impl Parser<&'a str, Output = Vec<JsonValue>, Error = Error<&'a str>> {
   delimited(
     char('['),
-    ws(separated_list0(ws(char(',')), json_value)),
+    ws(separated_list0(ws(char(',')), json_value())),
     char(']'),
   )
 }
@@ -118,7 +118,7 @@ fn object<'a>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Err
       char('{'),
       ws(separated_list0(
         ws(char(',')),
-        separated_pair(string(), ws(char(':')), json_value),
+        separated_pair(string(), ws(char(':')), json_value()),
       )),
       char('}'),
     ),
@@ -126,22 +126,39 @@ fn object<'a>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Err
   )
 }
 
-fn json_value(input: &str) -> IResult<&str, JsonValue> {
-  use JsonValue::*;
-
-  alt((
-    value(Null, tag("null")),
-    map(boolean(), Bool),
-    map(string(), Str),
-    map(double, Num),
-    map(array(), Array),
-    map(object(), Object),
-  ))
-  .parse(input)
+fn json_value<'a>() -> JsonParser {
+  JsonParser
 }
 
-fn json(input: &str) -> IResult<&str, JsonValue> {
-  ws(json_value).parse(input)
+struct JsonParser;
+
+// the main Parser implementation is done explicitely on a real type,
+// because haaving json_value return `impl Parser` would result in
+// "recursive opaque type" errors
+impl<'a> Parser<&'a str> for JsonParser {
+  type Output = JsonValue;
+  type Error = Error<&'a str>;
+
+  fn process<OM: nom::OutputMode>(
+    &mut self,
+    input: &'a str,
+  ) -> nom::PResult<OM, &'a str, Self::Output, Self::Error> {
+    use JsonValue::*;
+
+    alt((
+      value(Null, tag("null")),
+      map(boolean(), Bool),
+      map(string(), Str),
+      map(double, Num),
+      map(array(), Array),
+      map(object(), Object),
+    ))
+    .process::<OM>(input)
+  }
+}
+
+fn json<'a>() -> impl Parser<&'a str, Output = JsonValue, Error = Error<&'a str>> {
+  ws(json_value())
 }
 
 fn json_bench(c: &mut Criterion) {
@@ -153,7 +170,7 @@ fn json_bench(c: &mut Criterion) {
 
   // println!("data:\n{:?}", json(data));
   c.bench_function("json", |b| {
-    b.iter(|| json(data).unwrap());
+    b.iter(|| json().parse(data).unwrap());
   });
 }
 
