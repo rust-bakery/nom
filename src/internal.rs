@@ -316,7 +316,8 @@ pub trait IsStreaming {
   fn is_streaming() -> bool;
 }
 
-struct Streaming;
+/// TODO
+pub struct Streaming;
 
 impl IsStreaming for Streaming {
   fn incomplete<E, F: FnOnce() -> E>(needed: Needed, _err_f: F) -> Err<E> {
@@ -328,7 +329,8 @@ impl IsStreaming for Streaming {
   }
 }
 
-struct Complete;
+/// TODO
+pub struct Complete;
 
 impl IsStreaming for Complete {
   fn incomplete<E, F: FnOnce() -> E>(_needed: Needed, err_f: F) -> Err<E> {

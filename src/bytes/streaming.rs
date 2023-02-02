@@ -1,11 +1,16 @@
 //! Parsers recognizing bytes streams, streaming version
 
+use core::marker::PhantomData;
+
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::result::Result::*;
 use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputLength, ToUsize};
+use crate::Emit;
 use crate::Input;
+use crate::OutputM;
+use crate::Streaming;
 
 /// Recognizes a pattern.
 ///
@@ -31,18 +36,12 @@ where
   T: InputLength + Clone,
 {
   move |i: I| {
-    let tag_len = tag.input_len();
-    let t = tag.clone();
-
-    let res: IResult<_, _, Error> = match i.compare(t) {
-      CompareResult::Ok => Ok(i.take_split(tag_len)),
-      CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(tag_len - i.input_len()))),
-      CompareResult::Error => {
-        let e: ErrorKind = ErrorKind::Tag;
-        Err(Err::Error(Error::from_error_kind(i, e)))
-      }
+    let mut parser = super::Tag {
+      tag: tag.clone(),
+      e: PhantomData,
     };
-    res
+
+    parser.process::<OutputM<Emit, Emit, Streaming>>(i)
   }
 }
 

@@ -7,7 +7,7 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 use criterion::Criterion;
 use nom::{
   branch::alt,
-  bytes::complete::{tag, take},
+  bytes::{tag, take},
   character::complete::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
   error::{Error, ErrorKind, ParseError},
