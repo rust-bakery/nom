@@ -9,6 +9,8 @@ use crate::lib::std::slice::Iter;
 use crate::lib::std::str::from_utf8;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
+use crate::IsStreaming;
+use crate::Mode;
 
 #[cfg(feature = "alloc")]
 use crate::lib::std::string::String;
@@ -121,6 +123,27 @@ pub trait Input: Clone + Sized {
         }
       }
       res => res,
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          let len = self.input_len();
+          Ok((self.take_from(len), OM::Output::bind(|| self.take(len))))
+        }
+      }
     }
   }
 }

@@ -8,13 +8,13 @@ use criterion::Criterion;
 use nom::{
   branch::alt,
   bytes::{tag, take},
-  character::complete::{anychar, char, multispace0, none_of},
+  character::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
   error::{Error, ErrorKind, ParseError},
   multi::{fold, separated_list0},
   number::complete::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
-  IResult, Parser,
+  Emit, IResult, Mode, OutputM, Parser,
 };
 
 use std::collections::HashMap;
@@ -63,8 +63,9 @@ fn unicode_escape<'a>() -> impl Parser<&'a str, Output = char, Error = Error<&'a
   )
 }
 
-fn character(input: &str) -> IResult<&str, char> {
-  let (input, c) = none_of("\"")(input)?;
+fn character<'a>() -> impl Parser<&'a str, Output = char, Error = Error<&'a str>> {
+  Character
+  /*let (input, c) = none_of("\"")(input)?;
   if c == '\\' {
     alt((
       map_res(anychar, |c| {
@@ -83,13 +84,48 @@ fn character(input: &str) -> IResult<&str, char> {
     .parse(input)
   } else {
     Ok((input, c))
+  }*/
+}
+
+struct Character;
+
+impl<'a> Parser<&'a str> for Character {
+  type Output = char;
+
+  type Error = Error<&'a str>;
+
+  fn process<OM: nom::OutputMode>(
+    &mut self,
+    input: &'a str,
+  ) -> nom::PResult<OM, &'a str, Self::Output, Self::Error> {
+    let (input, c): (&str, char) =
+      none_of("\"").process::<OutputM<Emit, OM::Error, OM::Incomplete>>(input)?;
+    if c == '\\' {
+      alt((
+        map_res(anychar, |c| {
+          Ok(match c {
+            '"' | '\\' | '/' => c,
+            'b' => '\x08',
+            'f' => '\x0C',
+            'n' => '\n',
+            'r' => '\r',
+            't' => '\t',
+            _ => return Err(()),
+          })
+        }),
+        preceded(char('u'), unicode_escape()),
+      ))
+      .process::<OM>(input)
+    } else {
+      Ok((input, OM::Output::bind(|| c)))
+    }
   }
 }
 
 fn string<'a>() -> impl Parser<&'a str, Output = String, Error = Error<&'a str>> {
   delimited(
     char('"'),
-    fold(0.., character, String::new, |mut string, c| {
+    fold(0.., character(), String::new, |mut string, c| {
       string.push(c);
       string
     }),
@@ -100,7 +136,7 @@ fn string<'a>() -> impl Parser<&'a str, Output = String, Error = Error<&'a str>>
 fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
   f: F,
 ) -> impl Parser<&'a str, Output = O, Error = E> {
-  delimited(multispace0, f, multispace0)
+  delimited(multispace0(), f, multispace0())
 }
 
 fn array<'a>() -> impl Parser<&'a str, Output = Vec<JsonValue>, Error = Error<&'a str>> {
