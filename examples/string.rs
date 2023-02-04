@@ -103,7 +103,7 @@ fn parse_literal<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str,
   // the parser. The verification function accepts out output only if it
   // returns true. In this case, we want to ensure that the output of is_not
   // is non-empty.
-  verify(not_quote_slash, |s: &str| !s.is_empty())(input)
+  verify(not_quote_slash, |s: &str| !s.is_empty()).parse(input)
 }
 
 /// A string fragment contains a fragment of a string being parsed: either

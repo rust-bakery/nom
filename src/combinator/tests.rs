@@ -164,14 +164,14 @@ fn test_verify_ref() {
 
   let mut parser1 = verify(take(3u8), |s: &[u8]| s == &b"abc"[..]);
 
-  assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], &b"abc"[..])));
+  assert_eq!(parser1.parse(&b"abcd"[..]), Ok((&b"d"[..], &b"abc"[..])));
   assert_eq!(
-    parser1(&b"defg"[..]),
+    parser1.parse(&b"defg"[..]),
     Err(Err::Error((&b"defg"[..], ErrorKind::Verify)))
   );
 
   fn parser2(i: &[u8]) -> IResult<&[u8], u32> {
-    verify(crate::number::streaming::be_u32, |val: &u32| *val < 3)(i)
+    verify(crate::number::streaming::be_u32, |val: &u32| *val < 3).parse(i)
   }
 }
 
@@ -183,9 +183,12 @@ fn test_verify_alloc() {
     s == &b"abc"[..]
   });
 
-  assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], b"abc".to_vec())));
   assert_eq!(
-    parser1(&b"defg"[..]),
+    parser1.parse(&b"abcd"[..]),
+    Ok((&b"d"[..], b"abc".to_vec()))
+  );
+  assert_eq!(
+    parser1.parse(&b"defg"[..]),
     Err(Err::Error((&b"defg"[..], ErrorKind::Verify)))
   );
 }
@@ -252,7 +255,7 @@ fn verify_test() {
   use crate::bytes::streaming::take;
 
   fn test(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    verify(take(5u8), |slice: &[u8]| slice[0] == b'a')(i)
+    verify(take(5u8), |slice: &[u8]| slice[0] == b'a').parse(i)
   }
   assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::new(2))));
   assert_eq!(

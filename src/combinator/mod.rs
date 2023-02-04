@@ -2,6 +2,8 @@
 
 #![allow(unused_imports)]
 
+use core::marker::PhantomData;
+
 #[cfg(feature = "alloc")]
 use crate::lib::std::boxed::Box;
 
@@ -383,40 +385,68 @@ where
 /// parser.
 ///
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::verify;
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
 /// let mut parser = verify(alpha1, |s: &str| s.len() == 4);
 ///
-/// assert_eq!(parser("abcd"), Ok(("", "abcd")));
-/// assert_eq!(parser("abcde"), Err(Err::Error(("abcde", ErrorKind::Verify))));
-/// assert_eq!(parser("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
+/// assert_eq!(parser.parse("abcd"), Ok(("", "abcd")));
+/// assert_eq!(parser.parse("abcde"), Err(Err::Error(("abcde", ErrorKind::Verify))));
+/// assert_eq!(parser.parse("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
 pub fn verify<I: Clone, O2, E: ParseError<I>, F, G>(
-  mut first: F,
+  first: F,
   second: G,
-) -> impl FnMut(I) -> IResult<I, <F as Parser<I>>::Output, E>
+) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = E>
 where
   F: Parser<I, Error = E>,
   G: Fn(&O2) -> bool,
   <F as Parser<I>>::Output: Borrow<O2>,
   O2: ?Sized,
 {
-  move |input: I| {
-    let i = input.clone();
-    let (input, o) = first.parse(input)?;
-
-    if second(o.borrow()) {
-      Ok((input, o))
-    } else {
-      Err(Err::Error(E::from_error_kind(i, ErrorKind::Verify)))
-    }
+  Verify {
+    first,
+    second,
+    o2: PhantomData,
   }
 }
 
+/// TODO
+pub struct Verify<F, G, O2: ?Sized> {
+  first: F,
+  second: G,
+  o2: PhantomData<O2>,
+}
+
+impl<I, F: Parser<I>, G, O2> Parser<I> for Verify<F, G, O2>
+where
+  I: Clone,
+  G: Fn(&O2) -> bool,
+  <F as Parser<I>>::Output: Borrow<O2>,
+  O2: ?Sized,
+{
+  type Output = <F as Parser<I>>::Output;
+
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (i, o) = self
+      .first
+      .process::<OutputM<Emit, OM::Error, OM::Incomplete>>(input.clone())?;
+
+    if (self.second)(o.borrow()) {
+      Ok((i, OM::Output::bind(|| o)))
+    } else {
+      Err(Err::Error(OM::Error::bind(move || {
+        let e: ErrorKind = ErrorKind::Verify;
+        <F as Parser<I>>::Error::from_error_kind(input, e)
+      })))
+    }
+  }
+}
 /// Returns the provided value if the child parser succeeds.
 ///
 /// ```rust
