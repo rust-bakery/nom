@@ -127,3 +127,60 @@ where
     }
   }
 }
+
+/// Returns the longest (at least 1) input slice that matches the predicate.
+///
+/// The parser will return the longest slice that matches the given predicate *(a function that
+/// takes the input and returns a bool)*.
+///
+/// It will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met.
+///
+/// # Streaming Specific
+/// *Streaming version* will return a `Err::Incomplete(Needed::new(1))` or if the pattern reaches the end of the input.
+///
+/// # Example
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::bytes::streaming::take_while1;
+/// use nom::character::is_alphabetic;
+///
+/// fn alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
+///   take_while1(is_alphabetic)(s)
+/// }
+///
+/// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
+/// assert_eq!(alpha(b"latin"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(alpha(b"12345"), Err(Err::Error(Error::new(&b"12345"[..], ErrorKind::TakeWhile1))));
+/// ```
+pub fn take_while1<F, I, Error: ParseError<I>>(cond: F) -> impl Parser<I, Output = I, Error = Error>
+where
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
+{
+  TakeWhile1 {
+    f: move |c| !cond(c),
+    e: PhantomData,
+  }
+}
+
+/// TODO
+pub struct TakeWhile1<F, E> {
+  f: F,
+  e: PhantomData<E>,
+}
+
+impl<I, F, Error: ParseError<I>> Parser<I> for TakeWhile1<F, Error>
+where
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
+{
+  type Output = I;
+  type Error = Error;
+
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    i.split_at_position_mode1::<OM, _, _>(|item| (self.f)(item), ErrorKind::TakeWhile1)
+  }
+}

@@ -4,7 +4,7 @@
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
-use nom::{IResult, bytes::complete::{tag, take_while1}, character::complete::{line_ending, char}, multi::many};
+use nom::{IResult, bytes::{tag, take_while1}, character:: char, multi::many, OutputMode, Parser, PResult, error::Error, Mode, sequence::{preceded, delimited, separated_pair, terminated, pair}, OutputM, Emit, Complete};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug)]
@@ -67,46 +67,56 @@ fn is_version(c: u8) -> bool {
   c >= b'0' && c <= b'9' || c == b'.'
 }
 
-fn request_line(input: &[u8]) -> IResult<&[u8], Request<'_>> {
-  let (input, method) = take_while1(is_token)(input)?;
-  let (input, _) = take_while1(is_space)(input)?;
-  let (input, uri) = take_while1(is_not_space)(input)?;
-  let (input, _) = take_while1(is_space)(input)?;
-  let (input, version) = http_version(input)?;
-  let (input, _) = line_ending(input)?;
+fn line_ending<'a>()-> impl Parser<&'a[u8], Output=&'a[u8], Error=Error<&'a[u8]>>  {
+  tag("\n").or(tag("\r\n"))
+}
+/*
+fn request_line<OM: OutputMode>(input: &[u8]) -> PResult<OM, &[u8], Request<'_>, Error<&[u8]>> {
+  let (input, method) = take_while1(is_token).process::<OM>(input)?;
 
-  Ok((input, Request {method, uri, version}))
+  let (input, uri) = preceded(take_while1(is_space), take_while1(is_not_space)).process::<OM>(input)?;
+  let (input, version) = delimited(take_while1(is_space), http_version(), line_ending).process::<OM>(input)?;
+
+
+  Ok((input, OM::Output::bind(|| Request {method, uri, version})))
+
+  (take_while1(is_token),  preceded(take_while1(is_space), take_while1(is_not_space)), delimited(take_while1(is_space), http_version(), line_ending))
+}*/
+
+fn request_line<'a>()-> impl Parser<&'a[u8], Output=Request<'a>, Error=Error<&'a[u8]>> {
+  (take_while1(is_token),  preceded(take_while1(is_space), take_while1(is_not_space)), delimited(take_while1(is_space), http_version(), line_ending()))
+  .map(|(method, uri, version)| Request {method, uri, version})
 }
 
-fn http_version(input: &[u8]) -> IResult<&[u8], &[u8]> {
-  let (input, _) = tag("HTTP/")(input)?;
-  let (input, version) = take_while1(is_version)(input)?;
+fn http_version<'a>() -> impl Parser<&'a[u8], Output=&'a[u8], Error=Error<&'a[u8]>> {
 
-  Ok((input, version))
+  preceded(tag("HTTP/"), take_while1(is_version))
 }
 
-fn message_header_value(input: &[u8]) -> IResult<&[u8], &[u8]> {
-  let (input, _) = take_while1(is_horizontal_space)(input)?;
-  let (input, data) = take_while1(not_line_ending)(input)?;
-  let (input, _) = line_ending(input)?;
+fn message_header_value<'a>() -> impl Parser<&'a[u8], Output=&'a[u8], Error=Error<&'a[u8]>> {
 
-  Ok((input, data))
+  delimited(take_while1(is_horizontal_space),  take_while1(not_line_ending), line_ending())
 }
 
-fn message_header(input: &[u8]) -> IResult<&[u8], Header<'_>> {
-  let (input, name) = take_while1(is_token)(input)?;
+fn message_header<'a>() ->  impl Parser<&'a[u8], Output=Header<'a>, Error=Error<&'a[u8]> >{
+  /*let (input, name) = take_while1(is_token)(input)?;
   let (input, _) = char(':')(input)?;
   let (input, value) = many(1.., message_header_value)(input)?;
 
-  Ok((input, Header{ name, value }))
+  Ok((input, Header{ name, value }))*/
+
+  separated_pair(take_while1(is_token), char(':'), many(1.., message_header_value())).map(|(name, value)|Header{ name, value })
+
 }
 
-fn request(input: &[u8]) -> IResult<&[u8], (Request<'_>, Vec<Header<'_>>)> {
-  let (input, req) = request_line(input)?;
+fn request<'a>() -> impl Parser<&'a[u8], Output=(Request<'a>, Vec<Header<'a>>), Error=Error<&'a[u8]> > {
+  /*let (input, req) = request_line(input)?;
   let (input, h) = many(1.., message_header)(input)?;
   let (input, _) = line_ending(input)?;
 
-  Ok((input, (req, h)))
+  Ok((input, (req, h)))*/
+
+  pair(request_line(), terminated(many(1.., message_header()), line_ending()))
 }
 
 
@@ -114,7 +124,7 @@ fn parse(data: &[u8]) -> Option<Vec<(Request<'_>, Vec<Header<'_>>)>> {
   let mut buf = &data[..];
   let mut v = Vec::new();
   loop {
-    match request(buf) {
+    match request().process::<OutputM<Emit, Emit, Complete>>(buf) {
       Ok((b, r)) => {
         buf = b;
         v.push(r);
