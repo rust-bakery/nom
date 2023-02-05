@@ -256,13 +256,18 @@ pub trait Mode {
 pub struct Emit;
 impl Mode for Emit {
   type Output<T> = T;
+
+  #[inline]
   fn bind<T, F: FnOnce() -> T>(f: F) -> Self::Output<T> {
     f()
   }
+
+  #[inline]
   fn map<T, U, F: FnOnce(T) -> U>(x: Self::Output<T>, f: F) -> Self::Output<U> {
     f(x)
   }
 
+  #[inline]
   fn combine<T, U, V, F: FnOnce(T, U) -> V>(
     x: Self::Output<T>,
     y: Self::Output<U>,
@@ -276,14 +281,18 @@ impl Mode for Emit {
 pub struct Check;
 impl Mode for Check {
   type Output<T> = ();
+
+  #[inline]
   fn bind<T, F: FnOnce() -> T>(_: F) -> Self::Output<T> {
     ()
   }
 
+  #[inline]
   fn map<T, U, F: FnOnce(T) -> U>(_: Self::Output<T>, _: F) -> Self::Output<U> {
     ()
   }
 
+  #[inline]
   fn combine<T, U, V, F: FnOnce(T, U) -> V>(
     _: Self::Output<T>,
     _: Self::Output<U>,
@@ -324,6 +333,7 @@ impl IsStreaming for Streaming {
     Err::Incomplete(needed)
   }
 
+  #[inline]
   fn is_streaming() -> bool {
     true
   }
@@ -337,6 +347,7 @@ impl IsStreaming for Complete {
     Err::Error(err_f())
   }
 
+  #[inline]
   fn is_streaming() -> bool {
     false
   }
@@ -535,6 +546,7 @@ impl<I, O2, E: ParseError<I>, F: Parser<I, Error = E>, G: FnMut(<F as Parser<I>>
   type Output = O2;
   type Error = E;
 
+  #[inline]
   fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
     match self.f.process::<OM>(i) {
       Err(e) => Err(e),

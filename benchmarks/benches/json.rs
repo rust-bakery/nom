@@ -14,7 +14,7 @@ use nom::{
   multi::{fold, separated_list0},
   number::complete::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
-  Emit, IResult, Mode, OutputM, Parser,
+  Complete, Emit, IResult, Mode, OutputM, Parser,
 };
 
 use std::collections::HashMap;
@@ -206,7 +206,11 @@ fn json_bench(c: &mut Criterion) {
 
   // println!("data:\n{:?}", json(data));
   c.bench_function("json", |b| {
-    b.iter(|| json().parse(data).unwrap());
+    b.iter(|| {
+      json()
+        .process::<OutputM<Emit, Emit, Complete>>(data)
+        .unwrap()
+    });
   });
 }
 
