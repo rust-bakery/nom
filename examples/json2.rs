@@ -1,12 +1,8 @@
-#[macro_use]
-extern crate criterion;
+//#[global_allocator]
+//static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-#[global_allocator]
-static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
-
-use criterion::Criterion;
 use nom::{
-  branch::alt,
+  branch::{alt, Choice},
   bytes::{tag, take},
   character::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
@@ -181,15 +177,16 @@ impl<'a> Parser<&'a str> for JsonParser {
   ) -> nom::PResult<OM, &'a str, Self::Output, Self::Error> {
     use JsonValue::*;
 
-    alt((
+    let mut parser = alt((
       value(Null, tag("null")),
       map(boolean(), Bool),
       map(string(), Str),
       map(double, Num),
       map(array(), Array),
       map(object(), Object),
-    ))
-    .process::<OM>(input)
+    ));
+
+    parser.process::<OM>(input)
   }
 }
 
@@ -197,106 +194,12 @@ fn json<'a>() -> impl Parser<&'a str, Output = JsonValue, Error = Error<&'a str>
   ws(json_value())
 }
 
-fn json_bench(c: &mut Criterion) {
-  let data = "  { \"a\"\t: 42,
-  \"b\": [ \"x\", \"y\", 12 ,\"\\u2014\", \"\\uD83D\\uDE10\"] ,
-  \"c\": { \"hello\" : \"world\"
-  }
-  }  ";
+fn main() {
+  let data = include_str!("../canada.json");
 
-  // println!("data:\n{:?}", json(data));
-  c.bench_function("json", |b| {
-    b.iter(|| {
-      json()
-        .process::<OutputM<Emit, Emit, Complete>>(data)
-        .unwrap()
-    });
-  });
-}
-
-fn json_canada_bench(c: &mut Criterion) {
-  let data = include_str!("../../canada.json");
-
-  // println!("data:\n{:?}", json(data));
-  c.bench_function("json_canada", |b| {
-    b.iter(|| {
-      json()
-        .process::<OutputM<Emit, Emit, Complete>>(data)
-        .unwrap()
-    });
-  });
-}
-
-fn recognize_float_bytes(c: &mut Criterion) {
-  println!(
-    "recognize_float_bytes result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
-  );
-  c.bench_function("recognize float bytes", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
-  });
-}
-
-fn recognize_float_str(c: &mut Criterion) {
-  println!(
-    "recognize_float_str result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>("-1.234E-12")
-  );
-  c.bench_function("recognize float str", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>("-1.234E-12"));
-  });
-}
-
-fn float_bytes(c: &mut Criterion) {
-  println!(
-    "float_bytes result: {:?}",
-    double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
-  );
-  c.bench_function("float bytes", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
-  });
-}
-
-fn float_str(c: &mut Criterion) {
-  println!(
-    "float_str result: {:?}",
-    double::<_, (_, ErrorKind)>("-1.234E-12")
-  );
-  c.bench_function("float str", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>("-1.234E-12"));
-  });
-}
-
-use nom::Err;
-use nom::ParseTo;
-fn std_float(input: &[u8]) -> IResult<&[u8], f64, (&[u8], ErrorKind)> {
-  match recognize_float(input) {
-    Err(e) => Err(e),
-    Ok((i, s)) => match s.parse_to() {
-      Some(n) => Ok((i, n)),
-      None => Err(Err::Error((i, ErrorKind::Float))),
-    },
+  loop {
+    let a = json()
+      .process::<OutputM<Emit, Emit, Complete>>(data)
+      .unwrap();
   }
 }
-
-fn std_float_bytes(c: &mut Criterion) {
-  println!(
-    "std_float_bytes result: {:?}",
-    std_float(&b"-1.234E-12"[..])
-  );
-  c.bench_function("std_float bytes", |b| {
-    b.iter(|| std_float(&b"-1.234E-12"[..]));
-  });
-}
-
-criterion_group!(
-  benches,
-  json_bench,
-  json_canada_bench,
-  recognize_float_bytes,
-  recognize_float_str,
-  float_bytes,
-  std_float_bytes,
-  float_str
-);
-criterion_main!(benches);

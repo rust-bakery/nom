@@ -115,6 +115,11 @@ required-features = ["alloc"]
 path = "examples/json.rs"
 
 [[example]]
+name = "json2"
+required-features = ["alloc"]
+path = "examples/json2.rs"
+
+[[example]]
 name = "json_iterator"
 required-features = ["alloc"]
 path = "examples/json_iterator.rs"
