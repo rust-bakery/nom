@@ -11,7 +11,7 @@ use nom::{
   character::complete::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
   error::{ErrorKind, ParseError},
-  multi::{fold_many0, separated_list0},
+  multi::{fold, separated_list0},
   number::complete::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
   IResult, Parser,
@@ -87,7 +87,7 @@ fn character(input: &str) -> IResult<&str, char> {
 fn string(input: &str) -> IResult<&str, String> {
   delimited(
     char('"'),
-    fold_many0(character, String::new, |mut string, c| {
+    fold(0.., character, String::new, |mut string, c| {
       string.push(c);
       string
     }),
@@ -95,7 +95,9 @@ fn string(input: &str) -> IResult<&str, String> {
   )(input)
 }
 
-fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, O, E>>(f: F) -> impl Parser<&'a str, O, E> {
+fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
+  f: F,
+) -> impl Parser<&'a str, Output = O, Error = E> {
   delimited(multispace0, f, multispace0)
 }
 

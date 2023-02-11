@@ -27,7 +27,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [alt](https://docs.rs/nom/latest/nom/branch/fn.alt.html) | `alt((tag("ab"), tag("cd")))` |  `"cdef"` | `Ok(("ef", "cd"))` |Try a list of parsers and return the result of the first successful one|
-| [permutation](https://docs.rs/nom/latest/nom/branch/fn.permutation.html) | `permutation(tag("ab"), tag("cd"), tag("12"))` | `"cd12abc"` | `Ok(("c", ("ab", "cd", "12"))` |Succeeds when all its child parser have succeeded, whatever the order|
+| [permutation](https://docs.rs/nom/latest/nom/branch/fn.permutation.html) | `permutation((tag("ab"), tag("cd"), tag("12")))` | `"cd12abc"` | `Ok(("c", ("ab", "cd", "12"))` |Succeeds when all its child parser have succeeded, whatever the order|
 
 ## Sequence combinators
 
@@ -38,7 +38,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | [terminated](https://docs.rs/nom/latest/nom/sequence/fn.terminated.html) | `terminated(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", "ab"))` ||
 | [pair](https://docs.rs/nom/latest/nom/sequence/fn.pair.html) | `pair(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", ("ab", "XY")))` ||
 | [separated_pair](https://docs.rs/nom/latest/nom/sequence/fn.separated_pair.html) | `separated_pair(tag("hello"), char(','), tag("world"))` | `"hello,world!"` | `Ok(("!", ("hello", "world")))` ||
-| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `tuple((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` |Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
+| tuple | `((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` | Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
 
 ## Applying a parser multiple times
 
@@ -75,11 +75,15 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 
 ## Modifiers
 
-- [`cond`](https://docs.rs/nom/latest/nom/combinator/fn.cond.html): Conditional combinator. Wraps another parser and calls it if the condition is met
-- [`Parser::flat_map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.flat_map): method to map a new parser from the output of the first parser, then apply that parser over the rest of the input
-- [`flat_map`](https://docs.rs/nom/latest/nom/combinator/fn.flat_map.html): function variant of `Parser::flat_map`
-- [`Parser::map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.map): method to map a function on the result of a parser
+
+- [`Parser::and`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.and): method to create a parser by applying the supplied parser to the rest of the input after applying `self`, returning their results as a tuple (like `sequence::tuple` but only takes one parser)
+- [`Parser::and_then`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.and_then): method to create a parser from applying another parser to the output of `self`
+- [`map_parser`](https://docs.rs/nom/latest/nom/combinator/fn.map_parser.html): function variant of `Parser::and_then`
+- [`Parser::map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.map): method to map a function on the output of `self`
 - [`map`](https://docs.rs/nom/latest/nom/combinator/fn.map.html): function variant of `Parser::map`
+- [`Parser::flat_map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.flat_map): method to create a parser which will map a parser returning function (such as `take` or something which returns a parser) on the output of `self`, then apply that parser over the rest of the input. That is, this method accepts a parser-returning function which consumes the output of `self`, the resulting parser gets applied to the rest of the input
+- [`flat_map`](https://docs.rs/nom/latest/nom/combinator/fn.flat_map.html): function variant of `Parser::flat_map`
+- [`cond`](https://docs.rs/nom/latest/nom/combinator/fn.cond.html): Conditional combinator. Wraps another parser and calls it if the condition is met
 - [`map_opt`](https://docs.rs/nom/latest/nom/combinator/fn.map_opt.html): Maps a function returning an `Option` on the output of a parser
 - [`map_res`](https://docs.rs/nom/latest/nom/combinator/fn.map_res.html): Maps a function returning a `Result` on the output of a parser
 - [`not`](https://docs.rs/nom/latest/nom/combinator/fn.not.html): Returns a result only if the embedded parser returns `Error` or `Incomplete`. Does not consume the input

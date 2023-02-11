@@ -8,7 +8,7 @@ use nom::{
   bytes::complete::tag,
   character::complete::{digit1 as digit, multispace0 as multispace},
   combinator::{map, map_res},
-  multi::many0,
+  multi::many,
   sequence::{delimited, preceded},
   IResult,
 };
@@ -90,7 +90,7 @@ fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
 
 fn term(i: &str) -> IResult<&str, Expr> {
   let (i, initial) = factor(i)?;
-  let (i, remainder) = many0(alt((
+  let (i, remainder) = many(0.., alt((
     |i| {
       let (i, mul) = preceded(tag("*"), factor)(i)?;
       Ok((i, (Oper::Mul, mul)))
@@ -106,7 +106,7 @@ fn term(i: &str) -> IResult<&str, Expr> {
 
 fn expr(i: &str) -> IResult<&str, Expr> {
   let (i, initial) = term(i)?;
-  let (i, remainder) = many0(alt((
+  let (i, remainder) = many(0.., alt((
     |i| {
       let (i, add) = preceded(tag("+"), term)(i)?;
       Ok((i, (Oper::Add, add)))

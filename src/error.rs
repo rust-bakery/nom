@@ -54,7 +54,7 @@ pub trait FromExternalError<I, E> {
 }
 
 /// default error type, only contains the error' location and code
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Error<I> {
   /// position of the error in the input data
   pub input: I,
@@ -147,7 +147,7 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 /// it can be used to display user friendly error messages
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerboseError<I> {
   /// List of errors accumulated by `VerboseError`, containing the affected
   /// part of input data, and some context
@@ -156,7 +156,7 @@ pub struct VerboseError<I> {
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 /// Error context for `VerboseError`
 pub enum VerboseErrorKind {
   /// Static string added by the `context` function
@@ -235,7 +235,7 @@ pub fn context<I: Clone, E: ContextError<I>, F, O>(
   mut f: F,
 ) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Output = O, Error = E>,
 {
   move |i: I| match f.parse(i.clone()) {
     Ok(o) => Ok(o),
@@ -417,6 +417,8 @@ pub enum ErrorKind {
   Float,
   Satisfy,
   Fail,
+  Many,
+  Fold,
 }
 
 #[rustfmt::skip]
@@ -477,6 +479,8 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Float                     => 73,
     ErrorKind::Satisfy                   => 74,
     ErrorKind::Fail                      => 75,
+    ErrorKind::Many                      => 76,
+    ErrorKind::Fold                      => 77,
   }
 }
 
@@ -539,6 +543,8 @@ impl ErrorKind {
       ErrorKind::Float                     => "Float",
       ErrorKind::Satisfy                   => "Satisfy",
       ErrorKind::Fail                      => "Fail",
+      ErrorKind::Many                      => "Many",
+      ErrorKind::Fold                      => "Fold",
     }
   }
 }

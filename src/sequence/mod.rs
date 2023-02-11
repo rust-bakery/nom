@@ -31,8 +31,8 @@ pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
   mut second: G,
 ) -> impl FnMut(I) -> IResult<I, (O1, O2), E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
+  F: Parser<I, Output = O1, Error = E>,
+  G: Parser<I, Output = O2, Error = E>,
 {
   move |input: I| {
     let (input, o1) = first.parse(input)?;
@@ -60,13 +60,13 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
-pub fn preceded<I, O1, O2, E: ParseError<I>, F, G>(
+pub fn preceded<I, O, E: ParseError<I>, F, G>(
   mut first: F,
   mut second: G,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Output = O, Error = E>,
 {
   move |input: I| {
     let (input, _) = first.parse(input)?;
@@ -94,13 +94,13 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
-pub fn terminated<I, O1, O2, E: ParseError<I>, F, G>(
+pub fn terminated<I, O, E: ParseError<I>, F, G>(
   mut first: F,
   mut second: G,
-) -> impl FnMut(I) -> IResult<I, O1, E>
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
+  F: Parser<I, Output = O, Error = E>,
+  G: Parser<I, Error = E>,
 {
   move |input: I| {
     let (input, o1) = first.parse(input)?;
@@ -130,15 +130,15 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
-pub fn separated_pair<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+pub fn separated_pair<I, O1, O2, E: ParseError<I>, F, G, H>(
   mut first: F,
   mut sep: G,
   mut second: H,
-) -> impl FnMut(I) -> IResult<I, (O1, O3), E>
+) -> impl FnMut(I) -> IResult<I, (O1, O2), E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
-  H: Parser<I, O3, E>,
+  F: Parser<I, Output = O1, Error = E>,
+  G: Parser<I, Error = E>,
+  H: Parser<I, Output = O2, Error = E>,
 {
   move |input: I| {
     let (input, o1) = first.parse(input)?;
@@ -169,15 +169,15 @@ where
 /// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
 /// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
-pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+pub fn delimited<I, O, E: ParseError<I>, F, G, H>(
   mut first: F,
   mut second: G,
   mut third: H,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
-  H: Parser<I, O3, E>,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Output = O, Error = E>,
+  H: Parser<I, Error = E>,
 {
   move |input: I| {
     let (input, _) = first.parse(input)?;
@@ -189,12 +189,15 @@ where
 /// Helper trait for the tuple combinator.
 ///
 /// This trait is implemented for tuples of parsers of up to 21 elements.
+#[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
+#[allow(deprecated)]
 pub trait Tuple<I, O, E> {
   /// Parses the input and returns a tuple of results of each parser.
   fn parse(&mut self, input: I) -> IResult<I, O, E>;
 }
 
-impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output, Error>>
+#[allow(deprecated)]
+impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output = Output, Error = Error>>
   Tuple<Input, (Output,), Error> for (F,)
 {
   fn parse(&mut self, input: Input) -> IResult<Input, (Output,), Error> {
@@ -218,11 +221,11 @@ macro_rules! tuple_trait(
 
 macro_rules! tuple_trait_impl(
   ($($name:ident $ty: ident),+) => (
+    #[allow(deprecated)]
     impl<
       Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Parser<Input, $ty, Error>),+
+      $($name: Parser<Input, Output = $ty, Error = Error>),+
     > Tuple<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
-
       fn parse(&mut self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
         tuple_trait_inner!(0, self, input, (), $($name)+)
 
@@ -255,6 +258,7 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 // Special case: implement `Tuple` for `()`, the unit type.
 // This can come up in macros which accept a variable number of arguments.
 // Literally, `()` is an empty tuple, so it should simply parse nothing.
+#[allow(deprecated)]
 impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
   fn parse(&mut self, input: I) -> IResult<I, (), E> {
     Ok((input, ()))
@@ -272,6 +276,8 @@ impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
 /// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
 /// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
 /// ```
+#[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
+#[allow(deprecated)]
 pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {

@@ -2,9 +2,9 @@ use nom::{
   bytes::complete::{is_a, tag, take_till, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, space0 as space},
   combinator::opt,
-  multi::many0,
-  sequence::{delimited, pair, terminated, tuple},
-  IResult,
+  multi::many,
+  sequence::{delimited, pair, terminated},
+  IResult, Parser,
 };
 
 use std::collections::HashMap;
@@ -30,7 +30,7 @@ fn category(i: &str) -> IResult<&str, &str> {
 
 fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
   let (i, key) = alphanumeric(i)?;
-  let (i, _) = tuple((opt(space), tag("="), opt(space)))(i)?;
+  let (i, _) = (opt(space), tag("="), opt(space)).parse(i)?;
   let (i, val) = take_till(is_line_ending_or_comment)(i)?;
   let (i, _) = opt(space)(i)?;
   let (i, _) = opt(pair(tag(";"), not_line_ending))(i)?;
@@ -40,7 +40,7 @@ fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
 }
 
 fn keys_and_values_aggregator(i: &str) -> IResult<&str, Vec<(&str, &str)>> {
-  many0(key_value)(i)
+  many(0.., key_value)(i)
 }
 
 fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
@@ -54,8 +54,9 @@ fn category_and_keys(i: &str) -> IResult<&str, (&str, HashMap<&str, &str>)> {
   pair(category, keys_and_values)(i)
 }
 
+#[allow(clippy::type_complexity)]
 fn categories_aggregator(i: &str) -> IResult<&str, Vec<(&str, HashMap<&str, &str>)>> {
-  many0(category_and_keys)(i)
+  many(0.., category_and_keys)(i)
 }
 
 fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str>>> {

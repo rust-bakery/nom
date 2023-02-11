@@ -4,7 +4,7 @@
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use criterion::*;
-use nom::{IResult, bytes::complete::{tag, take_while1}, character::complete::{line_ending, char}, multi::many};
+use nom::{IResult, bytes::streaming::{tag, take_while1}, character::streaming::{line_ending, char}, multi::many};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug)]
@@ -167,7 +167,7 @@ Connection: keep-alive
   let mut http_group = c.benchmark_group("http");
   http_group.throughput(Throughput::Bytes(data.len() as u64));
   http_group.bench_with_input(
-    BenchmarkId::new("parse", data.len()),
+    BenchmarkId::new("parse_streaming", data.len()),
      data,
       |b, data| {
     b.iter(|| parse(data).unwrap());
@@ -195,5 +195,5 @@ fn main() {
 }
 */
 
-criterion_group!(http, one_test);
-criterion_main!(http);
+criterion_group!(http_streaming, one_test);
+criterion_main!(http_streaming);

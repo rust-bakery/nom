@@ -8,9 +8,10 @@
 //! ```rust
 //! use nom::{
 //!   IResult,
+//!   Parser,
 //!   bytes::complete::{tag, take_while_m_n},
-//!   combinator::map_res,
-//!   sequence::tuple};
+//!   combinator::map_res
+//! };
 //!
 //! #[derive(Debug,PartialEq)]
 //! pub struct Color {
@@ -36,7 +37,7 @@
 //!
 //! fn hex_color(input: &str) -> IResult<&str, Color> {
 //!   let (input, _) = tag("#")(input)?;
-//!   let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+//!   let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
 //!
 //!   Ok((input, Color { red, green, blue }))
 //! }
@@ -253,30 +254,32 @@
 //! - **`many0`**: Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
 //! - **`many1`**: Will apply the parser 1 or more times
 //!
-//! There are more complex (and more useful) parsers like `tuple`, which is
+//! There are more complex (and more useful) parsers like tuples, which are
 //! used to apply a series of parsers then assemble their results.
 //!
-//! Example with `tuple`:
+//! Example with a tuple of parsers:
 //!
 //! ```rust
 //! # fn main() {
-//! use nom::{error::ErrorKind, Needed,
-//! number::streaming::be_u16,
-//! bytes::streaming::{tag, take},
-//! sequence::tuple};
+//! use nom::{
+//!   error::ErrorKind,
+//!   Needed,
+//!   Parser,
+//!   number::streaming::be_u16,
+//!   bytes::streaming::{tag, take}};
 //!
-//! let mut tpl = tuple((be_u16, take(3u8), tag("fg")));
+//! let mut tpl = (be_u16, take(3u8), tag("fg"));
 //!
 //! assert_eq!(
-//!   tpl(&b"abcdefgh"[..]),
+//!   tpl.parse(&b"abcdefgh"[..]),
 //!   Ok((
 //!     &b"h"[..],
 //!     (0x6162u16, &b"cde"[..], &b"fg"[..])
 //!   ))
 //! );
-//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
+//! assert_eq!(tpl.parse(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
 //! let input = &b"abcdejk"[..];
-//! assert_eq!(tpl(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
+//! assert_eq!(tpl.parse(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
 //! # }
 //! ```
 //!
@@ -372,9 +375,9 @@
 //! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/main/doc),
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
+#![allow(clippy::doc_markdown)]
 #![deny(missing_docs)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 #[cfg(feature = "alloc")]
@@ -405,7 +408,7 @@ pub mod lib {
     pub use alloc::{borrow, boxed, string, vec};
 
     #[doc(hidden)]
-    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub use core::{cmp, convert, fmt, iter, mem, num, ops, option, result, slice, str};
 
     /// internal reproduction of std prelude
     #[doc(hidden)]
@@ -420,8 +423,8 @@ pub mod lib {
   pub mod std {
     #[doc(hidden)]
     pub use std::{
-      alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result,
-      slice, str, string, vec,
+      alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, num, ops, option,
+      result, slice, str, string, vec,
     };
 
     /// internal reproduction of std prelude
@@ -439,15 +442,16 @@ pub use self::traits::*;
 pub use self::str::*;
 
 #[macro_use]
+mod macros;
+#[macro_use]
 pub mod error;
 
+pub mod branch;
 pub mod combinator;
 mod internal;
-mod traits;
-#[macro_use]
-pub mod branch;
 pub mod multi;
 pub mod sequence;
+mod traits;
 
 pub mod bits;
 pub mod bytes;

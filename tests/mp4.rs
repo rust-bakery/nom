@@ -5,7 +5,7 @@ use nom::{
   bytes::streaming::{tag, take},
   combinator::{map, map_res},
   error::ErrorKind,
-  multi::many0,
+  multi::many,
   number::streaming::{be_f32, be_u16, be_u32, be_u64},
   Err, IResult, Needed,
 };
@@ -26,7 +26,7 @@ fn mp4_box(input: &[u8]) -> IResult<&[u8], &[u8]> {
   }
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[derive(PartialEq,Eq,Debug)]
 struct FileType<'a> {
   major_brand:         &'a str,
@@ -34,7 +34,7 @@ struct FileType<'a> {
   compatible_brands:   Vec<&'a str>
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[allow(non_snake_case)]
 #[derive(Debug,Clone)]
 pub struct Mvhd32 {
@@ -64,7 +64,7 @@ pub struct Mvhd32 {
   track_id:      u32
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[allow(non_snake_case)]
 #[derive(Debug,Clone)]
 pub struct Mvhd64 {
@@ -94,7 +94,7 @@ pub struct Mvhd64 {
   track_id:      u32
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 fn mvhd32(i: &[u8]) -> IResult<&[u8], MvhdBox> {
   let (i, version_flags) = be_u32(i)?;
   let (i, created_date) =  be_u32(i)?;
@@ -146,7 +146,7 @@ fn mvhd32(i: &[u8]) -> IResult<&[u8], MvhdBox> {
   Ok((i, mvhd_box))
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 fn mvhd64(i: &[u8]) -> IResult<&[u8], MvhdBox> {
   let (i, version_flags) = be_u32(i)?;
   let (i, created_date) =  be_u64(i)?;
@@ -250,7 +250,7 @@ fn brand_name(input: &[u8]) -> IResult<&[u8], &str> {
 fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType<'_>> {
   let (i, name) = brand_name(input)?;
   let (i, version) = take(4_usize)(i)?;
-  let (i, brands) = many0(brand_name)(i)?;
+  let (i, brands) = many(0.., brand_name)(i)?;
 
   let ft = FileType {
     major_brand: name,

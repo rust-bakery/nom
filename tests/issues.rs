@@ -1,6 +1,6 @@
 //#![feature(trace_macros)]
 #![allow(dead_code)]
-#![cfg_attr(feature = "cargo-clippy", allow(redundant_closure))]
+#![allow(clippy::redundant_closure)]
 
 use nom::{error::ErrorKind, Err, IResult, Needed};
 
@@ -24,13 +24,13 @@ mod parse_int {
   use nom::{
     character::streaming::{digit1 as digit, space1 as space},
     combinator::{complete, map, opt},
-    multi::many0,
+    multi::many,
     IResult,
   };
   use std::str;
 
   fn parse_ints(input: &[u8]) -> IResult<&[u8], Vec<i32>> {
-    many0(spaces_or_int)(input)
+    many(0.., spaces_or_int)(input)
   }
 
   fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32> {
@@ -120,6 +120,7 @@ mod issue_647 {
     v: Vec<f64>,
   }
 
+  #[allow(clippy::type_complexity)]
   fn list<'a, 'b>(
     input: Input<'a>,
     _cs: &'b f64,
@@ -170,9 +171,9 @@ fn issue_942() {
 #[test]
 fn issue_many_m_n_with_zeros() {
   use nom::character::complete::char;
-  use nom::multi::many_m_n;
-  let mut parser = many_m_n::<_, _, (), _>(0, 0, char('a'));
-  assert_eq!(parser("aaa"), Ok(("aaa", vec![])));
+  use nom::multi::many;
+  let mut parser = many::<_, (), Vec<char>, _, _>(0..=0, char('a'));
+  assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
 }
 
 #[test]
@@ -200,9 +201,8 @@ fn issue_1027_convert_error_panic_nonempty() {
 fn issue_1231_bits_expect_fn_closure() {
   use nom::bits::{bits, complete::take};
   use nom::error::Error;
-  use nom::sequence::tuple;
   pub fn example(input: &[u8]) -> IResult<&[u8], (u8, u8)> {
-    bits::<_, _, Error<_>, _, _>(tuple((take(1usize), take(1usize))))(input)
+    bits::<_, _, Error<_>, _, _>((take(1usize), take(1usize)))(input)
   }
   assert_eq!(example(&[0xff]), Ok((&b""[..], (1, 1))));
 }
@@ -213,4 +213,57 @@ fn issue_1282_findtoken_char() {
   use nom::error::Error;
   let parser = one_of::<_, _, Error<_>>(&['a', 'b', 'c'][..]);
   assert_eq!(parser("aaa"), Ok(("aa", 'a')));
+}
+
+#[test]
+fn issue_x_looser_fill_bounds() {
+  use nom::{
+    bytes::streaming::tag, character::streaming::digit1, error_position, multi::fill,
+    sequence::terminated,
+  };
+
+  fn fill_pair(i: &[u8]) -> IResult<&[u8], [&[u8]; 2]> {
+    let mut buf = [&[][..], &[][..]];
+    let (i, _) = fill(terminated(digit1, tag(",")), &mut buf)(i)?;
+    Ok((i, buf))
+  }
+
+  assert_eq!(
+    fill_pair(b"123,456,"),
+    Ok((&b""[..], [&b"123"[..], &b"456"[..]]))
+  );
+  assert_eq!(
+    fill_pair(b"123,456,789"),
+    Ok((&b"789"[..], [&b"123"[..], &b"456"[..]]))
+  );
+  assert_eq!(
+    fill_pair(b"123,,"),
+    Err(Err::Error(error_position!(&b","[..], ErrorKind::Digit)))
+  );
+}
+
+#[test]
+fn issue_1459_clamp_capacity() {
+  use nom::character::complete::char;
+
+  // shouldn't panic
+  use nom::multi::many_m_n;
+  let mut parser = many_m_n::<_, (), _>(usize::MAX, usize::MAX, char('a'));
+  assert_eq!(parser("a"), Err(nom::Err::Error(())));
+
+  // shouldn't panic
+  use nom::multi::count;
+  let mut parser = count::<_, (), _>(char('a'), usize::MAX);
+  assert_eq!(parser("a"), Err(nom::Err::Error(())));
+}
+
+#[test]
+fn issue_1617_count_parser_returning_zero_size() {
+  use nom::{bytes::complete::tag, combinator::map, error::Error, multi::count};
+
+  // previously, `count()` panicked if the parser had type `O = ()`
+  let parser = map(tag::<_, _, Error<&str>>("abc"), |_| ());
+  // shouldn't panic
+  let result = count(parser, 3)("abcabcabcdef").expect("parsing should succeed");
+  assert_eq!(result, ("def", vec![(), (), ()]));
 }

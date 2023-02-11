@@ -16,7 +16,7 @@ use nom::bytes::streaming::{is_not, take_while_m_n};
 use nom::character::streaming::{char, multispace1};
 use nom::combinator::{map, map_opt, map_res, value, verify};
 use nom::error::{FromExternalError, ParseError};
-use nom::multi::fold_many0;
+use nom::multi::fold;
 use nom::sequence::{delimited, preceded};
 use nom::IResult;
 
@@ -54,7 +54,7 @@ where
   // the function returns None, map_opt returns an error. In this case, because
   // not all u32 values are valid unicode code points, we have to fallibly
   // convert to char with from_u32.
-  map_opt(parse_u32, |value| std::char::from_u32(value))(input)
+  map_opt(parse_u32, std::char::from_u32)(input)
 }
 
 /// Parse an escaped character: \n, \t, \r, \u{00AC}, etc.
@@ -136,9 +136,10 @@ fn parse_string<'a, E>(input: &'a str) -> IResult<&'a str, String, E>
 where
   E: ParseError<&'a str> + FromExternalError<&'a str, std::num::ParseIntError>,
 {
-  // fold_many0 is the equivalent of iterator::fold. It runs a parser in a loop,
+  // fold is the equivalent of iterator::fold. It runs a parser in a loop,
   // and for each output value, calls a folding function on each output value.
-  let build_string = fold_many0(
+  let build_string = fold(
+    0..,
     // Our parser function– parses a single string fragment
     parse_fragment,
     // Our init value, an empty string
@@ -157,7 +158,7 @@ where
 
   // Finally, parse the string. Note that, if `build_string` could accept a raw
   // " character, the closing delimiter " would never match. When using
-  // `delimited` with a looping parser (like fold_many0), be sure that the
+  // `delimited` with a looping parser (like fold), be sure that the
   // loop won't accidentally match your closing delimiter!
   delimited(char('"'), build_string, char('"'))(input)
 }

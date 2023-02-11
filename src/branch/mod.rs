@@ -1,29 +1,5 @@
 //! Choice combinators
 
-macro_rules! succ (
-  (0, $submac:ident ! ($($rest:tt)*)) => ($submac!(1, $($rest)*));
-  (1, $submac:ident ! ($($rest:tt)*)) => ($submac!(2, $($rest)*));
-  (2, $submac:ident ! ($($rest:tt)*)) => ($submac!(3, $($rest)*));
-  (3, $submac:ident ! ($($rest:tt)*)) => ($submac!(4, $($rest)*));
-  (4, $submac:ident ! ($($rest:tt)*)) => ($submac!(5, $($rest)*));
-  (5, $submac:ident ! ($($rest:tt)*)) => ($submac!(6, $($rest)*));
-  (6, $submac:ident ! ($($rest:tt)*)) => ($submac!(7, $($rest)*));
-  (7, $submac:ident ! ($($rest:tt)*)) => ($submac!(8, $($rest)*));
-  (8, $submac:ident ! ($($rest:tt)*)) => ($submac!(9, $($rest)*));
-  (9, $submac:ident ! ($($rest:tt)*)) => ($submac!(10, $($rest)*));
-  (10, $submac:ident ! ($($rest:tt)*)) => ($submac!(11, $($rest)*));
-  (11, $submac:ident ! ($($rest:tt)*)) => ($submac!(12, $($rest)*));
-  (12, $submac:ident ! ($($rest:tt)*)) => ($submac!(13, $($rest)*));
-  (13, $submac:ident ! ($($rest:tt)*)) => ($submac!(14, $($rest)*));
-  (14, $submac:ident ! ($($rest:tt)*)) => ($submac!(15, $($rest)*));
-  (15, $submac:ident ! ($($rest:tt)*)) => ($submac!(16, $($rest)*));
-  (16, $submac:ident ! ($($rest:tt)*)) => ($submac!(17, $($rest)*));
-  (17, $submac:ident ! ($($rest:tt)*)) => ($submac!(18, $($rest)*));
-  (18, $submac:ident ! ($($rest:tt)*)) => ($submac!(19, $($rest)*));
-  (19, $submac:ident ! ($($rest:tt)*)) => ($submac!(20, $($rest)*));
-  (20, $submac:ident ! ($($rest:tt)*)) => ($submac!(21, $($rest)*));
-);
-
 #[cfg(test)]
 mod tests;
 
@@ -152,7 +128,7 @@ macro_rules! alt_trait_impl(
   ($($id:ident)+) => (
     impl<
       Input: Clone, Output, Error: ParseError<Input>,
-      $($id: Parser<Input, Output, Error>),+
+      $($id: Parser<Input, Output = Output, Error = Error>),+
     > Alt<Input, Output, Error> for ( $($id),+ ) {
 
       fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
@@ -183,7 +159,7 @@ macro_rules! alt_trait_inner(
 alt_trait!(A B C D E F G H I J K L M N O P Q R S T U);
 
 // Manually implement Alt for (A,), the 1-tuple type
-impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output, Error>>
+impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output = Output, Error = Error>>
   Alt<Input, Output, Error> for (A,)
 {
   fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
@@ -215,7 +191,7 @@ macro_rules! permutation_trait_impl(
   ($($name:ident $ty:ident $item:ident),+) => (
     impl<
       Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Parser<Input, $ty, Error>),+
+      $($name: Parser<Input, Output = $ty, Error = Error>),+
     > Permutation<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
 
       fn permutation(&mut self, mut input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
