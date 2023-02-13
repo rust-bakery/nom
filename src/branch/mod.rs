@@ -151,8 +151,7 @@ macro_rules! alt_trait_inner(
       Err(Err::Failure(e))=>Err(Err::Failure(e)),
       Err(Err::Incomplete(i))=> Err(Err::Incomplete(i)),
       Err(Err::Error(e)) => {
-        let err = <OM::Error as crate::Mode>::combine($err, e, |e1, e2| e1.or(e2));
-        succ!($it, alt_trait_inner!($self, $input, err, $($id)+))
+        succ!($it, alt_trait_inner!($self, $input, <OM::Error as crate::Mode>::combine($err, e, |e1, e2| e1.or(e2)), $($id)+))
       }
     }
   );
