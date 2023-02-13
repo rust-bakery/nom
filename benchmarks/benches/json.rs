@@ -10,14 +10,14 @@ use nom::{
   bytes::{tag, take},
   character::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
-  error::{Error, ErrorKind, ParseError},
+  error::{Error, ErrorKind, FromExternalError, ParseError, VerboseError},
   multi::{fold, separated_list0},
   number::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
   Complete, Emit, IResult, Mode, OutputM, Parser,
 };
 
-use std::collections::HashMap;
+use std::{collections::HashMap, marker::PhantomData, num::ParseIntError};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JsonValue {
@@ -29,15 +29,17 @@ pub enum JsonValue {
   Object(HashMap<String, JsonValue>),
 }
 
-fn boolean<'a>() -> impl Parser<&'a str, Output = bool, Error = Error<&'a str>> {
+fn boolean<'a, E: ParseError<&'a str>>() -> impl Parser<&'a str, Output = bool, Error = E> {
   alt((value(false, tag("false")), value(true, tag("true"))))
 }
 
-fn u16_hex<'a>() -> impl Parser<&'a str, Output = u16, Error = Error<&'a str>> {
+fn u16_hex<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
+) -> impl Parser<&'a str, Output = u16, Error = E> {
   map_res(take(4usize), |s| u16::from_str_radix(s, 16))
 }
 
-fn unicode_escape<'a>() -> impl Parser<&'a str, Output = char, Error = Error<&'a str>> {
+fn unicode_escape<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
+) -> impl Parser<&'a str, Output = char, Error = E> {
   map_opt(
     alt((
       // Not a surrogate
@@ -63,8 +65,11 @@ fn unicode_escape<'a>() -> impl Parser<&'a str, Output = char, Error = Error<&'a
   )
 }
 
-fn character<'a>() -> impl Parser<&'a str, Output = char, Error = Error<&'a str>> {
-  Character
+fn character<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>() -> impl Parser<&'a str, Output = char, Error = E> {
+  Character { e: PhantomData }
   /*let (input, c) = none_of("\"")(input)?;
   if c == '\\' {
     alt((
@@ -87,12 +92,19 @@ fn character<'a>() -> impl Parser<&'a str, Output = char, Error = Error<&'a str>
   }*/
 }
 
-struct Character;
+struct Character<E> {
+  e: PhantomData<E>,
+}
 
-impl<'a> Parser<&'a str> for Character {
+impl<'a, E> Parser<&'a str> for Character<E>
+where
+  E: ParseError<&'a str>
+    + FromExternalError<&'a str, ParseIntError>
+    + FromExternalError<&'a str, ()>,
+{
   type Output = char;
 
-  type Error = Error<&'a str>;
+  type Error = E;
 
   fn process<OM: nom::OutputMode>(
     &mut self,
@@ -122,7 +134,10 @@ impl<'a> Parser<&'a str> for Character {
   }
 }
 
-fn string<'a>() -> impl Parser<&'a str, Output = String, Error = Error<&'a str>> {
+fn string<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>() -> impl Parser<&'a str, Output = String, Error = E> {
   delimited(
     char('"'),
     fold(0.., character(), String::new, |mut string, c| {
@@ -133,13 +148,21 @@ fn string<'a>() -> impl Parser<&'a str, Output = String, Error = Error<&'a str>>
   )
 }
 
-fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
+fn ws<
+  'a,
+  O,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+  F: Parser<&'a str, Output = O, Error = E>,
+>(
   f: F,
 ) -> impl Parser<&'a str, Output = O, Error = E> {
   delimited(multispace0(), f, multispace0())
 }
 
-fn array<'a>() -> impl Parser<&'a str, Output = Vec<JsonValue>, Error = Error<&'a str>> {
+fn array<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>() -> impl Parser<&'a str, Output = Vec<JsonValue>, Error = E> {
   delimited(
     char('['),
     ws(separated_list0(ws(char(',')), json_value())),
@@ -147,8 +170,10 @@ fn array<'a>() -> impl Parser<&'a str, Output = Vec<JsonValue>, Error = Error<&'
   )
 }
 
-fn object<'a>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Error = Error<&'a str>>
-{
+fn object<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Error = E> {
   map(
     delimited(
       char('{'),
@@ -163,7 +188,8 @@ fn object<'a>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Err
 }
 
 /*
-fn json_value<'a>() -> Box<dyn Parser<&'a str, Output = JsonValue, Error = Error<&'a str>>> {
+fn json_value<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>() -> Box<dyn Parser<&'a str, Output = JsonValue, Error = E>> {
   use JsonValue::*;
 
   Box::new(alt((
@@ -177,18 +203,28 @@ fn json_value<'a>() -> Box<dyn Parser<&'a str, Output = JsonValue, Error = Error
 }
 */
 
-fn json_value<'a>() -> JsonParser {
-  JsonParser
+fn json_value<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>() -> JsonParser<E> {
+  JsonParser { e: PhantomData }
 }
 
-struct JsonParser;
+struct JsonParser<E> {
+  e: PhantomData<E>,
+}
 
 // the main Parser implementation is done explicitely on a real type,
 // because haaving json_value return `impl Parser` would result in
 // "recursive opaque type" errors
-impl<'a> Parser<&'a str> for JsonParser {
+impl<'a, E> Parser<&'a str> for JsonParser<E>
+where
+  E: ParseError<&'a str>
+    + FromExternalError<&'a str, ParseIntError>
+    + FromExternalError<&'a str, ()>,
+{
   type Output = JsonValue;
-  type Error = Error<&'a str>;
+  type Error = E;
 
   fn process<OM: nom::OutputMode>(
     &mut self,
@@ -208,7 +244,10 @@ impl<'a> Parser<&'a str> for JsonParser {
   }
 }
 
-fn json<'a>() -> impl Parser<&'a str, Output = JsonValue, Error = Error<&'a str>> {
+fn json<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>() -> impl Parser<&'a str, Output = JsonValue, Error = E> {
   ws(json_value())
 }
 
@@ -219,30 +258,71 @@ fn json_bench(c: &mut Criterion) {
   }
   }  ";
 
-  println!(
-    "json result: {:?}",
-    json()
-      .process::<OutputM<Emit, Emit, Complete>>(data)
-      .unwrap()
-  );
+  // test once to make sure it parses correctly
+  json::<Error<&str>>()
+    .process::<OutputM<Emit, Emit, Complete>>(data)
+    .unwrap();
+
   // println!("data:\n{:?}", json(data));
   c.bench_function("json", |b| {
     b.iter(|| {
-      json()
+      json::<Error<&str>>()
         .process::<OutputM<Emit, Emit, Complete>>(data)
         .unwrap()
     });
   });
 }
 
-fn json_canada_bench(c: &mut Criterion) {
-  let data = include_str!("../../canada.json");
+static CANADA: &str = include_str!("../canada.json");
+fn canada_json(c: &mut Criterion) {
+  // test once to make sure it parses correctly
+  json::<Error<&str>>()
+    .process::<OutputM<Emit, Emit, Complete>>(CANADA)
+    .unwrap();
 
   // println!("data:\n{:?}", json(data));
-  c.bench_function("json_canada", |b| {
+  c.bench_function("json canada", |b| {
     b.iter(|| {
-      json()
+      json::<Error<&str>>()
+        .process::<OutputM<Emit, Emit, Complete>>(CANADA)
+        .unwrap()
+    });
+  });
+}
+
+fn verbose_json(c: &mut Criterion) {
+  let data = "  { \"a\"\t: 42,
+  \"b\": [ \"x\", \"y\", 12 ,\"\\u2014\", \"\\uD83D\\uDE10\"] ,
+  \"c\": { \"hello\" : \"world\"
+  }
+  }  ";
+
+  // test once to make sure it parses correctly
+  json::<VerboseError<&str>>()
+    .process::<OutputM<Emit, Emit, Complete>>(data)
+    .unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json vebose", |b| {
+    b.iter(|| {
+      json::<VerboseError<&str>>()
         .process::<OutputM<Emit, Emit, Complete>>(data)
+        .unwrap()
+    });
+  });
+}
+
+fn verbose_canada_json(c: &mut Criterion) {
+  // test once to make sure it parses correctly
+  json::<VerboseError<&str>>()
+    .process::<OutputM<Emit, Emit, Complete>>(CANADA)
+    .unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json canada verbose", |b| {
+    b.iter(|| {
+      json::<VerboseError<&str>>()
+        .process::<OutputM<Emit, Emit, Complete>>(CANADA)
         .unwrap()
     });
   });
@@ -321,7 +401,9 @@ fn std_float_bytes(c: &mut Criterion) {
 criterion_group!(
   benches,
   json_bench,
-  json_canada_bench,
+  verbose_json,
+  canada_json,
+  verbose_canada_json,
   recognize_float_bytes,
   recognize_float_str,
   float_bytes,

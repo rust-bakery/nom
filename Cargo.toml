@@ -44,7 +44,8 @@ default-features = false
 
 [dev-dependencies]
 doc-comment = "0.3"
-proptest = "1.0.0"
+proptest = "=1.0.0"
+
 
 [package.metadata.docs.rs]
 features = ["alloc", "std", "docsrs"]
