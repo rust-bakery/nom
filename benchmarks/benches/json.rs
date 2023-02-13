@@ -10,14 +10,14 @@ use nom::{
   bytes::complete::{tag, take},
   character::complete::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
-  error::{ErrorKind, ParseError},
+  error::{Error, ErrorKind, FromExternalError, ParseError, VerboseError},
   multi::{fold, separated_list0},
   number::complete::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
   IResult, Parser,
 };
 
-use std::collections::HashMap;
+use std::{collections::HashMap, num::ParseIntError};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JsonValue {
@@ -29,15 +29,19 @@ pub enum JsonValue {
   Object(HashMap<String, JsonValue>),
 }
 
-fn boolean(input: &str) -> IResult<&str, bool> {
+fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&str, bool, E> {
   alt((value(false, tag("false")), value(true, tag("true"))))(input)
 }
 
-fn u16_hex(input: &str) -> IResult<&str, u16> {
+fn u16_hex<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
+  input: &'a str,
+) -> IResult<&str, u16, E> {
   map_res(take(4usize), |s| u16::from_str_radix(s, 16))(input)
 }
 
-fn unicode_escape(input: &str) -> IResult<&str, char> {
+fn unicode_escape<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
+  input: &'a str,
+) -> IResult<&str, char, E> {
   map_opt(
     alt((
       // Not a surrogate
@@ -62,7 +66,12 @@ fn unicode_escape(input: &str) -> IResult<&str, char> {
   )(input)
 }
 
-fn character(input: &str) -> IResult<&str, char> {
+fn character<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>(
+  input: &'a str,
+) -> IResult<&str, char, E> {
   let (input, c) = none_of("\"")(input)?;
   if c == '\\' {
     alt((
@@ -84,7 +93,12 @@ fn character(input: &str) -> IResult<&str, char> {
   }
 }
 
-fn string(input: &str) -> IResult<&str, String> {
+fn string<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>(
+  input: &'a str,
+) -> IResult<&str, String, E> {
   delimited(
     char('"'),
     fold(0.., character, String::new, |mut string, c| {
@@ -95,13 +109,23 @@ fn string(input: &str) -> IResult<&str, String> {
   )(input)
 }
 
-fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
+fn ws<
+  'a,
+  O,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+  F: Parser<&'a str, Output = O, Error = E>,
+>(
   f: F,
 ) -> impl Parser<&'a str, Output = O, Error = E> {
   delimited(multispace0, f, multispace0)
 }
 
-fn array(input: &str) -> IResult<&str, Vec<JsonValue>> {
+fn array<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>(
+  input: &'a str,
+) -> IResult<&str, Vec<JsonValue>, E> {
   delimited(
     char('['),
     ws(separated_list0(ws(char(',')), json_value)),
@@ -109,7 +133,12 @@ fn array(input: &str) -> IResult<&str, Vec<JsonValue>> {
   )(input)
 }
 
-fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
+fn object<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>(
+  input: &'a str,
+) -> IResult<&str, HashMap<String, JsonValue>, E> {
   map(
     delimited(
       char('{'),
@@ -123,7 +152,12 @@ fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
   )(input)
 }
 
-fn json_value(input: &str) -> IResult<&str, JsonValue> {
+fn json_value<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>(
+  input: &'a str,
+) -> IResult<&str, JsonValue, E> {
   use JsonValue::*;
 
   alt((
@@ -136,7 +170,12 @@ fn json_value(input: &str) -> IResult<&str, JsonValue> {
   ))(input)
 }
 
-fn json(input: &str) -> IResult<&str, JsonValue> {
+fn json<
+  'a,
+  E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>(
+  input: &'a str,
+) -> IResult<&'a str, JsonValue, E> {
   ws(json_value).parse(input)
 }
 
@@ -147,9 +186,49 @@ fn json_bench(c: &mut Criterion) {
   }
   }  ";
 
+  // test once to make sure it parses correctly
+  json::<Error<&str>>(data).unwrap();
+
   // println!("data:\n{:?}", json(data));
   c.bench_function("json", |b| {
-    b.iter(|| json(data).unwrap());
+    b.iter(|| json::<Error<&str>>(data).unwrap());
+  });
+}
+
+static CANADA: &str = include_str!("../canada.json");
+fn canada_json(c: &mut Criterion) {
+  // test once to make sure it parses correctly
+  json::<Error<&str>>(CANADA).unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json canada", |b| {
+    b.iter(|| json::<Error<&str>>(CANADA).unwrap());
+  });
+}
+
+fn verbose_json(c: &mut Criterion) {
+  let data = "  { \"a\"\t: 42,
+  \"b\": [ \"x\", \"y\", 12 ,\"\\u2014\", \"\\uD83D\\uDE10\"] ,
+  \"c\": { \"hello\" : \"world\"
+  }
+  }  ";
+
+  // test once to make sure it parses correctly
+  json::<VerboseError<&str>>(data).unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json vebose", |b| {
+    b.iter(|| json::<VerboseError<&str>>(data).unwrap());
+  });
+}
+
+fn verbose_canada_json(c: &mut Criterion) {
+  // test once to make sure it parses correctly
+  json::<VerboseError<&str>>(CANADA).unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json canada verbose", |b| {
+    b.iter(|| json::<VerboseError<&str>>(CANADA).unwrap());
   });
 }
 
@@ -218,6 +297,9 @@ fn std_float_bytes(c: &mut Criterion) {
 criterion_group!(
   benches,
   json_bench,
+  verbose_json,
+  canada_json,
+  verbose_canada_json,
   recognize_float_bytes,
   recognize_float_str,
   float_bytes,
