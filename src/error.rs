@@ -6,6 +6,9 @@
 use crate::internal::Parser;
 use crate::lib::std::fmt;
 
+#[cfg(feature = "alloc")]
+use crate::alloc::borrow::ToOwned;
+
 /// This trait must be implemented by the error type of a nom parser.
 ///
 /// There are already implementations of it for `(Input, ErrorKind)`
@@ -100,7 +103,7 @@ impl<I: fmt::Debug + fmt::Display> std::error::Error for Error<I> {}
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl From<Error<&[u8]>> for Error<Vec<u8>> {
+impl From<Error<&[u8]>> for Error<crate::lib::std::vec::Vec<u8>> {
   fn from(value: Error<&[u8]>) -> Self {
     Error {
       input: value.input.to_owned(),
@@ -111,7 +114,7 @@ impl From<Error<&[u8]>> for Error<Vec<u8>> {
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl From<Error<&str>> for Error<String> {
+impl From<Error<&str>> for Error<crate::lib::std::string::String> {
   fn from(value: Error<&str>) -> Self {
     Error {
       input: value.input.to_owned(),
@@ -249,7 +252,7 @@ impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseError<I> {}
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl From<VerboseError<&[u8]>> for VerboseError<Vec<u8>> {
+impl From<VerboseError<&[u8]>> for VerboseError<crate::lib::std::vec::Vec<u8>> {
   fn from(value: VerboseError<&[u8]>) -> Self {
     VerboseError {
       errors: value
@@ -263,7 +266,7 @@ impl From<VerboseError<&[u8]>> for VerboseError<Vec<u8>> {
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl From<VerboseError<&str>> for VerboseError<String> {
+impl From<VerboseError<&str>> for VerboseError<crate::lib::std::string::String> {
   fn from(value: VerboseError<&str>) -> Self {
     VerboseError {
       errors: value
