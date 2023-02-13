@@ -306,6 +306,48 @@ where
   }
 }
 
+/// Recognizes one or more ASCII numerical characters: 0-9
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non digit character).
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::digit1;
+/// assert_eq!(digit1::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
+/// assert_eq!(digit1::<_, (_, ErrorKind)>("c1"), Err(Err::Error(("c1", ErrorKind::Digit))));
+/// assert_eq!(digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```
+pub fn digit1<T, E: ParseError<T>>() -> impl Parser<T, Output = T, Error = E>
+where
+  T: Input,
+  <T as Input>::Item: AsChar,
+{
+  Digit1 { e: PhantomData }
+}
+
+/// todo
+pub struct Digit1<E> {
+  e: PhantomData<E>,
+}
+
+impl<I: Input, E: ParseError<I>> Parser<I> for Digit1<E>
+where
+  <I as Input>::Item: AsChar,
+{
+  type Output = I;
+
+  type Error = E;
+
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    input: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    input.split_at_position_mode1::<OM, _, _>(|item| !item.is_dec_digit(), ErrorKind::Digit)
+  }
+}
+
 /// Recognizes zero or more spaces, tabs, carriage returns and line feeds.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,

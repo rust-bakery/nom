@@ -12,7 +12,7 @@ use nom::{
   combinator::{map, map_opt, map_res, value, verify},
   error::{Error, ErrorKind, ParseError},
   multi::{fold, separated_list0},
-  number::complete::{double, recognize_float},
+  number::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
   Complete, Emit, IResult, Mode, OutputM, Parser,
 };
@@ -162,6 +162,21 @@ fn object<'a>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Err
   )
 }
 
+/*
+fn json_value<'a>() -> Box<dyn Parser<&'a str, Output = JsonValue, Error = Error<&'a str>>> {
+  use JsonValue::*;
+
+  Box::new(alt((
+    value(Null, tag("null")),
+    map(boolean(), Bool),
+    map(string(), Str),
+    map(double, Num),
+    map(array(), Array),
+    map(object(), Object),
+  )))
+}
+*/
+
 fn json_value<'a>() -> JsonParser {
   JsonParser
 }
@@ -185,7 +200,7 @@ impl<'a> Parser<&'a str> for JsonParser {
       value(Null, tag("null")),
       map(boolean(), Bool),
       map(string(), Str),
-      map(double, Num),
+      map(double(), Num),
       map(array(), Array),
       map(object(), Object),
     ))
@@ -204,6 +219,12 @@ fn json_bench(c: &mut Criterion) {
   }
   }  ";
 
+  println!(
+    "json result: {:?}",
+    json()
+      .process::<OutputM<Emit, Emit, Complete>>(data)
+      .unwrap()
+  );
   // println!("data:\n{:?}", json(data));
   c.bench_function("json", |b| {
     b.iter(|| {
@@ -230,47 +251,55 @@ fn json_canada_bench(c: &mut Criterion) {
 fn recognize_float_bytes(c: &mut Criterion) {
   println!(
     "recognize_float_bytes result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+    recognize_float::<_, (_, ErrorKind)>()
+      .process::<OutputM<Emit, Emit, Complete>>(&b"-1.234E-12"[..])
   );
   c.bench_function("recognize float bytes", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| {
+      recognize_float::<_, (_, ErrorKind)>()
+        .process::<OutputM<Emit, Emit, Complete>>(&b"-1.234E-12"[..])
+    });
   });
 }
 
 fn recognize_float_str(c: &mut Criterion) {
   println!(
     "recognize_float_str result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>("-1.234E-12")
+    recognize_float::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>("-1.234E-12")
   );
   c.bench_function("recognize float str", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>("-1.234E-12"));
+    b.iter(|| {
+      recognize_float::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>("-1.234E-12")
+    });
   });
 }
 
 fn float_bytes(c: &mut Criterion) {
   println!(
     "float_bytes result: {:?}",
-    double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+    double::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>(&b"-1.234E-12"[..])
   );
   c.bench_function("float bytes", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| {
+      double::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>(&b"-1.234E-12"[..])
+    });
   });
 }
 
 fn float_str(c: &mut Criterion) {
   println!(
     "float_str result: {:?}",
-    double::<_, (_, ErrorKind)>("-1.234E-12")
+    double::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>("-1.234E-12")
   );
   c.bench_function("float str", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>("-1.234E-12"));
+    b.iter(|| double::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>("-1.234E-12"));
   });
 }
 
 use nom::Err;
 use nom::ParseTo;
 fn std_float(input: &[u8]) -> IResult<&[u8], f64, (&[u8], ErrorKind)> {
-  match recognize_float(input) {
+  match recognize_float().process::<OutputM<Emit, Emit, Complete>>(input) {
     Err(e) => Err(e),
     Ok((i, s)) => match s.parse_to() {
       Some(n) => Ok((i, n)),

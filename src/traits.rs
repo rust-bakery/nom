@@ -435,6 +435,42 @@ impl<'a> Input for &'a str {
       }
     }
   }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(OM::Error::bind(|| {
+        E::from_error_kind(self.clone(), e)
+      }))),
+      Some(n) => unsafe {
+        // find() returns a byte index that is already in the slice at a char boundary
+        Ok((
+          self.get_unchecked(n..),
+          OM::Output::bind(|| self.get_unchecked(..n)),
+        ))
+      },
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          // the end of slice is a char boundary
+          unsafe {
+            Ok((
+              self.get_unchecked(self.len()..),
+              OM::Output::bind(|| self.get_unchecked(..self.len())),
+            ))
+          }
+        }
+      }
+    }
+  }
 }
 
 /// Abstract method to calculate the input length

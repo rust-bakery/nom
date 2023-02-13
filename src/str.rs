@@ -487,7 +487,7 @@ mod test {
   #[test]
   #[cfg(feature = "alloc")]
   fn recognize_is_a() {
-    use crate::lib::std::vec::Vec;
+    use crate::{lib::std::vec::Vec, Parser};
 
     let a = "aabbab";
     let b = "ababcd";
@@ -496,7 +496,8 @@ mod test {
       recognize(many::<_, _, Vec<&str>, _, _>(
         1..,
         alt((tag("a"), tag("b"))),
-      ))(i)
+      ))
+      .parse(i)
     }
 
     assert_eq!(f(a), Ok((&a[6..], a)));

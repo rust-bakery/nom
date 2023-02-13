@@ -1309,7 +1309,7 @@ where
         opt(alt((char('+'), char('-')))),
         cut(digit1)
       ))
-  ))(input)
+  )).parse(input)
 }
 
 // workaround until issues with minimal-lexical are fixed
@@ -1431,7 +1431,7 @@ where
   };
 
   let (i, exp) = if e {
-    cut(crate::character::streaming::i32)(i)?
+    cut(crate::character::streaming::i32).parse(i)?
   } else {
     (i2, 0)
   };

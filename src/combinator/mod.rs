@@ -515,17 +515,36 @@ where
 /// # }
 /// ```
 pub fn recognize<I: Clone + Offset + Input, E: ParseError<I>, F>(
-  mut parser: F,
-) -> impl FnMut(I) -> IResult<I, I, E>
+  parser: F,
+) -> impl Parser<I, Output = I, Error = E>
 where
   F: Parser<I, Error = E>,
 {
-  move |input: I| {
+  Recognize { parser }
+}
+
+/// TODO
+pub struct Recognize<F> {
+  parser: F,
+}
+
+impl<I, F> Parser<I> for Recognize<F>
+where
+  I: Clone + Offset + Input,
+  F: Parser<I>,
+{
+  type Output = I;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let i = input.clone();
-    match parser.parse(i) {
+    match self
+      .parser
+      .process::<OutputM<Check, OM::Error, OM::Incomplete>>(i)
+    {
       Ok((i, _)) => {
         let index = input.offset(&i);
-        Ok((i, input.take(index)))
+        Ok((i, OM::Output::bind(|| input.take(index))))
       }
       Err(e) => Err(e),
     }
@@ -642,14 +661,37 @@ where
 /// # }
 /// ```
 pub fn cut<I, E: ParseError<I>, F>(
-  mut parser: F,
-) -> impl FnMut(I) -> IResult<I, <F as Parser<I>>::Output, E>
+  parser: F,
+) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = E>
 where
   F: Parser<I, Error = E>,
 {
-  move |input: I| match parser.parse(input) {
-    Err(Err::Error(e)) => Err(Err::Failure(e)),
-    rest => rest,
+  Cut { parser }
+}
+
+/// TODO
+pub struct Cut<F> {
+  parser: F,
+}
+
+impl<I, F> Parser<I> for Cut<F>
+where
+  F: Parser<I>,
+{
+  type Output = <F as Parser<I>>::Output;
+
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    match self
+      .parser
+      .process::<OutputM<OM::Output, Emit, OM::Incomplete>>(input)
+    {
+      Err(Err::Error(e)) => Err(Err::Failure(e)),
+      Err(Err::Failure(e)) => Err(Err::Failure(e)),
+      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
+      Ok((i, o)) => Ok((i, o)),
+    }
   }
 }
 

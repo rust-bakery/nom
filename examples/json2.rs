@@ -8,7 +8,7 @@ use nom::{
   combinator::{map, map_opt, map_res, value, verify},
   error::{Error, ErrorKind, ParseError},
   multi::{fold, separated_list0},
-  number::complete::{double, recognize_float},
+  number::double,
   sequence::{delimited, preceded, separated_pair},
   Complete, Emit, IResult, Mode, OutputM, Parser,
 };
@@ -181,7 +181,7 @@ impl<'a> Parser<&'a str> for JsonParser {
       value(Null, tag("null")),
       map(boolean(), Bool),
       map(string(), Str),
-      map(double, Num),
+      map(double(), Num),
       map(array(), Array),
       map(object(), Object),
     ));
