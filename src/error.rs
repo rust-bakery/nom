@@ -98,6 +98,28 @@ impl<I: fmt::Display> fmt::Display for Error<I> {
 #[cfg(feature = "std")]
 impl<I: fmt::Debug + fmt::Display> std::error::Error for Error<I> {}
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<Error<&[u8]>> for Error<Vec<u8>> {
+  fn from(value: Error<&[u8]>) -> Self {
+    Error {
+      input: value.input.to_owned(),
+      code: value.code,
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<Error<&str>> for Error<String> {
+  fn from(value: Error<&str>) -> Self {
+    Error {
+      input: value.input.to_owned(),
+      code: value.code,
+    }
+  }
+}
+
 // for backward compatibility, keep those trait implementations
 // for the previously used error type
 impl<I> ParseError<I> for (I, ErrorKind) {
@@ -224,6 +246,34 @@ impl<I: fmt::Display> fmt::Display for VerboseError<I> {
 
 #[cfg(feature = "std")]
 impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseError<I> {}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<VerboseError<&[u8]>> for VerboseError<Vec<u8>> {
+  fn from(value: VerboseError<&[u8]>) -> Self {
+    VerboseError {
+      errors: value
+        .errors
+        .into_iter()
+        .map(|(i, e)| (i.to_owned(), e))
+        .collect(),
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<VerboseError<&str>> for VerboseError<String> {
+  fn from(value: VerboseError<&str>) -> Self {
+    VerboseError {
+      errors: value
+        .errors
+        .into_iter()
+        .map(|(i, e)| (i.to_owned(), e))
+        .collect(),
+    }
+  }
+}
 
 use crate::internal::{Err, IResult};
 
