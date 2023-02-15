@@ -214,16 +214,32 @@ where
 /// # }
 /// ```
 pub fn opt<I: Clone, E: ParseError<I>, F>(
-  mut f: F,
-) -> impl FnMut(I) -> IResult<I, Option<<F as Parser<I>>::Output>, E>
+  f: F,
+) -> impl Parser<I, Output = Option<<F as Parser<I>>::Output>, Error = E>
 where
   F: Parser<I, Error = E>,
 {
-  move |input: I| {
+  Opt { parser: f }
+}
+
+/// TODO
+pub struct Opt<F> {
+  parser: F,
+}
+
+impl<I, F: Parser<I>> Parser<I> for Opt<F>
+where
+  I: Clone,
+{
+  type Output = Option<<F as Parser<I>>::Output>;
+
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let i = input.clone();
-    match f.parse(input) {
-      Ok((i, o)) => Ok((i, Some(o))),
-      Err(Err::Error(_)) => Ok((i, None)),
+    match self.parser.process::<OM>(input) {
+      Ok((i, o)) => Ok((i, OM::Output::map(o, Some))),
+      Err(Err::Error(_)) => Ok((i, OM::Output::bind(|| None))),
       Err(e) => Err(e),
     }
   }
@@ -447,6 +463,7 @@ where
     }
   }
 }
+
 /// Returns the provided value if the child parser succeeds.
 ///
 /// ```rust

@@ -9,6 +9,7 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed};
 use crate::traits::{AsChar, FindToken, Input};
 use crate::traits::{Compare, CompareResult};
+use crate::Parser;
 
 /// Recognizes one character.
 ///
@@ -613,7 +614,8 @@ where
   let (i, opt_sign) = opt(alt((
     value(false, tag(&b"-"[..])),
     value(true, tag(&b"+"[..])),
-  )))(input)?;
+  )))
+  .parse(input)?;
   let sign = opt_sign.unwrap_or(true);
 
   Ok((i, sign))
@@ -1124,7 +1126,7 @@ mod tests {
 
   fn digit_to_i16(input: &str) -> IResult<&str, i16> {
     let i = input;
-    let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
+    let (i, opt_sign) = opt(alt((char('+'), char('-')))).parse(i)?;
     let sign = match opt_sign {
       Some('+') => true,
       Some('-') => false,

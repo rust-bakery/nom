@@ -8,7 +8,7 @@ use crate::{
   combinator::{cut, map, opt, recognize},
   error::{ErrorKind, ParseError},
   sequence::pair,
-  AsBytes, AsChar, Compare, Emit, Input, Mode, Offset, OutputM, ParseTo, Parser,
+  AsBytes, AsChar, Compare, Emit, Input, Mode, Offset, OutputM, Parser,
 };
 
 pub mod complete;
@@ -128,5 +128,77 @@ where
         E::from_error_kind(i, crate::error::ErrorKind::Float)
       }))),
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::error::ErrorKind;
+  use crate::internal::Err;
+  use proptest::prelude::*;
+
+  macro_rules! assert_parse(
+    ($left: expr, $right: expr) => {
+      let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
+      assert_eq!(res, $right);
+    };
+  );
+
+  #[test]
+  #[cfg(feature = "std")]
+  fn float_test() {
+    let mut test_cases = vec![
+      "+3.14",
+      "3.14",
+      "-3.14",
+      "0",
+      "0.0",
+      "1.",
+      ".789",
+      "-.5",
+      "1e7",
+      "-1E-7",
+      ".3e-2",
+      "1.e4",
+      "1.2e4",
+      "12.34",
+      "-1.234E-12",
+      "-1.234e-12",
+      "0.00000000000000000087",
+    ];
+
+    for test in test_cases.drain(..) {
+      let expected32 = str::parse::<f32>(test).unwrap();
+      let expected64 = str::parse::<f64>(test).unwrap();
+
+      println!("now parsing: {} -> {}", test, expected32);
+
+      assert_parse!(recognize_float().parse_complete(test), Ok(("", test)));
+
+      /*assert_parse!(float(test.as_bytes()), Ok((&b""[..], expected32)));
+      assert_parse!(float(test), Ok(("", expected32)));
+      */
+
+      assert_parse!(
+        double().parse_complete(test.as_bytes()),
+        Ok((&b""[..], expected64))
+      );
+      assert_parse!(double().parse_complete(test), Ok(("", expected64)));
+    }
+
+    let remaining_exponent = "-1.234E-";
+    assert_parse!(
+      recognize_float().parse_complete(remaining_exponent),
+      Err(Err::Failure(("", ErrorKind::Digit)))
+    );
+
+    /*let (_i, nan) = float::<_, ()>("NaN").unwrap();
+    assert!(nan.is_nan());
+
+    let (_i, inf) = float::<_, ()>("inf").unwrap();
+    assert!(inf.is_infinite());
+    let (_i, inf) = float::<_, ()>("infinite").unwrap();
+    assert!(inf.is_infinite());*/
   }
 }

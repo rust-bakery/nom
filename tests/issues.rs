@@ -35,7 +35,7 @@ mod parse_int {
 
   fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32> {
     println!("{}", input.to_hex(8));
-    let (i, _) = opt(complete(space))(input)?;
+    let (i, _) = opt(complete(space)).parse(input)?;
     let (i, res) = map(complete(digit), |x| {
       println!("x: {:?}", x);
       let result = str::from_utf8(x).unwrap();

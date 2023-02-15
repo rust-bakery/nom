@@ -1382,7 +1382,7 @@ where
     integer = zeroes.take_from(zeroes.input_len() - 1);
   }
 
-  let (i, opt_dot) = opt(tag(&b"."[..]))(i)?;
+  let (i, opt_dot) = opt(tag(&b"."[..])).parse(i)?;
   let (i, fraction) = if opt_dot.is_none() {
     let i2 = i.clone();
     (i2, i.take(0))

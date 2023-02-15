@@ -211,7 +211,7 @@ fn test_into() {
 #[test]
 fn opt_test() {
   fn opt_abcd(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
-    opt(tag("abcd"))(i)
+    opt(tag("abcd")).parse(i)
   }
 
   let a = &b"abcdef"[..];

@@ -1164,7 +1164,7 @@ mod tests {
 
   fn digit_to_i16(input: &str) -> IResult<&str, i16> {
     let i = input;
-    let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
+    let (i, opt_sign) = opt(alt((char('+'), char('-')))).parse(i)?;
     let sign = match opt_sign {
       Some('+') => true,
       Some('-') => false,

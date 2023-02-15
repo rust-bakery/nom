@@ -12,7 +12,8 @@ use nom::{
   combinator::{map, map_opt, map_res, value, verify},
   error::{Error, ErrorKind, FromExternalError, ParseError, VerboseError},
   multi::{fold, separated_list0},
-  number::{double, recognize_float},
+  number::double,
+  number::recognize_float,
   sequence::{delimited, preceded, separated_pair},
   Complete, Emit, IResult, Mode, OutputM, Parser,
 };

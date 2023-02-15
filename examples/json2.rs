@@ -195,7 +195,7 @@ fn json<'a>() -> impl Parser<&'a str, Output = JsonValue, Error = Error<&'a str>
 }
 
 fn main() {
-  let data = include_str!("../canada.json");
+  let data = include_str!("../benchmarks/canada.json");
 
   loop {
     let a = json()
