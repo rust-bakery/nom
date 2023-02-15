@@ -166,7 +166,13 @@ pub trait Input: Clone + Sized {
           Err(Err::Incomplete(Needed::new(1)))
         } else {
           let len = self.input_len();
-          Ok((self.take_from(len), OM::Output::bind(|| self.take(len))))
+          if len == 0 {
+            Err(Err::Error(OM::Error::bind(|| {
+              E::from_error_kind(self.clone(), e)
+            })))
+          } else {
+            Ok((self.take_from(len), OM::Output::bind(|| self.take(len))))
+          }
         }
       }
     }
@@ -460,12 +466,18 @@ impl<'a> Input for &'a str {
         if OM::Incomplete::is_streaming() {
           Err(Err::Incomplete(Needed::new(1)))
         } else {
-          // the end of slice is a char boundary
-          unsafe {
-            Ok((
-              self.get_unchecked(self.len()..),
-              OM::Output::bind(|| self.get_unchecked(..self.len())),
-            ))
+          if self.len() == 0 {
+            Err(Err::Error(OM::Error::bind(|| {
+              E::from_error_kind(self.clone(), e)
+            })))
+          } else {
+            // the end of slice is a char boundary
+            unsafe {
+              Ok((
+                self.get_unchecked(self.len()..),
+                OM::Output::bind(|| self.get_unchecked(..self.len())),
+              ))
+            }
           }
         }
       }
