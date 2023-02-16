@@ -281,6 +281,62 @@ impl<'a> Input for &'a [u8] {
       }
     }
   }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          Ok((
+            self.take_from(self.len()),
+            OM::Output::bind(|| self.take(self.len())),
+          ))
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(0) => Err(Err::Error(OM::Error::bind(|| {
+        E::from_error_kind(self.clone(), e)
+      }))),
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          if self.len() == 0 {
+            Err(Err::Error(OM::Error::bind(|| {
+              E::from_error_kind(self.clone(), e)
+            })))
+          } else {
+            Ok((
+              self.take_from(self.len()),
+              OM::Output::bind(|| self.take(self.len())),
+            ))
+          }
+        }
+      }
+    }
+  }
 }
 
 impl<'a> Input for &'a str {

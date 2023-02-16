@@ -128,14 +128,14 @@ macro_rules! alt_trait_impl(
       type Output = Output;
       type Error = Error;
 
-      #[inline]
+      #[inline(always)]
       fn process<OM: crate::OutputMode>(
         &mut self,
         input: Input,
       ) -> crate::PResult<OM, Input, Self::Output, Self::Error> {
         match self.parser.0.process::<OM>(input.clone()) {
           Ok(res) => Ok(res),
-          Err(Err::Failure(e))=>Err(Err::Failure(e)),
+          Err(Err::Failure(e))=> Err(Err::Failure(e)),
           Err(Err::Incomplete(i))=> Err(Err::Incomplete(i)),
           Err(Err::Error(e)) => alt_trait_inner!(1, self, input, e, $($id)+),
         }
@@ -169,6 +169,7 @@ impl<Input, Output, Error: ParseError<Input>, A: Parser<Input, Output = Output, 
   type Output = Output;
   type Error = Error;
 
+  #[inline]
   fn process<OM: crate::OutputMode>(
     &mut self,
     input: Input,

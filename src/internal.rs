@@ -499,6 +499,7 @@ macro_rules! impl_parser_for_tuple {
       type Output = ($($output),+,);
       type Error = E;
 
+      #[inline(always)]
       fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
         let ($(ref mut $parser),+,) = *self;
 
@@ -554,7 +555,7 @@ impl<I, O2, E: ParseError<I>, F: Parser<I, Error = E>, G: FnMut(<F as Parser<I>>
   type Output = O2;
   type Error = E;
 
-  #[inline]
+  #[inline(always)]
   fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
     match self.f.process::<OM>(i) {
       Err(e) => Err(e),
@@ -685,6 +686,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
   type Output = (<F as Parser<I>>::Output, <G as Parser<I>>::Output);
   type Error = E;
 
+  #[inline(always)]
   fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let (i, o1) = self.f.process::<OM>(i)?;
     let (i, o2) = self.g.process::<OM>(i)?;

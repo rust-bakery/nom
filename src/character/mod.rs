@@ -161,6 +161,7 @@ where
   type Output = char;
   type Error = Error;
 
+  #[inline(always)]
   fn process<OM: crate::OutputMode>(
     &mut self,
     i: I,
@@ -340,6 +341,7 @@ where
 
   type Error = E;
 
+  #[inline]
   fn process<OM: crate::OutputMode>(
     &mut self,
     input: I,
