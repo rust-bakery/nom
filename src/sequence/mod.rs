@@ -13,11 +13,11 @@ use crate::internal::{IResult, Parser};
 /// * `first` The first parser to apply.
 /// * `second` The second parser to apply.
 ///
+/// # Example
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::sequence::pair;
 /// use nom::bytes::complete::tag;
+/// use nom::{error::ErrorKind, Err};
 ///
 /// let mut parser = pair(tag("abc"), tag("efg"));
 ///
