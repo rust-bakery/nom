@@ -6,6 +6,9 @@
 use crate::internal::Parser;
 use crate::lib::std::fmt;
 
+#[cfg(feature = "alloc")]
+use crate::alloc::borrow::ToOwned;
+
 /// This trait must be implemented by the error type of a nom parser.
 ///
 /// There are already implementations of it for `(Input, ErrorKind)`
@@ -97,6 +100,28 @@ impl<I: fmt::Display> fmt::Display for Error<I> {
 
 #[cfg(feature = "std")]
 impl<I: fmt::Debug + fmt::Display> std::error::Error for Error<I> {}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<Error<&[u8]>> for Error<crate::lib::std::vec::Vec<u8>> {
+  fn from(value: Error<&[u8]>) -> Self {
+    Error {
+      input: value.input.to_owned(),
+      code: value.code,
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<Error<&str>> for Error<crate::lib::std::string::String> {
+  fn from(value: Error<&str>) -> Self {
+    Error {
+      input: value.input.to_owned(),
+      code: value.code,
+    }
+  }
+}
 
 // for backward compatibility, keep those trait implementations
 // for the previously used error type
@@ -224,6 +249,34 @@ impl<I: fmt::Display> fmt::Display for VerboseError<I> {
 
 #[cfg(feature = "std")]
 impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseError<I> {}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<VerboseError<&[u8]>> for VerboseError<crate::lib::std::vec::Vec<u8>> {
+  fn from(value: VerboseError<&[u8]>) -> Self {
+    VerboseError {
+      errors: value
+        .errors
+        .into_iter()
+        .map(|(i, e)| (i.to_owned(), e))
+        .collect(),
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<VerboseError<&str>> for VerboseError<crate::lib::std::string::String> {
+  fn from(value: VerboseError<&str>) -> Self {
+    VerboseError {
+      errors: value
+        .errors
+        .into_iter()
+        .map(|(i, e)| (i.to_owned(), e))
+        .collect(),
+    }
+  }
+}
 
 use crate::internal::{Err, IResult};
 

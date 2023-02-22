@@ -41,19 +41,18 @@ error prone plumbing.
 [Hexadecimal color](https://developer.mozilla.org/en-US/docs/Web/CSS/color) parser:
 
 ```rust
-extern crate nom;
 use nom::{
-  IResult,
   bytes::complete::{tag, take_while_m_n},
   combinator::map_res,
-  Parser,
+  sequence::Tuple,
+  IResult,
 };
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Color {
-  pub red:   u8,
+  pub red: u8,
   pub green: u8,
-  pub blue:  u8,
+  pub blue: u8,
 }
 
 fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
@@ -74,19 +73,26 @@ fn hex_primary(input: &str) -> IResult<&str, u8> {
 fn hex_color(input: &str) -> IResult<&str, Color> {
   let (input, _) = tag("#")(input)?;
   let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
-
   Ok((input, Color { red, green, blue }))
 }
 
-fn main() {}
+fn main() {
+  println!("{:?}", hex_color("#2F14DF"))
+}
 
 #[test]
 fn parse_color() {
-  assert_eq!(hex_color("#2F14DF"), Ok(("", Color {
-    red: 47,
-    green: 20,
-    blue: 223,
-  })));
+  assert_eq!(
+    hex_color("#2F14DF"),
+    Ok((
+      "",
+      Color {
+        red: 47,
+        green: 20,
+        blue: 223,
+      }
+    ))
+  );
 }
 ```
 
