@@ -3,7 +3,7 @@
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Parser};
-use crate::lib::std::result::Result::*;
+use crate::lib::std::{result::Result::*, cmp::min};
 use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputLength, ToUsize};
 use crate::Input;
 
@@ -208,7 +208,7 @@ where
   }
 }
 
-/// Returns the longest (m <= len <= n) input slice  that matches the predicate.
+/// Returns the longest (m <= len <= n) input slice that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
 /// takes the input and returns a bool)*.
@@ -242,55 +242,29 @@ where
 {
   move |i: I| {
     let input = i;
+    let input_len = input.iter_elements().count();
 
-    match input.position(|c| !cond(c)) {
-      Some(idx) => {
-        if idx >= m {
-          if idx <= n {
-            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(idx) {
-              Ok(input.take_split(index))
-            } else {
-              Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::TakeWhileMN,
-              )))
-            };
-            res
-          } else {
-            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(n) {
-              Ok(input.take_split(index))
-            } else {
-              Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::TakeWhileMN,
-              )))
-            };
-            res
-          }
-        } else {
-          let e = ErrorKind::TakeWhileMN;
-          Err(Err::Error(Error::from_error_kind(input, e)))
-        }
+    for (i, item) in input.iter_elements().enumerate() {
+      if i > n {
+        break;
       }
-      None => {
-        let len = input.input_len();
-        if len >= n {
-          match input.slice_index(n) {
-            Ok(index) => Ok(input.take_split(index)),
-            Err(_needed) => Err(Err::Error(Error::from_error_kind(
-              input,
-              ErrorKind::TakeWhileMN,
-            ))),
+      if !cond(item) {
+        if i >= m {
+          if let Ok(index) = input.slice_index(i) {
+            return Ok(input.take_split(index));
           }
-        } else if len >= m && len <= n {
-          let res: IResult<_, _, Error> = Ok((input.take_from(len), input));
-          res
-        } else {
-          let e = ErrorKind::TakeWhileMN;
-          Err(Err::Error(Error::from_error_kind(input, e)))
         }
+        return Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)));
       }
     }
+
+    if n <= input_len || (m <= input_len && input_len <= n) {
+      if let Ok(index) = input.slice_index(min(n, input_len)) {
+        return Ok(input.take_split(index));
+      }
+    }
+
+    Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
   }
 }
 
@@ -671,6 +645,7 @@ where
 
 #[cfg(test)]
 mod tests {
+  use crate::AsChar;
   use super::*;
 
   #[test]
@@ -717,5 +692,24 @@ mod tests {
   #[test]
   fn escaped_hang_1118() {
     assert_eq!(unquote(r#""""#), Ok(("", "")));
+  }
+
+  // issue #1630 take_while_m_n is invalid for multi-byte UTF-8 characters
+  #[test]
+  fn complete_take_while_m_n_multibyte() {
+    use crate::error::Error;
+
+    fn multi_byte_chars(s: &str, m: usize, n: usize) -> IResult<&str, &str> {
+      take_while_m_n(m, n, |c: char| c.len() > 1)(s)
+    }
+
+    assert_eq!(multi_byte_chars("€ latin", 0, 64), Ok((&" latin"[..], &"€"[..])));
+    assert_eq!(multi_byte_chars("𝄠 latin", 0, 1), Ok((&" latin"[..], &"𝄠"[..])));
+    assert_eq!(multi_byte_chars("باب latin", 0, 64), Ok((&" latin"[..], &"باب"[..])));
+    assert_eq!(multi_byte_chars("💣💢ᾠ latin", 3, 3), Ok((&" latin"[..], &"💣💢ᾠ"[..])));
+    assert_eq!(multi_byte_chars("latin", 0, 64), Ok((&"latin"[..], &""[..])));
+    assert_eq!(multi_byte_chars("باب", 1, 3), Ok((&""[..], &"باب"[..])));
+    assert_eq!(multi_byte_chars("باب", 1, 2), Ok((&"ب"[..], &"با"[..])));
+    assert_eq!(multi_byte_chars("latin", 1, 64), Err(Err::Error(Error::new(&"latin"[..], ErrorKind::TakeWhileMN))));
   }
 }

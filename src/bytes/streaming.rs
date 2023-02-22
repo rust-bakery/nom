@@ -253,52 +253,32 @@ where
 {
   move |i: I| {
     let input = i;
+    let input_len = input.iter_elements().count();
 
-    match input.position(|c| !cond(c)) {
-      Some(idx) => {
-        if idx >= m {
-          if idx <= n {
-            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(idx) {
-              Ok(input.take_split(index))
-            } else {
-              Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::TakeWhileMN,
-              )))
-            };
-            res
-          } else {
-            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(n) {
-              Ok(input.take_split(index))
-            } else {
-              Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::TakeWhileMN,
-              )))
-            };
-            res
-          }
-        } else {
-          let e = ErrorKind::TakeWhileMN;
-          Err(Err::Error(Error::from_error_kind(input, e)))
-        }
+    for (i, item) in input.iter_elements().enumerate() {
+      if i > n {
+        break;
       }
-      None => {
-        let len = input.input_len();
-        if len >= n {
-          match input.slice_index(n) {
-            Ok(index) => Ok(input.take_split(index)),
-            Err(_needed) => Err(Err::Error(Error::from_error_kind(
-              input,
-              ErrorKind::TakeWhileMN,
-            ))),
+      if !cond(item) {
+        if i >= m {
+          if let Ok(index) = input.slice_index(i) {
+            return Ok(input.take_split(index));
           }
-        } else {
-          let needed = if m > len { m - len } else { 1 };
-          Err(Err::Incomplete(Needed::new(needed)))
         }
+        return Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)));
       }
     }
+
+    if n <= input_len {
+      return if let Ok(index) = input.slice_index(n) {
+        Ok(input.take_split(index))
+      } else {
+        Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+      }
+    }
+
+    let needed = if m > input_len { m - input_len } else { 1 };
+    Err(Err::Incomplete(Needed::new(needed)))
   }
 }
 
