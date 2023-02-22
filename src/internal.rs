@@ -257,17 +257,17 @@ pub struct Emit;
 impl Mode for Emit {
   type Output<T> = T;
 
-  #[inline]
+  #[inline(always)]
   fn bind<T, F: FnOnce() -> T>(f: F) -> Self::Output<T> {
     f()
   }
 
-  #[inline]
+  #[inline(always)]
   fn map<T, U, F: FnOnce(T) -> U>(x: Self::Output<T>, f: F) -> Self::Output<U> {
     f(x)
   }
 
-  #[inline]
+  #[inline(always)]
   fn combine<T, U, V, F: FnOnce(T, U) -> V>(
     x: Self::Output<T>,
     y: Self::Output<U>,
@@ -282,17 +282,17 @@ pub struct Check;
 impl Mode for Check {
   type Output<T> = ();
 
-  #[inline]
+  #[inline(always)]
   fn bind<T, F: FnOnce() -> T>(_: F) -> Self::Output<T> {
     ()
   }
 
-  #[inline]
+  #[inline(always)]
   fn map<T, U, F: FnOnce(T) -> U>(_: Self::Output<T>, _: F) -> Self::Output<U> {
     ()
   }
 
-  #[inline]
+  #[inline(always)]
   fn combine<T, U, V, F: FnOnce(T, U) -> V>(
     _: Self::Output<T>,
     _: Self::Output<U>,

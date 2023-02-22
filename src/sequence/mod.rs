@@ -84,7 +84,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
   type Output = <G as Parser<I>>::Output;
   type Error = E;
 
-  #[inline]
+  #[inline(always)]
   fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let (i, _) = self
       .f
@@ -141,7 +141,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
   type Output = <F as Parser<I>>::Output;
   type Error = E;
 
-  #[inline]
+  #[inline(always)]
   fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let (i, o1) = self.f.process::<OM>(i)?;
     let (i, _) = self
