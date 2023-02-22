@@ -1455,4 +1455,31 @@ mod tests {
     assert_eq!(a.offset(c), 0);
     assert_eq!(a.offset(d), 5);
   }
+
+  #[test]
+  fn test_slice_index() {
+    let a = "abcřèÂßÇd123";
+    assert_eq!(a.slice_index(0), Ok(0));
+    assert_eq!(a.slice_index(2), Ok(2));
+  }
+
+  #[test]
+  fn test_slice_index_utf8() {
+    let a = "a¡€💢€¡a";
+
+    for (c, len) in a.chars().zip([1, 2, 3, 4, 3, 2, 1]) {
+      assert_eq!(c.len(), len);
+    }
+
+    assert_eq!(a.slice_index(0), Ok(0));
+    assert_eq!(a.slice_index(1), Ok(1));
+    assert_eq!(a.slice_index(2), Ok(3));
+    assert_eq!(a.slice_index(3), Ok(6));
+    assert_eq!(a.slice_index(4), Ok(10));
+    assert_eq!(a.slice_index(5), Ok(13));
+    assert_eq!(a.slice_index(6), Ok(15));
+    assert_eq!(a.slice_index(7), Ok(16));
+
+    assert!(a.slice_index(8).is_err());
+  }
 }
