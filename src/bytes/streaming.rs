@@ -6,7 +6,7 @@ use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed, Parser};
 use crate::lib::std::result::Result::*;
-use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputLength, ToUsize};
+use crate::traits::{Compare, FindSubstring, FindToken, InputLength, ToUsize};
 use crate::Emit;
 use crate::Input;
 use crate::OutputM;
@@ -70,18 +70,12 @@ where
   T: InputLength + Clone,
 {
   move |i: I| {
-    let tag_len = tag.input_len();
-    let t = tag.clone();
-
-    let res: IResult<_, _, Error> = match (i).compare_no_case(t) {
-      CompareResult::Ok => Ok(i.take_split(tag_len)),
-      CompareResult::Incomplete => Err(Err::Incomplete(Needed::new(tag_len - i.input_len()))),
-      CompareResult::Error => {
-        let e: ErrorKind = ErrorKind::Tag;
-        Err(Err::Error(Error::from_error_kind(i, e)))
-      }
+    let mut parser = super::TagNoCase {
+      tag: tag.clone(),
+      e: PhantomData,
     };
-    res
+
+    parser.process::<OutputM<Emit, Emit, Streaming>>(i)
   }
 }
 
@@ -106,15 +100,14 @@ where
 /// assert_eq!(not_space("Nospace"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(not_space(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn is_not<T, I, Error: ParseError<I>>(arr: T) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn is_not<T, I, Error: ParseError<I>>(arr: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   T: FindToken<<I as Input>::Item>,
 {
-  move |i: I| {
-    let e: ErrorKind = ErrorKind::IsNot;
-    i.split_at_position1(|c| arr.find_token(c), e)
-  }
+  let mut parser = super::is_not(arr);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns the longest slice of the matches the pattern.
@@ -140,15 +133,14 @@ where
 /// assert_eq!(hex("D15EA5E"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(hex(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn is_a<T, I, Error: ParseError<I>>(arr: T) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn is_a<T, I, Error: ParseError<I>>(arr: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   T: FindToken<<I as Input>::Item>,
 {
-  move |i: I| {
-    let e: ErrorKind = ErrorKind::IsA;
-    i.split_at_position1(|c| !arr.find_token(c), e)
-  }
+  let mut parser = super::is_a(arr);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns the longest input slice (if any) that matches the predicate.
@@ -173,12 +165,14 @@ where
 /// assert_eq!(alpha(b"latin"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(alpha(b""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn take_while<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn take_while<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: I| i.split_at_position(|c| !cond(c))
+  let mut parser = super::take_while(cond);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns the longest (at least 1) input slice that matches the predicate.
@@ -205,15 +199,14 @@ where
 /// assert_eq!(alpha(b"latin"), Err(Err::Incomplete(Needed::new(1))));
 /// assert_eq!(alpha(b"12345"), Err(Err::Error(Error::new(&b"12345"[..], ErrorKind::TakeWhile1))));
 /// ```
-pub fn take_while1<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn take_while1<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: I| {
-    let e: ErrorKind = ErrorKind::TakeWhile1;
-    i.split_at_position1(|c| !cond(c), e)
-  }
+  let mut parser = super::take_while1(cond);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns the longest (m <= len <= n) input slice  that matches the predicate.
@@ -325,12 +318,14 @@ where
 /// assert_eq!(till_colon(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[allow(clippy::redundant_closure)]
-pub fn take_till<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn take_till<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: I| i.split_at_position(|c| cond(c))
+  let mut parser = super::take_till(cond);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns the longest (at least 1) input slice till a predicate is met.
@@ -356,15 +351,14 @@ where
 /// assert_eq!(till_colon(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
 #[allow(clippy::redundant_closure)]
-pub fn take_till1<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn take_till1<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: I| {
-    let e: ErrorKind = ErrorKind::TakeTill1;
-    i.split_at_position1(|c| cond(c), e)
-  }
+  let mut parser = super::take_till1(cond);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns an input slice containing the first N input elements (Input[..N]).
@@ -423,20 +417,14 @@ where
 /// assert_eq!(until_eof("hello, worldeo"), Err(Err::Incomplete(Needed::Unknown)));
 /// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
 /// ```
-pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input + FindSubstring<T>,
   T: Clone,
 {
-  move |i: I| {
-    let t = tag.clone();
+  let mut parser = super::take_until(tag);
 
-    let res: IResult<_, _, Error> = match i.find_substring(t) {
-      None => Err(Err::Incomplete(Needed::Unknown)),
-      Some(index) => Ok(i.take_split(index)),
-    };
-    res
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns the non empty input slice up to the first occurrence of the pattern.
@@ -461,21 +449,14 @@ where
 /// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
 /// assert_eq!(until_eof("eof"),  Err(Err::Error(Error::new("eof", ErrorKind::TakeUntil))));
 /// ```
-pub fn take_until1<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn take_until1<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input + FindSubstring<T>,
   T: Clone,
 {
-  move |i: I| {
-    let t = tag.clone();
+  let mut parser = super::take_until1(tag);
 
-    let res: IResult<_, _, Error> = match i.find_substring(t) {
-      None => Err(Err::Incomplete(Needed::Unknown)),
-      Some(0) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntil))),
-      Some(index) => Ok(i.take_split(index)),
-    };
-    res
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Matches a byte string with escaped characters.
