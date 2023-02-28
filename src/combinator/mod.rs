@@ -200,13 +200,13 @@ where
 /// To chain an error up, see [`cut`].
 ///
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::opt;
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
 /// fn parser(i: &str) -> IResult<&str, Option<&str>> {
-///   opt(alpha1)(i)
+///   opt(alpha1).parse(i)
 /// }
 ///
 /// assert_eq!(parser("abcd;"), Ok((";", Some("abcd"))));
@@ -222,7 +222,7 @@ where
   Opt { parser: f }
 }
 
-/// TODO
+/// Parser implementation for [opt]
 pub struct Opt<F> {
   parser: F,
 }
@@ -253,13 +253,13 @@ where
 /// Calls the parser if the condition is met.
 ///
 /// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Parser};
 /// use nom::combinator::cond;
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
 /// fn parser(b: bool, i: &str) -> IResult<&str, Option<&str>> {
-///   cond(b, alpha1)(i)
+///   cond(b, alpha1).parse(i)
 /// }
 ///
 /// assert_eq!(parser(true, "abcd;"), Ok((";", Some("abcd"))));
@@ -270,19 +270,34 @@ where
 /// ```
 pub fn cond<I, E: ParseError<I>, F>(
   b: bool,
-  mut f: F,
-) -> impl FnMut(I) -> IResult<I, Option<<F as Parser<I>>::Output>, E>
+  f: F,
+) -> impl Parser<I, Output = Option<<F as Parser<I>>::Output>, Error = E>
 where
   F: Parser<I, Error = E>,
 {
-  move |input: I| {
-    if b {
-      match f.parse(input) {
-        Ok((i, o)) => Ok((i, Some(o))),
-        Err(e) => Err(e),
-      }
-    } else {
-      Ok((input, None))
+  Cond {
+    parser: if b { Some(f) } else { None },
+  }
+}
+
+/// Parser implementation for [cond]
+pub struct Cond<F> {
+  parser: Option<F>,
+}
+
+impl<I, F> Parser<I> for Cond<F>
+where
+  F: Parser<I>,
+{
+  type Output = Option<<F as Parser<I>>::Output>;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    match &mut self.parser {
+      None => Ok((input, OM::Output::bind(|| None))),
+      Some(f) => f
+        .process::<OM>(input)
+        .map(|(i, o)| (i, OM::Output::map(o, Some))),
     }
   }
 }
@@ -290,26 +305,42 @@ where
 /// Tries to apply its parser without consuming the input.
 ///
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::peek;
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
 /// let mut parser = peek(alpha1);
 ///
-/// assert_eq!(parser("abcd;"), Ok(("abcd;", "abcd")));
-/// assert_eq!(parser("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
+/// assert_eq!(parser.parse("abcd;"), Ok(("abcd;", "abcd")));
+/// assert_eq!(parser.parse("123;"), Err(Err::Error(("123;", ErrorKind::Alpha))));
 /// # }
 /// ```
-pub fn peek<I: Clone, E: ParseError<I>, F>(
-  mut f: F,
-) -> impl FnMut(I) -> IResult<I, <F as Parser<I>>::Output, E>
+pub fn peek<I: Clone, F>(
+  parser: F,
+) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = <F as Parser<I>>::Error>
 where
-  F: Parser<I, Error = E>,
+  F: Parser<I>,
 {
-  move |input: I| {
+  Peek { parser }
+}
+
+/// Parsr implementation for [peek]
+pub struct Peek<F> {
+  parser: F,
+}
+
+impl<I, F> Parser<I> for Peek<F>
+where
+  I: Clone,
+  F: Parser<I>,
+{
+  type Output = <F as Parser<I>>::Output;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let i = input.clone();
-    match f.parse(input) {
+    match self.parser.process::<OM>(input) {
       Ok((_, o)) => Ok((i, o)),
       Err(e) => Err(e),
     }
@@ -344,26 +375,51 @@ pub fn eof<I: InputLength + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, 
 /// Transforms Incomplete into `Error`.
 ///
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::bytes::streaming::take;
 /// use nom::combinator::complete;
 /// # fn main() {
 ///
 /// let mut parser = complete(take(5u8));
 ///
-/// assert_eq!(parser("abcdefg"), Ok(("fg", "abcde")));
-/// assert_eq!(parser("abcd"), Err(Err::Error(("abcd", ErrorKind::Complete))));
+/// assert_eq!(parser.parse("abcdefg"), Ok(("fg", "abcde")));
+/// assert_eq!(parser.parse("abcd"), Err(Err::Error(("abcd", ErrorKind::Complete))));
 /// # }
 /// ```
-pub fn complete<I: Clone, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, O, E>
+pub fn complete<I: Clone, O, E: ParseError<I>, F>(
+  parser: F,
+) -> impl Parser<I, Output = O, Error = E>
 where
   F: Parser<I, Output = O, Error = E>,
 {
-  move |input: I| {
+  MakeComplete { parser }
+}
+
+/// Parser implementation for [complete]
+pub struct MakeComplete<F> {
+  parser: F,
+}
+
+impl<I, F> Parser<I> for MakeComplete<F>
+where
+  I: Clone,
+  F: Parser<I>,
+{
+  type Output = <F as Parser<I>>::Output;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let i = input.clone();
-    match f.parse(input) {
-      Err(Err::Incomplete(_)) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Complete))),
-      rest => rest,
+
+    match self
+      .parser
+      .process::<OutputM<OM::Output, OM::Error, Complete>>(input)
+    {
+      Err(Err::Incomplete(_)) => Err(Err::Error(OM::Error::bind(|| {
+        <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::Complete)
+      }))),
+      Err(e) => Err(e),
+      Ok(o) => Ok(o),
     }
   }
 }
@@ -371,31 +427,49 @@ where
 /// Succeeds if all the input has been consumed by its child parser.
 ///
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::all_consuming;
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
 /// let mut parser = all_consuming(alpha1);
 ///
-/// assert_eq!(parser("abcd"), Ok(("", "abcd")));
-/// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Eof))));
-/// assert_eq!(parser("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
+/// assert_eq!(parser.parse("abcd"), Ok(("", "abcd")));
+/// assert_eq!(parser.parse("abcd;"),Err(Err::Error((";", ErrorKind::Eof))));
+/// assert_eq!(parser.parse("123abcd;"),Err(Err::Error(("123abcd;", ErrorKind::Alpha))));
 /// # }
 /// ```
 pub fn all_consuming<I, E: ParseError<I>, F>(
-  mut f: F,
-) -> impl FnMut(I) -> IResult<I, <F as Parser<I>>::Output, E>
+  parser: F,
+) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = E>
 where
   I: InputLength,
   F: Parser<I, Error = E>,
 {
-  move |input: I| {
-    let (input, res) = f.parse(input)?;
+  AllConsuming { parser }
+}
+
+/// Parser implementation for [all_consuming]
+pub struct AllConsuming<F> {
+  parser: F,
+}
+
+impl<I, F> Parser<I> for AllConsuming<F>
+where
+  I: InputLength,
+  F: Parser<I>,
+{
+  type Output = <F as Parser<I>>::Output;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (input, res) = self.parser.process::<OM>(input)?;
     if input.input_len() == 0 {
       Ok((input, res))
     } else {
-      Err(Err::Error(E::from_error_kind(input, ErrorKind::Eof)))
+      Err(Err::Error(OM::Error::bind(|| {
+        <F as Parser<I>>::Error::from_error_kind(input, ErrorKind::Eof)
+      })))
     }
   }
 }
@@ -435,7 +509,7 @@ where
   }
 }
 
-/// TODO
+/// Parser iplementation for verify
 pub struct Verify<F, G, O2: ?Sized> {
   first: F,
   second: G,
@@ -496,26 +570,44 @@ where
 /// Succeeds if the child parser returns an error.
 ///
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::not;
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
 /// let mut parser = not(alpha1);
 ///
-/// assert_eq!(parser("123"), Ok(("123", ())));
-/// assert_eq!(parser("abcd"), Err(Err::Error(("abcd", ErrorKind::Not))));
+/// assert_eq!(parser.parse("123"), Ok(("123", ())));
+/// assert_eq!(parser.parse("abcd"), Err(Err::Error(("abcd", ErrorKind::Not))));
 /// # }
 /// ```
-pub fn not<I: Clone, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, (), E>
+pub fn not<I: Clone, E: ParseError<I>, F>(parser: F) -> impl Parser<I, Output = (), Error = E>
 where
   F: Parser<I, Error = E>,
 {
-  move |input: I| {
+  Not { parser }
+}
+
+/// Parser implementation for [not]
+pub struct Not<F> {
+  parser: F,
+}
+
+impl<I, F> Parser<I> for Not<F>
+where
+  I: Clone,
+  F: Parser<I>,
+{
+  type Output = ();
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let i = input.clone();
-    match parser.parse(input) {
-      Ok(_) => Err(Err::Error(E::from_error_kind(i, ErrorKind::Not))),
-      Err(Err::Error(_)) => Ok((i, ())),
+    match self.parser.process::<OM>(input) {
+      Ok(_) => Err(Err::Error(OM::Error::bind(|| {
+        <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::Not)
+      }))),
+      Err(Err::Error(_)) => Ok((i, OM::Output::bind(|| ()))),
       Err(e) => Err(e),
     }
   }
@@ -524,7 +616,7 @@ where
 /// If the child parser was successful, return the consumed input as produced value.
 ///
 /// ```rust
-/// # use nom::{Err,error::ErrorKind, IResult};
+/// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::recognize;
 /// use nom::character::complete::{char, alpha1};
 /// use nom::sequence::separated_pair;
@@ -532,8 +624,8 @@ where
 ///
 /// let mut parser = recognize(separated_pair(alpha1, char(','), alpha1));
 ///
-/// assert_eq!(parser("abcd,efgh"), Ok(("", "abcd,efgh")));
-/// assert_eq!(parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
+/// assert_eq!(parser.parse("abcd,efgh"), Ok(("", "abcd,efgh")));
+/// assert_eq!(parser.parse("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
 /// # }
 /// ```
 pub fn recognize<I: Clone + Offset + Input, E: ParseError<I>, F>(
@@ -545,7 +637,7 @@ where
   Recognize { parser }
 }
 
-/// TODO
+/// Parser implementation for [recognize]
 pub struct Recognize<F> {
   parser: F,
 }
@@ -598,8 +690,8 @@ where
 ///
 /// let mut consumed_parser = consumed(value(true, separated_pair(alpha1, char(','), alpha1)));
 ///
-/// assert_eq!(consumed_parser("abcd,efgh1"), Ok(("1", ("abcd,efgh", true))));
-/// assert_eq!(consumed_parser("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
+/// assert_eq!(consumed_parser.parse("abcd,efgh1"), Ok(("1", ("abcd,efgh", true))));
+/// assert_eq!(consumed_parser.parse("abcd;"),Err(Err::Error((";", ErrorKind::Char))));
 ///
 ///
 /// // the first output (representing the consumed input)
@@ -607,25 +699,48 @@ where
 /// let mut recognize_parser = recognize(inner_parser);
 /// let mut consumed_parser = map(consumed(inner_parser), |(consumed, output)| consumed);
 ///
-/// assert_eq!(recognize_parser("1234"), consumed_parser.parse("1234"));
-/// assert_eq!(recognize_parser("abcd"), consumed_parser.parse("abcd"));
+/// assert_eq!(recognize_parser.parse("1234"), consumed_parser.parse("1234"));
+/// assert_eq!(recognize_parser.parse("abcd"), consumed_parser.parse("abcd"));
 /// # }
 /// ```
 pub fn consumed<I, F, E>(
-  mut parser: F,
-) -> impl FnMut(I) -> IResult<I, (I, <F as Parser<I>>::Output), E>
+  parser: F,
+) -> impl Parser<I, Output = (I, <F as Parser<I>>::Output), Error = E>
 where
   I: Clone + Offset + Input,
   E: ParseError<I>,
   F: Parser<I, Error = E>,
 {
-  move |input: I| {
+  Consumed { parser }
+}
+
+/// Parser implementation for [consumed]
+pub struct Consumed<F> {
+  parser: F,
+}
+
+impl<I, F> Parser<I> for Consumed<F>
+where
+  I: Clone + Offset + Input,
+  F: Parser<I>,
+{
+  type Output = (I, <F as Parser<I>>::Output);
+  type Error = <F as Parser<I>>::Error;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
     let i = input.clone();
-    match parser.parse(i) {
+    match self.parser.process::<OM>(i) {
       Ok((remaining, result)) => {
         let index = input.offset(&remaining);
-        let consumed = input.take(index);
-        Ok((remaining, (consumed, result)))
+
+        Ok((
+          remaining,
+          OM::Output::map(result, |res| {
+            let consumed = input.take(index);
+            (consumed, res)
+          }),
+        ))
       }
       Err(e) => Err(e),
     }
@@ -692,7 +807,7 @@ where
   Cut { parser }
 }
 
-/// TODO
+/// Parser implementation for [cut]
 pub struct Cut<F> {
   parser: F,
 }
@@ -858,7 +973,7 @@ enum State<E> {
 /// # fn main() {
 ///
 /// let mut parser = success::<_,_,(_,ErrorKind)>(10);
-/// assert_eq!(parser("xyz"), Ok(("xyz", 10)));
+/// assert_eq!(parser.parse("xyz"), Ok(("xyz", 10)));
 ///
 /// let mut sign = alt((value(-1, char('-')), value(1, char('+')), success::<_,_,(_,ErrorKind)>(1)));
 /// assert_eq!(sign.parse("+10"), Ok(("10", 1)));
@@ -866,19 +981,64 @@ enum State<E> {
 /// assert_eq!(sign.parse("10"), Ok(("10", 1)));
 /// # }
 /// ```
-pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I, O, E> {
-  move |input: I| Ok((input, val.clone()))
+pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Parser<I, Output = O, Error = E> {
+  Success {
+    val,
+    e: PhantomData,
+  }
+}
+
+/// Parser implementation for [success]
+pub struct Success<O: Clone, E> {
+  val: O,
+  e: PhantomData<E>,
+}
+
+impl<I, O, E> Parser<I> for Success<O, E>
+where
+  O: Clone,
+  E: ParseError<I>,
+{
+  type Output = O;
+  type Error = E;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    Ok((input, OM::Output::bind(|| self.val.clone())))
+  }
 }
 
 /// A parser which always fails.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, IResult};
+/// # use nom::{Err, error::ErrorKind, IResult, Parser};
 /// use nom::combinator::fail;
 ///
 /// let s = "string";
-/// assert_eq!(fail::<_, &str, _>(s), Err(Err::Error((s, ErrorKind::Fail))));
+/// assert_eq!(fail::<_, &str, _>().parse(s), Err(Err::Error((s, ErrorKind::Fail))));
 /// ```
-pub fn fail<I, O, E: ParseError<I>>(i: I) -> IResult<I, O, E> {
-  Err(Err::Error(E::from_error_kind(i, ErrorKind::Fail)))
+pub fn fail<I, O, E: ParseError<I>>() -> impl Parser<I, Output = O, Error = E> {
+  Fail {
+    o: PhantomData,
+    e: PhantomData,
+  }
+}
+
+/// Parser implementation for [fail]
+pub struct Fail<O, E> {
+  o: PhantomData<O>,
+  e: PhantomData<E>,
+}
+
+impl<I, O, E> Parser<I> for Fail<O, E>
+where
+  E: ParseError<I>,
+{
+  type Output = O;
+  type Error = E;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    Err(Err::Error(OM::Error::bind(|| {
+      E::from_error_kind(input, ErrorKind::Fail)
+    })))
+  }
 }

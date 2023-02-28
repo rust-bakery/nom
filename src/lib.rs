@@ -217,9 +217,9 @@
 //! an error, **`opt`** will still succeed and return None:
 //!
 //! ```rust
-//! use nom::{IResult, combinator::opt, bytes::complete::tag};
+//! use nom::{IResult, Parser, combinator::opt, bytes::complete::tag};
 //! fn abcd_opt(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
-//!   opt(tag("abcd"))(i)
+//!   opt(tag("abcd")).parse(i)
 //! }
 //!
 //! assert_eq!(abcd_opt(&b"abcdxxx"[..]), Ok((&b"xxx"[..], Some(&b"abcd"[..]))));

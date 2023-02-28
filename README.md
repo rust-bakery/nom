@@ -46,6 +46,7 @@ use nom::{
   combinator::map_res,
   sequence::Tuple,
   IResult,
+  Parser,
 };
 
 #[derive(Debug, PartialEq)]

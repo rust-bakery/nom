@@ -229,14 +229,14 @@ where
 #[allow(deprecated)]
 pub trait Tuple<I, O, E> {
   /// Parses the input and returns a tuple of results of each parser.
-  fn parse(&mut self, input: I) -> IResult<I, O, E>;
+  fn parse_tuple(&mut self, input: I) -> IResult<I, O, E>;
 }
 
 #[allow(deprecated)]
 impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output = Output, Error = Error>>
   Tuple<Input, (Output,), Error> for (F,)
 {
-  fn parse(&mut self, input: Input) -> IResult<Input, (Output,), Error> {
+  fn parse_tuple(&mut self, input: Input) -> IResult<Input, (Output,), Error> {
     self.0.parse(input).map(|(i, o)| (i, (o,)))
   }
 }
@@ -262,7 +262,7 @@ macro_rules! tuple_trait_impl(
       Input: Clone, $($ty),+ , Error: ParseError<Input>,
       $($name: Parser<Input, Output = $ty, Error = Error>),+
     > Tuple<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
-      fn parse(&mut self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
+      fn parse_tuple(&mut self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
         tuple_trait_inner!(0, self, input, (), $($name)+)
 
       }
@@ -296,7 +296,7 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 // Literally, `()` is an empty tuple, so it should simply parse nothing.
 #[allow(deprecated)]
 impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
-  fn parse(&mut self, input: I) -> IResult<I, (), E> {
+  fn parse_tuple(&mut self, input: I) -> IResult<I, (), E> {
     Ok((input, ()))
   }
 }
@@ -317,5 +317,5 @@ impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
 pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {
-  move |i: I| l.parse(i)
+  move |i: I| l.parse_tuple(i)
 }

@@ -148,11 +148,11 @@ fn test_map_parser() {
 fn test_all_consuming() {
   let input: &[u8] = &[100, 101, 102][..];
   assert_parse!(
-    all_consuming(take(2usize))(input),
+    all_consuming(take(2usize)).parse(input),
     Err(Err::Error((&[102][..], ErrorKind::Eof)))
   );
   assert_parse!(
-    all_consuming(take(3usize))(input),
+    all_consuming(take(3usize)).parse(input),
     Ok((&[][..], &[100, 101, 102][..]))
   );
 }
@@ -225,7 +225,7 @@ fn opt_test() {
 #[test]
 fn peek_test() {
   fn peek_tag(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    peek(tag("abcd"))(i)
+    peek(tag("abcd")).parse(i)
   }
 
   assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
@@ -239,7 +239,7 @@ fn peek_test() {
 #[test]
 fn not_test() {
   fn not_aaa(i: &[u8]) -> IResult<&[u8], ()> {
-    not(tag("aaa"))(i)
+    not(tag("aaa")).parse(i)
   }
 
   assert_eq!(
@@ -273,6 +273,12 @@ fn fail_test() {
   let a = "string";
   let b = "another string";
 
-  assert_eq!(fail::<_, &str, _>(a), Err(Err::Error((a, ErrorKind::Fail))));
-  assert_eq!(fail::<_, &str, _>(b), Err(Err::Error((b, ErrorKind::Fail))));
+  assert_eq!(
+    fail::<_, &str, _>().parse(a),
+    Err(Err::Error((a, ErrorKind::Fail)))
+  );
+  assert_eq!(
+    fail::<_, &str, _>().parse(b),
+    Err(Err::Error((b, ErrorKind::Fail)))
+  );
 }
