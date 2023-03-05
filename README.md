@@ -259,7 +259,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [PDB](https://github.com/TianyiShi2001/nom-pdb),
 [proto files](https://github.com/tafia/protobuf-parser),
 [Fountain screenplay markup](https://github.com/adamchalmers/fountain-rs),
-[vimwiki](https://github.com/chipsenkbeil/vimwiki-server/tree/master/vimwiki) & [vimwiki_macros](https://github.com/chipsenkbeil/vimwiki-server/tree/master/vimwiki_macros)
+[vimwiki](https://github.com/chipsenkbeil/vimwiki-server/tree/master/vimwiki) & [vimwiki_macros](https://github.com/chipsenkbeil/vimwiki-server/tree/master/vimwiki_macros),
+[TL](https://github.com/lorislibralato/tgram/tree/main/parser)
 - Programming languages:
 [PHP](https://github.com/tagua-vm/parser),
 [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs),
