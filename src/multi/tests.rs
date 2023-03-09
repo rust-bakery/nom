@@ -71,10 +71,10 @@ fn separated_list0_test() {
 #[cfg(feature = "alloc")]
 fn separated_list1_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_list1(tag(","), tag("abcd"))(i)
+    separated_list1(tag(","), tag("abcd")).parse(i)
   }
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    separated_list1(tag(".."), tag("abcd"))(i)
+    separated_list1(tag(".."), tag("abcd")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -134,7 +134,7 @@ fn many0_test() {
 #[cfg(feature = "alloc")]
 fn many1_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many1(tag("abcd"))(i)
+    many1(tag("abcd")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -158,7 +158,7 @@ fn many1_test() {
 fn many_till_test() {
   #[allow(clippy::type_complexity)]
   fn multi(i: &[u8]) -> IResult<&[u8], (Vec<&[u8]>, &[u8])> {
-    many_till(tag("abcd"), tag("efgh"))(i)
+    many_till(tag("abcd"), tag("efgh")).parse(i)
   }
 
   let a = b"abcdabcdefghabcd";
@@ -194,7 +194,7 @@ fn infinite_many() {
   assert_eq!(multi0(a), Ok((a, Vec::new())));
 
   fn multi1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many1(tst)(i)
+    many1(tst).parse(i)
   }
   let a = &b"abcdef"[..];
   assert_eq!(
@@ -207,7 +207,7 @@ fn infinite_many() {
 #[cfg(feature = "alloc")]
 fn many_m_n_test() {
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many_m_n(2, 4, tag("Abcd"))(i)
+    many_m_n(2, 4, tag("Abcd")).parse(i)
   }
 
   let a = &b"Abcdef"[..];
@@ -234,7 +234,7 @@ fn many_m_n_test() {
 fn count_test() {
   const TIMES: usize = 2;
   fn cnt_2(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    count(tag("abc"), TIMES)(i)
+    count(tag("abc"), TIMES).parse(i)
   }
 
   assert_eq!(
@@ -268,7 +268,7 @@ fn count_test() {
 fn count_zero() {
   const TIMES: usize = 0;
   fn counter_2(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    count(tag("abc"), TIMES)(i)
+    count(tag("abc"), TIMES).parse(i)
   }
 
   let done = &b"abcabcabcdef"[..];
@@ -330,7 +330,7 @@ fn number(i: &[u8]) -> IResult<&[u8], u32> {
 #[cfg(feature = "alloc")]
 fn length_count_test() {
   fn cnt(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    length_count(number, tag("abc"))(i)
+    length_count(number, tag("abc")).parse(i)
   }
 
   assert_eq!(
@@ -352,7 +352,7 @@ fn length_count_test() {
 #[test]
 fn length_data_test() {
   fn take(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    length_data(number)(i)
+    length_data(number).parse(i)
   }
 
   assert_eq!(
@@ -370,10 +370,10 @@ fn length_data_test() {
 #[test]
 fn length_value_test() {
   fn length_value_1(i: &[u8]) -> IResult<&[u8], u16> {
-    length_value(be_u8, be_u16)(i)
+    length_value(be_u8, be_u16).parse(i)
   }
   fn length_value_2(i: &[u8]) -> IResult<&[u8], (u8, u8)> {
-    length_value(be_u8, (be_u8, be_u8))(i)
+    length_value(be_u8, (be_u8, be_u8)).parse(i)
   }
 
   let i1 = [0, 5, 6];
@@ -413,10 +413,10 @@ fn fold_many0_test() {
     acc
   }
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold_many0(tag("abcd"), Vec::new, fold_into_vec)(i)
+    fold_many0(tag("abcd"), Vec::new, fold_into_vec).parse(i)
   }
   fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold_many0(tag(""), Vec::new, fold_into_vec)(i)
+    fold_many0(tag(""), Vec::new, fold_into_vec).parse(i)
   }
 
   assert_eq!(multi(&b"abcdef"[..]), Ok((&b"ef"[..], vec![&b"abcd"[..]])));
@@ -445,7 +445,7 @@ fn fold_many1_test() {
     acc
   }
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold_many1(tag("abcd"), Vec::new, fold_into_vec)(i)
+    fold_many1(tag("abcd"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -472,7 +472,7 @@ fn fold_many_m_n_test() {
     acc
   }
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold_many_m_n(2, 4, tag("Abcd"), Vec::new, fold_into_vec)(i)
+    fold_many_m_n(2, 4, tag("Abcd"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"Abcdef"[..];
@@ -497,7 +497,7 @@ fn fold_many_m_n_test() {
 #[test]
 fn many0_count_test() {
   fn count0_nums(i: &[u8]) -> IResult<&[u8], usize> {
-    many0_count(pair(digit, tag(",")))(i)
+    many0_count(pair(digit, tag(","))).parse(i)
   }
 
   assert_eq!(count0_nums(&b"123,junk"[..]), Ok((&b"junk"[..], 1)));
@@ -515,7 +515,7 @@ fn many0_count_test() {
 #[test]
 fn many1_count_test() {
   fn count1_nums(i: &[u8]) -> IResult<&[u8], usize> {
-    many1_count(pair(digit, tag(",")))(i)
+    many1_count(pair(digit, tag(","))).parse(i)
   }
 
   assert_eq!(count1_nums(&b"123,45,junk"[..]), Ok((&b"junk"[..], 2)));
@@ -542,7 +542,7 @@ fn many_test() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     }
-    many(0.., tst)(i)
+    many(0.., tst).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -552,7 +552,7 @@ fn many_test() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     }
-    many(1.., tst)(i)
+    many(1.., tst).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -562,7 +562,7 @@ fn many_test() {
   );
 
   fn many_error(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(0.., tag(""))(i)
+    many(0.., tag("")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -572,7 +572,7 @@ fn many_test() {
   );
 
   fn many_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(2..=1, tag("a"))(i)
+    many(2..=1, tag("a")).parse(i)
   }
 
   let a = &b"a"[..];
@@ -587,7 +587,7 @@ fn many_test() {
   );
 
   fn many_any(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(0.., tag("abcd"))(i)
+    many(0.., tag("abcd")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -607,7 +607,7 @@ fn many_test() {
   assert_eq!(many_any(f), Err(Err::Incomplete(Needed::new(4))));
 
   fn many_1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(1.., tag("abcd"))(i)
+    many(1.., tag("abcd")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -625,7 +625,7 @@ fn many_test() {
   assert_eq!(many_1(d), Err(Err::Incomplete(Needed::new(2))));
 
   fn many_m_n(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(2..=4, tag("Abcd"))(i)
+    many(2..=4, tag("Abcd")).parse(i)
   }
 
   let a = &b"Abcdef"[..];
@@ -646,7 +646,7 @@ fn many_test() {
   assert_eq!(many_m_n(e), Err(Err::Incomplete(Needed::new(2))));
 
   fn many_fixed(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(2, tag("Abcd"))(i)
+    many(2, tag("Abcd")).parse(i)
   }
 
   let a = &b"Abcdef"[..];
@@ -664,7 +664,7 @@ fn many_test() {
   assert_eq!(many_fixed(d), Err(Err::Incomplete(Needed::new(2))));
 
   fn multi_exclusive(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(0..2, tag("Abcd"))(i)
+    many(0..2, tag("Abcd")).parse(i)
   }
 
   let a = &b"AbcdAbcdAbcd"[..];
@@ -675,7 +675,7 @@ fn many_test() {
   assert_eq!(multi_exclusive(b), Ok((&b"AAA"[..], res2)));
 
   fn many_never(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(0..=0, tag("A"))(i)
+    many(0..=0, tag("A")).parse(i)
   }
 
   let a = &b"AA"[..];
@@ -697,7 +697,7 @@ fn fold_test() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     }
-    fold(0.., tst, Vec::new, fold_into_vec)(i)
+    fold(0.., tst, Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -707,7 +707,7 @@ fn fold_test() {
     fn tst(input: &[u8]) -> IResult<&[u8], &[u8]> {
       Err(Err::Error(error_position!(input, ErrorKind::Tag)))
     }
-    fold(1.., tst, Vec::new, fold_into_vec)(i)
+    fold(1.., tst, Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -717,7 +717,7 @@ fn fold_test() {
   );
 
   fn fold_error(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(0.., tag(""), Vec::new, fold_into_vec)(i)
+    fold(0.., tag(""), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -727,7 +727,7 @@ fn fold_test() {
   );
 
   fn fold_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(2..=1, tag("a"), Vec::new, fold_into_vec)(i)
+    fold(2..=1, tag("a"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"a"[..];
@@ -742,7 +742,7 @@ fn fold_test() {
   );
 
   fn fold_any(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(0.., tag("abcd"), Vec::new, fold_into_vec)(i)
+    fold(0.., tag("abcd"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -762,7 +762,7 @@ fn fold_test() {
   assert_eq!(fold_any(f), Err(Err::Incomplete(Needed::new(4))));
 
   fn fold_1(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(1.., tag("abcd"), Vec::new, fold_into_vec)(i)
+    fold(1.., tag("abcd"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -780,7 +780,7 @@ fn fold_test() {
   assert_eq!(fold_1(d), Err(Err::Incomplete(Needed::new(2))));
 
   fn fold_m_n(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(2..=4, tag("Abcd"), Vec::new, fold_into_vec)(i)
+    fold(2..=4, tag("Abcd"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"Abcdef"[..];
@@ -801,7 +801,7 @@ fn fold_test() {
   assert_eq!(fold_m_n(e), Err(Err::Incomplete(Needed::new(2))));
 
   fn fold_fixed(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(2, tag("Abcd"), Vec::new, fold_into_vec)(i)
+    fold(2, tag("Abcd"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"Abcdef"[..];
@@ -819,7 +819,7 @@ fn fold_test() {
   assert_eq!(fold_fixed(d), Err(Err::Incomplete(Needed::new(2))));
 
   fn fold_exclusive(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(0..2, tag("Abcd"), Vec::new, fold_into_vec)(i)
+    fold(0..2, tag("Abcd"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"AbcdAbcdAbcd"[..];
@@ -830,7 +830,7 @@ fn fold_test() {
   assert_eq!(fold_exclusive(b), Ok((&b"AAA"[..], res2)));
 
   fn fold_never(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(0..=0, tag("A"), Vec::new, fold_into_vec)(i)
+    fold(0..=0, tag("A"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"AAA"[..];

@@ -44,5 +44,5 @@ fn test3(input: &str) -> IResult<&str, &str, CustomError> {
 
 #[cfg(feature = "alloc")]
 fn test4(input: &str) -> IResult<&str, Vec<&str>, CustomError> {
-  count(test1, 4)(input)
+  count(test1, 4).parse(input)
 }

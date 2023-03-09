@@ -250,7 +250,7 @@ fn brand_name(input: &[u8]) -> IResult<&[u8], &str> {
 fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType<'_>> {
   let (i, name) = brand_name(input)?;
   let (i, version) = take(4_usize)(i)?;
-  let (i, brands) = many(0.., brand_name)(i)?;
+  let (i, brands) = many(0.., brand_name).parse(i)?;
 
   let ft = FileType {
     major_brand: name,

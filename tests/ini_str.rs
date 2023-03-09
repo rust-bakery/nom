@@ -41,7 +41,7 @@ fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
 }
 
 fn keys_and_values_aggregator(i: &str) -> IResult<&str, Vec<(&str, &str)>> {
-  many(0.., key_value)(i)
+  many(0.., key_value).parse(i)
 }
 
 fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
@@ -57,7 +57,7 @@ fn category_and_keys(i: &str) -> IResult<&str, (&str, HashMap<&str, &str>)> {
 
 #[allow(clippy::type_complexity)]
 fn categories_aggregator(i: &str) -> IResult<&str, Vec<(&str, HashMap<&str, &str>)>> {
-  many(0.., category_and_keys)(i)
+  many(0.., category_and_keys).parse(i)
 }
 
 fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str>>> {

@@ -47,7 +47,8 @@ fn term(i: &str) -> IResult<&str, i64> {
         acc / val
       }
     },
-  )(i)
+  )
+  .parse(i)
 }
 
 fn expr(i: &str) -> IResult<&str, i64> {
@@ -64,7 +65,8 @@ fn expr(i: &str) -> IResult<&str, i64> {
         acc - val
       }
     },
-  )(i)
+  )
+  .parse(i)
 }
 
 #[test]

@@ -18,7 +18,7 @@ pub fn read_line(input: &str) -> IResult<&str, &str> {
 }
 
 pub fn read_lines(input: &str) -> IResult<&str, Vec<&str>> {
-  many(0.., read_line)(input)
+  many(0.., read_line).parse(input)
 }
 
 #[cfg(feature = "alloc")]

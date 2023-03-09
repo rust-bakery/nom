@@ -29,7 +29,7 @@ fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
 }
 
 fn keys_and_values(i: &[u8]) -> IResult<&[u8], HashMap<&str, &str>> {
-  many(0.., terminated(key_value, opt(multispace)))(i)
+  many(0.., terminated(key_value, opt(multispace))).parse(i)
 }
 
 fn category_and_keys(i: &[u8]) -> IResult<&[u8], (&str, HashMap<&str, &str>)> {

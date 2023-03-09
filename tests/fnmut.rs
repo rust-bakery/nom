@@ -1,6 +1,7 @@
 use nom::{
   bytes::complete::tag,
   multi::{many, many0_count},
+  Parser,
 };
 
 #[test]
@@ -13,7 +14,7 @@ fn parse() {
       tag("abc")(i)
     });
 
-    parser("abcabcabcabc").unwrap()
+    parser.parse("abcabcabcabc").unwrap()
   };
 
   println!("res: {:?}", res);
@@ -30,7 +31,7 @@ fn accumulate() {
       v.push(o);
       Ok((i, ()))
     });
-    parser("abcabcabcabc").unwrap()
+    parser.parse("abcabcabcabc").unwrap()
   };
 
   println!("v: {:?}", v);

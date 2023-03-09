@@ -105,7 +105,8 @@ fn term(i: &str) -> IResult<&str, Expr> {
         Ok((i, (Oper::Div, div)))
       },
     )),
-  )(i)?;
+  )
+  .parse(i)?;
 
   Ok((i, fold_exprs(initial, remainder)))
 }
@@ -124,7 +125,8 @@ fn expr(i: &str) -> IResult<&str, Expr> {
         Ok((i, (Oper::Sub, sub)))
       },
     )),
-  )(i)?;
+  )
+  .parse(i)?;
 
   Ok((i, fold_exprs(initial, remainder)))
 }
