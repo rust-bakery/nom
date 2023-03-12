@@ -811,8 +811,8 @@ pub fn success<I, O: Clone, E: ParseError<I>>(val: O) -> impl Fn(I) -> IResult<I
 /// use nom::combinator::fail;
 ///
 /// let s = "string";
-/// assert_eq!(fail::<_, &str, _>(s), Err(Err::Error((s, ErrorKind::Fail))));
+/// assert_eq!(fail(s), Err(Err::Error((s, ErrorKind::Fail))));
 /// ```
-pub fn fail<I, O, E: ParseError<I>>(i: I) -> IResult<I, O, E> {
+pub fn fail<I, E: ParseError<I>>(i: I) -> IResult<I, (), E> {
   Err(Err::Error(E::from_error_kind(i, ErrorKind::Fail)))
 }
