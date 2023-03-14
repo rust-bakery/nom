@@ -3,7 +3,7 @@
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult, Parser};
-use crate::lib::std::{result::Result::*, cmp::min};
+use crate::lib::std::result::Result::*;
 use crate::traits::{Compare, CompareResult, FindSubstring, FindToken, InputLength, ToUsize};
 use crate::Input;
 
@@ -242,29 +242,34 @@ where
 {
   move |i: I| {
     let input = i;
-    let input_len = input.iter_elements().count();
-
-    for (i, item) in input.iter_elements().enumerate() {
-      if i > n {
-        break;
-      }
-      if !cond(item) {
-        if i >= m {
-          if let Ok(index) = input.slice_index(i) {
-            return Ok(input.take_split(index));
-          }
-        }
-        return Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)));
-      }
-    }
-
-    if n <= input_len || (m <= input_len && input_len <= n) {
-      if let Ok(index) = input.slice_index(min(n, input_len)) {
+    let mut count = 0;
+    for (i, (index, item)) in input.iter_indices().enumerate() {
+      if i == n {
         return Ok(input.take_split(index));
       }
+
+      if !cond(item) {
+        if i >= m {
+          return Ok(input.take_split(index));
+        } else {
+          return Err(Err::Error(Error::from_error_kind(
+            input,
+            ErrorKind::TakeWhileMN,
+          )));
+        }
+      }
+
+      count += 1;
     }
 
-    Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
+    if count >= m {
+      Ok(input.take_split(input.input_len()))
+    } else {
+      Err(Err::Error(Error::from_error_kind(
+        input,
+        ErrorKind::TakeWhileMN,
+      )))
+    }
   }
 }
 
@@ -645,8 +650,8 @@ where
 
 #[cfg(test)]
 mod tests {
-  use crate::AsChar;
   use super::*;
+  use crate::AsChar;
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
@@ -703,13 +708,31 @@ mod tests {
       take_while_m_n(m, n, |c: char| c.len() > 1)(s)
     }
 
-    assert_eq!(multi_byte_chars("€ latin", 0, 64), Ok((&" latin"[..], &"€"[..])));
-    assert_eq!(multi_byte_chars("𝄠 latin", 0, 1), Ok((&" latin"[..], &"𝄠"[..])));
-    assert_eq!(multi_byte_chars("باب latin", 0, 64), Ok((&" latin"[..], &"باب"[..])));
-    assert_eq!(multi_byte_chars("💣💢ᾠ latin", 3, 3), Ok((&" latin"[..], &"💣💢ᾠ"[..])));
-    assert_eq!(multi_byte_chars("latin", 0, 64), Ok((&"latin"[..], &""[..])));
+    assert_eq!(
+      multi_byte_chars("€ latin", 0, 64),
+      Ok((&" latin"[..], &"€"[..]))
+    );
+    assert_eq!(
+      multi_byte_chars("𝄠 latin", 0, 1),
+      Ok((&" latin"[..], &"𝄠"[..]))
+    );
+    assert_eq!(
+      multi_byte_chars("باب latin", 0, 64),
+      Ok((&" latin"[..], &"باب"[..]))
+    );
+    assert_eq!(
+      multi_byte_chars("💣💢ᾠ latin", 3, 3),
+      Ok((&" latin"[..], &"💣💢ᾠ"[..]))
+    );
+    assert_eq!(
+      multi_byte_chars("latin", 0, 64),
+      Ok((&"latin"[..], &""[..]))
+    );
     assert_eq!(multi_byte_chars("باب", 1, 3), Ok((&""[..], &"باب"[..])));
     assert_eq!(multi_byte_chars("باب", 1, 2), Ok((&"ب"[..], &"با"[..])));
-    assert_eq!(multi_byte_chars("latin", 1, 64), Err(Err::Error(Error::new(&"latin"[..], ErrorKind::TakeWhileMN))));
+    assert_eq!(
+      multi_byte_chars("latin", 1, 64),
+      Err(Err::Error(Error::new(&"latin"[..], ErrorKind::TakeWhileMN)))
+    );
   }
 }

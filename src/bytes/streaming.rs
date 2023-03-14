@@ -253,30 +253,25 @@ where
 {
   move |i: I| {
     let input = i;
-    let input_len = input.iter_elements().count();
 
-    for (i, item) in input.iter_elements().enumerate() {
-      if i > n {
-        break;
+    for (i, (index, item)) in input.iter_indices().enumerate() {
+      if i == n {
+        return Ok(input.take_split(index));
       }
+
       if !cond(item) {
         if i >= m {
-          if let Ok(index) = input.slice_index(i) {
-            return Ok(input.take_split(index));
-          }
+          return Ok(input.take_split(index));
+        } else {
+          return Err(Err::Error(Error::from_error_kind(
+            input,
+            ErrorKind::TakeWhileMN,
+          )));
         }
-        return Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)));
       }
     }
 
-    if n <= input_len {
-      return if let Ok(index) = input.slice_index(n) {
-        Ok(input.take_split(index))
-      } else {
-        Err(Err::Error(Error::from_error_kind(input, ErrorKind::TakeWhileMN)))
-      }
-    }
-
+    let input_len = input.input_len();
     let needed = if m > input_len { m - input_len } else { 1 };
     Err(Err::Incomplete(Needed::new(needed)))
   }
