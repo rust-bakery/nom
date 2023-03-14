@@ -28,8 +28,8 @@ pub trait Input: Clone + Sized {
   /// An iterator over the input type, producing the item
   type Iter: Iterator<Item = Self::Item>;
 
-  /// An iterator over the input type, producing the item and its position
-  /// for use with [Slice]. If we're iterating over `&str`, the position
+  /// An iterator over the input type, producing the item and its byte position
+  /// If we're iterating over `&str`, the position
   /// corresponds to the byte index of the character
   type IterIndices: Iterator<Item = (usize, Self::Item)>;
 
