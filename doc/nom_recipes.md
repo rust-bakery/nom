@@ -141,8 +141,8 @@ input text that was parsed, which in this case is the entire `&str` `hello_world
 
 ### Escaped Strings
 
-This is [one of the examples](https://github.com/Geal/nom/blob/main/examples/string.rs) in the
-examples directory.
+This is [one of the examples](https://github.com/rust-bakery/nom/blob/main/examples/string.rs) in
+the examples directory.
 
 ### Integers
 

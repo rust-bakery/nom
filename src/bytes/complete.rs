@@ -203,7 +203,7 @@ where
   move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
-/// Returns the longest (m <= len <= n) input slice  that matches the predicate.
+/// Returns the longest (m <= len <= n) input slice that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
 /// takes the input and returns a bool)*.
@@ -237,54 +237,33 @@ where
 {
   move |i: I| {
     let input = i;
+    let mut count = 0;
+    for (i, (index, item)) in input.iter_indices().enumerate() {
+      if i == n {
+        return Ok(input.take_split(index));
+      }
 
-    match input.position(|c| !cond(c)) {
-      Some(idx) => {
-        if idx >= m {
-          if idx <= n {
-            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(idx) {
-              Ok(input.take_split(index))
-            } else {
-              Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::TakeWhileMN,
-              )))
-            };
-            res
-          } else {
-            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(n) {
-              Ok(input.take_split(index))
-            } else {
-              Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::TakeWhileMN,
-              )))
-            };
-            res
-          }
+      if !cond(item) {
+        if i >= m {
+          return Ok(input.take_split(index));
         } else {
-          let e = ErrorKind::TakeWhileMN;
-          Err(Err::Error(Error::from_error_kind(input, e)))
+          return Err(Err::Error(Error::from_error_kind(
+            input,
+            ErrorKind::TakeWhileMN,
+          )));
         }
       }
-      None => {
-        let len = input.input_len();
-        if len >= n {
-          match input.slice_index(n) {
-            Ok(index) => Ok(input.take_split(index)),
-            Err(_needed) => Err(Err::Error(Error::from_error_kind(
-              input,
-              ErrorKind::TakeWhileMN,
-            ))),
-          }
-        } else if len >= m && len <= n {
-          let res: IResult<_, _, Error> = Ok((input.take_from(len), input));
-          res
-        } else {
-          let e = ErrorKind::TakeWhileMN;
-          Err(Err::Error(Error::from_error_kind(input, e)))
-        }
-      }
+
+      count += 1;
+    }
+
+    if count >= m {
+      Ok(input.take_split(input.input_len()))
+    } else {
+      Err(Err::Error(Error::from_error_kind(
+        input,
+        ErrorKind::TakeWhileMN,
+      )))
     }
   }
 }
@@ -657,6 +636,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::AsChar;
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
@@ -703,5 +683,42 @@ mod tests {
   #[test]
   fn escaped_hang_1118() {
     assert_eq!(unquote(r#""""#), Ok(("", "")));
+  }
+
+  // issue #1630 take_while_m_n is invalid for multi-byte UTF-8 characters
+  #[test]
+  fn complete_take_while_m_n_multibyte() {
+    use crate::error::Error;
+
+    fn multi_byte_chars(s: &str, m: usize, n: usize) -> IResult<&str, &str> {
+      take_while_m_n(m, n, |c: char| c.len() > 1)(s)
+    }
+
+    assert_eq!(
+      multi_byte_chars("€ latin", 0, 64),
+      Ok((&" latin"[..], &"€"[..]))
+    );
+    assert_eq!(
+      multi_byte_chars("𝄠 latin", 0, 1),
+      Ok((&" latin"[..], &"𝄠"[..]))
+    );
+    assert_eq!(
+      multi_byte_chars("باب latin", 0, 64),
+      Ok((&" latin"[..], &"باب"[..]))
+    );
+    assert_eq!(
+      multi_byte_chars("💣💢ᾠ latin", 3, 3),
+      Ok((&" latin"[..], &"💣💢ᾠ"[..]))
+    );
+    assert_eq!(
+      multi_byte_chars("latin", 0, 64),
+      Ok((&"latin"[..], &""[..]))
+    );
+    assert_eq!(multi_byte_chars("باب", 1, 3), Ok((&""[..], &"باب"[..])));
+    assert_eq!(multi_byte_chars("باب", 1, 2), Ok((&"ب"[..], &"با"[..])));
+    assert_eq!(
+      multi_byte_chars("latin", 1, 64),
+      Err(Err::Error(Error::new(&"latin"[..], ErrorKind::TakeWhileMN)))
+    );
   }
 }

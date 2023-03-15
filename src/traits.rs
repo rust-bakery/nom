@@ -1,4 +1,7 @@
 //! Traits input types have to implement to work with nom combinators
+use core::iter::Enumerate;
+use core::str::CharIndices;
+
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::iter::Copied;
@@ -27,6 +30,11 @@ pub trait Input: Clone + Sized {
   /// An iterator over the input type, producing the item
   type Iter: Iterator<Item = Self::Item>;
 
+  /// An iterator over the input type, producing the item and its byte position
+  /// If we're iterating over `&str`, the position
+  /// corresponds to the byte index of the character
+  type IterIndices: Iterator<Item = (usize, Self::Item)>;
+
   /// Calculates the input length, as indicated by its name,
   /// and the name of the trait itself
   fn input_len(&self) -> usize;
@@ -45,6 +53,9 @@ pub trait Input: Clone + Sized {
 
   /// Returns an iterator over the elements
   fn iter_elements(&self) -> Self::Iter;
+  /// Returns an iterator over the elements and their byte offsets
+  fn iter_indices(&self) -> Self::IterIndices;
+
   /// Get the byte offset from the element's position in the stream
   fn slice_index(&self, count: usize) -> Result<usize, Needed>;
 
@@ -182,6 +193,7 @@ pub trait Input: Clone + Sized {
 impl<'a> Input for &'a [u8] {
   type Item = u8;
   type Iter = Copied<Iter<'a, u8>>;
+  type IterIndices = Enumerate<Self::Iter>;
 
   fn input_len(&self) -> usize {
     self.len()
@@ -212,6 +224,11 @@ impl<'a> Input for &'a [u8] {
   #[inline]
   fn iter_elements(&self) -> Self::Iter {
     self.iter().copied()
+  }
+
+  #[inline]
+  fn iter_indices(&self) -> Self::IterIndices {
+    self.iter_elements().enumerate()
   }
 
   #[inline]
@@ -342,6 +359,7 @@ impl<'a> Input for &'a [u8] {
 impl<'a> Input for &'a str {
   type Item = char;
   type Iter = Chars<'a>;
+  type IterIndices = CharIndices<'a>;
 
   fn input_len(&self) -> usize {
     self.len()
@@ -374,6 +392,11 @@ impl<'a> Input for &'a str {
   #[inline]
   fn iter_elements(&self) -> Self::Iter {
     self.chars()
+  }
+
+  #[inline]
+  fn iter_indices(&self) -> Self::IterIndices {
+    self.char_indices()
   }
 
   #[inline]
@@ -1638,5 +1661,32 @@ mod tests {
     assert_eq!(a.offset(b), 7);
     assert_eq!(a.offset(c), 0);
     assert_eq!(a.offset(d), 5);
+  }
+
+  #[test]
+  fn test_slice_index() {
+    let a = "abcřèÂßÇd123";
+    assert_eq!(a.slice_index(0), Ok(0));
+    assert_eq!(a.slice_index(2), Ok(2));
+  }
+
+  #[test]
+  fn test_slice_index_utf8() {
+    let a = "a¡€💢€¡a";
+
+    for (c, len) in a.chars().zip([1, 2, 3, 4, 3, 2, 1]) {
+      assert_eq!(c.len(), len);
+    }
+
+    assert_eq!(a.slice_index(0), Ok(0));
+    assert_eq!(a.slice_index(1), Ok(1));
+    assert_eq!(a.slice_index(2), Ok(3));
+    assert_eq!(a.slice_index(3), Ok(6));
+    assert_eq!(a.slice_index(4), Ok(10));
+    assert_eq!(a.slice_index(5), Ok(13));
+    assert_eq!(a.slice_index(6), Ok(15));
+    assert_eq!(a.slice_index(7), Ok(16));
+
+    assert!(a.slice_index(8).is_err());
   }
 }

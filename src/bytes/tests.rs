@@ -411,7 +411,7 @@ fn take_while_m_n() {
   assert_eq!(x(&a[..]), Err(Err::Incomplete(Needed::new(2))));
   assert_eq!(x(&b[..]), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(x(&d[..]), Ok((&b"123"[..], &c[..])));
+  assert_eq!(x(&d[..]), Ok((&b"123"[..], &b"abc"[..])));
   assert_eq!(x(&e[..]), Ok((&b"e"[..], &b"abcd"[..])));
   assert_eq!(
     x(&f[..]),

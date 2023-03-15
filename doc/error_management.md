@@ -65,7 +65,7 @@ pub enum Err<E> {
 This error type is completely generic in nom's combinators, so you can choose
 exactly which error type you want to use when you define your parsers, or
 directly at the call site.
-See [the JSON parser](https://github.com/Geal/nom/blob/5405e1173f1052f7e006dcb0b9cfda2b06557b65/examples/json.rs#L209-L286)
+See [the JSON parser](https://github.com/rust-bakery/nom/blob/5405e1173f1052f7e006dcb0b9cfda2b06557b65/examples/json.rs#L209-L286)
 for an example of choosing different error types at the call site.
 
 ## Common error types
@@ -226,13 +226,13 @@ parsers.
 
 #### nom_locate
 
-[nom_locate](https://docs.rs/nom_locate/) wraps the input data in a `Span`
+[nom_locate](https://docs.rs/nom_locate) wraps the input data in a `Span`
 type that can be understood by nom parsers. That type provides location
 information, like line and column.
 
 #### nom-supreme
 
-[nom-supreme](https://docs.rs/nom-supreme/) provides the `ErrorTree<I>` error
+[nom-supreme](https://docs.rs/nom-supreme) provides the `ErrorTree<I>` error
 type, that provides the same chain of parser errors as `VerboseError`, but also
 accumulates errors from the various branches tried by `alt`.
 
