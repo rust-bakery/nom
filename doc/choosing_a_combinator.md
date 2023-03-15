@@ -11,7 +11,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [char](https://docs.rs/nom/latest/nom/character/complete/fn.char.html) | `char('a')` |  `"abc"` | `Ok(("bc", 'a'))` |Matches one character (works with non ASCII chars too) | 
-| [is_a](https://docs.rs/nom/latest/nom/bytes/complete/fn.is_a.html) | ` is_a("ab")` |  `"ababc"` | `Ok(("c", "abab"))` |Matches a sequence of any of the characters passed as arguments|
+| [is_a](https://docs.rs/nom/latest/nom/bytes/complete/fn.is_a.html) | `is_a("ab")` |  `"ababc"` | `Ok(("c", "abab"))` |Matches a sequence of any of the characters passed as arguments|
 | [is_not](https://docs.rs/nom/latest/nom/bytes/complete/fn.is_not.html) | `is_not("cd")` |  `"ababc"` | `Ok(("c", "abab"))` |Matches a sequence of none of the characters passed as arguments|
 | [one_of](https://docs.rs/nom/latest/nom/character/complete/fn.one_of.html) | `one_of("abc")` |  `"abc"` | `Ok(("bc", 'a'))` |Matches one of the provided characters (works with non ASCII characters too)|
 | [none_of](https://docs.rs/nom/latest/nom/character/complete/fn.none_of.html) | `none_of("abc")` |  `"xyab"` | `Ok(("yab", 'x'))` |Matches anything but the provided characters|
