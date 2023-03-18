@@ -12,11 +12,15 @@ use crate::error::ParseError;
 use crate::internal::{Err, Needed, Parser};
 use crate::lib::std::result::Result::*;
 use crate::traits::{Compare, CompareResult, InputLength};
+use crate::AsChar;
+use crate::Check;
+use crate::ExtendInto;
 use crate::FindSubstring;
 use crate::FindToken;
 use crate::Input;
 use crate::IsStreaming;
 use crate::Mode;
+use crate::OutputM;
 use crate::OutputMode;
 use crate::ToUsize;
 
@@ -332,6 +336,115 @@ where
   }
 }
 
+/// Returns the longest (m <= len <= n) input slice  that matches the predicate.
+///
+/// The parser will return the longest slice that matches the given predicate *(a function that
+/// takes the input and returns a bool)*.
+///
+/// It will return an `Err::Error((_, ErrorKind::TakeWhileMN))` if the pattern wasn't met.
+/// # Streaming Specific
+/// *Streaming version* will return a `Err::Incomplete(Needed::new(1))`  if the pattern reaches the end of the input or is too short.
+///
+/// # Example
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
+/// use nom::bytes::streaming::take_while_m_n;
+/// use nom::character::is_alphabetic;
+///
+/// fn short_alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
+///   take_while_m_n(3, 6, is_alphabetic)(s)
+/// }
+///
+/// assert_eq!(short_alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
+/// assert_eq!(short_alpha(b"lengthy"), Ok((&b"y"[..], &b"length"[..])));
+/// assert_eq!(short_alpha(b"latin"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(short_alpha(b"ed"), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(short_alpha(b"12345"), Err(Err::Error(Error::new(&b"12345"[..], ErrorKind::TakeWhileMN))));
+/// ```
+pub fn take_while_m_n<F, I, Error: ParseError<I>>(
+  m: usize,
+  n: usize,
+  predicate: F,
+) -> impl Parser<I, Output = I, Error = Error>
+where
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
+{
+  TakeWhileMN {
+    m,
+    n,
+    predicate,
+    e: PhantomData,
+  }
+}
+
+/// Parser implementation for [take_while_m_n]
+pub struct TakeWhileMN<F, E> {
+  m: usize,
+  n: usize,
+  predicate: F,
+  e: PhantomData<E>,
+}
+
+impl<I, Error: ParseError<I>, F> Parser<I> for TakeWhileMN<F, Error>
+where
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
+{
+  type Output = I;
+  type Error = Error;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    input: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut count = 0;
+    for (i, (index, item)) in input.iter_indices().enumerate() {
+      if i == self.n {
+        return Ok((
+          input.take_from(index),
+          OM::Output::bind(|| input.take(index)),
+        ));
+      }
+
+      if !(self.predicate)(item) {
+        if i >= self.m {
+          return Ok((
+            input.take_from(index),
+            OM::Output::bind(|| input.take(index)),
+          ));
+        } else {
+          return Err(Err::Error(OM::Error::bind(|| {
+            Error::from_error_kind(input, ErrorKind::TakeWhileMN)
+          })));
+        }
+      }
+      count += 1;
+    }
+
+    let input_len = input.input_len();
+    if OM::Incomplete::is_streaming() {
+      let needed = if self.m > input_len {
+        self.m - input_len
+      } else {
+        1
+      };
+      Err(Err::Incomplete(Needed::new(needed)))
+    } else {
+      if count >= self.m {
+        Ok((
+          input.take_from(input_len),
+          OM::Output::bind(|| input.take(input_len)),
+        ))
+      } else {
+        Err(Err::Error(OM::Error::bind(|| {
+          Error::from_error_kind(input, ErrorKind::TakeWhileMN)
+        })))
+      }
+    }
+  }
+}
+
 /// Returns the longest input slice (if any) till a predicate is met.
 ///
 /// The parser will return the longest slice till the given predicate *(a function that
@@ -431,7 +544,7 @@ where
   }
 }
 
-/// Parser implementation for take
+/// Parser implementation for [take]
 pub struct Take<E> {
   length: usize,
   e: PhantomData<E>,
@@ -493,7 +606,7 @@ where
   }
 }
 
-/// Parser implementation for take_until
+/// Parser implementation for [take_until]
 pub struct TakeUntil<T, E> {
   tag: T,
   e: PhantomData<E>,
@@ -588,6 +701,348 @@ where
       }))),
 
       Some(index) => Ok((i.take_from(index), OM::Output::bind(|| i.take(index)))),
+    }
+  }
+}
+
+/// Matches a byte string with escaped characters.
+///
+/// * The first argument matches the normal characters (it must not accept the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters
+/// # Example
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use nom::character::complete::digit1;
+/// use nom::bytes::streaming::escaped;
+/// use nom::character::streaming::one_of;
+///
+/// fn esc(s: &str) -> IResult<&str, &str> {
+///   escaped(digit1, '\\', one_of("\"n\\"))(s)
+/// }
+///
+/// assert_eq!(esc("123;"), Ok((";", "123")));
+/// assert_eq!(esc("12\\\"34;"), Ok((";", "12\\\"34")));
+/// ```
+///
+pub fn escaped<I, Error, F, G>(
+  normal: F,
+  control_char: char,
+  escapable: G,
+) -> impl Parser<I, Output = I, Error = Error>
+where
+  I: Input + Clone + crate::traits::Offset,
+  <I as Input>::Item: crate::traits::AsChar,
+  F: Parser<I, Error = Error>,
+  G: Parser<I, Error = Error>,
+  Error: ParseError<I>,
+{
+  Escaped {
+    normal,
+    escapable,
+    control_char,
+    e: PhantomData,
+  }
+}
+
+/// Parser implementation for [escaped]
+pub struct Escaped<F, G, E> {
+  normal: F,
+  escapable: G,
+  control_char: char,
+  e: PhantomData<E>,
+}
+
+impl<I, Error: ParseError<I>, F, G> Parser<I> for Escaped<F, G, Error>
+where
+  I: Input + Clone + crate::traits::Offset,
+  <I as Input>::Item: crate::traits::AsChar,
+  F: Parser<I, Error = Error>,
+  G: Parser<I, Error = Error>,
+  Error: ParseError<I>,
+{
+  type Output = I;
+  type Error = Error;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    input: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut i = input.clone();
+
+    while i.input_len() > 0 {
+      let current_len = i.input_len();
+
+      match self
+        .normal
+        .process::<OutputM<Check, Check, OM::Incomplete>>(i.clone())
+      {
+        Ok((i2, _)) => {
+          if i2.input_len() == 0 {
+            if OM::Incomplete::is_streaming() {
+              return Err(Err::Incomplete(Needed::Unknown));
+            } else {
+              let index = input.input_len();
+              return Ok((
+                input.take_from(index),
+                OM::Output::bind(|| input.take(index)),
+              ));
+            }
+          } else if i2.input_len() == current_len {
+            let index = input.offset(&i2);
+            return Ok((
+              input.take_from(index),
+              OM::Output::bind(|| input.take(index)),
+            ));
+          } else {
+            i = i2;
+          }
+        }
+        Err(Err::Error(_)) => {
+          // unwrap() should be safe here since index < $i.input_len()
+          if i.iter_elements().next().unwrap().as_char() == self.control_char {
+            let next = self.control_char.len_utf8();
+            if next >= i.input_len() {
+              if OM::Incomplete::is_streaming() {
+                return Err(Err::Incomplete(Needed::new(1)));
+              } else {
+                return Err(Err::Error(OM::Error::bind(|| {
+                  Error::from_error_kind(input, ErrorKind::Escaped)
+                })));
+              }
+            } else {
+              match self
+                .escapable
+                .process::<OutputM<Check, OM::Error, OM::Incomplete>>(i.take_from(next))
+              {
+                Ok((i2, _)) => {
+                  if i2.input_len() == 0 {
+                    if OM::Incomplete::is_streaming() {
+                      return Err(Err::Incomplete(Needed::Unknown));
+                    } else {
+                      let index = input.input_len();
+                      return Ok((
+                        input.take_from(index),
+                        OM::Output::bind(|| input.take(index)),
+                      ));
+                    }
+                  } else {
+                    i = i2;
+                  }
+                }
+                Err(e) => return Err(e),
+              }
+            }
+          } else {
+            let index = input.offset(&i);
+            if index == 0 {
+              return Err(Err::Error(OM::Error::bind(|| {
+                Error::from_error_kind(input, ErrorKind::Escaped)
+              })));
+            } else {
+              return Ok((
+                input.take_from(index),
+                OM::Output::bind(|| input.take(index)),
+              ));
+            }
+          }
+        }
+        Err(Err::Failure(e)) => {
+          return Err(Err::Failure(e));
+        }
+        Err(Err::Incomplete(i)) => {
+          return Err(Err::Incomplete(i));
+        }
+      }
+    }
+
+    if OM::Incomplete::is_streaming() {
+      Err(Err::Incomplete(Needed::Unknown))
+    } else {
+      let index = input.input_len();
+      Ok((
+        input.take_from(index),
+        OM::Output::bind(|| input.take(index)),
+      ))
+    }
+  }
+}
+
+/// Matches a byte string with escaped characters.
+///
+/// * The first argument matches the normal characters (it must not match the control character)
+/// * The second argument is the control character (like `\` in most languages)
+/// * The third argument matches the escaped characters and transforms them
+///
+/// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed, IResult};
+/// # use std::str::from_utf8;
+/// use nom::bytes::streaming::{escaped_transform, tag};
+/// use nom::character::streaming::alpha1;
+/// use nom::branch::alt;
+/// use nom::combinator::value;
+///
+/// fn parser(input: &str) -> IResult<&str, String> {
+///   escaped_transform(
+///     alpha1,
+///     '\\',
+///     alt((
+///       value("\\", tag("\\")),
+///       value("\"", tag("\"")),
+///       value("\n", tag("n")),
+///     ))
+///   )(input)
+/// }
+///
+/// assert_eq!(parser("ab\\\"cd\""), Ok(("\"", String::from("ab\"cd"))));
+/// ```
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+pub fn escaped_transform<I, Error, F, G, ExtendItem, Output>(
+  normal: F,
+  control_char: char,
+  transform: G,
+) -> impl Parser<I, Output = Output, Error = Error>
+where
+  I: Clone + crate::traits::Offset + Input,
+  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  <F as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  <G as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  <I as Input>::Item: crate::traits::AsChar,
+  F: Parser<I, Error = Error>,
+  G: Parser<I, Error = Error>,
+  Error: ParseError<I>,
+{
+  EscapedTransform {
+    normal,
+    control_char,
+    transform,
+    e: PhantomData,
+    extend: PhantomData,
+    o: PhantomData,
+  }
+}
+
+/// Parser implementation for [escaped_transform]
+pub struct EscapedTransform<F, G, E, ExtendItem, Output> {
+  normal: F,
+  transform: G,
+  control_char: char,
+  e: PhantomData<E>,
+  extend: PhantomData<ExtendItem>,
+  o: PhantomData<Output>,
+}
+
+impl<I, Error: ParseError<I>, F, G, ExtendItem, Output> Parser<I>
+  for EscapedTransform<F, G, Error, ExtendItem, Output>
+where
+  I: Clone + crate::traits::Offset + Input,
+  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  <F as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  <G as Parser<I>>::Output: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  <I as Input>::Item: crate::traits::AsChar,
+  F: Parser<I, Error = Error>,
+  G: Parser<I, Error = Error>,
+  Error: ParseError<I>,
+{
+  type Output = Output;
+  type Error = Error;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    input: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut index = 0;
+    let mut res = OM::Output::bind(|| input.new_builder());
+
+    let i = input.clone();
+
+    while index < i.input_len() {
+      let current_len = i.input_len();
+      let remainder = i.take_from(index);
+      match self.normal.process::<OM>(remainder.clone()) {
+        Ok((i2, o)) => {
+          res = OM::Output::combine(o, res, |o, mut res| {
+            o.extend_into(&mut res);
+            res
+          });
+          if i2.input_len() == 0 {
+            if OM::Incomplete::is_streaming() {
+              return Err(Err::Incomplete(Needed::Unknown));
+            } else {
+              let index = input.input_len();
+              return Ok((input.take_from(index), res));
+            }
+          } else if i2.input_len() == current_len {
+            return Ok((remainder, res));
+          } else {
+            index = input.offset(&i2);
+          }
+        }
+        Err(Err::Error(_)) => {
+          // unwrap() should be safe here since index < $i.input_len()
+          if remainder.iter_elements().next().unwrap().as_char() == self.control_char {
+            let next = index + self.control_char.len_utf8();
+            let input_len = input.input_len();
+
+            if next >= input_len {
+              if OM::Incomplete::is_streaming() {
+                return Err(Err::Incomplete(Needed::Unknown));
+              } else {
+                return Err(Err::Error(OM::Error::bind(|| {
+                  Error::from_error_kind(remainder, ErrorKind::EscapedTransform)
+                })));
+              }
+            } else {
+              match self.transform.process::<OM>(i.take_from(next)) {
+                Ok((i2, o)) => {
+                  res = OM::Output::combine(o, res, |o, mut res| {
+                    o.extend_into(&mut res);
+                    res
+                  });
+                  if i2.input_len() == 0 {
+                    if OM::Incomplete::is_streaming() {
+                      return Err(Err::Incomplete(Needed::Unknown));
+                    } else {
+                      return Ok((i.take_from(i.input_len()), res));
+                    }
+                  } else {
+                    index = input.offset(&i2);
+                  }
+                }
+                Err(Err::Error(e)) => return Err(Err::Error(e)),
+                Err(Err::Failure(e)) => {
+                  return Err(Err::Failure(e));
+                }
+                Err(Err::Incomplete(i)) => {
+                  return Err(Err::Incomplete(i));
+                }
+              }
+            }
+          } else {
+            if index == 0 {
+              return Err(Err::Error(OM::Error::bind(|| {
+                Error::from_error_kind(remainder, ErrorKind::EscapedTransform)
+              })));
+            }
+            return Ok((remainder, res));
+          }
+        }
+        Err(Err::Failure(e)) => {
+          return Err(Err::Failure(e));
+        }
+        Err(Err::Incomplete(i)) => {
+          return Err(Err::Incomplete(i));
+        }
+      }
+    }
+
+    if OM::Incomplete::is_streaming() {
+      Err(Err::Incomplete(Needed::Unknown))
+    } else {
+      Ok((input.take_from(index), res))
     }
   }
 }

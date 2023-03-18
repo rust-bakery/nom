@@ -2,10 +2,8 @@
 
 use core::marker::PhantomData;
 
-use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Needed, Parser};
-use crate::lib::std::result::Result::*;
+use crate::internal::{IResult, Parser};
 use crate::traits::{Compare, FindSubstring, FindToken, InputLength, ToUsize};
 use crate::Emit;
 use crate::Input;
@@ -238,35 +236,14 @@ pub fn take_while_m_n<F, I, Error: ParseError<I>>(
   m: usize,
   n: usize,
   cond: F,
-) -> impl Fn(I) -> IResult<I, I, Error>
+) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: I| {
-    let input = i;
+  let mut parser = super::take_while_m_n(m, n, cond);
 
-    for (i, (index, item)) in input.iter_indices().enumerate() {
-      if i == n {
-        return Ok(input.take_split(index));
-      }
-
-      if !cond(item) {
-        if i >= m {
-          return Ok(input.take_split(index));
-        } else {
-          return Err(Err::Error(Error::from_error_kind(
-            input,
-            ErrorKind::TakeWhileMN,
-          )));
-        }
-      }
-    }
-
-    let input_len = input.input_len();
-    let needed = if m > input_len { m - input_len } else { 1 };
-    Err(Err::Incomplete(Needed::new(needed)))
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns the longest input slice (if any) till a predicate is met.
@@ -359,16 +336,14 @@ where
 /// assert_eq!(take6("things"), Ok(("", "things")));
 /// assert_eq!(take6("short"), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn take<C, I, Error: ParseError<I>>(count: C) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn take<C, I, Error: ParseError<I>>(count: C) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input + InputLength,
   C: ToUsize,
 {
-  let c = count.to_usize();
-  move |i: I| match i.slice_index(c) {
-    Err(i) => Err(Err::Incomplete(i)),
-    Ok(index) => Ok(i.take_split(index)),
-  }
+  let mut parser = super::take(count);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Returns the input slice up to the first occurrence of the pattern.
@@ -455,9 +430,9 @@ where
 /// ```
 ///
 pub fn escaped<I, Error, F, G>(
-  mut normal: F,
+  normal: F,
   control_char: char,
-  mut escapable: G,
+  escapable: G,
 ) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input + Clone + crate::traits::Offset,
@@ -466,56 +441,9 @@ where
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
 {
-  use crate::traits::AsChar;
+  let mut parser = super::escaped(normal, control_char, escapable);
 
-  move |input: I| {
-    let mut i = input.clone();
-
-    while i.input_len() > 0 {
-      let current_len = i.input_len();
-
-      match normal.parse(i.clone()) {
-        Ok((i2, _)) => {
-          if i2.input_len() == 0 {
-            return Err(Err::Incomplete(Needed::Unknown));
-          } else if i2.input_len() == current_len {
-            let index = input.offset(&i2);
-            return Ok(input.take_split(index));
-          } else {
-            i = i2;
-          }
-        }
-        Err(Err::Error(_)) => {
-          // unwrap() should be safe here since index < $i.input_len()
-          if i.iter_elements().next().unwrap().as_char() == control_char {
-            let next = control_char.len_utf8();
-            if next >= i.input_len() {
-              return Err(Err::Incomplete(Needed::new(1)));
-            } else {
-              match escapable.parse(i.take_from(next)) {
-                Ok((i2, _)) => {
-                  if i2.input_len() == 0 {
-                    return Err(Err::Incomplete(Needed::Unknown));
-                  } else {
-                    i = i2;
-                  }
-                }
-                Err(e) => return Err(e),
-              }
-            }
-          } else {
-            let index = input.offset(&i);
-            return Ok(input.take_split(index));
-          }
-        }
-        Err(e) => {
-          return Err(e);
-        }
-      }
-    }
-
-    Err(Err::Incomplete(Needed::Unknown))
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Matches a byte string with escaped characters.
@@ -551,9 +479,9 @@ where
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn escaped_transform<I, Error, F, G, O1, O2, ExtendItem, Output>(
-  mut normal: F,
+  normal: F,
   control_char: char,
-  mut transform: G,
+  transform: G,
 ) -> impl FnMut(I) -> IResult<I, Output, Error>
 where
   I: Clone + crate::traits::Offset + Input,
@@ -565,56 +493,7 @@ where
   G: Parser<I, Output = O2, Error = Error>,
   Error: ParseError<I>,
 {
-  use crate::traits::AsChar;
+  let mut parser = super::escaped_transform(normal, control_char, transform);
 
-  move |input: I| {
-    let mut index = 0;
-    let mut res = input.new_builder();
-
-    let i = input.clone();
-
-    while index < i.input_len() {
-      let current_len = i.input_len();
-      let remainder = i.take_from(index);
-      match normal.parse(remainder.clone()) {
-        Ok((i2, o)) => {
-          o.extend_into(&mut res);
-          if i2.input_len() == 0 {
-            return Err(Err::Incomplete(Needed::Unknown));
-          } else if i2.input_len() == current_len {
-            return Ok((remainder, res));
-          } else {
-            index = input.offset(&i2);
-          }
-        }
-        Err(Err::Error(_)) => {
-          // unwrap() should be safe here since index < $i.input_len()
-          if remainder.iter_elements().next().unwrap().as_char() == control_char {
-            let next = index + control_char.len_utf8();
-            let input_len = input.input_len();
-
-            if next >= input_len {
-              return Err(Err::Incomplete(Needed::Unknown));
-            } else {
-              match transform.parse(i.take_from(next)) {
-                Ok((i2, o)) => {
-                  o.extend_into(&mut res);
-                  if i2.input_len() == 0 {
-                    return Err(Err::Incomplete(Needed::Unknown));
-                  } else {
-                    index = input.offset(&i2);
-                  }
-                }
-                Err(e) => return Err(e),
-              }
-            }
-          } else {
-            return Ok((remainder, res));
-          }
-        }
-        Err(e) => return Err(e),
-      }
-    }
-    Err(Err::Incomplete(Needed::Unknown))
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }

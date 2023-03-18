@@ -4,8 +4,7 @@ use core::marker::PhantomData;
 
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Parser};
-use crate::lib::std::result::Result::*;
+use crate::internal::{IResult, Parser};
 use crate::traits::{Compare, FindSubstring, FindToken, InputLength, ToUsize};
 use crate::Complete;
 use crate::Emit;
@@ -230,42 +229,14 @@ pub fn take_while_m_n<F, I, Error: ParseError<I>>(
   m: usize,
   n: usize,
   cond: F,
-) -> impl Fn(I) -> IResult<I, I, Error>
+) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: I| {
-    let input = i;
-    let mut count = 0;
-    for (i, (index, item)) in input.iter_indices().enumerate() {
-      if i == n {
-        return Ok(input.take_split(index));
-      }
+  let mut parser = super::take_while_m_n(m, n, cond);
 
-      if !cond(item) {
-        if i >= m {
-          return Ok(input.take_split(index));
-        } else {
-          return Err(Err::Error(Error::from_error_kind(
-            input,
-            ErrorKind::TakeWhileMN,
-          )));
-        }
-      }
-
-      count += 1;
-    }
-
-    if count >= m {
-      Ok(input.take_split(input.input_len()))
-    } else {
-      Err(Err::Error(Error::from_error_kind(
-        input,
-        ErrorKind::TakeWhileMN,
-      )))
-    }
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the longest input slice (if any) till a predicate is met.
@@ -358,16 +329,14 @@ where
 /// assert_eq!(take::<_, _, Error<_>>(1usize)("💙"), Ok(("", "💙")));
 /// assert_eq!(take::<_, _, Error<_>>(1usize)("💙".as_bytes()), Ok((b"\x9F\x92\x99".as_ref(), b"\xF0".as_ref())));
 /// ```
-pub fn take<C, I, Error: ParseError<I>>(count: C) -> impl Fn(I) -> IResult<I, I, Error>
+pub fn take<C, I, Error: ParseError<I>>(count: C) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input,
   C: ToUsize,
 {
-  let c = count.to_usize();
-  move |i: I| match i.slice_index(c) {
-    Err(_needed) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Eof))),
-    Ok(index) => Ok(i.take_split(index)),
-  }
+  let mut parser = super::take(count);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the input slice up to the first occurrence of the pattern.
@@ -448,9 +417,9 @@ where
 /// ```
 ///
 pub fn escaped<'a, I: 'a, Error, F, G>(
-  mut normal: F,
+  normal: F,
   control_char: char,
-  mut escapable: G,
+  escapable: G,
 ) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Clone + crate::traits::Offset + Input,
@@ -459,67 +428,9 @@ where
   G: Parser<I, Error = Error>,
   Error: ParseError<I>,
 {
-  use crate::traits::AsChar;
+  let mut parser = super::escaped(normal, control_char, escapable);
 
-  move |input: I| {
-    let mut i = input.clone();
-
-    while i.input_len() > 0 {
-      let current_len = i.input_len();
-
-      match normal.parse(i.clone()) {
-        Ok((i2, _)) => {
-          // return if we consumed everything or if the normal parser
-          // does not consume anything
-          if i2.input_len() == 0 {
-            return Ok(input.take_split(input.input_len()));
-          } else if i2.input_len() == current_len {
-            let index = input.offset(&i2);
-            return Ok(input.take_split(index));
-          } else {
-            i = i2;
-          }
-        }
-        Err(Err::Error(_)) => {
-          // unwrap() should be safe here since index < $i.input_len()
-          if i.iter_elements().next().unwrap().as_char() == control_char {
-            let next = control_char.len_utf8();
-            if next >= i.input_len() {
-              return Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::Escaped,
-              )));
-            } else {
-              match escapable.parse(i.take_from(next)) {
-                Ok((i2, _)) => {
-                  if i2.input_len() == 0 {
-                    return Ok(input.take_split(input.input_len()));
-                  } else {
-                    i = i2;
-                  }
-                }
-                Err(e) => return Err(e),
-              }
-            }
-          } else {
-            let index = input.offset(&i);
-            if index == 0 {
-              return Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::Escaped,
-              )));
-            }
-            return Ok(input.take_split(index));
-          }
-        }
-        Err(e) => {
-          return Err(e);
-        }
-      }
-    }
-
-    Ok(input.take_split(input.input_len()))
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Matches a byte string with escaped characters.
@@ -556,9 +467,9 @@ where
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn escaped_transform<I, Error, F, G, O1, O2, ExtendItem, Output>(
-  mut normal: F,
+  normal: F,
   control_char: char,
-  mut transform: G,
+  transform: G,
 ) -> impl FnMut(I) -> IResult<I, Output, Error>
 where
   I: Clone + crate::traits::Offset + Input,
@@ -570,73 +481,16 @@ where
   G: Parser<I, Output = O2, Error = Error>,
   Error: ParseError<I>,
 {
-  use crate::traits::AsChar;
+  let mut parser = super::escaped_transform(normal, control_char, transform);
 
-  move |input: I| {
-    let mut index = 0;
-    let mut res = input.new_builder();
-
-    let i = input.clone();
-
-    while index < i.input_len() {
-      let current_len = i.input_len();
-      let remainder = i.take_from(index);
-      match normal.parse(remainder.clone()) {
-        Ok((i2, o)) => {
-          o.extend_into(&mut res);
-          if i2.input_len() == 0 {
-            return Ok((i.take_from(i.input_len()), res));
-          } else if i2.input_len() == current_len {
-            return Ok((remainder, res));
-          } else {
-            index = input.offset(&i2);
-          }
-        }
-        Err(Err::Error(_)) => {
-          // unwrap() should be safe here since index < $i.input_len()
-          if remainder.iter_elements().next().unwrap().as_char() == control_char {
-            let next = index + control_char.len_utf8();
-            let input_len = input.input_len();
-
-            if next >= input_len {
-              return Err(Err::Error(Error::from_error_kind(
-                remainder,
-                ErrorKind::EscapedTransform,
-              )));
-            } else {
-              match transform.parse(i.take_from(next)) {
-                Ok((i2, o)) => {
-                  o.extend_into(&mut res);
-                  if i2.input_len() == 0 {
-                    return Ok((i.take_from(i.input_len()), res));
-                  } else {
-                    index = input.offset(&i2);
-                  }
-                }
-                Err(e) => return Err(e),
-              }
-            }
-          } else {
-            if index == 0 {
-              return Err(Err::Error(Error::from_error_kind(
-                remainder,
-                ErrorKind::EscapedTransform,
-              )));
-            }
-            return Ok((remainder, res));
-          }
-        }
-        Err(e) => return Err(e),
-      }
-    }
-    Ok((input.take_from(index), res))
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
   use crate::AsChar;
+  use crate::Err;
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
