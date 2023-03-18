@@ -119,7 +119,7 @@ fn alt_incomplete() {
 fn permutation_test() {
   #[allow(clippy::type_complexity)]
   fn perm(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8], &[u8])> {
-    permutation((tag("abcd"), tag("efg"), tag("hi")))(i)
+    permutation((tag("abcd"), tag("efg"), tag("hi"))).parse(i)
   }
 
   let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);

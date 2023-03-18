@@ -3,9 +3,11 @@
 #[cfg(test)]
 mod tests;
 
+use core::marker::PhantomData;
+
 use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Parser};
+use crate::internal::{Err, Mode, Parser};
 
 /// Tests a list of parsers one by one until one succeeds.
 ///
@@ -40,14 +42,6 @@ pub fn alt<List>(l: List) -> Choice<List> {
   Choice { parser: l }
 }
 
-/// Helper trait for the [permutation()] combinator.
-///
-/// This trait is implemented for tuples of up to 21 elements
-pub trait Permutation<I, O, E> {
-  /// Tries to apply all parsers in the tuple in various orders until all of them succeed
-  fn permutation(&mut self, input: I) -> IResult<I, O, E>;
-}
-
 /// Applies a list of parsers in any order.
 ///
 /// Permutation will succeed if all of the child parsers succeeded.
@@ -55,12 +49,12 @@ pub trait Permutation<I, O, E> {
 /// tuple of the parser results.
 ///
 /// ```rust
-/// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult};
+/// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::permutation;
 /// # fn main() {
 /// fn parser(input: &str) -> IResult<&str, (&str, &str)> {
-///   permutation((alpha1, digit1))(input)
+///   permutation((alpha1, digit1)).parse(input)
 /// }
 ///
 /// // permutation recognizes alphabetic characters then digit
@@ -77,12 +71,12 @@ pub trait Permutation<I, O, E> {
 /// The parsers are applied greedily: if there are multiple unapplied parsers
 /// that could parse the next slice of input, the first one is used.
 /// ```rust
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult};
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Parser};
 /// use nom::branch::permutation;
 /// use nom::character::complete::{anychar, char};
 ///
 /// fn parser(input: &str) -> IResult<&str, (char, char)> {
-///   permutation((anychar, char('a')))(input)
+///   permutation((anychar, char('a'))).parse(input)
 /// }
 ///
 /// // anychar parses 'b', then char('a') parses 'a'
@@ -93,10 +87,11 @@ pub trait Permutation<I, O, E> {
 /// assert_eq!(parser("ab"), Err(Err::Error(Error::new("b", ErrorKind::Char))));
 /// ```
 ///
-pub fn permutation<I: Clone, O, E: ParseError<I>, List: Permutation<I, O, E>>(
-  mut l: List,
-) -> impl FnMut(I) -> IResult<I, O, E> {
-  move |i: I| l.permutation(i)
+pub fn permutation<I: Clone, E: ParseError<I>, List>(list: List) -> Permutation<List, E> {
+  Permutation {
+    parser: list,
+    e: PhantomData,
+  }
 }
 
 macro_rules! alt_trait(
@@ -198,57 +193,79 @@ macro_rules! permutation_trait(
   );
 );
 
+/// Wrapping structure for the [permutation] combinator implementation
+pub struct Permutation<T, Error> {
+  parser: T,
+  e: PhantomData<Error>,
+}
+
 macro_rules! permutation_trait_impl(
   ($($name:ident $ty:ident $item:ident),+) => (
     impl<
-      Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Parser<Input, Output = $ty, Error = Error>),+
-    > Permutation<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
+      Input, Error, $($ty),+ , $($name),+
+    > Parser<Input> for Permutation< ( $($name),+ ), Error>
+    where
+    Input: Clone,
+    Error: ParseError<Input>,
+    $($name: Parser<Input, Output = $ty, Error = Error>),+
+    {
+      type Output = ( $($ty),+ );
+      type Error = Error;
 
-      fn permutation(&mut self, mut input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
-        let mut res = ($(Option::<$ty>::None),+);
+      #[inline(always)]
+      fn process<OM: crate::OutputMode>(
+        &mut self,
+        mut input: Input,
+      ) -> crate::PResult<OM, Input, Self::Output, Self::Error> {
+        let mut res = OM::Output::bind(|| ($(Option::<$ty>::None),+));
+        $(let mut $item = false;)+
 
         loop {
-          let mut err: Option<Error> = None;
-          permutation_trait_inner!(0, self, input, res, err, $($name)+);
+          let mut err: Option<<OM::Error as Mode>::Output<Error>> = None;
+          permutation_trait_inner!(0, self, input, res,  err, $($item)+);
 
           // If we reach here, every iterator has either been applied before,
           // or errored on the remaining input
           if let Some(err) = err {
             // There are remaining parsers, and all errored on the remaining input
-            return Err(Err::Error(Error::append(input, ErrorKind::Permutation, err)));
+            return Err(Err::Error(OM::Error::map(err, |err| Error::append(input, ErrorKind::Permutation, err))));
           }
 
-          // All parsers were applied
-          match res {
-            ($(Some($item)),+) => return Ok((input, ($($item),+))),
-            _ => unreachable!(),
-          }
+          return Ok((input,OM::Output::map(res, |res| {
+            // All parsers were applied
+            match res {
+              ($(Some($item)),+) =>  ($($item),+),
+              _ => unreachable!(),
+            }
+          })))
         }
       }
+
     }
   );
 );
 
 macro_rules! permutation_trait_inner(
-  ($it:tt, $self:expr, $input:ident, $res:expr, $err:expr, $head:ident $($id:ident)*) => (
-    if $res.$it.is_none() {
-      match $self.$it.parse($input.clone()) {
+  ($it:tt, $self:expr, $input:ident, $res:expr,  $err:expr, $head:ident $($item:ident)*) => (
+    if !$head {
+
+      match $self.parser.$it.process::<OM>($input.clone()) {
         Ok((i, o)) => {
           $input = i;
-          $res.$it = Some(o);
+          $res = OM::Output::combine($res, o, |mut res, o | {res.$it = Some(o);res });
+          $head = true;
           continue;
         }
         Err(Err::Error(e)) => {
           $err = Some(match $err {
-            Some(err) => err.or(e),
             None => e,
+            Some(err) => OM::Error::combine(err, e, |err, e| err.or(e))
           });
         }
         Err(e) => return Err(e),
       };
     }
-    succ!($it, permutation_trait_inner!($self, $input, $res, $err, $($id)*));
+    succ!($it, permutation_trait_inner!($self, $input, $res, $err, $($item)*));
   );
   ($it:tt, $self:expr, $input:ident, $res:expr, $err:expr,) => ();
 );
