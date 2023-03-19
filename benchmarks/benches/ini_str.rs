@@ -41,15 +41,15 @@ fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
 }
 
 fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
-  many(0.., key_value)(input)
+  many(0.., key_value).parse_complete(input)
 }
 
 fn category_and_keys(i: &str) -> IResult<&str, (&str, HashMap<&str, &str>)> {
-  pair(category, keys_and_values).parse(i)
+  pair(category, keys_and_values).parse_complete(i)
 }
 
 fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str>>> {
-  many(0.., category_and_keys)(input)
+  many(0.., category_and_keys).parse_complete(input)
 }
 
 fn bench_ini_str(c: &mut Criterion) {

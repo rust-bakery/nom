@@ -49,7 +49,8 @@ fn term(input: &[u8]) -> IResult<&[u8], i64> {
         acc / val
       }
     },
-  )(input)
+  )
+  .parse_complete(input)
 }
 
 fn expr(input: &[u8]) -> IResult<&[u8], i64> {
@@ -65,7 +66,8 @@ fn expr(input: &[u8]) -> IResult<&[u8], i64> {
         acc - val
       }
     },
-  )(input)
+  )
+  .parse_complete(input)
 }
 
 #[allow(clippy::eq_op, clippy::erasing_op)]

@@ -21,14 +21,15 @@ fn category(i: &[u8]) -> IResult<&[u8], &str> {
     delimited(char('['), take_while(|c| c != b']'), char(']')),
     str::from_utf8,
   )
-  .parse(i)
+  .parse_complete(i)
 }
 
 fn key_value(i: &[u8]) -> IResult<&[u8], (&str, &str)> {
-  let (i, key) = map_res(alphanumeric, str::from_utf8).parse(i)?;
-  let (i, _) = tuple((opt(space), char('='), opt(space))).parse(i)?;
-  let (i, val) = map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8).parse(i)?;
-  let (i, _) = opt(pair(char(';'), take_while(|c| c != b'\n'))).parse(i)?;
+  let (i, key) = map_res(alphanumeric, str::from_utf8).parse_complete(i)?;
+  let (i, _) = tuple((opt(space), char('='), opt(space))).parse_complete(i)?;
+  let (i, val) =
+    map_res(take_while(|c| c != b'\n' && c != b';'), str::from_utf8).parse_complete(i)?;
+  let (i, _) = opt(pair(char(';'), take_while(|c| c != b'\n'))).parse_complete(i)?;
   Ok((i, (key, val)))
 }
 
@@ -40,7 +41,8 @@ fn categories(i: &[u8]) -> IResult<&[u8], HashMap<&str, HashMap<&str, &str>>> {
       opt(multispace),
       many(0.., terminated(key_value, opt(multispace))),
     ),
-  )(i)
+  )
+  .parse_complete(i)
 }
 
 fn bench_ini(c: &mut Criterion) {
@@ -68,7 +70,7 @@ file=payroll.dat
 \0";
 
   fn acc(i: &[u8]) -> IResult<&[u8], Vec<(&str, &str)>> {
-    many(0.., key_value)(i)
+    many(0.., key_value).parse_complete(i)
   }
 
   let mut group = c.benchmark_group("ini keys and values");

@@ -488,6 +488,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::error::ErrorKind;
   use crate::AsChar;
   use crate::Err;
 
