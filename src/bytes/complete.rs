@@ -2,7 +2,6 @@
 
 use core::marker::PhantomData;
 
-use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
 use crate::traits::{Compare, FindSubstring, FindToken, InputLength, ToUsize};

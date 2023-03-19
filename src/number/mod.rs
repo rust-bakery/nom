@@ -136,7 +136,6 @@ mod tests {
   use super::*;
   use crate::error::ErrorKind;
   use crate::internal::Err;
-  use proptest::prelude::*;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {

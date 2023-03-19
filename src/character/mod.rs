@@ -8,7 +8,6 @@ use crate::error::ErrorKind;
 use crate::FindToken;
 use crate::IsStreaming;
 use crate::Mode;
-use crate::OutputMode;
 use crate::{error::ParseError, AsChar, Err, IResult, Input, Needed, Parser};
 
 #[cfg(test)]
@@ -146,7 +145,7 @@ where
   Char { c, e: PhantomData }
 }
 
-/// Parser implementation for [char]
+/// Parser implementation for [char()]
 pub struct Char<E> {
   c: char,
   e: PhantomData<E>,
