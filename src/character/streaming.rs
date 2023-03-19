@@ -9,7 +9,10 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed};
 use crate::traits::{AsChar, FindToken, Input};
 use crate::traits::{Compare, CompareResult};
+use crate::Emit;
+use crate::OutputM;
 use crate::Parser;
+use crate::Streaming;
 
 /// Recognizes one character.
 ///
@@ -26,19 +29,13 @@ use crate::Parser;
 /// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn char<I, Error: ParseError<I>>(c: char) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
 {
-  move |i: I| match (i).iter_elements().next().map(|t| {
-    let b = t.as_char() == c;
-    (&c, b)
-  }) {
-    None => Err(Err::Incomplete(Needed::new(c.len() - i.input_len()))),
-    Some((_, false)) => Err(Err::Error(Error::from_char(i, c))),
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-  }
+  let mut parser = super::char(c);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Recognizes one character and checks that it satisfies a predicate
@@ -56,21 +53,14 @@ where
 /// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
   F: Fn(char) -> bool,
 {
-  move |i: I| match (i).iter_elements().next().map(|t| {
-    let c = t.as_char();
-    let b = cond(c);
-    (c, b)
-  }) {
-    None => Err(Err::Incomplete(Needed::Unknown)),
-    Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Satisfy))),
-    Some((c, true)) => Ok((i.take_from(c.len()), c)),
-  }
+  let mut parser = super::satisfy(cond);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Recognizes one of the provided characters.
@@ -83,19 +73,16 @@ where
 /// # use nom::character::streaming::one_of;
 /// assert_eq!(one_of::<_, _, (_, ErrorKind)>("abc")("b"), Ok(("", 'b')));
 /// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
-/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
-  T: FindToken<<I as Input>::Item>,
+  T: FindToken<char>,
 {
-  move |i: I| match (i).iter_elements().next().map(|c| (c, list.find_token(c))) {
-    None => Err(Err::Incomplete(Needed::new(1))),
-    Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::OneOf))),
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-  }
+  let mut parser = super::one_of(list);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Recognizes a character that is not in the provided characters.
@@ -108,19 +95,16 @@ where
 /// # use nom::character::streaming::none_of;
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
-  T: FindToken<<I as Input>::Item>,
+  T: FindToken<char>,
 {
-  move |i: I| match (i).iter_elements().next().map(|c| (c, !list.find_token(c))) {
-    None => Err(Err::Incomplete(Needed::new(1))),
-    Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::NoneOf))),
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-  }
+  let mut parser = super::none_of(list);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Recognizes the string "\r\n".
@@ -269,8 +253,7 @@ where
   char('\t')(input)
 }
 
-/// Matches one byte as a character. Note that the input type will
-/// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
+/// Matches one element as a character.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example

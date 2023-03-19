@@ -213,7 +213,7 @@ fn issue_1231_bits_expect_fn_closure() {
 fn issue_1282_findtoken_char() {
   use nom::character::complete::one_of;
   use nom::error::Error;
-  let parser = one_of::<_, _, Error<_>>(&['a', 'b', 'c'][..]);
+  let mut parser = one_of::<_, _, Error<_>>(&['a', 'b', 'c'][..]);
   assert_eq!(parser("aaa"), Ok(("aa", 'a')));
 }
 

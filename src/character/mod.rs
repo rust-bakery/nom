@@ -126,7 +126,6 @@ pub fn is_newline(chr: u8) -> bool {
 
 /// Recognizes one character.
 ///
-/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -147,7 +146,7 @@ where
   Char { c, e: PhantomData }
 }
 
-/// Parser implementation for char
+/// Parser implementation for [char]
 pub struct Char<E> {
   c: char,
   e: PhantomData<E>,
@@ -160,7 +159,6 @@ where
 {
   type Output = char;
   type Error = Error;
-
   #[inline(always)]
   fn process<OM: crate::OutputMode>(
     &mut self,
@@ -183,10 +181,122 @@ where
   }
 }
 
+/// Recognizes one character and checks that it satisfies a predicate
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
+/// # use nom::character::complete::satisfy;
+/// fn parser(i: &str) -> IResult<&str, char> {
+///     satisfy(|c| c == 'a' || c == 'b')(i)
+/// }
+/// assert_eq!(parser("abc"), Ok(("bc", 'a')));
+/// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
+/// ```
+pub fn satisfy<F, I, Error: ParseError<I>>(
+  predicate: F,
+) -> impl Parser<I, Output = char, Error = Error>
+where
+  I: Input,
+  <I as Input>::Item: AsChar,
+  F: Fn(char) -> bool,
+{
+  Satisfy {
+    predicate,
+    make_error: |i: I| Error::from_error_kind(i, ErrorKind::Satisfy),
+  }
+}
+
+/// Parser implementation for [satisfy]
+pub struct Satisfy<F, MakeError> {
+  predicate: F,
+  make_error: MakeError,
+}
+
+impl<I, Error: ParseError<I>, F, MakeError> Parser<I> for Satisfy<F, MakeError>
+where
+  I: Input,
+  <I as Input>::Item: AsChar,
+  F: Fn(char) -> bool,
+  MakeError: Fn(I) -> Error,
+{
+  type Output = char;
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    match (i).iter_elements().next().map(|t| {
+      let c = t.as_char();
+      let b = (self.predicate)(c);
+      (c, b)
+    }) {
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::Unknown))
+        } else {
+          Err(Err::Error(OM::Error::bind(|| (self.make_error)(i))))
+        }
+      }
+      Some((_, false)) => Err(Err::Error(OM::Error::bind(|| (self.make_error)(i)))),
+      Some((c, true)) => Ok((i.take_from(c.len()), OM::Output::bind(|| c.as_char()))),
+    }
+  }
+}
+
+/// Recognizes one of the provided characters.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind};
+/// # use nom::character::complete::one_of;
+/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("abc")("b"), Ok(("", 'b')));
+/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
+/// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::OneOf))));
+/// ```
+pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
+where
+  I: Input,
+  <I as Input>::Item: AsChar,
+  T: FindToken<char>,
+{
+  Satisfy {
+    predicate: move |c: char| list.find_token(c),
+    make_error: move |i| Error::from_error_kind(i, ErrorKind::OneOf),
+  }
+}
+
+//. Recognizes a character that is not in the provided characters.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::character::streaming::none_of;
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Unknown)));
+/// ```
+pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
+where
+  I: Input,
+  <I as Input>::Item: AsChar,
+  T: FindToken<char>,
+{
+  Satisfy {
+    predicate: move |c: char| !list.find_token(c),
+    make_error: move |i| Error::from_error_kind(i, ErrorKind::NoneOf),
+  }
+}
+
 // Matches one byte as a character. Note that the input type will
 /// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
 ///
-/// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
 /// ```
@@ -238,71 +348,6 @@ where
         }
       }
       Some(c) => Ok((i.take_from(c.len()), OM::Output::bind(|| c.as_char()))),
-    }
-  }
-}
-
-/// Recognizes a character that is not in the provided characters.
-///
-/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
-/// # Example
-///
-/// ```
-/// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::character::streaming::none_of;
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::new(1))));
-/// ```
-pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = char, Error = Error>
-where
-  I: Input,
-  <I as Input>::Item: AsChar,
-  T: FindToken<<I as Input>::Item>,
-{
-  NoneOf {
-    list,
-    e: PhantomData,
-  }
-}
-
-/// Parser implementation for char
-pub struct NoneOf<T, E> {
-  list: T,
-  e: PhantomData<E>,
-}
-
-impl<I, T, Error: ParseError<I>> Parser<I> for NoneOf<T, Error>
-where
-  I: Input,
-  <I as Input>::Item: AsChar,
-  T: FindToken<<I as Input>::Item>,
-{
-  type Output = char;
-  type Error = Error;
-
-  fn process<OM: crate::OutputMode>(
-    &mut self,
-    i: I,
-  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    match (i)
-      .iter_elements()
-      .next()
-      .map(|c| (c, !self.list.find_token(c)))
-    {
-      None => {
-        if OM::Incomplete::is_streaming() {
-          Err(Err::Incomplete(Needed::new(1)))
-        } else {
-          Err(Err::Error(OM::Error::bind(|| {
-            Error::from_error_kind(i, ErrorKind::NoneOf)
-          })))
-        }
-      }
-      Some((_, false)) => Err(Err::Error(OM::Error::bind(|| {
-        Error::from_error_kind(i, ErrorKind::NoneOf)
-      }))),
-      Some((c, true)) => Ok((i.take_from(c.len()), OM::Output::bind(|| c.as_char()))),
     }
   }
 }
