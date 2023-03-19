@@ -72,24 +72,26 @@ where
   Many0 { parser: f }
 }
 
+#[cfg(feature = "alloc")]
 /// Parser implementation for the [many0] combinator
 pub struct Many0<F> {
   parser: F,
 }
 
+#[cfg(feature = "alloc")]
 impl<I, F> Parser<I> for Many0<F>
 where
   I: Clone + InputLength,
   F: Parser<I>,
 {
-  type Output = Vec<<F as Parser<I>>::Output>;
+  type Output = crate::lib::std::vec::Vec<<F as Parser<I>>::Output>;
   type Error = <F as Parser<I>>::Error;
 
   fn process<OM: OutputMode>(
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut acc = OM::Output::bind(|| Vec::with_capacity(4));
+    let mut acc = OM::Output::bind(|| crate::lib::std::vec::Vec::with_capacity(4));
     loop {
       let len = i.input_len();
       match self
@@ -157,11 +159,13 @@ where
   Many1 { parser }
 }
 
+#[cfg(feature = "alloc")]
 /// Parser implementation for the [many1] combinator
 pub struct Many1<F> {
   parser: F,
 }
 
+#[cfg(feature = "alloc")]
 impl<I, F> Parser<I> for Many1<F>
 where
   I: Clone + InputLength,
@@ -185,7 +189,7 @@ where
       Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
       Ok((i1, o)) => {
         let mut acc = OM::Output::map(o, |o| {
-          let mut acc = Vec::with_capacity(4);
+          let mut acc = crate::lib::std::vec::Vec::with_capacity(4);
           acc.push(o);
           acc
         });
@@ -263,6 +267,7 @@ where
   }
 }
 
+#[cfg(feature = "alloc")]
 /// Parser implementation for the [many_till] combinator
 pub struct ManyTill<F, G, E> {
   f: F,
@@ -270,6 +275,7 @@ pub struct ManyTill<F, G, E> {
   e: PhantomData<E>,
 }
 
+#[cfg(feature = "alloc")]
 impl<I, F, G, E> Parser<I> for ManyTill<F, G, E>
 where
   I: Clone + InputLength,
@@ -284,7 +290,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(|| Vec::new());
+    let mut res = OM::Output::bind(|| crate::lib::std::vec::Vec::new());
     loop {
       let len = i.input_len();
       match self
@@ -367,12 +373,14 @@ where
   }
 }
 
+#[cfg(feature = "alloc")]
 /// Parser implementation for the [separated_list0] combinator
 pub struct SeparatedList0<F, G> {
   parser: F,
   separator: G,
 }
 
+#[cfg(feature = "alloc")]
 impl<I, E: ParseError<I>, F, G> Parser<I> for SeparatedList0<F, G>
 where
   I: Clone + InputLength,
@@ -386,7 +394,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(|| Vec::new());
+    let mut res = OM::Output::bind(|| crate::lib::std::vec::Vec::new());
 
     match self
       .parser
@@ -482,12 +490,14 @@ where
   SeparatedList1 { parser, separator }
 }
 
+#[cfg(feature = "alloc")]
 /// Parser implementation for the [separated_list1] combinator
 pub struct SeparatedList1<F, G> {
   parser: F,
   separator: G,
 }
 
+#[cfg(feature = "alloc")]
 impl<I, E: ParseError<I>, F, G> Parser<I> for SeparatedList1<F, G>
 where
   I: Clone + InputLength,
@@ -501,7 +511,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(|| Vec::new());
+    let mut res = OM::Output::bind(|| crate::lib::std::vec::Vec::new());
 
     match self.parser.process::<OM>(i.clone()) {
       Err(e) => return Err(e),
@@ -596,6 +606,7 @@ where
   ManyMN { parser, min, max }
 }
 
+#[cfg(feature = "alloc")]
 /// Parser implementation for the [many_m_n] combinator
 pub struct ManyMN<F> {
   parser: F,
@@ -603,6 +614,7 @@ pub struct ManyMN<F> {
   max: usize,
 }
 
+#[cfg(feature = "alloc")]
 impl<I, F> Parser<I> for ManyMN<F>
 where
   I: Clone + InputLength,
@@ -873,12 +885,14 @@ where
   Count { parser, count }
 }
 
+#[cfg(feature = "alloc")]
 /// Parser implementation for the [count] combinator
 pub struct Count<F> {
   parser: F,
   count: usize,
 }
 
+#[cfg(feature = "alloc")]
 impl<I, F> Parser<I> for Count<F>
 where
   I: Clone,
@@ -1501,6 +1515,7 @@ where
   }
 }
 
+#[cfg(feature = "alloc")]
 /// Parser implementation for the [length_count] combinator
 pub struct LengthCount<F, G, E> {
   length: F,
@@ -1508,6 +1523,7 @@ pub struct LengthCount<F, G, E> {
   e: PhantomData<E>,
 }
 
+#[cfg(feature = "alloc")]
 impl<I, F, G, E> Parser<I> for LengthCount<F, G, E>
 where
   I: Clone,
