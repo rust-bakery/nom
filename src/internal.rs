@@ -88,9 +88,14 @@ impl Needed {
 /// to transform that case in `Error`
 /// * `Error` means some parser did not succeed, but another one might (as an example,
 /// when testing different branches of an `alt` combinator)
-/// * `Failure` indicates an unrecoverable error. As an example, if you recognize a prefix
-/// to decide on the next parser to apply, and that parser fails, you know there's no need
-/// to try other parsers, you were already in the right branch, so the data is invalid
+/// * `Failure` indicates an unrecoverable error. For example, when a prefix has been
+/// recognised and the next parser has been confirmed, if that parser fails, then the
+/// entire process fails; there are no more parsers to try.
+///
+/// Distinguishing `Failure` this from `Error` is only relevant inside the parser's code. For
+/// external consumers, both mean that parsing failed.
+///
+/// See also: [`nom::Finish`].
 ///
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
