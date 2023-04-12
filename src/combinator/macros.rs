@@ -506,7 +506,7 @@ macro_rules! map(
     map!(__impl $i, $submac!($($args)*), $g);
   );
   ($i:expr, $f:expr, $g:expr) => (
-    map!(__impl $i, call!($f), $g);
+    map!(__impl $i, call!($f), $g)
   );
 );
 

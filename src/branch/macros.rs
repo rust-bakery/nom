@@ -514,17 +514,17 @@ macro_rules! permutation_init (
   );
 
   (($($parsed:expr),*), $e:ident?, $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*);
+    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*)
   );
   (($($parsed:expr),*), $e:ident, $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*);
+    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*)
   );
 
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* )?, $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*);
+    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*)
   );
   (($($parsed:expr),*), $submac:ident!( $($args:tt)* ), $($rest:tt)*) => (
-    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*);
+    permutation_init!(($($parsed),* , $crate::lib::std::option::Option::None), $($rest)*)
   );
 
   (($($parsed:expr),*), $e:ident) => (
