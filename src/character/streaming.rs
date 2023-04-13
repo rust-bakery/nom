@@ -459,6 +459,48 @@ where
   input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
+/// Recognizes zero or more binary characters: 0-1
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non binary digit character).
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::bin_digit0;
+/// assert_eq!(bin_digit0::<_, (_, ErrorKind)>("013a"), Ok(("3a", "01")));
+/// assert_eq!(bin_digit0::<_, (_, ErrorKind)>("a013"), Ok(("a013", "")));
+/// assert_eq!(bin_digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```
+pub fn bin_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+where
+  T: Input,
+  <T as Input>::Item: AsChar,
+{
+  input.split_at_position(|item| !item.is_bin_digit())
+}
+
+/// Recognizes one or more binary characters: 0-1
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non binary digit character).
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::bin_digit1;
+/// assert_eq!(bin_digit1::<_, (_, ErrorKind)>("013a"), Ok(("3a", "01")));
+/// assert_eq!(bin_digit1::<_, (_, ErrorKind)>("a013"), Err(Err::Error(("a013", ErrorKind::BinDigit))));
+/// assert_eq!(bin_digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```
+pub fn bin_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+where
+  T: Input,
+  <T as Input>::Item: AsChar,
+{
+  input.split_at_position1(|item| !item.is_bin_digit(), ErrorKind::BinDigit)
+}
+
 /// Recognizes zero or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
@@ -809,6 +851,17 @@ mod tests {
       alphanumeric1::<_, (_, ErrorKind)>(a),
       Err(Err::Incomplete(Needed::new(1)))
     );
+    assert_eq!(bin_digit1(a), Err(Err::Error((a, ErrorKind::BinDigit))));
+    assert_eq!(
+      bin_digit1::<_, (_, ErrorKind)>(b),
+      Ok((&b"234"[..], &b"1"[..]))
+    );
+    assert_eq!(bin_digit1(c), Err(Err::Error((c, ErrorKind::BinDigit))));
+    assert_eq!(bin_digit1(d), Err(Err::Error((d, ErrorKind::BinDigit))));
+    assert_eq!(
+      alphanumeric1::<_, (_, ErrorKind)>(a),
+      Err(Err::Incomplete(Needed::new(1)))
+    );
     //assert_eq!(fix_error!(b,(), alphanumeric1), Ok((empty, b)));
     assert_eq!(
       alphanumeric1::<_, (_, ErrorKind)>(c),
@@ -868,6 +921,13 @@ mod tests {
     );
     assert_eq!(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
     assert_eq!(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
+    assert_eq!(bin_digit1(a), Err(Err::Error((a, ErrorKind::BinDigit))));
+    assert_eq!(
+      bin_digit1::<_, (_, ErrorKind)>(b),
+      Ok(("234", "1"))
+    );
+    assert_eq!(bin_digit1(c), Err(Err::Error((c, ErrorKind::BinDigit))));
+    assert_eq!(bin_digit1(d), Err(Err::Error((d, ErrorKind::BinDigit))));
     assert_eq!(
       alphanumeric1::<_, (_, ErrorKind)>(a),
       Err(Err::Incomplete(Needed::new(1)))
@@ -935,6 +995,12 @@ mod tests {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
       _ => panic!("wrong return type in offset test for oct_digit"),
+    }
+    match bin_digit1::<_, (_, ErrorKind)>(f) {
+      Ok((i, _)) => {
+        assert_eq!(f.offset(i) + i.len(), f.len());
+      }
+      _ => panic!("wrong return type in offset test for bin_digit"),
     }
   }
 
@@ -1046,6 +1112,29 @@ mod tests {
     assert!(!crate::character::is_oct_digit(b':'));
     assert!(!crate::character::is_oct_digit(b'@'));
     assert!(!crate::character::is_oct_digit(b'\x60'));
+  }
+
+  #[test]
+  fn bin_digit_test() {
+    let i = &b"01;"[..];
+    assert_parse!(bin_digit1(i), Ok((&b";"[..], &i[..i.len() - 1])));
+
+    let i = &b"8"[..];
+    assert_parse!(
+      bin_digit1(i),
+      Err(Err::Error(error_position!(i, ErrorKind::BinDigit)))
+    );
+
+    assert!(crate::character::is_bin_digit(b'0'));
+    assert!(crate::character::is_bin_digit(b'1'));
+    assert!(!crate::character::is_bin_digit(b'8'));
+    assert!(!crate::character::is_bin_digit(b'9'));
+    assert!(!crate::character::is_bin_digit(b'a'));
+    assert!(!crate::character::is_bin_digit(b'A'));
+    assert!(!crate::character::is_bin_digit(b'/'));
+    assert!(!crate::character::is_bin_digit(b':'));
+    assert!(!crate::character::is_bin_digit(b'@'));
+    assert!(!crate::character::is_bin_digit(b'\x60'));
   }
 
   #[test]

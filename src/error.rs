@@ -436,6 +436,7 @@ pub enum ErrorKind {
   Digit,
   HexDigit,
   OctDigit,
+  BinDigit,
   AlphaNumeric,
   Space,
   MultiSpace,
@@ -534,6 +535,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Fail                      => 75,
     ErrorKind::Many                      => 76,
     ErrorKind::Fold                      => 77,
+    ErrorKind::BinDigit                  => 78,
   }
 }
 
@@ -584,6 +586,7 @@ impl ErrorKind {
       ErrorKind::ManyMN                    => "Many(m, n)",
       ErrorKind::HexDigit                  => "Hexadecimal Digit",
       ErrorKind::OctDigit                  => "Octal digit",
+      ErrorKind::BinDigit                  => "Binary digit",
       ErrorKind::Not                       => "Negation",
       ErrorKind::Permutation               => "Permutation",
       ErrorKind::ManyTill                  => "ManyTill",

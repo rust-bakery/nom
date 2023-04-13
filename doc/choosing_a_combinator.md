@@ -126,6 +126,7 @@ Use these functions with a combinator like `take_while`:
 - [`is_digit`](https://docs.rs/nom/latest/nom/character/fn.is_digit.html): Tests if byte is ASCII digit: `[0-9]`
 - [`is_hex_digit`](https://docs.rs/nom/latest/nom/character/fn.is_hex_digit.html): Tests if byte is ASCII hex digit: `[0-9A-Fa-f]`
 - [`is_oct_digit`](https://docs.rs/nom/latest/nom/character/fn.is_oct_digit.html): Tests if byte is ASCII octal digit: `[0-7]`
+- [`is_bin_digit`](https://docs.rs/nom/latest/nom/character/fn.is_bin_digit.html): Tests if byte is ASCII binary digit: `[0-1]`
 - [`is_space`](https://docs.rs/nom/latest/nom/character/fn.is_space.html): Tests if byte is ASCII space or tab: `[ \t]`
 - [`is_newline`](https://docs.rs/nom/latest/nom/character/fn.is_newline.html): Tests if byte is ASCII newline: `[\n]`
 
@@ -145,6 +146,7 @@ Alternatively there are ready to use functions:
 - [`newline`](https://docs.rs/nom/latest/nom/character/complete/fn.newline.html): Matches a newline character `\n`
 - [`not_line_ending`](https://docs.rs/nom/latest/nom/character/complete/fn.not_line_ending.html): Recognizes a string of any char except `\r` or `\n`
 - [`oct_digit0`](https://docs.rs/nom/latest/nom/character/complete/fn.oct_digit0.html): Recognizes zero or more octal characters: `[0-7]`. [`oct_digit1`](https://docs.rs/nom/latest/nom/character/complete/fn.oct_digit1.html) does the same but returns at least one character
+- [`bin_digit0`](https://docs.rs/nom/latest/nom/character/complete/fn.bin_digit0.html): Recognizes zero or more binary characters: `[0-1]`. [`bin_digit1`](https://docs.rs/nom/latest/nom/character/complete/fn.bin_digit1.html) does the same but returns at least one character
 - [`rest`](https://docs.rs/nom/latest/nom/combinator/fn.rest.html): Return the remaining input
 - [`space0`](https://docs.rs/nom/latest/nom/character/complete/fn.space0.html): Recognizes zero or more spaces and tabs. [`space1`](https://docs.rs/nom/latest/nom/character/complete/fn.space1.html) does the same but returns at least one character
 - [`tab`](https://docs.rs/nom/latest/nom/character/complete/fn.tab.html): Matches a tab character `\t`
