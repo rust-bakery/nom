@@ -752,6 +752,29 @@ impl<
   }
 }
 
+pub(crate) enum Either<F, G> {
+  Left(F),
+  Right(G),
+}
+
+impl<
+    I,
+    F: Parser<I>,
+    G: Parser<I, Output = <F as Parser<I>>::Output, Error = <F as Parser<I>>::Error>,
+  > Parser<I> for Either<F, G>
+{
+  type Output = <F as Parser<I>>::Output;
+  type Error = <F as Parser<I>>::Error;
+
+  #[inline]
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    match self {
+      Either::Left(f) => f.process::<OM>(i),
+      Either::Right(g) => g.process::<OM>(i),
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

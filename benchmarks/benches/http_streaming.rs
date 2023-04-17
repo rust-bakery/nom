@@ -104,7 +104,7 @@ fn message_header(input: &[u8]) -> IResult<&[u8], Header<'_>> {
 fn request(input: &[u8]) -> IResult<&[u8], (Request<'_>, Vec<Header<'_>>)> {
   let (input, req) = request_line(input)?;
   let (input, h) = many(1.., message_header).parse(input)?;
-  let (input, _) = line_ending(input)?;
+    let (input, _) = line_ending(input)?;
 
   Ok((input, (req, h)))
 }
