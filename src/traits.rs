@@ -523,6 +523,10 @@ pub trait AsChar: Copy {
   fn is_oct_digit(self) -> bool;
   /// Gets the len in bytes for self
   fn len(self) -> usize;
+  /// Tests that self is ASCII space or tab
+  fn is_space(self) -> bool;
+  /// Tests if byte is ASCII newline: \n
+  fn is_newline(self) -> bool;
 }
 
 impl AsChar for u8 {
@@ -554,6 +558,13 @@ impl AsChar for u8 {
   fn len(self) -> usize {
     1
   }
+  #[inline]
+  fn is_space(self) -> bool {
+    self == b' ' || self == b'\t'
+  }
+  fn is_newline(self) -> bool {
+    self == b'\n'
+  }
 }
 impl<'a> AsChar for &'a u8 {
   #[inline]
@@ -583,6 +594,13 @@ impl<'a> AsChar for &'a u8 {
   #[inline]
   fn len(self) -> usize {
     1
+  }
+  #[inline]
+  fn is_space(self) -> bool {
+    *self == b' ' || *self == b'\t'
+  }
+  fn is_newline(self) -> bool {
+    *self == b'\n'
   }
 }
 
@@ -615,6 +633,13 @@ impl AsChar for char {
   fn len(self) -> usize {
     self.len_utf8()
   }
+  #[inline]
+  fn is_space(self) -> bool {
+    self == ' ' || self == '\t'
+  }
+  fn is_newline(self) -> bool {
+    self == '\n'
+  }
 }
 
 impl<'a> AsChar for &'a char {
@@ -645,6 +670,13 @@ impl<'a> AsChar for &'a char {
   #[inline]
   fn len(self) -> usize {
     self.len_utf8()
+  }
+  #[inline]
+  fn is_space(self) -> bool {
+    *self == ' ' || *self == '\t'
+  }
+  fn is_newline(self) -> bool {
+    *self == '\n'
   }
 }
 
