@@ -576,6 +576,7 @@ fn many_test() {
   );
   
   
+  #[allow(clippy::reversed_empty_ranges)]
   fn many_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     many(2..=1, tag("a"))(i)
   }
@@ -584,6 +585,22 @@ fn many_test() {
   let b = &b"b"[..];
   assert_eq!(many_invalid(a), Err(Err::Failure(error_position!(a, ErrorKind::Many))));
   assert_eq!(many_invalid(b), Err(Err::Failure(error_position!(b, ErrorKind::Many))));
+
+
+  fn many_invalid_range_to(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    many(..0, tag("a"))(i)
+  }
+
+  let a = &b"a"[..];
+  let b = &b"b"[..];
+  assert_eq!(
+    many_invalid_range_to(a),
+    Err(Err::Failure(error_position!(a, ErrorKind::Many)))
+  );
+  assert_eq!(
+    many_invalid_range_to(b),
+    Err(Err::Failure(error_position!(b, ErrorKind::Many)))
+  );
   
   
   fn many_any(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
@@ -737,6 +754,7 @@ fn fold_test() {
   );
   
   
+  #[allow(clippy::reversed_empty_ranges)]
   fn fold_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     fold(2..=1, tag("a"), Vec::new, fold_into_vec)(i)
   }
@@ -745,6 +763,22 @@ fn fold_test() {
   let b = &b"b"[..];
   assert_eq!(fold_invalid(a), Err(Err::Failure(error_position!(a, ErrorKind::Fold))));
   assert_eq!(fold_invalid(b), Err(Err::Failure(error_position!(b, ErrorKind::Fold))));
+
+
+  fn fold_invalid_range_to(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    fold(..0, tag("a"), Vec::new, fold_into_vec)(i)
+  }
+
+  let a = &b"a"[..];
+  let b = &b"b"[..];
+  assert_eq!(
+    fold_invalid_range_to(a),
+    Err(Err::Failure(error_position!(a, ErrorKind::Fold)))
+  );
+  assert_eq!(
+    fold_invalid_range_to(b),
+    Err(Err::Failure(error_position!(b, ErrorKind::Fold)))
+  );
   
   
   fn fold_any(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {

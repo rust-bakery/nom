@@ -1274,23 +1274,15 @@ impl NomRange<usize> for Range<usize> {
   }
 
   fn is_inverted(&self) -> bool {
-    !(self.start < self.end)
+    self.is_empty()
   }
 
   fn saturating_iter(&self) -> Self::Saturating {
-    if self.end == 0 {
-      1..0
-    } else {
-      0..self.end - 1
-    }
+    0..self.end - 1
   }
 
   fn bounded_iter(&self) -> Self::Bounded {
-    if self.end == 0 {
-      1..0
-    } else {
-      0..self.end - 1
-    }
+    0..self.end - 1
   }
 }
 
@@ -1307,7 +1299,7 @@ impl NomRange<usize> for RangeInclusive<usize> {
   }
 
   fn is_inverted(&self) -> bool {
-    !RangeInclusive::contains(self, self.start())
+    self.is_empty()
   }
 
   fn saturating_iter(&self) -> Self::Saturating {
@@ -1321,7 +1313,7 @@ impl NomRange<usize> for RangeInclusive<usize> {
 
 impl NomRange<usize> for RangeFrom<usize> {
   type Saturating = SaturatingIterator;
-  type Bounded = Range<usize>;
+  type Bounded = RangeInclusive<usize>;
 
   fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
     (Bound::Included(self.start), Bound::Unbounded)
@@ -1340,7 +1332,7 @@ impl NomRange<usize> for RangeFrom<usize> {
   }
 
   fn bounded_iter(&self) -> Self::Bounded {
-    0..core::usize::MAX
+    0..=core::usize::MAX
   }
 }
 
@@ -1357,23 +1349,15 @@ impl NomRange<usize> for RangeTo<usize> {
   }
 
   fn is_inverted(&self) -> bool {
-    false
+    self.end == 0
   }
 
   fn saturating_iter(&self) -> Self::Saturating {
-    if self.end == 0 {
-      1..0
-    } else {
-      0..self.end - 1
-    }
+    0..self.end - 1
   }
 
   fn bounded_iter(&self) -> Self::Bounded {
-    if self.end == 0 {
-      1..0
-    } else {
-      0..self.end - 1
-    }
+    0..self.end - 1
   }
 }
 
@@ -1404,7 +1388,7 @@ impl NomRange<usize> for RangeToInclusive<usize> {
 
 impl NomRange<usize> for RangeFull {
   type Saturating = SaturatingIterator;
-  type Bounded = Range<usize>;
+  type Bounded = RangeInclusive<usize>;
 
   fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
     (Bound::Unbounded, Bound::Unbounded)
@@ -1423,7 +1407,7 @@ impl NomRange<usize> for RangeFull {
   }
 
   fn bounded_iter(&self) -> Self::Bounded {
-    0..core::usize::MAX
+    0..=core::usize::MAX
   }
 }
 
