@@ -273,3 +273,15 @@ fn fail_test() {
   assert_eq!(fail::<_, &str, _>(a), Err(Err::Error((a, ErrorKind::Fail))));
   assert_eq!(fail::<_, &str, _>(b), Err(Err::Error((b, ErrorKind::Fail))));
 }
+
+#[test]
+fn test_iterator() {
+  use crate::character::complete::{line_ending, not_line_ending};
+
+  let input = "foo\nbar\r\nbaz";
+  let mut iter = iterator::<_, (), _>(input, (not_line_ending, line_ending));
+  assert_eq!((&mut iter).next(), Some(("foo", "\n")));
+  assert_eq!((&mut iter).next(), Some(("bar", "\r\n")));
+  assert_eq!((&mut iter).next(), None);
+  assert_eq!(iter.finish(), Ok(("baz", ())));
+}
