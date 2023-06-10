@@ -3,6 +3,7 @@ use std::fmt::{Debug, Display, Formatter};
 
 use std::str::FromStr;
 
+use nom::Parser;
 use nom::{
   branch::alt,
   bytes::complete::tag,
@@ -63,7 +64,8 @@ fn parens(i: &str) -> IResult<&str, Expr> {
     multispace,
     delimited(tag("("), map(expr, |e| Expr::Paren(Box::new(e))), tag(")")),
     multispace,
-  )(i)
+  )
+  .parse(i)
 }
 
 fn factor(i: &str) -> IResult<&str, Expr> {
@@ -73,7 +75,8 @@ fn factor(i: &str) -> IResult<&str, Expr> {
       Expr::Value,
     ),
     parens,
-  ))(i)
+  ))
+  .parse(i)
 }
 
 fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
@@ -90,32 +93,40 @@ fn fold_exprs(initial: Expr, remainder: Vec<(Oper, Expr)>) -> Expr {
 
 fn term(i: &str) -> IResult<&str, Expr> {
   let (i, initial) = factor(i)?;
-  let (i, remainder) = many(0.., alt((
-    |i| {
-      let (i, mul) = preceded(tag("*"), factor)(i)?;
-      Ok((i, (Oper::Mul, mul)))
-    },
-    |i| {
-      let (i, div) = preceded(tag("/"), factor)(i)?;
-      Ok((i, (Oper::Div, div)))
-    },
-  )))(i)?;
+  let (i, remainder) = many(
+    0..,
+    alt((
+      |i| {
+        let (i, mul) = preceded(tag("*"), factor).parse(i)?;
+        Ok((i, (Oper::Mul, mul)))
+      },
+      |i| {
+        let (i, div) = preceded(tag("/"), factor).parse(i)?;
+        Ok((i, (Oper::Div, div)))
+      },
+    )),
+  )
+  .parse(i)?;
 
   Ok((i, fold_exprs(initial, remainder)))
 }
 
 fn expr(i: &str) -> IResult<&str, Expr> {
   let (i, initial) = term(i)?;
-  let (i, remainder) = many(0.., alt((
-    |i| {
-      let (i, add) = preceded(tag("+"), term)(i)?;
-      Ok((i, (Oper::Add, add)))
-    },
-    |i| {
-      let (i, sub) = preceded(tag("-"), term)(i)?;
-      Ok((i, (Oper::Sub, sub)))
-    },
-  )))(i)?;
+  let (i, remainder) = many(
+    0..,
+    alt((
+      |i| {
+        let (i, add) = preceded(tag("+"), term).parse(i)?;
+        Ok((i, (Oper::Add, add)))
+      },
+      |i| {
+        let (i, sub) = preceded(tag("-"), term).parse(i)?;
+        Ok((i, (Oper::Sub, sub)))
+      },
+    )),
+  )
+  .parse(i)?;
 
   Ok((i, fold_exprs(initial, remainder)))
 }

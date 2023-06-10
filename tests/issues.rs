@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![allow(clippy::redundant_closure)]
 
-use nom::{error::ErrorKind, Err, IResult, Needed};
+use nom::{error::ErrorKind, Err, IResult, Needed, Parser};
 
 #[allow(dead_code)]
 struct Range {
@@ -20,22 +20,22 @@ pub fn take_char(input: &[u8]) -> IResult<&[u8], char> {
 
 #[cfg(feature = "std")]
 mod parse_int {
-  use nom::HexDisplay;
   use nom::{
     character::streaming::{digit1 as digit, space1 as space},
     combinator::{complete, map, opt},
     multi::many,
     IResult,
   };
+  use nom::{HexDisplay, Parser};
   use std::str;
 
   fn parse_ints(input: &[u8]) -> IResult<&[u8], Vec<i32>> {
-    many(0.., spaces_or_int)(input)
+    many(0.., spaces_or_int).parse(input)
   }
 
   fn spaces_or_int(input: &[u8]) -> IResult<&[u8], i32> {
     println!("{}", input.to_hex(8));
-    let (i, _) = opt(complete(space))(input)?;
+    let (i, _) = opt(complete(space)).parse(input)?;
     let (i, res) = map(complete(digit), |x| {
       println!("x: {:?}", x);
       let result = str::from_utf8(x).unwrap();
@@ -45,7 +45,8 @@ mod parse_int {
         Ok(i) => i,
         Err(e) => panic!("UH OH! NOT A DIGIT! {:?}", e),
       }
-    })(i)?;
+    })
+    .parse(i)?;
 
     Ok((i, res))
   }
@@ -66,7 +67,7 @@ mod parse_int {
 fn usize_length_bytes_issue() {
   use nom::multi::length_data;
   use nom::number::streaming::be_u16;
-  let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_data(be_u16)(b"012346");
+  let _: IResult<&[u8], &[u8], (&[u8], ErrorKind)> = length_data(be_u16).parse(b"012346");
 }
 
 #[test]
@@ -104,13 +105,14 @@ fn issue_717(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
   use nom::bytes::complete::{is_not, tag};
   use nom::multi::separated_list0;
 
-  separated_list0(tag([0x0]), is_not([0x0u8]))(i)
+  separated_list0(tag([0x0]), is_not([0x0u8])).parse(i)
 }
 
 mod issue_647 {
   use nom::bytes::streaming::tag;
   use nom::combinator::complete;
   use nom::multi::separated_list0;
+  use nom::Parser;
   use nom::{error::Error, number::streaming::be_f64, Err, IResult};
   pub type Input<'a> = &'a [u8];
 
@@ -125,7 +127,7 @@ mod issue_647 {
     input: Input<'a>,
     _cs: &'b f64,
   ) -> Result<(Input<'a>, Vec<f64>), Err<Error<&'a [u8]>>> {
-    separated_list0(complete(tag(",")), complete(be_f64))(input)
+    separated_list0(complete(tag(",")), complete(be_f64)).parse(input)
   }
 
   fn data(input: Input<'_>) -> IResult<Input<'_>, Data> {
@@ -163,7 +165,7 @@ fn issue_942() {
     i: &'a str,
   ) -> IResult<&'a str, usize, E> {
     use nom::{character::complete::char, error::context, multi::many0_count};
-    many0_count(context("char_a", char('a')))(i)
+    many0_count(context("char_a", char('a'))).parse(i)
   }
   assert_eq!(parser::<()>("aaa"), Ok(("", 3)));
 }
@@ -173,7 +175,7 @@ fn issue_many_m_n_with_zeros() {
   use nom::character::complete::char;
   use nom::multi::many;
   let mut parser = many::<_, (), Vec<char>, _, _>(0..=0, char('a'));
-  assert_eq!(parser("aaa"), Ok(("aaa", vec!())));
+  assert_eq!(parser.parse("aaa"), Ok(("aaa", vec!())));
 }
 
 #[test]
@@ -184,7 +186,7 @@ fn issue_1027_convert_error_panic_nonempty() {
 
   let input = "a";
 
-  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b'))(input);
+  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b')).parse(input);
   let err = match result.unwrap_err() {
     Err::Error(e) => e,
     _ => unreachable!(),
@@ -211,7 +213,7 @@ fn issue_1231_bits_expect_fn_closure() {
 fn issue_1282_findtoken_char() {
   use nom::character::complete::one_of;
   use nom::error::Error;
-  let parser = one_of::<_, _, Error<_>>(&['a', 'b', 'c'][..]);
+  let mut parser = one_of::<_, _, Error<_>>(&['a', 'b', 'c'][..]);
   assert_eq!(parser("aaa"), Ok(("aa", 'a')));
 }
 
@@ -224,7 +226,7 @@ fn issue_x_looser_fill_bounds() {
 
   fn fill_pair(i: &[u8]) -> IResult<&[u8], [&[u8]; 2]> {
     let mut buf = [&[][..], &[][..]];
-    let (i, _) = fill(terminated(digit1, tag(",")), &mut buf)(i)?;
+    let (i, _) = fill(terminated(digit1, tag(",")), &mut buf).parse(i)?;
     Ok((i, buf))
   }
 
@@ -249,12 +251,12 @@ fn issue_1459_clamp_capacity() {
   // shouldn't panic
   use nom::multi::many_m_n;
   let mut parser = many_m_n::<_, (), _>(usize::MAX, usize::MAX, char('a'));
-  assert_eq!(parser("a"), Err(nom::Err::Error(())));
+  assert_eq!(parser.parse("a"), Err(nom::Err::Error(())));
 
   // shouldn't panic
   use nom::multi::count;
-  let mut parser = count::<_, (), _>(char('a'), usize::MAX);
-  assert_eq!(parser("a"), Err(nom::Err::Error(())));
+  let mut parser = count(char('a'), usize::MAX);
+  assert_eq!(parser.parse("a"), Err(nom::Err::Error(())));
 }
 
 #[test]
@@ -264,6 +266,8 @@ fn issue_1617_count_parser_returning_zero_size() {
   // previously, `count()` panicked if the parser had type `O = ()`
   let parser = map(tag::<_, _, Error<&str>>("abc"), |_| ());
   // shouldn't panic
-  let result = count(parser, 3)("abcabcabcdef").expect("parsing should succeed");
+  let result = count(parser, 3)
+    .parse("abcabcabcdef")
+    .expect("parsing should succeed");
   assert_eq!(result, ("def", vec![(), (), ()]));
 }

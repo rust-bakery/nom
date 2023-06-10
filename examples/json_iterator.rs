@@ -9,7 +9,7 @@ use nom::{
   multi::separated_list0,
   number::complete::double,
   sequence::{preceded, separated_pair, terminated},
-  IResult,
+  IResult, Parser,
 };
 use std::collections::HashMap;
 
@@ -233,7 +233,7 @@ fn string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
 }
 
 fn boolean<'a>(input: &'a str) -> IResult<&'a str, bool> {
-  alt((map(tag("false"), |_| false), map(tag("true"), |_| true)))(input)
+  alt((map(tag("false"), |_| false), map(tag("true"), |_| true))).parse(input)
 }
 
 fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {
@@ -250,7 +250,7 @@ fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {
 }
 
 fn key_value<'a>(i: &'a str) -> IResult<&'a str, (&'a str, ())> {
-  separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value)(i)
+  separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value).parse(i)
 }
 
 fn hash<'a>(i: &'a str) -> IResult<&'a str, ()> {
@@ -276,7 +276,8 @@ fn value<'a>(i: &'a str) -> IResult<&'a str, ()> {
       map(double, |_| ()),
       map(boolean, |_| ()),
     )),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// object(input) -> iterator over (key, JsonValue)

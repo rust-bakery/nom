@@ -7,17 +7,18 @@ static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 use criterion::Criterion;
 use nom::{
   branch::alt,
-  bytes::complete::{tag, take},
-  character::complete::{anychar, char, multispace0, none_of},
+  bytes::{tag, take},
+  character::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
   error::{Error, ErrorKind, FromExternalError, ParseError, VerboseError},
   multi::{fold, separated_list0},
-  number::complete::{double, recognize_float},
+  number::double,
+  number::recognize_float,
   sequence::{delimited, preceded, separated_pair},
-  IResult, Parser,
+  Complete, Emit, IResult, Mode, OutputM, Parser,
 };
 
-use std::{collections::HashMap, num::ParseIntError};
+use std::{collections::HashMap, marker::PhantomData, num::ParseIntError};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JsonValue {
@@ -29,29 +30,28 @@ pub enum JsonValue {
   Object(HashMap<String, JsonValue>),
 }
 
-fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&str, bool, E> {
-  alt((value(false, tag("false")), value(true, tag("true"))))(input)
+fn boolean<'a, E: ParseError<&'a str>>() -> impl Parser<&'a str, Output = bool, Error = E> {
+  alt((value(false, tag("false")), value(true, tag("true"))))
 }
 
 fn u16_hex<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
-  input: &'a str,
-) -> IResult<&str, u16, E> {
-  map_res(take(4usize), |s| u16::from_str_radix(s, 16))(input)
+) -> impl Parser<&'a str, Output = u16, Error = E> {
+  map_res(take(4usize), |s| u16::from_str_radix(s, 16))
 }
 
 fn unicode_escape<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError>>(
-  input: &'a str,
-) -> IResult<&str, char, E> {
+) -> impl Parser<&'a str, Output = char, Error = E> {
   map_opt(
     alt((
       // Not a surrogate
-      map(verify(u16_hex, |cp| !(0xD800..0xE000).contains(cp)), |cp| {
-        cp as u32
-      }),
+      map(
+        verify(u16_hex(), |cp| !(0xD800..0xE000).contains(cp)),
+        |cp| cp as u32,
+      ),
       // See https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF for details
       map(
         verify(
-          separated_pair(u16_hex, tag("\\u"), u16_hex),
+          separated_pair(u16_hex(), tag("\\u"), u16_hex()),
           |(high, low)| (0xD800..0xDC00).contains(high) && (0xDC00..0xE000).contains(low),
         ),
         |(high, low)| {
@@ -63,16 +63,15 @@ fn unicode_escape<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseI
     )),
     // Could probably be replaced with .unwrap() or _unchecked due to the verify checks
     std::char::from_u32,
-  )(input)
+  )
 }
 
 fn character<
   'a,
   E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
->(
-  input: &'a str,
-) -> IResult<&str, char, E> {
-  let (input, c) = none_of("\"")(input)?;
+>() -> impl Parser<&'a str, Output = char, Error = E> {
+  Character { e: PhantomData }
+  /*let (input, c) = none_of("\"")(input)?;
   if c == '\\' {
     alt((
       map_res(anychar, |c| {
@@ -86,27 +85,68 @@ fn character<
           _ => return Err(()),
         })
       }),
-      preceded(char('u'), unicode_escape),
-    ))(input)
+      preceded(char('u'), unicode_escape()),
+    ))
+    .parse(input)
   } else {
     Ok((input, c))
+  }*/
+}
+
+struct Character<E> {
+  e: PhantomData<E>,
+}
+
+impl<'a, E> Parser<&'a str> for Character<E>
+where
+  E: ParseError<&'a str>
+    + FromExternalError<&'a str, ParseIntError>
+    + FromExternalError<&'a str, ()>,
+{
+  type Output = char;
+
+  type Error = E;
+
+  fn process<OM: nom::OutputMode>(
+    &mut self,
+    input: &'a str,
+  ) -> nom::PResult<OM, &'a str, Self::Output, Self::Error> {
+    let (input, c): (&str, char) =
+      none_of("\"").process::<OutputM<Emit, OM::Error, OM::Incomplete>>(input)?;
+    if c == '\\' {
+      alt((
+        map_res(anychar, |c| {
+          Ok(match c {
+            '"' | '\\' | '/' => c,
+            'b' => '\x08',
+            'f' => '\x0C',
+            'n' => '\n',
+            'r' => '\r',
+            't' => '\t',
+            _ => return Err(()),
+          })
+        }),
+        preceded(char('u'), unicode_escape()),
+      ))
+      .process::<OM>(input)
+    } else {
+      Ok((input, OM::Output::bind(|| c)))
+    }
   }
 }
 
 fn string<
   'a,
   E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
->(
-  input: &'a str,
-) -> IResult<&str, String, E> {
+>() -> impl Parser<&'a str, Output = String, Error = E> {
   delimited(
     char('"'),
-    fold(0.., character, String::new, |mut string, c| {
+    fold(0.., character(), String::new, |mut string, c| {
       string.push(c);
       string
     }),
     char('"'),
-  )(input)
+  )
 }
 
 fn ws<
@@ -117,66 +157,99 @@ fn ws<
 >(
   f: F,
 ) -> impl Parser<&'a str, Output = O, Error = E> {
-  delimited(multispace0, f, multispace0)
+  delimited(multispace0(), f, multispace0())
 }
 
 fn array<
   'a,
   E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
->(
-  input: &'a str,
-) -> IResult<&str, Vec<JsonValue>, E> {
+>() -> impl Parser<&'a str, Output = Vec<JsonValue>, Error = E> {
   delimited(
     char('['),
-    ws(separated_list0(ws(char(',')), json_value)),
+    ws(separated_list0(ws(char(',')), json_value())),
     char(']'),
-  )(input)
+  )
 }
 
 fn object<
   'a,
   E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
->(
-  input: &'a str,
-) -> IResult<&str, HashMap<String, JsonValue>, E> {
+>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Error = E> {
   map(
     delimited(
       char('{'),
       ws(separated_list0(
         ws(char(',')),
-        separated_pair(string, ws(char(':')), json_value),
+        separated_pair(string(), ws(char(':')), json_value()),
       )),
       char('}'),
     ),
     |key_values| key_values.into_iter().collect(),
-  )(input)
+  )
 }
+
+/*
+fn json_value<'a, E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
+>() -> Box<dyn Parser<&'a str, Output = JsonValue, Error = E>> {
+  use JsonValue::*;
+
+  Box::new(alt((
+    value(Null, tag("null")),
+    map(boolean(), Bool),
+    map(string(), Str),
+    map(double, Num),
+    map(array(), Array),
+    map(object(), Object),
+  )))
+}
+*/
 
 fn json_value<
   'a,
   E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
->(
-  input: &'a str,
-) -> IResult<&str, JsonValue, E> {
-  use JsonValue::*;
+>() -> JsonParser<E> {
+  JsonParser { e: PhantomData }
+}
 
-  alt((
-    value(Null, tag("null")),
-    map(boolean, Bool),
-    map(string, Str),
-    map(double, Num),
-    map(array, Array),
-    map(object, Object),
-  ))(input)
+struct JsonParser<E> {
+  e: PhantomData<E>,
+}
+
+// the main Parser implementation is done explicitely on a real type,
+// because haaving json_value return `impl Parser` would result in
+// "recursive opaque type" errors
+impl<'a, E> Parser<&'a str> for JsonParser<E>
+where
+  E: ParseError<&'a str>
+    + FromExternalError<&'a str, ParseIntError>
+    + FromExternalError<&'a str, ()>,
+{
+  type Output = JsonValue;
+  type Error = E;
+
+  fn process<OM: nom::OutputMode>(
+    &mut self,
+    input: &'a str,
+  ) -> nom::PResult<OM, &'a str, Self::Output, Self::Error> {
+    use JsonValue::*;
+
+    alt((
+      value(Null, tag("null")),
+      map(boolean(), Bool),
+      map(string(), Str),
+      map(double(), Num),
+      map(array(), Array),
+      map(object(), Object),
+    ))
+    .process::<OM>(input)
+  }
 }
 
 fn json<
   'a,
   E: ParseError<&'a str> + FromExternalError<&'a str, ParseIntError> + FromExternalError<&'a str, ()>,
->(
-  input: &'a str,
-) -> IResult<&'a str, JsonValue, E> {
-  ws(json_value).parse(input)
+>() -> impl Parser<&'a str, Output = JsonValue, Error = E> {
+  ws(json_value())
 }
 
 fn json_bench(c: &mut Criterion) {
@@ -187,22 +260,34 @@ fn json_bench(c: &mut Criterion) {
   }  ";
 
   // test once to make sure it parses correctly
-  json::<Error<&str>>(data).unwrap();
+  json::<Error<&str>>()
+    .process::<OutputM<Emit, Emit, Complete>>(data)
+    .unwrap();
 
   // println!("data:\n{:?}", json(data));
   c.bench_function("json", |b| {
-    b.iter(|| json::<Error<&str>>(data).unwrap());
+    b.iter(|| {
+      json::<Error<&str>>()
+        .process::<OutputM<Emit, Emit, Complete>>(data)
+        .unwrap()
+    });
   });
 }
 
 static CANADA: &str = include_str!("../canada.json");
 fn canada_json(c: &mut Criterion) {
   // test once to make sure it parses correctly
-  json::<Error<&str>>(CANADA).unwrap();
+  json::<Error<&str>>()
+    .process::<OutputM<Emit, Emit, Complete>>(CANADA)
+    .unwrap();
 
   // println!("data:\n{:?}", json(data));
   c.bench_function("json canada", |b| {
-    b.iter(|| json::<Error<&str>>(CANADA).unwrap());
+    b.iter(|| {
+      json::<Error<&str>>()
+        .process::<OutputM<Emit, Emit, Complete>>(CANADA)
+        .unwrap()
+    });
   });
 }
 
@@ -214,68 +299,88 @@ fn verbose_json(c: &mut Criterion) {
   }  ";
 
   // test once to make sure it parses correctly
-  json::<VerboseError<&str>>(data).unwrap();
+  json::<VerboseError<&str>>()
+    .process::<OutputM<Emit, Emit, Complete>>(data)
+    .unwrap();
 
   // println!("data:\n{:?}", json(data));
   c.bench_function("json vebose", |b| {
-    b.iter(|| json::<VerboseError<&str>>(data).unwrap());
+    b.iter(|| {
+      json::<VerboseError<&str>>()
+        .process::<OutputM<Emit, Emit, Complete>>(data)
+        .unwrap()
+    });
   });
 }
 
 fn verbose_canada_json(c: &mut Criterion) {
   // test once to make sure it parses correctly
-  json::<VerboseError<&str>>(CANADA).unwrap();
+  json::<VerboseError<&str>>()
+    .process::<OutputM<Emit, Emit, Complete>>(CANADA)
+    .unwrap();
 
   // println!("data:\n{:?}", json(data));
   c.bench_function("json canada verbose", |b| {
-    b.iter(|| json::<VerboseError<&str>>(CANADA).unwrap());
+    b.iter(|| {
+      json::<VerboseError<&str>>()
+        .process::<OutputM<Emit, Emit, Complete>>(CANADA)
+        .unwrap()
+    });
   });
 }
 
 fn recognize_float_bytes(c: &mut Criterion) {
   println!(
     "recognize_float_bytes result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+    recognize_float::<_, (_, ErrorKind)>()
+      .process::<OutputM<Emit, Emit, Complete>>(&b"-1.234E-12"[..])
   );
   c.bench_function("recognize float bytes", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| {
+      recognize_float::<_, (_, ErrorKind)>()
+        .process::<OutputM<Emit, Emit, Complete>>(&b"-1.234E-12"[..])
+    });
   });
 }
 
 fn recognize_float_str(c: &mut Criterion) {
   println!(
     "recognize_float_str result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>("-1.234E-12")
+    recognize_float::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>("-1.234E-12")
   );
   c.bench_function("recognize float str", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>("-1.234E-12"));
+    b.iter(|| {
+      recognize_float::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>("-1.234E-12")
+    });
   });
 }
 
 fn float_bytes(c: &mut Criterion) {
   println!(
     "float_bytes result: {:?}",
-    double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+    double::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>(&b"-1.234E-12"[..])
   );
   c.bench_function("float bytes", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
+    b.iter(|| {
+      double::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>(&b"-1.234E-12"[..])
+    });
   });
 }
 
 fn float_str(c: &mut Criterion) {
   println!(
     "float_str result: {:?}",
-    double::<_, (_, ErrorKind)>("-1.234E-12")
+    double::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>("-1.234E-12")
   );
   c.bench_function("float str", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>("-1.234E-12"));
+    b.iter(|| double::<_, (_, ErrorKind)>().process::<OutputM<Emit, Emit, Complete>>("-1.234E-12"));
   });
 }
 
 use nom::Err;
 use nom::ParseTo;
 fn std_float(input: &[u8]) -> IResult<&[u8], f64, (&[u8], ErrorKind)> {
-  match recognize_float(input) {
+  match recognize_float().process::<OutputM<Emit, Emit, Complete>>(input) {
     Err(e) => Err(e),
     Ok((i, s)) => match s.parse_to() {
       Some(n) => Ok((i, n)),

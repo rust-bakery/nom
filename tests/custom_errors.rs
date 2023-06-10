@@ -7,7 +7,7 @@ use nom::error::{ErrorKind, ParseError};
 #[cfg(feature = "alloc")]
 use nom::multi::count;
 use nom::sequence::terminated;
-use nom::IResult;
+use nom::{IResult, Parser};
 
 #[derive(Debug)]
 pub struct CustomError(String);
@@ -35,14 +35,14 @@ fn test1(input: &str) -> IResult<&str, &str, CustomError> {
 
 fn test2(input: &str) -> IResult<&str, &str, CustomError> {
   //terminated!(input, test1, fix_error!(CustomError, digit))
-  terminated(test1, digit)(input)
+  terminated(test1, digit).parse(input)
 }
 
 fn test3(input: &str) -> IResult<&str, &str, CustomError> {
-  verify(test1, |s: &str| s.starts_with("abcd"))(input)
+  verify(test1, |s: &str| s.starts_with("abcd")).parse(input)
 }
 
 #[cfg(feature = "alloc")]
 fn test4(input: &str) -> IResult<&str, Vec<&str>, CustomError> {
-  count(test1, 4)(input)
+  count(test1, 4).parse(input)
 }

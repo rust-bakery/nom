@@ -9,6 +9,10 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult};
 use crate::traits::{AsChar, FindToken, Input, InputLength};
 use crate::traits::{Compare, CompareResult};
+use crate::Complete;
+use crate::Emit;
+use crate::OutputM;
+use crate::Parser;
 
 /// Recognizes one character.
 ///
@@ -26,18 +30,13 @@ use crate::traits::{Compare, CompareResult};
 /// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Char))));
 /// ```
-pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn char<I, Error: ParseError<I>>(c: char) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
 {
-  move |i: I| match (i).iter_elements().next().map(|t| {
-    let b = t.as_char() == c;
-    (&c, b)
-  }) {
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-    _ => Err(Err::Error(Error::from_char(i, c))),
-  }
+  let mut parser = super::char(c);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Recognizes one character and checks that it satisfies a predicate
@@ -55,20 +54,14 @@ where
 /// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Satisfy))));
 /// ```
-pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn satisfy<F, I, Error: ParseError<I>>(predicate: F) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
   F: Fn(char) -> bool,
 {
-  move |i: I| match (i).iter_elements().next().map(|t| {
-    let c = t.as_char();
-    let b = cond(c);
-    (c, b)
-  }) {
-    Some((c, true)) => Ok((i.take_from(c.len()), c)),
-    _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Satisfy))),
-  }
+  let mut parser = super::satisfy(predicate);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Recognizes one of the provided characters.
@@ -83,16 +76,14 @@ where
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::OneOf))));
 /// ```
-pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
-  T: FindToken<<I as Input>::Item>,
+  T: FindToken<char>,
 {
-  move |i: I| match (i).iter_elements().next().map(|c| (c, list.find_token(c))) {
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-    _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::OneOf))),
-  }
+  let mut parser = super::one_of(list);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Recognizes a character that is not in the provided characters.
@@ -107,16 +98,14 @@ where
 /// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
 /// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("a")(""), Err(Err::Error(("", ErrorKind::NoneOf))));
 /// ```
-pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
-  T: FindToken<<I as Input>::Item>,
+  T: FindToken<char>,
 {
-  move |i: I| match (i).iter_elements().next().map(|c| (c, !list.find_token(c))) {
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-    _ => Err(Err::Error(Error::from_error_kind(i, ErrorKind::NoneOf))),
-  }
+  let mut parser = super::none_of(list);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Recognizes the string "\r\n".
@@ -405,11 +394,11 @@ where
 /// You can use `digit1` in combination with [`map_res`] to parse an integer:
 ///
 /// ```
-/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
+/// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed, Parser};
 /// # use nom::combinator::map_res;
 /// # use nom::character::complete::digit1;
 /// fn parser(input: &str) -> IResult<&str, u32> {
-///   map_res(digit1, str::parse)(input)
+///   map_res(digit1, str::parse).parse(input)
 /// }
 ///
 /// assert_eq!(parser("416"), Ok(("", 416)));
@@ -703,7 +692,8 @@ where
   let (i, opt_sign) = opt(alt((
     value(false, tag(&b"-"[..])),
     value(true, tag(&b"+"[..])),
-  )))(input)?;
+  )))
+  .parse(input)?;
   let sign = opt_sign.unwrap_or(true);
 
   Ok((i, sign))
@@ -831,6 +821,7 @@ mod tests {
   use super::*;
   use crate::internal::Err;
   use crate::traits::ParseTo;
+  use crate::Parser;
   use proptest::prelude::*;
 
   macro_rules! assert_parse(
@@ -1079,7 +1070,7 @@ mod tests {
   fn full_line_windows() {
     use crate::sequence::pair;
     fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-      pair(not_line_ending, line_ending)(i)
+      pair(not_line_ending, line_ending).parse(i)
     }
     let input = b"abc\r\n";
     let output = take_full_line(input);
@@ -1090,7 +1081,7 @@ mod tests {
   fn full_line_unix() {
     use crate::sequence::pair;
     fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-      pair(not_line_ending, line_ending)(i)
+      pair(not_line_ending, line_ending).parse(i)
     }
     let input = b"abc\n";
     let output = take_full_line(input);
@@ -1161,7 +1152,7 @@ mod tests {
 
   fn digit_to_i16(input: &str) -> IResult<&str, i16> {
     let i = input;
-    let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
+    let (i, opt_sign) = opt(alt((char('+'), char('-')))).parse(i)?;
     let sign = match opt_sign {
       Some('+') => true,
       Some('-') => false,

@@ -11,7 +11,7 @@ use nom::{
   combinator::map_res,
   multi::fold,
   sequence::{delimited, pair},
-  IResult,
+  IResult, Parser,
 };
 
 // Parser definition
@@ -29,7 +29,8 @@ fn factor(input: &[u8]) -> IResult<&[u8], i64> {
       delimited(char('('), expr, char(')')),
     )),
     space0,
-  )(input)
+  )
+  .parse(input)
 }
 
 // We read an initial factor and for each time we find
@@ -48,7 +49,8 @@ fn term(input: &[u8]) -> IResult<&[u8], i64> {
         acc / val
       }
     },
-  )(input)
+  )
+  .parse_complete(input)
 }
 
 fn expr(input: &[u8]) -> IResult<&[u8], i64> {
@@ -64,7 +66,8 @@ fn expr(input: &[u8]) -> IResult<&[u8], i64> {
         acc - val
       }
     },
-  )(input)
+  )
+  .parse_complete(input)
 }
 
 #[allow(clippy::eq_op, clippy::erasing_op)]

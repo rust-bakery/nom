@@ -32,7 +32,7 @@
 //!   map_res(
 //!     take_while_m_n(2, 2, is_hex_digit),
 //!     from_hex
-//!   )(input)
+//!   ).parse(input)
 //! }
 //!
 //! fn hex_color(input: &str) -> IResult<&str, Color> {
@@ -89,6 +89,7 @@
 //! ```rust
 //! use nom::{
 //!   IResult,
+//!   Parser,
 //!   sequence::delimited,
 //!   // see the "streaming/complete" paragraph lower for an explanation of these submodules
 //!   character::complete::char,
@@ -96,7 +97,7 @@
 //! };
 //!
 //! fn parens(input: &str) -> IResult<&str, &str> {
-//!   delimited(char('('), is_not(")"), char(')'))(input)
+//!   delimited(char('('), is_not(")"), char(')')).parse(input)
 //! }
 //! ```
 //!
@@ -201,24 +202,24 @@
 //! the next, and returns the result of the first parser that succeeds:
 //!
 //! ```rust
-//! use nom::IResult;
+//! use nom::{IResult, Parser};
 //! use nom::branch::alt;
 //! use nom::bytes::complete::tag;
 //!
 //! let mut alt_tags = alt((tag("abcd"), tag("efgh")));
 //!
-//! assert_eq!(alt_tags(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
-//! assert_eq!(alt_tags(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
-//! assert_eq!(alt_tags(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
+//! assert_eq!(alt_tags.parse(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
+//! assert_eq!(alt_tags.parse(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
+//! assert_eq!(alt_tags.parse(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
 //! ```
 //!
 //! The **`opt`** combinator makes a parser optional. If the child parser returns
 //! an error, **`opt`** will still succeed and return None:
 //!
 //! ```rust
-//! use nom::{IResult, combinator::opt, bytes::complete::tag};
+//! use nom::{IResult, Parser, combinator::opt, bytes::complete::tag};
 //! fn abcd_opt(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
-//!   opt(tag("abcd"))(i)
+//!   opt(tag("abcd")).parse(i)
 //! }
 //!
 //! assert_eq!(abcd_opt(&b"abcdxxx"[..]), Ok((&b"xxx"[..], Some(&b"abcd"[..]))));
@@ -230,11 +231,11 @@
 //! ```rust
 //! # #[cfg(feature = "alloc")]
 //! # fn main() {
-//! use nom::{IResult, multi::many0, bytes::complete::tag};
+//! use nom::{IResult, Parser, multi::many0, bytes::complete::tag};
 //! use std::str;
 //!
 //! fn multi(i: &str) -> IResult<&str, Vec<&str>> {
-//!   many0(tag("abcd"))(i)
+//!   many0(tag("abcd")).parse(i)
 //! }
 //!
 //! let a = "abcdef";

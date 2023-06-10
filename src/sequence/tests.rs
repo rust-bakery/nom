@@ -90,7 +90,7 @@ fn complete() {
 #[test]
 fn pair_test() {
   fn pair_abc_def(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-    pair(tag("abc"), tag("def"))(i)
+    pair(tag("abc"), tag("def")).parse(i)
   }
 
   assert_eq!(
@@ -122,7 +122,7 @@ fn pair_test() {
 #[test]
 fn separated_pair_test() {
   fn sep_pair_abc_def(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-    separated_pair(tag("abc"), tag(","), tag("def"))(i)
+    separated_pair(tag("abc"), tag(","), tag("def")).parse(i)
   }
 
   assert_eq!(
@@ -154,7 +154,7 @@ fn separated_pair_test() {
 #[test]
 fn preceded_test() {
   fn preceded_abcd_efgh(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    preceded(tag("abcd"), tag("efgh"))(i)
+    preceded(tag("abcd"), tag("efgh")).parse(i)
   }
 
   assert_eq!(
@@ -186,7 +186,7 @@ fn preceded_test() {
 #[test]
 fn terminated_test() {
   fn terminated_abcd_efgh(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    terminated(tag("abcd"), tag("efgh"))(i)
+    terminated(tag("abcd"), tag("efgh")).parse(i)
   }
 
   assert_eq!(
@@ -218,7 +218,7 @@ fn terminated_test() {
 #[test]
 fn delimited_test() {
   fn delimited_abc_def_ghi(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    delimited(tag("abc"), tag("def"), tag("ghi"))(i)
+    delimited(tag("abc"), tag("def"), tag("ghi")).parse(i)
   }
 
   assert_eq!(

@@ -92,7 +92,8 @@ fn parse_builtin(i: &str) -> IResult<&str, BuiltIn, VerboseError<&str>> {
     // map lets us process the parsed output, in this case we know what we parsed,
     // so we ignore the input and return the BuiltIn directly
     map(tag("not"), |_| BuiltIn::Not),
-  ))(i)
+  ))
+  .parse(i)
 }
 
 /// Our boolean values are also constant, so we can do it the same way
@@ -100,7 +101,8 @@ fn parse_bool(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
   alt((
     map(tag("#t"), |_| Atom::Boolean(true)),
     map(tag("#f"), |_| Atom::Boolean(false)),
-  ))(i)
+  ))
+  .parse(i)
 }
 
 /// The next easiest thing to parse are keywords.
@@ -113,7 +115,8 @@ fn parse_keyword(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
   map(
     context("keyword", preceded(tag(":"), cut(alpha1))),
     |sym_str: &str| Atom::Keyword(sym_str.to_string()),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// Next up is number parsing. We're keeping it simple here by accepting any number (> 1)
@@ -126,7 +129,8 @@ fn parse_num(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
     map(preceded(tag("-"), digit1), |digit_str: &str| {
       Atom::Num(-digit_str.parse::<i32>().unwrap())
     }),
-  ))(i)
+  ))
+  .parse(i)
 }
 
 /// Now we take all these simple parsers and connect them.
@@ -137,12 +141,13 @@ fn parse_atom(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
     parse_bool,
     map(parse_builtin, Atom::BuiltIn),
     parse_keyword,
-  ))(i)
+  ))
+  .parse(i)
 }
 
 /// We then add the Expr layer on top
 fn parse_constant(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
-  map(parse_atom, Expr::Constant)(i)
+  map(parse_atom, Expr::Constant).parse(i)
 }
 
 /// Before continuing, we need a helper function to parse lists.
@@ -152,7 +157,7 @@ fn parse_constant(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
 ///
 /// Unlike the previous functions, this function doesn't take or consume input, instead it
 /// takes a parsing function and returns a new parsing function.
-fn s_exp<'a, O1, F>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O1, VerboseError<&'a str>>
+fn s_exp<'a, O1, F>(inner: F) -> impl Parser<&'a str, Output = O1, Error = VerboseError<&'a str>>
 where
   F: Parser<&'a str, Output = O1, Error = VerboseError<&'a str>>,
 {
@@ -178,7 +183,7 @@ fn parse_application(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
     Expr::Application(Box::new(head), tail)
   });
   // finally, we wrap it in an s-expression
-  s_exp(application_inner)(i)
+  s_exp(application_inner).parse(i)
 }
 
 /// Because `Expr::If` and `Expr::IfElse` are so similar (we easily could have
@@ -211,7 +216,7 @@ fn parse_if(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
       },
     ),
   );
-  s_exp(if_inner)(i)
+  s_exp(if_inner).parse(i)
 }
 
 /// A quoted S-expression is list data structure.
@@ -229,7 +234,8 @@ fn parse_quote(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
       preceded(tag("'"), cut(s_exp(many(0.., parse_expr)))),
     ),
     Expr::Quote,
-  )(i)
+  )
+  .parse(i)
 }
 
 /// We tie them all together again, making a top-level expression parser!
@@ -238,7 +244,8 @@ fn parse_expr(i: &str) -> IResult<&str, Expr, VerboseError<&str>> {
   preceded(
     multispace0,
     alt((parse_constant, parse_application, parse_if, parse_quote)),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// And that's it!

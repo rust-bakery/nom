@@ -4,8 +4,8 @@ use crate::branch::alt;
 use crate::bytes::complete::tag;
 use crate::character::complete::{char, digit1, sign};
 use crate::combinator::{cut, map, opt, recognize};
+use crate::error::ErrorKind;
 use crate::error::ParseError;
-use crate::error::{make_error, ErrorKind};
 use crate::internal::*;
 use crate::lib::std::ops::{Add, Shl};
 use crate::sequence::pair;
@@ -155,24 +155,7 @@ where
   I: Input<Item = u8>,
   Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
 {
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = Uint::default();
-
-    // special case to avoid shift a byte with overflow
-    if bound > 1 {
-      for byte in input.iter_elements().take(bound) {
-        res = (res << 8) + byte.into();
-      }
-    } else {
-      for byte in input.iter_elements().take(bound) {
-        res = byte.into();
-      }
-    }
-
-    Ok((input.take_from(bound), res))
-  }
+  super::be_uint(bound).parse_complete(input)
 }
 
 /// Recognizes a signed 1 byte integer.
@@ -466,16 +449,7 @@ where
   I: Input<Item = u8>,
   Uint: Default + Shl<u8, Output = Uint> + Add<Uint, Output = Uint> + From<u8>,
 {
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let mut res = Uint::default();
-    for (index, byte) in input.iter_elements().take(bound).enumerate() {
-      res = res + (Uint::from(byte) << (8 * index as u8));
-    }
-
-    Ok((input.take_from(bound), res))
-  }
+  super::le_uint(bound).parse_complete(input)
 }
 
 /// Recognizes a signed 1 byte integer.
@@ -646,14 +620,7 @@ pub fn u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
 where
   I: Input<Item = u8>,
 {
-  let bound: usize = 1;
-  if input.input_len() < bound {
-    Err(Err::Error(make_error(input, ErrorKind::Eof)))
-  } else {
-    let res = input.iter_elements().next().unwrap();
-
-    Ok((input.take_from(bound), res))
-  }
+  super::u8().parse_complete(input)
 }
 
 /// Recognizes an unsigned 2 bytes integer
@@ -682,18 +649,13 @@ where
 /// assert_eq!(le_u16(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u16, E>
+pub fn u16<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, u16, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_u16,
-    crate::number::Endianness::Little => le_u16,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_u16,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_u16,
-  }
+  move |input| super::u16(endian).parse_complete(input)
 }
 
 /// Recognizes an unsigned 3 byte integer
@@ -721,18 +683,13 @@ where
 /// assert_eq!(le_u24(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
+pub fn u24<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, u32, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_u24,
-    crate::number::Endianness::Little => le_u24,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_u24,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_u24,
-  }
+  move |input| super::u24(endian).parse_complete(input)
 }
 
 /// Recognizes an unsigned 4 byte integer
@@ -760,18 +717,13 @@ where
 /// assert_eq!(le_u32(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
+pub fn u32<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, u32, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_u32,
-    crate::number::Endianness::Little => le_u32,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_u32,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_u32,
-  }
+  move |input| super::u32(endian).parse_complete(input)
 }
 
 /// Recognizes an unsigned 8 byte integer
@@ -799,18 +751,13 @@ where
 /// assert_eq!(le_u64(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u64, E>
+pub fn u64<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, u64, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_u64,
-    crate::number::Endianness::Little => le_u64,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_u64,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_u64,
-  }
+  move |input| super::u64(endian).parse_complete(input)
 }
 
 /// Recognizes an unsigned 16 byte integer
@@ -838,18 +785,13 @@ where
 /// assert_eq!(le_u128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn u128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u128, E>
+pub fn u128<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, u128, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_u128,
-    crate::number::Endianness::Little => le_u128,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_u128,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_u128,
-  }
+  move |input| super::u128(endian).parse_complete(input)
 }
 
 /// Recognizes a signed 1 byte integer
@@ -873,7 +815,7 @@ pub fn i8<I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
 where
   I: Input<Item = u8>,
 {
-  u8.map(|x| x as i8).parse(i)
+  super::u8().map(|x| x as i8).parse_complete(i)
 }
 
 /// Recognizes a signed 2 byte integer
@@ -901,18 +843,13 @@ where
 /// assert_eq!(le_i16(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i16, E>
+pub fn i16<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, i16, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_i16,
-    crate::number::Endianness::Little => le_i16,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_i16,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_i16,
-  }
+  move |input| super::i16(endian).parse_complete(input)
 }
 
 /// Recognizes a signed 3 byte integer
@@ -940,18 +877,13 @@ where
 /// assert_eq!(le_i24(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
+pub fn i24<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, i32, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_i24,
-    crate::number::Endianness::Little => le_i24,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_i24,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_i24,
-  }
+  move |input| super::i24(endian).parse_complete(input)
 }
 
 /// Recognizes a signed 4 byte integer
@@ -979,18 +911,13 @@ where
 /// assert_eq!(le_i32(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
+pub fn i32<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, i32, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_i32,
-    crate::number::Endianness::Little => le_i32,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_i32,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_i32,
-  }
+  move |input| super::i32(endian).parse_complete(input)
 }
 
 /// Recognizes a signed 8 byte integer
@@ -1018,18 +945,13 @@ where
 /// assert_eq!(le_i64(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i64, E>
+pub fn i64<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, i64, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_i64,
-    crate::number::Endianness::Little => le_i64,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_i64,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_i64,
-  }
+  move |input| super::i64(endian).parse_complete(input)
 }
 
 /// Recognizes a signed 16 byte integer
@@ -1057,18 +979,13 @@ where
 /// assert_eq!(le_i128(&b"\x01"[..]), Err(Err::Error((&[0x01][..], ErrorKind::Eof))));
 /// ```
 #[inline]
-pub fn i128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i128, E>
+pub fn i128<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Fn(I) -> IResult<I, i128, E>
 where
   I: Input<Item = u8>,
 {
-  match endian {
-    crate::number::Endianness::Big => be_i128,
-    crate::number::Endianness::Little => le_i128,
-    #[cfg(target_endian = "big")]
-    crate::number::Endianness::Native => be_i128,
-    #[cfg(target_endian = "little")]
-    crate::number::Endianness::Native => le_i128,
-  }
+  move |input| super::i128(endian).parse_complete(input)
 }
 
 /// Recognizes a big endian 4 bytes floating point number.
@@ -1342,7 +1259,7 @@ where
         opt(alt((char('+'), char('-')))),
         cut(digit1)
       ))
-  ))(input)
+  )).parse(input)
 }
 
 // workaround until issues with minimal-lexical are fixed
@@ -1373,7 +1290,8 @@ where
       crate::bytes::complete::tag_no_case::<_, _, E>("infinity")(i.clone())
         .map_err(|_| crate::Err::Error(E::from_error_kind(i, ErrorKind::Float)))
     },
-  ))(input)
+  ))
+  .parse(input)
 }
 
 /// Recognizes a floating point number in text format
@@ -1413,7 +1331,7 @@ where
     integer = zeroes.take_from(zeroes.input_len() - 1);
   }
 
-  let (i, opt_dot) = opt(tag(&b"."[..]))(i)?;
+  let (i, opt_dot) = opt(tag(&b"."[..])).parse(i)?;
   let (i, fraction) = if opt_dot.is_none() {
     let i2 = i.clone();
     (i2, i.take(0))
@@ -1460,7 +1378,7 @@ where
   };
 
   let (i, exp) = if e {
-    cut(crate::character::complete::i32)(i)?
+    cut(crate::character::complete::i32).parse(i)?
   } else {
     (i2, 0)
   };
