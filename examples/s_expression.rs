@@ -110,7 +110,7 @@ fn parse_bool(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
 /// and `cut` to prevent back-tracking.
 ///
 /// Put plainly: `preceded(tag(":"), cut(alpha1))` means that once we see the `:`
-/// character, we have to see one or more alphabetic chararcters or the input is invalid.
+/// character, we have to see one or more alphabetic characters or the input is invalid.
 fn parse_keyword(i: &str) -> IResult<&str, Atom, VerboseError<&str>> {
   map(
     context("keyword", preceded(tag(":"), cut(alpha1))),
