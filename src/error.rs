@@ -57,7 +57,7 @@ pub trait FromExternalError<I, E> {
 }
 
 /// default error type, only contains the error' location and code
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Error<I> {
   /// position of the error in the input data
   pub input: I,

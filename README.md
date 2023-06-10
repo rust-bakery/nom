@@ -100,6 +100,7 @@ fn parse_color() {
 ## Documentation
 
 - [Reference documentation](https://docs.rs/nom)
+- [The Nominomicon: A Guide To Using Nom](https://tfpk.github.io/nominomicon/)
 - [Various design documents and tutorials](https://github.com/rust-bakery/nom/tree/main/doc)
 - [List of combinators and their behaviour](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md)
 
