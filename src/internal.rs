@@ -288,14 +288,10 @@ impl Mode for Check {
   type Output<T> = ();
 
   #[inline(always)]
-  fn bind<T, F: FnOnce() -> T>(_: F) -> Self::Output<T> {
-    ()
-  }
+  fn bind<T, F: FnOnce() -> T>(_: F) -> Self::Output<T> {}
 
   #[inline(always)]
-  fn map<T, U, F: FnOnce(T) -> U>(_: Self::Output<T>, _: F) -> Self::Output<U> {
-    ()
-  }
+  fn map<T, U, F: FnOnce(T) -> U>(_: Self::Output<T>, _: F) -> Self::Output<U> {}
 
   #[inline(always)]
   fn combine<T, U, V, F: FnOnce(T, U) -> V>(

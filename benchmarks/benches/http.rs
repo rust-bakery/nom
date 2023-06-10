@@ -70,18 +70,6 @@ fn is_version(c: u8) -> bool {
 fn line_ending<'a>()-> impl Parser<&'a[u8], Output=&'a[u8], Error=Error<&'a[u8]>>  {
   tag("\n").or(tag("\r\n"))
 }
-/*
-fn request_line<OM: OutputMode>(input: &[u8]) -> PResult<OM, &[u8], Request<'_>, Error<&[u8]>> {
-  let (input, method) = take_while1(is_token).process::<OM>(input)?;
-
-  let (input, uri) = preceded(take_while1(is_space), take_while1(is_not_space)).process::<OM>(input)?;
-  let (input, version) = delimited(take_while1(is_space), http_version(), line_ending).process::<OM>(input)?;
-
-
-  Ok((input, OM::Output::bind(|| Request {method, uri, version})))
-
-  (take_while1(is_token),  preceded(take_while1(is_space), take_while1(is_not_space)), delimited(take_while1(is_space), http_version(), line_ending))
-}*/
 
 fn request_line<'a>()-> impl Parser<&'a[u8], Output=Request<'a>, Error=Error<&'a[u8]>> {
   (take_while1(is_token),  preceded(take_while1(is_space), take_while1(is_not_space)), delimited(take_while1(is_space), http_version(), line_ending()))
@@ -99,23 +87,11 @@ fn message_header_value<'a>() -> impl Parser<&'a[u8], Output=&'a[u8], Error=Erro
 }
 
 fn message_header<'a>() ->  impl Parser<&'a[u8], Output=Header<'a>, Error=Error<&'a[u8]> >{
-  /*let (input, name) = take_while1(is_token)(input)?;
-  let (input, _) = char(':')(input)?;
-  let (input, value) = many(1.., message_header_value)(input)?;
-
-  Ok((input, Header{ name, value }))*/
-
-  separated_pair(take_while1(is_token), char(':'), many(1.., message_header_value())).map(|(name, value)|Header{ name, value })
-
+  separated_pair(take_while1(is_token), char(':'), many(1.., message_header_value()))
+    .map(|(name, value)|Header{ name, value })
 }
 
 fn request<'a>() -> impl Parser<&'a[u8], Output=(Request<'a>, Vec<Header<'a>>), Error=Error<&'a[u8]> > {
-  /*let (input, req) = request_line(input)?;
-  let (input, h) = many(1.., message_header)(input)?;
-  let (input, _) = line_ending(input)?;
-
-  Ok((input, (req, h)))*/
-
   pair(request_line(), terminated(many(1.., message_header()), line_ending()))
 }
 

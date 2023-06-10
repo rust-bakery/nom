@@ -430,17 +430,15 @@ where
         1
       };
       Err(Err::Incomplete(Needed::new(needed)))
+    } else if count >= self.m {
+      Ok((
+        input.take_from(input_len),
+        OM::Output::bind(|| input.take(input_len)),
+      ))
     } else {
-      if count >= self.m {
-        Ok((
-          input.take_from(input_len),
-          OM::Output::bind(|| input.take(input_len)),
-        ))
-      } else {
-        Err(Err::Error(OM::Error::bind(|| {
-          Error::from_error_kind(input, ErrorKind::TakeWhileMN)
-        })))
-      }
+      Err(Err::Error(OM::Error::bind(|| {
+        Error::from_error_kind(input, ErrorKind::TakeWhileMN)
+      })))
     }
   }
 }

@@ -62,7 +62,7 @@ where
           let val: O = if offset == 0 {
             byte.into()
           } else {
-            ((byte << offset) as u8 >> offset).into()
+            ((byte << offset) >> offset).into()
           };
 
           if remaining < 8 - offset {

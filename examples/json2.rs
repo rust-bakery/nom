@@ -2,15 +2,15 @@
 //static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 use nom::{
-  branch::{alt, Choice},
+  branch::alt,
   bytes::{tag, take},
   character::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
-  error::{Error, ErrorKind, ParseError},
+  error::{Error, ParseError},
   multi::{fold, separated_list0},
   number::double,
   sequence::{delimited, preceded, separated_pair},
-  Complete, Emit, IResult, Mode, OutputM, Parser,
+  Complete, Emit, Mode, OutputM, Parser,
 };
 
 use std::collections::HashMap;
@@ -198,7 +198,7 @@ fn main() {
   let data = include_str!("../benchmarks/canada.json");
 
   loop {
-    let a = json()
+    let _a = json()
       .process::<OutputM<Emit, Emit, Complete>>(data)
       .unwrap();
   }

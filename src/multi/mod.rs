@@ -290,7 +290,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(|| crate::lib::std::vec::Vec::new());
+    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
     loop {
       let len = i.input_len();
       match self
@@ -394,7 +394,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(|| crate::lib::std::vec::Vec::new());
+    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
 
     match self
       .parser
@@ -511,7 +511,7 @@ where
     &mut self,
     mut i: I,
   ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
-    let mut res = OM::Output::bind(|| crate::lib::std::vec::Vec::new());
+    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
 
     match self.parser.process::<OM>(i.clone()) {
       Err(e) => return Err(e),
@@ -818,8 +818,8 @@ where
           <F as Parser<I>>::Error::from_error_kind(input, ErrorKind::Many1Count)
         })))
       }
-      Err(Err::Failure(e)) => return Err(Err::Failure(e)),
-      Err(Err::Incomplete(i)) => return Err(Err::Incomplete(i)),
+      Err(Err::Failure(e)) => Err(Err::Failure(e)),
+      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
       Ok((mut input, _)) => {
         count += 1;
 
