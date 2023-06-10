@@ -96,7 +96,7 @@ impl Needed {
 /// Distinguishing `Failure` this from `Error` is only relevant inside the parser's code. For
 /// external consumers, both mean that parsing failed.
 ///
-/// See also: [`nom::Finish`].
+/// See also: [`Finish`].
 ///
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
