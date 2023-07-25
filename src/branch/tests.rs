@@ -2,6 +2,7 @@ use crate::branch::{alt, permutation};
 use crate::bytes::streaming::tag;
 use crate::error::ErrorKind;
 use crate::internal::{Err, IResult, Needed};
+use crate::Parser;
 #[cfg(feature = "alloc")]
 use crate::{
   error::ParseError,
@@ -12,7 +13,7 @@ use crate::{
 };
 
 #[cfg(feature = "alloc")]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ErrorStr(String);
 
 #[cfg(feature = "alloc")]
@@ -46,6 +47,8 @@ impl<I: Debug> ParseError<I> for ErrorStr {
 #[cfg(feature = "alloc")]
 #[test]
 fn alt_test() {
+  use crate::Parser;
+
   fn work(input: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
     Ok((&b""[..], input))
   }
@@ -60,13 +63,13 @@ fn alt_test() {
   }
 
   fn alt1(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
-    alt((dont_work, dont_work))(i)
+    alt((dont_work, dont_work)).parse(i)
   }
   fn alt2(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
-    alt((dont_work, work))(i)
+    alt((dont_work, work)).parse(i)
   }
   fn alt3(i: &[u8]) -> IResult<&[u8], &[u8], ErrorStr> {
-    alt((dont_work, dont_work, work2, dont_work))(i)
+    alt((dont_work, dont_work, work2, dont_work)).parse(i)
   }
   //named!(alt1, alt!(dont_work | dont_work));
   //named!(alt2, alt!(dont_work | work));
@@ -85,7 +88,7 @@ fn alt_test() {
   assert_eq!(alt3(a), Ok((a, &b""[..])));
 
   fn alt4(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    alt((tag("abcd"), tag("efgh")))(i)
+    alt((tag("abcd"), tag("efgh"))).parse(i)
   }
   let b = &b"efgh"[..];
   assert_eq!(alt4(a), Ok((&b""[..], a)));
@@ -95,7 +98,7 @@ fn alt_test() {
 #[test]
 fn alt_incomplete() {
   fn alt1(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    alt((tag("a"), tag("bc"), tag("def")))(i)
+    alt((tag("a"), tag("bc"), tag("def"))).parse(i)
   }
 
   let a = &b""[..];
@@ -114,8 +117,9 @@ fn alt_incomplete() {
 
 #[test]
 fn permutation_test() {
+  #[allow(clippy::type_complexity)]
   fn perm(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8], &[u8])> {
-    permutation((tag("abcd"), tag("efg"), tag("hi")))(i)
+    permutation((tag("abcd"), tag("efg"), tag("hi"))).parse(i)
   }
 
   let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);

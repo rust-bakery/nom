@@ -9,9 +9,9 @@ use nom::{
   branch::alt,
   character::complete::{char, digit1, one_of, space0},
   combinator::map_res,
-  multi::fold_many0,
+  multi::fold,
   sequence::{delimited, pair},
-  IResult,
+  IResult, Parser,
 };
 
 // Parser definition
@@ -29,7 +29,8 @@ fn factor(input: &[u8]) -> IResult<&[u8], i64> {
       delimited(char('('), expr, char(')')),
     )),
     space0,
-  )(input)
+  )
+  .parse(input)
 }
 
 // We read an initial factor and for each time we find
@@ -37,7 +38,8 @@ fn factor(input: &[u8]) -> IResult<&[u8], i64> {
 // the math by folding everything
 fn term(input: &[u8]) -> IResult<&[u8], i64> {
   let (input, init) = factor(input)?;
-  fold_many0(
+  fold(
+    0..,
     pair(one_of("*/"), factor),
     move || init,
     |acc, (op, val)| {
@@ -47,12 +49,14 @@ fn term(input: &[u8]) -> IResult<&[u8], i64> {
         acc / val
       }
     },
-  )(input)
+  )
+  .parse_complete(input)
 }
 
 fn expr(input: &[u8]) -> IResult<&[u8], i64> {
   let (input, init) = term(input)?;
-  fold_many0(
+  fold(
+    0..,
     pair(one_of("+-"), term),
     move || init,
     |acc, (op, val)| {
@@ -62,9 +66,11 @@ fn expr(input: &[u8]) -> IResult<&[u8], i64> {
         acc - val
       }
     },
-  )(input)
+  )
+  .parse_complete(input)
 }
 
+#[allow(clippy::eq_op, clippy::erasing_op)]
 fn arithmetic(c: &mut Criterion) {
   let data = b"  2*2 / ( 5 - 1) + 3 / 4 * (2 - 7 + 567 *12 /2) + 3*(1+2*( 45 /2));";
 

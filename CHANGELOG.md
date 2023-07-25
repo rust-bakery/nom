@@ -6,6 +6,61 @@
 
 ### Changed
 
+## 7.1.2 - 2023-01-01
+
+### Thanks
+
+- @joubs
+- @Fyko
+- @LoganDark
+- @darnuria
+- @jkugelman
+- @barower
+- @puzzlewolf
+- @epage
+- @cky
+- @wolthom
+- @w1ll-i-code
+
+### Changed
+
+- documentation fixes
+- tests fixes
+- limit the initial capacity of the result vector of `many_m_n` to 64kiB
+- bits parser now accept `Parser` implementors instead of only functions
+
+### Added
+
+- implement `Tuple` parsing for the unit type as a special case
+- implement `ErrorConvert` on the unit type to make it usable as error type for bits parsers
+- bool parser for bits input
+
+## 7.1.1 - 2022-03-14
+
+### Thanks
+
+- @ThomasdenH
+- @@SphinxKnight
+- @irevoire
+- @doehyunbaek
+- @pxeger
+- @punkeel
+- @max-sixty
+- @Xiretza
+- @5c077m4n
+- @erihsu
+- @TheNeikos
+- @LoganDark
+- @nickelc
+- @chotchki
+- @ctrlcctrlv
+
+
+### Changed
+
+- documentation fixes
+- more examples
+
 ## 7.1.0 - 2021-11-04
 
 ### Thanks
@@ -851,7 +906,7 @@ Bugfix release
 
 The 2.0 release is one of the biggest yet. It was a good opportunity to clean up some badly named combinators and fix invalid behaviours.
 
-Since this version introduces a few breaking changes, an [upgrade documentation](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_2.md) is available, detailing the steps to fix the most common migration issues. After testing on a set of 30 crates, most of them will build directly, a large part will just need to activate the "verbose-errors" compilation feature. The remaining fixes are documented.
+Since this version introduces a few breaking changes, an [upgrade documentation](https://github.com/rust-bakery/nom/blob/main/doc/archive/upgrading_to_nom_2.md) is available, detailing the steps to fix the most common migration issues. After testing on a set of 30 crates, most of them will build directly, a large part will just need to activate the "verbose-errors" compilation feature. The remaining fixes are documented.
 
 This version also adds a lot of interesting features, like the permutation combinator or whitespace separated formats support.
 
@@ -1366,7 +1421,7 @@ Considering the number of changes since the last release, this version can conta
 ### Added
 - `peek!` macro: matches the future input but does not consume it
 - `length_value!` macro: the first argument is a parser returning a `n` that can cast to usize, then applies the second parser `n` times. The macro has a variant with a third argument indicating the expected input size for the second parser
-- benchmarks are available at https://github.com/Geal/nom_benchmarks
+- benchmarks are available at https://github.com/rust-bakery/parser_benchmarks
 - more documentation
 - **Unnamed parser syntax**: warning, this is a breaking change. With this new syntax, the macro combinators do not generate functions anymore, they create blocks. That way, they can be nested, for better readability. The `named!` macro is provided to create functions from parsers. Please be aware that nesting parsers comes with a small cost of compilation time, negligible in most cases, but can quickly get to the minutes scale if not careful. If this happens, separate your parsers in multiple subfunctions.
 - `named!`, `closure!` and `call!` macros used to support the unnamed syntax
@@ -1420,63 +1475,66 @@ Considering the number of changes since the last release, this version can conta
 
 ## Compare code
 
-* [unreleased](https://github.com/Geal/nom/compare/7.0.0...HEAD)
-* [7.0.0](https://github.com/Geal/nom/compare/6.2.1...7.0.0)
-* [6.2.1](https://github.com/Geal/nom/compare/6.2.0...6.2.1)
-* [6.2.0](https://github.com/Geal/nom/compare/6.1.2...6.2.0)
-* [6.1.2](https://github.com/Geal/nom/compare/6.1.1...6.1.2)
-* [6.1.1](https://github.com/Geal/nom/compare/6.1.0...6.1.1)
-* [6.1.0](https://github.com/Geal/nom/compare/6.0.1...6.1.0)
-* [6.0.1](https://github.com/Geal/nom/compare/6.0.0...6.0.1)
-* [6.0.0](https://github.com/Geal/nom/compare/5.1.1...6.0.0)
-* [5.1.1](https://github.com/Geal/nom/compare/5.1.0...5.1.1)
-* [5.1.0](https://github.com/Geal/nom/compare/5.0.1...5.1.0)
-* [5.0.1](https://github.com/Geal/nom/compare/5.0.0...5.0.1)
-* [5.0.0](https://github.com/Geal/nom/compare/4.2.3...5.0.0)
-* [4.2.3](https://github.com/Geal/nom/compare/4.2.2...4.2.3)
-* [4.2.2](https://github.com/Geal/nom/compare/4.2.1...4.2.2)
-* [4.2.1](https://github.com/Geal/nom/compare/4.2.0...4.2.1)
-* [4.2.0](https://github.com/Geal/nom/compare/4.1.1...4.2.0)
-* [4.1.1](https://github.com/Geal/nom/compare/4.1.0...4.1.1)
-* [4.1.0](https://github.com/Geal/nom/compare/4.0.0...4.1.0)
-* [4.0.0](https://github.com/Geal/nom/compare/3.2.1...4.0.0)
-* [3.2.1](https://github.com/Geal/nom/compare/3.2.0...3.2.1)
-* [3.2.0](https://github.com/Geal/nom/compare/3.1.0...3.2.0)
-* [3.1.0](https://github.com/Geal/nom/compare/3.0.0...3.1.0)
-* [3.0.0](https://github.com/Geal/nom/compare/2.2.1...3.0.0)
-* [2.2.1](https://github.com/Geal/nom/compare/2.2.0...2.2.1)
-* [2.2.0](https://github.com/Geal/nom/compare/2.1.0...2.2.0)
-* [2.1.0](https://github.com/Geal/nom/compare/2.0.1...2.1.0)
-* [2.0.1](https://github.com/Geal/nom/compare/2.0.0...2.0.1)
-* [2.0.0](https://github.com/Geal/nom/compare/1.2.4...2.0.0)
-* [1.2.4](https://github.com/Geal/nom/compare/1.2.3...1.2.4)
-* [1.2.3](https://github.com/Geal/nom/compare/1.2.2...1.2.3)
-* [1.2.2](https://github.com/Geal/nom/compare/1.2.1...1.2.2)
-* [1.2.1](https://github.com/Geal/nom/compare/1.2.0...1.2.1)
-* [1.2.0](https://github.com/Geal/nom/compare/1.1.0...1.2.0)
-* [1.1.0](https://github.com/Geal/nom/compare/1.0.1...1.1.0)
-* [1.0.1](https://github.com/Geal/nom/compare/1.0.0...1.0.1)
-* [1.0.0](https://github.com/Geal/nom/compare/0.5.0...1.0.0)
-* [0.5.0](https://github.com/geal/nom/compare/0.4.0...0.5.0)
-* [0.4.0](https://github.com/geal/nom/compare/0.3.11...0.4.0)
-* [0.3.11](https://github.com/geal/nom/compare/0.3.10...0.3.11)
-* [0.3.10](https://github.com/geal/nom/compare/0.3.9...0.3.10)
-* [0.3.9](https://github.com/geal/nom/compare/0.3.8...0.3.9)
-* [0.3.8](https://github.com/Geal/nom/compare/0.3.7...0.3.8)
-* [0.3.7](https://github.com/Geal/nom/compare/0.3.6...0.3.7)
-* [0.3.6](https://github.com/Geal/nom/compare/0.3.5...0.3.6)
-* [0.3.5](https://github.com/Geal/nom/compare/0.3.4...0.3.5)
-* [0.3.4](https://github.com/Geal/nom/compare/0.3.3...0.3.4)
-* [0.3.3](https://github.com/Geal/nom/compare/0.3.2...0.3.3)
-* [0.3.2](https://github.com/Geal/nom/compare/0.3.1...0.3.2)
-* [0.3.1](https://github.com/Geal/nom/compare/0.3.0...0.3.1)
-* [0.3.0](https://github.com/Geal/nom/compare/0.2.2...0.3.0)
-* [0.2.2](https://github.com/Geal/nom/compare/0.2.1...0.2.2)
-* [0.2.1](https://github.com/Geal/nom/compare/0.2.0...0.2.1)
-* [0.2.0](https://github.com/Geal/nom/compare/0.1.6...0.2.0)
-* [0.1.6](https://github.com/Geal/nom/compare/0.1.5...0.1.6)
-* [0.1.5](https://github.com/Geal/nom/compare/0.1.4...0.1.5)
-* [0.1.4](https://github.com/Geal/nom/compare/0.1.3...0.1.4)
-* [0.1.3](https://github.com/Geal/nom/compare/0.1.2...0.1.3)
-* [0.1.2](https://github.com/Geal/nom/compare/0.1.1...0.1.2)
-* [0.1.1](https://github.com/Geal/nom/compare/0.1.0...0.1.1)
+* [unreleased](https://github.com/rust-bakery/nom/compare/7.1.2...HEAD)
+* [7.1.2](https://github.com/rust-bakery/nom/compare/7.1.1...7.1.2)
+* [7.1.1](https://github.com/rust-bakery/nom/compare/7.1.0...7.1.1)
+* [7.1.0](https://github.com/rust-bakery/nom/compare/7.0.0...7.1.0)
+* [7.0.0](https://github.com/rust-bakery/nom/compare/6.2.1...7.0.0)
+* [6.2.1](https://github.com/rust-bakery/nom/compare/6.2.0...6.2.1)
+* [6.2.0](https://github.com/rust-bakery/nom/compare/6.1.2...6.2.0)
+* [6.1.2](https://github.com/rust-bakery/nom/compare/6.1.1...6.1.2)
+* [6.1.1](https://github.com/rust-bakery/nom/compare/6.1.0...6.1.1)
+* [6.1.0](https://github.com/rust-bakery/nom/compare/6.0.1...6.1.0)
+* [6.0.1](https://github.com/rust-bakery/nom/compare/6.0.0...6.0.1)
+* [6.0.0](https://github.com/rust-bakery/nom/compare/5.1.1...6.0.0)
+* [5.1.1](https://github.com/rust-bakery/nom/compare/5.1.0...5.1.1)
+* [5.1.0](https://github.com/rust-bakery/nom/compare/5.0.1...5.1.0)
+* [5.0.1](https://github.com/rust-bakery/nom/compare/5.0.0...5.0.1)
+* [5.0.0](https://github.com/rust-bakery/nom/compare/4.2.3...5.0.0)
+* [4.2.3](https://github.com/rust-bakery/nom/compare/4.2.2...4.2.3)
+* [4.2.2](https://github.com/rust-bakery/nom/compare/4.2.1...4.2.2)
+* [4.2.1](https://github.com/rust-bakery/nom/compare/4.2.0...4.2.1)
+* [4.2.0](https://github.com/rust-bakery/nom/compare/4.1.1...4.2.0)
+* [4.1.1](https://github.com/rust-bakery/nom/compare/4.1.0...4.1.1)
+* [4.1.0](https://github.com/rust-bakery/nom/compare/4.0.0...4.1.0)
+* [4.0.0](https://github.com/rust-bakery/nom/compare/3.2.1...4.0.0)
+* [3.2.1](https://github.com/rust-bakery/nom/compare/3.2.0...3.2.1)
+* [3.2.0](https://github.com/rust-bakery/nom/compare/3.1.0...3.2.0)
+* [3.1.0](https://github.com/rust-bakery/nom/compare/3.0.0...3.1.0)
+* [3.0.0](https://github.com/rust-bakery/nom/compare/2.2.1...3.0.0)
+* [2.2.1](https://github.com/rust-bakery/nom/compare/2.2.0...2.2.1)
+* [2.2.0](https://github.com/rust-bakery/nom/compare/2.1.0...2.2.0)
+* [2.1.0](https://github.com/rust-bakery/nom/compare/2.0.1...2.1.0)
+* [2.0.1](https://github.com/rust-bakery/nom/compare/2.0.0...2.0.1)
+* [2.0.0](https://github.com/rust-bakery/nom/compare/1.2.4...2.0.0)
+* [1.2.4](https://github.com/rust-bakery/nom/compare/1.2.3...1.2.4)
+* [1.2.3](https://github.com/rust-bakery/nom/compare/1.2.2...1.2.3)
+* [1.2.2](https://github.com/rust-bakery/nom/compare/1.2.1...1.2.2)
+* [1.2.1](https://github.com/rust-bakery/nom/compare/1.2.0...1.2.1)
+* [1.2.0](https://github.com/rust-bakery/nom/compare/1.1.0...1.2.0)
+* [1.1.0](https://github.com/rust-bakery/nom/compare/1.0.1...1.1.0)
+* [1.0.1](https://github.com/rust-bakery/nom/compare/1.0.0...1.0.1)
+* [1.0.0](https://github.com/rust-bakery/nom/compare/0.5.0...1.0.0)
+* [0.5.0](https://github.com/rust-bakery/nom/compare/0.4.0...0.5.0)
+* [0.4.0](https://github.com/rust-bakery/nom/compare/0.3.11...0.4.0)
+* [0.3.11](https://github.com/rust-bakery/nom/compare/0.3.10...0.3.11)
+* [0.3.10](https://github.com/rust-bakery/nom/compare/0.3.9...0.3.10)
+* [0.3.9](https://github.com/rust-bakery/nom/compare/0.3.8...0.3.9)
+* [0.3.8](https://github.com/rust-bakery/nom/compare/0.3.7...0.3.8)
+* [0.3.7](https://github.com/rust-bakery/nom/compare/0.3.6...0.3.7)
+* [0.3.6](https://github.com/rust-bakery/nom/compare/0.3.5...0.3.6)
+* [0.3.5](https://github.com/rust-bakery/nom/compare/0.3.4...0.3.5)
+* [0.3.4](https://github.com/rust-bakery/nom/compare/0.3.3...0.3.4)
+* [0.3.3](https://github.com/rust-bakery/nom/compare/0.3.2...0.3.3)
+* [0.3.2](https://github.com/rust-bakery/nom/compare/0.3.1...0.3.2)
+* [0.3.1](https://github.com/rust-bakery/nom/compare/0.3.0...0.3.1)
+* [0.3.0](https://github.com/rust-bakery/nom/compare/0.2.2...0.3.0)
+* [0.2.2](https://github.com/rust-bakery/nom/compare/0.2.1...0.2.2)
+* [0.2.1](https://github.com/rust-bakery/nom/compare/0.2.0...0.2.1)
+* [0.2.0](https://github.com/rust-bakery/nom/compare/0.1.6...0.2.0)
+* [0.1.6](https://github.com/rust-bakery/nom/compare/0.1.5...0.1.6)
+* [0.1.5](https://github.com/rust-bakery/nom/compare/0.1.4...0.1.5)
+* [0.1.4](https://github.com/rust-bakery/nom/compare/0.1.3...0.1.4)
+* [0.1.3](https://github.com/rust-bakery/nom/compare/0.1.2...0.1.3)
+* [0.1.2](https://github.com/rust-bakery/nom/compare/0.1.1...0.1.2)
+* [0.1.1](https://github.com/rust-bakery/nom/compare/0.1.0...0.1.1)

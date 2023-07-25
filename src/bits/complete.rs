@@ -3,8 +3,8 @@
 
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult};
-use crate::lib::std::ops::{AddAssign, Div, RangeFrom, Shl, Shr};
-use crate::traits::{InputIter, InputLength, Slice, ToUsize};
+use crate::lib::std::ops::{AddAssign, Div, Shl, Shr};
+use crate::traits::{Input, ToUsize};
 
 /// Generates a parser taking `count` bits
 ///
@@ -34,7 +34,7 @@ pub fn take<I, O, C, E: ParseError<(I, usize)>>(
   count: C,
 ) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+  I: Input<Item = u8>,
   C: ToUsize,
   O: From<u8> + AddAssign + Shl<usize, Output = O> + Shr<usize, Output = O>,
 {
@@ -62,7 +62,7 @@ where
           let val: O = if offset == 0 {
             byte.into()
           } else {
-            ((byte << offset) as u8 >> offset).into()
+            ((byte << offset) >> offset).into()
           };
 
           if remaining < 8 - offset {
@@ -75,7 +75,7 @@ where
             offset = 0;
           }
         }
-        Ok(((input.slice(cnt..), end_offset), acc))
+        Ok(((input.take_from(cnt), end_offset), acc))
       }
     }
   }
@@ -87,7 +87,7 @@ pub fn tag<I, O, C, E: ParseError<(I, usize)>>(
   count: C,
 ) -> impl Fn((I, usize)) -> IResult<(I, usize), O, E>
 where
-  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength + Clone,
+  I: Input<Item = u8> + Clone,
   C: ToUsize,
   O: From<u8> + AddAssign + Shl<usize, Output = O> + Shr<usize, Output = O> + PartialEq,
 {
@@ -103,6 +103,29 @@ where
       }
     })
   }
+}
+
+/// Parses one specific bit as a bool.
+///
+/// # Example
+/// ```rust
+/// # use nom::bits::complete::bool;
+/// # use nom::IResult;
+/// # use nom::error::{Error, ErrorKind};
+///
+/// fn parse(input: (&[u8], usize)) -> IResult<(&[u8], usize), bool> {
+///     bool(input)
+/// }
+///
+/// assert_eq!(parse(([0b10000000].as_ref(), 0)), Ok((([0b10000000].as_ref(), 1), true)));
+/// assert_eq!(parse(([0b10000000].as_ref(), 1)), Ok((([0b10000000].as_ref(), 2), false)));
+/// ```
+pub fn bool<I, E: ParseError<(I, usize)>>(input: (I, usize)) -> IResult<(I, usize), bool, E>
+where
+  I: Input<Item = u8>,
+{
+  let (res, bit): (_, u32) = take(1usize)(input)?;
+  Ok((res, bit != 0))
 }
 
 #[cfg(test)]
@@ -145,6 +168,30 @@ mod test {
     assert_eq!(
       result,
       Ok((([0b11111111].as_ref(), 4), 0b1000110100111111111111))
+    );
+  }
+
+  #[test]
+  fn test_bool_0() {
+    let input = [0b10000000].as_ref();
+
+    let result: crate::IResult<(&[u8], usize), bool> = bool((input, 0));
+
+    assert_eq!(result, Ok(((input, 1), true)));
+  }
+
+  #[test]
+  fn test_bool_eof() {
+    let input = [0b10000000].as_ref();
+
+    let result: crate::IResult<(&[u8], usize), bool> = bool((input, 8));
+
+    assert_eq!(
+      result,
+      Err(crate::Err::Error(crate::error::Error {
+        input: (input, 8),
+        code: ErrorKind::Eof
+      }))
     );
   }
 }

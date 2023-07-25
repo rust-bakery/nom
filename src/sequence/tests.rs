@@ -1,6 +1,6 @@
 use super::*;
 use crate::bytes::streaming::{tag, take};
-use crate::error::ErrorKind;
+use crate::error::{Error, ErrorKind};
 use crate::internal::{Err, IResult, Needed};
 use crate::number::streaming::be_u16;
 
@@ -9,10 +9,13 @@ fn single_element_tuples() {
   use crate::character::complete::alpha1;
   use crate::{error::ErrorKind, Err};
 
-  let mut parser = tuple((alpha1,));
-  assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));
+  let mut parser = (alpha1,);
   assert_eq!(
-    parser("123def"),
+    crate::Parser::parse(&mut parser, "abc123def"),
+    Ok(("123def", ("abc",)))
+  );
+  assert_eq!(
+    crate::Parser::parse(&mut parser, "123def"),
     Err(Err::Error(("123def", ErrorKind::Alpha)))
   );
 }
@@ -87,7 +90,7 @@ fn complete() {
 #[test]
 fn pair_test() {
   fn pair_abc_def(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-    pair(tag("abc"), tag("def"))(i)
+    pair(tag("abc"), tag("def")).parse(i)
   }
 
   assert_eq!(
@@ -119,7 +122,7 @@ fn pair_test() {
 #[test]
 fn separated_pair_test() {
   fn sep_pair_abc_def(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-    separated_pair(tag("abc"), tag(","), tag("def"))(i)
+    separated_pair(tag("abc"), tag(","), tag("def")).parse(i)
   }
 
   assert_eq!(
@@ -151,7 +154,7 @@ fn separated_pair_test() {
 #[test]
 fn preceded_test() {
   fn preceded_abcd_efgh(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    preceded(tag("abcd"), tag("efgh"))(i)
+    preceded(tag("abcd"), tag("efgh")).parse(i)
   }
 
   assert_eq!(
@@ -183,7 +186,7 @@ fn preceded_test() {
 #[test]
 fn terminated_test() {
   fn terminated_abcd_efgh(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    terminated(tag("abcd"), tag("efgh"))(i)
+    terminated(tag("abcd"), tag("efgh")).parse(i)
   }
 
   assert_eq!(
@@ -215,7 +218,7 @@ fn terminated_test() {
 #[test]
 fn delimited_test() {
   fn delimited_abc_def_ghi(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    delimited(tag("abc"), tag("def"), tag("ghi"))(i)
+    delimited(tag("abc"), tag("def"), tag("ghi")).parse(i)
   }
 
   assert_eq!(
@@ -257,8 +260,9 @@ fn delimited_test() {
 
 #[test]
 fn tuple_test() {
+  #[allow(clippy::type_complexity)]
   fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8], &[u8])> {
-    tuple((be_u16, take(3u8), tag("fg")))(i)
+    crate::Parser::parse(&mut (be_u16, take(3u8), tag("fg")), i)
   }
 
   assert_eq!(
@@ -270,5 +274,22 @@ fn tuple_test() {
   assert_eq!(
     tuple_3(&b"abcdejk"[..]),
     Err(Err::Error(error_position!(&b"jk"[..], ErrorKind::Tag)))
+  );
+}
+
+#[test]
+#[allow(deprecated)]
+fn unit_type() {
+  assert_eq!(
+    tuple::<&'static str, (), Error<&'static str>, ()>(())("abxsbsh"),
+    Ok(("abxsbsh", ()))
+  );
+  assert_eq!(
+    tuple::<&'static str, (), Error<&'static str>, ()>(())("sdfjakdsas"),
+    Ok(("sdfjakdsas", ()))
+  );
+  assert_eq!(
+    tuple::<&'static str, (), Error<&'static str>, ()>(())(""),
+    Ok(("", ()))
   );
 }
