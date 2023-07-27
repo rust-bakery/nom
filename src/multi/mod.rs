@@ -813,11 +813,9 @@ where
       .parser
       .process::<OutputM<Check, Check, OM::Incomplete>>(input.clone())
     {
-      Err(Err::Error(_)) => {
-        Err(Err::Error(OM::Error::bind(move || {
-          <F as Parser<I>>::Error::from_error_kind(input, ErrorKind::Many1Count)
-        })))
-      }
+      Err(Err::Error(_)) => Err(Err::Error(OM::Error::bind(move || {
+        <F as Parser<I>>::Error::from_error_kind(input, ErrorKind::Many1Count)
+      }))),
       Err(Err::Failure(e)) => Err(Err::Failure(e)),
       Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
       Ok((mut input, _)) => {
