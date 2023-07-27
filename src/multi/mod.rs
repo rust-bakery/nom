@@ -814,7 +814,7 @@ where
       .process::<OutputM<Check, Check, OM::Incomplete>>(input.clone())
     {
       Err(Err::Error(_)) => {
-        return Err(Err::Error(OM::Error::bind(move || {
+        Err(Err::Error(OM::Error::bind(move || {
           <F as Parser<I>>::Error::from_error_kind(input, ErrorKind::Many1Count)
         })))
       }
