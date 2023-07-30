@@ -7,9 +7,9 @@ use nom::{
   bytes::complete::{is_a, tag, take_till, take_while},
   character::complete::{alphanumeric1 as alphanumeric, char, not_line_ending, space0 as space},
   combinator::opt,
-  multi::many0,
+  multi::many,
   sequence::{delimited, pair, terminated, tuple},
-  IResult,
+  IResult, Parser,
 };
 
 use std::collections::HashMap;
@@ -26,43 +26,30 @@ fn category(i: &str) -> IResult<&str, &str> {
   terminated(
     delimited(char('['), take_while(|c| c != ']'), char(']')),
     opt(is_a(" \r\n")),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
   let (i, key) = alphanumeric(i)?;
   let (i, _) = tuple((opt(space), tag("="), opt(space)))(i)?;
   let (i, val) = take_till(is_line_ending_or_comment)(i)?;
-  let (i, _) = opt(space)(i)?;
-  let (i, _) = opt(pair(tag(";"), not_line_ending))(i)?;
-  let (i, _) = opt(space_or_line_ending)(i)?;
+  let (i, _) = opt(space).parse_complete(i)?;
+  let (i, _) = opt(pair(tag(";"), not_line_ending)).parse_complete(i)?;
+  let (i, _) = opt(space_or_line_ending).parse_complete(i)?;
   Ok((i, (key, val)))
 }
 
-fn keys_and_values_aggregator(i: &str) -> IResult<&str, Vec<(&str, &str)>> {
-  many0(key_value)(i)
-}
-
 fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
-  match keys_and_values_aggregator(input) {
-    Ok((i, tuple_vec)) => Ok((i, tuple_vec.into_iter().collect())),
-    Err(e) => Err(e),
-  }
+  many(0.., key_value).parse_complete(input)
 }
 
 fn category_and_keys(i: &str) -> IResult<&str, (&str, HashMap<&str, &str>)> {
-  pair(category, keys_and_values)(i)
-}
-
-fn categories_aggregator(i: &str) -> IResult<&str, Vec<(&str, HashMap<&str, &str>)>> {
-  many0(category_and_keys)(i)
+  pair(category, keys_and_values).parse_complete(i)
 }
 
 fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str>>> {
-  match categories_aggregator(input) {
-    Ok((i, tuple_vec)) => Ok((i, tuple_vec.into_iter().collect())),
-    Err(e) => Err(e),
-  }
+  many(0.., category_and_keys).parse_complete(input)
 }
 
 fn bench_ini_str(c: &mut Criterion) {

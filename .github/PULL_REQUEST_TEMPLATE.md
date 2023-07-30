@@ -14,14 +14,14 @@ Please provide the following information with this pull request:
 
 - related issue number (I need some context to understand a PR with a lot of
 code, except for documentation typos)
-- a test case reproducing the issue. You can write it in [issues.rs](https://github.com/Geal/nom/blob/main/tests/issues.rs)
+- a test case reproducing the issue. You can write it in [issues.rs](https://github.com/rust-bakery/nom/blob/main/tests/issues.rs)
 - if adding a new combinator, please add code documentation and some unit tests
-in the same file. Also, please update the [combinator list](https://github.com/Geal/nom/blob/main/doc/choosing_a_combinator.md)
+in the same file. Also, please update the [combinator list](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md)
 
 ## Code style
 
-This project follows a [code style](https://github.com/Geal/nom/blob/main/rustfmt.toml)
-checked by [rustfmt][https://github.com/rust-lang-nursery/rustfmt].
+This project follows a [code style](https://github.com/rust-bakery/nom/blob/main/rustfmt.toml)
+checked by [rustfmt](https://github.com/rust-lang/rustfmt).
 
 Please avoid cosmetic fixes unrelated to the pull request. Keeping the changes
 as small as possible increase your chances of getting this merged quickly.
