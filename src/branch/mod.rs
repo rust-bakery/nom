@@ -178,22 +178,34 @@ impl<
     Input: Clone,
     Output,
     Error: ParseError<Input>,
-    A: Parser<Input, Output, Error>,
-  > Alt<Input, Output, Error> for [A; N]
+    A: Parser<Input, Output = Output, Error = Error>,
+  > Parser<Input> for Choice<[A; N]>
 {
-  fn choice(&mut self, input: Input) -> IResult<Input, Output, Error> {
+  type Output = Output;
+  type Error = Error;
+
+  #[inline]
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    input: Input,
+  ) -> crate::PResult<OM, Input, Self::Output, Self::Error> {
     let mut error = None;
 
-    for branch in self {
-      match branch.parse(input.clone()) {
+    for branch in &mut self.parser {
+      match branch.process::<OM>(input.clone()) {
+        //branch.parse(input.clone()) {
         Err(Err::Error(e)) => error = Some(e),
         res => return res,
       }
     }
 
     match error {
-      Some(e) => Err(Err::Error(Error::append(input, ErrorKind::Alt, e))),
-      None => Err(Err::Error(Error::from_error_kind(input, ErrorKind::Alt))),
+      Some(e) => Err(Err::Error(OM::Error::map(e, |err| {
+        Error::append(input, ErrorKind::Alt, err)
+      }))),
+      None => Err(Err::Error(OM::Error::bind(|| {
+        Error::from_error_kind(input, ErrorKind::Alt)
+      }))),
     }
   }
 }

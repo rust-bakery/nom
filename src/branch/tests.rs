@@ -118,7 +118,7 @@ fn alt_incomplete() {
 #[test]
 fn alt_array() {
   fn alt1(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    alt([tag("a"), tag("bc"), tag("def")])(i)
+    alt([tag("a"), tag("bc"), tag("def")]).parse(i)
   }
 
   let a = &b"a"[..];
