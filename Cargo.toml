@@ -50,6 +50,7 @@ proptest = "=1.0.0"
 [package.metadata.docs.rs]
 features = ["alloc", "std", "docsrs"]
 all-features = true
+rustdoc-args = ["--generate-link-to-definition"]
 
 [profile.bench]
 debug = true
