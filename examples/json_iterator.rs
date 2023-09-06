@@ -213,18 +213,18 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
   escaped(alphanumeric, '\\', one_of("\"n\\"))(i)
 }
 
-fn string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
+fn string(i: &str) -> IResult<&str, &str> {
   context(
     "string",
     preceded(char('\"'), cut(terminated(parse_str, char('\"')))),
   )(i)
 }
 
-fn boolean<'a>(input: &'a str) -> IResult<&'a str, bool> {
+fn boolean(input: &str) -> IResult<&str, bool> {
   alt((map(tag("false"), |_| false), map(tag("true"), |_| true))).parse(input)
 }
 
-fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn array(i: &str) -> IResult<&str, ()> {
   context(
     "array",
     preceded(
@@ -237,11 +237,11 @@ fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {
   )(i)
 }
 
-fn key_value<'a>(i: &'a str) -> IResult<&'a str, (&'a str, ())> {
+fn key_value(i: &str) -> IResult<&str, (&str, ())> {
   separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value).parse(i)
 }
 
-fn hash<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn hash(i: &str) -> IResult<&str, ()> {
   context(
     "map",
     preceded(
@@ -254,7 +254,7 @@ fn hash<'a>(i: &'a str) -> IResult<&'a str, ()> {
   )(i)
 }
 
-fn value<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn value(i: &str) -> IResult<&str, ()> {
   preceded(
     sp,
     alt((
