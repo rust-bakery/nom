@@ -1,7 +1,6 @@
 //! Traits input types have to implement to work with nom combinators
 use core::iter::Enumerate;
 use core::str::CharIndices;
-use std::ops::Deref;
 
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
@@ -662,7 +661,7 @@ impl AsBytes for [u8] {
 impl<'a, const N: usize> AsBytes for &'a [u8; N] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    self.deref()
+    self.as_slice()
   }
 }
 
