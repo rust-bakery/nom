@@ -193,8 +193,10 @@ impl<
 
     for branch in &mut self.parser {
       match branch.process::<OM>(input.clone()) {
-        //branch.parse(input.clone()) {
-        Err(Err::Error(e)) => error = Some(e),
+        Err(Err::Error(e)) => match error {
+          None => error = Some(e),
+          Some(err) => error = Some(OM::Error::combine(err, e, |e1, e2| e1.or(e2))),
+        },
         res => return res,
       }
     }
