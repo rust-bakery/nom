@@ -296,11 +296,10 @@ fn main() {
         .filter_map(|(_, v)| v.object())
         .flatten()
         .filter_map(|(user, v)| v.object().map(|o| (user, o)))
-        .map(|(user, o)| {
+        .flat_map(|(user, o)| {
           o.filter(|(k, _)| *k == "city")
             .filter_map(move |(_, v)| v.string().map(|s| (user, s)))
         })
-        .flatten()
         .collect();
 
       println!("res = {:?}", s);
