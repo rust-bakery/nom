@@ -1,3 +1,4 @@
+use std::ops::Range;
 use super::{length_data, length_value, many0_count, many1_count};
 use crate::{
   bytes::streaming::tag,
@@ -572,7 +573,7 @@ fn many_test() {
   );
 
   fn many_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(2..=1, tag("a")).parse(i)
+    many(Range::default(), tag("a")).parse(i)
   }
 
   let a = &b"a"[..];
@@ -727,7 +728,7 @@ fn fold_test() {
   );
 
   fn fold_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(2..=1, tag("a"), Vec::new, fold_into_vec).parse(i)
+    fold(Range::default(), tag("a"), Vec::new, fold_into_vec).parse(i)
   }
 
   let a = &b"a"[..];
