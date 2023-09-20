@@ -1,18 +1,564 @@
 //! Traits input types have to implement to work with nom combinators
+use core::iter::Enumerate;
+use core::str::CharIndices;
+
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
-use crate::lib::std::iter::{Copied, Enumerate};
-use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use crate::lib::std::iter::Copied;
+use crate::lib::std::ops::{
+  Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
+};
 use crate::lib::std::slice::Iter;
 use crate::lib::std::str::from_utf8;
-use crate::lib::std::str::CharIndices;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
+use crate::IsStreaming;
+use crate::Mode;
 
 #[cfg(feature = "alloc")]
 use crate::lib::std::string::String;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
+
+/// Parser input types must implement this trait
+pub trait Input: Clone + Sized {
+  /// The current input type is a sequence of that `Item` type.
+  ///
+  /// Example: `u8` for `&[u8]` or `char` for `&str`
+  type Item;
+
+  /// An iterator over the input type, producing the item
+  type Iter: Iterator<Item = Self::Item>;
+
+  /// An iterator over the input type, producing the item and its byte position
+  /// If we're iterating over `&str`, the position
+  /// corresponds to the byte index of the character
+  type IterIndices: Iterator<Item = (usize, Self::Item)>;
+
+  /// Calculates the input length, as indicated by its name,
+  /// and the name of the trait itself
+  fn input_len(&self) -> usize;
+
+  /// Returns a slice of `index` bytes. panics if index > length
+  fn take(&self, index: usize) -> Self;
+  /// Returns a slice starting at `index` bytes. panics if index > length
+  fn take_from(&self, index: usize) -> Self;
+  /// Split the stream at the `index` byte offset. panics if index > length
+  fn take_split(&self, index: usize) -> (Self, Self);
+
+  /// Returns the byte position of the first element satisfying the predicate
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool;
+
+  /// Returns an iterator over the elements
+  fn iter_elements(&self) -> Self::Iter;
+  /// Returns an iterator over the elements and their byte offsets
+  fn iter_indices(&self) -> Self::IterIndices;
+
+  /// Get the byte offset from the element's position in the stream
+  fn slice_index(&self, count: usize) -> Result<usize, Needed>;
+
+  /// Looks for the first element of the input type for which the condition returns true,
+  /// and returns the input up to this position.
+  ///
+  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(n) => Ok(self.take_split(n)),
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  /// Looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position.
+  ///
+  /// Fails if the produced slice is empty.
+  ///
+  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
+  fn split_at_position1<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
+      Some(n) => Ok(self.take_split(n)),
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  /// Looks for the first element of the input type for which the condition returns true,
+  /// and returns the input up to this position.
+  ///
+  /// *complete version*: If no element is found matching the condition, this will return the whole input
+  fn split_at_position_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      res => res,
+    }
+  }
+
+  /// Looks for the first element of the input type for which the condition returns true
+  /// and returns the input up to this position.
+  ///
+  /// Fails if the produced slice is empty.
+  ///
+  /// *complete version*: If no element is found matching the condition, this will return the whole input
+  fn split_at_position1_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(_)) => {
+        if self.input_len() == 0 {
+          Err(Err::Error(E::from_error_kind(self.clone(), e)))
+        } else {
+          Ok(self.take_split(self.input_len()))
+        }
+      }
+      res => res,
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          let len = self.input_len();
+          Ok((self.take_from(len), OM::Output::bind(|| self.take(len))))
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(0) => Err(Err::Error(OM::Error::bind(|| {
+        E::from_error_kind(self.clone(), e)
+      }))),
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          let len = self.input_len();
+          if len == 0 {
+            Err(Err::Error(OM::Error::bind(|| {
+              E::from_error_kind(self.clone(), e)
+            })))
+          } else {
+            Ok((self.take_from(len), OM::Output::bind(|| self.take(len))))
+          }
+        }
+      }
+    }
+  }
+}
+
+impl<'a> Input for &'a [u8] {
+  type Item = u8;
+  type Iter = Copied<Iter<'a, u8>>;
+  type IterIndices = Enumerate<Self::Iter>;
+
+  fn input_len(&self) -> usize {
+    self.len()
+  }
+
+  #[inline]
+  fn take(&self, index: usize) -> Self {
+    &self[0..index]
+  }
+
+  fn take_from(&self, index: usize) -> Self {
+    &self[index..]
+  }
+  #[inline]
+  fn take_split(&self, index: usize) -> (Self, Self) {
+    let (prefix, suffix) = self.split_at(index);
+    (suffix, prefix)
+  }
+
+  #[inline]
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.iter().position(|b| predicate(*b))
+  }
+
+  #[inline]
+  fn iter_elements(&self) -> Self::Iter {
+    self.iter().copied()
+  }
+
+  #[inline]
+  fn iter_indices(&self) -> Self::IterIndices {
+    self.iter_elements().enumerate()
+  }
+
+  #[inline]
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
+    if self.len() >= count {
+      Ok(count)
+    } else {
+      Err(Needed::new(count - self.len()))
+    }
+  }
+
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(i) => Ok(self.take_split(i)),
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  fn split_at_position1<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(i) => Ok(self.take_split(i)),
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(i) => Ok(self.take_split(i)),
+      None => Ok(self.take_split(self.len())),
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(i) => Ok(self.take_split(i)),
+      None => {
+        if self.is_empty() {
+          Err(Err::Error(E::from_error_kind(self, e)))
+        } else {
+          Ok(self.take_split(self.len()))
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          Ok((
+            self.take_from(self.len()),
+            OM::Output::bind(|| self.take(self.len())),
+          ))
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(0) => Err(Err::Error(OM::Error::bind(|| {
+        E::from_error_kind(self.clone(), e)
+      }))),
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else if self.is_empty() {
+          Err(Err::Error(OM::Error::bind(|| {
+            E::from_error_kind(self.clone(), e)
+          })))
+        } else {
+          Ok((
+            self.take_from(self.len()),
+            OM::Output::bind(|| self.take(self.len())),
+          ))
+        }
+      }
+    }
+  }
+}
+
+impl<'a> Input for &'a str {
+  type Item = char;
+  type Iter = Chars<'a>;
+  type IterIndices = CharIndices<'a>;
+
+  fn input_len(&self) -> usize {
+    self.len()
+  }
+
+  #[inline]
+  fn take(&self, index: usize) -> Self {
+    &self[..index]
+  }
+
+  #[inline]
+  fn take_from(&self, index: usize) -> Self {
+    &self[index..]
+  }
+
+  // return byte index
+  #[inline]
+  fn take_split(&self, index: usize) -> (Self, Self) {
+    let (prefix, suffix) = self.split_at(index);
+    (suffix, prefix)
+  }
+
+  fn position<P>(&self, predicate: P) -> Option<usize>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    self.find(predicate)
+  }
+
+  #[inline]
+  fn iter_elements(&self) -> Self::Iter {
+    self.chars()
+  }
+
+  #[inline]
+  fn iter_indices(&self) -> Self::IterIndices {
+    self.char_indices()
+  }
+
+  #[inline]
+  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
+    let mut cnt = 0;
+    for (index, _) in self.char_indices() {
+      if cnt == count {
+        return Ok(index);
+      }
+      cnt += 1;
+    }
+    if cnt == count {
+      return Ok(self.len());
+    }
+    Err(Needed::Unknown)
+  }
+
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      // find() returns a byte index that is already in the slice at a char boundary
+      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  fn split_at_position1<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      // find() returns a byte index that is already in the slice at a char boundary
+      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      None => Err(Err::Incomplete(Needed::new(1))),
+    }
+  }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      // find() returns a byte index that is already in the slice at a char boundary
+      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // the end of slice is a char boundary
+      None => unsafe {
+        Ok((
+          self.get_unchecked(self.len()..),
+          self.get_unchecked(..self.len()),
+        ))
+      },
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      // find() returns a byte index that is already in the slice at a char boundary
+      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      None => {
+        if self.is_empty() {
+          Err(Err::Error(E::from_error_kind(self, e)))
+        } else {
+          // the end of slice is a char boundary
+          unsafe {
+            Ok((
+              self.get_unchecked(self.len()..),
+              self.get_unchecked(..self.len()),
+            ))
+          }
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      Some(n) => unsafe {
+        // find() returns a byte index that is already in the slice at a char boundary
+        Ok((
+          self.get_unchecked(n..),
+          OM::Output::bind(|| self.get_unchecked(..n)),
+        ))
+      },
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          // the end of slice is a char boundary
+          unsafe {
+            Ok((
+              self.get_unchecked(self.len()..),
+              OM::Output::bind(|| self.get_unchecked(..self.len())),
+            ))
+          }
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(OM::Error::bind(|| {
+        E::from_error_kind(self.clone(), e)
+      }))),
+      Some(n) => unsafe {
+        // find() returns a byte index that is already in the slice at a char boundary
+        Ok((
+          self.get_unchecked(n..),
+          OM::Output::bind(|| self.get_unchecked(..n)),
+        ))
+      },
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else if self.len() == 0 {
+          Err(Err::Error(OM::Error::bind(|| {
+            E::from_error_kind(self.clone(), e)
+          })))
+        } else {
+          // the end of slice is a char boundary
+          unsafe {
+            Ok((
+              self.get_unchecked(self.len()..),
+              OM::Output::bind(|| self.get_unchecked(..self.len())),
+            ))
+          }
+        }
+      }
+    }
+  }
+}
 
 /// Abstract method to calculate the input length
 pub trait InputLength {
@@ -109,7 +655,7 @@ impl AsBytes for str {
 impl<'a> AsBytes for &'a [u8] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    *self
+    self
   }
 }
 
@@ -120,35 +666,23 @@ impl AsBytes for [u8] {
   }
 }
 
-macro_rules! as_bytes_array_impls {
-  ($($N:expr)+) => {
-    $(
-      impl<'a> AsBytes for &'a [u8; $N] {
-        #[inline(always)]
-        fn as_bytes(&self) -> &[u8] {
-          *self
-        }
-      }
-
-      impl AsBytes for [u8; $N] {
-        #[inline(always)]
-        fn as_bytes(&self) -> &[u8] {
-          self
-        }
-      }
-    )+
-  };
+impl<'a, const N: usize> AsBytes for &'a [u8; N] {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    *self
+  }
 }
 
-as_bytes_array_impls! {
-     0  1  2  3  4  5  6  7  8  9
-    10 11 12 13 14 15 16 17 18 19
-    20 21 22 23 24 25 26 27 28 29
-    30 31 32
+impl<const N: usize> AsBytes for [u8; N] {
+  #[inline(always)]
+  fn as_bytes(&self) -> &[u8] {
+    self
+  }
 }
 
 /// Transforms common types to a char for basic token parsing
-pub trait AsChar {
+#[allow(clippy::len_without_is_empty)]
+pub trait AsChar: Copy {
   /// makes a char from self
   fn as_char(self) -> char;
 
@@ -178,7 +712,7 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    (self >= 0x41 && self <= 0x5A) || (self >= 0x61 && self <= 0x7A)
+    matches!(self, 0x41..=0x5A | 0x61..=0x7A)
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -186,17 +720,15 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    self >= 0x30 && self <= 0x39
+    matches!(self, 0x30..=0x39)
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    (self >= 0x30 && self <= 0x39)
-      || (self >= 0x41 && self <= 0x46)
-      || (self >= 0x61 && self <= 0x66)
+    matches!(self, 0x30..=0x39 | 0x41..=0x46 | 0x61..=0x66)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
-    self >= 0x30 && self <= 0x37
+    matches!(self, 0x30..=0x37)
   }
   #[inline]
   fn len(self) -> usize {
@@ -210,7 +742,7 @@ impl<'a> AsChar for &'a u8 {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    (*self >= 0x41 && *self <= 0x5A) || (*self >= 0x61 && *self <= 0x7A)
+    matches!(*self, 0x41..=0x5A | 0x61..=0x7A)
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -218,17 +750,15 @@ impl<'a> AsChar for &'a u8 {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    *self >= 0x30 && *self <= 0x39
+    matches!(*self, 0x30..=0x39)
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    (*self >= 0x30 && *self <= 0x39)
-      || (*self >= 0x41 && *self <= 0x46)
-      || (*self >= 0x61 && *self <= 0x66)
+    matches!(*self, 0x30..=0x39 | 0x41..=0x46 | 0x61..=0x66)
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
-    *self >= 0x30 && *self <= 0x37
+    matches!(*self, 0x30..=0x37)
   }
   #[inline]
   fn len(self) -> usize {
@@ -298,412 +828,9 @@ impl<'a> AsChar for &'a char {
   }
 }
 
-/// Abstracts common iteration operations on the input type
-pub trait InputIter {
-  /// The current input type is a sequence of that `Item` type.
-  ///
-  /// Example: `u8` for `&[u8]` or `char` for `&str`
-  type Item;
-  /// An iterator over the input type, producing the item and its position
-  /// for use with [Slice]. If we're iterating over `&str`, the position
-  /// corresponds to the byte index of the character
-  type Iter: Iterator<Item = (usize, Self::Item)>;
-
-  /// An iterator over the input type, producing the item
-  type IterElem: Iterator<Item = Self::Item>;
-
-  /// Returns an iterator over the elements and their byte offsets
-  fn iter_indices(&self) -> Self::Iter;
-  /// Returns an iterator over the elements
-  fn iter_elements(&self) -> Self::IterElem;
-  /// Finds the byte position of the element
-  fn position<P>(&self, predicate: P) -> Option<usize>
-  where
-    P: Fn(Self::Item) -> bool;
-  /// Get the byte offset from the element's position in the stream
-  fn slice_index(&self, count: usize) -> Result<usize, Needed>;
-}
-
-/// Abstracts slicing operations
-pub trait InputTake: Sized {
-  /// Returns a slice of `count` bytes. panics if count > length
-  fn take(&self, count: usize) -> Self;
-  /// Split the stream at the `count` byte offset. panics if count > length
-  fn take_split(&self, count: usize) -> (Self, Self);
-}
-
-impl<'a> InputIter for &'a [u8] {
-  type Item = u8;
-  type Iter = Enumerate<Self::IterElem>;
-  type IterElem = Copied<Iter<'a, u8>>;
-
-  #[inline]
-  fn iter_indices(&self) -> Self::Iter {
-    self.iter_elements().enumerate()
-  }
-  #[inline]
-  fn iter_elements(&self) -> Self::IterElem {
-    self.iter().copied()
-  }
-  #[inline]
-  fn position<P>(&self, predicate: P) -> Option<usize>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    self.iter().position(|b| predicate(*b))
-  }
-  #[inline]
-  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
-    if self.len() >= count {
-      Ok(count)
-    } else {
-      Err(Needed::new(count - self.len()))
-    }
-  }
-}
-
-impl<'a> InputTake for &'a [u8] {
-  #[inline]
-  fn take(&self, count: usize) -> Self {
-    &self[0..count]
-  }
-  #[inline]
-  fn take_split(&self, count: usize) -> (Self, Self) {
-    let (prefix, suffix) = self.split_at(count);
-    (suffix, prefix)
-  }
-}
-
-impl<'a> InputIter for &'a str {
-  type Item = char;
-  type Iter = CharIndices<'a>;
-  type IterElem = Chars<'a>;
-  #[inline]
-  fn iter_indices(&self) -> Self::Iter {
-    self.char_indices()
-  }
-  #[inline]
-  fn iter_elements(&self) -> Self::IterElem {
-    self.chars()
-  }
-  fn position<P>(&self, predicate: P) -> Option<usize>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    for (o, c) in self.char_indices() {
-      if predicate(c) {
-        return Some(o);
-      }
-    }
-    None
-  }
-  #[inline]
-  fn slice_index(&self, count: usize) -> Result<usize, Needed> {
-    let mut cnt = 0;
-    for (index, _) in self.char_indices() {
-      if cnt == count {
-        return Ok(index);
-      }
-      cnt += 1;
-    }
-    if cnt == count {
-      return Ok(self.len());
-    }
-    Err(Needed::Unknown)
-  }
-}
-
-impl<'a> InputTake for &'a str {
-  #[inline]
-  fn take(&self, count: usize) -> Self {
-    &self[..count]
-  }
-
-  // return byte index
-  #[inline]
-  fn take_split(&self, count: usize) -> (Self, Self) {
-    let (prefix, suffix) = self.split_at(count);
-    (suffix, prefix)
-  }
-}
-
-/// Dummy trait used for default implementations (currently only used for `InputTakeAtPosition` and `Compare`).
-///
-/// When implementing a custom input type, it is possible to use directly the
-/// default implementation: If the input type implements `InputLength`, `InputIter`,
-/// `InputTake` and `Clone`, you can implement `UnspecializedInput` and get
-/// a default version of `InputTakeAtPosition` and `Compare`.
-///
-/// For performance reasons, you might want to write a custom implementation of
-/// `InputTakeAtPosition` (like the one for `&[u8]`).
-pub trait UnspecializedInput {}
-
-/// Methods to take as much input as possible until the provided function returns true for the current element.
-///
-/// A large part of nom's basic parsers are built using this trait.
-pub trait InputTakeAtPosition: Sized {
-  /// The current input type is a sequence of that `Item` type.
-  ///
-  /// Example: `u8` for `&[u8]` or `char` for `&str`
-  type Item;
-
-  /// Looks for the first element of the input type for which the condition returns true,
-  /// and returns the input up to this position.
-  ///
-  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-
-  /// Looks for the first element of the input type for which the condition returns true
-  /// and returns the input up to this position.
-  ///
-  /// Fails if the produced slice is empty.
-  ///
-  /// *streaming version*: If no element is found matching the condition, this will return `Incomplete`
-  fn split_at_position1<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-
-  /// Looks for the first element of the input type for which the condition returns true,
-  /// and returns the input up to this position.
-  ///
-  /// *complete version*: If no element is found matching the condition, this will return the whole input
-  fn split_at_position_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-
-  /// Looks for the first element of the input type for which the condition returns true
-  /// and returns the input up to this position.
-  ///
-  /// Fails if the produced slice is empty.
-  ///
-  /// *complete version*: If no element is found matching the condition, this will return the whole input
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool;
-}
-
-impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputTakeAtPosition
-  for T
-{
-  type Item = <T as InputIter>::Item;
-
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.position(predicate) {
-      Some(n) => Ok(self.take_split(n)),
-      None => Err(Err::Incomplete(Needed::new(1))),
-    }
-  }
-
-  fn split_at_position1<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.position(predicate) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
-      Some(n) => Ok(self.take_split(n)),
-      None => Err(Err::Incomplete(Needed::new(1))),
-    }
-  }
-
-  fn split_at_position_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.split_at_position(predicate) {
-      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
-      res => res,
-    }
-  }
-
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.split_at_position1(predicate, e) {
-      Err(Err::Incomplete(_)) => {
-        if self.input_len() == 0 {
-          Err(Err::Error(E::from_error_kind(self.clone(), e)))
-        } else {
-          Ok(self.take_split(self.input_len()))
-        }
-      }
-      res => res,
-    }
-  }
-}
-
-impl<'a> InputTakeAtPosition for &'a [u8] {
-  type Item = u8;
-
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.iter().position(|c| predicate(*c)) {
-      Some(i) => Ok(self.take_split(i)),
-      None => Err(Err::Incomplete(Needed::new(1))),
-    }
-  }
-
-  fn split_at_position1<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.iter().position(|c| predicate(*c)) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some(i) => Ok(self.take_split(i)),
-      None => Err(Err::Incomplete(Needed::new(1))),
-    }
-  }
-
-  fn split_at_position_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.iter().position(|c| predicate(*c)) {
-      Some(i) => Ok(self.take_split(i)),
-      None => Ok(self.take_split(self.input_len())),
-    }
-  }
-
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.iter().position(|c| predicate(*c)) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      Some(i) => Ok(self.take_split(i)),
-      None => {
-        if self.is_empty() {
-          Err(Err::Error(E::from_error_kind(self, e)))
-        } else {
-          Ok(self.take_split(self.input_len()))
-        }
-      }
-    }
-  }
-}
-
-impl<'a> InputTakeAtPosition for &'a str {
-  type Item = char;
-
-  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.find(predicate) {
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      None => Err(Err::Incomplete(Needed::new(1))),
-    }
-  }
-
-  fn split_at_position1<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.find(predicate) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      None => Err(Err::Incomplete(Needed::new(1))),
-    }
-  }
-
-  fn split_at_position_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.find(predicate) {
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      // the end of slice is a char boundary
-      None => unsafe {
-        Ok((
-          self.get_unchecked(self.len()..),
-          self.get_unchecked(..self.len()),
-        ))
-      },
-    }
-  }
-
-  fn split_at_position1_complete<P, E: ParseError<Self>>(
-    &self,
-    predicate: P,
-    e: ErrorKind,
-  ) -> IResult<Self, Self, E>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.find(predicate) {
-      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      None => {
-        if self.is_empty() {
-          Err(Err::Error(E::from_error_kind(self, e)))
-        } else {
-          // the end of slice is a char boundary
-          unsafe {
-            Ok((
-              self.get_unchecked(self.len()..),
-              self.get_unchecked(..self.len()),
-            ))
-          }
-        }
-      }
-    }
-  }
-}
-
 /// Indicates whether a comparison was successful, an error, or
 /// if more data was needed
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum CompareResult {
   /// Comparison was successful
   Ok,
@@ -749,22 +876,6 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
         }
       }
     }
-
-    /*
-    let len = self.len();
-    let blen = t.len();
-    let m = if len < blen { len } else { blen };
-    let reduced = &self[..m];
-    let b = &t[..m];
-
-    if reduced != b {
-      CompareResult::Error
-    } else if m < blen {
-      CompareResult::Incomplete
-    } else {
-      CompareResult::Ok
-    }
-    */
   }
 
   #[inline(always)]
@@ -776,46 +887,6 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     {
       CompareResult::Error
     } else if self.len() < t.len() {
-      CompareResult::Incomplete
-    } else {
-      CompareResult::Ok
-    }
-  }
-}
-
-impl<
-    T: InputLength + InputIter<Item = u8> + InputTake + UnspecializedInput,
-    O: InputLength + InputIter<Item = u8> + InputTake,
-  > Compare<O> for T
-{
-  #[inline(always)]
-  fn compare(&self, t: O) -> CompareResult {
-    let pos = self
-      .iter_elements()
-      .zip(t.iter_elements())
-      .position(|(a, b)| a != b);
-
-    match pos {
-      Some(_) => CompareResult::Error,
-      None => {
-        if self.input_len() >= t.input_len() {
-          CompareResult::Ok
-        } else {
-          CompareResult::Incomplete
-        }
-      }
-    }
-  }
-
-  #[inline(always)]
-  fn compare_no_case(&self, t: O) -> CompareResult {
-    if self
-      .iter_elements()
-      .zip(t.iter_elements())
-      .any(|(a, b)| lowercase_byte(a) != lowercase_byte(b))
-    {
-      CompareResult::Error
-    } else if self.input_len() < t.input_len() {
       CompareResult::Incomplete
     } else {
       CompareResult::Ok
@@ -998,139 +1069,54 @@ impl<'a, R: FromStr> ParseTo<R> for &'a str {
   }
 }
 
-/// Slicing operations using ranges.
-///
-/// This trait is loosely based on
-/// `Index`, but can actually return
-/// something else than a `&[T]` or `&str`
-pub trait Slice<R> {
-  /// Slices self according to the range argument
-  fn slice(&self, range: R) -> Self;
+impl<const N: usize> InputLength for [u8; N] {
+  #[inline]
+  fn input_len(&self) -> usize {
+    self.len()
+  }
 }
 
-macro_rules! impl_fn_slice {
-  ( $ty:ty ) => {
-    fn slice(&self, range: $ty) -> Self {
-      &self[range]
-    }
-  };
+impl<'a, const N: usize> InputLength for &'a [u8; N] {
+  #[inline]
+  fn input_len(&self) -> usize {
+    self.len()
+  }
 }
 
-macro_rules! slice_range_impl {
-  ( [ $for_type:ident ], $ty:ty ) => {
-    impl<'a, $for_type> Slice<$ty> for &'a [$for_type] {
-      impl_fn_slice!($ty);
-    }
-  };
-  ( $for_type:ty, $ty:ty ) => {
-    impl<'a> Slice<$ty> for &'a $for_type {
-      impl_fn_slice!($ty);
-    }
-  };
+impl<'a, const N: usize> Compare<[u8; N]> for &'a [u8] {
+  #[inline(always)]
+  fn compare(&self, t: [u8; N]) -> CompareResult {
+    self.compare(&t[..])
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: [u8; N]) -> CompareResult {
+    self.compare_no_case(&t[..])
+  }
 }
 
-macro_rules! slice_ranges_impl {
-  ( [ $for_type:ident ] ) => {
-    slice_range_impl! {[$for_type], Range<usize>}
-    slice_range_impl! {[$for_type], RangeTo<usize>}
-    slice_range_impl! {[$for_type], RangeFrom<usize>}
-    slice_range_impl! {[$for_type], RangeFull}
-  };
-  ( $for_type:ty ) => {
-    slice_range_impl! {$for_type, Range<usize>}
-    slice_range_impl! {$for_type, RangeTo<usize>}
-    slice_range_impl! {$for_type, RangeFrom<usize>}
-    slice_range_impl! {$for_type, RangeFull}
-  };
+impl<'a, 'b, const N: usize> Compare<&'b [u8; N]> for &'a [u8] {
+  #[inline(always)]
+  fn compare(&self, t: &'b [u8; N]) -> CompareResult {
+    self.compare(&t[..])
+  }
+
+  #[inline(always)]
+  fn compare_no_case(&self, t: &'b [u8; N]) -> CompareResult {
+    self.compare_no_case(&t[..])
+  }
 }
 
-slice_ranges_impl! {str}
-slice_ranges_impl! {[T]}
-
-macro_rules! array_impls {
-  ($($N:expr)+) => {
-    $(
-      impl InputLength for [u8; $N] {
-        #[inline]
-        fn input_len(&self) -> usize {
-          self.len()
-        }
-      }
-
-      impl<'a> InputLength for &'a [u8; $N] {
-        #[inline]
-        fn input_len(&self) -> usize {
-          self.len()
-        }
-      }
-
-      impl<'a> InputIter for &'a [u8; $N] {
-        type Item = u8;
-        type Iter = Enumerate<Self::IterElem>;
-        type IterElem = Copied<Iter<'a, u8>>;
-
-        fn iter_indices(&self) -> Self::Iter {
-          (&self[..]).iter_indices()
-        }
-
-        fn iter_elements(&self) -> Self::IterElem {
-          (&self[..]).iter_elements()
-        }
-
-        fn position<P>(&self, predicate: P) -> Option<usize>
-          where P: Fn(Self::Item) -> bool {
-          (&self[..]).position(predicate)
-        }
-
-        fn slice_index(&self, count: usize) -> Result<usize, Needed> {
-          (&self[..]).slice_index(count)
-        }
-      }
-
-      impl<'a> Compare<[u8; $N]> for &'a [u8] {
-        #[inline(always)]
-        fn compare(&self, t: [u8; $N]) -> CompareResult {
-          self.compare(&t[..])
-        }
-
-        #[inline(always)]
-        fn compare_no_case(&self, t: [u8;$N]) -> CompareResult {
-          self.compare_no_case(&t[..])
-        }
-      }
-
-      impl<'a,'b> Compare<&'b [u8; $N]> for &'a [u8] {
-        #[inline(always)]
-        fn compare(&self, t: &'b [u8; $N]) -> CompareResult {
-          self.compare(&t[..])
-        }
-
-        #[inline(always)]
-        fn compare_no_case(&self, t: &'b [u8;$N]) -> CompareResult {
-          self.compare_no_case(&t[..])
-        }
-      }
-
-      impl FindToken<u8> for [u8; $N] {
-        fn find_token(&self, token: u8) -> bool {
-          memchr::memchr(token, &self[..]).is_some()
-        }
-      }
-
-      impl<'a> FindToken<&'a u8> for [u8; $N] {
-        fn find_token(&self, token: &u8) -> bool {
-          self.find_token(*token)
-        }
-      }
-    )+
-  };
+impl<const N: usize> FindToken<u8> for [u8; N] {
+  fn find_token(&self, token: u8) -> bool {
+    memchr::memchr(token, &self[..]).is_some()
+  }
 }
 
-array_impls! {
-     0  1  2  3  4  5  6  7  8  9
-    10 11 12 13 14 15 16 17 18 19
-    20 21 22 23 24 25 26 27 28 29
-    30 31 32
+impl<'a, const N: usize> FindToken<&'a u8> for [u8; N] {
+  fn find_token(&self, token: &u8) -> bool {
+    self.find_token(*token)
+  }
 }
 
 /// Abstracts something which can extend an `Extend`.
@@ -1330,6 +1316,10 @@ impl<I> ErrorConvert<error::VerboseError<(I, usize)>> for error::VerboseError<I>
   }
 }
 
+impl ErrorConvert<()> for () {
+  fn convert(self) {}
+}
+
 #[cfg(feature = "std")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
 /// Helper trait to show a byte slice as a hex dump
@@ -1381,7 +1371,7 @@ impl HexDisplay for [u8] {
       v.push(b'\t');
 
       for &byte in chunk {
-        if (byte >= 32 && byte <= 126) || byte >= 128 {
+        if matches!(byte, 32..=126 | 128..=255) {
           v.push(byte);
         } else {
           v.push(b'.');
@@ -1407,6 +1397,241 @@ impl HexDisplay for str {
   }
 }
 
+/// A saturating iterator for usize.
+pub struct SaturatingIterator {
+  count: usize,
+}
+
+impl Iterator for SaturatingIterator {
+  type Item = usize;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    let old_count = self.count;
+    self.count = self.count.saturating_add(1);
+    Some(old_count)
+  }
+}
+
+/// Abstractions for range-like types.
+pub trait NomRange<Idx> {
+  /// The saturating iterator type.
+  type Saturating: Iterator<Item = Idx>;
+  /// The bounded iterator type.
+  type Bounded: Iterator<Item = Idx>;
+
+  /// `true` if `item` is contained in the range.
+  fn contains(&self, item: &Idx) -> bool;
+
+  /// Returns the bounds of this range.
+  fn bounds(&self) -> (Bound<Idx>, Bound<Idx>);
+
+  /// `true` if the range is inverted.
+  fn is_inverted(&self) -> bool;
+
+  /// Creates a saturating iterator.
+  /// A saturating iterator counts the number of iterations starting from 0 up to the upper bound of this range.
+  /// If the upper bound is infinite the iterator saturates at the largest representable value of its type and
+  /// returns it for all further elements.
+  fn saturating_iter(&self) -> Self::Saturating;
+
+  /// Creates a bounded iterator.
+  /// A bounded iterator counts the number of iterations starting from 0 up to the upper bound of this range.
+  /// If the upper bounds is infinite the iterator counts up until the amount of iterations has reached the
+  /// largest representable value of its type and then returns `None` for all further elements.
+  fn bounded_iter(&self) -> Self::Bounded;
+}
+
+impl NomRange<usize> for Range<usize> {
+  type Saturating = Range<usize>;
+  type Bounded = Range<usize>;
+
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
+    (Bound::Included(self.start), Bound::Excluded(self.end))
+  }
+
+  fn contains(&self, item: &usize) -> bool {
+    RangeBounds::contains(self, item)
+  }
+
+  fn is_inverted(&self) -> bool {
+    !(self.start < self.end)
+  }
+
+  fn saturating_iter(&self) -> Self::Saturating {
+    if self.end == 0 {
+      1..0
+    } else {
+      0..self.end - 1
+    }
+  }
+
+  fn bounded_iter(&self) -> Self::Bounded {
+    if self.end == 0 {
+      1..0
+    } else {
+      0..self.end - 1
+    }
+  }
+}
+
+impl NomRange<usize> for RangeInclusive<usize> {
+  type Saturating = Range<usize>;
+  type Bounded = Range<usize>;
+
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
+    (Bound::Included(*self.start()), Bound::Included(*self.end()))
+  }
+
+  fn contains(&self, item: &usize) -> bool {
+    RangeBounds::contains(self, item)
+  }
+
+  fn is_inverted(&self) -> bool {
+    !RangeInclusive::contains(self, self.start())
+  }
+
+  fn saturating_iter(&self) -> Self::Saturating {
+    0..*self.end()
+  }
+
+  fn bounded_iter(&self) -> Self::Bounded {
+    0..*self.end()
+  }
+}
+
+impl NomRange<usize> for RangeFrom<usize> {
+  type Saturating = SaturatingIterator;
+  type Bounded = Range<usize>;
+
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
+    (Bound::Included(self.start), Bound::Unbounded)
+  }
+
+  fn contains(&self, item: &usize) -> bool {
+    RangeBounds::contains(self, item)
+  }
+
+  fn is_inverted(&self) -> bool {
+    false
+  }
+
+  fn saturating_iter(&self) -> Self::Saturating {
+    SaturatingIterator { count: 0 }
+  }
+
+  fn bounded_iter(&self) -> Self::Bounded {
+    0..core::usize::MAX
+  }
+}
+
+impl NomRange<usize> for RangeTo<usize> {
+  type Saturating = Range<usize>;
+  type Bounded = Range<usize>;
+
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
+    (Bound::Unbounded, Bound::Excluded(self.end))
+  }
+
+  fn contains(&self, item: &usize) -> bool {
+    RangeBounds::contains(self, item)
+  }
+
+  fn is_inverted(&self) -> bool {
+    false
+  }
+
+  fn saturating_iter(&self) -> Self::Saturating {
+    if self.end == 0 {
+      1..0
+    } else {
+      0..self.end - 1
+    }
+  }
+
+  fn bounded_iter(&self) -> Self::Bounded {
+    if self.end == 0 {
+      1..0
+    } else {
+      0..self.end - 1
+    }
+  }
+}
+
+impl NomRange<usize> for RangeToInclusive<usize> {
+  type Saturating = Range<usize>;
+  type Bounded = Range<usize>;
+
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
+    (Bound::Unbounded, Bound::Included(self.end))
+  }
+
+  fn contains(&self, item: &usize) -> bool {
+    RangeBounds::contains(self, item)
+  }
+
+  fn is_inverted(&self) -> bool {
+    false
+  }
+
+  fn saturating_iter(&self) -> Self::Saturating {
+    0..self.end
+  }
+
+  fn bounded_iter(&self) -> Self::Bounded {
+    0..self.end
+  }
+}
+
+impl NomRange<usize> for RangeFull {
+  type Saturating = SaturatingIterator;
+  type Bounded = Range<usize>;
+
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
+    (Bound::Unbounded, Bound::Unbounded)
+  }
+
+  fn contains(&self, item: &usize) -> bool {
+    RangeBounds::contains(self, item)
+  }
+
+  fn is_inverted(&self) -> bool {
+    false
+  }
+
+  fn saturating_iter(&self) -> Self::Saturating {
+    SaturatingIterator { count: 0 }
+  }
+
+  fn bounded_iter(&self) -> Self::Bounded {
+    0..core::usize::MAX
+  }
+}
+
+impl NomRange<usize> for usize {
+  type Saturating = Range<usize>;
+  type Bounded = Range<usize>;
+
+  fn bounds(&self) -> (Bound<usize>, Bound<usize>) {
+    (Bound::Included(*self), Bound::Included(*self))
+  }
+
+  fn contains(&self, item: &usize) -> bool {
+    self == item
+  }
+
+  fn is_inverted(&self) -> bool {
+    false
+  }
+
+  fn saturating_iter(&self) -> Self::Saturating {
+    0..*self
+  }
+
+  fn bounded_iter(&self) -> Self::Bounded {
+    0..*self
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -1425,13 +1650,39 @@ mod tests {
 
   #[test]
   fn test_offset_str() {
-    let s = "abcřèÂßÇd123";
-    let a = &s[..];
+    let a = "abcřèÂßÇd123";
     let b = &a[7..];
     let c = &a[..5];
     let d = &a[5..9];
     assert_eq!(a.offset(b), 7);
     assert_eq!(a.offset(c), 0);
     assert_eq!(a.offset(d), 5);
+  }
+
+  #[test]
+  fn test_slice_index() {
+    let a = "abcřèÂßÇd123";
+    assert_eq!(a.slice_index(0), Ok(0));
+    assert_eq!(a.slice_index(2), Ok(2));
+  }
+
+  #[test]
+  fn test_slice_index_utf8() {
+    let a = "a¡€💢€¡a";
+
+    for (c, len) in a.chars().zip([1, 2, 3, 4, 3, 2, 1]) {
+      assert_eq!(c.len(), len);
+    }
+
+    assert_eq!(a.slice_index(0), Ok(0));
+    assert_eq!(a.slice_index(1), Ok(1));
+    assert_eq!(a.slice_index(2), Ok(3));
+    assert_eq!(a.slice_index(3), Ok(6));
+    assert_eq!(a.slice_index(4), Ok(10));
+    assert_eq!(a.slice_index(5), Ok(13));
+    assert_eq!(a.slice_index(6), Ok(15));
+    assert_eq!(a.slice_index(7), Ok(16));
+
+    assert!(a.slice_index(8).is_err());
   }
 }

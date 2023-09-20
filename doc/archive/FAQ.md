@@ -65,7 +65,7 @@ error: aborting due to previous error(s)
 error: Could not compile `nom`.
 ```
 
-If the error message is not helpful, please reach out on the [Gitter chat](https://gitter.im/Geal/nom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) or the IRC channel (#nom on freenode), and show
+If the error message is not helpful, please reach out on the [Gitter chat](https://gitter.im/Geal/nom) or the IRC channel (#nom on freenode), and show
 your code and the error message you got.
 
 ### nom 1.0 does not compile on Rust older than 1.4

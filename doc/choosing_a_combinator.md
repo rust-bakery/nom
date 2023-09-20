@@ -11,14 +11,14 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [char](https://docs.rs/nom/latest/nom/character/complete/fn.char.html) | `char('a')` |  `"abc"` | `Ok(("bc", 'a'))` |Matches one character (works with non ASCII chars too) | 
-| [is_a](https://docs.rs/nom/latest/nom/bytes/complete/fn.is_a.html) | ` is_a("ab")` |  `"ababc"` | `Ok(("c", "abab"))` |Matches a sequence of any of the characters passed as arguments|
+| [is_a](https://docs.rs/nom/latest/nom/bytes/complete/fn.is_a.html) | `is_a("ab")` |  `"abbac"` | `Ok(("c", "abba"))` |Matches a sequence of any of the characters passed as arguments|
 | [is_not](https://docs.rs/nom/latest/nom/bytes/complete/fn.is_not.html) | `is_not("cd")` |  `"ababc"` | `Ok(("c", "abab"))` |Matches a sequence of none of the characters passed as arguments|
 | [one_of](https://docs.rs/nom/latest/nom/character/complete/fn.one_of.html) | `one_of("abc")` |  `"abc"` | `Ok(("bc", 'a'))` |Matches one of the provided characters (works with non ASCII characters too)|
 | [none_of](https://docs.rs/nom/latest/nom/character/complete/fn.none_of.html) | `none_of("abc")` |  `"xyab"` | `Ok(("yab", 'x'))` |Matches anything but the provided characters|
 | [tag](https://docs.rs/nom/latest/nom/bytes/complete/fn.tag.html) | `tag("hello")` |  `"hello world"` | `Ok((" world", "hello"))` |Recognizes a specific suite of characters or bytes|
 | [tag_no_case](https://docs.rs/nom/latest/nom/bytes/complete/fn.tag_no_case.html) | `tag_no_case("hello")` |  `"HeLLo World"` | `Ok((" World", "HeLLo"))` |Case insensitive comparison. Note that case insensitive comparison is not well defined for unicode, and that you might have bad surprises|
 | [take](https://docs.rs/nom/latest/nom/bytes/complete/fn.take.html) | `take(4)` |  `"hello"` | `Ok(("o", "hell"))` |Takes a specific number of bytes or characters|
-| [take_while](https://docs.rs/nom/latest/nom/bytes/complete/fn.take_while.html) | `take_while(is_alphabetic)` |  `"abc123"` | `Ok(("123", "abc"))` |Returns the longest list of bytes for which the provided function returns true. `take_while1` does the same, but must return at least one character|
+| [take_while](https://docs.rs/nom/latest/nom/bytes/complete/fn.take_while.html) | `take_while(is_alphabetic)` |  `"abc123"` | `Ok(("123", "abc"))` |Returns the longest list of bytes for which the provided function returns true. `take_while1` does the same, but must return at least one character, while `take_while_m_n` must return between m and n|
 | [take_till](https://docs.rs/nom/latest/nom/bytes/complete/fn.take_till.html) | `take_till(is_alphabetic)` |  `"123abc"` | `Ok(("abc", "123"))` |Returns the longest list of bytes or characters until the provided function returns true. `take_till1` does the same, but must return at least one character. This is the reverse behaviour from `take_while`: `take_till(f)` is equivalent to `take_while(\|c\| !f(c))`|
 | [take_until](https://docs.rs/nom/latest/nom/bytes/complete/fn.take_until.html) | `take_until("world")` |  `"Hello world"` | `Ok(("world", "Hello "))` |Returns the longest list of bytes or characters until the provided tag is found. `take_until1` does the same, but must return at least one character|
 
@@ -27,7 +27,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | combinator | usage | input | output | comment |
 |---|---|---|---|---|
 | [alt](https://docs.rs/nom/latest/nom/branch/fn.alt.html) | `alt((tag("ab"), tag("cd")))` |  `"cdef"` | `Ok(("ef", "cd"))` |Try a list of parsers and return the result of the first successful one|
-| [permutation](https://docs.rs/nom/latest/nom/branch/fn.permutation.html) | `permutation(tag("ab"), tag("cd"), tag("12"))` | `"cd12abc"` | `Ok(("c", ("ab", "cd", "12"))` |Succeeds when all its child parser have succeeded, whatever the order|
+| [permutation](https://docs.rs/nom/latest/nom/branch/fn.permutation.html) | `permutation((tag("ab"), tag("cd"), tag("12")))` | `"cd12abc"` | `Ok(("c", ("ab", "cd", "12"))` |Succeeds when all its child parser have succeeded, whatever the order|
 
 ## Sequence combinators
 
@@ -38,7 +38,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | [terminated](https://docs.rs/nom/latest/nom/sequence/fn.terminated.html) | `terminated(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", "ab"))` ||
 | [pair](https://docs.rs/nom/latest/nom/sequence/fn.pair.html) | `pair(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", ("ab", "XY")))` ||
 | [separated_pair](https://docs.rs/nom/latest/nom/sequence/fn.separated_pair.html) | `separated_pair(tag("hello"), char(','), tag("world"))` | `"hello,world!"` | `Ok(("!", ("hello", "world")))` ||
-| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `tuple((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` |Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
+| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` | Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
 
 ## Applying a parser multiple times
 
@@ -46,6 +46,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 |---|---|---|---|---|
 | [count](https://docs.rs/nom/latest/nom/multi/fn.count.html) | `count(take(2), 3)` | `"abcdefgh"` | `Ok(("gh", vec!["ab", "cd", "ef"]))` |Applies the child parser a specified number of times|
 | [many0](https://docs.rs/nom/latest/nom/multi/fn.many0.html) | `many0(tag("ab"))` |  `"abababc"` | `Ok(("c", vec!["ab", "ab", "ab"]))` |Applies the parser 0 or more times and returns the list of results in a Vec. `many1` does the same operation but must return at least one element|
+| [many0_count](https://docs.rs/nom/latest/nom/multi/fn.many0_count.html) | `many0_count(tag("ab"))` | `"abababc"` | `Ok(("c", 3))` |Applies the parser 0 or more times and returns how often it was applicable. `many1_count` does the same operation but the parser must apply at least once|
 | [many_m_n](https://docs.rs/nom/latest/nom/multi/fn.many_m_n.html) | `many_m_n(1, 3, tag("ab"))` | `"ababc"` | `Ok(("c", vec!["ab", "ab"]))` |Applies the parser between m and n times (n included) and returns the list of results in a Vec|
 | [many_till](https://docs.rs/nom/latest/nom/multi/fn.many_till.html) | `many_till(tag( "ab" ), tag( "ef" ))` | `"ababefg"` | `Ok(("g", (vec!["ab", "ab"], "ef")))` |Applies the first parser until the second applies. Returns a tuple containing the list of results from the first in a Vec and the result of the second|
 | [separated_list0](https://docs.rs/nom/latest/nom/multi/fn.separated_list0.html) | `separated_list0(tag(","), tag("ab"))` | `"ab,ab,ab."` | `Ok((".", vec!["ab", "ab", "ab"]))` |`separated_list1` works like `separated_list0` but must returns at least one element|
@@ -75,19 +76,27 @@ The following parsers could be found on [docs.rs number section](https://docs.rs
 
 ## Modifiers
 
-- [`cond`](https://docs.rs/nom/latest/nom/combinator/fn.cond.html): Conditional combinator. Wraps another parser and calls it if the condition is met
-- [`Parser::flat_map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.flat_map): method to map a new parser from the output of the first parser, then apply that parser over the rest of the input
-- [`flat_map`](https://docs.rs/nom/latest/nom/combinator/fn.flat_map.html): function variant of `Parser::flat_map`
-- [`Parser::map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.map): method to map a function on the result of a parser
+
+- [`Parser::and`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.and): method to create a parser by applying the supplied parser to the rest of the input after applying `self`, returning their results as a tuple (like `sequence::tuple` but only takes one parser)
+- [`Parser::and_then`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.and_then): method to create a parser from applying another parser to the output of `self`
+- [`map_parser`](https://docs.rs/nom/latest/nom/combinator/fn.map_parser.html): function variant of `Parser::and_then`
+- [`Parser::map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.map): method to map a function on the output of `self`
 - [`map`](https://docs.rs/nom/latest/nom/combinator/fn.map.html): function variant of `Parser::map`
+- [`Parser::flat_map`](https://docs.rs/nom/latest/nom/trait.Parser.html#method.flat_map): method to create a parser which will map a parser returning function (such as `take` or something which returns a parser) on the output of `self`, then apply that parser over the rest of the input. That is, this method accepts a parser-returning function which consumes the output of `self`, the resulting parser gets applied to the rest of the input
+- [`flat_map`](https://docs.rs/nom/latest/nom/combinator/fn.flat_map.html): function variant of `Parser::flat_map`
+- [`cond`](https://docs.rs/nom/latest/nom/combinator/fn.cond.html): Conditional combinator. Wraps another parser and calls it if the condition is met
 - [`map_opt`](https://docs.rs/nom/latest/nom/combinator/fn.map_opt.html): Maps a function returning an `Option` on the output of a parser
 - [`map_res`](https://docs.rs/nom/latest/nom/combinator/fn.map_res.html): Maps a function returning a `Result` on the output of a parser
+- [`into`](https://docs.rs/nom/latest/nom/combinator/fn.into.html): Converts the child parser's result to another type
 - [`not`](https://docs.rs/nom/latest/nom/combinator/fn.not.html): Returns a result only if the embedded parser returns `Error` or `Incomplete`. Does not consume the input
 - [`opt`](https://docs.rs/nom/latest/nom/combinator/fn.opt.html): Make the underlying parser optional
+- [`cut`](https://docs.rs/nom/latest/nom/combinator/fn.cut.html): Transform recoverable error into unrecoverable failure (commitment to current branch)
 - [`peek`](https://docs.rs/nom/latest/nom/combinator/fn.peek.html): Returns a result without consuming the input
 - [`recognize`](https://docs.rs/nom/latest/nom/combinator/fn.recognize.html): If the child parser was successful, return the consumed input as the produced value
 - [`consumed`](https://docs.rs/nom/latest/nom/combinator/fn.consumed.html): If the child parser was successful, return a tuple of the consumed input and the produced output.
 - [`verify`](https://docs.rs/nom/latest/nom/combinator/fn.verify.html): Returns the result of the child parser if it satisfies a verification function
+- [`value`](https://docs.rs/nom/latest/nom/combinator/fn.value.html): Returns a provided value if the child parser was successful
+- [`all_consuming`](https://docs.rs/nom/latest/nom/combinator/fn.all_consuming.html): Returns the result of the child parser only if it consumed all the input
 
 ## Error management and debugging
 
@@ -142,5 +151,6 @@ Alternatively there are ready to use functions:
 - [`not_line_ending`](https://docs.rs/nom/latest/nom/character/complete/fn.not_line_ending.html): Recognizes a string of any char except `\r` or `\n`
 - [`oct_digit0`](https://docs.rs/nom/latest/nom/character/complete/fn.oct_digit0.html): Recognizes zero or more octal characters: `[0-7]`. [`oct_digit1`](https://docs.rs/nom/latest/nom/character/complete/fn.oct_digit1.html) does the same but returns at least one character
 - [`rest`](https://docs.rs/nom/latest/nom/combinator/fn.rest.html): Return the remaining input
+- [`rest_len`](https://docs.rs/nom/latest/nom/combinator/fn.rest_len.html): Return the length of the remaining input
 - [`space0`](https://docs.rs/nom/latest/nom/character/complete/fn.space0.html): Recognizes zero or more spaces and tabs. [`space1`](https://docs.rs/nom/latest/nom/character/complete/fn.space1.html) does the same but returns at least one character
 - [`tab`](https://docs.rs/nom/latest/nom/character/complete/fn.tab.html): Matches a tab character `\t`

@@ -6,6 +6,9 @@
 use crate::internal::Parser;
 use crate::lib::std::fmt;
 
+#[cfg(feature = "alloc")]
+use crate::alloc::borrow::ToOwned;
+
 /// This trait must be implemented by the error type of a nom parser.
 ///
 /// There are already implementations of it for `(Input, ErrorKind)`
@@ -54,7 +57,7 @@ pub trait FromExternalError<I, E> {
 }
 
 /// default error type, only contains the error' location and code
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Error<I> {
   /// position of the error in the input data
   pub input: I,
@@ -97,6 +100,28 @@ impl<I: fmt::Display> fmt::Display for Error<I> {
 
 #[cfg(feature = "std")]
 impl<I: fmt::Debug + fmt::Display> std::error::Error for Error<I> {}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<Error<&[u8]>> for Error<crate::lib::std::vec::Vec<u8>> {
+  fn from(value: Error<&[u8]>) -> Self {
+    Error {
+      input: value.input.to_owned(),
+      code: value.code,
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<Error<&str>> for Error<crate::lib::std::string::String> {
+  fn from(value: Error<&str>) -> Self {
+    Error {
+      input: value.input.to_owned(),
+      code: value.code,
+    }
+  }
+}
 
 // for backward compatibility, keep those trait implementations
 // for the previously used error type
@@ -147,7 +172,7 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 /// it can be used to display user friendly error messages
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerboseError<I> {
   /// List of errors accumulated by `VerboseError`, containing the affected
   /// part of input data, and some context
@@ -156,7 +181,7 @@ pub struct VerboseError<I> {
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 /// Error context for `VerboseError`
 pub enum VerboseErrorKind {
   /// Static string added by the `context` function
@@ -225,6 +250,34 @@ impl<I: fmt::Display> fmt::Display for VerboseError<I> {
 #[cfg(feature = "std")]
 impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseError<I> {}
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<VerboseError<&[u8]>> for VerboseError<crate::lib::std::vec::Vec<u8>> {
+  fn from(value: VerboseError<&[u8]>) -> Self {
+    VerboseError {
+      errors: value
+        .errors
+        .into_iter()
+        .map(|(i, e)| (i.to_owned(), e))
+        .collect(),
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl From<VerboseError<&str>> for VerboseError<crate::lib::std::string::String> {
+  fn from(value: VerboseError<&str>) -> Self {
+    VerboseError {
+      errors: value
+        .errors
+        .into_iter()
+        .map(|(i, e)| (i.to_owned(), e))
+        .collect(),
+    }
+  }
+}
+
 use crate::internal::{Err, IResult};
 
 /// Create a new error from an input position, a static string and an existing error.
@@ -235,7 +288,7 @@ pub fn context<I: Clone, E: ContextError<I>, F, O>(
   mut f: F,
 ) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Parser<I, O, E>,
+  F: Parser<I, Output = O, Error = E>,
 {
   move |i: I| match f.parse(i.clone()) {
     Ok(o) => Ok(o),
@@ -417,6 +470,8 @@ pub enum ErrorKind {
   Float,
   Satisfy,
   Fail,
+  Many,
+  Fold,
 }
 
 #[rustfmt::skip]
@@ -477,6 +532,8 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Float                     => 73,
     ErrorKind::Satisfy                   => 74,
     ErrorKind::Fail                      => 75,
+    ErrorKind::Many                      => 76,
+    ErrorKind::Fold                      => 77,
   }
 }
 
@@ -539,6 +596,8 @@ impl ErrorKind {
       ErrorKind::Float                     => "Float",
       ErrorKind::Satisfy                   => "Satisfy",
       ErrorKind::Fail                      => "Fail",
+      ErrorKind::Many                      => "Many",
+      ErrorKind::Fold                      => "Fold",
     }
   }
 }

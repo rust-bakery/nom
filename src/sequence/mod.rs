@@ -5,6 +5,7 @@ mod tests;
 
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
+use crate::{Check, OutputM, OutputMode, PResult};
 
 /// Gets an object from the first parser,
 /// then gets another object from the second parser.
@@ -13,31 +14,28 @@ use crate::internal::{IResult, Parser};
 /// * `first` The first parser to apply.
 /// * `second` The second parser to apply.
 ///
+/// # Example
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
-/// # use nom::Needed::Size;
 /// use nom::sequence::pair;
 /// use nom::bytes::complete::tag;
+/// use nom::{error::ErrorKind, Err, Parser};
 ///
 /// let mut parser = pair(tag("abc"), tag("efg"));
 ///
-/// assert_eq!(parser("abcefg"), Ok(("", ("abc", "efg"))));
-/// assert_eq!(parser("abcefghij"), Ok(("hij", ("abc", "efg"))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("abcefg"), Ok(("", ("abc", "efg"))));
+/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", ("abc", "efg"))));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
 pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
-  mut first: F,
-  mut second: G,
-) -> impl FnMut(I) -> IResult<I, (O1, O2), E>
+  first: F,
+  second: G,
+) -> impl Parser<I, Output = (O1, O2), Error = E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
+  F: Parser<I, Output = O1, Error = E>,
+  G: Parser<I, Output = O2, Error = E>,
 {
-  move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    second.parse(input).map(|(i, o2)| (i, (o1, o2)))
-  }
+  first.and(second)
 }
 
 /// Matches an object from the first parser and discards it,
@@ -48,29 +46,52 @@ where
 /// * `second` The second parser to get object.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::preceded;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = preceded(tag("abc"), tag("efg"));
 ///
-/// assert_eq!(parser("abcefg"), Ok(("", "efg")));
-/// assert_eq!(parser("abcefghij"), Ok(("hij", "efg")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("abcefg"), Ok(("", "efg")));
+/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", "efg")));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
-pub fn preceded<I, O1, O2, E: ParseError<I>, F, G>(
-  mut first: F,
-  mut second: G,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+pub fn preceded<I, O, E: ParseError<I>, F, G>(
+  first: F,
+  second: G,
+) -> impl Parser<I, Output = O, Error = E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Output = O, Error = E>,
 {
-  move |input: I| {
-    let (input, _) = first.parse(input)?;
-    second.parse(input)
+  Preceded {
+    f: first,
+    g: second,
+  }
+}
+
+/// a
+pub struct Preceded<F, G> {
+  f: F,
+  g: G,
+}
+
+impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Parser<I>
+  for Preceded<F, G>
+{
+  type Output = <G as Parser<I>>::Output;
+  type Error = E;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (i, _) = self
+      .f
+      .process::<OutputM<Check, OM::Error, OM::Incomplete>>(i)?;
+    let (i, o2) = self.g.process::<OM>(i)?;
+
+    Ok((i, o2))
   }
 }
 
@@ -82,29 +103,52 @@ where
 /// * `second` The second parser to match an object.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::terminated;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = terminated(tag("abc"), tag("efg"));
 ///
-/// assert_eq!(parser("abcefg"), Ok(("", "abc")));
-/// assert_eq!(parser("abcefghij"), Ok(("hij", "abc")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("abcefg"), Ok(("", "abc")));
+/// assert_eq!(parser.parse("abcefghij"), Ok(("hij", "abc")));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
-pub fn terminated<I, O1, O2, E: ParseError<I>, F, G>(
-  mut first: F,
-  mut second: G,
-) -> impl FnMut(I) -> IResult<I, O1, E>
+pub fn terminated<I, O, E: ParseError<I>, F, G>(
+  first: F,
+  second: G,
+) -> impl Parser<I, Output = O, Error = E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
+  F: Parser<I, Output = O, Error = E>,
+  G: Parser<I, Error = E>,
 {
-  move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    second.parse(input).map(|(i, _)| (i, o1))
+  Terminated {
+    f: first,
+    g: second,
+  }
+}
+
+/// a
+pub struct Terminated<F, G> {
+  f: F,
+  g: G,
+}
+
+impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Parser<I>
+  for Terminated<F, G>
+{
+  type Output = <F as Parser<I>>::Output;
+  type Error = E;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (i, o1) = self.f.process::<OM>(i)?;
+    let (i, _) = self
+      .g
+      .process::<OutputM<Check, OM::Error, OM::Incomplete>>(i)?;
+
+    Ok((i, o1))
   }
 }
 
@@ -118,33 +162,29 @@ where
 /// * `second` The second parser to apply.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::separated_pair;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = separated_pair(tag("abc"), tag("|"), tag("efg"));
 ///
-/// assert_eq!(parser("abc|efg"), Ok(("", ("abc", "efg"))));
-/// assert_eq!(parser("abc|efghij"), Ok(("hij", ("abc", "efg"))));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("abc|efg"), Ok(("", ("abc", "efg"))));
+/// assert_eq!(parser.parse("abc|efghij"), Ok(("hij", ("abc", "efg"))));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
-pub fn separated_pair<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
-  mut first: F,
-  mut sep: G,
-  mut second: H,
-) -> impl FnMut(I) -> IResult<I, (O1, O3), E>
+pub fn separated_pair<I, O1, O2, E: ParseError<I>, F, G, H>(
+  first: F,
+  sep: G,
+  second: H,
+) -> impl Parser<I, Output = (O1, O2), Error = E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
-  H: Parser<I, O3, E>,
+  F: Parser<I, Output = O1, Error = E>,
+  G: Parser<I, Error = E>,
+  H: Parser<I, Output = O2, Error = E>,
 {
-  move |input: I| {
-    let (input, o1) = first.parse(input)?;
-    let (input, _) = sep.parse(input)?;
-    second.parse(input).map(|(i, o2)| (i, (o1, o2)))
-  }
+  first.and(preceded(sep, second))
 }
 
 /// Matches an object from the first parser and discards it,
@@ -157,47 +197,46 @@ where
 /// * `third` The third parser to apply and discard.
 ///
 /// ```rust
-/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::delimited;
 /// use nom::bytes::complete::tag;
 ///
 /// let mut parser = delimited(tag("("), tag("abc"), tag(")"));
 ///
-/// assert_eq!(parser("(abc)"), Ok(("", "abc")));
-/// assert_eq!(parser("(abc)def"), Ok(("def", "abc")));
-/// assert_eq!(parser(""), Err(Err::Error(("", ErrorKind::Tag))));
-/// assert_eq!(parser("123"), Err(Err::Error(("123", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("(abc)"), Ok(("", "abc")));
+/// assert_eq!(parser.parse("(abc)def"), Ok(("def", "abc")));
+/// assert_eq!(parser.parse(""), Err(Err::Error(("", ErrorKind::Tag))));
+/// assert_eq!(parser.parse("123"), Err(Err::Error(("123", ErrorKind::Tag))));
 /// ```
-pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
-  mut first: F,
-  mut second: G,
-  mut third: H,
-) -> impl FnMut(I) -> IResult<I, O2, E>
+pub fn delimited<I, O, E: ParseError<I>, F, G, H>(
+  first: F,
+  second: G,
+  third: H,
+) -> impl Parser<I, Output = O, Error = E>
 where
-  F: Parser<I, O1, E>,
-  G: Parser<I, O2, E>,
-  H: Parser<I, O3, E>,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Output = O, Error = E>,
+  H: Parser<I, Error = E>,
 {
-  move |input: I| {
-    let (input, _) = first.parse(input)?;
-    let (input, o2) = second.parse(input)?;
-    third.parse(input).map(|(i, _)| (i, o2))
-  }
+  preceded(first, terminated(second, third))
 }
 
 /// Helper trait for the tuple combinator.
 ///
 /// This trait is implemented for tuples of parsers of up to 21 elements.
+#[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
+#[allow(deprecated)]
 pub trait Tuple<I, O, E> {
   /// Parses the input and returns a tuple of results of each parser.
-  fn parse(&mut self, input: I) -> IResult<I, O, E>;
+  fn parse_tuple(&mut self, input: I) -> IResult<I, O, E>;
 }
 
-impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output, Error>>
+#[allow(deprecated)]
+impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output = Output, Error = Error>>
   Tuple<Input, (Output,), Error> for (F,)
 {
-  fn parse(&mut self, input: Input) -> IResult<Input, (Output,), Error> {
+  fn parse_tuple(&mut self, input: Input) -> IResult<Input, (Output,), Error> {
     self.0.parse(input).map(|(i, o)| (i, (o,)))
   }
 }
@@ -218,12 +257,12 @@ macro_rules! tuple_trait(
 
 macro_rules! tuple_trait_impl(
   ($($name:ident $ty: ident),+) => (
+    #[allow(deprecated)]
     impl<
       Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Parser<Input, $ty, Error>),+
+      $($name: Parser<Input, Output = $ty, Error = Error>),+
     > Tuple<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
-
-      fn parse(&mut self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
+      fn parse_tuple(&mut self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
         tuple_trait_inner!(0, self, input, (), $($name)+)
 
       }
@@ -255,8 +294,9 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 // Special case: implement `Tuple` for `()`, the unit type.
 // This can come up in macros which accept a variable number of arguments.
 // Literally, `()` is an empty tuple, so it should simply parse nothing.
+#[allow(deprecated)]
 impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
-  fn parse(&mut self, input: I) -> IResult<I, (), E> {
+  fn parse_tuple(&mut self, input: I) -> IResult<I, (), E> {
     Ok((input, ()))
   }
 }
@@ -272,8 +312,10 @@ impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
 /// assert_eq!(parser("abc123def"), Ok(("", ("abc", "123", "def"))));
 /// assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
 /// ```
+#[deprecated(since = "8.0.0", note = "`Parser` is directly implemented for tuples")]
+#[allow(deprecated)]
 pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
   mut l: List,
 ) -> impl FnMut(I) -> IResult<I, O, E> {
-  move |i: I| l.parse(i)
+  move |i: I| l.parse_tuple(i)
 }
