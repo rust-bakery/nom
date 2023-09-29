@@ -466,3 +466,7 @@ pub mod number;
 #[cfg(feature = "docsrs")]
 #[cfg_attr(feature = "docsrs", cfg_attr(feature = "docsrs", doc = include_str!("../doc/nom_recipes.md")))]
 pub mod recipes {}
+
+#[cfg(doctest)]
+#[doc = include_str!("../doc/nom_recipes.md")]
+pub mod recipes {}
