@@ -333,7 +333,7 @@ impl<'a> Input for &'a [u8] {
   {
     match self.iter().position(|c| predicate(*c)) {
       Some(0) => Err(Err::Error(OM::Error::bind(|| {
-        E::from_error_kind(self.clone(), e)
+        E::from_error_kind(self, e)
       }))),
       Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
       None => {
@@ -341,7 +341,7 @@ impl<'a> Input for &'a [u8] {
           Err(Err::Incomplete(Needed::new(1)))
         } else if self.is_empty() {
           Err(Err::Error(OM::Error::bind(|| {
-            E::from_error_kind(self.clone(), e)
+            E::from_error_kind(self, e)
           })))
         } else {
           Ok((
@@ -530,7 +530,7 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(OM::Error::bind(|| {
-        E::from_error_kind(self.clone(), e)
+        E::from_error_kind(self, e)
       }))),
       Some(n) => unsafe {
         // find() returns a byte index that is already in the slice at a char boundary
@@ -544,7 +544,7 @@ impl<'a> Input for &'a str {
           Err(Err::Incomplete(Needed::new(1)))
         } else if self.len() == 0 {
           Err(Err::Error(OM::Error::bind(|| {
-            E::from_error_kind(self.clone(), e)
+            E::from_error_kind(self, e)
           })))
         } else {
           // the end of slice is a char boundary
