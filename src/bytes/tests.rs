@@ -1,7 +1,7 @@
 use crate::character::is_alphabetic;
 use crate::character::streaming::{
-  alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
-  multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
+  alpha1 as alpha, alphanumeric1 as alphanumeric, bin_digit1 as bin_digit, digit1 as digit,
+  hex_digit1 as hex_digit, multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
 };
 use crate::error::ErrorKind;
 use crate::internal::{Err, IResult, Needed};
@@ -335,6 +335,12 @@ fn recognize() {
   }
   let rod = yod(&b"1234567;"[..]);
   assert_eq!(rod, Ok((semicolon, &b"1234567"[..])));
+
+  fn ybd(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    recognize(bin_digit).parse(i)
+  }
+  let rbd = ybd(&b"101010;"[..]);
+  assert_eq!(rbd, Ok((semicolon, &b"101010"[..])));
 
   fn yan(i: &[u8]) -> IResult<&[u8], &[u8]> {
     recognize(alphanumeric).parse(i)
