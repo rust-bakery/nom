@@ -94,22 +94,16 @@ impl<'a, 'b: 'a> JsonValue<'a, 'b> {
           // if we ignored one of the items, skip over the value
           if v.offset.get() == previous {
             println!("skipping value");
-            match value(v.data()) {
-              Ok((i, _)) => {
-                v.offset(i);
-              }
-              Err(_) => {}
+            if let Ok((i, _)) = value(v.data()) {
+              v.offset(i);
             }
           }
 
-          match tag::<_, _, ()>("]")(v.data()) {
-            Ok((i, _)) => {
-              println!("]");
-              v.offset(i);
-              done = true;
-              return None;
-            }
-            Err(_) => {}
+          if let Ok((i, _)) = tag::<_, _, ()>("]")(v.data()) {
+            println!("]");
+            v.offset(i);
+            done = true;
+            return None;
           };
 
           if first {
@@ -158,22 +152,16 @@ impl<'a, 'b: 'a> JsonValue<'a, 'b> {
           // if we ignored one of the items, skip over the value
           if v.offset.get() == previous {
             println!("skipping value");
-            match value(v.data()) {
-              Ok((i, _)) => {
-                v.offset(i);
-              }
-              Err(_) => {}
+            if let Ok((i, _)) = value(v.data()) {
+              v.offset(i);
             }
           }
 
-          match tag::<_, _, ()>("}")(v.data()) {
-            Ok((i, _)) => {
-              println!("}}");
-              v.offset(i);
-              done = true;
-              return None;
-            }
-            Err(_) => {}
+          if let Ok((i, _)) = tag::<_, _, ()>("}")(v.data()) {
+            println!("}}");
+            v.offset(i);
+            done = true;
+            return None;
           };
 
           if first {
@@ -225,18 +213,18 @@ fn parse_str<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str
   escaped(alphanumeric, '\\', one_of("\"n\\"))(i)
 }
 
-fn string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
+fn string(i: &str) -> IResult<&str, &str> {
   context(
     "string",
     preceded(char('\"'), cut(terminated(parse_str, char('\"')))),
   )(i)
 }
 
-fn boolean<'a>(input: &'a str) -> IResult<&'a str, bool> {
+fn boolean(input: &str) -> IResult<&str, bool> {
   alt((map(tag("false"), |_| false), map(tag("true"), |_| true))).parse(input)
 }
 
-fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn array(i: &str) -> IResult<&str, ()> {
   context(
     "array",
     preceded(
@@ -249,11 +237,11 @@ fn array<'a>(i: &'a str) -> IResult<&'a str, ()> {
   )(i)
 }
 
-fn key_value<'a>(i: &'a str) -> IResult<&'a str, (&'a str, ())> {
+fn key_value(i: &str) -> IResult<&str, (&str, ())> {
   separated_pair(preceded(sp, string), cut(preceded(sp, char(':'))), value).parse(i)
 }
 
-fn hash<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn hash(i: &str) -> IResult<&str, ()> {
   context(
     "map",
     preceded(
@@ -266,7 +254,7 @@ fn hash<'a>(i: &'a str) -> IResult<&'a str, ()> {
   )(i)
 }
 
-fn value<'a>(i: &'a str) -> IResult<&'a str, ()> {
+fn value(i: &str) -> IResult<&str, ()> {
   preceded(
     sp,
     alt((
@@ -308,11 +296,10 @@ fn main() {
         .filter_map(|(_, v)| v.object())
         .flatten()
         .filter_map(|(user, v)| v.object().map(|o| (user, o)))
-        .map(|(user, o)| {
+        .flat_map(|(user, o)| {
           o.filter(|(k, _)| *k == "city")
             .filter_map(move |(_, v)| v.string().map(|s| (user, s)))
         })
-        .flatten()
         .collect();
 
       println!("res = {:?}", s);

@@ -158,7 +158,7 @@ fn object<'a>() -> impl Parser<&'a str, Output = HashMap<String, JsonValue>, Err
   )
 }
 
-fn json_value<'a>() -> JsonParser {
+fn json_value() -> JsonParser {
   JsonParser
 }
 

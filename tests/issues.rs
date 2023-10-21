@@ -123,9 +123,9 @@ mod issue_647 {
   }
 
   #[allow(clippy::type_complexity)]
-  fn list<'a, 'b>(
+  fn list<'a>(
     input: Input<'a>,
-    _cs: &'b f64,
+    _cs: &'_ f64,
   ) -> Result<(Input<'a>, Vec<f64>), Err<Error<&'a [u8]>>> {
     separated_list0(complete(tag(",")), complete(be_f64)).parse(input)
   }
