@@ -278,7 +278,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [CSML](https://github.com/CSML-by-Clevy/csml-engine/tree/dev/csml_interpreter),
 [Wasm](https://github.com/fabrizio-m/wasm-nom),
 [Pseudocode](https://github.com/Gungy2/pseudocod),
-[Filter for MeiliSearch](https://github.com/meilisearch/meilisearch)
+[Filter for MeiliSearch](https://github.com/meilisearch/meilisearch),
+[PotterScript](https://github.com/fmiras/potterscript)
 - Interface definition formats: [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
 [GIF](https://github.com/Geal/gif.rs),
