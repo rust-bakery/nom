@@ -377,7 +377,6 @@
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
-#![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
 #![allow(clippy::doc_markdown)]
 #![deny(missing_docs)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
@@ -463,6 +462,6 @@ mod str;
 
 pub mod number;
 
-#[cfg(feature = "docsrs")]
-#[cfg_attr(feature = "docsrs", cfg_attr(feature = "docsrs", doc = include_str!("../doc/nom_recipes.md")))]
+#[cfg(all(feature = "std", any(doc, doctest, feature = "docsrs")))]
+#[cfg_attr(any(doc, doctest, feature = "docsrs"), doc = include_str!("../doc/nom_recipes.md"))]
 pub mod recipes {}
