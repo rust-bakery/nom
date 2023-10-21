@@ -388,7 +388,7 @@ where
   Digit1 { e: PhantomData }
 }
 
-/// todo
+/// Parser implementation for [digit1]
 pub struct Digit1<E> {
   e: PhantomData<E>,
 }
@@ -435,7 +435,7 @@ where
   })*/
 }
 
-/// TODO
+/// Parser implementation for [multispace0()]
 pub struct MultiSpace0<E> {
   e: PhantomData<E>,
 }
