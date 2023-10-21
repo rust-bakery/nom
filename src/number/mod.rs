@@ -29,6 +29,10 @@ pub enum Endianness {
   Native,
 }
 
+/// creates a big endian unsigned integer parser
+///
+/// * `bound`: the number of bytes that will be read
+/// * `Uint`: the output type
 #[inline]
 fn be_uint<I, Uint, E: ParseError<I>>(bound: usize) -> impl Parser<I, Output = Uint, Error = E>
 where
@@ -42,8 +46,8 @@ where
   }
 }
 
-/// todo
-pub struct BeUint<Uint, E> {
+/// Big endian unsigned integer parser
+struct BeUint<Uint, E> {
   bound: usize,
   e: PhantomData<E>,
   u: PhantomData<Uint>,
@@ -341,6 +345,10 @@ where
   be_u128().map(|x| x as i128)
 }
 
+/// creates a little endian unsigned integer parser
+///
+/// * `bound`: the number of bytes that will be read
+/// * `Uint`: the output type
 #[inline]
 fn le_uint<I, Uint, E: ParseError<I>>(bound: usize) -> impl Parser<I, Output = Uint, Error = E>
 where
@@ -354,8 +362,8 @@ where
   }
 }
 
-/// todo
-pub struct LeUint<Uint, E> {
+/// Little endian unsigned integer parser
+struct LeUint<Uint, E> {
   bound: usize,
   e: PhantomData<E>,
   u: PhantomData<Uint>,
@@ -1351,7 +1359,7 @@ where
 }
 
 /// TODO
-pub struct Double<E> {
+struct Double<E> {
   e: PhantomData<E>,
 }
 
