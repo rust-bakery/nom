@@ -1,4 +1,4 @@
-# Nom Recipes
+# Common recipes to build nom parsers
 
 These are short recipes for accomplishing common tasks with nom.
 
