@@ -281,7 +281,7 @@ fn issue_1586_parser_iterator_impl() {
     IResult,
   };
   fn parse_line(i: &str) -> IResult<&str, &str> {
-    terminated(digit1, opt(newline))(i)
+    terminated(digit1, opt(newline)).parse(i)
   }
 
   fn parse_input(i: &str) -> impl Iterator<Item = i32> + '_ {
