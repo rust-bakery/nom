@@ -1388,6 +1388,7 @@ mod tests {
   use crate::error::ErrorKind;
   use crate::internal::Err;
 
+  #[cfg(feature = "std")]
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
       let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;

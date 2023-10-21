@@ -1,10 +1,10 @@
-use std::ops::Range;
 use super::{length_data, length_value, many0_count, many1_count};
 use crate::{
   bytes::streaming::tag,
   character::streaming::digit1 as digit,
   error::{ErrorKind, ParseError},
   internal::{Err, IResult, Needed},
+  lib::std::ops::Range,
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
   sequence::pair,
