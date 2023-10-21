@@ -43,8 +43,9 @@ where
     if count == 0 {
       Ok(((input, bit_offset), 0u8.into()))
     } else {
-      let cnt = (count + bit_offset).div(8);
-      if input.input_len() * 8 < count + bit_offset {
+      const BITS: usize = u8::BITS as usize;
+      let cnt = (count + bit_offset).div(BITS);
+      if input.input_len() * BITS < count + bit_offset {
         Err(Err::Error(E::from_error_kind(
           (input, bit_offset),
           ErrorKind::Eof,
@@ -65,13 +66,13 @@ where
             ((byte << offset) >> offset).into()
           };
 
-          if remaining < 8 - offset {
-            acc += val >> (8 - offset - remaining);
+          if remaining < BITS - offset {
+            acc += val >> (BITS - offset - remaining);
             end_offset = remaining + offset;
             break;
           } else {
-            acc += val << (remaining - (8 - offset));
-            remaining -= 8 - offset;
+            acc += val << (remaining - (BITS - offset));
+            remaining -= BITS - offset;
             offset = 0;
           }
         }
