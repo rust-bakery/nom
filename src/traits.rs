@@ -726,7 +726,7 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_bin_digit(self) -> bool {
-      matches!(self, 0x30..=0x31)
+    matches!(self, 0x30..=0x31)
   }
   #[inline]
   fn len(self) -> usize {

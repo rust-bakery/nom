@@ -908,10 +908,7 @@ mod tests {
     assert_eq!(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
     assert_eq!(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
     assert_eq!(bin_digit1(a), Err(Err::Error((a, ErrorKind::BinDigit))));
-    assert_eq!(
-      bin_digit1::<_, (_, ErrorKind)>(b),
-      Ok(("234", "1"))
-    );
+    assert_eq!(bin_digit1::<_, (_, ErrorKind)>(b), Ok(("234", "1")));
     assert_eq!(bin_digit1(c), Err(Err::Error((c, ErrorKind::BinDigit))));
     assert_eq!(bin_digit1(d), Err(Err::Error((d, ErrorKind::BinDigit))));
     assert_eq!(
