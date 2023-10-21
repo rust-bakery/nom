@@ -701,6 +701,8 @@ pub trait AsChar: Copy {
   fn is_hex_digit(self) -> bool;
   /// Tests that self is an octal digit
   fn is_oct_digit(self) -> bool;
+  /// Tests that self is a binary digit
+  fn is_bin_digit(self) -> bool;
   /// Gets the len in bytes for self
   fn len(self) -> usize;
 }
@@ -731,6 +733,10 @@ impl AsChar for u8 {
     matches!(self, 0x30..=0x37)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+      matches!(self, 0x30..=0x31)
+  }
+  #[inline]
   fn len(self) -> usize {
     1
   }
@@ -759,6 +765,10 @@ impl<'a> AsChar for &'a u8 {
   #[inline]
   fn is_oct_digit(self) -> bool {
     matches!(*self, 0x30..=0x37)
+  }
+  #[inline]
+  fn is_bin_digit(self) -> bool {
+    matches!(*self, 0x30..=0x31)
   }
   #[inline]
   fn len(self) -> usize {
@@ -792,6 +802,10 @@ impl AsChar for char {
     self.is_digit(8)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    self.is_digit(2)
+  }
+  #[inline]
   fn len(self) -> usize {
     self.len_utf8()
   }
@@ -821,6 +835,10 @@ impl<'a> AsChar for &'a char {
   #[inline]
   fn is_oct_digit(self) -> bool {
     self.is_digit(8)
+  }
+  #[inline]
+  fn is_bin_digit(self) -> bool {
+    self.is_digit(2)
   }
   #[inline]
   fn len(self) -> usize {
