@@ -253,6 +253,7 @@ Here is a (non exhaustive) list of known projects using nom:
 
 - Text file formats: [Ceph Crush](https://github.com/cholcombe973/crushtool),
 [Cronenberg](https://github.com/ayrat555/cronenberg),
+[Email](https://github.com/deuxfleurs-org/eml-codec),
 [XFS Runtime Stats](https://github.com/ChrisMacNaughton/xfs-rs),
 [CSV](https://github.com/GuillaumeGomez/csv-parser),
 [FASTA](https://github.com/TianyiShi2001/nom-fasta),
@@ -301,7 +302,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [DHCP](https://github.com/rusticata/dhcp-parser),
 [HTTP](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http),
 [URI](https://github.com/santifa/rrp/blob/master/src/uri.rs),
-[IMAP](https://github.com/djc/tokio-imap),
+[IMAP](https://github.com/djc/tokio-imap) ([alt](https://github.com/duesee/imap-codec)),
 [IRC](https://github.com/Detegr/RBot-parser),
 [Pcap-NG](https://github.com/richo/pcapng-rs),
 [Pcap](https://github.com/ithinuel/pcap-rs),
@@ -315,6 +316,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix),
 [GTP](https://github.com/fuerstenau/gorrosion-gtp),
 [SIP](https://github.com/kurotych/sipcore/tree/master/crates/sipmsg),
+[SMTP](https://github.com/Ekleog/kannader),
 [Prometheus](https://github.com/vectordotdev/vector/blob/master/lib/prometheus-parser/src/line.rs)
 - Language specifications:
 [BNF](https://github.com/shnewto/bnf)
