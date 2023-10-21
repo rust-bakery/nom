@@ -955,11 +955,9 @@ where
     let mut index = 0;
     let mut res = OM::Output::bind(|| input.new_builder());
 
-    let i = input.clone();
-
-    while index < i.input_len() {
-      let current_len = i.input_len();
-      let remainder = i.take_from(index);
+    while index < input.input_len() {
+      let current_len = input.input_len();
+      let remainder = input.take_from(index);
       match self.normal.process::<OM>(remainder.clone()) {
         Ok((i2, o)) => {
           res = OM::Output::combine(o, res, |o, mut res| {
@@ -994,7 +992,7 @@ where
                 })));
               }
             } else {
-              match self.transform.process::<OM>(i.take_from(next)) {
+              match self.transform.process::<OM>(input.take_from(next)) {
                 Ok((i2, o)) => {
                   res = OM::Output::combine(o, res, |o, mut res| {
                     o.extend_into(&mut res);
@@ -1004,7 +1002,7 @@ where
                     if OM::Incomplete::is_streaming() {
                       return Err(Err::Incomplete(Needed::Unknown));
                     } else {
-                      return Ok((i.take_from(i.input_len()), res));
+                      return Ok((input.take_from(input.input_len()), res));
                     }
                   } else {
                     index = input.offset(&i2);

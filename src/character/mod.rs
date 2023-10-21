@@ -75,6 +75,22 @@ pub fn is_oct_digit(chr: u8) -> bool {
   matches!(chr, 0x30..=0x37)
 }
 
+/// Tests if byte is ASCII binary digit: 0-1
+///
+/// # Example
+///
+/// ```
+/// # use nom::character::is_bin_digit;
+/// assert_eq!(is_bin_digit(b'a'), false);
+/// assert_eq!(is_bin_digit(b'2'), false);
+/// assert_eq!(is_bin_digit(b'0'), true);
+/// assert_eq!(is_bin_digit(b'1'), true);
+/// ```
+#[inline]
+pub fn is_bin_digit(chr: u8) -> bool {
+  matches!(chr, 0x30..=0x31)
+}
+
 /// Tests if byte is ASCII alphanumeric: A-Z, a-z, 0-9
 ///
 /// # Example
@@ -372,7 +388,7 @@ where
   Digit1 { e: PhantomData }
 }
 
-/// todo
+/// Parser implementation for [digit1]
 pub struct Digit1<E> {
   e: PhantomData<E>,
 }
@@ -419,7 +435,7 @@ where
   })*/
 }
 
-/// TODO
+/// Parser implementation for [multispace0()]
 pub struct MultiSpace0<E> {
   e: PhantomData<E>,
 }

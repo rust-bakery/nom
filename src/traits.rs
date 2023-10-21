@@ -332,17 +332,13 @@ impl<'a> Input for &'a [u8] {
     P: Fn(Self::Item) -> bool,
   {
     match self.iter().position(|c| predicate(*c)) {
-      Some(0) => Err(Err::Error(OM::Error::bind(|| {
-        E::from_error_kind(self.clone(), e)
-      }))),
+      Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
       Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
       None => {
         if OM::Incomplete::is_streaming() {
           Err(Err::Incomplete(Needed::new(1)))
         } else if self.is_empty() {
-          Err(Err::Error(OM::Error::bind(|| {
-            E::from_error_kind(self.clone(), e)
-          })))
+          Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e))))
         } else {
           Ok((
             self.take_from(self.len()),
@@ -529,9 +525,7 @@ impl<'a> Input for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(0) => Err(Err::Error(OM::Error::bind(|| {
-        E::from_error_kind(self.clone(), e)
-      }))),
+      Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
       Some(n) => unsafe {
         // find() returns a byte index that is already in the slice at a char boundary
         Ok((
@@ -542,10 +536,8 @@ impl<'a> Input for &'a str {
       None => {
         if OM::Incomplete::is_streaming() {
           Err(Err::Incomplete(Needed::new(1)))
-        } else if self.len() == 0 {
-          Err(Err::Error(OM::Error::bind(|| {
-            E::from_error_kind(self.clone(), e)
-          })))
+        } else if self.is_empty() {
+          Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e))))
         } else {
           // the end of slice is a char boundary
           unsafe {
@@ -669,7 +661,7 @@ impl AsBytes for [u8] {
 impl<'a, const N: usize> AsBytes for &'a [u8; N] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    *self
+    self.as_slice()
   }
 }
 
@@ -701,6 +693,8 @@ pub trait AsChar: Copy {
   fn is_hex_digit(self) -> bool;
   /// Tests that self is an octal digit
   fn is_oct_digit(self) -> bool;
+  /// Tests that self is a binary digit
+  fn is_bin_digit(self) -> bool;
   /// Gets the len in bytes for self
   fn len(self) -> usize;
 }
@@ -731,6 +725,10 @@ impl AsChar for u8 {
     matches!(self, 0x30..=0x37)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    matches!(self, 0x30..=0x31)
+  }
+  #[inline]
   fn len(self) -> usize {
     1
   }
@@ -759,6 +757,10 @@ impl<'a> AsChar for &'a u8 {
   #[inline]
   fn is_oct_digit(self) -> bool {
     matches!(*self, 0x30..=0x37)
+  }
+  #[inline]
+  fn is_bin_digit(self) -> bool {
+    matches!(*self, 0x30..=0x31)
   }
   #[inline]
   fn len(self) -> usize {
@@ -792,6 +794,10 @@ impl AsChar for char {
     self.is_digit(8)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    self.is_digit(2)
+  }
+  #[inline]
   fn len(self) -> usize {
     self.len_utf8()
   }
@@ -821,6 +827,10 @@ impl<'a> AsChar for &'a char {
   #[inline]
   fn is_oct_digit(self) -> bool {
     self.is_digit(8)
+  }
+  #[inline]
+  fn is_bin_digit(self) -> bool {
+    self.is_digit(2)
   }
   #[inline]
   fn len(self) -> usize {
@@ -1454,12 +1464,12 @@ impl NomRange<usize> for Range<usize> {
   }
 
   fn is_inverted(&self) -> bool {
-    !(self.start < self.end)
+    self.start >= self.end
   }
 
   fn saturating_iter(&self) -> Self::Saturating {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1467,7 +1477,7 @@ impl NomRange<usize> for Range<usize> {
 
   fn bounded_iter(&self) -> Self::Bounded {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1542,7 +1552,7 @@ impl NomRange<usize> for RangeTo<usize> {
 
   fn saturating_iter(&self) -> Self::Saturating {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1550,7 +1560,7 @@ impl NomRange<usize> for RangeTo<usize> {
 
   fn bounded_iter(&self) -> Self::Bounded {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
