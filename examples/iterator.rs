@@ -71,6 +71,7 @@ fn main() {
   );
 
   let res = nom_it
+    .by_ref()
     .map(|(k, v)| (k.to_uppercase(), v))
     .collect::<HashMap<_, _>>();
 

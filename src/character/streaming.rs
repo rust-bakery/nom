@@ -9,6 +9,10 @@ use crate::error::ParseError;
 use crate::internal::{Err, IResult, Needed};
 use crate::traits::{AsChar, FindToken, Input};
 use crate::traits::{Compare, CompareResult};
+use crate::Emit;
+use crate::OutputM;
+use crate::Parser;
+use crate::Streaming;
 
 /// Recognizes one character.
 ///
@@ -25,19 +29,13 @@ use crate::traits::{Compare, CompareResult};
 /// assert_eq!(parser("bc"), Err(Err::Error(Error::new("bc", ErrorKind::Char))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::new(1))));
 /// ```
-pub fn char<I, Error: ParseError<I>>(c: char) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn char<I, Error: ParseError<I>>(c: char) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
 {
-  move |i: I| match (i).iter_elements().next().map(|t| {
-    let b = t.as_char() == c;
-    (&c, b)
-  }) {
-    None => Err(Err::Incomplete(Needed::new(c.len() - i.input_len()))),
-    Some((_, false)) => Err(Err::Error(Error::from_char(i, c))),
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-  }
+  let mut parser = super::char(c);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Recognizes one character and checks that it satisfies a predicate
@@ -55,21 +53,14 @@ where
 /// assert_eq!(parser("cd"), Err(Err::Error(Error::new("cd", ErrorKind::Satisfy))));
 /// assert_eq!(parser(""), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn satisfy<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
   F: Fn(char) -> bool,
 {
-  move |i: I| match (i).iter_elements().next().map(|t| {
-    let c = t.as_char();
-    let b = cond(c);
-    (c, b)
-  }) {
-    None => Err(Err::Incomplete(Needed::Unknown)),
-    Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Satisfy))),
-    Some((c, true)) => Ok((i.take_from(c.len()), c)),
-  }
+  let mut parser = super::satisfy(cond);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Recognizes one of the provided characters.
@@ -82,19 +73,16 @@ where
 /// # use nom::character::streaming::one_of;
 /// assert_eq!(one_of::<_, _, (_, ErrorKind)>("abc")("b"), Ok(("", 'b')));
 /// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")("bc"), Err(Err::Error(("bc", ErrorKind::OneOf))));
-/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(one_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
-  T: FindToken<<I as Input>::Item>,
+  T: FindToken<char>,
 {
-  move |i: I| match (i).iter_elements().next().map(|c| (c, list.find_token(c))) {
-    None => Err(Err::Incomplete(Needed::new(1))),
-    Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::OneOf))),
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-  }
+  let mut parser = super::one_of(list);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Recognizes a character that is not in the provided characters.
@@ -107,19 +95,16 @@ where
 /// # use nom::character::streaming::none_of;
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("ab")("a"), Err(Err::Error(("a", ErrorKind::NoneOf))));
-/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::new(1))));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>("a")(""), Err(Err::Incomplete(Needed::Unknown)));
 /// ```
-pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Fn(I) -> IResult<I, char, Error>
+pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl FnMut(I) -> IResult<I, char, Error>
 where
   I: Input,
   <I as Input>::Item: AsChar,
-  T: FindToken<<I as Input>::Item>,
+  T: FindToken<char>,
 {
-  move |i: I| match (i).iter_elements().next().map(|c| (c, !list.find_token(c))) {
-    None => Err(Err::Incomplete(Needed::new(1))),
-    Some((_, false)) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::NoneOf))),
-    Some((c, true)) => Ok((i.take_from(c.len()), c.as_char())),
-  }
+  let mut parser = super::none_of(list);
+  move |i: I| parser.process::<OutputM<Emit, Emit, Streaming>>(i)
 }
 
 /// Recognizes the string "\r\n".
@@ -268,8 +253,7 @@ where
   char('\t')(input)
 }
 
-/// Matches one byte as a character. Note that the input type will
-/// accept a `str`, but not a `&[u8]`, unlike many other nom parsers.
+/// Matches one element as a character.
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
@@ -459,6 +443,48 @@ where
   input.split_at_position1(|item| !item.is_oct_digit(), ErrorKind::OctDigit)
 }
 
+/// Recognizes zero or more binary characters: 0-1
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non binary digit character).
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::bin_digit0;
+/// assert_eq!(bin_digit0::<_, (_, ErrorKind)>("013a"), Ok(("3a", "01")));
+/// assert_eq!(bin_digit0::<_, (_, ErrorKind)>("a013"), Ok(("a013", "")));
+/// assert_eq!(bin_digit0::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```
+pub fn bin_digit0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+where
+  T: Input,
+  <T as Input>::Item: AsChar,
+{
+  input.split_at_position(|item| !item.is_bin_digit())
+}
+
+/// Recognizes one or more binary characters: 0-1
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
+/// or if no terminating token is found (a non binary digit character).
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, IResult, Needed};
+/// # use nom::character::streaming::bin_digit1;
+/// assert_eq!(bin_digit1::<_, (_, ErrorKind)>("013a"), Ok(("3a", "01")));
+/// assert_eq!(bin_digit1::<_, (_, ErrorKind)>("a013"), Err(Err::Error(("a013", ErrorKind::BinDigit))));
+/// assert_eq!(bin_digit1::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
+/// ```
+pub fn bin_digit1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+where
+  T: Input,
+  <T as Input>::Item: AsChar,
+{
+  input.split_at_position1(|item| !item.is_bin_digit(), ErrorKind::BinDigit)
+}
+
 /// Recognizes zero or more ASCII numerical and alphabetic characters: 0-9, a-z, A-Z
 ///
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data,
@@ -613,7 +639,8 @@ where
   let (i, opt_sign) = opt(alt((
     value(false, tag(&b"-"[..])),
     value(true, tag(&b"+"[..])),
-  )))(input)?;
+  )))
+  .parse(input)?;
   let sign = opt_sign.unwrap_or(true);
 
   Ok((i, sign))
@@ -743,6 +770,7 @@ mod tests {
   use crate::internal::{Err, Needed};
   use crate::sequence::pair;
   use crate::traits::ParseTo;
+  use crate::Parser;
   use proptest::prelude::*;
 
   macro_rules! assert_parse(
@@ -809,6 +837,17 @@ mod tests {
       alphanumeric1::<_, (_, ErrorKind)>(a),
       Err(Err::Incomplete(Needed::new(1)))
     );
+    assert_eq!(bin_digit1(a), Err(Err::Error((a, ErrorKind::BinDigit))));
+    assert_eq!(
+      bin_digit1::<_, (_, ErrorKind)>(b),
+      Ok((&b"234"[..], &b"1"[..]))
+    );
+    assert_eq!(bin_digit1(c), Err(Err::Error((c, ErrorKind::BinDigit))));
+    assert_eq!(bin_digit1(d), Err(Err::Error((d, ErrorKind::BinDigit))));
+    assert_eq!(
+      alphanumeric1::<_, (_, ErrorKind)>(a),
+      Err(Err::Incomplete(Needed::new(1)))
+    );
     //assert_eq!(fix_error!(b,(), alphanumeric1), Ok((empty, b)));
     assert_eq!(
       alphanumeric1::<_, (_, ErrorKind)>(c),
@@ -868,6 +907,10 @@ mod tests {
     );
     assert_eq!(oct_digit1(c), Err(Err::Error((c, ErrorKind::OctDigit))));
     assert_eq!(oct_digit1(d), Err(Err::Error((d, ErrorKind::OctDigit))));
+    assert_eq!(bin_digit1(a), Err(Err::Error((a, ErrorKind::BinDigit))));
+    assert_eq!(bin_digit1::<_, (_, ErrorKind)>(b), Ok(("234", "1")));
+    assert_eq!(bin_digit1(c), Err(Err::Error((c, ErrorKind::BinDigit))));
+    assert_eq!(bin_digit1(d), Err(Err::Error((d, ErrorKind::BinDigit))));
     assert_eq!(
       alphanumeric1::<_, (_, ErrorKind)>(a),
       Err(Err::Incomplete(Needed::new(1)))
@@ -935,6 +978,12 @@ mod tests {
         assert_eq!(f.offset(i) + i.len(), f.len());
       }
       _ => panic!("wrong return type in offset test for oct_digit"),
+    }
+    match bin_digit1::<_, (_, ErrorKind)>(f) {
+      Ok((i, _)) => {
+        assert_eq!(f.offset(i) + i.len(), f.len());
+      }
+      _ => panic!("wrong return type in offset test for bin_digit"),
     }
   }
 
@@ -1049,9 +1098,32 @@ mod tests {
   }
 
   #[test]
+  fn bin_digit_test() {
+    let i = &b"01;"[..];
+    assert_parse!(bin_digit1(i), Ok((&b";"[..], &i[..i.len() - 1])));
+
+    let i = &b"8"[..];
+    assert_parse!(
+      bin_digit1(i),
+      Err(Err::Error(error_position!(i, ErrorKind::BinDigit)))
+    );
+
+    assert!(crate::character::is_bin_digit(b'0'));
+    assert!(crate::character::is_bin_digit(b'1'));
+    assert!(!crate::character::is_bin_digit(b'8'));
+    assert!(!crate::character::is_bin_digit(b'9'));
+    assert!(!crate::character::is_bin_digit(b'a'));
+    assert!(!crate::character::is_bin_digit(b'A'));
+    assert!(!crate::character::is_bin_digit(b'/'));
+    assert!(!crate::character::is_bin_digit(b':'));
+    assert!(!crate::character::is_bin_digit(b'@'));
+    assert!(!crate::character::is_bin_digit(b'\x60'));
+  }
+
+  #[test]
   fn full_line_windows() {
     fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-      pair(not_line_ending, line_ending)(i)
+      pair(not_line_ending, line_ending).parse(i)
     }
     let input = b"abc\r\n";
     let output = take_full_line(input);
@@ -1061,7 +1133,7 @@ mod tests {
   #[test]
   fn full_line_unix() {
     fn take_full_line(i: &[u8]) -> IResult<&[u8], (&[u8], &[u8])> {
-      pair(not_line_ending, line_ending)(i)
+      pair(not_line_ending, line_ending).parse(i)
     }
     let input = b"abc\n";
     let output = take_full_line(input);
@@ -1123,7 +1195,7 @@ mod tests {
 
   fn digit_to_i16(input: &str) -> IResult<&str, i16> {
     let i = input;
-    let (i, opt_sign) = opt(alt((char('+'), char('-'))))(i)?;
+    let (i, opt_sign) = opt(alt((char('+'), char('-')))).parse(i)?;
     let sign = match opt_sign {
       Some('+') => true,
       Some('-') => false,

@@ -3,6 +3,7 @@
 use self::Needed::*;
 use crate::error::{self, ErrorKind, FromExternalError, ParseError};
 use crate::lib::std::fmt;
+use core::marker::PhantomData;
 use core::num::NonZeroUsize;
 
 /// Holds the result of parsing functions
@@ -88,21 +89,26 @@ impl Needed {
 /// to transform that case in `Error`
 /// * `Error` means some parser did not succeed, but another one might (as an example,
 /// when testing different branches of an `alt` combinator)
-/// * `Failure` indicates an unrecoverable error. As an example, if you recognize a prefix
-/// to decide on the next parser to apply, and that parser fails, you know there's no need
-/// to try other parsers, you were already in the right branch, so the data is invalid
+/// * `Failure` indicates an unrecoverable error. For example, when a prefix has been
+/// recognised and the next parser has been confirmed, if that parser fails, then the
+/// entire process fails; there are no more parsers to try.
+///
+/// Distinguishing `Failure` this from `Error` is only relevant inside the parser's code. For
+/// external consumers, both mean that parsing failed.
+///
+/// See also: [`Finish`].
 ///
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
-pub enum Err<E> {
+pub enum Err<Failure, Error = Failure> {
   /// There was not enough data
   Incomplete(Needed),
   /// The parser had an error (recoverable)
-  Error(E),
+  Error(Error),
   /// The parser had an unrecoverable error: we got to the right
   /// branch and we know other branches won't work, so backtrack
   /// as fast as possible
-  Failure(E),
+  Failure(Failure),
 }
 
 impl<E> Err<E> {
@@ -233,6 +239,133 @@ where
   }
 }
 
+/// TODO
+pub trait Mode {
+  /// TODO
+  type Output<T>;
+
+  /// TODO
+  fn bind<T, F: FnOnce() -> T>(f: F) -> Self::Output<T>;
+  /// TODO
+  fn map<T, U, F: FnOnce(T) -> U>(x: Self::Output<T>, f: F) -> Self::Output<U>;
+
+  /// TODO
+  fn combine<T, U, V, F: FnOnce(T, U) -> V>(
+    x: Self::Output<T>,
+    y: Self::Output<U>,
+    f: F,
+  ) -> Self::Output<V>;
+}
+
+/// TODO
+pub struct Emit;
+impl Mode for Emit {
+  type Output<T> = T;
+
+  #[inline(always)]
+  fn bind<T, F: FnOnce() -> T>(f: F) -> Self::Output<T> {
+    f()
+  }
+
+  #[inline(always)]
+  fn map<T, U, F: FnOnce(T) -> U>(x: Self::Output<T>, f: F) -> Self::Output<U> {
+    f(x)
+  }
+
+  #[inline(always)]
+  fn combine<T, U, V, F: FnOnce(T, U) -> V>(
+    x: Self::Output<T>,
+    y: Self::Output<U>,
+    f: F,
+  ) -> Self::Output<V> {
+    f(x, y)
+  }
+}
+
+/// TODO
+pub struct Check;
+impl Mode for Check {
+  type Output<T> = ();
+
+  #[inline(always)]
+  fn bind<T, F: FnOnce() -> T>(_: F) -> Self::Output<T> {}
+
+  #[inline(always)]
+  fn map<T, U, F: FnOnce(T) -> U>(_: Self::Output<T>, _: F) -> Self::Output<U> {}
+
+  #[inline(always)]
+  fn combine<T, U, V, F: FnOnce(T, U) -> V>(
+    _: Self::Output<T>,
+    _: Self::Output<U>,
+    _: F,
+  ) -> Self::Output<V> {
+  }
+}
+
+/// TODO
+pub type PResult<OM, I, O, E> = Result<
+  (I, <<OM as OutputMode>::Output as Mode>::Output<O>),
+  Err<E, <<OM as OutputMode>::Error as Mode>::Output<E>>,
+>;
+
+/// TODO
+pub trait OutputMode {
+  /// TODO
+  type Output: Mode;
+  /// TODO
+  type Error: Mode;
+  /// TODO
+  type Incomplete: IsStreaming;
+}
+
+/// TODO
+pub trait IsStreaming {
+  /// TODO
+  fn incomplete<E, F: FnOnce() -> E>(needed: Needed, err_f: F) -> Err<E>;
+  /// TODO
+  fn is_streaming() -> bool;
+}
+
+/// TODO
+pub struct Streaming;
+
+impl IsStreaming for Streaming {
+  fn incomplete<E, F: FnOnce() -> E>(needed: Needed, _err_f: F) -> Err<E> {
+    Err::Incomplete(needed)
+  }
+
+  #[inline]
+  fn is_streaming() -> bool {
+    true
+  }
+}
+
+/// TODO
+pub struct Complete;
+
+impl IsStreaming for Complete {
+  fn incomplete<E, F: FnOnce() -> E>(_needed: Needed, err_f: F) -> Err<E> {
+    Err::Error(err_f())
+  }
+
+  #[inline]
+  fn is_streaming() -> bool {
+    false
+  }
+}
+
+/// a
+pub struct OutputM<M: Mode, EM: Mode, S: IsStreaming> {
+  m: PhantomData<M>,
+  em: PhantomData<EM>,
+  s: PhantomData<S>,
+}
+
+impl<M: Mode, EM: Mode, S: IsStreaming> OutputMode for OutputM<M, EM, S> {
+  type Output = M;
+  type Error = EM;
+  type Incomplete = S;
+}
 /// All nom parsers implement this trait
 pub trait Parser<Input> {
   /// Type of the produced value
@@ -242,7 +375,24 @@ pub trait Parser<Input> {
 
   /// A parser takes in input type, and returns a `Result` containing
   /// either the remaining input and the output value, or an error
-  fn parse(&mut self, input: Input) -> IResult<Input, Self::Output, Self::Error>;
+  #[inline]
+  fn parse(&mut self, input: Input) -> IResult<Input, Self::Output, Self::Error> {
+    self.process::<OutputM<Emit, Emit, Streaming>>(input)
+  }
+
+  /// A parser takes in input type, and returns a `Result` containing
+  /// either the remaining input and the output value, or an error
+  #[inline]
+  fn parse_complete(&mut self, input: Input) -> IResult<Input, Self::Output, Self::Error> {
+    self.process::<OutputM<Emit, Emit, Complete>>(input)
+  }
+
+  /// A parser takes in input type, and returns a `Result` containing
+  /// either the remaining input and the output value, or an error
+  fn process<OM: OutputMode>(
+    &mut self,
+    input: Input,
+  ) -> PResult<OM, Input, Self::Output, Self::Error>;
 
   /// Maps a function over the result of a parser
   fn map<G, O2>(self, g: G) -> Map<Self, G>
@@ -256,7 +406,7 @@ pub trait Parser<Input> {
   /// Applies a function returning a `Result` over the result of a parser.
   fn map_res<G, O2, E2>(self, g: G) -> MapRes<Self, G>
   where
-    G: Fn(Self::Output) -> Result<O2, E2>,
+    G: FnMut(Self::Output) -> Result<O2, E2>,
     Self::Error: FromExternalError<Input, E2>,
     Self: core::marker::Sized,
   {
@@ -266,7 +416,7 @@ pub trait Parser<Input> {
   /// Applies a function returning an `Option` over the result of a parser.
   fn map_opt<G, O2>(self, g: G) -> MapOpt<Self, G>
   where
-    G: Fn(Self::Output) -> Option<O2>,
+    G: FnMut(Self::Output) -> Option<O2>,
     Self: core::marker::Sized,
   {
     MapOpt { f: self, g }
@@ -329,8 +479,14 @@ where
 {
   type Output = O;
   type Error = E;
-  fn parse(&mut self, i: I) -> IResult<I, O, E> {
-    self(i)
+
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (i, o) = self(i).map_err(|e| match e {
+      Err::Incomplete(i) => Err::Incomplete(i),
+      Err::Error(e) => Err::Error(OM::Error::bind(|| e)),
+      Err::Failure(e) => Err::Failure(e),
+    })?;
+    Ok((i, OM::Output::bind(|| o)))
   }
 }
 
@@ -343,12 +499,16 @@ macro_rules! impl_parser_for_tuple {
     {
       type Output = ($($output),+,);
       type Error = E;
-      fn parse(&mut self, i: I) -> IResult<I, ($($output),+,), E> {
+
+      #[inline(always)]
+      fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
         let ($(ref mut $parser),+,) = *self;
 
-        $(let(i, $output) = $parser.parse(i)?;)+
+        // FIXME: is there a way to avoid producing the output values?
+        $(let(i, $output) = $parser.process::<OutputM<Emit, OM::Error, OM::Incomplete>>(i)?;)+
 
-        Ok((i, ($($output),+,)))
+        // ???
+        Ok((i, OM::Output::bind(|| ($($output),+,))))
       }
     }
   )
@@ -369,6 +529,7 @@ macro_rules! impl_parser_for_tuples {
 
 impl_parser_for_tuples!(P1 O1, P2 O2, P3 O3, P4 O4, P5 O5, P6 O6, P7 O7, P8 O8, P9 O9, P10 O10, P11 O11, P12 O12, P13 O13, P14 O14, P15 O15, P16 O16, P17 O17, P18 O18, P19 O19, P20 O20, P21 O21);
 
+/*
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 
@@ -376,11 +537,12 @@ use alloc::boxed::Box;
 impl<I, O, E: ParseError<I>> Parser<I> for Box<dyn Parser<I, Output = O, Error = E>> {
   type Output = O;
   type Error = E;
-  fn parse(&mut self, input: I) -> IResult<I, O, E> {
-    (**self).parse(input)
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    (**self).process(input)
   }
 }
-
+*/
 /// Implementation of `Parser::map`
 #[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct Map<F, G> {
@@ -394,10 +556,11 @@ impl<I, O2, E: ParseError<I>, F: Parser<I, Error = E>, G: FnMut(<F as Parser<I>>
   type Output = O2;
   type Error = E;
 
-  fn parse(&mut self, i: I) -> IResult<I, O2, E> {
-    match self.f.parse(i) {
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    match self.f.process::<OM>(i) {
       Err(e) => Err(e),
-      Ok((i, o)) => Ok((i, (self.g)(o))),
+      Ok((i, o)) => Ok((i, OM::Output::map(o, |o| (self.g)(o)))),
     }
   }
 }
@@ -413,20 +576,21 @@ where
   I: Clone,
   <F as Parser<I>>::Error: FromExternalError<I, E2>,
   F: Parser<I>,
-  G: Fn(<F as Parser<I>>::Output) -> Result<O2, E2>,
+  G: FnMut(<F as Parser<I>>::Output) -> Result<O2, E2>,
 {
   type Output = O2;
   type Error = <F as Parser<I>>::Error;
-  fn parse(&mut self, input: I) -> IResult<I, O2, <F as Parser<I>>::Error> {
-    let i = input.clone();
-    let (input, o1) = self.f.parse(input)?;
+
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (input, o1) = self
+      .f
+      .process::<OutputM<Emit, OM::Error, OM::Incomplete>>(i.clone())?;
+
     match (self.g)(o1) {
-      Ok(o2) => Ok((input, o2)),
-      Err(e) => Err(Err::Error(<F as Parser<I>>::Error::from_external_error(
-        i,
-        ErrorKind::MapRes,
-        e,
-      ))),
+      Ok(o2) => Ok((input, OM::Output::bind(|| o2))),
+      Err(e) => Err(Err::Error(OM::Error::bind(|| {
+        <F as Parser<I>>::Error::from_external_error(i, ErrorKind::MapRes, e)
+      }))),
     }
   }
 }
@@ -441,20 +605,21 @@ impl<I, O2, F, G> Parser<I> for MapOpt<F, G>
 where
   I: Clone,
   F: Parser<I>,
-  G: Fn(<F as Parser<I>>::Output) -> Option<O2>,
+  G: FnMut(<F as Parser<I>>::Output) -> Option<O2>,
 {
   type Output = O2;
   type Error = <F as Parser<I>>::Error;
 
-  fn parse(&mut self, input: I) -> IResult<I, O2, <F as Parser<I>>::Error> {
-    let i = input.clone();
-    let (input, o1) = self.f.parse(input)?;
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (input, o1) = self
+      .f
+      .process::<OutputM<Emit, OM::Error, OM::Incomplete>>(i.clone())?;
+
     match (self.g)(o1) {
-      Some(o2) => Ok((input, o2)),
-      None => Err(Err::Error(<F as Parser<I>>::Error::from_error_kind(
-        i,
-        ErrorKind::MapOpt,
-      ))),
+      Some(o2) => Ok((input, OM::Output::bind(|| o2))),
+      None => Err(Err::Error(OM::Error::bind(|| {
+        <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::MapOpt)
+      }))),
     }
   }
 }
@@ -477,9 +642,12 @@ impl<
   type Output = <H as Parser<I>>::Output;
   type Error = E;
 
-  fn parse(&mut self, i: I) -> IResult<I, Self::Output, E> {
-    let (i, o1) = self.f.parse(i)?;
-    (self.g)(o1).parse(i)
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (input, o1) = self
+      .f
+      .process::<OutputM<Emit, OM::Error, OM::Incomplete>>(i)?;
+
+    (self.g)(o1).process::<OM>(input)
   }
 }
 
@@ -496,10 +664,13 @@ impl<I, F: Parser<I>, G: Parser<<F as Parser<I>>::Output, Error = <F as Parser<I
   type Output = <G as Parser<<F as Parser<I>>::Output>>::Output;
   type Error = <F as Parser<I>>::Error;
 
-  fn parse(&mut self, i: I) -> IResult<I, Self::Output, Self::Error> {
-    let (i, o1) = self.f.parse(i)?;
-    let (_, o2) = self.g.parse(o1)?;
-    Ok((i, o2))
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (input, o1) = self
+      .f
+      .process::<OutputM<Emit, OM::Error, OM::Incomplete>>(i)?;
+
+    let (_, o2) = self.g.process::<OM>(o1)?;
+    Ok((input, o2))
   }
 }
 
@@ -516,10 +687,12 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
   type Output = (<F as Parser<I>>::Output, <G as Parser<I>>::Output);
   type Error = E;
 
-  fn parse(&mut self, i: I) -> IResult<I, Self::Output, Self::Error> {
-    let (i, o1) = self.f.parse(i)?;
-    let (i, o2) = self.g.parse(i)?;
-    Ok((i, (o1, o2)))
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let (i, o1) = self.f.process::<OM>(i)?;
+    let (i, o2) = self.g.process::<OM>(i)?;
+
+    Ok((i, OM::Output::combine(o1, o2, |o1, o2| (o1, o2))))
   }
 }
 
@@ -541,10 +714,10 @@ impl<
   type Output = <F as Parser<I>>::Output;
   type Error = <F as Parser<I>>::Error;
 
-  fn parse(&mut self, i: I) -> IResult<I, Self::Output, Self::Error> {
-    match self.f.parse(i.clone()) {
-      Err(Err::Error(e1)) => match self.g.parse(i) {
-        Err(Err::Error(e2)) => Err(Err::Error(e1.or(e2))),
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    match self.f.process::<OM>(i.clone()) {
+      Err(Err::Error(e1)) => match self.g.process::<OM>(i) {
+        Err(Err::Error(e2)) => Err(Err::Error(OM::Error::combine(e1, e2, |e1, e2| e1.or(e2)))),
         res => res,
       },
       res => res,
@@ -561,7 +734,7 @@ pub struct Into<F, O2, E2> {
 }
 
 impl<
-    I: Clone,
+    I,
     O2: From<<F as Parser<I>>::Output>,
     E2: crate::error::ParseError<I> + From<<F as Parser<I>>::Error>,
     F: Parser<I>,
@@ -570,12 +743,36 @@ impl<
   type Output = O2;
   type Error = E2;
 
-  fn parse(&mut self, i: I) -> IResult<I, Self::Output, Self::Error> {
-    match self.f.parse(i) {
-      Ok((i, o)) => Ok((i, o.into())),
-      Err(Err::Error(e)) => Err(Err::Error(e.into())),
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    match self.f.process::<OM>(i) {
+      Ok((i, o)) => Ok((i, OM::Output::map(o, |o| o.into()))),
+      Err(Err::Error(e)) => Err(Err::Error(OM::Error::map(e, |e| e.into()))),
       Err(Err::Failure(e)) => Err(Err::Failure(e.into())),
       Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
+    }
+  }
+}
+
+/// Alternate between two Parser implementations with the same result type.
+pub(crate) enum Either<F, G> {
+  Left(F),
+  Right(G),
+}
+
+impl<
+    I,
+    F: Parser<I>,
+    G: Parser<I, Output = <F as Parser<I>>::Output, Error = <F as Parser<I>>::Error>,
+  > Parser<I> for Either<F, G>
+{
+  type Output = <F as Parser<I>>::Output;
+  type Error = <F as Parser<I>>::Error;
+
+  #[inline]
+  fn process<OM: OutputMode>(&mut self, i: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    match self {
+      Either::Left(f) => f.process::<OM>(i),
+      Either::Right(g) => g.process::<OM>(i),
     }
   }
 }
@@ -618,7 +815,7 @@ mod tests {
   #[test]
   fn native_tuple_test() {
     fn tuple_3(i: &[u8]) -> IResult<&[u8], (u16, &[u8])> {
-      terminated((be_u16, take(3u8)), tag("fg"))(i)
+      terminated((be_u16, take(3u8)), tag("fg")).parse(i)
     }
 
     assert_eq!(

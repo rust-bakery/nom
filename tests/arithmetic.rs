@@ -6,7 +6,7 @@ use nom::{
   combinator::map_res,
   multi::fold,
   sequence::{delimited, pair},
-  IResult,
+  IResult, Parser,
 };
 
 // Parser definition
@@ -15,7 +15,7 @@ use std::str::FromStr;
 
 // We parse any expr surrounded by parens, ignoring all whitespaces around those
 fn parens(i: &str) -> IResult<&str, i64> {
-  delimited(space, delimited(tag("("), expr, tag(")")), space)(i)
+  delimited(space, delimited(tag("("), expr, tag(")")), space).parse(i)
 }
 
 // We transform an integer string into a i64, ignoring surrounding whitespaces
@@ -26,7 +26,8 @@ fn factor(i: &str) -> IResult<&str, i64> {
   alt((
     map_res(delimited(space, digit, space), FromStr::from_str),
     parens,
-  ))(i)
+  ))
+  .parse(i)
 }
 
 // We read an initial factor and for each time we find
@@ -46,7 +47,8 @@ fn term(i: &str) -> IResult<&str, i64> {
         acc / val
       }
     },
-  )(i)
+  )
+  .parse(i)
 }
 
 fn expr(i: &str) -> IResult<&str, i64> {
@@ -63,7 +65,8 @@ fn expr(i: &str) -> IResult<&str, i64> {
         acc - val
       }
     },
-  )(i)
+  )
+  .parse(i)
 }
 
 #[test]

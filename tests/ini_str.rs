@@ -25,22 +25,23 @@ fn category(i: &str) -> IResult<&str, &str> {
   terminated(
     delimited(char('['), take_while(|c| c != ']'), char(']')),
     opt(is_a(" \r\n")),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn key_value(i: &str) -> IResult<&str, (&str, &str)> {
   let (i, key) = alphanumeric(i)?;
   let (i, _) = (opt(space), tag("="), opt(space)).parse(i)?;
   let (i, val) = take_till(is_line_ending_or_comment)(i)?;
-  let (i, _) = opt(space)(i)?;
-  let (i, _) = opt(pair(tag(";"), not_line_ending))(i)?;
-  let (i, _) = opt(space_or_line_ending)(i)?;
+  let (i, _) = opt(space).parse(i)?;
+  let (i, _) = opt(pair(tag(";"), not_line_ending)).parse(i)?;
+  let (i, _) = opt(space_or_line_ending).parse(i)?;
 
   Ok((i, (key, val)))
 }
 
 fn keys_and_values_aggregator(i: &str) -> IResult<&str, Vec<(&str, &str)>> {
-  many(0.., key_value)(i)
+  many(0.., key_value).parse(i)
 }
 
 fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
@@ -51,12 +52,12 @@ fn keys_and_values(input: &str) -> IResult<&str, HashMap<&str, &str>> {
 }
 
 fn category_and_keys(i: &str) -> IResult<&str, (&str, HashMap<&str, &str>)> {
-  pair(category, keys_and_values)(i)
+  pair(category, keys_and_values).parse(i)
 }
 
 #[allow(clippy::type_complexity)]
 fn categories_aggregator(i: &str) -> IResult<&str, Vec<(&str, HashMap<&str, &str>)>> {
-  many(0.., category_and_keys)(i)
+  many(0.., category_and_keys).parse(i)
 }
 
 fn categories(input: &str) -> IResult<&str, HashMap<&str, HashMap<&str, &str>>> {

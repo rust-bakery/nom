@@ -7,7 +7,7 @@ use nom::{
   error::ErrorKind,
   multi::many,
   number::streaming::{be_f32, be_u16, be_u32, be_u64},
-  Err, IResult, Needed,
+  Err, IResult, Needed, Parser,
 };
 
 use std::str;
@@ -244,13 +244,13 @@ struct MP4BoxHeader {
 }
 
 fn brand_name(input: &[u8]) -> IResult<&[u8], &str> {
-  map_res(take(4_usize), str::from_utf8)(input)
+  map_res(take(4_usize), str::from_utf8).parse(input)
 }
 
 fn filetype_parser(input: &[u8]) -> IResult<&[u8], FileType<'_>> {
   let (i, name) = brand_name(input)?;
   let (i, version) = take(4_usize)(i)?;
-  let (i, brands) = many(0.., brand_name)(i)?;
+  let (i, brands) = many(0.., brand_name).parse(i)?;
 
   let ft = FileType {
     major_brand: name,
@@ -287,7 +287,8 @@ fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
     map(tag("skip"), |_| MP4BoxType::Skip),
     map(tag("wide"), |_| MP4BoxType::Wide),
     unknown_box_type,
-  ))(input)
+  ))
+  .parse(input)
 }
 
 // warning, an alt combinator with 9 branches containing a tag combinator
@@ -304,7 +305,8 @@ fn moov_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
     map(tag("clip"), |_| MP4BoxType::Clip),
     map(tag("trak"), |_| MP4BoxType::Trak),
     map(tag("udta"), |_| MP4BoxType::Udta),
-  ))(input)
+  ))
+  .parse(input)
 }
 
 fn box_header(input: &[u8]) -> IResult<&[u8], MP4BoxHeader> {

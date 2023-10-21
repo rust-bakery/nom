@@ -2,10 +2,10 @@
 
 name = "nom"
 version = "7.1.2"
-authors = [ "contact@geoffroycouprie.com" ]
+authors = ["contact@geoffroycouprie.com"]
 description = "A byte-oriented, zero-copy, parser combinators library"
 license = "MIT"
-repository = "https://github.com/Geal/nom"
+repository = "https://github.com/rust-bakery/nom"
 readme = "README.md"
 documentation = "https://docs.rs/nom"
 keywords = ["parser", "parser-combinators", "parsing", "streaming", "bit"]
@@ -44,11 +44,13 @@ default-features = false
 
 [dev-dependencies]
 doc-comment = "0.3"
-proptest = "1.0.0"
+proptest = "=1.0.0"
+
 
 [package.metadata.docs.rs]
 features = ["alloc", "std", "docsrs"]
 all-features = true
+rustdoc-args = ["--generate-link-to-definition"]
 
 [profile.bench]
 debug = true
@@ -113,6 +115,11 @@ path = "examples/custom_error.rs"
 name = "json"
 required-features = ["alloc"]
 path = "examples/json.rs"
+
+[[example]]
+name = "json2"
+required-features = ["alloc"]
+path = "examples/json2.rs"
 
 [[example]]
 name = "json_iterator"

@@ -1,4 +1,7 @@
 //! Traits input types have to implement to work with nom combinators
+use core::iter::Enumerate;
+use core::str::CharIndices;
+
 use crate::error::{ErrorKind, ParseError};
 use crate::internal::{Err, IResult, Needed};
 use crate::lib::std::iter::Copied;
@@ -9,6 +12,8 @@ use crate::lib::std::slice::Iter;
 use crate::lib::std::str::from_utf8;
 use crate::lib::std::str::Chars;
 use crate::lib::std::str::FromStr;
+use crate::IsStreaming;
+use crate::Mode;
 
 #[cfg(feature = "alloc")]
 use crate::lib::std::string::String;
@@ -24,6 +29,11 @@ pub trait Input: Clone + Sized {
 
   /// An iterator over the input type, producing the item
   type Iter: Iterator<Item = Self::Item>;
+
+  /// An iterator over the input type, producing the item and its byte position
+  /// If we're iterating over `&str`, the position
+  /// corresponds to the byte index of the character
+  type IterIndices: Iterator<Item = (usize, Self::Item)>;
 
   /// Calculates the input length, as indicated by its name,
   /// and the name of the trait itself
@@ -43,6 +53,9 @@ pub trait Input: Clone + Sized {
 
   /// Returns an iterator over the elements
   fn iter_elements(&self) -> Self::Iter;
+  /// Returns an iterator over the elements and their byte offsets
+  fn iter_indices(&self) -> Self::IterIndices;
+
   /// Get the byte offset from the element's position in the stream
   fn slice_index(&self, count: usize) -> Result<usize, Needed>;
 
@@ -123,11 +136,64 @@ pub trait Input: Clone + Sized {
       res => res,
     }
   }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          let len = self.input_len();
+          Ok((self.take_from(len), OM::Output::bind(|| self.take(len))))
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.position(predicate) {
+      Some(0) => Err(Err::Error(OM::Error::bind(|| {
+        E::from_error_kind(self.clone(), e)
+      }))),
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          let len = self.input_len();
+          if len == 0 {
+            Err(Err::Error(OM::Error::bind(|| {
+              E::from_error_kind(self.clone(), e)
+            })))
+          } else {
+            Ok((self.take_from(len), OM::Output::bind(|| self.take(len))))
+          }
+        }
+      }
+    }
+  }
 }
 
 impl<'a> Input for &'a [u8] {
   type Item = u8;
   type Iter = Copied<Iter<'a, u8>>;
+  type IterIndices = Enumerate<Self::Iter>;
 
   fn input_len(&self) -> usize {
     self.len()
@@ -158,6 +224,11 @@ impl<'a> Input for &'a [u8] {
   #[inline]
   fn iter_elements(&self) -> Self::Iter {
     self.iter().copied()
+  }
+
+  #[inline]
+  fn iter_indices(&self) -> Self::IterIndices {
+    self.iter_elements().enumerate()
   }
 
   #[inline]
@@ -227,11 +298,62 @@ impl<'a> Input for &'a [u8] {
       }
     }
   }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          Ok((
+            self.take_from(self.len()),
+            OM::Output::bind(|| self.take(self.len())),
+          ))
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.iter().position(|c| predicate(*c)) {
+      Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
+      Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else if self.is_empty() {
+          Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e))))
+        } else {
+          Ok((
+            self.take_from(self.len()),
+            OM::Output::bind(|| self.take(self.len())),
+          ))
+        }
+      }
+    }
+  }
 }
 
 impl<'a> Input for &'a str {
   type Item = char;
   type Iter = Chars<'a>;
+  type IterIndices = CharIndices<'a>;
 
   fn input_len(&self) -> usize {
     self.len()
@@ -264,6 +386,11 @@ impl<'a> Input for &'a str {
   #[inline]
   fn iter_elements(&self) -> Self::Iter {
     self.chars()
+  }
+
+  #[inline]
+  fn iter_indices(&self) -> Self::IterIndices {
+    self.char_indices()
   }
 
   #[inline]
@@ -349,6 +476,74 @@ impl<'a> Input for &'a str {
             Ok((
               self.get_unchecked(self.len()..),
               self.get_unchecked(..self.len()),
+            ))
+          }
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      Some(n) => unsafe {
+        // find() returns a byte index that is already in the slice at a char boundary
+        Ok((
+          self.get_unchecked(n..),
+          OM::Output::bind(|| self.get_unchecked(..n)),
+        ))
+      },
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          // the end of slice is a char boundary
+          unsafe {
+            Ok((
+              self.get_unchecked(self.len()..),
+              OM::Output::bind(|| self.get_unchecked(..self.len())),
+            ))
+          }
+        }
+      }
+    }
+  }
+
+  /// mode version of split_at_position
+  fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
+    &self,
+    predicate: P,
+    e: ErrorKind,
+  ) -> crate::PResult<OM, Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool,
+  {
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
+      Some(n) => unsafe {
+        // find() returns a byte index that is already in the slice at a char boundary
+        Ok((
+          self.get_unchecked(n..),
+          OM::Output::bind(|| self.get_unchecked(..n)),
+        ))
+      },
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else if self.is_empty() {
+          Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e))))
+        } else {
+          // the end of slice is a char boundary
+          unsafe {
+            Ok((
+              self.get_unchecked(self.len()..),
+              OM::Output::bind(|| self.get_unchecked(..self.len())),
             ))
           }
         }
@@ -466,7 +661,7 @@ impl AsBytes for [u8] {
 impl<'a, const N: usize> AsBytes for &'a [u8; N] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    *self
+    self.as_slice()
   }
 }
 
@@ -498,6 +693,8 @@ pub trait AsChar: Copy {
   fn is_hex_digit(self) -> bool;
   /// Tests that self is an octal digit
   fn is_oct_digit(self) -> bool;
+  /// Tests that self is a binary digit
+  fn is_bin_digit(self) -> bool;
   /// Gets the len in bytes for self
   fn len(self) -> usize;
 }
@@ -528,6 +725,10 @@ impl AsChar for u8 {
     matches!(self, 0x30..=0x37)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    matches!(self, 0x30..=0x31)
+  }
+  #[inline]
   fn len(self) -> usize {
     1
   }
@@ -556,6 +757,10 @@ impl<'a> AsChar for &'a u8 {
   #[inline]
   fn is_oct_digit(self) -> bool {
     matches!(*self, 0x30..=0x37)
+  }
+  #[inline]
+  fn is_bin_digit(self) -> bool {
+    matches!(*self, 0x30..=0x31)
   }
   #[inline]
   fn len(self) -> usize {
@@ -589,6 +794,10 @@ impl AsChar for char {
     self.is_digit(8)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    self.is_digit(2)
+  }
+  #[inline]
   fn len(self) -> usize {
     self.len_utf8()
   }
@@ -618,6 +827,10 @@ impl<'a> AsChar for &'a char {
   #[inline]
   fn is_oct_digit(self) -> bool {
     self.is_digit(8)
+  }
+  #[inline]
+  fn is_bin_digit(self) -> bool {
+    self.is_digit(2)
   }
   #[inline]
   fn len(self) -> usize {
@@ -1251,12 +1464,12 @@ impl NomRange<usize> for Range<usize> {
   }
 
   fn is_inverted(&self) -> bool {
-    !(self.start < self.end)
+    self.start >= self.end
   }
 
   fn saturating_iter(&self) -> Self::Saturating {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1264,7 +1477,7 @@ impl NomRange<usize> for Range<usize> {
 
   fn bounded_iter(&self) -> Self::Bounded {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1339,7 +1552,7 @@ impl NomRange<usize> for RangeTo<usize> {
 
   fn saturating_iter(&self) -> Self::Saturating {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1347,7 +1560,7 @@ impl NomRange<usize> for RangeTo<usize> {
 
   fn bounded_iter(&self) -> Self::Bounded {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1454,5 +1667,32 @@ mod tests {
     assert_eq!(a.offset(b), 7);
     assert_eq!(a.offset(c), 0);
     assert_eq!(a.offset(d), 5);
+  }
+
+  #[test]
+  fn test_slice_index() {
+    let a = "abcřèÂßÇd123";
+    assert_eq!(a.slice_index(0), Ok(0));
+    assert_eq!(a.slice_index(2), Ok(2));
+  }
+
+  #[test]
+  fn test_slice_index_utf8() {
+    let a = "a¡€💢€¡a";
+
+    for (c, len) in a.chars().zip([1, 2, 3, 4, 3, 2, 1]) {
+      assert_eq!(c.len(), len);
+    }
+
+    assert_eq!(a.slice_index(0), Ok(0));
+    assert_eq!(a.slice_index(1), Ok(1));
+    assert_eq!(a.slice_index(2), Ok(3));
+    assert_eq!(a.slice_index(3), Ok(6));
+    assert_eq!(a.slice_index(4), Ok(10));
+    assert_eq!(a.slice_index(5), Ok(13));
+    assert_eq!(a.slice_index(6), Ok(15));
+    assert_eq!(a.slice_index(7), Ok(16));
+
+    assert!(a.slice_index(8).is_err());
   }
 }
