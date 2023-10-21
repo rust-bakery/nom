@@ -29,6 +29,10 @@ pub enum Endianness {
   Native,
 }
 
+/// creates a big endian unsigned integer parser
+///
+/// * `bound`: the number of bytes that will be read
+/// * `Uint`: the output type
 #[inline]
 fn be_uint<I, Uint, E: ParseError<I>>(bound: usize) -> impl Parser<I, Output = Uint, Error = E>
 where
@@ -42,8 +46,8 @@ where
   }
 }
 
-/// todo
-pub struct BeUint<Uint, E> {
+/// Big endian unsigned integer parser
+struct BeUint<Uint, E> {
   bound: usize,
   e: PhantomData<E>,
   u: PhantomData<Uint>,
@@ -341,6 +345,10 @@ where
   be_u128().map(|x| x as i128)
 }
 
+/// creates a little endian unsigned integer parser
+///
+/// * `bound`: the number of bytes that will be read
+/// * `Uint`: the output type
 #[inline]
 fn le_uint<I, Uint, E: ParseError<I>>(bound: usize) -> impl Parser<I, Output = Uint, Error = E>
 where
@@ -354,8 +362,8 @@ where
   }
 }
 
-/// todo
-pub struct LeUint<Uint, E> {
+/// Little endian unsigned integer parser
+struct LeUint<Uint, E> {
   bound: usize,
   e: PhantomData<E>,
   u: PhantomData<Uint>,
@@ -1314,7 +1322,7 @@ where
   ))
 }
 
-///todo
+/// float number text parser that also recognizes "nan", "infinity" and "inf" (case insensitive)
 pub fn recognize_float_or_exceptions<T, E: ParseError<T>>() -> impl Parser<T, Output = T, Error = E>
 where
   T: Clone + Offset,
@@ -1338,7 +1346,22 @@ where
   ))
 }
 
-/// TODO
+/// single precision floating point number parser from text
+pub fn float<T, E: ParseError<T>>() -> impl Parser<T, Output = f32, Error = E>
+where
+  T: Clone + Offset,
+  T: Input + crate::traits::ParseTo<f32> + Compare<&'static str>,
+  <T as Input>::Item: AsChar + Clone,
+  T: AsBytes,
+  T: for<'a> Compare<&'a [u8]>,
+{
+  Float {
+    o: PhantomData,
+    e: PhantomData,
+  }
+}
+
+/// double precision floating point number parser from text
 pub fn double<T, E: ParseError<T>>() -> impl Parser<T, Output = f64, Error = E>
 where
   T: Clone + Offset,
@@ -1347,23 +1370,27 @@ where
   T: AsBytes,
   T: for<'a> Compare<&'a [u8]>,
 {
-  Double { e: PhantomData }
+  Float {
+    o: PhantomData,
+    e: PhantomData,
+  }
 }
 
-/// TODO
-pub struct Double<E> {
+/// f64 parser from text
+struct Float<O, E> {
+  o: PhantomData<O>,
   e: PhantomData<E>,
 }
 
-impl<I, E: ParseError<I>> Parser<I> for Double<E>
+impl<I, O, E: ParseError<I>> Parser<I> for Float<O, E>
 where
   I: Clone + Offset,
-  I: Input + crate::traits::ParseTo<f64> + Compare<&'static str>,
+  I: Input + crate::traits::ParseTo<O> + Compare<&'static str>,
   <I as Input>::Item: AsChar + Clone,
   I: AsBytes,
   I: for<'a> Compare<&'a [u8]>,
 {
-  type Output = f64;
+  type Output = O;
   type Error = E;
 
   fn process<OM: crate::OutputMode>(
