@@ -548,31 +548,19 @@ mod tests {
       take_while_m_n(m, n, |c: char| c.len() > 1)(s)
     }
 
-    assert_eq!(
-      multi_byte_chars("€ latin", 0, 64),
-      Ok((&" latin"[..], &"€"[..]))
-    );
-    assert_eq!(
-      multi_byte_chars("𝄠 latin", 0, 1),
-      Ok((&" latin"[..], &"𝄠"[..]))
-    );
-    assert_eq!(
-      multi_byte_chars("باب latin", 0, 64),
-      Ok((&" latin"[..], &"باب"[..]))
-    );
+    assert_eq!(multi_byte_chars("€ latin", 0, 64), Ok((" latin", "€")));
+    assert_eq!(multi_byte_chars("𝄠 latin", 0, 1), Ok((" latin", "𝄠")));
+    assert_eq!(multi_byte_chars("باب latin", 0, 64), Ok((" latin", "باب")));
     assert_eq!(
       multi_byte_chars("💣💢ᾠ latin", 3, 3),
-      Ok((&" latin"[..], &"💣💢ᾠ"[..]))
+      Ok((" latin", "💣💢ᾠ"))
     );
-    assert_eq!(
-      multi_byte_chars("latin", 0, 64),
-      Ok((&"latin"[..], &""[..]))
-    );
-    assert_eq!(multi_byte_chars("باب", 1, 3), Ok((&""[..], &"باب"[..])));
-    assert_eq!(multi_byte_chars("باب", 1, 2), Ok((&"ب"[..], &"با"[..])));
+    assert_eq!(multi_byte_chars("latin", 0, 64), Ok(("latin", "")));
+    assert_eq!(multi_byte_chars("باب", 1, 3), Ok(("", "باب")));
+    assert_eq!(multi_byte_chars("باب", 1, 2), Ok(("ب", "با")));
     assert_eq!(
       multi_byte_chars("latin", 1, 64),
-      Err(Err::Error(Error::new(&"latin"[..], ErrorKind::TakeWhileMN)))
+      Err(Err::Error(Error::new("latin", ErrorKind::TakeWhileMN)))
     );
   }
 }

@@ -332,17 +332,13 @@ impl<'a> Input for &'a [u8] {
     P: Fn(Self::Item) -> bool,
   {
     match self.iter().position(|c| predicate(*c)) {
-      Some(0) => Err(Err::Error(OM::Error::bind(|| {
-        E::from_error_kind(self, e)
-      }))),
+      Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
       Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
       None => {
         if OM::Incomplete::is_streaming() {
           Err(Err::Incomplete(Needed::new(1)))
         } else if self.is_empty() {
-          Err(Err::Error(OM::Error::bind(|| {
-            E::from_error_kind(self, e)
-          })))
+          Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e))))
         } else {
           Ok((
             self.take_from(self.len()),
@@ -529,9 +525,7 @@ impl<'a> Input for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(0) => Err(Err::Error(OM::Error::bind(|| {
-        E::from_error_kind(self, e)
-      }))),
+      Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
       Some(n) => unsafe {
         // find() returns a byte index that is already in the slice at a char boundary
         Ok((
@@ -542,10 +536,8 @@ impl<'a> Input for &'a str {
       None => {
         if OM::Incomplete::is_streaming() {
           Err(Err::Incomplete(Needed::new(1)))
-        } else if self.len() == 0 {
-          Err(Err::Error(OM::Error::bind(|| {
-            E::from_error_kind(self, e)
-          })))
+        } else if self.is_empty() {
+          Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e))))
         } else {
           // the end of slice is a char boundary
           unsafe {
@@ -669,7 +661,7 @@ impl AsBytes for [u8] {
 impl<'a, const N: usize> AsBytes for &'a [u8; N] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    *self
+    self.as_slice()
   }
 }
 
@@ -734,7 +726,7 @@ impl AsChar for u8 {
   }
   #[inline]
   fn is_bin_digit(self) -> bool {
-      matches!(self, 0x30..=0x31)
+    matches!(self, 0x30..=0x31)
   }
   #[inline]
   fn len(self) -> usize {
@@ -1472,12 +1464,12 @@ impl NomRange<usize> for Range<usize> {
   }
 
   fn is_inverted(&self) -> bool {
-    !(self.start < self.end)
+    self.start >= self.end
   }
 
   fn saturating_iter(&self) -> Self::Saturating {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1485,7 +1477,7 @@ impl NomRange<usize> for Range<usize> {
 
   fn bounded_iter(&self) -> Self::Bounded {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1560,7 +1552,7 @@ impl NomRange<usize> for RangeTo<usize> {
 
   fn saturating_iter(&self) -> Self::Saturating {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1568,7 +1560,7 @@ impl NomRange<usize> for RangeTo<usize> {
 
   fn bounded_iter(&self) -> Self::Bounded {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
