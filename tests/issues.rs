@@ -271,3 +271,22 @@ fn issue_1617_count_parser_returning_zero_size() {
     .expect("parsing should succeed");
   assert_eq!(result, ("def", vec![(), (), ()]));
 }
+
+#[test]
+fn issue_1586_parser_iterator_impl() {
+  use nom::{
+    character::complete::{digit1, newline},
+    combinator::{iterator, opt},
+    sequence::terminated,
+    IResult,
+  };
+  fn parse_line(i: &str) -> IResult<&str, &str> {
+    terminated(digit1, opt(newline)).parse(i)
+  }
+
+  fn parse_input(i: &str) -> impl Iterator<Item = i32> + '_ {
+    iterator(i, parse_line).map(|x| x.parse::<i32>().unwrap())
+  }
+
+  assert_eq!(parse_input("123\n456").collect::<Vec<_>>(), vec![123, 456]);
+}

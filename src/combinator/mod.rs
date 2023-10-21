@@ -881,7 +881,7 @@ where
 /// let data = "abc|defg|hijkl|mnopqr|123";
 /// let mut it = iterator(data, terminated(alpha1, tag("|")));
 ///
-/// let parsed = it.map(|v| (v, v.len())).collect::<HashMap<_,_>>();
+/// let parsed = it.by_ref().map(|v| (v, v.len())).collect::<HashMap<_,_>>();
 /// let res: IResult<_,_> = it.finish();
 ///
 /// assert_eq!(parsed, [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)].iter().cloned().collect());
@@ -917,7 +917,7 @@ impl<I: Clone, E, F> ParserIterator<I, E, F> {
   }
 }
 
-impl<'a, Input, Output, Error, F> core::iter::Iterator for &'a mut ParserIterator<Input, Error, F>
+impl<Input, Output, Error, F> core::iter::Iterator for ParserIterator<Input, Error, F>
 where
   F: Parser<Input, Output = Output, Error = Error>,
   Input: Clone,
