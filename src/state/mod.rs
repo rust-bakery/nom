@@ -105,9 +105,7 @@ mod tests {
   fn state_update() {
     fn a(i: &str) -> IResult<&str, &str, ()> {
       on_input::<u8, &str, _, _, _>(preceded(tag("a"), b), |state, input| {
-        println!("state = {state}, input = {input}");
         if *state == 3 {
-          println!("returning Failure");
           ControlFlow::Break(Err(Err::Failure(())))
         } else {
           *state += 1;
