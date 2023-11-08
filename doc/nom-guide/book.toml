@@ -1,0 +1,6 @@
+[book]
+authors = ["Tom Kunc"]
+language = "en"
+multilingual = false
+src = "src"
+title = "The Nom Guide (Nominomicon)"
