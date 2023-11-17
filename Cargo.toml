@@ -30,13 +30,9 @@ include = [
 
 [features]
 alloc = []
-std = ["alloc", "memchr/std", "minimal-lexical/std"]
+std = ["alloc", "memchr/std"]
 default = ["std"]
 docsrs = []
-
-[dependencies.minimal-lexical]
-version = "0.2.0"
-default-features = false
 
 [dependencies.memchr]
 version = "2.3"
