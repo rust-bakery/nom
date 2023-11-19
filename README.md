@@ -328,7 +328,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [MySQL binary log](https://github.com/PrivateRookie/boxercrab),
 [URI](https://github.com/Skasselbard/nom-uri),
 [Furigana](https://github.com/sachaarbonel/furigana.rs),
-[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser)
+[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser),
+[NBT](https://github.com/phoenixr-codes/mcnbt)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/rust-bakery/nom/issues/14).
 
