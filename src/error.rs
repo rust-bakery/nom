@@ -610,7 +610,7 @@ impl ErrorKind {
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
 macro_rules! error_position(
-  ($input:expr, $code:expr) => ({
+  ($input:expr, $code:expr $(,)?) => ({
     $crate::error::make_error($input, $code)
   });
 );
@@ -621,7 +621,7 @@ macro_rules! error_position(
 #[allow(unused_variables)]
 #[macro_export(local_inner_macros)]
 macro_rules! error_node_position(
-  ($input:expr, $code:expr, $next:expr) => ({
+  ($input:expr, $code:expr, $next:expr $(,)?) => ({
     $crate::error::append_error($input, $code, $next)
   });
 );
