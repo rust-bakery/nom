@@ -435,7 +435,6 @@ pub mod lib {
   }
 }
 
-pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
 
