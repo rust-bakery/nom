@@ -454,7 +454,7 @@ impl<'a> Input for &'a str {
         let (str1, str2) = self.split_at(i);
         Ok((str2, str1))
       }
-      None => Ok(("", self)),
+      None => Ok(self.split_at(0)),
     }
   }
 
@@ -478,7 +478,8 @@ impl<'a> Input for &'a str {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
           // the end of slice is a char boundary
-          unsafe { Ok((self.get_unchecked(self.len()..), self)) }
+          let (str1, str2) = self.split_at(self.len());
+          Ok((str2, str1))
         }
       }
     }
