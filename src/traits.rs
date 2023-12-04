@@ -413,8 +413,8 @@ impl<'a> Input for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => Ok(self.split_at(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -429,8 +429,8 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => Ok(self.split_at(i)),
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -443,15 +443,9 @@ impl<'a> Input for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      // the end of slice is a char boundary
-      None => unsafe {
-        Ok((
-          self.get_unchecked(self.len()..),
-          self.get_unchecked(..self.len()),
-        ))
-      },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => Ok(self.split_at(i)),
+      None => Ok(("", self))
     }
   }
 
@@ -465,19 +459,13 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => Ok(self.split_at(i)),
       None => {
         if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
-          // the end of slice is a char boundary
-          unsafe {
-            Ok((
-              self.get_unchecked(self.len()..),
-              self.get_unchecked(..self.len()),
-            ))
-          }
+          Ok(("", self))
         }
       }
     }
