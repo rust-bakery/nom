@@ -414,7 +414,10 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       // The position i is returned from str::find() which means it is within the bounds of the string
-      Some(i) => Ok(self.split_at(i)),
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -430,7 +433,10 @@ impl<'a> Input for &'a str {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       // The position i is returned from str::find() which means it is within the bounds of the string
-      Some(i) => Ok(self.split_at(i)),
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
@@ -444,8 +450,11 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       // The position i is returned from str::find() which means it is within the bounds of the string
-      Some(i) => Ok(self.split_at(i)),
-      None => Ok(("", self))
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
+      None => Ok(("", self)),
     }
   }
 
@@ -460,12 +469,16 @@ impl<'a> Input for &'a str {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       // The position i is returned from str::find() which means it is within the bounds of the string
-      Some(i) => Ok(self.split_at(i)),
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => {
         if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
-          Ok(("", self))
+          // the end of slice is a char boundary
+          unsafe { Ok((self.get_unchecked(self.len()..), self)) }
         }
       }
     }
