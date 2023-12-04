@@ -439,6 +439,7 @@ pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
 
+#[allow(unused_imports)]
 pub use self::str::*;
 
 #[macro_use]
