@@ -1695,4 +1695,14 @@ mod tests {
 
     assert!(a.slice_index(8).is_err());
   }
+
+  #[test]
+  fn test_to_hex() {
+    let p0: &[u8] = &[0x12, 0x34, 0x56, 0x78];
+    assert_eq!(
+      <[u8] as HexDisplay>::to_hex(p0, 2),
+      "00000000	12 34 	.4
+00000002	56 78 	Vx\n"
+    );
+  }
 }
