@@ -15,7 +15,7 @@ use crate::{
   lib::std::vec::Vec,
   multi::{
     count, fold, fold_many0, fold_many1, fold_many_m_n, length_count, many, many0, many1, many_m_n,
-    many_till, separated_list0, separated_list1,
+    many_till, separated_list0, separated_list1, separated_list_m_n,
   },
 };
 
@@ -101,6 +101,87 @@ fn separated_list1_test() {
   assert_eq!(multi(f), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(multi_longsep(g), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(multi(h), Err(Err::Incomplete(Needed::new(1))));
+}
+
+#[test]
+#[cfg(feature = "alloc")]
+fn separated_list_m_n_test() {
+  fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list_m_n(2, 4, tag(","), tag("abcd")).parse(i)
+  }
+  fn multi_empty(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list_m_n(2, 4, tag(","), tag("")).parse(i)
+  }
+  fn empty_sep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list_m_n(2, 4, tag(""), tag("abc")).parse(i)
+  }
+  fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list_m_n(2, 4, tag(".."), tag("abcd")).parse(i)
+  }
+  fn multi0(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list_m_n(0, 3, tag(","), tag("abc")).parse(i)
+  }
+
+  let no_items = &b"azerty"[..];
+  let less_items = &b"abcdef"[..];
+  let lower_bound = &b"abcd,abcdef"[..];
+  let empty_items = &b",,abc"[..];
+  let trailing_sep = &b"abcd,abcd,ef"[..];
+  let incomplete_less_items = &b"abc"[..];
+  let incomplete_sep = &b"abcd."[..];
+  let incomplete_item = &b"abcd,abc"[..];
+  let not_separated = &b"abcabc"[..];
+
+  let no_items_err_pos = &no_items[0..];
+  assert_eq!(
+    multi(no_items),
+    Err(Err::Error(error_position!(
+      no_items_err_pos,
+      ErrorKind::Tag
+    )))
+  );
+
+  let less_items_err_pos = &less_items[4..];
+  assert_eq!(
+    multi(less_items),
+    Err(Err::Error(error_position!(
+      less_items_err_pos,
+      ErrorKind::SeparatedList
+    )))
+  );
+
+  let lower_bound_res = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi(lower_bound), Ok((&b"ef"[..], lower_bound_res)));
+
+  let empty_items_res = vec![&b""[..], &b""[..], &b""[..]];
+  assert_eq!(multi_empty(empty_items), Ok((&b"abc"[..], empty_items_res)));
+
+  let not_separated_err_pos = &not_separated[3..];
+  assert_eq!(
+    empty_sep(not_separated),
+    Err(Err::Error(error_position!(
+      not_separated_err_pos,
+      ErrorKind::SeparatedList
+    )))
+  );
+
+  let trailing_sep_res = vec![&b"abcd"[..], &b"abcd"[..]];
+  assert_eq!(multi(trailing_sep), Ok((&b",ef"[..], trailing_sep_res)));
+
+  assert_eq!(
+    multi(incomplete_less_items),
+    Err(Err::Incomplete(Needed::new(1)))
+  );
+
+  assert_eq!(
+    multi_longsep(incomplete_sep),
+    Err(Err::Incomplete(Needed::new(1)))
+  );
+
+  assert_eq!(multi(incomplete_item), Err(Err::Incomplete(Needed::new(1))));
+
+  let no_items0_res = vec![];
+  assert_eq!(multi0(no_items), Ok((&no_items[0..], no_items0_res)));
 }
 
 #[test]
