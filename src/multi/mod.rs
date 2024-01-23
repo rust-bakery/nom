@@ -562,6 +562,148 @@ where
   }
 }
 
+/// Alternates between two parsers to produce a list of at most `max` elements until [`Err::Error`].
+///
+/// Fails if the element parser does not produce at least `min` elements.
+///
+/// This stops when either parser returns [`Err::Error`] or the number of elements reaches `max`,
+/// and returns the results that were accumulated. To instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
+///
+/// # Arguments
+/// * `min` The minimum number of elements.
+/// * `max` The maximum number of elements.
+/// * `separator` Parses the separator between list elements.
+/// * `parser` Parses the elements of the list.
+///
+/// ```rust
+/// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
+/// use nom::multi::separated_list_m_n;
+/// use nom::bytes::complete::tag;
+///
+/// fn parser(s: &str) -> IResult<&str, Vec<&str>> {
+///   separated_list_m_n(2, 3, tag("|"), tag("abc")).parse(s)
+/// }
+///
+/// assert_eq!(parser("abc|abc|abc"), Ok(("", vec!["abc", "abc", "abc"])));
+/// assert_eq!(parser("abc|abc|def"), Ok(("|def", vec!["abc", "abc"])));
+/// assert_eq!(parser("abc1abc"), Err(Err::Error(Error::new("1abc", ErrorKind::SeparatedList))));
+/// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
+/// assert_eq!(parser("def|abc"), Err(Err::Error(Error::new("def|abc", ErrorKind::Tag))));
+/// ```
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+pub fn separated_list_m_n<I, E, F, G>(
+  min: usize,
+  max: usize,
+  separator: G,
+  parser: F,
+) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
+where
+  I: Clone + InputLength,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
+  E: ParseError<I>,
+{
+  SeparatedListMN {
+    parser,
+    separator,
+    min,
+    max,
+  }
+}
+
+#[cfg(feature = "alloc")]
+/// Parser implementation for the [separated_list_m_n] combinator
+pub struct SeparatedListMN<F, G> {
+  parser: F,
+  separator: G,
+  min: usize,
+  max: usize,
+}
+
+#[cfg(feature = "alloc")]
+impl<I, E: ParseError<I>, F, G> Parser<I> for SeparatedListMN<F, G>
+where
+  I: Clone + InputLength,
+  F: Parser<I, Error = E>,
+  G: Parser<I, Error = E>,
+{
+  type Output = Vec<<F as Parser<I>>::Output>;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    mut i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let mut res = OM::Output::bind(crate::lib::std::vec::Vec::new);
+    let mut res_len = 0usize;
+
+    match self.parser.process::<OM>(i.clone()) {
+      Err(e) => {
+        if (self.min..=self.max).contains(&res_len) {
+          return Ok((i, res));
+        } else {
+          return Err(e);
+        }
+      }
+      Ok((i1, o)) => {
+        res = OM::Output::combine(res, o, |mut res, o| {
+          res.push(o);
+          res_len += 1;
+          res
+        });
+        i = i1;
+      }
+    }
+
+    loop {
+      let len = i.input_len();
+      match self.separator.process::<OM>(i.clone()) {
+        Err(Err::Error(_)) => {
+          if (self.min..=self.max).contains(&res_len) {
+            return Ok((i, res));
+          } else {
+            return Err(Err::Error(OM::Error::bind(|| {
+              <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+            })));
+          }
+        }
+        Err(e) => return Err(e),
+        Ok((i1, _)) => {
+          // infinite loop check: the parser must always consume
+          if i1.input_len() == len {
+            return Err(Err::Error(OM::Error::bind(|| {
+              <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+            })));
+          }
+
+          match self.parser.process::<OM>(i1.clone()) {
+            Err(Err::Error(_)) => {
+              if (self.min..=self.max).contains(&res_len) {
+                return Ok((i, res));
+              } else {
+                return Err(Err::Error(OM::Error::bind(|| {
+                  <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+                })));
+              }
+            }
+            Err(e) => return Err(e),
+            Ok((i2, o)) => {
+              res = OM::Output::combine(res, o, |mut res, o| {
+                res.push(o);
+                res_len += 1;
+                res
+              });
+              i = i2;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 /// Repeats the embedded parser `m..=n` times
 ///
 /// This stops before `n` when the parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
