@@ -82,6 +82,49 @@ where
 }
 
 /// Generates a parser taking `count` bits and comparing them to `pattern`
+///
+/// # Example
+/// ```rust
+///
+/// use nom::error::{Error, ErrorKind};
+///
+/// /// Compare the lowest `count` bits of `input` against the lowest `count` bits of `pattern`.
+/// /// Return Ok and the matching section of `input` if there's a match.
+/// /// Return Err if there's no match.
+/// fn parser(pattern: u8, count: u8, input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), u8> {
+///     nom::bits::complete::tag(pattern, count)(input)
+/// }
+///
+/// // The lowest 4 bits of 0b00001111 match the lowest 4 bits of 0b11111111.
+/// assert_eq!(
+///     parser(0b0000_1111, 4, ([0b1111_1111].as_ref(), 0)),
+///     Ok((([0b1111_1111]..as_ref()(), 4), 0b0000_1111))
+/// );
+///
+/// // The lowest bit of 0b00001111 matches the lowest bit of 0b11111111 (both are 1).
+/// assert_eq!(
+///     parser(0b00000001, 1, ([0b11111111].as_ref(), 0)),
+///     Ok((([0b11111111]..as_ref()(), 1), 0b00000001))
+/// );
+///
+/// // The lowest 2 bits of 0b11111111 and 0b00000001 are different.
+/// assert_eq!(
+///     parser(0b000000_01, 2, ([0b111111_11].as_ref(), 0)),
+///     Err(nom::Err::Error(Error {
+///         input: ([0b11111111].as_ref(), 0),
+///         code: ErrorKind::TagBits
+///     }))
+/// );
+///
+/// // The lowest 8 bits of 0b11111111 and 0b11111110 are different.
+/// assert_eq!(
+///     parser(0b11111110, 8, ([0b11111111].as_ref(), 0)),
+///     Err(nom::Err::Error(Error {
+///         input: ([0b11111111].as_ref(), 0),
+///         code: ErrorKind::TagBits
+///     }))
+/// );
+/// ```
 pub fn tag<I, O, C, E: ParseError<(I, usize)>>(
   pattern: O,
   count: C,
