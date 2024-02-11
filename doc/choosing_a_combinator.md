@@ -38,7 +38,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | [terminated](https://docs.rs/nom/latest/nom/sequence/fn.terminated.html) | `terminated(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", "ab"))` ||
 | [pair](https://docs.rs/nom/latest/nom/sequence/fn.pair.html) | `pair(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", ("ab", "XY")))` ||
 | [separated_pair](https://docs.rs/nom/latest/nom/sequence/fn.separated_pair.html) | `separated_pair(tag("hello"), char(','), tag("world"))` | `"hello,world!"` | `Ok(("!", ("hello", "world")))` ||
-| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` | Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
+| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `tupple((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` | Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
 
 ## Applying a parser multiple times
 
