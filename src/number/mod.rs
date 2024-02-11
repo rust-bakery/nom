@@ -181,6 +181,27 @@ where
   be_uint(4)
 }
 
+/// Recognizes a big endian unsigned 6 bytes integer.
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
+/// use nom::number::be_u48;
+///
+/// let parser = |s| {
+///   be_u48::<_, (_, ErrorKind)>().parse(s)
+/// };
+///
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05abcd"[..]), Ok((&b"abcd"[..], 0x000102030405)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(5))));
+/// ```
+#[inline]
+pub fn be_u48<I, E: ParseError<I>>() -> impl Parser<I, Output = u64, Error = E>
+where
+  I: Input<Item = u8>,
+{
+  be_uint(6)
+}
+
 /// Recognizes a big endian unsigned 8 bytes integer.
 ///
 /// ```rust
@@ -305,6 +326,32 @@ where
   I: Input<Item = u8>,
 {
   be_u32().map(|x| x as i32)
+}
+
+/// Recognizes a big endian signed 6 bytes integer.
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
+/// use nom::number::be_i48;
+///
+/// let mut parser = be_i48::<_, (_, ErrorKind)>();
+///
+/// assert_eq!(parser.parse(&b"\x00\x01\x02\x03\x04\x05abcd"[..]), Ok((&b"abcd"[..], 0x000102030405)));
+/// assert_eq!(parser.parse(&b""[..]), Err(Err::Incomplete(Needed::new(6))));
+/// ```
+#[inline]
+pub fn be_i48<I, E: ParseError<I>>() -> impl Parser<I, Output = i64, Error = E>
+where
+  I: Input<Item = u8>,
+{
+  // Same as the unsigned version but we need to sign-extend manually here
+  be_u48().map(|x| {
+    if x & 0x80_00_00_00_00_00 != 0 {
+      (x | 0xff_ff_00_00_00_00_00_00) as i64
+    } else {
+      x as i64
+    }
+  })
 }
 
 /// Recognizes a big endian signed 8 bytes integer.
@@ -488,6 +535,27 @@ where
   le_uint(4)
 }
 
+/// Recognizes a little endian unsigned 6 bytes integer.
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
+/// use nom::number::le_u48;
+///
+/// let parser = |s| {
+///   le_u48::<_, (_, ErrorKind)>().parse(s)
+/// };
+///
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05abcd"[..]), Ok((&b"abcd"[..], 0x050403020100)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(5))));
+/// ```
+#[inline]
+pub fn le_u48<I, E: ParseError<I>>() -> impl Parser<I, Output = u64, Error = E>
+where
+  I: Input<Item = u8>,
+{
+  le_uint(6)
+}
+
 /// Recognizes a little endian unsigned 8 bytes integer.
 ///
 /// ```rust
@@ -617,6 +685,34 @@ where
   I: Input<Item = u8>,
 {
   le_u32().map(|x| x as i32)
+}
+
+/// Recognizes a little endian signed 6 bytes integer.
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
+/// use nom::number::le_i48;
+///
+/// let parser = |s| {
+///   le_i48::<_, (_, ErrorKind)>().parse(s)
+/// };
+///
+/// assert_eq!(parser(&b"\x00\x01\x02\x03\x04\x05abcd"[..]), Ok((&b"abcd"[..], 0x050403020100)));
+/// assert_eq!(parser(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(5))));
+/// ```
+#[inline]
+pub fn le_i48<I, E: ParseError<I>>() -> impl Parser<I, Output = i64, Error = E>
+where
+  I: Input<Item = u8>,
+{
+  // Same as the unsigned version but we need to sign-extend manually here
+  le_u48().map(|x| {
+    if x & 0x80_00_00_00_00_00 != 0 {
+      (x | 0xff_ff_00_00_00_00_00_00) as i64
+    } else {
+      x as i64
+    }
+  })
 }
 
 /// Recognizes a little endian signed 8 bytes integer.
@@ -802,6 +898,46 @@ where
     crate::number::Endianness::Native => Either::Left(be_u32()),
     #[cfg(target_endian = "little")]
     crate::number::Endianness::Native => Either::Right(le_u32()),
+  }
+}
+
+/// Recognizes an unsigned 6 byte integer
+///
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian u48 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian u48 integer.
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
+/// # use nom::Needed::Size;
+/// use nom::number::u48;
+///
+/// let be_u48 = |s| {
+///   u48::<_, (_, ErrorKind)>(nom::number::Endianness::Big).parse(s)
+/// };
+///
+/// assert_eq!(be_u48(&b"\x00\x01\x02\x03\x04\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000102030405)));
+/// assert_eq!(be_u48(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(5))));
+///
+/// let le_u48 = |s| {
+///   u48::<_, (_, ErrorKind)>(nom::number::Endianness::Little).parse(s)
+/// };
+///
+/// assert_eq!(le_u48(&b"\x00\x01\x02\x03\x04\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050403020100)));
+/// assert_eq!(le_u48(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(5))));
+/// ```
+#[inline]
+pub fn u48<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Parser<I, Output = u64, Error = E>
+where
+  I: Input<Item = u8>,
+{
+  match endian {
+    crate::number::Endianness::Big => Either::Left(be_u48()),
+    crate::number::Endianness::Little => Either::Right(le_u48()),
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => Either::Left(be_u48()),
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => Either::Right(le_u48()),
   }
 }
 
@@ -1029,6 +1165,47 @@ where
     crate::number::Endianness::Native => Either::Left(be_i32()),
     #[cfg(target_endian = "little")]
     crate::number::Endianness::Native => Either::Right(le_i32()),
+  }
+}
+
+/// Recognizes a signed 6 byte integer
+///
+/// If the parameter is `nom::number::Endianness::Big`, parse a big endian i48 integer,
+/// otherwise if `nom::number::Endianness::Little` parse a little endian i48 integer.
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed, Parser};
+/// # use nom::Needed::Size;
+/// use nom::number::i48;
+///
+/// let be_i48 = |s| {
+///   i48::<_, (_, ErrorKind)>(nom::number::Endianness::Big).parse(s)
+/// };
+///
+/// assert_eq!(be_i48(&b"\x00\x01\x02\x03\x04\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x000102030405)));
+/// assert_eq!(be_i48(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(5))));
+///
+/// let le_i48 = |s| {
+///   i48::<_, (_, ErrorKind)>(nom::number::Endianness::Little).parse(s)
+/// };
+///
+/// assert_eq!(le_i48(&b"\x00\x01\x02\x03\x04\x05abcefg"[..]), Ok((&b"abcefg"[..], 0x050403020100)));
+/// assert_eq!(le_i48(&b"\x01"[..]), Err(Err::Incomplete(Needed::new(5))));
+/// ```
+#[inline]
+pub fn i48<I, E: ParseError<I>>(
+  endian: crate::number::Endianness,
+) -> impl Parser<I, Output = i64, Error = E>
+where
+  I: Input<Item = u8>,
+{
+  match endian {
+    crate::number::Endianness::Big => Either::Left(be_i48()),
+    crate::number::Endianness::Little => Either::Right(le_i48()),
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => Either::Left(be_i48()),
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => Either::Right(le_i48()),
   }
 }
 
