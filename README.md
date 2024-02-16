@@ -289,7 +289,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [MIDI](https://github.com/derekdreery/nom-midi-rs),
 [SWF](https://github.com/open-flash/swf-parser),
 [WAVE](https://github.com/Noise-Labs/wave),
-[Matroska (MKV)](https://github.com/rust-av/matroska)
+[Matroska (MKV)](https://github.com/rust-av/matroska),
+[Exif/Metadata parser for JPEG/HEIF/HEIC/MOV/MP4](https://github.com/mindeng/nom-exif)
 - Document formats:
 [TAR](https://github.com/Keruspe/tar-parser.rs),
 [GZ](https://github.com/nharward/nom-gzip),
