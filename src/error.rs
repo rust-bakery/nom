@@ -783,7 +783,7 @@ pub fn write_color(v: &mut Vec<u8>, color: u8) {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(feature = "cargo-clippy", allow(implicit_hasher))]
+#[allow(clippy::implicit_hasher)]
 pub fn print_codes(colors: &HashMap<u32, u8>, names: &HashMap<u32, &str>) -> String {
   let mut v = Vec::new();
   for (code, &color) in colors {

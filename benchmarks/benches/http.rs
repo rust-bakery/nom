@@ -21,7 +21,7 @@ struct Header<'a> {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-#[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
+#[allow(clippy::match_same_arms)]
 fn is_token(c: u8) -> bool {
   match c {
     128..=255 => false,
