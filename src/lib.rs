@@ -439,8 +439,6 @@ pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
 
-pub use self::str::*;
-
 #[macro_use]
 mod macros;
 #[macro_use]
