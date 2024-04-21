@@ -1,10 +1,7 @@
-#[macro_use]
-extern crate criterion;
-
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use criterion::Criterion;
+use codspeed_criterion_compat::{criterion_group, criterion_main, Criterion};
 use nom::{
   branch::alt,
   character::complete::{char, digit1, one_of, space0},

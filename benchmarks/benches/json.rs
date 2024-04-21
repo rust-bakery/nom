@@ -1,10 +1,7 @@
-#[macro_use]
-extern crate criterion;
-
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use criterion::Criterion;
+use codspeed_criterion_compat::*;
 use nom::{
   branch::alt,
   bytes::complete::{tag, take},
@@ -148,6 +145,43 @@ fn json_bench(c: &mut Criterion) {
   // println!("data:\n{:?}", json(data));
   c.bench_function("json", |b| {
     b.iter(|| json(data).unwrap());
+  });
+}
+
+static CANADA: &str = include_str!("../canada.json");
+fn canada_json(c: &mut Criterion) {
+  // test once to make sure it parses correctly
+  json::<Error<&str>>(CANADA).unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json canada", |b| {
+    b.iter(|| json::<Error<&str>>(CANADA).unwrap());
+  });
+}
+
+fn verbose_json(c: &mut Criterion) {
+  let data = "  { \"a\"\t: 42,
+  \"b\": [ \"x\", \"y\", 12 ,\"\\u2014\", \"\\uD83D\\uDE10\"] ,
+  \"c\": { \"hello\" : \"world\"
+  }
+  }  ";
+
+  // test once to make sure it parses correctly
+  json::<VerboseError<&str>>(data).unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json verbose", |b| {
+    b.iter(|| json::<VerboseError<&str>>(data).unwrap());
+  });
+}
+
+fn verbose_canada_json(c: &mut Criterion) {
+  // test once to make sure it parses correctly
+  json::<VerboseError<&str>>(CANADA).unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json canada verbose", |b| {
+    b.iter(|| json::<VerboseError<&str>>(CANADA).unwrap());
   });
 }
 
