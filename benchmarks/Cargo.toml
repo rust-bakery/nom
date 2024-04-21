@@ -6,8 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-criterion = "0.3.5"
-jemallocator = "0.3.2"
+criterion = "0.5.0"
+jemallocator = "0.5.4"
 nom = { path = "../" }
 
 [lib]
