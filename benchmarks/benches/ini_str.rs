@@ -1,7 +1,7 @@
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use criterion::*;
+use codspeed_criterion_compat::*;
 
 use nom::{
   bytes::complete::{is_a, tag, take_till, take_while},

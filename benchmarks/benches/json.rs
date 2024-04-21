@@ -1,10 +1,7 @@
-#[macro_use]
-extern crate criterion;
-
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use criterion::Criterion;
+use codspeed_criterion_compat::*;
 use nom::{
   branch::alt,
   bytes::{tag, take},
@@ -304,7 +301,7 @@ fn verbose_json(c: &mut Criterion) {
     .unwrap();
 
   // println!("data:\n{:?}", json(data));
-  c.bench_function("json vebose", |b| {
+  c.bench_function("json verbose", |b| {
     b.iter(|| {
       json::<VerboseError<&str>>()
         .process::<OutputM<Emit, Emit, Complete>>(data)

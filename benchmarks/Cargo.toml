@@ -53,3 +53,6 @@ harness = false
 name = "json_streaming"
 path = "benches/json_streaming.rs"
 harness = false
+
+[dev-dependencies]
+codspeed-criterion-compat = "2.4.1"
