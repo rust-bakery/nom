@@ -455,6 +455,7 @@ impl<'a> Input for &'a str {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
