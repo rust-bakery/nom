@@ -217,7 +217,8 @@ fn string(i: &str) -> IResult<&str, &str> {
   context(
     "string",
     preceded(char('\"'), cut(terminated(parse_str, char('\"')))),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn boolean(input: &str) -> IResult<&str, bool> {
@@ -234,7 +235,8 @@ fn array(i: &str) -> IResult<&str, ()> {
         preceded(sp, char(']')),
       )),
     ),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn key_value(i: &str) -> IResult<&str, (&str, ())> {
@@ -251,7 +253,8 @@ fn hash(i: &str) -> IResult<&str, ()> {
         preceded(sp, char('}')),
       )),
     ),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn value(i: &str) -> IResult<&str, ()> {
