@@ -23,12 +23,10 @@ jobs:
           bins: cargo-codspeed
 
       - name: Build the benchmark target(s)
-        working-directory: ./benchmarks
-        run: cargo codspeed build
+        run: cargo codspeed build -p benchmarks
 
       - name: Run the benchmarks
         uses: CodSpeedHQ/action@v2
         with:
-          working-directory: ./benchmarks
-          run: cargo codspeed run
+          run: cargo codspeed run -p benchmarks
           token: ${{ secrets.CODSPEED_TOKEN }}
