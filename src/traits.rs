@@ -1079,6 +1079,14 @@ impl<'a, R: FromStr> ParseTo<R> for &'a str {
   }
 }
 
+/// Provides a parser for a given type
+pub trait Parsable<O>: Sized {
+    /// The associated error which can be returned from parsing.
+    type Err;
+    /// Attempt to parse this type, returning an [`IResult`]
+    fn parse(s: O) -> IResult<Self, O, Self::Err>; 
+}
+
 impl<const N: usize> InputLength for [u8; N] {
   #[inline]
   fn input_len(&self) -> usize {
