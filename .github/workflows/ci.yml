@@ -190,7 +190,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: tarpaulin
-          args: --output-dir coverage --out Lcov --exclude benchmarks
+          args: --output-dir coverage --out Lcov --workspace --exclude benchmarks
       
       - name: Publish to Coveralls
         uses: coverallsapp/github-action@master
