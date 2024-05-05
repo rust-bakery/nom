@@ -338,7 +338,7 @@ where
 /// ```
 pub fn take<C, I, Error: ParseError<I>>(count: C) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  I: Input + Input,
+  I: Input,
   C: ToUsize,
 {
   let mut parser = super::take(count);

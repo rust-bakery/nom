@@ -208,7 +208,7 @@ where
 /// ```
 pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Input + Input,
+  T: Input,
   T: Compare<&'static str>,
 {
   match input.compare("\n") {
