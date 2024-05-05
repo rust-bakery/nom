@@ -379,7 +379,7 @@
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![allow(clippy::doc_markdown)]
 #![deny(missing_docs)]
-#[warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples)]
 #[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
