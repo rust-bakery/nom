@@ -56,7 +56,7 @@ pub trait FromExternalError<I, E> {
   fn from_external_error(input: I, kind: ErrorKind, e: E) -> Self;
 }
 
-/// default error type, only contains the error' location and code
+/// default error type, only contains the error's location and code
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Error<I> {
   /// position of the error in the input data

@@ -379,7 +379,6 @@
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
 #![allow(clippy::doc_markdown)]
 #![deny(missing_docs)]
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 #[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
@@ -391,12 +390,10 @@ doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.
-#[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
 pub mod lib {
   /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
   /// as well as `core` or `std`
   #[cfg(not(feature = "std"))]
-  #[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[doc(hidden)]
@@ -418,7 +415,6 @@ pub mod lib {
   }
 
   #[cfg(feature = "std")]
-  #[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[doc(hidden)]
@@ -439,8 +435,6 @@ pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
 
-#[allow(unused_imports)]
-pub use self::str::*;
 
 #[macro_use]
 mod macros;

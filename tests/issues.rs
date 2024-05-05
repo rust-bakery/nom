@@ -105,7 +105,7 @@ fn issue_717(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
   use nom::bytes::complete::{is_not, tag};
   use nom::multi::separated_list0;
 
-  separated_list0(tag([0x0]), is_not([0x0u8])).parse(i)
+  separated_list0(tag(&[0x0][..]), is_not([0x0u8])).parse(i)
 }
 
 mod issue_647 {

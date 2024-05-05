@@ -4,7 +4,7 @@ use core::marker::PhantomData;
 
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
-use crate::traits::{Compare, FindSubstring, FindToken, InputLength, ToUsize};
+use crate::traits::{Compare, FindSubstring, FindToken, ToUsize};
 use crate::Complete;
 use crate::Emit;
 use crate::Input;
@@ -32,7 +32,7 @@ use crate::OutputM;
 pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   move |i: I| {
     let mut parser = super::Tag {
@@ -68,7 +68,7 @@ where
 pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   move |i: I| {
     let mut parser = super::TagNoCase {
@@ -359,7 +359,7 @@ where
 pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input + FindSubstring<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   let mut parser = super::take_until(tag);
 
@@ -388,7 +388,7 @@ where
 pub fn take_until1<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input + FindSubstring<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   let mut parser = super::take_until1(tag);
 
