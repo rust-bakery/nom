@@ -151,37 +151,11 @@ fn json_bench(c: &mut Criterion) {
 static CANADA: &str = include_str!("../canada.json");
 fn canada_json(c: &mut Criterion) {
   // test once to make sure it parses correctly
-  json::<Error<&str>>(CANADA).unwrap();
+  json(CANADA).unwrap();
 
   // println!("data:\n{:?}", json(data));
   c.bench_function("json canada", |b| {
-    b.iter(|| json::<Error<&str>>(CANADA).unwrap());
-  });
-}
-
-fn verbose_json(c: &mut Criterion) {
-  let data = "  { \"a\"\t: 42,
-  \"b\": [ \"x\", \"y\", 12 ,\"\\u2014\", \"\\uD83D\\uDE10\"] ,
-  \"c\": { \"hello\" : \"world\"
-  }
-  }  ";
-
-  // test once to make sure it parses correctly
-  json::<VerboseError<&str>>(data).unwrap();
-
-  // println!("data:\n{:?}", json(data));
-  c.bench_function("json verbose", |b| {
-    b.iter(|| json::<VerboseError<&str>>(data).unwrap());
-  });
-}
-
-fn verbose_canada_json(c: &mut Criterion) {
-  // test once to make sure it parses correctly
-  json::<VerboseError<&str>>(CANADA).unwrap();
-
-  // println!("data:\n{:?}", json(data));
-  c.bench_function("json canada verbose", |b| {
-    b.iter(|| json::<VerboseError<&str>>(CANADA).unwrap());
+    b.iter(|| json(CANADA).unwrap());
   });
 }
 
@@ -250,6 +224,7 @@ fn std_float_bytes(c: &mut Criterion) {
 criterion_group!(
   benches,
   json_bench,
+  canada_json,
   recognize_float_bytes,
   recognize_float_str,
   float_bytes,
