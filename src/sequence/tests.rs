@@ -20,18 +20,6 @@ fn single_element_tuples() {
   );
 }
 
-#[derive(PartialEq, Eq, Debug)]
-struct B {
-  a: u8,
-  b: u8,
-}
-
-#[derive(PartialEq, Eq, Debug)]
-struct C {
-  a: u8,
-  b: Option<u8>,
-}
-
 /*FIXME: convert code examples to new error management
 use util::{add_error_pattern, error_to_list, print_error};
 

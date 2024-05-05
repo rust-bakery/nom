@@ -1410,12 +1410,12 @@ where
 }
 
 #[cfg(test)]
+#[cfg(feature = "std")]
 mod tests {
   use super::*;
   use crate::error::ErrorKind;
   use crate::internal::Err;
 
-  #[cfg(feature = "std")]
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
       let res: $crate::IResult<_, _, (_, ErrorKind)> = $left;
@@ -1424,7 +1424,6 @@ mod tests {
   );
 
   #[test]
-  #[cfg(feature = "std")]
   fn float_test() {
     let mut test_cases = vec![
       "+3.14",
