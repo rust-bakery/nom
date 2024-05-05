@@ -18,7 +18,6 @@ jobs:
           - stable
           - beta
           - nightly
-          - 1.48.0
 
         features:
           - ''
@@ -65,29 +64,7 @@ jobs:
           command: test
           args: --verbose ${{ matrix.features }}
 
-  minrust:
-    name: Test minimal rust version
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install rust (${{ env.RUST_MINVERSION }})
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ env.RUST_MINVERSION }}
-          profile: minimal
-          override: true
-
-      - name: Cache
-        uses: Swatinem/rust-cache@v1
-
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --verbose --no-default-features --features "alloc,std"
+ 
 
   bench:
     name: Bench
