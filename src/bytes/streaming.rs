@@ -4,7 +4,7 @@ use core::marker::PhantomData;
 
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
-use crate::traits::{Compare, FindSubstring, FindToken, InputLength, ToUsize};
+use crate::traits::{Compare, FindSubstring, FindToken, ToUsize};
 use crate::Emit;
 use crate::Input;
 use crate::OutputM;
@@ -31,7 +31,7 @@ use crate::Streaming;
 pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   move |i: I| {
     let mut parser = super::Tag {
@@ -65,7 +65,7 @@ where
 pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   move |i: I| {
     let mut parser = super::TagNoCase {
@@ -338,7 +338,7 @@ where
 /// ```
 pub fn take<C, I, Error: ParseError<I>>(count: C) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  I: Input + InputLength,
+  I: Input,
   C: ToUsize,
 {
   let mut parser = super::take(count);

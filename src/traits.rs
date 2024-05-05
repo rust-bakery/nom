@@ -240,6 +240,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
@@ -250,6 +251,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -278,6 +280,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -300,6 +303,7 @@ impl<'a> Input for &'a [u8] {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -323,6 +327,7 @@ impl<'a> Input for &'a [u8] {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -408,17 +413,22 @@ impl<'a> Input for &'a str {
     Err(Needed::Unknown)
   }
 
+  #[inline(always)]
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
+  #[inline(always)]
   fn split_at_position1<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -429,12 +439,16 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
+  #[inline(always)]
   fn split_at_position_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -443,18 +457,16 @@ impl<'a> Input for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      // the end of slice is a char boundary
-      None => unsafe {
-        Ok((
-          self.get_unchecked(self.len()..),
-          self.get_unchecked(..self.len()),
-        ))
-      },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
+      None => Ok(self.split_at(0)),
     }
   }
 
+  #[inline(always)]
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -465,25 +477,25 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => {
         if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
           // the end of slice is a char boundary
-          unsafe {
-            Ok((
-              self.get_unchecked(self.len()..),
-              self.get_unchecked(..self.len()),
-            ))
-          }
+          let (str1, str2) = self.split_at(self.len());
+          Ok((str2, str1))
         }
       }
     }
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -516,6 +528,7 @@ impl<'a> Input for &'a str {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -552,39 +565,11 @@ impl<'a> Input for &'a str {
   }
 }
 
-/// Abstract method to calculate the input length
-pub trait InputLength {
-  /// Calculates the input length, as indicated by its name,
-  /// and the name of the trait itself
-  fn input_len(&self) -> usize;
-}
-
-impl<'a, T> InputLength for &'a [T] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a> InputLength for &'a str {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a> InputLength for (&'a [u8], usize) {
-  #[inline]
-  fn input_len(&self) -> usize {
-    //println!("bit input length for ({:?}, {}):", self.0, self.1);
-    //println!("-> {}", self.0.len() * 8 - self.1);
-    self.0.len() * 8 - self.1
-  }
-}
-
 /// Useful functions to calculate the offset between slices and show a hexdump of a slice
 pub trait Offset {
   /// Offset between the first byte of self and the first byte of the argument
+  /// the argument must be a part of self, otherwise this can fail with arithmetic
+  /// underflows as it compares byte offsets
   fn offset(&self, second: &Self) -> usize;
 }
 
@@ -1076,20 +1061,6 @@ impl<'a, R: FromStr> ParseTo<R> for &'a [u8] {
 impl<'a, R: FromStr> ParseTo<R> for &'a str {
   fn parse_to(&self) -> Option<R> {
     self.parse().ok()
-  }
-}
-
-impl<const N: usize> InputLength for [u8; N] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a, const N: usize> InputLength for &'a [u8; N] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
   }
 }
 

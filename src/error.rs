@@ -318,6 +318,9 @@ where
 }
 
 /// Transforms a `VerboseError` into a trace with input position information
+///
+/// The errors contain references to input data that must come from `input`,
+/// because nom calculates byte offsets between them
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn convert_error<I: core::ops::Deref<Target = str>>(

@@ -4,7 +4,6 @@ use crate::{
   character::streaming::digit1 as digit,
   error::{ErrorKind, ParseError},
   internal::{Err, IResult, Needed},
-  lib::std::ops::Range,
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
   sequence::pair,
@@ -573,7 +572,7 @@ fn many_test() {
   );
 
   fn many_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(Range::default(), tag("a")).parse(i)
+    many(crate::lib::std::ops::Range::default(), tag("a")).parse(i)
   }
 
   let a = &b"a"[..];
@@ -728,7 +727,13 @@ fn fold_test() {
   );
 
   fn fold_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(Range::default(), tag("a"), Vec::new, fold_into_vec).parse(i)
+    fold(
+      crate::lib::std::ops::Range::default(),
+      tag("a"),
+      Vec::new,
+      fold_into_vec,
+    )
+    .parse(i)
   }
 
   let a = &b"a"[..];
