@@ -98,7 +98,7 @@ These changes keep the same memory footprint in simple errors mode, and reduce i
 | nom 3 | 40 bytes | 64 bytes |
 | nom 4 | 40 bytes | 48 bytes |
 
-In addition, [parsers are faster in nom 4 than in nom 3](https://github.com/Geal/nom/issues/356#issuecomment-333816834). This change is justified.
+In addition, [parsers are faster in nom 4 than in nom 3](https://github.com/rust-bakery/nom/issues/356#issuecomment-333816834). This change is justified.
 
 ## Replacing parser result matchers
 
@@ -223,7 +223,7 @@ assert_eq!(parser(CompleteStr("abcd123")), Ok((CompleteStr("123"), CompleteStr("
 ```
 
 These types allow you to correctly handle cases like text formats for which there might be a last
-empty line or not, as seen in [one of the examples](https://github.com/Geal/nom/blob/87d837006467aebcdb0c37621da874a56c8562b5/tests/multiline.rs).
+empty line or not, as seen in [one of the examples](https://github.com/rust-bakery/nom/blob/87d837006467aebcdb0c37621da874a56c8562b5/tests/multiline.rs).
 
 If those types feel a bit long to write everywhere in the parsers, it's possible
 to alias them like this:
