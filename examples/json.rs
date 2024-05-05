@@ -97,7 +97,8 @@ fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   context(
     "string",
     preceded(char('\"'), cut(terminated(parse_str, char('\"')))),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// some combinators, like `separated_list0` or `many0`, will call a parser repeatedly,
@@ -116,7 +117,8 @@ fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         preceded(sp, char(']')),
       )),
     ),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -150,7 +152,8 @@ fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         preceded(sp, char('}')),
       )),
     ),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// here, we apply the space parser before trying to parse a value
