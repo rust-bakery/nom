@@ -64,7 +64,7 @@ pub fn is_bin_digit(chr: u8) -> bool {
 #[doc(hidden)]
 #[deprecated(since = "8.0.0", note = "Replaced with `AsChar::is_alphanum`")]
 pub fn is_alphanumeric(chr: u8) -> bool {
-  is_alphabetic(chr) || is_digit(chr)
+  AsChar::is_alphanum(chr)
 }
 
 #[inline]
