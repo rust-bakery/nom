@@ -398,6 +398,9 @@ where
       .parser
       .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
     {
+      Err(Err::Error(_)) => return Ok((i, res)),
+      Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+      Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
       Ok((i1, o)) => {
         res = OM::Output::combine(res, o, |mut res, o| {
           res.push(o);
@@ -405,9 +408,6 @@ where
         });
         i = i1;
       }
-      Err(Err::Error(_)) => return Ok((i, res)),
-      Err(Err::Failure(e)) => return Err(Err::Failure(e)),
-      Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
     }
 
     loop {
@@ -416,6 +416,9 @@ where
         .separator
         .process::<OutputM<Check, Check, OM::Incomplete>>(i.clone())
       {
+        Err(Err::Error(_)) => return Ok((i, res)),
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
         Ok((i1, _)) => {
           // infinite loop check: the parser must always consume
           if i1.input_len() == len {
@@ -428,6 +431,9 @@ where
             .parser
             .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i1.clone())
           {
+            Err(Err::Error(_)) => return Ok((i, res)),
+            Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+            Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
             Ok((i2, o)) => {
               res = OM::Output::combine(res, o, |mut res, o| {
                 res.push(o);
@@ -435,14 +441,8 @@ where
               });
               i = i2;
             }
-            Err(Err::Error(_)) => return Ok((i, res)),
-            Err(Err::Failure(e)) => return Err(Err::Failure(e)),
-            Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
           }
         }
-        Err(Err::Error(_)) => return Ok((i, res)),
-        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
-        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
       }
     }
   }
