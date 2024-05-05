@@ -47,7 +47,7 @@ impl<I, O, E> Finish<I, O, E> for IResult<I, O, E> {
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples))]
 pub enum Needed {
   /// Needs more data, but we do not know how much
   Unknown,
@@ -99,7 +99,7 @@ impl Needed {
 /// See also: [`Finish`].
 ///
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples))]
 pub enum Err<Failure, Error = Failure> {
   /// There was not enough data
   Incomplete(Needed),
@@ -579,7 +579,7 @@ impl<I, O, E: ParseError<I>> Parser<I> for Box<dyn Parser<I, Output = O, Error =
 }
 */
 /// Implementation of `Parser::map`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples))]
 pub struct Map<F, G> {
   f: F,
   g: G,
@@ -660,7 +660,7 @@ where
 }
 
 /// Implementation of `Parser::flat_map`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples))]
 pub struct FlatMap<F, G> {
   f: F,
   g: G,
@@ -687,7 +687,7 @@ impl<
 }
 
 /// Implementation of `Parser::and_then`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples))]
 pub struct AndThen<F, G> {
   f: F,
   g: G,
@@ -710,7 +710,7 @@ impl<I, F: Parser<I>, G: Parser<<F as Parser<I>>::Output, Error = <F as Parser<I
 }
 
 /// Implementation of `Parser::and`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples))]
 pub struct And<F, G> {
   f: F,
   g: G,
@@ -732,7 +732,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 }
 
 /// Implementation of `Parser::or`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples))]
 pub struct Or<F, G> {
   f: F,
   g: G,
@@ -761,7 +761,7 @@ impl<
 }
 
 /// Implementation of `Parser::into`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
+#[warn(rustdoc::missing_doc_code_examples))]
 pub struct Into<F, O2, E2> {
   f: F,
   phantom_out2: core::marker::PhantomData<O2>,
