@@ -553,36 +553,6 @@ impl<'a> Input for &'a str {
   }
 }
 
-/// Abstract method to calculate the input length
-pub trait InputLength {
-  /// Calculates the input length, as indicated by its name,
-  /// and the name of the trait itself
-  fn input_len(&self) -> usize;
-}
-
-impl<'a, T> InputLength for &'a [T] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a> InputLength for &'a str {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a> InputLength for (&'a [u8], usize) {
-  #[inline]
-  fn input_len(&self) -> usize {
-    //println!("bit input length for ({:?}, {}):", self.0, self.1);
-    //println!("-> {}", self.0.len() * 8 - self.1);
-    self.0.len() * 8 - self.1
-  }
-}
-
 /// Useful functions to calculate the offset between slices and show a hexdump of a slice
 pub trait Offset {
   /// Offset between the first byte of self and the first byte of the argument
@@ -1077,20 +1047,6 @@ impl<'a, R: FromStr> ParseTo<R> for &'a [u8] {
 impl<'a, R: FromStr> ParseTo<R> for &'a str {
   fn parse_to(&self) -> Option<R> {
     self.parse().ok()
-  }
-}
-
-impl<const N: usize> InputLength for [u8; N] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a, const N: usize> InputLength for &'a [u8; N] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
   }
 }
 
