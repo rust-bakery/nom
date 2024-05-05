@@ -6,8 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-criterion = "0.3.5"
-jemallocator = "0.3.2"
+criterion = "0.5.0"
+jemallocator = "0.5.4"
 nom = { path = "../" }
 
 [lib]
@@ -29,6 +29,12 @@ path = "benches/http.rs"
 harness = false
 
 [[bench]]
+name = "http_streaming"
+path = "benches/http_streaming.rs"
+harness = false
+
+
+[[bench]]
 name = "ini"
 path = "benches/ini.rs"
 harness = false
@@ -42,3 +48,11 @@ harness = false
 name = "json"
 path = "benches/json.rs"
 harness = false
+
+[[bench]]
+name = "json_streaming"
+path = "benches/json_streaming.rs"
+harness = false
+
+[dev-dependencies]
+codspeed-criterion-compat = "2.4.1"

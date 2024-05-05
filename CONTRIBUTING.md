@@ -6,7 +6,7 @@ The following is a set of guidelines for contributing to [nom][1].
 
 **Since the project is young**: consider those best practices prone to change. Please suggest improvements!
 
-[1]: https://github.com/geal/nom
+[1]: https://github.com/rust-bakery/nom
 
 ## Basics
 
@@ -15,7 +15,7 @@ The following is a set of guidelines for contributing to [nom][1].
 The project uses the [MIT][l1] license. By contributing to this project you agree to license
 your changes under this license.
 
-[l1]: https://opensource.org/licenses/MIT
+[l1]: https://opensource.org/license/mit/
 
 
 ## What to do
@@ -25,9 +25,9 @@ your changes under this license.
 There is plenty of [features missing][i1] and possibly bugs might be already there. Feel free to add new [issues][i2]
 and to wrangle over those already [open][i3] and help fixing them.
 
-[i1]: https://github.com/geal/nom/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement
-[i2]: https://github.com/geal/nom/issues
-[i3]: https://github.com/geal/nom/issues?q=is%3Aopen+is%3Aissue
+[i1]: https://github.com/rust-bakery/nom/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement
+[i2]: https://github.com/rust-bakery/nom/issues
+[i3]: https://github.com/rust-bakery/nom/issues?q=is%3Aopen+is%3Aissue
 
 ### Code
 
@@ -61,7 +61,7 @@ If possible provide:
 - a backtrace, if it is a crash.
 - a sample file, if it is a decoding or encoding issue.
 
-[is1]: https://gist.github.com
+[is1]: https://gist.github.com/
 
 ### Coding style
 
@@ -70,5 +70,6 @@ Readable code is the first step on having good and safe libraries.
 
 To avoid slight differences appearing in nightly versions, please
 use the following command to run rustfmt: `cargo +stable fmt`
-[cs1]: https://github.com/rust-lang-nursery/rustfmt
+
+[cs1]: https://github.com/rust-lang/rustfmt
 

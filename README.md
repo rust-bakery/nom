@@ -2,10 +2,10 @@
 
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Join the chat at https://gitter.im/Geal/nom](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Geal/nom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://github.com/Geal/nom/actions/workflows/ci.yml/badge.svg)](https://github.com/Geal/nom/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/Geal/nom/badge.svg?branch=master)](https://coveralls.io/r/Geal/nom?branch=master)
-[![Crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
-[![Minimum rustc version](https://img.shields.io/badge/rustc-1.48.0+-lightgray.svg)](#rust-version-requirements)
+[![Build Status](https://github.com/rust-bakery/nom/actions/workflows/ci.yml/badge.svg)](https://github.com/rust-bakery/nom/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/rust-bakery/nom/badge.svg?branch=main)](https://coveralls.io/github/rust-bakery/nom?branch=main)
+[![crates.io Version](https://img.shields.io/crates/v/nom.svg)](https://crates.io/crates/nom)
+[![Minimum rustc version](https://img.shields.io/badge/rustc-1.56.0+-lightgray.svg)](#rust-version-requirements-msrv)
 
 nom is a parser combinators library written in Rust. Its goal is to provide tools
 to build safe parsers without compromising the speed or memory consumption. To
@@ -13,28 +13,47 @@ that end, it uses extensively Rust's *strong typing* and *memory safety* to prod
 fast and correct parsers, and provides functions, macros and traits to abstract most of the
 error prone plumbing.
 
-![nom logo in CC0 license, by Ange Albertini](https://raw.githubusercontent.com/Geal/nom/master/assets/nom.png)
+![nom logo in CC0 license, by Ange Albertini](https://raw.githubusercontent.com/Geal/nom/main/assets/nom.png)
 
 *nom will happily take a byte out of your files :)*
+
+<!-- toc -->
+
+- [Example](#example)
+- [Documentation](#documentation)
+- [Why use nom?](#why-use-nom)
+    - [Binary format parsers](#binary-format-parsers)
+    - [Text format parsers](#text-format-parsers)
+    - [Programming language parsers](#programming-language-parsers)
+    - [Streaming formats](#streaming-formats)
+- [Parser combinators](#parser-combinators)
+- [Technical features](#technical-features)
+- [Rust version requirements](#rust-version-requirements-msrv)
+- [Installation](#installation)
+- [Related projects](#related-projects)
+- [Parsers written with nom](#parsers-written-with-nom)
+- [Contributors](#contributors)
+
+<!-- tocstop -->
 
 ## Example
 
 [Hexadecimal color](https://developer.mozilla.org/en-US/docs/Web/CSS/color) parser:
 
 ```rust
-extern crate nom;
 use nom::{
-  IResult,
   bytes::complete::{tag, take_while_m_n},
   combinator::map_res,
-  sequence::tuple
+  sequence::Tuple,
+  IResult,
+  Parser,
 };
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Color {
-  pub red:   u8,
+  pub red: u8,
   pub green: u8,
-  pub blue:  u8,
+  pub blue: u8,
 }
 
 fn from_hex(input: &str) -> Result<u8, std::num::ParseIntError> {
@@ -49,35 +68,43 @@ fn hex_primary(input: &str) -> IResult<&str, u8> {
   map_res(
     take_while_m_n(2, 2, is_hex_digit),
     from_hex
-  )(input)
+  ).parse(input)
 }
 
 fn hex_color(input: &str) -> IResult<&str, Color> {
   let (input, _) = tag("#")(input)?;
-  let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
-
+  let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
   Ok((input, Color { red, green, blue }))
 }
 
-fn main() {}
+fn main() {
+  println!("{:?}", hex_color("#2F14DF"))
+}
 
 #[test]
 fn parse_color() {
-  assert_eq!(hex_color("#2F14DF"), Ok(("", Color {
-    red: 47,
-    green: 20,
-    blue: 223,
-  })));
+  assert_eq!(
+    hex_color("#2F14DF"),
+    Ok((
+      "",
+      Color {
+        red: 47,
+        green: 20,
+        blue: 223,
+      }
+    ))
+  );
 }
 ```
 
 ## Documentation
 
 - [Reference documentation](https://docs.rs/nom)
-- [Various design documents and tutorials](https://github.com/Geal/nom/tree/master/doc)
-- [List of combinators and their behaviour](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)
+- [The Nominomicon: A Guide To Using Nom](https://tfpk.github.io/nominomicon/)
+- [Various design documents and tutorials](https://github.com/rust-bakery/nom/tree/main/doc)
+- [List of combinators and their behaviour](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md)
 
-If you need any help developing your parsers, please ping `geal` on IRC (libera, geeknode, oftc), go to `#nom-parsers` on Libera IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
+If you need any help developing your parsers, please ping `geal` on IRC (Libera, Geeknode, OFTC), go to `#nom-parsers` on Libera IRC, or on the [Gitter chat room](https://gitter.im/Geal/nom).
 
 ## Why use nom
 
@@ -113,7 +140,7 @@ formats such as JSON, nom can manage it, and provides you with useful tools:
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/main/lib/src/protocol/h2/parser.rs)
 - [TOML parser](https://github.com/joelself/tomllib)
 
 ### Programming language parsers
@@ -131,8 +158,7 @@ parsing, and construct an AST in place.
 Example projects:
 
 - [PHP VM](https://github.com/tagua-vm/parser)
-- eve language prototype
-- [xshade shading language](https://github.com/xshade-lang/xshade/)
+- [xshade shading language](https://github.com/xshade-lang/xshade)
 
 ### Streaming formats
 
@@ -148,8 +174,8 @@ It allows you to build powerful, deterministic state machines for your protocols
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/master/lib/src/protocol/http/parser.rs)
-- [Using nom with generators](https://github.com/Geal/generator_nom)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/main/lib/src/protocol/h2/parser.rs)
+- [Using nom with generators](https://github.com/rust-bakery/generator_nom)
 
 ## Parser combinators
 
@@ -184,11 +210,11 @@ nom parsers are for:
 - [x] **safe parsing**: nom leverages Rust's safe memory handling and powerful types, and parsers are routinely fuzzed and tested with real world data. So far, the only flaws found by fuzzing were in code written outside of nom
 - [x] **speed**: Benchmarks have shown that nom parsers often outperform many parser combinators library like Parsec and attoparsec, some regular expression engines and even handwritten C parsers
 
-Some benchmarks are available on [Github](https://github.com/Geal/nom_benchmarks).
+Some benchmarks are available on [GitHub](https://github.com/rust-bakery/parser_benchmarks).
 
-## Rust version requirements
+## Rust version requirements (MSRV)
 
-The 7.0 series of nom supports **Rustc version 1.48 or greater**. It is known to work properly on Rust 1.41.1 but there is no guarantee it will stay the case through this major release.
+The 7.0 series of nom supports **Rustc version 1.56 or greater**.
 
 The current policy is that this will only be updated in the next major nom release.
 
@@ -226,51 +252,57 @@ Here is a (non exhaustive) list of known projects using nom:
 
 - Text file formats: [Ceph Crush](https://github.com/cholcombe973/crushtool),
 [Cronenberg](https://github.com/ayrat555/cronenberg),
+[Email](https://github.com/deuxfleurs-org/eml-codec),
 [XFS Runtime Stats](https://github.com/ChrisMacNaughton/xfs-rs),
 [CSV](https://github.com/GuillaumeGomez/csv-parser),
 [FASTA](https://github.com/TianyiShi2001/nom-fasta),
 [FASTQ](https://github.com/elij/fastq.rs),
-[INI](https://github.com/Geal/nom/blob/master/tests/ini.rs),
+[INI](https://github.com/rust-bakery/nom/blob/main/tests/ini.rs),
 [ISO 8601 dates](https://github.com/badboy/iso8601),
 [libconfig-like configuration file format](https://github.com/filipegoncalves/rust-config),
 [Web archive](https://github.com/sbeckeriv/warc_nom_parser),
 [PDB](https://github.com/TianyiShi2001/nom-pdb),
 [proto files](https://github.com/tafia/protobuf-parser),
 [Fountain screenplay markup](https://github.com/adamchalmers/fountain-rs),
-[vimwiki](https://github.com/chipsenkbeil/vimwiki-server/tree/master/vimwiki) & [vimwiki_macros](https://github.com/chipsenkbeil/vimwiki-server/tree/master/vimwiki_macros)
+[vimwiki](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki) & [vimwiki_macros](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki_macros),
+[Kconfig language](https://github.com/Mcdostone/nom-kconfig), [Askama templates](https://crates.io/crates/askama_parser/)
 - Programming languages:
 [PHP](https://github.com/tagua-vm/parser),
 [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs),
 [GLSL](https://github.com/phaazon/glsl),
-[Lua](https://github.com/doomrobo/nom-lua53),
+[Lua](https://github.com/rozbb/nom-lua53),
 [Python](https://github.com/ProgVal/rust-python-parser),
 [SQL](https://github.com/ms705/nom-sql),
 [Elm](https://github.com/cout970/Elm-interpreter),
 [SystemVerilog](https://github.com/dalance/sv-parser),
 [Turtle](https://github.com/vandenoever/rome/tree/master/src/io/turtle),
-[CSML](https://github.com/CSML-by-Clevy/csml-interpreter),
-[Wasm](https://github.com/Strytyp/wasm-nom),
-[Pseudocode](https://github.com/Gungy2/pseudocode)
+[CSML](https://github.com/CSML-by-Clevy/csml-engine/tree/dev/csml_interpreter),
+[Wasm](https://github.com/fabrizio-m/wasm-nom),
+[Pseudocode](https://github.com/Gungy2/pseudocod),
+[Filter for MeiliSearch](https://github.com/meilisearch/meilisearch),
+[PotterScript](https://github.com/fmiras/potterscript)
 - Interface definition formats: [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
 [GIF](https://github.com/Geal/gif.rs),
-[MagicaVoxel .vox](https://github.com/davidedmonds/dot_vox),
-[midi](https://github.com/derekdreery/nom-midi-rs),
+[MagicaVoxel .vox](https://github.com/dust-engine/dot_vox),
+[MIDI](https://github.com/derekdreery/nom-midi-rs),
 [SWF](https://github.com/open-flash/swf-parser),
-[WAVE](http://github.com/noise-Labs/wave),
-[Matroska (MKV)](https://github.com/rust-av/matroska)
+[WAVE](https://github.com/Noise-Labs/wave),
+[Matroska (MKV)](https://github.com/rust-av/matroska),
+[Exif/Metadata parser for JPEG/HEIF/HEIC/MOV/MP4](https://github.com/mindeng/nom-exif)
 - Document formats:
 [TAR](https://github.com/Keruspe/tar-parser.rs),
-[GZ](https://github.com/nharward/nom-gzip)
+[GZ](https://github.com/nharward/nom-gzip),
+[GDSII](https://github.com/erihsu/gds2-io)
 - Cryptographic formats:
 [X.509](https://github.com/rusticata/x509-parser)
 - Network protocol formats:
 [Bencode](https://github.com/jbaum98/bencode.rs),
 [D-Bus](https://github.com/toshokan/misato),
 [DHCP](https://github.com/rusticata/dhcp-parser),
-[HTTP](https://github.com/sozu-proxy/sozu/tree/master/lib/src/protocol/http),
+[HTTP](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http),
 [URI](https://github.com/santifa/rrp/blob/master/src/uri.rs),
-[IMAP](https://github.com/djc/tokio-imap),
+[IMAP](https://github.com/djc/tokio-imap) ([alt](https://github.com/duesee/imap-codec)),
 [IRC](https://github.com/Detegr/RBot-parser),
 [Pcap-NG](https://github.com/richo/pcapng-rs),
 [Pcap](https://github.com/ithinuel/pcap-rs),
@@ -283,20 +315,23 @@ Here is a (non exhaustive) list of known projects using nom:
 [TLS](https://github.com/rusticata/tls-parser),
 [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix),
 [GTP](https://github.com/fuerstenau/gorrosion-gtp),
-[SIP](https://github.com/armatusmiles/sipcore/tree/master/crates/sipmsg),
-[Prometheus](https://github.com/timberio/vector/blob/master/lib/prometheus-parser/src/line.rs)
+[SIP](https://github.com/kurotych/sipcore/tree/master/crates/sipmsg),
+[SMTP](https://github.com/Ekleog/kannader),
+[Prometheus](https://github.com/vectordotdev/vector/blob/master/lib/prometheus-parser/src/line.rs)
 - Language specifications:
-[BNF](https://github.com/snewt/bnf)
+[BNF](https://github.com/shnewto/bnf)
 - Misc formats:
-[Gameboy ROM](https://github.com/MarkMcCaskey/gameboy-rom-parser),
+[Game Boy ROM](https://github.com/MarkMcCaskey/gameboy-rom-parser),
 [ANT FIT](https://github.com/stadelmanma/fitparse-rs),
 [Version Numbers](https://github.com/fosskers/rs-versions),
 [Telcordia/Bellcore SR-4731 SOR OTDR files](https://github.com/JamesHarrison/otdrs),
 [MySQL binary log](https://github.com/PrivateRookie/boxercrab),
 [URI](https://github.com/Skasselbard/nom-uri),
-[Furigana](https://github.com/sachaarbonel/furigana.rs)
+[Furigana](https://github.com/sachaarbonel/furigana.rs),
+[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser),
+[NBT](https://github.com/phoenixr-codes/mcnbt)
 
-Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/Geal/nom/issues/14).
+Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/rust-bakery/nom/issues/14).
 
 Want to add your parser here? Create a pull request for it!
 
@@ -304,6 +339,6 @@ Want to add your parser here? Create a pull request for it!
 
 nom is the fruit of the work of many contributors over the years, many thanks for your help!
 
-<a href="https://github.com/geal/nom/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=geal/nom" />
+<a href="https://github.com/rust-bakery/nom/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=rust-bakery/nom" />
 </a>

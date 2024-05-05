@@ -8,9 +8,10 @@
 //! ```rust
 //! use nom::{
 //!   IResult,
+//!   Parser,
 //!   bytes::complete::{tag, take_while_m_n},
-//!   combinator::map_res,
-//!   sequence::tuple};
+//!   combinator::map_res
+//! };
 //!
 //! #[derive(Debug,PartialEq)]
 //! pub struct Color {
@@ -31,12 +32,12 @@
 //!   map_res(
 //!     take_while_m_n(2, 2, is_hex_digit),
 //!     from_hex
-//!   )(input)
+//!   ).parse(input)
 //! }
 //!
 //! fn hex_color(input: &str) -> IResult<&str, Color> {
 //!   let (input, _) = tag("#")(input)?;
-//!   let (input, (red, green, blue)) = tuple((hex_primary, hex_primary, hex_primary))(input)?;
+//!   let (input, (red, green, blue)) = (hex_primary, hex_primary, hex_primary).parse(input)?;
 //!
 //!   Ok((input, Color { red, green, blue }))
 //! }
@@ -50,18 +51,18 @@
 //! }
 //! ```
 //!
-//! The code is available on [Github](https://github.com/Geal/nom)
+//! The code is available on [GitHub](https://github.com/rust-bakery/nom)
 //!
-//! There are a few [guides](https://github.com/Geal/nom/tree/master/doc) with more details
-//! about [how to write parsers](https://github.com/Geal/nom/blob/master/doc/making_a_new_parser_from_scratch.md),
-//! or the [error management system](https://github.com/Geal/nom/blob/master/doc/error_management.md).
+//! There are a few [guides](https://github.com/rust-bakery/nom/tree/main/doc) with more details
+//! about [how to write parsers](https://github.com/rust-bakery/nom/blob/main/doc/making_a_new_parser_from_scratch.md),
+//! or the [error management system](https://github.com/rust-bakery/nom/blob/main/doc/error_management.md).
 //! You can also check out the [recipes] module that contains examples of common patterns.
 //!
 //! **Looking for a specific combinator? Read the
-//! ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md)**
+//! ["choose a combinator" guide](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md)**
 //!
 //! If you are upgrading to nom 5.0, please read the
-//! [migration document](https://github.com/Geal/nom/blob/master/doc/upgrading_to_nom_5.md).
+//! [migration document](https://github.com/rust-bakery/nom/blob/main/doc/upgrading_to_nom_5.md).
 //!
 //! ## Parser combinators
 //!
@@ -88,6 +89,7 @@
 //! ```rust
 //! use nom::{
 //!   IResult,
+//!   Parser,
 //!   sequence::delimited,
 //!   // see the "streaming/complete" paragraph lower for an explanation of these submodules
 //!   character::complete::char,
@@ -95,7 +97,7 @@
 //! };
 //!
 //! fn parens(input: &str) -> IResult<&str, &str> {
-//!   delimited(char('('), is_not(")"), char(')'))(input)
+//!   delimited(char('('), is_not(")"), char(')')).parse(input)
 //! }
 //! ```
 //!
@@ -167,8 +169,8 @@
 //! - An error `Err(Err::Incomplete(Needed))` indicating that more input is necessary. `Needed` can indicate how much data is needed
 //! - An error `Err(Err::Failure(c))`. It works like the `Error` case, except it indicates an unrecoverable error: We cannot backtrack and test another parser
 //!
-//! Please refer to the ["choose a combinator" guide](https://github.com/Geal/nom/blob/master/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
-//! See also the rest of the documentation [here](https://github.com/Geal/nom/blob/master/doc).
+//! Please refer to the ["choose a combinator" guide](https://github.com/rust-bakery/nom/blob/main/doc/choosing_a_combinator.md) for an exhaustive list of parsers.
+//! See also the rest of the documentation [here](https://github.com/rust-bakery/nom/tree/main/doc).
 //!
 //! ## Making new parsers with function combinators
 //!
@@ -200,24 +202,24 @@
 //! the next, and returns the result of the first parser that succeeds:
 //!
 //! ```rust
-//! use nom::IResult;
+//! use nom::{IResult, Parser};
 //! use nom::branch::alt;
 //! use nom::bytes::complete::tag;
 //!
 //! let mut alt_tags = alt((tag("abcd"), tag("efgh")));
 //!
-//! assert_eq!(alt_tags(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
-//! assert_eq!(alt_tags(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
-//! assert_eq!(alt_tags(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
+//! assert_eq!(alt_tags.parse(&b"abcdxxx"[..]), Ok((&b"xxx"[..], &b"abcd"[..])));
+//! assert_eq!(alt_tags.parse(&b"efghxxx"[..]), Ok((&b"xxx"[..], &b"efgh"[..])));
+//! assert_eq!(alt_tags.parse(&b"ijklxxx"[..]), Err(nom::Err::Error((&b"ijklxxx"[..], nom::error::ErrorKind::Tag))));
 //! ```
 //!
 //! The **`opt`** combinator makes a parser optional. If the child parser returns
 //! an error, **`opt`** will still succeed and return None:
 //!
 //! ```rust
-//! use nom::{IResult, combinator::opt, bytes::complete::tag};
+//! use nom::{IResult, Parser, combinator::opt, bytes::complete::tag};
 //! fn abcd_opt(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
-//!   opt(tag("abcd"))(i)
+//!   opt(tag("abcd")).parse(i)
 //! }
 //!
 //! assert_eq!(abcd_opt(&b"abcdxxx"[..]), Ok((&b"xxx"[..], Some(&b"abcd"[..]))));
@@ -229,11 +231,11 @@
 //! ```rust
 //! # #[cfg(feature = "alloc")]
 //! # fn main() {
-//! use nom::{IResult, multi::many0, bytes::complete::tag};
+//! use nom::{IResult, Parser, multi::many0, bytes::complete::tag};
 //! use std::str;
 //!
 //! fn multi(i: &str) -> IResult<&str, Vec<&str>> {
-//!   many0(tag("abcd"))(i)
+//!   many0(tag("abcd")).parse(i)
 //! }
 //!
 //! let a = "abcdef";
@@ -253,30 +255,32 @@
 //! - **`many0`**: Will apply the parser 0 or more times (if it returns the `O` type, the new parser returns `Vec<O>`)
 //! - **`many1`**: Will apply the parser 1 or more times
 //!
-//! There are more complex (and more useful) parsers like `tuple!`, which is
+//! There are more complex (and more useful) parsers like tuples, which are
 //! used to apply a series of parsers then assemble their results.
 //!
-//! Example with `tuple`:
+//! Example with a tuple of parsers:
 //!
 //! ```rust
 //! # fn main() {
-//! use nom::{error::ErrorKind, Needed,
-//! number::streaming::be_u16,
-//! bytes::streaming::{tag, take},
-//! sequence::tuple};
+//! use nom::{
+//!   error::ErrorKind,
+//!   Needed,
+//!   Parser,
+//!   number::streaming::be_u16,
+//!   bytes::streaming::{tag, take}};
 //!
-//! let mut tpl = tuple((be_u16, take(3u8), tag("fg")));
+//! let mut tpl = (be_u16, take(3u8), tag("fg"));
 //!
 //! assert_eq!(
-//!   tpl(&b"abcdefgh"[..]),
+//!   tpl.parse(&b"abcdefgh"[..]),
 //!   Ok((
 //!     &b"h"[..],
 //!     (0x6162u16, &b"cde"[..], &b"fg"[..])
 //!   ))
 //! );
-//! assert_eq!(tpl(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
+//! assert_eq!(tpl.parse(&b"abcde"[..]), Err(nom::Err::Incomplete(Needed::new(2))));
 //! let input = &b"abcdejk"[..];
-//! assert_eq!(tpl(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
+//! assert_eq!(tpl.parse(input), Err(nom::Err::Error((&input[5..], ErrorKind::Tag))));
 //! # }
 //! ```
 //!
@@ -369,35 +373,27 @@
 //! // while the complete version knows that all of the data is there
 //! assert_eq!(alpha0_complete("abcd"), Ok(("", "abcd")));
 //! ```
-//! **Going further:** Read the [guides](https://github.com/Geal/nom/tree/master/doc),
+//! **Going further:** Read the [guides](https://github.com/rust-bakery/nom/tree/main/doc),
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
-#![cfg_attr(nightly, feature(test))]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
-#![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
+#![allow(clippy::doc_markdown)]
 #![deny(missing_docs)]
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 #[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
 #[cfg(doctest)]
 extern crate doc_comment;
 
-#[cfg(nightly)]
-extern crate test;
-
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.
-#[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
 pub mod lib {
   /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
   /// as well as `core` or `std`
   #[cfg(not(feature = "std"))]
-  #[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[doc(hidden)]
@@ -409,7 +405,7 @@ pub mod lib {
     pub use alloc::{borrow, boxed, string, vec};
 
     #[doc(hidden)]
-    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub use core::{cmp, convert, fmt, iter, mem, num, ops, option, result, slice, str};
 
     /// internal reproduction of std prelude
     #[doc(hidden)]
@@ -419,13 +415,12 @@ pub mod lib {
   }
 
   #[cfg(feature = "std")]
-  #[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[doc(hidden)]
     pub use std::{
-      alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result,
-      slice, str, string, vec,
+      alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, num, ops, option,
+      result, slice, str, string, vec,
     };
 
     /// internal reproduction of std prelude
@@ -436,22 +431,20 @@ pub mod lib {
   }
 }
 
-pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
 
-pub use self::str::*;
-
+#[macro_use]
+mod macros;
 #[macro_use]
 pub mod error;
 
+pub mod branch;
 pub mod combinator;
 mod internal;
-mod traits;
-#[macro_use]
-pub mod branch;
 pub mod multi;
 pub mod sequence;
+mod traits;
 
 pub mod bits;
 pub mod bytes;
@@ -462,6 +455,6 @@ mod str;
 
 pub mod number;
 
-#[cfg(feature = "docsrs")]
-#[cfg_attr(feature = "docsrs", cfg_attr(feature = "docsrs", doc = include_str!("../doc/nom_recipes.md")))]
+#[cfg(all(feature = "std", any(doc, doctest, feature = "docsrs")))]
+#[cfg_attr(any(doc, doctest, feature = "docsrs"), doc = include_str!("../doc/nom_recipes.md"))]
 pub mod recipes {}

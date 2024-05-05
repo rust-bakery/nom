@@ -12,7 +12,7 @@ If you got the following error when compiling your nom parser:
 error[E0425]: cannot find value `INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ` in this scope
    --> src/lib.rs:111:7
     |
-111 |         INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/master/doc/FAQ.md#using-nightly-to-get-better-error-messages
+111 |         INVALID_NOM_SYNTAX_PLEASE_SEE_FAQ //https://github.com/Geal/nom/blob/main/doc/archive/FAQ.md#using-nightly-to-get-better-error-messages
     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in this scope
 ```
 
@@ -65,7 +65,7 @@ error: aborting due to previous error(s)
 error: Could not compile `nom`.
 ```
 
-If the error message is not helpful, please reach out on the [Gitter chat](https://gitter.im/Geal/nom?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) or the IRC channel (#nom on freenode), and show
+If the error message is not helpful, please reach out on the [Gitter chat](https://gitter.im/Geal/nom) or the IRC channel (#nom on freenode), and show
 your code and the error message you got.
 
 ### nom 1.0 does not compile on Rust older than 1.4

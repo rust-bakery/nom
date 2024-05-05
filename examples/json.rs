@@ -9,7 +9,7 @@ use nom::{
   multi::separated_list0,
   number::complete::double,
   sequence::{delimited, preceded, separated_pair, terminated},
-  Err, IResult,
+  Err, IResult, Parser,
 };
 use std::collections::HashMap;
 use std::str;
@@ -73,11 +73,11 @@ fn boolean<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, bool,
 
   // `alt` combines the two parsers. It returns the result of the first
   // successful parser, or an error
-  alt((parse_true, parse_false))(input)
+  alt((parse_true, parse_false)).parse(input)
 }
 
 fn null<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, (), E> {
-  value((), tag("null"))(input)
+  value((), tag("null")).parse(input)
 }
 
 /// this parser combines the previous `parse_str` parser, that recognizes the
@@ -97,7 +97,8 @@ fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
   context(
     "string",
     preceded(char('\"'), cut(terminated(parse_str, char('\"')))),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// some combinators, like `separated_list0` or `many0`, will call a parser repeatedly,
@@ -116,7 +117,8 @@ fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         preceded(sp, char(']')),
       )),
     ),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -126,7 +128,8 @@ fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     preceded(sp, string),
     cut(preceded(sp, char(':'))),
     json_value,
-  )(i)
+  )
+  .parse(i)
 }
 
 fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -149,7 +152,8 @@ fn hash<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
         preceded(sp, char('}')),
       )),
     ),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// here, we apply the space parser before trying to parse a value
@@ -166,7 +170,8 @@ fn json_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
       map(boolean, JsonValue::Boolean),
       map(null, |_| JsonValue::Null),
     )),
-  )(i)
+  )
+  .parse(i)
 }
 
 /// the root element of a JSON parser is either an object or an array
@@ -181,7 +186,8 @@ fn root<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
       map(null, |_| JsonValue::Null),
     )),
     opt(sp),
-  )(i)
+  )
+  .parse(i)
 }
 
 fn main() {
