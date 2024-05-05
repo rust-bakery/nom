@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test {
   #[cfg(feature = "alloc")]
-  use crate::{branch::alt, bytes::complete::tag_no_case, combinator::recognize, multi::many1};
+  use crate::{branch::alt, bytes::complete::tag_no_case, combinator::recognize, multi::many};
   use crate::{
     bytes::complete::{is_a, is_not, tag, take, take_till, take_until},
     error::{self, ErrorKind},
@@ -168,10 +168,10 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
-    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
-    assert_eq!(f(&c[..]), Ok((&d[..], &b[..])));
-    assert_eq!(f(&d[..]), Ok((&d[..], &a[..])));
+    assert_eq!(f(a), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f(b), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f(c), Ok((d, b)));
+    assert_eq!(f(d), Ok((d, a)));
   }
 
   #[test]
@@ -186,12 +186,12 @@ mod test {
     let c = "abcd123";
     let d = "123";
 
-    assert_eq!(f(&a[..]), Err(Err::Incomplete(Needed::new(1))));
-    assert_eq!(f(&b[..]), Err(Err::Incomplete(Needed::new(1))));
-    assert_eq!(f(&c[..]), Ok((&"123"[..], &b[..])));
+    assert_eq!(f(a), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f(b), Err(Err::Incomplete(Needed::new(1))));
+    assert_eq!(f(c), Ok(("123", b)));
     assert_eq!(
-      f(&d[..]),
-      Err(Err::Error(error_position!(&d[..], ErrorKind::TakeWhile1)))
+      f(d),
+      Err(Err::Error(error_position!(d, ErrorKind::TakeWhile1)))
     );
   }
 
@@ -302,15 +302,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
     fn while_s(c: char) -> bool {
-      c == 'β'
-        || c == 'è'
-        || c == 'ƒ'
-        || c == 'ô'
-        || c == 'ř'
-        || c == 'è'
-        || c == 'Â'
-        || c == 'ß'
-        || c == 'Ç'
+      matches!(c, 'β' | 'è' | 'ƒ' | 'ô' | 'ř' | 'Â' | 'ß' | 'Ç')
     }
     fn test(input: &str) -> IResult<&str, &str> {
       take_while(while_s)(input)
@@ -361,15 +353,7 @@ mod test {
     const CONSUMED: &str = "βèƒôřèÂßÇ";
     const LEFTOVER: &str = "áƒƭèř";
     fn while1_s(c: char) -> bool {
-      c == 'β'
-        || c == 'è'
-        || c == 'ƒ'
-        || c == 'ô'
-        || c == 'ř'
-        || c == 'è'
-        || c == 'Â'
-        || c == 'ß'
-        || c == 'Ç'
+      matches!(c, 'β' | 'è' | 'ƒ' | 'ô' | 'ř' | 'Â' | 'ß' | 'Ç')
     }
     fn test(input: &str) -> IResult<&str, &str> {
       take_while1(while1_s)(input)
@@ -503,15 +487,21 @@ mod test {
   #[test]
   #[cfg(feature = "alloc")]
   fn recognize_is_a() {
+    use crate::{lib::std::vec::Vec, Parser};
+
     let a = "aabbab";
     let b = "ababcd";
 
     fn f(i: &str) -> IResult<&str, &str> {
-      recognize(many1(alt((tag("a"), tag("b")))))(i)
+      recognize(many::<_, _, Vec<&str>, _, _>(
+        1..,
+        alt((tag("a"), tag("b"))),
+      ))
+      .parse(i)
     }
 
-    assert_eq!(f(&a[..]), Ok((&a[6..], &a[..])));
-    assert_eq!(f(&b[..]), Ok((&b[4..], &b[..4])));
+    assert_eq!(f(a), Ok((&a[6..], a)));
+    assert_eq!(f(b), Ok((&b[4..], &b[..4])));
   }
 
   #[test]
