@@ -158,7 +158,6 @@ parsing, and construct an AST in place.
 Example projects:
 
 - [PHP VM](https://github.com/tagua-vm/parser)
-- eve language prototype
 - [xshade shading language](https://github.com/xshade-lang/xshade)
 
 ### Streaming formats
@@ -266,7 +265,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [proto files](https://github.com/tafia/protobuf-parser),
 [Fountain screenplay markup](https://github.com/adamchalmers/fountain-rs),
 [vimwiki](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki) & [vimwiki_macros](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki_macros),
-[Kconfig language](https://github.com/Mcdostone/nom-kconfig)
+[Kconfig language](https://github.com/Mcdostone/nom-kconfig), [Askama templates](https://crates.io/crates/askama_parser/)
 - Programming languages:
 [PHP](https://github.com/tagua-vm/parser),
 [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs),
@@ -289,7 +288,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [MIDI](https://github.com/derekdreery/nom-midi-rs),
 [SWF](https://github.com/open-flash/swf-parser),
 [WAVE](https://github.com/Noise-Labs/wave),
-[Matroska (MKV)](https://github.com/rust-av/matroska)
+[Matroska (MKV)](https://github.com/rust-av/matroska),
+[Exif/Metadata parser for JPEG/HEIF/HEIC/MOV/MP4](https://github.com/mindeng/nom-exif)
 - Document formats:
 [TAR](https://github.com/Keruspe/tar-parser.rs),
 [GZ](https://github.com/nharward/nom-gzip),
@@ -328,7 +328,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [MySQL binary log](https://github.com/PrivateRookie/boxercrab),
 [URI](https://github.com/Skasselbard/nom-uri),
 [Furigana](https://github.com/sachaarbonel/furigana.rs),
-[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser)
+[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser),
+[NBT](https://github.com/phoenixr-codes/mcnbt)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/rust-bakery/nom/issues/14).
 

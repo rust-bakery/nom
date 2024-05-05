@@ -3,7 +3,7 @@
 //! Parsers are generic over their error type, requiring that it implements
 //! the `error::ParseError<Input>` trait.
 
-use crate::internal::Parser;
+use crate::internal::{Mode, OutputMode, PResult, Parser};
 use crate::lib::std::fmt;
 
 #[cfg(feature = "alloc")]
@@ -56,7 +56,7 @@ pub trait FromExternalError<I, E> {
   fn from_external_error(input: I, kind: ErrorKind, e: E) -> Self;
 }
 
-/// default error type, only contains the error' location and code
+/// default error type, only contains the error's location and code
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Error<I> {
   /// position of the error in the input data
@@ -283,22 +283,44 @@ use crate::internal::{Err, IResult};
 /// Create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
 /// to errors when backtracking through a parse tree
-pub fn context<I: Clone, E: ContextError<I>, F, O>(
+pub fn context<F>(context: &'static str, parser: F) -> Context<F> {
+  Context { context, parser }
+}
+
+/// Parser implementation for [context]
+pub struct Context<F> {
   context: &'static str,
-  mut f: F,
-) -> impl FnMut(I) -> IResult<I, O, E>
+  parser: F,
+}
+
+impl<I, F> Parser<I> for Context<F>
 where
-  F: Parser<I, Output = O, Error = E>,
+  I: Clone,
+  F: Parser<I>,
+  <F as Parser<I>>::Error: ContextError<I>,
 {
-  move |i: I| match f.parse(i.clone()) {
-    Ok(o) => Ok(o),
-    Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
-    Err(Err::Error(e)) => Err(Err::Error(E::add_context(i, context, e))),
-    Err(Err::Failure(e)) => Err(Err::Failure(E::add_context(i, context, e))),
+  type Output = <F as Parser<I>>::Output;
+  type Error = <F as Parser<I>>::Error;
+
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    match self.parser.process::<OM>(input.clone()) {
+      Err(Err::Error(e)) => Err(Err::Error(OM::Error::map(e, |e| {
+        <F as Parser<I>>::Error::add_context(input, self.context, e)
+      }))),
+      Err(Err::Failure(e)) => Err(Err::Failure(<F as Parser<I>>::Error::add_context(
+        input,
+        self.context,
+        e,
+      ))),
+      x => x,
+    }
   }
 }
 
 /// Transforms a `VerboseError` into a trace with input position information
+///
+/// The errors contain references to input data that must come from `input`,
+/// because nom calculates byte offsets between them
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn convert_error<I: core::ops::Deref<Target = str>>(
@@ -667,11 +689,67 @@ where
 }
 
 #[cfg(test)]
-#[cfg(feature = "alloc")]
 mod tests {
   use super::*;
   use crate::character::complete::char;
 
+  #[test]
+  fn context_test() {
+    use crate::{character::char, combinator::cut, internal::Needed};
+
+    #[derive(Debug, PartialEq)]
+    struct Error<I> {
+      input: I,
+      ctx: Option<&'static str>,
+    }
+
+    impl<I> ParseError<I> for Error<I> {
+      fn from_error_kind(input: I, _kind: ErrorKind) -> Self {
+        Self { input, ctx: None }
+      }
+
+      fn append(input: I, _kind: ErrorKind, other: Self) -> Self {
+        Self {
+          input,
+          ctx: other.ctx,
+        }
+      }
+    }
+
+    impl<I> ContextError<I> for Error<I> {
+      fn add_context(input: I, ctx: &'static str, _other: Self) -> Self {
+        Self {
+          input,
+          ctx: Some(ctx),
+        }
+      }
+    }
+
+    assert_eq!(
+      context("ctx", char::<_, Error<_>>('a')).parse("abcd"),
+      Ok(("bcd", 'a'))
+    );
+    assert_eq!(
+      context("ctx", char::<_, Error<_>>('a')).parse(""),
+      Err(Err::Incomplete(Needed::new(1)))
+    );
+    assert_eq!(
+      context("ctx", char::<_, Error<_>>('a')).parse_complete(""),
+      Err(Err::Error(Error {
+        input: "",
+        ctx: Some("ctx")
+      }))
+    );
+    assert_eq!(
+      context("ctx", cut(char::<_, Error<_>>('a'))).parse("bcd"),
+      Err(Err::Failure(Error {
+        input: "bcd",
+        ctx: Some("ctx")
+      }))
+    );
+  }
+
+  #[cfg(feature = "alloc")]
   #[test]
   fn convert_error_panic() {
     let input = "";

@@ -4,7 +4,7 @@ use core::marker::PhantomData;
 
 use crate::error::ParseError;
 use crate::internal::{IResult, Parser};
-use crate::traits::{Compare, FindSubstring, FindToken, InputLength, ToUsize};
+use crate::traits::{Compare, FindSubstring, FindToken, ToUsize};
 use crate::Complete;
 use crate::Emit;
 use crate::Input;
@@ -32,7 +32,7 @@ use crate::OutputM;
 pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   move |i: I| {
     let mut parser = super::Tag {
@@ -68,7 +68,7 @@ where
 pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   move |i: I| {
     let mut parser = super::TagNoCase {
@@ -150,10 +150,10 @@ where
 /// ```rust
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::bytes::complete::take_while;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while(is_alphabetic)(s)
+///   take_while(AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
@@ -181,10 +181,10 @@ where
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_while1;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while1(is_alphabetic)(s)
+///   take_while1(AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
@@ -212,10 +212,10 @@ where
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_while_m_n;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn short_alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while_m_n(3, 6, is_alphabetic)(s)
+///   take_while_m_n(3, 6, AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(short_alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
@@ -359,7 +359,7 @@ where
 pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input + FindSubstring<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   let mut parser = super::take_until(tag);
 
@@ -388,7 +388,7 @@ where
 pub fn take_until1<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
   I: Input + FindSubstring<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   let mut parser = super::take_until1(tag);
 

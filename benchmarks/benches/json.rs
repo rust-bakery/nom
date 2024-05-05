@@ -1,10 +1,7 @@
-#[macro_use]
-extern crate criterion;
-
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use criterion::Criterion;
+use codspeed_criterion_compat::*;
 use nom::{
   branch::alt,
   bytes::{tag, take},
@@ -15,7 +12,7 @@ use nom::{
   number::double,
   number::recognize_float,
   sequence::{delimited, preceded, separated_pair},
-  Complete, Emit, IResult, Mode, OutputM, Parser,
+  Check, Complete, Emit, IResult, Mode, OutputM, Parser,
 };
 
 use std::{collections::HashMap, marker::PhantomData, num::ParseIntError};
@@ -274,6 +271,28 @@ fn json_bench(c: &mut Criterion) {
   });
 }
 
+fn json_bench_error_check(c: &mut Criterion) {
+  let data = "  { \"a\"\t: 42,
+  \"b\": [ \"x\", \"y\", 12 ,\"\\u2014\", \"\\uD83D\\uDE10\"] ,
+  \"c\": { \"hello\" : \"world\"
+  }
+  }  ";
+
+  // test once to make sure it parses correctly
+  json::<Error<&str>>()
+    .process::<OutputM<Emit, Check, Complete>>(data)
+    .unwrap();
+
+  // println!("data:\n{:?}", json(data));
+  c.bench_function("json", |b| {
+    b.iter(|| {
+      json::<Error<&str>>()
+        .process::<OutputM<Emit, Check, Complete>>(data)
+        .unwrap()
+    });
+  });
+}
+
 static CANADA: &str = include_str!("../canada.json");
 fn canada_json(c: &mut Criterion) {
   // test once to make sure it parses correctly
@@ -304,7 +323,7 @@ fn verbose_json(c: &mut Criterion) {
     .unwrap();
 
   // println!("data:\n{:?}", json(data));
-  c.bench_function("json vebose", |b| {
+  c.bench_function("json verbose", |b| {
     b.iter(|| {
       json::<VerboseError<&str>>()
         .process::<OutputM<Emit, Emit, Complete>>(data)
@@ -402,6 +421,7 @@ fn std_float_bytes(c: &mut Criterion) {
 criterion_group!(
   benches,
   json_bench,
+  json_bench_error_check,
   verbose_json,
   canada_json,
   verbose_canada_json,
