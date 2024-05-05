@@ -568,6 +568,8 @@ impl<'a> Input for &'a str {
 /// Useful functions to calculate the offset between slices and show a hexdump of a slice
 pub trait Offset {
   /// Offset between the first byte of self and the first byte of the argument
+  /// the argument must be a part of self, otherwise this can fail with arithmetic
+  /// underflows as it compares byte offsets
   fn offset(&self, second: &Self) -> usize;
 }
 
