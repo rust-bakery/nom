@@ -12,16 +12,14 @@ use crate::internal::{Err, Needed, Parser};
 use crate::lib::std::num::NonZeroUsize;
 #[cfg(feature = "alloc")]
 use crate::lib::std::vec::Vec;
+use crate::traits::ToUsize;
 use crate::Check;
 use crate::Emit;
 use crate::Input;
 use crate::Mode;
+use crate::NomRange;
 use crate::OutputM;
 use crate::OutputMode;
-use crate::{
-  traits::{InputLength, ToUsize},
-  NomRange,
-};
 
 /// Don't pre-allocate more than 64KiB when calling `Vec::with_capacity`.
 ///
@@ -66,7 +64,7 @@ pub fn many0<I, F>(
   f: F,
 ) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = <F as Parser<I>>::Error>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
 {
   Many0 { parser: f }
@@ -81,7 +79,7 @@ pub struct Many0<F> {
 #[cfg(feature = "alloc")]
 impl<I, F> Parser<I> for Many0<F>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
 {
   type Output = crate::lib::std::vec::Vec<<F as Parser<I>>::Output>;
@@ -153,7 +151,7 @@ pub fn many1<I, F>(
   parser: F,
 ) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = <F as Parser<I>>::Error>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
 {
   Many1 { parser }
@@ -168,7 +166,7 @@ pub struct Many1<F> {
 #[cfg(feature = "alloc")]
 impl<I, F> Parser<I> for Many1<F>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
 {
   type Output = Vec<<F as Parser<I>>::Output>;
@@ -255,7 +253,7 @@ pub fn many_till<I, E, F, G>(
   g: G,
 ) -> impl Parser<I, Output = (Vec<<F as Parser<I>>::Output>, <G as Parser<I>>::Output), Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: Parser<I, Error = E>,
   E: ParseError<I>,
@@ -278,7 +276,7 @@ pub struct ManyTill<F, G, E> {
 #[cfg(feature = "alloc")]
 impl<I, F, G, E> Parser<I> for ManyTill<F, G, E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: Parser<I, Error = E>,
   E: ParseError<I>,
@@ -337,7 +335,7 @@ where
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
-/// * `sep` Parses the separator between list elements. Must be consuming. 
+/// * `sep` Parses the separator between list elements. Must be consuming.
 /// * `f` Parses the elements of the list.
 ///
 /// ```rust
@@ -362,7 +360,7 @@ pub fn separated_list0<I, E, F, G>(
   f: F,
 ) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: Parser<I, Error = E>,
   E: ParseError<I>,
@@ -383,7 +381,7 @@ pub struct SeparatedList0<F, G> {
 #[cfg(feature = "alloc")]
 impl<I, E: ParseError<I>, F, G> Parser<I> for SeparatedList0<F, G>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: Parser<I, Error = E>,
 {
@@ -482,7 +480,7 @@ pub fn separated_list1<I, E, F, G>(
   parser: F,
 ) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: Parser<I, Error = E>,
   E: ParseError<I>,
@@ -500,7 +498,7 @@ pub struct SeparatedList1<F, G> {
 #[cfg(feature = "alloc")]
 impl<I, E: ParseError<I>, F, G> Parser<I> for SeparatedList1<F, G>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: Parser<I, Error = E>,
 {
@@ -599,7 +597,7 @@ pub fn many_m_n<I, E, F>(
   parser: F,
 ) -> impl Parser<I, Output = Vec<<F as Parser<I>>::Output>, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
@@ -617,7 +615,7 @@ pub struct ManyMN<F> {
 #[cfg(feature = "alloc")]
 impl<I, F> Parser<I> for ManyMN<F>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
 {
   type Output = Vec<<F as Parser<I>>::Output>;
@@ -702,7 +700,7 @@ where
 /// ```
 pub fn many0_count<I, E, F>(parser: F) -> impl Parser<I, Output = usize, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
@@ -716,7 +714,7 @@ pub struct Many0Count<F> {
 
 impl<I, F> Parser<I> for Many0Count<F>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
 {
   type Output = usize;
@@ -783,7 +781,7 @@ where
 /// ```
 pub fn many1_count<I, E, F>(parser: F) -> impl Parser<I, Output = usize, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   E: ParseError<I>,
 {
@@ -797,7 +795,7 @@ pub struct Many1Count<F> {
 
 impl<I, F> Parser<I> for Many1Count<F>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
 {
   type Output = usize;
@@ -1048,7 +1046,7 @@ pub fn fold_many0<I, E, F, G, H, R>(
   g: G,
 ) -> impl Parser<I, Output = R, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: FnMut(R, <F as Parser<I>>::Output) -> R,
   H: FnMut() -> R,
@@ -1072,7 +1070,7 @@ pub struct FoldMany0<F, G, Init, R> {
 
 impl<I, F, G, Init, R> Parser<I> for FoldMany0<F, G, Init, R>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
   G: FnMut(R, <F as Parser<I>>::Output) -> R,
   Init: FnMut() -> R,
@@ -1152,7 +1150,7 @@ pub fn fold_many1<I, E, F, G, H, R>(
   g: G,
 ) -> impl Parser<I, Output = R, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: FnMut(R, <F as Parser<I>>::Output) -> R,
   H: FnMut() -> R,
@@ -1176,7 +1174,7 @@ pub struct FoldMany1<F, G, Init, R> {
 
 impl<I, F, G, Init, R> Parser<I> for FoldMany1<F, G, Init, R>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
   G: FnMut(R, <F as Parser<I>>::Output) -> R,
   Init: FnMut() -> R,
@@ -1274,7 +1272,7 @@ pub fn fold_many_m_n<I, E, F, G, H, R>(
   g: G,
 ) -> impl Parser<I, Output = R, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: FnMut(R, <F as Parser<I>>::Output) -> R,
   H: FnMut() -> R,
@@ -1302,7 +1300,7 @@ pub struct FoldManyMN<F, G, Init, R> {
 
 impl<I, F, G, Init, R> Parser<I> for FoldManyMN<F, G, Init, R>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
   G: FnMut(R, <F as Parser<I>>::Output) -> R,
   Init: FnMut() -> R,
@@ -1668,7 +1666,7 @@ pub fn many<I, E, Collection, F, G>(
   parser: F,
 ) -> impl Parser<I, Output = Collection, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   Collection: Extend<<F as Parser<I>>::Output> + Default,
   E: ParseError<I>,
@@ -1690,7 +1688,7 @@ pub struct Many<F, R, Collection> {
 
 impl<I, F, R, Collection> Parser<I> for Many<F, R, Collection>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
   Collection: Extend<<F as Parser<I>>::Output> + Default,
   R: NomRange<usize>,
@@ -1792,7 +1790,7 @@ pub fn fold<I, E, F, G, H, J, R>(
   fold: G,
 ) -> impl Parser<I, Output = R, Error = E>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I, Error = E>,
   G: FnMut(R, <F as Parser<I>>::Output) -> R,
   H: FnMut() -> R,
@@ -1817,7 +1815,7 @@ pub struct Fold<F, G, H, Range> {
 
 impl<I, F, G, H, Range, Res> Parser<I> for Fold<F, G, H, Range>
 where
-  I: Clone + InputLength,
+  I: Clone + Input,
   F: Parser<I>,
   G: FnMut(Res, <F as Parser<I>>::Output) -> Res,
   H: FnMut() -> Res,

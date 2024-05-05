@@ -7,7 +7,7 @@ use crate::combinator::opt;
 use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, IResult};
-use crate::traits::{AsChar, FindToken, Input, InputLength};
+use crate::traits::{AsChar, FindToken, Input};
 use crate::traits::{Compare, CompareResult};
 use crate::Complete;
 use crate::Emit;
@@ -208,7 +208,7 @@ where
 /// ```
 pub fn line_ending<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
 where
-  T: Input + InputLength,
+  T: Input + Input,
   T: Compare<&'static str>,
 {
   match input.compare("\n") {
