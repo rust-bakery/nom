@@ -420,13 +420,6 @@ where
         Err(Err::Failure(e)) => return Err(Err::Failure(e)),
         Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
         Ok((i1, _)) => {
-          // infinite loop check: the parser must always consume
-          if i1.input_len() == len {
-            return Err(Err::Error(OM::Error::bind(|| {
-              <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
-            })));
-          }
-
           match self
             .parser
             .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i1.clone())
@@ -435,10 +428,18 @@ where
             Err(Err::Failure(e)) => return Err(Err::Failure(e)),
             Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
             Ok((i2, o)) => {
+              // infinite loop check: the parser must always consume
+              if i2.input_len() == len {
+                return Err(Err::Error(OM::Error::bind(|| {
+                  <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+                })));
+              }
+
               res = OM::Output::combine(res, o, |mut res, o| {
                 res.push(o);
                 res
               });
+
               i = i2;
             }
           }
@@ -532,13 +533,6 @@ where
         Err(Err::Failure(e)) => return Err(Err::Failure(e)),
         Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
         Ok((i1, _)) => {
-          // infinite loop check: the parser must always consume
-          if i1.input_len() == len {
-            return Err(Err::Error(OM::Error::bind(|| {
-              <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
-            })));
-          }
-
           match self
             .parser
             .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i1.clone())
@@ -547,6 +541,13 @@ where
             Err(Err::Failure(e)) => return Err(Err::Failure(e)),
             Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
             Ok((i2, o)) => {
+              // infinite loop check: the parser must always consume
+              if i2.input_len() == len {
+                return Err(Err::Error(OM::Error::bind(|| {
+                  <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+                })));
+              }
+
               res = OM::Output::combine(res, o, |mut res, o| {
                 res.push(o);
                 res
