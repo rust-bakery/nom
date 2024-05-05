@@ -1,10 +1,11 @@
 use crate::character::streaming::{
-  alpha1 as alpha, alphanumeric1 as alphanumeric, digit1 as digit, hex_digit1 as hex_digit,
-  multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
+  alpha1 as alpha, alphanumeric1 as alphanumeric, bin_digit1 as bin_digit, digit1 as digit,
+  hex_digit1 as hex_digit, multispace1 as multispace, oct_digit1 as oct_digit, space1 as space,
 };
 use crate::error::ErrorKind;
 use crate::internal::{Err, IResult, Needed};
 use crate::AsChar;
+use crate::Parser;
 #[cfg(feature = "alloc")]
 use crate::{
   branch::alt,
@@ -146,6 +147,8 @@ fn to_s(i: Vec<u8>) -> String {
 #[cfg(feature = "alloc")]
 #[test]
 fn escape_transform() {
+  use crate::Parser;
+
   fn esc(i: &[u8]) -> IResult<&[u8], String> {
     map(
       escaped_transform(
@@ -158,7 +161,8 @@ fn escape_transform() {
         )),
       ),
       to_s,
-    )(i)
+    )
+    .parse(i)
   }
 
   assert_eq!(esc(&b"abcd;"[..]), Ok((&b";"[..], String::from("abcd"))));
@@ -202,7 +206,8 @@ fn escape_transform() {
         )),
       ),
       to_s,
-    )(i)
+    )
+    .parse(i)
   }
   assert_eq!(
     esc2(&b"ab&egrave;DEF;"[..]),
@@ -300,7 +305,7 @@ fn recognize() {
   use crate::sequence::delimited;
 
   fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(delimited(tag("<!--"), take(5_usize), tag("-->")))(i)
+    recognize(delimited(tag("<!--"), take(5_usize), tag("-->"))).parse(i)
   }
   let r = x(&b"<!-- abc --> aaa"[..]);
   assert_eq!(r, Ok((&b" aaa"[..], &b"<!-- abc -->"[..])));
@@ -308,43 +313,49 @@ fn recognize() {
   let semicolon = &b";"[..];
 
   fn ya(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(alpha)(i)
+    recognize(alpha).parse(i)
   }
   let ra = ya(&b"abc;"[..]);
   assert_eq!(ra, Ok((semicolon, &b"abc"[..])));
 
   fn yd(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(digit)(i)
+    recognize(digit).parse(i)
   }
   let rd = yd(&b"123;"[..]);
   assert_eq!(rd, Ok((semicolon, &b"123"[..])));
 
   fn yhd(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(hex_digit)(i)
+    recognize(hex_digit).parse(i)
   }
   let rhd = yhd(&b"123abcDEF;"[..]);
   assert_eq!(rhd, Ok((semicolon, &b"123abcDEF"[..])));
 
   fn yod(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(oct_digit)(i)
+    recognize(oct_digit).parse(i)
   }
   let rod = yod(&b"1234567;"[..]);
   assert_eq!(rod, Ok((semicolon, &b"1234567"[..])));
 
+  fn ybd(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    recognize(bin_digit).parse(i)
+  }
+  let rbd = ybd(&b"101010;"[..]);
+  assert_eq!(rbd, Ok((semicolon, &b"101010"[..])));
+
   fn yan(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(alphanumeric)(i)
+    recognize(alphanumeric).parse(i)
   }
   let ran = yan(&b"123abc;"[..]);
   assert_eq!(ran, Ok((semicolon, &b"123abc"[..])));
 
   fn ys(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(space)(i)
+    recognize(space).parse(i)
   }
   let rs = ys(&b" \t;"[..]);
   assert_eq!(rs, Ok((semicolon, &b" \t"[..])));
 
   fn yms(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(multispace)(i)
+    recognize(multispace).parse(i)
   }
   let rms = yms(&b" \t\r\n;"[..]);
   assert_eq!(rms, Ok((semicolon, &b" \t\r\n"[..])));
@@ -406,7 +417,7 @@ fn take_while_m_n() {
   assert_eq!(x(&a[..]), Err(Err::Incomplete(Needed::new(2))));
   assert_eq!(x(&b[..]), Err(Err::Incomplete(Needed::new(1))));
   assert_eq!(x(&c[..]), Err(Err::Incomplete(Needed::new(1))));
-  assert_eq!(x(&d[..]), Ok((&b"123"[..], &c[..])));
+  assert_eq!(x(&d[..]), Ok((&b"123"[..], &b"abc"[..])));
   assert_eq!(x(&e[..]), Ok((&b"e"[..], &b"abcd"[..])));
   assert_eq!(
     x(&f[..]),
@@ -552,7 +563,7 @@ fn recognize_take_while() {
     take_while(AsChar::is_alphanum)(i)
   }
   fn y(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    recognize(x)(i)
+    recognize(x).parse(i)
   }
   assert_eq!(x(&b"ab."[..]), Ok((&b"."[..], &b"ab"[..])));
   println!("X: {:?}", x(&b"ab"[..]));
@@ -564,7 +575,7 @@ fn length_bytes() {
   use crate::{bytes::streaming::tag, multi::length_data, number::streaming::le_u8};
 
   fn x(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    length_data(le_u8)(i)
+    length_data(le_u8).parse(i)
   }
   assert_eq!(x(b"\x02..>>"), Ok((&b">>"[..], &b".."[..])));
   assert_eq!(x(b"\x02.."), Ok((&[][..], &b".."[..])));
@@ -573,7 +584,7 @@ fn length_bytes() {
 
   fn y(i: &[u8]) -> IResult<&[u8], &[u8]> {
     let (i, _) = tag("magic")(i)?;
-    length_data(le_u8)(i)
+    length_data(le_u8).parse(i)
   }
   assert_eq!(y(b"magic\x02..>>"), Ok((&b">>"[..], &b".."[..])));
   assert_eq!(y(b"magic\x02.."), Ok((&[][..], &b".."[..])));
@@ -611,11 +622,11 @@ fn case_insensitive() {
   assert_eq!(test2("ab"), Err(Err::Incomplete(Needed::new(2))));
   assert_eq!(
     test2("Hello"),
-    Err(Err::Error(error_position!(&"Hello"[..], ErrorKind::Tag)))
+    Err(Err::Error(error_position!("Hello", ErrorKind::Tag)))
   );
   assert_eq!(
     test2("Hel"),
-    Err(Err::Error(error_position!(&"Hel"[..], ErrorKind::Tag)))
+    Err(Err::Error(error_position!("Hel", ErrorKind::Tag)))
   );
 }
 
@@ -624,10 +635,10 @@ fn tag_fixed_size_array() {
   use crate::bytes::streaming::tag;
 
   fn test(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    tag([0x42])(i)
+    tag(&[0x42][..])(i)
   }
   fn test2(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    tag(&[0x42])(i)
+    tag(&[0x42][..])(i)
   }
   let input = [0x42, 0x00];
   assert_eq!(test(&input), Ok((&b"\x00"[..], &b"\x42"[..])));

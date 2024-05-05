@@ -54,9 +54,9 @@ fn char_str() {
     char('c')(i)
   }
 
-  let a = &"abcd"[..];
+  let a = "abcd";
   assert_eq!(f(a), Err(Err::Error(error_position!(a, ErrorKind::Char))));
 
-  let b = &"cde"[..];
-  assert_eq!(f(b), Ok((&"de"[..], 'c')));
+  let b = "cde";
+  assert_eq!(f(b), Ok(("de", 'c')));
 }
