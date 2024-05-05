@@ -240,6 +240,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
@@ -250,6 +251,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -278,6 +280,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -300,6 +303,7 @@ impl<'a> Input for &'a [u8] {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -323,6 +327,7 @@ impl<'a> Input for &'a [u8] {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -408,6 +413,7 @@ impl<'a> Input for &'a str {
     Err(Needed::Unknown)
   }
 
+  #[inline(always)]
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
@@ -419,6 +425,7 @@ impl<'a> Input for &'a str {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -435,6 +442,7 @@ impl<'a> Input for &'a str {
     }
   }
 
+  #[inline(always)]
   fn split_at_position_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -455,6 +463,7 @@ impl<'a> Input for &'a str {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -484,6 +493,7 @@ impl<'a> Input for &'a str {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -516,6 +526,7 @@ impl<'a> Input for &'a str {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
