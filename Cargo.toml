@@ -14,7 +14,8 @@ edition = "2021"
 autoexamples = false
 
 # also update in README.md (badge and "Rust version requirements" section)
-rust-version = "1.56"
+# 1.57.0 - Now using '.as_slice()'
+rust-version = "1.57.0"
 
 include = [
   "CHANGELOG.md",
