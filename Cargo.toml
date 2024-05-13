@@ -14,7 +14,7 @@ edition = "2021"
 autoexamples = false
 
 # also update in README.md (badge and "Rust version requirements" section)
-rust-version = "1.56"
+rust-version = "1.65.0"
 
 include = [
   "CHANGELOG.md",
