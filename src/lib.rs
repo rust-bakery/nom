@@ -377,10 +377,8 @@
 //! check out the [recipes]!
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "docsrs", feature(doc_cfg))]
-#![cfg_attr(feature = "docsrs", feature(extended_key_value_attributes))]
 #![allow(clippy::doc_markdown)]
 #![deny(missing_docs)]
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 #[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
@@ -392,12 +390,10 @@ doc_comment::doctest!("../README.md");
 
 /// Lib module to re-export everything needed from `std` or `core`/`alloc`. This is how `serde` does
 /// it, albeit there it is not public.
-#[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
 pub mod lib {
   /// `std` facade allowing `std`/`core` to be interchangeable. Reexports `alloc` crate optionally,
   /// as well as `core` or `std`
   #[cfg(not(feature = "std"))]
-  #[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[doc(hidden)]
@@ -419,7 +415,6 @@ pub mod lib {
   }
 
   #[cfg(feature = "std")]
-  #[cfg_attr(nightly, allow(rustdoc::missing_doc_code_examples))]
   /// internal std exports for no_std compatibility
   pub mod std {
     #[doc(hidden)]
@@ -436,11 +431,8 @@ pub mod lib {
   }
 }
 
-pub use self::bits::*;
 pub use self::internal::*;
 pub use self::traits::*;
-
-pub use self::str::*;
 
 #[macro_use]
 mod macros;
@@ -463,6 +455,6 @@ mod str;
 
 pub mod number;
 
-#[cfg(feature = "docsrs")]
-#[cfg_attr(feature = "docsrs", cfg_attr(feature = "docsrs", doc = include_str!("../doc/nom_recipes.md")))]
+#[cfg(all(feature = "std", any(doc, doctest, feature = "docsrs")))]
+#[cfg_attr(any(doc, doctest, feature = "docsrs"), doc = include_str!("../doc/nom_recipes.md"))]
 pub mod recipes {}

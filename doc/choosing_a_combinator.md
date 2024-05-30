@@ -38,7 +38,7 @@ Those are used to recognize the lowest level elements of your grammar, like, "he
 | [terminated](https://docs.rs/nom/latest/nom/sequence/fn.terminated.html) | `terminated(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", "ab"))` ||
 | [pair](https://docs.rs/nom/latest/nom/sequence/fn.pair.html) | `pair(tag("ab"), tag("XY"))` | `"abXYZ"` | `Ok(("Z", ("ab", "XY")))` ||
 | [separated_pair](https://docs.rs/nom/latest/nom/sequence/fn.separated_pair.html) | `separated_pair(tag("hello"), char(','), tag("world"))` | `"hello,world!"` | `Ok(("!", ("hello", "world")))` ||
-| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` | Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
+| [tuple](https://docs.rs/nom/latest/nom/sequence/fn.tuple.html) | `tuple((tag("ab"), tag("XY"), take(1)))` | `"abXYZ!"` | `Ok(("!", ("ab", "XY", "Z")))` | Chains parsers and assemble the sub results in a tuple. You can use as many child parsers as you can put elements in a tuple|
 
 ## Applying a parser multiple times
 
@@ -131,6 +131,7 @@ Use these functions with a combinator like `take_while`:
 - [`is_digit`](https://docs.rs/nom/latest/nom/character/fn.is_digit.html): Tests if byte is ASCII digit: `[0-9]`
 - [`is_hex_digit`](https://docs.rs/nom/latest/nom/character/fn.is_hex_digit.html): Tests if byte is ASCII hex digit: `[0-9A-Fa-f]`
 - [`is_oct_digit`](https://docs.rs/nom/latest/nom/character/fn.is_oct_digit.html): Tests if byte is ASCII octal digit: `[0-7]`
+- [`is_bin_digit`](https://docs.rs/nom/latest/nom/character/fn.is_bin_digit.html): Tests if byte is ASCII binary digit: `[0-1]`
 - [`is_space`](https://docs.rs/nom/latest/nom/character/fn.is_space.html): Tests if byte is ASCII space or tab: `[ \t]`
 - [`is_newline`](https://docs.rs/nom/latest/nom/character/fn.is_newline.html): Tests if byte is ASCII newline: `[\n]`
 
@@ -150,6 +151,7 @@ Alternatively there are ready to use functions:
 - [`newline`](https://docs.rs/nom/latest/nom/character/complete/fn.newline.html): Matches a newline character `\n`
 - [`not_line_ending`](https://docs.rs/nom/latest/nom/character/complete/fn.not_line_ending.html): Recognizes a string of any char except `\r` or `\n`
 - [`oct_digit0`](https://docs.rs/nom/latest/nom/character/complete/fn.oct_digit0.html): Recognizes zero or more octal characters: `[0-7]`. [`oct_digit1`](https://docs.rs/nom/latest/nom/character/complete/fn.oct_digit1.html) does the same but returns at least one character
+- [`bin_digit0`](https://docs.rs/nom/latest/nom/character/complete/fn.bin_digit0.html): Recognizes zero or more binary characters: `[0-1]`. [`bin_digit1`](https://docs.rs/nom/latest/nom/character/complete/fn.bin_digit1.html) does the same but returns at least one character
 - [`rest`](https://docs.rs/nom/latest/nom/combinator/fn.rest.html): Return the remaining input
 - [`rest_len`](https://docs.rs/nom/latest/nom/combinator/fn.rest_len.html): Return the length of the remaining input
 - [`space0`](https://docs.rs/nom/latest/nom/character/complete/fn.space0.html): Recognizes zero or more spaces and tabs. [`space1`](https://docs.rs/nom/latest/nom/character/complete/fn.space1.html) does the same but returns at least one character

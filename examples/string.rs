@@ -142,7 +142,7 @@ where
   // and for each output value, calls a folding function on each output value.
   let build_string = fold(
     0..,
-    // Our parser function– parses a single string fragment
+    // Our parser function – parses a single string fragment
     parse_fragment,
     // Our init value, an empty string
     String::new,

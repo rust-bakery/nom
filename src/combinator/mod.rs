@@ -15,7 +15,7 @@ use crate::lib::std::convert::Into;
 use crate::lib::std::fmt::Debug;
 use crate::lib::std::mem::transmute;
 use crate::lib::std::ops::{Range, RangeFrom, RangeTo};
-use crate::traits::{AsChar, Input, InputLength, ParseTo};
+use crate::traits::{AsChar, Input, ParseTo};
 use crate::traits::{Compare, CompareResult, Offset};
 
 #[cfg(test)]
@@ -48,7 +48,7 @@ where
 #[inline]
 pub fn rest_len<T, E: ParseError<T>>(input: T) -> IResult<T, usize, E>
 where
-  T: InputLength,
+  T: Input,
 {
   let len = input.input_len();
   Ok((input, len))
@@ -363,7 +363,7 @@ where
 /// assert_eq!(parser(""), Ok(("", "")));
 /// # }
 /// ```
-pub fn eof<I: InputLength + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
+pub fn eof<I: Input + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
   if input.input_len() == 0 {
     let clone = input.clone();
     Ok((input, clone))
@@ -443,7 +443,7 @@ pub fn all_consuming<I, E: ParseError<I>, F>(
   parser: F,
 ) -> impl Parser<I, Output = <F as Parser<I>>::Output, Error = E>
 where
-  I: InputLength,
+  I: Input,
   F: Parser<I, Error = E>,
 {
   AllConsuming { parser }
@@ -456,7 +456,7 @@ pub struct AllConsuming<F> {
 
 impl<I, F> Parser<I> for AllConsuming<F>
 where
-  I: InputLength,
+  I: Input,
   F: Parser<I>,
 {
   type Output = <F as Parser<I>>::Output;
@@ -845,11 +845,11 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-///  fn parser1(i: &str) -> IResult<&str, &str> {
-///    alpha1(i)
-///  }
+/// fn parser1(i: &str) -> IResult<&str, &str> {
+///   alpha1(i)
+/// }
 ///
-///  let mut parser2 = into(parser1);
+/// let mut parser2 = into(parser1);
 ///
 /// // the parser converts the &str output of the child parser into a Vec<u8>
 /// let bytes: IResult<&str, Vec<u8>> = parser2.parse("abcd");
@@ -881,7 +881,7 @@ where
 /// let data = "abc|defg|hijkl|mnopqr|123";
 /// let mut it = iterator(data, terminated(alpha1, tag("|")));
 ///
-/// let parsed = it.map(|v| (v, v.len())).collect::<HashMap<_,_>>();
+/// let parsed = it.by_ref().map(|v| (v, v.len())).collect::<HashMap<_,_>>();
 /// let res: IResult<_,_> = it.finish();
 ///
 /// assert_eq!(parsed, [("abc", 3usize), ("defg", 4), ("hijkl", 5), ("mnopqr", 6)].iter().cloned().collect());
@@ -917,7 +917,7 @@ impl<I: Clone, E, F> ParserIterator<I, E, F> {
   }
 }
 
-impl<'a, Input, Output, Error, F> core::iter::Iterator for &'a mut ParserIterator<Input, Error, F>
+impl<Input, Output, Error, F> core::iter::Iterator for ParserIterator<Input, Error, F>
 where
   F: Parser<Input, Output = Output, Error = Error>,
   Input: Clone,

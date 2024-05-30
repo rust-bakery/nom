@@ -21,6 +21,8 @@ use crate::{
 #[test]
 #[cfg(feature = "alloc")]
 fn separated_list0_test() {
+  use core::num::NonZeroUsize;
+
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(","), tag("abcd")).parse(i)
   }
@@ -32,6 +34,9 @@ fn separated_list0_test() {
   }
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(".."), tag("abcd")).parse(i)
+  }
+  fn empty_both(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list0(tag(""), tag("")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -51,13 +56,14 @@ fn separated_list0_test() {
   assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
   let res3 = vec![&b""[..], &b""[..], &b""[..]];
   assert_eq!(multi_empty(d), Ok((&b"abc"[..], res3)));
-  let i_err_pos = &i[3..];
   assert_eq!(
     empty_sep(i),
-    Err(Err::Error(error_position!(
-      i_err_pos,
-      ErrorKind::SeparatedList
-    )))
+    Err(Err::Incomplete(Needed::Size(NonZeroUsize::new(3).unwrap())))
+  );
+
+  assert_eq!(
+    empty_both(i),
+    Err(Err::Error(error_position!(i, ErrorKind::SeparatedList)))
   );
   let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
   assert_eq!(multi(e), Ok((&b",ef"[..], res4)));
@@ -572,7 +578,7 @@ fn many_test() {
   );
 
   fn many_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(2..=1, tag("a")).parse(i)
+    many(crate::lib::std::ops::Range::default(), tag("a")).parse(i)
   }
 
   let a = &b"a"[..];
@@ -727,7 +733,13 @@ fn fold_test() {
   );
 
   fn fold_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(2..=1, tag("a"), Vec::new, fold_into_vec).parse(i)
+    fold(
+      crate::lib::std::ops::Range::default(),
+      tag("a"),
+      Vec::new,
+      fold_into_vec,
+    )
+    .parse(i)
   }
 
   let a = &b"a"[..];

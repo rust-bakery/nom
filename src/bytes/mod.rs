@@ -11,7 +11,7 @@ use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, Needed, Parser};
 use crate::lib::std::result::Result::*;
-use crate::traits::{Compare, CompareResult, InputLength};
+use crate::traits::{Compare, CompareResult};
 use crate::AsChar;
 use crate::Check;
 use crate::ExtendInto;
@@ -45,7 +45,7 @@ use crate::ToUsize;
 pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   Tag {
     tag,
@@ -62,7 +62,7 @@ pub struct Tag<T, E> {
 impl<I, Error: ParseError<I>, T> Parser<I> for Tag<T, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   type Output = I;
 
@@ -114,7 +114,7 @@ where
 pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   TagNoCase {
     tag,
@@ -131,7 +131,7 @@ pub struct TagNoCase<T, E> {
 impl<I, Error: ParseError<I>, T> Parser<I> for TagNoCase<T, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   type Output = I;
 
@@ -955,11 +955,9 @@ where
     let mut index = 0;
     let mut res = OM::Output::bind(|| input.new_builder());
 
-    let i = input.clone();
-
-    while index < i.input_len() {
-      let current_len = i.input_len();
-      let remainder = i.take_from(index);
+    while index < input.input_len() {
+      let current_len = input.input_len();
+      let remainder = input.take_from(index);
       match self.normal.process::<OM>(remainder.clone()) {
         Ok((i2, o)) => {
           res = OM::Output::combine(o, res, |o, mut res| {
@@ -994,7 +992,7 @@ where
                 })));
               }
             } else {
-              match self.transform.process::<OM>(i.take_from(next)) {
+              match self.transform.process::<OM>(input.take_from(next)) {
                 Ok((i2, o)) => {
                   res = OM::Output::combine(o, res, |o, mut res| {
                     o.extend_into(&mut res);
@@ -1004,7 +1002,7 @@ where
                     if OM::Incomplete::is_streaming() {
                       return Err(Err::Incomplete(Needed::Unknown));
                     } else {
-                      return Ok((i.take_from(i.input_len()), res));
+                      return Ok((input.take_from(input.input_len()), res));
                     }
                   } else {
                     index = input.offset(&i2);

@@ -140,7 +140,7 @@ formats such as JSON, nom can manage it, and provides you with useful tools:
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http/parser)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/main/lib/src/protocol/h2/parser.rs)
 - [TOML parser](https://github.com/joelself/tomllib)
 
 ### Programming language parsers
@@ -158,7 +158,6 @@ parsing, and construct an AST in place.
 Example projects:
 
 - [PHP VM](https://github.com/tagua-vm/parser)
-- eve language prototype
 - [xshade shading language](https://github.com/xshade-lang/xshade)
 
 ### Streaming formats
@@ -175,7 +174,7 @@ It allows you to build powerful, deterministic state machines for your protocols
 
 Example projects:
 
-- [HTTP proxy](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http/parser)
+- [HTTP proxy](https://github.com/sozu-proxy/sozu/blob/main/lib/src/protocol/h2/parser.rs)
 - [Using nom with generators](https://github.com/rust-bakery/generator_nom)
 
 ## Parser combinators
@@ -253,6 +252,7 @@ Here is a (non exhaustive) list of known projects using nom:
 
 - Text file formats: [Ceph Crush](https://github.com/cholcombe973/crushtool),
 [Cronenberg](https://github.com/ayrat555/cronenberg),
+[Email](https://github.com/deuxfleurs-org/eml-codec),
 [XFS Runtime Stats](https://github.com/ChrisMacNaughton/xfs-rs),
 [CSV](https://github.com/GuillaumeGomez/csv-parser),
 [FASTA](https://github.com/TianyiShi2001/nom-fasta),
@@ -264,7 +264,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [PDB](https://github.com/TianyiShi2001/nom-pdb),
 [proto files](https://github.com/tafia/protobuf-parser),
 [Fountain screenplay markup](https://github.com/adamchalmers/fountain-rs),
-[vimwiki](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki) & [vimwiki_macros](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki_macros)
+[vimwiki](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki) & [vimwiki_macros](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki_macros),
+[Kconfig language](https://github.com/Mcdostone/nom-kconfig), [Askama templates](https://crates.io/crates/askama_parser/)
 - Programming languages:
 [PHP](https://github.com/tagua-vm/parser),
 [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs),
@@ -278,7 +279,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [CSML](https://github.com/CSML-by-Clevy/csml-engine/tree/dev/csml_interpreter),
 [Wasm](https://github.com/fabrizio-m/wasm-nom),
 [Pseudocode](https://github.com/Gungy2/pseudocod),
-[Filter for MeiliSearch](https://github.com/meilisearch/meilisearch)
+[Filter for MeiliSearch](https://github.com/meilisearch/meilisearch),
+[PotterScript](https://github.com/fmiras/potterscript)
 - Interface definition formats: [Thrift](https://github.com/thehydroimpulse/thrust)
 - Audio, video and image formats:
 [GIF](https://github.com/Geal/gif.rs),
@@ -286,7 +288,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [MIDI](https://github.com/derekdreery/nom-midi-rs),
 [SWF](https://github.com/open-flash/swf-parser),
 [WAVE](https://github.com/Noise-Labs/wave),
-[Matroska (MKV)](https://github.com/rust-av/matroska)
+[Matroska (MKV)](https://github.com/rust-av/matroska),
+[Exif/Metadata parser for JPEG/HEIF/HEIC/MOV/MP4](https://github.com/mindeng/nom-exif)
 - Document formats:
 [TAR](https://github.com/Keruspe/tar-parser.rs),
 [GZ](https://github.com/nharward/nom-gzip),
@@ -299,7 +302,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [DHCP](https://github.com/rusticata/dhcp-parser),
 [HTTP](https://github.com/sozu-proxy/sozu/tree/main/lib/src/protocol/http),
 [URI](https://github.com/santifa/rrp/blob/master/src/uri.rs),
-[IMAP](https://github.com/djc/tokio-imap),
+[IMAP](https://github.com/djc/tokio-imap) ([alt](https://github.com/duesee/imap-codec)),
 [IRC](https://github.com/Detegr/RBot-parser),
 [Pcap-NG](https://github.com/richo/pcapng-rs),
 [Pcap](https://github.com/ithinuel/pcap-rs),
@@ -313,6 +316,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix),
 [GTP](https://github.com/fuerstenau/gorrosion-gtp),
 [SIP](https://github.com/kurotych/sipcore/tree/master/crates/sipmsg),
+[SMTP](https://github.com/Ekleog/kannader),
 [Prometheus](https://github.com/vectordotdev/vector/blob/master/lib/prometheus-parser/src/line.rs)
 - Language specifications:
 [BNF](https://github.com/shnewto/bnf)
@@ -324,7 +328,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [MySQL binary log](https://github.com/PrivateRookie/boxercrab),
 [URI](https://github.com/Skasselbard/nom-uri),
 [Furigana](https://github.com/sachaarbonel/furigana.rs),
-[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser)
+[Wordle Result](https://github.com/Fyko/wordle-stats/tree/main/parser),
+[NBT](https://github.com/phoenixr-codes/mcnbt)
 
 Want to create a new parser using `nom`? A list of not yet implemented formats is available [here](https://github.com/rust-bakery/nom/issues/14).
 

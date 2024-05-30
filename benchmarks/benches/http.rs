@@ -3,7 +3,7 @@
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use criterion::*;
+use codspeed_criterion_compat::*;
 use nom::{IResult, bytes::{tag, take_while1}, character:: char, multi::many, OutputMode, Parser, PResult, error::Error, Mode, sequence::{preceded, delimited, separated_pair, terminated, pair}, OutputM, Emit, Complete};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]

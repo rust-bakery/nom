@@ -240,6 +240,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
@@ -250,6 +251,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -278,6 +280,7 @@ impl<'a> Input for &'a [u8] {
     }
   }
 
+  #[inline(always)]
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -300,6 +303,7 @@ impl<'a> Input for &'a [u8] {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -323,6 +327,7 @@ impl<'a> Input for &'a [u8] {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -332,17 +337,13 @@ impl<'a> Input for &'a [u8] {
     P: Fn(Self::Item) -> bool,
   {
     match self.iter().position(|c| predicate(*c)) {
-      Some(0) => Err(Err::Error(OM::Error::bind(|| {
-        E::from_error_kind(self.clone(), e)
-      }))),
+      Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
       Some(n) => Ok((self.take_from(n), OM::Output::bind(|| self.take(n)))),
       None => {
         if OM::Incomplete::is_streaming() {
           Err(Err::Incomplete(Needed::new(1)))
         } else if self.is_empty() {
-          Err(Err::Error(OM::Error::bind(|| {
-            E::from_error_kind(self.clone(), e)
-          })))
+          Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e))))
         } else {
           Ok((
             self.take_from(self.len()),
@@ -412,17 +413,22 @@ impl<'a> Input for &'a str {
     Err(Needed::Unknown)
   }
 
+  #[inline(always)]
   fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
+  #[inline(always)]
   fn split_at_position1<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -433,12 +439,16 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => Err(Err::Incomplete(Needed::new(1))),
     }
   }
 
+  #[inline(always)]
   fn split_at_position_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -447,18 +457,16 @@ impl<'a> Input for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
-      // the end of slice is a char boundary
-      None => unsafe {
-        Ok((
-          self.get_unchecked(self.len()..),
-          self.get_unchecked(..self.len()),
-        ))
-      },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
+      None => Ok(self.split_at(0)),
     }
   }
 
+  #[inline(always)]
   fn split_at_position1_complete<P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -469,25 +477,25 @@ impl<'a> Input for &'a str {
   {
     match self.find(predicate) {
       Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
-      // find() returns a byte index that is already in the slice at a char boundary
-      Some(i) => unsafe { Ok((self.get_unchecked(i..), self.get_unchecked(..i))) },
+      // The position i is returned from str::find() which means it is within the bounds of the string
+      Some(i) => {
+        let (str1, str2) = self.split_at(i);
+        Ok((str2, str1))
+      }
       None => {
         if self.is_empty() {
           Err(Err::Error(E::from_error_kind(self, e)))
         } else {
           // the end of slice is a char boundary
-          unsafe {
-            Ok((
-              self.get_unchecked(self.len()..),
-              self.get_unchecked(..self.len()),
-            ))
-          }
+          let (str1, str2) = self.split_at(self.len());
+          Ok((str2, str1))
         }
       }
     }
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -520,6 +528,7 @@ impl<'a> Input for &'a str {
   }
 
   /// mode version of split_at_position
+  #[inline(always)]
   fn split_at_position_mode1<OM: crate::OutputMode, P, E: ParseError<Self>>(
     &self,
     predicate: P,
@@ -529,9 +538,7 @@ impl<'a> Input for &'a str {
     P: Fn(Self::Item) -> bool,
   {
     match self.find(predicate) {
-      Some(0) => Err(Err::Error(OM::Error::bind(|| {
-        E::from_error_kind(self.clone(), e)
-      }))),
+      Some(0) => Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e)))),
       Some(n) => unsafe {
         // find() returns a byte index that is already in the slice at a char boundary
         Ok((
@@ -542,10 +549,8 @@ impl<'a> Input for &'a str {
       None => {
         if OM::Incomplete::is_streaming() {
           Err(Err::Incomplete(Needed::new(1)))
-        } else if self.len() == 0 {
-          Err(Err::Error(OM::Error::bind(|| {
-            E::from_error_kind(self.clone(), e)
-          })))
+        } else if self.is_empty() {
+          Err(Err::Error(OM::Error::bind(|| E::from_error_kind(self, e))))
         } else {
           // the end of slice is a char boundary
           unsafe {
@@ -560,39 +565,11 @@ impl<'a> Input for &'a str {
   }
 }
 
-/// Abstract method to calculate the input length
-pub trait InputLength {
-  /// Calculates the input length, as indicated by its name,
-  /// and the name of the trait itself
-  fn input_len(&self) -> usize;
-}
-
-impl<'a, T> InputLength for &'a [T] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a> InputLength for &'a str {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a> InputLength for (&'a [u8], usize) {
-  #[inline]
-  fn input_len(&self) -> usize {
-    //println!("bit input length for ({:?}, {}):", self.0, self.1);
-    //println!("-> {}", self.0.len() * 8 - self.1);
-    self.0.len() * 8 - self.1
-  }
-}
-
 /// Useful functions to calculate the offset between slices and show a hexdump of a slice
 pub trait Offset {
   /// Offset between the first byte of self and the first byte of the argument
+  /// the argument must be a part of self, otherwise this can fail with arithmetic
+  /// underflows as it compares byte offsets
   fn offset(&self, second: &Self) -> usize;
 }
 
@@ -669,7 +646,7 @@ impl AsBytes for [u8] {
 impl<'a, const N: usize> AsBytes for &'a [u8; N] {
   #[inline(always)]
   fn as_bytes(&self) -> &[u8] {
-    *self
+    self.as_slice()
   }
 }
 
@@ -701,8 +678,14 @@ pub trait AsChar: Copy {
   fn is_hex_digit(self) -> bool;
   /// Tests that self is an octal digit
   fn is_oct_digit(self) -> bool;
+  /// Tests that self is a binary digit
+  fn is_bin_digit(self) -> bool;
   /// Gets the len in bytes for self
   fn len(self) -> usize;
+  /// Tests that self is ASCII space or tab
+  fn is_space(self) -> bool;
+  /// Tests if byte is ASCII newline: \n
+  fn is_newline(self) -> bool;
 }
 
 impl AsChar for u8 {
@@ -731,8 +714,19 @@ impl AsChar for u8 {
     matches!(self, 0x30..=0x37)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    matches!(self, 0x30..=0x31)
+  }
+  #[inline]
   fn len(self) -> usize {
     1
+  }
+  #[inline]
+  fn is_space(self) -> bool {
+    self == b' ' || self == b'\t'
+  }
+  fn is_newline(self) -> bool {
+    self == b'\n'
   }
 }
 impl<'a> AsChar for &'a u8 {
@@ -761,8 +755,19 @@ impl<'a> AsChar for &'a u8 {
     matches!(*self, 0x30..=0x37)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    matches!(*self, 0x30..=0x31)
+  }
+  #[inline]
   fn len(self) -> usize {
     1
+  }
+  #[inline]
+  fn is_space(self) -> bool {
+    *self == b' ' || *self == b'\t'
+  }
+  fn is_newline(self) -> bool {
+    *self == b'\n'
   }
 }
 
@@ -792,8 +797,19 @@ impl AsChar for char {
     self.is_digit(8)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    self.is_digit(2)
+  }
+  #[inline]
   fn len(self) -> usize {
     self.len_utf8()
+  }
+  #[inline]
+  fn is_space(self) -> bool {
+    self == ' ' || self == '\t'
+  }
+  fn is_newline(self) -> bool {
+    self == '\n'
   }
 }
 
@@ -823,8 +839,19 @@ impl<'a> AsChar for &'a char {
     self.is_digit(8)
   }
   #[inline]
+  fn is_bin_digit(self) -> bool {
+    self.is_digit(2)
+  }
+  #[inline]
   fn len(self) -> usize {
     self.len_utf8()
+  }
+  #[inline]
+  fn is_space(self) -> bool {
+    *self == ' ' || *self == '\t'
+  }
+  fn is_newline(self) -> bool {
+    *self == '\n'
   }
 }
 
@@ -1066,20 +1093,6 @@ impl<'a, R: FromStr> ParseTo<R> for &'a [u8] {
 impl<'a, R: FromStr> ParseTo<R> for &'a str {
   fn parse_to(&self) -> Option<R> {
     self.parse().ok()
-  }
-}
-
-impl<const N: usize> InputLength for [u8; N] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
-  }
-}
-
-impl<'a, const N: usize> InputLength for &'a [u8; N] {
-  #[inline]
-  fn input_len(&self) -> usize {
-    self.len()
   }
 }
 
@@ -1454,12 +1467,12 @@ impl NomRange<usize> for Range<usize> {
   }
 
   fn is_inverted(&self) -> bool {
-    !(self.start < self.end)
+    self.start >= self.end
   }
 
   fn saturating_iter(&self) -> Self::Saturating {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1467,7 +1480,7 @@ impl NomRange<usize> for Range<usize> {
 
   fn bounded_iter(&self) -> Self::Bounded {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1542,7 +1555,7 @@ impl NomRange<usize> for RangeTo<usize> {
 
   fn saturating_iter(&self) -> Self::Saturating {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
@@ -1550,7 +1563,7 @@ impl NomRange<usize> for RangeTo<usize> {
 
   fn bounded_iter(&self) -> Self::Bounded {
     if self.end == 0 {
-      1..0
+      Range::default()
     } else {
       0..self.end - 1
     }
