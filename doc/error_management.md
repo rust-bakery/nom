@@ -350,7 +350,7 @@ impl ContextError<&str> for DebugError {
 ```
 
 So when calling our JSON parser with this error type, we will get a trace
-of all the times a parser stoppped and backtracked:
+of all the times a parser stopped and backtracked:
 
 ```rust
 println!("debug: {:#?}", root::<DebugError>(data));
