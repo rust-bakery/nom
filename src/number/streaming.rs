@@ -1456,6 +1456,79 @@ where
   }
 }
 
+#[inline]
+#[doc(hidden)]
+pub fn varint<I, E: ParseError<I>, R>(i: I) -> IResult<I, R, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength + Copy,
+  R: std::ops::AddAssign<R> + std::ops::Shl<usize, Output = R> + Default + From<u8>,
+{
+  let mut result = R::default();
+  let mut ofs: usize = 0;
+  let mut remainder = i;
+  loop {
+    let (i, byte) = le_u8(remainder)?;
+    result += (<R as From<u8>>::from(byte & 0x7F)) << ofs;
+    if byte < 0x80 {
+      return Ok((i, result));
+    }
+    remainder = i;
+    ofs += 7;
+  }
+}
+
+/// Recognizes a variable-length quantity.
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::varint_u128;
+///
+/// let parser = |s| {
+///   varint_u128(s)
+/// };
+///
+/// assert_eq!(parser(&[0x7F][..]), Ok((b"", 127)));
+/// assert_eq!(parser(&[0x80][..]), Ok((b"", 128)));
+/// assert_eq!(parser(&[0x20, 0x00][..]), Ok((b"", 8192)));
+/// assert_eq!(parser(&[0x20, 0x00, 0x00][..]), Ok((b"", 2_097_152)));
+/// ```
+#[inline]
+pub fn varint_u64<I, E: ParseError<I>>(i: I) -> IResult<I, u64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength + Copy,
+{
+  varint::<I, E, u64>(i)
+}
+
+/// Recognizes a variable-length quantity.
+///
+/// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there is not enough data.
+///
+/// ```rust
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::Needed::Size;
+/// use nom::number::streaming::varint_u128;
+///
+/// let parser = |s| {
+///   varint_u128(s)
+/// };
+///
+/// assert_eq!(parser(&[0x7F][..]), Ok((b"", 127)));
+/// assert_eq!(parser(&[0x80][..]), Ok((b"", 128)));
+/// assert_eq!(parser(&[0x20, 0x00][..]), Ok((b"", 8192)));
+/// assert_eq!(parser(&[0x20, 0x00, 0x00][..]), Ok((b"", 2_097_152)));
+/// ```
+#[inline]
+pub fn varint_u128<I, E: ParseError<I>>(i: I) -> IResult<I, u128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength + Copy,
+{
+  varint::<I, E, u128>(i)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
