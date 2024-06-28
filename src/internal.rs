@@ -436,6 +436,16 @@ pub trait Parser<Input> {
     Map { f: self, g }
   }
 
+  /// Applies a second parser after the first one if the first one returns
+  /// `Some`.
+  fn flat_some<G, O2>(self, g: G) -> FlatSome<Self, G>
+  where
+    G: Parser<Input, Output = O2, Error = Self::Error>,
+    Self: core::marker::Sized,
+  {
+    FlatSome { f: self, g }
+  }
+
   /// Applies a function returning a `Result` over the result of a parser.
   fn map_res<G, O2, E2>(self, g: G) -> MapRes<Self, G>
   where
@@ -593,6 +603,39 @@ impl<I, O2, E: ParseError<I>, F: Parser<I, Error = E>, G: FnMut(<F as Parser<I>>
     match self.f.process::<OM>(i) {
       Err(e) => Err(e),
       Ok((i, o)) => Ok((i, OM::Output::map(o, |o| (self.g)(o)))),
+    }
+  }
+}
+
+/// Implementation of `Parser::map_some`.
+pub struct FlatSome<F, G> {
+  f: F,
+  g: G,
+}
+
+impl<I, O1, O2, E: ParseError<I>, F, G> Parser<I> for FlatSome<F, G>
+where
+  F: Parser<I, Output = O1, Error = E>,
+  G: Parser<I, Output = O2, Error = E>,
+  I: Clone,
+{
+  type Output = Option<O2>;
+  type Error = E;
+
+  #[inline(always)]
+  fn process<OM: OutputMode>(&mut self, input: I) -> PResult<OM, I, Self::Output, Self::Error> {
+    let i = input.clone();
+    match self
+      .f
+      .process::<OutputM<OM::Output, Check, OM::Incomplete>>(input)
+    {
+      Ok((i, _)) => self
+        .g
+        .process::<OM>(i)
+        .map(|(i, o)| (i, OM::Output::map(o, |o| Some(o)))),
+      Err(Err::Error(_)) => Ok((i, OM::Output::bind(|| None))),
+      Err(Err::Failure(e)) => Err(Err::Failure(e)),
+      Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
     }
   }
 }

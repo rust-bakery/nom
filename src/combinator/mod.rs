@@ -79,6 +79,40 @@ where
   parser.map(f)
 }
 
+/// Applies a parser over the result of a parser returning an [`Option`](core::option::Option),
+/// if that result is `Some`.
+///
+/// ```rust
+/// use nom::{Err,error::ErrorKind, IResult, Parser};
+/// use nom::bytes::complete::tag;
+/// use nom::combinator::{opt, flat_some};
+/// # fn main() {
+///
+/// let mut parser = flat_some(tag("abc"), tag("def"));
+///
+/// // the parser will return Some("def") if "abc" was found first.
+/// assert_eq!(parser.parse("abcdef"), Ok(("", Some("def"))));
+///
+/// // this will return None if "abc" was not found.
+/// assert_eq!(parser.parse("xyzdef"), Ok(("xyzdef", None)));
+///
+/// // this will fail if "abc" was found but "def" was not.
+/// assert_eq!(parser.parse("abcxyz"), Err(Err::Error(("xyz", ErrorKind::Tag))));
+/// # }
+/// ```
+pub fn flat_some<I, O1, O2, E, F, G>(
+  parser: F,
+  applied_parser: G,
+) -> impl Parser<I, Output = Option<O2>, Error = E>
+where
+  E: ParseError<I>,
+  I: Clone,
+  F: Parser<I, Output = O1, Error = E>,
+  G: Parser<I, Output = O2, Error = E>,
+{
+  parser.flat_some(applied_parser)
+}
+
 /// Applies a function returning a `Result` over the result of a parser.
 ///
 /// ```rust
