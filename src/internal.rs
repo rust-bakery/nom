@@ -291,7 +291,7 @@ impl Mode for Emit {
 /// Applies the parser, but do not a produce a value
 ///
 /// This has the effect of greatly reducing the amount of code generated and the
-/// parser memory usage. Some combinators chek for an error in a child parser but
+/// parser memory usage. Some combinators check for an error in a child parser but
 /// discard the error, and for those, using [Check] makes sure the error is not
 /// even generated, only the fact that an error happened remains
 pub struct Check;
@@ -331,7 +331,7 @@ pub type PResult<OM, I, O, E> = Result<
 /// output mode
 pub trait OutputMode {
   /// Defines the [Mode] for the output type. [Emit] will generate the value, [Check] will
-  /// apply the parser but will only generate `()` if successul. This can be used when
+  /// apply the parser but will only generate `()` if successful. This can be used when
   /// verifying that the input data conforms to the format without having to generate any
   /// output data
   type Output: Mode;
@@ -351,7 +351,7 @@ pub trait OutputMode {
 /// Specifies the behaviour when a parser encounters an error that could be due to partial ata
 pub trait IsStreaming {
   /// called by parsers on partial data errors
-  /// * `needed` can hold the amount of dditional data the parser would need to decide
+  /// * `needed` can hold the amount of additional data the parser would need to decide
   /// * `err_f`: produces the error when in "complete" mode
   fn incomplete<E, F: FnOnce() -> E>(needed: Needed, err_f: F) -> Err<E>;
   /// Indicates whether the data is in streaming mode or not
