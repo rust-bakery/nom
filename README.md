@@ -317,7 +317,8 @@ Here is a (non exhaustive) list of known projects using nom:
 [GTP](https://github.com/fuerstenau/gorrosion-gtp),
 [SIP](https://github.com/kurotych/sipcore/tree/master/crates/sipmsg),
 [SMTP](https://github.com/Ekleog/kannader),
-[Prometheus](https://github.com/vectordotdev/vector/blob/master/lib/prometheus-parser/src/line.rs)
+[Prometheus](https://github.com/vectordotdev/vector/blob/master/lib/prometheus-parser/src/line.rs),
+[DNS](https://github.com/adiSuper94/dns-rs)
 - Language specifications:
 [BNF](https://github.com/shnewto/bnf)
 - Misc formats:
