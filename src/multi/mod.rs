@@ -1868,3 +1868,138 @@ where
     Ok((input, acc))
   }
 }
+
+/// Applies a parser multiple times separated by another parser.
+///
+/// It is similar to [`separated_list1`][crate::multi::separated_list1] but instead of collecting
+/// into a vector, you have a callback to build the output.
+///
+/// In a LALR grammar a left recursive operator is usually built with a rule syntax such as:
+///  * A := A op B | B
+///
+/// If you try to parse that wth [`alt`][crate::branch::alt] it will fail with a stack overflow
+/// because the recusion is unlimited. This function solves this problem by converting the recusion
+/// into an iteration.
+///
+/// Compare with a right recursive operator, that in LALR would be:
+///  * A := B op A | B
+/// Or equivalently:
+///  * A := B (op A)?
+///
+///  That can be written in `nom` trivially.
+///
+/// This stops when either parser returns [`err::error`]  and returns the last built value. to instead chain an error up, see
+/// [`cut`][crate::combinator::cut].
+///
+/// # Arguments
+/// * `child` The parser to apply.
+/// * `operator` Parses the operator between argument.
+/// * `init` A function returning the initial value.
+/// * `fold` The function that combines a result of `f` with
+///       the current accumulator.
+/// ```rust
+/// # #[macro_use] extern crate nom;
+/// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
+/// use nom::multi::left_assoc;
+/// use nom::branch::alt;
+/// use nom::sequence::delimited;
+/// use nom::character::complete::{char, digit1};
+///
+/// fn add(i: &str) -> IResult<&str, String> {
+///     left_assoc(mult, char('+'), |a, o, b| format!("{o}{a}{b}")).parse(i)
+/// }
+/// fn mult(i: &str) -> IResult<&str, String> {
+///     left_assoc(single, char('*'), |a, o, b| format!("{o}{a}{b}")).parse(i)
+/// }
+/// fn single(i: &str) -> IResult<&str, String> {
+///     alt((
+///         digit1.map(|x: &str| x.to_string()),
+///         delimited(char('('), add, char(')'))
+///     )).parse(i)
+/// }
+///
+/// assert_eq!(single("(1+2*3)"), Ok(("", String::from("+1*23"))));
+/// assert_eq!(single("((1+2)*3)"), Ok(("", String::from("*+123"))));
+/// assert_eq!(single("(1*2+3)"), Ok(("", String::from("+*123"))));
+/// assert_eq!(single("((1+2*3)+4)"), Ok(("", String::from("++1*234"))));
+/// assert_eq!(single("(1+(2*3+4))"), Ok(("", String::from("+1+*234"))));
+/// ```
+pub fn left_assoc<I, E, O, OP, G, F, B>(
+  child: F,
+  operator: G,
+  builder: B,
+) -> impl Parser<I, Output = O, Error = E>
+where
+  I: Clone + Input,
+  E: ParseError<I>,
+  F: Parser<I, Output = O, Error = E>,
+  G: Parser<I, Output = OP, Error = E>,
+  B: FnMut(O, OP, O) -> O,
+{
+  LeftAssoc {
+    child,
+    operator,
+    builder,
+  }
+}
+
+/// Parser implementation for the [separated_list1] combinator
+pub struct LeftAssoc<F, G, B> {
+  child: F,
+  operator: G,
+  builder: B,
+}
+
+impl<I, E, O, OP, G, F, B> Parser<I> for LeftAssoc<F, G, B>
+where
+  I: Clone + Input,
+  E: ParseError<I>,
+  F: Parser<I, Output = O, Error = E>,
+  G: Parser<I, Output = OP, Error = E>,
+  B: FnMut(O, OP, O) -> O,
+{
+  type Output = O;
+  type Error = E;
+
+  fn process<OM: OutputMode>(
+    &mut self,
+    mut i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    let (i1, mut res) = self.child.process::<OM>(i)?;
+    i = i1;
+
+    loop {
+      let len = i.input_len();
+      match self
+        .operator
+        .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
+      {
+        Err(Err::Error(_)) => return Ok((i, res)),
+        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
+        Ok((i1, op)) => {
+          match self
+            .child
+            .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i1.clone())
+          {
+            Err(Err::Error(_)) => return Ok((i, res)),
+            Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+            Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
+            Ok((i2, rhs)) => {
+              // infinite loop check: the parser must always consume
+              if i2.input_len() == len {
+                return Err(Err::Error(OM::Error::bind(|| {
+                  <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+                })));
+              }
+              // there is no combine() with 3 arguments, fake it with a tuple and two calls
+              let op_rhs = OM::Output::combine(op, rhs, |op, rhs| (op, rhs));
+              res = OM::Output::combine(res, op_rhs, |lhs, (op, rhs)| (self.builder)(lhs, op, rhs));
+              i = i2;
+            }
+          }
+        }
+      }
+    }
+  }
+}
