@@ -1717,6 +1717,13 @@ mod tests {
   }
 
   #[test]
+  fn le_u16_test() {
+    assert_parse!(le_u16(&[0x00, 0x03][..]), Ok((&b""[..], 0x0300)));
+    assert_parse!(le_u16(&[b'a', b'b'][..]), Ok((&b""[..], 0x6261)));
+    assert_parse!(le_u16(&[0x01][..]), Err(Err::Incomplete(Needed::new(1))));
+  }
+
+  #[test]
   fn le_u24_tests() {
     assert_parse!(le_u24(&[0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(le_u24(&[0xFF, 0xFF, 0x00][..]), Ok((&b""[..], 65_535_u32)));
@@ -1748,6 +1755,19 @@ mod tests {
       le_i32(&[0x00, 0x00, 0x00, 0x80][..]),
       Ok((&b""[..], -2_147_483_648_i32))
     );
+  }
+
+  #[test]
+  fn le_u32_test() {
+    assert_parse!(
+      le_u32(&[0x00, 0x03, 0x05, 0x07][..]),
+      Ok((&b""[..], 0x07050300))
+    );
+    assert_parse!(
+      le_u32(&[b'a', b'b', b'c', b'd'][..]),
+      Ok((&b""[..], 0x64636261))
+    );
+    assert_parse!(le_u32(&[0x01][..]), Err(Err::Incomplete(Needed::new(3))));
   }
 
   #[test]
