@@ -335,7 +335,7 @@ where
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
-/// * `sep` Parses the separator between list elements. Must be consuming.
+/// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
 ///
 /// ```rust
@@ -457,7 +457,7 @@ where
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
-/// * `sep` Parses the separator between list elements. Must be consuming.
+/// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
