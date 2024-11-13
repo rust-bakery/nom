@@ -27,16 +27,14 @@ include = [
   "tests/*.rs",
   "doc/nom_recipes.md",
 ]
+[dependencies]
+nom_core = {path = "./nom_core"}
 
 [features]
-alloc = []
-std = ["alloc", "memchr/std"]
+alloc = ["nom_core/alloc"]
+std = ["nom_core/std"]
 default = ["std"]
 docsrs = []
-
-[dependencies.memchr]
-version = "2.3"
-default-features = false
 
 [dev-dependencies]
 doc-comment = "0.3"
@@ -142,4 +140,4 @@ coveralls = { repository = "Geal/nom", branch = "main", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [workspace]
-members = [".", "benchmarks/"]
+members = [".", "benchmarks/", "nom_core"]

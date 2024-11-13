@@ -15,7 +15,8 @@ use crate::Input;
 /// away.
 ///
 /// # Example
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// use nom::bits::{bits, streaming::take};
 /// use nom::error::Error;
 /// use nom::IResult;
@@ -63,7 +64,8 @@ where
 /// A partial byte remaining in the input will be ignored and the given parser will start parsing
 /// at the next full byte.
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// use nom::bits::{bits, bytes, streaming::take};
 /// use nom::combinator::rest;
 /// use nom::error::Error;

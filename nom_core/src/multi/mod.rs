@@ -45,6 +45,7 @@ const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
 /// return an error, to prevent going into an infinite loop
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many0;
 /// use nom::bytes::complete::tag;
@@ -132,6 +133,7 @@ where
 /// to prevent going into an infinite loop.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::many1;
 /// use nom::bytes::complete::tag;
@@ -232,6 +234,7 @@ where
 /// `f` keeps going so long as `g` produces [`Err::Error`]. To instead chain an error up, see [`cut`][crate::combinator::cut].
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::many_till;
 /// use nom::bytes::complete::tag;
@@ -339,6 +342,7 @@ where
 /// * `f` Parses the elements of the list.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::separated_list0;
 /// use nom::bytes::complete::tag;
@@ -460,6 +464,7 @@ where
 /// * `sep` Parses the separator between list elements. Must be consuming.
 /// * `f` Parses the elements of the list.
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::separated_list1;
 /// use nom::bytes::complete::tag;
@@ -576,6 +581,7 @@ where
 /// to prevent going into an infinite loop.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many_m_n;
 /// use nom::bytes::complete::tag;
@@ -686,6 +692,7 @@ where
 /// return an error, to prevent going into an infinite loop
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many0_count;
 /// use nom::bytes::complete::tag;
@@ -767,6 +774,7 @@ where
 /// to prevent going into an infinite loop.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::many1_count;
 /// use nom::bytes::complete::tag;
@@ -855,6 +863,7 @@ where
 /// * `f` The parser to apply.
 /// * `count` How often to apply the parser.
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::count;
 /// use nom::bytes::complete::tag;
@@ -939,6 +948,7 @@ where
 /// * `f` The parser to apply.
 /// * `buf` The slice to fill
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::fill;
 /// use nom::bytes::complete::tag;
@@ -1021,6 +1031,7 @@ where
 /// return an error, to prevent going into an infinite loop
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::fold_many0;
 /// use nom::bytes::complete::tag;
@@ -1125,6 +1136,7 @@ where
 /// to prevent going into an infinite loop.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::multi::fold_many1;
 /// use nom::bytes::complete::tag;
@@ -1242,6 +1254,7 @@ where
 /// to prevent going into an infinite loop.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::fold_many_m_n;
 /// use nom::bytes::complete::tag;
@@ -1358,6 +1371,7 @@ where
 /// # Arguments
 /// * `f` The parser to apply.
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_data;
@@ -1389,6 +1403,7 @@ where
 /// * `f` The parser to apply.
 /// * `g` The parser to apply on the subslice.
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::number::complete::be_u16;
 /// use nom::multi::length_value;
@@ -1477,6 +1492,7 @@ where
 /// * `f` The parser to apply to obtain the count.
 /// * `g` The parser to apply repeatedly.
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::number::complete::u8;
 /// use nom::multi::length_count;
@@ -1588,7 +1604,8 @@ where
 /// * `parse` The parser to apply.
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
+/// # #[macro_use] extern crate nom_core;
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many;
 /// use nom::bytes::complete::tag;
@@ -1608,7 +1625,8 @@ where
 /// can be used:
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
+/// # #[macro_use] extern crate nom_core;
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::many;
 /// use nom::bytes::complete::{tag, take_while};
@@ -1638,7 +1656,8 @@ where
 /// be used instead:
 ///
 /// ```rust
-/// # #[macro_use] extern crate nom;
+/// # #[macro_use] extern crate nom_core;
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::fold;
 /// use nom::bytes::complete::tag;
@@ -1761,7 +1780,8 @@ where
 /// * `fold` The function that combines a result of `f` with
 ///       the current accumulator.
 /// ```rust
-/// # #[macro_use] extern crate nom;
+/// # #[macro_use] extern crate nom_core;
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
 /// use nom::multi::fold;
 /// use nom::bytes::complete::tag;

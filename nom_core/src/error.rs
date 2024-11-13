@@ -656,6 +656,7 @@ macro_rules! error_node_position(
 /// It also displays the input in hexdump format
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// use nom::{IResult, error::dbg_dmp, bytes::complete::tag};
 ///
 /// fn f(i: &[u8]) -> IResult<&[u8], &[u8]> {
