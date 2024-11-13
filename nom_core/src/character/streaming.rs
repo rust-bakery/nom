@@ -19,7 +19,8 @@ use crate::Streaming;
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
 /// # use nom::character::streaming::char;
 /// fn parser(i: &str) -> IResult<&str, char> {
@@ -43,7 +44,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
 /// # use nom::character::streaming::satisfy;
 /// fn parser(i: &str) -> IResult<&str, char> {
@@ -68,7 +70,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::character::streaming::one_of;
 /// assert_eq!(one_of::<_, _, (_, ErrorKind)>("abc")("b"), Ok(("", 'b')));
@@ -90,7 +93,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::character::streaming::none_of;
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
@@ -112,7 +116,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::crlf;
 /// assert_eq!(crlf::<_, (_, ErrorKind)>("\r\nc"), Ok(("c", "\r\n")));
@@ -140,7 +145,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::streaming::not_line_ending;
 /// assert_eq!(not_line_ending::<_, (_, ErrorKind)>("ab\r\nc"), Ok(("\r\nc", "ab")));
@@ -187,7 +193,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::line_ending;
 /// assert_eq!(line_ending::<_, (_, ErrorKind)>("\r\nc"), Ok(("c", "\r\n")));
@@ -218,7 +225,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::newline;
 /// assert_eq!(newline::<_, (_, ErrorKind)>("\nc"), Ok(("c", '\n')));
@@ -238,7 +246,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::tab;
 /// assert_eq!(tab::<_, (_, ErrorKind)>("\tc"), Ok(("c", '\t')));
@@ -258,7 +267,8 @@ where
 /// *Streaming version*: Will return `Err(nom::Err::Incomplete(_))` if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{character::streaming::anychar, Err, error::ErrorKind, IResult, Needed};
 /// assert_eq!(anychar::<_, (_, ErrorKind)>("abc"), Ok(("bc",'a')));
 /// assert_eq!(anychar::<_, (_, ErrorKind)>(""), Err(Err::Incomplete(Needed::new(1))));
@@ -281,7 +291,8 @@ where
 /// or if no terminating token is found (a non alphabetic character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::alpha0;
 /// assert_eq!(alpha0::<_, (_, ErrorKind)>("ab1c"), Ok(("1c", "ab")));
@@ -302,7 +313,8 @@ where
 /// or if no terminating token is found (a non alphabetic character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::alpha1;
 /// assert_eq!(alpha1::<_, (_, ErrorKind)>("aB1c"), Ok(("1c", "aB")));
@@ -323,7 +335,8 @@ where
 /// or if no terminating token is found (a non digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::digit0;
 /// assert_eq!(digit0::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
@@ -344,7 +357,8 @@ where
 /// or if no terminating token is found (a non digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::digit1;
 /// assert_eq!(digit1::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
@@ -365,7 +379,8 @@ where
 /// or if no terminating token is found (a non hexadecimal digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::hex_digit0;
 /// assert_eq!(hex_digit0::<_, (_, ErrorKind)>("21cZ"), Ok(("Z", "21c")));
@@ -386,7 +401,8 @@ where
 /// or if no terminating token is found (a non hexadecimal digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::hex_digit1;
 /// assert_eq!(hex_digit1::<_, (_, ErrorKind)>("21cZ"), Ok(("Z", "21c")));
@@ -407,7 +423,8 @@ where
 /// or if no terminating token is found (a non octal digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::oct_digit0;
 /// assert_eq!(oct_digit0::<_, (_, ErrorKind)>("21cZ"), Ok(("cZ", "21")));
@@ -428,7 +445,8 @@ where
 /// or if no terminating token is found (a non octal digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::oct_digit1;
 /// assert_eq!(oct_digit1::<_, (_, ErrorKind)>("21cZ"), Ok(("cZ", "21")));
@@ -449,7 +467,8 @@ where
 /// or if no terminating token is found (a non binary digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::bin_digit0;
 /// assert_eq!(bin_digit0::<_, (_, ErrorKind)>("013a"), Ok(("3a", "01")));
@@ -470,7 +489,8 @@ where
 /// or if no terminating token is found (a non binary digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::bin_digit1;
 /// assert_eq!(bin_digit1::<_, (_, ErrorKind)>("013a"), Ok(("3a", "01")));
@@ -491,7 +511,8 @@ where
 /// or if no terminating token is found (a non alphanumerical character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::alphanumeric0;
 /// assert_eq!(alphanumeric0::<_, (_, ErrorKind)>("21cZ%1"), Ok(("%1", "21cZ")));
@@ -512,7 +533,8 @@ where
 /// or if no terminating token is found (a non alphanumerical character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::alphanumeric1;
 /// assert_eq!(alphanumeric1::<_, (_, ErrorKind)>("21cZ%1"), Ok(("%1", "21cZ")));
@@ -533,7 +555,8 @@ where
 /// or if no terminating token is found (a non space character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::space0;
 /// assert_eq!(space0::<_, (_, ErrorKind)>(" \t21c"), Ok(("21c", " \t")));
@@ -556,7 +579,8 @@ where
 /// or if no terminating token is found (a non space character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::space1;
 /// assert_eq!(space1::<_, (_, ErrorKind)>(" \t21c"), Ok(("21c", " \t")));
@@ -583,7 +607,8 @@ where
 /// or if no terminating token is found (a non space character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::multispace0;
 /// assert_eq!(multispace0::<_, (_, ErrorKind)>(" \t\n\r21c"), Ok(("21c", " \t\n\r")));
@@ -607,7 +632,8 @@ where
 /// or if no terminating token is found (a non space character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::multispace1;
 /// assert_eq!(multispace1::<_, (_, ErrorKind)>(" \t\n\r21c"), Ok(("21c", " \t\n\r")));

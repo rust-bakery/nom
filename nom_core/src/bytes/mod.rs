@@ -30,6 +30,7 @@ use crate::ToUsize;
 /// the input that matches the argument.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::tag;
 ///
@@ -98,6 +99,7 @@ where
 /// the input that matches the argument with no regard to case.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::tag_no_case;
 ///
@@ -213,6 +215,7 @@ where
 /// It will return a `Err::Error(("", ErrorKind::IsNot))` if the pattern wasn't met.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::is_not;
 ///
@@ -245,6 +248,7 @@ where
 /// It will return a `Err(Err::Error((_, ErrorKind::IsA)))` if the pattern wasn't met.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::is_a;
 ///
@@ -276,6 +280,7 @@ where
 /// takes the input and returns a bool)*.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::bytes::complete::take_while;
 /// use nom::character::is_alphabetic;
@@ -312,6 +317,7 @@ where
 ///
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::take_while1;
 /// use nom::character::is_alphabetic;
@@ -347,6 +353,7 @@ where
 ///
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::take_while_m_n;
 /// use nom::character::is_alphabetic;
@@ -449,6 +456,7 @@ where
 /// takes the input and returns a bool)*.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::bytes::complete::take_till;
 ///
@@ -483,6 +491,7 @@ where
 /// end of input or if there was not match.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::take_till1;
 ///
@@ -520,6 +529,7 @@ where
 ///
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::bytes::streaming::take;
 ///
@@ -581,6 +591,7 @@ where
 /// contain the pattern or if the input is smaller than the pattern.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::bytes::streaming::take_until;
 ///
@@ -644,6 +655,7 @@ where
 /// contain the pattern or if the input is smaller than the pattern.
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::streaming::take_until1;
 ///
@@ -709,7 +721,8 @@ where
 /// * The second argument is the control character (like `\` in most languages)
 /// * The third argument matches the escaped characters
 /// # Example
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// # use nom::character::complete::digit1;
 /// use nom::bytes::streaming::escaped;
@@ -874,7 +887,8 @@ where
 ///
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// # use std::str::from_utf8;
 /// use nom::bytes::streaming::{escaped_transform, tag};

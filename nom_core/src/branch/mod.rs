@@ -16,6 +16,7 @@ use crate::internal::{Err, Mode, Parser};
 /// use an array.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::error_position;
 /// # use nom::{Err,error::ErrorKind, Needed, IResult, Parser};
 /// use nom::character::complete::{alpha1, digit1};
@@ -49,6 +50,7 @@ pub fn alt<List>(l: List) -> Choice<List> {
 /// tuple of the parser results.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::{Error, ErrorKind}, Needed, IResult, Parser};
 /// use nom::character::complete::{alpha1, digit1};
 /// use nom::branch::permutation;
@@ -71,6 +73,7 @@ pub fn alt<List>(l: List) -> Choice<List> {
 /// The parsers are applied greedily: if there are multiple unapplied parsers
 /// that could parse the next slice of input, the first one is used.
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Parser};
 /// use nom::branch::permutation;
 /// use nom::character::complete::{anychar, char};

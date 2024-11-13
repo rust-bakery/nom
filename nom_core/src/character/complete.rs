@@ -19,7 +19,8 @@ use crate::Parser;
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{ErrorKind, Error}, IResult};
 /// # use nom::character::complete::char;
 /// fn parser(i: &str) -> IResult<&str, char> {
@@ -44,7 +45,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
 /// # use nom::character::complete::satisfy;
 /// fn parser(i: &str) -> IResult<&str, char> {
@@ -69,7 +71,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind};
 /// # use nom::character::complete::one_of;
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("abc")("b"), Ok(("", 'b')));
@@ -91,7 +94,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind};
 /// # use nom::character::complete::none_of;
 /// assert_eq!(none_of::<_, _, (&str, ErrorKind)>("abc")("z"), Ok(("", 'z')));
@@ -113,7 +117,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
 /// # use nom::character::complete::crlf;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -144,7 +149,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::not_line_ending;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -195,7 +201,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::line_ending;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -226,7 +233,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::newline;
 /// fn parser(input: &str) -> IResult<&str, char> {
@@ -250,7 +258,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::tab;
 /// fn parser(input: &str) -> IResult<&str, char> {
@@ -275,7 +284,8 @@ where
 /// *Complete version*: Will return an error if there's not enough input data.
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{character::complete::anychar, Err, error::{Error, ErrorKind}, IResult};
 /// fn parser(input: &str) -> IResult<&str, char> {
 ///     anychar(input)
@@ -302,7 +312,8 @@ where
 /// alphabetic character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alpha0;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -327,7 +338,8 @@ where
 /// or the whole input if no terminating token is found  (a non alphabetic character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::alpha1;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -352,7 +364,8 @@ where
 /// or the whole input if no terminating token is found (a non digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::digit0;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -378,7 +391,8 @@ where
 /// or the whole input if no terminating token is found (a non digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::digit1;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -393,7 +407,8 @@ where
 /// ## Parsing an integer
 /// You can use `digit1` in combination with [`map_res`] to parse an integer:
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed, Parser};
 /// # use nom::combinator::map_res;
 /// # use nom::character::complete::digit1;
@@ -420,7 +435,8 @@ where
 /// *Complete version*: Will return the whole input if no terminating token is found (a non hexadecimal digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::hex_digit0;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -444,7 +460,8 @@ where
 /// or the whole input if no terminating token is found (a non hexadecimal digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::hex_digit1;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -469,7 +486,8 @@ where
 /// digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::oct_digit0;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -494,7 +512,8 @@ where
 /// or the whole input if no terminating token is found (a non octal digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::oct_digit1;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -519,7 +538,8 @@ where
 /// digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::bin_digit0;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -544,7 +564,8 @@ where
 /// or the whole input if no terminating token is found (a non binary digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::bin_digit1;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -569,7 +590,8 @@ where
 /// alphanumerical character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::alphanumeric0;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -594,7 +616,8 @@ where
 /// or the whole input if no terminating token is found (a non alphanumerical character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::alphanumeric1;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -619,7 +642,8 @@ where
 /// character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::space0;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -647,7 +671,8 @@ where
 /// or the whole input if no terminating token is found (a non space character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::space1;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -678,7 +703,8 @@ where
 /// character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::complete::multispace0;
 /// fn parser(input: &str) -> IResult<&str, &str> {
@@ -706,7 +732,8 @@ where
 /// or the whole input if no terminating token is found (a non space character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Needed};
 /// # use nom::character::complete::multispace1;
 /// fn parser(input: &str) -> IResult<&str, &str> {

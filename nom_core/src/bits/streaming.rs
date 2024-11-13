@@ -83,6 +83,7 @@ where
 ///
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::bits::complete::bool;
 /// # use nom::IResult;
 /// # use nom::error::{Error, ErrorKind};

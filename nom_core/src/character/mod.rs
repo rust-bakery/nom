@@ -48,7 +48,8 @@ pub fn is_oct_digit(chr: u8) -> bool {
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::character::is_bin_digit;
 /// assert_eq!(is_bin_digit(b'a'), false);
 /// assert_eq!(is_bin_digit(b'2'), false);
@@ -85,7 +86,8 @@ pub fn is_newline(chr: u8) -> bool {
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
 /// # use nom::character::streaming::char;
 /// fn parser(i: &str) -> IResult<&str, char> {
@@ -142,7 +144,8 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
 /// # use nom::character::complete::satisfy;
 /// fn parser(i: &str) -> IResult<&str, char> {
@@ -209,7 +212,8 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind};
 /// # use nom::character::complete::one_of;
 /// assert_eq!(one_of::<_, _, (&str, ErrorKind)>("abc")("b"), Ok(("", 'b')));
@@ -232,7 +236,8 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed};
 /// # use nom::character::streaming::none_of;
 /// assert_eq!(none_of::<_, _, (_, ErrorKind)>("abc")("z"), Ok(("", 'z')));
@@ -256,7 +261,8 @@ where
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{character::complete::anychar, Err, error::{Error, ErrorKind}, IResult};
 /// fn parser(input: &str) -> IResult<&str, char> {
 ///     anychar(input)
@@ -315,7 +321,8 @@ where
 /// or if no terminating token is found (a non digit character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::digit1;
 /// assert_eq!(digit1::<_, (_, ErrorKind)>("21c"), Ok(("c", "21")));
@@ -358,7 +365,8 @@ where
 /// or if no terminating token is found (a non space character).
 /// # Example
 ///
-/// ```
+/// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Needed};
 /// # use nom::character::streaming::multispace0;
 /// assert_eq!(multispace0::<_, (_, ErrorKind)>(" \t\n\r21c"), Ok(("21c", " \t\n\r")));

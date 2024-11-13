@@ -16,6 +16,7 @@ use crate::{Check, OutputM, OutputMode, PResult};
 ///
 /// # Example
 /// ```rust
+/// # use nom_core as nom;
 /// use nom::sequence::pair;
 /// use nom::bytes::complete::tag;
 /// use nom::{error::ErrorKind, Err, Parser};
@@ -46,6 +47,7 @@ where
 /// * `second` The second parser to get object.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::preceded;
@@ -103,6 +105,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 /// * `second` The second parser to match an object.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::terminated;
@@ -162,6 +165,7 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 /// * `second` The second parser to apply.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::separated_pair;
@@ -197,6 +201,7 @@ where
 /// * `third` The third parser to apply and discard.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, Needed, Parser};
 /// # use nom::Needed::Size;
 /// use nom::sequence::delimited;
@@ -304,6 +309,7 @@ impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
 ///Applies a tuple of parsers one by one and returns their results as a tuple.
 ///There is a maximum of 21 parsers
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind};
 /// use nom::sequence::tuple;
 /// use nom::character::complete::{alpha1, digit1};

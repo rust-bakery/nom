@@ -24,6 +24,7 @@ mod tests;
 /// Return the remaining input.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::error::ErrorKind;
 /// use nom::combinator::rest;
 /// assert_eq!(rest::<_,(_, ErrorKind)>("abc"), Ok(("", "abc")));
@@ -40,6 +41,7 @@ where
 /// Return the length of the remaining input.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::error::ErrorKind;
 /// use nom::combinator::rest_len;
 /// assert_eq!(rest_len::<_,(_, ErrorKind)>("abc"), Ok(("abc", 3)));
@@ -57,6 +59,7 @@ where
 /// Maps a function on the result of a parser.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map;
@@ -82,6 +85,7 @@ where
 /// Applies a function returning a `Result` over the result of a parser.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map_res;
@@ -113,6 +117,7 @@ where
 /// Applies a function returning an `Option` over the result of a parser.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::map_opt;
@@ -144,6 +149,7 @@ where
 /// Applies a parser over the result of another one.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::character::complete::digit1;
 /// use nom::bytes::complete::take;
@@ -171,6 +177,7 @@ where
 /// Creates a new parser from the output of the first parser, then apply that parser over the rest of the input.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::bytes::complete::take;
 /// use nom::number::complete::u8;
@@ -200,6 +207,7 @@ where
 /// To chain an error up, see [`cut`].
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::opt;
 /// use nom::character::complete::alpha1;
@@ -253,6 +261,7 @@ where
 /// Calls the parser if the condition is met.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult, Parser};
 /// use nom::combinator::cond;
 /// use nom::character::complete::alpha1;
@@ -305,6 +314,7 @@ where
 /// Tries to apply its parser without consuming the input.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::peek;
 /// use nom::character::complete::alpha1;
@@ -352,8 +362,9 @@ where
 /// When we're at the end of the data, this combinator
 /// will succeed
 ///
-/// ```
+/// ```rust
 /// # use std::str;
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult};
 /// # use nom::combinator::eof;
 ///
@@ -375,6 +386,7 @@ pub fn eof<I: Input + Clone, E: ParseError<I>>(input: I) -> IResult<I, I, E> {
 /// Transforms Incomplete into `Error`.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::bytes::streaming::take;
 /// use nom::combinator::complete;
@@ -427,6 +439,7 @@ where
 /// Succeeds if all the input has been consumed by its child parser.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::all_consuming;
 /// use nom::character::complete::alpha1;
@@ -480,6 +493,7 @@ where
 /// parser.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::verify;
 /// use nom::character::complete::alpha1;
@@ -546,6 +560,7 @@ where
 /// Returns the provided value if the child parser succeeds.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::value;
 /// use nom::character::complete::alpha1;
@@ -570,6 +585,7 @@ where
 /// Succeeds if the child parser returns an error.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::not;
 /// use nom::character::complete::alpha1;
@@ -616,6 +632,7 @@ where
 /// If the child parser was successful, return the consumed input as produced value.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::recognize;
 /// use nom::character::complete::{char, alpha1};
@@ -676,6 +693,7 @@ where
 /// Returned tuple is of the format `(consumed input, produced output)`.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::combinator::{consumed, value, recognize, map};
 /// use nom::character::complete::{char, alpha1};
@@ -756,6 +774,7 @@ where
 ///
 /// Without `cut`:
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// # use nom::character::complete::{one_of, digit1};
 /// # use nom::combinator::rest;
@@ -778,6 +797,7 @@ where
 ///
 /// With `cut`:
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser, error::Error};
 /// # use nom::character::complete::{one_of, digit1};
 /// # use nom::combinator::rest;
@@ -840,6 +860,7 @@ where
 /// as long as the `Into` implementations are available
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{IResult, Parser};
 /// use nom::combinator::into;
 /// use nom::character::complete::alpha1;
@@ -875,6 +896,7 @@ where
 /// On [`Err::Error`], iteration will stop. To instead chain an error up, see [`cut`].
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// use nom::{combinator::iterator, IResult, bytes::complete::tag, character::complete::alpha1, sequence::terminated};
 /// use std::collections::HashMap;
 ///
@@ -966,6 +988,7 @@ enum State<E> {
 /// specify the default case.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err,error::ErrorKind, IResult, Parser};
 /// use nom::branch::alt;
 /// use nom::combinator::{success, value};
@@ -1010,6 +1033,7 @@ where
 /// A parser which always fails.
 ///
 /// ```rust
+/// # use nom_core as nom;
 /// # use nom::{Err, error::ErrorKind, IResult, Parser};
 /// use nom::combinator::fail;
 ///
