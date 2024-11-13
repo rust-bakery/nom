@@ -433,6 +433,9 @@ pub mod lib {
 
 pub use self::internal::*;
 pub use self::traits::*;
+#[cfg(feature = "supreme")]
+#[cfg_attr(feature = "supreme", doc(cfg(feature = "supreme")))]
+pub use nom_supreme as supreme;
 
 #[macro_use]
 mod macros;
