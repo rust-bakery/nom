@@ -310,6 +310,7 @@ pub enum ErrorKind {
   Fail,
   Many,
   Fold,
+  Precedence,
 }
 
 #[rustfmt::skip]
@@ -373,6 +374,7 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Many                      => 76,
     ErrorKind::Fold                      => 77,
     ErrorKind::BinDigit                  => 78,
+    ErrorKind::Precedence                => 79,
   }
 }
 
@@ -438,6 +440,7 @@ impl ErrorKind {
       ErrorKind::Fail                      => "Fail",
       ErrorKind::Many                      => "Many",
       ErrorKind::Fold                      => "Fold",
+      ErrorKind::Precedence                => "Precedence",
     }
   }
 }

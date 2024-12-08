@@ -451,6 +451,8 @@ pub mod bytes;
 
 pub mod character;
 
+pub mod precedence;
+
 mod str;
 
 pub mod number;

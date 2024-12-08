@@ -67,6 +67,10 @@ name = "css"
 name = "custom_errors"
 
 [[test]]
+name = "expression_ast"
+required-features = ["alloc"]
+
+[[test]]
 name = "float"
 
 [[test]]
