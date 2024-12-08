@@ -29,10 +29,15 @@ include = [
 ]
 
 [features]
-alloc = []
+default = ["std", "supreme"]
 std = ["alloc", "memchr/std"]
-default = ["std"]
+supreme = ["std", "dep:nom-supreme"]
+
+alloc = []
 docsrs = []
+
+[dependencies]
+nom-supreme = { version = "0.8.0", optional = true }
 
 [dependencies.memchr]
 version = "2.3"
