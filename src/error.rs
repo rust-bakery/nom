@@ -3,11 +3,14 @@
 //! Parsers are generic over their error type, requiring that it implements
 //! the `error::ParseError<Input>` trait.
 
-use crate::internal::{Mode, OutputMode, PResult, Parser};
+use crate::internal::{Err, Mode, OutputMode, PResult, Parser};
 use crate::lib::std::fmt;
 
 #[cfg(feature = "alloc")]
 use crate::alloc::borrow::ToOwned;
+
+#[cfg(feature = "std")]
+use crate::internal::IResult;
 
 /// This trait must be implemented by the error type of a nom parser.
 ///
@@ -319,8 +322,6 @@ impl From<VerboseError<&str>> for VerboseError<crate::lib::std::string::String> 
     }
   }
 }
-
-use crate::internal::{Err, IResult};
 
 /// Create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
@@ -733,7 +734,6 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::character::complete::char;
 
   #[test]
   fn context_test() {
@@ -794,6 +794,9 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn convert_error_panic() {
+    use crate::character::complete::char;
+    use crate::internal::IResult;
+
     let input = "";
 
     let _result: IResult<_, _, VerboseError<&str>> = char('x')(input);

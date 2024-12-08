@@ -7,9 +7,8 @@ use nom::number::complete::f32;
 use nom::number::complete::f64;
 use nom::number::Endianness;
 use nom::sequence::{delimited, pair};
-use nom::{Err, Needed};
+use nom::Err;
 use nom::{IResult, Parser};
-use std::num::NonZeroUsize;
 use std::str;
 use std::str::FromStr;
 
