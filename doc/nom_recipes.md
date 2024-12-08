@@ -37,9 +37,9 @@ use nom::{
 /// trailing whitespace, returning the output of `inner`.
 pub fn ws<'a, O, E: ParseError<&'a str>, F>(
     inner: F,
-) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
+) -> impl Parser<&'a str, Output = O, Error = E>
 where
-    F: Parser<&'a str, O, E>,
+    F: Parser<&'a str, Output = O, Error = E>,
 {
     delimited(multispace0, inner, multispace0)
 }
