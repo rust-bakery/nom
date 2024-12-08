@@ -82,6 +82,9 @@ fn separated_list1_test() {
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list1(tag(".."), tag("abcd")).parse(i)
   }
+  fn empty_both(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list0(tag(""), tag("")).parse(i)
+  }
 
   let a = &b"abcdef"[..];
   let b = &b"abcd,abcdef"[..];
@@ -99,6 +102,10 @@ fn separated_list1_test() {
   assert_eq!(
     multi(c),
     Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+  );
+  assert_eq!(
+    empty_both(f),
+    Err(Err::Error(error_position!(f, ErrorKind::SeparatedList)))
   );
   let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
   assert_eq!(multi(d), Ok((&b",ef"[..], res3)));
