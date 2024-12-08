@@ -1,14 +1,14 @@
 //! Parsers recognizing bytes streams, complete input version
 
-use crate::error::ErrorKind;
+use core::marker::PhantomData;
+
 use crate::error::ParseError;
-use crate::internal::{Err, IResult, Parser};
-use crate::lib::std::ops::RangeFrom;
-use crate::lib::std::result::Result::*;
-use crate::traits::{
-  Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength, InputTake,
-  InputTakeAtPosition, Slice, ToUsize,
-};
+use crate::internal::{IResult, Parser};
+use crate::traits::{Compare, FindSubstring, FindToken, ToUsize};
+use crate::Complete;
+use crate::Emit;
+use crate::Input;
+use crate::OutputM;
 
 /// Recognizes a pattern
 ///
@@ -18,7 +18,6 @@ use crate::traits::{
 /// It will return `Err(Err::Error((_, ErrorKind::Tag)))` if the input doesn't match the pattern
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::tag;
 ///
@@ -30,24 +29,18 @@ use crate::traits::{
 /// assert_eq!(parser("Something"), Err(Err::Error(Error::new("Something", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// ```
-pub fn tag<T, Input, Error: ParseError<Input>>(
-  tag: T,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
-  Input: InputTake + Compare<T>,
-  T: InputLength + Clone,
+  I: Input + Compare<T>,
+  T: Input + Clone,
 {
-  move |i: Input| {
-    let tag_len = tag.input_len();
-    let t = tag.clone();
-    let res: IResult<_, _, Error> = match i.compare(t) {
-      CompareResult::Ok => Ok(i.take_split(tag_len)),
-      _ => {
-        let e: ErrorKind = ErrorKind::Tag;
-        Err(Err::Error(Error::from_error_kind(i, e)))
-      }
+  move |i: I| {
+    let mut parser = super::Tag {
+      tag: tag.clone(),
+      e: PhantomData,
     };
-    res
+
+    parser.process::<OutputM<Emit, Emit, Complete>>(i)
   }
 }
 
@@ -59,7 +52,6 @@ where
 /// It will return `Err(Err::Error((_, ErrorKind::Tag)))` if the input doesn't match the pattern.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::tag_no_case;
 ///
@@ -73,25 +65,18 @@ where
 /// assert_eq!(parser("Something"), Err(Err::Error(Error::new("Something", ErrorKind::Tag))));
 /// assert_eq!(parser(""), Err(Err::Error(Error::new("", ErrorKind::Tag))));
 /// ```
-pub fn tag_no_case<T, Input, Error: ParseError<Input>>(
-  tag: T,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Fn(I) -> IResult<I, I, Error>
 where
-  Input: InputTake + Compare<T>,
-  T: InputLength + Clone,
+  I: Input + Compare<T>,
+  T: Input + Clone,
 {
-  move |i: Input| {
-    let tag_len = tag.input_len();
-    let t = tag.clone();
-
-    let res: IResult<_, _, Error> = match (i).compare_no_case(t) {
-      CompareResult::Ok => Ok(i.take_split(tag_len)),
-      _ => {
-        let e: ErrorKind = ErrorKind::Tag;
-        Err(Err::Error(Error::from_error_kind(i, e)))
-      }
+  move |i: I| {
+    let mut parser = super::TagNoCase {
+      tag: tag.clone(),
+      e: PhantomData,
     };
-    res
+
+    parser.process::<OutputM<Emit, Emit, Complete>>(i)
   }
 }
 
@@ -104,7 +89,6 @@ where
 /// It will return a `Err::Error(("", ErrorKind::IsNot))` if the pattern wasn't met.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::is_not;
 ///
@@ -117,17 +101,14 @@ where
 /// assert_eq!(not_space("Nospace"), Ok(("", "Nospace")));
 /// assert_eq!(not_space(""), Err(Err::Error(Error::new("", ErrorKind::IsNot))));
 /// ```
-pub fn is_not<T, Input, Error: ParseError<Input>>(
-  arr: T,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn is_not<T, I, Error: ParseError<I>>(arr: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTakeAtPosition,
-  T: FindToken<<Input as InputTakeAtPosition>::Item>,
+  I: Input,
+  T: FindToken<<I as Input>::Item>,
 {
-  move |i: Input| {
-    let e: ErrorKind = ErrorKind::IsNot;
-    i.split_at_position1_complete(|c| arr.find_token(c), e)
-  }
+  let mut parser = super::is_not(arr);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the longest slice of the matches the pattern.
@@ -138,7 +119,6 @@ where
 /// It will return a `Err(Err::Error((_, ErrorKind::IsA)))` if the pattern wasn't met.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::is_a;
 ///
@@ -152,17 +132,14 @@ where
 /// assert_eq!(hex("D15EA5E"), Ok(("", "D15EA5E")));
 /// assert_eq!(hex(""), Err(Err::Error(Error::new("", ErrorKind::IsA))));
 /// ```
-pub fn is_a<T, Input, Error: ParseError<Input>>(
-  arr: T,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn is_a<T, I, Error: ParseError<I>>(arr: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTakeAtPosition,
-  T: FindToken<<Input as InputTakeAtPosition>::Item>,
+  I: Input,
+  T: FindToken<<I as Input>::Item>,
 {
-  move |i: Input| {
-    let e: ErrorKind = ErrorKind::IsA;
-    i.split_at_position1_complete(|c| !arr.find_token(c), e)
-  }
+  let mut parser = super::is_a(arr);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the longest input slice (if any) that matches the predicate.
@@ -171,13 +148,12 @@ where
 /// takes the input and returns a bool)*.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::bytes::complete::take_while;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while(is_alphabetic)(s)
+///   take_while(AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
@@ -185,14 +161,14 @@ where
 /// assert_eq!(alpha(b"latin"), Ok((&b""[..], &b"latin"[..])));
 /// assert_eq!(alpha(b""), Ok((&b""[..], &b""[..])));
 /// ```
-pub fn take_while<F, Input, Error: ParseError<Input>>(
-  cond: F,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_while<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTakeAtPosition,
-  F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: Input| i.split_at_position_complete(|c| !cond(c))
+  let mut parser = super::take_while(cond);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the longest (at least 1) input slice that matches the predicate.
@@ -203,33 +179,29 @@ where
 /// It will return an `Err(Err::Error((_, ErrorKind::TakeWhile1)))` if the pattern wasn't met.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_while1;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while1(is_alphabetic)(s)
+///   take_while1(AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
 /// assert_eq!(alpha(b"latin"), Ok((&b""[..], &b"latin"[..])));
 /// assert_eq!(alpha(b"12345"), Err(Err::Error(Error::new(&b"12345"[..], ErrorKind::TakeWhile1))));
 /// ```
-pub fn take_while1<F, Input, Error: ParseError<Input>>(
-  cond: F,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_while1<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTakeAtPosition,
-  F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: Input| {
-    let e: ErrorKind = ErrorKind::TakeWhile1;
-    i.split_at_position1_complete(|c| !cond(c), e)
-  }
+  let mut parser = super::take_while1(cond);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
-/// Returns the longest (m <= len <= n) input slice  that matches the predicate.
+/// Returns the longest (m <= len <= n) input slice that matches the predicate.
 ///
 /// The parser will return the longest slice that matches the given predicate *(a function that
 /// takes the input and returns a bool)*.
@@ -238,13 +210,12 @@ where
 /// of range (m <= len <= n).
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_while_m_n;
-/// use nom::character::is_alphabetic;
+/// use nom::AsChar;
 ///
 /// fn short_alpha(s: &[u8]) -> IResult<&[u8], &[u8]> {
-///   take_while_m_n(3, 6, is_alphabetic)(s)
+///   take_while_m_n(3, 6, AsChar::is_alpha)(s)
 /// }
 ///
 /// assert_eq!(short_alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
@@ -253,67 +224,18 @@ where
 /// assert_eq!(short_alpha(b"ed"), Err(Err::Error(Error::new(&b"ed"[..], ErrorKind::TakeWhileMN))));
 /// assert_eq!(short_alpha(b"12345"), Err(Err::Error(Error::new(&b"12345"[..], ErrorKind::TakeWhileMN))));
 /// ```
-pub fn take_while_m_n<F, Input, Error: ParseError<Input>>(
+pub fn take_while_m_n<F, I, Error: ParseError<I>>(
   m: usize,
   n: usize,
   cond: F,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTake + InputIter + InputLength + Slice<RangeFrom<usize>>,
-  F: Fn(<Input as InputIter>::Item) -> bool,
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: Input| {
-    let input = i;
+  let mut parser = super::take_while_m_n(m, n, cond);
 
-    match input.position(|c| !cond(c)) {
-      Some(idx) => {
-        if idx >= m {
-          if idx <= n {
-            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(idx) {
-              Ok(input.take_split(index))
-            } else {
-              Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::TakeWhileMN,
-              )))
-            };
-            res
-          } else {
-            let res: IResult<_, _, Error> = if let Ok(index) = input.slice_index(n) {
-              Ok(input.take_split(index))
-            } else {
-              Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::TakeWhileMN,
-              )))
-            };
-            res
-          }
-        } else {
-          let e = ErrorKind::TakeWhileMN;
-          Err(Err::Error(Error::from_error_kind(input, e)))
-        }
-      }
-      None => {
-        let len = input.input_len();
-        if len >= n {
-          match input.slice_index(n) {
-            Ok(index) => Ok(input.take_split(index)),
-            Err(_needed) => Err(Err::Error(Error::from_error_kind(
-              input,
-              ErrorKind::TakeWhileMN,
-            ))),
-          }
-        } else if len >= m && len <= n {
-          let res: IResult<_, _, Error> = Ok((input.slice(len..), input));
-          res
-        } else {
-          let e = ErrorKind::TakeWhileMN;
-          Err(Err::Error(Error::from_error_kind(input, e)))
-        }
-      }
-    }
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the longest input slice (if any) till a predicate is met.
@@ -322,7 +244,6 @@ where
 /// takes the input and returns a bool)*.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// use nom::bytes::complete::take_till;
 ///
@@ -335,14 +256,15 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Ok(("", "")));
 /// ```
-pub fn take_till<F, Input, Error: ParseError<Input>>(
-  cond: F,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+#[allow(clippy::redundant_closure)]
+pub fn take_till<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTakeAtPosition,
-  F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: Input| i.split_at_position_complete(|c| cond(c))
+  let mut parser = super::take_till(cond);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the longest (at least 1) input slice till a predicate is met.
@@ -354,7 +276,6 @@ where
 /// predicate matches the first input.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_till1;
 ///
@@ -367,17 +288,15 @@ where
 /// assert_eq!(till_colon("12345"), Ok(("", "12345")));
 /// assert_eq!(till_colon(""), Err(Err::Error(Error::new("", ErrorKind::TakeTill1))));
 /// ```
-pub fn take_till1<F, Input, Error: ParseError<Input>>(
-  cond: F,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+#[allow(clippy::redundant_closure)]
+pub fn take_till1<F, I, Error: ParseError<I>>(cond: F) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTakeAtPosition,
-  F: Fn(<Input as InputTakeAtPosition>::Item) -> bool,
+  I: Input,
+  F: Fn(<I as Input>::Item) -> bool,
 {
-  move |i: Input| {
-    let e: ErrorKind = ErrorKind::TakeTill1;
-    i.split_at_position1_complete(|c| cond(c), e)
-  }
+  let mut parser = super::take_till1(cond);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns an input slice containing the first N input elements (Input[..N]).
@@ -385,7 +304,6 @@ where
 /// It will return `Err(Err::Error((_, ErrorKind::Eof)))` if the input is shorter than the argument.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take;
 ///
@@ -398,18 +316,26 @@ where
 /// assert_eq!(take6("short"), Err(Err::Error(Error::new("short", ErrorKind::Eof))));
 /// assert_eq!(take6(""), Err(Err::Error(Error::new("", ErrorKind::Eof))));
 /// ```
-pub fn take<C, Input, Error: ParseError<Input>>(
-  count: C,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+///
+/// The units that are taken will depend on the input type. For example, for a
+/// `&str` it will take a number of `char`'s, whereas for a `&[u8]` it will
+/// take that many `u8`'s:
+///
+/// ```rust
+/// use nom::error::Error;
+/// use nom::bytes::complete::take;
+///
+/// assert_eq!(take::<_, _, Error<_>>(1usize)("💙"), Ok(("", "💙")));
+/// assert_eq!(take::<_, _, Error<_>>(1usize)("💙".as_bytes()), Ok((b"\x9F\x92\x99".as_ref(), b"\xF0".as_ref())));
+/// ```
+pub fn take<C, I, Error: ParseError<I>>(count: C) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputIter + InputTake,
+  I: Input,
   C: ToUsize,
 {
-  let c = count.to_usize();
-  move |i: Input| match i.slice_index(c) {
-    Err(_needed) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::Eof))),
-    Ok(index) => Ok(i.take_split(index)),
-  }
+  let mut parser = super::take(count);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the input slice up to the first occurrence of the pattern.
@@ -418,7 +344,6 @@ where
 /// if the pattern wasn't met.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_until;
 ///
@@ -431,21 +356,14 @@ where
 /// assert_eq!(until_eof(""), Err(Err::Error(Error::new("", ErrorKind::TakeUntil))));
 /// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
 /// ```
-pub fn take_until<T, Input, Error: ParseError<Input>>(
-  tag: T,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_until<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTake + FindSubstring<T>,
-  T: InputLength + Clone,
+  I: Input + FindSubstring<T>,
+  T: Input + Clone,
 {
-  move |i: Input| {
-    let t = tag.clone();
-    let res: IResult<_, _, Error> = match i.find_substring(t) {
-      None => Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntil))),
-      Some(index) => Ok(i.take_split(index)),
-    };
-    res
-  }
+  let mut parser = super::take_until(tag);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Returns the non empty input slice up to the first occurrence of the pattern.
@@ -454,7 +372,6 @@ where
 /// if the pattern wasn't met.
 /// # Example
 /// ```rust
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult};
 /// use nom::bytes::complete::take_until1;
 ///
@@ -468,22 +385,14 @@ where
 /// assert_eq!(until_eof("1eof2eof"), Ok(("eof2eof", "1")));
 /// assert_eq!(until_eof("eof"), Err(Err::Error(Error::new("eof", ErrorKind::TakeUntil))));
 /// ```
-pub fn take_until1<T, Input, Error: ParseError<Input>>(
-  tag: T,
-) -> impl Fn(Input) -> IResult<Input, Input, Error>
+pub fn take_until1<T, I, Error: ParseError<I>>(tag: T) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: InputTake + FindSubstring<T>,
-  T: InputLength + Clone,
+  I: Input + FindSubstring<T>,
+  T: Input + Clone,
 {
-  move |i: Input| {
-    let t = tag.clone();
-    let res: IResult<_, _, Error> = match i.find_substring(t) {
-      None => Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntil))),
-      Some(0) => Err(Err::Error(Error::from_error_kind(i, ErrorKind::TakeUntil))),
-      Some(index) => Ok(i.take_split(index)),
-    };
-    res
-  }
+  let mut parser = super::take_until1(tag);
+
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Matches a byte string with escaped characters.
@@ -493,7 +402,6 @@ where
 /// * The third argument matches the escaped characters
 /// # Example
 /// ```
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// # use nom::character::complete::digit1;
 /// use nom::bytes::complete::escaped;
@@ -507,85 +415,21 @@ where
 /// assert_eq!(esc(r#"12\"34;"#), Ok((";", r#"12\"34"#)));
 /// ```
 ///
-pub fn escaped<'a, Input: 'a, Error, F, G, O1, O2>(
-  mut normal: F,
+pub fn escaped<'a, I, Error, F, G>(
+  normal: F,
   control_char: char,
-  mut escapable: G,
-) -> impl FnMut(Input) -> IResult<Input, Input, Error>
+  escapable: G,
+) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  Input: Clone
-    + crate::traits::Offset
-    + InputLength
-    + InputTake
-    + InputTakeAtPosition
-    + Slice<RangeFrom<usize>>
-    + InputIter,
-  <Input as InputIter>::Item: crate::traits::AsChar,
-  F: Parser<Input, O1, Error>,
-  G: Parser<Input, O2, Error>,
-  Error: ParseError<Input>,
+  I: Clone + crate::traits::Offset + Input + 'a,
+  <I as Input>::Item: crate::traits::AsChar,
+  F: Parser<I, Error = Error>,
+  G: Parser<I, Error = Error>,
+  Error: ParseError<I>,
 {
-  use crate::traits::AsChar;
+  let mut parser = super::escaped(normal, control_char, escapable);
 
-  move |input: Input| {
-    let mut i = input.clone();
-
-    while i.input_len() > 0 {
-      let current_len = i.input_len();
-
-      match normal.parse(i.clone()) {
-        Ok((i2, _)) => {
-          // return if we consumed everything or if the normal parser
-          // does not consume anything
-          if i2.input_len() == 0 {
-            return Ok((input.slice(input.input_len()..), input));
-          } else if i2.input_len() == current_len {
-            let index = input.offset(&i2);
-            return Ok(input.take_split(index));
-          } else {
-            i = i2;
-          }
-        }
-        Err(Err::Error(_)) => {
-          // unwrap() should be safe here since index < $i.input_len()
-          if i.iter_elements().next().unwrap().as_char() == control_char {
-            let next = control_char.len_utf8();
-            if next >= i.input_len() {
-              return Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::Escaped,
-              )));
-            } else {
-              match escapable.parse(i.slice(next..)) {
-                Ok((i2, _)) => {
-                  if i2.input_len() == 0 {
-                    return Ok((input.slice(input.input_len()..), input));
-                  } else {
-                    i = i2;
-                  }
-                }
-                Err(e) => return Err(e),
-              }
-            }
-          } else {
-            let index = input.offset(&i);
-            if index == 0 {
-              return Err(Err::Error(Error::from_error_kind(
-                input,
-                ErrorKind::Escaped,
-              )));
-            }
-            return Ok(input.take_split(index));
-          }
-        }
-        Err(e) => {
-          return Err(e);
-        }
-      }
-    }
-
-    Ok((input.slice(input.input_len()..), input))
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 /// Matches a byte string with escaped characters.
@@ -597,7 +441,6 @@ where
 /// As an example, the chain `abc\tdef` could be `abc    def` (it also consumes the control character)
 ///
 /// ```
-/// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult};
 /// # use std::str::from_utf8;
 /// use nom::bytes::complete::{escaped_transform, tag};
@@ -622,93 +465,32 @@ where
 /// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-pub fn escaped_transform<Input, Error, F, G, O1, O2, ExtendItem, Output>(
-  mut normal: F,
+pub fn escaped_transform<I, Error, F, G, O1, O2, ExtendItem, Output>(
+  normal: F,
   control_char: char,
-  mut transform: G,
-) -> impl FnMut(Input) -> IResult<Input, Output, Error>
+  transform: G,
+) -> impl FnMut(I) -> IResult<I, Output, Error>
 where
-  Input: Clone
-    + crate::traits::Offset
-    + InputLength
-    + InputTake
-    + InputTakeAtPosition
-    + Slice<RangeFrom<usize>>
-    + InputIter,
-  Input: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
+  I: Clone + crate::traits::Offset + Input,
+  I: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O1: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
   O2: crate::traits::ExtendInto<Item = ExtendItem, Extender = Output>,
-  <Input as InputIter>::Item: crate::traits::AsChar,
-  F: Parser<Input, O1, Error>,
-  G: Parser<Input, O2, Error>,
-  Error: ParseError<Input>,
+  <I as Input>::Item: crate::traits::AsChar,
+  F: Parser<I, Output = O1, Error = Error>,
+  G: Parser<I, Output = O2, Error = Error>,
+  Error: ParseError<I>,
 {
-  use crate::traits::AsChar;
+  let mut parser = super::escaped_transform(normal, control_char, transform);
 
-  move |input: Input| {
-    let mut index = 0;
-    let mut res = input.new_builder();
-
-    let i = input.clone();
-
-    while index < i.input_len() {
-      let current_len = i.input_len();
-      let remainder = i.slice(index..);
-      match normal.parse(remainder.clone()) {
-        Ok((i2, o)) => {
-          o.extend_into(&mut res);
-          if i2.input_len() == 0 {
-            return Ok((i.slice(i.input_len()..), res));
-          } else if i2.input_len() == current_len {
-            return Ok((remainder, res));
-          } else {
-            index = input.offset(&i2);
-          }
-        }
-        Err(Err::Error(_)) => {
-          // unwrap() should be safe here since index < $i.input_len()
-          if remainder.iter_elements().next().unwrap().as_char() == control_char {
-            let next = index + control_char.len_utf8();
-            let input_len = input.input_len();
-
-            if next >= input_len {
-              return Err(Err::Error(Error::from_error_kind(
-                remainder,
-                ErrorKind::EscapedTransform,
-              )));
-            } else {
-              match transform.parse(i.slice(next..)) {
-                Ok((i2, o)) => {
-                  o.extend_into(&mut res);
-                  if i2.input_len() == 0 {
-                    return Ok((i.slice(i.input_len()..), res));
-                  } else {
-                    index = input.offset(&i2);
-                  }
-                }
-                Err(e) => return Err(e),
-              }
-            }
-          } else {
-            if index == 0 {
-              return Err(Err::Error(Error::from_error_kind(
-                remainder,
-                ErrorKind::EscapedTransform,
-              )));
-            }
-            return Ok((remainder, res));
-          }
-        }
-        Err(e) => return Err(e),
-      }
-    }
-    Ok((input.slice(index..), res))
-  }
+  move |i: I| parser.process::<OutputM<Emit, Emit, Complete>>(i)
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::error::ErrorKind;
+  use crate::AsChar;
+  use crate::Err;
 
   #[test]
   fn complete_take_while_m_n_utf8_all_matching() {
@@ -738,7 +520,7 @@ mod tests {
   }
 
   // issue ##1118 escaped does not work with empty string
-  fn unquote<'a>(input: &'a str) -> IResult<&'a str, &'a str> {
+  fn unquote(input: &str) -> IResult<&str, &str> {
     use crate::bytes::complete::*;
     use crate::character::complete::*;
     use crate::combinator::opt;
@@ -748,11 +530,37 @@ mod tests {
       char('"'),
       escaped(opt(none_of(r#"\""#)), '\\', one_of(r#"\"rnt"#)),
       char('"'),
-    )(input)
+    )
+    .parse(input)
   }
 
   #[test]
   fn escaped_hang_1118() {
     assert_eq!(unquote(r#""""#), Ok(("", "")));
+  }
+
+  // issue #1630 take_while_m_n is invalid for multi-byte UTF-8 characters
+  #[test]
+  fn complete_take_while_m_n_multibyte() {
+    use crate::error::Error;
+
+    fn multi_byte_chars(s: &str, m: usize, n: usize) -> IResult<&str, &str> {
+      take_while_m_n(m, n, |c: char| c.len() > 1)(s)
+    }
+
+    assert_eq!(multi_byte_chars("€ latin", 0, 64), Ok((" latin", "€")));
+    assert_eq!(multi_byte_chars("𝄠 latin", 0, 1), Ok((" latin", "𝄠")));
+    assert_eq!(multi_byte_chars("باب latin", 0, 64), Ok((" latin", "باب")));
+    assert_eq!(
+      multi_byte_chars("💣💢ᾠ latin", 3, 3),
+      Ok((" latin", "💣💢ᾠ"))
+    );
+    assert_eq!(multi_byte_chars("latin", 0, 64), Ok(("latin", "")));
+    assert_eq!(multi_byte_chars("باب", 1, 3), Ok(("", "باب")));
+    assert_eq!(multi_byte_chars("باب", 1, 2), Ok(("ب", "با")));
+    assert_eq!(
+      multi_byte_chars("latin", 1, 64),
+      Err(Err::Error(Error::new("latin", ErrorKind::TakeWhileMN)))
+    );
   }
 }

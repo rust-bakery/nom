@@ -1,4 +1,4 @@
-# Nom Recipes
+# Common recipes to build nom parsers
 
 These are short recipes for accomplishing common tasks with nom.
 
@@ -27,23 +27,21 @@ These are short recipes for accomplishing common tasks with nom.
 ```rust
 use nom::{
   IResult,
+  Parser,
   error::ParseError,
-  combinator::value,
   sequence::delimited,
   character::complete::multispace0,
 };
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and 
 /// trailing whitespace, returning the output of `inner`.
-fn ws<'a, F: 'a, O, E: ParseError<&'a str>>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, E>
-  where
-  F: Fn(&'a str) -> IResult<&'a str, O, E>,
+pub fn ws<'a, O, E: ParseError<&'a str>, F>(
+    inner: F,
+) -> impl Parser<&'a str, Output = O, Error = E>
+where
+    F: Parser<&'a str, Output = O, Error = E>,
 {
-  delimited(
-    multispace0,
-    inner,
-    multispace0
-  )
+    delimited(multispace0, inner, multispace0)
 }
 ```
 
@@ -62,6 +60,7 @@ output of `()`.
 ```rust
 use nom::{
   IResult,
+  Parser,
   error::ParseError,
   combinator::value,
   sequence::pair,
@@ -74,7 +73,7 @@ pub fn peol_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, 
   value(
     (), // Output is thrown away.
     pair(char('%'), is_not("\n\r"))
-  )(i)
+  ).parse(i)
 }
 ```
 
@@ -86,21 +85,21 @@ and does not handle nested comments.
 ```rust
 use nom::{
   IResult,
+  Parser,
   error::ParseError,
   combinator::value,
-  sequence::tuple,
   bytes::complete::{tag, take_until},
 };
 
 pub fn pinline_comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, (), E> {
   value(
     (), // Output is thrown away.
-    tuple((
+    (
       tag("(*"),
       take_until("*)"),
       tag("*)")
-    ))
-  )(i)
+    )
+  ).parse(i)
 }
 ```
 
@@ -114,8 +113,9 @@ letters and numbers may be parsed like this:
 ```rust
 use nom::{
   IResult,
+  Parser,
   branch::alt,
-  multi::many0,
+  multi::many0_count,
   combinator::recognize,
   sequence::pair,
   character::complete::{alpha1, alphanumeric1},
@@ -126,9 +126,9 @@ pub fn identifier(input: &str) -> IResult<&str, &str> {
   recognize(
     pair(
       alt((alpha1, tag("_"))),
-      many0(alt((alphanumeric1, tag("_"))))
+      many0_count(alt((alphanumeric1, tag("_"))))
     )
-  )(input)
+  ).parse(input)
 }
 ```
 
@@ -142,8 +142,8 @@ input text that was parsed, which in this case is the entire `&str` `hello_world
 
 ### Escaped Strings
 
-This is [one of the examples](https://github.com/Geal/nom/blob/master/examples/string.rs) in the
-examples directory.
+This is [one of the examples](https://github.com/rust-bakery/nom/blob/main/examples/string.rs) in
+the examples directory.
 
 ### Integers
 
@@ -153,7 +153,7 @@ integer value instead is demonstrated for hexadecimal integers. The others are s
 The parsers allow the grouping character `_`, which allows one to group the digits by byte, for
 example: `0xA4_3F_11_28`. If you prefer to exclude the `_` character, the lambda to convert from a
 string slice to an integer value is slightly simpler. You can also strip the `_` from the string
-slice that is returned, which is demonstrated in the second hexdecimal number parser.
+slice that is returned, which is demonstrated in the second hexadecimal number parser.
 
 If you wish to limit the number of digits in a valid integer literal, replace `many1` with
 `many_m_n` in the recipes.
@@ -165,6 +165,7 @@ The parser outputs the string slice of the digits without the leading `0x`/`0X`.
 ```rust
 use nom::{
   IResult,
+  Parser,
   branch::alt,
   multi::{many0, many1},
   combinator::recognize,
@@ -181,7 +182,7 @@ fn hexadecimal(input: &str) -> IResult<&str, &str> { // <'a, E: ParseError<&'a s
         terminated(one_of("0123456789abcdefABCDEF"), many0(char('_')))
       )
     )
-  )(input)
+  ).parse(input)
 }
 ```
 
@@ -190,6 +191,7 @@ If you want it to return the integer value instead, use map:
 ```rust
 use nom::{
   IResult,
+  Parser,
   branch::alt,
   multi::{many0, many1},
   combinator::{map_res, recognize},
@@ -209,7 +211,7 @@ fn hexadecimal_value(input: &str) -> IResult<&str, i64> {
       )
     ),
     |out: &str| i64::from_str_radix(&str::replace(&out, "_", ""), 16)
-  )(input)
+  ).parse(input)
 }
 ```
 
@@ -218,6 +220,7 @@ fn hexadecimal_value(input: &str) -> IResult<&str, i64> {
 ```rust
 use nom::{
   IResult,
+  Parser,
   branch::alt,
   multi::{many0, many1},
   combinator::recognize,
@@ -234,7 +237,7 @@ fn octal(input: &str) -> IResult<&str, &str> {
         terminated(one_of("01234567"), many0(char('_')))
       )
     )
-  )(input)
+  ).parse(input)
 }
 ```
 
@@ -243,6 +246,7 @@ fn octal(input: &str) -> IResult<&str, &str> {
 ```rust
 use nom::{
   IResult,
+  Parser,
   branch::alt,
   multi::{many0, many1},
   combinator::recognize,
@@ -259,7 +263,7 @@ fn binary(input: &str) -> IResult<&str, &str> {
         terminated(one_of("01"), many0(char('_')))
       )
     )
-  )(input)
+  ).parse(input)
 }
 ```
 
@@ -268,6 +272,7 @@ fn binary(input: &str) -> IResult<&str, &str> {
 ```rust
 use nom::{
   IResult,
+  Parser,
   multi::{many0, many1},
   combinator::recognize,
   sequence::terminated,
@@ -279,7 +284,7 @@ fn decimal(input: &str) -> IResult<&str, &str> {
     many1(
       terminated(one_of("0123456789"), many0(char('_')))
     )
-  )(input)
+  ).parse(input)
 }
 ```
 
@@ -290,10 +295,11 @@ The following is adapted from [the Python parser by Valentin Lorentz (ProgVal)](
 ```rust
 use nom::{
   IResult,
+  Parser,
   branch::alt,
   multi::{many0, many1},
   combinator::{opt, recognize},
-  sequence::{preceded, terminated, tuple},
+  sequence::{preceded, terminated},
   character::complete::{char, one_of},
 };
 
@@ -301,19 +307,19 @@ fn float(input: &str) -> IResult<&str, &str> {
   alt((
     // Case one: .42
     recognize(
-      tuple((
+      (
         char('.'),
         decimal,
-        opt(tuple((
+        opt((
           one_of("eE"),
           opt(one_of("+-")),
           decimal
-        )))
-      ))
+        ))
+      )
     )
     , // Case two: 42e42 and 42.42e42
     recognize(
-      tuple((
+      (
         decimal,
         opt(preceded(
           char('.'),
@@ -322,17 +328,17 @@ fn float(input: &str) -> IResult<&str, &str> {
         one_of("eE"),
         opt(one_of("+-")),
         decimal
-      ))
+      )
     )
     , // Case three: 42. and 42.42
     recognize(
-      tuple((
+      (
         decimal,
         char('.'),
         opt(decimal)
-      ))
+      )
     )
-  ))(input)
+  )).parse(input)
 }
 
 fn decimal(input: &str) -> IResult<&str, &str> {
@@ -340,7 +346,7 @@ fn decimal(input: &str) -> IResult<&str, &str> {
     many1(
       terminated(one_of("0123456789"), many0(char('_')))
     )
-  )(input)
+  ).parse(input)
 }
 ```
 
@@ -351,14 +357,14 @@ a common interface to parse from a string.
 
 ```rust
 use nom::{
-  IResult, Finish, error::Error,
+  IResult, Parser, Finish, error::Error,
   bytes::complete::{tag, take_while},
 };
 use std::str::FromStr;
 
 // will recognize the name in "Hello, name!"
 fn parse_name(input: &str) -> IResult<&str, &str> {
-  let (i, _) = tag("Hello, ")(input)?;
+  let (i, _) = tag("Hello, ").parse(input)?;
   let (i, name) = take_while(|c:char| c.is_alphabetic())(i)?;
   let (i, _) = tag("!")(i)?;
 

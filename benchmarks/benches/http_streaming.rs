@@ -3,8 +3,8 @@
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use criterion::*;
-use nom::{IResult, bytes::complete::{tag, take_while1}, character::complete::{line_ending, char}, multi::many1};
+use codspeed_criterion_compat::*;
+use nom::{IResult, bytes::streaming::{tag, take_while1}, character::streaming::{line_ending, char}, multi::many, Parser};
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 #[derive(Debug)]
@@ -96,15 +96,15 @@ fn message_header_value(input: &[u8]) -> IResult<&[u8], &[u8]> {
 fn message_header(input: &[u8]) -> IResult<&[u8], Header<'_>> {
   let (input, name) = take_while1(is_token)(input)?;
   let (input, _) = char(':')(input)?;
-  let (input, value) = many1(message_header_value)(input)?;
+  let (input, value) = many(1.., message_header_value).parse(input)?;
 
   Ok((input, Header{ name, value }))
 }
 
 fn request(input: &[u8]) -> IResult<&[u8], (Request<'_>, Vec<Header<'_>>)> {
   let (input, req) = request_line(input)?;
-  let (input, h) = many1(message_header)(input)?;
-  let (input, _) = line_ending(input)?;
+  let (input, h) = many(1.., message_header).parse(input)?;
+    let (input, _) = line_ending(input)?;
 
   Ok((input, (req, h)))
 }
@@ -167,7 +167,7 @@ Connection: keep-alive
   let mut http_group = c.benchmark_group("http");
   http_group.throughput(Throughput::Bytes(data.len() as u64));
   http_group.bench_with_input(
-    BenchmarkId::new("parse", data.len()),
+    BenchmarkId::new("parse_streaming", data.len()),
      data,
       |b, data| {
     b.iter(|| parse(data).unwrap());
@@ -195,5 +195,5 @@ fn main() {
 }
 */
 
-criterion_group!(http, one_test);
-criterion_main!(http);
+criterion_group!(http_streaming, one_test);
+criterion_main!(http_streaming);

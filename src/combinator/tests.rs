@@ -117,7 +117,7 @@ fn custom_error(input: &[u8]) -> IResult<&[u8], &[u8], CustomError> {
 fn test_flat_map() {
   let input: &[u8] = &[3, 100, 101, 102, 103, 104][..];
   assert_parse!(
-    flat_map(u8, take)(input),
+    flat_map(u8, take).parse(input),
     Ok((&[103, 104][..], &[100, 101, 102][..]))
   );
 }
@@ -126,11 +126,11 @@ fn test_flat_map() {
 fn test_map_opt() {
   let input: &[u8] = &[50][..];
   assert_parse!(
-    map_opt(u8, |u| if u < 20 { Some(u) } else { None })(input),
+    map_opt(u8, |u| if u < 20 { Some(u) } else { None }).parse(input),
     Err(Err::Error((&[50][..], ErrorKind::MapOpt)))
   );
   assert_parse!(
-    map_opt(u8, |u| if u > 20 { Some(u) } else { None })(input),
+    map_opt(u8, |u| if u > 20 { Some(u) } else { None }).parse(input),
     Ok((&[][..], 50))
   );
 }
@@ -139,7 +139,7 @@ fn test_map_opt() {
 fn test_map_parser() {
   let input: &[u8] = &[100, 101, 102, 103, 104][..];
   assert_parse!(
-    map_parser(take(4usize), take(2usize))(input),
+    map_parser(take(4usize), take(2usize)).parse(input),
     Ok((&[104][..], &[100, 101][..]))
   );
 }
@@ -148,11 +148,11 @@ fn test_map_parser() {
 fn test_all_consuming() {
   let input: &[u8] = &[100, 101, 102][..];
   assert_parse!(
-    all_consuming(take(2usize))(input),
+    all_consuming(take(2usize)).parse(input),
     Err(Err::Error((&[102][..], ErrorKind::Eof)))
   );
   assert_parse!(
-    all_consuming(take(3usize))(input),
+    all_consuming(take(3usize)).parse(input),
     Ok((&[][..], &[100, 101, 102][..]))
   );
 }
@@ -164,14 +164,14 @@ fn test_verify_ref() {
 
   let mut parser1 = verify(take(3u8), |s: &[u8]| s == &b"abc"[..]);
 
-  assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], &b"abc"[..])));
+  assert_eq!(parser1.parse(&b"abcd"[..]), Ok((&b"d"[..], &b"abc"[..])));
   assert_eq!(
-    parser1(&b"defg"[..]),
+    parser1.parse(&b"defg"[..]),
     Err(Err::Error((&b"defg"[..], ErrorKind::Verify)))
   );
 
   fn parser2(i: &[u8]) -> IResult<&[u8], u32> {
-    verify(crate::number::streaming::be_u32, |val: &u32| *val < 3)(i)
+    verify(crate::number::streaming::be_u32, |val: &u32| *val < 3).parse(i)
   }
 }
 
@@ -183,9 +183,12 @@ fn test_verify_alloc() {
     s == &b"abc"[..]
   });
 
-  assert_eq!(parser1(&b"abcd"[..]), Ok((&b"d"[..], (&b"abc").to_vec())));
   assert_eq!(
-    parser1(&b"defg"[..]),
+    parser1.parse(&b"abcd"[..]),
+    Ok((&b"d"[..], b"abc".to_vec()))
+  );
+  assert_eq!(
+    parser1.parse(&b"defg"[..]),
     Err(Err::Error((&b"defg"[..], ErrorKind::Verify)))
   );
 }
@@ -200,7 +203,7 @@ fn test_into() {
   };
 
   let mut parser = into(take::<_, _, Error<_>>(3u8));
-  let result: IResult<&[u8], Vec<u8>> = parser(&b"abcdefg"[..]);
+  let result: IResult<&[u8], Vec<u8>> = parser.parse(&b"abcdefg"[..]);
 
   assert_eq!(result, Ok((&b"defg"[..], vec![97, 98, 99])));
 }
@@ -208,7 +211,7 @@ fn test_into() {
 #[test]
 fn opt_test() {
   fn opt_abcd(i: &[u8]) -> IResult<&[u8], Option<&[u8]>> {
-    opt(tag("abcd"))(i)
+    opt(tag("abcd")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -222,7 +225,7 @@ fn opt_test() {
 #[test]
 fn peek_test() {
   fn peek_tag(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    peek(tag("abcd"))(i)
+    peek(tag("abcd")).parse(i)
   }
 
   assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
@@ -236,7 +239,7 @@ fn peek_test() {
 #[test]
 fn not_test() {
   fn not_aaa(i: &[u8]) -> IResult<&[u8], ()> {
-    not(tag("aaa"))(i)
+    not(tag("aaa")).parse(i)
   }
 
   assert_eq!(
@@ -252,7 +255,7 @@ fn verify_test() {
   use crate::bytes::streaming::take;
 
   fn test(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    verify(take(5u8), |slice: &[u8]| slice[0] == b'a')(i)
+    verify(take(5u8), |slice: &[u8]| slice[0] == b'a').parse(i)
   }
   assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::new(2))));
   assert_eq!(
@@ -269,7 +272,13 @@ fn verify_test() {
 fn fail_test() {
   let a = "string";
   let b = "another string";
-  
-  assert_eq!(fail::<_, &str, _>(a), Err(Err::Error((a, ErrorKind::Fail))));
-  assert_eq!(fail::<_, &str, _>(b), Err(Err::Error((b, ErrorKind::Fail))));
+
+  assert_eq!(
+    fail::<_, &str, _>().parse(a),
+    Err(Err::Error((a, ErrorKind::Fail)))
+  );
+  assert_eq!(
+    fail::<_, &str, _>().parse(b),
+    Err(Err::Error((b, ErrorKind::Fail)))
+  );
 }

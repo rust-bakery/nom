@@ -1,18 +1,15 @@
-#[macro_use]
-extern crate criterion;
-
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
-use criterion::Criterion;
+use codspeed_criterion_compat::*;
 use nom::{
   branch::alt,
-  bytes::complete::{tag, take},
-  character::complete::{anychar, char, multispace0, none_of},
+  bytes::streaming::{tag, take},
+  character::streaming::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
   error::{ErrorKind, ParseError},
-  multi::{fold_many0, separated_list0},
-  number::complete::{double, recognize_float},
+  multi::{fold, separated_list0},
+  number::streaming::{double, recognize_float},
   sequence::{delimited, preceded, separated_pair},
   IResult, Parser,
 };
@@ -30,11 +27,11 @@ pub enum JsonValue {
 }
 
 fn boolean(input: &str) -> IResult<&str, bool> {
-  alt((value(false, tag("false")), value(true, tag("true"))))(input)
+  alt((value(false, tag("false")), value(true, tag("true")))).parse(input)
 }
 
 fn u16_hex(input: &str) -> IResult<&str, u16> {
-  map_res(take(4usize), |s| u16::from_str_radix(s, 16))(input)
+  map_res(take(4usize), |s| u16::from_str_radix(s, 16)).parse(input)
 }
 
 fn unicode_escape(input: &str) -> IResult<&str, char> {
@@ -59,7 +56,8 @@ fn unicode_escape(input: &str) -> IResult<&str, char> {
     )),
     // Could probably be replaced with .unwrap() or _unchecked due to the verify checks
     std::char::from_u32,
-  )(input)
+  )
+  .parse(input)
 }
 
 fn character(input: &str) -> IResult<&str, char> {
@@ -78,7 +76,8 @@ fn character(input: &str) -> IResult<&str, char> {
         })
       }),
       preceded(char('u'), unicode_escape),
-    ))(input)
+    ))
+    .parse(input)
   } else {
     Ok((input, c))
   }
@@ -87,15 +86,18 @@ fn character(input: &str) -> IResult<&str, char> {
 fn string(input: &str) -> IResult<&str, String> {
   delimited(
     char('"'),
-    fold_many0(character, String::new, |mut string, c| {
+    fold(0.., character, String::new, |mut string, c| {
       string.push(c);
       string
     }),
     char('"'),
-  )(input)
+  )
+  .parse(input)
 }
 
-fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, O, E>>(f: F) -> impl Parser<&'a str, O, E> {
+fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
+  f: F,
+) -> impl Parser<&'a str, Output = O, Error = E> {
   delimited(multispace0, f, multispace0)
 }
 
@@ -104,7 +106,8 @@ fn array(input: &str) -> IResult<&str, Vec<JsonValue>> {
     char('['),
     ws(separated_list0(ws(char(',')), json_value)),
     char(']'),
-  )(input)
+  )
+  .parse(input)
 }
 
 fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
@@ -118,7 +121,8 @@ fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
       char('}'),
     ),
     |key_values| key_values.into_iter().collect(),
-  )(input)
+  )
+  .parse(input)
 }
 
 fn json_value(input: &str) -> IResult<&str, JsonValue> {
@@ -131,7 +135,8 @@ fn json_value(input: &str) -> IResult<&str, JsonValue> {
     map(double, Num),
     map(array, Array),
     map(object, Object),
-  ))(input)
+  ))
+  .parse(input)
 }
 
 fn json(input: &str) -> IResult<&str, JsonValue> {
@@ -143,10 +148,10 @@ fn json_bench(c: &mut Criterion) {
   \"b\": [ \"x\", \"y\", 12 ,\"\\u2014\", \"\\uD83D\\uDE10\"] ,
   \"c\": { \"hello\" : \"world\"
   }
-  }  ";
+  }  ;";
 
   // println!("data:\n{:?}", json(data));
-  c.bench_function("json", |b| {
+  c.bench_function("json streaming", |b| {
     b.iter(|| json(data).unwrap());
   });
 }
@@ -154,29 +159,29 @@ fn json_bench(c: &mut Criterion) {
 fn recognize_float_bytes(c: &mut Criterion) {
   println!(
     "recognize_float_bytes result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+    recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12;"[..])
   );
-  c.bench_function("recognize float bytes", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
+  c.bench_function("recognize float bytes streaming", |b| {
+    b.iter(|| recognize_float::<_, (_, ErrorKind)>(&b"-1.234E-12;"[..]));
   });
 }
 
 fn recognize_float_str(c: &mut Criterion) {
   println!(
     "recognize_float_str result: {:?}",
-    recognize_float::<_, (_, ErrorKind)>("-1.234E-12")
+    recognize_float::<_, (_, ErrorKind)>("-1.234E-12;")
   );
-  c.bench_function("recognize float str", |b| {
-    b.iter(|| recognize_float::<_, (_, ErrorKind)>("-1.234E-12"));
+  c.bench_function("recognize float str streaming", |b| {
+    b.iter(|| recognize_float::<_, (_, ErrorKind)>("-1.234E-12;"));
   });
 }
 
 fn float_bytes(c: &mut Criterion) {
   println!(
     "float_bytes result: {:?}",
-    double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..])
+    double::<_, (_, ErrorKind)>(&b"-1.234E-12;"[..])
   );
-  c.bench_function("float bytes", |b| {
+  c.bench_function("float bytes streaming", |b| {
     b.iter(|| double::<_, (_, ErrorKind)>(&b"-1.234E-12"[..]));
   });
 }
@@ -184,10 +189,32 @@ fn float_bytes(c: &mut Criterion) {
 fn float_str(c: &mut Criterion) {
   println!(
     "float_str result: {:?}",
-    double::<_, (_, ErrorKind)>("-1.234E-12")
+    double::<_, (_, ErrorKind)>("-1.234E-12;")
   );
-  c.bench_function("float str", |b| {
-    b.iter(|| double::<_, (_, ErrorKind)>("-1.234E-12"));
+  c.bench_function("float str streaming", |b| {
+    b.iter(|| double::<_, (_, ErrorKind)>("-1.234E-12;"));
+  });
+}
+
+use nom::Err;
+use nom::ParseTo;
+fn std_float(input: &[u8]) -> IResult<&[u8], f64, (&[u8], ErrorKind)> {
+  match recognize_float(input) {
+    Err(e) => Err(e),
+    Ok((i, s)) => match s.parse_to() {
+      Some(n) => Ok((i, n)),
+      None => Err(Err::Error((i, ErrorKind::Float))),
+    },
+  }
+}
+
+fn std_float_bytes(c: &mut Criterion) {
+  println!(
+    "std_float_bytes result: {:?}",
+    std_float(&b"-1.234E-12;"[..])
+  );
+  c.bench_function("std_float bytes streaming", |b| {
+    b.iter(|| std_float(&b"-1.234E-12;"[..]));
   });
 }
 
@@ -197,6 +224,7 @@ criterion_group!(
   recognize_float_bytes,
   recognize_float_str,
   float_bytes,
+  std_float_bytes,
   float_str
 );
 criterion_main!(benches);

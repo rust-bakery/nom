@@ -1,5 +1,7 @@
 # How nom macros work
 
+**NOTE: macros were removed in nom 7. You should now use the function based combinators**
+
 nom uses Rust macros heavily to provide a nice syntax and generate parsing code.
 This has multiple advantages:
 

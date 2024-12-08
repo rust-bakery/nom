@@ -9,5 +9,4 @@ channel on irc.mozilla.org, or ping 'geal' on Mozilla, Freenode, Geeknode or oft
 * [Making a new parser from scratch](making_a_new_parser_from_scratch.md)
 (general tips on writing a parser and code architecture)
 * [How to handle parser errors](error_management.md)
-* [How nom's macro combinators work](how_nom_macros_work.md)
 * [Recipes for common nom tasks](nom_recipes.md)

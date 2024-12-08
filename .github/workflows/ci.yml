@@ -3,7 +3,9 @@ name: CI
 on: [push, pull_request]
 
 env:
-  RUST_MINVERSION: 1.41.1
+  RUST_MINVERSION: 1.65.0
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
 
 jobs:
   test:
@@ -16,7 +18,7 @@ jobs:
           - stable
           - beta
           - nightly
-          - 1.46.0
+          - 1.65.0
 
         features:
           - ''
@@ -25,7 +27,7 @@ jobs:
           - rust: stable
             features: ''
           - rust: stable
-            features: '--features "std lexical"'
+            features: '--features "std"'
           - rust: stable
             features: '--no-default-features'
           - rust: stable
@@ -48,6 +50,9 @@ jobs:
           profile: minimal
           override: true
 
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:
@@ -61,7 +66,7 @@ jobs:
           args: --verbose ${{ matrix.features }}
 
   minrust:
-    name: Test MSRV
+    name: Test minimal rust version
     runs-on: ubuntu-latest
 
     steps:
@@ -74,6 +79,9 @@ jobs:
           toolchain: ${{ env.RUST_MINVERSION }}
           profile: minimal
           override: true
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
 
       - name: Build
         uses: actions-rs/cargo@v1
@@ -95,6 +103,9 @@ jobs:
           toolchain: nightly
           profile: minimal
           override: true
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
 
       - name: Compile bench
         uses: actions-rs/cargo@v1
@@ -124,10 +135,9 @@ jobs:
           override: true
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --verbose --features "std lexical docsrs"
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --no-deps --document-private-items --workspace --verbose --features "std docsrs"
 
   fmt:
     name: Check formatting
@@ -167,16 +177,23 @@ jobs:
           profile: minimal
           override: true
 
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+
       - name: Install cargo-tarpaulin
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: cargo-tarpaulin --version 0.18.0-alpha3 # @TODO restore to normal (https://github.com/xd009642/tarpaulin/issues/756#issuecomment-838769320)
+          args: cargo-tarpaulin
 
       - name: Run cargo tarpaulin
         uses: actions-rs/cargo@v1
-        env:
-          TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         with:
           command: tarpaulin
-          args: --coveralls "$TOKEN" --avoid-cfg-tarpaulin # @TODO restore to normal (https://github.com/xd009642/tarpaulin/issues/756#issuecomment-838769320)
+          args: --output-dir coverage --out xml --workspace --exclude benchmarks
+      
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: rust-bakery/nom

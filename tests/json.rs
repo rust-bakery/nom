@@ -6,7 +6,7 @@ use nom::{
   character::complete::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
   error::ParseError,
-  multi::{fold_many0, separated_list0},
+  multi::{fold, separated_list0},
   number::complete::double,
   sequence::{delimited, preceded, separated_pair},
   IResult, Parser,
@@ -25,11 +25,11 @@ pub enum JsonValue {
 }
 
 fn boolean(input: &str) -> IResult<&str, bool> {
-  alt((value(false, tag("false")), value(true, tag("true"))))(input)
+  alt((value(false, tag("false")), value(true, tag("true")))).parse(input)
 }
 
 fn u16_hex(input: &str) -> IResult<&str, u16> {
-  map_res(take(4usize), |s| u16::from_str_radix(s, 16))(input)
+  map_res(take(4usize), |s| u16::from_str_radix(s, 16)).parse(input)
 }
 
 fn unicode_escape(input: &str) -> IResult<&str, char> {
@@ -54,7 +54,8 @@ fn unicode_escape(input: &str) -> IResult<&str, char> {
     )),
     // Could be probably replaced with .unwrap() or _unchecked due to the verify checks
     std::char::from_u32,
-  )(input)
+  )
+  .parse(input)
 }
 
 fn character(input: &str) -> IResult<&str, char> {
@@ -73,7 +74,8 @@ fn character(input: &str) -> IResult<&str, char> {
         })
       }),
       preceded(char('u'), unicode_escape),
-    ))(input)
+    ))
+    .parse(input)
   } else {
     Ok((input, c))
   }
@@ -82,15 +84,18 @@ fn character(input: &str) -> IResult<&str, char> {
 fn string(input: &str) -> IResult<&str, String> {
   delimited(
     char('"'),
-    fold_many0(character, String::new, |mut string, c| {
+    fold(0.., character, String::new, |mut string, c| {
       string.push(c);
       string
     }),
     char('"'),
-  )(input)
+  )
+  .parse(input)
 }
 
-fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, O, E>>(f: F) -> impl Parser<&'a str, O, E> {
+fn ws<'a, O, E: ParseError<&'a str>, F: Parser<&'a str, Output = O, Error = E>>(
+  f: F,
+) -> impl Parser<&'a str, Output = O, Error = E> {
   delimited(multispace0, f, multispace0)
 }
 
@@ -99,7 +104,8 @@ fn array(input: &str) -> IResult<&str, Vec<JsonValue>> {
     char('['),
     ws(separated_list0(ws(char(',')), json_value)),
     char(']'),
-  )(input)
+  )
+  .parse(input)
 }
 
 fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
@@ -113,7 +119,8 @@ fn object(input: &str) -> IResult<&str, HashMap<String, JsonValue>> {
       char('}'),
     ),
     |key_values| key_values.into_iter().collect(),
-  )(input)
+  )
+  .parse(input)
 }
 
 fn json_value(input: &str) -> IResult<&str, JsonValue> {
@@ -126,7 +133,8 @@ fn json_value(input: &str) -> IResult<&str, JsonValue> {
     map(double, Num),
     map(array, Array),
     map(object, Object),
-  ))(input)
+  ))
+  .parse(input)
 }
 
 fn json(input: &str) -> IResult<&str, JsonValue> {
