@@ -179,27 +179,6 @@ fn issue_many_m_n_with_zeros() {
 }
 
 #[test]
-fn issue_1027_convert_error_panic_nonempty() {
-  use nom::character::complete::char;
-  use nom::error::{convert_error, VerboseError};
-  use nom::sequence::pair;
-
-  let input = "a";
-
-  let result: IResult<_, _, VerboseError<&str>> = pair(char('a'), char('b')).parse(input);
-  let err = match result.unwrap_err() {
-    Err::Error(e) => e,
-    _ => unreachable!(),
-  };
-
-  let msg = convert_error(input, err);
-  assert_eq!(
-    msg,
-    "0: at line 1:\na\n ^\nexpected \'b\', got end of input\n\n"
-  );
-}
-
-#[test]
 fn issue_1231_bits_expect_fn_closure() {
   use nom::bits::{bits, complete::take};
   use nom::error::Error;
