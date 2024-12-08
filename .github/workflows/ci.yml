@@ -190,9 +190,10 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: tarpaulin
-          args: --output-dir coverage --out Lcov
+          args: --output-dir coverage --out xml --workspace --exclude benchmarks
       
-      - name: Publish to Coveralls
-        uses: coverallsapp/github-action@master
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: rust-bakery/nom

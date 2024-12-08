@@ -11,7 +11,7 @@ use crate::error::ErrorKind;
 use crate::error::ParseError;
 use crate::internal::{Err, Needed, Parser};
 use crate::lib::std::result::Result::*;
-use crate::traits::{Compare, CompareResult, InputLength};
+use crate::traits::{Compare, CompareResult};
 use crate::AsChar;
 use crate::Check;
 use crate::ExtendInto;
@@ -45,7 +45,7 @@ use crate::ToUsize;
 pub fn tag<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   Tag {
     tag,
@@ -62,7 +62,7 @@ pub struct Tag<T, E> {
 impl<I, Error: ParseError<I>, T> Parser<I> for Tag<T, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   type Output = I;
 
@@ -114,7 +114,7 @@ where
 pub fn tag_no_case<T, I, Error: ParseError<I>>(tag: T) -> impl Parser<I, Output = I, Error = Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   TagNoCase {
     tag,
@@ -131,7 +131,7 @@ pub struct TagNoCase<T, E> {
 impl<I, Error: ParseError<I>, T> Parser<I> for TagNoCase<T, Error>
 where
   I: Input + Compare<T>,
-  T: InputLength + Clone,
+  T: Input + Clone,
 {
   type Output = I;
 

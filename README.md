@@ -158,7 +158,6 @@ parsing, and construct an AST in place.
 Example projects:
 
 - [PHP VM](https://github.com/tagua-vm/parser)
-- eve language prototype
 - [xshade shading language](https://github.com/xshade-lang/xshade)
 
 ### Streaming formats
@@ -266,7 +265,7 @@ Here is a (non exhaustive) list of known projects using nom:
 [proto files](https://github.com/tafia/protobuf-parser),
 [Fountain screenplay markup](https://github.com/adamchalmers/fountain-rs),
 [vimwiki](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki) & [vimwiki_macros](https://github.com/chipsenkbeil/vimwiki-rs/tree/master/vimwiki_macros),
-[Kconfig language](https://github.com/Mcdostone/nom-kconfig)
+[Kconfig language](https://github.com/Mcdostone/nom-kconfig), [Askama templates](https://crates.io/crates/askama_parser/)
 - Programming languages:
 [PHP](https://github.com/tagua-vm/parser),
 [Basic Calculator](https://github.com/balajisivaraman/basic_calculator_rs),

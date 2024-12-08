@@ -35,15 +35,13 @@ use nom::{
 
 /// A combinator that takes a parser `inner` and produces a parser that also consumes both leading and 
 /// trailing whitespace, returning the output of `inner`.
-fn ws<'a, F, O, E: ParseError<&'a str>>(inner: F) -> impl Parser<&'a str>
-  where
-  F: Parser<&'a str>,
+pub fn ws<'a, O, E: ParseError<&'a str>, F>(
+    inner: F,
+) -> impl Parser<&'a str, Output = O, Error = E>
+where
+    F: Parser<&'a str, Output = O, Error = E>,
 {
-  delimited(
-    multispace0,
-    inner,
-    multispace0
-  )
+    delimited(multispace0, inner, multispace0)
 }
 ```
 
@@ -155,7 +153,7 @@ integer value instead is demonstrated for hexadecimal integers. The others are s
 The parsers allow the grouping character `_`, which allows one to group the digits by byte, for
 example: `0xA4_3F_11_28`. If you prefer to exclude the `_` character, the lambda to convert from a
 string slice to an integer value is slightly simpler. You can also strip the `_` from the string
-slice that is returned, which is demonstrated in the second hexdecimal number parser.
+slice that is returned, which is demonstrated in the second hexadecimal number parser.
 
 If you wish to limit the number of digits in a valid integer literal, replace `many1` with
 `many_m_n` in the recipes.

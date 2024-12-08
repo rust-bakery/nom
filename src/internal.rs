@@ -47,7 +47,6 @@ impl<I, O, E> Finish<I, O, E> for IResult<I, O, E> {
 
 /// Contains information on needed data if a parser returned `Incomplete`
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub enum Needed {
   /// Needs more data, but we do not know how much
   Unknown,
@@ -99,7 +98,6 @@ impl Needed {
 /// See also: [`Finish`].
 ///
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub enum Err<Failure, Error = Failure> {
   /// There was not enough data
   Incomplete(Needed),
@@ -293,7 +291,7 @@ impl Mode for Emit {
 /// Applies the parser, but do not a produce a value
 ///
 /// This has the effect of greatly reducing the amount of code generated and the
-/// parser memory usage. Some combinators chek for an error in a child parser but
+/// parser memory usage. Some combinators check for an error in a child parser but
 /// discard the error, and for those, using [Check] makes sure the error is not
 /// even generated, only the fact that an error happened remains
 pub struct Check;
@@ -333,7 +331,7 @@ pub type PResult<OM, I, O, E> = Result<
 /// output mode
 pub trait OutputMode {
   /// Defines the [Mode] for the output type. [Emit] will generate the value, [Check] will
-  /// apply the parser but will only generate `()` if successul. This can be used when
+  /// apply the parser but will only generate `()` if successful. This can be used when
   /// verifying that the input data conforms to the format without having to generate any
   /// output data
   type Output: Mode;
@@ -353,7 +351,7 @@ pub trait OutputMode {
 /// Specifies the behaviour when a parser encounters an error that could be due to partial ata
 pub trait IsStreaming {
   /// called by parsers on partial data errors
-  /// * `needed` can hold the amount of dditional data the parser would need to decide
+  /// * `needed` can hold the amount of additional data the parser would need to decide
   /// * `err_f`: produces the error when in "complete" mode
   fn incomplete<E, F: FnOnce() -> E>(needed: Needed, err_f: F) -> Err<E>;
   /// Indicates whether the data is in streaming mode or not
@@ -579,7 +577,6 @@ impl<I, O, E: ParseError<I>> Parser<I> for Box<dyn Parser<I, Output = O, Error =
 }
 */
 /// Implementation of `Parser::map`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct Map<F, G> {
   f: F,
   g: G,
@@ -660,7 +657,6 @@ where
 }
 
 /// Implementation of `Parser::flat_map`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct FlatMap<F, G> {
   f: F,
   g: G,
@@ -687,7 +683,6 @@ impl<
 }
 
 /// Implementation of `Parser::and_then`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct AndThen<F, G> {
   f: F,
   g: G,
@@ -710,7 +705,6 @@ impl<I, F: Parser<I>, G: Parser<<F as Parser<I>>::Output, Error = <F as Parser<I
 }
 
 /// Implementation of `Parser::and`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct And<F, G> {
   f: F,
   g: G,
@@ -732,7 +726,6 @@ impl<I, E: ParseError<I>, F: Parser<I, Error = E>, G: Parser<I, Error = E>> Pars
 }
 
 /// Implementation of `Parser::or`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct Or<F, G> {
   f: F,
   g: G,
@@ -761,7 +754,6 @@ impl<
 }
 
 /// Implementation of `Parser::into`
-#[cfg_attr(nightly, warn(rustdoc::missing_doc_code_examples))]
 pub struct Into<F, O2, E2> {
   f: F,
   phantom_out2: core::marker::PhantomData<O2>,

@@ -4,7 +4,6 @@ use crate::{
   character::streaming::digit1 as digit,
   error::{ErrorKind, ParseError},
   internal::{Err, IResult, Needed},
-  lib::std::ops::Range,
   lib::std::str::{self, FromStr},
   number::streaming::{be_u16, be_u8},
   sequence::pair,
@@ -22,6 +21,8 @@ use crate::{
 #[test]
 #[cfg(feature = "alloc")]
 fn separated_list0_test() {
+  use core::num::NonZeroUsize;
+
   fn multi(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(","), tag("abcd")).parse(i)
   }
@@ -33,6 +34,9 @@ fn separated_list0_test() {
   }
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list0(tag(".."), tag("abcd")).parse(i)
+  }
+  fn empty_both(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list0(tag(""), tag("")).parse(i)
   }
 
   let a = &b"abcdef"[..];
@@ -52,13 +56,14 @@ fn separated_list0_test() {
   assert_eq!(multi(c), Ok((&b"azerty"[..], Vec::new())));
   let res3 = vec![&b""[..], &b""[..], &b""[..]];
   assert_eq!(multi_empty(d), Ok((&b"abc"[..], res3)));
-  let i_err_pos = &i[3..];
   assert_eq!(
     empty_sep(i),
-    Err(Err::Error(error_position!(
-      i_err_pos,
-      ErrorKind::SeparatedList
-    )))
+    Err(Err::Incomplete(Needed::Size(NonZeroUsize::new(3).unwrap())))
+  );
+
+  assert_eq!(
+    empty_both(i),
+    Err(Err::Error(error_position!(i, ErrorKind::SeparatedList)))
   );
   let res4 = vec![&b"abcd"[..], &b"abcd"[..]];
   assert_eq!(multi(e), Ok((&b",ef"[..], res4)));
@@ -77,6 +82,9 @@ fn separated_list1_test() {
   fn multi_longsep(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
     separated_list1(tag(".."), tag("abcd")).parse(i)
   }
+  fn empty_both(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
+    separated_list0(tag(""), tag("")).parse(i)
+  }
 
   let a = &b"abcdef"[..];
   let b = &b"abcd,abcdef"[..];
@@ -94,6 +102,10 @@ fn separated_list1_test() {
   assert_eq!(
     multi(c),
     Err(Err::Error(error_position!(c, ErrorKind::Tag)))
+  );
+  assert_eq!(
+    empty_both(f),
+    Err(Err::Error(error_position!(f, ErrorKind::SeparatedList)))
   );
   let res3 = vec![&b"abcd"[..], &b"abcd"[..]];
   assert_eq!(multi(d), Ok((&b",ef"[..], res3)));
@@ -573,7 +585,7 @@ fn many_test() {
   );
 
   fn many_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    many(Range::default(), tag("a")).parse(i)
+    many(crate::lib::std::ops::Range::default(), tag("a")).parse(i)
   }
 
   let a = &b"a"[..];
@@ -728,7 +740,13 @@ fn fold_test() {
   );
 
   fn fold_invalid(i: &[u8]) -> IResult<&[u8], Vec<&[u8]>> {
-    fold(Range::default(), tag("a"), Vec::new, fold_into_vec).parse(i)
+    fold(
+      crate::lib::std::ops::Range::default(),
+      tag("a"),
+      Vec::new,
+      fold_into_vec,
+    )
+    .parse(i)
   }
 
   let a = &b"a"[..];
