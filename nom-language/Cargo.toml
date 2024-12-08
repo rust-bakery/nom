@@ -1,6 +1,6 @@
 [package]
 name = "nom-language"
-version = "0.0.1"
+version = "0.1.0-alpha.1"
 authors = ["contact@geoffroycouprie.com"]
 description = "Language parsing focused combinators for the nom parser library"
 edition = "2021"
@@ -8,4 +8,4 @@ license = "MIT"
 repository = "https://github.com/rust-bakery/nom"
 
 [dependencies]
-nom = { path = "..", version = "8.0.0-alpha2" }
+nom = { path = "..", version = "8.0.0-beta.1" }
