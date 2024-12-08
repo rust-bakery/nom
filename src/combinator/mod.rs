@@ -845,11 +845,11 @@ where
 /// use nom::character::complete::alpha1;
 /// # fn main() {
 ///
-///  fn parser1(i: &str) -> IResult<&str, &str> {
-///    alpha1(i)
-///  }
+/// fn parser1(i: &str) -> IResult<&str, &str> {
+///   alpha1(i)
+/// }
 ///
-///  let mut parser2 = into(parser1);
+/// let mut parser2 = into(parser1);
 ///
 /// // the parser converts the &str output of the child parser into a Vec<u8>
 /// let bytes: IResult<&str, Vec<u8>> = parser2.parse("abcd");
