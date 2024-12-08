@@ -7,13 +7,14 @@ use nom::{
   bytes::{tag, take},
   character::{anychar, char, multispace0, none_of},
   combinator::{map, map_opt, map_res, value, verify},
-  error::{Error, ErrorKind, FromExternalError, ParseError, VerboseError},
+  error::{Error, ErrorKind, FromExternalError, ParseError},
   multi::{fold, separated_list0},
   number::double,
   number::recognize_float,
   sequence::{delimited, preceded, separated_pair},
   Check, Complete, Emit, IResult, Mode, OutputM, Parser,
 };
+use nom_language::error::VerboseError;
 
 use std::{collections::HashMap, marker::PhantomData, num::ParseIntError};
 

@@ -41,7 +41,7 @@ default-features = false
 [dev-dependencies]
 doc-comment = "0.3"
 proptest = "=1.0.0"
-
+nom-language = { path = "./nom-language" }
 
 [package.metadata.docs.rs]
 features = ["alloc", "std", "docsrs"]
@@ -65,6 +65,10 @@ name = "css"
 
 [[test]]
 name = "custom_errors"
+
+[[test]]
+name = "expression_ast"
+required-features = ["alloc"]
 
 [[test]]
 name = "float"
@@ -142,4 +146,4 @@ coveralls = { repository = "Geal/nom", branch = "main", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [workspace]
-members = [".", "benchmarks/"]
+members = [".", "benchmarks/", "nom-language"]
