@@ -9,11 +9,12 @@ use nom::{
   bytes::complete::tag,
   character::complete::{alpha1, char, digit1, multispace0, multispace1, one_of},
   combinator::{cut, map, map_res, opt},
-  error::{context, VerboseError},
+  error::context,
   multi::many,
   sequence::{delimited, preceded, terminated},
   IResult, Parser,
 };
+use nom_language::error::VerboseError;
 
 /// We start by defining the types that define the shape of data that we want.
 /// In this case, we want something tree-like

@@ -41,7 +41,7 @@ default-features = false
 [dev-dependencies]
 doc-comment = "0.3"
 proptest = "=1.0.0"
-
+nom-language = { path = "./nom-language" }
 
 [package.metadata.docs.rs]
 features = ["alloc", "std", "docsrs"]
