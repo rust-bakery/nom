@@ -753,6 +753,7 @@ mod tests {
   #[test]
   fn convert_error_panic() {
     use crate::character::complete::char;
+    use crate::internal::IResult;
 
     let input = "";
 
