@@ -1,5 +1,5 @@
 //! Combinators to parse expressions with operator precedence.
-#![cfg(feature="alloc")]
+#![cfg(feature = "alloc")]
 #![cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 
 #[cfg(test)]
@@ -79,17 +79,11 @@ pub fn unary_op<I, O, E, P, Q>(
   mut parser: P,
 ) -> impl FnMut(I) -> IResult<I, Unary<O, Q>, E>
 where
-  P: Parser<I, O, E>,
+  P: Parser<I, Output = O, Error = E>,
   Q: Ord + Copy,
 {
   move |input| match parser.parse(input) {
-    Ok((i, value)) => Ok((
-      i,
-      Unary {
-        value,
-        precedence,
-      },
-    )),
+    Ok((i, value)) => Ok((i, Unary { value, precedence })),
     Err(e) => Err(e),
   }
 }
@@ -107,7 +101,7 @@ pub fn binary_op<I, O, E, P, Q>(
   mut parser: P,
 ) -> impl FnMut(I) -> IResult<I, Binary<O, Q>, E>
 where
-  P: Parser<I, O, E>,
+  P: Parser<I, Output = O, Error = E>,
   Q: Ord + Copy,
 {
   move |input| match parser.parse(input) {
@@ -124,7 +118,7 @@ where
 }
 
 /// Parses an expression with operator precedence.
-/// 
+///
 /// Supports prefix, postfix and binary operators. Operators are applied in ascending precedence.
 ///
 /// The parser will track its current position inside the expression and call the respective
@@ -146,7 +140,7 @@ where
 /// * `binary` Parser for binary operators.
 /// * `operand` Parser for operands.
 /// * `fold` Function that evaluates a single operation and returns the result.
-/// 
+///
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
@@ -156,11 +150,11 @@ where
 /// use nom::sequence::delimited;
 /// use nom::bytes::complete::tag;
 /// use nom::branch::alt;
-/// 
+///
 /// fn parser(i: &str) -> IResult<&str, i64> {
 ///   precedence(
 ///     unary_op(1, tag("-")),
-///     fail,
+///     fail(),
 ///     alt((
 ///       binary_op(2, Assoc::Left, tag("*")),
 ///       binary_op(2, Assoc::Left, tag("/")),
@@ -189,19 +183,19 @@ where
 /// assert_eq!(parser("4-(2+2)"), Ok(("", 0)));
 /// assert_eq!(parser("3-(2*3)+7+2*2-(2*(2+4))"), Ok(("", -4)));
 /// ```
-/// 
+///
 /// # Evaluation order
 /// This parser reads expressions from left to right and folds operations as soon as possible. This
 /// behaviour is only important when using an operator grammar that allows for ambigious expressions.
-/// 
+///
 /// For example, the expression `-a++**b` is ambigious with the following precedence.
-/// 
+///
 /// | Operator | Position | Precedence | Associativity |
 /// |----------|----------|------------|---------------|
 /// | **       | Binary   | 1          | Right         |
 /// | -        | Prefix   | 2          | N/A           |
 /// | ++       | Postfix  | 3          | N/A           |
-/// 
+///
 /// The expression can be parsed in two ways: `-((a++)**b)` or `((-a)++)**b`. This parser will always
 /// parse it as the latter because of how it evaluates expressions:
 /// * It reads, left-to-right, the first two operators `-a++`.
@@ -220,11 +214,11 @@ pub fn precedence<I, O, E, E2, F, G, H1, H3, H2, P1, P2, P3, Q>(
 where
   I: Clone + PartialEq,
   E: ParseError<I> + FromExternalError<I, E2>,
-  F: Parser<I, O, E>,
+  F: Parser<I, Output = O, Error = E>,
   G: FnMut(Operation<P1, P2, P3, O>) -> Result<O, E2>,
-  H1: Parser<I, Unary<P1, Q>, E>,
-  H2: Parser<I, Unary<P2, Q>, E>,
-  H3: Parser<I, Binary<P3, Q>, E>,
+  H1: Parser<I, Output = Unary<P1, Q>, Error = E>,
+  H2: Parser<I, Output = Unary<P2, Q>, Error = E>,
+  H3: Parser<I, Output = Binary<P3, Q>, Error = E>,
   Q: Ord + Copy,
 {
   move |mut i| {
