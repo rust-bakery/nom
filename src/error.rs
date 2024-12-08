@@ -802,6 +802,7 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn clone_error() {
+    use crate::lib::std::string::String;
     let err = Error {
       code: ErrorKind::Eof,
       input: "test",
