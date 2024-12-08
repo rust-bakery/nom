@@ -1,13 +1,10 @@
 //! Combinators to parse expressions with operator precedence.
-#![cfg(feature = "alloc")]
-#![cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 
 #[cfg(test)]
 mod tests;
 
-use crate::error::{ErrorKind, FromExternalError, ParseError};
-use crate::lib::std::vec::Vec;
-use crate::{Err, IResult, Parser};
+use nom::error::{ErrorKind, FromExternalError, ParseError};
+use nom::{Err, IResult, Parser};
 
 /// An unary operator.
 pub struct Unary<V, Q: Ord + Copy> {
@@ -203,7 +200,6 @@ where
 /// * It then reads the remaining input and evaluates the increment next in order to preserve its
 /// position in the expression \
 /// `((-a)++)**b`.
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn precedence<I, O, E, E2, F, G, H1, H3, H2, P1, P2, P3, Q>(
   mut prefix: H1,
   mut postfix: H2,

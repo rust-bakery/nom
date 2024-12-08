@@ -6,3 +6,4 @@
 //! at language parsing.
 
 pub mod error;
+pub mod precedence;

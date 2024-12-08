@@ -1,18 +1,17 @@
 use crate::precedence::{binary_op, unary_op, Assoc, Operation};
-use crate::{
+use nom::{
   branch::alt,
   bytes::complete::tag,
   character::complete::digit1,
   combinator::{fail, map_res},
   error::ErrorKind,
-  internal::{Err, IResult},
+  error_node_position, error_position,
   sequence::delimited,
+  Err, IResult,
 };
 
-#[cfg(feature = "alloc")]
 use crate::precedence::precedence;
 
-#[cfg(feature = "alloc")]
 fn parser(i: &str) -> IResult<&str, i64> {
   precedence(
     unary_op(1, tag("-")),
@@ -42,7 +41,6 @@ fn parser(i: &str) -> IResult<&str, i64> {
 }
 
 #[test]
-#[cfg(feature = "alloc")]
 fn precedence_test() {
   assert_eq!(parser("3"), Ok(("", 3)));
   assert_eq!(parser("-3"), Ok(("", -3)));

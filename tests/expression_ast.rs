@@ -4,10 +4,10 @@ use nom::{
   character::complete::{alphanumeric1 as alphanumeric, digit1 as digit},
   combinator::{map, map_res},
   multi::separated_list0,
-  precedence::{binary_op, precedence, unary_op, Assoc, Operation},
   sequence::delimited,
   IResult, Parser,
 };
+use nom_language::precedence::{binary_op, precedence, unary_op, Assoc, Operation};
 
 // Elements of the abstract syntax tree (ast) that represents an expression.
 #[derive(Debug)]
@@ -119,7 +119,7 @@ fn expression(i: &str) -> IResult<&str, Expr> {
       delimited(tag("("), expression, tag(")")),
     )),
     |op: Operation<PrefixOp, PostfixOp, BinaryOp, Expr>| -> Result<Expr, ()> {
-      use nom::precedence::Operation::*;
+      use nom_language::precedence::Operation::*;
       use BinaryOp::*;
       use PostfixOp::*;
       use PrefixOp::*;
