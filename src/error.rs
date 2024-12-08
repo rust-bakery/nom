@@ -98,6 +98,48 @@ impl<I: fmt::Display> fmt::Display for Error<I> {
   }
 }
 
+#[cfg(feature = "alloc")]
+impl<I: ToOwned + ?Sized> Error<&I> {
+  /// Converts `Error<&I>` into `Error<I::Owned>` by cloning.
+  pub fn cloned(self) -> Error<I::Owned> {
+    Error {
+      input: self.input.to_owned(),
+      code: self.code,
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+impl<I: ToOwned + ?Sized> Error<&mut I> {
+  /// Converts `Error<&mut I>` into `Error<I::Owned>` by cloning.
+  pub fn cloned(self) -> Error<I::Owned> {
+    Error {
+      input: self.input.to_owned(),
+      code: self.code,
+    }
+  }
+}
+
+impl<I: Copy> Error<&I> {
+  /// Converts `Error<&I>` into `Error<I>` by copying.
+  pub fn copied(self) -> Error<I> {
+    Error {
+      input: *self.input,
+      code: self.code,
+    }
+  }
+}
+
+impl<I: Copy> Error<&mut I> {
+  /// Converts `Error<&mut I>` into `Error<I>` by copying.
+  pub fn copied(self) -> Error<I> {
+    Error {
+      input: *self.input,
+      code: self.code,
+    }
+  }
+}
+
 #[cfg(feature = "std")]
 impl<I: fmt::Debug + fmt::Display> std::error::Error for Error<I> {}
 
@@ -755,6 +797,28 @@ mod tests {
     let input = "";
 
     let _result: IResult<_, _, VerboseError<&str>> = char('x')(input);
+  }
+
+  #[cfg(feature = "alloc")]
+  #[test]
+  fn clone_error() {
+    use crate::lib::std::string::String;
+    let err = Error {
+      code: ErrorKind::Eof,
+      input: "test",
+    };
+
+    let _err: Error<String> = err.cloned();
+  }
+
+  #[test]
+  fn copy_error() {
+    let err = Error {
+      code: ErrorKind::Eof,
+      input: &0_u8,
+    };
+
+    let _err: Error<u8> = err.copied();
   }
 }
 
