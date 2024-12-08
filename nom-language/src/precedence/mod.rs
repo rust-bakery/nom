@@ -141,7 +141,7 @@ where
 /// # Example
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, IResult};
-/// use nom::precedence::{precedence, unary_op, binary_op, Assoc, Operation};
+/// use nom_language::precedence::{precedence, unary_op, binary_op, Assoc, Operation};
 /// use nom::character::complete::digit1;
 /// use nom::combinator::{map_res, fail};
 /// use nom::sequence::delimited;
@@ -163,7 +163,7 @@ where
 ///       delimited(tag("("), parser, tag(")")),
 ///     )),
 ///     |op: Operation<&str, &str, &str, i64>| {
-///       use nom::precedence::Operation::*;
+///       use nom_language::precedence::Operation::*;
 ///       match op {
 ///         Prefix("-", o) => Ok(-o),
 ///         Binary(lhs, "*", rhs) => Ok(lhs * rhs),
@@ -399,7 +399,7 @@ where
 /// ```rust
 /// # #[macro_use] extern crate nom;
 /// # use nom::{Err, error::ErrorKind, Needed, IResult, Parser};
-/// use nom::multi::left_assoc;
+/// use nom_language::precedence::left_assoc;
 /// use nom::branch::alt;
 /// use nom::sequence::delimited;
 /// use nom::character::complete::{char, digit1};
