@@ -142,4 +142,4 @@ coveralls = { repository = "Geal/nom", branch = "main", service = "github" }
 maintenance = { status = "actively-developed" }
 
 [workspace]
-members = [".", "benchmarks/"]
+members = [".", "benchmarks/", "nom-language"]
