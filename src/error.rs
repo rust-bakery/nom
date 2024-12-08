@@ -3,11 +3,14 @@
 //! Parsers are generic over their error type, requiring that it implements
 //! the `error::ParseError<Input>` trait.
 
-use crate::internal::{Mode, OutputMode, PResult, Parser};
+use crate::internal::{Err, Mode, OutputMode, PResult, Parser};
 use crate::lib::std::fmt;
 
 #[cfg(feature = "alloc")]
 use crate::alloc::borrow::ToOwned;
+
+#[cfg(feature = "std")]
+use crate::internal::IResult;
 
 /// This trait must be implemented by the error type of a nom parser.
 ///
@@ -95,6 +98,48 @@ impl<I, E> FromExternalError<I, E> for Error<I> {
 impl<I: fmt::Display> fmt::Display for Error<I> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "error {:?} at: {}", self.code, self.input)
+  }
+}
+
+#[cfg(feature = "alloc")]
+impl<I: ToOwned + ?Sized> Error<&I> {
+  /// Converts `Error<&I>` into `Error<I::Owned>` by cloning.
+  pub fn cloned(self) -> Error<I::Owned> {
+    Error {
+      input: self.input.to_owned(),
+      code: self.code,
+    }
+  }
+}
+
+#[cfg(feature = "alloc")]
+impl<I: ToOwned + ?Sized> Error<&mut I> {
+  /// Converts `Error<&mut I>` into `Error<I::Owned>` by cloning.
+  pub fn cloned(self) -> Error<I::Owned> {
+    Error {
+      input: self.input.to_owned(),
+      code: self.code,
+    }
+  }
+}
+
+impl<I: Copy> Error<&I> {
+  /// Converts `Error<&I>` into `Error<I>` by copying.
+  pub fn copied(self) -> Error<I> {
+    Error {
+      input: *self.input,
+      code: self.code,
+    }
+  }
+}
+
+impl<I: Copy> Error<&mut I> {
+  /// Converts `Error<&mut I>` into `Error<I>` by copying.
+  pub fn copied(self) -> Error<I> {
+    Error {
+      input: *self.input,
+      code: self.code,
+    }
   }
 }
 
@@ -277,8 +322,6 @@ impl From<VerboseError<&str>> for VerboseError<crate::lib::std::string::String> 
     }
   }
 }
-
-use crate::internal::{Err, IResult};
 
 /// Create a new error from an input position, a static string and an existing error.
 /// This is used mainly in the [context] combinator, to add user friendly information
@@ -691,7 +734,6 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::character::complete::char;
 
   #[test]
   fn context_test() {
@@ -752,9 +794,34 @@ mod tests {
   #[cfg(feature = "alloc")]
   #[test]
   fn convert_error_panic() {
+    use crate::character::complete::char;
+    use crate::internal::IResult;
+
     let input = "";
 
     let _result: IResult<_, _, VerboseError<&str>> = char('x')(input);
+  }
+
+  #[cfg(feature = "alloc")]
+  #[test]
+  fn clone_error() {
+    use crate::lib::std::string::String;
+    let err = Error {
+      code: ErrorKind::Eof,
+      input: "test",
+    };
+
+    let _err: Error<String> = err.cloned();
+  }
+
+  #[test]
+  fn copy_error() {
+    let err = Error {
+      code: ErrorKind::Eof,
+      input: &0_u8,
+    };
+
+    let _err: Error<u8> = err.copied();
   }
 }
 

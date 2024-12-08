@@ -313,11 +313,12 @@ Here is a (non exhaustive) list of known projects using nom:
 [Kerberos v5](https://github.com/rusticata/kerberos-parser),
 [DER](https://github.com/rusticata/der-parser),
 [TLS](https://github.com/rusticata/tls-parser),
-[IPFIX / Netflow v10](https://github.com/dominotree/rs-ipfix),
+[V5, V7, V9, IPFIX / Netflow v10](https://github.com/mikemiles-dev/netflow_parser),
 [GTP](https://github.com/fuerstenau/gorrosion-gtp),
 [SIP](https://github.com/kurotych/sipcore/tree/master/crates/sipmsg),
 [SMTP](https://github.com/Ekleog/kannader),
-[Prometheus](https://github.com/vectordotdev/vector/blob/master/lib/prometheus-parser/src/line.rs)
+[Prometheus](https://github.com/vectordotdev/vector/blob/master/lib/prometheus-parser/src/line.rs),
+[DNS](https://github.com/adiSuper94/dns-rs)
 - Language specifications:
 [BNF](https://github.com/shnewto/bnf)
 - Misc formats:

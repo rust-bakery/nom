@@ -335,7 +335,7 @@ where
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
-/// * `sep` Parses the separator between list elements. Must be consuming.
+/// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
 ///
 /// ```rust
@@ -451,13 +451,13 @@ where
 
 /// Alternates between two parsers to produce a list of elements until [`Err::Error`].
 ///
-/// Fails if the element parser does not produce at least one element.$
+/// Fails if the element parser does not produce at least one element.
 ///
 /// This stops when either parser returns [`Err::Error`]  and returns the results that were accumulated. To instead chain an error up, see
 /// [`cut`][crate::combinator::cut].
 ///
 /// # Arguments
-/// * `sep` Parses the separator between list elements. Must be consuming.
+/// * `sep` Parses the separator between list elements.
 /// * `f` Parses the elements of the list.
 /// ```rust
 /// # use nom::{Err, error::{Error, ErrorKind}, Needed, IResult, Parser};
