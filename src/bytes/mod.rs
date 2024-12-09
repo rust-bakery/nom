@@ -12,6 +12,7 @@ use crate::error::ParseError;
 use crate::internal::{Err, Needed, Parser};
 use crate::lib::std::result::Result::*;
 use crate::traits::{Compare, CompareResult};
+use crate::AsByte;
 use crate::AsChar;
 use crate::Check;
 use crate::ExtendInto;
@@ -1040,5 +1041,118 @@ where
     } else {
       Ok((input.take_from(index), res))
     }
+  }
+}
+
+/// Takes 1 byte and checks that it satisfies a predicate
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::{ErrorKind, Error}, Needed, IResult};
+/// # use nom::bytes::complete::satisfy;
+/// fn parser(i: &[u8]) -> IResult<&[u8], u8> {
+///  satisfy(|c| c == b'a' || c == b'b')(i)
+/// }
+/// assert_eq!(parser(b"abc" as &[u8]), Ok((b"bc" as &[u8], b'a')));
+/// assert_eq!(parser(b"cd" as &[u8]), Err(Err::Error(Error::new(b"cd" as &[u8], ErrorKind::Satisfy))));
+/// assert_eq!(parser(b"" as &[u8]), Err(Err::Error(Error::new(b"" as &[u8], ErrorKind::Satisfy))));
+/// ```
+pub fn satisfy<F, I, Error: ParseError<I>>(
+  predicate: F,
+) -> impl Parser<I, Output = u8, Error = Error>
+where
+  I: Input,
+  <I as Input>::Item: AsByte,
+  F: Fn(u8) -> bool,
+{
+  Satisfy {
+    predicate,
+    make_error: |i: I| Error::from_error_kind(i, ErrorKind::Satisfy),
+  }
+}
+
+/// parser implementation for [satisfy]
+pub struct Satisfy<F, MakeError> {
+  predicate: F,
+  make_error: MakeError,
+}
+
+impl<I, Error: ParseError<I>, F, MakeError> Parser<I> for Satisfy<F, MakeError>
+where
+  I: Input,
+  <I as Input>::Item: AsByte,
+  F: Fn(u8) -> bool,
+  MakeError: Fn(I) -> Error,
+{
+  type Output = u8;
+  type Error = Error;
+
+  #[inline(always)]
+  fn process<OM: crate::OutputMode>(
+    &mut self,
+    i: I,
+  ) -> crate::PResult<OM, I, Self::Output, Self::Error> {
+    match (i).iter_elements().next().map(|t| {
+      let byte = t.as_byte();
+      let result = (self.predicate)(byte);
+      (byte, result)
+    }) {
+      None => {
+        if OM::Incomplete::is_streaming() {
+          Err(Err::Incomplete(Needed::new(1)))
+        } else {
+          Err(Err::Error(OM::Error::bind(|| (self.make_error)(i))))
+        }
+      }
+      Some((_, false)) => Err(Err::Error(OM::Error::bind(|| (self.make_error)(i)))),
+      Some((byte, true)) => Ok((i.take_from(1), OM::Output::bind(|| byte.as_byte()))),
+    }
+  }
+}
+
+/// Matches one of the provided bytes
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind};
+/// # use nom::bytes::complete::one_of;
+/// assert_eq!(one_of::<_, _, (&[u8], ErrorKind)>(b"abc" as &[u8])(b"b" as &[u8]), Ok((b"" as &[u8], b'b')));
+/// assert_eq!(one_of::<_, _, (&[u8], ErrorKind)>(b"a" as &[u8])(b"bc" as &[u8]), Err(Err::Error((b"bc" as &[u8], ErrorKind::OneOf))));
+/// assert_eq!(one_of::<_, _, (&[u8], ErrorKind)>(b"a" as &[u8])(b"" as &[u8]), Err(Err::Error((b"" as &[u8], ErrorKind::OneOf))));
+/// ```
+pub fn one_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = u8, Error = Error>
+where
+  I: Input,
+  <I as Input>::Item: AsByte,
+  T: FindToken<u8>,
+{
+  Satisfy {
+    predicate: move |b: u8| list.find_token(b),
+    make_error: move |i| Error::from_error_kind(i, ErrorKind::OneOf),
+  }
+}
+
+//. Recognizes a character that is not in the provided characters.
+///
+/// # Example
+///
+/// ```
+/// # use nom::{Err, error::ErrorKind, Needed};
+/// # use nom::bytes::streaming::none_of;
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>(b"abc" as &[u8])(b"z" as &[u8]), Ok((b"" as &[u8], b'z')));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>(b"ab" as &[u8])(b"a" as &[u8]), Err(Err::Error((b"a" as &[u8], ErrorKind::NoneOf))));
+/// assert_eq!(none_of::<_, _, (_, ErrorKind)>(b"a" as &[u8])(b"" as &[u8]), Err(Err::Incomplete(Needed::new(1))));
+/// ```
+pub fn none_of<I, T, Error: ParseError<I>>(list: T) -> impl Parser<I, Output = u8, Error = Error>
+where
+  I: Input,
+  <I as Input>::Item: AsByte,
+  T: FindToken<u8>,
+{
+  Satisfy {
+    predicate: move |b: u8| !list.find_token(b),
+    make_error: move |i| Error::from_error_kind(i, ErrorKind::NoneOf),
   }
 }
