@@ -56,3 +56,4 @@ harness = false
 
 [dev-dependencies]
 codspeed-criterion-compat = "2.4.1"
+nom-language = { path = "../nom-language" }

@@ -416,13 +416,13 @@ where
 /// assert_eq!(esc(r#"12\"34;"#), Ok((";", r#"12\"34"#)));
 /// ```
 ///
-pub fn escaped<'a, I: 'a, Error, F, G>(
+pub fn escaped<'a, I, Error, F, G>(
   normal: F,
   control_char: char,
   escapable: G,
 ) -> impl FnMut(I) -> IResult<I, I, Error>
 where
-  I: Clone + crate::traits::Offset + Input,
+  I: Clone + crate::traits::Offset + Input + 'a,
   <I as Input>::Item: crate::traits::AsChar,
   F: Parser<I, Error = Error>,
   G: Parser<I, Error = Error>,

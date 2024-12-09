@@ -1329,26 +1329,6 @@ impl<I> ErrorConvert<error::Error<(I, usize)>> for error::Error<I> {
   }
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl<I> ErrorConvert<error::VerboseError<I>> for error::VerboseError<(I, usize)> {
-  fn convert(self) -> error::VerboseError<I> {
-    error::VerboseError {
-      errors: self.errors.into_iter().map(|(i, e)| (i.0, e)).collect(),
-    }
-  }
-}
-
-#[cfg(feature = "alloc")]
-#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
-impl<I> ErrorConvert<error::VerboseError<(I, usize)>> for error::VerboseError<I> {
-  fn convert(self) -> error::VerboseError<(I, usize)> {
-    error::VerboseError {
-      errors: self.errors.into_iter().map(|(i, e)| ((i, 0), e)).collect(),
-    }
-  }
-}
-
 impl ErrorConvert<()> for () {
   fn convert(self) {}
 }
@@ -1553,7 +1533,7 @@ impl NomRange<usize> for RangeFrom<usize> {
   }
 
   fn bounded_iter(&self) -> Self::Bounded {
-    0..core::usize::MAX
+    0..usize::MAX
   }
 }
 
@@ -1636,7 +1616,7 @@ impl NomRange<usize> for RangeFull {
   }
 
   fn bounded_iter(&self) -> Self::Bounded {
-    0..core::usize::MAX
+    0..usize::MAX
   }
 }
 

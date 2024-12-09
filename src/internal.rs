@@ -27,9 +27,9 @@ pub trait Finish<I, O, E> {
   /// *warning*: if the result is `Err(Err::Incomplete(_))`, this method will panic.
   /// - "complete" parsers: It will not be an issue, `Incomplete` is never used
   /// - "streaming" parsers: `Incomplete` will be returned if there's not enough data
-  /// for the parser to decide, and you should gather more data before parsing again.
-  /// Once the parser returns either `Ok(_)`, `Err(Err::Error(_))` or `Err(Err::Failure(_))`,
-  /// you can get out of the parsing loop and call `finish()` on the parser's result
+  ///   for the parser to decide, and you should gather more data before parsing again.
+  ///   Once the parser returns either `Ok(_)`, `Err(Err::Error(_))` or `Err(Err::Failure(_))`,
+  ///   you can get out of the parsing loop and call `finish()` on the parser's result
   fn finish(self) -> Result<(I, O), E>;
 }
 
@@ -83,14 +83,14 @@ impl Needed {
 /// It has three cases:
 ///
 /// * `Incomplete` indicates that more data is needed to decide. The `Needed` enum
-/// can contain how many additional bytes are necessary. If you are sure your parser
-/// is working on full data, you can wrap your parser with the `complete` combinator
-/// to transform that case in `Error`
+///   can contain how many additional bytes are necessary. If you are sure your parser
+///   is working on full data, you can wrap your parser with the `complete` combinator
+///   to transform that case in `Error`
 /// * `Error` means some parser did not succeed, but another one might (as an example,
-/// when testing different branches of an `alt` combinator)
+///   when testing different branches of an `alt` combinator)
 /// * `Failure` indicates an unrecoverable error. For example, when a prefix has been
-/// recognised and the next parser has been confirmed, if that parser fails, then the
-/// entire process fails; there are no more parsers to try.
+///   recognised and the next parser has been confirmed, if that parser fails, then the
+///   entire process fails; there are no more parsers to try.
 ///
 /// Distinguishing `Failure` this from `Error` is only relevant inside the parser's code. For
 /// external consumers, both mean that parsing failed.
@@ -316,10 +316,10 @@ impl Mode for Check {
 /// Parser result type
 ///
 /// * `Ok` branch: a tuple of the remaining input data, and the output value.
-/// The output value is of the `O` type if the output mode was [Emit], and `()`
-/// if the mode was [Check]
+///   The output value is of the `O` type if the output mode was [Emit], and `()`
+///   if the mode was [Check]
 /// * `Err` branch: an error of the `E` type if the erroor mode was [Emit], and `()`
-/// if the mode was [Check]
+///   if the mode was [Check]
 pub type PResult<OM, I, O, E> = Result<
   (I, <<OM as OutputMode>::Output as Mode>::Output<O>),
   Err<E, <<OM as OutputMode>::Error as Mode>::Output<E>>,
