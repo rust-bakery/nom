@@ -13,7 +13,7 @@ pub struct Unary<V, Q: Ord + Clone> {
 }
 
 /// A binary operator.
-pub struct Binary<V, Q: Ord + Copy + Clone> {
+pub struct Binary<V, Q: Ord + Clone> {
     value: V,
     precedence: Q,
     assoc: Assoc,
@@ -99,14 +99,14 @@ pub fn binary_op<I, O, E, P, Q>(
 ) -> impl FnMut(I) -> IResult<I, Binary<O, Q>, E>
 where
     P: Parser<I, Output=O, Error=E>,
-    Q: Ord + Copy,
+    Q: Ord + Clone,
 {
     move |input| match parser.parse(input) {
         Ok((i, value)) => Ok((
             i,
             Binary {
                 value,
-                precedence,
+                precedence: precedence.clone(),
                 assoc,
             },
         )),
@@ -215,7 +215,7 @@ where
     H1: Parser<I, Output=Unary<P1, Q>, Error=E>,
     H2: Parser<I, Output=Unary<P2, Q>, Error=E>,
     H3: Parser<I, Output=Binary<P3, Q>, Error=E>,
-    Q: Ord + Copy,
+    Q: Ord + Clone,
 {
     move |mut i| {
         let mut operands = Vec::new();
