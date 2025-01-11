@@ -7,62 +7,62 @@ use nom::error::{ErrorKind, FromExternalError, ParseError};
 use nom::{Check, Err, IResult, Input, Mode, OutputM, OutputMode, Parser};
 
 /// An unary operator.
-pub struct Unary<V, Q: Ord + Copy> {
-  value: V,
-  precedence: Q,
+pub struct Unary<V, Q: Ord + Clone> {
+    value: V,
+    precedence: Q,
 }
 
 /// A binary operator.
-pub struct Binary<V, Q: Ord + Copy> {
-  value: V,
-  precedence: Q,
-  assoc: Assoc,
+pub struct Binary<V, Q: Ord + Copy + Clone> {
+    value: V,
+    precedence: Q,
+    assoc: Assoc,
 }
 
 /// A single evaluation step.
 pub enum Operation<P1, P2, P3, O> {
-  /// A prefix operation.
-  Prefix(P1, O),
-  /// A postfix operation.
-  Postfix(O, P2),
-  /// A binary operation.
-  Binary(O, P3, O),
+    /// A prefix operation.
+    Prefix(P1, O),
+    /// A postfix operation.
+    Postfix(O, P2),
+    /// A binary operation.
+    Binary(O, P3, O),
 }
 
 /// Associativity for binary operators.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Assoc {
-  /// Left associative.
-  Left,
-  /// Right associative.
-  Right,
+    /// Left associative.
+    Left,
+    /// Right associative.
+    Right,
 }
 
 /// Element for operator stack.
-enum Operator<P1, P2, P3, Q: Ord + Copy> {
-  Prefix(P1, Q),
-  Postfix(P2, Q),
-  Binary(P3, Q, Assoc),
+enum Operator<P1, P2, P3, Q: Ord + Clone> {
+    Prefix(P1, Q),
+    Postfix(P2, Q),
+    Binary(P3, Q, Assoc),
 }
 
 impl<P1, P2, P3, Q> Operator<P1, P2, P3, Q>
 where
-  Q: Ord + Copy,
+    Q: Ord + Clone,
 {
-  fn precedence(&self) -> Q {
-    match self {
-      Operator::Prefix(_, p) => *p,
-      Operator::Postfix(_, p) => *p,
-      Operator::Binary(_, p, _) => *p,
+    fn precedence(&self) -> Q {
+        match self {
+            Operator::Prefix(_, p) => p.clone(),
+            Operator::Postfix(_, p) => p.clone(),
+            Operator::Binary(_, p, _) => p.clone(),
+        }
     }
-  }
 
-  fn is_postfix(&self) -> bool {
-    match self {
-      Operator::Postfix(_, _) => true,
-      _ => false,
+    fn is_postfix(&self) -> bool {
+        match self {
+            Operator::Postfix(_, _) => true,
+            _ => false,
+        }
     }
-  }
 }
 
 /// Runs the inner parser and transforms the result into an unary operator with the given precedence.
@@ -72,17 +72,17 @@ where
 /// * `precedence` The precedence of the operator.
 /// * `parser` The parser to apply.
 pub fn unary_op<I, O, E, P, Q>(
-  precedence: Q,
-  mut parser: P,
+    precedence: Q,
+    mut parser: P,
 ) -> impl FnMut(I) -> IResult<I, Unary<O, Q>, E>
 where
-  P: Parser<I, Output = O, Error = E>,
-  Q: Ord + Copy,
+    P: Parser<I, Output=O, Error=E>,
+    Q: Ord + Clone,
 {
-  move |input| match parser.parse(input) {
-    Ok((i, value)) => Ok((i, Unary { value, precedence })),
-    Err(e) => Err(e),
-  }
+    move |input| match parser.parse(input) {
+        Ok((i, value)) => Ok((i, Unary { value, precedence: precedence.clone() })),
+        Err(e) => Err(e),
+    }
 }
 
 /// Runs the inner parser and transforms the result into a binary operator with the given precedence and associativity.
@@ -93,25 +93,25 @@ where
 /// * `assoc` The associativity of the operator.
 /// * `parser` The parser to apply.
 pub fn binary_op<I, O, E, P, Q>(
-  precedence: Q,
-  assoc: Assoc,
-  mut parser: P,
+    precedence: Q,
+    assoc: Assoc,
+    mut parser: P,
 ) -> impl FnMut(I) -> IResult<I, Binary<O, Q>, E>
 where
-  P: Parser<I, Output = O, Error = E>,
-  Q: Ord + Copy,
+    P: Parser<I, Output=O, Error=E>,
+    Q: Ord + Copy,
 {
-  move |input| match parser.parse(input) {
-    Ok((i, value)) => Ok((
-      i,
-      Binary {
-        value,
-        precedence,
-        assoc,
-      },
-    )),
-    Err(e) => Err(e),
-  }
+    move |input| match parser.parse(input) {
+        Ok((i, value)) => Ok((
+            i,
+            Binary {
+                value,
+                precedence,
+                assoc,
+            },
+        )),
+        Err(e) => Err(e),
+    }
 }
 
 /// Parses an expression with operator precedence.
@@ -201,171 +201,171 @@ where
 /// position in the expression \
 /// `((-a)++)**b`.
 pub fn precedence<I, O, E, E2, F, G, H1, H3, H2, P1, P2, P3, Q>(
-  mut prefix: H1,
-  mut postfix: H2,
-  mut binary: H3,
-  mut operand: F,
-  mut fold: G,
+    mut prefix: H1,
+    mut postfix: H2,
+    mut binary: H3,
+    mut operand: F,
+    mut fold: G,
 ) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  I: Clone + PartialEq,
-  E: ParseError<I> + FromExternalError<I, E2>,
-  F: Parser<I, Output = O, Error = E>,
-  G: FnMut(Operation<P1, P2, P3, O>) -> Result<O, E2>,
-  H1: Parser<I, Output = Unary<P1, Q>, Error = E>,
-  H2: Parser<I, Output = Unary<P2, Q>, Error = E>,
-  H3: Parser<I, Output = Binary<P3, Q>, Error = E>,
-  Q: Ord + Copy,
+    I: Clone + PartialEq,
+    E: ParseError<I> + FromExternalError<I, E2>,
+    F: Parser<I, Output=O, Error=E>,
+    G: FnMut(Operation<P1, P2, P3, O>) -> Result<O, E2>,
+    H1: Parser<I, Output=Unary<P1, Q>, Error=E>,
+    H2: Parser<I, Output=Unary<P2, Q>, Error=E>,
+    H3: Parser<I, Output=Binary<P3, Q>, Error=E>,
+    Q: Ord + Copy,
 {
-  move |mut i| {
-    let mut operands = Vec::new();
-    let mut operators = Vec::new();
-    let mut i1 = i.clone();
+    move |mut i| {
+        let mut operands = Vec::new();
+        let mut operators = Vec::new();
+        let mut i1 = i.clone();
 
-    'main: loop {
-      'prefix: loop {
-        match prefix.parse(i1.clone()) {
-          Err(Err::Error(_)) => break 'prefix,
-          Err(e) => return Err(e),
-          Ok((i2, o)) => {
-            // infinite loop check: the parser must always consume
-            if i2 == i1 {
-              return Err(Err::Error(E::from_error_kind(i1, ErrorKind::Precedence)));
+        'main: loop {
+            'prefix: loop {
+                match prefix.parse(i1.clone()) {
+                    Err(Err::Error(_)) => break 'prefix,
+                    Err(e) => return Err(e),
+                    Ok((i2, o)) => {
+                        // infinite loop check: the parser must always consume
+                        if i2 == i1 {
+                            return Err(Err::Error(E::from_error_kind(i1, ErrorKind::Precedence)));
+                        }
+                        i1 = i2;
+                        operators.push(Operator::Prefix(o.value, o.precedence));
+                    }
+                }
             }
+
+            let (i2, o) = match operand.parse(i1.clone()) {
+                Ok((i, o)) => (i, o),
+                Err(Err::Error(e)) => return Err(Err::Error(E::append(i, ErrorKind::Precedence, e))),
+                Err(e) => return Err(e),
+            };
             i1 = i2;
-            operators.push(Operator::Prefix(o.value, o.precedence));
-          }
-        }
-      }
+            operands.push(o);
 
-      let (i2, o) = match operand.parse(i1.clone()) {
-        Ok((i, o)) => (i, o),
-        Err(Err::Error(e)) => return Err(Err::Error(E::append(i, ErrorKind::Precedence, e))),
-        Err(e) => return Err(e),
-      };
-      i1 = i2;
-      operands.push(o);
+            'postfix: loop {
+                match postfix.parse(i1.clone()) {
+                    Err(Err::Error(_)) => break 'postfix,
+                    Err(e) => return Err(e),
+                    Ok((i2, o)) => {
+                        // infinite loop check: the parser must always consume
+                        if i2 == i1 {
+                            return Err(Err::Error(E::from_error_kind(i1, ErrorKind::Precedence)));
+                        }
 
-      'postfix: loop {
-        match postfix.parse(i1.clone()) {
-          Err(Err::Error(_)) => break 'postfix,
-          Err(e) => return Err(e),
-          Ok((i2, o)) => {
-            // infinite loop check: the parser must always consume
-            if i2 == i1 {
-              return Err(Err::Error(E::from_error_kind(i1, ErrorKind::Precedence)));
+                        while operators
+                            .last()
+                            .map(|op| op.precedence() <= o.precedence)
+                            .unwrap_or(false)
+                        {
+                            let value = operands.pop().unwrap();
+                            let operation = match operators.pop().unwrap() {
+                                Operator::Prefix(op, _) => Operation::Prefix(op, value),
+                                Operator::Postfix(op, _) => Operation::Postfix(value, op),
+                                Operator::Binary(op, _, _) => match operands.pop() {
+                                    Some(lhs) => Operation::Binary(lhs, op, value),
+                                    None => return Err(Err::Error(E::from_error_kind(i1, ErrorKind::Precedence))),
+                                },
+                            };
+                            let result = match fold(operation) {
+                                Err(e) => {
+                                    return Err(Err::Error(E::from_external_error(
+                                        i,
+                                        ErrorKind::Precedence,
+                                        e,
+                                    )))
+                                }
+                                Ok(r) => r,
+                            };
+                            operands.push(result);
+                        }
+                        i1 = i2;
+                        operators.push(Operator::Postfix(o.value, o.precedence));
+                    }
+                }
             }
 
-            while operators
-              .last()
-              .map(|op| op.precedence() <= o.precedence)
-              .unwrap_or(false)
-            {
-              let value = operands.pop().unwrap();
-              let operation = match operators.pop().unwrap() {
+            match binary.parse(i1.clone()) {
+                Err(Err::Error(_)) => break 'main,
+                Err(e) => return Err(e),
+                Ok((i2, o)) => {
+                    while operators
+                        .last()
+                        .map(|op| {
+                            op.precedence() < o.precedence
+                                || (o.assoc == Assoc::Left && op.precedence() == o.precedence)
+                                || (op.is_postfix())
+                        })
+                        .unwrap_or(false)
+                    {
+                        let value = operands.pop().unwrap();
+                        let operation = match operators.pop().unwrap() {
+                            Operator::Prefix(op, _) => Operation::Prefix(op, value),
+                            Operator::Postfix(op, _) => Operation::Postfix(value, op),
+                            Operator::Binary(op, _, _) => match operands.pop() {
+                                Some(lhs) => Operation::Binary(lhs, op, value),
+                                None => return Err(Err::Error(E::from_error_kind(i1, ErrorKind::Precedence))),
+                            },
+                        };
+                        let result = match fold(operation) {
+                            Err(e) => {
+                                return Err(Err::Error(E::from_external_error(
+                                    i,
+                                    ErrorKind::Precedence,
+                                    e,
+                                )))
+                            }
+                            Ok(r) => r,
+                        };
+                        operands.push(result);
+                    }
+                    operators.push(Operator::Binary(o.value, o.precedence, o.assoc));
+                    i1 = i2;
+                }
+            }
+
+            // infinite loop check: either operand or operator must consume input
+            if i == i1 {
+                return Err(Err::Error(E::from_error_kind(i, ErrorKind::Precedence)));
+            }
+            i = i1.clone();
+        }
+
+        while operators.len() > 0 {
+            let value = match operands.pop() {
+                Some(o) => o,
+                None => return Err(Err::Error(E::from_error_kind(i, ErrorKind::Precedence))),
+            };
+            let operation = match operators.pop().unwrap() {
                 Operator::Prefix(op, _) => Operation::Prefix(op, value),
                 Operator::Postfix(op, _) => Operation::Postfix(value, op),
                 Operator::Binary(op, _, _) => match operands.pop() {
-                  Some(lhs) => Operation::Binary(lhs, op, value),
-                  None => return Err(Err::Error(E::from_error_kind(i1, ErrorKind::Precedence))),
+                    Some(lhs) => Operation::Binary(lhs, op, value),
+                    None => return Err(Err::Error(E::from_error_kind(i, ErrorKind::Precedence))),
                 },
-              };
-              let result = match fold(operation) {
-                Err(e) => {
-                  return Err(Err::Error(E::from_external_error(
-                    i,
-                    ErrorKind::Precedence,
-                    e,
-                  )))
-                }
-                Ok(r) => r,
-              };
-              operands.push(result);
-            }
-            i1 = i2;
-            operators.push(Operator::Postfix(o.value, o.precedence));
-          }
-        }
-      }
-
-      match binary.parse(i1.clone()) {
-        Err(Err::Error(_)) => break 'main,
-        Err(e) => return Err(e),
-        Ok((i2, o)) => {
-          while operators
-            .last()
-            .map(|op| {
-              op.precedence() < o.precedence
-                || (o.assoc == Assoc::Left && op.precedence() == o.precedence)
-                || (op.is_postfix())
-            })
-            .unwrap_or(false)
-          {
-            let value = operands.pop().unwrap();
-            let operation = match operators.pop().unwrap() {
-              Operator::Prefix(op, _) => Operation::Prefix(op, value),
-              Operator::Postfix(op, _) => Operation::Postfix(value, op),
-              Operator::Binary(op, _, _) => match operands.pop() {
-                Some(lhs) => Operation::Binary(lhs, op, value),
-                None => return Err(Err::Error(E::from_error_kind(i1, ErrorKind::Precedence))),
-              },
             };
             let result = match fold(operation) {
-              Err(e) => {
-                return Err(Err::Error(E::from_external_error(
-                  i,
-                  ErrorKind::Precedence,
-                  e,
-                )))
-              }
-              Ok(r) => r,
+                Ok(r) => r,
+                Err(e) => {
+                    return Err(Err::Error(E::from_external_error(
+                        i,
+                        ErrorKind::Precedence,
+                        e,
+                    )))
+                }
             };
             operands.push(result);
-          }
-          operators.push(Operator::Binary(o.value, o.precedence, o.assoc));
-          i1 = i2;
         }
-      }
 
-      // infinite loop check: either operand or operator must consume input
-      if i == i1 {
-        return Err(Err::Error(E::from_error_kind(i, ErrorKind::Precedence)));
-      }
-      i = i1.clone();
-    }
-
-    while operators.len() > 0 {
-      let value = match operands.pop() {
-        Some(o) => o,
-        None => return Err(Err::Error(E::from_error_kind(i, ErrorKind::Precedence))),
-      };
-      let operation = match operators.pop().unwrap() {
-        Operator::Prefix(op, _) => Operation::Prefix(op, value),
-        Operator::Postfix(op, _) => Operation::Postfix(value, op),
-        Operator::Binary(op, _, _) => match operands.pop() {
-          Some(lhs) => Operation::Binary(lhs, op, value),
-          None => return Err(Err::Error(E::from_error_kind(i, ErrorKind::Precedence))),
-        },
-      };
-      let result = match fold(operation) {
-        Ok(r) => r,
-        Err(e) => {
-          return Err(Err::Error(E::from_external_error(
-            i,
-            ErrorKind::Precedence,
-            e,
-          )))
+        if operands.len() == 1 {
+            return Ok((i1, operands.pop().unwrap()));
+        } else {
+            return Err(Err::Error(E::from_error_kind(i, ErrorKind::Precedence)));
         }
-      };
-      operands.push(result);
     }
-
-    if operands.len() == 1 {
-      return Ok((i1, operands.pop().unwrap()));
-    } else {
-      return Err(Err::Error(E::from_error_kind(i, ErrorKind::Precedence)));
-    }
-  }
 }
 
 /// Applies a parser multiple times separated by another parser.
@@ -424,81 +424,81 @@ where
 /// assert_eq!(single("(1+(2*3+4))"), Ok(("", String::from("+1+*234"))));
 /// ```
 pub fn left_assoc<I, E, O, OP, G, F, B>(
-  child: F,
-  operator: G,
-  builder: B,
-) -> impl Parser<I, Output = O, Error = E>
+    child: F,
+    operator: G,
+    builder: B,
+) -> impl Parser<I, Output=O, Error=E>
 where
-  I: Clone + Input,
-  E: ParseError<I>,
-  F: Parser<I, Output = O, Error = E>,
-  G: Parser<I, Output = OP, Error = E>,
-  B: FnMut(O, OP, O) -> O,
+    I: Clone + Input,
+    E: ParseError<I>,
+    F: Parser<I, Output=O, Error=E>,
+    G: Parser<I, Output=OP, Error=E>,
+    B: FnMut(O, OP, O) -> O,
 {
-  LeftAssoc {
-    child,
-    operator,
-    builder,
-  }
+    LeftAssoc {
+        child,
+        operator,
+        builder,
+    }
 }
 
 /// Parser implementation for the [separated_list1] combinator
 pub struct LeftAssoc<F, G, B> {
-  child: F,
-  operator: G,
-  builder: B,
+    child: F,
+    operator: G,
+    builder: B,
 }
 
 impl<I, E, O, OP, G, F, B> Parser<I> for LeftAssoc<F, G, B>
 where
-  I: Clone + Input,
-  E: ParseError<I>,
-  F: Parser<I, Output = O, Error = E>,
-  G: Parser<I, Output = OP, Error = E>,
-  B: FnMut(O, OP, O) -> O,
+    I: Clone + Input,
+    E: ParseError<I>,
+    F: Parser<I, Output=O, Error=E>,
+    G: Parser<I, Output=OP, Error=E>,
+    B: FnMut(O, OP, O) -> O,
 {
-  type Output = O;
-  type Error = E;
+    type Output = O;
+    type Error = E;
 
-  fn process<OM: OutputMode>(
-    &mut self,
-    mut i: I,
-  ) -> nom::PResult<OM, I, Self::Output, Self::Error> {
-    let (i1, mut res) = self.child.process::<OM>(i)?;
-    i = i1;
+    fn process<OM: OutputMode>(
+        &mut self,
+        mut i: I,
+    ) -> nom::PResult<OM, I, Self::Output, Self::Error> {
+        let (i1, mut res) = self.child.process::<OM>(i)?;
+        i = i1;
 
-    loop {
-      let len = i.input_len();
-      match self
-        .operator
-        .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
-      {
-        Err(Err::Error(_)) => return Ok((i, res)),
-        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
-        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
-        Ok((i1, op)) => {
-          match self
-            .child
-            .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i1.clone())
-          {
-            Err(Err::Error(_)) => return Ok((i, res)),
-            Err(Err::Failure(e)) => return Err(Err::Failure(e)),
-            Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
-            Ok((i2, rhs)) => {
-              // infinite loop check: the parser must always consume
-              if i2.input_len() == len {
-                return Err(Err::Error(OM::Error::bind(|| {
-                  <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
-                })));
-              }
-              // there is no combine() with 3 arguments, fake it with a tuple and two calls
-              let op_rhs = OM::Output::combine(op, rhs, |op, rhs| (op, rhs));
-              res = OM::Output::combine(res, op_rhs, |lhs, (op, rhs)| (self.builder)(lhs, op, rhs));
-              i = i2;
+        loop {
+            let len = i.input_len();
+            match self
+                .operator
+                .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i.clone())
+            {
+                Err(Err::Error(_)) => return Ok((i, res)),
+                Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+                Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
+                Ok((i1, op)) => {
+                    match self
+                        .child
+                        .process::<OutputM<OM::Output, Check, OM::Incomplete>>(i1.clone())
+                    {
+                        Err(Err::Error(_)) => return Ok((i, res)),
+                        Err(Err::Failure(e)) => return Err(Err::Failure(e)),
+                        Err(Err::Incomplete(e)) => return Err(Err::Incomplete(e)),
+                        Ok((i2, rhs)) => {
+                            // infinite loop check: the parser must always consume
+                            if i2.input_len() == len {
+                                return Err(Err::Error(OM::Error::bind(|| {
+                                    <F as Parser<I>>::Error::from_error_kind(i, ErrorKind::SeparatedList)
+                                })));
+                            }
+                            // there is no combine() with 3 arguments, fake it with a tuple and two calls
+                            let op_rhs = OM::Output::combine(op, rhs, |op, rhs| (op, rhs));
+                            res = OM::Output::combine(res, op_rhs, |lhs, (op, rhs)| (self.builder)(lhs, op, rhs));
+                            i = i2;
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     }
-  }
 }
